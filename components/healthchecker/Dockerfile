@@ -1,6 +1,6 @@
 FROM golang:1.12.5-alpine3.9 as builder
 
-ENV BASE_APP_DIR /go/src/github.com/kyma-incubator/compass/components/director
+ENV BASE_APP_DIR /go/src/github.com/kyma-incubator/compass/components/healthchecker
 WORKDIR ${BASE_APP_DIR}
 
 #

@@ -2,6 +2,17 @@
 
 
 [[projects]]
+  digest = "1:b472339040c571f1085e429ad08d94218bc3fc7a635c99fd95e3f80382413317"
+  name = "github.com/kisielk/errcheck"
+  packages = [
+    ".",
+    "internal/errcheck",
+  ]
+  pruneopts = "UT"
+  revision = "e14f8d59a22d460d56c5ee92507cd94c78fbf274"
+  version = "v1.2.0"
+
+[[projects]]
   branch = "master"
   digest = "1:99086e459644a91580b93e8bbf86dea957a490641c43fbbedd592b4b90a031a0"
   name = "golang.org/x/tools"
@@ -25,6 +36,9 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  input-imports = ["golang.org/x/tools/cmd/goimports"]
+  input-imports = [
+    "github.com/kisielk/errcheck",
+    "golang.org/x/tools/cmd/goimports",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -1,29 +1,19 @@
-APP_NAME = director
-IMG = $(DOCKER_PUSH_REPOSITORY)$(DOCKER_PUSH_DIRECTORY)/$(APP_NAME)
+IMG_NAME = director
+IMG = $(DOCKER_PUSH_REPOSITORY)$(DOCKER_PUSH_DIRECTORY)/$(IMG_NAME)
 TAG = $(DOCKER_TAG)
 
-.PHONY: build
-build:
+.PHONY: ci-pr ci-master ci-release resolve build-and-test build-image push-image
+
+ci-pr: resolve build-and-test build-image push-image
+ci-master: resolve build-and-test build-image push-image
+ci-release: resolve build-and-test build-image push-image
+
+resolve:
+	dep ensure -v -vendor-only
+build-and-test:
 	./before-commit.sh ci
-
-.PHONY: build-image
 build-image:
-	docker build -t $(APP_NAME):latest .
-
-.PHONY: push-image
+	docker build -t $(IMG_NAME) .
 push-image:
-	docker tag $(APP_NAME) $(IMG):$(TAG)
+	docker tag $(IMG_NAME) $(IMG):$(TAG)
 	docker push $(IMG):$(TAG)
-
-.PHONY: ci-pr
-ci-pr: build build-image push-image
-
-.PHONY: ci-master
-ci-master: build build-image push-image
-
-.PHONY: ci-release
-ci-release: build build-image push-image
-
-.PHONY: clean
-clean:
-	rm -rf bin
