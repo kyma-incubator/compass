@@ -14,9 +14,70 @@ We want to have an easy access to the pieces of information:
 
 To achieve querying by groups, the following bucket structure is suggested:
 
-![Test](assets/bucket-structure.jpg)
+![Bucket structure](./assets/bucket-structure.jpg)
 
 Data redundancy is needed to reduce requests while doing read operations.
+
+**Runtime creation**
+
+- Create `data.json` file in `{tenant_id}/runtimes/{runtime_id}` directory (1 request)
+
+For every label of the runtime (N is the number of the runtimes):
+- Create `{key}={value}` file for every label in `{tenant_id}/runtimes/{runtime_id}/labels` (N requests)
+- Create `data.json` file in `{tenant_id}/labels/{key}/{value}/runtimes/{runtime_id}` directory (N requests)
+- Create `key=value` file in `{tenant_id}/labels/{key}/{value}/runtimes/{runtime_id}/labels` directory (N * N requests)
+
+Total calls: N^2 + 2*N + 1
+
+**Application registration**
+
+Similar to Runtime creation - replace `runtimes` with `applications`
+
+Total calls: N^2 + 2*N + 1
+
+**Adding label to Application**
+
+- Create file `{key}={value}` in `{tenant_id}/applications/{application_id}` directory (1 request)
+- Copy files from `{tenant_id}/applications/{application_id}` to `{tenant_id}/labels/{key}/{value}/applications/{application_id}` directory (every file is a separate request; 1 request for data.json + N for labels)
+
+Total calls: N + 2
+
+**List all runtimes**
+
+- List all directories under `{tenant_id}/runtimes` (1 request)
+
+For every runtime (N is the number of the runtimes):
+- Get `data.json` file from `{tenant_id}/runtimes/{runtime_id}` directory (N requests)
+
+Total calls: N + 1
+
+**List all applications**
+
+Similar to listing all runtimes - replace `runtimes` with `applications`
+
+Total calls: N + 1
+
+**List application by label**
+
+- List all directories under `{tenant_id}/labels/{key}/{value}/applications` (1 request)
+
+For every application (N is the number of the application):
+- Get `data.json` file from `{tenant_id}/labels/{key}/{value}/applications/{application_id}` directory (N requests)
+
+Total calls: N + 1
+
+**List all labels**
+
+- List all directories in `{tenant_id}/labels` (1 request)
+- Iterate over the list and construct all possible labels ({key}={value})
+
+Total calls: 1
+
+**List all possible values for label key**
+
+- List all directories under `{tenant_id}/labels/{key}` (1 request)
+
+Total calls: 1
 
 ### Pros
 - low cost
