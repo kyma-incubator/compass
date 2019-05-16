@@ -1,0 +1,8 @@
+required = [
+    "golang.org/x/tools/cmd/goimports",
+    "github.com/kisielk/errcheck",
+]
+
+[prune]
+  go-tests = true
+  unused-packages = true
