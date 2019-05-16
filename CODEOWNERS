@@ -6,3 +6,6 @@
 
 # These are the default owners for the whole content of the `compass` repository. The default owners are automatically added as reviewers when you open a pull request, unless different owners are specified in the file.
 * @PK85 @aszecowka @crabtree @pkosiec @kfurgol @tgorgol
+
+# All .md files
+*.md @kazydek @klaudiagrz @tomekpapiernik @bszwarc @mmitoraj
