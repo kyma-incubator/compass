@@ -18,6 +18,8 @@ To achieve querying by groups, the following bucket structure is suggested:
 
 Data redundancy is needed to reduce requests while doing read operations.
 
+In `data.json` files we could store API, event specs and docs. However, we would need to assure that always the latest file is modified (file versioning). We can also store the files separately, but then the number of requests increases. That's why the cases below assumes that we store the data in single `data.json` file.
+
 **Runtime creation**
 
 - Create `data.json` file in `{tenant_id}/runtimes/{runtime_id}` directory (1 request)
@@ -29,16 +31,23 @@ For every label of the runtime (N is the number of the runtimes):
 
 Total calls: N^2 + 2*N + 1
 
-**Application registration**
+**Application creation**
 
 Similar to Runtime creation - replace `runtimes` with `applications`
 
 Total calls: N^2 + 2*N + 1
 
-**Adding label to Application**
+**Adding label to an existing Application**
 
 - Create file `{key}={value}` in `{tenant_id}/applications/{application_id}` directory (1 request)
 - Copy files from `{tenant_id}/applications/{application_id}` to `{tenant_id}/labels/{key}/{value}/applications/{application_id}` directory (every file is a separate request; 1 request for data.json + N for labels)
+
+Total calls: N + 2
+
+**Adding label to an existing Runtime**
+
+- Create file `{key}={value}` in `{tenant_id}/runtimes/{runtime_id}` directory (1 request)
+- Copy files from `{tenant_id}/runtimes/{runtime_id}` to `{tenant_id}/labels/{key}/{value}/runtimes/{runtime_id}` directory (every file is a separate request; 1 request for data.json + N for labels)
 
 Total calls: N + 2
 
@@ -124,7 +133,7 @@ Total calls: 1
 
 ## Cross-region replication
 
-The following section describes a comparison between cloud-storage offerings, regarding the cross-region replication5
+The following section describes a comparison between cloud-storage offerings, regarding the cross-region replication. All providers listed below have similiar offering, except the GCP, which has multi-region within only the same continent.
 
 ### Google Cloud Platform
 
@@ -140,7 +149,11 @@ We cannot replicate a single bucket across multiple regions like Asia, USA and E
 
 ### AWS S3
 
-Amazon has [Cross-region replication for S3 buckets](https://docs.aws.amazon.com/AmazonS3/latest/dev/crr.html). One bucket would be used to write, and others to read.
+Amazon has [Cross-region replication for S3 buckets](https://docs.aws.amazon.com/AmazonS3/latest/dev/crr.html). One bucket would be used to write, and others to read. It is limited to two regions at the same time (1:1 bucket mapping).
+
+### Azure Blob Storage
+
+On Microsoft Azure, there is available [Read-Access Geo-Redundant Storage (RA-GRS)](https://docs.microsoft.com/pl-pl/azure/storage/common/storage-redundancy), but it is limited to only two regions at the same time.
 
 ## Summary
 
@@ -148,3 +161,4 @@ There are many [discussions](https://www.quora.com/How-can-we-use-Amazon-S3-as-a
 
 In our case using S3 will make the Registry implementation much more difficult. Doing so many request per single read/write operation will mean that every request to the Registry will be slow - much slower than typical (No)SQL database.
 
+We should investigate database cloud solutions. In my opinion, in our use case, NoSQL database will fit more than SQL ones. We could investigate solutions such as [Cloud Firestone](https://cloud.google.com/firestore/) or [Amazon DynamoDB](https://aws.amazon.com/dynamodb/).
