@@ -31,7 +31,7 @@ Apache Parquet is a column-oriented data storage format, which could be used to 
 
     For example, every time the user adds an application to a group, we would need to download `parquet` file, modify it and then upload modified version. We can't implement caching as we always need latest version of this file, especially when we will use Cross-region replicas.
 
-    However, there is S3 Select available on AWS for [Parquet](https://aws.amazon.com/about-aws/whats-new/2018/09/amazon-s3-announces-new-features-for-s3-select/), which would eliminate the need to download the whole file for read-only operations.
+    However, there is S3 Select available on AWS for [Parquet](https://aws.amazon.com/about-aws/whats-new/2018/09/amazon-s3-announces-new-features-for-s3-select/), which would eliminate the need to download the whole file for read-only operations. Still, writing will always mean that we need to download the file.
 
 ### Summary
 

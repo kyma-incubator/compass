@@ -93,7 +93,34 @@ Total calls: 1
     -   to Add new runtime with 2 labels, we would need to upload 9 files because of the data redundancy (9 calls - 6 files for labels and 3 files with runtime data)
 
 - complex implementation for adding, removing and querying data
-- problems with caching while cross-region replication - 
+- problems with caching while cross-region replication - while using cache, even very short-living one, there will be a delay for reading modifications in `data.json` file, if it were accessed before and modified by other client
+- No support for transactions (@tgorgol)
+    
+    For example, if we want to use data redundancy then we need to consider cases where one file write will succeed while other one will fail. This will further increase code complexity.
+- No update functionality. (@tgorgol)
+
+    If we decide to store metadata in `data.json` file then to update a single value from that file we have to replace whole file. In our case this wouldn't be a big problem as the `data.json` file is expected to be small, nonetheless it will increase complexity of code, as we will have to first download current file, patch it locally and then put the new file in the storage.
+    
+    One way of solving this issue is to use separate files for each metadata property with it's value in name, so we would have a directory structure like that:
+    
+    ```
+    {tenant_id}/
+    ├── applications/
+    │   ├── {application_id}/
+    │   │  ├── name={application_name}
+    │   │  ├── description={application_description}
+    │   │  ├── annotations/
+    │   │  │  ├── {annotation_key} // value in file?
+    │   │  │  └── ...
+    │   │  ├── apis/
+    │   │  │  └── ...
+    │   │  ├── labels/
+    │   │  │  └── {label_key}={label_value}
+    │   │  └── ...
+    ...
+    ```
+
+   that way updating single property would require only replacing a single file, also, reading application metadata would be faster as most of it would be available after listing the application directory. The downsides to storing this data in filename are possible length/encoding limitations.
 
 ## Cross-region replication
 
