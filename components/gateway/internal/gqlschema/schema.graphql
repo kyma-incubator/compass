@@ -1,0 +1,142 @@
+scalar Labels
+#scalar Annotations
+
+type Label {
+    key: String
+    value: String
+}
+
+type Runtime {
+    id: ID!
+    name: String!
+    tenant: String!
+
+}
+
+type Application {
+    id: ID!
+    name: String!
+    tenant: String!
+    description: String
+    labels: Labels
+#    annotations: Annotations
+    apis: [Api!]
+    events: [Event!]
+    documentations: [Documentation!]
+}
+
+input ApplicationInput {
+    name: String!
+    description: String
+    labels: Labels
+#    annotations: Annotations
+    apis: [ApiInput!]
+    events: [EventInput!]
+    documentations: [DocumentationInput!]
+}
+
+
+
+type Credentials {
+    id: ID!
+    data: ConcreteCredential!
+    requestAuth: Credentials
+}
+
+# in queries we can use __typename
+union ConcreteCredential = OauthCredential | BasicCredential
+
+type OauthCredential {
+    tbd: String
+}
+
+type BasicCredential {
+    tbd: String
+}
+
+
+
+type Api {
+    targetURL: String!
+    spec: ConcreateAPiSpec
+    credentials: Credentials
+    specFetchRequest: FetchRequest
+    # TODO headers
+}
+
+input ApiInput {
+    tbd: String
+}
+
+type FetchRequest {
+    url: String
+    credentials: Credentials
+}
+
+union ConcreateAPiSpec = OdataApiSpec | OpenApiSpec
+
+type OdataApiSpec {
+    tbd: String
+}
+
+type OpenApiSpec {
+    tbd: String
+}
+
+input EventInput {
+    tbd: String
+}
+
+type Event {
+    tbd: String
+    spec: ConcreteEventSpec
+    credentials: Credentials
+    specFetchRequest: FetchRequest
+}
+
+input DocumentationInput {
+    tbd: String
+}
+
+type Documentation {
+    tbd: String
+    content: String
+    contentFetchRequest: FetchRequest
+}
+
+
+union ConcreteEventSpec = AsyncApiSpec
+
+type AsyncApiSpec {
+    tbd: String
+}
+
+#
+
+type Query {
+    applications: [Application!]!
+    application(id: ID!): Application
+
+    runtimes: [Runtime!]!
+    runtime(id: ID!): Runtime
+}
+
+type Mutation {
+    createApplication(in: ApplicationInput!): Application
+    deleteApplication(id: String!): Application
+    createApplicationLabel(id: ID!, label: String!, value: String!): Label
+    deleteApplicationLabel(id: ID!, label: String!): String
+    createApiDef: String
+    deleteApiDef: String
+    createEventDef: String
+    deleteEventDef: String
+    createDocsDef: String
+    deletDocsDef: String
+
+
+    createRuntime:String
+    deleteRuntime: String
+    createRuntimeLabel(id: ID!, label: String!, value: String!): String
+    deleteRuntimeLabel(id: ID!, label: String!): String
+
+}
