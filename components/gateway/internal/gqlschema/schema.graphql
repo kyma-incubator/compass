@@ -2,14 +2,15 @@
 
 scalar Timestamp
 
-scalar Tenant
+scalar Tenant # -> String
 
-scalar Labels
-scalar Annotations
+scalar Labels # -> map[string]string #TODO: Maybe it should be just an array of Label? [Label!]
 
-scalar HttpHeaders
+scalar Annotations # -> map[string]interface{}
 
-scalar JSON
+scalar HttpHeaders # -> map[string][]string
+
+scalar JSON # -> map[string]interface{}
 
 # Runtime
 
@@ -19,7 +20,7 @@ type Runtime {
     tenant: Tenant!
     labels: Labels!
     annotations: Annotations!
-    agentCredentials: Credentials
+    agentCredentials: Credential
     status: RuntimeStatus!
 }
 
@@ -63,9 +64,9 @@ enum ApplicationStatusCondition {
 }
 
 type ApplicationWebhook {
-    type: ApplicationWebhookType!
+    type: ApplicationWebhookType! # TODO: enum or union? Do we want to extend a specific type? It would be good to be consistent...
     url: String!
-    credentials: Credentials
+    credential: Credential
 }
 
 enum ApplicationWebhookType {
@@ -78,12 +79,12 @@ enum ApplicationWebhookType {
 type Api {
     spec: ApiSpec!
     targetURL: String!
-    credentials: Credentials
+    credential: Credential
     headers: HttpHeaders
 }
 
 type ApiSpec {
-    type: ApiSpecType!
+    type: ApiSpecType! # TODO: enum or union? Do we want to extend a specific type? We cannot drop `data` and define some fields. But it would be good to be consistent...
     data: JSON!
     fetchRequest: FetchRequest
 }
@@ -94,13 +95,14 @@ enum ApiSpecType {
 }
 
 # Event
+
 type Event {
     spec: EventSpec!
     fetchRequest: FetchRequest
 }
 
 type EventSpec {
-    type: EventSpecType!
+    type: EventSpecType! # TODO: enum or union? Do we want to extend a specific type? We cannot drop `data` and define some fields. But it would be good to be consistent...
     data: JSON!
 }
 
@@ -111,15 +113,21 @@ enum EventSpecType {
 # Document
 
 type Document {
-    data: JSON! # TODO: Or String? Ask Lukasz Gornicki
+    #TODO: Do we need type? Ask Łukasz
+    data: String! # TODO: String or JSON? Ask Łukasz
     fetchRequest: FetchRequest
+}
+
+# TODO: Do we need this? Ask Łukasz Gornicki
+enum DocumentType {
+    MARKDOWN
 }
 
 # FetchRequest
 
 type FetchRequest {
     url: String
-    credentials: Credentials
+    credential: Credential
     status: FetchRequestStatus!
 }
 
@@ -136,56 +144,75 @@ enum FetchRequestStatusCondition {
 
 # Credential
 
-type Credential {
+interface Credential {
     id: ID!
-    type: CredentialType!
     data: CredentialData!
     requestAuth: CredentialRequestAuth
 }
 
-type CredentialRequestAuth {
-    type: CredentialRequestAuthType!
-    data: JSON! #TODO: interfaces?
-}
+union CredentialRequestAuth = CsrfTokenCredentialRequestAuth
 
-enum CredentialRequestAuthType {
-    CSRF_TOKEN
-}
-
-enum CredentialType {
-    O_AUTH
-    BASIC
+type CsrfTokenCredentialRequestAuth {
+    token: String!
 }
 
 # in queries we can use __typename
-union ConcreteCredential = OauthCredential | BasicCredential
+union CredentialData = OAuthCredentialData | BasicCredentialData
 
-type OAuthCredential {
+type OAuthCredentialData implements Credential {
     clientId: string!
     clientSecret: string!
     url: string!
 }
 
-type BasicCredential {
+type BasicCredentialData implements Credential {
     username: String!
     password: String!
 }
 
+# HealthCheck
+
+union HealthCheckStatus = ManagementPlaneHealthCheck | RuntimeHealthCheck
+
+interface HealthCheckStatusBase {
+    origin: HealthCheckStatusOrigin!
+}
+
+enum HealthCheckStatusCondition {
+    SUCCEEDED # TODO: doesn't look good... maybe we should unify all 'Success' values
+    FAILED
+}
+
+enum HealthCheckStatusOrigin {
+    MANAGEMENT_PLANE
+    RUNTIME
+}
+
+type ManagementPlaneHealthCheck implements HealthCheckStatusBase {
+    condition: HealthCheckStatusCondition!
+    message: String
+    timestamp: Timestamp!
+}
+
+# You cannot extend interfaces in GraphQL, so I figured out that maybe we can consolidate different types.
+# TODO: Discuss it
+type RuntimeHealthCheck implements HealthCheckStatusBase {
+    runtimeId: ID!
+    agent: RuntimeHealthCheckPartialStatus!
+    events: RuntimeHealthCheckPartialStatus
+    gateway: RuntimeHealthCheckPartialStatus
+}
+
+type RuntimeHealthCheckPartialStatus {
+    condition: HealthCheckStatusCondition!
+    message: String
+    timestamp: Timestamp!
+}
 
 
+# ------------------------------------------
 
 
-
-
-
-
-
-
-
-
-
-
-# TODO: ???
 type Label {
     key: String
     value: String
@@ -203,23 +230,7 @@ input ApplicationInput {
 }
 
 
-
-
-
-
-
 input ApiInput {
-    tbd: String
-}
-
-
-union ConcreateAPiSpec = OdataApiSpec | OpenApiSpec
-
-type OdataApiSpec {
-    tbd: String
-}
-
-type OpenApiSpec {
     tbd: String
 }
 
@@ -227,20 +238,9 @@ input EventInput {
     tbd: String
 }
 
-
 input DocumentationInput {
     tbd: String
 }
-
-
-
-
-union ConcreteEventSpec = AsyncApiSpec
-
-type AsyncApiSpec {
-    tbd: String
-}
-
 #
 
 type Query {

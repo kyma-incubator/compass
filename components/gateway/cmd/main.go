@@ -1,33 +1,24 @@
 package main
 
 import (
-	"log"
 	"net/http"
+
+	"github.com/99designs/gqlgen/handler"
+	"github.com/gorilla/mux"
+	"github.com/kyma-incubator/compass/components/gateway/internal/gqlschema"
 )
 
-const serverPort = "3000"
-
-func EchoHandler(writer http.ResponseWriter, request *http.Request) {
-
-	log.Println("Echoing back request made to " + request.URL.Path + " to client (" + request.RemoteAddr + ")")
-
-	writer.Header().Set("Access-Control-Allow-Origin", "*")
-
-	writer.Header().Set("Access-Control-Allow-Headers", "Content-Range, Content-Disposition, Content-Type, ETag")
-
-	err := request.Write(writer)
-	if err != nil {
-		log.Println("error: ", err)
-	}
-}
-
 func main() {
+	cfg := gqlschema.Config{}
+	executableSchema := gqlschema.NewExecutableSchema(cfg)
 
-	log.Println("starting server, listening on port " + serverPort)
+	router := mux.NewRouter()
+	router.HandleFunc("/", handler.Playground("Dataloader", "/graphql"))
+	router.HandleFunc("/graphql", handler.GraphQL(executableSchema))
 
-	http.HandleFunc("/", EchoHandler)
-	err := http.ListenAndServe(":"+serverPort, nil)
-	if err != nil {
-		log.Println("error: ", err)
+	http.Handle("/", router)
+
+	if err := http.ListenAndServe(":3000", nil); err != nil {
+		panic(err)
 	}
 }
