@@ -7,7 +7,9 @@ scalar Tenant
 scalar Labels
 scalar Annotations
 
-scalar JSON # TODO: Is this needed?
+scalar HttpHeaders
+
+scalar JSON
 
 # Runtime
 
@@ -38,22 +40,15 @@ type Application {
     id: ID!
     name: String!
     tenant: Tenant!
-    #description: String #TODO: Can't we use annotations for storing?
+    description: String
     labels: Labels
     annotations: Annotations
     status: ApplicationStatus!
-
+    webhooks: [ApplicationWebhook!]
     apis: [Api!]
     events: [Event!]
     docs: [Document!]
-
-    #TODO:L
-    webhooks: [ApplicationWebhook!]
 }
-
-# type APplicationWebhook {
-#     type: 
-# }
 
 type ApplicationStatus {
     condition: ApplicationStatusCondition!
@@ -67,26 +62,116 @@ enum ApplicationStatusCondition {
     FAILED
 }
 
-type Api {
-    targetURL: String!
-    spec: ConcreateAPiSpec
+type ApplicationWebhook {
+    type: ApplicationWebhookType!
+    url: String!
     credentials: Credentials
-    specFetchRequest: FetchRequest
-    # TODO headers
 }
 
-type Event {
-    tbd: String
-    spec: ConcreteEventSpec
-    credentials: Credentials
-    specFetchRequest: FetchRequest
+enum ApplicationWebhookType {
+    HEALTH_CHECK
+    CONFIGURATION
 }
+
+# API
+
+type Api {
+    spec: ApiSpec!
+    targetURL: String!
+    credentials: Credentials
+    headers: HttpHeaders
+}
+
+type ApiSpec {
+    type: ApiSpecType!
+    data: JSON!
+    fetchRequest: FetchRequest
+}
+
+enum ApiSpecType {
+    O_DATA
+    OPEN_API
+}
+
+# Event
+type Event {
+    spec: EventSpec!
+    fetchRequest: FetchRequest
+}
+
+type EventSpec {
+    type: EventSpecType!
+    data: JSON!
+}
+
+enum EventSpecType {
+    ASYNC_API
+}
+
+# Document
 
 type Document {
-    tbd: String
-    content: String
-    contentFetchRequest: FetchRequest
+    data: JSON! # TODO: Or String? Ask Lukasz Gornicki
+    fetchRequest: FetchRequest
 }
+
+# FetchRequest
+
+type FetchRequest {
+    url: String
+    credentials: Credentials
+    status: FetchRequestStatus!
+}
+
+type FetchRequestStatus {
+    condition: FetchRequestStatusCondition!
+    timestamp: Timestamp!
+}
+
+enum FetchRequestStatusCondition {
+    INITIAL
+    SUCCEEDED
+    FAILED
+}
+
+# Credential
+
+type Credential {
+    id: ID!
+    type: CredentialType!
+    data: CredentialData!
+    requestAuth: CredentialRequestAuth
+}
+
+type CredentialRequestAuth {
+    type: CredentialRequestAuthType!
+    data: JSON! #TODO: interfaces?
+}
+
+enum CredentialRequestAuthType {
+    CSRF_TOKEN
+}
+
+enum CredentialType {
+    O_AUTH
+    BASIC
+}
+
+# in queries we can use __typename
+union ConcreteCredential = OauthCredential | BasicCredential
+
+type OAuthCredential {
+    clientId: string!
+    clientSecret: string!
+    url: string!
+}
+
+type BasicCredential {
+    username: String!
+    password: String!
+}
+
+
 
 
 
@@ -119,23 +204,6 @@ input ApplicationInput {
 
 
 
-type Credentials {
-    id: ID!
-    data: ConcreteCredential!
-    requestAuth: Credentials
-}
-
-# in queries we can use __typename
-union ConcreteCredential = OauthCredential | BasicCredential
-
-type OauthCredential {
-    tbd: String
-}
-
-type BasicCredential {
-    tbd: String
-}
-
 
 
 
@@ -144,10 +212,6 @@ input ApiInput {
     tbd: String
 }
 
-type FetchRequest {
-    url: String
-    credentials: Credentials
-}
 
 union ConcreateAPiSpec = OdataApiSpec | OpenApiSpec
 
@@ -198,7 +262,6 @@ type Mutation {
     deleteEventDef: String
     createDocsDef: String
     deleteDocsDef: String
-
 
     createRuntime:String
     deleteRuntime: String
