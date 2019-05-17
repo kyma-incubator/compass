@@ -1,29 +1,111 @@
-scalar Labels
-#scalar Annotations
+# Scalars
 
+scalar Timestamp
+
+scalar Tenant
+
+scalar Labels
+scalar Annotations
+
+scalar JSON # TODO: Is this needed?
+
+# Runtime
+
+type Runtime {
+    id: ID!
+    name: String!
+    tenant: Tenant!
+    labels: Labels!
+    annotations: Annotations!
+    agentCredentials: Credentials
+    status: RuntimeStatus!
+}
+
+type RuntimeStatus {
+    condition: RuntimeStatusCondition!
+    timestamp: Timestamp!
+}
+
+enum RuntimeStatusCondition {
+    INITIAL
+    READY
+    FAILED
+}
+
+# Application
+
+type Application {
+    id: ID!
+    name: String!
+    tenant: Tenant!
+    #description: String #TODO: Can't we use annotations for storing?
+    labels: Labels
+    annotations: Annotations
+    status: ApplicationStatus!
+
+    apis: [Api!]
+    events: [Event!]
+    docs: [Document!]
+
+    #TODO:L
+    webhooks: [ApplicationWebhook!]
+}
+
+# type APplicationWebhook {
+#     type: 
+# }
+
+type ApplicationStatus {
+    condition: ApplicationStatusCondition!
+    timestamp: Timestamp!
+}
+
+enum ApplicationStatusCondition {
+    INITIAL 
+    UNKNOWN
+    READY
+    FAILED
+}
+
+type Api {
+    targetURL: String!
+    spec: ConcreateAPiSpec
+    credentials: Credentials
+    specFetchRequest: FetchRequest
+    # TODO headers
+}
+
+type Event {
+    tbd: String
+    spec: ConcreteEventSpec
+    credentials: Credentials
+    specFetchRequest: FetchRequest
+}
+
+type Document {
+    tbd: String
+    content: String
+    contentFetchRequest: FetchRequest
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+# TODO: ???
 type Label {
     key: String
     value: String
 }
 
-type Runtime {
-    id: ID!
-    name: String!
-    tenant: String!
-
-}
-
-type Application {
-    id: ID!
-    name: String!
-    tenant: String!
-    description: String
-    labels: Labels
-#    annotations: Annotations
-    apis: [Api!]
-    events: [Event!]
-    documentations: [Documentation!]
-}
 
 input ApplicationInput {
     name: String!
@@ -56,13 +138,7 @@ type BasicCredential {
 
 
 
-type Api {
-    targetURL: String!
-    spec: ConcreateAPiSpec
-    credentials: Credentials
-    specFetchRequest: FetchRequest
-    # TODO headers
-}
+
 
 input ApiInput {
     tbd: String
@@ -87,22 +163,12 @@ input EventInput {
     tbd: String
 }
 
-type Event {
-    tbd: String
-    spec: ConcreteEventSpec
-    credentials: Credentials
-    specFetchRequest: FetchRequest
-}
 
 input DocumentationInput {
     tbd: String
 }
 
-type Documentation {
-    tbd: String
-    content: String
-    contentFetchRequest: FetchRequest
-}
+
 
 
 union ConcreteEventSpec = AsyncApiSpec
@@ -125,13 +191,13 @@ type Mutation {
     createApplication(in: ApplicationInput!): Application
     deleteApplication(id: String!): Application
     createApplicationLabel(id: ID!, label: String!, value: String!): Label
-    deleteApplicationLabel(id: ID!, label: String!): String
+    deleteApplicationLabel(id: ID!, label: String!): Label
     createApiDef: String
     deleteApiDef: String
     createEventDef: String
     deleteEventDef: String
     createDocsDef: String
-    deletDocsDef: String
+    deleteDocsDef: String
 
 
     createRuntime:String
