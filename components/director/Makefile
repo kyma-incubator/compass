@@ -1,4 +1,4 @@
-IMG_NAME = director
+IMG_NAME = compass-director
 IMG = $(DOCKER_PUSH_REPOSITORY)$(DOCKER_PUSH_DIRECTORY)/$(IMG_NAME)
 TAG = $(DOCKER_TAG)
 
