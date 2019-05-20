@@ -144,7 +144,7 @@ enum FetchRequestStatusCondition {
 
 # Credential
 
-interface Credential {
+type Credential {
     id: ID!
     data: CredentialData!
     requestAuth: CredentialRequestAuth
@@ -159,13 +159,13 @@ type CsrfTokenCredentialRequestAuth {
 # in queries we can use __typename
 union CredentialData = OAuthCredentialData | BasicCredentialData
 
-type OAuthCredentialData implements Credential {
-    clientId: string!
-    clientSecret: string!
-    url: string!
+type OAuthCredentialData {
+    clientId: String!
+    clientSecret: String!
+    url: String!
 }
 
-type BasicCredentialData implements Credential {
+type BasicCredentialData {
     username: String!
     password: String!
 }
@@ -189,6 +189,7 @@ enum HealthCheckStatusOrigin {
 }
 
 type ManagementPlaneHealthCheck implements HealthCheckStatusBase {
+    origin: HealthCheckStatusOrigin!
     condition: HealthCheckStatusCondition!
     message: String
     timestamp: Timestamp!
@@ -197,6 +198,7 @@ type ManagementPlaneHealthCheck implements HealthCheckStatusBase {
 # You cannot extend interfaces in GraphQL, so I figured out that maybe we can consolidate different types.
 # TODO: Discuss it
 type RuntimeHealthCheck implements HealthCheckStatusBase {
+    origin: HealthCheckStatusOrigin!
     runtimeId: ID!
     agent: RuntimeHealthCheckPartialStatus!
     events: RuntimeHealthCheckPartialStatus

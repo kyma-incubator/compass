@@ -3,8 +3,9 @@ package gqlschema
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
+
+	"github.com/pkg/errors"
 )
 
 type Labels map[string]string

@@ -22,10 +22,9 @@ if [ "$1" == "$CI_FLAG" ]; then
 	buildEnv="env CGO_ENABLED=0 GOOS=linux GOARCH=amd64"
 fi
 
-${buildEnv} go build -o bin/app ./cmd/
-
+${buildEnv} go build -o gateway
 goBuildResult=$?
-rm -r bin/
+rm gateway
 
 if [ ${goBuildResult} != 0 ]; then
 	echo -e "${RED}✗ go build${NC}\n$goBuildResult${NC}"
