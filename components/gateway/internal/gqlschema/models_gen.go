@@ -25,6 +25,7 @@ type HealthCheckStatusBase interface {
 }
 
 type API struct {
+	ID         string      `json:"id"`
 	Spec       *APISpec    `json:"spec"`
 	TargetURL  string      `json:"targetURL"`
 	Credential *Credential `json:"credential"`
@@ -32,13 +33,26 @@ type API struct {
 }
 
 type APIInput struct {
-	Tbd *string `json:"tbd"`
+	Spec      *APISpecInput `json:"spec"`
+	TargetURL string        `json:"targetURL"`
+	Headers   *string       `json:"headers"`
 }
 
 type APISpec struct {
 	Type         APISpecType   `json:"type"`
 	Data         string        `json:"data"`
 	FetchRequest *FetchRequest `json:"fetchRequest"`
+}
+
+type APISpecInput struct {
+	Type         *APISpecType       `json:"type"`
+	Data         *string            `json:"data"`
+	FetchRequest *FetchRequestInput `json:"fetchRequest"`
+}
+
+type Annotation struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 type Application struct {
@@ -95,24 +109,35 @@ type CsrfTokenCredentialRequestAuth struct {
 func (CsrfTokenCredentialRequestAuth) IsCredentialRequestAuth() {}
 
 type Document struct {
+	ID           string        `json:"id"`
+	Type         DocumentType  `json:"type"`
 	Data         string        `json:"data"`
 	FetchRequest *FetchRequest `json:"fetchRequest"`
 }
 
 type DocumentationInput struct {
-	Tbd *string `json:"tbd"`
+	Type         *DocumentType      `json:"type"`
+	Data         *string            `json:"data"`
+	FetchRequest *FetchRequestInput `json:"fetchRequest"`
 }
 
 type Event struct {
+	ID           string        `json:"id"`
 	Spec         *EventSpec    `json:"spec"`
 	FetchRequest *FetchRequest `json:"fetchRequest"`
 }
 
 type EventInput struct {
-	Tbd *string `json:"tbd"`
+	Spec         *EventSpecInput    `json:"spec"`
+	FetchRequest *FetchRequestInput `json:"fetchRequest"`
 }
 
 type EventSpec struct {
+	Type EventSpecType `json:"type"`
+	Data string        `json:"data"`
+}
+
+type EventSpecInput struct {
 	Type EventSpecType `json:"type"`
 	Data string        `json:"data"`
 }
@@ -121,6 +146,10 @@ type FetchRequest struct {
 	URL        *string             `json:"url"`
 	Credential *Credential         `json:"credential"`
 	Status     *FetchRequestStatus `json:"status"`
+}
+
+type FetchRequestInput struct {
+	URL *string `json:"url"`
 }
 
 type FetchRequestStatus struct {
@@ -178,6 +207,11 @@ type RuntimeHealthCheckPartialStatus struct {
 	Timestamp string                     `json:"timestamp"`
 }
 
+type RuntimeInput struct {
+	Name   string  `json:"name"`
+	Labels *Labels `json:"labels"`
+}
+
 type RuntimeStatus struct {
 	Condition RuntimeStatusCondition `json:"condition"`
 	Timestamp string                 `json:"timestamp"`
@@ -215,7 +249,7 @@ func (e *APISpecType) UnmarshalGQL(v interface{}) error {
 
 	*e = APISpecType(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid ApiSpecType", str)
+		return fmt.Errorf("%s is not a valid APISpecType", str)
 	}
 	return nil
 }
