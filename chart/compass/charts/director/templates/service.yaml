@@ -1,12 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "director.fullname" . }}
+  name: {{ .Chart.Name }}
   labels:
-    app: {{ include "director.name" . }}
-    chart: {{ include "director.chart" . }}
+    app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
 spec:
   type: ClusterIP
   ports:
@@ -15,5 +13,5 @@ spec:
       protocol: TCP
       name: http
   selector:
-    app: {{ include "director.name" . }}
+    app: {{ .Chart.Name }}
     release: {{ .Release.Name }}

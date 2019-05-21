@@ -1,21 +1,19 @@
 apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
-  name: {{ include "director.fullname" . }}
+  name: {{ .Chart.Name }}
   labels:
-    app: {{ include "director.name" . }}
-    chart: {{ include "director.chart" . }}
+    app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
 spec:
   selector:
     matchLabels:
-      app: {{ include "director.name" . }}
+      app: {{ .Chart.Name }}
       release: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app: {{ include "director.name" . }}
+        app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
     spec:
       containers:

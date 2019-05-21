@@ -1,21 +1,19 @@
 apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
-  name: {{ include "gateway.fullname" . }}
+  name: {{ .Chart.Name }}
   labels:
-    app: {{ include "gateway.name" . }}
-    chart: {{ include "gateway.chart" . }}
+    app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
 spec:
   selector:
     matchLabels:
-      app: {{ include "gateway.name" . }}
+      app: {{ .Chart.Name }}
       release: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app: {{ include "gateway.name" . }}
+        app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
     spec:
       containers:

@@ -1,21 +1,19 @@
 apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
-  name: {{ include "healthchecker.fullname" . }}
+  name: {{ .Chart.Name }}
   labels:
-    app: {{ include "healthchecker.name" . }}
-    chart: {{ include "healthchecker.chart" . }}
+    app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
 spec:
   selector:
     matchLabels:
-      app: {{ include "healthchecker.name" . }}
+      app: {{ .Chart.Name }}
       release: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app: {{ include "healthchecker.name" . }}
+        app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
     spec:
       containers:
