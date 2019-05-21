@@ -47,7 +47,7 @@ type Application {
     annotations: Annotations!
     status: ApplicationStatus!
     webhooks: [ApplicationWebhook!]!
-    apis: [API!]!
+    apis: [Api!]!
     events: [Event!]!
     docs: [Documentation!]!
 }
@@ -75,25 +75,25 @@ enum ApplicationWebhookType {
     CONFIGURATION
 }
 
-# API #TODO: Make sure it's compatible with Kyma CMS
+# Api #TODO: Make sure it's compatible with Kyma CMS
 
-type API {
+type Api {
     id: ID!
-    spec: APISpec!
+    spec: ApiSpec!
     targetURL: String!
     credential: Credential
     headers: HttpHeaders
 }
 
-type APISpec {
-    type: APISpecType!
+type ApiSpec {
+    type: ApiSpecType!
     data: JSON!
     fetchRequest: FetchRequest
 }
 
-enum APISpecType {
+enum ApiSpecType {
     O_DATA
-    OPEN_API
+    OPEN_Api
 }
 
 # Event #TODO: Make sure it's compatible with Kyma CMS
@@ -110,7 +110,7 @@ type EventSpec {
 }
 
 enum EventSpecType {
-    ASYNC_API
+    ASYNC_Api
 }
 
 # Documentation #TODO: Make sure it's compatible with Kyma CMS
@@ -253,7 +253,7 @@ input ApplicationInput {
     description: String
     labels: Labels
     annotations: Annotations
-    apis: [APIInput!]
+    apis: [ApiInput!]
     events: [EventInput!]
     documentations: [DocumentationInput!]
 }
@@ -282,10 +282,10 @@ input ApplicationWebhookInput {
     credential: CredentialInput
 }
 
-# API Input
+# Api Input
 
-input APIInput {
-    type: APISpecType!
+input ApiInput {
+    type: ApiSpecType!
     targetURL: String!
     data: JSON
     fetchRequest: FetchRequestInput
@@ -348,7 +348,7 @@ input BasicCredentialDataInput {
     password: String!
 }
 
-# Healthcheck Input
+# HealthCheck Input
 
 input RuntimeHealthCheckInput {
     type: RuntimeHealthCheckType!
@@ -365,9 +365,9 @@ type Query {
     runtimes: [Runtime!]!
     runtime(id: ID!): Runtime
 
-    healthchecks(labels: [String!]): [HealthCheckStatus!]!
-    runtimeHealthchecks(origin: ID, type: [RuntimeHealthCheckType!], labels: [String!]): [HealthCheckStatus!]! # Has to be validated at runtime
-    managementPlaneHealthchecks(type: [ManagementPlaneHealthCheckType!], labels: [String!]): [HealthCheckStatus!]!
+    healthChecks(labels: [String!]): [HealthCheckStatus!]!
+    runtimeHealthChecks(origin: ID, type: [RuntimeHealthCheckType!], labels: [String!]): [HealthCheckStatus!]! # Has to be validated at runtime
+    managementPlaneHealthChecks(type: [ManagementPlaneHealthCheckType!], labels: [String!]): [HealthCheckStatus!]!
 
     labels(key: String): [Labels!]!
 }
@@ -388,12 +388,12 @@ type Mutation {
     updateApplicationWebhook(applicationID: ID!, type: ApplicationWebhookType, in: ApplicationWebhookInput): ApplicationWebhook
     deleteApplicationWebhook(applicationID: ID!, type: ApplicationWebhookType): ApplicationWebhook
 
-    createAPI(applicationID: ID!, in: APIInput!): API
-    updateAPI(id: ID!, in: APIInput!): API
-    deleteAPI(id: ID!): API
+    createApi(applicationID: ID!, in: ApiInput!): Api
+    updateApi(id: ID!, in: ApiInput!): Api
+    deleteApi(id: ID!): Api
 
-    createAPICredential(apiID: ID!, in: CredentialInput!): Credential
-    deleteAPICredential(apiID: ID!): Credential
+    createApiCredential(apiID: ID!, in: CredentialInput!): Credential
+    deleteApiCredential(apiID: ID!): Credential
 
     createEvent(applicationID: ID!, in: EventInput!): Event
     updateEvent(id: ID!, in: EventInput!): Event
@@ -414,6 +414,6 @@ type Mutation {
     createRuntimeAnnotation(runtimeID: ID!, annotation: String!, value: JSON!): Annotation
     deleteRuntimeAnnotation(id: ID!, annotation: String!): Annotation
 
-    # Healthcheck
+    # HealthCheck
     createRuntimeHealthCheck(in: RuntimeHealthCheckInput!): HealthCheckStatus
 }
