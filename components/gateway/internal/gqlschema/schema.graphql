@@ -47,7 +47,7 @@ type Application {
     annotations: Annotations!
     status: ApplicationStatus!
     webhooks: [ApplicationWebhook!]!
-    apis: [Api!]!
+    apis: [API!]!
     events: [Event!]!
     docs: [Documentation!]!
 }
@@ -75,25 +75,25 @@ enum ApplicationWebhookType {
     CONFIGURATION
 }
 
-# Api #TODO: Make sure it's compatible with Kyma CMS
+# API #TODO: Make sure it's compatible with Kyma CMS
 
-type Api {
+type API {
     id: ID!
-    spec: ApiSpec!
+    spec: APISpec!
     targetURL: String!
     credential: Credential
     headers: HttpHeaders
 }
 
-type ApiSpec {
-    type: ApiSpecType!
+type APISpec {
+    type: APISpecType!
     data: JSON!
     fetchRequest: FetchRequest
 }
 
-enum ApiSpecType {
+enum APISpecType {
     O_DATA
-    OPEN_Api
+    OPEN_API
 }
 
 # Event #TODO: Make sure it's compatible with Kyma CMS
@@ -110,7 +110,7 @@ type EventSpec {
 }
 
 enum EventSpecType {
-    ASYNC_Api
+    ASYNC_API
 }
 
 # Documentation #TODO: Make sure it's compatible with Kyma CMS
@@ -253,7 +253,7 @@ input ApplicationInput {
     description: String
     labels: Labels
     annotations: Annotations
-    apis: [ApiInput!]
+    apis: [APIInput!]
     events: [EventInput!]
     documentations: [DocumentationInput!]
 }
@@ -282,10 +282,10 @@ input ApplicationWebhookInput {
     credential: CredentialInput
 }
 
-# Api Input
+# API Input
 
-input ApiInput {
-    type: ApiSpecType!
+input APIInput {
+    type: APISpecType!
     targetURL: String!
     data: JSON
     fetchRequest: FetchRequestInput
@@ -388,12 +388,12 @@ type Mutation {
     updateApplicationWebhook(applicationID: ID!, type: ApplicationWebhookType, in: ApplicationWebhookInput): ApplicationWebhook
     deleteApplicationWebhook(applicationID: ID!, type: ApplicationWebhookType): ApplicationWebhook
 
-    createApi(applicationID: ID!, in: ApiInput!): Api
-    updateApi(id: ID!, in: ApiInput!): Api
-    deleteApi(id: ID!): Api
+    createAPI(applicationID: ID!, in: APIInput!): API
+    updateAPI(id: ID!, in: APIInput!): API
+    deleteAPI(id: ID!): API
 
-    createApiCredential(apiID: ID!, in: CredentialInput!): Credential
-    deleteApiCredential(apiID: ID!): Credential
+    createAPICredential(apiID: ID!, in: CredentialInput!): Credential
+    deleteAPICredential(apiID: ID!): Credential
 
     createEvent(applicationID: ID!, in: EventInput!): Event
     updateEvent(id: ID!, in: EventInput!): Event

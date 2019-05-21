@@ -12,11 +12,6 @@ type HealthCheckStatus interface {
 	IsHealthCheckStatus()
 }
 
-type Annotation struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
-}
-
 type API struct {
 	ID         string      `json:"id"`
 	Spec       *APISpec    `json:"spec"`
@@ -38,6 +33,11 @@ type APISpec struct {
 	Type         APISpecType   `json:"type"`
 	Data         string        `json:"data"`
 	FetchRequest *FetchRequest `json:"fetchRequest"`
+}
+
+type Annotation struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 type Application struct {
@@ -260,7 +260,7 @@ type APISpecType string
 
 const (
 	APISpecTypeOData   APISpecType = "O_DATA"
-	APISpecTypeOpenAPI APISpecType = "OPEN_Api"
+	APISpecTypeOpenAPI APISpecType = "OPEN_API"
 )
 
 var AllAPISpecType = []APISpecType{
@@ -288,7 +288,7 @@ func (e *APISpecType) UnmarshalGQL(v interface{}) error {
 
 	*e = APISpecType(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid ApiSpecType", str)
+		return fmt.Errorf("%s is not a valid APISpecType", str)
 	}
 	return nil
 }
@@ -505,7 +505,7 @@ func (e DocumentationType) MarshalGQL(w io.Writer) {
 type EventSpecType string
 
 const (
-	EventSpecTypeAsyncAPI EventSpecType = "ASYNC_Api"
+	EventSpecTypeAsyncAPI EventSpecType = "ASYNC_API"
 )
 
 var AllEventSpecType = []EventSpecType{
