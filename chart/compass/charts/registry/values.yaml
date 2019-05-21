@@ -5,4 +5,4 @@ deployment:
     containerPort: &port 3000
 
 service:
-  gatewayPort: *port
+  registryPort: *port

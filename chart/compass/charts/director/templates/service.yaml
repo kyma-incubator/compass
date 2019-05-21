@@ -10,7 +10,7 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: {{ .Values.service.gatewayPort }}
+    - port: {{ .Values.service.directorPort }}
       targetPort: http
       protocol: TCP
       name: http
