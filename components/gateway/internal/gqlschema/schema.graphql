@@ -21,7 +21,7 @@ type Runtime {
     tenant: Tenant!
     labels(key: String): Labels!
     annotations: Annotations!
-    agentCredentials: Credential
+    agentCredential: Credential!
     status: RuntimeStatus!
 }
 
@@ -47,9 +47,9 @@ type Application {
     annotations: Annotations!
     status: ApplicationStatus!
     webhooks: [ApplicationWebhook!]!
-    apis: [API!]
-    events: [Event!]
-    docs: [Documentation!]
+    apis: [API!]!
+    events: [Event!]!
+    docs: [Documentation!]!
 }
 
 type ApplicationStatus {
@@ -65,7 +65,7 @@ enum ApplicationStatusCondition {
 }
 
 type ApplicationWebhook {
-    type: ApplicationWebhookType! # TODO: enum or union? Do we want to extend a specific type? It would be good to be consistent... (enum)
+    type: ApplicationWebhookType!
     url: String!
     credential: Credential
 }
@@ -75,7 +75,7 @@ enum ApplicationWebhookType {
     CONFIGURATION
 }
 
-# API
+# API #TODO: Make sure it's compatible with Kyma CMS
 
 type API {
     id: ID!
@@ -83,12 +83,12 @@ type API {
     targetURL: String!
     credential: Credential
     headers: HttpHeaders
-    fetchRequest: FetchRequest
 }
 
 type APISpec {
-    type: APISpecType! # TODO: enum or union? Do we want to extend a specific type? We cannot drop `data` and define some fields. But it would be good to be consistent... (enum)
+    type: APISpecType!
     data: JSON!
+    fetchRequest: FetchRequest
 }
 
 enum APISpecType {
@@ -96,44 +96,48 @@ enum APISpecType {
     OPEN_API
 }
 
-# Event
+# Event #TODO: Make sure it's compatible with Kyma CMS
 
 type Event {
     id: ID!
     spec: EventSpec!
-    fetchRequest: FetchRequest
 }
 
 type EventSpec {
-    type: EventSpecType! # TODO: enum or union? Do we want to extend a specific type? We cannot drop `data` and define some fields. But it would be good to be consistent... (enum)
+    type: EventSpecType!
     data: JSON!
+    fetchRequest: FetchRequest
 }
 
 enum EventSpecType {
     ASYNC_API
 }
 
-# Documentation
+# Documentation #TODO: Make sure it's compatible with Kyma CMS
 
 type Documentation {
     id: ID!
-    spec: DocumentationSpec!
+    displayName: String!
+    description: String!
+    type: DocumentationType!
+    data: [Document!]!
     fetchRequest: FetchRequest
 }
 
-type DocumentationSpec {
-    type: DocumentationSpecType!
-    data: String!
+enum DocumentationType {
+    MARKDOWN
 }
 
-enum DocumentationSpecType {
-    MARKDOWN
+type Document {
+    title: String!
+    type: String! #TODO: what are these fields, should they stay as String?
+    source: String! #TODO: what are these fields, should they stay as String?
 }
 
 # FetchRequest
 
-type FetchRequest {
-    url: String
+type FetchRequest { #TODO: Who fetches data? Management plane or runtime?
+    url: String!
     credential: Credential
     status: FetchRequestStatus!
 }
@@ -152,19 +156,20 @@ enum FetchRequestStatusCondition {
 # Credential
 
 type Credential {
-    id: ID!
     data: CredentialData!
     requestAuth: CredentialRequestAuth
 }
 
-union CredentialRequestAuth = CsrfTokenCredentialRequestAuth
-
-type CsrfTokenCredentialRequestAuth {
-    token: String!
+type CredentialData {
+    type: CredentialDataType!
+    basic: BasicCredentialData
+    oauth: OAuthCredentialData
 }
 
-# in queries we can use __typename
-union CredentialData = OAuthCredentialData | BasicCredentialData
+enum CredentialDataType {
+    BASIC
+    OAUTH
+}
 
 type OAuthCredentialData {
     clientId: ID!
@@ -177,47 +182,57 @@ type BasicCredentialData {
     password: String!
 }
 
+type CredentialRequestAuth {
+    type: CredentialRequestAuthType!
+    csrf: CSRFTokenCredentialRequestAuth
+}
+
+enum CredentialRequestAuthType {
+    CSRF_TOKEN
+}
+
+type CSRFTokenCredentialRequestAuth {
+    token: String!
+}
+
 # HealthCheck
 
-interface HealthCheckStatus { #TODO: Interface seems like a good choice, but to remain consistant we could use enum or union
-    origin: ID!
-}
+#TODO: Rethink
+union HealthCheckStatus = RuntimeHealthCheck | ManagementPlaneHealthCheck
 
 enum HealthCheckStatusCondition {
     SUCCEEDED # TODO: doesn't look good... maybe we should unify all 'Success' values
     FAILED
 }
 
-enum HealthCheckStatusOrigin {
-    MANAGEMENT_PLANE
-    RUNTIME
+enum ManagementPlaneHealthCheckType {
+    MANAGEMENT_PLANE_HEALTHCHECK
+    MANAGEMENT_PLANE_APPLICATION_HEALTHCHECK
 }
 
-type ManagementPlaneHealthCheck implements HealthCheckStatus {
-    origin: ID!
+enum RuntimeHealthCheckType {
+    RUNTIME_HEALTHCHECK
+    RUNTIME_APPLICATION_HEALTHCHECK
+    RUNTIME_APPLICATION_EVENTS
+    RUNTIME_APPLICATION_GATEWAY
+}
+
+type ManagementPlaneHealthCheck {
+    type: ManagementPlaneHealthCheckType!
     condition: HealthCheckStatusCondition!
     message: String
     timestamp: Timestamp!
 }
 
-# You cannot extend interfaces in GraphQL, so I figured out that maybe we can consolidate different types.
-# TODO: Discuss it
-type RuntimeHealthCheck implements HealthCheckStatus {
+type RuntimeHealthCheck {
     origin: ID!
-    agent: RuntimeHealthCheckPartialStatus!
-    events: RuntimeHealthCheckPartialStatus
-    gateway: RuntimeHealthCheckPartialStatus
-}
-
-type RuntimeHealthCheckPartialStatus {
+    type: RuntimeHealthCheckType!
     condition: HealthCheckStatusCondition!
     message: String
     timestamp: Timestamp!
 }
 
-
-# ------------------------------------------
-
+# Label & Annotation
 
 type Label {
     key: String!
@@ -228,6 +243,8 @@ type Annotation {
     key: String!
     value: JSON! #TODO: maybe we should use serialized string instead? Further discussion needed
 }
+
+# INPUTS
 
 # Application Input
 
@@ -247,53 +264,96 @@ input RuntimeInput {
     name: String!
     labels: Labels
     annotations: Annotations
-#    agentCredentials: Credential #TODO: nested
+    agentCredential: CredentialInput!
 }
 
 # FetchRequest Input
 
 input FetchRequestInput {
     url: String
-#    credential: Credential #TODO: nested
+    credential: CredentialInput
+}
+
+# Webhook Input
+
+input ApplicationWebhookInput {
+    type: ApplicationWebhookType!
+    url: String!
+    credential: CredentialInput
 }
 
 # API Input
 
 input APIInput {
-    spec: APISpecInput
-    fetchRequest: FetchRequestInput
-    targetURL: String!
-#    credential: Credential #TODO: nested
-    headers: HttpHeaders
-}
-
-input APISpecInput {
     type: APISpecType!
-    data: JSON!
+    targetURL: String!
+    data: JSON
+    fetchRequest: FetchRequestInput
+    credential: CredentialInput
+    headers: HttpHeaders
 }
 
 # Event Input
 
 input EventInput {
-    spec: EventSpecInput
-    fetchRequest: FetchRequestInput
-}
-
-input EventSpecInput {
     type: EventSpecType!
-    data: JSON!
+    data: JSON
+    fetchRequest: FetchRequestInput
 }
 
 # Documentation Input
 
 input DocumentationInput {
-    spec: DocumentationSpecInput
+    type: DocumentationType!
+    data: [DocumentInput!]
     fetchRequest: FetchRequestInput
 }
 
-input DocumentationSpecInput {
-    type: DocumentationSpecType!
-    data: String!
+input DocumentInput {
+    title: String!
+    type: String! #TODO: what are these fields, should they stay as String?
+    source: String! #TODO: what are these fields, should they stay as String?
+}
+
+# Credential Input
+
+input CredentialInput {
+    data: CredentialDataInput!
+    requestAuth: CredentialRequestAuthInput
+}
+
+input CredentialRequestAuthInput {
+    type: CredentialRequestAuthType!
+    csrf: CSRFTokenCredentialRequestAuthInput
+}
+
+input CSRFTokenCredentialRequestAuthInput {
+    token: String!
+}
+
+input CredentialDataInput {
+    type: CredentialDataType!
+    basic: BasicCredentialDataInput
+    oauth: OAuthCredentialDataInput
+}
+
+input OAuthCredentialDataInput {
+    clientId: ID!
+    clientSecret: String!
+    url: String!
+}
+
+input BasicCredentialDataInput {
+    username: String!
+    password: String!
+}
+
+# Healthcheck Input
+
+input RuntimeHealthCheckInput {
+    type: RuntimeHealthCheckType!
+    condition: HealthCheckStatusCondition!
+    message: String
 }
 
 #
@@ -305,34 +365,55 @@ type Query {
     runtimes: [Runtime!]!
     runtime(id: ID!): Runtime
 
-    healthchecks(origin: ID, type: HealthCheckStatusOrigin, labels: [String!]): [HealthCheckStatus!]! # Has to be validated at runtime
+    healthchecks(labels: [String!]): [HealthCheckStatus!]!
+    runtimeHealthchecks(origin: ID, type: [RuntimeHealthCheckType!], labels: [String!]): [HealthCheckStatus!]! # Has to be validated at runtime
+    managementPlaneHealthchecks(type: [ManagementPlaneHealthCheckType!], labels: [String!]): [HealthCheckStatus!]!
 
     labels(key: String): [Labels!]!
 }
 
-#TODO: Updates @TG
 type Mutation {
+    # Application
     createApplication(in: ApplicationInput!): Application
+    updateApplication(id: ID!, in: ApplicationInput!): Application
     deleteApplication(id: ID!): Application
+
     createApplicationLabel(applicationID: ID!, label: String!, value: String!): Label
     deleteApplicationLabel(id: ID!, label: String!): Label
+
     createApplicationAnnotation(applicationID: ID!, annotation: String!, value: JSON!): Annotation
     deleteApplicationAnnotation(id: ID!, label: String!): Annotation
-    createAPI(applicationID: ID!, in: APIInput!): API
-    #createAPICredential(apiID: ID!, in: ) #TODO:
-    deleteAPI(id: ID!): API
-    createEvent(applicationID: ID!, in: EventInput!): Event
-    deleteEvent(id: ID!): Event
-    createDoc(applicationID: ID!, in: DocumentationInput!): Documentation
-    deleteDoc(id: ID!): Documentation
 
+    createApplicationWebhook(applicationID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook
+    updateApplicationWebhook(applicationID: ID!, type: ApplicationWebhookType, in: ApplicationWebhookInput): ApplicationWebhook
+    deleteApplicationWebhook(applicationID: ID!, type: ApplicationWebhookType): ApplicationWebhook
+
+    createAPI(applicationID: ID!, in: APIInput!): API
+    updateAPI(id: ID!, in: APIInput!): API
+    deleteAPI(id: ID!): API
+
+    createAPICredential(apiID: ID!, in: CredentialInput!): Credential
+    deleteAPICredential(apiID: ID!): Credential
+
+    createEvent(applicationID: ID!, in: EventInput!): Event
+    updateEvent(id: ID!, in: EventInput!): Event
+    deleteEvent(id: ID!): Event
+
+    createDocumentation(applicationID: ID!, in: DocumentationInput!): Documentation
+    updateDocumentation(id: ID!, in: DocumentationInput!): Documentation
+    deleteDocumentation(id: ID!): Documentation
+
+    # Runtime
     createRuntime(in: RuntimeInput!): Runtime
+    updateRuntime(id: ID!, in: RuntimeInput!): Runtime
     deleteRuntime(id: ID!): Runtime
+
     createRuntimeLabel(runtimeID: ID!, label: String!, value: String!): Label
     deleteRuntimeLabel(id: ID!, label: String!): Label
+
     createRuntimeAnnotation(runtimeID: ID!, annotation: String!, value: JSON!): Annotation
     deleteRuntimeAnnotation(id: ID!, annotation: String!): Annotation
 
-    #createHealthcheck
-
+    # Healthcheck
+    createRuntimeHealthCheck(in: RuntimeHealthCheckInput!): HealthCheckStatus
 }
