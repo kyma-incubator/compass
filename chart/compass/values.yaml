@@ -2,14 +2,14 @@ global:
   containerRegistry:
     path: eu.gcr.io/kyma-project/incubator
   director:
-    dir: pr/
-    version: "PR-8"
+    dir: develop/
+    version: "6d888e37"
   gateway:
-    dir: pr/
-    version: "PR-8"
+    dir: develop/
+    version: "6d888e37"
   healthchecker:
-    dir: pr/
-    version: "PR-8"
+    dir: develop/
+    version: "6d888e37"
   registry:
-    dir: pr/
-    version: "PR-8"
+    dir: develop/
+    version: "6d888e37"

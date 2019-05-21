@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: {{ .Chart.Name }}
-          image: {{ .Values.global.containerRegistry.path }}/{{ .Values.global.gateway.dir }}gateway:{{ .Values.global.gateway.version }}
+          image: {{ .Values.global.containerRegistry.path }}/{{ .Values.global.gateway.dir }}compass-gateway:{{ .Values.global.gateway.version }}
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - name: http
