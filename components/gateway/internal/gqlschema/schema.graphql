@@ -4,7 +4,7 @@ scalar Timestamp
 
 scalar Tenant # -> String
 
-scalar Labels # -> map[string]string #TODO: Maybe it should be just an array of Label? [Label!]
+scalar Labels # -> map[string]string
 
 scalar Annotations # -> map[string]interface{}
 
@@ -14,11 +14,12 @@ scalar JSON # -> map[string]interface{}
 
 # Runtime
 
-type Runtime { #TODO: description? @TG
+type Runtime {
     id: ID!
     name: String!
+    description: String
     tenant: Tenant!
-    labels: Labels!
+    labels(key: String): Labels!
     annotations: Annotations!
     agentCredentials: Credential
     status: RuntimeStatus!
@@ -42,14 +43,13 @@ type Application {
     name: String!
     tenant: Tenant!
     description: String
-    labels: Labels #TODO: not required but required in Runtime? @TG
-#    labels(key: String): Labels #TODO: optional key to query only specific labels? @TG
-    annotations: Annotations #TODO: not required but required in Runtime? @TG
+    labels(key: String): Labels!
+    annotations: Annotations!
     status: ApplicationStatus!
-    webhooks: [ApplicationWebhook!]
+    webhooks: [ApplicationWebhook!]!
     apis: [API!]
     events: [Event!]
-    docs: [Document!]
+    docs: [Documentation!]
 }
 
 type ApplicationStatus {
@@ -65,7 +65,7 @@ enum ApplicationStatusCondition {
 }
 
 type ApplicationWebhook {
-    type: ApplicationWebhookType! # TODO: enum or union? Do we want to extend a specific type? It would be good to be consistent...
+    type: ApplicationWebhookType! # TODO: enum or union? Do we want to extend a specific type? It would be good to be consistent... (enum)
     url: String!
     credential: Credential
 }
@@ -83,12 +83,12 @@ type API {
     targetURL: String!
     credential: Credential
     headers: HttpHeaders
+    fetchRequest: FetchRequest
 }
 
 type APISpec {
-    type: APISpecType! # TODO: enum or union? Do we want to extend a specific type? We cannot drop `data` and define some fields. But it would be good to be consistent...
+    type: APISpecType! # TODO: enum or union? Do we want to extend a specific type? We cannot drop `data` and define some fields. But it would be good to be consistent... (enum)
     data: JSON!
-    fetchRequest: FetchRequest
 }
 
 enum APISpecType {
@@ -105,7 +105,7 @@ type Event {
 }
 
 type EventSpec {
-    type: EventSpecType! # TODO: enum or union? Do we want to extend a specific type? We cannot drop `data` and define some fields. But it would be good to be consistent...
+    type: EventSpecType! # TODO: enum or union? Do we want to extend a specific type? We cannot drop `data` and define some fields. But it would be good to be consistent... (enum)
     data: JSON!
 }
 
@@ -113,16 +113,20 @@ enum EventSpecType {
     ASYNC_API
 }
 
-# Document #TODO: naming: Document vs Documentation? @TG
+# Documentation
 
-type Document {
+type Documentation {
     id: ID!
-    type: DocumentType!
-    data: String!
+    spec: DocumentationSpec!
     fetchRequest: FetchRequest
 }
 
-enum DocumentType {
+type DocumentationSpec {
+    type: DocumentationSpecType!
+    data: String!
+}
+
+enum DocumentationSpecType {
     MARKDOWN
 }
 
@@ -175,10 +179,8 @@ type BasicCredentialData {
 
 # HealthCheck
 
-union HealthCheckStatus = ManagementPlaneHealthCheck | RuntimeHealthCheck  #TODO: union vs interface base (same behaviour?) @TG
-
-interface HealthCheckStatusBase {
-    origin: HealthCheckStatusOrigin! #TODO: enum or id? @TG
+interface HealthCheckStatus { #TODO: Interface seems like a good choice, but to remain consistant we could use enum or union
+    origin: ID!
 }
 
 enum HealthCheckStatusCondition {
@@ -186,13 +188,13 @@ enum HealthCheckStatusCondition {
     FAILED
 }
 
-enum HealthCheckStatusOrigin { #TODO: Application? @TG
+enum HealthCheckStatusOrigin {
     MANAGEMENT_PLANE
     RUNTIME
 }
 
-type ManagementPlaneHealthCheck implements HealthCheckStatusBase {
-    origin: HealthCheckStatusOrigin!
+type ManagementPlaneHealthCheck implements HealthCheckStatus {
+    origin: ID!
     condition: HealthCheckStatusCondition!
     message: String
     timestamp: Timestamp!
@@ -200,9 +202,8 @@ type ManagementPlaneHealthCheck implements HealthCheckStatusBase {
 
 # You cannot extend interfaces in GraphQL, so I figured out that maybe we can consolidate different types.
 # TODO: Discuss it
-type RuntimeHealthCheck implements HealthCheckStatusBase {
-    origin: HealthCheckStatusOrigin!
-    runtimeId: ID!
+type RuntimeHealthCheck implements HealthCheckStatus {
+    origin: ID!
     agent: RuntimeHealthCheckPartialStatus!
     events: RuntimeHealthCheckPartialStatus
     gateway: RuntimeHealthCheckPartialStatus
@@ -219,13 +220,13 @@ type RuntimeHealthCheckPartialStatus {
 
 
 type Label {
-    key: String #TODO: required? @TG
-    value: String #TODO: required? @TG
+    key: String!
+    value: String!
 }
 
 type Annotation {
     key: String!
-    value: String! #TODO: interface{} ? should we create scalar for Annotation type? @TG
+    value: JSON! #TODO: maybe we should use serialized string instead? Further discussion needed
 }
 
 # Application Input
@@ -234,7 +235,7 @@ input ApplicationInput {
     name: String!
     description: String
     labels: Labels
-#    annotations: Annotations #TODO: why is it commented out? @TG
+    annotations: Annotations
     apis: [APIInput!]
     events: [EventInput!]
     documentations: [DocumentationInput!]
@@ -245,36 +246,36 @@ input ApplicationInput {
 input RuntimeInput {
     name: String!
     labels: Labels
-#    annotations: Annotations #TODO: why is it commented out? @TG
-#    agentCredentials: Credential #TODO: Union is not an input type, what can we do? (we could create nested input objects and check at runtime for example) @TG
+    annotations: Annotations
+#    agentCredentials: Credential #TODO: nested
 }
 
 # FetchRequest Input
 
 input FetchRequestInput {
     url: String
-#    credential: Credential #TODO: union as input problem again @TG
+#    credential: Credential #TODO: nested
 }
 
 # API Input
 
 input APIInput {
     spec: APISpecInput
+    fetchRequest: FetchRequestInput
     targetURL: String!
-#    credential: Credential #TODO: union as input problem again @TG
+#    credential: Credential #TODO: nested
     headers: HttpHeaders
 }
 
-input APISpecInput { #TODO: type&data can passed on creation or have to fetched? if both, runtime validation required @TG
-    type: APISpecType
-    data: JSON
-    fetchRequest: FetchRequestInput
+input APISpecInput {
+    type: APISpecType!
+    data: JSON!
 }
 
 # Event Input
 
 input EventInput {
-    spec: EventSpecInput!
+    spec: EventSpecInput
     fetchRequest: FetchRequestInput
 }
 
@@ -285,10 +286,14 @@ input EventSpecInput {
 
 # Documentation Input
 
-input DocumentationInput { #TODO: type&data can be passed? @TG
-    type: DocumentType
-    data: String
+input DocumentationInput {
+    spec: DocumentationSpecInput
     fetchRequest: FetchRequestInput
+}
+
+input DocumentationSpecInput {
+    type: DocumentationSpecType!
+    data: String!
 }
 
 #
@@ -300,7 +305,7 @@ type Query {
     runtimes: [Runtime!]!
     runtime(id: ID!): Runtime
 
-    healthchecks(origin: HealthCheckStatusOrigin, labels: [String!]): [HealthCheckStatus!]! #TODO: type -> origin? @TG
+    healthchecks(origin: ID, type: HealthCheckStatusOrigin, labels: [String!]): [HealthCheckStatus!]! # Has to be validated at runtime
 
     labels(key: String): [Labels!]!
 }
@@ -311,19 +316,23 @@ type Mutation {
     deleteApplication(id: ID!): Application
     createApplicationLabel(applicationID: ID!, label: String!, value: String!): Label
     deleteApplicationLabel(id: ID!, label: String!): Label
-    createApplicationAnnotation(applicationID: ID!, annotation: String!, value: String!): Annotation #TODO: value is string? @TG
+    createApplicationAnnotation(applicationID: ID!, annotation: String!, value: JSON!): Annotation
     deleteApplicationAnnotation(id: ID!, label: String!): Annotation
     createAPI(applicationID: ID!, in: APIInput!): API
-    deleteAPI(id: ID!): API #TODO: ids unique across applications, do we have to specify application id as well? @TG
+    #createAPICredential(apiID: ID!, in: ) #TODO:
+    deleteAPI(id: ID!): API
     createEvent(applicationID: ID!, in: EventInput!): Event
     deleteEvent(id: ID!): Event
-    createDoc(applicationID: ID!, in: DocumentationInput!): Document
-    deleteDoc(id: ID!): Document
+    createDoc(applicationID: ID!, in: DocumentationInput!): Documentation
+    deleteDoc(id: ID!): Documentation
 
     createRuntime(in: RuntimeInput!): Runtime
     deleteRuntime(id: ID!): Runtime
     createRuntimeLabel(runtimeID: ID!, label: String!, value: String!): Label
     deleteRuntimeLabel(id: ID!, label: String!): Label
-    createRuntimeAnnotation(runtimeID: ID!, annotation: String!, value: String!): Annotation #TODO: value string? @TG
+    createRuntimeAnnotation(runtimeID: ID!, annotation: String!, value: JSON!): Annotation
     deleteRuntimeAnnotation(id: ID!, annotation: String!): Annotation
+
+    #createHealthcheck
+
 }
