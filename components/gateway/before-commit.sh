@@ -22,7 +22,7 @@ if [ "$1" == "$CI_FLAG" ]; then
 	buildEnv="env CGO_ENABLED=0 GOOS=linux GOARCH=amd64"
 fi
 
-${buildEnv} go build -o gateway
+${buildEnv} go build -o gateway ./cmd/main.go
 goBuildResult=$?
 rm gateway
 
