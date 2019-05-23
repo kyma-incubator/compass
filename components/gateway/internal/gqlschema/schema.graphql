@@ -4,13 +4,15 @@ scalar Timestamp
 
 scalar Tenant # -> String
 
-scalar Labels # -> map[string]string
+scalar Labels # -> map[string][]string
 
 scalar Annotations # -> map[string]interface{}
 
 scalar HttpHeaders # -> map[string][]string
 
-scalar JSON # -> map[string]interface{}
+scalar QueryParams # -> map[string][]string
+
+scalar Blob # TBD
 
 # Runtime
 
@@ -47,6 +49,7 @@ type Application {
     annotations: Annotations!
     status: ApplicationStatus!
     webhooks: [ApplicationWebhook!]!
+    healthCheckURL: String
     apis: [API!]!
     events: [Event!]!
     docs: [Documentation!]!
@@ -58,7 +61,7 @@ type ApplicationStatus {
 }
 
 enum ApplicationStatusCondition {
-    INITIAL 
+    INITIAL
     UNKNOWN
     READY
     FAILED
@@ -71,23 +74,33 @@ type ApplicationWebhook {
 }
 
 enum ApplicationWebhookType {
-    HEALTH_CHECK
-    CONFIGURATION
+    CONFIGURATION_CHANGED
 }
 
 # API #TODO: Make sure it's compatible with Kyma CMS
+
+type Version {
+    value: String! # for example 4.6
+    deprecated: Boolean
+    since: String! # for example 4.5
+    forRemoval: Boolean # if true, will be removed in the next version
+
+}
 
 type API {
     id: ID!
     spec: APISpec!
     targetURL: String!
     credential: Credential
-    headers: HttpHeaders
+    injectHeaders: HttpHeaders
+    injectQueryParams: QueryParams
+    version: Version
+
 }
 
 type APISpec {
     type: APISpecType!
-    data: JSON!
+    data: Blob!
     fetchRequest: FetchRequest
 }
 
@@ -101,11 +114,12 @@ enum APISpecType {
 type Event {
     id: ID!
     spec: EventSpec!
+    version: Version
 }
 
 type EventSpec {
     type: EventSpecType!
-    data: JSON!
+    data: Blob!
     fetchRequest: FetchRequest
 }
 
@@ -117,22 +131,22 @@ enum EventSpecType {
 
 type Documentation {
     id: ID!
+    title: String!
     displayName: String!
     description: String!
-    type: DocumentationType!
-    data: [Document!]!
+    format: DocumentationFormat!
+    type: String!   # for example Service Class, API etc
+    data: Blob
     fetchRequest: FetchRequest
+
+    # TODO: how to connect, that given documentation describes specific API, Event. By ID can be dificult, because we want to provide API and Docu at the same time
+    # TODO embed documwentation to API and Events
 }
 
-enum DocumentationType {
+enum DocumentationFormat {
     MARKDOWN
 }
 
-type Document {
-    title: String!
-    type: String! #TODO: what are these fields, should they stay as String?
-    source: String! #TODO: what are these fields, should they stay as String?
-}
 
 # FetchRequest
 
@@ -197,52 +211,29 @@ type CSRFTokenCredentialRequestAuth {
 
 # HealthCheck
 
-#TODO: Rethink
-union HealthCheckStatus = RuntimeHealthCheck | ManagementPlaneHealthCheck
+
 
 enum HealthCheckStatusCondition {
-    SUCCEEDED # TODO: doesn't look good... maybe we should unify all 'Success' values
+    SUCCEEDED
     FAILED
 }
 
-enum ManagementPlaneHealthCheckType {
-    MANAGEMENT_PLANE_HEALTHCHECK
+enum HealthCheckType {
     MANAGEMENT_PLANE_APPLICATION_HEALTHCHECK
 }
 
-enum RuntimeHealthCheckType {
-    RUNTIME_HEALTHCHECK
-    RUNTIME_APPLICATION_HEALTHCHECK
-    RUNTIME_APPLICATION_EVENTS
-    RUNTIME_APPLICATION_GATEWAY
-}
-
-type ManagementPlaneHealthCheck {
-    type: ManagementPlaneHealthCheckType!
+type HealthCheck {
+    type: HealthCheckType!
     condition: HealthCheckStatusCondition!
+    origin: ID
     message: String
     timestamp: Timestamp!
 }
 
-type RuntimeHealthCheck {
-    origin: ID!
-    type: RuntimeHealthCheckType!
-    condition: HealthCheckStatusCondition!
-    message: String
-    timestamp: Timestamp!
-}
 
 # Label & Annotation
 
-type Label {
-    key: String!
-    value: String!
-}
 
-type Annotation {
-    key: String!
-    value: JSON! #TODO: maybe we should use serialized string instead? Further discussion needed
-}
 
 # INPUTS
 
@@ -287,7 +278,7 @@ input ApplicationWebhookInput {
 input APIInput {
     type: APISpecType!
     targetURL: String!
-    data: JSON
+    data: Blob
     fetchRequest: FetchRequestInput
     credential: CredentialInput
     headers: HttpHeaders
@@ -297,14 +288,14 @@ input APIInput {
 
 input EventInput {
     type: EventSpecType!
-    data: JSON
+    data: Blob
     fetchRequest: FetchRequestInput
 }
 
 # Documentation Input
 
 input DocumentationInput {
-    type: DocumentationType!
+    type: DocumentationFormat!
     data: [DocumentInput!]
     fetchRequest: FetchRequestInput
 }
@@ -350,26 +341,34 @@ input BasicCredentialDataInput {
 
 # HealthCheck Input
 
-input RuntimeHealthCheckInput {
-    type: RuntimeHealthCheckType!
-    condition: HealthCheckStatusCondition!
-    message: String
-}
+
+# TODO VersionInput, ApiInput + EventInput
+# TODO version mutation
 
 #
 
+enum FilterOperator {
+    ALL, ANY
+}
+
+input LabelFilter {
+    label: String!
+    values: [String]!
+    operator: FilterOperator
+}
+
 type Query {
-    applications: [Application!]!
+    applications(filer: LabelFilter): [Application!]!
     application(id: ID!): Application
 
-    runtimes: [Runtime!]!
+    runtimes(filter: LabelFilter): [Runtime!]!
     runtime(id: ID!): Runtime
 
-    healthChecks(labels: [String!]): [HealthCheckStatus!]!
-    runtimeHealthChecks(origin: ID, type: [RuntimeHealthCheckType!], labels: [String!]): [HealthCheckStatus!]! # Has to be validated at runtime
-    managementPlaneHealthChecks(type: [ManagementPlaneHealthCheckType!], labels: [String!]): [HealthCheckStatus!]!
+    healthChecks(types: [HealthCheckType], originID: String): [HealthCheck!]!
 
-    labels(key: String): [Labels!]!
+    labels(key: String): [String]!
+    # TODO: eventSubscribers
+    # TODO: bindingsUsage ??? who calls API?
 }
 
 type Mutation {
@@ -378,11 +377,11 @@ type Mutation {
     updateApplication(id: ID!, in: ApplicationInput!): Application
     deleteApplication(id: ID!): Application
 
-    createApplicationLabel(applicationID: ID!, label: String!, value: String!): Label
-    deleteApplicationLabel(id: ID!, label: String!): Label
+    createApplicationLabel(applicationID: ID!, label: String!, values: [String!]!): [String!]!
+    deleteApplicationLabel(id: ID!, label: String!, values: [String!]!): [String!]!
 
-    createApplicationAnnotation(applicationID: ID!, annotation: String!, value: JSON!): Annotation
-    deleteApplicationAnnotation(id: ID!, label: String!): Annotation
+    createApplicationAnnotation(applicationID: ID!, annotation: String!, value: String!): String
+    deleteApplicationAnnotation(id: ID!, annotation: String!): Boolean
 
     createApplicationWebhook(applicationID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook
     updateApplicationWebhook(applicationID: ID!, type: ApplicationWebhookType, in: ApplicationWebhookInput): ApplicationWebhook
@@ -391,13 +390,15 @@ type Mutation {
     createAPI(applicationID: ID!, in: APIInput!): API
     updateAPI(id: ID!, in: APIInput!): API
     deleteAPI(id: ID!): API
+    refetchAPI(id: ID!): API
 
-    createAPICredential(apiID: ID!, in: CredentialInput!): Credential
+    setAPICredential(apiID: ID!, in: CredentialInput!): Credential
     deleteAPICredential(apiID: ID!): Credential
 
     createEvent(applicationID: ID!, in: EventInput!): Event
     updateEvent(id: ID!, in: EventInput!): Event
     deleteEvent(id: ID!): Event
+    refetchEvent(id: ID!): Event
 
     createDocumentation(applicationID: ID!, in: DocumentationInput!): Documentation
     updateDocumentation(id: ID!, in: DocumentationInput!): Documentation
@@ -408,12 +409,15 @@ type Mutation {
     updateRuntime(id: ID!, in: RuntimeInput!): Runtime
     deleteRuntime(id: ID!): Runtime
 
-    createRuntimeLabel(runtimeID: ID!, label: String!, value: String!): Label
-    deleteRuntimeLabel(id: ID!, label: String!): Label
+    createRuntimeLabel(runtimeID: ID!, label: String!, values: [String!]!): [String!]!
+    deleteRuntimeLabel(id: ID!, label: String! ,values: [String!]!): [String!]!
 
-    createRuntimeAnnotation(runtimeID: ID!, annotation: String!, value: JSON!): Annotation
-    deleteRuntimeAnnotation(id: ID!, annotation: String!): Annotation
+    createRuntimeAnnotation(runtimeID: ID!, annotation: String!, value: String!): String
+    deleteRuntimeAnnotation(id: ID!, annotation: String!): Boolean
 
-    # HealthCheck
-    createRuntimeHealthCheck(in: RuntimeHealthCheckInput!): HealthCheckStatus
+    #
+
+
+
 }
+

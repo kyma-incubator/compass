@@ -18,5 +18,16 @@ struct_tag: json
 models:
   Labels:
     model: "github.com/kyma-incubator/compass/components/gateway/internal/gqlschema.Labels"
+  Timestamp:
+    model: "github.com/kyma-incubator/compass/components/gateway/internal/gqlschema.Timestamp"
+  Tenant:
+    model: "github.com/kyma-incubator/compass/components/gateway/internal/gqlschema.Tenant"
+  Annotations:
+    model: "github.com/kyma-incubator/compass/components/gateway/internal/gqlschema.Annotations"
+  HttpHeaders:
+    model: "github.com/kyma-incubator/compass/components/gateway/internal/gqlschema.HttpHeaders"
+  QueryParams:
+    model: "github.com/kyma-incubator/compass/components/gateway/internal/gqlschema.QueryParams"
+ 
 #  Annotations:
 #    model: "github.com/kyma-incubator/compass/internal/gqlschema.Annotations"

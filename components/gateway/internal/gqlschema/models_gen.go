@@ -8,16 +8,14 @@ import (
 	"strconv"
 )
 
-type HealthCheckStatus interface {
-	IsHealthCheckStatus()
-}
-
 type API struct {
-	ID         string      `json:"id"`
-	Spec       *APISpec    `json:"spec"`
-	TargetURL  string      `json:"targetURL"`
-	Credential *Credential `json:"credential"`
-	Headers    *string     `json:"headers"`
+	ID                string       `json:"id"`
+	Spec              *APISpec     `json:"spec"`
+	TargetURL         string       `json:"targetURL"`
+	Credential        *Credential  `json:"credential"`
+	InjectHeaders     *HttpHeaders `json:"injectHeaders"`
+	InjectQueryParams *QueryParams `json:"injectQueryParams"`
+	Version           *Version     `json:"version"`
 }
 
 type APIInput struct {
@@ -26,7 +24,7 @@ type APIInput struct {
 	Data         *string            `json:"data"`
 	FetchRequest *FetchRequestInput `json:"fetchRequest"`
 	Credential   *CredentialInput   `json:"credential"`
-	Headers      *string            `json:"headers"`
+	Headers      *HttpHeaders       `json:"headers"`
 }
 
 type APISpec struct {
@@ -35,30 +33,26 @@ type APISpec struct {
 	FetchRequest *FetchRequest `json:"fetchRequest"`
 }
 
-type Annotation struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
-}
-
 type Application struct {
-	ID          string                `json:"id"`
-	Name        string                `json:"name"`
-	Tenant      string                `json:"tenant"`
-	Description *string               `json:"description"`
-	Labels      Labels                `json:"labels"`
-	Annotations string                `json:"annotations"`
-	Status      *ApplicationStatus    `json:"status"`
-	Webhooks    []*ApplicationWebhook `json:"webhooks"`
-	Apis        []*API                `json:"apis"`
-	Events      []*Event              `json:"events"`
-	Docs        []*Documentation      `json:"docs"`
+	ID             string                `json:"id"`
+	Name           string                `json:"name"`
+	Tenant         Tenant                `json:"tenant"`
+	Description    *string               `json:"description"`
+	Labels         Labels                `json:"labels"`
+	Annotations    Annotations           `json:"annotations"`
+	Status         *ApplicationStatus    `json:"status"`
+	Webhooks       []*ApplicationWebhook `json:"webhooks"`
+	HealthCheckURL *string               `json:"healthCheckURL"`
+	Apis           []*API                `json:"apis"`
+	Events         []*Event              `json:"events"`
+	Docs           []*Documentation      `json:"docs"`
 }
 
 type ApplicationInput struct {
 	Name           string                `json:"name"`
 	Description    *string               `json:"description"`
 	Labels         *Labels               `json:"labels"`
-	Annotations    *string               `json:"annotations"`
+	Annotations    *Annotations          `json:"annotations"`
 	Apis           []*APIInput           `json:"apis"`
 	Events         []*EventInput         `json:"events"`
 	Documentations []*DocumentationInput `json:"documentations"`
@@ -66,7 +60,7 @@ type ApplicationInput struct {
 
 type ApplicationStatus struct {
 	Condition ApplicationStatusCondition `json:"condition"`
-	Timestamp string                     `json:"timestamp"`
+	Timestamp Timestamp                  `json:"timestamp"`
 }
 
 type ApplicationWebhook struct {
@@ -131,12 +125,6 @@ type CredentialRequestAuthInput struct {
 	Csrf *CSRFTokenCredentialRequestAuthInput `json:"csrf"`
 }
 
-type Document struct {
-	Title  string `json:"title"`
-	Type   string `json:"type"`
-	Source string `json:"source"`
-}
-
 type DocumentInput struct {
 	Title  string `json:"title"`
 	Type   string `json:"type"`
@@ -144,23 +132,26 @@ type DocumentInput struct {
 }
 
 type Documentation struct {
-	ID           string            `json:"id"`
-	DisplayName  string            `json:"displayName"`
-	Description  string            `json:"description"`
-	Type         DocumentationType `json:"type"`
-	Data         []*Document       `json:"data"`
-	FetchRequest *FetchRequest     `json:"fetchRequest"`
+	ID           string              `json:"id"`
+	Title        string              `json:"title"`
+	DisplayName  string              `json:"displayName"`
+	Description  string              `json:"description"`
+	Format       DocumentationFormat `json:"format"`
+	Type         string              `json:"type"`
+	Data         *string             `json:"data"`
+	FetchRequest *FetchRequest       `json:"fetchRequest"`
 }
 
 type DocumentationInput struct {
-	Type         DocumentationType  `json:"type"`
-	Data         []*DocumentInput   `json:"data"`
-	FetchRequest *FetchRequestInput `json:"fetchRequest"`
+	Type         DocumentationFormat `json:"type"`
+	Data         []*DocumentInput    `json:"data"`
+	FetchRequest *FetchRequestInput  `json:"fetchRequest"`
 }
 
 type Event struct {
-	ID   string     `json:"id"`
-	Spec *EventSpec `json:"spec"`
+	ID      string     `json:"id"`
+	Spec    *EventSpec `json:"spec"`
+	Version *Version   `json:"version"`
 }
 
 type EventInput struct {
@@ -188,22 +179,22 @@ type FetchRequestInput struct {
 
 type FetchRequestStatus struct {
 	Condition FetchRequestStatusCondition `json:"condition"`
-	Timestamp string                      `json:"timestamp"`
+	Timestamp Timestamp                   `json:"timestamp"`
 }
 
-type Label struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
+type HealthCheck struct {
+	Type      HealthCheckType            `json:"type"`
+	Condition HealthCheckStatusCondition `json:"condition"`
+	Origin    *string                    `json:"origin"`
+	Message   *string                    `json:"message"`
+	Timestamp Timestamp                  `json:"timestamp"`
 }
 
-type ManagementPlaneHealthCheck struct {
-	Type      ManagementPlaneHealthCheckType `json:"type"`
-	Condition HealthCheckStatusCondition     `json:"condition"`
-	Message   *string                        `json:"message"`
-	Timestamp string                         `json:"timestamp"`
+type LabelFilter struct {
+	Label    string          `json:"label"`
+	Values   []*string       `json:"values"`
+	Operator *FilterOperator `json:"operator"`
 }
-
-func (ManagementPlaneHealthCheck) IsHealthCheckStatus() {}
 
 type OAuthCredentialData struct {
 	ClientID     string `json:"clientId"`
@@ -221,39 +212,30 @@ type Runtime struct {
 	ID              string         `json:"id"`
 	Name            string         `json:"name"`
 	Description     *string        `json:"description"`
-	Tenant          string         `json:"tenant"`
+	Tenant          Tenant         `json:"tenant"`
 	Labels          Labels         `json:"labels"`
-	Annotations     string         `json:"annotations"`
+	Annotations     Annotations    `json:"annotations"`
 	AgentCredential *Credential    `json:"agentCredential"`
 	Status          *RuntimeStatus `json:"status"`
-}
-
-type RuntimeHealthCheck struct {
-	Origin    string                     `json:"origin"`
-	Type      RuntimeHealthCheckType     `json:"type"`
-	Condition HealthCheckStatusCondition `json:"condition"`
-	Message   *string                    `json:"message"`
-	Timestamp string                     `json:"timestamp"`
-}
-
-func (RuntimeHealthCheck) IsHealthCheckStatus() {}
-
-type RuntimeHealthCheckInput struct {
-	Type      RuntimeHealthCheckType     `json:"type"`
-	Condition HealthCheckStatusCondition `json:"condition"`
-	Message   *string                    `json:"message"`
 }
 
 type RuntimeInput struct {
 	Name            string           `json:"name"`
 	Labels          *Labels          `json:"labels"`
-	Annotations     *string          `json:"annotations"`
+	Annotations     *Annotations     `json:"annotations"`
 	AgentCredential *CredentialInput `json:"agentCredential"`
 }
 
 type RuntimeStatus struct {
 	Condition RuntimeStatusCondition `json:"condition"`
-	Timestamp string                 `json:"timestamp"`
+	Timestamp Timestamp              `json:"timestamp"`
+}
+
+type Version struct {
+	Value      string `json:"value"`
+	Deprecated *bool  `json:"deprecated"`
+	Since      string `json:"since"`
+	ForRemoval *bool  `json:"forRemoval"`
 }
 
 type APISpecType string
@@ -345,18 +327,16 @@ func (e ApplicationStatusCondition) MarshalGQL(w io.Writer) {
 type ApplicationWebhookType string
 
 const (
-	ApplicationWebhookTypeHealthCheck   ApplicationWebhookType = "HEALTH_CHECK"
-	ApplicationWebhookTypeConfiguration ApplicationWebhookType = "CONFIGURATION"
+	ApplicationWebhookTypeConfigurationChanged ApplicationWebhookType = "CONFIGURATION_CHANGED"
 )
 
 var AllApplicationWebhookType = []ApplicationWebhookType{
-	ApplicationWebhookTypeHealthCheck,
-	ApplicationWebhookTypeConfiguration,
+	ApplicationWebhookTypeConfigurationChanged,
 }
 
 func (e ApplicationWebhookType) IsValid() bool {
 	switch e {
-	case ApplicationWebhookTypeHealthCheck, ApplicationWebhookTypeConfiguration:
+	case ApplicationWebhookTypeConfigurationChanged:
 		return true
 	}
 	return false
@@ -463,42 +443,42 @@ func (e CredentialRequestAuthType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-type DocumentationType string
+type DocumentationFormat string
 
 const (
-	DocumentationTypeMarkdown DocumentationType = "MARKDOWN"
+	DocumentationFormatMarkdown DocumentationFormat = "MARKDOWN"
 )
 
-var AllDocumentationType = []DocumentationType{
-	DocumentationTypeMarkdown,
+var AllDocumentationFormat = []DocumentationFormat{
+	DocumentationFormatMarkdown,
 }
 
-func (e DocumentationType) IsValid() bool {
+func (e DocumentationFormat) IsValid() bool {
 	switch e {
-	case DocumentationTypeMarkdown:
+	case DocumentationFormatMarkdown:
 		return true
 	}
 	return false
 }
 
-func (e DocumentationType) String() string {
+func (e DocumentationFormat) String() string {
 	return string(e)
 }
 
-func (e *DocumentationType) UnmarshalGQL(v interface{}) error {
+func (e *DocumentationFormat) UnmarshalGQL(v interface{}) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = DocumentationType(str)
+	*e = DocumentationFormat(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid DocumentationType", str)
+		return fmt.Errorf("%s is not a valid DocumentationFormat", str)
 	}
 	return nil
 }
 
-func (e DocumentationType) MarshalGQL(w io.Writer) {
+func (e DocumentationFormat) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -584,6 +564,47 @@ func (e FetchRequestStatusCondition) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type FilterOperator string
+
+const (
+	FilterOperatorAll FilterOperator = "ALL"
+	FilterOperatorAny FilterOperator = "ANY"
+)
+
+var AllFilterOperator = []FilterOperator{
+	FilterOperatorAll,
+	FilterOperatorAny,
+}
+
+func (e FilterOperator) IsValid() bool {
+	switch e {
+	case FilterOperatorAll, FilterOperatorAny:
+		return true
+	}
+	return false
+}
+
+func (e FilterOperator) String() string {
+	return string(e)
+}
+
+func (e *FilterOperator) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = FilterOperator(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid FilterOperator", str)
+	}
+	return nil
+}
+
+func (e FilterOperator) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type HealthCheckStatusCondition string
 
 const (
@@ -625,89 +646,42 @@ func (e HealthCheckStatusCondition) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-type ManagementPlaneHealthCheckType string
+type HealthCheckType string
 
 const (
-	ManagementPlaneHealthCheckTypeManagementPlaneHealthcheck            ManagementPlaneHealthCheckType = "MANAGEMENT_PLANE_HEALTHCHECK"
-	ManagementPlaneHealthCheckTypeManagementPlaneApplicationHealthcheck ManagementPlaneHealthCheckType = "MANAGEMENT_PLANE_APPLICATION_HEALTHCHECK"
+	HealthCheckTypeManagementPlaneApplicationHealthcheck HealthCheckType = "MANAGEMENT_PLANE_APPLICATION_HEALTHCHECK"
 )
 
-var AllManagementPlaneHealthCheckType = []ManagementPlaneHealthCheckType{
-	ManagementPlaneHealthCheckTypeManagementPlaneHealthcheck,
-	ManagementPlaneHealthCheckTypeManagementPlaneApplicationHealthcheck,
+var AllHealthCheckType = []HealthCheckType{
+	HealthCheckTypeManagementPlaneApplicationHealthcheck,
 }
 
-func (e ManagementPlaneHealthCheckType) IsValid() bool {
+func (e HealthCheckType) IsValid() bool {
 	switch e {
-	case ManagementPlaneHealthCheckTypeManagementPlaneHealthcheck, ManagementPlaneHealthCheckTypeManagementPlaneApplicationHealthcheck:
+	case HealthCheckTypeManagementPlaneApplicationHealthcheck:
 		return true
 	}
 	return false
 }
 
-func (e ManagementPlaneHealthCheckType) String() string {
+func (e HealthCheckType) String() string {
 	return string(e)
 }
 
-func (e *ManagementPlaneHealthCheckType) UnmarshalGQL(v interface{}) error {
+func (e *HealthCheckType) UnmarshalGQL(v interface{}) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = ManagementPlaneHealthCheckType(str)
+	*e = HealthCheckType(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid ManagementPlaneHealthCheckType", str)
+		return fmt.Errorf("%s is not a valid HealthCheckType", str)
 	}
 	return nil
 }
 
-func (e ManagementPlaneHealthCheckType) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type RuntimeHealthCheckType string
-
-const (
-	RuntimeHealthCheckTypeRuntimeHealthcheck            RuntimeHealthCheckType = "RUNTIME_HEALTHCHECK"
-	RuntimeHealthCheckTypeRuntimeApplicationHealthcheck RuntimeHealthCheckType = "RUNTIME_APPLICATION_HEALTHCHECK"
-	RuntimeHealthCheckTypeRuntimeApplicationEvents      RuntimeHealthCheckType = "RUNTIME_APPLICATION_EVENTS"
-	RuntimeHealthCheckTypeRuntimeApplicationGateway     RuntimeHealthCheckType = "RUNTIME_APPLICATION_GATEWAY"
-)
-
-var AllRuntimeHealthCheckType = []RuntimeHealthCheckType{
-	RuntimeHealthCheckTypeRuntimeHealthcheck,
-	RuntimeHealthCheckTypeRuntimeApplicationHealthcheck,
-	RuntimeHealthCheckTypeRuntimeApplicationEvents,
-	RuntimeHealthCheckTypeRuntimeApplicationGateway,
-}
-
-func (e RuntimeHealthCheckType) IsValid() bool {
-	switch e {
-	case RuntimeHealthCheckTypeRuntimeHealthcheck, RuntimeHealthCheckTypeRuntimeApplicationHealthcheck, RuntimeHealthCheckTypeRuntimeApplicationEvents, RuntimeHealthCheckTypeRuntimeApplicationGateway:
-		return true
-	}
-	return false
-}
-
-func (e RuntimeHealthCheckType) String() string {
-	return string(e)
-}
-
-func (e *RuntimeHealthCheckType) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = RuntimeHealthCheckType(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid RuntimeHealthCheckType", str)
-	}
-	return nil
-}
-
-func (e RuntimeHealthCheckType) MarshalGQL(w io.Writer) {
+func (e HealthCheckType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

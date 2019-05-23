@@ -9,6 +9,48 @@ import (
 )
 
 type Labels map[string]string
+type Tenant map[string]string
+
+func (y *Tenant) UnmarshalGQL(v interface{}) error {
+	return nil
+}
+func (y Tenant) MarshalGQL(w io.Writer) {}
+
+type Timestamp map[string]string
+
+func (y *Timestamp) UnmarshalGQL(v interface{}) error {
+	return nil
+}
+func (y Timestamp) MarshalGQL(w io.Writer) {}
+
+type Annotations map[string]string
+
+func (y *Annotations) UnmarshalGQL(v interface{}) error {
+	return nil
+}
+func (y Annotations) MarshalGQL(w io.Writer) {}
+
+type HttpHeaders map[string]string
+
+func (y *HttpHeaders) UnmarshalGQL(v interface{}) error {
+	return nil
+}
+func (y HttpHeaders) MarshalGQL(w io.Writer) {}
+
+type QueryParams map[string]string
+
+func (y *QueryParams) UnmarshalGQL(v interface{}) error {
+	return nil
+}
+func (y QueryParams) MarshalGQL(w io.Writer) {}
+
+type Blob map[string]string
+
+func (y *Blob) UnmarshalGQL(v interface{}) error {
+	return nil
+}
+func (y Blob) MarshalGQL(w io.Writer) {}
+
 
 func (y *Labels) UnmarshalGQL(v interface{}) error {
 
