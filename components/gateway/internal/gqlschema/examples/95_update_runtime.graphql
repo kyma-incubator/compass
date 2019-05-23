@@ -1,0 +1,24 @@
+mutation {
+  updateRuntime(id: "123", in: {
+    name: "name",
+    labels: "",
+    annotations: "",
+    agentCredential: {
+      data: {
+        type: BASIC
+        basic: {
+          username: "username",
+          password: "password"}
+      },
+      requestAuth: {
+        type: CSRF_TOKEN
+        csrf: {
+          token: "token"}
+      }
+    }
+  }){
+    id
+    name
+    # ...
+  }
+}

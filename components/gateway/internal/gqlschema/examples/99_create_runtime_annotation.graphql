@@ -1,0 +1,7 @@
+mutation {
+    createRuntimeAnnotation(
+        runtimeID: "123"
+        annotation: "annotation"
+        value: "value"
+    )
+}
