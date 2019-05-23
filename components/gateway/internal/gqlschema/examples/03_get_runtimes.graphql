@@ -1,0 +1,27 @@
+query {
+    runtimes(
+        filter: [
+            { label: "group", values: ["production", "experimental"], operator: ANY }
+        ]
+    ) {
+        id
+        name
+        description
+        tenant
+        labels
+        annotations
+        agentCredential {
+            data {
+                type
+                basic {
+                    username
+                    password
+                }
+            }
+        }
+        status {
+            condition
+            timestamp
+        }
+    }
+}

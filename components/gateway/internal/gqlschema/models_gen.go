@@ -9,28 +9,35 @@ import (
 )
 
 type API struct {
-	ID                string       `json:"id"`
-	Spec              *APISpec     `json:"spec"`
-	TargetURL         string       `json:"targetURL"`
-	Credential        *Credential  `json:"credential"`
-	InjectHeaders     *HttpHeaders `json:"injectHeaders"`
-	InjectQueryParams *QueryParams `json:"injectQueryParams"`
-	Version           *Version     `json:"version"`
+	ID                string           `json:"id"`
+	Spec              *APISpec         `json:"spec"`
+	TargetURL         string           `json:"targetURL"`
+	Credential        *Credential      `json:"credential"`
+	InjectHeaders     *HttpHeaders     `json:"injectHeaders"`
+	InjectQueryParams *QueryParams     `json:"injectQueryParams"`
+	Version           *Version         `json:"version"`
+	Documentations    []*Documentation `json:"documentations"`
 }
 
 type APIInput struct {
-	Type         APISpecType        `json:"type"`
-	TargetURL    string             `json:"targetURL"`
-	Data         *string            `json:"data"`
-	FetchRequest *FetchRequestInput `json:"fetchRequest"`
-	Credential   *CredentialInput   `json:"credential"`
-	Headers      *HttpHeaders       `json:"headers"`
+	TargetURL         string                `json:"targetURL"`
+	Credential        *CredentialInput      `json:"credential"`
+	InjectHeaders     *HttpHeaders          `json:"injectHeaders"`
+	InjectQueryParams *QueryParams          `json:"injectQueryParams"`
+	Documentations    []*DocumentationInput `json:"documentations"`
+	Spec              *APISpecInput         `json:"spec"`
 }
 
 type APISpec struct {
 	Type         APISpecType   `json:"type"`
 	Data         string        `json:"data"`
 	FetchRequest *FetchRequest `json:"fetchRequest"`
+}
+
+type APISpecInput struct {
+	Type         APISpecType        `json:"type"`
+	Data         string             `json:"data"`
+	FetchRequest *FetchRequestInput `json:"fetchRequest"`
 }
 
 type Application struct {
@@ -45,17 +52,17 @@ type Application struct {
 	HealthCheckURL *string               `json:"healthCheckURL"`
 	Apis           []*API                `json:"apis"`
 	Events         []*Event              `json:"events"`
-	Docs           []*Documentation      `json:"docs"`
 }
 
 type ApplicationInput struct {
-	Name           string                `json:"name"`
-	Description    *string               `json:"description"`
-	Labels         *Labels               `json:"labels"`
-	Annotations    *Annotations          `json:"annotations"`
-	Apis           []*APIInput           `json:"apis"`
-	Events         []*EventInput         `json:"events"`
-	Documentations []*DocumentationInput `json:"documentations"`
+	Name           string                     `json:"name"`
+	Description    *string                    `json:"description"`
+	Labels         *Labels                    `json:"labels"`
+	Annotations    *Annotations               `json:"annotations"`
+	Webhooks       []*ApplicationWebhookInput `json:"webhooks"`
+	HealthCheckURL *string                    `json:"healthCheckURL"`
+	Apis           []*APIInput                `json:"apis"`
+	Events         []*EventInput              `json:"events"`
 }
 
 type ApplicationStatus struct {
@@ -125,39 +132,39 @@ type CredentialRequestAuthInput struct {
 	Csrf *CSRFTokenCredentialRequestAuthInput `json:"csrf"`
 }
 
-type DocumentInput struct {
-	Title  string `json:"title"`
-	Type   string `json:"type"`
-	Source string `json:"source"`
-}
-
 type Documentation struct {
 	ID           string              `json:"id"`
 	Title        string              `json:"title"`
 	DisplayName  string              `json:"displayName"`
 	Description  string              `json:"description"`
 	Format       DocumentationFormat `json:"format"`
-	Type         string              `json:"type"`
+	Kind         *string             `json:"kind"`
 	Data         *string             `json:"data"`
 	FetchRequest *FetchRequest       `json:"fetchRequest"`
 }
 
 type DocumentationInput struct {
-	Type         DocumentationFormat `json:"type"`
-	Data         []*DocumentInput    `json:"data"`
+	Title        string              `json:"title"`
+	DisplayName  string              `json:"displayName"`
+	Description  string              `json:"description"`
+	Format       DocumentationFormat `json:"format"`
+	Kind         *string             `json:"kind"`
+	Data         *string             `json:"data"`
 	FetchRequest *FetchRequestInput  `json:"fetchRequest"`
 }
 
 type Event struct {
-	ID      string     `json:"id"`
-	Spec    *EventSpec `json:"spec"`
-	Version *Version   `json:"version"`
+	ID             string           `json:"id"`
+	Spec           *EventSpec       `json:"spec"`
+	Version        *Version         `json:"version"`
+	Documentations []*Documentation `json:"documentations"`
 }
 
 type EventInput struct {
-	Type         EventSpecType      `json:"type"`
-	Data         *string            `json:"data"`
-	FetchRequest *FetchRequestInput `json:"fetchRequest"`
+	Type           EventSpecType         `json:"type"`
+	Data           *string               `json:"data"`
+	FetchRequest   *FetchRequestInput    `json:"fetchRequest"`
+	Documentations []*DocumentationInput `json:"documentations"`
 }
 
 type EventSpec struct {

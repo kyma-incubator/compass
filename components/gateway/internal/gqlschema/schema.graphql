@@ -23,7 +23,7 @@ type Runtime {
     tenant: Tenant!
     labels(key: String): Labels!
     annotations: Annotations!
-    agentCredential: Credential!
+    agentCredential: Credential! # TODO why do we expose it?
     status: RuntimeStatus!
 }
 
@@ -52,7 +52,6 @@ type Application {
     healthCheckURL: String
     apis: [API!]!
     events: [Event!]!
-    docs: [Documentation!]!
 }
 
 type ApplicationStatus {
@@ -95,6 +94,7 @@ type API {
     injectHeaders: HttpHeaders
     injectQueryParams: QueryParams
     version: Version
+    documentations: [Documentation!]
 
 }
 
@@ -115,6 +115,7 @@ type Event {
     id: ID!
     spec: EventSpec!
     version: Version
+    documentations: [Documentation!]
 }
 
 type EventSpec {
@@ -135,12 +136,9 @@ type Documentation {
     displayName: String!
     description: String!
     format: DocumentationFormat!
-    type: String!   # for example Service Class, API etc
+    kind: String   # for example Service Class, API etc
     data: Blob
     fetchRequest: FetchRequest
-
-    # TODO: how to connect, that given documentation describes specific API, Event. By ID can be dificult, because we want to provide API and Docu at the same time
-    # TODO embed documwentation to API and Events
 }
 
 enum DocumentationFormat {
@@ -244,9 +242,10 @@ input ApplicationInput {
     description: String
     labels: Labels
     annotations: Annotations
+    webhooks: [ApplicationWebhookInput]
+    healthCheckURL: String
     apis: [APIInput!]
     events: [EventInput!]
-    documentations: [DocumentationInput!]
 }
 
 # Runtime Input
@@ -276,12 +275,19 @@ input ApplicationWebhookInput {
 # API Input
 
 input APIInput {
-    type: APISpecType!
     targetURL: String!
-    data: Blob
-    fetchRequest: FetchRequestInput
     credential: CredentialInput
-    headers: HttpHeaders
+    injectHeaders: HttpHeaders
+    injectQueryParams: QueryParams
+    documentations: [DocumentationInput!]
+    spec: APISpecInput
+
+}
+
+input APISpecInput {
+    type: APISpecType!
+    data: Blob!
+    fetchRequest: FetchRequestInput
 }
 
 # Event Input
@@ -290,21 +296,21 @@ input EventInput {
     type: EventSpecType!
     data: Blob
     fetchRequest: FetchRequestInput
+    documentations: [DocumentationInput!]
 }
 
 # Documentation Input
 
 input DocumentationInput {
-    type: DocumentationFormat!
-    data: [DocumentInput!]
+    title: String!
+    displayName: String!
+    description: String!
+    format: DocumentationFormat!
+    kind: String
+    data: Blob
     fetchRequest: FetchRequestInput
 }
 
-input DocumentInput {
-    title: String!
-    type: String! #TODO: what are these fields, should they stay as String?
-    source: String! #TODO: what are these fields, should they stay as String?
-}
 
 # Credential Input
 
@@ -358,14 +364,13 @@ input LabelFilter {
 }
 
 type Query {
-    applications(filer: LabelFilter): [Application!]!
+    applications(filer: [LabelFilter!]): [Application!]!
     application(id: ID!): Application
 
-    runtimes(filter: LabelFilter): [Runtime!]!
+    runtimes(filter: [LabelFilter!]): [Runtime!]!
     runtime(id: ID!): Runtime
 
     healthChecks(types: [HealthCheckType], originID: String): [HealthCheck!]!
-
     labels(key: String): [String]!
     # TODO: eventSubscribers
     # TODO: bindingsUsage ??? who calls API?
@@ -384,7 +389,7 @@ type Mutation {
     deleteApplicationAnnotation(id: ID!, annotation: String!): Boolean
 
     createApplicationWebhook(applicationID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook
-    updateApplicationWebhook(applicationID: ID!, type: ApplicationWebhookType, in: ApplicationWebhookInput): ApplicationWebhook
+    updateApplicationWebhook(applicationID: ID!, type: ApplicationWebhookType, in: ApplicationWebhookInput): ApplicationWebhook #TODO remove type
     deleteApplicationWebhook(applicationID: ID!, type: ApplicationWebhookType): ApplicationWebhook
 
     createAPI(applicationID: ID!, in: APIInput!): API
@@ -400,7 +405,9 @@ type Mutation {
     deleteEvent(id: ID!): Event
     refetchEvent(id: ID!): Event
 
-    createDocumentation(applicationID: ID!, in: DocumentationInput!): Documentation
+    createAPIDocumentation(applicationID: ID!, apiID: ID!,in: DocumentationInput!): Documentation
+    createEventDocumentation(applicationID: ID!, eventID: ID!, in: DocumentationInput!): Documentation
+
     updateDocumentation(id: ID!, in: DocumentationInput!): Documentation
     deleteDocumentation(id: ID!): Documentation
 
@@ -414,10 +421,6 @@ type Mutation {
 
     createRuntimeAnnotation(runtimeID: ID!, annotation: String!, value: String!): String
     deleteRuntimeAnnotation(id: ID!, annotation: String!): Boolean
-
-    #
-
-
 
 }
 

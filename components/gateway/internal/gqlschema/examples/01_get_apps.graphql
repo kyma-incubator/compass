@@ -1,0 +1,94 @@
+query {
+    applications(
+        filer: [
+            { label: "group", values: ["production", "experimental"], operator: ANY },
+            {label: "region", values:["us"]}
+        ]
+    ) {
+        id
+        name
+        tenant
+        description
+
+        labels
+        annotations
+        status {
+            condition
+            timestamp
+        }
+        webhooks {
+            type
+            url
+            credential {
+                data {
+                    type
+                    basic {
+                        username
+                        password
+                    }
+                    oauth {
+                        clientId
+                        clientSecret
+                        url
+                    }
+                }
+            }
+        }
+        healthCheckURL
+        apis {
+            id
+            targetURL
+            credential {
+                data {
+                    type
+                }
+            }
+            spec {
+                type
+                data
+            }
+            injectHeaders
+            injectQueryParams
+            version {
+                value
+                deprecated
+                since
+                forRemoval
+            }
+            documentations {
+                id
+                title
+                displayName
+                description
+                format
+                kind
+                data
+            }
+        }
+        events {
+            id
+            spec {
+                type
+                data
+                fetchRequest {
+                    url
+                    credential {
+                        data {
+                            type
+                            basic {
+                                username
+                                password
+                            }
+                        }
+                    }
+                }
+            }
+            version {
+                value
+            }
+            documentations {
+                id
+            }
+        }
+    }
+}
