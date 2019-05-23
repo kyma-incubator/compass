@@ -1,3 +1,4 @@
 mutation {
+  createRuntimeLabel(runtimeID: "123", label: "key", values: ["val1","val2"])
   deleteRuntimeLabel(id: "123", label: "key", values: ["val1","val2"])
 }

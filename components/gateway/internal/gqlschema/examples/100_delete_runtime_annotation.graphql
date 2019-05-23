@@ -1,3 +1,0 @@
-mutation {
-  deleteRuntimeAnnotation(id:"123", annotation: "annotation")
-}
