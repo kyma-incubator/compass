@@ -71,6 +71,7 @@ type ApplicationStatus struct {
 }
 
 type ApplicationWebhook struct {
+	ID         string                 `json:"id"`
 	Type       ApplicationWebhookType `json:"type"`
 	URL        string                 `json:"url"`
 	Credential *Credential            `json:"credential"`

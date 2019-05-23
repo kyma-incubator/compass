@@ -67,6 +67,7 @@ enum ApplicationStatusCondition {
 }
 
 type ApplicationWebhook {
+    id: ID!
     type: ApplicationWebhookType!
     url: String!
     credential: Credential
@@ -229,10 +230,6 @@ type HealthCheck {
 }
 
 
-# Label & Annotation
-
-
-
 # INPUTS
 
 # Application Input
@@ -348,11 +345,6 @@ input BasicCredentialDataInput {
 # HealthCheck Input
 
 
-# TODO VersionInput, ApiInput + EventInput
-# TODO version mutation
-
-#
-
 enum FilterOperator {
     ALL, ANY
 }
@@ -372,8 +364,7 @@ type Query {
 
     healthChecks(types: [HealthCheckType], originID: String): [HealthCheck!]!
     labels(key: String): [String]!
-    # TODO: eventSubscribers
-    # TODO: bindingsUsage ??? who calls API?
+
 }
 
 type Mutation {
@@ -383,19 +374,19 @@ type Mutation {
     deleteApplication(id: ID!): Application
 
     createApplicationLabel(applicationID: ID!, label: String!, values: [String!]!): [String!]!
-    deleteApplicationLabel(id: ID!, label: String!, values: [String!]!): [String!]!
+    deleteApplicationLabel(applicationID: ID!, label: String!, values: [String!]!): [String!]!
 
     createApplicationAnnotation(applicationID: ID!, annotation: String!, value: String!): String
-    deleteApplicationAnnotation(id: ID!, annotation: String!): Boolean
+    deleteApplicationAnnotation(applicationID: ID!, annotation: String!): Boolean
 
     createApplicationWebhook(applicationID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook
-    updateApplicationWebhook(applicationID: ID!, type: ApplicationWebhookType, in: ApplicationWebhookInput): ApplicationWebhook #TODO remove type
-    deleteApplicationWebhook(applicationID: ID!, type: ApplicationWebhookType): ApplicationWebhook
+    updateApplicationWebhook(webhookID: ID!, in: ApplicationWebhookInput): ApplicationWebhook
+    deleteApplicationWebhook(webhookID: ID!): ApplicationWebhook
 
     createAPI(applicationID: ID!, in: APIInput!): API
     updateAPI(id: ID!, in: APIInput!): API
     deleteAPI(id: ID!): API
-    refetchAPI(id: ID!): API
+    refetchAPISpec(id: ID!): API # TODO sync or async
 
     setAPICredential(apiID: ID!, in: CredentialInput!): Credential
     deleteAPICredential(apiID: ID!): Credential
@@ -403,13 +394,7 @@ type Mutation {
     createEvent(applicationID: ID!, in: EventInput!): Event
     updateEvent(id: ID!, in: EventInput!): Event
     deleteEvent(id: ID!): Event
-    refetchEvent(id: ID!): Event
-
-    createAPIDocumentation(applicationID: ID!, apiID: ID!,in: DocumentationInput!): Documentation
-    createEventDocumentation(applicationID: ID!, eventID: ID!, in: DocumentationInput!): Documentation
-
-    updateDocumentation(id: ID!, in: DocumentationInput!): Documentation
-    deleteDocumentation(id: ID!): Documentation
+    refetchEventSpec(id: ID!): Event
 
     # Runtime
     createRuntime(in: RuntimeInput!): Runtime

@@ -1,0 +1,6 @@
+mutation {
+    createApplicationLabel(applicationID: "123",label: "groups",values: ["production","experimental"])
+    deleteApplicationLabel(applicationID: "123",label: "groups",values: ["experimental"])
+    createApplicationAnnotation(applicationID: "123",annotation: "abc", value: "x,y,z")
+    deleteApplicationAnnotation(applicationID: "123",annotation: "abc")
+}

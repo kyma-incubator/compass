@@ -1,0 +1,33 @@
+mutation {
+    createEvent(applicationID: "123",in:  {
+        type: ASYNC_API,
+        data: "",
+
+    }) {
+        id
+    }
+
+    deleteEvent(id: 456) {
+        id
+    }
+
+
+    updateEvent(id: 456, in:{
+        type: ASYNC_API,
+        data: "",
+    }) {
+        id
+    }
+
+    refetchEventSpec(id: 456) {
+        id
+        spec {
+            fetchRequest {
+                status {
+                    condition
+                    timestamp
+                }
+            }
+        }
+    }
+}

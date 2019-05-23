@@ -1,0 +1,54 @@
+mutation {
+    createAPI(applicationID: "123", in: {
+        targetURL: "",
+        spec: {type: OPEN_API,
+            data: ""}
+    }) {
+        id
+    }
+
+    updateAPI(id:"456", in: {
+        targetURL: "",
+        spec: {type: OPEN_API,
+            data: ""}
+    }) {
+        id
+    }
+
+    deleteAPI(id:"456") {
+        id
+    }
+
+    refetchAPISpec(id: 456) {
+        id
+        spec {
+            fetchRequest {
+                status {
+                    condition
+                    timestamp
+                }
+            }
+        }
+    }
+
+    setAPICredential(apiID:  456, in: {
+        data: {
+            type: BASIC
+            basic: {
+                username: "aaa",
+                password: "bbb",
+            }
+        }
+    })  {
+        data {
+            type
+        }
+    }
+
+    deleteAPICredential(apiID: 456) {
+        data {
+            type
+        }
+    }
+
+}
