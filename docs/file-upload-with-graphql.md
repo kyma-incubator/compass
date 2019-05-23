@@ -56,9 +56,6 @@ func (r *Resolver) Mutation() MutationResolver {
 func (r *Resolver) Query() QueryResolver {
 	return &queryResolver{r}
 }
-//func (r *Resolver) Video() VideoResolver {
-//	return &videoResolver{r}
-//}
 
 type mutationResolver struct{ *Resolver }
 
@@ -161,7 +158,7 @@ func getResolver() *go_graphql_demo.Stub {
 <summary> Resolver configuration </summary>
 <p>
 
-To make your server recognise that resolver, attach it inside main function. \
+To make your server recognise that resolver, attach it inside `main` function. \
 You can also set some parameters like `UploadMaxMemory` or `UploadMaxSize`.
 
 ```go
