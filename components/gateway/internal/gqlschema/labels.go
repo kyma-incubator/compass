@@ -51,7 +51,6 @@ func (y *Blob) UnmarshalGQL(v interface{}) error {
 }
 func (y Blob) MarshalGQL(w io.Writer) {}
 
-
 func (y *Labels) UnmarshalGQL(v interface{}) error {
 
 	if v == nil {
