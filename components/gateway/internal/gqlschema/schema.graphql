@@ -12,7 +12,7 @@ scalar HttpHeaders # -> map[string][]string
 
 scalar QueryParams # -> map[string][]string
 
-scalar Blob # TBD
+scalar Clob # TBD
 
 # Runtime
 
@@ -101,7 +101,7 @@ type API {
 
 type APISpec {
     type: APISpecType!
-    data: Blob!
+    data: Clob!
     fetchRequest: FetchRequest
 }
 
@@ -121,7 +121,7 @@ type Event {
 
 type EventSpec {
     type: EventSpecType!
-    data: Blob!
+    data: Clob!
     fetchRequest: FetchRequest
 }
 
@@ -138,7 +138,7 @@ type Documentation {
     description: String!
     format: DocumentationFormat!
     kind: String   # for example Service Class, API etc
-    data: Blob
+    data: Clob
     fetchRequest: FetchRequest
 }
 
@@ -283,7 +283,7 @@ input APIInput {
 
 input APISpecInput {
     type: APISpecType!
-    data: Blob!
+    data: Clob!
     fetchRequest: FetchRequestInput
 }
 
@@ -291,7 +291,7 @@ input APISpecInput {
 
 input EventInput {
     type: EventSpecType!
-    data: Blob
+    data: Clob
     fetchRequest: FetchRequestInput
     documentations: [DocumentationInput!]
 }
@@ -304,7 +304,7 @@ input DocumentationInput {
     description: String!
     format: DocumentationFormat!
     kind: String
-    data: Blob
+    data: Clob
     fetchRequest: FetchRequestInput
 }
 

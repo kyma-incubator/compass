@@ -1332,7 +1332,7 @@ scalar HttpHeaders # -> map[string][]string
 
 scalar QueryParams # -> map[string][]string
 
-scalar Blob # TBD
+scalar Clob # TBD
 
 # Runtime
 
@@ -1421,7 +1421,7 @@ type API {
 
 type APISpec {
     type: APISpecType!
-    data: Blob!
+    data: Clob!
     fetchRequest: FetchRequest
 }
 
@@ -1441,7 +1441,7 @@ type Event {
 
 type EventSpec {
     type: EventSpecType!
-    data: Blob!
+    data: Clob!
     fetchRequest: FetchRequest
 }
 
@@ -1458,7 +1458,7 @@ type Documentation {
     description: String!
     format: DocumentationFormat!
     kind: String   # for example Service Class, API etc
-    data: Blob
+    data: Clob
     fetchRequest: FetchRequest
 }
 
@@ -1603,7 +1603,7 @@ input APIInput {
 
 input APISpecInput {
     type: APISpecType!
-    data: Blob!
+    data: Clob!
     fetchRequest: FetchRequestInput
 }
 
@@ -1611,7 +1611,7 @@ input APISpecInput {
 
 input EventInput {
     type: EventSpecType!
-    data: Blob
+    data: Clob
     fetchRequest: FetchRequestInput
     documentations: [DocumentationInput!]
 }
@@ -1624,7 +1624,7 @@ input DocumentationInput {
     description: String!
     format: DocumentationFormat!
     kind: String
-    data: Blob
+    data: Clob
     fetchRequest: FetchRequestInput
 }
 
@@ -2716,7 +2716,7 @@ func (ec *executionContext) _APISpec_data(ctx context.Context, field graphql.Col
 	res := resTmp.(string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNBlob2string(ctx, field.Selections, res)
+	return ec.marshalNClob2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APISpec_fetchRequest(ctx context.Context, field graphql.CollectedField, obj *APISpec) graphql.Marshaler {
@@ -3638,7 +3638,7 @@ func (ec *executionContext) _Documentation_data(ctx context.Context, field graph
 	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOBlob2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOClob2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Documentation_fetchRequest(ctx context.Context, field graphql.CollectedField, obj *Documentation) graphql.Marshaler {
@@ -3818,7 +3818,7 @@ func (ec *executionContext) _EventSpec_data(ctx context.Context, field graphql.C
 	res := resTmp.(string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNBlob2string(ctx, field.Selections, res)
+	return ec.marshalNClob2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EventSpec_fetchRequest(ctx context.Context, field graphql.CollectedField, obj *EventSpec) graphql.Marshaler {
@@ -6558,7 +6558,7 @@ func (ec *executionContext) unmarshalInputAPISpecInput(ctx context.Context, v in
 			}
 		case "data":
 			var err error
-			it.Data, err = ec.unmarshalNBlob2string(ctx, v)
+			it.Data, err = ec.unmarshalNClob2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6822,7 +6822,7 @@ func (ec *executionContext) unmarshalInputDocumentationInput(ctx context.Context
 			}
 		case "data":
 			var err error
-			it.Data, err = ec.unmarshalOBlob2ᚖstring(ctx, v)
+			it.Data, err = ec.unmarshalOClob2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6852,7 +6852,7 @@ func (ec *executionContext) unmarshalInputEventInput(ctx context.Context, v inte
 			}
 		case "data":
 			var err error
-			it.Data, err = ec.unmarshalOBlob2ᚖstring(ctx, v)
+			it.Data, err = ec.unmarshalOClob2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8449,12 +8449,12 @@ func (ec *executionContext) marshalNApplicationWebhookType2githubᚗcomᚋkyma�
 	return v
 }
 
-func (ec *executionContext) unmarshalNBlob2string(ctx context.Context, v interface{}) (string, error) {
-	return graphql.UnmarshalString(v)
+func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
+	return graphql.UnmarshalBoolean(v)
 }
 
-func (ec *executionContext) marshalNBlob2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	res := graphql.MarshalString(v)
+func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.SelectionSet, v bool) graphql.Marshaler {
+	res := graphql.MarshalBoolean(v)
 	if res == graphql.Null {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -8463,12 +8463,12 @@ func (ec *executionContext) marshalNBlob2string(ctx context.Context, sel ast.Sel
 	return res
 }
 
-func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
-	return graphql.UnmarshalBoolean(v)
+func (ec *executionContext) unmarshalNClob2string(ctx context.Context, v interface{}) (string, error) {
+	return graphql.UnmarshalString(v)
 }
 
-func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.SelectionSet, v bool) graphql.Marshaler {
-	res := graphql.MarshalBoolean(v)
+func (ec *executionContext) marshalNClob2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	res := graphql.MarshalString(v)
 	if res == graphql.Null {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -9333,29 +9333,6 @@ func (ec *executionContext) unmarshalOBasicCredentialDataInput2ᚖgithubᚗcom�
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalOBlob2string(ctx context.Context, v interface{}) (string, error) {
-	return graphql.UnmarshalString(v)
-}
-
-func (ec *executionContext) marshalOBlob2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	return graphql.MarshalString(v)
-}
-
-func (ec *executionContext) unmarshalOBlob2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOBlob2string(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOBlob2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec.marshalOBlob2string(ctx, sel, *v)
-}
-
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	return graphql.UnmarshalBoolean(v)
 }
@@ -9400,6 +9377,29 @@ func (ec *executionContext) unmarshalOCSRFTokenCredentialRequestAuthInput2ᚖgit
 	}
 	res, err := ec.unmarshalOCSRFTokenCredentialRequestAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐCSRFTokenCredentialRequestAuthInput(ctx, v)
 	return &res, err
+}
+
+func (ec *executionContext) unmarshalOClob2string(ctx context.Context, v interface{}) (string, error) {
+	return graphql.UnmarshalString(v)
+}
+
+func (ec *executionContext) marshalOClob2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	return graphql.MarshalString(v)
+}
+
+func (ec *executionContext) unmarshalOClob2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOClob2string(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOClob2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOClob2string(ctx, sel, *v)
 }
 
 func (ec *executionContext) marshalOCredential2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐCredential(ctx context.Context, sel ast.SelectionSet, v Credential) graphql.Marshaler {
