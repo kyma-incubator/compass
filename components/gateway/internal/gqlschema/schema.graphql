@@ -16,6 +16,11 @@ scalar Clob # TBD
 
 # Runtime
 
+
+# TODO CreateRuntimeOutput (agentCredential included)
+
+
+
 type Runtime {
     id: ID!
     name: String!
@@ -23,7 +28,6 @@ type Runtime {
     tenant: Tenant!
     labels(key: String): Labels!
     annotations: Annotations!
-    agentCredential: Credential! # TODO why do we expose it?
     status: RuntimeStatus!
 }
 
@@ -149,7 +153,7 @@ enum DocumentationFormat {
 
 # FetchRequest
 
-type FetchRequest { #TODO: Who fetches data? Management plane or runtime?
+type FetchRequest {
     url: String!
     credential: Credential
     status: FetchRequestStatus!
@@ -252,7 +256,6 @@ input RuntimeInput {
     description: String
     labels: Labels
     annotations: Annotations
-    agentCredential: CredentialInput!
 }
 
 # FetchRequest Input
@@ -285,6 +288,7 @@ input APIInput {
 input APISpecInput {
     type: APISpecType!
     data: Clob
+    # TODO: support all properties from ClusterDocsTopic
     fetchRequest: FetchRequestInput
 }
 
@@ -370,9 +374,9 @@ type Query {
 
 type Mutation {
     # Application
-    createApplication(in: ApplicationInput!): Application
+    createApplication(in: ApplicationInput!): Application!
     updateApplication(id: ID!, in: ApplicationInput!): Application
-    deleteApplication(id: ID!): Application
+    deleteApplication(id: ID!): Application # TODO return Bool?
 
     createApplicationLabel(applicationID: ID!, label: String!, values: [String!]!): [String!]!
     deleteApplicationLabel(applicationID: ID!, label: String!, values: [String!]!): [String!]!
@@ -380,14 +384,14 @@ type Mutation {
     createApplicationAnnotation(applicationID: ID!, annotation: String!, value: String!): String!
     deleteApplicationAnnotation(applicationID: ID!, annotation: String!): String!
 
-    createApplicationWebhook(applicationID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook
+    createApplicationWebhook(applicationID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
     updateApplicationWebhook(webhookID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook
-    deleteApplicationWebhook(webhookID: ID!): ApplicationWebhook
+    deleteApplicationWebhook(webhookID: ID!): ApplicationWebhook # TODO if not found, return error or nil???
 
     createAPI(applicationID: ID!, in: APIInput!): API
     updateAPI(id: ID!, in: APIInput!): API
     deleteAPI(id: ID!): API
-    refetchAPISpec(id: ID!): API # TODO sync or async
+    refetchAPISpec(id: ID!): API # TODO async, consider using subscriptions
 
     setAPICredential(apiID: ID!, in: CredentialInput!): Credential
     deleteAPICredential(apiID: ID!): Credential
