@@ -15,11 +15,6 @@ As vanilla graphql does not support uploading files, there are several workaroun
 # It is already implemented in gqlgen library, so we can use it straight away.
 scalar Upload
 
-type Documentation {
-  id: ID!
-  data: Upload!
-}
-
 input DocumentationInput {
   data: Upload!
 }
@@ -66,7 +61,7 @@ func (r *mutationResolver) StoreDocumentation(ctx context.Context, in Documentat
 
 type queryResolver struct{ *Resolver }
 
-func (r *Resolver) Anything(ctx context.Context) (*string,error){
+func (r *queryResolver) Anything(ctx context.Context) (*string,error){
 	return nil,nil
 }
 ```
@@ -83,7 +78,7 @@ To make your server recognise that resolver, attach it inside `main` function. \
 You can also set some parameters like `UploadMaxMemory` or `UploadMaxSize`.
 
 ```go
-	exec := go_graphql_demo.NewExecutableSchema(go_graphql_demo.Config{Resolvers: &go_graphql_demo.Resolver{}})
+	exec := fileupload.NewExecutableSchema(fileupload.Config{Resolvers: &fileupload.Resolver{}})
 
 	var mb int64 = 1 << 20
 	uploadMaxMemory := handler.UploadMaxMemory(32 * mb)
@@ -119,8 +114,16 @@ The `Clob` type which is in to be defined state, could look like that:
 
 ```graphql
 type Clob {
-    content: String
-    file: Upload
+  type: UploadType!  
+  content: String
+  file: Upload
+}
+```
+
+```graphql
+enum UploadType {
+  FILE
+  STRING
 }
 ```
 
