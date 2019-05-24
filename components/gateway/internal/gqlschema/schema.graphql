@@ -16,11 +16,6 @@ scalar Clob # TBD
 
 # Runtime
 
-
-# TODO CreateRuntimeOutput (agentCredential included)
-
-
-
 type Runtime {
     id: ID!
     name: String!
@@ -29,6 +24,17 @@ type Runtime {
     labels(key: String): Labels!
     annotations: Annotations!
     status: RuntimeStatus!
+}
+
+type RuntimeModificationOutput {
+    id: ID!
+    name: String!
+    description: String
+    tenant: Tenant!
+    labels(key: String): Labels!
+    annotations: Annotations!
+    status: RuntimeStatus!
+    agentCredential: Credential!
 }
 
 type RuntimeStatus {
@@ -402,9 +408,9 @@ type Mutation {
     refetchEventSpec(id: ID!): Event
 
     # Runtime
-    createRuntime(in: RuntimeInput!): Runtime
-    updateRuntime(id: ID!, in: RuntimeInput!): Runtime
-    deleteRuntime(id: ID!): Runtime
+    createRuntime(in: RuntimeInput!): RuntimeModificationOutput
+    updateRuntime(id: ID!, in: RuntimeInput!): RuntimeModificationOutput
+    deleteRuntime(id: ID!): RuntimeModificationOutput
 
     createRuntimeLabel(runtimeID: ID!, label: String!, values: [String!]!): [String!]!
     deleteRuntimeLabel(id: ID!, label: String! ,values: [String!]!): [String!]!
