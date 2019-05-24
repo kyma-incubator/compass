@@ -249,6 +249,7 @@ input ApplicationInput {
 
 input RuntimeInput {
     name: String!
+    description: String
     labels: Labels
     annotations: Annotations
     agentCredential: CredentialInput!
@@ -283,7 +284,7 @@ input APIInput {
 
 input APISpecInput {
     type: APISpecType!
-    data: Clob!
+    data: Clob
     fetchRequest: FetchRequestInput
 }
 
@@ -351,7 +352,7 @@ enum FilterOperator {
 
 input LabelFilter {
     label: String!
-    values: [String]!
+    values: [String!]!
     operator: FilterOperator
 }
 
@@ -362,8 +363,8 @@ type Query {
     runtimes(filter: [LabelFilter!]): [Runtime!]!
     runtime(id: ID!): Runtime
 
-    healthChecks(types: [HealthCheckType], originID: String): [HealthCheck!]!
-    labels(key: String): [String]!
+    healthChecks(types: [HealthCheckType], originID: ID): [HealthCheck!]!
+    labels(key: String): [String!]!
 
 }
 
@@ -376,11 +377,11 @@ type Mutation {
     createApplicationLabel(applicationID: ID!, label: String!, values: [String!]!): [String!]!
     deleteApplicationLabel(applicationID: ID!, label: String!, values: [String!]!): [String!]!
 
-    createApplicationAnnotation(applicationID: ID!, annotation: String!, value: String!): String
-    deleteApplicationAnnotation(applicationID: ID!, annotation: String!): Boolean
+    createApplicationAnnotation(applicationID: ID!, annotation: String!, value: String!): String!
+    deleteApplicationAnnotation(applicationID: ID!, annotation: String!): String!
 
     createApplicationWebhook(applicationID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook
-    updateApplicationWebhook(webhookID: ID!, in: ApplicationWebhookInput): ApplicationWebhook
+    updateApplicationWebhook(webhookID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook
     deleteApplicationWebhook(webhookID: ID!): ApplicationWebhook
 
     createAPI(applicationID: ID!, in: APIInput!): API
@@ -404,8 +405,8 @@ type Mutation {
     createRuntimeLabel(runtimeID: ID!, label: String!, values: [String!]!): [String!]!
     deleteRuntimeLabel(id: ID!, label: String! ,values: [String!]!): [String!]!
 
-    createRuntimeAnnotation(runtimeID: ID!, annotation: String!, value: String!): String
-    deleteRuntimeAnnotation(id: ID!, annotation: String!): Boolean
+    createRuntimeAnnotation(runtimeID: ID!, annotation: String!, value: String!): String!
+    deleteRuntimeAnnotation(id: ID!, annotation: String!): String!
 
 }
 

@@ -14,6 +14,17 @@ echo "GOPATH:" + $GOPATH
 echo -e "${NC}"
 
 ##
+# DEP ENSURE
+##
+dep ensure -v --vendor-only
+ensureResult=$?
+if [ ${ensureResult} != 0 ]; then
+	echo -e "${RED}✗ dep ensure -v --vendor-only${NC}\n$ensureResult${NC}"
+	exit 1
+else echo -e "${GREEN}√ dep ensure -v --vendor-only${NC}"
+fi
+
+##
 # GO BUILD
 ##
 buildEnv=""
@@ -33,7 +44,7 @@ else echo -e "${GREEN}√ go build${NC}"
 fi
 
 ##
-# DEP
+# DEP STATUS
 ##
 echo "? dep status"
 depResult=$(dep status -v)

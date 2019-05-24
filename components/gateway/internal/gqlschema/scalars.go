@@ -44,12 +44,12 @@ func (y *QueryParams) UnmarshalGQL(v interface{}) error {
 }
 func (y QueryParams) MarshalGQL(w io.Writer) {}
 
-type Blob map[string]string
+type Clob map[string]string
 
-func (y *Blob) UnmarshalGQL(v interface{}) error {
+func (y *Clob) UnmarshalGQL(v interface{}) error {
 	return nil
 }
-func (y Blob) MarshalGQL(w io.Writer) {}
+func (y Clob) MarshalGQL(w io.Writer) {}
 
 func (y *Labels) UnmarshalGQL(v interface{}) error {
 
