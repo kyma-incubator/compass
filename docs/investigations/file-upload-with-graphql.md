@@ -13,7 +13,7 @@ As vanilla graphql does not support uploading files, there are several workaroun
 
 ### File uploading with gqlgen 0.9.0 library
 
-1. Example of schema.graphql
+1. Use the schema.graphql below
 ```graphql
 # The `Upload` scalar type represents a multipart file upload.
 # It is already implemented in gqlgen library, so we can use it straight away.
@@ -33,7 +33,7 @@ type Query {
 
 ```
 
-2. Implementation of resolvers
+2. Implement resolvers
 ```go
 type Resolver struct{}
 
@@ -65,7 +65,7 @@ func (r *queryResolver) Anything(ctx context.Context) (*string,error){
 }
 ```
 
-3. Resolver configuration
+3. Set configuration of resolvers
 
 To make your server recognise that resolver, attach it inside `main` function. \
 You can also set some parameters like `UploadMaxMemory` or `UploadMaxSize`.
