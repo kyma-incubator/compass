@@ -94,7 +94,7 @@ For more examples check reference links section.
 ### Improvement proposal
 
 We should support multiple ways of uploading large amounts of data (for example documentation).
-The `Clob` type which is in to be defined state, could look like that:
+The `Clob` type, which is to be defined, could look as follows:
 
 ```graphql
 type Clob {
