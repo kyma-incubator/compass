@@ -13,23 +13,21 @@ type CredentialData interface {
 }
 
 type APIDefinition struct {
-	ID                    string           `json:"id"`
-	Spec                  *APISpec         `json:"spec"`
-	TargetURL             string           `json:"targetURL"`
-	Credential            *Credential      `json:"credential"`
-	AdditionalHeaders     *HttpHeaders     `json:"additionalHeaders"`
-	AdditionalQueryParams *QueryParams     `json:"additionalQueryParams"`
-	Version               *Version         `json:"version"`
-	Documentation         []*Documentation `json:"documentation"`
+	ID                    string       `json:"id"`
+	Spec                  *APISpec     `json:"spec"`
+	TargetURL             string       `json:"targetURL"`
+	Credential            *Credential  `json:"credential"`
+	AdditionalHeaders     *HttpHeaders `json:"additionalHeaders"`
+	AdditionalQueryParams *QueryParams `json:"additionalQueryParams"`
+	Version               *Version     `json:"version"`
 }
 
 type APIDefinitionInput struct {
-	TargetURL         string                `json:"targetURL"`
-	Credential        *CredentialInput      `json:"credential"`
-	Spec              *APISpecInput         `json:"spec"`
-	InjectHeaders     *HttpHeaders          `json:"injectHeaders"`
-	InjectQueryParams *QueryParams          `json:"injectQueryParams"`
-	Documentation     []*DocumentationInput `json:"documentation"`
+	TargetURL         string           `json:"targetURL"`
+	Credential        *CredentialInput `json:"credential"`
+	Spec              *APISpecInput    `json:"spec"`
+	InjectHeaders     *HttpHeaders     `json:"injectHeaders"`
+	InjectQueryParams *QueryParams     `json:"injectQueryParams"`
 }
 
 type APISpec struct {
@@ -48,8 +46,9 @@ type APISpecInput struct {
 
 type Application struct {
 	ID             string                `json:"id"`
-	Name           string                `json:"name"`
 	Tenant         Tenant                `json:"tenant"`
+	Name           string                `json:"name"`
+	DisplayName    string                `json:"displayName"`
 	Description    *string               `json:"description"`
 	Labels         Labels                `json:"labels"`
 	Annotations    Annotations           `json:"annotations"`
@@ -58,7 +57,7 @@ type Application struct {
 	HealthCheckURL *string               `json:"healthCheckURL"`
 	Apis           []*APIDefinition      `json:"apis"`
 	EventAPIs      []*EventAPIDefinition `json:"eventAPIs"`
-	Documentation  []*Documentation      `json:"documentation"`
+	Documents      []*Document           `json:"documents"`
 }
 
 type ApplicationInput struct {
@@ -70,6 +69,7 @@ type ApplicationInput struct {
 	HealthCheckURL *string                    `json:"healthCheckURL"`
 	Apis           []*APIDefinitionInput      `json:"apis"`
 	Events         []*EventDefinitionInput    `json:"events"`
+	Documents      []*DocumentInput           `json:"documents"`
 }
 
 type ApplicationStatus struct {
@@ -135,38 +135,34 @@ type CredentialRequestAuthInput struct {
 	Csrf *CSRFTokenCredentialRequestAuthInput `json:"csrf"`
 }
 
-type Documentation struct {
-	ID          string              `json:"id"`
-	Title       string              `json:"title"`
-	DisplayName string              `json:"displayName"`
-	Description string              `json:"description"`
-	Format      DocumentationFormat `json:"format"`
+type Document struct {
+	ID     string         `json:"id"`
+	Title  string         `json:"title"`
+	Format DocumentFormat `json:"format"`
 	// for example Service Class, API etc
 	Kind         *string       `json:"kind"`
 	Data         *string       `json:"data"`
 	FetchRequest *FetchRequest `json:"fetchRequest"`
 }
 
-type DocumentationInput struct {
-	Title        string              `json:"title"`
-	DisplayName  string              `json:"displayName"`
-	Description  string              `json:"description"`
-	Format       DocumentationFormat `json:"format"`
-	Kind         *string             `json:"kind"`
-	Data         *string             `json:"data"`
-	FetchRequest *FetchRequestInput  `json:"fetchRequest"`
+type DocumentInput struct {
+	Title        string             `json:"title"`
+	DisplayName  string             `json:"displayName"`
+	Description  string             `json:"description"`
+	Format       DocumentFormat     `json:"format"`
+	Kind         *string            `json:"kind"`
+	Data         *string            `json:"data"`
+	FetchRequest *FetchRequestInput `json:"fetchRequest"`
 }
 
 type EventAPIDefinition struct {
-	ID            string           `json:"id"`
-	Spec          *EventSpec       `json:"spec"`
-	Version       *Version         `json:"version"`
-	Documentation []*Documentation `json:"documentation"`
+	ID      string     `json:"id"`
+	Spec    *EventSpec `json:"spec"`
+	Version *Version   `json:"version"`
 }
 
 type EventDefinitionInput struct {
-	Spec          *EventSpecInput       `json:"spec"`
-	Documentation []*DocumentationInput `json:"documentation"`
+	Spec *EventSpecInput `json:"spec"`
 }
 
 type EventSpec struct {
@@ -429,42 +425,42 @@ func (e CredentialRequestAuthType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-type DocumentationFormat string
+type DocumentFormat string
 
 const (
-	DocumentationFormatMarkdown DocumentationFormat = "MARKDOWN"
+	DocumentFormatMarkdown DocumentFormat = "MARKDOWN"
 )
 
-var AllDocumentationFormat = []DocumentationFormat{
-	DocumentationFormatMarkdown,
+var AllDocumentFormat = []DocumentFormat{
+	DocumentFormatMarkdown,
 }
 
-func (e DocumentationFormat) IsValid() bool {
+func (e DocumentFormat) IsValid() bool {
 	switch e {
-	case DocumentationFormatMarkdown:
+	case DocumentFormatMarkdown:
 		return true
 	}
 	return false
 }
 
-func (e DocumentationFormat) String() string {
+func (e DocumentFormat) String() string {
 	return string(e)
 }
 
-func (e *DocumentationFormat) UnmarshalGQL(v interface{}) error {
+func (e *DocumentFormat) UnmarshalGQL(v interface{}) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = DocumentationFormat(str)
+	*e = DocumentFormat(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid DocumentationFormat", str)
+		return fmt.Errorf("%s is not a valid DocumentFormat", str)
 	}
 	return nil
 }
 
-func (e DocumentationFormat) MarshalGQL(w io.Writer) {
+func (e DocumentFormat) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

@@ -12,7 +12,7 @@ scalar HttpHeaders # -> map[string][]string
 
 scalar QueryParams # -> map[string][]string
 
-scalar Clob # TBD
+scalar CLOB # TBD
 
 # Runtime
 
@@ -22,11 +22,10 @@ type Runtime {
     description: String
     tenant: Tenant!
     labels(key: String): Labels!
-    annotations: Annotations!
+    annotations(key: String): Annotations!
     status: RuntimeStatus!
     """directive for checking auth"""
     agentCredential: Credential!
-
 }
 
 type RuntimeStatus {
@@ -44,17 +43,18 @@ enum RuntimeStatusCondition {
 
 type Application {
     id: ID!
-    name: String!
     tenant: Tenant!
+    name: String!
+    displayName: String!
     description: String
     labels(key: String): Labels!
-    annotations: Annotations!
+    annotations(key: String): Annotations!
     status: ApplicationStatus!
     webhooks: [ApplicationWebhook!]!
     healthCheckURL: String
     apis: [APIDefinition!]!
     eventAPIs: [EventAPIDefinition!]!
-    documentation: [Documentation!]!
+    documents: [Document!]!
 }
 
 type ApplicationStatus {
@@ -105,7 +105,7 @@ type APIDefinition {
 
 type APISpec {
     """when fetch request specified, data will be automatically populated"""
-    data: Clob
+    data: CLOB
     format: SpecFormat
     type: APISpecType!
     fetchRequest: FetchRequest
@@ -134,27 +134,25 @@ type EventAPIDefinition {
 }
 
 type EventSpec {
-    data: Clob
+    data: CLOB
     type: EventSpecType!
     format: SpecFormat
     fetchRequest: FetchRequest
 }
 
-# Documentation
+# Document
 
-type Documentation {
+type Document {
     id: ID!
     title: String!
-    displayName: String!
-    description: String!
-    format: DocumentationFormat!
+    format: DocumentFormat!
     """for example Service Class, API etc"""
     kind: String
-    data: Clob
+    data: CLOB
     fetchRequest: FetchRequest
 }
 
-enum DocumentationFormat {
+enum DocumentFormat {
     MARKDOWN
 }
 
@@ -251,7 +249,7 @@ input ApplicationInput {
     healthCheckURL: String
     apis: [APIDefinitionInput!]
     events: [EventDefinitionInput!]
-    documentation: [DocumentationInput!]
+    documents: [DocumentInput!]
 }
 
 # Runtime Input
@@ -291,7 +289,7 @@ input APIDefinitionInput {
 }
 
 input APISpecInput {
-    data: Clob
+    data: CLOB
     apiSpecType: APISpecType!
     fetchRequest: FetchRequestInput
 }
@@ -303,20 +301,20 @@ input EventDefinitionInput {
 }
 
 input EventSpecInput {
-    data: Clob
+    data: CLOB
     eventSpecType: EventSpecType!
     fetchRequest: FetchRequestInput
 }
 
-# Documentation Input
+# Document Input
 
-input DocumentationInput {
+input DocumentInput {
     title: String!
     displayName: String!
     description: String!
-    format: DocumentationFormat!
+    format: DocumentFormat!
     kind: String
-    data: Clob
+    data: CLOB
     fetchRequest: FetchRequestInput
 }
 
@@ -355,7 +353,6 @@ input BasicCredentialDataInput {
 
 # HealthCheck Input
 
-
 enum FilterOperator {
     ALL, ANY
 }
@@ -373,9 +370,8 @@ type Query {
     runtimes(filter: [LabelFilter!]): [Runtime!]!
     runtime(id: ID!): Runtime
 
-    healthChecks(types: [HealthCheckType], originID: ID): [HealthCheck!]!
-    labels(key: String): [String!]!
-
+    healthChecks(types: [HealthCheckType!], origin: ID): [HealthCheck!]!
+    labels(key: String!): [String!]! #TODO: Do we need query for all labels for apps and runtimes?
 }
 
 type Mutation {
@@ -413,11 +409,10 @@ type Mutation {
     updateRuntime(id: ID!, in: RuntimeInput!): Runtime!
     deleteRuntime(id: ID!): Runtime
 
-    addRuntimeLabel(runtimeID: ID!, label: String!, values: [String!]!): [String!]!
-    deleteRuntimeLabel(id: ID!, label: String! ,values: [String!]!): [String!]!
+    addRuntimeLabel(runtimeID: ID!, key: String!, values: [String!]!): [String!]!
+    deleteRuntimeLabel(id: ID!, key: String!, values: [String!]!): [String!]
 
-    addRuntimeAnnotation(runtimeID: ID!, annotation: String!, value: String!): String!
-    deleteRuntimeAnnotation(id: ID!, annotation: String!): String!
-
+    addRuntimeAnnotation(runtimeID: ID!, key: String!, value: String!): String!
+    deleteRuntimeAnnotation(id: ID!, key: String!): String
 }
 
