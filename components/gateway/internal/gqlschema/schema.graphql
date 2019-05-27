@@ -24,7 +24,7 @@ type Runtime {
     labels(key: String): Labels!
     annotations: Annotations!
     status: RuntimeStatus!
-    # directive for checking auth
+    """directive for checking auth"""
     agentCredential: Credential!
 
 }
@@ -83,10 +83,13 @@ enum ApplicationWebhookType {
 # API
 
 type Version {
-    value: String! # for example 4.6
+    """for example 4.6"""
+    value: String!
     deprecated: Boolean
-    deprecatedSince: String # for example 4.5
-    forRemoval: Boolean # if true, will be removed in the next version
+    """for example 4.5"""
+    deprecatedSince: String
+    """if true, will be removed in the next version"""
+    forRemoval: Boolean
 
 }
 
@@ -102,7 +105,7 @@ type APIDefinition {
 }
 
 type APISpec {
-    # when fetch request specified, data will be automatically populated
+    """when fetch request specified, data will be automatically populated"""
     data: Clob
     format: SpecFormat
     type: APISpecType!
@@ -147,7 +150,8 @@ type Documentation {
     displayName: String!
     description: String!
     format: DocumentationFormat!
-    kind: String   # for example Service Class, API etc
+    """for example Service Class, API etc"""
+    kind: String
     data: Clob
     fetchRequest: FetchRequest
 }
@@ -157,15 +161,12 @@ enum DocumentationFormat {
 }
 
 
-# FetchRequest
-# Compass performs fetch to validate if request is correct and stores a copy.
-# Every runtime fetches data on their own.
+""" Compass performs fetch to validate if request is correct and stores a copy"""
 type FetchRequest {
     url: String!
     credential: Credential
     mode: FetchMode
     filter: String
-    # status from Compass perspective
     status: FetchRequestStatus!
 }
 

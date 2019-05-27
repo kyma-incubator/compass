@@ -8,28 +8,34 @@ import (
 	"strconv"
 )
 
-type API struct {
-	ID                string           `json:"id"`
-	Spec              *APISpec         `json:"spec"`
-	TargetURL         string           `json:"targetURL"`
-	Credential        *Credential      `json:"credential"`
-	InjectHeaders     *HttpHeaders     `json:"injectHeaders"`
-	InjectQueryParams *QueryParams     `json:"injectQueryParams"`
-	Version           *Version         `json:"version"`
-	Documentations    []*Documentation `json:"documentations"`
+type CredentialData interface {
+	IsCredentialData()
 }
 
-type APIInput struct {
+type APIDefinition struct {
+	ID                    string           `json:"id"`
+	Spec                  *APISpec         `json:"spec"`
+	TargetURL             string           `json:"targetURL"`
+	Credential            *Credential      `json:"credential"`
+	AdditionalHeaders     *HttpHeaders     `json:"additionalHeaders"`
+	AdditionalQueryParams *QueryParams     `json:"additionalQueryParams"`
+	Version               *Version         `json:"version"`
+	Documentation         []*Documentation `json:"documentation"`
+}
+
+type APIDefinitionInput struct {
 	TargetURL         string                `json:"targetURL"`
 	Credential        *CredentialInput      `json:"credential"`
 	Spec              *APISpecInput         `json:"spec"`
 	InjectHeaders     *HttpHeaders          `json:"injectHeaders"`
 	InjectQueryParams *QueryParams          `json:"injectQueryParams"`
-	Documentations    []*DocumentationInput `json:"documentations"`
+	Documentation     []*DocumentationInput `json:"documentation"`
 }
 
 type APISpec struct {
+	// when fetch request specified, data will be automatically populated
 	Data         *string       `json:"data"`
+	Format       *SpecFormat   `json:"format"`
 	Type         APISpecType   `json:"type"`
 	FetchRequest *FetchRequest `json:"fetchRequest"`
 }
@@ -50,8 +56,9 @@ type Application struct {
 	Status         *ApplicationStatus    `json:"status"`
 	Webhooks       []*ApplicationWebhook `json:"webhooks"`
 	HealthCheckURL *string               `json:"healthCheckURL"`
-	Apis           []*API                `json:"apis"`
-	Events         []*Event              `json:"events"`
+	Apis           []*APIDefinition      `json:"apis"`
+	EventAPIs      []*EventAPIDefinition `json:"eventAPIs"`
+	Documentation  []*Documentation      `json:"documentation"`
 }
 
 type ApplicationInput struct {
@@ -61,8 +68,8 @@ type ApplicationInput struct {
 	Annotations    *Annotations               `json:"annotations"`
 	Webhooks       []*ApplicationWebhookInput `json:"webhooks"`
 	HealthCheckURL *string                    `json:"healthCheckURL"`
-	Apis           []*APIInput                `json:"apis"`
-	Events         []*EventInput              `json:"events"`
+	Apis           []*APIDefinitionInput      `json:"apis"`
+	Events         []*EventDefinitionInput    `json:"events"`
 }
 
 type ApplicationStatus struct {
@@ -88,6 +95,8 @@ type BasicCredentialData struct {
 	Password string `json:"password"`
 }
 
+func (BasicCredentialData) IsCredentialData() {}
+
 type BasicCredentialDataInput struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -102,18 +111,11 @@ type CSRFTokenCredentialRequestAuthInput struct {
 }
 
 type Credential struct {
-	Data        *CredentialData        `json:"data"`
+	Data        CredentialData         `json:"data"`
 	RequestAuth *CredentialRequestAuth `json:"requestAuth"`
 }
 
-type CredentialData struct {
-	Type  CredentialDataType   `json:"type"`
-	Basic *BasicCredentialData `json:"basic"`
-	Oauth *OAuthCredentialData `json:"oauth"`
-}
-
 type CredentialDataInput struct {
-	Type  CredentialDataType        `json:"type"`
 	Basic *BasicCredentialDataInput `json:"basic"`
 	Oauth *OAuthCredentialDataInput `json:"oauth"`
 }
@@ -134,14 +136,15 @@ type CredentialRequestAuthInput struct {
 }
 
 type Documentation struct {
-	ID           string              `json:"id"`
-	Title        string              `json:"title"`
-	DisplayName  string              `json:"displayName"`
-	Description  string              `json:"description"`
-	Format       DocumentationFormat `json:"format"`
-	Kind         *string             `json:"kind"`
-	Data         *string             `json:"data"`
-	FetchRequest *FetchRequest       `json:"fetchRequest"`
+	ID          string              `json:"id"`
+	Title       string              `json:"title"`
+	DisplayName string              `json:"displayName"`
+	Description string              `json:"description"`
+	Format      DocumentationFormat `json:"format"`
+	// for example Service Class, API etc
+	Kind         *string       `json:"kind"`
+	Data         *string       `json:"data"`
+	FetchRequest *FetchRequest `json:"fetchRequest"`
 }
 
 type DocumentationInput struct {
@@ -154,21 +157,22 @@ type DocumentationInput struct {
 	FetchRequest *FetchRequestInput  `json:"fetchRequest"`
 }
 
-type Event struct {
-	ID             string           `json:"id"`
-	Spec           *EventSpec       `json:"spec"`
-	Version        *Version         `json:"version"`
-	Documentations []*Documentation `json:"documentations"`
+type EventAPIDefinition struct {
+	ID            string           `json:"id"`
+	Spec          *EventSpec       `json:"spec"`
+	Version       *Version         `json:"version"`
+	Documentation []*Documentation `json:"documentation"`
 }
 
-type EventInput struct {
-	Spec           *EventSpecInput       `json:"spec"`
-	Documentations []*DocumentationInput `json:"documentations"`
+type EventDefinitionInput struct {
+	Spec          *EventSpecInput       `json:"spec"`
+	Documentation []*DocumentationInput `json:"documentation"`
 }
 
 type EventSpec struct {
 	Data         *string       `json:"data"`
 	Type         EventSpecType `json:"type"`
+	Format       *SpecFormat   `json:"format"`
 	FetchRequest *FetchRequest `json:"fetchRequest"`
 }
 
@@ -178,6 +182,7 @@ type EventSpecInput struct {
 	FetchRequest  *FetchRequestInput `json:"fetchRequest"`
 }
 
+//  Compass performs fetch to validate if request is correct and stores a copy
 type FetchRequest struct {
 	URL        string              `json:"url"`
 	Credential *Credential         `json:"credential"`
@@ -187,9 +192,9 @@ type FetchRequest struct {
 }
 
 type FetchRequestInput struct {
-	URL        *string          `json:"url"`
+	URL        string           `json:"url"`
 	Credential *CredentialInput `json:"credential"`
-	Mode       *FetchMode       `json:"mode"`
+	Mode       FetchMode        `json:"mode"`
 	Filter     *string          `json:"filter"`
 }
 
@@ -218,6 +223,8 @@ type OAuthCredentialData struct {
 	URL          string `json:"url"`
 }
 
+func (OAuthCredentialData) IsCredentialData() {}
+
 type OAuthCredentialDataInput struct {
 	ClientID     string `json:"clientId"`
 	ClientSecret string `json:"clientSecret"`
@@ -225,14 +232,15 @@ type OAuthCredentialDataInput struct {
 }
 
 type Runtime struct {
-	ID              string         `json:"id"`
-	Name            string         `json:"name"`
-	Description     *string        `json:"description"`
-	Tenant          Tenant         `json:"tenant"`
-	Labels          Labels         `json:"labels"`
-	Annotations     Annotations    `json:"annotations"`
-	Status          *RuntimeStatus `json:"status"`
-	AgentCredential *Credential    `json:"agentCredential"`
+	ID          string         `json:"id"`
+	Name        string         `json:"name"`
+	Description *string        `json:"description"`
+	Tenant      Tenant         `json:"tenant"`
+	Labels      Labels         `json:"labels"`
+	Annotations Annotations    `json:"annotations"`
+	Status      *RuntimeStatus `json:"status"`
+	// directive for checking auth
+	AgentCredential *Credential `json:"agentCredential"`
 }
 
 type RuntimeInput struct {
@@ -248,10 +256,13 @@ type RuntimeStatus struct {
 }
 
 type Version struct {
+	// for example 4.6
 	Value      string `json:"value"`
 	Deprecated *bool  `json:"deprecated"`
-	Since      string `json:"since"`
-	ForRemoval *bool  `json:"forRemoval"`
+	// for example 4.5
+	DeprecatedSince *string `json:"deprecatedSince"`
+	// if true, will be removed in the next version
+	ForRemoval *bool `json:"forRemoval"`
 }
 
 type APISpecType string
@@ -376,47 +387,6 @@ func (e *ApplicationWebhookType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e ApplicationWebhookType) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type CredentialDataType string
-
-const (
-	CredentialDataTypeBasic CredentialDataType = "BASIC"
-	CredentialDataTypeOauth CredentialDataType = "OAUTH"
-)
-
-var AllCredentialDataType = []CredentialDataType{
-	CredentialDataTypeBasic,
-	CredentialDataTypeOauth,
-}
-
-func (e CredentialDataType) IsValid() bool {
-	switch e {
-	case CredentialDataTypeBasic, CredentialDataTypeOauth:
-		return true
-	}
-	return false
-}
-
-func (e CredentialDataType) String() string {
-	return string(e)
-}
-
-func (e *CredentialDataType) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = CredentialDataType(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid CredentialDataType", str)
-	}
-	return nil
-}
-
-func (e CredentialDataType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -784,5 +754,46 @@ func (e *RuntimeStatusCondition) UnmarshalGQL(v interface{}) error {
 }
 
 func (e RuntimeStatusCondition) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type SpecFormat string
+
+const (
+	SpecFormatYaml SpecFormat = "YAML"
+	SpecFormatJSON SpecFormat = "JSON"
+)
+
+var AllSpecFormat = []SpecFormat{
+	SpecFormatYaml,
+	SpecFormatJSON,
+}
+
+func (e SpecFormat) IsValid() bool {
+	switch e {
+	case SpecFormatYaml, SpecFormatJSON:
+		return true
+	}
+	return false
+}
+
+func (e SpecFormat) String() string {
+	return string(e)
+}
+
+func (e *SpecFormat) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = SpecFormat(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid SpecFormat", str)
+	}
+	return nil
+}
+
+func (e SpecFormat) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
