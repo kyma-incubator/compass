@@ -101,7 +101,6 @@ type APIDefinition {
     additionalHeaders: HttpHeaders #
     additionalQueryParams: QueryParams
     version: Version
-    documentation: [Documentation!]!
 }
 
 type APISpec {
@@ -132,7 +131,6 @@ type EventAPIDefinition {
     id: ID!
     spec: EventSpec!
     version: Version
-    documentation: [Documentation!]!
 }
 
 type EventSpec {
@@ -253,6 +251,7 @@ input ApplicationInput {
     healthCheckURL: String
     apis: [APIDefinitionInput!]
     events: [EventDefinitionInput!]
+    documentation: [DocumentationInput!]
 }
 
 # Runtime Input
@@ -289,7 +288,6 @@ input APIDefinitionInput {
     spec: APISpecInput
     injectHeaders: HttpHeaders
     injectQueryParams: QueryParams
-    documentation: [DocumentationInput!]
 }
 
 input APISpecInput {
@@ -302,7 +300,6 @@ input APISpecInput {
 
 input EventDefinitionInput {
     spec: EventSpecInput
-    documentation: [DocumentationInput!]
 }
 
 input EventSpecInput {

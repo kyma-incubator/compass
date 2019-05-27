@@ -28,12 +28,6 @@ mutation {
                         apiSpecType: OPEN_API,
                         data: "",
                     },
-                    documentation: [{
-                        description: "",
-                        displayName: "",
-                        format: MARKDOWN,
-                        title: "",
-                    }],
                 }
             ],
             events: [

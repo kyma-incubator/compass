@@ -64,15 +64,6 @@ query {
                 deprecatedSince
                 forRemoval
             }
-            documentation {
-                id
-                title
-                displayName
-                description
-                format
-                kind
-                data
-            }
         }
         eventAPIs {
             id
@@ -99,9 +90,6 @@ query {
             }
             version {
                 value
-            }
-            documentation {
-                id
             }
         }
     }
