@@ -7,11 +7,11 @@ This document discusses how to upload files using graphql and suggests how to ha
 Vanilla graphql does not support uploading files. However, you can use one of the following workarounds:
 - Multipart Request Spec implemented in gqlgen library
 - Base64 data encoding
-- Middleware which handles file uploading
+- Middleware which handles uploading files
 
 ## Upload files with gqlgen 0.9.0 library
 
-1. Use the following schema.graphql:
+1. Use the following `schema.graphql`:
 ```graphql
 # The `Upload` scalar type represents a multipart file upload.
 # It is already implemented in gqlgen library, so we can use it straight away.
@@ -65,8 +65,7 @@ func (r *queryResolver) Anything(ctx context.Context) (*string,error){
 
 3. Configure the resolvers:
 
-To make your server recognize that resolver, attach it inside the `main` function. \
-You can also set some additional parameters, such as `UploadMaxMemory` or `UploadMaxSize`.
+To make your server recognize that resolver, attach it inside the `main` function. You can also set some additional parameters, such as `UploadMaxMemory` or `UploadMaxSize`.
 
 ```go
 	exec := fileupload.NewExecutableSchema(fileupload.Config{Resolvers: &fileupload.Resolver{}})
@@ -87,7 +86,7 @@ curl localhost:8080/query \
   -F map='{ "0": ["variables.file"] }' \
   -F 0=@${FILEPATH}
 ```
-For more examples of file uploading using gqlgen library, go to the reference links section.
+For more examples of how to upload files using gqlgen library, go to the reference links section.
 
 ## Improvement proposal
 
@@ -113,7 +112,7 @@ That approach gives the end-user more flexibility on how to upload the data.
 
 ## Reference links
 
-- [An article about file upload possibilities](https://medium.freecodecamp.org/how-to-manage-file-uploads-in-graphql-mutations-using-apollo-graphene-b48ed6a6498c)
+- [An article about the possible ways of uploading files](https://medium.freecodecamp.org/how-to-manage-file-uploads-in-graphql-mutations-using-apollo-graphene-b48ed6a6498c)
 - [GraphQL multipart request specification](https://github.com/jaydenseric/graphql-multipart-request-spec)
 - [gqlgen 0.9.0 library](https://github.com/99designs/gqlgen/tree/v0.9.0)
 - [gqlgen file upload example](https://github.com/99designs/gqlgen/tree/v0.9.0/example/fileupload)
