@@ -91,7 +91,7 @@ curl localhost:8080/query \
 ```
 For more examples check reference links section.
 
-### Improvement proposal
+## Improvement proposal
 
 We should support multiple ways of uploading large amounts of data (for example documentation).
 The `Clob` type, which is to be defined, could look as follows:
