@@ -1,7 +1,7 @@
 mutation {
     createAPI(applicationID: "123", in: {
         targetURL: "",
-        spec: {type: OPEN_API,
+        spec: {apiSpecType: OPEN_API,
             data: ""}
     }) {
         id
@@ -9,7 +9,7 @@ mutation {
 
     updateAPI(id:"456", in: {
         targetURL: "",
-        spec: {type: OPEN_API,
+        spec: {apiSpecType: OPEN_API,
             data: ""}
     }) {
         id

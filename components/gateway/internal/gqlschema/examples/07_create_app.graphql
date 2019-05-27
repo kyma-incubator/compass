@@ -25,7 +25,7 @@ mutation {
                     injectHeaders: "",
                     injectQueryParams: "",
                     spec: {
-                        type: OPEN_API,
+                        apiSpecType: OPEN_API,
                         data: "",
                     },
                     documentations: [{
@@ -38,7 +38,9 @@ mutation {
             ],
             events: [
                 {
-                    type: ASYNC_API,
+                    spec: {
+                        eventSpecType: ASYNC_API
+                    }
 
                 }
             ]

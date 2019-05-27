@@ -1,8 +1,9 @@
 mutation {
     createEvent(applicationID: "123",in:  {
-        type: ASYNC_API,
-        data: "",
-
+        spec: {
+            data: ""
+            eventSpecType: ASYNC_API,
+        }
     }) {
         id
     }
@@ -13,8 +14,10 @@ mutation {
 
 
     updateEvent(id: 456, in:{
-        type: ASYNC_API,
-        data: "",
+        spec: {
+            eventSpecType: ASYNC_API,
+            data: "",
+        }
     }) {
         id
     }

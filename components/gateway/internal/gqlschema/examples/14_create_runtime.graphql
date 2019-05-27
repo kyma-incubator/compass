@@ -1,27 +1,27 @@
 mutation {
-  createRuntime(in: {
-    name: "name",
-    labels: "",
-    annotations: "",
-    agentCredential: {
-      data: {
-        type: OAUTH
-        oauth: {
-          clientId: "clientid"
-          clientSecret: "clientsecret"
-          url: "url.com"
+    createRuntime(in: {
+        name: "name",
+        labels: "",
+        annotations: "",
+    }){
+        id
+        name
+        agentCredential {
+            data {
+                type
+                oauth {
+                    clientId
+                    clientSecret
+                    url
+                }
+            }
+            requestAuth {
+                type
+                csrf {
+                    token
+                }
+            }
         }
-      }
-      requestAuth: {
-        type: CSRF_TOKEN
-        csrf: {
-          token: "token"
-        }
-      }
+        # ...
     }
-  }){
-    id
-    name
-    # ...
-  }
 }
