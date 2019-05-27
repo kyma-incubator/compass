@@ -115,7 +115,7 @@ That approach gives the end-user more flexibility on how to upload the data.
 
 #### Reference links
 
-- [Article about file upload possibilities](https://medium.freecodecamp.org/how-to-manage-file-uploads-in-graphql-mutations-using-apollo-graphene-b48ed6a6498c)
+- [An article about file upload possibilities](https://medium.freecodecamp.org/how-to-manage-file-uploads-in-graphql-mutations-using-apollo-graphene-b48ed6a6498c)
 - [GraphQL multipart request specification](https://github.com/jaydenseric/graphql-multipart-request-spec)
 - [gqlgen 0.9.0 library](https://github.com/99designs/gqlgen/tree/v0.9.0)
 - [gqlgen file upload example](https://github.com/99designs/gqlgen/tree/v0.9.0/example/fileupload)
