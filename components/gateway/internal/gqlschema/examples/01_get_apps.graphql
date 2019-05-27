@@ -21,12 +21,12 @@ query {
             url
             credential {
                 data {
-                    type
-                    basic {
+                    __typename
+                   ... on BasicCredentialData {
                         username
                         password
                     }
-                    oauth {
+                    ... on OAuthCredentialData {
                         clientId
                         clientSecret
                         url
@@ -35,7 +35,7 @@ query {
             }
         }
         healthCheckURL
-        apis {
+        apiDefinitions {
             id
             targetURL
             credential {
@@ -47,15 +47,15 @@ query {
                 type
                 data
             }
-            injectHeaders
-            injectQueryParams
+            additionalHeaders
+            additionalQueryParams
             version {
                 value
                 deprecated
-                since
+                deprecatedSince
                 forRemoval
             }
-            documentations {
+            documentation {
                 id
                 title
                 displayName
@@ -65,7 +65,7 @@ query {
                 data
             }
         }
-        events {
+        eventDefinitions {
             id
             spec {
                 type
@@ -86,7 +86,7 @@ query {
             version {
                 value
             }
-            documentations {
+            documentation {
                 id
             }
         }

@@ -29,7 +29,7 @@ mutation {
                         apiSpecType: OPEN_API,
                         data: "",
                     },
-                    documentations: [{
+                    documentation: [{
                         description: "",
                         displayName: "",
                         format: MARKDOWN,

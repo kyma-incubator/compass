@@ -52,9 +52,9 @@ type Application {
     status: ApplicationStatus!
     webhooks: [ApplicationWebhook!]!
     healthCheckURL: String
-    apis: [API!]!
-    events: [Event!]!
-    # TODO docu: high-level
+    apiDefinitions: [APIDefinition!]!
+    eventDefinitions: [EventDefinition!]!
+    documentation: [Documentation!]!
 }
 
 type ApplicationStatus {
@@ -85,29 +85,33 @@ enum ApplicationWebhookType {
 type Version {
     value: String! # for example 4.6
     deprecated: Boolean
-    since: String! # for example 4.5 #TODO
+    deprecatedSince: String # for example 4.5
     forRemoval: Boolean # if true, will be removed in the next version
 
 }
 
-type API {
+type APIDefinition {
     id: ID!
     spec: APISpec!
     targetURL: String!
     credential: Credential
-    injectHeaders: HttpHeaders # TODO additionalHeaders
-    injectQueryParams: QueryParams
+    additionalHeaders: HttpHeaders #
+    additionalQueryParams: QueryParams
     version: Version
-    documentations: [Documentation!]! # TODO documantations is incorrect
-
+    documentation: [Documentation!]!
 }
 
 type APISpec {
     # when fetch request specified, data will be automatically populated
     data: Clob
-    # format:  TODO yaml, json
+    format: SpecFormat
     type: APISpecType!
     fetchRequest: FetchRequest
+}
+
+enum SpecFormat {
+    YAML,
+    JSON
 }
 
 enum APISpecType {
@@ -121,16 +125,17 @@ enum EventSpecType {
 
 # Event
 
-type Event {
+type EventDefinition {
     id: ID!
     spec: EventSpec!
     version: Version
-    documentations: [Documentation!]!
+    documentation: [Documentation!]!
 }
 
 type EventSpec {
     data: Clob
     type: EventSpecType!
+    format: SpecFormat
     fetchRequest: FetchRequest
 }
 
@@ -144,7 +149,7 @@ type Documentation {
     format: DocumentationFormat!
     kind: String   # for example Service Class, API etc
     data: Clob
-    fetchRequest: FetchRequest # TODO how fetching is performed: CR in mgmt plane?
+    fetchRequest: FetchRequest
 }
 
 enum DocumentationFormat {
@@ -153,12 +158,14 @@ enum DocumentationFormat {
 
 
 # FetchRequest
-
+# Compass performs fetch to validate if request is correct and stores a copy.
+# Every runtime fetches data on their own.
 type FetchRequest {
     url: String!
     credential: Credential
     mode: FetchMode
     filter: String
+    # status from Compass perspective
     status: FetchRequestStatus!
 }
 
@@ -180,22 +187,12 @@ enum FetchMode {
 }
 
 # Credential
-# TODO: input the same as now, output returns union
 type Credential {
     data: CredentialData!
     requestAuth: CredentialRequestAuth
 }
 
-type CredentialData {
-    type: CredentialDataType! #TODO consider removing type
-    basic: BasicCredentialData
-    oauth: OAuthCredentialData
-}
-
-enum CredentialDataType {
-    BASIC
-    OAUTH
-}
+union CredentialData = BasicCredentialData | OAuthCredentialData
 
 type OAuthCredentialData {
     clientId: ID!
@@ -222,7 +219,6 @@ type CSRFTokenCredentialRequestAuth {
 }
 
 # HealthCheck
-
 
 
 enum HealthCheckStatusCondition {
@@ -254,8 +250,8 @@ input ApplicationInput {
     annotations: Annotations
     webhooks: [ApplicationWebhookInput]
     healthCheckURL: String
-    apis: [APIInput!]
-    events: [EventInput!]
+    apis: [APIDefinitionInput!]
+    events: [EventDefinitionInput!]
 }
 
 # Runtime Input
@@ -286,13 +282,13 @@ input ApplicationWebhookInput {
 
 # API Input
 
-input APIInput {
+input APIDefinitionInput {
     targetURL: String!
     credential: CredentialInput
     spec: APISpecInput
     injectHeaders: HttpHeaders
     injectQueryParams: QueryParams
-    documentations: [DocumentationInput!]
+    documentation: [DocumentationInput!]
 }
 
 input APISpecInput {
@@ -303,9 +299,9 @@ input APISpecInput {
 
 # Event Input
 
-input EventInput {
+input EventDefinitionInput {
     spec: EventSpecInput
-    documentations: [DocumentationInput!]
+    documentation: [DocumentationInput!]
 }
 
 input EventSpecInput {
@@ -344,7 +340,6 @@ input CSRFTokenCredentialRequestAuthInput {
 }
 
 input CredentialDataInput {
-    type: CredentialDataType!
     basic: BasicCredentialDataInput
     oauth: OAuthCredentialDataInput
 }
@@ -364,13 +359,13 @@ input BasicCredentialDataInput {
 
 
 enum FilterOperator {
-    ALL, ANY #TODO default
+    ALL, ANY
 }
 
 input LabelFilter {
     label: String!
     values: [String!]!
-    operator: FilterOperator
+    operator: FilterOperator = ALL
 }
 
 type Query {
@@ -402,17 +397,17 @@ type Mutation {
     updateApplicationWebhook(webhookID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
     deleteApplicationWebhook(webhookID: ID!): ApplicationWebhook
 
-    addAPI(applicationID: ID!, in: APIInput!): API!
-    updateAPI(id: ID!, in: APIInput!): API!
-    deleteAPI(id: ID!): API
+    addAPI(applicationID: ID!, in: APIDefinitionInput!): APIDefinition!
+    updateAPI(id: ID!, in: APIDefinitionInput!): APIDefinition!
+    deleteAPI(id: ID!): APIDefinition
     refetchAPISpec(apiID: ID!): APISpec
 
     setAPICredential(apiID: ID!, in: CredentialInput!): Credential!
     deleteAPICredential(apiID: ID!): Credential
 
-    addEvent(applicationID: ID!, in: EventInput!): Event!
-    updateEvent(id: ID!, in: EventInput!): Event!
-    deleteEvent(id: ID!): Event
+    addEvent(applicationID: ID!, in: EventDefinitionInput!): EventDefinition!
+    updateEvent(id: ID!, in: EventDefinitionInput!): EventDefinition!
+    deleteEvent(id: ID!): EventDefinition
     refetchEventSpec(eventID: ID!): EventSpec
 
     # Runtime

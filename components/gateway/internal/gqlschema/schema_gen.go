@@ -1706,7 +1706,7 @@ enum FilterOperator {
 input LabelFilter {
     label: String!
     values: [String!]!
-    operator: FilterOperator
+    operator: FilterOperator = ALL
 }
 
 type Query {
@@ -7053,6 +7053,10 @@ func (ec *executionContext) unmarshalInputFetchRequestInput(ctx context.Context,
 func (ec *executionContext) unmarshalInputLabelFilter(ctx context.Context, v interface{}) (LabelFilter, error) {
 	var it LabelFilter
 	var asMap = v.(map[string]interface{})
+
+	if _, present := asMap["operator"]; !present {
+		asMap["operator"] = "ALL"
+	}
 
 	for k, v := range asMap {
 		switch k {
