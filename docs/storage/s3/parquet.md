@@ -5,19 +5,18 @@ Apache Parquet is a column-oriented data storage format, which could be used to 
 
 The whole structure on S3 would look like this:
 
-    ```
-    {tenant_id}/
-    ├── applications/
-    │   ├── {application_id}/
-    │   │  └── data.json
-    ├── runtimes/
-    │   ├── {application_id}/
-    │   │  └── data.json
-    └── db.parquet
-    ...
-    ```
+```
+{tenant_id}/
+├── applications/
+│   ├── {application_id}/
+│   │  └── data.json
+├── runtimes/
+│   ├── {application_id}/
+│   │  └── data.json
+└── db.parquet
+```
 
-To minimize the file, the `db.parquet` file would store all details regarding labels for runtimes and applications. We would do querys for:
+To minimize the file, the `db.parquet` file would store all details regarding labels for runtimes and applications. We would do queries for:
 - all labels
 - all applications with a specific label
 - all runtimes with a specific label
@@ -38,7 +37,7 @@ We could use similar approach to the one described [here](./README.md), by writi
 
     Very good compression. For example, if CSV file is as big as 1 TB, the data stored in Parquet file has 130 GB.
 
-1. **Good performance**
+1. **Good performance for reading data**
     
     Fetching specific column values doesn't need reading the entire raw data.
 
@@ -56,7 +55,7 @@ We could use similar approach to the one described [here](./README.md), by writi
 
     We could enable bucket files versioning (for example, in [GCS](https://cloud.google.com/storage/docs/gsutil/addlhelp/ObjectVersioningandConcurrencyControl)). However, we would need to implement a mechanism to always fetch the latest version of the file and retry saving until success.
  
-1. **Time-consuming operations related to labels**
+1. **Time-consuming operations**
 
     For example, every time the user adds an application to a group, we would need to download `parquet` file, modify it and then upload modified version. We can't implement caching as we always need latest version of this file, especially when we will use Cross-region replicas.
 

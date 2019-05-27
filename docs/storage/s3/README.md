@@ -135,6 +135,8 @@ Total calls: 1
 
 The following section describes a comparison between cloud-storage offerings, regarding the cross-region replication. All providers listed below have similiar offering, except the GCP, which has multi-region within only the same continent.
 
+We would like to create multiple replicas in different regions. For example, in the same time we would like to have three replicas in the following regions: Asia, Europe and USA.
+
 ### Google Cloud Platform
 
 We can create multi-regional GCS buckets, but this functionality is limited to the following options:
@@ -145,20 +147,22 @@ We can create multi-regional GCS buckets, but this functionality is limited to t
 - eur4 (Finland and Netherlands) 
 - nam4 (Iowa and South Carolina) 
 
-We cannot replicate a single bucket across multiple regions like Asia, USA and Europe.
+We cannot replicate a single bucket across multiple regions like Asia, USA and Europe. Therefore, it doesn't meet our requirements. 
 
 ### AWS S3
 
-Amazon has [Cross-region replication for S3 buckets](https://docs.aws.amazon.com/AmazonS3/latest/dev/crr.html). One bucket would be used to write, and others to read. It is limited to two regions at the same time (1:1 bucket mapping).
+Amazon has [Cross-region replication for S3 buckets](https://docs.aws.amazon.com/AmazonS3/latest/dev/crr.html). One bucket would be used to write, and others to read. It is limited to two regions at the same time (1:1 bucket mapping). It doesn't meet our requirements. 
 
 ### Azure Blob Storage
 
-On Microsoft Azure, there is available [Read-Access Geo-Redundant Storage (RA-GRS)](https://docs.microsoft.com/pl-pl/azure/storage/common/storage-redundancy), but it is limited to only two regions at the same time.
+On Microsoft Azure, there is available [Read-Access Geo-Redundant Storage (RA-GRS)](https://docs.microsoft.com/pl-pl/azure/storage/common/storage-redundancy), but it is limited to only two regions at the same time. In a result, it doesn't meet our requirements.
 
 ## Summary
 
 There are many [discussions](https://www.quora.com/How-can-we-use-Amazon-S3-as-a-database) whether using S3 as database is a good idea. It might work in some specific use cases, but generally it is not suggested to do so.
 
 In our case using S3 will make the Registry implementation much more difficult. Doing so many request per single read/write operation will mean that every request to the Registry will be slow - much slower than typical (No)SQL database.
+
+Also, the cross-region replication is very limited in the top cloud providers. There is no cloud provider from three investigated that meets our requirements.
 
 We should investigate database cloud solutions. In my opinion, in our use case, NoSQL database will fit more than SQL ones. We could investigate solutions such as [Cloud Firestone](https://cloud.google.com/firestore/) or [Amazon DynamoDB](https://aws.amazon.com/dynamodb/).
