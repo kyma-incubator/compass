@@ -87,7 +87,7 @@ enum ApplicationWebhookType {
     CONFIGURATION_CHANGED
 }
 
-# API #TODO: Make sure it's compatible with Kyma CMS
+# API
 
 type Version {
     value: String! # for example 4.6
@@ -110,17 +110,11 @@ type API {
 }
 
 type APISpec {
-    type: APISpecType!
-    data: Clob!
+    data: Documentation!
     fetchRequest: FetchRequest
 }
 
-enum APISpecType {
-    O_DATA
-    OPEN_API
-}
-
-# Event #TODO: Make sure it's compatible with Kyma CMS
+# Event
 
 type Event {
     id: ID!
@@ -130,16 +124,11 @@ type Event {
 }
 
 type EventSpec {
-    type: EventSpecType!
-    data: Clob!
+    data: Documentation!
     fetchRequest: FetchRequest
 }
 
-enum EventSpecType {
-    ASYNC_API
-}
-
-# Documentation #TODO: Make sure it's compatible with Kyma CMS
+# Documentation
 
 type Documentation {
     id: ID!
@@ -148,12 +137,16 @@ type Documentation {
     description: String!
     format: DocumentationFormat!
     kind: String   # for example Service Class, API etc
-    data: Clob
+    data: Clob!
     fetchRequest: FetchRequest
 }
 
 enum DocumentationFormat {
     MARKDOWN
+    O_DATA
+    OPEN_API
+    ASYNC_API
+
 }
 
 
