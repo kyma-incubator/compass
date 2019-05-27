@@ -8,8 +8,12 @@ mutation {
         name
         agentCredential {
             data {
-                type
-                oauth {
+                __typename
+                ... on BasicCredentialData {
+                    username
+                    password
+                }
+                ... on OAuthCredentialData {
                     clientId
                     clientSecret
                     url

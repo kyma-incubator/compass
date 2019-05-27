@@ -52,8 +52,8 @@ type Application {
     status: ApplicationStatus!
     webhooks: [ApplicationWebhook!]!
     healthCheckURL: String
-    apiDefinitions: [APIDefinition!]!
-    eventDefinitions: [EventDefinition!]!
+    apis: [APIDefinition!]!
+    eventAPIs: [EventAPIDefinition!]!
     documentation: [Documentation!]!
 }
 
@@ -125,7 +125,7 @@ enum EventSpecType {
 
 # Event
 
-type EventDefinition {
+type EventAPIDefinition {
     id: ID!
     spec: EventSpec!
     version: Version
@@ -266,9 +266,9 @@ input RuntimeInput {
 # FetchRequest Input
 
 input FetchRequestInput {
-    url: String
+    url: String!
     credential: CredentialInput
-    mode: FetchMode
+    mode: FetchMode! = SINGLE
     filter: String
 }
 
@@ -405,9 +405,9 @@ type Mutation {
     setAPICredential(apiID: ID!, in: CredentialInput!): Credential!
     deleteAPICredential(apiID: ID!): Credential
 
-    addEvent(applicationID: ID!, in: EventDefinitionInput!): EventDefinition!
-    updateEvent(id: ID!, in: EventDefinitionInput!): EventDefinition!
-    deleteEvent(id: ID!): EventDefinition
+    addEvent(applicationID: ID!, in: EventDefinitionInput!): EventAPIDefinition!
+    updateEvent(id: ID!, in: EventDefinitionInput!): EventAPIDefinition!
+    deleteEvent(id: ID!): EventAPIDefinition
     refetchEventSpec(eventID: ID!): EventSpec
 
     # Runtime

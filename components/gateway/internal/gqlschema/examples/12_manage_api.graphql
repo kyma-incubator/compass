@@ -19,21 +19,18 @@ mutation {
         id
     }
 
-    refetchAPISpec(id: 456) {
-        id
-        spec {
-            fetchRequest {
-                status {
-                    condition
-                    timestamp
-                }
+    refetchAPISpec(apiID: 456) {
+        fetchRequest {
+            status {
+                condition
+                timestamp
             }
         }
+
     }
 
     setAPICredential(apiID:  456, in: {
         data: {
-            type: BASIC
             basic: {
                 username: "aaa",
                 password: "bbb",
@@ -41,13 +38,13 @@ mutation {
         }
     })  {
         data {
-            type
+            __typename
         }
     }
 
     deleteAPICredential(apiID: 456) {
         data {
-            type
+            __typename
         }
     }
 

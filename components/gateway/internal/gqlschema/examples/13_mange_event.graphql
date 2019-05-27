@@ -22,15 +22,13 @@ mutation {
         id
     }
 
-    refetchEventSpec(id: 456) {
-        id
-        spec {
-            fetchRequest {
-                status {
-                    condition
-                    timestamp
-                }
+    refetchEventSpec(eventID: 456) {
+        fetchRequest {
+            status {
+                condition
+                timestamp
             }
         }
+
     }
 }

@@ -35,12 +35,21 @@ query {
             }
         }
         healthCheckURL
-        apiDefinitions {
+        apis {
             id
             targetURL
             credential {
                 data {
-                    type
+                    __typename
+                    ... on BasicCredentialData {
+                        username
+                        password
+                    }
+                    ... on OAuthCredentialData {
+                        clientId
+                        clientSecret
+                        url
+                    }
                 }
             }
             spec {
@@ -65,7 +74,7 @@ query {
                 data
             }
         }
-        eventDefinitions {
+        eventAPIs {
             id
             spec {
                 type
@@ -74,10 +83,15 @@ query {
                     url
                     credential {
                         data {
-                            type
-                            basic {
+                            __typename
+                            ... on BasicCredentialData {
                                 username
                                 password
+                            }
+                            ... on OAuthCredentialData {
+                                clientId
+                                clientSecret
+                                url
                             }
                         }
                     }
