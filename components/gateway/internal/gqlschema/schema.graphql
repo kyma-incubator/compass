@@ -105,13 +105,23 @@ type API {
     injectHeaders: HttpHeaders
     injectQueryParams: QueryParams
     version: Version
-    documentations: [Documentation!]
+    documentations: [Documentation!]!
 
 }
 
 type APISpec {
-    data: Documentation!
+    data: Clob
+    type: APISpecType!
     fetchRequest: FetchRequest
+}
+
+enum APISpecType {
+    ODATA,
+    OPEN_API
+}
+
+enum EventSpecType {
+    ASYNC_API
 }
 
 # Event
@@ -120,11 +130,12 @@ type Event {
     id: ID!
     spec: EventSpec!
     version: Version
-    documentations: [Documentation!]
+    documentations: [Documentation!]!
 }
 
 type EventSpec {
-    data: Documentation!
+    data: Clob
+    type: EventSpecType!
     fetchRequest: FetchRequest
 }
 
@@ -137,15 +148,12 @@ type Documentation {
     description: String!
     format: DocumentationFormat!
     kind: String   # for example Service Class, API etc
-    data: Clob!
+    data: Clob
     fetchRequest: FetchRequest
 }
 
 enum DocumentationFormat {
     MARKDOWN
-    O_DATA
-    OPEN_API
-    ASYNC_API
 }
 
 
@@ -154,9 +162,9 @@ enum DocumentationFormat {
 type FetchRequest {
     url: String!
     credential: Credential
-    status: FetchRequestStatus!
-    mode: Mode
+    mode: FetchMode
     filter: String
+    status: FetchRequestStatus!
 }
 
 type FetchRequestStatus {
@@ -170,7 +178,7 @@ enum FetchRequestStatusCondition {
     FAILED
 }
 
-enum Mode {
+enum FetchMode {
     SINGLE
     PACKAGE
     INDEX
@@ -269,7 +277,7 @@ input RuntimeInput {
 input FetchRequestInput {
     url: String
     credential: CredentialInput
-    mode: Mode
+    mode: FetchMode
     filter: String
 }
 
@@ -286,15 +294,15 @@ input ApplicationWebhookInput {
 input APIInput {
     targetURL: String!
     credential: CredentialInput
+    spec: APISpecInput
     injectHeaders: HttpHeaders
     injectQueryParams: QueryParams
     documentations: [DocumentationInput!]
-    spec: APISpecInput
-
 }
 
 input APISpecInput {
-    data: DocumentationInput!
+    data: Clob
+    apiSpecType: APISpecType!
     fetchRequest: FetchRequestInput
 }
 
@@ -306,7 +314,8 @@ input EventInput {
 }
 
 input EventSpecInput {
-    data: DocumentationInput!
+    data: Clob
+    eventSpecType: EventSpecType!
     fetchRequest: FetchRequestInput
 }
 
