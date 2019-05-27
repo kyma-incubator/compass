@@ -285,19 +285,20 @@ input APIInput {
 }
 
 input APISpecInput {
-    type: APISpecType!
-    data: Clob
-    # TODO: support all properties from ClusterDocsTopic
+    data: DocumentationInput!
     fetchRequest: FetchRequestInput
 }
 
 # Event Input
 
 input EventInput {
-    type: EventSpecType!
-    data: Clob
-    fetchRequest: FetchRequestInput
+    spec: EventSpecInput
     documentations: [DocumentationInput!]
+}
+
+input EventSpecInput {
+    data: DocumentationInput!
+    fetchRequest: FetchRequestInput
 }
 
 # Documentation Input
