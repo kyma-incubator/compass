@@ -1,5 +1,5 @@
 mutation {
-    createApplicationWebhook(applicationID: "123",in: {
+    addApplicationWebhook(applicationID: "123",in: {
         type: CONFIGURATION_CHANGED,
         url: "",
     }) {

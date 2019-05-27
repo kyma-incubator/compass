@@ -1,4 +1,4 @@
 mutation {
-    createRuntimeAnnotation(runtimeID: "123", annotation: "annotation", value: "value")
+    addRuntimeAnnotation(runtimeID: "123", annotation: "annotation", value: "value")
     deleteRuntimeAnnotation(id:"123", annotation: "annotation")
 }

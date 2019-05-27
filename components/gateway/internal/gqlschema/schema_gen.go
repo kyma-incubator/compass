@@ -136,6 +136,8 @@ type ComplexityRoot struct {
 
 	FetchRequest struct {
 		Credential func(childComplexity int) int
+		Filter     func(childComplexity int) int
+		Mode       func(childComplexity int) int
 		Status     func(childComplexity int) int
 		URL        func(childComplexity int) int
 	}
@@ -154,15 +156,15 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateAPI                   func(childComplexity int, applicationID string, in APIInput) int
+		AddAPI                      func(childComplexity int, applicationID string, in APIInput) int
+		AddApplicationAnnotation    func(childComplexity int, applicationID string, annotation string, value string) int
+		AddApplicationLabel         func(childComplexity int, applicationID string, label string, values []string) int
+		AddApplicationWebhook       func(childComplexity int, applicationID string, in ApplicationWebhookInput) int
+		AddEvent                    func(childComplexity int, applicationID string, in EventInput) int
+		AddRuntimeAnnotation        func(childComplexity int, runtimeID string, annotation string, value string) int
+		AddRuntimeLabel             func(childComplexity int, runtimeID string, label string, values []string) int
 		CreateApplication           func(childComplexity int, in ApplicationInput) int
-		CreateApplicationAnnotation func(childComplexity int, applicationID string, annotation string, value string) int
-		CreateApplicationLabel      func(childComplexity int, applicationID string, label string, values []string) int
-		CreateApplicationWebhook    func(childComplexity int, applicationID string, in ApplicationWebhookInput) int
-		CreateEvent                 func(childComplexity int, applicationID string, in EventInput) int
 		CreateRuntime               func(childComplexity int, in RuntimeInput) int
-		CreateRuntimeAnnotation     func(childComplexity int, runtimeID string, annotation string, value string) int
-		CreateRuntimeLabel          func(childComplexity int, runtimeID string, label string, values []string) int
 		DeleteAPI                   func(childComplexity int, id string) int
 		DeleteAPICredential         func(childComplexity int, apiID string) int
 		DeleteApplication           func(childComplexity int, id string) int
@@ -173,12 +175,12 @@ type ComplexityRoot struct {
 		DeleteRuntime               func(childComplexity int, id string) int
 		DeleteRuntimeAnnotation     func(childComplexity int, id string, annotation string) int
 		DeleteRuntimeLabel          func(childComplexity int, id string, label string, values []string) int
-		RefetchAPISpec              func(childComplexity int, id string) int
-		RefetchEventSpec            func(childComplexity int, id string) int
+		RefetchAPISpec              func(childComplexity int, apiID string) int
+		RefetchEventSpec            func(childComplexity int, eventID string) int
 		SetAPICredential            func(childComplexity int, apiID string, in CredentialInput) int
 		UpdateAPI                   func(childComplexity int, id string, in APIInput) int
 		UpdateApplication           func(childComplexity int, id string, in ApplicationInput) int
-		UpdateApplicationWebhook    func(childComplexity int, webhookID string, in *ApplicationWebhookInput) int
+		UpdateApplicationWebhook    func(childComplexity int, webhookID string, in ApplicationWebhookInput) int
 		UpdateEvent                 func(childComplexity int, id string, in EventInput) int
 		UpdateRuntime               func(childComplexity int, id string, in RuntimeInput) int
 	}
@@ -226,30 +228,30 @@ type MutationResolver interface {
 	CreateApplication(ctx context.Context, in ApplicationInput) (*Application, error)
 	UpdateApplication(ctx context.Context, id string, in ApplicationInput) (*Application, error)
 	DeleteApplication(ctx context.Context, id string) (*Application, error)
-	CreateApplicationLabel(ctx context.Context, applicationID string, label string, values []string) ([]string, error)
+	AddApplicationLabel(ctx context.Context, applicationID string, label string, values []string) ([]string, error)
 	DeleteApplicationLabel(ctx context.Context, applicationID string, label string, values []string) ([]string, error)
-	CreateApplicationAnnotation(ctx context.Context, applicationID string, annotation string, value string) (*string, error)
-	DeleteApplicationAnnotation(ctx context.Context, applicationID string, annotation string) (*bool, error)
-	CreateApplicationWebhook(ctx context.Context, applicationID string, in ApplicationWebhookInput) (*ApplicationWebhook, error)
-	UpdateApplicationWebhook(ctx context.Context, webhookID string, in *ApplicationWebhookInput) (*ApplicationWebhook, error)
+	AddApplicationAnnotation(ctx context.Context, applicationID string, annotation string, value string) (string, error)
+	DeleteApplicationAnnotation(ctx context.Context, applicationID string, annotation string) (*string, error)
+	AddApplicationWebhook(ctx context.Context, applicationID string, in ApplicationWebhookInput) (*ApplicationWebhook, error)
+	UpdateApplicationWebhook(ctx context.Context, webhookID string, in ApplicationWebhookInput) (*ApplicationWebhook, error)
 	DeleteApplicationWebhook(ctx context.Context, webhookID string) (*ApplicationWebhook, error)
-	CreateAPI(ctx context.Context, applicationID string, in APIInput) (*API, error)
+	AddAPI(ctx context.Context, applicationID string, in APIInput) (*API, error)
 	UpdateAPI(ctx context.Context, id string, in APIInput) (*API, error)
 	DeleteAPI(ctx context.Context, id string) (*API, error)
-	RefetchAPISpec(ctx context.Context, id string) (*API, error)
+	RefetchAPISpec(ctx context.Context, apiID string) (*APISpec, error)
 	SetAPICredential(ctx context.Context, apiID string, in CredentialInput) (*Credential, error)
 	DeleteAPICredential(ctx context.Context, apiID string) (*Credential, error)
-	CreateEvent(ctx context.Context, applicationID string, in EventInput) (*Event, error)
+	AddEvent(ctx context.Context, applicationID string, in EventInput) (*Event, error)
 	UpdateEvent(ctx context.Context, id string, in EventInput) (*Event, error)
 	DeleteEvent(ctx context.Context, id string) (*Event, error)
-	RefetchEventSpec(ctx context.Context, id string) (*Event, error)
+	RefetchEventSpec(ctx context.Context, eventID string) (*EventSpec, error)
 	CreateRuntime(ctx context.Context, in RuntimeInput) (*Runtime, error)
 	UpdateRuntime(ctx context.Context, id string, in RuntimeInput) (*Runtime, error)
 	DeleteRuntime(ctx context.Context, id string) (*Runtime, error)
-	CreateRuntimeLabel(ctx context.Context, runtimeID string, label string, values []string) ([]string, error)
+	AddRuntimeLabel(ctx context.Context, runtimeID string, label string, values []string) ([]string, error)
 	DeleteRuntimeLabel(ctx context.Context, id string, label string, values []string) ([]string, error)
-	CreateRuntimeAnnotation(ctx context.Context, runtimeID string, annotation string, value string) (*string, error)
-	DeleteRuntimeAnnotation(ctx context.Context, id string, annotation string) (*bool, error)
+	AddRuntimeAnnotation(ctx context.Context, runtimeID string, annotation string, value string) (string, error)
+	DeleteRuntimeAnnotation(ctx context.Context, id string, annotation string) (string, error)
 }
 type QueryResolver interface {
 	Applications(ctx context.Context, filer []*LabelFilter) ([]*Application, error)
@@ -257,7 +259,7 @@ type QueryResolver interface {
 	Runtimes(ctx context.Context, filter []*LabelFilter) ([]*Runtime, error)
 	Runtime(ctx context.Context, id string) (*Runtime, error)
 	HealthChecks(ctx context.Context, types []*HealthCheckType, originID *string) ([]*HealthCheck, error)
-	Labels(ctx context.Context, key *string) ([]*string, error)
+	Labels(ctx context.Context, key *string) ([]string, error)
 }
 
 type executableSchema struct {
@@ -658,6 +660,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.FetchRequest.Credential(childComplexity), true
 
+	case "FetchRequest.filter":
+		if e.complexity.FetchRequest.Filter == nil {
+			break
+		}
+
+		return e.complexity.FetchRequest.Filter(childComplexity), true
+
+	case "FetchRequest.mode":
+		if e.complexity.FetchRequest.Mode == nil {
+			break
+		}
+
+		return e.complexity.FetchRequest.Mode(childComplexity), true
+
 	case "FetchRequest.status":
 		if e.complexity.FetchRequest.Status == nil {
 			break
@@ -721,17 +737,89 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.HealthCheck.Type(childComplexity), true
 
-	case "Mutation.createAPI":
-		if e.complexity.Mutation.CreateAPI == nil {
+	case "Mutation.addAPI":
+		if e.complexity.Mutation.AddAPI == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_createAPI_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_addAPI_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateAPI(childComplexity, args["applicationID"].(string), args["in"].(APIInput)), true
+		return e.complexity.Mutation.AddAPI(childComplexity, args["applicationID"].(string), args["in"].(APIInput)), true
+
+	case "Mutation.addApplicationAnnotation":
+		if e.complexity.Mutation.AddApplicationAnnotation == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_addApplicationAnnotation_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddApplicationAnnotation(childComplexity, args["applicationID"].(string), args["annotation"].(string), args["value"].(string)), true
+
+	case "Mutation.addApplicationLabel":
+		if e.complexity.Mutation.AddApplicationLabel == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_addApplicationLabel_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddApplicationLabel(childComplexity, args["applicationID"].(string), args["label"].(string), args["values"].([]string)), true
+
+	case "Mutation.addApplicationWebhook":
+		if e.complexity.Mutation.AddApplicationWebhook == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_addApplicationWebhook_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddApplicationWebhook(childComplexity, args["applicationID"].(string), args["in"].(ApplicationWebhookInput)), true
+
+	case "Mutation.addEvent":
+		if e.complexity.Mutation.AddEvent == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_addEvent_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddEvent(childComplexity, args["applicationID"].(string), args["in"].(EventInput)), true
+
+	case "Mutation.addRuntimeAnnotation":
+		if e.complexity.Mutation.AddRuntimeAnnotation == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_addRuntimeAnnotation_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddRuntimeAnnotation(childComplexity, args["runtimeID"].(string), args["annotation"].(string), args["value"].(string)), true
+
+	case "Mutation.addRuntimeLabel":
+		if e.complexity.Mutation.AddRuntimeLabel == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_addRuntimeLabel_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddRuntimeLabel(childComplexity, args["runtimeID"].(string), args["label"].(string), args["values"].([]string)), true
 
 	case "Mutation.createApplication":
 		if e.complexity.Mutation.CreateApplication == nil {
@@ -745,54 +833,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateApplication(childComplexity, args["in"].(ApplicationInput)), true
 
-	case "Mutation.createApplicationAnnotation":
-		if e.complexity.Mutation.CreateApplicationAnnotation == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_createApplicationAnnotation_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.CreateApplicationAnnotation(childComplexity, args["applicationID"].(string), args["annotation"].(string), args["value"].(string)), true
-
-	case "Mutation.createApplicationLabel":
-		if e.complexity.Mutation.CreateApplicationLabel == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_createApplicationLabel_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.CreateApplicationLabel(childComplexity, args["applicationID"].(string), args["label"].(string), args["values"].([]string)), true
-
-	case "Mutation.createApplicationWebhook":
-		if e.complexity.Mutation.CreateApplicationWebhook == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_createApplicationWebhook_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.CreateApplicationWebhook(childComplexity, args["applicationID"].(string), args["in"].(ApplicationWebhookInput)), true
-
-	case "Mutation.createEvent":
-		if e.complexity.Mutation.CreateEvent == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_createEvent_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.CreateEvent(childComplexity, args["applicationID"].(string), args["in"].(EventInput)), true
-
 	case "Mutation.createRuntime":
 		if e.complexity.Mutation.CreateRuntime == nil {
 			break
@@ -804,30 +844,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.CreateRuntime(childComplexity, args["in"].(RuntimeInput)), true
-
-	case "Mutation.createRuntimeAnnotation":
-		if e.complexity.Mutation.CreateRuntimeAnnotation == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_createRuntimeAnnotation_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.CreateRuntimeAnnotation(childComplexity, args["runtimeID"].(string), args["annotation"].(string), args["value"].(string)), true
-
-	case "Mutation.createRuntimeLabel":
-		if e.complexity.Mutation.CreateRuntimeLabel == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_createRuntimeLabel_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.CreateRuntimeLabel(childComplexity, args["runtimeID"].(string), args["label"].(string), args["values"].([]string)), true
 
 	case "Mutation.deleteAPI":
 		if e.complexity.Mutation.DeleteAPI == nil {
@@ -959,7 +975,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.RefetchAPISpec(childComplexity, args["id"].(string)), true
+		return e.complexity.Mutation.RefetchAPISpec(childComplexity, args["apiID"].(string)), true
 
 	case "Mutation.refetchEventSpec":
 		if e.complexity.Mutation.RefetchEventSpec == nil {
@@ -971,7 +987,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.RefetchEventSpec(childComplexity, args["id"].(string)), true
+		return e.complexity.Mutation.RefetchEventSpec(childComplexity, args["eventID"].(string)), true
 
 	case "Mutation.setAPICredential":
 		if e.complexity.Mutation.SetAPICredential == nil {
@@ -1019,7 +1035,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateApplicationWebhook(childComplexity, args["webhookID"].(string), args["in"].(*ApplicationWebhookInput)), true
+		return e.complexity.Mutation.UpdateApplicationWebhook(childComplexity, args["webhookID"].(string), args["in"].(ApplicationWebhookInput)), true
 
 	case "Mutation.updateEvent":
 		if e.complexity.Mutation.UpdateEvent == nil {
@@ -1343,8 +1359,10 @@ type Runtime {
     tenant: Tenant!
     labels(key: String): Labels!
     annotations: Annotations!
-    agentCredential: Credential! # TODO why do we expose it?
     status: RuntimeStatus!
+    # directive for checking auth
+    agentCredential: Credential!
+
 }
 
 type RuntimeStatus {
@@ -1372,6 +1390,7 @@ type Application {
     healthCheckURL: String
     apis: [API!]!
     events: [Event!]!
+    # TODO docu: high-level
 }
 
 type ApplicationStatus {
@@ -1397,12 +1416,12 @@ enum ApplicationWebhookType {
     CONFIGURATION_CHANGED
 }
 
-# API #TODO: Make sure it's compatible with Kyma CMS
+# API
 
 type Version {
     value: String! # for example 4.6
     deprecated: Boolean
-    since: String! # for example 4.5
+    since: String! # for example 4.5 #TODO
     forRemoval: Boolean # if true, will be removed in the next version
 
 }
@@ -1412,44 +1431,46 @@ type API {
     spec: APISpec!
     targetURL: String!
     credential: Credential
-    injectHeaders: HttpHeaders
+    injectHeaders: HttpHeaders # TODO additionalHeaders
     injectQueryParams: QueryParams
     version: Version
-    documentations: [Documentation!]
+    documentations: [Documentation!]! # TODO documantations is incorrect
 
 }
 
 type APISpec {
+    # when fetch request specified, data will be automatically populated
+    data: Clob
+    # format:  TODO yaml, json
     type: APISpecType!
-    data: Clob!
     fetchRequest: FetchRequest
 }
 
 enum APISpecType {
-    O_DATA
+    ODATA,
     OPEN_API
-}
-
-# Event #TODO: Make sure it's compatible with Kyma CMS
-
-type Event {
-    id: ID!
-    spec: EventSpec!
-    version: Version
-    documentations: [Documentation!]
-}
-
-type EventSpec {
-    type: EventSpecType!
-    data: Clob!
-    fetchRequest: FetchRequest
 }
 
 enum EventSpecType {
     ASYNC_API
 }
 
-# Documentation #TODO: Make sure it's compatible with Kyma CMS
+# Event
+
+type Event {
+    id: ID!
+    spec: EventSpec!
+    version: Version
+    documentations: [Documentation!]!
+}
+
+type EventSpec {
+    data: Clob
+    type: EventSpecType!
+    fetchRequest: FetchRequest
+}
+
+# Documentation
 
 type Documentation {
     id: ID!
@@ -1459,7 +1480,7 @@ type Documentation {
     format: DocumentationFormat!
     kind: String   # for example Service Class, API etc
     data: Clob
-    fetchRequest: FetchRequest
+    fetchRequest: FetchRequest # TODO how fetching is performed: CR in mgmt plane?
 }
 
 enum DocumentationFormat {
@@ -1469,9 +1490,11 @@ enum DocumentationFormat {
 
 # FetchRequest
 
-type FetchRequest { #TODO: Who fetches data? Management plane or runtime?
+type FetchRequest {
     url: String!
     credential: Credential
+    mode: FetchMode
+    filter: String
     status: FetchRequestStatus!
 }
 
@@ -1486,15 +1509,21 @@ enum FetchRequestStatusCondition {
     FAILED
 }
 
-# Credential
+enum FetchMode {
+    SINGLE
+    PACKAGE
+    INDEX
+}
 
+# Credential
+# TODO: input the same as now, output returns union
 type Credential {
     data: CredentialData!
     requestAuth: CredentialRequestAuth
 }
 
 type CredentialData {
-    type: CredentialDataType!
+    type: CredentialDataType! #TODO consider removing type
     basic: BasicCredentialData
     oauth: OAuthCredentialData
 }
@@ -1569,9 +1598,9 @@ input ApplicationInput {
 
 input RuntimeInput {
     name: String!
+    description: String
     labels: Labels
     annotations: Annotations
-    agentCredential: CredentialInput!
 }
 
 # FetchRequest Input
@@ -1579,6 +1608,8 @@ input RuntimeInput {
 input FetchRequestInput {
     url: String
     credential: CredentialInput
+    mode: FetchMode
+    filter: String
 }
 
 # Webhook Input
@@ -1594,26 +1625,29 @@ input ApplicationWebhookInput {
 input APIInput {
     targetURL: String!
     credential: CredentialInput
+    spec: APISpecInput
     injectHeaders: HttpHeaders
     injectQueryParams: QueryParams
     documentations: [DocumentationInput!]
-    spec: APISpecInput
-
 }
 
 input APISpecInput {
-    type: APISpecType!
-    data: Clob!
+    data: Clob
+    apiSpecType: APISpecType!
     fetchRequest: FetchRequestInput
 }
 
 # Event Input
 
 input EventInput {
-    type: EventSpecType!
-    data: Clob
-    fetchRequest: FetchRequestInput
+    spec: EventSpecInput
     documentations: [DocumentationInput!]
+}
+
+input EventSpecInput {
+    data: Clob
+    eventSpecType: EventSpecType!
+    fetchRequest: FetchRequestInput
 }
 
 # Documentation Input
@@ -1666,12 +1700,12 @@ input BasicCredentialDataInput {
 
 
 enum FilterOperator {
-    ALL, ANY
+    ALL, ANY #TODO default
 }
 
 input LabelFilter {
     label: String!
-    values: [String]!
+    values: [String!]!
     operator: FilterOperator
 }
 
@@ -1682,50 +1716,51 @@ type Query {
     runtimes(filter: [LabelFilter!]): [Runtime!]!
     runtime(id: ID!): Runtime
 
-    healthChecks(types: [HealthCheckType], originID: String): [HealthCheck!]!
-    labels(key: String): [String]!
+    healthChecks(types: [HealthCheckType], originID: ID): [HealthCheck!]!
+    labels(key: String): [String!]!
 
 }
 
 type Mutation {
     # Application
-    createApplication(in: ApplicationInput!): Application
-    updateApplication(id: ID!, in: ApplicationInput!): Application
+    createApplication(in: ApplicationInput!): Application!
+    updateApplication(id: ID!, in: ApplicationInput!): Application!
     deleteApplication(id: ID!): Application
 
-    createApplicationLabel(applicationID: ID!, label: String!, values: [String!]!): [String!]!
-    deleteApplicationLabel(applicationID: ID!, label: String!, values: [String!]!): [String!]!
+    addApplicationLabel(applicationID: ID!, label: String!, values: [String!]!): [String!]!
+    # if application does not exist, return error
+    deleteApplicationLabel(applicationID: ID!, label: String!, values: [String!]!): [String!]
 
-    createApplicationAnnotation(applicationID: ID!, annotation: String!, value: String!): String
-    deleteApplicationAnnotation(applicationID: ID!, annotation: String!): Boolean
+    addApplicationAnnotation(applicationID: ID!, annotation: String!, value: String!): String!
+    deleteApplicationAnnotation(applicationID: ID!, annotation: String!): String
 
-    createApplicationWebhook(applicationID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook
-    updateApplicationWebhook(webhookID: ID!, in: ApplicationWebhookInput): ApplicationWebhook
+    addApplicationWebhook(applicationID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
+    updateApplicationWebhook(webhookID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
     deleteApplicationWebhook(webhookID: ID!): ApplicationWebhook
 
-    createAPI(applicationID: ID!, in: APIInput!): API
-    updateAPI(id: ID!, in: APIInput!): API
+    addAPI(applicationID: ID!, in: APIInput!): API!
+    updateAPI(id: ID!, in: APIInput!): API!
     deleteAPI(id: ID!): API
-    refetchAPISpec(id: ID!): API # TODO sync or async
+    refetchAPISpec(apiID: ID!): APISpec
 
-    setAPICredential(apiID: ID!, in: CredentialInput!): Credential
+    setAPICredential(apiID: ID!, in: CredentialInput!): Credential!
     deleteAPICredential(apiID: ID!): Credential
 
-    createEvent(applicationID: ID!, in: EventInput!): Event
-    updateEvent(id: ID!, in: EventInput!): Event
+    addEvent(applicationID: ID!, in: EventInput!): Event!
+    updateEvent(id: ID!, in: EventInput!): Event!
     deleteEvent(id: ID!): Event
-    refetchEventSpec(id: ID!): Event
+    refetchEventSpec(eventID: ID!): EventSpec
 
     # Runtime
-    createRuntime(in: RuntimeInput!): Runtime
-    updateRuntime(id: ID!, in: RuntimeInput!): Runtime
+    createRuntime(in: RuntimeInput!): Runtime!
+    updateRuntime(id: ID!, in: RuntimeInput!): Runtime!
     deleteRuntime(id: ID!): Runtime
 
-    createRuntimeLabel(runtimeID: ID!, label: String!, values: [String!]!): [String!]!
+    addRuntimeLabel(runtimeID: ID!, label: String!, values: [String!]!): [String!]!
     deleteRuntimeLabel(id: ID!, label: String! ,values: [String!]!): [String!]!
 
-    createRuntimeAnnotation(runtimeID: ID!, annotation: String!, value: String!): String
-    deleteRuntimeAnnotation(id: ID!, annotation: String!): Boolean
+    addRuntimeAnnotation(runtimeID: ID!, annotation: String!, value: String!): String!
+    deleteRuntimeAnnotation(id: ID!, annotation: String!): String!
 
 }
 
@@ -1750,7 +1785,7 @@ func (ec *executionContext) field_Application_labels_args(ctx context.Context, r
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_createAPI_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_addAPI_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -1772,7 +1807,7 @@ func (ec *executionContext) field_Mutation_createAPI_args(ctx context.Context, r
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_createApplicationAnnotation_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_addApplicationAnnotation_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -1802,7 +1837,7 @@ func (ec *executionContext) field_Mutation_createApplicationAnnotation_args(ctx 
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_createApplicationLabel_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_addApplicationLabel_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -1832,7 +1867,7 @@ func (ec *executionContext) field_Mutation_createApplicationLabel_args(ctx conte
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_createApplicationWebhook_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_addApplicationWebhook_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -1854,21 +1889,7 @@ func (ec *executionContext) field_Mutation_createApplicationWebhook_args(ctx con
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_createApplication_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 ApplicationInput
-	if tmp, ok := rawArgs["in"]; ok {
-		arg0, err = ec.unmarshalNApplicationInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplicationInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["in"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_createEvent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_addEvent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -1890,7 +1911,7 @@ func (ec *executionContext) field_Mutation_createEvent_args(ctx context.Context,
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_createRuntimeAnnotation_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_addRuntimeAnnotation_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -1920,7 +1941,7 @@ func (ec *executionContext) field_Mutation_createRuntimeAnnotation_args(ctx cont
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_createRuntimeLabel_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_addRuntimeLabel_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -1947,6 +1968,20 @@ func (ec *executionContext) field_Mutation_createRuntimeLabel_args(ctx context.C
 		}
 	}
 	args["values"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createApplication_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 ApplicationInput
+	if tmp, ok := rawArgs["in"]; ok {
+		arg0, err = ec.unmarshalNApplicationInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplicationInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["in"] = arg0
 	return args, nil
 }
 
@@ -2156,13 +2191,13 @@ func (ec *executionContext) field_Mutation_refetchAPISpec_args(ctx context.Conte
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
+	if tmp, ok := rawArgs["apiID"]; ok {
 		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["id"] = arg0
+	args["apiID"] = arg0
 	return args, nil
 }
 
@@ -2170,13 +2205,13 @@ func (ec *executionContext) field_Mutation_refetchEventSpec_args(ctx context.Con
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
+	if tmp, ok := rawArgs["eventID"]; ok {
 		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["id"] = arg0
+	args["eventID"] = arg0
 	return args, nil
 }
 
@@ -2235,9 +2270,9 @@ func (ec *executionContext) field_Mutation_updateApplicationWebhook_args(ctx con
 		}
 	}
 	args["webhookID"] = arg0
-	var arg1 *ApplicationWebhookInput
+	var arg1 ApplicationWebhookInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg1, err = ec.unmarshalOApplicationWebhookInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplicationWebhookInput(ctx, tmp)
+		arg1, err = ec.unmarshalNApplicationWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplicationWebhookInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2367,7 +2402,7 @@ func (ec *executionContext) field_Query_healthChecks_args(ctx context.Context, r
 	args["types"] = arg0
 	var arg1 *string
 	if tmp, ok := rawArgs["originID"]; ok {
-		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2657,12 +2692,39 @@ func (ec *executionContext) _API_documentations(ctx context.Context, field graph
 		return obj.Documentations, nil
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]*Documentation)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalODocumentation2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐDocumentation(ctx, field.Selections, res)
+	return ec.marshalNDocumentation2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐDocumentation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _APISpec_data(ctx context.Context, field graphql.CollectedField, obj *APISpec) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "APISpec",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Data, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOClob2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APISpec_type(ctx context.Context, field graphql.CollectedField, obj *APISpec) graphql.Marshaler {
@@ -2690,33 +2752,6 @@ func (ec *executionContext) _APISpec_type(ctx context.Context, field graphql.Col
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNAPISpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPISpecType(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _APISpec_data(ctx context.Context, field graphql.CollectedField, obj *APISpec) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "APISpec",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Data, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNClob2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APISpec_fetchRequest(ctx context.Context, field graphql.CollectedField, obj *APISpec) graphql.Marshaler {
@@ -3759,12 +3794,39 @@ func (ec *executionContext) _Event_documentations(ctx context.Context, field gra
 		return obj.Documentations, nil
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]*Documentation)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalODocumentation2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐDocumentation(ctx, field.Selections, res)
+	return ec.marshalNDocumentation2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐDocumentation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EventSpec_data(ctx context.Context, field graphql.CollectedField, obj *EventSpec) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "EventSpec",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Data, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOClob2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EventSpec_type(ctx context.Context, field graphql.CollectedField, obj *EventSpec) graphql.Marshaler {
@@ -3792,33 +3854,6 @@ func (ec *executionContext) _EventSpec_type(ctx context.Context, field graphql.C
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNEventSpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐEventSpecType(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _EventSpec_data(ctx context.Context, field graphql.CollectedField, obj *EventSpec) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "EventSpec",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Data, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNClob2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EventSpec_fetchRequest(ctx context.Context, field graphql.CollectedField, obj *EventSpec) graphql.Marshaler {
@@ -3894,6 +3929,54 @@ func (ec *executionContext) _FetchRequest_credential(ctx context.Context, field 
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOCredential2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐCredential(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FetchRequest_mode(ctx context.Context, field graphql.CollectedField, obj *FetchRequest) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "FetchRequest",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Mode, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*FetchMode)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOFetchMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐFetchMode(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FetchRequest_filter(ctx context.Context, field graphql.CollectedField, obj *FetchRequest) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "FetchRequest",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Filter, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FetchRequest_status(ctx context.Context, field graphql.CollectedField, obj *FetchRequest) graphql.Marshaler {
@@ -4129,12 +4212,15 @@ func (ec *executionContext) _Mutation_createApplication(ctx context.Context, fie
 		return ec.resolvers.Mutation().CreateApplication(rctx, args["in"].(ApplicationInput))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*Application)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplication(ctx, field.Selections, res)
+	return ec.marshalNApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplication(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_updateApplication(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -4160,12 +4246,15 @@ func (ec *executionContext) _Mutation_updateApplication(ctx context.Context, fie
 		return ec.resolvers.Mutation().UpdateApplication(rctx, args["id"].(string), args["in"].(ApplicationInput))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*Application)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplication(ctx, field.Selections, res)
+	return ec.marshalNApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplication(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteApplication(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -4199,7 +4288,7 @@ func (ec *executionContext) _Mutation_deleteApplication(ctx context.Context, fie
 	return ec.marshalOApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplication(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_createApplicationLabel(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Mutation_addApplicationLabel(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -4210,7 +4299,7 @@ func (ec *executionContext) _Mutation_createApplicationLabel(ctx context.Context
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_createApplicationLabel_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_addApplicationLabel_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -4219,7 +4308,7 @@ func (ec *executionContext) _Mutation_createApplicationLabel(ctx context.Context
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateApplicationLabel(rctx, args["applicationID"].(string), args["label"].(string), args["values"].([]string))
+		return ec.resolvers.Mutation().AddApplicationLabel(rctx, args["applicationID"].(string), args["label"].(string), args["values"].([]string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -4256,18 +4345,15 @@ func (ec *executionContext) _Mutation_deleteApplicationLabel(ctx context.Context
 		return ec.resolvers.Mutation().DeleteApplicationLabel(rctx, args["applicationID"].(string), args["label"].(string), args["values"].([]string))
 	})
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.([]string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2ᚕstring(ctx, field.Selections, res)
+	return ec.marshalOString2ᚕstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_createApplicationAnnotation(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Mutation_addApplicationAnnotation(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -4278,7 +4364,7 @@ func (ec *executionContext) _Mutation_createApplicationAnnotation(ctx context.Co
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_createApplicationAnnotation_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_addApplicationAnnotation_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -4287,15 +4373,18 @@ func (ec *executionContext) _Mutation_createApplicationAnnotation(ctx context.Co
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateApplicationAnnotation(rctx, args["applicationID"].(string), args["annotation"].(string), args["value"].(string))
+		return ec.resolvers.Mutation().AddApplicationAnnotation(rctx, args["applicationID"].(string), args["annotation"].(string), args["value"].(string))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteApplicationAnnotation(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -4323,13 +4412,13 @@ func (ec *executionContext) _Mutation_deleteApplicationAnnotation(ctx context.Co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_createApplicationWebhook(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Mutation_addApplicationWebhook(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -4340,7 +4429,7 @@ func (ec *executionContext) _Mutation_createApplicationWebhook(ctx context.Conte
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_createApplicationWebhook_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_addApplicationWebhook_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -4349,15 +4438,18 @@ func (ec *executionContext) _Mutation_createApplicationWebhook(ctx context.Conte
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateApplicationWebhook(rctx, args["applicationID"].(string), args["in"].(ApplicationWebhookInput))
+		return ec.resolvers.Mutation().AddApplicationWebhook(rctx, args["applicationID"].(string), args["in"].(ApplicationWebhookInput))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*ApplicationWebhook)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOApplicationWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplicationWebhook(ctx, field.Selections, res)
+	return ec.marshalNApplicationWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplicationWebhook(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_updateApplicationWebhook(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -4380,15 +4472,18 @@ func (ec *executionContext) _Mutation_updateApplicationWebhook(ctx context.Conte
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateApplicationWebhook(rctx, args["webhookID"].(string), args["in"].(*ApplicationWebhookInput))
+		return ec.resolvers.Mutation().UpdateApplicationWebhook(rctx, args["webhookID"].(string), args["in"].(ApplicationWebhookInput))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*ApplicationWebhook)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOApplicationWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplicationWebhook(ctx, field.Selections, res)
+	return ec.marshalNApplicationWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplicationWebhook(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteApplicationWebhook(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -4422,7 +4517,7 @@ func (ec *executionContext) _Mutation_deleteApplicationWebhook(ctx context.Conte
 	return ec.marshalOApplicationWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplicationWebhook(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_createAPI(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Mutation_addAPI(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -4433,7 +4528,7 @@ func (ec *executionContext) _Mutation_createAPI(ctx context.Context, field graph
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_createAPI_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_addAPI_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -4442,15 +4537,18 @@ func (ec *executionContext) _Mutation_createAPI(ctx context.Context, field graph
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateAPI(rctx, args["applicationID"].(string), args["in"].(APIInput))
+		return ec.resolvers.Mutation().AddAPI(rctx, args["applicationID"].(string), args["in"].(APIInput))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*API)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAPI2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPI(ctx, field.Selections, res)
+	return ec.marshalNAPI2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPI(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_updateAPI(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -4476,12 +4574,15 @@ func (ec *executionContext) _Mutation_updateAPI(ctx context.Context, field graph
 		return ec.resolvers.Mutation().UpdateAPI(rctx, args["id"].(string), args["in"].(APIInput))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*API)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAPI2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPI(ctx, field.Selections, res)
+	return ec.marshalNAPI2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPI(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteAPI(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -4535,15 +4636,15 @@ func (ec *executionContext) _Mutation_refetchAPISpec(ctx context.Context, field 
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().RefetchAPISpec(rctx, args["id"].(string))
+		return ec.resolvers.Mutation().RefetchAPISpec(rctx, args["apiID"].(string))
 	})
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*API)
+	res := resTmp.(*APISpec)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAPI2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPI(ctx, field.Selections, res)
+	return ec.marshalOAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPISpec(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_setAPICredential(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -4569,12 +4670,15 @@ func (ec *executionContext) _Mutation_setAPICredential(ctx context.Context, fiel
 		return ec.resolvers.Mutation().SetAPICredential(rctx, args["apiID"].(string), args["in"].(CredentialInput))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*Credential)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOCredential2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐCredential(ctx, field.Selections, res)
+	return ec.marshalNCredential2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐCredential(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteAPICredential(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -4608,7 +4712,7 @@ func (ec *executionContext) _Mutation_deleteAPICredential(ctx context.Context, f
 	return ec.marshalOCredential2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐCredential(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_createEvent(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Mutation_addEvent(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -4619,7 +4723,7 @@ func (ec *executionContext) _Mutation_createEvent(ctx context.Context, field gra
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_createEvent_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_addEvent_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -4628,15 +4732,18 @@ func (ec *executionContext) _Mutation_createEvent(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateEvent(rctx, args["applicationID"].(string), args["in"].(EventInput))
+		return ec.resolvers.Mutation().AddEvent(rctx, args["applicationID"].(string), args["in"].(EventInput))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*Event)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOEvent2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐEvent(ctx, field.Selections, res)
+	return ec.marshalNEvent2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐEvent(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_updateEvent(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -4662,12 +4769,15 @@ func (ec *executionContext) _Mutation_updateEvent(ctx context.Context, field gra
 		return ec.resolvers.Mutation().UpdateEvent(rctx, args["id"].(string), args["in"].(EventInput))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*Event)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOEvent2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐEvent(ctx, field.Selections, res)
+	return ec.marshalNEvent2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐEvent(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteEvent(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -4721,15 +4831,15 @@ func (ec *executionContext) _Mutation_refetchEventSpec(ctx context.Context, fiel
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().RefetchEventSpec(rctx, args["id"].(string))
+		return ec.resolvers.Mutation().RefetchEventSpec(rctx, args["eventID"].(string))
 	})
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*Event)
+	res := resTmp.(*EventSpec)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOEvent2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐEvent(ctx, field.Selections, res)
+	return ec.marshalOEventSpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐEventSpec(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_createRuntime(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -4755,12 +4865,15 @@ func (ec *executionContext) _Mutation_createRuntime(ctx context.Context, field g
 		return ec.resolvers.Mutation().CreateRuntime(rctx, args["in"].(RuntimeInput))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*Runtime)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalORuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntime(ctx, field.Selections, res)
+	return ec.marshalNRuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_updateRuntime(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -4786,12 +4899,15 @@ func (ec *executionContext) _Mutation_updateRuntime(ctx context.Context, field g
 		return ec.resolvers.Mutation().UpdateRuntime(rctx, args["id"].(string), args["in"].(RuntimeInput))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*Runtime)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalORuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntime(ctx, field.Selections, res)
+	return ec.marshalNRuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteRuntime(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -4825,7 +4941,7 @@ func (ec *executionContext) _Mutation_deleteRuntime(ctx context.Context, field g
 	return ec.marshalORuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_createRuntimeLabel(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Mutation_addRuntimeLabel(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -4836,7 +4952,7 @@ func (ec *executionContext) _Mutation_createRuntimeLabel(ctx context.Context, fi
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_createRuntimeLabel_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_addRuntimeLabel_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -4845,7 +4961,7 @@ func (ec *executionContext) _Mutation_createRuntimeLabel(ctx context.Context, fi
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateRuntimeLabel(rctx, args["runtimeID"].(string), args["label"].(string), args["values"].([]string))
+		return ec.resolvers.Mutation().AddRuntimeLabel(rctx, args["runtimeID"].(string), args["label"].(string), args["values"].([]string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -4893,7 +5009,7 @@ func (ec *executionContext) _Mutation_deleteRuntimeLabel(ctx context.Context, fi
 	return ec.marshalNString2ᚕstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_createRuntimeAnnotation(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Mutation_addRuntimeAnnotation(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -4904,7 +5020,7 @@ func (ec *executionContext) _Mutation_createRuntimeAnnotation(ctx context.Contex
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_createRuntimeAnnotation_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_addRuntimeAnnotation_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -4913,15 +5029,18 @@ func (ec *executionContext) _Mutation_createRuntimeAnnotation(ctx context.Contex
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateRuntimeAnnotation(rctx, args["runtimeID"].(string), args["annotation"].(string), args["value"].(string))
+		return ec.resolvers.Mutation().AddRuntimeAnnotation(rctx, args["runtimeID"].(string), args["annotation"].(string), args["value"].(string))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteRuntimeAnnotation(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -4947,12 +5066,15 @@ func (ec *executionContext) _Mutation_deleteRuntimeAnnotation(ctx context.Contex
 		return ec.resolvers.Mutation().DeleteRuntimeAnnotation(rctx, args["id"].(string), args["annotation"].(string))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OAuthCredentialData_clientId(ctx context.Context, field graphql.CollectedField, obj *OAuthCredentialData) graphql.Marshaler {
@@ -5228,10 +5350,10 @@ func (ec *executionContext) _Query_labels(ctx context.Context, field graphql.Col
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*string)
+	res := resTmp.([]string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2ᚕᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2ᚕstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -5455,33 +5577,6 @@ func (ec *executionContext) _Runtime_annotations(ctx context.Context, field grap
 	return ec.marshalNAnnotations2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAnnotations(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Runtime_agentCredential(ctx context.Context, field graphql.CollectedField, obj *Runtime) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "Runtime",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.AgentCredential, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*Credential)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNCredential2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐCredential(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Runtime_status(ctx context.Context, field graphql.CollectedField, obj *Runtime) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -5507,6 +5602,33 @@ func (ec *executionContext) _Runtime_status(ctx context.Context, field graphql.C
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNRuntimeStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimeStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Runtime_agentCredential(ctx context.Context, field graphql.CollectedField, obj *Runtime) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Runtime",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AgentCredential, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Credential)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNCredential2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐCredential(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimeStatus_condition(ctx context.Context, field graphql.CollectedField, obj *RuntimeStatus) graphql.Marshaler {
@@ -6514,6 +6636,12 @@ func (ec *executionContext) unmarshalInputAPIInput(ctx context.Context, v interf
 			if err != nil {
 				return it, err
 			}
+		case "spec":
+			var err error
+			it.Spec, err = ec.unmarshalOAPISpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPISpecInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "injectHeaders":
 			var err error
 			it.InjectHeaders, err = ec.unmarshalOHttpHeaders2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐHttpHeaders(ctx, v)
@@ -6532,12 +6660,6 @@ func (ec *executionContext) unmarshalInputAPIInput(ctx context.Context, v interf
 			if err != nil {
 				return it, err
 			}
-		case "spec":
-			var err error
-			it.Spec, err = ec.unmarshalOAPISpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPISpecInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		}
 	}
 
@@ -6550,15 +6672,15 @@ func (ec *executionContext) unmarshalInputAPISpecInput(ctx context.Context, v in
 
 	for k, v := range asMap {
 		switch k {
-		case "type":
+		case "data":
 			var err error
-			it.Type, err = ec.unmarshalNAPISpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPISpecType(ctx, v)
+			it.Data, err = ec.unmarshalOClob2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "data":
+		case "apiSpecType":
 			var err error
-			it.Data, err = ec.unmarshalNClob2string(ctx, v)
+			it.APISpecType, err = ec.unmarshalNAPISpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPISpecType(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6844,27 +6966,45 @@ func (ec *executionContext) unmarshalInputEventInput(ctx context.Context, v inte
 
 	for k, v := range asMap {
 		switch k {
-		case "type":
+		case "spec":
 			var err error
-			it.Type, err = ec.unmarshalNEventSpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐEventSpecType(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "data":
-			var err error
-			it.Data, err = ec.unmarshalOClob2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "fetchRequest":
-			var err error
-			it.FetchRequest, err = ec.unmarshalOFetchRequestInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐFetchRequestInput(ctx, v)
+			it.Spec, err = ec.unmarshalOEventSpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐEventSpecInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "documentations":
 			var err error
 			it.Documentations, err = ec.unmarshalODocumentationInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐDocumentationInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputEventSpecInput(ctx context.Context, v interface{}) (EventSpecInput, error) {
+	var it EventSpecInput
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "data":
+			var err error
+			it.Data, err = ec.unmarshalOClob2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "eventSpecType":
+			var err error
+			it.EventSpecType, err = ec.unmarshalNEventSpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐEventSpecType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "fetchRequest":
+			var err error
+			it.FetchRequest, err = ec.unmarshalOFetchRequestInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐFetchRequestInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6892,6 +7032,18 @@ func (ec *executionContext) unmarshalInputFetchRequestInput(ctx context.Context,
 			if err != nil {
 				return it, err
 			}
+		case "mode":
+			var err error
+			it.Mode, err = ec.unmarshalOFetchMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐFetchMode(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "filter":
+			var err error
+			it.Filter, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -6912,7 +7064,7 @@ func (ec *executionContext) unmarshalInputLabelFilter(ctx context.Context, v int
 			}
 		case "values":
 			var err error
-			it.Values, err = ec.unmarshalNString2ᚕᚖstring(ctx, v)
+			it.Values, err = ec.unmarshalNString2ᚕstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6970,6 +7122,12 @@ func (ec *executionContext) unmarshalInputRuntimeInput(ctx context.Context, v in
 			if err != nil {
 				return it, err
 			}
+		case "description":
+			var err error
+			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "labels":
 			var err error
 			it.Labels, err = ec.unmarshalOLabels2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐLabels(ctx, v)
@@ -6979,12 +7137,6 @@ func (ec *executionContext) unmarshalInputRuntimeInput(ctx context.Context, v in
 		case "annotations":
 			var err error
 			it.Annotations, err = ec.unmarshalOAnnotations2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAnnotations(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "agentCredential":
-			var err error
-			it.AgentCredential, err = ec.unmarshalNCredentialInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐCredentialInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7038,6 +7190,9 @@ func (ec *executionContext) _API(ctx context.Context, sel ast.SelectionSet, obj 
 			out.Values[i] = ec._API_version(ctx, field, obj)
 		case "documentations":
 			out.Values[i] = ec._API_documentations(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7060,13 +7215,10 @@ func (ec *executionContext) _APISpec(ctx context.Context, sel ast.SelectionSet, 
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("APISpec")
-		case "type":
-			out.Values[i] = ec._APISpec_type(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "data":
 			out.Values[i] = ec._APISpec_data(ctx, field, obj)
+		case "type":
+			out.Values[i] = ec._APISpec_type(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -7451,6 +7603,9 @@ func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, ob
 			out.Values[i] = ec._Event_version(ctx, field, obj)
 		case "documentations":
 			out.Values[i] = ec._Event_documentations(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7473,13 +7628,10 @@ func (ec *executionContext) _EventSpec(ctx context.Context, sel ast.SelectionSet
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("EventSpec")
-		case "type":
-			out.Values[i] = ec._EventSpec_type(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "data":
 			out.Values[i] = ec._EventSpec_data(ctx, field, obj)
+		case "type":
+			out.Values[i] = ec._EventSpec_type(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -7514,6 +7666,10 @@ func (ec *executionContext) _FetchRequest(ctx context.Context, sel ast.Selection
 			}
 		case "credential":
 			out.Values[i] = ec._FetchRequest_credential(ctx, field, obj)
+		case "mode":
+			out.Values[i] = ec._FetchRequest_mode(ctx, field, obj)
+		case "filter":
+			out.Values[i] = ec._FetchRequest_filter(ctx, field, obj)
 		case "status":
 			out.Values[i] = ec._FetchRequest_status(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -7620,58 +7776,91 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = graphql.MarshalString("Mutation")
 		case "createApplication":
 			out.Values[i] = ec._Mutation_createApplication(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "updateApplication":
 			out.Values[i] = ec._Mutation_updateApplication(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "deleteApplication":
 			out.Values[i] = ec._Mutation_deleteApplication(ctx, field)
-		case "createApplicationLabel":
-			out.Values[i] = ec._Mutation_createApplicationLabel(ctx, field)
+		case "addApplicationLabel":
+			out.Values[i] = ec._Mutation_addApplicationLabel(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "deleteApplicationLabel":
 			out.Values[i] = ec._Mutation_deleteApplicationLabel(ctx, field)
+		case "addApplicationAnnotation":
+			out.Values[i] = ec._Mutation_addApplicationAnnotation(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "createApplicationAnnotation":
-			out.Values[i] = ec._Mutation_createApplicationAnnotation(ctx, field)
 		case "deleteApplicationAnnotation":
 			out.Values[i] = ec._Mutation_deleteApplicationAnnotation(ctx, field)
-		case "createApplicationWebhook":
-			out.Values[i] = ec._Mutation_createApplicationWebhook(ctx, field)
+		case "addApplicationWebhook":
+			out.Values[i] = ec._Mutation_addApplicationWebhook(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "updateApplicationWebhook":
 			out.Values[i] = ec._Mutation_updateApplicationWebhook(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "deleteApplicationWebhook":
 			out.Values[i] = ec._Mutation_deleteApplicationWebhook(ctx, field)
-		case "createAPI":
-			out.Values[i] = ec._Mutation_createAPI(ctx, field)
+		case "addAPI":
+			out.Values[i] = ec._Mutation_addAPI(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "updateAPI":
 			out.Values[i] = ec._Mutation_updateAPI(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "deleteAPI":
 			out.Values[i] = ec._Mutation_deleteAPI(ctx, field)
 		case "refetchAPISpec":
 			out.Values[i] = ec._Mutation_refetchAPISpec(ctx, field)
 		case "setAPICredential":
 			out.Values[i] = ec._Mutation_setAPICredential(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "deleteAPICredential":
 			out.Values[i] = ec._Mutation_deleteAPICredential(ctx, field)
-		case "createEvent":
-			out.Values[i] = ec._Mutation_createEvent(ctx, field)
+		case "addEvent":
+			out.Values[i] = ec._Mutation_addEvent(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "updateEvent":
 			out.Values[i] = ec._Mutation_updateEvent(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "deleteEvent":
 			out.Values[i] = ec._Mutation_deleteEvent(ctx, field)
 		case "refetchEventSpec":
 			out.Values[i] = ec._Mutation_refetchEventSpec(ctx, field)
 		case "createRuntime":
 			out.Values[i] = ec._Mutation_createRuntime(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "updateRuntime":
 			out.Values[i] = ec._Mutation_updateRuntime(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "deleteRuntime":
 			out.Values[i] = ec._Mutation_deleteRuntime(ctx, field)
-		case "createRuntimeLabel":
-			out.Values[i] = ec._Mutation_createRuntimeLabel(ctx, field)
+		case "addRuntimeLabel":
+			out.Values[i] = ec._Mutation_addRuntimeLabel(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -7680,10 +7869,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "createRuntimeAnnotation":
-			out.Values[i] = ec._Mutation_createRuntimeAnnotation(ctx, field)
+		case "addRuntimeAnnotation":
+			out.Values[i] = ec._Mutation_addRuntimeAnnotation(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "deleteRuntimeAnnotation":
 			out.Values[i] = ec._Mutation_deleteRuntimeAnnotation(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7878,13 +8073,13 @@ func (ec *executionContext) _Runtime(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "agentCredential":
-			out.Values[i] = ec._Runtime_agentCredential(ctx, field, obj)
+		case "status":
+			out.Values[i] = ec._Runtime_status(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "status":
-			out.Values[i] = ec._Runtime_status(ctx, field, obj)
+		case "agentCredential":
+			out.Values[i] = ec._Runtime_agentCredential(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -8463,20 +8658,6 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) unmarshalNClob2string(ctx context.Context, v interface{}) (string, error) {
-	return graphql.UnmarshalString(v)
-}
-
-func (ec *executionContext) marshalNClob2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	res := graphql.MarshalString(v)
-	if res == graphql.Null {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-	}
-	return res
-}
-
 func (ec *executionContext) marshalNCredential2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐCredential(ctx context.Context, sel ast.SelectionSet, v Credential) graphql.Marshaler {
 	return ec._Credential(ctx, sel, &v)
 }
@@ -8530,14 +8711,6 @@ func (ec *executionContext) unmarshalNCredentialInput2githubᚗcomᚋkymaᚑincu
 	return ec.unmarshalInputCredentialInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNCredentialInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐCredentialInput(ctx context.Context, v interface{}) (*CredentialInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNCredentialInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐCredentialInput(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) unmarshalNCredentialRequestAuthType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐCredentialRequestAuthType(ctx context.Context, v interface{}) (CredentialRequestAuthType, error) {
 	var res CredentialRequestAuthType
 	return res, res.UnmarshalGQL(v)
@@ -8549,6 +8722,43 @@ func (ec *executionContext) marshalNCredentialRequestAuthType2githubᚗcomᚋkym
 
 func (ec *executionContext) marshalNDocumentation2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐDocumentation(ctx context.Context, sel ast.SelectionSet, v Documentation) graphql.Marshaler {
 	return ec._Documentation(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNDocumentation2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐDocumentation(ctx context.Context, sel ast.SelectionSet, v []*Documentation) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNDocumentation2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐDocumentation(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
 }
 
 func (ec *executionContext) marshalNDocumentation2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐDocumentation(ctx context.Context, sel ast.SelectionSet, v *Documentation) graphql.Marshaler {
@@ -8916,35 +9126,6 @@ func (ec *executionContext) marshalNString2ᚕstring(ctx context.Context, sel as
 	return ret
 }
 
-func (ec *executionContext) unmarshalNString2ᚕᚖstring(ctx context.Context, v interface{}) ([]*string, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*string, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalOString2ᚖstring(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalNString2ᚕᚖstring(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	for i := range v {
-		ret[i] = ec.marshalOString2ᚖstring(ctx, sel, v[i])
-	}
-
-	return ret
-}
-
 func (ec *executionContext) unmarshalNTenant2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐTenant(ctx context.Context, v interface{}) (Tenant, error) {
 	var res Tenant
 	return res, res.UnmarshalGQL(v)
@@ -9220,6 +9401,17 @@ func (ec *executionContext) unmarshalOAPIInput2ᚕᚖgithubᚗcomᚋkymaᚑincub
 	return res, nil
 }
 
+func (ec *executionContext) marshalOAPISpec2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPISpec(ctx context.Context, sel ast.SelectionSet, v APISpec) graphql.Marshaler {
+	return ec._APISpec(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPISpec(ctx context.Context, sel ast.SelectionSet, v *APISpec) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._APISpec(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalOAPISpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPISpecInput(ctx context.Context, v interface{}) (APISpecInput, error) {
 	return ec.unmarshalInputAPISpecInput(ctx, v)
 }
@@ -9448,46 +9640,6 @@ func (ec *executionContext) unmarshalOCredentialRequestAuthInput2ᚖgithubᚗcom
 	return &res, err
 }
 
-func (ec *executionContext) marshalODocumentation2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐDocumentation(ctx context.Context, sel ast.SelectionSet, v []*Documentation) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		rctx := &graphql.ResolverContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithResolverContext(ctx, rctx)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNDocumentation2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐDocumentation(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
 func (ec *executionContext) unmarshalODocumentationInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐDocumentationInput(ctx context.Context, v interface{}) ([]*DocumentationInput, error) {
 	var vSlice []interface{}
 	if v != nil {
@@ -9537,6 +9689,53 @@ func (ec *executionContext) unmarshalOEventInput2ᚕᚖgithubᚗcomᚋkymaᚑinc
 		}
 	}
 	return res, nil
+}
+
+func (ec *executionContext) marshalOEventSpec2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐEventSpec(ctx context.Context, sel ast.SelectionSet, v EventSpec) graphql.Marshaler {
+	return ec._EventSpec(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOEventSpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐEventSpec(ctx context.Context, sel ast.SelectionSet, v *EventSpec) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._EventSpec(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOEventSpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐEventSpecInput(ctx context.Context, v interface{}) (EventSpecInput, error) {
+	return ec.unmarshalInputEventSpecInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOEventSpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐEventSpecInput(ctx context.Context, v interface{}) (*EventSpecInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOEventSpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐEventSpecInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalOFetchMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐFetchMode(ctx context.Context, v interface{}) (FetchMode, error) {
+	var res FetchMode
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOFetchMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐFetchMode(ctx context.Context, sel ast.SelectionSet, v FetchMode) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOFetchMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐFetchMode(ctx context.Context, v interface{}) (*FetchMode, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOFetchMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐFetchMode(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOFetchMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐFetchMode(ctx context.Context, sel ast.SelectionSet, v *FetchMode) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalOFetchRequest2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐFetchRequest(ctx context.Context, sel ast.SelectionSet, v FetchRequest) graphql.Marshaler {
@@ -9825,6 +10024,38 @@ func (ec *executionContext) unmarshalOString2string(ctx context.Context, v inter
 
 func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	return graphql.MarshalString(v)
+}
+
+func (ec *executionContext) unmarshalOString2ᚕstring(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕstring(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {

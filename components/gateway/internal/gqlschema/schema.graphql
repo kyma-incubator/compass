@@ -24,17 +24,9 @@ type Runtime {
     labels(key: String): Labels!
     annotations: Annotations!
     status: RuntimeStatus!
-}
-
-type RuntimeModificationOutput {
-    id: ID!
-    name: String!
-    description: String
-    tenant: Tenant!
-    labels(key: String): Labels!
-    annotations: Annotations!
-    status: RuntimeStatus!
+    # directive for checking auth
     agentCredential: Credential!
+
 }
 
 type RuntimeStatus {
@@ -62,6 +54,7 @@ type Application {
     healthCheckURL: String
     apis: [API!]!
     events: [Event!]!
+    # TODO docu: high-level
 }
 
 type ApplicationStatus {
@@ -92,7 +85,7 @@ enum ApplicationWebhookType {
 type Version {
     value: String! # for example 4.6
     deprecated: Boolean
-    since: String! # for example 4.5
+    since: String! # for example 4.5 #TODO
     forRemoval: Boolean # if true, will be removed in the next version
 
 }
@@ -102,15 +95,17 @@ type API {
     spec: APISpec!
     targetURL: String!
     credential: Credential
-    injectHeaders: HttpHeaders
+    injectHeaders: HttpHeaders # TODO additionalHeaders
     injectQueryParams: QueryParams
     version: Version
-    documentations: [Documentation!]!
+    documentations: [Documentation!]! # TODO documantations is incorrect
 
 }
 
 type APISpec {
+    # when fetch request specified, data will be automatically populated
     data: Clob
+    # format:  TODO yaml, json
     type: APISpecType!
     fetchRequest: FetchRequest
 }
@@ -149,7 +144,7 @@ type Documentation {
     format: DocumentationFormat!
     kind: String   # for example Service Class, API etc
     data: Clob
-    fetchRequest: FetchRequest
+    fetchRequest: FetchRequest # TODO how fetching is performed: CR in mgmt plane?
 }
 
 enum DocumentationFormat {
@@ -185,14 +180,14 @@ enum FetchMode {
 }
 
 # Credential
-
+# TODO: input the same as now, output returns union
 type Credential {
     data: CredentialData!
     requestAuth: CredentialRequestAuth
 }
 
 type CredentialData {
-    type: CredentialDataType!
+    type: CredentialDataType! #TODO consider removing type
     basic: BasicCredentialData
     oauth: OAuthCredentialData
 }
@@ -369,7 +364,7 @@ input BasicCredentialDataInput {
 
 
 enum FilterOperator {
-    ALL, ANY
+    ALL, ANY #TODO default
 }
 
 input LabelFilter {
@@ -393,41 +388,42 @@ type Query {
 type Mutation {
     # Application
     createApplication(in: ApplicationInput!): Application!
-    updateApplication(id: ID!, in: ApplicationInput!): Application
+    updateApplication(id: ID!, in: ApplicationInput!): Application!
     deleteApplication(id: ID!): Application
 
-    createApplicationLabel(applicationID: ID!, label: String!, values: [String!]!): [String!]!
-    deleteApplicationLabel(applicationID: ID!, label: String!, values: [String!]!): [String!]!
+    addApplicationLabel(applicationID: ID!, label: String!, values: [String!]!): [String!]!
+    # if application does not exist, return error
+    deleteApplicationLabel(applicationID: ID!, label: String!, values: [String!]!): [String!]
 
-    createApplicationAnnotation(applicationID: ID!, annotation: String!, value: String!): String!
-    deleteApplicationAnnotation(applicationID: ID!, annotation: String!): String!
+    addApplicationAnnotation(applicationID: ID!, annotation: String!, value: String!): String!
+    deleteApplicationAnnotation(applicationID: ID!, annotation: String!): String
 
-    createApplicationWebhook(applicationID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
-    updateApplicationWebhook(webhookID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook
+    addApplicationWebhook(applicationID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
+    updateApplicationWebhook(webhookID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
     deleteApplicationWebhook(webhookID: ID!): ApplicationWebhook
 
-    createAPI(applicationID: ID!, in: APIInput!): API
-    updateAPI(id: ID!, in: APIInput!): API
+    addAPI(applicationID: ID!, in: APIInput!): API!
+    updateAPI(id: ID!, in: APIInput!): API!
     deleteAPI(id: ID!): API
-    refetchAPISpec(id: ID!): API
+    refetchAPISpec(apiID: ID!): APISpec
 
-    setAPICredential(apiID: ID!, in: CredentialInput!): Credential
+    setAPICredential(apiID: ID!, in: CredentialInput!): Credential!
     deleteAPICredential(apiID: ID!): Credential
 
-    createEvent(applicationID: ID!, in: EventInput!): Event
-    updateEvent(id: ID!, in: EventInput!): Event
+    addEvent(applicationID: ID!, in: EventInput!): Event!
+    updateEvent(id: ID!, in: EventInput!): Event!
     deleteEvent(id: ID!): Event
-    refetchEventSpec(id: ID!): Event
+    refetchEventSpec(eventID: ID!): EventSpec
 
     # Runtime
-    createRuntime(in: RuntimeInput!): RuntimeModificationOutput
-    updateRuntime(id: ID!, in: RuntimeInput!): RuntimeModificationOutput
-    deleteRuntime(id: ID!): RuntimeModificationOutput
+    createRuntime(in: RuntimeInput!): Runtime!
+    updateRuntime(id: ID!, in: RuntimeInput!): Runtime!
+    deleteRuntime(id: ID!): Runtime
 
-    createRuntimeLabel(runtimeID: ID!, label: String!, values: [String!]!): [String!]!
+    addRuntimeLabel(runtimeID: ID!, label: String!, values: [String!]!): [String!]!
     deleteRuntimeLabel(id: ID!, label: String! ,values: [String!]!): [String!]!
 
-    createRuntimeAnnotation(runtimeID: ID!, annotation: String!, value: String!): String!
+    addRuntimeAnnotation(runtimeID: ID!, annotation: String!, value: String!): String!
     deleteRuntimeAnnotation(id: ID!, annotation: String!): String!
 
 }

@@ -22,21 +22,21 @@ type API struct {
 type APIInput struct {
 	TargetURL         string                `json:"targetURL"`
 	Credential        *CredentialInput      `json:"credential"`
+	Spec              *APISpecInput         `json:"spec"`
 	InjectHeaders     *HttpHeaders          `json:"injectHeaders"`
 	InjectQueryParams *QueryParams          `json:"injectQueryParams"`
 	Documentations    []*DocumentationInput `json:"documentations"`
-	Spec              *APISpecInput         `json:"spec"`
 }
 
 type APISpec struct {
+	Data         *string       `json:"data"`
 	Type         APISpecType   `json:"type"`
-	Data         string        `json:"data"`
 	FetchRequest *FetchRequest `json:"fetchRequest"`
 }
 
 type APISpecInput struct {
-	Type         APISpecType        `json:"type"`
-	Data         string             `json:"data"`
+	Data         *string            `json:"data"`
+	APISpecType  APISpecType        `json:"apiSpecType"`
 	FetchRequest *FetchRequestInput `json:"fetchRequest"`
 }
 
@@ -162,27 +162,35 @@ type Event struct {
 }
 
 type EventInput struct {
-	Type           EventSpecType         `json:"type"`
-	Data           *string               `json:"data"`
-	FetchRequest   *FetchRequestInput    `json:"fetchRequest"`
+	Spec           *EventSpecInput       `json:"spec"`
 	Documentations []*DocumentationInput `json:"documentations"`
 }
 
 type EventSpec struct {
+	Data         *string       `json:"data"`
 	Type         EventSpecType `json:"type"`
-	Data         string        `json:"data"`
 	FetchRequest *FetchRequest `json:"fetchRequest"`
+}
+
+type EventSpecInput struct {
+	Data          *string            `json:"data"`
+	EventSpecType EventSpecType      `json:"eventSpecType"`
+	FetchRequest  *FetchRequestInput `json:"fetchRequest"`
 }
 
 type FetchRequest struct {
 	URL        string              `json:"url"`
 	Credential *Credential         `json:"credential"`
+	Mode       *FetchMode          `json:"mode"`
+	Filter     *string             `json:"filter"`
 	Status     *FetchRequestStatus `json:"status"`
 }
 
 type FetchRequestInput struct {
 	URL        *string          `json:"url"`
 	Credential *CredentialInput `json:"credential"`
+	Mode       *FetchMode       `json:"mode"`
+	Filter     *string          `json:"filter"`
 }
 
 type FetchRequestStatus struct {
@@ -200,7 +208,7 @@ type HealthCheck struct {
 
 type LabelFilter struct {
 	Label    string          `json:"label"`
-	Values   []*string       `json:"values"`
+	Values   []string        `json:"values"`
 	Operator *FilterOperator `json:"operator"`
 }
 
@@ -223,15 +231,15 @@ type Runtime struct {
 	Tenant          Tenant         `json:"tenant"`
 	Labels          Labels         `json:"labels"`
 	Annotations     Annotations    `json:"annotations"`
-	AgentCredential *Credential    `json:"agentCredential"`
 	Status          *RuntimeStatus `json:"status"`
+	AgentCredential *Credential    `json:"agentCredential"`
 }
 
 type RuntimeInput struct {
-	Name            string           `json:"name"`
-	Labels          *Labels          `json:"labels"`
-	Annotations     *Annotations     `json:"annotations"`
-	AgentCredential *CredentialInput `json:"agentCredential"`
+	Name        string       `json:"name"`
+	Description *string      `json:"description"`
+	Labels      *Labels      `json:"labels"`
+	Annotations *Annotations `json:"annotations"`
 }
 
 type RuntimeStatus struct {
@@ -249,18 +257,18 @@ type Version struct {
 type APISpecType string
 
 const (
-	APISpecTypeOData   APISpecType = "O_DATA"
+	APISpecTypeOdata   APISpecType = "ODATA"
 	APISpecTypeOpenAPI APISpecType = "OPEN_API"
 )
 
 var AllAPISpecType = []APISpecType{
-	APISpecTypeOData,
+	APISpecTypeOdata,
 	APISpecTypeOpenAPI,
 }
 
 func (e APISpecType) IsValid() bool {
 	switch e {
-	case APISpecTypeOData, APISpecTypeOpenAPI:
+	case APISpecTypeOdata, APISpecTypeOpenAPI:
 		return true
 	}
 	return false
@@ -526,6 +534,49 @@ func (e *EventSpecType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e EventSpecType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type FetchMode string
+
+const (
+	FetchModeSingle  FetchMode = "SINGLE"
+	FetchModePackage FetchMode = "PACKAGE"
+	FetchModeIndex   FetchMode = "INDEX"
+)
+
+var AllFetchMode = []FetchMode{
+	FetchModeSingle,
+	FetchModePackage,
+	FetchModeIndex,
+}
+
+func (e FetchMode) IsValid() bool {
+	switch e {
+	case FetchModeSingle, FetchModePackage, FetchModeIndex:
+		return true
+	}
+	return false
+}
+
+func (e FetchMode) String() string {
+	return string(e)
+}
+
+func (e *FetchMode) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = FetchMode(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid FetchMode", str)
+	}
+	return nil
+}
+
+func (e FetchMode) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

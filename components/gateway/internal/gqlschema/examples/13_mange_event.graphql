@@ -1,5 +1,5 @@
 mutation {
-    createEvent(applicationID: "123",in:  {
+    addEvent(applicationID: "123",in:  {
         spec: {
             data: ""
             eventSpecType: ASYNC_API,
