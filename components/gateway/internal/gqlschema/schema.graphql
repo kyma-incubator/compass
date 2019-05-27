@@ -375,7 +375,7 @@ type Mutation {
     # Application
     createApplication(in: ApplicationInput!): Application!
     updateApplication(id: ID!, in: ApplicationInput!): Application
-    deleteApplication(id: ID!): Application # TODO return Bool?
+    deleteApplication(id: ID!): Application
 
     createApplicationLabel(applicationID: ID!, label: String!, values: [String!]!): [String!]!
     deleteApplicationLabel(applicationID: ID!, label: String!, values: [String!]!): [String!]!
@@ -385,12 +385,12 @@ type Mutation {
 
     createApplicationWebhook(applicationID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
     updateApplicationWebhook(webhookID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook
-    deleteApplicationWebhook(webhookID: ID!): ApplicationWebhook # TODO if not found, return error or nil???
+    deleteApplicationWebhook(webhookID: ID!): ApplicationWebhook
 
     createAPI(applicationID: ID!, in: APIInput!): API
     updateAPI(id: ID!, in: APIInput!): API
     deleteAPI(id: ID!): API
-    refetchAPISpec(id: ID!): API # TODO async, consider using subscriptions
+    refetchAPISpec(id: ID!): API
 
     setAPICredential(apiID: ID!, in: CredentialInput!): Credential
     deleteAPICredential(apiID: ID!): Credential
