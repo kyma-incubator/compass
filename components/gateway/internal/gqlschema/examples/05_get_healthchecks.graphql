@@ -1,5 +1,5 @@
 query {
-    healthChecks(types:[MANAGEMENT_PLANE_APPLICATION_HEALTHCHECK],originID: "1") {
+    healthChecks(types:[MANAGEMENT_PLANE_APPLICATION_HEALTHCHECK],origin: "1") {
         type
         condition
         origin
