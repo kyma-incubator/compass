@@ -1,14 +1,14 @@
 # Gateway
 
-Gateway exposes GraphQL API.
+The Gateway exposes GraphQL API.
 
 ## Development
 
-After introducing changes in GraphQL schema, execute a `gqlgen.sh` script.
-To run a Gateway, execute the following command:
+After you introduce changes in the GraphQL schema, run the `gqlgen.sh` script.
+To run the Gateway, use the following command:
 
 ```
 go run cmd/main.go
 ```
 
-GraphQL API playground is available at `localhost:3000` address.
+The GraphQL API playground is available at `localhost:3000`.
