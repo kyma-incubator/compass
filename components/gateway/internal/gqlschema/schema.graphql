@@ -1,0 +1,417 @@
+# Scalars
+
+scalar Timestamp
+
+scalar Tenant # -> String
+
+scalar Labels # -> map[string][]string
+
+scalar Annotations # -> map[string]interface{}
+
+scalar HttpHeaders # -> map[string][]string
+
+scalar QueryParams # -> map[string][]string
+
+scalar CLOB # TBD
+
+# Runtime
+
+type Runtime {
+    id: ID!
+    name: String!
+    description: String
+    tenant: Tenant!
+    labels(key: String): Labels!
+    annotations(key: String): Annotations!
+    status: RuntimeStatus!
+    """directive for checking auth"""
+    agentCredential: Credential!
+}
+
+type RuntimeStatus {
+    condition: RuntimeStatusCondition!
+    timestamp: Timestamp!
+}
+
+enum RuntimeStatusCondition {
+    INITIAL
+    READY
+    FAILED
+}
+
+# Application
+
+type Application {
+    id: ID!
+    tenant: Tenant!
+    name: String!
+    description: String
+    labels(key: String): Labels!
+    annotations(key: String): Annotations!
+    status: ApplicationStatus!
+    webhooks: [ApplicationWebhook!]!
+    healthCheckURL: String
+    apis: [APIDefinition!]!
+    eventAPIs: [EventAPIDefinition!]!
+    documents: [Document!]!
+}
+
+type ApplicationStatus {
+    condition: ApplicationStatusCondition!
+    timestamp: Timestamp!
+}
+
+enum ApplicationStatusCondition {
+    INITIAL
+    UNKNOWN
+    READY
+    FAILED
+}
+
+type ApplicationWebhook {
+    id: ID!
+    type: ApplicationWebhookType!
+    url: String!
+    credential: Credential
+}
+
+enum ApplicationWebhookType {
+    CONFIGURATION_CHANGED
+}
+
+# API
+
+type Version {
+    """for example 4.6"""
+    value: String!
+    deprecated: Boolean
+    """for example 4.5"""
+    deprecatedSince: String
+    """if true, will be removed in the next version"""
+    forRemoval: Boolean
+
+}
+
+type APIDefinition {
+    id: ID!
+    spec: APISpec
+    targetURL: String!
+    credential: Credential
+    additionalHeaders: HttpHeaders #
+    additionalQueryParams: QueryParams
+    version: Version
+}
+
+type APISpec {
+    """when fetch request specified, data will be automatically populated"""
+    data: CLOB
+    format: SpecFormat
+    type: APISpecType!
+    fetchRequest: FetchRequest
+}
+
+enum SpecFormat {
+    YAML
+    JSON
+}
+
+enum APISpecType {
+    ODATA,
+    OPEN_API
+}
+
+enum EventSpecType {
+    ASYNC_API
+}
+
+# Event
+
+type EventAPIDefinition {
+    id: ID!
+    spec: EventSpec!
+    version: Version
+}
+
+type EventSpec {
+    data: CLOB
+    type: EventSpecType!
+    format: SpecFormat
+    fetchRequest: FetchRequest
+}
+
+# Document
+
+type Document {
+    id: ID!
+    title: String!
+    format: DocumentFormat!
+    """for example Service Class, API etc"""
+    kind: String
+    data: CLOB
+    fetchRequest: FetchRequest
+}
+
+enum DocumentFormat {
+    MARKDOWN
+}
+
+
+""" Compass performs fetch to validate if request is correct and stores a copy"""
+type FetchRequest {
+    url: String!
+    credential: Credential
+    mode: FetchMode!
+    filter: String
+    status: FetchRequestStatus!
+}
+
+type FetchRequestStatus {
+    condition: FetchRequestStatusCondition!
+    timestamp: Timestamp!
+}
+
+enum FetchRequestStatusCondition {
+    INITIAL
+    SUCCEEDED
+    FAILED
+}
+
+enum FetchMode {
+    SINGLE
+    PACKAGE
+    INDEX
+}
+
+# Credential
+type Credential {
+    data: CredentialData!
+    requestAuth: CredentialRequestAuth
+}
+
+union CredentialData = BasicCredentialData | OAuthCredentialData
+
+type OAuthCredentialData {
+    clientId: ID!
+    clientSecret: String!
+    url: String!
+}
+
+type BasicCredentialData {
+    username: String!
+    password: String!
+}
+
+type CredentialRequestAuth {
+    type: CredentialRequestAuthType!
+    csrf: CSRFTokenCredentialRequestAuth
+}
+
+enum CredentialRequestAuthType {
+    CSRF_TOKEN
+}
+
+type CSRFTokenCredentialRequestAuth {
+    token: String!
+}
+
+# HealthCheck
+
+
+enum HealthCheckStatusCondition {
+    SUCCEEDED
+    FAILED
+}
+
+enum HealthCheckType {
+    MANAGEMENT_PLANE_APPLICATION_HEALTHCHECK
+}
+
+type HealthCheck {
+    type: HealthCheckType!
+    condition: HealthCheckStatusCondition!
+    origin: ID
+    message: String
+    timestamp: Timestamp!
+}
+
+
+# INPUTS
+
+# Application Input
+
+input ApplicationInput {
+    name: String!
+    description: String
+    labels: Labels
+    annotations: Annotations
+    webhooks: [ApplicationWebhookInput]
+    healthCheckURL: String
+    apis: [APIDefinitionInput!]
+    events: [EventDefinitionInput!]
+    documents: [DocumentInput!]
+}
+
+# Runtime Input
+
+input RuntimeInput {
+    name: String!
+    description: String
+    labels: Labels
+    annotations: Annotations
+}
+
+# FetchRequest Input
+
+input FetchRequestInput {
+    url: String!
+    credential: CredentialInput
+    mode: FetchMode
+    filter: String
+}
+
+# Webhook Input
+
+input ApplicationWebhookInput {
+    type: ApplicationWebhookType!
+    url: String!
+    credential: CredentialInput
+}
+
+# API Input
+
+input APIDefinitionInput {
+    targetURL: String!
+    credential: CredentialInput
+    spec: APISpecInput
+    injectHeaders: HttpHeaders
+    injectQueryParams: QueryParams
+}
+
+input APISpecInput {
+    data: CLOB
+    type: APISpecType!
+    format: SpecFormat!
+    fetchRequest: FetchRequestInput
+}
+
+# Event Input
+
+input EventDefinitionInput {
+    spec: EventSpecInput
+}
+
+input EventSpecInput {
+    data: CLOB
+    eventSpecType: EventSpecType!
+    fetchRequest: FetchRequestInput
+}
+
+# Document Input
+
+input DocumentInput {
+    title: String!
+    displayName: String!
+    description: String!
+    format: DocumentFormat!
+    kind: String
+    data: CLOB
+    fetchRequest: FetchRequestInput
+}
+
+
+# Credential Input
+
+input CredentialInput {
+    data: CredentialDataInput!
+    requestAuth: CredentialRequestAuthInput
+}
+
+input CredentialRequestAuthInput {
+    type: CredentialRequestAuthType!
+    csrf: CSRFTokenCredentialRequestAuthInput
+}
+
+input CSRFTokenCredentialRequestAuthInput {
+    token: String!
+}
+
+input CredentialDataInput {
+    basic: BasicCredentialDataInput
+    oauth: OAuthCredentialDataInput
+}
+
+input OAuthCredentialDataInput {
+    clientId: ID!
+    clientSecret: String!
+    url: String!
+}
+
+input BasicCredentialDataInput {
+    username: String!
+    password: String!
+}
+
+# HealthCheck Input
+
+enum FilterOperator {
+    ALL, ANY
+}
+
+input LabelFilter {
+    label: String!
+    values: [String!]!
+    operator: FilterOperator = ALL
+}
+
+type Query {
+    applications(filter: [LabelFilter!]): [Application!]!
+    application(id: ID!): Application
+
+    runtimes(filter: [LabelFilter!]): [Runtime!]!
+    runtime(id: ID!): Runtime
+
+    healthChecks(types: [HealthCheckType!], origin: ID): [HealthCheck!]!
+}
+
+type Mutation {
+    # Application
+    createApplication(in: ApplicationInput!): Application!
+    updateApplication(id: ID!, in: ApplicationInput!): Application!
+    deleteApplication(id: ID!): Application
+
+    addApplicationLabel(applicationID: ID!, label: String!, values: [String!]!): [String!]!
+    # if application does not exist, return error
+    deleteApplicationLabel(applicationID: ID!, label: String!, values: [String!]!): [String!]
+
+    addApplicationAnnotation(applicationID: ID!, annotation: String!, value: String!): String!
+    deleteApplicationAnnotation(applicationID: ID!, annotation: String!): String
+
+    addApplicationWebhook(applicationID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
+    updateApplicationWebhook(webhookID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
+    deleteApplicationWebhook(webhookID: ID!): ApplicationWebhook
+
+    addAPI(applicationID: ID!, in: APIDefinitionInput!): APIDefinition!
+    updateAPI(id: ID!, in: APIDefinitionInput!): APIDefinition!
+    deleteAPI(id: ID!): APIDefinition
+    refetchAPISpec(apiID: ID!): APISpec
+
+    setAPICredential(apiID: ID!, in: CredentialInput!): Credential!
+    deleteAPICredential(apiID: ID!): Credential
+
+    addEvent(applicationID: ID!, in: EventDefinitionInput!): EventAPIDefinition!
+    updateEvent(id: ID!, in: EventDefinitionInput!): EventAPIDefinition!
+    deleteEvent(id: ID!): EventAPIDefinition
+    refetchEventSpec(eventID: ID!): EventSpec
+
+    # Runtime
+    createRuntime(in: RuntimeInput!): Runtime!
+    updateRuntime(id: ID!, in: RuntimeInput!): Runtime!
+    deleteRuntime(id: ID!): Runtime
+
+    addRuntimeLabel(runtimeID: ID!, key: String!, values: [String!]!): [String!]!
+    deleteRuntimeLabel(id: ID!, key: String!, values: [String!]!): [String!]
+
+    addRuntimeAnnotation(runtimeID: ID!, key: String!, value: String!): String!
+    deleteRuntimeAnnotation(id: ID!, key: String!): String
+}
+

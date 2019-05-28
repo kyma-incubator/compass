@@ -14,18 +14,50 @@ echo "GOPATH:" + $GOPATH
 echo -e "${NC}"
 
 ##
+# DEP ENSURE
+##
+dep ensure -v --vendor-only
+ensureResult=$?
+if [ ${ensureResult} != 0 ]; then
+	echo -e "${RED}✗ dep ensure -v --vendor-only${NC}\n$ensureResult${NC}"
+	exit 1
+else echo -e "${GREEN}√ dep ensure -v --vendor-only${NC}"
+fi
+
+
+./gqlgen.sh
+genStatus=$?
+
+if [[ ${genStatus} != 0 ]];then
+    echo -e "${RED}✗ gqlgen.sh${NC}\n${genStatus}${NC}"
+    exit 1
+  else
+    echo -e "${GREEN}√ gqlgen.sh${NC}"
+fi
+
+##
+# Ensuring that GraphQL schema and code are in-sync
+##
+if [[ "$1" == "$CI_FLAG" ]]; then
+  if [[ -n $(git status -s) ]]; then
+    echo -e "${RED}✗ gqlgen.sh modified some files, schema and code are out-of-sync${NC}"
+    exit 1
+  fi
+fi
+
+
+##
 # GO BUILD
 ##
 buildEnv=""
-if [ "$1" == "$CI_FLAG" ]; then
+if [[ "$1" == "$CI_FLAG" ]]; then
 	# build binary statically
 	buildEnv="env CGO_ENABLED=0 GOOS=linux GOARCH=amd64"
 fi
 
-${buildEnv} go build -o bin/app ./cmd/
-
+${buildEnv} go build -o gateway ./cmd/main.go
 goBuildResult=$?
-rm -r bin/
+rm gateway
 
 if [ ${goBuildResult} != 0 ]; then
 	echo -e "${RED}✗ go build${NC}\n$goBuildResult${NC}"
@@ -34,11 +66,11 @@ else echo -e "${GREEN}√ go build${NC}"
 fi
 
 ##
-# DEP
+# DEP STATUS
 ##
 echo "? dep status"
 depResult=$(dep status -v)
-if [ $? != 0 ]
+if [[ $? != 0 ]]
     then
         echo -e "${RED}✗ dep status\n$depResult${NC}"
         exit 1;
@@ -51,7 +83,7 @@ fi
 echo "? go test"
 go test ./...
 # Check if tests passed
-if [ $? != 0 ];
+if [[ $? != 0 ]];
     then
     	echo -e "${RED}✗ go test\n${NC}"
     	exit 1;
@@ -66,7 +98,7 @@ go build -o goimports-vendored ./vendor/golang.org/x/tools/cmd/goimports
 goImportsResult=$(echo "${filesToCheck}" | xargs -L1 ./goimports-vendored -w -l)
 rm goimports-vendored
 
-if [ $(echo ${#goImportsResult}) != 0 ]
+if [[ $(echo ${#goImportsResult}) != 0 ]]
 	then
     	echo -e "${RED}✗ goimports ${NC}\n$goImportsResult${NC}"
     	exit 1;
@@ -77,7 +109,7 @@ fi
 # GO FMT
 #
 goFmtResult=$(echo "${filesToCheck}" | xargs -L1 go fmt)
-if [ $(echo ${#goFmtResult}) != 0 ]
+if [[ $(echo ${#goFmtResult}) != 0 ]]
 	then
     	echo -e "${RED}✗ go fmt${NC}\n$goFmtResult${NC}"
     	exit 1;
@@ -107,7 +139,7 @@ fi
 # GO VET
 #
 goVetResult=$(echo "${filesToCheck}" | xargs -L1 go vet)
-if [ $(echo ${#goVetResult}) != 0 ]
+if [[ $(echo ${#goVetResult}) != 0 ]]
 	then
     	echo -e "${RED}✗ go vet${NC}\n$goVetResult${NC}"
     	exit 1;

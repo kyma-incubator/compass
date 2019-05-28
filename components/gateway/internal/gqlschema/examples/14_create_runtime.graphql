@@ -1,0 +1,31 @@
+mutation {
+    createRuntime(in: {
+        name: "name",
+        labels: "",
+        annotations: "",
+    }){
+        id
+        name
+        agentCredential {
+            data {
+                __typename
+                ... on BasicCredentialData {
+                    username
+                    password
+                }
+                ... on OAuthCredentialData {
+                    clientId
+                    clientSecret
+                    url
+                }
+            }
+            requestAuth {
+                type
+                csrf {
+                    token
+                }
+            }
+        }
+        # ...
+    }
+}

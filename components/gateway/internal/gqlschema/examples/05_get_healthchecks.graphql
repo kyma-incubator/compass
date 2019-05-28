@@ -1,0 +1,9 @@
+query {
+    healthChecks(types:[MANAGEMENT_PLANE_APPLICATION_HEALTHCHECK],origin: "1") {
+        type
+        condition
+        origin
+        message
+        timestamp
+    }
+}

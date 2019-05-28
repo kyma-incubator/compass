@@ -1,0 +1,33 @@
+schema: schema.graphql
+
+# Let gqlgen know where to put the generated server
+exec:
+  filename: schema_gen.go
+  package: gqlschema
+
+# Let gqlgen know where to the generated models (if any)
+model:
+  filename: models_gen.go
+  package: gqlschema
+
+# Optional turns on binding to field names by tag provided
+struct_tag: json
+
+# Tell gqlgen about any existing models you want to reuse for
+# graphql. These normally come from the db or a remote api.
+models:
+  Labels:
+    model: "github.com/kyma-incubator/compass/components/gateway/internal/gqlschema.Labels"
+  Timestamp:
+    model: "github.com/kyma-incubator/compass/components/gateway/internal/gqlschema.Timestamp"
+  Tenant:
+    model: "github.com/kyma-incubator/compass/components/gateway/internal/gqlschema.Tenant"
+  Annotations:
+    model: "github.com/kyma-incubator/compass/components/gateway/internal/gqlschema.Annotations"
+  HttpHeaders:
+    model: "github.com/kyma-incubator/compass/components/gateway/internal/gqlschema.HttpHeaders"
+  QueryParams:
+    model: "github.com/kyma-incubator/compass/components/gateway/internal/gqlschema.QueryParams"
+ 
+#  Annotations:
+#    model: "github.com/kyma-incubator/compass/internal/gqlschema.Annotations"

@@ -1,0 +1,44 @@
+mutation {
+    createApplication(
+        in: {
+            name: "EC",
+            description: "TODO",
+            labels: "",
+            annotations: "",
+            webhooks: [{type:CONFIGURATION_CHANGED,url: "",credential: {data: { basic: {
+                password: "aaa",
+                username: "bbb",
+            }}}}],
+            healthCheckURL: "",
+            apis: [
+                {
+                    targetURL: "",
+                    credential: {
+                        data: {
+                            basic: {
+                                username: "aaa",
+                                password: "bbb",
+                            }
+                        }
+                    },
+                    injectHeaders: "",
+                    injectQueryParams: "",
+                    spec: {
+                        apiSpecType: OPEN_API,
+                        data: "",
+                    },
+                }
+            ],
+            events: [
+                {
+                    spec: {
+                        eventSpecType: ASYNC_API
+                    }
+
+                }
+            ]
+        }
+    ) {
+        id
+    }
+}

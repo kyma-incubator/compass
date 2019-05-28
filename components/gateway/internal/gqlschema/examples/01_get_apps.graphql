@@ -1,0 +1,96 @@
+query {
+    applications(
+        filer: [
+            { label: "group", values: ["production", "experimental"], operator: ANY },
+            {label: "region", values:["us"]}
+        ]
+    ) {
+        id
+        name
+        tenant
+        description
+
+        labels
+        annotations
+        status {
+            condition
+            timestamp
+        }
+        webhooks {
+            type
+            url
+            credential {
+                data {
+                    __typename
+                   ... on BasicCredentialData {
+                        username
+                        password
+                    }
+                    ... on OAuthCredentialData {
+                        clientId
+                        clientSecret
+                        url
+                    }
+                }
+            }
+        }
+        healthCheckURL
+        apis {
+            id
+            targetURL
+            credential {
+                data {
+                    __typename
+                    ... on BasicCredentialData {
+                        username
+                        password
+                    }
+                    ... on OAuthCredentialData {
+                        clientId
+                        clientSecret
+                        url
+                    }
+                }
+            }
+            spec {
+                type
+                data
+            }
+            additionalHeaders
+            additionalQueryParams
+            version {
+                value
+                deprecated
+                deprecatedSince
+                forRemoval
+            }
+        }
+        eventAPIs {
+            id
+            spec {
+                type
+                data
+                fetchRequest {
+                    url
+                    credential {
+                        data {
+                            __typename
+                            ... on BasicCredentialData {
+                                username
+                                password
+                            }
+                            ... on OAuthCredentialData {
+                                clientId
+                                clientSecret
+                                url
+                            }
+                        }
+                    }
+                }
+            }
+            version {
+                value
+            }
+        }
+    }
+}
