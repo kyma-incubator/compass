@@ -1673,7 +1673,6 @@ input BasicCredentialDataInput {
 
 # HealthCheck Input
 
-
 enum FilterOperator {
     ALL, ANY
 }
