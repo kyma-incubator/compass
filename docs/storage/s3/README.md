@@ -1,13 +1,13 @@
 # Storage
 
-Description of using static object storage as database for Application Registry.
+This document describes using static object storage as a database for the Application Registry.
 
 ## Storing Application labels
 
-There were an idea to use Apache Parquet for storing the pieces of information regarding labels.
-We want to have an easy access to the pieces of information:
-    - list all labels for application 
-    - query application by label
+The idea is to use Apache Parquet for storing pieces of information regarding labels.
+We want to have easy access to information and be able to:
+    - list all labels for an application
+    - query an application by labels
     - list all labels
 
 ### S3-based Solution
@@ -18,36 +18,36 @@ To achieve querying by groups, the following bucket structure is suggested:
 
 Data redundancy is needed to reduce requests while doing read operations.
 
-In `data.json` files we could store API, event specs and docs. However, we would need to assure that always the latest file is modified (file versioning). We can also store the files separately, but then the number of requests increases. That's why the cases below assumes that we store the data in single `data.json` file.
+In the `data.json` files we could store API, event specs and docs. However, we would need to assure that the latest file is always modified (file versioning). We can also store the files separately, but then the number of requests increases. That's why the cases below assume that we store the data in a single `data.json` file.
 
 **Runtime creation**
 
-- Create `data.json` file in `{tenant_id}/runtimes/{runtime_id}` directory (1 request)
+- Create a `data.json` file in the `{tenant_id}/runtimes/{runtime_id}` directory (1 request)
 
 For every label of the runtime (N is the number of the runtimes):
-- Create `{key}={value}` file for every label in `{tenant_id}/runtimes/{runtime_id}/labels` (N requests)
-- Create `data.json` file in `{tenant_id}/labels/{key}/{value}/runtimes/{runtime_id}` directory (N requests)
-- Create `key=value` file in `{tenant_id}/labels/{key}/{value}/runtimes/{runtime_id}/labels` directory (N * N requests)
+- Create the `{key}={value}` file in the `{tenant_id}/runtimes/{runtime_id}/labels` directory (N requests)
+- Create the `data.json` file in the `{tenant_id}/labels/{key}/{value}/runtimes/{runtime_id}` directory (N requests)
+- Create the `key=value` file in the `{tenant_id}/labels/{key}/{value}/runtimes/{runtime_id}/labels` directory (N * N requests)
 
 Total calls: N^2 + 2*N + 1
 
 **Application creation**
 
-Similar to Runtime creation - replace `runtimes` with `applications`
+Similar to the Runtime creation - replace `runtimes` with `applications`
 
 Total calls: N^2 + 2*N + 1
 
-**Adding label to an existing Application**
+**Adding a label to an existing Application**
 
-- Create file `{key}={value}` in `{tenant_id}/applications/{application_id}` directory (1 request)
-- Copy files from `{tenant_id}/applications/{application_id}` to `{tenant_id}/labels/{key}/{value}/applications/{application_id}` directory (every file is a separate request; 1 request for data.json + N for labels)
+- Create the file `{key}={value}` in the `{tenant_id}/applications/{application_id}` directory (1 request)
+- Copy files from the `{tenant_id}/applications/{application_id}` to the `{tenant_id}/labels/{key}/{value}/applications/{application_id}` directory (every file is a separate request; 1 request for data.json + N for labels)
 
 Total calls: N + 2
 
-**Adding label to an existing Runtime**
+**Adding a label to an existing Runtime**
 
-- Create file `{key}={value}` in `{tenant_id}/runtimes/{runtime_id}` directory (1 request)
-- Copy files from `{tenant_id}/runtimes/{runtime_id}` to `{tenant_id}/labels/{key}/{value}/runtimes/{runtime_id}` directory (every file is a separate request; 1 request for data.json + N for labels)
+- Create the `{key}={value}` file in the `{tenant_id}/runtimes/{runtime_id}` directory (1 request)
+- Copy files from the `{tenant_id}/runtimes/{runtime_id}` to the `{tenant_id}/labels/{key}/{value}/runtimes/{runtime_id}` directory (every file is a separate request; 1 request for data.json + N for labels)
 
 Total calls: N + 2
 
@@ -56,7 +56,7 @@ Total calls: N + 2
 - List all directories under `{tenant_id}/runtimes` (1 request)
 
 For every runtime (N is the number of the runtimes):
-- Get `data.json` file from `{tenant_id}/runtimes/{runtime_id}` directory (N requests)
+- Get  the`data.json` file from the `{tenant_id}/runtimes/{runtime_id}` directory (N requests)
 
 Total calls: N + 1
 
@@ -71,7 +71,7 @@ Total calls: N + 1
 - List all directories under `{tenant_id}/labels/{key}/{value}/applications` (1 request)
 
 For every application (N is the number of the application):
-- Get `data.json` file from `{tenant_id}/labels/{key}/{value}/applications/{application_id}` directory (N requests)
+- Get the `data.json` file from the `{tenant_id}/labels/{key}/{value}/applications/{application_id}` directory (N requests)
 
 Total calls: N + 1
 
@@ -82,7 +82,7 @@ Total calls: N + 1
 
 Total calls: 1
 
-**List all possible values for label key**
+**List all possible values for the label key**
 
 - List all directories under `{tenant_id}/labels/{key}` (1 request)
 
@@ -94,23 +94,23 @@ Total calls: 1
 - backup
 
 ### Cons
-- multiple calls to S3 every time we want to read, write or delete some data. 
+- multiple calls to S3 every time we want to read, write or delete some data
 
-    For example, to query all 10 runtimes for tenant, we would need to do 11 calls to S3:
+    For example, to query all 10 runtimes for a tenant requires 11 calls to S3:
     -   1 for listing all files in directory
     -   10 requests to download files with data for every runtime.
-    -   to Add new runtime with 2 labels, we would need to upload 9 files because of the data redundancy (9 calls - 6 files for labels and 3 files with runtime data)
+    -   to add new runtime with 2 labels requires uploading 9 files because of the data redundancy (9 calls - 6 files for labels and 3 files with runtime data)
 
 - complex implementation for adding, removing and querying data
-- problems with caching while cross-region replication - while using cache, even very short-living one, there will be a delay for reading modifications in `data.json` file, if it were accessed before and modified by other client
+- problems with caching while cross-region replication - while using the cache, even very short-living one, there will be a delay in reading modifications in the `data.json` file if it was accessed before and modified by another client
 - No support for transactions (@tgorgol)
     
-    For example, if we want to use data redundancy then we need to consider cases where one file write will succeed while other one will fail. This will further increase code complexity.
+    For example, if we want to use data redundancy then we need to consider cases where one file write will succeed while another one will fail. This will further increase code complexity.
 - No update functionality. (@tgorgol)
 
-    If we decide to store metadata in `data.json` file then to update a single value from that file we have to replace whole file. In our case this wouldn't be a big problem as the `data.json` file is expected to be small, nonetheless it will increase complexity of code, as we will have to first download current file, patch it locally and then put the new file in the storage.
+    If we decide to store metadata in the `data.json` file, we will have to replace the whole file to be able to update a single value from that file. In our case this wouldn't be a big problem as the `data.json` file is expected to be small, nonetheless, it will increase the complexity of the code, as we will have to first download the existing file, patch it locally and then put the new file in the storage.
     
-    One way of solving this issue is to use separate files for each metadata property with it's value in name, so we would have a directory structure like that:
+    One way of solving this issue is to use separate files for each metadata property with its value in the name, so we would have the following directory structure:
     
     ```
     {tenant_id}/
@@ -129,11 +129,11 @@ Total calls: 1
     ...
     ```
 
-   that way updating single property would require only replacing a single file, also, reading application metadata would be faster as most of it would be available after listing the application directory. The downsides to storing this data in filename are possible length/encoding limitations.
+   Using the structure, updating a single property would require only replacing a single file. Also, reading application metadata would be faster as most of it would be available after listing the application directory. The downsides to storing this data in a filename are possible length/encoding limitations.
 
 ## Cross-region replication
 
-The following section describes a comparison between cloud-storage offerings, regarding the cross-region replication. All providers listed below have similiar offering, except the GCP, which has multi-region within only the same continent.
+The following section describes a comparison between cloud-storage offerings regarding cross-region replication. All providers listed below have a similar offering, except for the GCP which offers multi-region within only the same continent.
 
 We would like to create multiple replicas in different regions. For example, in the same time we would like to have three replicas in the following regions: Asia, Europe and USA.
 
@@ -155,14 +155,14 @@ Amazon has [Cross-region replication for S3 buckets](https://docs.aws.amazon.com
 
 ### Azure Blob Storage
 
-On Microsoft Azure, there is available [Read-Access Geo-Redundant Storage (RA-GRS)](https://docs.microsoft.com/pl-pl/azure/storage/common/storage-redundancy), but it is limited to only two regions at the same time. In a result, it doesn't meet our requirements.
+Microsoft Azure has [Read-Access Geo-Redundant Storage (RA-GRS)](https://docs.microsoft.com/pl-pl/azure/storage/common/storage-redundancy) available, but it is limited to only two regions at the same time. As a result, it doesn't meet our requirements.
 
 ## Summary
 
-There are many [discussions](https://www.quora.com/How-can-we-use-Amazon-S3-as-a-database) whether using S3 as database is a good idea. It might work in some specific use cases, but generally it is not suggested to do so.
+There are many [discussions](https://www.quora.com/How-can-we-use-Amazon-S3-as-a-database) whether using S3 as a database is a good idea. It might work in some specific use cases, but generally, it is not suggested to do so.
 
-In our case using S3 will make the Registry implementation much more difficult. Doing so many request per single read/write operation will mean that every request to the Registry will be slow - much slower than typical (No)SQL database.
+In our case using S3 will make the Registry implementation much more difficult. Doing so, many requests per single read/write operation will mean that every request to the Registry will be slow - much slower than a typical (No)SQL database.
 
-Also, the cross-region replication is very limited in the top cloud providers. There is no cloud provider from three investigated that meets our requirements.
+Also, the cross-region replication is very limited in the top cloud providers' offerings. There is no cloud provider from the three investigated that meets our requirements.
 
-We should investigate database cloud solutions. In my opinion, in our use case, NoSQL database will fit more than SQL ones. We could investigate solutions such as [Cloud Firestone](https://cloud.google.com/firestore/) or [Amazon DynamoDB](https://aws.amazon.com/dynamodb/).
+We should investigate database cloud solutions. In my opinion, in our use case, the NoSQL database will fit more than SQL ones. We could investigate solutions such as [Cloud Firestone](https://cloud.google.com/firestore/) or [Amazon DynamoDB](https://aws.amazon.com/dynamodb/).
