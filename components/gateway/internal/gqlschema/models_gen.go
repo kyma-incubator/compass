@@ -40,7 +40,8 @@ type APISpec struct {
 
 type APISpecInput struct {
 	Data         *string            `json:"data"`
-	APISpecType  APISpecType        `json:"apiSpecType"`
+	Type         APISpecType        `json:"type"`
+	Format       SpecFormat         `json:"format"`
 	FetchRequest *FetchRequestInput `json:"fetchRequest"`
 }
 
@@ -48,7 +49,6 @@ type Application struct {
 	ID             string                `json:"id"`
 	Tenant         Tenant                `json:"tenant"`
 	Name           string                `json:"name"`
-	DisplayName    string                `json:"displayName"`
 	Description    *string               `json:"description"`
 	Labels         Labels                `json:"labels"`
 	Annotations    Annotations           `json:"annotations"`
@@ -182,7 +182,7 @@ type EventSpecInput struct {
 type FetchRequest struct {
 	URL        string              `json:"url"`
 	Credential *Credential         `json:"credential"`
-	Mode       *FetchMode          `json:"mode"`
+	Mode       FetchMode           `json:"mode"`
 	Filter     *string             `json:"filter"`
 	Status     *FetchRequestStatus `json:"status"`
 }
@@ -190,7 +190,7 @@ type FetchRequest struct {
 type FetchRequestInput struct {
 	URL        string           `json:"url"`
 	Credential *CredentialInput `json:"credential"`
-	Mode       FetchMode        `json:"mode"`
+	Mode       *FetchMode       `json:"mode"`
 	Filter     *string          `json:"filter"`
 }
 

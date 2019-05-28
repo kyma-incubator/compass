@@ -45,7 +45,6 @@ type Application {
     id: ID!
     tenant: Tenant!
     name: String!
-    displayName: String!
     description: String
     labels(key: String): Labels!
     annotations(key: String): Annotations!
@@ -95,7 +94,7 @@ type Version {
 
 type APIDefinition {
     id: ID!
-    spec: APISpec!
+    spec: APISpec
     targetURL: String!
     credential: Credential
     additionalHeaders: HttpHeaders #
@@ -112,7 +111,7 @@ type APISpec {
 }
 
 enum SpecFormat {
-    YAML,
+    YAML
     JSON
 }
 
@@ -161,7 +160,7 @@ enum DocumentFormat {
 type FetchRequest {
     url: String!
     credential: Credential
-    mode: FetchMode
+    mode: FetchMode!
     filter: String
     status: FetchRequestStatus!
 }
@@ -266,7 +265,7 @@ input RuntimeInput {
 input FetchRequestInput {
     url: String!
     credential: CredentialInput
-    mode: FetchMode! = SINGLE
+    mode: FetchMode
     filter: String
 }
 
@@ -290,7 +289,8 @@ input APIDefinitionInput {
 
 input APISpecInput {
     data: CLOB
-    apiSpecType: APISpecType!
+    type: APISpecType!
+    format: SpecFormat!
     fetchRequest: FetchRequestInput
 }
 
@@ -364,14 +364,13 @@ input LabelFilter {
 }
 
 type Query {
-    applications(filer: [LabelFilter!]): [Application!]!
+    applications(filter: [LabelFilter!]): [Application!]!
     application(id: ID!): Application
 
     runtimes(filter: [LabelFilter!]): [Runtime!]!
     runtime(id: ID!): Runtime
 
     healthChecks(types: [HealthCheckType!], origin: ID): [HealthCheck!]!
-    labels(key: String!): [String!]! #TODO: Do we need query for all labels for apps and runtimes?
 }
 
 type Mutation {

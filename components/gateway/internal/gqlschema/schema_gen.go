@@ -64,7 +64,6 @@ type ComplexityRoot struct {
 		Annotations    func(childComplexity int, key *string) int
 		Apis           func(childComplexity int) int
 		Description    func(childComplexity int) int
-		DisplayName    func(childComplexity int) int
 		Documents      func(childComplexity int) int
 		EventAPIs      func(childComplexity int) int
 		HealthCheckURL func(childComplexity int) int
@@ -188,9 +187,8 @@ type ComplexityRoot struct {
 
 	Query struct {
 		Application  func(childComplexity int, id string) int
-		Applications func(childComplexity int, filer []*LabelFilter) int
+		Applications func(childComplexity int, filter []*LabelFilter) int
 		HealthChecks func(childComplexity int, types []HealthCheckType, origin *string) int
-		Labels       func(childComplexity int, key string) int
 		Runtime      func(childComplexity int, id string) int
 		Runtimes     func(childComplexity int, filter []*LabelFilter) int
 	}
@@ -249,12 +247,11 @@ type MutationResolver interface {
 	DeleteRuntimeAnnotation(ctx context.Context, id string, key string) (*string, error)
 }
 type QueryResolver interface {
-	Applications(ctx context.Context, filer []*LabelFilter) ([]*Application, error)
+	Applications(ctx context.Context, filter []*LabelFilter) ([]*Application, error)
 	Application(ctx context.Context, id string) (*Application, error)
 	Runtimes(ctx context.Context, filter []*LabelFilter) ([]*Runtime, error)
 	Runtime(ctx context.Context, id string) (*Runtime, error)
 	HealthChecks(ctx context.Context, types []HealthCheckType, origin *string) ([]*HealthCheck, error)
-	Labels(ctx context.Context, key string) ([]string, error)
 }
 
 type executableSchema struct {
@@ -374,13 +371,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.Description(childComplexity), true
-
-	case "Application.displayName":
-		if e.complexity.Application.DisplayName == nil {
-			break
-		}
-
-		return e.complexity.Application.DisplayName(childComplexity), true
 
 	case "Application.documents":
 		if e.complexity.Application.Documents == nil {
@@ -1083,7 +1073,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Applications(childComplexity, args["filer"].([]*LabelFilter)), true
+		return e.complexity.Query.Applications(childComplexity, args["filter"].([]*LabelFilter)), true
 
 	case "Query.healthChecks":
 		if e.complexity.Query.HealthChecks == nil {
@@ -1096,18 +1086,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.HealthChecks(childComplexity, args["types"].([]HealthCheckType), args["origin"].(*string)), true
-
-	case "Query.labels":
-		if e.complexity.Query.Labels == nil {
-			break
-		}
-
-		args, err := ec.field_Query_labels_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.Labels(childComplexity, args["key"].(string)), true
 
 	case "Query.runtime":
 		if e.complexity.Query.Runtime == nil {
@@ -1365,7 +1343,6 @@ type Application {
     id: ID!
     tenant: Tenant!
     name: String!
-    displayName: String!
     description: String
     labels(key: String): Labels!
     annotations(key: String): Annotations!
@@ -1415,7 +1392,7 @@ type Version {
 
 type APIDefinition {
     id: ID!
-    spec: APISpec!
+    spec: APISpec
     targetURL: String!
     credential: Credential
     additionalHeaders: HttpHeaders #
@@ -1432,7 +1409,7 @@ type APISpec {
 }
 
 enum SpecFormat {
-    YAML,
+    YAML
     JSON
 }
 
@@ -1481,7 +1458,7 @@ enum DocumentFormat {
 type FetchRequest {
     url: String!
     credential: Credential
-    mode: FetchMode
+    mode: FetchMode!
     filter: String
     status: FetchRequestStatus!
 }
@@ -1586,7 +1563,7 @@ input RuntimeInput {
 input FetchRequestInput {
     url: String!
     credential: CredentialInput
-    mode: FetchMode! = SINGLE
+    mode: FetchMode
     filter: String
 }
 
@@ -1610,7 +1587,8 @@ input APIDefinitionInput {
 
 input APISpecInput {
     data: CLOB
-    apiSpecType: APISpecType!
+    type: APISpecType!
+    format: SpecFormat!
     fetchRequest: FetchRequestInput
 }
 
@@ -1684,14 +1662,13 @@ input LabelFilter {
 }
 
 type Query {
-    applications(filer: [LabelFilter!]): [Application!]!
+    applications(filter: [LabelFilter!]): [Application!]!
     application(id: ID!): Application
 
     runtimes(filter: [LabelFilter!]): [Runtime!]!
     runtime(id: ID!): Runtime
 
     healthChecks(types: [HealthCheckType!], origin: ID): [HealthCheck!]!
-    labels(key: String!): [String!]! #TODO: Do we need query for all labels for apps and runtimes?
 }
 
 type Mutation {
@@ -2365,13 +2342,13 @@ func (ec *executionContext) field_Query_applications_args(ctx context.Context, r
 	var err error
 	args := map[string]interface{}{}
 	var arg0 []*LabelFilter
-	if tmp, ok := rawArgs["filer"]; ok {
+	if tmp, ok := rawArgs["filter"]; ok {
 		arg0, err = ec.unmarshalOLabelFilter2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐLabelFilter(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["filer"] = arg0
+	args["filter"] = arg0
 	return args, nil
 }
 
@@ -2394,20 +2371,6 @@ func (ec *executionContext) field_Query_healthChecks_args(ctx context.Context, r
 		}
 	}
 	args["origin"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_labels_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["key"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["key"] = arg0
 	return args, nil
 }
 
@@ -2542,15 +2505,12 @@ func (ec *executionContext) _APIDefinition_spec(ctx context.Context, field graph
 		return obj.Spec, nil
 	})
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*APISpec)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPISpec(ctx, field.Selections, res)
+	return ec.marshalOAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPISpec(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APIDefinition_targetURL(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) graphql.Marshaler {
@@ -2843,33 +2803,6 @@ func (ec *executionContext) _Application_name(ctx context.Context, field graphql
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Name, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Application_displayName(ctx context.Context, field graphql.CollectedField, obj *Application) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "Application",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.DisplayName, nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -3873,12 +3806,15 @@ func (ec *executionContext) _FetchRequest_mode(ctx context.Context, field graphq
 		return obj.Mode, nil
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*FetchMode)
+	res := resTmp.(FetchMode)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOFetchMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐFetchMode(ctx, field.Selections, res)
+	return ec.marshalNFetchMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐFetchMode(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FetchRequest_filter(ctx context.Context, field graphql.CollectedField, obj *FetchRequest) graphql.Marshaler {
@@ -5098,7 +5034,7 @@ func (ec *executionContext) _Query_applications(ctx context.Context, field graph
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Applications(rctx, args["filer"].([]*LabelFilter))
+		return ec.resolvers.Query().Applications(rctx, args["filter"].([]*LabelFilter))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -5240,40 +5176,6 @@ func (ec *executionContext) _Query_healthChecks(ctx context.Context, field graph
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNHealthCheck2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐHealthCheck(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_labels(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_labels_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Labels(rctx, args["key"].(string))
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2ᚕstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -6596,9 +6498,15 @@ func (ec *executionContext) unmarshalInputAPISpecInput(ctx context.Context, v in
 			if err != nil {
 				return it, err
 			}
-		case "apiSpecType":
+		case "type":
 			var err error
-			it.APISpecType, err = ec.unmarshalNAPISpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPISpecType(ctx, v)
+			it.Type, err = ec.unmarshalNAPISpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPISpecType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "format":
+			var err error
+			it.Format, err = ec.unmarshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐSpecFormat(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6930,10 +6838,6 @@ func (ec *executionContext) unmarshalInputFetchRequestInput(ctx context.Context,
 	var it FetchRequestInput
 	var asMap = v.(map[string]interface{})
 
-	if _, present := asMap["mode"]; !present {
-		asMap["mode"] = "SINGLE"
-	}
-
 	for k, v := range asMap {
 		switch k {
 		case "url":
@@ -6950,7 +6854,7 @@ func (ec *executionContext) unmarshalInputFetchRequestInput(ctx context.Context,
 			}
 		case "mode":
 			var err error
-			it.Mode, err = ec.unmarshalNFetchMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐFetchMode(ctx, v)
+			it.Mode, err = ec.unmarshalOFetchMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐFetchMode(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7109,9 +7013,6 @@ func (ec *executionContext) _APIDefinition(ctx context.Context, sel ast.Selectio
 			}
 		case "spec":
 			out.Values[i] = ec._APIDefinition_spec(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "targetURL":
 			out.Values[i] = ec._APIDefinition_targetURL(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -7192,11 +7093,6 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			}
 		case "name":
 			out.Values[i] = ec._Application_name(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "displayName":
-			out.Values[i] = ec._Application_displayName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -7568,6 +7464,9 @@ func (ec *executionContext) _FetchRequest(ctx context.Context, sel ast.Selection
 			out.Values[i] = ec._FetchRequest_credential(ctx, field, obj)
 		case "mode":
 			out.Values[i] = ec._FetchRequest_mode(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "filter":
 			out.Values[i] = ec._FetchRequest_filter(ctx, field, obj)
 		case "status":
@@ -7895,20 +7794,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_healthChecks(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "labels":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_labels(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -8359,20 +8244,6 @@ func (ec *executionContext) unmarshalNAPIDefinitionInput2ᚖgithubᚗcomᚋkyma�
 	}
 	res, err := ec.unmarshalNAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPIDefinitionInput(ctx, v)
 	return &res, err
-}
-
-func (ec *executionContext) marshalNAPISpec2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPISpec(ctx context.Context, sel ast.SelectionSet, v APISpec) graphql.Marshaler {
-	return ec._APISpec(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPISpec(ctx context.Context, sel ast.SelectionSet, v *APISpec) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._APISpec(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNAPISpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPISpecType(ctx context.Context, v interface{}) (APISpecType, error) {
@@ -8961,6 +8832,15 @@ func (ec *executionContext) unmarshalNRuntimeStatusCondition2githubᚗcomᚋkyma
 }
 
 func (ec *executionContext) marshalNRuntimeStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimeStatusCondition(ctx context.Context, sel ast.SelectionSet, v RuntimeStatusCondition) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐSpecFormat(ctx context.Context, v interface{}) (SpecFormat, error) {
+	var res SpecFormat
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐSpecFormat(ctx context.Context, sel ast.SelectionSet, v SpecFormat) graphql.Marshaler {
 	return v
 }
 
