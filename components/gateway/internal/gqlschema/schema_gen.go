@@ -1308,6 +1308,8 @@ scalar Timestamp
 
 scalar Tenant # -> String
 
+scalar Map
+
 scalar Labels # -> map[string][]string
 
 scalar Annotations # -> map[string]interface{}
@@ -1347,13 +1349,13 @@ enum RuntimeStatusCondition {
 
 type Application {
     id: ID!
-    tenant: Tenant!
+    tenant: String!
     name: String!
     description: String
-    labels(key: String): Labels!
-    annotations(key: String): Annotations!
+    labels(key: String): Map!
+    annotations(key: String): Map!
     status: ApplicationStatus!
-    webhooks: [ApplicationWebhook!]!
+    webhooks: [ApplicationWebhook!]
     healthCheckURL: String
     apis: [APIDefinition!]!
     eventAPIs: [EventAPIDefinition!]!
@@ -1362,7 +1364,7 @@ type Application {
 
 type ApplicationStatus {
     condition: ApplicationStatusCondition!
-    timestamp: Timestamp!
+    timestamp: Int!
 }
 
 enum ApplicationStatusCondition {
@@ -2789,10 +2791,10 @@ func (ec *executionContext) _Application_tenant(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(Tenant)
+	res := resTmp.(string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNTenant2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐTenant(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_name(ctx context.Context, field graphql.CollectedField, obj *Application) graphql.Marshaler {
@@ -2874,10 +2876,10 @@ func (ec *executionContext) _Application_labels(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(Labels)
+	res := resTmp.(map[string]interface{})
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐLabels(ctx, field.Selections, res)
+	return ec.marshalNMap2map(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_annotations(ctx context.Context, field graphql.CollectedField, obj *Application) graphql.Marshaler {
@@ -2908,10 +2910,10 @@ func (ec *executionContext) _Application_annotations(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(Annotations)
+	res := resTmp.(map[string]interface{})
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAnnotations2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAnnotations(ctx, field.Selections, res)
+	return ec.marshalNMap2map(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_status(ctx context.Context, field graphql.CollectedField, obj *Application) graphql.Marshaler {
@@ -2957,15 +2959,12 @@ func (ec *executionContext) _Application_webhooks(ctx context.Context, field gra
 		return obj.Webhooks, nil
 	})
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.([]*ApplicationWebhook)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNApplicationWebhook2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplicationWebhook(ctx, field.Selections, res)
+	return ec.marshalOApplicationWebhook2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplicationWebhook(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_healthCheckURL(ctx context.Context, field graphql.CollectedField, obj *Application) graphql.Marshaler {
@@ -3121,10 +3120,10 @@ func (ec *executionContext) _ApplicationStatus_timestamp(ctx context.Context, fi
 		}
 		return graphql.Null
 	}
-	res := resTmp.(Timestamp)
+	res := resTmp.(int)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐTimestamp(ctx, field.Selections, res)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ApplicationWebhook_id(ctx context.Context, field graphql.CollectedField, obj *ApplicationWebhook) graphql.Marshaler {
@@ -7121,9 +7120,6 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			}
 		case "webhooks":
 			out.Values[i] = ec._Application_webhooks(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		case "healthCheckURL":
 			out.Values[i] = ec._Application_healthCheckURL(ctx, field, obj)
 		case "apis":
@@ -8379,43 +8375,6 @@ func (ec *executionContext) marshalNApplicationWebhook2githubᚗcomᚋkymaᚑinc
 	return ec._ApplicationWebhook(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNApplicationWebhook2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplicationWebhook(ctx context.Context, sel ast.SelectionSet, v []*ApplicationWebhook) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		rctx := &graphql.ResolverContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithResolverContext(ctx, rctx)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNApplicationWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplicationWebhook(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
 func (ec *executionContext) marshalNApplicationWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplicationWebhook(ctx context.Context, sel ast.SelectionSet, v *ApplicationWebhook) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
@@ -8769,6 +8728,20 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	return res
 }
 
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+	return graphql.UnmarshalInt(v)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) unmarshalNLabelFilter2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐLabelFilter(ctx context.Context, v interface{}) (LabelFilter, error) {
 	return ec.unmarshalInputLabelFilter(ctx, v)
 }
@@ -8788,6 +8761,29 @@ func (ec *executionContext) unmarshalNLabels2githubᚗcomᚋkymaᚑincubatorᚋc
 
 func (ec *executionContext) marshalNLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐLabels(ctx context.Context, sel ast.SelectionSet, v Labels) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) unmarshalNMap2map(ctx context.Context, v interface{}) (map[string]interface{}, error) {
+	if v == nil {
+		return nil, nil
+	}
+	return graphql.UnmarshalMap(v)
+}
+
+func (ec *executionContext) marshalNMap2map(ctx context.Context, sel ast.SelectionSet, v map[string]interface{}) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := graphql.MarshalMap(v)
+	if res == graphql.Null {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNRuntime2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntime(ctx context.Context, sel ast.SelectionSet, v Runtime) graphql.Marshaler {
@@ -9255,6 +9251,46 @@ func (ec *executionContext) marshalOApplication2ᚖgithubᚗcomᚋkymaᚑincubat
 
 func (ec *executionContext) marshalOApplicationWebhook2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplicationWebhook(ctx context.Context, sel ast.SelectionSet, v ApplicationWebhook) graphql.Marshaler {
 	return ec._ApplicationWebhook(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOApplicationWebhook2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplicationWebhook(ctx context.Context, sel ast.SelectionSet, v []*ApplicationWebhook) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNApplicationWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplicationWebhook(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
 }
 
 func (ec *executionContext) marshalOApplicationWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplicationWebhook(ctx context.Context, sel ast.SelectionSet, v *ApplicationWebhook) graphql.Marshaler {

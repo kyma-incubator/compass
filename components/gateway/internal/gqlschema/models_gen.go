@@ -46,18 +46,18 @@ type APISpecInput struct {
 }
 
 type Application struct {
-	ID             string                `json:"id"`
-	Tenant         Tenant                `json:"tenant"`
-	Name           string                `json:"name"`
-	Description    *string               `json:"description"`
-	Labels         Labels                `json:"labels"`
-	Annotations    Annotations           `json:"annotations"`
-	Status         *ApplicationStatus    `json:"status"`
-	Webhooks       []*ApplicationWebhook `json:"webhooks"`
-	HealthCheckURL *string               `json:"healthCheckURL"`
-	Apis           []*APIDefinition      `json:"apis"`
-	EventAPIs      []*EventAPIDefinition `json:"eventAPIs"`
-	Documents      []*Document           `json:"documents"`
+	ID             string                 `json:"id"`
+	Tenant         string                 `json:"tenant"`
+	Name           string                 `json:"name"`
+	Description    *string                `json:"description"`
+	Labels         map[string]interface{} `json:"labels"`
+	Annotations    map[string]interface{} `json:"annotations"`
+	Status         *ApplicationStatus     `json:"status"`
+	Webhooks       []*ApplicationWebhook  `json:"webhooks"`
+	HealthCheckURL *string                `json:"healthCheckURL"`
+	Apis           []*APIDefinition       `json:"apis"`
+	EventAPIs      []*EventAPIDefinition  `json:"eventAPIs"`
+	Documents      []*Document            `json:"documents"`
 }
 
 type ApplicationInput struct {
@@ -74,7 +74,7 @@ type ApplicationInput struct {
 
 type ApplicationStatus struct {
 	Condition ApplicationStatusCondition `json:"condition"`
-	Timestamp Timestamp                  `json:"timestamp"`
+	Timestamp int                        `json:"timestamp"`
 }
 
 type ApplicationWebhook struct {

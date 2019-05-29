@@ -1,33 +1,85 @@
 package main
 
 import (
+	"fmt"
+	pb "github.com/kyma-incubator/compass/components/director/protobuf"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 	"log"
-	"net/http"
+	"net"
 )
 
-const serverPort = "3000"
+type handler struct{}
 
-func EchoHandler(writer http.ResponseWriter, request *http.Request) {
+func (handler) Applications(ctx context.Context, in *pb.ApplicationsInput) (*pb.ApplicationsResponse, error) {
+	return &pb.ApplicationsResponse{
+		Applications: []*pb.Application{
+			{
+				Id: "foo-test",
+				Name:           "Test",
+				Description:    "Foo",
+				HealthCheckURL: "foo.bar",
+				Tenant: "1",
+				Annotations: map[string][]byte{
+					"test": []byte("string"),
+				},
+				Status: &pb.ApplicationStatus{
+					Condition: pb.ApplicationStatusCondition_INITIAL,
+					Timestamp:int64(3231),
+				},
+			},
+			{
+				Id: "bar-test",
+				Name:           "Test2",
+				Description:    "aa.bb",
+				HealthCheckURL: "bar.com",
+				Tenant: "1",
+				Annotations: map[string][]byte{
+					"test": []byte("string2"),
+				},
+				Status: &pb.ApplicationStatus{
+					Condition: pb.ApplicationStatusCondition_INITIAL,
+					Timestamp:int64(3231),
+				},
+			},
+		},
+	}, nil
+}
 
-	log.Println("Echoing back request made to " + request.URL.Path + " to client (" + request.RemoteAddr + ")")
+func (handler) Apis(ctx context.Context, in *pb.ApplicationRoot) (*pb.ApplicationApisResult, error) {
+	return &pb.ApplicationApisResult{
+		ApplicationApis: []*pb.ApplicationApi{
+			{
+				ID: "1",
+				TargetURL: fmt.Sprintf("%s.foo.bar", in.ID),
+			},
+			{
+				ID: "2",
+				TargetURL: fmt.Sprintf("%s.foo.bar", in.ID),
+			},
+		},
+	}, nil
+}
 
-	writer.Header().Set("Access-Control-Allow-Origin", "*")
-
-	writer.Header().Set("Access-Control-Allow-Headers", "Content-Range, Content-Disposition, Content-Type, ETag")
-
-	err := request.Write(writer)
-	if err != nil {
-		log.Println("error: ", err)
-	}
+func newHandler() *handler {
+	return &handler{}
 }
 
 func main() {
-
-	log.Println("starting server, listening on port " + serverPort)
-
-	http.HandleFunc("/", EchoHandler)
-	err := http.ListenAndServe(":"+serverPort, nil)
+	log.Println("Starting Director...")
+	addr := fmt.Sprintf("127.0.0.1:4000")
+	listener, err := net.Listen("tcp", addr)
 	if err != nil {
-		log.Println("error: ", err)
+		panic(err)
+	}
+
+	srv := grpc.NewServer()
+	pb.RegisterDirectorServer(srv, newHandler())
+	reflection.Register(srv)
+
+	err = srv.Serve(listener)
+	if err != nil {
+		panic(err)
 	}
 }

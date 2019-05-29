@@ -4,6 +4,8 @@ scalar Timestamp
 
 scalar Tenant # -> String
 
+scalar Map
+
 scalar Labels # -> map[string][]string
 
 scalar Annotations # -> map[string]interface{}
@@ -43,13 +45,13 @@ enum RuntimeStatusCondition {
 
 type Application {
     id: ID!
-    tenant: Tenant!
+    tenant: String!
     name: String!
     description: String
-    labels(key: String): Labels!
-    annotations(key: String): Annotations!
+    labels(key: String): Map!
+    annotations(key: String): Map!
     status: ApplicationStatus!
-    webhooks: [ApplicationWebhook!]!
+    webhooks: [ApplicationWebhook!]
     healthCheckURL: String
     apis: [APIDefinition!]!
     eventAPIs: [EventAPIDefinition!]!
@@ -58,7 +60,7 @@ type Application {
 
 type ApplicationStatus {
     condition: ApplicationStatusCondition!
-    timestamp: Timestamp!
+    timestamp: Int!
 }
 
 enum ApplicationStatusCondition {

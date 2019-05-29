@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package director;
+
+enum FilterOperator {
+  ALL = 0;
+  ANY = 1;
+}
+
+message ApplicationsInput {
+  LabelFilter labelFilter = 1;
+  string labelsKey = 2;
+  string annotationsKey = 3;
+}
+
+message LabelFilter {
+  string label = 1;
+  repeated string values = 2;
+  FilterOperator filterOperator = 3;
+}
+
+message ApplicationStatus {
+  ApplicationStatusCondition condition = 1;
+  int64 timestamp = 2; // use Timestamp from "google/protobuf/timestamp.proto";
+}
+
+message APIDefinition {
+  string id = 1;
+//  string spec = 2; //
+  string targetURL = 2;
+//  credential: Credential
+//  additionalHeaders: HttpHeaders #
+//  additionalQueryParams: QueryParams
+//  version: Version
+}
+
+enum ApplicationStatusCondition {
+  INITIAL = 0;
+  UNKNOWN = 1;
+  READY = 2;
+  FAILED = 3;
+}
+
+message Application {
+  string id = 1;
+  string tenant = 2;
+  string name = 3;
+  string description = 4;
+  map<string, string> labels = 5;
+  map<string, bytes> annotations = 6;
+  ApplicationStatus status = 7;
+//  repeated ApplicationWebhook webhooks = 8;
+  string healthCheckURL = 9;
+  repeated APIDefinition apis = 10;
+//  repeated EventAPIDefinition eventAPIs = 11;
+//  repeated Document documents = 12;
+}
+
+message ApplicationsResponse {
+  repeated Application applications = 1;
+}
+
+message ApplicationRoot {
+  string ID = 1;
+}
+
+message ApplicationApi {
+  string ID = 1;
+  string targetURL = 2;
+}
+
+message ApplicationApisResult {
+  repeated ApplicationApi applicationApis = 1;
+}
+
+service Director {
+  rpc Applications (ApplicationsInput) returns (ApplicationsResponse) {}
+  rpc Apis (ApplicationRoot) returns (ApplicationApisResult) {}
+}

@@ -2,9 +2,17 @@ package gqlschema
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/gateway/internal/director"
+	pb "github.com/kyma-incubator/compass/components/gateway/protobuf"
 ) // THIS CODE IS A STARTING POINT ONLY. IT WILL NOT BE UPDATED WITH SCHEMA CHANGES.
 
-type Resolver struct{}
+type Resolver struct{
+	directorClient *director.Client
+}
+
+func NewResolver(directorClient *director.Client) *Resolver {
+	return &Resolver{directorClient: directorClient}
+}
 
 func (r *Resolver) Application() ApplicationResolver {
 	return &applicationResolver{r}
@@ -19,7 +27,28 @@ func (r *Resolver) Query() QueryResolver {
 type applicationResolver struct{ *Resolver }
 
 func (r *applicationResolver) Apis(ctx context.Context, obj *Application) ([]*APIDefinition, error) {
-	panic("not implemented")
+	cli, conn, err := r.directorClient.DirectorClient()
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	resp, err := cli.Apis(ctx, &pb.ApplicationRoot{
+		ID: obj.ID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var apiDefs []*APIDefinition
+	for _, api := range resp.ApplicationApis {
+		apiDefs = append(apiDefs, &APIDefinition{
+			ID: api.ID,
+			TargetURL: api.TargetURL,
+		})
+	}
+
+	return apiDefs, nil
 }
 func (r *applicationResolver) EventAPIs(ctx context.Context, obj *Application) ([]*EventAPIDefinition, error) {
 	panic("not implemented")
@@ -115,7 +144,49 @@ func (r *mutationResolver) DeleteRuntimeAnnotation(ctx context.Context, id strin
 type queryResolver struct{ *Resolver }
 
 func (r *queryResolver) Applications(ctx context.Context, filter []*LabelFilter) ([]*Application, error) {
-	panic("not implemented")
+	cli, conn, err := r.directorClient.DirectorClient()
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	appInput := &pb.ApplicationsInput{
+
+	}
+	resp, err := cli.Applications(ctx, appInput)
+	if err != nil {
+		return nil, err
+	}
+
+	var gqlApps []*Application
+	for _, app := range resp.Applications {
+
+		labels := make(map[string]interface{})
+		for k, v := range app.Labels {
+			labels[k] = v
+		}
+
+		annotations := make(map[string]interface{})
+		for k, v := range app.Annotations {
+			annotations[k] = string(v)
+		}
+		gqlApps = append(gqlApps, &Application{
+			ID: app.Id,
+			Name: app.Name,
+			Tenant: "string",
+			Description: &app.Description,
+			Annotations: annotations,
+			Labels: labels,
+			Webhooks: nil,
+			Status:&ApplicationStatus{
+				//Condition:app.Status.Condition, // TODO:
+				Condition: ApplicationStatusConditionReady,
+				Timestamp:int(app.Status.Timestamp),
+			},
+		})
+	}
+
+	return gqlApps, nil
 }
 func (r *queryResolver) Application(ctx context.Context, id string) (*Application, error) {
 	panic("not implemented")

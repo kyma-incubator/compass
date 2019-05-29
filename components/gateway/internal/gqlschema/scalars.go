@@ -9,7 +9,7 @@ import (
 )
 
 type Labels map[string]string
-type Tenant map[string]string
+type Tenant string
 
 func (y *Tenant) UnmarshalGQL(v interface{}) error {
 	return nil
@@ -21,9 +21,10 @@ type Timestamp map[string]string
 func (y *Timestamp) UnmarshalGQL(v interface{}) error {
 	return nil
 }
-func (y Timestamp) MarshalGQL(w io.Writer) {}
+func (y Timestamp) MarshalGQL(w io.Writer) {
+}
 
-type Annotations map[string]string
+type Annotations map[string][]byte
 
 func (y *Annotations) UnmarshalGQL(v interface{}) error {
 	return nil
