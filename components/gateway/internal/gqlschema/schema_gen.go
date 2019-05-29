@@ -35,6 +35,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Application() ApplicationResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
 }
@@ -217,6 +218,11 @@ type ComplexityRoot struct {
 	}
 }
 
+type ApplicationResolver interface {
+	Apis(ctx context.Context, obj *Application) ([]*APIDefinition, error)
+	EventAPIs(ctx context.Context, obj *Application) ([]*EventAPIDefinition, error)
+	Documents(ctx context.Context, obj *Application) ([]*Document, error)
+}
 type MutationResolver interface {
 	CreateApplication(ctx context.Context, in ApplicationInput) (*Application, error)
 	UpdateApplication(ctx context.Context, id string, in ApplicationInput) (*Application, error)
@@ -2993,13 +2999,13 @@ func (ec *executionContext) _Application_apis(ctx context.Context, field graphql
 		Object:   "Application",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Apis, nil
+		return ec.resolvers.Application().Apis(rctx, obj)
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -3020,13 +3026,13 @@ func (ec *executionContext) _Application_eventAPIs(ctx context.Context, field gr
 		Object:   "Application",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.EventAPIs, nil
+		return ec.resolvers.Application().EventAPIs(rctx, obj)
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -3047,13 +3053,13 @@ func (ec *executionContext) _Application_documents(ctx context.Context, field gr
 		Object:   "Application",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Documents, nil
+		return ec.resolvers.Application().Documents(rctx, obj)
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -7084,57 +7090,84 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 		case "id":
 			out.Values[i] = ec._Application_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "tenant":
 			out.Values[i] = ec._Application_tenant(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._Application_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "description":
 			out.Values[i] = ec._Application_description(ctx, field, obj)
 		case "labels":
 			out.Values[i] = ec._Application_labels(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "annotations":
 			out.Values[i] = ec._Application_annotations(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "status":
 			out.Values[i] = ec._Application_status(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "webhooks":
 			out.Values[i] = ec._Application_webhooks(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "healthCheckURL":
 			out.Values[i] = ec._Application_healthCheckURL(ctx, field, obj)
 		case "apis":
-			out.Values[i] = ec._Application_apis(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Application_apis(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "eventAPIs":
-			out.Values[i] = ec._Application_eventAPIs(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Application_eventAPIs(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "documents":
-			out.Values[i] = ec._Application_documents(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Application_documents(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

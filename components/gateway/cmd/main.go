@@ -9,7 +9,9 @@ import (
 )
 
 func main() {
-	cfg := gqlschema.Config{}
+	cfg := gqlschema.Config{
+		Resolvers: &gqlschema.Resolver{},
+	}
 	executableSchema := gqlschema.NewExecutableSchema(cfg)
 
 	router := mux.NewRouter()

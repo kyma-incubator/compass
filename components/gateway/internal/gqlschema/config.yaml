@@ -10,6 +10,11 @@ model:
   filename: models_gen.go
   package: gqlschema
 
+resolver:
+  filename: resolver.go # where to write them
+  type: Resolver  # what's the resolver root implementation type called?
+
+
 # Optional turns on binding to field names by tag provided
 struct_tag: json
 
@@ -28,6 +33,11 @@ models:
     model: "github.com/kyma-incubator/compass/components/gateway/internal/gqlschema.HttpHeaders"
   QueryParams:
     model: "github.com/kyma-incubator/compass/components/gateway/internal/gqlschema.QueryParams"
- 
-#  Annotations:
-#    model: "github.com/kyma-incubator/compass/internal/gqlschema.Annotations"
+  Application:
+    fields:
+      documents:
+        resolver: true
+      eventAPIs:
+        resolver: true
+      apis:
+        resolver: true
