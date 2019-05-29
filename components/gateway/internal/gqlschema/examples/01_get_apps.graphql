@@ -19,8 +19,8 @@ query {
         webhooks {
             type
             url
-            credential {
-                data {
+            auth {
+                credential {
                     __typename
                     ... on BasicCredentialData {
                         username
@@ -44,7 +44,7 @@ query {
                 credential {
                     additionalHeaders
                     additionalQueryParams
-                    data {
+                    credential {
                         __typename
                         ... on BasicCredentialData {
                             username
