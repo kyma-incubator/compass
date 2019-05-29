@@ -13,21 +13,20 @@ type CredentialData interface {
 }
 
 type APIDefinition struct {
-	ID                    string       `json:"id"`
-	Spec                  *APISpec     `json:"spec"`
-	TargetURL             string       `json:"targetURL"`
-	Credential            *Credential  `json:"credential"`
-	AdditionalHeaders     *HttpHeaders `json:"additionalHeaders"`
-	AdditionalQueryParams *QueryParams `json:"additionalQueryParams"`
-	Version               *Version     `json:"version"`
+	ID        string   `json:"id"`
+	Spec      *APISpec `json:"spec"`
+	TargetURL string   `json:"targetURL"`
+	//  group allows you to find the same API but in different version
+	Group       *string              `json:"group"`
+	Credential  *Credential          `json:"credential"`
+	Credentials []*RuntimeCredential `json:"credentials"`
+	Version     *Version             `json:"version"`
 }
 
 type APIDefinitionInput struct {
-	TargetURL         string           `json:"targetURL"`
-	Credential        *CredentialInput `json:"credential"`
-	Spec              *APISpecInput    `json:"spec"`
-	InjectHeaders     *HttpHeaders     `json:"injectHeaders"`
-	InjectQueryParams *QueryParams     `json:"injectQueryParams"`
+	TargetURL string        `json:"targetURL"`
+	Spec      *APISpecInput `json:"spec"`
+	Version   *VersionInput `json:"version"`
 }
 
 type APISpec struct {
@@ -55,9 +54,10 @@ type Application struct {
 	Status         *ApplicationStatus    `json:"status"`
 	Webhooks       []*ApplicationWebhook `json:"webhooks"`
 	HealthCheckURL *string               `json:"healthCheckURL"`
-	Apis           []*APIDefinition      `json:"apis"`
-	EventAPIs      []*EventAPIDefinition `json:"eventAPIs"`
-	Documents      []*Document           `json:"documents"`
+	//  groupName allows to find different versions of the same API
+	Apis      []*APIDefinition      `json:"apis"`
+	EventAPIs []*EventAPIDefinition `json:"eventAPIs"`
+	Documents []*Document           `json:"documents"`
 }
 
 type ApplicationInput struct {
@@ -111,8 +111,10 @@ type CSRFTokenCredentialRequestAuthInput struct {
 }
 
 type Credential struct {
-	Data        CredentialData         `json:"data"`
-	RequestAuth *CredentialRequestAuth `json:"requestAuth"`
+	Data                  CredentialData         `json:"data"`
+	AdditionalHeaders     *HttpHeaders           `json:"additionalHeaders"`
+	AdditionalQueryParams *QueryParams           `json:"additionalQueryParams"`
+	RequestAuth           *CredentialRequestAuth `json:"requestAuth"`
 }
 
 type CredentialDataInput struct {
@@ -121,8 +123,10 @@ type CredentialDataInput struct {
 }
 
 type CredentialInput struct {
-	Data        *CredentialDataInput        `json:"data"`
-	RequestAuth *CredentialRequestAuthInput `json:"requestAuth"`
+	Data                  *CredentialDataInput        `json:"data"`
+	AdditionalHeaders     *HttpHeaders                `json:"additionalHeaders"`
+	AdditionalQueryParams *QueryParams                `json:"additionalQueryParams"`
+	RequestAuth           *CredentialRequestAuthInput `json:"requestAuth"`
 }
 
 type CredentialRequestAuth struct {
@@ -156,7 +160,9 @@ type DocumentInput struct {
 }
 
 type EventAPIDefinition struct {
-	ID      string     `json:"id"`
+	ID string `json:"id"`
+	// group allows you to find the same API but in different version
+	Group   *string    `json:"group"`
 	Spec    *EventSpec `json:"spec"`
 	Version *Version   `json:"version"`
 }
@@ -239,6 +245,11 @@ type Runtime struct {
 	AgentCredential *Credential `json:"agentCredential"`
 }
 
+type RuntimeCredential struct {
+	RuntimeID  string      `json:"runtimeID"`
+	Credential *Credential `json:"credential"`
+}
+
 type RuntimeInput struct {
 	Name        string       `json:"name"`
 	Description *string      `json:"description"`
@@ -259,6 +270,13 @@ type Version struct {
 	DeprecatedSince *string `json:"deprecatedSince"`
 	// if true, will be removed in the next version
 	ForRemoval *bool `json:"forRemoval"`
+}
+
+type VersionInput struct {
+	Value           string  `json:"value"`
+	Deprecated      *bool   `json:"deprecated"`
+	DeprecatedSince *string `json:"deprecatedSince"`
+	ForRemoval      *bool   `json:"forRemoval"`
 }
 
 type APISpecType string

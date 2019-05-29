@@ -22,10 +22,11 @@ mutation {
                             }
                         }
                     },
-                    injectHeaders: "",
-                    injectQueryParams: "",
+                    additionalHeaders: "",
+                    additionalQueryParams: "",
                     spec: {
-                        apiSpecType: OPEN_API,
+                        type: OPEN_API,
+                        format: JSON,
                         data: "",
                     },
                 }

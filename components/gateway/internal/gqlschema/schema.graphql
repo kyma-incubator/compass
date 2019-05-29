@@ -51,8 +51,9 @@ type Application {
     status: ApplicationStatus!
     webhooks: [ApplicationWebhook!]!
     healthCheckURL: String
-    apis: [APIDefinition!]!
-    eventAPIs: [EventAPIDefinition!]!
+    """ groupName allows to find different versions of the same API """
+    apis(groupName: String): [APIDefinition!]!
+    eventAPIs(groupName: String): [EventAPIDefinition!]!
     documents: [Document!]!
 }
 
@@ -89,17 +90,22 @@ type Version {
     deprecatedSince: String
     """if true, will be removed in the next version"""
     forRemoval: Boolean
-
 }
 
 type APIDefinition {
     id: ID!
     spec: APISpec
     targetURL: String!
-    credential: Credential
-    additionalHeaders: HttpHeaders #
-    additionalQueryParams: QueryParams
+    """ group allows you to find the same API but in different version """
+    group: String
+    credential(runtimeID: ID!): Credential
+    credentials: [RuntimeCredential!]
     version: Version
+}
+
+type RuntimeCredential {
+    runtimeID: ID!
+    credential: Credential!
 }
 
 type APISpec {
@@ -128,6 +134,8 @@ enum EventSpecType {
 
 type EventAPIDefinition {
     id: ID!
+    """group allows you to find the same API but in different version"""
+    group: String
     spec: EventSpec!
     version: Version
 }
@@ -185,6 +193,8 @@ enum FetchMode {
 # Credential
 type Credential {
     data: CredentialData!
+    additionalHeaders: HttpHeaders
+    additionalQueryParams: QueryParams
     requestAuth: CredentialRequestAuth
 }
 
@@ -278,14 +288,20 @@ input ApplicationWebhookInput {
 }
 
 # API Input
-
+# you need to perform separate call to set credentials
 input APIDefinitionInput {
     targetURL: String!
-    credential: CredentialInput
     spec: APISpecInput
-    injectHeaders: HttpHeaders
-    injectQueryParams: QueryParams
+    version: VersionInput
 }
+
+input VersionInput {
+    value: String!
+    deprecated: Boolean = false
+    deprecatedSince: String
+    forRemoval: Boolean = false
+}
+
 
 input APISpecInput {
     data: CLOB
@@ -323,6 +339,8 @@ input DocumentInput {
 
 input CredentialInput {
     data: CredentialDataInput!
+    additionalHeaders: HttpHeaders #
+    additionalQueryParams: QueryParams
     requestAuth: CredentialRequestAuthInput
 }
 
@@ -395,8 +413,13 @@ type Mutation {
     deleteAPI(id: ID!): APIDefinition
     refetchAPISpec(apiID: ID!): APISpec
 
-    setAPICredential(apiID: ID!, in: CredentialInput!): Credential!
-    deleteAPICredential(apiID: ID!): Credential
+    """
+    If runtimeID not provided, the samec credential will be set for every runtime already available
+    Returns information for which runtime it was configured
+    """
+    setAPICredential(apiID: ID!, runtimeID: ID, in: CredentialInput!): [RuntimeCredential!]!
+    deleteAPICredential(apiID: ID!, runtimeID: ID): [RuntimeCredential!]!
+
 
     addEvent(applicationID: ID!, in: EventDefinitionInput!): EventAPIDefinition!
     updateEvent(id: ID!, in: EventDefinitionInput!): EventAPIDefinition!

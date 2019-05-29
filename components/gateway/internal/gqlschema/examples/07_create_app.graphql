@@ -21,12 +21,27 @@ mutation {
                             }
                         }
                     },
-                    injectHeaders: "",
-                    injectQueryParams: "",
+                    additionalHeaders: "",
+                    additionalQueryParams: "",
                     spec: {
-                        apiSpecType: OPEN_API,
+                        type: OPEN_API,
+                        format: JSON,
                         data: "",
                     },
+                    variants: [
+                        {
+                            runtimeID: "kyma-1",
+                            credential: {
+                                data: {
+                                    basic: {
+                                        username: "fff",
+                                        password: "ggg",
+                                    }
+                                }
+
+                            }
+                        },
+                    ],
                 }
             ],
             events: [

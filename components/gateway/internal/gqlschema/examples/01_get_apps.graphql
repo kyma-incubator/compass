@@ -1,6 +1,6 @@
 query {
     applications(
-        filer: [
+        filter: [
             { label: "group", values: ["production", "experimental"], operator: ANY },
             {label: "region", values:["us"]}
         ]
@@ -22,7 +22,7 @@ query {
             credential {
                 data {
                     __typename
-                   ... on BasicCredentialData {
+                    ... on BasicCredentialData {
                         username
                         password
                     }
@@ -38,59 +38,66 @@ query {
         apis {
             id
             targetURL
-            credential {
-                data {
-                    __typename
-                    ... on BasicCredentialData {
-                        username
-                        password
-                    }
-                    ... on OAuthCredentialData {
-                        clientId
-                        clientSecret
-                        url
-                    }
-                }
-            }
-            spec {
-                type
-                data
-            }
-            additionalHeaders
-            additionalQueryParams
-            version {
-                value
-                deprecated
-                deprecatedSince
-                forRemoval
-            }
-        }
-        eventAPIs {
-            id
-            spec {
-                type
-                data
-                fetchRequest {
-                    url
-                    credential {
-                        data {
-                            __typename
-                            ... on BasicCredentialData {
-                                username
-                                password
-                            }
-                            ... on OAuthCredentialData {
-                                clientId
-                                clientSecret
-                                url
-                            }
+            credentials {
+                runtimeID
+
+                credential {
+                    additionalHeaders
+                    additionalQueryParams
+                    data {
+                        __typename
+                        ... on BasicCredentialData {
+                            username
+                            password
+                        }
+                        ... on OAuthCredentialData {
+                            clientId
+                            clientSecret
+                            url
                         }
                     }
                 }
             }
-            version {
-                value
-            }
+        }
+        spec {
+            type
+            data
+        }
+        additionalHeaders
+        additionalQueryParams
+        version {
+            value
+            deprecated
+            deprecatedSince
+            forRemoval
         }
     }
+    eventAPIs {
+        id
+        spec {
+            type
+            data
+            fetchRequest {
+                url
+                credential {
+                    data {
+                        __typename
+                        ... on BasicCredentialData {
+                            username
+                            password
+                        }
+                        ... on OAuthCredentialData {
+                            clientId
+                            clientSecret
+                            url
+                        }
+                    }
+                }
+            }
+        }
+        version {
+            value
+        }
+    }
+}
 }
