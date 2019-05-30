@@ -10,13 +10,13 @@ We discussed three different approaches to exposing our API to users.
 
 ## Possible solutions
 
-### 1. Single handwritten schema
+### 1. Handwritten GraphQL Gateway
 
 // TODO
 
 ### 2. Multiple schemas stitched into one
 
-#### Apollo Server
+#### 2.1. Apollo Server
 
 First option is to use the Node.js [Apollo Server](https://www.apollographql.com/), that already has the functionality to merge schemas and proxy traffic to specific internal graphql servers. Merging works by introspection of existing schemas, and it takes care of things such as type conflicts. It is even possible to combine and modify types and fields from different schemas. Apollo supports queries, mutations and subscriptions.
 
@@ -32,7 +32,7 @@ Cons
 
 - adding Node.js to our technology stack (worse performance)
 
-#### Implementing HTTP proxy in Go
+#### 2.2. Custom HTTP proxy in Go
 
 Another idea was to implement a HTTP proxy that would first create a mapping of queries and remote servers they should access. Then it would forward received queries and mutations to remote servers using the mapped relations.
 
@@ -49,7 +49,7 @@ Cons
 - lack of some GraphQL features
 - implementing subscriptions proxying
 
-#### Implementing solution similar to Apollo stitching in Go
+#### 2.3. Custom stitching implementation in Go
 
 In this approach we would have to either write our custom solution that would stitch remote schemas in similar manner to how it's done in Apollo library or contribute to [gqlgen](https://github.com/99designs/gqlgen/issues/5). Either way it seems like a lot of work to support all edge cases and the gqlgen issue that's open for over a year and still not implemented seems to be a proof of that.
 
@@ -71,6 +71,6 @@ Solution | Introspection & subscriptions support | Good performance<br>(Go) | Si
 :-:|:-:|:-:|:-:|:-:|:-:|:-:
 Handwritten GraphQL Gateway | ✓ | ✓ | ✓ | ✓ | ✗ | medium
 Apollo Server | ✓ | ✗ | ✓ | ✗ | ✓ | very small
-Custom HTTP proxy in Go | ✗ | ✓ | ✓ | ✗ | ✓ | big
+Custom HTTP proxy in Go | ✗ | ✓ | ✓ | ✗ | ✓ | small
 Custom stitching implementation in Go | ✓ | ✓ | ✓ | ✗ | ✓ | big
-Multiple HTTP endpoints | ✓<br>(per endpoint) | ✓ | ✗ | ✗ | ✓ | small
+Separate HTTP endpoints | ✓<br>(per endpoint) | ✓ | ✗ | ✗ | ✓ | small
