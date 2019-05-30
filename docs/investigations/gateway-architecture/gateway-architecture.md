@@ -24,6 +24,7 @@ Pros
 Cons
 
 - need to maintain almost identical protobuf schema to relay requests to internal services
+- each resolver sends separate call to proxied API
 
 ### 2. Multiple schemas stitched into one
 
@@ -44,6 +45,7 @@ Cons
 
 - adding Node.js to our technology stack (worse performance)
 - no facade over internal APIs
+- each resolver sends separate call to proxied API
 
 #### 2.2. Custom HTTP proxy in Go
 
@@ -57,6 +59,7 @@ Pros
 
 - avoiding Node.js (better performance)
 - single endpoint
+- single call to proxied API
 
 Cons
 
@@ -81,6 +84,7 @@ Cons
 
 - seems like a huge amount of work
 - no facade over internal APIs
+- each resolver sends separate call to proxied API
 
 ### 3. Separate HTTP endpoints
 
@@ -91,6 +95,7 @@ Pros
 - full GraphQL support (per endpoint)
 - avoiding Node.js (better performance)
 - support for proxying queries, mutations and subscriptions
+- single call to proxied API
 
 Cons
 
@@ -99,10 +104,10 @@ Cons
 
 ## Summary
 
-Solution | Introspection & subscriptions support | Good performance<br>(Go) | Single endpoint | Facade over internal components | No need to maintain almost identical protobuf schema | Relative amount of work
-:-:|:-:|:-:|:-:|:-:|:-:|:-:
-Handwritten GraphQL Gateway | ✓ | ✓ | ✓ | ✓ | ✗ | medium
-Apollo Server | ✓ | ✗ | ✓ | ✗ | ✓ | very small
-Custom HTTP proxy in Go | ✗ | ✓ | ✓ | ✗ | ✓ | small
-Custom stitching implementation in Go | ✓ | ✓ | ✓ | ✗ | ✓ | big
-Separate HTTP endpoints | ✓<br>(per endpoint) | ✓ | ✗ | ✗ | ✓ | small
+Solution | Introspection & subscriptions support | Single call to proxied API | Good performance<br>(Go) | Single endpoint | Facade over internal components | No need to maintain almost identical protobuf schema | Relative amount of work
+:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:
+Handwritten GraphQL Gateway | ✓ | ✗ | ✓ | ✓ | ✓ | ✗ | medium
+Apollo Server | ✓ | ✗ | ✗ | ✓ | ✗ | ✓ | very small
+Custom HTTP proxy in Go | ✗ | ✓ | ✓ | ✓ | ✗ | ✓ | small
+Custom stitching implementation in Go | ✓ | ✗ | ✓ | ✓ | ✗ | ✓ | big
+Separate HTTP endpoints | ✓<br>(per endpoint) | ✓ | ✓ | ✗ | ✗ | ✓ | small
