@@ -2,4 +2,4 @@
 
 ## Diagram
 
-[](./assets/components-high-level.svg)
+![](./assets/components-high-level.svg)

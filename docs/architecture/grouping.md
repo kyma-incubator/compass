@@ -1,4 +1,4 @@
 # Overview
 
 ## Diagram
-[](./assets/grouping.svg)
+![](./assets/grouping.svg)
