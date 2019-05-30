@@ -14,6 +14,17 @@ We discussed three different approaches to exposing our API to users.
 
 // TODO
 
+Pros
+
+- full GraphQL support (introspection + subscriptions)
+- avoiding Node.js (better performance)
+- single endpoint
+- facade over internal APIs
+
+Cons
+
+- need to maintain almost identical protobuf schema to relay requests to internal services
+
 ### 2. Multiple schemas stitched into one
 
 #### 2.1. Apollo Server
@@ -27,10 +38,12 @@ Pros
 - out of the box support for proxying queries, mutations and subscriptions
 - type conflict detection and resolution
 - combining and editing types of merged schemas
+- single endpoint
 
 Cons
 
 - adding Node.js to our technology stack (worse performance)
+- no facade over internal APIs
 
 #### 2.2. Custom HTTP proxy in Go
 
@@ -43,11 +56,13 @@ Handling subscriptions would be problematic as well, because that would require 
 Pros
 
 - avoiding Node.js (better performance)
+- single endpoint
 
 Cons
 
-- lack of some GraphQL features
+- lack of some GraphQL features (introspection)
 - implementing subscriptions proxying
+- no facade over internal APIs
 
 #### 2.3. Custom stitching implementation in Go
 
@@ -56,14 +71,31 @@ In this approach we would have to either write our custom solution that would st
 Pros
 
 - avoiding Node.js (better performance)
+- actually hosts fully functioning GraphQL server, so that API user can't tell he's using a abstraction over few separate APIs
+- support for proxying queries, mutations and subscriptions
+- type conflict detection and resolution
+- combining and editing types of merged schemas
+- single endpoint
 
 Cons
 
 - seems like a huge amount of work
+- no facade over internal APIs
 
 ### 3. Separate HTTP endpoints
 
 // TODO
+
+Pros
+
+- full GraphQL support (per endpoint)
+- avoiding Node.js (better performance)
+- support for proxying queries, mutations and subscriptions
+
+Cons
+
+- no facade over internal APIs
+- multiple endpoints
 
 ## Summary
 
