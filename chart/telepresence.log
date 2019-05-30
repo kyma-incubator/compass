@@ -1,0 +1,1255 @@
+   0.0 TEL | Telepresence 0.97 launched at Thu May 30 12:48:05 2019
+   0.0 TEL |   /usr/local/bin/telepresence
+   0.0 TEL | Platform: darwin
+   0.0 TEL | Python 3.7.2 (default, Feb 12 2019, 08:15:36)
+   0.0 TEL | [Clang 10.0.0 (clang-1000.11.45.5)]
+   0.0 TEL | [1] Running: uname -a
+   0.0   1 | Darwin C02W41MYHTDF 18.5.0 Darwin Kernel Version 18.5.0: Mon Mar 11 20:40:32 PDT 2019; root:xnu-4903.251.3~3/RELEASE_X86_64 x86_64
+   0.0 TEL | BEGIN SPAN main.py:40(main)
+   0.0 TEL | BEGIN SPAN startup.py:74(__init__)
+   0.0 TEL | Found kubectl -> /usr/local/bin/kubectl
+   0.0 TEL | [2] Capturing: kubectl version --short
+   0.1 TEL | [3] Capturing: kubectl config current-context
+   0.2 TEL | [4] Capturing: kubectl config view -o json
+   0.3 TEL | [5] Capturing: kubectl --context minikube get ns kyma-system
+   0.4 TEL | Command: kubectl 1.12.3
+   0.4 TEL | Context: minikube, namespace: kyma-system, version: 1.12.5
+   0.4 TEL | Looks like we're in a local VM, e.g. minikube.
+   0.4 TEL | END SPAN startup.py:74(__init__)    0.4s
+   0.4 TEL | Found ssh -> /usr/bin/ssh
+   0.4 TEL | [6] Capturing: ssh -V
+   0.4 TEL | Found bash -> /bin/bash
+   0.4 TEL | Found sshuttle-telepresence -> /usr/local/Cellar/telepresence/0.97/libexec/sshuttle-telepresence
+   0.4 TEL | Found pfctl -> /sbin/pfctl
+   0.4 TEL | Found sudo -> /usr/bin/sudo
+   0.4 TEL | [7] Running: sudo -n echo -n
+   0.5   7 | sudo: a password is required
+   0.5 TEL | [7] exit 1 in 0.04 secs.
+   0.5 >>> | Invoking sudo. Please enter your sudo password.
+   0.5 TEL | [8] Running: sudo echo -n
+   3.4 TEL | [8] ran in 2.89 secs.
+   3.4 >>> | Starting proxy with method 'vpn-tcp', which has the following limitations: All processes are affected, only one telepresence can run per machine, and you can't use other VPNs. You may need to add cloud hosts and headless services with --also-proxy. For a full list of method limitations see https://telepresence.io/reference/methods.html
+   3.4 TEL | Found sshfs -> /usr/local/bin/sshfs
+   3.4 TEL | Found umount -> /sbin/umount
+   3.4 >>> | Volumes are rooted at $TELEPRESENCE_ROOT. See https://telepresence.io/howto/volumes.html for details.
+   3.4 TEL | [9] Capturing: kubectl --context minikube --namespace kyma-system get pods telepresence-connectivity-check --ignore-not-found
+   4.2 TEL | Scout info: {'latest_version': '0.99', 'application': 'telepresence', 'notices': []}
+   4.2 TEL | BEGIN SPAN deployment.py:61(create_new_deployment)
+   4.2 >>> | Starting network proxy to cluster using new Deployment telepresence-1559213285-875679-33428
+   4.2 TEL | [10] Capturing: kubectl --context minikube --namespace kyma-system delete --ignore-not-found svc,deploy --selector=telepresence=7a691f9cf9c84a3f82858aeb354388cd
+   4.3 TEL | [11] Capturing: kubectl --context minikube --namespace kyma-system run --restart=Always --limits=cpu=100m,memory=256Mi --requests=cpu=25m,memory=64Mi telepresence-1559213285-875679-33428 --image=datawire/telepresence-k8s:0.97 --labels=telepresence=7a691f9cf9c84a3f82858aeb354388cd --env=TELEPRESENCE_NAMESERVER=8.8.8.8
+   4.4  11 | kubectl run --generator=deployment/apps.v1beta1 is DEPRECATED and will be removed in a future version. Use kubectl create instead.
+   4.5  11 | deployment.apps/telepresence-1559213285-875679-33428 created
+   4.5 TEL | END SPAN deployment.py:61(create_new_deployment)    0.3s
+   4.5 TEL | BEGIN SPAN remote.py:154(get_remote_info)
+   4.5 TEL | BEGIN SPAN remote.py:78(get_deployment_json)
+   4.5 TEL | [12] Capturing: kubectl --context minikube --namespace kyma-system get deployment -o json --export --selector=telepresence=7a691f9cf9c84a3f82858aeb354388cd
+   4.6 TEL | END SPAN remote.py:78(get_deployment_json)    0.2s
+   4.6 TEL | Searching for Telepresence pod:
+   4.6 TEL |   with name telepresence-1559213285-875679-33428-*
+   4.6 TEL |   with labels {'telepresence': '7a691f9cf9c84a3f82858aeb354388cd'}
+   4.6 TEL | [13] Capturing: kubectl --context minikube --namespace kyma-system get pod -o json --export --selector=telepresence=7a691f9cf9c84a3f82858aeb354388cd
+   4.8 TEL | Checking telepresence-1559213285-875679-33428-9cfc65469-6lz5g
+   4.8 TEL | Looks like we've found our pod!
+   4.8 TEL | BEGIN SPAN remote.py:116(wait_for_pod)
+   4.8 TEL | [14] Capturing: kubectl --context minikube --namespace kyma-system get pod telepresence-1559213285-875679-33428-9cfc65469-6lz5g -o json
+   5.2 TEL | [15] Capturing: kubectl --context minikube --namespace kyma-system get pod telepresence-1559213285-875679-33428-9cfc65469-6lz5g -o json
+   5.5 TEL | [16] Capturing: kubectl --context minikube --namespace kyma-system get pod telepresence-1559213285-875679-33428-9cfc65469-6lz5g -o json
+   5.9 TEL | [17] Capturing: kubectl --context minikube --namespace kyma-system get pod telepresence-1559213285-875679-33428-9cfc65469-6lz5g -o json
+   6.3 TEL | [18] Capturing: kubectl --context minikube --namespace kyma-system get pod telepresence-1559213285-875679-33428-9cfc65469-6lz5g -o json
+   6.7 TEL | [19] Capturing: kubectl --context minikube --namespace kyma-system get pod telepresence-1559213285-875679-33428-9cfc65469-6lz5g -o json
+   7.2 TEL | [20] Capturing: kubectl --context minikube --namespace kyma-system get pod telepresence-1559213285-875679-33428-9cfc65469-6lz5g -o json
+   7.6 TEL | [21] Capturing: kubectl --context minikube --namespace kyma-system get pod telepresence-1559213285-875679-33428-9cfc65469-6lz5g -o json
+   8.9 TEL | [22] Capturing: kubectl --context minikube --namespace kyma-system get pod telepresence-1559213285-875679-33428-9cfc65469-6lz5g -o json
+   9.3 TEL | [23] Capturing: kubectl --context minikube --namespace kyma-system get pod telepresence-1559213285-875679-33428-9cfc65469-6lz5g -o json
+   9.7 TEL | [24] Capturing: kubectl --context minikube --namespace kyma-system get pod telepresence-1559213285-875679-33428-9cfc65469-6lz5g -o json
+  10.1 TEL | [25] Capturing: kubectl --context minikube --namespace kyma-system get pod telepresence-1559213285-875679-33428-9cfc65469-6lz5g -o json
+  10.5 TEL | [26] Capturing: kubectl --context minikube --namespace kyma-system get pod telepresence-1559213285-875679-33428-9cfc65469-6lz5g -o json
+  10.6 TEL | END SPAN remote.py:116(wait_for_pod)    5.8s
+  10.6 TEL | END SPAN remote.py:154(get_remote_info)    6.2s
+  10.6 TEL | BEGIN SPAN connect.py:36(connect)
+  10.6 TEL | [27] Launching kubectl logs: kubectl --context minikube --namespace kyma-system logs -f telepresence-1559213285-875679-33428-9cfc65469-6lz5g --container telepresence-1559213285-875679-33428 --tail=10
+  10.6 TEL | [28] Launching kubectl port-forward: kubectl --context minikube --namespace kyma-system port-forward telepresence-1559213285-875679-33428-9cfc65469-6lz5g 51547:8022
+  10.7 TEL | [29] Running: ssh -F /dev/null -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -q -p 51547 telepresence@127.0.0.1 /bin/true
+  10.7 TEL | [29] exit 255 in 0.05 secs.
+  11.0 TEL | [30] Running: ssh -F /dev/null -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -q -p 51547 telepresence@127.0.0.1 /bin/true
+  11.0 TEL | [30] exit 255 in 0.03 secs.
+  11.0  28 | Forwarding from 127.0.0.1:51547 -> 8022
+  11.0  28 | Forwarding from [::1]:51547 -> 8022
+  11.2 TEL | [31] Running: ssh -F /dev/null -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -q -p 51547 telepresence@127.0.0.1 /bin/true
+  11.3  28 | Handling connection for 51547
+  12.2 >>> | 
+  12.2 >>> | No traffic is being forwarded from the remote Deployment to your local machine. You can use the --expose option to specify which ports you want to forward.
+  12.2 >>> | 
+  12.2 TEL | Launching Web server for proxy poll
+  12.2 TEL | [32] Launching SSH port forward (socks and proxy poll): ssh -N -oServerAliveInterval=1 -oServerAliveCountMax=10 -F /dev/null -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -q -p 51547 telepresence@127.0.0.1 -L127.0.0.1:51558:127.0.0.1:9050 -R9055:127.0.0.1:51559
+  12.2 TEL | END SPAN connect.py:36(connect)    1.6s
+  12.2 TEL | BEGIN SPAN remote_env.py:28(get_remote_env)
+  12.2 TEL | [33] Capturing: kubectl --context minikube --namespace kyma-system exec telepresence-1559213285-875679-33428-9cfc65469-6lz5g --container telepresence-1559213285-875679-33428 -- python3 podinfo.py
+  12.3  28 | Handling connection for 51547
+  14.4 TEL | [33] captured in 2.11 secs.
+  14.4 TEL | END SPAN remote_env.py:28(get_remote_env)    2.1s
+  14.4 TEL | BEGIN SPAN mount.py:32(mount_remote_volumes)
+  14.4 TEL | [34] Capturing: sshfs -p 51547 -F /dev/null -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null telepresence@127.0.0.1:/ /tmp/tel-rqtgknpq/fs
+  15.6  28 | Handling connection for 51547
+  16.1 TEL | [34] captured in 1.69 secs.
+  16.1 TEL | END SPAN mount.py:32(mount_remote_volumes)    1.7s
+  16.1 TEL | BEGIN SPAN vpn.py:245(connect_sshuttle)
+  16.1 TEL | BEGIN SPAN vpn.py:75(get_proxy_cidrs)
+  16.1 TEL | [35] Capturing: kubectl --context minikube --namespace kyma-system get nodes -o json
+  16.9 TEL | [36] Capturing: kubectl --context minikube --namespace kyma-system get services -o json
+  17.4 >>> | Guessing that Services IP range is 10.96.0.0/12. Services started after this point will be inaccessible if are outside this range; restart telepresence if you can't access a new Service.
+  17.4 TEL | END SPAN vpn.py:75(get_proxy_cidrs)    1.4s
+  17.4 TEL | [37] Launching sshuttle: sshuttle-telepresence -v --dns --method auto -e 'ssh -F /dev/null -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null' -r telepresence@127.0.0.1:51547 --to-ns 127.0.0.1:9053 10.96.0.0/12
+  17.4 TEL | BEGIN SPAN vpn.py:268(connect_sshuttle,sshuttle-wait)
+  17.4 TEL | Wait for vpn-tcp connection: hellotelepresence-0
+  17.9 TEL | Wait for vpn-tcp connection: hellotelepresence-1
+  18.2  37 | Starting sshuttle proxy.
+  18.4 TEL | Wait for vpn-tcp connection: hellotelepresence-2
+  18.9  37 | firewall manager: Starting firewall with Python version 3.7.2
+  18.9  37 | firewall manager: ready method name pf.
+  18.9  37 | IPv6 enabled: True
+  18.9  37 | UDP enabled: False
+  18.9  37 | DNS enabled: True
+  18.9  37 | TCP redirector listening on ('::1', 12300, 0, 0).
+  18.9  37 | TCP redirector listening on ('127.0.0.1', 12300).
+  18.9  37 | DNS listening on ('::1', 12300, 0, 0).
+  18.9  37 | DNS listening on ('127.0.0.1', 12300).
+  18.9  37 | Starting client with Python version 3.7.2
+  18.9  37 | c : connecting to server...
+  18.9 TEL | Wait for vpn-tcp connection: hellotelepresence-3
+  19.0  28 | Handling connection for 51547
+  19.2  37 | Warning: Permanently added '[127.0.0.1]:51547' (ECDSA) to the list of known hosts.
+  19.4 TEL | Wait for vpn-tcp connection: hellotelepresence-4
+  19.9 TEL | Wait for vpn-tcp connection: hellotelepresence-5
+  20.3 TEL | Wait for vpn-tcp connection: hellotelepresence-6
+  20.8 TEL | Wait for vpn-tcp connection: hellotelepresence-7
+  21.1  27 | Listening...
+  21.1  27 | 2019-05-30T10:48:22+0000 [-] Loading ./forwarder.py...
+  21.1  27 | 2019-05-30T10:48:26+0000 [-] SOCKSv5Factory starting on 9050
+  21.1  27 | 2019-05-30T10:48:26+0000 [socks.SOCKSv5Factory#info] Starting factory <socks.SOCKSv5Factory object at 0x7fc8722aa5c0>
+  21.1  27 | 2019-05-30T10:48:26+0000 [-] DNSDatagramProtocol starting on 9053
+  21.2  27 | 2019-05-30T10:48:26+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8722aa860>
+  21.2  27 | 2019-05-30T10:48:26+0000 [-] Loaded.
+  21.2  27 | 2019-05-30T10:48:26+0000 [twisted.scripts._twistd_unix.UnixAppLogger#info] twistd 18.9.0 (/usr/bin/python3.6 3.6.5) starting up.
+  21.2  27 | 2019-05-30T10:48:26+0000 [twisted.scripts._twistd_unix.UnixAppLogger#info] reactor class: twisted.internet.epollreactor.EPollReactor.
+  21.3 TEL | Wait for vpn-tcp connection: hellotelepresence-8
+  21.4  37 | Starting server with Python version 3.6.5
+  21.4  37 |  s: latency control setting = True
+  21.4  37 |  s: available routes:
+  21.4  37 |  s:   2/172.17.0.0/16
+  21.4  37 | c : Connected.
+  21.4  37 | firewall manager: setting up.
+  21.4  37 | >> pfctl -s Interfaces -i lo -v
+  21.5  37 | >> pfctl -f /dev/stdin
+  21.5  37 | >> pfctl -s all
+  21.5  37 | >> pfctl -a sshuttle6-12300 -f /dev/stdin
+  21.5  37 | >> pfctl -E
+  21.5  37 | >> pfctl -s Interfaces -i lo -v
+  21.5  37 | >> pfctl -s all
+  21.5  37 | >> pfctl -a sshuttle-12300 -f /dev/stdin
+  21.5  37 | >> pfctl -E
+  21.6  37 | c : DNS request from ('10.27.180.157', 49827) to None: 49 bytes
+  21.6 TEL | Resolved hellotelepresence-8. 2 more...
+  21.6  27 | 2019-05-30T10:48:26+0000 [stdout#info] Set DNS suffix we filter out to: [(b'mo', b'sap', b'corp')]
+  21.6  27 | 2019-05-30T10:48:26+0000 [stdout#info] Result for b'hellotelepresence-8.mo.sap.corp' is ['127.0.0.1']
+  21.6  37 | c : DNS request from ('10.27.180.157', 50490) to None: 68 bytes
+  21.6  27 | 2019-05-30T10:48:26+0000 [stdout#info] Sanity check: b'hellotelepresence-8.a.sanity.check.telepresence.io'
+  21.7 TEL | Wait for vpn-tcp connection: hellotelepresence-9
+  21.7  37 | c : DNS request from ('10.27.180.157', 50040) to None: 50 bytes
+  21.7 TEL | Resolved hellotelepresence-9. 1 more...
+  21.7  27 | 2019-05-30T10:48:26+0000 [stdout#info] Set DNS suffix we filter out to: [(b'mo', b'sap', b'corp'), (b'ktw', b'sap', b'corp')]
+  21.7  27 | 2019-05-30T10:48:26+0000 [stdout#info] Result for b'hellotelepresence-9.ktw.sap.corp' is ['127.0.0.1']
+  21.7  37 | c : DNS request from ('10.27.180.157', 53933) to None: 68 bytes
+  21.7  27 | 2019-05-30T10:48:26+0000 [stdout#info] Sanity check: b'hellotelepresence-9.a.sanity.check.telepresence.io'
+  21.8 TEL | Wait for vpn-tcp connection: hellotelepresence-10
+  21.8  37 | c : DNS request from ('10.27.180.157', 59129) to None: 51 bytes
+  21.8 TEL | Resolved hellotelepresence-10. 0 more...
+  21.8 TEL | END SPAN vpn.py:268(connect_sshuttle,sshuttle-wait)    4.4s
+  21.8 TEL | END SPAN vpn.py:245(connect_sshuttle)    5.8s
+  21.8  27 | 2019-05-30T10:48:26+0000 [stdout#info] Result for b'hellotelepresence-10.ktw.sap.corp' is ['127.0.0.1']
+  24.7 >>> | Setup complete. Launching your command.
+  24.7 TEL | Everything launched. Waiting to exit...
+  24.7 TEL | BEGIN SPAN runner.py:586(wait_for_exit)
+  27.9  37 | c : DNS request from ('10.27.180.157', 52494) to None: 45 bytes
+  27.9  37 | c : DNS request from ('10.27.180.157', 55834) to None: 48 bytes
+  27.9  27 | 2019-05-30T10:48:32+0000 [stdout#info] A query: b'partnerad.l.doubleclick.net'
+  28.0  27 | 2019-05-30T10:48:33+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 60495
+  28.0  27 | 2019-05-30T10:48:33+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253160>
+  28.0  27 | 2019-05-30T10:48:33+0000 [stdout#info] A query: b'weblb-wg.dual-gslb.spotify.com'
+  28.0  27 | 2019-05-30T10:48:33+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 22763
+  28.1  27 | 2019-05-30T10:48:33+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253518>
+  28.2  37 | c : DNS request from ('10.27.180.157', 55353) to None: 40 bytes
+  28.2  27 | 2019-05-30T10:48:33+0000 [stdout#info] A query: b'audio-sp-fra2.pscdn.co'
+  28.2  27 | 2019-05-30T10:48:33+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 55682
+  28.2  27 | 2019-05-30T10:48:33+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253780>
+  28.9  37 | c : DNS request from ('10.27.180.157', 52494) to None: 45 bytes
+  28.9  37 | c : DNS request from ('10.27.180.157', 55834) to None: 48 bytes
+  28.9  27 | 2019-05-30T10:48:33+0000 [stdout#info] A query: b'partnerad.l.doubleclick.net'
+  28.9  27 | 2019-05-30T10:48:33+0000 [stdout#info] A query: b'weblb-wg.dual-gslb.spotify.com'
+  29.0  27 | 2019-05-30T10:48:34+0000 [-] DNSDatagramProtocol starting on 57751
+  29.0  27 | 2019-05-30T10:48:34+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253a20>
+  29.0  27 | 2019-05-30T10:48:34+0000 [-] (UDP Port 60495 Closed)
+  29.0  27 | 2019-05-30T10:48:34+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253160>
+  29.1  27 | 2019-05-30T10:48:34+0000 [-] DNSDatagramProtocol starting on 4377
+  29.1  27 | 2019-05-30T10:48:34+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8722530b8>
+  29.1  27 | 2019-05-30T10:48:34+0000 [-] (UDP Port 22763 Closed)
+  29.1  27 | 2019-05-30T10:48:34+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253518>
+  29.2  37 | c : DNS request from ('10.27.180.157', 55353) to None: 40 bytes
+  29.2  27 | 2019-05-30T10:48:34+0000 [-] DNSDatagramProtocol starting on 40581
+  29.2  27 | 2019-05-30T10:48:34+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253588>
+  29.2  27 | 2019-05-30T10:48:34+0000 [-] (UDP Port 55682 Closed)
+  29.2  27 | 2019-05-30T10:48:34+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253780>
+  29.2  27 | 2019-05-30T10:48:34+0000 [stdout#info] A query: b'audio-sp-fra2.pscdn.co'
+  31.4  37 | c : DNS request from ('10.27.180.157', 59512) to None: 40 bytes
+  31.4  27 | 2019-05-30T10:48:36+0000 [stdout#info] A query: b'sync.standardnotes.org'
+  31.4  27 | 2019-05-30T10:48:36+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 14223
+  31.4  27 | 2019-05-30T10:48:36+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253ef0>
+  32.0  27 | 2019-05-30T10:48:37+0000 [-] DNSDatagramProtocol starting on 25413
+  32.0  27 | 2019-05-30T10:48:37+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253e10>
+  32.0  27 | 2019-05-30T10:48:37+0000 [-] (UDP Port 57751 Closed)
+  32.0  27 | 2019-05-30T10:48:37+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253a20>
+  32.1  27 | 2019-05-30T10:48:37+0000 [-] DNSDatagramProtocol starting on 35503
+  32.1  27 | 2019-05-30T10:48:37+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253a90>
+  32.1  27 | 2019-05-30T10:48:37+0000 [-] (UDP Port 4377 Closed)
+  32.1  27 | 2019-05-30T10:48:37+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8722530b8>
+  32.2  27 | 2019-05-30T10:48:37+0000 [-] DNSDatagramProtocol starting on 50408
+  32.2  27 | 2019-05-30T10:48:37+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253160>
+  32.2  27 | 2019-05-30T10:48:37+0000 [-] (UDP Port 40581 Closed)
+  32.2  27 | 2019-05-30T10:48:37+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253588>
+  32.4  37 | c : DNS request from ('10.27.180.157', 59512) to None: 40 bytes
+  32.4  27 | 2019-05-30T10:48:37+0000 [-] DNSDatagramProtocol starting on 56070
+  32.4  27 | 2019-05-30T10:48:37+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253518>
+  32.4  27 | 2019-05-30T10:48:37+0000 [-] (UDP Port 14223 Closed)
+  32.4  27 | 2019-05-30T10:48:37+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253ef0>
+  32.4  27 | 2019-05-30T10:48:37+0000 [stdout#info] A query: b'sync.standardnotes.org'
+  33.1  37 | c : DNS request from ('10.27.180.157', 53997) to None: 56 bytes
+  33.1  27 | 2019-05-30T10:48:38+0000 [stdout#info] A query: b'director.kyma-system.svc.cluster.local'
+  33.1  27 | 2019-05-30T10:48:38+0000 [stdout#info] RESOLVING b'director.kyma-system.svc.cluster.local'
+  33.1  27 | 2019-05-30T10:48:38+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 63555
+  33.1  27 | 2019-05-30T10:48:38+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268668>
+  33.1  27 | 2019-05-30T10:48:38+0000 [stdout#info] RESULT: ([<RR name=director.kyma-system.svc.cluster.local type=A class=IN ttl=5s auth=True>], [], [])
+  33.1  27 | 2019-05-30T10:48:38+0000 [-] (UDP Port 63555 Closed)
+  33.1  27 | 2019-05-30T10:48:38+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268668>
+  33.2  37 | c : Accept TCP: 10.27.180.157:51584 -> 10.106.167.192:4000.
+  33.5 TEL | [38] Running: sudo -n echo -n
+  35.4  27 | 2019-05-30T10:48:40+0000 [-] DNSDatagramProtocol starting on 5788
+  35.5  27 | 2019-05-30T10:48:40+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268710>
+  35.5  27 | 2019-05-30T10:48:40+0000 [-] (UDP Port 56070 Closed)
+  35.5  27 | 2019-05-30T10:48:40+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253518>
+  36.3  37 | c : Accept TCP: 10.27.180.157:51585 -> 10.106.167.192:4000.
+  37.0  37 | c : DNS request from ('10.27.180.157', 52494) to None: 45 bytes
+  37.0  37 | c : DNS request from ('10.27.180.157', 55834) to None: 48 bytes
+  37.0  27 | 2019-05-30T10:48:41+0000 [stdout#info] A query: b'partnerad.l.doubleclick.net'
+  37.0  27 | 2019-05-30T10:48:41+0000 [stdout#info] A query: b'weblb-wg.dual-gslb.spotify.com'
+  37.2  37 | c : DNS request from ('10.27.180.157', 55353) to None: 40 bytes
+  37.2  27 | 2019-05-30T10:48:42+0000 [stdout#info] A query: b'audio-sp-fra2.pscdn.co'
+  37.7  37 | c : DNS request from ('10.27.180.157', 21612) to None: 33 bytes
+  37.7  27 | 2019-05-30T10:48:42+0000 [stdout#info] A query: b'docs.google.com'
+  37.7  27 | 2019-05-30T10:48:42+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 22897
+  37.7  27 | 2019-05-30T10:48:42+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268940>
+  37.8  37 | c : DNS request from ('10.27.180.157', 14564) to None: 33 bytes
+  37.8  27 | 2019-05-30T10:48:42+0000 [stdout#info] A query: b'ssl.gstatic.com'
+  37.8  27 | 2019-05-30T10:48:42+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 61444
+  37.8  27 | 2019-05-30T10:48:42+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268b38>
+  38.7  27 | 2019-05-30T10:48:43+0000 [-] DNSDatagramProtocol starting on 28557
+  38.7  37 | c : DNS request from ('10.27.180.157', 5988) to None: 33 bytes
+  38.7  27 | 2019-05-30T10:48:43+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268a90>
+  38.7  27 | 2019-05-30T10:48:43+0000 [-] (UDP Port 22897 Closed)
+  38.7  27 | 2019-05-30T10:48:43+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268940>
+  38.7  27 | 2019-05-30T10:48:43+0000 [stdout#info] A query: b'docs.google.com'
+  38.8  27 | 2019-05-30T10:48:43+0000 [-] DNSDatagramProtocol starting on 3181
+  38.8  27 | 2019-05-30T10:48:43+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8722689e8>
+  38.8  27 | 2019-05-30T10:48:43+0000 [-] (UDP Port 61444 Closed)
+  38.8  27 | 2019-05-30T10:48:43+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268b38>
+  38.8  37 | c : DNS request from ('10.27.180.157', 6263) to None: 33 bytes
+  38.8  27 | 2019-05-30T10:48:43+0000 [stdout#info] A query: b'ssl.gstatic.com'
+  39.7  37 | c : DNS request from ('10.27.180.157', 13394) to None: 33 bytes
+  39.7  27 | 2019-05-30T10:48:44+0000 [stdout#info] A query: b'docs.google.com'
+  39.8  37 | c : DNS request from ('10.27.180.157', 45917) to None: 33 bytes
+  39.8  27 | 2019-05-30T10:48:44+0000 [stdout#info] A query: b'ssl.gstatic.com'
+  40.4  37 | c : DNS request from ('10.27.180.157', 59512) to None: 40 bytes
+  40.4  27 | 2019-05-30T10:48:45+0000 [stdout#info] A query: b'sync.standardnotes.org'
+  40.8  37 | c : DNS request from ('10.27.180.157', 50020) to None: 33 bytes
+  40.8  27 | 2019-05-30T10:48:45+0000 [stdout#info] A query: b'docs.google.com'
+  40.8  37 | c : DNS request from ('10.27.180.157', 53828) to None: 33 bytes
+  40.8  27 | 2019-05-30T10:48:45+0000 [stdout#info] A query: b'ssl.gstatic.com'
+  41.2  37 | c : DNS request from ('10.27.180.157', 55353) to None: 40 bytes
+  41.2  27 | 2019-05-30T10:48:46+0000 [stdout#info] A query: b'audio-sp-fra2.pscdn.co'
+  41.7  27 | 2019-05-30T10:48:46+0000 [-] DNSDatagramProtocol starting on 29902
+  41.7  27 | 2019-05-30T10:48:46+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8722734a8>
+  41.7  27 | 2019-05-30T10:48:46+0000 [-] (UDP Port 28557 Closed)
+  41.7  27 | 2019-05-30T10:48:46+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268a90>
+  41.8  27 | 2019-05-30T10:48:46+0000 [-] DNSDatagramProtocol starting on 64223
+  41.8  27 | 2019-05-30T10:48:46+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268a90>
+  41.8  27 | 2019-05-30T10:48:46+0000 [-] (UDP Port 3181 Closed)
+  41.8  27 | 2019-05-30T10:48:46+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8722689e8>
+  42.8  37 | c : DNS request from ('10.27.180.157', 1102) to None: 33 bytes
+  42.8  27 | 2019-05-30T10:48:47+0000 [stdout#info] A query: b'docs.google.com'
+  42.9  37 | c : DNS request from ('10.27.180.157', 42802) to None: 33 bytes
+  42.9  27 | 2019-05-30T10:48:47+0000 [stdout#info] A query: b'ssl.gstatic.com'
+  43.0  27 | 2019-05-30T10:48:48+0000 [-] DNSDatagramProtocol starting on 36111
+  43.0  27 | 2019-05-30T10:48:48+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8722737f0>
+  43.0  27 | 2019-05-30T10:48:48+0000 [-] (UDP Port 25413 Closed)
+  43.0  27 | 2019-05-30T10:48:48+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253e10>
+  43.1  27 | 2019-05-30T10:48:48+0000 [-] DNSDatagramProtocol starting on 64929
+  43.1  27 | 2019-05-30T10:48:48+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253f98>
+  43.1  27 | 2019-05-30T10:48:48+0000 [-] (UDP Port 35503 Closed)
+  43.1  27 | 2019-05-30T10:48:48+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253a90>
+  43.2  27 | 2019-05-30T10:48:48+0000 [-] DNSDatagramProtocol starting on 61632
+  43.2  27 | 2019-05-30T10:48:48+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253a90>
+  43.2  27 | 2019-05-30T10:48:48+0000 [-] (UDP Port 50408 Closed)
+  43.2  27 | 2019-05-30T10:48:48+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253160>
+  44.4  37 | c : DNS request from ('10.27.180.157', 59512) to None: 40 bytes
+  44.4  27 | 2019-05-30T10:48:49+0000 [stdout#info] A query: b'sync.standardnotes.org'
+  44.8  37 | c : DNS request from ('10.27.180.157', 47711) to None: 33 bytes
+  44.8  27 | 2019-05-30T10:48:49+0000 [stdout#info] A query: b'docs.google.com'
+  44.9  37 | c : DNS request from ('10.27.180.157', 23908) to None: 33 bytes
+  44.9  27 | 2019-05-30T10:48:49+0000 [stdout#info] A query: b'ssl.gstatic.com'
+  46.5  27 | 2019-05-30T10:48:51+0000 [-] DNSDatagramProtocol starting on 26714
+  46.5  27 | 2019-05-30T10:48:51+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872273d68>
+  46.5  27 | 2019-05-30T10:48:51+0000 [-] (UDP Port 5788 Closed)
+  46.5  27 | 2019-05-30T10:48:51+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268710>
+  46.8  37 | c : DNS request from ('10.27.180.157', 62286) to None: 33 bytes
+  46.8  27 | 2019-05-30T10:48:51+0000 [stdout#info] A query: b'docs.google.com'
+  46.9  37 | c : DNS request from ('10.27.180.157', 54500) to None: 33 bytes
+  46.9  27 | 2019-05-30T10:48:51+0000 [stdout#info] A query: b'ssl.gstatic.com'
+  47.8  37 | c : DNS request from ('10.27.180.157', 62286) to None: 33 bytes
+  47.8  27 | 2019-05-30T10:48:52+0000 [stdout#info] A query: b'docs.google.com'
+  47.9  37 | c : DNS request from ('10.27.180.157', 54500) to None: 33 bytes
+  47.9  27 | 2019-05-30T10:48:52+0000 [stdout#info] A query: b'ssl.gstatic.com'
+  51.0  37 | c : DNS request from ('10.27.180.157', 56719) to None: 55 bytes
+  51.0  27 | 2019-05-30T10:48:55+0000 [stdout#info] A query: b'gateway.kyma-system.svc.cluster.local'
+  51.0  27 | 2019-05-30T10:48:55+0000 [stdout#info] RESOLVING b'gateway.kyma-system.svc.cluster.local'
+  51.0  27 | 2019-05-30T10:48:55+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 4694
+  51.0  27 | 2019-05-30T10:48:55+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc87227b4e0>
+  51.0  27 | 2019-05-30T10:48:55+0000 [stdout#info] RESULT: ([<RR name=gateway.kyma-system.svc.cluster.local type=A class=IN ttl=5s auth=True>], [], [])
+  51.0  27 | 2019-05-30T10:48:55+0000 [-] (UDP Port 4694 Closed)
+  51.0  27 | 2019-05-30T10:48:55+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc87227b4e0>
+  51.0  37 | c : Accept TCP: 10.27.180.157:51592 -> 10.109.126.191:4000.
+  51.2 TEL | (proxy checking local liveness)
+  51.2  27 | 2019-05-30T10:48:56+0000 [Poll#info] Checkpoint
+  52.7  27 | 2019-05-30T10:48:57+0000 [-] DNSDatagramProtocol starting on 17899
+  52.7  27 | 2019-05-30T10:48:57+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872233550>
+  52.8  27 | 2019-05-30T10:48:57+0000 [-] (UDP Port 29902 Closed)
+  52.8  27 | 2019-05-30T10:48:57+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8722734a8>
+  52.8  27 | 2019-05-30T10:48:57+0000 [-] DNSDatagramProtocol starting on 38167
+  52.8  27 | 2019-05-30T10:48:57+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872273550>
+  52.8  27 | 2019-05-30T10:48:57+0000 [-] (UDP Port 64223 Closed)
+  52.8  27 | 2019-05-30T10:48:57+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268a90>
+  55.8  37 | c : Accept TCP: 10.27.180.157:51596 -> 10.109.126.191:3000.
+  55.8  37 | c : DNS request from ('10.27.180.157', 62286) to None: 33 bytes
+  55.9  27 | 2019-05-30T10:49:00+0000 [stdout#info] A query: b'docs.google.com'
+  55.9  37 | c : DNS request from ('10.27.180.157', 54500) to None: 33 bytes
+  55.9  27 | 2019-05-30T10:49:00+0000 [stdout#info] A query: b'ssl.gstatic.com'
+  58.2  37 | c : DNS request from ('10.27.180.157', 60346) to None: 45 bytes
+  58.2  37 |  s: SW#-1:10.106.167.192:4000: deleting (7 remain)
+  58.2  37 |  s: SW'unknown':Mux#15: deleting (6 remain)
+  58.2  37 |  s: SW#-1:10.106.167.192:4000: deleting (5 remain)
+  58.2  37 |  s: SW'unknown':Mux#16: deleting (4 remain)
+  58.2  37 |  s: SW#-1:10.109.126.191:4000: deleting (3 remain)
+  58.2  37 |  s: SW'unknown':Mux#40: deleting (2 remain)
+  58.2  37 |  s: SW#-1:10.109.126.191:3000: deleting (1 remain)
+  58.2  37 |  s: SW'unknown':Mux#41: deleting (0 remain)
+  58.2  27 | 2019-05-30T10:49:03+0000 [stdout#info] A query: b'beta.spotify.map.fastly.net'
+  58.2  27 | 2019-05-30T10:49:03+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 31961
+  58.2  27 | 2019-05-30T10:49:03+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721cb6d8>
+  59.2  37 | c : DNS request from ('10.27.180.157', 60346) to None: 45 bytes
+  59.2  27 | 2019-05-30T10:49:04+0000 [stdout#info] A query: b'beta.spotify.map.fastly.net'
+  59.2  27 | 2019-05-30T10:49:04+0000 [-] DNSDatagramProtocol starting on 51946
+  59.3  27 | 2019-05-30T10:49:04+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721cb7f0>
+  59.3  27 | 2019-05-30T10:49:04+0000 [-] (UDP Port 31961 Closed)
+  59.3  27 | 2019-05-30T10:49:04+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721cb6d8>
+  59.8  37 | c : DNS request from ('10.27.180.157', 62286) to None: 33 bytes
+  59.8  27 | 2019-05-30T10:49:04+0000 [stdout#info] A query: b'docs.google.com'
+  59.9  37 | c : DNS request from ('10.27.180.157', 54500) to None: 33 bytes
+  59.9  27 | 2019-05-30T10:49:04+0000 [stdout#info] A query: b'ssl.gstatic.com'
+  62.3  27 | 2019-05-30T10:49:07+0000 [-] DNSDatagramProtocol starting on 55322
+  62.3  27 | 2019-05-30T10:49:07+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721cba90>
+  62.3  27 | 2019-05-30T10:49:07+0000 [-] (UDP Port 51946 Closed)
+  62.3  27 | 2019-05-30T10:49:07+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721cb7f0>
+  63.6 TEL | [39] Running: sudo -n echo -n
+  67.2  37 | c : DNS request from ('10.27.180.157', 60346) to None: 45 bytes
+  67.2  27 | 2019-05-30T10:49:12+0000 [stdout#info] A query: b'beta.spotify.map.fastly.net'
+  69.6  37 | c : DNS request from ('10.27.180.157', 63640) to None: 56 bytes
+  69.6  27 | 2019-05-30T10:49:14+0000 [stdout#info] A query: b'director.kyma-system.svc.cluster.local'
+  69.6  27 | 2019-05-30T10:49:14+0000 [stdout#info] RESOLVING b'director.kyma-system.svc.cluster.local'
+  69.6  27 | 2019-05-30T10:49:14+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 16677
+  69.6  27 | 2019-05-30T10:49:14+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721cbef0>
+  69.6  27 | 2019-05-30T10:49:14+0000 [stdout#info] RESULT: ([<RR name=director.kyma-system.svc.cluster.local type=A class=IN ttl=5s auth=True>], [], [])
+  69.6  27 | 2019-05-30T10:49:14+0000 [-] (UDP Port 16677 Closed)
+  69.6  27 | 2019-05-30T10:49:14+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721cbef0>
+  69.7  37 | c : Accept TCP: 10.27.180.157:51601 -> 10.106.167.192:3000.
+  71.2  37 | c : DNS request from ('10.27.180.157', 60346) to None: 45 bytes
+  71.3  27 | 2019-05-30T10:49:16+0000 [stdout#info] A query: b'beta.spotify.map.fastly.net'
+  72.5  37 | c : Accept TCP: 10.27.180.157:51602 -> 10.106.167.192:4000.
+  73.3  27 | 2019-05-30T10:49:18+0000 [-] DNSDatagramProtocol starting on 44779
+  73.3  27 | 2019-05-30T10:49:18+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721cbf28>
+  73.3  27 | 2019-05-30T10:49:18+0000 [-] (UDP Port 55322 Closed)
+  73.3  27 | 2019-05-30T10:49:18+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721cba90>
+  75.3  37 | c : Accept TCP: 10.27.180.157:51605 -> 10.106.167.192:4000.
+  81.2 TEL | (proxy checking local liveness)
+  81.2  27 | 2019-05-30T10:49:26+0000 [Poll#info] Checkpoint
+  88.0  27 | 2019-05-30T10:49:33+0000 [-] Unhandled Error
+  88.0  27 | 	Traceback (most recent call last):
+  88.1  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('partnerad.l.doubleclick.net', 1, 1)]
+  88.1  27 | 
+  88.1  27 | 2019-05-30T10:49:33+0000 [-] Unhandled Error
+  88.1  27 | 	Traceback (most recent call last):
+  88.1  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('partnerad.l.doubleclick.net', 1, 1)]
+  88.1  27 | 
+  88.1  27 | 2019-05-30T10:49:33+0000 [-] Unhandled Error
+  88.1  27 | 	Traceback (most recent call last):
+  88.1  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('partnerad.l.doubleclick.net', 1, 1)]
+  88.1  27 | 
+  88.1  27 | 2019-05-30T10:49:33+0000 [-] (UDP Port 36111 Closed)
+  88.2  27 | 2019-05-30T10:49:33+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8722737f0>
+  88.2  27 | 2019-05-30T10:49:33+0000 [-] Unhandled Error
+  88.2  27 | 	Traceback (most recent call last):
+  88.2  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('weblb-wg.dual-gslb.spotify.com', 1, 1)]
+  88.2  27 | 
+  88.2  27 | 2019-05-30T10:49:33+0000 [-] Unhandled Error
+  88.2  27 | 	Traceback (most recent call last):
+  88.2  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('weblb-wg.dual-gslb.spotify.com', 1, 1)]
+  88.2  27 | 
+  88.2  27 | 2019-05-30T10:49:33+0000 [-] Unhandled Error
+  88.2  27 | 	Traceback (most recent call last):
+  88.2  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('weblb-wg.dual-gslb.spotify.com', 1, 1)]
+  88.2  27 | 
+  88.2  27 | 2019-05-30T10:49:33+0000 [-] (UDP Port 64929 Closed)
+  88.2  27 | 2019-05-30T10:49:33+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253f98>
+  88.2  37 | c : DNS request from ('10.27.180.157', 49721) to None: 53 bytes
+  88.2  27 | 2019-05-30T10:49:33+0000 [stdout#info] A query: b'audio4-ak.spotify.com.edgesuite.net'
+  88.2  27 | 2019-05-30T10:49:33+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 41609
+  88.2  27 | 2019-05-30T10:49:33+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872273860>
+  88.2  27 | 2019-05-30T10:49:33+0000 [-] Unhandled Error
+  88.2  27 | 	Traceback (most recent call last):
+  88.2  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('audio-sp-fra2.pscdn.co', 1, 1)]
+  88.2  27 | 
+  88.2  27 | 2019-05-30T10:49:33+0000 [-] Unhandled Error
+  88.2  27 | 	Traceback (most recent call last):
+  88.2  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('audio-sp-fra2.pscdn.co', 1, 1)]
+  88.2  27 | 
+  88.2  27 | 2019-05-30T10:49:33+0000 [-] Unhandled Error
+  88.2  27 | 	Traceback (most recent call last):
+  88.2  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('audio-sp-fra2.pscdn.co', 1, 1)]
+  88.2  27 | 
+  88.2  27 | 2019-05-30T10:49:33+0000 [-] Unhandled Error
+  88.2  27 | 	Traceback (most recent call last):
+  88.2  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('audio-sp-fra2.pscdn.co', 1, 1)]
+  88.2  27 | 
+  88.2  27 | 2019-05-30T10:49:33+0000 [-] (UDP Port 61632 Closed)
+  88.2  27 | 2019-05-30T10:49:33+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253a90>
+  89.2  37 | c : DNS request from ('10.27.180.157', 49721) to None: 53 bytes
+  89.2  27 | 2019-05-30T10:49:34+0000 [stdout#info] A query: b'audio4-ak.spotify.com.edgesuite.net'
+  89.2  27 | 2019-05-30T10:49:34+0000 [-] DNSDatagramProtocol starting on 13027
+  89.2  27 | 2019-05-30T10:49:34+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872273518>
+  89.2  27 | 2019-05-30T10:49:34+0000 [-] (UDP Port 41609 Closed)
+  89.2  27 | 2019-05-30T10:49:34+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872273860>
+  91.5  27 | 2019-05-30T10:49:36+0000 [-] Unhandled Error
+  91.5  27 | 	Traceback (most recent call last):
+  91.5  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('sync.standardnotes.org', 1, 1)]
+  91.5  27 | 
+  91.6  27 | 2019-05-30T10:49:36+0000 [-] Unhandled Error
+  91.6  27 | 	Traceback (most recent call last):
+  91.6  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('sync.standardnotes.org', 1, 1)]
+  91.6  27 | 
+  91.6  27 | 2019-05-30T10:49:36+0000 [-] Unhandled Error
+  91.6  27 | 	Traceback (most recent call last):
+  91.6  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('sync.standardnotes.org', 1, 1)]
+  91.6  27 | 
+  91.6  27 | 2019-05-30T10:49:36+0000 [-] Unhandled Error
+  91.6  27 | 	Traceback (most recent call last):
+  91.6  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('sync.standardnotes.org', 1, 1)]
+  91.6  27 | 
+  91.6  27 | 2019-05-30T10:49:36+0000 [-] (UDP Port 26714 Closed)
+  91.6  27 | 2019-05-30T10:49:36+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872273d68>
+  92.2  27 | 2019-05-30T10:49:37+0000 [-] DNSDatagramProtocol starting on 46843
+  92.2  27 | 2019-05-30T10:49:37+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872273dd8>
+  92.2  27 | 2019-05-30T10:49:37+0000 [-] (UDP Port 13027 Closed)
+  92.2  27 | 2019-05-30T10:49:37+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872273518>
+  93.7 TEL | [40] Running: sudo -n echo -n
+  97.2  37 | c : DNS request from ('10.27.180.157', 49721) to None: 53 bytes
+  97.2  27 | 2019-05-30T10:49:42+0000 [stdout#info] A query: b'audio4-ak.spotify.com.edgesuite.net'
+  97.8  27 | 2019-05-30T10:49:42+0000 [-] Unhandled Error
+  97.8  27 | 	Traceback (most recent call last):
+  97.8  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('docs.google.com', 1, 1)]
+  97.8  27 | 
+  97.8  27 | 2019-05-30T10:49:42+0000 [-] Unhandled Error
+  97.8  27 | 	Traceback (most recent call last):
+  97.8  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('docs.google.com', 1, 1)]
+  97.8  27 | 
+  97.8  27 | 2019-05-30T10:49:42+0000 [-] Unhandled Error
+  97.8  27 | 	Traceback (most recent call last):
+  97.8  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('docs.google.com', 1, 1)]
+  97.8  27 | 
+  97.8  27 | 2019-05-30T10:49:42+0000 [-] Unhandled Error
+  97.8  27 | 	Traceback (most recent call last):
+  97.8  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('docs.google.com', 1, 1)]
+  97.8  27 | 
+  97.8  27 | 2019-05-30T10:49:42+0000 [-] Unhandled Error
+  97.8  27 | 	Traceback (most recent call last):
+  97.8  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('docs.google.com', 1, 1)]
+  97.8  27 | 
+  97.9  27 | 2019-05-30T10:49:42+0000 [-] Unhandled Error
+  97.9  27 | 	Traceback (most recent call last):
+  97.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('docs.google.com', 1, 1)]
+  97.9  27 | 
+  97.9  27 | 2019-05-30T10:49:42+0000 [-] Unhandled Error
+  97.9  27 | 	Traceback (most recent call last):
+  97.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('docs.google.com', 1, 1)]
+  97.9  27 | 
+  97.9  27 | 2019-05-30T10:49:42+0000 [-] Unhandled Error
+  97.9  27 | 	Traceback (most recent call last):
+  97.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('docs.google.com', 1, 1)]
+  97.9  27 | 
+  97.9  27 | 2019-05-30T10:49:42+0000 [-] Unhandled Error
+  97.9  27 | 	Traceback (most recent call last):
+  97.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('docs.google.com', 1, 1)]
+  97.9  27 | 
+  97.9  27 | 2019-05-30T10:49:42+0000 [-] Unhandled Error
+  97.9  27 | 	Traceback (most recent call last):
+  97.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('docs.google.com', 1, 1)]
+  97.9  27 | 
+  97.9  27 | 2019-05-30T10:49:42+0000 [-] (UDP Port 17899 Closed)
+  97.9  27 | 2019-05-30T10:49:42+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872233550>
+  97.9  27 | 2019-05-30T10:49:42+0000 [-] Unhandled Error
+  97.9  27 | 	Traceback (most recent call last):
+  97.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('ssl.gstatic.com', 1, 1)]
+  97.9  27 | 
+  97.9  27 | 2019-05-30T10:49:42+0000 [-] Unhandled Error
+  97.9  27 | 	Traceback (most recent call last):
+  97.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('ssl.gstatic.com', 1, 1)]
+  97.9  27 | 
+  97.9  27 | 2019-05-30T10:49:42+0000 [-] Unhandled Error
+  97.9  27 | 	Traceback (most recent call last):
+  97.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('ssl.gstatic.com', 1, 1)]
+  97.9  27 | 
+  97.9  27 | 2019-05-30T10:49:42+0000 [-] Unhandled Error
+  97.9  27 | 	Traceback (most recent call last):
+  97.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('ssl.gstatic.com', 1, 1)]
+  97.9  27 | 
+  97.9  27 | 2019-05-30T10:49:42+0000 [-] Unhandled Error
+  97.9  27 | 	Traceback (most recent call last):
+  97.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('ssl.gstatic.com', 1, 1)]
+  97.9  27 | 
+  97.9  27 | 2019-05-30T10:49:42+0000 [-] Unhandled Error
+  97.9  27 | 	Traceback (most recent call last):
+  97.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('ssl.gstatic.com', 1, 1)]
+  98.0  27 | 
+  98.0  27 | 2019-05-30T10:49:42+0000 [-] Unhandled Error
+  98.0  27 | 	Traceback (most recent call last):
+  98.0  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('ssl.gstatic.com', 1, 1)]
+  98.0  27 | 
+  98.0  27 | 2019-05-30T10:49:42+0000 [-] Unhandled Error
+  98.0  27 | 	Traceback (most recent call last):
+  98.0  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('ssl.gstatic.com', 1, 1)]
+  98.0  27 | 
+  98.0  27 | 2019-05-30T10:49:42+0000 [-] Unhandled Error
+  98.0  27 | 	Traceback (most recent call last):
+  98.0  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('ssl.gstatic.com', 1, 1)]
+  98.0  27 | 
+  98.0  27 | 2019-05-30T10:49:42+0000 [-] Unhandled Error
+  98.0  27 | 	Traceback (most recent call last):
+  98.0  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('ssl.gstatic.com', 1, 1)]
+  98.0  27 | 
+  98.0  27 | 2019-05-30T10:49:42+0000 [-] (UDP Port 38167 Closed)
+  98.0  27 | 2019-05-30T10:49:42+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872273550>
+ 101.2  37 | c : DNS request from ('10.27.180.157', 49721) to None: 53 bytes
+ 101.2  27 | 2019-05-30T10:49:46+0000 [stdout#info] A query: b'audio4-ak.spotify.com.edgesuite.net'
+ 103.2  27 | 2019-05-30T10:49:48+0000 [-] DNSDatagramProtocol starting on 28007
+ 103.2  27 | 2019-05-30T10:49:48+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc87227b160>
+ 103.3  27 | 2019-05-30T10:49:48+0000 [-] (UDP Port 46843 Closed)
+ 103.3  27 | 2019-05-30T10:49:48+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872273dd8>
+ 103.9  37 | c : DNS request from ('10.27.180.157', 51327) to None: 40 bytes
+ 103.9  27 | 2019-05-30T10:49:48+0000 [stdout#info] A query: b'sync.standardnotes.org'
+ 103.9  27 | 2019-05-30T10:49:48+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 50448
+ 103.9  27 | 2019-05-30T10:49:48+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8722736a0>
+ 104.9  37 | c : DNS request from ('10.27.180.157', 51327) to None: 40 bytes
+ 104.9  27 | 2019-05-30T10:49:49+0000 [stdout#info] A query: b'sync.standardnotes.org'
+ 104.9  27 | 2019-05-30T10:49:49+0000 [-] DNSDatagramProtocol starting on 44392
+ 104.9  27 | 2019-05-30T10:49:49+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8722735c0>
+ 105.0  27 | 2019-05-30T10:49:50+0000 [-] (UDP Port 50448 Closed)
+ 105.0  27 | 2019-05-30T10:49:50+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8722736a0>
+ 108.0  27 | 2019-05-30T10:49:53+0000 [-] DNSDatagramProtocol starting on 63762
+ 108.0  27 | 2019-05-30T10:49:53+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872273128>
+ 108.0  27 | 2019-05-30T10:49:53+0000 [-] (UDP Port 44392 Closed)
+ 108.1  27 | 2019-05-30T10:49:53+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8722735c0>
+ 111.2 TEL | (proxy checking local liveness)
+ 111.2  27 | 2019-05-30T10:49:56+0000 [Poll#info] Checkpoint
+ 112.9  37 | c : DNS request from ('10.27.180.157', 51327) to None: 40 bytes
+ 113.0  27 | 2019-05-30T10:49:57+0000 [stdout#info] A query: b'sync.standardnotes.org'
+ 117.0  37 | c : DNS request from ('10.27.180.157', 51327) to None: 40 bytes
+ 117.0  27 | 2019-05-30T10:50:01+0000 [stdout#info] A query: b'sync.standardnotes.org'
+ 118.2  37 | c : DNS request from ('10.27.180.157', 59102) to None: 40 bytes
+ 118.2  27 | 2019-05-30T10:50:03+0000 [stdout#info] A query: b'audio-sp-fra2.pscdn.co'
+ 118.2  27 | 2019-05-30T10:50:03+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 25857
+ 118.2  27 | 2019-05-30T10:50:03+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268b38>
+ 118.3  27 | 2019-05-30T10:50:03+0000 [-] Unhandled Error
+ 118.3  27 | 	Traceback (most recent call last):
+ 118.3  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('beta.spotify.map.fastly.net', 1, 1)]
+ 118.3  27 | 
+ 118.3  27 | 2019-05-30T10:50:03+0000 [-] Unhandled Error
+ 118.3  27 | 	Traceback (most recent call last):
+ 118.3  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('beta.spotify.map.fastly.net', 1, 1)]
+ 118.3  27 | 
+ 118.4  27 | 2019-05-30T10:50:03+0000 [-] Unhandled Error
+ 118.4  27 | 	Traceback (most recent call last):
+ 118.4  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('beta.spotify.map.fastly.net', 1, 1)]
+ 118.4  27 | 
+ 118.4  27 | 2019-05-30T10:50:03+0000 [-] Unhandled Error
+ 118.4  27 | 	Traceback (most recent call last):
+ 118.4  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('beta.spotify.map.fastly.net', 1, 1)]
+ 118.4  27 | 
+ 118.4  27 | 2019-05-30T10:50:03+0000 [-] (UDP Port 44779 Closed)
+ 118.4  27 | 2019-05-30T10:50:03+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721cbf28>
+ 119.0  27 | 2019-05-30T10:50:04+0000 [-] DNSDatagramProtocol starting on 13484
+ 119.0  27 | 2019-05-30T10:50:04+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8722335f8>
+ 119.0  27 | 2019-05-30T10:50:04+0000 [-] (UDP Port 63762 Closed)
+ 119.0  27 | 2019-05-30T10:50:04+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872273128>
+ 119.2  37 | c : DNS request from ('10.27.180.157', 59102) to None: 40 bytes
+ 119.2  27 | 2019-05-30T10:50:04+0000 [-] DNSDatagramProtocol starting on 49271
+ 119.2  27 | 2019-05-30T10:50:04+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8722736a0>
+ 119.2  27 | 2019-05-30T10:50:04+0000 [-] (UDP Port 25857 Closed)
+ 119.2  27 | 2019-05-30T10:50:04+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268b38>
+ 119.2  27 | 2019-05-30T10:50:04+0000 [stdout#info] A query: b'audio-sp-fra2.pscdn.co'
+ 122.2  27 | 2019-05-30T10:50:07+0000 [-] DNSDatagramProtocol starting on 20282
+ 122.2  27 | 2019-05-30T10:50:07+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268b38>
+ 122.2  27 | 2019-05-30T10:50:07+0000 [-] (UDP Port 49271 Closed)
+ 122.2  27 | 2019-05-30T10:50:07+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8722736a0>
+ 123.8 TEL | [41] Running: sudo -n echo -n
+ 126.3  37 | c : DNS request from ('10.27.180.157', 51465) to None: 40 bytes
+ 126.3  27 | 2019-05-30T10:50:11+0000 [stdout#info] A query: b'msgstore.www.notion.so'
+ 126.3  27 | 2019-05-30T10:50:11+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 53277
+ 126.3  27 | 2019-05-30T10:50:11+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268240>
+ 127.3  37 | c : DNS request from ('10.27.180.157', 51465) to None: 40 bytes
+ 127.3  27 | 2019-05-30T10:50:12+0000 [stdout#info] A query: b'msgstore.www.notion.so'
+ 127.3  27 | 2019-05-30T10:50:12+0000 [-] DNSDatagramProtocol starting on 49685
+ 127.3  27 | 2019-05-30T10:50:12+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268e10>
+ 127.3  27 | 2019-05-30T10:50:12+0000 [-] (UDP Port 53277 Closed)
+ 127.3  27 | 2019-05-30T10:50:12+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268240>
+ 128.2  37 | c : DNS request from ('10.27.180.157', 56891) to None: 43 bytes
+ 128.2  27 | 2019-05-30T10:50:13+0000 [stdout#info] A query: b'apple.applebucket.int.sap'
+ 128.2  27 | 2019-05-30T10:50:13+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 57270
+ 128.2  27 | 2019-05-30T10:50:13+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268390>
+ 129.0  37 | c : DNS request from ('10.27.180.157', 58198) to None: 45 bytes
+ 129.0  37 | c : DNS request from ('10.27.180.157', 56864) to None: 48 bytes
+ 129.0  27 | 2019-05-30T10:50:13+0000 [stdout#info] A query: b'partnerad.l.doubleclick.net'
+ 129.0  27 | 2019-05-30T10:50:14+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 4298
+ 129.0  27 | 2019-05-30T10:50:14+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268748>
+ 129.0  27 | 2019-05-30T10:50:14+0000 [stdout#info] A query: b'weblb-wg.dual-gslb.spotify.com'
+ 129.0  27 | 2019-05-30T10:50:14+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 44581
+ 129.0  27 | 2019-05-30T10:50:14+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8722530b8>
+ 129.2  37 | c : DNS request from ('10.27.180.157', 56891) to None: 43 bytes
+ 129.2  27 | 2019-05-30T10:50:14+0000 [stdout#info] A query: b'apple.applebucket.int.sap'
+ 129.2  27 | 2019-05-30T10:50:14+0000 [-] DNSDatagramProtocol starting on 44674
+ 129.2  27 | 2019-05-30T10:50:14+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253ef0>
+ 129.2  27 | 2019-05-30T10:50:14+0000 [-] (UDP Port 57270 Closed)
+ 129.2  27 | 2019-05-30T10:50:14+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268390>
+ 130.0  37 | c : SW'unknown':Mux#15: deleting (13 remain)
+ 130.0  37 | c : SW#-1:10.27.180.157:51584: deleting (12 remain)
+ 130.0  37 | c : SW'unknown':Mux#16: deleting (11 remain)
+ 130.0  37 | c : SW#-1:10.27.180.157:51585: deleting (10 remain)
+ 130.0  37 | c : SW'unknown':Mux#40: deleting (9 remain)
+ 130.0  37 | c : SW#-1:10.27.180.157:51592: deleting (8 remain)
+ 130.0  37 | c : SW'unknown':Mux#41: deleting (7 remain)
+ 130.0  37 | c : SW#-1:10.27.180.157:51596: deleting (6 remain)
+ 130.0  37 | c : SW'unknown':Mux#50: deleting (5 remain)
+ 130.0  37 | c : SW#-1:10.27.180.157:51601: deleting (4 remain)
+ 130.0  37 | c : SW'unknown':Mux#52: deleting (3 remain)
+ 130.0  37 | c : SW#-1:10.27.180.157:51602: deleting (2 remain)
+ 130.0  37 | c : SW'unknown':Mux#53: deleting (1 remain)
+ 130.0  37 | c : SW#-1:10.27.180.157:51605: deleting (0 remain)
+ 130.0  37 | c : DNS request from ('10.27.180.157', 58198) to None: 45 bytes
+ 130.0  37 | c : DNS request from ('10.27.180.157', 56864) to None: 48 bytes
+ 130.0  27 | 2019-05-30T10:50:14+0000 [stdout#info] A query: b'partnerad.l.doubleclick.net'
+ 130.0  27 | 2019-05-30T10:50:14+0000 [stdout#info] A query: b'weblb-wg.dual-gslb.spotify.com'
+ 130.0  27 | 2019-05-30T10:50:15+0000 [-] DNSDatagramProtocol starting on 51233
+ 130.0  27 | 2019-05-30T10:50:15+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253710>
+ 130.0  27 | 2019-05-30T10:50:15+0000 [-] (UDP Port 4298 Closed)
+ 130.0  27 | 2019-05-30T10:50:15+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268748>
+ 130.0  27 | 2019-05-30T10:50:15+0000 [-] DNSDatagramProtocol starting on 54279
+ 130.0  27 | 2019-05-30T10:50:15+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253320>
+ 130.0  27 | 2019-05-30T10:50:15+0000 [-] (UDP Port 44581 Closed)
+ 130.0  27 | 2019-05-30T10:50:15+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8722530b8>
+ 130.3  27 | 2019-05-30T10:50:15+0000 [-] DNSDatagramProtocol starting on 62098
+ 130.3  27 | 2019-05-30T10:50:15+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253160>
+ 130.3  27 | 2019-05-30T10:50:15+0000 [-] (UDP Port 49685 Closed)
+ 130.3  27 | 2019-05-30T10:50:15+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268e10>
+ 132.2  27 | 2019-05-30T10:50:17+0000 [-] DNSDatagramProtocol starting on 23336
+ 132.2  27 | 2019-05-30T10:50:17+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268978>
+ 132.2  27 | 2019-05-30T10:50:17+0000 [-] (UDP Port 44674 Closed)
+ 132.2  27 | 2019-05-30T10:50:17+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253ef0>
+ 133.0  27 | 2019-05-30T10:50:18+0000 [-] DNSDatagramProtocol starting on 38708
+ 133.0  27 | 2019-05-30T10:50:18+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268080>
+ 133.0  27 | 2019-05-30T10:50:18+0000 [-] (UDP Port 51233 Closed)
+ 133.0  27 | 2019-05-30T10:50:18+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253710>
+ 133.1  27 | 2019-05-30T10:50:18+0000 [-] DNSDatagramProtocol starting on 54459
+ 133.1  27 | 2019-05-30T10:50:18+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253d68>
+ 133.1  27 | 2019-05-30T10:50:18+0000 [-] (UDP Port 54279 Closed)
+ 133.1  27 | 2019-05-30T10:50:18+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253320>
+ 133.2  27 | 2019-05-30T10:50:18+0000 [-] DNSDatagramProtocol starting on 50618
+ 133.2  27 | 2019-05-30T10:50:18+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253fd0>
+ 133.2  27 | 2019-05-30T10:50:18+0000 [-] (UDP Port 20282 Closed)
+ 133.2  27 | 2019-05-30T10:50:18+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268b38>
+ 135.3  37 | c : DNS request from ('10.27.180.157', 51465) to None: 40 bytes
+ 135.3  27 | 2019-05-30T10:50:20+0000 [stdout#info] A query: b'msgstore.www.notion.so'
+ 137.2  37 | c : DNS request from ('10.27.180.157', 56891) to None: 43 bytes
+ 137.2  27 | 2019-05-30T10:50:22+0000 [stdout#info] A query: b'apple.applebucket.int.sap'
+ 138.0  37 | c : DNS request from ('10.27.180.157', 58198) to None: 45 bytes
+ 138.0  37 | c : DNS request from ('10.27.180.157', 56864) to None: 48 bytes
+ 138.0  27 | 2019-05-30T10:50:22+0000 [stdout#info] A query: b'partnerad.l.doubleclick.net'
+ 138.0  27 | 2019-05-30T10:50:22+0000 [stdout#info] A query: b'weblb-wg.dual-gslb.spotify.com'
+ 139.0  37 | c : DNS request from ('10.27.180.157', 58112) to None: 45 bytes
+ 139.1  27 | 2019-05-30T10:50:24+0000 [stdout#info] A query: b'partnerad.l.doubleclick.net'
+ 140.3  37 | c : DNS request from ('10.27.180.157', 58902) to None: 48 bytes
+ 140.3  27 | 2019-05-30T10:50:24+0000 [stdout#info] A query: b'weblb-wg.dual-gslb.spotify.com'
+ 140.3  27 | 2019-05-30T10:50:24+0000 [stdout#info] A query: b'audio-sp-fra2.pscdn.co'
+ 140.3  37 | c : DNS request from ('10.27.180.157', 59102) to None: 40 bytes
+ 140.3  37 | c : DNS request from ('10.27.180.157', 63564) to None: 45 bytes
+ 140.3  27 | 2019-05-30T10:50:24+0000 [stdout#info] A query: b'partnerad.l.doubleclick.net'
+ 140.3  37 | c : DNS request from ('10.27.180.157', 58602) to None: 48 bytes
+ 140.3  27 | 2019-05-30T10:50:24+0000 [stdout#info] A query: b'weblb-wg.dual-gslb.spotify.com'
+ 140.3  37 | c : DNS request from ('10.27.180.157', 51465) to None: 40 bytes
+ 140.3  27 | 2019-05-30T10:50:24+0000 [stdout#info] A query: b'msgstore.www.notion.so'
+ 140.3  37 | c : DNS request from ('10.27.180.157', 63564) to None: 45 bytes
+ 140.3  37 | c : DNS request from ('10.27.180.157', 58602) to None: 48 bytes
+ 140.4  27 | 2019-05-30T10:50:25+0000 [stdout#info] A query: b'partnerad.l.doubleclick.net'
+ 140.4  27 | 2019-05-30T10:50:25+0000 [stdout#info] A query: b'weblb-wg.dual-gslb.spotify.com'
+ 141.1  37 | c : DNS request from ('10.27.180.157', 63231) to None: 45 bytes
+ 141.1  37 | c : DNS request from ('10.27.180.157', 50994) to None: 48 bytes
+ 141.1  27 | 2019-05-30T10:50:26+0000 [stdout#info] A query: b'partnerad.l.doubleclick.net'
+ 141.1  27 | 2019-05-30T10:50:26+0000 [stdout#info] A query: b'weblb-wg.dual-gslb.spotify.com'
+ 141.2  37 | c : DNS request from ('10.27.180.157', 56891) to None: 43 bytes
+ 141.4  27 | 2019-05-30T10:50:26+0000 [stdout#info] A query: b'apple.applebucket.int.sap'
+ 141.4  27 | 2019-05-30T10:50:26+0000 [-] DNSDatagramProtocol starting on 63396
+ 141.4  27 | 2019-05-30T10:50:26+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721de048>
+ 141.4  27 | 2019-05-30T10:50:26+0000 [-] (UDP Port 62098 Closed)
+ 141.4  27 | 2019-05-30T10:50:26+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253160>
+ 141.4 TEL | (proxy checking local liveness)
+ 141.7  27 | 2019-05-30T10:50:26+0000 [Poll#info] Checkpoint
+ 143.2  27 | 2019-05-30T10:50:28+0000 [-] DNSDatagramProtocol starting on 43509
+ 143.2  27 | 2019-05-30T10:50:28+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872273128>
+ 143.4  27 | 2019-05-30T10:50:28+0000 [-] (UDP Port 23336 Closed)
+ 143.4  27 | 2019-05-30T10:50:28+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268978>
+ 144.0  27 | 2019-05-30T10:50:29+0000 [-] DNSDatagramProtocol starting on 65439
+ 144.0  27 | 2019-05-30T10:50:29+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253160>
+ 144.1  27 | 2019-05-30T10:50:29+0000 [-] (UDP Port 38708 Closed)
+ 144.2  27 | 2019-05-30T10:50:29+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268080>
+ 144.2  27 | 2019-05-30T10:50:29+0000 [-] DNSDatagramProtocol starting on 45077
+ 144.2  27 | 2019-05-30T10:50:29+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268978>
+ 144.2  27 | 2019-05-30T10:50:29+0000 [-] (UDP Port 54459 Closed)
+ 144.2  27 | 2019-05-30T10:50:29+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253d68>
+ 149.2  37 | c : DNS request from ('10.27.180.157', 65368) to None: 41 bytes
+ 150.2  37 | c : DNS request from ('10.27.180.157', 65368) to None: 41 bytes
+ 151.8  27 | 2019-05-30T10:50:34+0000 [-] Unhandled Error
+ 151.8  27 | 	Traceback (most recent call last):
+ 151.8  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('audio4-ak.spotify.com.edgesuite.net', 1, 1)]
+ 151.8  27 | 
+ 151.8  27 | 2019-05-30T10:50:34+0000 [-] Unhandled Error
+ 151.8  27 | 	Traceback (most recent call last):
+ 151.8  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('audio4-ak.spotify.com.edgesuite.net', 1, 1)]
+ 151.8  27 | 
+ 151.8  27 | 2019-05-30T10:50:34+0000 [-] Unhandled Error
+ 151.8  27 | 	Traceback (most recent call last):
+ 151.8  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('audio4-ak.spotify.com.edgesuite.net', 1, 1)]
+ 151.8  27 | 
+ 151.8  27 | 2019-05-30T10:50:34+0000 [-] Unhandled Error
+ 151.9  27 | 	Traceback (most recent call last):
+ 151.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('audio4-ak.spotify.com.edgesuite.net', 1, 1)]
+ 151.9  27 | 
+ 151.9  27 | 2019-05-30T10:50:34+0000 [-] (UDP Port 28007 Closed)
+ 151.9  27 | 2019-05-30T10:50:34+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc87227b160>
+ 151.9  27 | 2019-05-30T10:50:34+0000 [stdout#info] A query: b'world-gen.g.aaplimg.com'
+ 151.9  27 | 2019-05-30T10:50:34+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 48678
+ 151.9  27 | 2019-05-30T10:50:34+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8722aadd8>
+ 151.9  27 | 2019-05-30T10:50:36+0000 [-] DNSDatagramProtocol starting on 42121
+ 151.9  27 | 2019-05-30T10:50:36+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc87227b198>
+ 151.9  27 | 2019-05-30T10:50:36+0000 [-] (UDP Port 48678 Closed)
+ 151.9  27 | 2019-05-30T10:50:36+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8722aadd8>
+ 151.9  27 | 2019-05-30T10:50:36+0000 [stdout#info] A query: b'world-gen.g.aaplimg.com'
+ 152.6  37 | c : DNS request from ('10.27.180.157', 52396) to None: 41 bytes
+ 152.8  27 | 2019-05-30T10:50:37+0000 [stdout#info] A query: b'world-gen.g.aaplimg.com'
+ 153.6  37 | c : DNS request from ('10.27.180.157', 52396) to None: 41 bytes
+ 153.6  27 | 2019-05-30T10:50:38+0000 [stdout#info] A query: b'world-gen.g.aaplimg.com'
+ 154.0 TEL | [42] Running: sudo -n echo -n
+ 154.2  27 | 2019-05-30T10:50:39+0000 [-] DNSDatagramProtocol starting on 1626
+ 154.2  27 | 2019-05-30T10:50:39+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253ef0>
+ 154.2  27 | 2019-05-30T10:50:39+0000 [-] (UDP Port 42121 Closed)
+ 154.2  27 | 2019-05-30T10:50:39+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc87227b198>
+ 156.4  37 | c : DNS request from ('10.27.180.157', 60273) to None: 41 bytes
+ 156.4  27 | 2019-05-30T10:50:41+0000 [stdout#info] A query: b'world-gen.g.aaplimg.com'
+ 157.4  37 | c : DNS request from ('10.27.180.157', 60273) to None: 41 bytes
+ 157.4  27 | 2019-05-30T10:50:42+0000 [stdout#info] A query: b'world-gen.g.aaplimg.com'
+ 161.3  37 | c : DNS request from ('10.27.180.157', 65238) to None: 41 bytes
+ 161.3  27 | 2019-05-30T10:50:46+0000 [stdout#info] A query: b'world-gen.g.aaplimg.com'
+ 162.3  37 | c : DNS request from ('10.27.180.157', 65238) to None: 41 bytes
+ 162.4  27 | 2019-05-30T10:50:47+0000 [stdout#info] A query: b'world-gen.g.aaplimg.com'
+ 164.2  27 | 2019-05-30T10:50:49+0000 [-] Unhandled Error
+ 164.2  27 | 	Traceback (most recent call last):
+ 164.2  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('sync.standardnotes.org', 1, 1)]
+ 164.2  27 | 
+ 164.3  27 | 2019-05-30T10:50:49+0000 [-] Unhandled Error
+ 164.3  27 | 	Traceback (most recent call last):
+ 164.3  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('sync.standardnotes.org', 1, 1)]
+ 164.3  27 | 
+ 164.3  27 | 2019-05-30T10:50:49+0000 [-] Unhandled Error
+ 164.3  27 | 	Traceback (most recent call last):
+ 164.3  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('sync.standardnotes.org', 1, 1)]
+ 164.3  27 | 
+ 164.3  27 | 2019-05-30T10:50:49+0000 [-] Unhandled Error
+ 164.3  27 | 	Traceback (most recent call last):
+ 164.3  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('sync.standardnotes.org', 1, 1)]
+ 164.3  27 | 
+ 164.3  27 | 2019-05-30T10:50:49+0000 [-] (UDP Port 13484 Closed)
+ 164.4  27 | 2019-05-30T10:50:49+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8722335f8>
+ 165.0  37 | c : DNS request from ('10.27.180.157', 54706) to None: 41 bytes
+ 165.2  27 | 2019-05-30T10:50:50+0000 [stdout#info] A query: b'world-gen.g.aaplimg.com'
+ 165.2  27 | 2019-05-30T10:50:50+0000 [-] DNSDatagramProtocol starting on 38213
+ 165.2  27 | 2019-05-30T10:50:50+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc87227b048>
+ 165.2  27 | 2019-05-30T10:50:50+0000 [-] (UDP Port 1626 Closed)
+ 165.2  27 | 2019-05-30T10:50:50+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253ef0>
+ 165.3  37 | c : DNS request from ('10.27.180.157', 52221) to None: 40 bytes
+ 165.3  27 | 2019-05-30T10:50:50+0000 [stdout#info] A query: b'sync.standardnotes.org'
+ 165.3  27 | 2019-05-30T10:50:50+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 3193
+ 165.3  27 | 2019-05-30T10:50:50+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8722734a8>
+ 166.0  37 | c : DNS request from ('10.27.180.157', 54706) to None: 41 bytes
+ 166.1  27 | 2019-05-30T10:50:50+0000 [stdout#info] A query: b'world-gen.g.aaplimg.com'
+ 166.3  37 | c : DNS request from ('10.27.180.157', 52221) to None: 40 bytes
+ 166.3  27 | 2019-05-30T10:50:51+0000 [stdout#info] A query: b'sync.standardnotes.org'
+ 166.3  27 | 2019-05-30T10:50:51+0000 [-] DNSDatagramProtocol starting on 46578
+ 166.3  27 | 2019-05-30T10:50:51+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872273198>
+ 166.4  27 | 2019-05-30T10:50:51+0000 [-] (UDP Port 3193 Closed)
+ 166.4  27 | 2019-05-30T10:50:51+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8722734a8>
+ 169.4  27 | 2019-05-30T10:50:54+0000 [-] DNSDatagramProtocol starting on 57271
+ 170.1  27 | 2019-05-30T10:50:54+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872273550>
+ 170.1  27 | 2019-05-30T10:50:54+0000 [-] (UDP Port 46578 Closed)
+ 170.1  27 | 2019-05-30T10:50:54+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872273198>
+ 172.3 TEL | (proxy checking local liveness)
+ 172.4  27 | 2019-05-30T10:50:57+0000 [Poll#info] Checkpoint
+ 174.0  37 | c : DNS request from ('10.27.180.157', 54706) to None: 41 bytes
+ 174.3  37 | c : DNS request from ('10.27.180.157', 52221) to None: 40 bytes
+ 174.8  27 | 2019-05-30T10:50:59+0000 [stdout#info] A query: b'world-gen.g.aaplimg.com'
+ 174.8  27 | 2019-05-30T10:50:59+0000 [stdout#info] A query: b'sync.standardnotes.org'
+ 176.1  37 | c : DNS request from ('10.27.180.157', 57752) to None: 41 bytes
+ 176.3  27 | 2019-05-30T10:51:01+0000 [stdout#info] A query: b'world-gen.g.aaplimg.com'
+ 177.1  37 | c : DNS request from ('10.27.180.157', 57752) to None: 41 bytes
+ 177.8  27 | 2019-05-30T10:51:02+0000 [stdout#info] A query: b'world-gen.g.aaplimg.com'
+ 178.3  27 | 2019-05-30T10:51:03+0000 [-] Unhandled Error
+ 178.3  27 | 	Traceback (most recent call last):
+ 178.3  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('audio-sp-fra2.pscdn.co', 1, 1)]
+ 178.3  27 | 
+ 178.3  37 | c : DNS request from ('10.27.180.157', 52221) to None: 40 bytes
+ 178.4  27 | 2019-05-30T10:51:03+0000 [-] Unhandled Error
+ 178.4  27 | 	Traceback (most recent call last):
+ 178.4  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('audio-sp-fra2.pscdn.co', 1, 1)]
+ 178.4  27 | 
+ 178.4  27 | 2019-05-30T10:51:03+0000 [-] Unhandled Error
+ 178.4  27 | 	Traceback (most recent call last):
+ 178.4  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('audio-sp-fra2.pscdn.co', 1, 1)]
+ 178.4  27 | 
+ 178.4  27 | 2019-05-30T10:51:03+0000 [-] (UDP Port 50618 Closed)
+ 178.4  27 | 2019-05-30T10:51:03+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253fd0>
+ 178.6  27 | 2019-05-30T10:51:03+0000 [stdout#info] A query: b'sync.standardnotes.org'
+ 180.4  27 | 2019-05-30T10:51:05+0000 [-] DNSDatagramProtocol starting on 43217
+ 180.4  27 | 2019-05-30T10:51:05+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8722537f0>
+ 180.6  27 | 2019-05-30T10:51:05+0000 [-] (UDP Port 57271 Closed)
+ 180.6  27 | 2019-05-30T10:51:05+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872273550>
+ 181.8  37 | c : DNS request from ('10.27.180.157', 60736) to None: 41 bytes
+ 181.8  27 | 2019-05-30T10:51:06+0000 [stdout#info] A query: b'world-gen.g.aaplimg.com'
+ 182.8  37 | c : DNS request from ('10.27.180.157', 60736) to None: 41 bytes
+ 182.8  27 | 2019-05-30T10:51:07+0000 [stdout#info] A query: b'world-gen.g.aaplimg.com'
+ 184.2 TEL | [43] Running: sudo -n echo -n
+ 186.5  27 | 2019-05-30T10:51:11+0000 [-] Unhandled Error
+ 186.5  27 | 	Traceback (most recent call last):
+ 186.5  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('msgstore.www.notion.so', 1, 1)]
+ 186.5  27 | 
+ 186.5  27 | 2019-05-30T10:51:11+0000 [-] Unhandled Error
+ 186.5  27 | 	Traceback (most recent call last):
+ 186.5  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('msgstore.www.notion.so', 1, 1)]
+ 186.5  27 | 
+ 186.5  27 | 2019-05-30T10:51:11+0000 [-] Unhandled Error
+ 186.5  27 | 	Traceback (most recent call last):
+ 186.5  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('msgstore.www.notion.so', 1, 1)]
+ 186.5  27 | 
+ 186.6  27 | 2019-05-30T10:51:11+0000 [-] Unhandled Error
+ 186.6  27 | 	Traceback (most recent call last):
+ 186.6  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('msgstore.www.notion.so', 1, 1)]
+ 186.6  27 | 
+ 186.6  27 | 2019-05-30T10:51:11+0000 [-] (UDP Port 63396 Closed)
+ 186.6  27 | 2019-05-30T10:51:11+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721de048>
+ 186.7  37 | c : DNS request from ('10.27.180.157', 65348) to None: 41 bytes
+ 186.8  27 | 2019-05-30T10:51:11+0000 [stdout#info] A query: b'world-gen.g.aaplimg.com'
+ 187.7  37 | c : DNS request from ('10.27.180.157', 65348) to None: 41 bytes
+ 187.9  27 | 2019-05-30T10:51:12+0000 [stdout#info] A query: b'world-gen.g.aaplimg.com'
+ 188.0  37 | c : DNS request from ('10.27.180.157', 57295) to None: 39 bytes
+ 188.6  27 | 2019-05-30T10:51:13+0000 [stdout#info] A query: b'apresolve.spotify.com'
+ 188.6  27 | 2019-05-30T10:51:13+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 1123
+ 188.6  27 | 2019-05-30T10:51:13+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268fd0>
+ 188.9  27 | 2019-05-30T10:51:13+0000 [-] Unhandled Error
+ 188.9  27 | 	Traceback (most recent call last):
+ 188.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('apple.applebucket.int.sap', 1, 1)]
+ 188.9  27 | 
+ 188.9  27 | 2019-05-30T10:51:13+0000 [-] Unhandled Error
+ 188.9  27 | 	Traceback (most recent call last):
+ 188.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('apple.applebucket.int.sap', 1, 1)]
+ 188.9  27 | 
+ 188.9  27 | 2019-05-30T10:51:13+0000 [-] Unhandled Error
+ 188.9  27 | 	Traceback (most recent call last):
+ 188.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('apple.applebucket.int.sap', 1, 1)]
+ 188.9  27 | 
+ 188.9  27 | 2019-05-30T10:51:13+0000 [-] Unhandled Error
+ 188.9  27 | 	Traceback (most recent call last):
+ 188.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('apple.applebucket.int.sap', 1, 1)]
+ 188.9  27 | 
+ 188.9  27 | 2019-05-30T10:51:13+0000 [-] (UDP Port 43509 Closed)
+ 188.9  27 | 2019-05-30T10:51:13+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872273128>
+ 189.1  37 | c : DNS request from ('10.27.180.157', 57295) to None: 39 bytes
+ 190.5  37 | c : DNS request from ('10.27.180.157', 57368) to None: 41 bytes
+ 190.7  27 | 2019-05-30T10:51:14+0000 [-] Unhandled Error
+ 190.7  27 | 	Traceback (most recent call last):
+ 190.8  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('partnerad.l.doubleclick.net', 1, 1)]
+ 190.8  27 | 
+ 190.8  27 | 2019-05-30T10:51:14+0000 [-] Unhandled Error
+ 190.8  27 | 	Traceback (most recent call last):
+ 190.8  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('partnerad.l.doubleclick.net', 1, 1)]
+ 190.8  27 | 
+ 190.8  27 | 2019-05-30T10:51:14+0000 [-] Unhandled Error
+ 190.8  27 | 	Traceback (most recent call last):
+ 190.8  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('partnerad.l.doubleclick.net', 1, 1)]
+ 190.8  27 | 
+ 190.8  27 | 2019-05-30T10:51:14+0000 [-] Unhandled Error
+ 190.8  27 | 	Traceback (most recent call last):
+ 190.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('partnerad.l.doubleclick.net', 1, 1)]
+ 190.9  27 | 
+ 190.9  27 | 2019-05-30T10:51:14+0000 [-] Unhandled Error
+ 190.9  27 | 	Traceback (most recent call last):
+ 190.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('partnerad.l.doubleclick.net', 1, 1)]
+ 190.9  27 | 
+ 190.9  27 | 2019-05-30T10:51:14+0000 [-] Unhandled Error
+ 190.9  27 | 	Traceback (most recent call last):
+ 190.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('partnerad.l.doubleclick.net', 1, 1)]
+ 190.9  27 | 
+ 190.9  27 | 2019-05-30T10:51:14+0000 [-] Unhandled Error
+ 190.9  27 | 	Traceback (most recent call last):
+ 190.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('partnerad.l.doubleclick.net', 1, 1)]
+ 190.9  27 | 
+ 190.9  27 | 2019-05-30T10:51:14+0000 [-] Unhandled Error
+ 190.9  27 | 	Traceback (most recent call last):
+ 190.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('weblb-wg.dual-gslb.spotify.com', 1, 1)]
+ 190.9  27 | 
+ 190.9  27 | 2019-05-30T10:51:14+0000 [-] Unhandled Error
+ 190.9  27 | 	Traceback (most recent call last):
+ 190.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('weblb-wg.dual-gslb.spotify.com', 1, 1)]
+ 190.9  27 | 
+ 190.9  27 | 2019-05-30T10:51:14+0000 [-] Unhandled Error
+ 190.9  27 | 	Traceback (most recent call last):
+ 190.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('weblb-wg.dual-gslb.spotify.com', 1, 1)]
+ 190.9  27 | 
+ 190.9  27 | 2019-05-30T10:51:14+0000 [-] Unhandled Error
+ 190.9  27 | 	Traceback (most recent call last):
+ 190.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('weblb-wg.dual-gslb.spotify.com', 1, 1)]
+ 190.9  27 | 
+ 190.9  27 | 2019-05-30T10:51:14+0000 [-] Unhandled Error
+ 190.9  27 | 	Traceback (most recent call last):
+ 190.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('weblb-wg.dual-gslb.spotify.com', 1, 1)]
+ 190.9  27 | 
+ 190.9  27 | 2019-05-30T10:51:14+0000 [-] Unhandled Error
+ 190.9  27 | 	Traceback (most recent call last):
+ 190.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('weblb-wg.dual-gslb.spotify.com', 1, 1)]
+ 190.9  27 | 
+ 190.9  27 | 2019-05-30T10:51:14+0000 [-] Unhandled Error
+ 190.9  27 | 	Traceback (most recent call last):
+ 190.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('weblb-wg.dual-gslb.spotify.com', 1, 1)]
+ 190.9  27 | 
+ 190.9  27 | 2019-05-30T10:51:14+0000 [-] (UDP Port 65439 Closed)
+ 190.9  27 | 2019-05-30T10:51:14+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253160>
+ 190.9  27 | 2019-05-30T10:51:14+0000 [-] (UDP Port 45077 Closed)
+ 190.9  27 | 2019-05-30T10:51:14+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268978>
+ 190.9  27 | 2019-05-30T10:51:14+0000 [-] DNSDatagramProtocol starting on 23932
+ 190.9  27 | 2019-05-30T10:51:14+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721cb320>
+ 190.9  27 | 2019-05-30T10:51:14+0000 [-] (UDP Port 1123 Closed)
+ 190.9  27 | 2019-05-30T10:51:14+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268fd0>
+ 190.9  27 | 2019-05-30T10:51:15+0000 [stdout#info] A query: b'apresolve.spotify.com'
+ 190.9  27 | 2019-05-30T10:51:15+0000 [stdout#info] A query: b'world-gen.g.aaplimg.com'
+ 191.5  37 | c : DNS request from ('10.27.180.157', 57368) to None: 41 bytes
+ 191.7  27 | 2019-05-30T10:51:16+0000 [stdout#info] A query: b'world-gen.g.aaplimg.com'
+ 192.9  27 | 2019-05-30T10:51:17+0000 [-] DNSDatagramProtocol starting on 31493
+ 192.9  27 | 2019-05-30T10:51:17+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721cbb00>
+ 192.9  27 | 2019-05-30T10:51:17+0000 [-] (UDP Port 23932 Closed)
+ 192.9  27 | 2019-05-30T10:51:17+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721cb320>
+ 197.2  37 | c : DNS request from ('10.27.180.157', 57295) to None: 39 bytes
+ 197.2  37 | c : DNS request from ('10.27.180.157', 56891) to None: 43 bytes
+ 198.1  27 | 2019-05-30T10:51:22+0000 [stdout#info] A query: b'apresolve.spotify.com'
+ 198.1  27 | 2019-05-30T10:51:22+0000 [stdout#info] A query: b'apple.applebucket.int.sap'
+ 199.3  27 | 2019-05-30T10:51:23+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 54727
+ 199.3  27 | 2019-05-30T10:51:23+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721d5dd8>
+ 199.4  27 | 2019-05-30T10:51:24+0000 [-] DNSDatagramProtocol starting on 4537
+ 199.4  27 | 2019-05-30T10:51:24+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721d5a90>
+ 199.4  27 | 2019-05-30T10:51:24+0000 [-] (UDP Port 54727 Closed)
+ 199.4  27 | 2019-05-30T10:51:24+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721d5dd8>
+ 199.5  37 | c : DNS request from ('10.27.180.157', 63719) to None: 37 bytes
+ 199.6  27 | 2019-05-30T10:51:24+0000 [stdout#info] A query: b'clients4.google.com'
+ 199.6  27 | 2019-05-30T10:51:24+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 65483
+ 199.6  27 | 2019-05-30T10:51:24+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253e80>
+ 200.5  37 | c : DNS request from ('10.27.180.157', 52206) to None: 37 bytes
+ 200.5  27 | 2019-05-30T10:51:25+0000 [stdout#info] A query: b'clients4.google.com'
+ 200.6  27 | 2019-05-30T10:51:25+0000 [-] DNSDatagramProtocol starting on 7465
+ 200.7  27 | 2019-05-30T10:51:25+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253400>
+ 200.7  27 | 2019-05-30T10:51:25+0000 [-] (UDP Port 65483 Closed)
+ 200.7  27 | 2019-05-30T10:51:25+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253e80>
+ 201.1  37 | c : DNS request from ('10.27.180.157', 57295) to None: 39 bytes
+ 201.1  27 | 2019-05-30T10:51:26+0000 [stdout#info] A query: b'apresolve.spotify.com'
+ 201.4 TEL | (proxy checking local liveness)
+ 201.5  27 | 2019-05-30T10:51:26+0000 [Poll#info] Checkpoint
+ 201.5  37 | c : DNS request from ('10.27.180.157', 52269) to None: 37 bytes
+ 201.6  27 | 2019-05-30T10:51:26+0000 [stdout#info] A query: b'clients4.google.com'
+ 202.4  27 | 2019-05-30T10:51:27+0000 [-] DNSDatagramProtocol starting on 7903
+ 202.4  27 | 2019-05-30T10:51:27+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8722686d8>
+ 202.4  27 | 2019-05-30T10:51:27+0000 [-] (UDP Port 4537 Closed)
+ 202.4  27 | 2019-05-30T10:51:27+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721d5a90>
+ 202.5  37 | c : DNS request from ('10.27.180.157', 47517) to None: 37 bytes
+ 202.5  27 | 2019-05-30T10:51:27+0000 [stdout#info] A query: b'clients4.google.com'
+ 204.3  37 | c : DNS request from ('10.27.180.157', 58661) to None: 31 bytes
+ 204.5  37 | c : DNS request from ('10.27.180.157', 7606) to None: 37 bytes
+ 204.6  27 | 2019-05-30T10:51:29+0000 [-] DNSDatagramProtocol starting on 4326
+ 204.6  27 | 2019-05-30T10:51:29+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268fd0>
+ 204.6  27 | 2019-05-30T10:51:29+0000 [-] (UDP Port 7465 Closed)
+ 204.6  27 | 2019-05-30T10:51:29+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253400>
+ 204.6  27 | 2019-05-30T10:51:29+0000 [-] DNSDatagramProtocol starting on 46486
+ 204.6  27 | 2019-05-30T10:51:29+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872253400>
+ 204.6  27 | 2019-05-30T10:51:29+0000 [-] (UDP Port 31493 Closed)
+ 204.6  27 | 2019-05-30T10:51:29+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721cbb00>
+ 205.3  27 | 2019-05-30T10:51:29+0000 [stdout#info] A query: b'd.dropbox.com'
+ 205.3  27 | 2019-05-30T10:51:29+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 22612
+ 205.3  27 | 2019-05-30T10:51:29+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268860>
+ 205.3  27 | 2019-05-30T10:51:29+0000 [stdout#info] A query: b'clients4.google.com'
+ 205.3  37 | c : DNS request from ('10.27.180.157', 58661) to None: 31 bytes
+ 205.4  27 | 2019-05-30T10:51:30+0000 [stdout#info] A query: b'd.dropbox.com'
+ 205.9  27 | 2019-05-30T10:51:30+0000 [-] DNSDatagramProtocol starting on 15944
+ 205.9  27 | 2019-05-30T10:51:30+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268ba8>
+ 206.0  27 | 2019-05-30T10:51:30+0000 [-] (UDP Port 22612 Closed)
+ 206.0  27 | 2019-05-30T10:51:30+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268860>
+ 206.5  37 | c : DNS request from ('10.27.180.157', 41958) to None: 37 bytes
+ 206.7  27 | 2019-05-30T10:51:31+0000 [stdout#info] A query: b'clients4.google.com'
+ 206.8  37 | c : DNS request from ('10.27.180.157', 58812) to None: 28 bytes
+ 206.9  27 | 2019-05-30T10:51:31+0000 [stdout#info] A query: b'trello.com'
+ 206.9  27 | 2019-05-30T10:51:31+0000 [stdout#info] RESOLVING b'trello.com.svc.cluster.local'
+ 206.9  27 | 2019-05-30T10:51:31+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 2578
+ 206.9  27 | 2019-05-30T10:51:31+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721de470>
+ 206.9  27 | 2019-05-30T10:51:31+0000 [stdout#info] FAILED to lookup b'trello.com.svc.cluster.local' ([Failure instance: Traceback (failure with no frames): <class 'twisted.names.error.DNSNameError'>: <Message id=65409 rCode=3 maxSize=0 flags=answer,auth,recDes,recAv queries=[Query('trello.com.svc.cluster.local', 1, 1)] authority=[<RR name=cluster.local type=SOA class=IN ttl=30s auth=True>]>
+ 206.9  27 | 2019-05-30T10:51:31+0000 [stdout#info] ]), trying b'trello.com'
+ 206.9  27 | 2019-05-30T10:51:31+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 31442
+ 206.9  27 | 2019-05-30T10:51:31+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721de7f0>
+ 206.9  27 | 2019-05-30T10:51:31+0000 [-] (UDP Port 2578 Closed)
+ 206.9  27 | 2019-05-30T10:51:31+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721de470>
+ 207.8  37 | c : DNS request from ('10.27.180.157', 58812) to None: 28 bytes
+ 207.9  27 | 2019-05-30T10:51:32+0000 [-] DNSDatagramProtocol starting on 21098
+ 207.9  27 | 2019-05-30T10:51:32+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721de6d8>
+ 207.9  27 | 2019-05-30T10:51:32+0000 [stdout#info] A query: b'trello.com'
+ 208.0  27 | 2019-05-30T10:51:32+0000 [stdout#info] RESOLVING b'trello.com.svc.cluster.local'
+ 208.0  27 | 2019-05-30T10:51:32+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 13681
+ 208.0  27 | 2019-05-30T10:51:32+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721de860>
+ 208.0  27 | 2019-05-30T10:51:32+0000 [-] (UDP Port 31442 Closed)
+ 208.0  27 | 2019-05-30T10:51:32+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721de7f0>
+ 208.0  27 | 2019-05-30T10:51:32+0000 [stdout#info] FAILED to lookup b'trello.com.svc.cluster.local' ([Failure instance: Traceback (failure with no frames): <class 'twisted.names.error.DNSNameError'>: <Message id=52934 rCode=3 maxSize=0 flags=answer,auth,recDes,recAv queries=[Query('trello.com.svc.cluster.local', 1, 1)] authority=[<RR name=cluster.local type=SOA class=IN ttl=30s auth=True>]>
+ 208.0  27 | 2019-05-30T10:51:32+0000 [stdout#info] ]), trying b'trello.com'
+ 208.0  27 | 2019-05-30T10:51:32+0000 [-] (UDP Port 13681 Closed)
+ 208.0  27 | 2019-05-30T10:51:32+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721de860>
+ 208.6  37 | c : DNS request from ('10.27.180.157', 54191) to None: 37 bytes
+ 209.2  27 | 2019-05-30T10:51:34+0000 [-] DNSDatagramProtocol starting on 7902
+ 209.2  27 | 2019-05-30T10:51:34+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721dea58>
+ 209.2  27 | 2019-05-30T10:51:34+0000 [stdout#info] A query: b'clients4.google.com'
+ 209.3  27 | 2019-05-30T10:51:34+0000 [-] (UDP Port 15944 Closed)
+ 209.3  27 | 2019-05-30T10:51:34+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc872268ba8>
+ 209.6  37 | c : DNS request from ('10.27.180.157', 54191) to None: 37 bytes
+ 209.7  27 | 2019-05-30T10:51:34+0000 [stdout#info] A query: b'clients4.google.com'
+ 210.2  27 | 2019-05-30T10:51:35+0000 [-] Unhandled Error
+ 210.2  27 | 	Traceback (most recent call last):
+ 210.2  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('world-gen.g.aaplimg.com', 1, 1)]
+ 210.2  27 | 
+ 210.4  27 | 2019-05-30T10:51:35+0000 [-] Unhandled Error
+ 210.4  27 | 	Traceback (most recent call last):
+ 210.4  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('world-gen.g.aaplimg.com', 1, 1)]
+ 210.4  27 | 
+ 210.4  27 | 2019-05-30T10:51:35+0000 [-] Unhandled Error
+ 210.4  27 | 	Traceback (most recent call last):
+ 210.4  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('world-gen.g.aaplimg.com', 1, 1)]
+ 210.4  27 | 
+ 210.4  27 | 2019-05-30T10:51:35+0000 [-] Unhandled Error
+ 210.4  27 | 	Traceback (most recent call last):
+ 210.4  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('world-gen.g.aaplimg.com', 1, 1)]
+ 210.5  27 | 
+ 210.5  27 | 2019-05-30T10:51:35+0000 [-] Unhandled Error
+ 210.5  27 | 	Traceback (most recent call last):
+ 210.5  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('world-gen.g.aaplimg.com', 1, 1)]
+ 210.5  27 | 
+ 210.5  27 | 2019-05-30T10:51:35+0000 [-] Unhandled Error
+ 210.5  27 | 	Traceback (most recent call last):
+ 210.5  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('world-gen.g.aaplimg.com', 1, 1)]
+ 210.5  27 | 
+ 210.5  27 | 2019-05-30T10:51:35+0000 [-] Unhandled Error
+ 210.5  27 | 	Traceback (most recent call last):
+ 210.5  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('world-gen.g.aaplimg.com', 1, 1)]
+ 210.5  27 | 
+ 210.5  27 | 2019-05-30T10:51:35+0000 [-] Unhandled Error
+ 210.5  27 | 	Traceback (most recent call last):
+ 210.5  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('world-gen.g.aaplimg.com', 1, 1)]
+ 210.5  27 | 
+ 210.5  27 | 2019-05-30T10:51:35+0000 [-] Unhandled Error
+ 210.5  27 | 	Traceback (most recent call last):
+ 210.5  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('world-gen.g.aaplimg.com', 1, 1)]
+ 210.5  27 | 
+ 210.5  27 | 2019-05-30T10:51:35+0000 [-] Unhandled Error
+ 210.5  27 | 	Traceback (most recent call last):
+ 210.5  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('world-gen.g.aaplimg.com', 1, 1)]
+ 210.5  27 | 
+ 210.5  27 | 2019-05-30T10:51:35+0000 [-] Unhandled Error
+ 210.5  27 | 	Traceback (most recent call last):
+ 210.5  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('world-gen.g.aaplimg.com', 1, 1)]
+ 210.5  27 | 
+ 210.5  27 | 2019-05-30T10:51:35+0000 [-] Unhandled Error
+ 210.5  27 | 	Traceback (most recent call last):
+ 210.5  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('world-gen.g.aaplimg.com', 1, 1)]
+ 210.5  27 | 
+ 210.8  27 | 2019-05-30T10:51:35+0000 [-] Unhandled Error
+ 210.8  27 | 	Traceback (most recent call last):
+ 210.8  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('world-gen.g.aaplimg.com', 1, 1)]
+ 210.8  27 | 
+ 210.8  27 | 2019-05-30T10:51:35+0000 [-] Unhandled Error
+ 210.8  27 | 	Traceback (most recent call last):
+ 210.8  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('world-gen.g.aaplimg.com', 1, 1)]
+ 210.8  27 | 
+ 210.8  27 | 2019-05-30T10:51:35+0000 [-] Unhandled Error
+ 210.8  27 | 	Traceback (most recent call last):
+ 210.8  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('world-gen.g.aaplimg.com', 1, 1)]
+ 210.8  27 | 
+ 210.8  27 | 2019-05-30T10:51:35+0000 [-] Unhandled Error
+ 210.8  27 | 	Traceback (most recent call last):
+ 210.8  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('world-gen.g.aaplimg.com', 1, 1)]
+ 210.8  27 | 
+ 210.8  27 | 2019-05-30T10:51:35+0000 [-] Unhandled Error
+ 210.8  27 | 	Traceback (most recent call last):
+ 210.8  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('world-gen.g.aaplimg.com', 1, 1)]
+ 210.8  27 | 
+ 210.8  27 | 2019-05-30T10:51:35+0000 [-] Unhandled Error
+ 210.8  27 | 	Traceback (most recent call last):
+ 210.8  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('world-gen.g.aaplimg.com', 1, 1)]
+ 210.8  27 | 
+ 210.9  27 | 2019-05-30T10:51:35+0000 [-] Unhandled Error
+ 210.9  27 | 	Traceback (most recent call last):
+ 210.9  27 | 	Failure: twisted.internet.defer.TimeoutError: [Query('world-gen.g.aaplimg.com', 1, 1)]
+ 210.9  27 | 
+ 210.9  27 | 2019-05-30T10:51:35+0000 [-] (UDP Port 38213 Closed)
+ 210.9  27 | 2019-05-30T10:51:35+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc87227b048>
+ 210.9  27 | 2019-05-30T10:51:35+0000 [-] DNSDatagramProtocol starting on 39031
+ 210.9  27 | 2019-05-30T10:51:35+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721cb668>
+ 210.9  27 | 2019-05-30T10:51:35+0000 [-] (UDP Port 21098 Closed)
+ 210.9  27 | 2019-05-30T10:51:35+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721de6d8>
+ 211.6  37 | c : DNS request from ('10.27.180.157', 52199) to None: 40 bytes
+ 212.3  27 | 2019-05-30T10:51:37+0000 [stdout#info] A query: b'msgstore.www.notion.so'
+ 212.3  27 | 2019-05-30T10:51:37+0000 [DNSDatagramProtocol (UDP)] DNSDatagramProtocol starting on 51747
+ 212.3  27 | 2019-05-30T10:51:37+0000 [DNSDatagramProtocol (UDP)] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721cb828>
+ 212.6  37 | c : DNS request from ('10.27.180.157', 52199) to None: 40 bytes
+ 212.8  27 | 2019-05-30T10:51:37+0000 [stdout#info] A query: b'msgstore.www.notion.so'
+ 213.2  27 | 2019-05-30T10:51:38+0000 [-] DNSDatagramProtocol starting on 12208
+ 213.2  27 | 2019-05-30T10:51:38+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721d58d0>
+ 213.2  27 | 2019-05-30T10:51:38+0000 [-] (UDP Port 51747 Closed)
+ 213.2  27 | 2019-05-30T10:51:38+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721cb828>
+ 213.3  37 | c : DNS request from ('10.27.180.157', 58661) to None: 31 bytes
+ 213.5  27 | 2019-05-30T10:51:38+0000 [-] DNSDatagramProtocol starting on 34791
+ 213.5  27 | 2019-05-30T10:51:38+0000 [-] Starting protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8721cb828>
+ 213.5  27 | 2019-05-30T10:51:38+0000 [-] (UDP Port 7903 Closed)
+ 213.5  27 | 2019-05-30T10:51:38+0000 [-] Stopping protocol <twisted.names.dns.DNSDatagramProtocol object at 0x7fc8722686d8>
+ 213.5  27 | 2019-05-30T10:51:38+0000 [stdout#info] A query: b'd.dropbox.com'
+ 214.4 TEL | [44] Running: sudo -n echo -n
+ 214.7 TEL | END SPAN runner.py:586(wait_for_exit)  189.9s
+ 214.7 TEL | Main process (bash --norc)
+ 214.7 TEL |  exited with code 0.
+ 214.7 >>> | Your process has exited.
+ 214.7 TEL | EXITING successful session.
+ 214.7 >>> | Exit cleanup in progress
+ 214.7 TEL | (Cleanup) Terminate local process
+ 214.7 TEL | (Cleanup) Kill BG process [37] sshuttle
+ 214.7  37 | >> pfctl -a sshuttle6-12300 -F all
+ 214.7 TEL | (Cleanup) Unmount remote filesystem
+ 214.7 TEL | [45] Capturing: umount -f /tmp/tel-rqtgknpq/fs
+ 214.7  37 | >> pfctl -X 10023905529299459619
+ 214.7  37 | >> pfctl -a sshuttle-12300 -F all
+ 214.7  37 | >> pfctl -X 10023905529299458467
+ 214.8 TEL | (Cleanup) Kill BG process [32] SSH port forward (socks and proxy poll)
+ 214.8 TEL | [32] exit 0
+ 214.8 TEL | (Cleanup) Kill Web server for proxy poll
+ 215.0 TEL | (Cleanup) Kill BG process [28] kubectl port-forward
+ 215.0  37 | Connection to 127.0.0.1 closed by remote host.
+ 215.0 TEL | [28] exit -15
+ 215.0 TEL | (Cleanup) Kill BG process [27] kubectl logs
+ 215.0 TEL | [37] exit -15
+ 215.0 TEL | [27] exit -15
+ 215.0 TEL | (Cleanup) Delete new deployment
+ 215.0 >>> | Cleaning up Deployment telepresence-1559213285-875679-33428
+ 215.0 TEL | [46] Capturing: kubectl --context minikube --namespace kyma-system delete --ignore-not-found svc,deploy --selector=telepresence=7a691f9cf9c84a3f82858aeb354388cd
+ 215.9 TEL | (Cleanup) Show version notice
+ 215.9 >>> | 
+ 215.9 >>> | Telepresence 0.99 is available (you're running 0.97). https://www.telepresence.io/reference/changelog
+ 215.9 TEL | (Cleanup) Kill sudo privileges holder
+ 215.9 TEL | (Cleanup) Stop time tracking
+ 215.9 TEL | END SPAN main.py:40(main)  215.9s
+ 215.9 TEL | SPAN SUMMARY:
+ 215.9 TEL |  215.9s main.py:40(main)
+ 215.9 TEL |    0.4s   startup.py:74(__init__)
+ 215.9 TEL |    0.1s     2 kubectl version --short
+ 215.9 TEL |    0.1s     3 kubectl config current-context
+ 215.9 TEL |    0.1s     4 kubectl config view -o json
+ 215.9 TEL |    0.1s     5 kubectl --context minikube get ns kyma-system
+ 215.9 TEL |    0.0s   6 ssh -V
+ 215.9 TEL |    0.0s   7 sudo -n echo -n
+ 215.9 TEL |    2.9s   8 sudo echo -n
+ 215.9 TEL |    0.1s   9 kubectl --context minikube --namespace kyma-system get pods telepresence-conne
+ 215.9 TEL |    0.3s   deployment.py:61(create_new_deployment)
+ 215.9 TEL |    0.2s     10 kubectl --context minikube --namespace kyma-system delete --ignore-not-found
+ 215.9 TEL |    0.1s     11 kubectl --context minikube --namespace kyma-system run --restart=Always --lim
+ 215.9 TEL |    6.2s   remote.py:154(get_remote_info)
+ 215.9 TEL |    0.2s     remote.py:78(get_deployment_json)
+ 215.9 TEL |    0.2s       12 kubectl --context minikube --namespace kyma-system get deployment -o json --e
+ 215.9 TEL |    0.2s     13 kubectl --context minikube --namespace kyma-system get pod -o json --export -
+ 215.9 TEL |    5.8s     remote.py:116(wait_for_pod)
+ 215.9 TEL |    0.1s       14 kubectl --context minikube --namespace kyma-system get pod telepresence-15592
+ 215.9 TEL |    0.1s       15 kubectl --context minikube --namespace kyma-system get pod telepresence-15592
+ 215.9 TEL |    0.1s       16 kubectl --context minikube --namespace kyma-system get pod telepresence-15592
+ 215.9 TEL |    0.1s       17 kubectl --context minikube --namespace kyma-system get pod telepresence-15592
+ 215.9 TEL |    0.1s       18 kubectl --context minikube --namespace kyma-system get pod telepresence-15592
+ 215.9 TEL |    0.2s       19 kubectl --context minikube --namespace kyma-system get pod telepresence-15592
+ 215.9 TEL |    0.2s       20 kubectl --context minikube --namespace kyma-system get pod telepresence-15592
+ 215.9 TEL |    1.0s       21 kubectl --context minikube --namespace kyma-system get pod telepresence-15592
+ 215.9 TEL |    0.2s       22 kubectl --context minikube --namespace kyma-system get pod telepresence-15592
+ 215.9 TEL |    0.1s       23 kubectl --context minikube --namespace kyma-system get pod telepresence-15592
+ 215.9 TEL |    0.1s       24 kubectl --context minikube --namespace kyma-system get pod telepresence-15592
+ 215.9 TEL |    0.2s       25 kubectl --context minikube --namespace kyma-system get pod telepresence-15592
+ 215.9 TEL |    0.2s       26 kubectl --context minikube --namespace kyma-system get pod telepresence-15592
+ 215.9 TEL |    1.6s   connect.py:36(connect)
+ 215.9 TEL |    0.0s     29 ssh -F /dev/null -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -q
+ 215.9 TEL |    0.0s     30 ssh -F /dev/null -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -q
+ 215.9 TEL |    1.0s     31 ssh -F /dev/null -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -q
+ 215.9 TEL |    2.1s   remote_env.py:28(get_remote_env)
+ 215.9 TEL |    2.1s     33 kubectl --context minikube --namespace kyma-system exec telepresence-15592132
+ 215.9 TEL |    1.7s   mount.py:32(mount_remote_volumes)
+ 215.9 TEL |    1.7s     34 sshfs -p 51547 -F /dev/null -oStrictHostKeyChecking=no -oUserKnownHostsFile=/
+ 215.9 TEL |    5.8s   vpn.py:245(connect_sshuttle)
+ 215.9 TEL |    1.4s     vpn.py:75(get_proxy_cidrs)
+ 215.9 TEL |    0.9s       35 kubectl --context minikube --namespace kyma-system get nodes -o json
+ 215.9 TEL |    0.5s       36 kubectl --context minikube --namespace kyma-system get services -o json
+ 215.9 TEL |    4.4s     vpn.py:268(connect_sshuttle,sshuttle-wait)
+ 215.9 TEL |  189.9s   runner.py:586(wait_for_exit)
+ 215.9 TEL |    0.0s     38 sudo -n echo -n
+ 215.9 TEL |    0.0s     39 sudo -n echo -n
+ 215.9 TEL |    0.0s     40 sudo -n echo -n
+ 215.9 TEL |    0.2s     41 sudo -n echo -n
+ 215.9 TEL |    0.1s     42 sudo -n echo -n
+ 215.9 TEL |    0.1s     43 sudo -n echo -n
+ 215.9 TEL |    0.1s     44 sudo -n echo -n
+ 215.9 TEL |    0.1s   45 umount -f /tmp/tel-rqtgknpq/fs
+ 215.9 TEL |    0.9s   46 kubectl --context minikube --namespace kyma-system delete --ignore-not-found
+ 215.9 TEL | (Cleanup) Remove temporary directory
+ 216.4 TEL | (Cleanup) Save caches
+ 216.6 TEL | (sudo privileges holder thread exiting)

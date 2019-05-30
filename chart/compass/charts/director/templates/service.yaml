@@ -9,9 +9,8 @@ spec:
   type: ClusterIP
   ports:
     - port: {{ .Values.service.directorPort }}
-      targetPort: http
-      protocol: TCP
-      name: http
+      targetPort: {{ .Values.service.directorPort }}
+      name: grpc
   selector:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}

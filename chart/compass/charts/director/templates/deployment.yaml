@@ -21,6 +21,8 @@ spec:
           image: {{ .Values.global.containerRegistry.path }}/{{ .Values.global.director.dir }}compass-director:{{ .Values.global.director.version }}
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
-            - name: http
-              containerPort: {{ .Values.deployment.args.containerPort}}
-              protocol: TCP
+            - name: grpc
+              containerPort: {{ .Values.service.directorPort }}
+          env:
+            - name: DIRECTOR_ADDRESS
+              value: "0.0.0.0:4000"

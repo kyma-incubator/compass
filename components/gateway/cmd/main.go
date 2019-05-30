@@ -1,7 +1,9 @@
 package main
 
 import (
+	"log"
 	"net/http"
+	"os"
 
 	"github.com/kyma-incubator/compass/components/gateway/internal/director"
 
@@ -27,7 +29,9 @@ func main() {
 
 	http.Handle("/", router)
 
-	if err := http.ListenAndServe("127.0.0.1:3000", nil); err != nil {
+	addr := os.Getenv("GATEWAY_ADDRESS")
+	log.Printf("Gateway server addr %s", addr)
+	if err := http.ListenAndServe(addr, nil); err != nil {
 		panic(err)
 	}
 }

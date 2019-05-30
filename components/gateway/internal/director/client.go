@@ -2,6 +2,8 @@ package director
 
 import (
 	"context"
+	"log"
+	"os"
 	"time"
 
 	pb "github.com/kyma-incubator/compass/components/gateway/protobuf"
@@ -21,7 +23,9 @@ type Client struct {
 }
 
 func NewClient() (*Client, error) {
-	pool, err := grpcpool.New(connFactory("127.0.0.1:4000"), initialOpenSocketNo, maxOpenSocketNo, socketIdleTimeout)
+	addr := os.Getenv("DIRECTOR_ADDRESS")
+	log.Printf("Director Addr %s", addr)
+	pool, err := grpcpool.New(connFactory(addr), initialOpenSocketNo, maxOpenSocketNo, socketIdleTimeout)
 	if err != nil {
 		return nil, err
 	}

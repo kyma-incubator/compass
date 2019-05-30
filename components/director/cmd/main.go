@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 
 	pb "github.com/kyma-incubator/compass/components/director/protobuf"
 	"golang.org/x/net/context"
@@ -69,7 +70,7 @@ func newHandler() *handler {
 
 func main() {
 	log.Println("Starting Director...")
-	addr := fmt.Sprintf("127.0.0.1:4000")
+	addr := os.Getenv("DIRECTOR_ADDRESS")
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		panic(err)

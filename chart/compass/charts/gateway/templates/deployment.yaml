@@ -24,3 +24,8 @@ spec:
             - name: http
               containerPort: {{ .Values.deployment.args.containerPort}}
               protocol: TCP
+          env:
+            - name: DIRECTOR_ADDRESS
+              value: "director.kyma-system.svc.cluster.local:4000"
+            - name: GATEWAY_ADDRESS
+              value: "0.0.0.0:3000"
