@@ -88,7 +88,7 @@ Cons
 
 ### 3. Separate HTTP endpoints
 
-// TODO
+This approach requires us to write reverse proxy server that would expose a separate endpoint for each internal API we want to expose. This way we wouldn't be limited to GraphQL APIs, we could for example have one endpoint with REST API and different one with GraphQL API.
 
 Pros
 
@@ -100,6 +100,7 @@ Pros
 Cons
 
 - no facade over internal APIs
+- implementing subscriptions proxying
 - multiple endpoints
 
 ## Summary
@@ -108,6 +109,8 @@ Solution | Introspection & subscriptions support | Single call to proxied API | 
 :-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:
 Handwritten GraphQL Gateway | ✓ | ✗ | ✓ | ✓ | ✓ | ✗ | medium
 Apollo Server | ✓ | ✗ | ✗ | ✓ | ✗ | ✓ | very small
-Custom HTTP proxy in Go | ✗ | ✓ | ✓ | ✓ | ✗ | ✓ | small
+Custom HTTP proxy in Go | ✗ | ✓ | ✓ | ✓ | ✗ | ✓ | small*
 Custom stitching implementation in Go | ✓ | ✗ | ✓ | ✓ | ✗ | ✓ | big
 Separate HTTP endpoints | ✓<br>(per endpoint) | ✓ | ✓ | ✗ | ✗ | ✓ | small
+
+\* Unless we decide to fake GraphQL behaviour to support all it's features, then I believe the amount of work would be big.
