@@ -4,7 +4,7 @@
 
 This proof of concept contains Gateway GraphQL server, which communicates via gRPC with Director. Gateway delegates all operations to Director, which contains actual business logic.
 
-From technical point of view, Gateway utilizes connection pool to be easily scaleable. gRPC underneath uses HTTP/2 server-side push, so there is no need to reconnect for every request.
+From technical point of view, Gateway utilizes connection pool to be easily scalable. gRPC underneath uses HTTP/2 server-side push, so there is no need to reconnect for every request.
 
 ## Run locally
 
@@ -41,7 +41,7 @@ Run the following query in playground:
 }
 ```
 
-Result: Only one resolver will be triggered (1 request).
+Result: Only one resolver will be triggered: applications (once) (1 request).
 
 Next, run this query:
 
@@ -64,8 +64,7 @@ Next, run this query:
 }
 ```
 
-Result: Two resolvers will be triggered (3 requests in total).
-
+Result: Two resolvers will be triggered: applications (once) + apis (two times) (3 requests in total).
 
 ## Summary
 
