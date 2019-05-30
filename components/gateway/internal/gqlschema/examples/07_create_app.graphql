@@ -5,7 +5,7 @@ mutation {
             description: "TODO",
             labels: "",
             annotations: "",
-            webhooks: [{type:CONFIGURATION_CHANGED,url: "",credential: {data: { basic: {
+            webhooks: [{type:CONFIGURATION_CHANGED,url: "",auth: {credential: { basic: {
                 password: "aaa",
                 username: "bbb",
             }}}}],
@@ -13,35 +13,11 @@ mutation {
             apis: [
                 {
                     targetURL: "",
-                    credential: {
-                        data: {
-                            basic: {
-                                username: "aaa",
-                                password: "bbb",
-                            }
-                        }
-                    },
-                    additionalHeaders: "",
-                    additionalQueryParams: "",
                     spec: {
                         type: OPEN_API,
                         format: JSON,
                         data: "",
                     },
-                    variants: [
-                        {
-                            runtimeID: "kyma-1",
-                            credential: {
-                                data: {
-                                    basic: {
-                                        username: "fff",
-                                        password: "ggg",
-                                    }
-                                }
-
-                            }
-                        },
-                    ],
                 }
             ],
             events: [

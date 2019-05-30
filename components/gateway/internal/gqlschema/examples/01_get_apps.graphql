@@ -38,10 +38,9 @@ query {
         apis {
             id
             targetURL
-            credentials {
+            auths {
                 runtimeID
-
-                credential {
+                auth {
                     additionalHeaders
                     additionalQueryParams
                     credential {
@@ -58,46 +57,41 @@ query {
                     }
                 }
             }
+            version {
+                value
+                deprecated
+                deprecatedSince
+                forRemoval
+            }
+            group
         }
-        spec {
-            type
-            data
-        }
-        additionalHeaders
-        additionalQueryParams
-        version {
-            value
-            deprecated
-            deprecatedSince
-            forRemoval
-        }
-    }
-    eventAPIs {
-        id
-        spec {
-            type
-            data
-            fetchRequest {
-                url
-                credential {
-                    data {
-                        __typename
-                        ... on BasicCredentialData {
-                            username
-                            password
-                        }
-                        ... on OAuthCredentialData {
-                            clientId
-                            clientSecret
-                            url
+
+        eventAPIs {
+            id
+            spec {
+                type
+                data
+                fetchRequest {
+                    url
+                    auth {
+                        credential {
+                            __typename
+                            ... on BasicCredentialData {
+                                username
+                                password
+                            }
+                            ... on OAuthCredentialData {
+                                clientId
+                                clientSecret
+                                url
+                            }
                         }
                     }
                 }
             }
-        }
-        version {
-            value
+            version {
+                value
+            }
         }
     }
-}
 }

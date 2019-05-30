@@ -31,7 +31,7 @@ mutation {
 
     }
 
-    setAPIAuth(apiID:  456, in: {
+    firstSet: setAPIAuth(apiID:  "456", in: {
         credential: {
             basic: {
                 username: "aaa",
@@ -39,11 +39,13 @@ mutation {
             }
         }
     })  {
-        data {
+
+        auth {
             __typename
         }
+        runtimeID
     }
-    setAPIAuth(apiID:  456, in: {
+    secondSet: setAPIAuth(apiID:  "456", runtimeID: "789",in: {
         credential: {
             basic: {
                 username: "aaa",
@@ -51,28 +53,11 @@ mutation {
             }
         }
     })  {
-        data {
+        auth {
             __typename
         }
+        runtimeID
     }
 
-    setAPIAuth(apiID: 567, in: {
-        credential: {
-            basic: {
-                username: "fff",
-                password: "fff"
-            }
-        }
-    }) {
-        data {
-            __typename
-        }
-    }
-
-    deleteAPICredential(apiID: 456) {
-        data {
-            __typename
-        }
-    }
 
 }
