@@ -19,7 +19,7 @@ spec:
             regex: /.*
       route:
         - destination:
-            host: gateway
+            host: compass-gateway
             port:
               number: 3000
       corsPolicy:

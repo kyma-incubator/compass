@@ -1,7 +1,8 @@
 apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
-  name: {{ .Chart.Name }}
+  name: {{ template "fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
@@ -26,6 +27,6 @@ spec:
               protocol: TCP
           env:
             - name: DIRECTOR_ADDRESS
-              value: "director.kyma-system.svc.cluster.local:4000"
+              value: "compass-director.kyma-system.svc.cluster.local:4000"
             - name: GATEWAY_ADDRESS
               value: "0.0.0.0:3000"
