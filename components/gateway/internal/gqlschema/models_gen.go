@@ -18,9 +18,9 @@ type APIDefinition struct {
 	TargetURL string   `json:"targetURL"`
 	//  group allows you to find the same API but in different version
 	Group *string `json:"group"`
-	// " If runtime does not exist, error will be returned. If runtime exist but does not have Auth defined, nil is returned
+	// "If runtime does not exist, an error will be returned. If runtime exists but does not have Auth defined, null is returned
 	Auth *Auth `json:"auth"`
-	//  Auths returns information for all runtimes, even for given runtime Auth is not yet specified
+	// Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified
 	Auths   []*RuntimeAuth `json:"auths"`
 	Version *Version       `json:"version"`
 }
