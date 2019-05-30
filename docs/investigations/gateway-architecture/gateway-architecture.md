@@ -40,12 +40,12 @@ Pros
 - type conflict detection and resolution
 - combining and editing types of merged schemas
 - single endpoint
+- single call to proxied API
 
 Cons
 
 - adding Node.js to our technology stack (worse performance)
 - no facade over internal APIs
-- each resolver sends separate call to proxied API
 
 #### 2.2. Custom HTTP proxy in Go
 
@@ -79,12 +79,12 @@ Pros
 - type conflict detection and resolution
 - combining and editing types of merged schemas
 - single endpoint
+- single call to proxied API
 
 Cons
 
 - seems like a huge amount of work
 - no facade over internal APIs
-- each resolver sends separate call to proxied API
 
 ### 3. Separate HTTP endpoints
 
@@ -108,9 +108,9 @@ Cons
 Solution | Introspection & subscriptions support | Single call to proxied API | Good performance<br>(Go) | Single endpoint | Facade over internal components | No need to maintain almost identical protobuf schema | Relative amount of work
 :-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:
 Handwritten GraphQL Gateway | ✓ | ✗ | ✓ | ✓ | ✓ | ✗ | medium
-Apollo Server | ✓ | ✗ | ✗ | ✓ | ✗ | ✓ | very small
+Apollo Server | ✓ | ✓ | ✗ | ✓ | ✗ | ✓ | very small
 Custom HTTP proxy in Go | ✗ | ✓ | ✓ | ✓ | ✗ | ✓ | small*
-Custom stitching implementation in Go | ✓ | ✗ | ✓ | ✓ | ✗ | ✓ | big
+Custom stitching implementation in Go | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ | big
 Separate HTTP endpoints | ✓<br>(per endpoint) | ✓ | ✓ | ✗ | ✗ | ✓ | small
 
 \* Unless we decide to fake GraphQL behaviour to support all it's features, then I believe the amount of work would be big.
