@@ -12,7 +12,7 @@ We discussed three different approaches to exposing our API to users.
 
 ### 1. Handwritten GraphQL Gateway
 
-// TODO
+First option is to use single GraphQL server on gateway with manually written schema and resolvers, that would delegate the operations to internal services. We could use for example gRPC to communicate with them (a PoC of this can be found [here](https://github.com/kyma-incubator/compass/pull/21/)).
 
 Pros
 
@@ -30,7 +30,7 @@ Cons
 
 #### 2.1. Apollo Server
 
-First option is to use the Node.js [Apollo Server](https://www.apollographql.com/), that already has the functionality to merge schemas and proxy traffic to specific internal graphql servers. Merging works by introspection of existing schemas, and it takes care of things such as type conflicts. It is even possible to combine and modify types and fields from different schemas. Apollo supports queries, mutations and subscriptions.
+Simplest way to stitch multiple GraphQL schemas would be to use the Node.js [Apollo Server](https://www.apollographql.com/), that already has the functionality to merge schemas and proxy traffic to specific internal graphql servers. Merging works by introspection of existing schemas, and it takes care of things such as type conflicts. It is even possible to combine and modify types and fields from different schemas. Apollo supports queries, mutations and subscriptions.
 
 Pros
 
