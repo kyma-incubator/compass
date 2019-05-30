@@ -168,7 +168,7 @@ type ComplexityRoot struct {
 		CreateApplication           func(childComplexity int, in ApplicationInput) int
 		CreateRuntime               func(childComplexity int, in RuntimeInput) int
 		DeleteAPI                   func(childComplexity int, id string) int
-		DeleteAPICredential         func(childComplexity int, apiID string, runtimeID *string) int
+		DeleteAPIAuth               func(childComplexity int, apiID string, runtimeID *string) int
 		DeleteApplication           func(childComplexity int, id string) int
 		DeleteApplicationAnnotation func(childComplexity int, applicationID string, annotation string) int
 		DeleteApplicationLabel      func(childComplexity int, applicationID string, label string, values []string) int
@@ -179,7 +179,7 @@ type ComplexityRoot struct {
 		DeleteRuntimeLabel          func(childComplexity int, id string, key string, values []string) int
 		RefetchAPISpec              func(childComplexity int, apiID string) int
 		RefetchEventSpec            func(childComplexity int, eventID string) int
-		SetAPICredential            func(childComplexity int, apiID string, runtimeID *string, in AuthInput) int
+		SetAPIAuth                  func(childComplexity int, apiID string, runtimeID *string, in AuthInput) int
 		UpdateAPI                   func(childComplexity int, id string, in APIDefinitionInput) int
 		UpdateApplication           func(childComplexity int, id string, in ApplicationInput) int
 		UpdateApplicationWebhook    func(childComplexity int, webhookID string, in ApplicationWebhookInput) int
@@ -240,8 +240,8 @@ type MutationResolver interface {
 	UpdateAPI(ctx context.Context, id string, in APIDefinitionInput) (*APIDefinition, error)
 	DeleteAPI(ctx context.Context, id string) (*APIDefinition, error)
 	RefetchAPISpec(ctx context.Context, apiID string) (*APISpec, error)
-	SetAPICredential(ctx context.Context, apiID string, runtimeID *string, in AuthInput) ([]*AuthForRuntime, error)
-	DeleteAPICredential(ctx context.Context, apiID string, runtimeID *string) ([]*AuthForRuntime, error)
+	SetAPIAuth(ctx context.Context, apiID string, runtimeID *string, in AuthInput) ([]*AuthForRuntime, error)
+	DeleteAPIAuth(ctx context.Context, apiID string, runtimeID *string) ([]*AuthForRuntime, error)
 	AddEvent(ctx context.Context, applicationID string, in EventDefinitionInput) (*EventAPIDefinition, error)
 	UpdateEvent(ctx context.Context, id string, in EventDefinitionInput) (*EventAPIDefinition, error)
 	DeleteEvent(ctx context.Context, id string) (*EventAPIDefinition, error)
@@ -884,17 +884,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteAPI(childComplexity, args["id"].(string)), true
 
-	case "Mutation.deleteAPICredential":
-		if e.complexity.Mutation.DeleteAPICredential == nil {
+	case "Mutation.deleteAPIAuth":
+		if e.complexity.Mutation.DeleteAPIAuth == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_deleteAPICredential_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_deleteAPIAuth_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteAPICredential(childComplexity, args["apiID"].(string), args["runtimeID"].(*string)), true
+		return e.complexity.Mutation.DeleteAPIAuth(childComplexity, args["apiID"].(string), args["runtimeID"].(*string)), true
 
 	case "Mutation.deleteApplication":
 		if e.complexity.Mutation.DeleteApplication == nil {
@@ -1016,17 +1016,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.RefetchEventSpec(childComplexity, args["eventID"].(string)), true
 
-	case "Mutation.setAPICredential":
-		if e.complexity.Mutation.SetAPICredential == nil {
+	case "Mutation.setAPIAuth":
+		if e.complexity.Mutation.SetAPIAuth == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_setAPICredential_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_setAPIAuth_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SetAPICredential(childComplexity, args["apiID"].(string), args["runtimeID"].(*string), args["in"].(AuthInput)), true
+		return e.complexity.Mutation.SetAPIAuth(childComplexity, args["apiID"].(string), args["runtimeID"].(*string), args["in"].(AuthInput)), true
 
 	case "Mutation.updateAPI":
 		if e.complexity.Mutation.UpdateAPI == nil {
@@ -1773,11 +1773,11 @@ type Mutation {
     refetchAPISpec(apiID: ID!): APISpec
 
     """
-    If runtimeID not provided, the samec credential will be set for every runtime already available
+    If runtimeID not provided, the samec auth will be set for every runtime already available
     Returns information for which runtime it was configured
     """
-    setAPICredential(apiID: ID!, runtimeID: ID, in: AuthInput!): [AuthForRuntime!]!
-    deleteAPICredential(apiID: ID!, runtimeID: ID): [AuthForRuntime!]!
+    setAPIAuth(apiID: ID!, runtimeID: ID, in: AuthInput!): [AuthForRuntime!]!
+    deleteAPIAuth(apiID: ID!, runtimeID: ID): [AuthForRuntime!]!
 
 
     addEvent(applicationID: ID!, in: EventDefinitionInput!): EventAPIDefinition!
@@ -2088,7 +2088,7 @@ func (ec *executionContext) field_Mutation_createRuntime_args(ctx context.Contex
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_deleteAPICredential_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_deleteAPIAuth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -2312,7 +2312,7 @@ func (ec *executionContext) field_Mutation_refetchEventSpec_args(ctx context.Con
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_setAPICredential_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_setAPIAuth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -4798,7 +4798,7 @@ func (ec *executionContext) _Mutation_refetchAPISpec(ctx context.Context, field 
 	return ec.marshalOAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPISpec(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_setAPICredential(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Mutation_setAPIAuth(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -4809,7 +4809,7 @@ func (ec *executionContext) _Mutation_setAPICredential(ctx context.Context, fiel
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_setAPICredential_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_setAPIAuth_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -4818,7 +4818,7 @@ func (ec *executionContext) _Mutation_setAPICredential(ctx context.Context, fiel
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SetAPICredential(rctx, args["apiID"].(string), args["runtimeID"].(*string), args["in"].(AuthInput))
+		return ec.resolvers.Mutation().SetAPIAuth(rctx, args["apiID"].(string), args["runtimeID"].(*string), args["in"].(AuthInput))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -4832,7 +4832,7 @@ func (ec *executionContext) _Mutation_setAPICredential(ctx context.Context, fiel
 	return ec.marshalNAuthForRuntime2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAuthForRuntime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_deleteAPICredential(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Mutation_deleteAPIAuth(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -4843,7 +4843,7 @@ func (ec *executionContext) _Mutation_deleteAPICredential(ctx context.Context, f
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_deleteAPICredential_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_deleteAPIAuth_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -4852,7 +4852,7 @@ func (ec *executionContext) _Mutation_deleteAPICredential(ctx context.Context, f
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteAPICredential(rctx, args["apiID"].(string), args["runtimeID"].(*string))
+		return ec.resolvers.Mutation().DeleteAPIAuth(rctx, args["apiID"].(string), args["runtimeID"].(*string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -8009,13 +8009,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_deleteAPI(ctx, field)
 		case "refetchAPISpec":
 			out.Values[i] = ec._Mutation_refetchAPISpec(ctx, field)
-		case "setAPICredential":
-			out.Values[i] = ec._Mutation_setAPICredential(ctx, field)
+		case "setAPIAuth":
+			out.Values[i] = ec._Mutation_setAPIAuth(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "deleteAPICredential":
-			out.Values[i] = ec._Mutation_deleteAPICredential(ctx, field)
+		case "deleteAPIAuth":
+			out.Values[i] = ec._Mutation_deleteAPIAuth(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
