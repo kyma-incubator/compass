@@ -5,7 +5,9 @@
 # Compass
 
 ## Overview
-A flexible and easy way to register, manage and group your applications.
+A flexible and easy way to register, manage and group your Applications across Kyma Runtimes.
+
+-   [Documentation](./docs/README.md)
 
 ## Prerequisities
 

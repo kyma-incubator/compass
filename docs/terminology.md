@@ -6,36 +6,57 @@ This document contains all terminology used across compass documentation.
 ## Management Plane 
 Abbr.: *MP*\
 \
+Includes *Compass*, *Runtime Provisioners*, *Service Mesh* and *UI* components.
+
+The multi-tenant system which allows to:
+- create Applications
+- create Runtimes
+- manage Applications and Runtimes
+
+### MP Compass
+Abbr.: *Compass*\
+\
+Includes *Connector*, *Gateway*, *Director* and *Healtchecker* components.
+
 The multi-tenant system which allows to:
 - configure Applications
 - configure Runtimes
-- group Applications
 - assign Applications or Runtimes to the group
 
 ### MP Connector
 Abbr.: *Connector*\
 \
-Component that establish trust among Applications, Management Plane and Runtimes. In first iteration we support only client certificates.
+Connector component establishes trust among Applications, Management Plane and Runtimes. In first iteration we support only client certificates.
 
 ### MP Gateway
 Abbr.: *Gateway*\
 \
-Component that.. TBD
+Gateway component serves as the main API Gateway that extracts token from incoming requests and proxies the requests to the Director component.
 
 ### MP Director
 Abbr.: *Director*\
 \
-Component that.. TBD
+Director component is mainly responsible for *Applications* and *Runtimes* registration. In addition, requests *Appliction Webhook API* for credentials and exposes health information about *Runtimes*.
 
-### MP Healtchecker
-Abbr.: *Healtchecker*\
+### MP Runtime Provisioner
+Abbr.: *Provisioner*\
 \
-Component that.. TBD
+Runtime Provisioner system manages *Runtimes*.
+
+### MP UI
+Abbr.: *UI*\
+\
+UI component calls *Management Plane* APIs.
+
+### MP Service Mesh
+Abbr.: *Service Mesh*\
+\
+Service Mesh component, among other things, uses *Compass* and *Runtime Provisioner* APIs.
 
 ### MP Tenant
 Abbr.: *Tenant*\
 \
-TBD
+Represents customer tenant.
 
 ## Application
 Existing system registered to *MP* with its *API and Event Definitions*.
@@ -57,12 +78,12 @@ Any system that can configure itself according to the configuration provided by 
 ### Runtime Agent
 Abbr.: *Agent*  
 
-Component responsible:
+This component is responsible:
 - to fetch configuration from *MP* to *Runtime*.
 - for reporting health checks
 
 ## Administrator
 
-User who:
+The User who:
 - configures *Applications* and *Runtimes* in the *Management Plane*. 
 - groups *Applications* and *Runtimes*.
