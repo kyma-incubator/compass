@@ -31,7 +31,7 @@ mutation {
 
     }
 
-    setAPICredential(apiID:  456, in: {
+    setAPIAuth(apiID:  456, in: {
         credential: {
             basic: {
                 username: "aaa",
@@ -43,7 +43,7 @@ mutation {
             __typename
         }
     }
-    setAPICredential(apiID:  456, in: {
+    setAPIAuth(apiID:  456, in: {
         credential: {
             basic: {
                 username: "aaa",
@@ -56,7 +56,7 @@ mutation {
         }
     }
 
-    setAPICredential(apiID: 567, in: {
+    setAPIAuth(apiID: 567, in: {
         credential: {
             basic: {
                 username: "fff",

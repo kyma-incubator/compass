@@ -417,11 +417,11 @@ type Mutation {
     refetchAPISpec(apiID: ID!): APISpec
 
     """
-    If runtimeID not provided, the samec credential will be set for every runtime already available
+    If runtimeID not provided, the samec auth will be set for every runtime already available
     Returns information for which runtime it was configured
     """
-    setAPICredential(apiID: ID!, runtimeID: ID, in: AuthInput!): [AuthForRuntime!]!
-    deleteAPICredential(apiID: ID!, runtimeID: ID): [AuthForRuntime!]!
+    setAPIAuth(apiID: ID!, runtimeID: ID, in: AuthInput!): [AuthForRuntime!]!
+    deleteAPIAuth(apiID: ID!, runtimeID: ID): [AuthForRuntime!]!
 
 
     addEvent(applicationID: ID!, in: EventDefinitionInput!): EventAPIDefinition!
