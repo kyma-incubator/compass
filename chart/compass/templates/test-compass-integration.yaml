@@ -1,0 +1,14 @@
+apiVersion: "testing.kyma-project.io/v1alpha1"
+kind: TestDefinition
+metadata:
+  name: "test-{{ .Release.Name }}-compass-integration"
+spec:
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+    spec:
+      containers:
+          name: "test-{{ .Release.Name }}-compass-integration"
+          image: kfurgol/compass-test:test #TODO change image
+      restartPolicy: Never
