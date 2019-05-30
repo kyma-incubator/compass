@@ -33,9 +33,9 @@ if [ "$1" == "$CI_FLAG" ]; then
 	buildEnv="env CGO_ENABLED=0"
 fi
 
-${buildEnv} go test ./compass_test.go -c
+${buildEnv} go test ./compass_e2e_test.go -c
 goBuildResult=$?
-rm compass_integration.test
+rm end-to-end.test
 
 if [ ${goBuildResult} != 0 ]; then
 	echo -e "${RED}✗ go build${NC}\n$goBuildResult${NC}"
