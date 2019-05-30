@@ -5,7 +5,7 @@ source ${ROOT_PATH}/kyma-scripts/testing-common.sh
 
 suiteName="testsuite-all-$(date '+%Y-%m-%d-%H-%M')"
 echo "----------------------------"
-echo "- Testing Kyma..."
+echo "- Testing Compass..."
 echo "----------------------------"
 
 kc="kubectl $(context_arg)"
