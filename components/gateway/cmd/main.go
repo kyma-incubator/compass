@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/kyma-incubator/compass/components/gateway/internal/director"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/gateway/internal/director"
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"

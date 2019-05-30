@@ -2,11 +2,12 @@ package gqlschema
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/gateway/internal/director"
 	pb "github.com/kyma-incubator/compass/components/gateway/protobuf"
 ) // THIS CODE IS A STARTING POINT ONLY. IT WILL NOT BE UPDATED WITH SCHEMA CHANGES.
 
-type Resolver struct{
+type Resolver struct {
 	directorClient *director.Client
 }
 
@@ -43,7 +44,7 @@ func (r *applicationResolver) Apis(ctx context.Context, obj *Application) ([]*AP
 	var apiDefs []*APIDefinition
 	for _, api := range resp.ApplicationApis {
 		apiDefs = append(apiDefs, &APIDefinition{
-			ID: api.ID,
+			ID:        api.ID,
 			TargetURL: api.TargetURL,
 		})
 	}
@@ -150,9 +151,7 @@ func (r *queryResolver) Applications(ctx context.Context, filter []*LabelFilter)
 	}
 	defer conn.Close()
 
-	appInput := &pb.ApplicationsInput{
-
-	}
+	appInput := &pb.ApplicationsInput{}
 	resp, err := cli.Applications(ctx, appInput)
 	if err != nil {
 		return nil, err
@@ -171,17 +170,17 @@ func (r *queryResolver) Applications(ctx context.Context, filter []*LabelFilter)
 			annotations[k] = string(v)
 		}
 		gqlApps = append(gqlApps, &Application{
-			ID: app.Id,
-			Name: app.Name,
-			Tenant: "string",
+			ID:          app.Id,
+			Name:        app.Name,
+			Tenant:      "string",
 			Description: &app.Description,
 			Annotations: annotations,
-			Labels: labels,
-			Webhooks: nil,
-			Status:&ApplicationStatus{
+			Labels:      labels,
+			Webhooks:    nil,
+			Status: &ApplicationStatus{
 				//Condition:app.Status.Condition, // TODO:
 				Condition: ApplicationStatusConditionReady,
-				Timestamp:int(app.Status.Timestamp),
+				Timestamp: int(app.Status.Timestamp),
 			},
 		})
 	}

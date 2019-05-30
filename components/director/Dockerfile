@@ -8,13 +8,14 @@ WORKDIR ${BASE_APP_DIR}
 #
 
 COPY ./vendor/ ${BASE_APP_DIR}/vendor/
-COPY ./cmd/main.go ${BASE_APP_DIR}/
+COPY ./cmd/ ${BASE_APP_DIR}/cmd/
+COPY ./protobuf/ ${BASE_APP_DIR}/protobuf/
 
 #
 # Build app
 #
 
-RUN go build -v -o main .
+RUN go build -v -o main ./cmd/main.go
 RUN mkdir /app && mv ./main /app/main
 
 FROM alpine:3.9

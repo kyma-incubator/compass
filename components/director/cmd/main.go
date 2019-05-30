@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net"
+
 	pb "github.com/kyma-incubator/compass/components/director/protobuf"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
-	"log"
-	"net"
 )
 
 type handler struct{}
@@ -16,31 +17,31 @@ func (handler) Applications(ctx context.Context, in *pb.ApplicationsInput) (*pb.
 	return &pb.ApplicationsResponse{
 		Applications: []*pb.Application{
 			{
-				Id: "foo-test",
+				Id:             "foo-test",
 				Name:           "Test",
 				Description:    "Foo",
 				HealthCheckURL: "foo.bar",
-				Tenant: "1",
+				Tenant:         "1",
 				Annotations: map[string][]byte{
 					"test": []byte("string"),
 				},
 				Status: &pb.ApplicationStatus{
 					Condition: pb.ApplicationStatusCondition_INITIAL,
-					Timestamp:int64(3231),
+					Timestamp: int64(3231),
 				},
 			},
 			{
-				Id: "bar-test",
+				Id:             "bar-test",
 				Name:           "Test2",
 				Description:    "aa.bb",
 				HealthCheckURL: "bar.com",
-				Tenant: "1",
+				Tenant:         "1",
 				Annotations: map[string][]byte{
 					"test": []byte("string2"),
 				},
 				Status: &pb.ApplicationStatus{
 					Condition: pb.ApplicationStatusCondition_INITIAL,
-					Timestamp:int64(3231),
+					Timestamp: int64(3231),
 				},
 			},
 		},
@@ -51,11 +52,11 @@ func (handler) Apis(ctx context.Context, in *pb.ApplicationRoot) (*pb.Applicatio
 	return &pb.ApplicationApisResult{
 		ApplicationApis: []*pb.ApplicationApi{
 			{
-				ID: "1",
+				ID:        "1",
 				TargetURL: fmt.Sprintf("%s.foo.bar", in.ID),
 			},
 			{
-				ID: "2",
+				ID:        "2",
 				TargetURL: fmt.Sprintf("%s.foo.bar", in.ID),
 			},
 		},

@@ -153,8 +153,8 @@
   analyzer-version = 1
   input-imports = [
     "github.com/golang/protobuf/proto",
-    "github.com/golang/protobuf/ptypes/any",
     "github.com/kisielk/errcheck",
+    "golang.org/x/net/context",
     "golang.org/x/tools/cmd/goimports",
     "google.golang.org/grpc",
     "google.golang.org/grpc/reflection",

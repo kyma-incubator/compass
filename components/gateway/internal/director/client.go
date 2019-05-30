@@ -5,7 +5,7 @@ import (
 	"time"
 
 	pb "github.com/kyma-incubator/compass/components/gateway/protobuf"
-	"github.com/processout/grpc-go-pool"
+	grpcpool "github.com/processout/grpc-go-pool"
 	"google.golang.org/grpc"
 )
 
