@@ -17,10 +17,12 @@ type APIDefinition struct {
 	Spec      *APISpec `json:"spec"`
 	TargetURL string   `json:"targetURL"`
 	//  group allows you to find the same API but in different version
-	Group   *string           `json:"group"`
-	Auth    *Auth             `json:"auth"`
-	Auths   []*AuthForRuntime `json:"auths"`
-	Version *Version          `json:"version"`
+	Group *string `json:"group"`
+	// " If runtime does not exist, error will be returned. If runtime exist but does not have Auth defined, nil is returned
+	Auth *Auth `json:"auth"`
+	//  Auths returns information for all runtimes, even for given runtime Auth is not yet specified
+	Auths   []*RuntimeAuth `json:"auths"`
+	Version *Version       `json:"version"`
 }
 
 type APIDefinitionInput struct {
@@ -55,8 +57,9 @@ type Application struct {
 	Status         *ApplicationStatus    `json:"status"`
 	Webhooks       []*ApplicationWebhook `json:"webhooks"`
 	HealthCheckURL *string               `json:"healthCheckURL"`
-	//  groupName allows to find different versions of the same API
-	Apis      []*APIDefinition      `json:"apis"`
+	//  group allows to find different versions of the same API
+	Apis []*APIDefinition `json:"apis"`
+	//  group allows to find different versions of the same event API
 	EventAPIs []*EventAPIDefinition `json:"eventAPIs"`
 	Documents []*Document           `json:"documents"`
 }
@@ -96,11 +99,6 @@ type Auth struct {
 	AdditionalHeaders     *HttpHeaders           `json:"additionalHeaders"`
 	AdditionalQueryParams *QueryParams           `json:"additionalQueryParams"`
 	RequestAuth           *CredentialRequestAuth `json:"requestAuth"`
-}
-
-type AuthForRuntime struct {
-	RuntimeID string `json:"runtimeID"`
-	Auth      *Auth  `json:"auth"`
 }
 
 type AuthInput struct {
@@ -251,6 +249,11 @@ type Runtime struct {
 	Status      *RuntimeStatus `json:"status"`
 	// directive for checking auth
 	AgentAuth *Auth `json:"agentAuth"`
+}
+
+type RuntimeAuth struct {
+	RuntimeID string `json:"runtimeID"`
+	Auth      *Auth  `json:"auth"`
 }
 
 type RuntimeInput struct {

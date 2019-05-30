@@ -51,9 +51,10 @@ type Application {
     status: ApplicationStatus!
     webhooks: [ApplicationWebhook!]!
     healthCheckURL: String
-    """ groupName allows to find different versions of the same API """
-    apis(groupName: String): [APIDefinition!]!
-    eventAPIs(groupName: String): [EventAPIDefinition!]!
+    """ group allows to find different versions of the same API """
+    apis(group: String): [APIDefinition!]!
+    """ group allows to find different versions of the same event API """
+    eventAPIs(group: String): [EventAPIDefinition!]!
     documents: [Document!]!
 }
 
@@ -98,14 +99,16 @@ type APIDefinition {
     targetURL: String!
     """ group allows you to find the same API but in different version """
     group: String
+    """" If runtime does not exist, error will be returned. If runtime exist but does not have Auth defined, nil is returned """
     auth(runtimeID: ID!): Auth
-    auths: [AuthForRuntime!]
+    """ Auths returns information for all runtimes, even for given runtime Auth is not yet specified """
+    auths: [RuntimeAuth!]!
     version: Version
 }
 
-type AuthForRuntime {
+type RuntimeAuth {
     runtimeID: ID!
-    auth: Auth!
+    auth: Auth
 }
 
 type APISpec {
@@ -417,11 +420,11 @@ type Mutation {
     refetchAPISpec(apiID: ID!): APISpec
 
     """
-    If runtimeID not provided, the samec auth will be set for every runtime already available
+    If runtimeID not provided, the same auth will be set for every runtime already available
     Returns information for which runtime it was configured
     """
-    setAPIAuth(apiID: ID!, runtimeID: ID, in: AuthInput!): [AuthForRuntime!]!
-    deleteAPIAuth(apiID: ID!, runtimeID: ID): [AuthForRuntime!]!
+    setAPIAuth(apiID: ID!, runtimeID: ID, in: AuthInput!): [RuntimeAuth!]!
+    deleteAPIAuth(apiID: ID!, runtimeID: ID): [RuntimeAuth!]!
 
 
     addEvent(applicationID: ID!, in: EventDefinitionInput!): EventAPIDefinition!

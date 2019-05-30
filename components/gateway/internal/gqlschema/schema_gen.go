@@ -62,10 +62,10 @@ type ComplexityRoot struct {
 
 	Application struct {
 		Annotations    func(childComplexity int, key *string) int
-		Apis           func(childComplexity int, groupName *string) int
+		Apis           func(childComplexity int, group *string) int
 		Description    func(childComplexity int) int
 		Documents      func(childComplexity int) int
-		EventAPIs      func(childComplexity int, groupName *string) int
+		EventAPIs      func(childComplexity int, group *string) int
 		HealthCheckURL func(childComplexity int) int
 		ID             func(childComplexity int) int
 		Labels         func(childComplexity int, key *string) int
@@ -92,11 +92,6 @@ type ComplexityRoot struct {
 		AdditionalQueryParams func(childComplexity int) int
 		Credential            func(childComplexity int) int
 		RequestAuth           func(childComplexity int) int
-	}
-
-	AuthForRuntime struct {
-		Auth      func(childComplexity int) int
-		RuntimeID func(childComplexity int) int
 	}
 
 	BasicCredentialData struct {
@@ -212,6 +207,11 @@ type ComplexityRoot struct {
 		Tenant      func(childComplexity int) int
 	}
 
+	RuntimeAuth struct {
+		Auth      func(childComplexity int) int
+		RuntimeID func(childComplexity int) int
+	}
+
 	RuntimeStatus struct {
 		Condition func(childComplexity int) int
 		Timestamp func(childComplexity int) int
@@ -240,8 +240,8 @@ type MutationResolver interface {
 	UpdateAPI(ctx context.Context, id string, in APIDefinitionInput) (*APIDefinition, error)
 	DeleteAPI(ctx context.Context, id string) (*APIDefinition, error)
 	RefetchAPISpec(ctx context.Context, apiID string) (*APISpec, error)
-	SetAPIAuth(ctx context.Context, apiID string, runtimeID *string, in AuthInput) ([]*AuthForRuntime, error)
-	DeleteAPIAuth(ctx context.Context, apiID string, runtimeID *string) ([]*AuthForRuntime, error)
+	SetAPIAuth(ctx context.Context, apiID string, runtimeID *string, in AuthInput) ([]*RuntimeAuth, error)
+	DeleteAPIAuth(ctx context.Context, apiID string, runtimeID *string) ([]*RuntimeAuth, error)
 	AddEvent(ctx context.Context, applicationID string, in EventDefinitionInput) (*EventAPIDefinition, error)
 	UpdateEvent(ctx context.Context, id string, in EventDefinitionInput) (*EventAPIDefinition, error)
 	DeleteEvent(ctx context.Context, id string) (*EventAPIDefinition, error)
@@ -381,7 +381,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Application.Apis(childComplexity, args["groupName"].(*string)), true
+		return e.complexity.Application.Apis(childComplexity, args["group"].(*string)), true
 
 	case "Application.description":
 		if e.complexity.Application.Description == nil {
@@ -407,7 +407,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Application.EventAPIs(childComplexity, args["groupName"].(*string)), true
+		return e.complexity.Application.EventAPIs(childComplexity, args["group"].(*string)), true
 
 	case "Application.healthCheckURL":
 		if e.complexity.Application.HealthCheckURL == nil {
@@ -532,20 +532,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Auth.RequestAuth(childComplexity), true
-
-	case "AuthForRuntime.auth":
-		if e.complexity.AuthForRuntime.Auth == nil {
-			break
-		}
-
-		return e.complexity.AuthForRuntime.Auth(childComplexity), true
-
-	case "AuthForRuntime.runtimeID":
-		if e.complexity.AuthForRuntime.RuntimeID == nil {
-			break
-		}
-
-		return e.complexity.AuthForRuntime.RuntimeID(childComplexity), true
 
 	case "BasicCredentialData.password":
 		if e.complexity.BasicCredentialData.Password == nil {
@@ -1235,6 +1221,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Runtime.Tenant(childComplexity), true
 
+	case "RuntimeAuth.auth":
+		if e.complexity.RuntimeAuth.Auth == nil {
+			break
+		}
+
+		return e.complexity.RuntimeAuth.Auth(childComplexity), true
+
+	case "RuntimeAuth.runtimeID":
+		if e.complexity.RuntimeAuth.RuntimeID == nil {
+			break
+		}
+
+		return e.complexity.RuntimeAuth.RuntimeID(childComplexity), true
+
 	case "RuntimeStatus.condition":
 		if e.complexity.RuntimeStatus.Condition == nil {
 			break
@@ -1407,9 +1407,10 @@ type Application {
     status: ApplicationStatus!
     webhooks: [ApplicationWebhook!]!
     healthCheckURL: String
-    """ groupName allows to find different versions of the same API """
-    apis(groupName: String): [APIDefinition!]!
-    eventAPIs(groupName: String): [EventAPIDefinition!]!
+    """ group allows to find different versions of the same API """
+    apis(group: String): [APIDefinition!]!
+    """ group allows to find different versions of the same event API """
+    eventAPIs(group: String): [EventAPIDefinition!]!
     documents: [Document!]!
 }
 
@@ -1454,14 +1455,16 @@ type APIDefinition {
     targetURL: String!
     """ group allows you to find the same API but in different version """
     group: String
+    """" If runtime does not exist, error will be returned. If runtime exist but does not have Auth defined, nil is returned """
     auth(runtimeID: ID!): Auth
-    auths: [AuthForRuntime!]
+    """ Auths returns information for all runtimes, even for given runtime Auth is not yet specified """
+    auths: [RuntimeAuth!]!
     version: Version
 }
 
-type AuthForRuntime {
+type RuntimeAuth {
     runtimeID: ID!
-    auth: Auth!
+    auth: Auth
 }
 
 type APISpec {
@@ -1773,11 +1776,11 @@ type Mutation {
     refetchAPISpec(apiID: ID!): APISpec
 
     """
-    If runtimeID not provided, the samec auth will be set for every runtime already available
+    If runtimeID not provided, the same auth will be set for every runtime already available
     Returns information for which runtime it was configured
     """
-    setAPIAuth(apiID: ID!, runtimeID: ID, in: AuthInput!): [AuthForRuntime!]!
-    deleteAPIAuth(apiID: ID!, runtimeID: ID): [AuthForRuntime!]!
+    setAPIAuth(apiID: ID!, runtimeID: ID, in: AuthInput!): [RuntimeAuth!]!
+    deleteAPIAuth(apiID: ID!, runtimeID: ID): [RuntimeAuth!]!
 
 
     addEvent(applicationID: ID!, in: EventDefinitionInput!): EventAPIDefinition!
@@ -1836,13 +1839,13 @@ func (ec *executionContext) field_Application_apis_args(ctx context.Context, raw
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["groupName"]; ok {
+	if tmp, ok := rawArgs["group"]; ok {
 		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["groupName"] = arg0
+	args["group"] = arg0
 	return args, nil
 }
 
@@ -1850,13 +1853,13 @@ func (ec *executionContext) field_Application_eventAPIs_args(ctx context.Context
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["groupName"]; ok {
+	if tmp, ok := rawArgs["group"]; ok {
 		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["groupName"] = arg0
+	args["group"] = arg0
 	return args, nil
 }
 
@@ -2753,12 +2756,15 @@ func (ec *executionContext) _APIDefinition_auths(ctx context.Context, field grap
 		return obj.Auths, nil
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.([]*AuthForRuntime)
+	res := resTmp.([]*RuntimeAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAuthForRuntime2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAuthForRuntime(ctx, field.Selections, res)
+	return ec.marshalNRuntimeAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimeAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APIDefinition_version(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) graphql.Marshaler {
@@ -3486,60 +3492,6 @@ func (ec *executionContext) _Auth_requestAuth(ctx context.Context, field graphql
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOCredentialRequestAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐCredentialRequestAuth(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _AuthForRuntime_runtimeID(ctx context.Context, field graphql.CollectedField, obj *AuthForRuntime) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "AuthForRuntime",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.RuntimeID, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _AuthForRuntime_auth(ctx context.Context, field graphql.CollectedField, obj *AuthForRuntime) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "AuthForRuntime",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Auth, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*Auth)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _BasicCredentialData_username(ctx context.Context, field graphql.CollectedField, obj *BasicCredentialData) graphql.Marshaler {
@@ -4826,10 +4778,10 @@ func (ec *executionContext) _Mutation_setAPIAuth(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*AuthForRuntime)
+	res := resTmp.([]*RuntimeAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAuthForRuntime2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAuthForRuntime(ctx, field.Selections, res)
+	return ec.marshalNRuntimeAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimeAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteAPIAuth(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -4860,10 +4812,10 @@ func (ec *executionContext) _Mutation_deleteAPIAuth(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*AuthForRuntime)
+	res := resTmp.([]*RuntimeAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAuthForRuntime2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAuthForRuntime(ctx, field.Selections, res)
+	return ec.marshalNRuntimeAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimeAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_addEvent(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -5750,6 +5702,57 @@ func (ec *executionContext) _Runtime_agentAuth(ctx context.Context, field graphq
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAuth(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RuntimeAuth_runtimeID(ctx context.Context, field graphql.CollectedField, obj *RuntimeAuth) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "RuntimeAuth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RuntimeID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RuntimeAuth_auth(ctx context.Context, field graphql.CollectedField, obj *RuntimeAuth) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "RuntimeAuth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Auth, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Auth)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimeStatus_condition(ctx context.Context, field graphql.CollectedField, obj *RuntimeStatus) graphql.Marshaler {
@@ -7370,6 +7373,9 @@ func (ec *executionContext) _APIDefinition(ctx context.Context, sel ast.Selectio
 			out.Values[i] = ec._APIDefinition_auth(ctx, field, obj)
 		case "auths":
 			out.Values[i] = ec._APIDefinition_auths(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "version":
 			out.Values[i] = ec._APIDefinition_version(ctx, field, obj)
 		default:
@@ -7585,38 +7591,6 @@ func (ec *executionContext) _Auth(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._Auth_additionalQueryParams(ctx, field, obj)
 		case "requestAuth":
 			out.Values[i] = ec._Auth_requestAuth(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var authForRuntimeImplementors = []string{"AuthForRuntime"}
-
-func (ec *executionContext) _AuthForRuntime(ctx context.Context, sel ast.SelectionSet, obj *AuthForRuntime) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, authForRuntimeImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("AuthForRuntime")
-		case "runtimeID":
-			out.Values[i] = ec._AuthForRuntime_runtimeID(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "auth":
-			out.Values[i] = ec._AuthForRuntime_auth(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8260,6 +8234,35 @@ func (ec *executionContext) _Runtime(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
+var runtimeAuthImplementors = []string{"RuntimeAuth"}
+
+func (ec *executionContext) _RuntimeAuth(ctx context.Context, sel ast.SelectionSet, obj *RuntimeAuth) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, runtimeAuthImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RuntimeAuth")
+		case "runtimeID":
+			out.Values[i] = ec._RuntimeAuth_runtimeID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "auth":
+			out.Values[i] = ec._RuntimeAuth_auth(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var runtimeStatusImplementors = []string{"RuntimeStatus"}
 
 func (ec *executionContext) _RuntimeStatus(ctx context.Context, sel ast.SelectionSet, obj *RuntimeStatus) graphql.Marshaler {
@@ -8807,57 +8810,6 @@ func (ec *executionContext) marshalNAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋco
 	return ec._Auth(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNAuthForRuntime2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAuthForRuntime(ctx context.Context, sel ast.SelectionSet, v AuthForRuntime) graphql.Marshaler {
-	return ec._AuthForRuntime(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNAuthForRuntime2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAuthForRuntime(ctx context.Context, sel ast.SelectionSet, v []*AuthForRuntime) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		rctx := &graphql.ResolverContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithResolverContext(ctx, rctx)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNAuthForRuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAuthForRuntime(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
-func (ec *executionContext) marshalNAuthForRuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAuthForRuntime(ctx context.Context, sel ast.SelectionSet, v *AuthForRuntime) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._AuthForRuntime(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalNAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAuthInput(ctx context.Context, v interface{}) (AuthInput, error) {
 	return ec.unmarshalInputAuthInput(ctx, v)
 }
@@ -9256,6 +9208,57 @@ func (ec *executionContext) marshalNRuntime2ᚖgithubᚗcomᚋkymaᚑincubator�
 		return graphql.Null
 	}
 	return ec._Runtime(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNRuntimeAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimeAuth(ctx context.Context, sel ast.SelectionSet, v RuntimeAuth) graphql.Marshaler {
+	return ec._RuntimeAuth(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNRuntimeAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimeAuth(ctx context.Context, sel ast.SelectionSet, v []*RuntimeAuth) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNRuntimeAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimeAuth(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNRuntimeAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimeAuth(ctx context.Context, sel ast.SelectionSet, v *RuntimeAuth) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._RuntimeAuth(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimeInput(ctx context.Context, v interface{}) (RuntimeInput, error) {
@@ -9722,46 +9725,6 @@ func (ec *executionContext) marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋco
 		return graphql.Null
 	}
 	return ec._Auth(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOAuthForRuntime2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAuthForRuntime(ctx context.Context, sel ast.SelectionSet, v []*AuthForRuntime) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		rctx := &graphql.ResolverContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithResolverContext(ctx, rctx)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNAuthForRuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAuthForRuntime(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
 }
 
 func (ec *executionContext) unmarshalOAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAuthInput(ctx context.Context, v interface{}) (AuthInput, error) {
