@@ -1,7 +1,8 @@
 mutation {
     addAPI(applicationID: "123", in: {
         targetURL: "",
-        spec: {apiSpecType: OPEN_API,
+        spec: {type: OPEN_API,
+            format: JSON,
             data: ""}
     }) {
         id
@@ -9,7 +10,8 @@ mutation {
 
     updateAPI(id:"456", in: {
         targetURL: "",
-        spec: {apiSpecType: OPEN_API,
+        spec: {type: OPEN_API,
+            format: JSON,
             data: ""}
     }) {
         id
@@ -29,23 +31,33 @@ mutation {
 
     }
 
-    setAPICredential(apiID:  456, in: {
-        data: {
+    firstSet: setAPIAuth(apiID:  "456", runtimeID: "999",in: {
+        credential: {
             basic: {
                 username: "aaa",
                 password: "bbb",
             }
         }
     })  {
-        data {
+
+        auth {
             __typename
         }
+        runtimeID
+    }
+    secondSet: setAPIAuth(apiID:  "456", runtimeID: "789",in: {
+        credential: {
+            basic: {
+                username: "aaa",
+                password: "bbb",
+            }
+        }
+    })  {
+        auth {
+            __typename
+        }
+        runtimeID
     }
 
-    deleteAPICredential(apiID: 456) {
-        data {
-            __typename
-        }
-    }
 
 }

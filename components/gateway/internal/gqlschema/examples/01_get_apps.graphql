@@ -1,6 +1,6 @@
 query {
     applications(
-        filer: [
+        filter: [
             { label: "group", values: ["production", "experimental"], operator: ANY },
             {label: "region", values:["us"]}
         ]
@@ -19,10 +19,10 @@ query {
         webhooks {
             type
             url
-            credential {
-                data {
+            auth {
+                credential {
                     __typename
-                   ... on BasicCredentialData {
+                    ... on BasicCredentialData {
                         username
                         password
                     }
@@ -38,33 +38,34 @@ query {
         apis {
             id
             targetURL
-            credential {
-                data {
-                    __typename
-                    ... on BasicCredentialData {
-                        username
-                        password
-                    }
-                    ... on OAuthCredentialData {
-                        clientId
-                        clientSecret
-                        url
+            auths {
+                runtimeID
+                auth {
+                    additionalHeaders
+                    additionalQueryParams
+                    credential {
+                        __typename
+                        ... on BasicCredentialData {
+                            username
+                            password
+                        }
+                        ... on OAuthCredentialData {
+                            clientId
+                            clientSecret
+                            url
+                        }
                     }
                 }
             }
-            spec {
-                type
-                data
-            }
-            additionalHeaders
-            additionalQueryParams
             version {
                 value
                 deprecated
                 deprecatedSince
                 forRemoval
             }
+            group
         }
+
         eventAPIs {
             id
             spec {
@@ -72,8 +73,8 @@ query {
                 data
                 fetchRequest {
                     url
-                    credential {
-                        data {
+                    auth {
+                        credential {
                             __typename
                             ... on BasicCredentialData {
                                 username

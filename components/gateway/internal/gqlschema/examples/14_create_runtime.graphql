@@ -6,8 +6,8 @@ mutation {
     }){
         id
         name
-        agentCredential {
-            data {
+        agentAuth {
+            credential {
                 __typename
                 ... on BasicCredentialData {
                     username

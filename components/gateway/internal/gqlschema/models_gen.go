@@ -13,21 +13,26 @@ type CredentialData interface {
 }
 
 type APIDefinition struct {
-	ID                    string       `json:"id"`
-	Spec                  *APISpec     `json:"spec"`
-	TargetURL             string       `json:"targetURL"`
-	Credential            *Credential  `json:"credential"`
-	AdditionalHeaders     *HttpHeaders `json:"additionalHeaders"`
-	AdditionalQueryParams *QueryParams `json:"additionalQueryParams"`
-	Version               *Version     `json:"version"`
+	ID        string   `json:"id"`
+	Spec      *APISpec `json:"spec"`
+	TargetURL string   `json:"targetURL"`
+	//  group allows you to find the same API but in different version
+	Group *string `json:"group"`
+	// "If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified.
+	Auth *RuntimeAuth `json:"auth"`
+	// Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified.
+	Auths []*RuntimeAuth `json:"auths"`
+	// If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly.
+	DefaultAuth *Auth    `json:"defaultAuth"`
+	Version     *Version `json:"version"`
 }
 
 type APIDefinitionInput struct {
-	TargetURL         string           `json:"targetURL"`
-	Credential        *CredentialInput `json:"credential"`
-	Spec              *APISpecInput    `json:"spec"`
-	InjectHeaders     *HttpHeaders     `json:"injectHeaders"`
-	InjectQueryParams *QueryParams     `json:"injectQueryParams"`
+	TargetURL   string        `json:"targetURL"`
+	Group       *string       `json:"group"`
+	Spec        *APISpecInput `json:"spec"`
+	Version     *VersionInput `json:"version"`
+	DefaultAuth *AuthInput    `json:"defaultAuth"`
 }
 
 type APISpec struct {
@@ -55,9 +60,11 @@ type Application struct {
 	Status         *ApplicationStatus    `json:"status"`
 	Webhooks       []*ApplicationWebhook `json:"webhooks"`
 	HealthCheckURL *string               `json:"healthCheckURL"`
-	Apis           []*APIDefinition      `json:"apis"`
-	EventAPIs      []*EventAPIDefinition `json:"eventAPIs"`
-	Documents      []*Document           `json:"documents"`
+	//  group allows to find different versions of the same API
+	Apis []*APIDefinition `json:"apis"`
+	//  group allows to find different versions of the same event API
+	EventAPIs []*EventAPIDefinition `json:"eventAPIs"`
+	Documents []*Document           `json:"documents"`
 }
 
 type ApplicationInput struct {
@@ -78,16 +85,30 @@ type ApplicationStatus struct {
 }
 
 type ApplicationWebhook struct {
-	ID         string                 `json:"id"`
-	Type       ApplicationWebhookType `json:"type"`
-	URL        string                 `json:"url"`
-	Credential *Credential            `json:"credential"`
+	ID   string                 `json:"id"`
+	Type ApplicationWebhookType `json:"type"`
+	URL  string                 `json:"url"`
+	Auth *Auth                  `json:"auth"`
 }
 
 type ApplicationWebhookInput struct {
-	Type       ApplicationWebhookType `json:"type"`
-	URL        string                 `json:"url"`
-	Credential *CredentialInput       `json:"credential"`
+	Type ApplicationWebhookType `json:"type"`
+	URL  string                 `json:"url"`
+	Auth *AuthInput             `json:"auth"`
+}
+
+type Auth struct {
+	Credential            CredentialData         `json:"credential"`
+	AdditionalHeaders     *HttpHeaders           `json:"additionalHeaders"`
+	AdditionalQueryParams *QueryParams           `json:"additionalQueryParams"`
+	RequestAuth           *CredentialRequestAuth `json:"requestAuth"`
+}
+
+type AuthInput struct {
+	Credential            *CredentialDataInput        `json:"credential"`
+	AdditionalHeaders     *HttpHeaders                `json:"additionalHeaders"`
+	AdditionalQueryParams *QueryParams                `json:"additionalQueryParams"`
+	RequestAuth           *CredentialRequestAuthInput `json:"requestAuth"`
 }
 
 type BasicCredentialData struct {
@@ -110,19 +131,9 @@ type CSRFTokenCredentialRequestAuthInput struct {
 	Token string `json:"token"`
 }
 
-type Credential struct {
-	Data        CredentialData         `json:"data"`
-	RequestAuth *CredentialRequestAuth `json:"requestAuth"`
-}
-
 type CredentialDataInput struct {
 	Basic *BasicCredentialDataInput `json:"basic"`
 	Oauth *OAuthCredentialDataInput `json:"oauth"`
-}
-
-type CredentialInput struct {
-	Data        *CredentialDataInput        `json:"data"`
-	RequestAuth *CredentialRequestAuthInput `json:"requestAuth"`
 }
 
 type CredentialRequestAuth struct {
@@ -156,13 +167,17 @@ type DocumentInput struct {
 }
 
 type EventAPIDefinition struct {
-	ID      string     `json:"id"`
+	ID string `json:"id"`
+	// group allows you to find the same API but in different version
+	Group   *string    `json:"group"`
 	Spec    *EventSpec `json:"spec"`
 	Version *Version   `json:"version"`
 }
 
 type EventDefinitionInput struct {
-	Spec *EventSpecInput `json:"spec"`
+	Spec    *EventSpecInput `json:"spec"`
+	Group   *string         `json:"group"`
+	Version *VersionInput   `json:"version"`
 }
 
 type EventSpec struct {
@@ -180,18 +195,18 @@ type EventSpecInput struct {
 
 //  Compass performs fetch to validate if request is correct and stores a copy
 type FetchRequest struct {
-	URL        string              `json:"url"`
-	Credential *Credential         `json:"credential"`
-	Mode       FetchMode           `json:"mode"`
-	Filter     *string             `json:"filter"`
-	Status     *FetchRequestStatus `json:"status"`
+	URL    string              `json:"url"`
+	Auth   *Auth               `json:"auth"`
+	Mode   FetchMode           `json:"mode"`
+	Filter *string             `json:"filter"`
+	Status *FetchRequestStatus `json:"status"`
 }
 
 type FetchRequestInput struct {
-	URL        string           `json:"url"`
-	Credential *CredentialInput `json:"credential"`
-	Mode       *FetchMode       `json:"mode"`
-	Filter     *string          `json:"filter"`
+	URL    string     `json:"url"`
+	Auth   *AuthInput `json:"auth"`
+	Mode   *FetchMode `json:"mode"`
+	Filter *string    `json:"filter"`
 }
 
 type FetchRequestStatus struct {
@@ -236,7 +251,12 @@ type Runtime struct {
 	Annotations Annotations    `json:"annotations"`
 	Status      *RuntimeStatus `json:"status"`
 	// directive for checking auth
-	AgentCredential *Credential `json:"agentCredential"`
+	AgentAuth *Auth `json:"agentAuth"`
+}
+
+type RuntimeAuth struct {
+	RuntimeID string `json:"runtimeID"`
+	Auth      *Auth  `json:"auth"`
 }
 
 type RuntimeInput struct {
@@ -259,6 +279,13 @@ type Version struct {
 	DeprecatedSince *string `json:"deprecatedSince"`
 	// if true, will be removed in the next version
 	ForRemoval *bool `json:"forRemoval"`
+}
+
+type VersionInput struct {
+	Value           string  `json:"value"`
+	Deprecated      *bool   `json:"deprecated"`
+	DeprecatedSince *string `json:"deprecatedSince"`
+	ForRemoval      *bool   `json:"forRemoval"`
 }
 
 type APISpecType string

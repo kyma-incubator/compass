@@ -6,7 +6,7 @@ mutation {
             description: "TODO",
             labels: "",
             annotations: "",
-            webhooks: [{type:CONFIGURATION_CHANGED,url: "",credential: {data: { basic: {
+            webhooks: [{type:CONFIGURATION_CHANGED,url: "",auth: {credential: { basic: {
                 password: "aaa",
                 username: "bbb",
             }}}}],
@@ -14,18 +14,9 @@ mutation {
             apis: [
                 {
                     targetURL: "",
-                    credential: {
-                        data: {
-                            basic: {
-                                username: "aaa",
-                                password: "bbb",
-                            }
-                        }
-                    },
-                    injectHeaders: "",
-                    injectQueryParams: "",
                     spec: {
-                        apiSpecType: OPEN_API,
+                        type: OPEN_API,
+                        format: JSON,
                         data: "",
                     },
                 }

@@ -25,7 +25,7 @@ type Runtime {
     annotations(key: String): Annotations!
     status: RuntimeStatus!
     """directive for checking auth"""
-    agentCredential: Credential!
+    agentAuth: Auth!
 }
 
 type RuntimeStatus {
@@ -51,8 +51,10 @@ type Application {
     status: ApplicationStatus!
     webhooks: [ApplicationWebhook!]!
     healthCheckURL: String
-    apis: [APIDefinition!]!
-    eventAPIs: [EventAPIDefinition!]!
+    """ group allows to find different versions of the same API """
+    apis(group: String): [APIDefinition!]!
+    """ group allows to find different versions of the same event API """
+    eventAPIs(group: String): [EventAPIDefinition!]!
     documents: [Document!]!
 }
 
@@ -72,7 +74,7 @@ type ApplicationWebhook {
     id: ID!
     type: ApplicationWebhookType!
     url: String!
-    credential: Credential
+    auth: Auth
 }
 
 enum ApplicationWebhookType {
@@ -89,17 +91,26 @@ type Version {
     deprecatedSince: String
     """if true, will be removed in the next version"""
     forRemoval: Boolean
-
 }
 
 type APIDefinition {
     id: ID!
     spec: APISpec
     targetURL: String!
-    credential: Credential
-    additionalHeaders: HttpHeaders #
-    additionalQueryParams: QueryParams
+    """ group allows you to find the same API but in different version """
+    group: String
+    """"If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified."""
+    auth(runtimeID: ID!): RuntimeAuth
+    """Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified."""
+    auths: [RuntimeAuth!]!
+    """If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly."""
+    defaultAuth: Auth
     version: Version
+}
+
+type RuntimeAuth {
+    runtimeID: ID!
+    auth: Auth
 }
 
 type APISpec {
@@ -128,6 +139,8 @@ enum EventSpecType {
 
 type EventAPIDefinition {
     id: ID!
+    """group allows you to find the same API but in different version"""
+    group: String
     spec: EventSpec!
     version: Version
 }
@@ -159,7 +172,7 @@ enum DocumentFormat {
 """ Compass performs fetch to validate if request is correct and stores a copy"""
 type FetchRequest {
     url: String!
-    credential: Credential
+    auth: Auth
     mode: FetchMode!
     filter: String
     status: FetchRequestStatus!
@@ -182,9 +195,11 @@ enum FetchMode {
     INDEX
 }
 
-# Credential
-type Credential {
-    data: CredentialData!
+# Authentication
+type Auth {
+    credential: CredentialData!
+    additionalHeaders: HttpHeaders
+    additionalQueryParams: QueryParams
     requestAuth: CredentialRequestAuth
 }
 
@@ -264,7 +279,7 @@ input RuntimeInput {
 
 input FetchRequestInput {
     url: String!
-    credential: CredentialInput
+    auth: AuthInput
     mode: FetchMode
     filter: String
 }
@@ -274,18 +289,27 @@ input FetchRequestInput {
 input ApplicationWebhookInput {
     type: ApplicationWebhookType!
     url: String!
-    credential: CredentialInput
+    auth: AuthInput
 }
 
 # API Input
-
+# You can specify defaultAuth to specify Auth used for all runtimes. If you want to specify auth only for a dedicated Runtime,
+# you need to perform separate mutation setAPIAuth.
 input APIDefinitionInput {
     targetURL: String!
-    credential: CredentialInput
+    group: String
     spec: APISpecInput
-    injectHeaders: HttpHeaders
-    injectQueryParams: QueryParams
+    version: VersionInput
+    defaultAuth: AuthInput
 }
+
+input VersionInput {
+    value: String!
+    deprecated: Boolean = false
+    deprecatedSince: String
+    forRemoval: Boolean = false
+}
+
 
 input APISpecInput {
     data: CLOB
@@ -297,7 +321,9 @@ input APISpecInput {
 # Event Input
 
 input EventDefinitionInput {
-    spec: EventSpecInput
+    spec: EventSpecInput!
+    group: String
+    version: VersionInput
 }
 
 input EventSpecInput {
@@ -319,10 +345,12 @@ input DocumentInput {
 }
 
 
-# Credential Input
+# Auth Input
 
-input CredentialInput {
-    data: CredentialDataInput!
+input AuthInput {
+    credential: CredentialDataInput!
+    additionalHeaders: HttpHeaders #
+    additionalQueryParams: QueryParams
     requestAuth: CredentialRequestAuthInput
 }
 
@@ -395,8 +423,12 @@ type Mutation {
     deleteAPI(id: ID!): APIDefinition
     refetchAPISpec(apiID: ID!): APISpec
 
-    setAPICredential(apiID: ID!, in: CredentialInput!): Credential!
-    deleteAPICredential(apiID: ID!): Credential
+    """
+    Returns information about all Auths for given applicationID. To set default Auth for API, use updateAPI mutation
+    """
+    setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput!): [RuntimeAuth!]!
+    deleteAPIAuth(apiID: ID!, runtimeID: ID!): [RuntimeAuth!]!
+
 
     addEvent(applicationID: ID!, in: EventDefinitionInput!): EventAPIDefinition!
     updateEvent(id: ID!, in: EventDefinitionInput!): EventAPIDefinition!
