@@ -44,13 +44,14 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	APIDefinition struct {
-		Auth      func(childComplexity int, runtimeID string) int
-		Auths     func(childComplexity int) int
-		Group     func(childComplexity int) int
-		ID        func(childComplexity int) int
-		Spec      func(childComplexity int) int
-		TargetURL func(childComplexity int) int
-		Version   func(childComplexity int) int
+		Auth        func(childComplexity int, runtimeID string) int
+		Auths       func(childComplexity int) int
+		DefaultAuth func(childComplexity int) int
+		Group       func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Spec        func(childComplexity int) int
+		TargetURL   func(childComplexity int) int
+		Version     func(childComplexity int) int
 	}
 
 	APISpec struct {
@@ -174,7 +175,7 @@ type ComplexityRoot struct {
 		DeleteRuntimeLabel          func(childComplexity int, id string, key string, values []string) int
 		RefetchAPISpec              func(childComplexity int, apiID string) int
 		RefetchEventSpec            func(childComplexity int, eventID string) int
-		SetAPIAuth                  func(childComplexity int, apiID string, runtimeID *string, in AuthInput) int
+		SetAPIAuth                  func(childComplexity int, apiID string, runtimeID string, in AuthInput) int
 		UpdateAPI                   func(childComplexity int, id string, in APIDefinitionInput) int
 		UpdateApplication           func(childComplexity int, id string, in ApplicationInput) int
 		UpdateApplicationWebhook    func(childComplexity int, webhookID string, in ApplicationWebhookInput) int
@@ -240,7 +241,7 @@ type MutationResolver interface {
 	UpdateAPI(ctx context.Context, id string, in APIDefinitionInput) (*APIDefinition, error)
 	DeleteAPI(ctx context.Context, id string) (*APIDefinition, error)
 	RefetchAPISpec(ctx context.Context, apiID string) (*APISpec, error)
-	SetAPIAuth(ctx context.Context, apiID string, runtimeID *string, in AuthInput) ([]*RuntimeAuth, error)
+	SetAPIAuth(ctx context.Context, apiID string, runtimeID string, in AuthInput) ([]*RuntimeAuth, error)
 	DeleteAPIAuth(ctx context.Context, apiID string, runtimeID *string) ([]*RuntimeAuth, error)
 	AddEvent(ctx context.Context, applicationID string, in EventDefinitionInput) (*EventAPIDefinition, error)
 	UpdateEvent(ctx context.Context, id string, in EventDefinitionInput) (*EventAPIDefinition, error)
@@ -295,6 +296,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.APIDefinition.Auths(childComplexity), true
+
+	case "APIDefinition.defaultAuth":
+		if e.complexity.APIDefinition.DefaultAuth == nil {
+			break
+		}
+
+		return e.complexity.APIDefinition.DefaultAuth(childComplexity), true
 
 	case "APIDefinition.group":
 		if e.complexity.APIDefinition.Group == nil {
@@ -1012,7 +1020,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SetAPIAuth(childComplexity, args["apiID"].(string), args["runtimeID"].(*string), args["in"].(AuthInput)), true
+		return e.complexity.Mutation.SetAPIAuth(childComplexity, args["apiID"].(string), args["runtimeID"].(string), args["in"].(AuthInput)), true
 
 	case "Mutation.updateAPI":
 		if e.complexity.Mutation.UpdateAPI == nil {
@@ -1455,10 +1463,12 @@ type APIDefinition {
     targetURL: String!
     """ group allows you to find the same API but in different version """
     group: String
-    """"If runtime does not exist, an error will be returned. If runtime exists but does not have Auth defined, null is returned"""
-    auth(runtimeID: ID!): Auth
-    """Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified"""
+    """"If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified."""
+    auth(runtimeID: ID!): RuntimeAuth
+    """Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified."""
     auths: [RuntimeAuth!]!
+    """If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly."""
+    defaultAuth: Auth
     version: Version
 }
 
@@ -1647,12 +1657,14 @@ input ApplicationWebhookInput {
 }
 
 # API Input
-# you need to perform separate call to set auth
+# You can specify defaultAuth to specify Auth used for all runtimes. If you want to specify auth only for a dedicated Runtime,
+# you need to perform separate mutation setAPIAuth.
 input APIDefinitionInput {
     targetURL: String!
     group: String
     spec: APISpecInput
     version: VersionInput
+    defaultAuth: AuthInput
 }
 
 input VersionInput {
@@ -1776,10 +1788,9 @@ type Mutation {
     refetchAPISpec(apiID: ID!): APISpec
 
     """
-    If runtimeID is not provided, the same authentication details will be set for every runtime already available.
-    Returns information for which runtime it was configured.
+    Returns information about all Auths for given applicationID. To set default Auth for API, use updateAPI mutation
     """
-    setAPIAuth(apiID: ID!, runtimeID: ID, in: AuthInput!): [RuntimeAuth!]!
+    setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput!): [RuntimeAuth!]!
     deleteAPIAuth(apiID: ID!, runtimeID: ID): [RuntimeAuth!]!
 
 
@@ -2326,9 +2337,9 @@ func (ec *executionContext) field_Mutation_setAPIAuth_args(ctx context.Context, 
 		}
 	}
 	args["apiID"] = arg0
-	var arg1 *string
+	var arg1 string
 	if tmp, ok := rawArgs["runtimeID"]; ok {
-		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		arg1, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2734,10 +2745,10 @@ func (ec *executionContext) _APIDefinition_auth(ctx context.Context, field graph
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*Auth)
+	res := resTmp.(*RuntimeAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAuth(ctx, field.Selections, res)
+	return ec.marshalORuntimeAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimeAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APIDefinition_auths(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) graphql.Marshaler {
@@ -2765,6 +2776,30 @@ func (ec *executionContext) _APIDefinition_auths(ctx context.Context, field grap
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNRuntimeAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimeAuth(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _APIDefinition_defaultAuth(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "APIDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DefaultAuth, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Auth)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APIDefinition_version(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) graphql.Marshaler {
@@ -4770,7 +4805,7 @@ func (ec *executionContext) _Mutation_setAPIAuth(ctx context.Context, field grap
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SetAPIAuth(rctx, args["apiID"].(string), args["runtimeID"].(*string), args["in"].(AuthInput))
+		return ec.resolvers.Mutation().SetAPIAuth(rctx, args["apiID"].(string), args["runtimeID"].(string), args["in"].(AuthInput))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -6769,6 +6804,12 @@ func (ec *executionContext) unmarshalInputAPIDefinitionInput(ctx context.Context
 			if err != nil {
 				return it, err
 			}
+		case "defaultAuth":
+			var err error
+			it.DefaultAuth, err = ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAuthInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -7376,6 +7417,8 @@ func (ec *executionContext) _APIDefinition(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "defaultAuth":
+			out.Values[i] = ec._APIDefinition_defaultAuth(ctx, field, obj)
 		case "version":
 			out.Values[i] = ec._APIDefinition_version(ctx, field, obj)
 		default:
@@ -10172,6 +10215,17 @@ func (ec *executionContext) marshalORuntime2ᚖgithubᚗcomᚋkymaᚑincubator�
 		return graphql.Null
 	}
 	return ec._Runtime(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalORuntimeAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimeAuth(ctx context.Context, sel ast.SelectionSet, v RuntimeAuth) graphql.Marshaler {
+	return ec._RuntimeAuth(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalORuntimeAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimeAuth(ctx context.Context, sel ast.SelectionSet, v *RuntimeAuth) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RuntimeAuth(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐSpecFormat(ctx context.Context, v interface{}) (SpecFormat, error) {

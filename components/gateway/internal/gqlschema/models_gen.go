@@ -18,18 +18,21 @@ type APIDefinition struct {
 	TargetURL string   `json:"targetURL"`
 	//  group allows you to find the same API but in different version
 	Group *string `json:"group"`
-	// "If runtime does not exist, an error will be returned. If runtime exists but does not have Auth defined, null is returned
-	Auth *Auth `json:"auth"`
-	// Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified
-	Auths   []*RuntimeAuth `json:"auths"`
-	Version *Version       `json:"version"`
+	// "If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified.
+	Auth *RuntimeAuth `json:"auth"`
+	// Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified.
+	Auths []*RuntimeAuth `json:"auths"`
+	// If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly.
+	DefaultAuth *Auth    `json:"defaultAuth"`
+	Version     *Version `json:"version"`
 }
 
 type APIDefinitionInput struct {
-	TargetURL string        `json:"targetURL"`
-	Group     *string       `json:"group"`
-	Spec      *APISpecInput `json:"spec"`
-	Version   *VersionInput `json:"version"`
+	TargetURL   string        `json:"targetURL"`
+	Group       *string       `json:"group"`
+	Spec        *APISpecInput `json:"spec"`
+	Version     *VersionInput `json:"version"`
+	DefaultAuth *AuthInput    `json:"defaultAuth"`
 }
 
 type APISpec struct {

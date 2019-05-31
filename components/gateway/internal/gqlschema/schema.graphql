@@ -99,10 +99,12 @@ type APIDefinition {
     targetURL: String!
     """ group allows you to find the same API but in different version """
     group: String
-    """"If runtime does not exist, an error will be returned. If runtime exists but does not have Auth defined, null is returned"""
-    auth(runtimeID: ID!): Auth
-    """Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified"""
+    """"If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified."""
+    auth(runtimeID: ID!): RuntimeAuth
+    """Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified."""
     auths: [RuntimeAuth!]!
+    """If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly."""
+    defaultAuth: Auth
     version: Version
 }
 
@@ -291,12 +293,14 @@ input ApplicationWebhookInput {
 }
 
 # API Input
-# you need to perform separate call to set auth
+# You can specify defaultAuth to specify Auth used for all runtimes. If you want to specify auth only for a dedicated Runtime,
+# you need to perform separate mutation setAPIAuth.
 input APIDefinitionInput {
     targetURL: String!
     group: String
     spec: APISpecInput
     version: VersionInput
+    defaultAuth: AuthInput
 }
 
 input VersionInput {
@@ -420,10 +424,9 @@ type Mutation {
     refetchAPISpec(apiID: ID!): APISpec
 
     """
-    If runtimeID is not provided, the same authentication details will be set for every runtime already available.
-    Returns information for which runtime it was configured.
+    Returns information about all Auths for given applicationID. To set default Auth for API, use updateAPI mutation
     """
-    setAPIAuth(apiID: ID!, runtimeID: ID, in: AuthInput!): [RuntimeAuth!]!
+    setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput!): [RuntimeAuth!]!
     deleteAPIAuth(apiID: ID!, runtimeID: ID): [RuntimeAuth!]!
 
 
