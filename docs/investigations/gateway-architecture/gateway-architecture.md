@@ -10,16 +10,29 @@ We discussed three different approaches to exposing our API to users.
 
 ## Possible solutions
 
-### 1. Handwritten GraphQL Gateway
+### 1. Schema on Gateway delegating to other services via gRPC
 
 The first option is to use a single GraphQL server on the gateway with manually written schema and resolvers, that would delegate the operations to internal services. We could use for example gRPC to communicate with them (a PoC of this can be found [here](https://github.com/kyma-incubator/compass/pull/21/)).
+
+@aszecowka ran some tests, here are the results:
+
+```
+even if we reuse connections, with many requests, provided solution seems to be not the most efficient:
+I queried for:
+
+100 apps, each has 10 APIs: response time was ~0.04s
+100 apps without querying about APIs: 0.01s
+1000 apps, each has 10 APIs: response time ~ 0.5s
+1000 apps, without querying about APIs: 0.04s
+This was tested on the localhost.
+```
 
 Pros
 
 - full GraphQL support (introspection + subscriptions)
-- avoiding Node.js (better performance)
-- single endpoint
-- facade over internal APIs
+- avoiding Node.js
+- single endpoint exposed on the gateway, that would be stored by clients
+- we can hide our internal APIs behind a "facade" that would allow us to make changes without breaking compatibility
 
 Cons
 
@@ -30,7 +43,7 @@ Cons
 
 #### 2.1. Apollo Server
 
-The simplest way to stitch multiple GraphQL schemas would be to use the Node.js [Apollo Server](https://www.apollographql.com/), that already has the functionality to merge schemas and proxy traffic to specific internal graphql servers. Merging works by introspection of existing schemas, and it takes care of things such as type conflicts. It is even possible to combine and modify types and fields from different schemas. Apollo supports queries, mutations, and subscriptions.
+The simplest way to stitch multiple GraphQL schemas would be to use the Node.js [Apollo Server](https://www.apollographql.com/), that already has the functionality to merge schemas and proxy traffic to specific internal graphql servers. Merging works by introspection of existing schemas, and it takes care of things such as type conflicts. It is even possible to combine and modify types and fields from different schemas. Apollo supports queries, mutations, and subscriptions. Examples of code needed to run Apollo Server with stitched schema can be found [here](https://www.contentful.com/blog/2019/01/30/combining-apis-graphql-schema-stitching-part-2/).
 
 Pros
 
@@ -39,13 +52,14 @@ Pros
 - out of the box support for proxying queries, mutations, and subscriptions
 - type conflict detection and resolution
 - combining and editing types of merged schemas
-- single endpoint
+- single endpoint exposed on the gateway, that would be stored by clients
 - a single call to proxied API
 
 Cons
 
-- adding Node.js to our technology stack (worse performance)
-- no facade over internal APIs
+- adding Node.js to our technology stack
+- we expose 1:1 schemas from internal APIs
+- introduces dependencies on internal APIs that have to expose their schemas before stitching, in case one of them is modified at runtime of system, the gateway needs to update its stitched schema
 
 #### 2.2. Custom HTTP proxy in Go
 
@@ -57,15 +71,16 @@ Handling subscriptions would be problematic as well because that would require p
 
 Pros
 
-- avoiding Node.js (better performance)
-- single endpoint
+- avoiding Node.js
+- single endpoint exposed on the gateway, that would be stored by clients
 - a single call to proxied API
 
 Cons
 
 - lack of some GraphQL features (introspection)
-- implementing subscriptions proxying
-- no facade over internal APIs
+- implementing subscriptions proxying which would be problematic because that would require proxying WebSocket traffic
+- we expose 1:1 schemas from internal APIs
+- introduces dependencies on internal APIs that have to expose their schemas before stitching, in case one of them is modified at runtime of system, the gateway needs to update its stitched schema
 
 #### 2.3. Custom stitching implementation in Go
 
@@ -73,18 +88,19 @@ In this approach, we would have to either write our custom solution that would s
 
 Pros
 
-- avoiding Node.js (better performance)
+- avoiding Node.js
 - hosts fully functioning GraphQL server, so that API user can't tell he's using an abstraction over few separate APIs
 - support for proxying queries, mutations, and subscriptions
 - type conflict detection and resolution
 - combining and editing types of merged schemas
-- single endpoint
+- single endpoint exposed on the gateway, that would be stored by clients
 - a single call to proxied API
 
 Cons
 
 - seems like a huge amount of work
-- no facade over internal APIs
+- we expose 1:1 schemas from internal APIs
+- introduces dependencies on internal APIs that have to expose their schemas before stitching, in case one of them is modified at runtime of system, the gateway needs to update its stitched schema
 
 ### 3. Separate HTTP endpoints
 
@@ -93,27 +109,28 @@ This approach requires us to write a reverse proxy server that would expose a se
 Pros
 
 - full GraphQL support (per endpoint)
-- avoiding Node.js (better performance)
+- avoiding Node.js
 - support for proxying queries, mutations, and subscriptions
 - a single call to proxied API
 
 Cons
 
-- no facade over internal APIs
-- implementing subscriptions proxying
-- multiple endpoints
+- we expose 1:1 schemas from internal APIs
+- implementing subscriptions proxying which would be problematic because that would require proxying WebSocket traffic
+- multiple endpoints (that clients have to store)
+- we expose our internal architecture
 
 ## Summary
 
-Solution | Introspection & subscriptions support | Single call to proxied API | Good performance<br>(Go) | Single endpoint | Facade over internal components | No need to maintain almost identical protobuf schema | Relative amount of work
+Solution | Introspection & subscriptions support<br>(must have) | Single call to proxied API | Good performance<br>(Go) | Single endpoint | Not exposing internal APIs 1:1 | Low maintenance effort | Relative amount of work
 :-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:
-Handwritten GraphQL Gateway | ✓ | ✗ | ✓ | ✓ | ✓ | ✗ | medium
+Schema on Gateway delegating to other services via gRPC | ✓ | ✗ | ✓ | ✓ | ✓ | ✗ | medium
 Apollo Server | ✓ | ✓ | ✗ | ✓ | ✗ | ✓ | very small
 Custom HTTP proxy in Go | ✗ | ✓ | ✓ | ✓ | ✗ | ✓ | small*
 Custom stitching implementation in Go | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ | big
 Separate HTTP endpoints | ✓<br>(per endpoint) | ✓ | ✓ | ✗ | ✗ | ✓ | small
 
-\* Unless we decide to fake GraphQL behavior to support all its features, then I believe the amount of work would be big.
+\* Unless we decide to support subscriptions and introspection, then I believe the amount of work would be big.
 
 ## Conclusion
 
