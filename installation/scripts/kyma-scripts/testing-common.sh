@@ -1,3 +1,5 @@
+#Script downloaded from https://raw.githubusercontent.com/kyma-project/kyma/1.1.0/installation/scripts/utils.sh
+
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source ${ROOT_PATH}/utils.sh
 

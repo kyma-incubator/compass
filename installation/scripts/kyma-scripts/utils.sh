@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#Script downloaded from https://raw.githubusercontent.com/kyma-project/kyma/1.1.0/installation/scripts/utils.sh
 
 #
 # Log is function useful for logs creation.

@@ -10,5 +10,5 @@ spec:
     spec:
       containers:
         - name: "test-{{ .Release.Name }}-end-to-end"
-          image: kfurgol/compass-test:test
+          image: {{ .Values.global.containerRegistry.path }}/{{ .Values.global.tests.e2e.dir }}compass-end-to-end-test:{{ .Values.global.tests.e2e.version }}
       restartPolicy: Never

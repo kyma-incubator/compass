@@ -13,3 +13,7 @@ global:
   registry:
     dir: develop/
     version: "6d888e37"
+  tests:
+    e2e:
+      dir: develop/
+      version: "ec80b7e4"
