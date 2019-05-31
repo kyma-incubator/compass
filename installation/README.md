@@ -6,19 +6,9 @@ This document presents the deep dive into Compass installation and testing.
 
 ## Installation
 
-If you have already running Kyma instance with created secrets which contains Tiller client certificates, run:
-```bash
-helm install --name "compass" "${ROOT_PATH}"/chart/compass --tls
-```
-
-To install the Compass, run:
-```bash
-./installation/scripts/run.sh
-```
-
 The `run.sh` scripts do the following:
 1. Provision local Kubernetes cluster on Minikube adjusted for Kyma installation via `Kyma CLI`.
-2. Install Kyma on the cluster with hardened list of components provided in `./installation/resources/installer-cr.yaml` file.  
+2. Install Kyma 1.1.0 on the cluster with hardened list of components provided in `./installation/resources/installer-cr.yaml` file.  
 3. Download Helm client certificates created with Kyma installation.
 4. Perform installation of `compass` Helm chart.
 
