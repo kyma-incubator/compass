@@ -164,7 +164,7 @@ type ComplexityRoot struct {
 		CreateApplication           func(childComplexity int, in ApplicationInput) int
 		CreateRuntime               func(childComplexity int, in RuntimeInput) int
 		DeleteAPI                   func(childComplexity int, id string) int
-		DeleteAPIAuth               func(childComplexity int, apiID string, runtimeID *string) int
+		DeleteAPIAuth               func(childComplexity int, apiID string, runtimeID string) int
 		DeleteApplication           func(childComplexity int, id string) int
 		DeleteApplicationAnnotation func(childComplexity int, applicationID string, annotation string) int
 		DeleteApplicationLabel      func(childComplexity int, applicationID string, label string, values []string) int
@@ -242,7 +242,7 @@ type MutationResolver interface {
 	DeleteAPI(ctx context.Context, id string) (*APIDefinition, error)
 	RefetchAPISpec(ctx context.Context, apiID string) (*APISpec, error)
 	SetAPIAuth(ctx context.Context, apiID string, runtimeID string, in AuthInput) ([]*RuntimeAuth, error)
-	DeleteAPIAuth(ctx context.Context, apiID string, runtimeID *string) ([]*RuntimeAuth, error)
+	DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) ([]*RuntimeAuth, error)
 	AddEvent(ctx context.Context, applicationID string, in EventDefinitionInput) (*EventAPIDefinition, error)
 	UpdateEvent(ctx context.Context, id string, in EventDefinitionInput) (*EventAPIDefinition, error)
 	DeleteEvent(ctx context.Context, id string) (*EventAPIDefinition, error)
@@ -888,7 +888,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteAPIAuth(childComplexity, args["apiID"].(string), args["runtimeID"].(*string)), true
+		return e.complexity.Mutation.DeleteAPIAuth(childComplexity, args["apiID"].(string), args["runtimeID"].(string)), true
 
 	case "Mutation.deleteApplication":
 		if e.complexity.Mutation.DeleteApplication == nil {
@@ -1791,7 +1791,7 @@ type Mutation {
     Returns information about all Auths for given applicationID. To set default Auth for API, use updateAPI mutation
     """
     setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput!): [RuntimeAuth!]!
-    deleteAPIAuth(apiID: ID!, runtimeID: ID): [RuntimeAuth!]!
+    deleteAPIAuth(apiID: ID!, runtimeID: ID!): [RuntimeAuth!]!
 
 
     addEvent(applicationID: ID!, in: EventDefinitionInput!): EventAPIDefinition!
@@ -2113,9 +2113,9 @@ func (ec *executionContext) field_Mutation_deleteAPIAuth_args(ctx context.Contex
 		}
 	}
 	args["apiID"] = arg0
-	var arg1 *string
+	var arg1 string
 	if tmp, ok := rawArgs["runtimeID"]; ok {
-		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		arg1, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -4839,7 +4839,7 @@ func (ec *executionContext) _Mutation_deleteAPIAuth(ctx context.Context, field g
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteAPIAuth(rctx, args["apiID"].(string), args["runtimeID"].(*string))
+		return ec.resolvers.Mutation().DeleteAPIAuth(rctx, args["apiID"].(string), args["runtimeID"].(string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {

@@ -427,7 +427,7 @@ type Mutation {
     Returns information about all Auths for given applicationID. To set default Auth for API, use updateAPI mutation
     """
     setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput!): [RuntimeAuth!]!
-    deleteAPIAuth(apiID: ID!, runtimeID: ID): [RuntimeAuth!]!
+    deleteAPIAuth(apiID: ID!, runtimeID: ID!): [RuntimeAuth!]!
 
 
     addEvent(applicationID: ID!, in: EventDefinitionInput!): EventAPIDefinition!
