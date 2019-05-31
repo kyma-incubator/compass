@@ -114,3 +114,7 @@ Custom stitching implementation in Go | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ | big
 Separate HTTP endpoints | ✓<br>(per endpoint) | ✓ | ✓ | ✗ | ✗ | ✓ | small
 
 \* Unless we decide to fake GraphQL behavior to support all its features, then I believe the amount of work would be big.
+
+## Conclusion
+
+Taking into account all the pros and cons of mentioned solutions I believe that two options would work best in our case: **Apollo Server** and **Separate HTTP endpoints**. While Apollo Server is very handy to use and offers a lot of out of the box functionality it would introduce unnecessary change to our technology stack and performance hit. Because of that, I am personally leaning towards the more straightforward solution - **Separate HTTP endpoints** that seems to meet all our key requirements and doesn't seem to require a lot of work to implement.
