@@ -18,6 +18,10 @@ The `run.sh` scripts do the following:
 3. Download Helm client certificates created with Kyma installation.
 4. Perform installation of `compass` Helm chart.
 
+You can also install the Helm chart using this command:
+```bash
+helm install --name "compass" ./chart/compass --tls
+```
 ## Testing
 
 To run the Compass tests, run:

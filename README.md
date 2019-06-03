@@ -17,12 +17,14 @@ A flexible and easy way to register, manage and group your applications.
 
 ## Installation
 
+### Chart installation  
 If you have already running Kyma 1.1.0 instance with created secrets which contains Tiller client certificates, run:
 ```bash
 helm install --name "compass" ./chart/compass --tls
 ```
 
-or you can install the Compass on top of Kyma, run:
+### Local installation with Kyma
+To install the Compass along with Kyma 1.1.0, run:
 ```bash
 ./installation/scripts/run.sh
 ```
