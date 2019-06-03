@@ -58,6 +58,24 @@ type Application {
     documents: [Document!]!
 }
 
+interface Pageable {
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+
+type ApplicationPage implements Pageable {
+    data: [Application!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+
+}
+
+type PageInfo {
+    startCursor: String
+    endCursor: String
+    hasNextPage: Boolean
+}
+
 type ApplicationStatus {
     condition: ApplicationStatusCondition!
     timestamp: Timestamp!
@@ -392,7 +410,7 @@ input LabelFilter {
 }
 
 type Query {
-    applications(filter: [LabelFilter!]): [Application!]!
+    applications(filter: [LabelFilter!], first: Int = 100, after: String):  ApplicationPage!
     application(id: ID!): Application
 
     runtimes(filter: [LabelFilter!]): [Runtime!]!
