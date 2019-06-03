@@ -12,6 +12,10 @@ type CredentialData interface {
 	IsCredentialData()
 }
 
+type Pageable interface {
+	IsPageable()
+}
+
 type APIDefinition struct {
 	ID        string   `json:"id"`
 	Spec      *APISpec `json:"spec"`
@@ -34,6 +38,14 @@ type APIDefinitionInput struct {
 	Version     *VersionInput `json:"version"`
 	DefaultAuth *AuthInput    `json:"defaultAuth"`
 }
+
+type APIDefinitionPage struct {
+	Data       []*APIDefinition `json:"data"`
+	PageInfo   *PageInfo        `json:"pageInfo"`
+	TotalCount int              `json:"totalCount"`
+}
+
+func (APIDefinitionPage) IsPageable() {}
 
 type APISpec struct {
 	// when fetch request specified, data will be automatically populated
@@ -61,10 +73,10 @@ type Application struct {
 	Webhooks       []*ApplicationWebhook `json:"webhooks"`
 	HealthCheckURL *string               `json:"healthCheckURL"`
 	//  group allows to find different versions of the same API
-	Apis []*APIDefinition `json:"apis"`
+	Apis *APIDefinitionPage `json:"apis"`
 	//  group allows to find different versions of the same event API
-	EventAPIs []*EventAPIDefinition `json:"eventAPIs"`
-	Documents []*Document           `json:"documents"`
+	EventAPIs *EventAPIDefinitionPage `json:"eventAPIs"`
+	Documents []*Document             `json:"documents"`
 }
 
 type ApplicationInput struct {
@@ -78,6 +90,14 @@ type ApplicationInput struct {
 	Events         []*EventDefinitionInput    `json:"events"`
 	Documents      []*DocumentInput           `json:"documents"`
 }
+
+type ApplicationPage struct {
+	Data       []*Application `json:"data"`
+	PageInfo   *PageInfo      `json:"pageInfo"`
+	TotalCount int            `json:"totalCount"`
+}
+
+func (ApplicationPage) IsPageable() {}
 
 type ApplicationStatus struct {
 	Condition ApplicationStatusCondition `json:"condition"`
@@ -174,6 +194,14 @@ type EventAPIDefinition struct {
 	Version *Version   `json:"version"`
 }
 
+type EventAPIDefinitionPage struct {
+	Data       []*EventAPIDefinition `json:"data"`
+	PageInfo   *PageInfo             `json:"pageInfo"`
+	TotalCount int                   `json:"totalCount"`
+}
+
+func (EventAPIDefinitionPage) IsPageable() {}
+
 type EventDefinitionInput struct {
 	Spec    *EventSpecInput `json:"spec"`
 	Group   *string         `json:"group"`
@@ -222,6 +250,14 @@ type HealthCheck struct {
 	Timestamp Timestamp                  `json:"timestamp"`
 }
 
+type HealthCheckPage struct {
+	Data       []*HealthCheck `json:"data"`
+	PageInfo   *PageInfo      `json:"pageInfo"`
+	TotalCount int            `json:"totalCount"`
+}
+
+func (HealthCheckPage) IsPageable() {}
+
 type LabelFilter struct {
 	Label    string          `json:"label"`
 	Values   []string        `json:"values"`
@@ -240,6 +276,12 @@ type OAuthCredentialDataInput struct {
 	ClientID     string `json:"clientId"`
 	ClientSecret string `json:"clientSecret"`
 	URL          string `json:"url"`
+}
+
+type PageInfo struct {
+	StartCursor string  `json:"startCursor"`
+	EndCursor   *string `json:"endCursor"`
+	HasNextPage bool    `json:"hasNextPage"`
 }
 
 type Runtime struct {
@@ -265,6 +307,14 @@ type RuntimeInput struct {
 	Labels      *Labels      `json:"labels"`
 	Annotations *Annotations `json:"annotations"`
 }
+
+type RuntimePage struct {
+	Data       []*Runtime `json:"data"`
+	PageInfo   *PageInfo  `json:"pageInfo"`
+	TotalCount int        `json:"totalCount"`
+}
+
+func (RuntimePage) IsPageable() {}
 
 type RuntimeStatus struct {
 	Condition RuntimeStatusCondition `json:"condition"`

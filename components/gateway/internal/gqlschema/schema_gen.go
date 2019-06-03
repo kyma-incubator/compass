@@ -54,6 +54,12 @@ type ComplexityRoot struct {
 		Version     func(childComplexity int) int
 	}
 
+	APIDefinitionPage struct {
+		Data       func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
 	APISpec struct {
 		Data         func(childComplexity int) int
 		FetchRequest func(childComplexity int) int
@@ -63,10 +69,10 @@ type ComplexityRoot struct {
 
 	Application struct {
 		Annotations    func(childComplexity int, key *string) int
-		Apis           func(childComplexity int, group *string) int
+		Apis           func(childComplexity int, group *string, first *int, after *string) int
 		Description    func(childComplexity int) int
 		Documents      func(childComplexity int) int
-		EventAPIs      func(childComplexity int, group *string) int
+		EventAPIs      func(childComplexity int, group *string, first *int, after *string) int
 		HealthCheckURL func(childComplexity int) int
 		ID             func(childComplexity int) int
 		Labels         func(childComplexity int, key *string) int
@@ -74,6 +80,12 @@ type ComplexityRoot struct {
 		Status         func(childComplexity int) int
 		Tenant         func(childComplexity int) int
 		Webhooks       func(childComplexity int) int
+	}
+
+	ApplicationPage struct {
+		Data       func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
 	}
 
 	ApplicationStatus struct {
@@ -125,6 +137,12 @@ type ComplexityRoot struct {
 		Version func(childComplexity int) int
 	}
 
+	EventAPIDefinitionPage struct {
+		Data       func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
 	EventSpec struct {
 		Data         func(childComplexity int) int
 		FetchRequest func(childComplexity int) int
@@ -151,6 +169,12 @@ type ComplexityRoot struct {
 		Origin    func(childComplexity int) int
 		Timestamp func(childComplexity int) int
 		Type      func(childComplexity int) int
+	}
+
+	HealthCheckPage struct {
+		Data       func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -189,12 +213,18 @@ type ComplexityRoot struct {
 		URL          func(childComplexity int) int
 	}
 
+	PageInfo struct {
+		EndCursor   func(childComplexity int) int
+		HasNextPage func(childComplexity int) int
+		StartCursor func(childComplexity int) int
+	}
+
 	Query struct {
 		Application  func(childComplexity int, id string) int
-		Applications func(childComplexity int, filter []*LabelFilter) int
-		HealthChecks func(childComplexity int, types []HealthCheckType, origin *string) int
+		Applications func(childComplexity int, filter []*LabelFilter, first *int, after *string) int
+		HealthChecks func(childComplexity int, types []HealthCheckType, origin *string, first *int, after *string) int
 		Runtime      func(childComplexity int, id string) int
-		Runtimes     func(childComplexity int, filter []*LabelFilter) int
+		Runtimes     func(childComplexity int, filter []*LabelFilter, first *int, after *string) int
 	}
 
 	Runtime struct {
@@ -211,6 +241,12 @@ type ComplexityRoot struct {
 	RuntimeAuth struct {
 		Auth      func(childComplexity int) int
 		RuntimeID func(childComplexity int) int
+	}
+
+	RuntimePage struct {
+		Data       func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
 	}
 
 	RuntimeStatus struct {
@@ -256,11 +292,11 @@ type MutationResolver interface {
 	DeleteRuntimeAnnotation(ctx context.Context, id string, key string) (*string, error)
 }
 type QueryResolver interface {
-	Applications(ctx context.Context, filter []*LabelFilter) ([]*Application, error)
+	Applications(ctx context.Context, filter []*LabelFilter, first *int, after *string) (*ApplicationPage, error)
 	Application(ctx context.Context, id string) (*Application, error)
-	Runtimes(ctx context.Context, filter []*LabelFilter) ([]*Runtime, error)
+	Runtimes(ctx context.Context, filter []*LabelFilter, first *int, after *string) (*RuntimePage, error)
 	Runtime(ctx context.Context, id string) (*Runtime, error)
-	HealthChecks(ctx context.Context, types []HealthCheckType, origin *string) ([]*HealthCheck, error)
+	HealthChecks(ctx context.Context, types []HealthCheckType, origin *string, first *int, after *string) (*HealthCheckPage, error)
 }
 
 type executableSchema struct {
@@ -339,6 +375,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.APIDefinition.Version(childComplexity), true
 
+	case "APIDefinitionPage.data":
+		if e.complexity.APIDefinitionPage.Data == nil {
+			break
+		}
+
+		return e.complexity.APIDefinitionPage.Data(childComplexity), true
+
+	case "APIDefinitionPage.pageInfo":
+		if e.complexity.APIDefinitionPage.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.APIDefinitionPage.PageInfo(childComplexity), true
+
+	case "APIDefinitionPage.totalCount":
+		if e.complexity.APIDefinitionPage.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.APIDefinitionPage.TotalCount(childComplexity), true
+
 	case "APISpec.data":
 		if e.complexity.APISpec.Data == nil {
 			break
@@ -389,7 +446,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Application.Apis(childComplexity, args["group"].(*string)), true
+		return e.complexity.Application.Apis(childComplexity, args["group"].(*string), args["first"].(*int), args["after"].(*string)), true
 
 	case "Application.description":
 		if e.complexity.Application.Description == nil {
@@ -415,7 +472,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Application.EventAPIs(childComplexity, args["group"].(*string)), true
+		return e.complexity.Application.EventAPIs(childComplexity, args["group"].(*string), args["first"].(*int), args["after"].(*string)), true
 
 	case "Application.healthCheckURL":
 		if e.complexity.Application.HealthCheckURL == nil {
@@ -470,6 +527,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.Webhooks(childComplexity), true
+
+	case "ApplicationPage.data":
+		if e.complexity.ApplicationPage.Data == nil {
+			break
+		}
+
+		return e.complexity.ApplicationPage.Data(childComplexity), true
+
+	case "ApplicationPage.pageInfo":
+		if e.complexity.ApplicationPage.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.ApplicationPage.PageInfo(childComplexity), true
+
+	case "ApplicationPage.totalCount":
+		if e.complexity.ApplicationPage.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.ApplicationPage.TotalCount(childComplexity), true
 
 	case "ApplicationStatus.condition":
 		if e.complexity.ApplicationStatus.Condition == nil {
@@ -646,6 +724,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.EventAPIDefinition.Version(childComplexity), true
 
+	case "EventAPIDefinitionPage.data":
+		if e.complexity.EventAPIDefinitionPage.Data == nil {
+			break
+		}
+
+		return e.complexity.EventAPIDefinitionPage.Data(childComplexity), true
+
+	case "EventAPIDefinitionPage.pageInfo":
+		if e.complexity.EventAPIDefinitionPage.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.EventAPIDefinitionPage.PageInfo(childComplexity), true
+
+	case "EventAPIDefinitionPage.totalCount":
+		if e.complexity.EventAPIDefinitionPage.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.EventAPIDefinitionPage.TotalCount(childComplexity), true
+
 	case "EventSpec.data":
 		if e.complexity.EventSpec.Data == nil {
 			break
@@ -757,6 +856,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.HealthCheck.Type(childComplexity), true
+
+	case "HealthCheckPage.data":
+		if e.complexity.HealthCheckPage.Data == nil {
+			break
+		}
+
+		return e.complexity.HealthCheckPage.Data(childComplexity), true
+
+	case "HealthCheckPage.pageInfo":
+		if e.complexity.HealthCheckPage.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.HealthCheckPage.PageInfo(childComplexity), true
+
+	case "HealthCheckPage.totalCount":
+		if e.complexity.HealthCheckPage.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.HealthCheckPage.TotalCount(childComplexity), true
 
 	case "Mutation.addAPI":
 		if e.complexity.Mutation.AddAPI == nil {
@@ -1103,6 +1223,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OAuthCredentialData.URL(childComplexity), true
 
+	case "PageInfo.endCursor":
+		if e.complexity.PageInfo.EndCursor == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.EndCursor(childComplexity), true
+
+	case "PageInfo.hasNextPage":
+		if e.complexity.PageInfo.HasNextPage == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.HasNextPage(childComplexity), true
+
+	case "PageInfo.startCursor":
+		if e.complexity.PageInfo.StartCursor == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.StartCursor(childComplexity), true
+
 	case "Query.application":
 		if e.complexity.Query.Application == nil {
 			break
@@ -1125,7 +1266,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Applications(childComplexity, args["filter"].([]*LabelFilter)), true
+		return e.complexity.Query.Applications(childComplexity, args["filter"].([]*LabelFilter), args["first"].(*int), args["after"].(*string)), true
 
 	case "Query.healthChecks":
 		if e.complexity.Query.HealthChecks == nil {
@@ -1137,7 +1278,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.HealthChecks(childComplexity, args["types"].([]HealthCheckType), args["origin"].(*string)), true
+		return e.complexity.Query.HealthChecks(childComplexity, args["types"].([]HealthCheckType), args["origin"].(*string), args["first"].(*int), args["after"].(*string)), true
 
 	case "Query.runtime":
 		if e.complexity.Query.Runtime == nil {
@@ -1161,7 +1302,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Runtimes(childComplexity, args["filter"].([]*LabelFilter)), true
+		return e.complexity.Query.Runtimes(childComplexity, args["filter"].([]*LabelFilter), args["first"].(*int), args["after"].(*string)), true
 
 	case "Runtime.agentAuth":
 		if e.complexity.Runtime.AgentAuth == nil {
@@ -1242,6 +1383,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.RuntimeAuth.RuntimeID(childComplexity), true
+
+	case "RuntimePage.data":
+		if e.complexity.RuntimePage.Data == nil {
+			break
+		}
+
+		return e.complexity.RuntimePage.Data(childComplexity), true
+
+	case "RuntimePage.pageInfo":
+		if e.complexity.RuntimePage.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.RuntimePage.PageInfo(childComplexity), true
+
+	case "RuntimePage.totalCount":
+		if e.complexity.RuntimePage.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.RuntimePage.TotalCount(childComplexity), true
 
 	case "RuntimeStatus.condition":
 		if e.complexity.RuntimeStatus.Condition == nil {
@@ -1416,11 +1578,52 @@ type Application {
     webhooks: [ApplicationWebhook!]!
     healthCheckURL: String
     """ group allows to find different versions of the same API """
-    apis(group: String): [APIDefinition!]!
+    apis(group: String, first: Int = 100, after: String): APIDefinitionPage!
     """ group allows to find different versions of the same event API """
-    eventAPIs(group: String): [EventAPIDefinition!]!
+    eventAPIs(group: String, first: Int = 100, after: String): EventAPIDefinitionPage!
     documents: [Document!]!
 }
+interface Pageable {
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+
+type PageInfo {
+    startCursor: String!
+    endCursor: String
+    hasNextPage: Boolean!
+}
+
+type ApplicationPage implements Pageable {
+    data: [Application!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+
+type RuntimePage implements Pageable {
+    data: [Runtime!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+
+type HealthCheckPage implements Pageable {
+    data: [HealthCheck!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+
+type APIDefinitionPage implements Pageable {
+    data: [APIDefinition!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+type EventAPIDefinitionPage implements Pageable {
+    data: [EventAPIDefinition!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+
+
 
 type ApplicationStatus {
     condition: ApplicationStatusCondition!
@@ -1466,7 +1669,7 @@ type APIDefinition {
     """"If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified."""
     auth(runtimeID: ID!): RuntimeAuth
     """Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified."""
-    auths: [RuntimeAuth!]!
+    auths: [RuntimeAuth!]! #TODO
     """If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly."""
     defaultAuth: Auth
     version: Version
@@ -1755,14 +1958,15 @@ input LabelFilter {
     operator: FilterOperator = ALL
 }
 
+
 type Query {
-    applications(filter: [LabelFilter!]): [Application!]!
+    applications(filter: [LabelFilter!], first: Int = 100, after: String):  ApplicationPage!
     application(id: ID!): Application
 
-    runtimes(filter: [LabelFilter!]): [Runtime!]!
+    runtimes(filter: [LabelFilter!], first: Int = 100, after: String): RuntimePage!
     runtime(id: ID!): Runtime
 
-    healthChecks(types: [HealthCheckType!], origin: ID): [HealthCheck!]!
+    healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: String): HealthCheckPage!
 }
 
 type Mutation {
@@ -1857,6 +2061,22 @@ func (ec *executionContext) field_Application_apis_args(ctx context.Context, raw
 		}
 	}
 	args["group"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["after"]; ok {
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg2
 	return args, nil
 }
 
@@ -1871,6 +2091,22 @@ func (ec *executionContext) field_Application_eventAPIs_args(ctx context.Context
 		}
 	}
 	args["group"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["after"]; ok {
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg2
 	return args, nil
 }
 
@@ -2505,6 +2741,22 @@ func (ec *executionContext) field_Query_applications_args(ctx context.Context, r
 		}
 	}
 	args["filter"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["after"]; ok {
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg2
 	return args, nil
 }
 
@@ -2527,6 +2779,22 @@ func (ec *executionContext) field_Query_healthChecks_args(ctx context.Context, r
 		}
 	}
 	args["origin"] = arg1
+	var arg2 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg2
+	var arg3 *string
+	if tmp, ok := rawArgs["after"]; ok {
+		arg3, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg3
 	return args, nil
 }
 
@@ -2555,6 +2823,22 @@ func (ec *executionContext) field_Query_runtimes_args(ctx context.Context, rawAr
 		}
 	}
 	args["filter"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["after"]; ok {
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg2
 	return args, nil
 }
 
@@ -2824,6 +3108,87 @@ func (ec *executionContext) _APIDefinition_version(ctx context.Context, field gr
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOVersion2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐVersion(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _APIDefinitionPage_data(ctx context.Context, field graphql.CollectedField, obj *APIDefinitionPage) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "APIDefinitionPage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Data, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*APIDefinition)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNAPIDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPIDefinition(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _APIDefinitionPage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *APIDefinitionPage) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "APIDefinitionPage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PageInfo)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _APIDefinitionPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *APIDefinitionPage) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "APIDefinitionPage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APISpec_data(ctx context.Context, field graphql.CollectedField, obj *APISpec) graphql.Marshaler {
@@ -3204,10 +3569,10 @@ func (ec *executionContext) _Application_apis(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*APIDefinition)
+	res := resTmp.(*APIDefinitionPage)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAPIDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPIDefinition(ctx, field.Selections, res)
+	return ec.marshalNAPIDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPIDefinitionPage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_eventAPIs(ctx context.Context, field graphql.CollectedField, obj *Application) graphql.Marshaler {
@@ -3238,10 +3603,10 @@ func (ec *executionContext) _Application_eventAPIs(ctx context.Context, field gr
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*EventAPIDefinition)
+	res := resTmp.(*EventAPIDefinitionPage)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNEventAPIDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐEventAPIDefinition(ctx, field.Selections, res)
+	return ec.marshalNEventAPIDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐEventAPIDefinitionPage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_documents(ctx context.Context, field graphql.CollectedField, obj *Application) graphql.Marshaler {
@@ -3269,6 +3634,87 @@ func (ec *executionContext) _Application_documents(ctx context.Context, field gr
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNDocument2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐDocument(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ApplicationPage_data(ctx context.Context, field graphql.CollectedField, obj *ApplicationPage) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "ApplicationPage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Data, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*Application)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNApplication2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplication(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ApplicationPage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ApplicationPage) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "ApplicationPage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PageInfo)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ApplicationPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *ApplicationPage) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "ApplicationPage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ApplicationStatus_condition(ctx context.Context, field graphql.CollectedField, obj *ApplicationStatus) graphql.Marshaler {
@@ -3916,6 +4362,87 @@ func (ec *executionContext) _EventAPIDefinition_version(ctx context.Context, fie
 	return ec.marshalOVersion2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐVersion(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _EventAPIDefinitionPage_data(ctx context.Context, field graphql.CollectedField, obj *EventAPIDefinitionPage) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "EventAPIDefinitionPage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Data, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*EventAPIDefinition)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNEventAPIDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐEventAPIDefinition(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EventAPIDefinitionPage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *EventAPIDefinitionPage) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "EventAPIDefinitionPage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PageInfo)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EventAPIDefinitionPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *EventAPIDefinitionPage) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "EventAPIDefinitionPage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _EventSpec_data(ctx context.Context, field graphql.CollectedField, obj *EventSpec) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -4325,6 +4852,87 @@ func (ec *executionContext) _HealthCheck_timestamp(ctx context.Context, field gr
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _HealthCheckPage_data(ctx context.Context, field graphql.CollectedField, obj *HealthCheckPage) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "HealthCheckPage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Data, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*HealthCheck)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNHealthCheck2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐHealthCheck(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _HealthCheckPage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *HealthCheckPage) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "HealthCheckPage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PageInfo)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _HealthCheckPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *HealthCheckPage) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "HealthCheckPage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_createApplication(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -5293,6 +5901,84 @@ func (ec *executionContext) _OAuthCredentialData_url(ctx context.Context, field 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field graphql.CollectedField, obj *PageInfo) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "PageInfo",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartCursor, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graphql.CollectedField, obj *PageInfo) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "PageInfo",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EndCursor, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *PageInfo) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "PageInfo",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HasNextPage, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_applications(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -5313,7 +5999,7 @@ func (ec *executionContext) _Query_applications(ctx context.Context, field graph
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Applications(rctx, args["filter"].([]*LabelFilter))
+		return ec.resolvers.Query().Applications(rctx, args["filter"].([]*LabelFilter), args["first"].(*int), args["after"].(*string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -5321,10 +6007,10 @@ func (ec *executionContext) _Query_applications(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*Application)
+	res := resTmp.(*ApplicationPage)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNApplication2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplication(ctx, field.Selections, res)
+	return ec.marshalNApplicationPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplicationPage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_application(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -5378,7 +6064,7 @@ func (ec *executionContext) _Query_runtimes(ctx context.Context, field graphql.C
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Runtimes(rctx, args["filter"].([]*LabelFilter))
+		return ec.resolvers.Query().Runtimes(rctx, args["filter"].([]*LabelFilter), args["first"].(*int), args["after"].(*string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -5386,10 +6072,10 @@ func (ec *executionContext) _Query_runtimes(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*Runtime)
+	res := resTmp.(*RuntimePage)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNRuntime2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntime(ctx, field.Selections, res)
+	return ec.marshalNRuntimePage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimePage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_runtime(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -5443,7 +6129,7 @@ func (ec *executionContext) _Query_healthChecks(ctx context.Context, field graph
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().HealthChecks(rctx, args["types"].([]HealthCheckType), args["origin"].(*string))
+		return ec.resolvers.Query().HealthChecks(rctx, args["types"].([]HealthCheckType), args["origin"].(*string), args["first"].(*int), args["after"].(*string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -5451,10 +6137,10 @@ func (ec *executionContext) _Query_healthChecks(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*HealthCheck)
+	res := resTmp.(*HealthCheckPage)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNHealthCheck2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐHealthCheck(ctx, field.Selections, res)
+	return ec.marshalNHealthCheckPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐHealthCheckPage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -5788,6 +6474,87 @@ func (ec *executionContext) _RuntimeAuth_auth(ctx context.Context, field graphql
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAuth(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RuntimePage_data(ctx context.Context, field graphql.CollectedField, obj *RuntimePage) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "RuntimePage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Data, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*Runtime)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNRuntime2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RuntimePage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *RuntimePage) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "RuntimePage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PageInfo)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RuntimePage_totalCount(ctx context.Context, field graphql.CollectedField, obj *RuntimePage) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "RuntimePage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimeStatus_condition(ctx context.Context, field graphql.CollectedField, obj *RuntimeStatus) graphql.Marshaler {
@@ -7381,6 +8148,35 @@ func (ec *executionContext) _CredentialData(ctx context.Context, sel ast.Selecti
 	}
 }
 
+func (ec *executionContext) _Pageable(ctx context.Context, sel ast.SelectionSet, obj *Pageable) graphql.Marshaler {
+	switch obj := (*obj).(type) {
+	case nil:
+		return graphql.Null
+	case ApplicationPage:
+		return ec._ApplicationPage(ctx, sel, &obj)
+	case *ApplicationPage:
+		return ec._ApplicationPage(ctx, sel, obj)
+	case RuntimePage:
+		return ec._RuntimePage(ctx, sel, &obj)
+	case *RuntimePage:
+		return ec._RuntimePage(ctx, sel, obj)
+	case HealthCheckPage:
+		return ec._HealthCheckPage(ctx, sel, &obj)
+	case *HealthCheckPage:
+		return ec._HealthCheckPage(ctx, sel, obj)
+	case APIDefinitionPage:
+		return ec._APIDefinitionPage(ctx, sel, &obj)
+	case *APIDefinitionPage:
+		return ec._APIDefinitionPage(ctx, sel, obj)
+	case EventAPIDefinitionPage:
+		return ec._EventAPIDefinitionPage(ctx, sel, &obj)
+	case *EventAPIDefinitionPage:
+		return ec._EventAPIDefinitionPage(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
@@ -7421,6 +8217,43 @@ func (ec *executionContext) _APIDefinition(ctx context.Context, sel ast.Selectio
 			out.Values[i] = ec._APIDefinition_defaultAuth(ctx, field, obj)
 		case "version":
 			out.Values[i] = ec._APIDefinition_version(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var aPIDefinitionPageImplementors = []string{"APIDefinitionPage", "Pageable"}
+
+func (ec *executionContext) _APIDefinitionPage(ctx context.Context, sel ast.SelectionSet, obj *APIDefinitionPage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, aPIDefinitionPageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("APIDefinitionPage")
+		case "data":
+			out.Values[i] = ec._APIDefinitionPage_data(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pageInfo":
+			out.Values[i] = ec._APIDefinitionPage_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._APIDefinitionPage_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7527,6 +8360,43 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			}
 		case "documents":
 			out.Values[i] = ec._Application_documents(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var applicationPageImplementors = []string{"ApplicationPage", "Pageable"}
+
+func (ec *executionContext) _ApplicationPage(ctx context.Context, sel ast.SelectionSet, obj *ApplicationPage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, applicationPageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ApplicationPage")
+		case "data":
+			out.Values[i] = ec._ApplicationPage_data(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pageInfo":
+			out.Values[i] = ec._ApplicationPage_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._ApplicationPage_totalCount(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -7812,6 +8682,43 @@ func (ec *executionContext) _EventAPIDefinition(ctx context.Context, sel ast.Sel
 	return out
 }
 
+var eventAPIDefinitionPageImplementors = []string{"EventAPIDefinitionPage", "Pageable"}
+
+func (ec *executionContext) _EventAPIDefinitionPage(ctx context.Context, sel ast.SelectionSet, obj *EventAPIDefinitionPage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, eventAPIDefinitionPageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EventAPIDefinitionPage")
+		case "data":
+			out.Values[i] = ec._EventAPIDefinitionPage_data(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pageInfo":
+			out.Values[i] = ec._EventAPIDefinitionPage_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._EventAPIDefinitionPage_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var eventSpecImplementors = []string{"EventSpec"}
 
 func (ec *executionContext) _EventSpec(ctx context.Context, sel ast.SelectionSet, obj *EventSpec) graphql.Marshaler {
@@ -7945,6 +8852,43 @@ func (ec *executionContext) _HealthCheck(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec._HealthCheck_message(ctx, field, obj)
 		case "timestamp":
 			out.Values[i] = ec._HealthCheck_timestamp(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var healthCheckPageImplementors = []string{"HealthCheckPage", "Pageable"}
+
+func (ec *executionContext) _HealthCheckPage(ctx context.Context, sel ast.SelectionSet, obj *HealthCheckPage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, healthCheckPageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("HealthCheckPage")
+		case "data":
+			out.Values[i] = ec._HealthCheckPage_data(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pageInfo":
+			out.Values[i] = ec._HealthCheckPage_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._HealthCheckPage_totalCount(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -8110,6 +9054,40 @@ func (ec *executionContext) _OAuthCredentialData(ctx context.Context, sel ast.Se
 			}
 		case "url":
 			out.Values[i] = ec._OAuthCredentialData_url(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var pageInfoImplementors = []string{"PageInfo"}
+
+func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet, obj *PageInfo) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, pageInfoImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PageInfo")
+		case "startCursor":
+			out.Values[i] = ec._PageInfo_startCursor(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "endCursor":
+			out.Values[i] = ec._PageInfo_endCursor(ctx, field, obj)
+		case "hasNextPage":
+			out.Values[i] = ec._PageInfo_hasNextPage(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -8295,6 +9273,43 @@ func (ec *executionContext) _RuntimeAuth(ctx context.Context, sel ast.SelectionS
 			}
 		case "auth":
 			out.Values[i] = ec._RuntimeAuth_auth(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var runtimePageImplementors = []string{"RuntimePage", "Pageable"}
+
+func (ec *executionContext) _RuntimePage(ctx context.Context, sel ast.SelectionSet, obj *RuntimePage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, runtimePageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RuntimePage")
+		case "data":
+			out.Values[i] = ec._RuntimePage_data(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pageInfo":
+			out.Values[i] = ec._RuntimePage_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._RuntimePage_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8679,6 +9694,20 @@ func (ec *executionContext) unmarshalNAPIDefinitionInput2ᚖgithubᚗcomᚋkyma�
 	return &res, err
 }
 
+func (ec *executionContext) marshalNAPIDefinitionPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPIDefinitionPage(ctx context.Context, sel ast.SelectionSet, v APIDefinitionPage) graphql.Marshaler {
+	return ec._APIDefinitionPage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAPIDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPIDefinitionPage(ctx context.Context, sel ast.SelectionSet, v *APIDefinitionPage) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._APIDefinitionPage(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNAPISpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAPISpecType(ctx context.Context, v interface{}) (APISpecType, error) {
 	var res APISpecType
 	return res, res.UnmarshalGQL(v)
@@ -8750,6 +9779,20 @@ func (ec *executionContext) marshalNApplication2ᚖgithubᚗcomᚋkymaᚑincubat
 
 func (ec *executionContext) unmarshalNApplicationInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplicationInput(ctx context.Context, v interface{}) (ApplicationInput, error) {
 	return ec.unmarshalInputApplicationInput(ctx, v)
+}
+
+func (ec *executionContext) marshalNApplicationPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplicationPage(ctx context.Context, sel ast.SelectionSet, v ApplicationPage) graphql.Marshaler {
+	return ec._ApplicationPage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNApplicationPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplicationPage(ctx context.Context, sel ast.SelectionSet, v *ApplicationPage) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ApplicationPage(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNApplicationStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐApplicationStatus(ctx context.Context, sel ast.SelectionSet, v ApplicationStatus) graphql.Marshaler {
@@ -9019,6 +10062,20 @@ func (ec *executionContext) marshalNEventAPIDefinition2ᚖgithubᚗcomᚋkymaᚑ
 	return ec._EventAPIDefinition(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNEventAPIDefinitionPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐEventAPIDefinitionPage(ctx context.Context, sel ast.SelectionSet, v EventAPIDefinitionPage) graphql.Marshaler {
+	return ec._EventAPIDefinitionPage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNEventAPIDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐEventAPIDefinitionPage(ctx context.Context, sel ast.SelectionSet, v *EventAPIDefinitionPage) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._EventAPIDefinitionPage(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNEventDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐEventDefinitionInput(ctx context.Context, v interface{}) (EventDefinitionInput, error) {
 	return ec.unmarshalInputEventDefinitionInput(ctx, v)
 }
@@ -9149,6 +10206,20 @@ func (ec *executionContext) marshalNHealthCheck2ᚖgithubᚗcomᚋkymaᚑincubat
 	return ec._HealthCheck(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNHealthCheckPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐHealthCheckPage(ctx context.Context, sel ast.SelectionSet, v HealthCheckPage) graphql.Marshaler {
+	return ec._HealthCheckPage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNHealthCheckPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐHealthCheckPage(ctx context.Context, sel ast.SelectionSet, v *HealthCheckPage) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._HealthCheckPage(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNHealthCheckStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐHealthCheckStatusCondition(ctx context.Context, v interface{}) (HealthCheckStatusCondition, error) {
 	var res HealthCheckStatusCondition
 	return res, res.UnmarshalGQL(v)
@@ -9181,6 +10252,20 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	return res
 }
 
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+	return graphql.UnmarshalInt(v)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) unmarshalNLabelFilter2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐLabelFilter(ctx context.Context, v interface{}) (LabelFilter, error) {
 	return ec.unmarshalInputLabelFilter(ctx, v)
 }
@@ -9200,6 +10285,20 @@ func (ec *executionContext) unmarshalNLabels2githubᚗcomᚋkymaᚑincubatorᚋc
 
 func (ec *executionContext) marshalNLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐLabels(ctx context.Context, sel ast.SelectionSet, v Labels) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNPageInfo2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v PageInfo) graphql.Marshaler {
+	return ec._PageInfo(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *PageInfo) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._PageInfo(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNRuntime2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntime(ctx context.Context, sel ast.SelectionSet, v Runtime) graphql.Marshaler {
@@ -9306,6 +10405,20 @@ func (ec *executionContext) marshalNRuntimeAuth2ᚖgithubᚗcomᚋkymaᚑincubat
 
 func (ec *executionContext) unmarshalNRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimeInput(ctx context.Context, v interface{}) (RuntimeInput, error) {
 	return ec.unmarshalInputRuntimeInput(ctx, v)
+}
+
+func (ec *executionContext) marshalNRuntimePage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimePage(ctx context.Context, sel ast.SelectionSet, v RuntimePage) graphql.Marshaler {
+	return ec._RuntimePage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNRuntimePage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimePage(ctx context.Context, sel ast.SelectionSet, v *RuntimePage) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._RuntimePage(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNRuntimeStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimeStatus(ctx context.Context, sel ast.SelectionSet, v RuntimeStatus) graphql.Marshaler {
@@ -10124,6 +11237,29 @@ func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.Se
 		return graphql.Null
 	}
 	return ec.marshalOID2string(ctx, sel, *v)
+}
+
+func (ec *executionContext) unmarshalOInt2int(ctx context.Context, v interface{}) (int, error) {
+	return graphql.UnmarshalInt(v)
+}
+
+func (ec *executionContext) marshalOInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	return graphql.MarshalInt(v)
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOInt2int(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOInt2int(ctx, sel, *v)
 }
 
 func (ec *executionContext) unmarshalOLabelFilter2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐLabelFilter(ctx context.Context, v interface{}) ([]*LabelFilter, error) {

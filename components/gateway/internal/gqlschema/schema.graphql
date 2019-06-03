@@ -52,22 +52,14 @@ type Application {
     webhooks: [ApplicationWebhook!]!
     healthCheckURL: String
     """ group allows to find different versions of the same API """
-    apis(group: String): [APIDefinition!]!
+    apis(group: String, first: Int = 100, after: String): APIDefinitionPage!
     """ group allows to find different versions of the same event API """
-    eventAPIs(group: String): [EventAPIDefinition!]!
+    eventAPIs(group: String, first: Int = 100, after: String): EventAPIDefinitionPage!
     documents: [Document!]!
 }
-
 interface Pageable {
     pageInfo: PageInfo!
     totalCount: Int!
-}
-
-type ApplicationPage implements Pageable {
-    data: [Application!]!
-    pageInfo: PageInfo!
-    totalCount: Int!
-
 }
 
 type PageInfo {
@@ -75,6 +67,37 @@ type PageInfo {
     endCursor: String
     hasNextPage: Boolean!
 }
+
+type ApplicationPage implements Pageable {
+    data: [Application!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+
+type RuntimePage implements Pageable {
+    data: [Runtime!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+
+type HealthCheckPage implements Pageable {
+    data: [HealthCheck!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+
+type APIDefinitionPage implements Pageable {
+    data: [APIDefinition!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+type EventAPIDefinitionPage implements Pageable {
+    data: [EventAPIDefinition!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+
+
 
 type ApplicationStatus {
     condition: ApplicationStatusCondition!
@@ -120,7 +143,7 @@ type APIDefinition {
     """"If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified."""
     auth(runtimeID: ID!): RuntimeAuth
     """Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified."""
-    auths: [RuntimeAuth!]!
+    auths: [RuntimeAuth!]! #TODO
     """If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly."""
     defaultAuth: Auth
     version: Version
@@ -411,13 +434,13 @@ input LabelFilter {
 
 
 type Query {
-    applications(filter: [LabelFilter!], page: Page):  ApplicationPage!
+    applications(filter: [LabelFilter!], first: Int = 100, after: String):  ApplicationPage!
     application(id: ID!): Application
 
-    runtimes(filter: [LabelFilter!], page: Page): [Runtime!]!
+    runtimes(filter: [LabelFilter!], first: Int = 100, after: String): RuntimePage!
     runtime(id: ID!): Runtime
 
-    healthChecks(types: [HealthCheckType!], origin: ID, page: Page): [HealthCheck!]!
+    healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: String): HealthCheckPage!
 }
 
 type Mutation {
