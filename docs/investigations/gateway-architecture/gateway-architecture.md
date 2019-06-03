@@ -135,3 +135,9 @@ Separate HTTP endpoints | ✓<br>(per endpoint) | ✓ | ✓ | ✗ | ✗ | ✓ | 
 ## Conclusion
 
 Taking into account all the pros and cons of mentioned solutions I believe that two options would work best in our case: **Apollo Server** and **Separate HTTP endpoints**. While Apollo Server is very handy to use and offers a lot of out of the box functionality it would introduce unnecessary change to our technology stack and performance hit. Because of that, I am personally leaning towards the more straightforward solution - **Separate HTTP endpoints** that seems to meet all our key requirements and doesn't seem to require a lot of work to implement.
+
+## Decision
+
+The decision made by the team is that we will implement third option (separate HTTP endpoints) but for now we will expose only one endpoint (`/graphql`) that will point at our `Director` service, hosting our current API. This way in the future we'll still be able to smoothly transition to a more complex solution.
+
+The first solution was rejected due to high maintenance effort and performance issues. We decided to reject Apollo Server because we didn't want to introduce Node.js to our technology stack. The team was unsure how difficult implementing custom stitching solution in Go would be, so we rejected that option for now as well.
