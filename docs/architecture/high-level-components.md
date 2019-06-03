@@ -1,6 +1,8 @@
-# Overview
+# High Level Components
 
-This document describes communication between Management Plane, Application and Runtimes. 
+## Overview
+
+This document describes communication between Management Plane, Applications and Runtimes. 
 
 ## Components
 Management Plane is a central place which stores configuration about Applications and Runtimes and is responsible for propagating that information to Applications and Runtimes. 
