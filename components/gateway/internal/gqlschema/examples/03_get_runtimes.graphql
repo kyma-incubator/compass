@@ -4,15 +4,17 @@ query {
             { label: "group", values: ["production", "experimental"], operator: ANY }
         ]
     ) {
-        id
-        name
-        description
-        tenant
-        labels
-        annotations
-        status {
-            condition
-            timestamp
+        data {
+            id
+            name
+            description
+            tenant
+            labels
+            annotations
+            status {
+                condition
+                timestamp
+            }
         }
     }
 }

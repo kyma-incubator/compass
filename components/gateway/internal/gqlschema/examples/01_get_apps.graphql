@@ -4,7 +4,8 @@ query {
             { label: "group", values: ["production", "experimental"], operator: ANY },
             {label: "region", values:["us"]}
         ]
-    ) {
+    ) { data
+    {
         id
         name
         tenant
@@ -36,44 +37,14 @@ query {
         }
         healthCheckURL
         apis {
-            id
-            targetURL
-            auths {
-                runtimeID
-                auth {
-                    additionalHeaders
-                    additionalQueryParams
-                    credential {
-                        __typename
-                        ... on BasicCredentialData {
-                            username
-                            password
-                        }
-                        ... on OAuthCredentialData {
-                            clientId
-                            clientSecret
-                            url
-                        }
-                    }
-                }
-            }
-            version {
-                value
-                deprecated
-                deprecatedSince
-                forRemoval
-            }
-            group
-        }
-
-        eventAPIs {
-            id
-            spec {
-                type
-                data
-                fetchRequest {
-                    url
+            data {
+                id
+                targetURL
+                auths {
+                    runtimeID
                     auth {
+                        additionalHeaders
+                        additionalQueryParams
                         credential {
                             __typename
                             ... on BasicCredentialData {
@@ -88,10 +59,45 @@ query {
                         }
                     }
                 }
-            }
-            version {
-                value
+                version {
+                    value
+                    deprecated
+                    deprecatedSince
+                    forRemoval
+                }
+                group
+            }}
+
+        eventAPIs {
+            data {
+                id
+                spec {
+                    type
+                    data
+                    fetchRequest {
+                        url
+                        auth {
+                            credential {
+                                __typename
+                                ... on BasicCredentialData {
+                                    username
+                                    password
+                                }
+                                ... on OAuthCredentialData {
+                                    clientId
+                                    clientSecret
+                                    url
+                                }
+                            }
+                        }
+                    }
+                }
+                version {
+                    value
+                }
             }
         }
     }
+    }
+
 }
