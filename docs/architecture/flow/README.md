@@ -14,4 +14,4 @@ To create a new Runtime, Administrator sends proper request to the Management Pl
 
 When the Management Plane receives notification that a Runtime is ready, it passes the notification for every Application in group assigned to the Runtime via Application webhook. In the meantime, Runtime gets configuration details from Management Plane, including application list with theirs credentials, and applies the configuration asynchronously.
 
-![](./assets/runtime-creation-flow.svg)
+![](./assets/runtime-creation-flow.svg)g
