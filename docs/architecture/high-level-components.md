@@ -24,6 +24,6 @@ If you add a Group to the Application or Runtime assigned to the `default` group
 
 ![](./assets/grouping.svg)
 
-Application or Runtime can be assigned to many groups. On the diagram above, you can see that Application 2 belongs to 2 Groups: `production` and `stage`.
-Thanks to that, its API or Events can be consumed by both Runtime 1 and Runtime 2. Communication between components that do not belong to the same group is forbidden, 
-in the example above, `App3` cannot communicate with `Runtime1`.
+Application or Runtime can be assigned to many groups. On the diagram above, you can see that `Application 2` belongs to 2 Groups: `production` and `stage`.
+Thanks to that, its API or Events can be consumed by both `Runtime 1` and `Runtime 2`. Communication between components that do not belong to the same group is forbidden, 
+in the example above, `Application 3` cannot communicate with `Runtime 1`.
