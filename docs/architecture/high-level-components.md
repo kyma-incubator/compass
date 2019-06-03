@@ -12,8 +12,8 @@ Management Plane plays crucial role in establishing trusted connection between A
 
 An administrator adds Runtimes, Applications and configures them through Management Plane GraphQL API. 
 To keep Runtimes in-sync with the configuration, an agent installed on a Runtime is responsible for fetching actual configuration. 
-An Agent sends information about Runtime healthchecks to Management Plane. 
-In case an Application has configured optional Webhooks, Management Plane notify an Application about any events that concern given Application.
+An Agent sends information about Runtime health checks to Management Plane. 
+In case an Application has configured optional Webhooks, Management Plane notifies an Application about any events that concern given Application.
 Management Plane does not participate in any business flow. After establishing a trusted connection between Application
 and Runtime, they communicate directly, with omitting Management Plane. 
 
