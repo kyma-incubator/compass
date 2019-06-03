@@ -71,9 +71,9 @@ type ApplicationPage implements Pageable {
 }
 
 type PageInfo {
-    startCursor: String
+    startCursor: String!
     endCursor: String
-    hasNextPage: Boolean
+    hasNextPage: Boolean!
 }
 
 type ApplicationStatus {
@@ -409,14 +409,15 @@ input LabelFilter {
     operator: FilterOperator = ALL
 }
 
+
 type Query {
-    applications(filter: [LabelFilter!], first: Int = 100, after: String):  ApplicationPage!
+    applications(filter: [LabelFilter!], page: Page):  ApplicationPage!
     application(id: ID!): Application
 
-    runtimes(filter: [LabelFilter!]): [Runtime!]!
+    runtimes(filter: [LabelFilter!], page: Page): [Runtime!]!
     runtime(id: ID!): Runtime
 
-    healthChecks(types: [HealthCheckType!], origin: ID): [HealthCheck!]!
+    healthChecks(types: [HealthCheckType!], origin: ID, page: Page): [HealthCheck!]!
 }
 
 type Mutation {
