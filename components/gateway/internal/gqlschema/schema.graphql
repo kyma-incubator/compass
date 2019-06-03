@@ -258,16 +258,12 @@ type BasicCredentialData {
 }
 
 type CredentialRequestAuth {
-    type: CredentialRequestAuthType!
     csrf: CSRFTokenCredentialRequestAuth
 }
 
-enum CredentialRequestAuthType {
-    CSRF_TOKEN
-}
-
 type CSRFTokenCredentialRequestAuth {
-    token: String!
+    tokenEndpointURL: String!
+    auth: Auth
 }
 
 # HealthCheck
@@ -396,12 +392,12 @@ input AuthInput {
 }
 
 input CredentialRequestAuthInput {
-    type: CredentialRequestAuthType!
     csrf: CSRFTokenCredentialRequestAuthInput
 }
 
 input CSRFTokenCredentialRequestAuthInput {
-    token: String!
+    tokenEndpointURL: String!
+    auth: AuthInput
 }
 
 input CredentialDataInput {

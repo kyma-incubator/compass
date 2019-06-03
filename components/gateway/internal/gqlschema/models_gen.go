@@ -144,11 +144,13 @@ type BasicCredentialDataInput struct {
 }
 
 type CSRFTokenCredentialRequestAuth struct {
-	Token string `json:"token"`
+	TokenEndpointURL string `json:"tokenEndpointURL"`
+	Auth             *Auth  `json:"auth"`
 }
 
 type CSRFTokenCredentialRequestAuthInput struct {
-	Token string `json:"token"`
+	TokenEndpointURL string     `json:"tokenEndpointURL"`
+	Auth             *AuthInput `json:"auth"`
 }
 
 type CredentialDataInput struct {
@@ -157,12 +159,10 @@ type CredentialDataInput struct {
 }
 
 type CredentialRequestAuth struct {
-	Type CredentialRequestAuthType       `json:"type"`
 	Csrf *CSRFTokenCredentialRequestAuth `json:"csrf"`
 }
 
 type CredentialRequestAuthInput struct {
-	Type CredentialRequestAuthType            `json:"type"`
 	Csrf *CSRFTokenCredentialRequestAuthInput `json:"csrf"`
 }
 
@@ -460,45 +460,6 @@ func (e *ApplicationWebhookType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e ApplicationWebhookType) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type CredentialRequestAuthType string
-
-const (
-	CredentialRequestAuthTypeCsrfToken CredentialRequestAuthType = "CSRF_TOKEN"
-)
-
-var AllCredentialRequestAuthType = []CredentialRequestAuthType{
-	CredentialRequestAuthTypeCsrfToken,
-}
-
-func (e CredentialRequestAuthType) IsValid() bool {
-	switch e {
-	case CredentialRequestAuthTypeCsrfToken:
-		return true
-	}
-	return false
-}
-
-func (e CredentialRequestAuthType) String() string {
-	return string(e)
-}
-
-func (e *CredentialRequestAuthType) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = CredentialRequestAuthType(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid CredentialRequestAuthType", str)
-	}
-	return nil
-}
-
-func (e CredentialRequestAuthType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
