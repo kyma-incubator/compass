@@ -6,6 +6,12 @@ This document presents the deep dive into Compass installation and testing.
 
 ## Installation
 
+To run the Compass with Kyma locally, run the following script:
+
+```bash
+./installation/scripts/run.sh
+```
+
 The `run.sh` scripts do the following:
 1. Provision local Kubernetes cluster on Minikube adjusted for Kyma installation via `Kyma CLI`.
 2. Install Kyma 1.1.0 on the cluster with hardened list of components provided in `./installation/resources/installer-cr.yaml` file.  
