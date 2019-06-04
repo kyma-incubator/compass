@@ -6,7 +6,7 @@ This document contains all terminology used across compass documentation.
 ## Management Plane 
 Abbr.: *MP*\
 \
-Includes *Compass*, *Runtime Provisioners*, *Service Mesh* and *UI* components.
+Includes *Compass*, *Runtime Provisioners* and *Cockpit* components.
 
 The multi-tenant system which allows to:
 - create Applications
@@ -43,15 +43,10 @@ Abbr.: *Provisioner*\
 \
 Runtime Provisioner system manages *Runtimes*.
 
-### MP UI
-Abbr.: *UI*\
+### MP Cockpit
+Abbr.: *Cockpit*\
 \
-UI component calls *Management Plane* APIs.
-
-### MP Service Mesh
-Abbr.: *Service Mesh*\
-\
-Service Mesh component, among other things, uses *Compass* and *Runtime Provisioner* APIs.
+Cockpit component calls *Management Plane* APIs (in particular *Compass* and *Runtime Provisioner* APIs).
 
 ### MP Tenant
 Abbr.: *Tenant*\

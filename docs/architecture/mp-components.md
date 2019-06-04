@@ -6,7 +6,7 @@ This document describes the [Management Plane's](/docs/terminology.md#Management
 
 ## Components
 
-Management Plane consists of [Compass](/docs/terminology.md#MP-Compass), [Runtime Provisioners](/docs/terminology.md#MP-Runtime-Provisioner), [Service Mesh](/docs/terminology.md#MP-Service-Mesh) and [UI](/docs/terminology.md#MP-UI) components. [Applications](/docs/terminology.md#Application) and [Agents](/docs/terminology.md#Runtime-Agent) can communicate with the [Gateway](/docs/terminology.md#MP-Gateway) component or [Connector](/docs/terminology.md#MP-Connector) component. [Admin](/docs/terminology.md#Administrator) uses UI to configure Management Plane.
+Management Plane consists of [Compass](/docs/terminology.md#MP-Compass), [Runtime Provisioners](/docs/terminology.md#MP-Runtime-Provisioner) and [Cockpit](/docs/terminology.md#MP-Cockpit) components. [Applications](/docs/terminology.md#Application) and [Agents](/docs/terminology.md#Runtime-Agent) can communicate with the [Gateway](/docs/terminology.md#MP-Gateway) component or [Connector](/docs/terminology.md#MP-Connector) component. [Administrator](/docs/terminology.md#Administrator) uses Cockpit to configure Management Plane.
 
 ![Management Plane Components](./assets/mp-components.svg)
 
@@ -26,13 +26,9 @@ Gateway component serves as the main API Gateway that extracts [Tenant](/docs/te
 
 Director component exposes GraphQL API that can be accessed through the Gateway component. It contains all business logic required to handle Applications and Runtimes registration as well as health checks. It also requests Application [Webhook API](/docs/terminology.md#Application-Webhook-API) for credentials. This component has access to storage.
 
-### UI
+### Cockpit
 
-UI component calls Management Plane APIs. This component is interchangeable.
-
-### Service Mesh
-
-Service Mesh component serves as an infrastructure layer allowing communication between services. This component is interchangeable.
+Cockpit component calls Management Plane APIs (in particular Compass and Runtime Provisioner APIs). This component is interchangeable.
 
 ### Runtime Provisioner
 
