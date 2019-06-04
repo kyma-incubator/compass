@@ -38,13 +38,15 @@ The following section describes configuration update flows for Application and R
 
 Application can choose between two options of updating configuration: periodically fetching configuration or exposing [Application Webhook API](./terminology.md#application-webhook-api) for configuration update notifications.
 
-In the first case, Application periodically pulls configuration details for connected Runtimes, such as `eventURL`:
+In the first case, Application periodically pulls configuration details for connected Runtimes, such as `eventURL`.
 
 ![](./assets/app-configuration-update.svg)
 
-In the second case, if any connected Runtime changes, Application is notified via Application Webhook API that new configuration details are available. The following diagram shows the interaction between Runtime Agent, Director and Connector, when a new Runtime is provisioned and configured successfully:
+In the second case, if any connected Runtime changes, Application is notified via Application Webhook API that new configuration details are available. The following diagram shows the interaction between Runtime Agent, Director and Application, when a new Runtime is provisioned and configured successfully:
 
 ![](./assets/runtime-notification.svg)
+
+When connected Runtime is runtime, Application generates API credentials for it and sends them to Director. To learn more about API Credentials flow, see the [API Credentials flow diagram](./api-credentials-flow.md).
 
 ### Runtime configuration update
 
