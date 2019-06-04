@@ -24,7 +24,7 @@ Gateway component serves as the main API Gateway that extracts token from incomi
 
 #### Director
 
-Director component exposes GraphQL API that can be accessed through the Gateway component. It contains all business logic required to handle Applications and Runtimes registration. It also requests Application Webhook API for credentials. This component has access to external to storage.
+Director component exposes GraphQL API that can be accessed through the Gateway component. It contains all business logic required to handle Applications and Runtimes registration as well as health checks. It also requests Application Webhook API for credentials. This component has access to external to storage.
 
 ### UI
 
