@@ -18,11 +18,9 @@ To learn about implementation details of the pairing process, see the [Applicati
 
 ### API registration phase
 
-API registration phase is a process of registering new API and Event API definitions.
+API registration phase is a process of registering new API and Event API definitions. Application requests API or Event API registration and receives operation result.
 
-TODO
-
-![](./assets/app-registration.svg)
+![](./assets/api-registration.svg)
 
 
 ## Runtime creation
@@ -35,6 +33,10 @@ To create a new Runtime, Administrator sends proper request to the Runtime Provi
 
 TODO
 
+
+If Runtimes assigned to a group of applications has been modified, Application is notified via webhook that new configuration details are available.
+
+Runtime gets configuration details from Management Plane, including application list with theirs credentials, and applies the configuration asynchronously. Runtime checks periodically for new configuration details and applies them, if they changes.
 
 -----
 
