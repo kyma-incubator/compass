@@ -12,6 +12,10 @@ type CredentialData interface {
 	IsCredentialData()
 }
 
+//  Every query that implements pagination returns object that implements Pageable interface.
+// To specify page details, query specify two parameters: `first` and `after`.
+// `first` specify page size, `after` is a cursor for the next page. When requesting first page, set `after` to empty value.
+// For requesting next page, set `after` to `pageInfo.endCursor` returned from previous query.
 type Pageable interface {
 	IsPageable()
 }
