@@ -1,0 +1,46 @@
+# Certificate
+type Certificate {
+    crt: String!
+    caCrt: String!
+    clientCrt: String!
+}
+
+# MPInfo
+type MPInfo {
+    directorURL: String! # eg.: "https://director.cluster.kyma.cx/graphql"
+}
+
+# CSR
+type CSR {
+    subject: String! # eg.: "OU=Test,O=Test,L=Blacksburg,ST=Virginia,C=US,CN={ID}"
+    keyAlgorithm: String! # eg.: rsa2048
+}
+
+# CSRInfo
+type CSRInfo {
+    csrURL: String! # eg.: "https://connector-service.test.cluster.kyma.cx/v1/runtimes/certificates?token=1edfc34g"
+    api: MPInfo!
+    csr: CSR!
+}
+
+type Mutation {
+    # Applications
+    getApplicationToken(appID: ID!) # internal?
+
+    # Rutimes
+    getRuntimeToken(runtimeID: ID!) # internal?
+
+    # Client-Certificates
+    
+    # Retuns subject that should be placed in the signing request
+    getCSRInfo(token: String): CSRInfo
+    
+    # Signs CSR, currently we have two very similar endpoints. One for signing new CSR
+    # protected by one-time token and second for certificates renewals protected by 
+    # client-certificate. We may consider chaning the implementation to have only one
+    # mutation that will be aware of those two protection mechanisms
+    signCSR(csr: String!, token: String): Certificate
+
+    # Revokes certificate with which the request was issued
+    revokeCertificate()
+}
