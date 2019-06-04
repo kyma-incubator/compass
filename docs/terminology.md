@@ -6,7 +6,7 @@ This document contains all terminology used across compass documentation.
 ## Management Plane 
 Abbr.: *MP*\
 \
-Includes *Compass*, *Runtime Provisioners*, *Service Mesh* and *UI* components.
+Includes *Compass*, *Runtime Provisioners* and *Cockpit* components.
 
 The multi-tenant system which allows to:
 - create Applications
@@ -31,7 +31,7 @@ Connector component establishes trust among Applications, Management Plane and R
 ### MP Gateway
 Abbr.: *Gateway*\
 \
-Gateway component serves as the main API Gateway that extracts token from incoming requests and proxies the requests to the Director component.
+Gateway component serves as the main API Gateway that extracts *Tenant* from incoming requests and proxies the requests to the Director component.
 
 ### MP Director
 Abbr.: *Director*\
@@ -43,15 +43,10 @@ Abbr.: *Provisioner*\
 \
 Runtime Provisioner system manages *Runtimes*.
 
-### MP UI
-Abbr.: *UI*\
+### MP Cockpit
+Abbr.: *Cockpit*\
 \
-UI component calls *Management Plane* APIs.
-
-### MP Service Mesh
-Abbr.: *Service Mesh*\
-\
-Service Mesh component, among other things, uses *Compass* and *Runtime Provisioner* APIs.
+Cockpit component calls *Management Plane* APIs (in particular *Compass* and *Runtime Provisioner* APIs).
 
 ### MP Tenant
 Abbr.: *Tenant*\

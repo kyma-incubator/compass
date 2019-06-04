@@ -8,6 +8,7 @@ This folder contains documents that relate to the project.
 
 Architecture:
 -   [Components - High Level Architecture](./architecture/high-level-components.md)
+-   [Components - Management Plane Components](./architecture/mp-components.md)
 -   [API Credentials Flow](./architecture/api-credentials-flows.md)
 
 Investigations:
