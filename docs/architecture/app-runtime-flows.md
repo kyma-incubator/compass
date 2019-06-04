@@ -1,10 +1,10 @@
 # Application and Runtime flows
 
-The following diagrams shows interactions between Application, Management Plane and Runtime.
+The following diagrams shows interactions between [Application](./terminology.md#application), [Management Plane](./terminology.md#management-plane) and [Runtime](./terminology.md#runtime).
 
 ## Application connection
 
-Application connection consists of two phases: Application pairing and API registration. In the process of connecting new Application, two Management Plane's components are involved: Director and Connector.
+Application connection consists of two phases: Application pairing and API registration. In the process of connecting new Application, two Management Plane's components are involved: [Director](./terminology.md#mp-director) and [Connector](./terminology.md#mp-connector).
 
 ### Application pairing phase
 
@@ -24,11 +24,11 @@ API registration phase is a process of registering new API and Event API definit
 
 ## Runtime creation
 
-To create a new Runtime, Administrator sends proper request to the Runtime Provisioner. Runtime Provisioner requests Runtime configuration from Director, and one-time token from Connector. Runtime Provisioner provisions Runtime, and then injects the configuration with one-time token. Runtime uses this token to set-up trusted connection between Management Plane and Runtime.
+To create a new Runtime, Administrator sends proper request to the [Runtime Provisioner](./terminology.md#mp-runtime-provisioner). Runtime Provisioner requests Runtime configuration from Director, and one-time token from Connector. Runtime Provisioner provisions Runtime, and then injects the configuration with one-time token. [Runtime Agent](./terminology.md#runtime-agent) uses this token to set-up trusted connection between Management Plane and Runtime Agent.
 
 ![](./assets/runtime-creation.svg)
 
-When Runtime is ready, it notifies Director about its status. When the Director receives notification that a Runtime is ready, it passes the notification for every Application in group assigned to the Runtime via Application webhook. See the [Application configuration update diagram](#application-configuration-update) for runtime ready notification example.
+When Runtime is ready, Runtime Agent notifies Director about its status. When the Director receives notification that a Runtime is ready, it passes the notification for every Application in group assigned to the Runtime via [Application Webhook API](./terminology.md#application-webhook-api). See the [Application configuration update diagram](#application-configuration-update) for Runtime ready notification example.
 
 ## Configuration change
 
@@ -40,12 +40,12 @@ Application periodically pulls configuration details for connected Runtimes, suc
 
 ![](./assets/app-configuration-update.svg)
 
-Application exposes a webhook, which is called when configuration is updated. If any connected Runtime changes, Application is notified via this webhook that new configuration details are available. The following diagram shows the interaction between Runtime Agent, Director and Connector, when a new Runtime is provisioned and configured successfully:
+If any connected Runtime changes, Application is notified via [Application Webhook API](./terminology.md#application-webhook-api) that new configuration details are available. The following diagram shows the interaction between Runtime Agent, Director and Connector, when a new Runtime is provisioned and configured successfully:
 
 ![](./assets/runtime-notification.svg)
 
 ### Runtime configuration update
 
-Runtime gets configuration details from Director, including application list with theirs credentials, and applies the configuration asynchronously. Runtime checks periodically for new configuration details and applies them, if they changes.
+Runtime gets configuration details from Director, including application list with theirs credentials, and applies the configuration asynchronously. Runtime Agent checks periodically for new configuration details and applies them, if they changes.
 
 ![](./assets/runtime-configuration-update.svg)
