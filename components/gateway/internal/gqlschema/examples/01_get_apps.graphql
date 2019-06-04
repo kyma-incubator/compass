@@ -41,25 +41,25 @@ query {
                 id
                 targetURL
                 auths {
-                    data {
-                        runtimeID
-                        auth {
-                            additionalHeaders
-                            additionalQueryParams
-                            credential {
-                                __typename
-                                ... on BasicCredentialData {
-                                    username
-                                    password
-                                }
-                                ... on OAuthCredentialData {
-                                    clientId
-                                    clientSecret
-                                    url
-                                }
+
+                    runtimeID
+                    auth {
+                        additionalHeaders
+                        additionalQueryParams
+                        credential {
+                            __typename
+                            ... on BasicCredentialData {
+                                username
+                                password
+                            }
+                            ... on OAuthCredentialData {
+                                clientId
+                                clientSecret
+                                url
                             }
                         }
                     }
+
                 }
                 version {
                     value
