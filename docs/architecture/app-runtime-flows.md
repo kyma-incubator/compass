@@ -1,4 +1,4 @@
-# Flow diagrams
+# Application and Runtime flows
 
 The following diagrams shows interactions between Application, Management Plane and Runtime.
 
