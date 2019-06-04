@@ -1,47 +1,38 @@
 # Token
 type Token {
-    url: String! # eg.: "https://connector-service.test.cluster.kyma.cx/v1/applications/info?token=1edfc34g"
     token: String! # eg.: "1edfc34g"
 }
 
-# Certificate
-type Certificate {
-    crt: String!
-    caCrt: String!
-    clientCrt: String!
+# Certificates
+type Certificates {
+    certificate: String!
+    caCertificate: String!
+    clientCertificate: String!
 }
 
-# MPInfo
-type MPInfo {
+# ManagementPlaneInfo
+type ManagementPlaneInfo {
     directorURL: String! # eg.: "https://director.cluster.kyma.cx/graphql"
 }
 
-# CSR
-type CSR {
+# CSRInfo
+type CertificateSigningRequestInfo {
+    managementPlaneInfo: ManagementPlaneInfo!
     subject: String! # eg.: "OU=Test,O=Test,L=Blacksburg,ST=Virginia,C=US,CN={ID}"
     keyAlgorithm: String! # eg.: rsa2048
-}
-
-# CSRInfo
-type CSRInfo {
-    csrURL: String! # eg.: "https://connector-service.test.cluster.kyma.cx/v1/runtimes/certificates?token=1edfc34g"
-    api: MPInfo!
-    csr: CSR!
 }
 
 type Query {
     # Client-Certificates
     
     # Retuns subject that should be placed in the signing request
-    getCSRInfo(token: String): CSRInfo!
+    getCertificateSignignRequestInfo(token: String): CertificateSigningRequestInfo!
 }
 
 type Mutation {
-    # Applications
-    getApplicationToken(appID: ID!): Token! # internal?
-
-    # Rutimes
-    getRuntimeToken(runtimeID: ID!): Token! # internal?
+    # Tokens
+    generateApplicationToken(appID: ID!): Token! # internal?
+    generateRuntimeToken(runtimeID: ID!): Token! # internal?
 
     # Client-Certificates
     
@@ -49,10 +40,10 @@ type Mutation {
     # protected by one-time token and second for certificates renewals protected by 
     # client-certificate. We may consider chaning the implementation to have only one
     # mutation that will be aware of those two protection mechanisms
-    signCSR(csr: String!, token: String): Certificate!
+    signCertificateSigningRequest(csr: String!, token: String): Certificates!
 
     # If we decide to reuse signCSR mutation then we can skip this one
-    renewCertificate(csr: String!): Certificate!
+    renewCertificate(csr: String!): Certificates!
 
     # Revokes certificate with which the request was issued
     revokeCertificate: Boolean!

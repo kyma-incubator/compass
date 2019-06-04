@@ -2,28 +2,22 @@
 
 package gqlschema
 
-type Csr struct {
-	Subject      string `json:"subject"`
-	KeyAlgorithm string `json:"keyAlgorithm"`
+type CertificateSigningRequestInfo struct {
+	ManagementPlaneInfo *ManagementPlaneInfo `json:"managementPlaneInfo"`
+	Subject             string               `json:"subject"`
+	KeyAlgorithm        string               `json:"keyAlgorithm"`
 }
 
-type CSRInfo struct {
-	CsrURL string  `json:"csrURL"`
-	API    *MPInfo `json:"api"`
-	Csr    *Csr    `json:"csr"`
+type Certificates struct {
+	Certificate       string `json:"certificate"`
+	CaCertificate     string `json:"caCertificate"`
+	ClientCertificate string `json:"clientCertificate"`
 }
 
-type Certificate struct {
-	Crt       string `json:"crt"`
-	CaCrt     string `json:"caCrt"`
-	ClientCrt string `json:"clientCrt"`
-}
-
-type MPInfo struct {
+type ManagementPlaneInfo struct {
 	DirectorURL string `json:"directorURL"`
 }
 
 type Token struct {
-	URL   string `json:"url"`
 	Token string `json:"token"`
 }
