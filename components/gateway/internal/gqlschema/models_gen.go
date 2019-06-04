@@ -25,7 +25,7 @@ type APIDefinition struct {
 	// "If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified.
 	Auth *RuntimeAuth `json:"auth"`
 	// Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified.
-	Auths *RuntimeAuthPage `json:"auths"`
+	Auths []*RuntimeAuth `json:"auths"`
 	// If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly.
 	DefaultAuth *Auth    `json:"defaultAuth"`
 	Version     *Version `json:"version"`
@@ -308,14 +308,6 @@ type RuntimeAuth struct {
 	RuntimeID string `json:"runtimeID"`
 	Auth      *Auth  `json:"auth"`
 }
-
-type RuntimeAuthPage struct {
-	Data       []*RuntimeAuth `json:"data"`
-	PageInfo   *PageInfo      `json:"pageInfo"`
-	TotalCount int            `json:"totalCount"`
-}
-
-func (RuntimeAuthPage) IsPageable() {}
 
 type RuntimeInput struct {
 	Name        string       `json:"name"`

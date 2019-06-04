@@ -45,7 +45,7 @@ type DirectiveRoot struct {
 type ComplexityRoot struct {
 	APIDefinition struct {
 		Auth        func(childComplexity int, runtimeID string) int
-		Auths       func(childComplexity int, first *int, after *string) int
+		Auths       func(childComplexity int) int
 		DefaultAuth func(childComplexity int) int
 		Group       func(childComplexity int) int
 		ID          func(childComplexity int) int
@@ -249,12 +249,6 @@ type ComplexityRoot struct {
 		RuntimeID func(childComplexity int) int
 	}
 
-	RuntimeAuthPage struct {
-		Data       func(childComplexity int) int
-		PageInfo   func(childComplexity int) int
-		TotalCount func(childComplexity int) int
-	}
-
 	RuntimePage struct {
 		Data       func(childComplexity int) int
 		PageInfo   func(childComplexity int) int
@@ -289,8 +283,8 @@ type MutationResolver interface {
 	UpdateAPI(ctx context.Context, id string, in APIDefinitionInput) (*APIDefinition, error)
 	DeleteAPI(ctx context.Context, id string) (*APIDefinition, error)
 	RefetchAPISpec(ctx context.Context, apiID string) (*APISpec, error)
-	SetAPIAuth(ctx context.Context, apiID string, runtimeID string, in AuthInput) ([]*RuntimeAuth, error)
-	DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) ([]*RuntimeAuth, error)
+	SetAPIAuth(ctx context.Context, apiID string, runtimeID string, in AuthInput) (*RuntimeAuth, error)
+	DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*RuntimeAuth, error)
 	AddEvent(ctx context.Context, applicationID string, in EventDefinitionInput) (*EventAPIDefinition, error)
 	UpdateEvent(ctx context.Context, id string, in EventDefinitionInput) (*EventAPIDefinition, error)
 	DeleteEvent(ctx context.Context, id string) (*EventAPIDefinition, error)
@@ -343,12 +337,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_APIDefinition_auths_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.APIDefinition.Auths(childComplexity, args["first"].(*int), args["after"].(*string)), true
+		return e.complexity.APIDefinition.Auths(childComplexity), true
 
 	case "APIDefinition.defaultAuth":
 		if e.complexity.APIDefinition.DefaultAuth == nil {
@@ -1427,27 +1416,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RuntimeAuth.RuntimeID(childComplexity), true
 
-	case "RuntimeAuthPage.data":
-		if e.complexity.RuntimeAuthPage.Data == nil {
-			break
-		}
-
-		return e.complexity.RuntimeAuthPage.Data(childComplexity), true
-
-	case "RuntimeAuthPage.pageInfo":
-		if e.complexity.RuntimeAuthPage.PageInfo == nil {
-			break
-		}
-
-		return e.complexity.RuntimeAuthPage.PageInfo(childComplexity), true
-
-	case "RuntimeAuthPage.totalCount":
-		if e.complexity.RuntimeAuthPage.TotalCount == nil {
-			break
-		}
-
-		return e.complexity.RuntimeAuthPage.TotalCount(childComplexity), true
-
 	case "RuntimePage.data":
 		if e.complexity.RuntimePage.Data == nil {
 			break
@@ -1696,13 +1664,6 @@ type DocumentPage implements Pageable {
     totalCount: Int!
 }
 
-type RuntimeAuthPage implements Pageable {
-    data: [RuntimeAuth!]!
-    pageInfo: PageInfo!
-    totalCount: Int!
-}
-
-
 type ApplicationStatus {
     condition: ApplicationStatusCondition!
     timestamp: Timestamp!
@@ -1747,7 +1708,7 @@ type APIDefinition {
     """"If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified."""
     auth(runtimeID: ID!): RuntimeAuth
     """Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified."""
-    auths(first: Int = 100, after: PageCursor): RuntimeAuthPage
+    auths: [RuntimeAuth!]!
     """If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly."""
     defaultAuth: Auth
     version: Version
@@ -2066,10 +2027,10 @@ type Mutation {
     refetchAPISpec(apiID: ID!): APISpec
 
     """
-    Returns information about all Auths for given applicationID. To set default Auth for API, use updateAPI mutation
+    Sets Auth for given Application and Runtime. To set default Auth for API, use updateAPI mutation
     """
-    setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput!): [RuntimeAuth!]!
-    deleteAPIAuth(apiID: ID!, runtimeID: ID!): [RuntimeAuth!]!
+    setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput!): RuntimeAuth!
+    deleteAPIAuth(apiID: ID!, runtimeID: ID!): RuntimeAuth!
 
 
     addEvent(applicationID: ID!, in: EventDefinitionInput!): EventAPIDefinition!
@@ -2107,28 +2068,6 @@ func (ec *executionContext) field_APIDefinition_auth_args(ctx context.Context, r
 		}
 	}
 	args["runtimeID"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_APIDefinition_auths_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *int
-	if tmp, ok := rawArgs["first"]; ok {
-		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["first"] = arg0
-	var arg1 *string
-	if tmp, ok := rawArgs["after"]; ok {
-		arg1, err = ec.unmarshalOPageCursor2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["after"] = arg1
 	return args, nil
 }
 
@@ -3163,25 +3102,21 @@ func (ec *executionContext) _APIDefinition_auths(ctx context.Context, field grap
 		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_APIDefinition_auths_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Auths, nil
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*RuntimeAuthPage)
+	res := resTmp.([]*RuntimeAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalORuntimeAuthPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimeAuthPage(ctx, field.Selections, res)
+	return ec.marshalNRuntimeAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimeAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APIDefinition_defaultAuth(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) graphql.Marshaler {
@@ -5628,10 +5563,10 @@ func (ec *executionContext) _Mutation_setAPIAuth(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*RuntimeAuth)
+	res := resTmp.(*RuntimeAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNRuntimeAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimeAuth(ctx, field.Selections, res)
+	return ec.marshalNRuntimeAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimeAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteAPIAuth(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -5662,10 +5597,10 @@ func (ec *executionContext) _Mutation_deleteAPIAuth(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*RuntimeAuth)
+	res := resTmp.(*RuntimeAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNRuntimeAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimeAuth(ctx, field.Selections, res)
+	return ec.marshalNRuntimeAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimeAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_addEvent(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -6684,87 +6619,6 @@ func (ec *executionContext) _RuntimeAuth_auth(ctx context.Context, field graphql
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐAuth(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _RuntimeAuthPage_data(ctx context.Context, field graphql.CollectedField, obj *RuntimeAuthPage) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "RuntimeAuthPage",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Data, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*RuntimeAuth)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNRuntimeAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimeAuth(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _RuntimeAuthPage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *RuntimeAuthPage) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "RuntimeAuthPage",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PageInfo, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*PageInfo)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐPageInfo(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _RuntimeAuthPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *RuntimeAuthPage) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "RuntimeAuthPage",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimePage_data(ctx context.Context, field graphql.CollectedField, obj *RuntimePage) graphql.Marshaler {
@@ -8467,10 +8321,6 @@ func (ec *executionContext) _Pageable(ctx context.Context, sel ast.SelectionSet,
 		return ec._DocumentPage(ctx, sel, &obj)
 	case *DocumentPage:
 		return ec._DocumentPage(ctx, sel, obj)
-	case RuntimeAuthPage:
-		return ec._RuntimeAuthPage(ctx, sel, &obj)
-	case *RuntimeAuthPage:
-		return ec._RuntimeAuthPage(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -8509,6 +8359,9 @@ func (ec *executionContext) _APIDefinition(ctx context.Context, sel ast.Selectio
 			out.Values[i] = ec._APIDefinition_auth(ctx, field, obj)
 		case "auths":
 			out.Values[i] = ec._APIDefinition_auths(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "defaultAuth":
 			out.Values[i] = ec._APIDefinition_defaultAuth(ctx, field, obj)
 		case "version":
@@ -9606,43 +9459,6 @@ func (ec *executionContext) _RuntimeAuth(ctx context.Context, sel ast.SelectionS
 			}
 		case "auth":
 			out.Values[i] = ec._RuntimeAuth_auth(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var runtimeAuthPageImplementors = []string{"RuntimeAuthPage", "Pageable"}
-
-func (ec *executionContext) _RuntimeAuthPage(ctx context.Context, sel ast.SelectionSet, obj *RuntimeAuthPage) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, runtimeAuthPageImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("RuntimeAuthPage")
-		case "data":
-			out.Values[i] = ec._RuntimeAuthPage_data(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "pageInfo":
-			out.Values[i] = ec._RuntimeAuthPage_pageInfo(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "totalCount":
-			out.Values[i] = ec._RuntimeAuthPage_totalCount(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -11774,17 +11590,6 @@ func (ec *executionContext) marshalORuntimeAuth2ᚖgithubᚗcomᚋkymaᚑincubat
 		return graphql.Null
 	}
 	return ec._RuntimeAuth(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalORuntimeAuthPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimeAuthPage(ctx context.Context, sel ast.SelectionSet, v RuntimeAuthPage) graphql.Marshaler {
-	return ec._RuntimeAuthPage(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalORuntimeAuthPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐRuntimeAuthPage(ctx context.Context, sel ast.SelectionSet, v *RuntimeAuthPage) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._RuntimeAuthPage(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐSpecFormat(ctx context.Context, v interface{}) (SpecFormat, error) {
