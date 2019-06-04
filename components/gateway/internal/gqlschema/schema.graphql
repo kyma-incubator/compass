@@ -14,6 +14,8 @@ scalar QueryParams # -> map[string][]string
 
 scalar CLOB # TBD
 
+scalar PageCursor
+
 # Runtime
 
 type Runtime {
@@ -52,9 +54,9 @@ type Application {
     webhooks: [ApplicationWebhook!]!
     healthCheckURL: String
     """ group allows to find different versions of the same API """
-    apis(group: String, first: Int = 100, after: String): APIDefinitionPage!
+    apis(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage!
     """ group allows to find different versions of the same event API """
-    eventAPIs(group: String, first: Int = 100, after: String): EventAPIDefinitionPage!
+    eventAPIs(group: String, first: Int = 100, after: PageCursor): EventAPIDefinitionPage!
     documents: [Document!]!
 }
 interface Pageable {
@@ -63,8 +65,8 @@ interface Pageable {
 }
 
 type PageInfo {
-    startCursor: String!
-    endCursor: String
+    startCursor: PageCursor!
+    endCursor: PageCursor
     hasNextPage: Boolean!
 }
 
@@ -143,7 +145,7 @@ type APIDefinition {
     """"If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified."""
     auth(runtimeID: ID!): RuntimeAuth
     """Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified."""
-    auths: [RuntimeAuth!]! #TODO
+    auths: [RuntimeAuth!]!
     """If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly."""
     defaultAuth: Auth
     version: Version
@@ -430,13 +432,13 @@ input LabelFilter {
 
 
 type Query {
-    applications(filter: [LabelFilter!], first: Int = 100, after: String):  ApplicationPage!
+    applications(filter: [LabelFilter!], first: Int = 100, after: PageCursor):  ApplicationPage!
     application(id: ID!): Application
 
-    runtimes(filter: [LabelFilter!], first: Int = 100, after: String): RuntimePage!
+    runtimes(filter: [LabelFilter!], first: Int = 100, after: PageCursor): RuntimePage!
     runtime(id: ID!): Runtime
 
-    healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: String): HealthCheckPage!
+    healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: PageCursor): HealthCheckPage!
 }
 
 type Mutation {

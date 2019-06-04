@@ -1540,6 +1540,8 @@ scalar QueryParams # -> map[string][]string
 
 scalar CLOB # TBD
 
+scalar PageCursor
+
 # Runtime
 
 type Runtime {
@@ -1578,9 +1580,9 @@ type Application {
     webhooks: [ApplicationWebhook!]!
     healthCheckURL: String
     """ group allows to find different versions of the same API """
-    apis(group: String, first: Int = 100, after: String): APIDefinitionPage!
+    apis(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage!
     """ group allows to find different versions of the same event API """
-    eventAPIs(group: String, first: Int = 100, after: String): EventAPIDefinitionPage!
+    eventAPIs(group: String, first: Int = 100, after: PageCursor): EventAPIDefinitionPage!
     documents: [Document!]!
 }
 interface Pageable {
@@ -1589,8 +1591,8 @@ interface Pageable {
 }
 
 type PageInfo {
-    startCursor: String!
-    endCursor: String
+    startCursor: PageCursor!
+    endCursor: PageCursor
     hasNextPage: Boolean!
 }
 
@@ -1669,7 +1671,7 @@ type APIDefinition {
     """"If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified."""
     auth(runtimeID: ID!): RuntimeAuth
     """Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified."""
-    auths: [RuntimeAuth!]! #TODO
+    auths: [RuntimeAuth!]!
     """If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly."""
     defaultAuth: Auth
     version: Version
@@ -1956,13 +1958,13 @@ input LabelFilter {
 
 
 type Query {
-    applications(filter: [LabelFilter!], first: Int = 100, after: String):  ApplicationPage!
+    applications(filter: [LabelFilter!], first: Int = 100, after: PageCursor):  ApplicationPage!
     application(id: ID!): Application
 
-    runtimes(filter: [LabelFilter!], first: Int = 100, after: String): RuntimePage!
+    runtimes(filter: [LabelFilter!], first: Int = 100, after: PageCursor): RuntimePage!
     runtime(id: ID!): Runtime
 
-    healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: String): HealthCheckPage!
+    healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: PageCursor): HealthCheckPage!
 }
 
 type Mutation {
@@ -2067,7 +2069,7 @@ func (ec *executionContext) field_Application_apis_args(ctx context.Context, raw
 	args["first"] = arg1
 	var arg2 *string
 	if tmp, ok := rawArgs["after"]; ok {
-		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg2, err = ec.unmarshalOPageCursor2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2097,7 +2099,7 @@ func (ec *executionContext) field_Application_eventAPIs_args(ctx context.Context
 	args["first"] = arg1
 	var arg2 *string
 	if tmp, ok := rawArgs["after"]; ok {
-		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg2, err = ec.unmarshalOPageCursor2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2747,7 +2749,7 @@ func (ec *executionContext) field_Query_applications_args(ctx context.Context, r
 	args["first"] = arg1
 	var arg2 *string
 	if tmp, ok := rawArgs["after"]; ok {
-		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg2, err = ec.unmarshalOPageCursor2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2785,7 +2787,7 @@ func (ec *executionContext) field_Query_healthChecks_args(ctx context.Context, r
 	args["first"] = arg2
 	var arg3 *string
 	if tmp, ok := rawArgs["after"]; ok {
-		arg3, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg3, err = ec.unmarshalOPageCursor2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2829,7 +2831,7 @@ func (ec *executionContext) field_Query_runtimes_args(ctx context.Context, rawAr
 	args["first"] = arg1
 	var arg2 *string
 	if tmp, ok := rawArgs["after"]; ok {
-		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg2, err = ec.unmarshalOPageCursor2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -5918,7 +5920,7 @@ func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field gra
 	res := resTmp.(string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNPageCursor2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graphql.CollectedField, obj *PageInfo) graphql.Marshaler {
@@ -5942,7 +5944,7 @@ func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graph
 	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOPageCursor2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *PageInfo) graphql.Marshaler {
@@ -10268,6 +10270,20 @@ func (ec *executionContext) marshalNLabels2githubᚗcomᚋkymaᚑincubatorᚋcom
 	return v
 }
 
+func (ec *executionContext) unmarshalNPageCursor2string(ctx context.Context, v interface{}) (string, error) {
+	return graphql.UnmarshalString(v)
+}
+
+func (ec *executionContext) marshalNPageCursor2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	res := graphql.MarshalString(v)
+	if res == graphql.Null {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) marshalNPageInfo2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v PageInfo) graphql.Marshaler {
 	return ec._PageInfo(ctx, sel, &v)
 }
@@ -11297,6 +11313,29 @@ func (ec *executionContext) unmarshalOOAuthCredentialDataInput2ᚖgithubᚗcom�
 	}
 	res, err := ec.unmarshalOOAuthCredentialDataInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐOAuthCredentialDataInput(ctx, v)
 	return &res, err
+}
+
+func (ec *executionContext) unmarshalOPageCursor2string(ctx context.Context, v interface{}) (string, error) {
+	return graphql.UnmarshalString(v)
+}
+
+func (ec *executionContext) marshalOPageCursor2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	return graphql.MarshalString(v)
+}
+
+func (ec *executionContext) unmarshalOPageCursor2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOPageCursor2string(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOPageCursor2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOPageCursor2string(ctx, sel, *v)
 }
 
 func (ec *executionContext) unmarshalOQueryParams2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋgatewayᚋinternalᚋgqlschemaᚐQueryParams(ctx context.Context, v interface{}) (QueryParams, error) {
