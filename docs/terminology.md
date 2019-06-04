@@ -31,7 +31,7 @@ Connector component establishes trust among Applications, Management Plane and R
 ### MP Gateway
 Abbr.: *Gateway*\
 \
-Gateway component serves as the main API Gateway that extracts token from incoming requests and proxies the requests to the Director component.
+Gateway component serves as the main API Gateway that extracts *Tenant* from incoming requests and proxies the requests to the Director component.
 
 ### MP Director
 Abbr.: *Director*\

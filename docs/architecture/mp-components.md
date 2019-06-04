@@ -2,29 +2,29 @@
 
 ## Overview
 
-This document describes the Management Plane's components.
+This document describes the [Management Plane's](/docs/terminology.md#Management-Plane) components.
 
 ## Components
 
-Management Plane consists of Compass, Runtime Provisioners, Service Mesh and UI components. Applications and Agents can communicate with the Gateway component or Connector component. Admin uses UI to configure Management Plane.
+Management Plane consists of [Compass](/docs/terminology.md#MP-Compass), [Runtime Provisioners](/docs/terminology.md#MP-Runtime-Provisioner), [Service Mesh](/docs/terminology.md#MP-Service-Mesh) and [UI](/docs/terminology.md#MP-UI) components. [Applications](/docs/terminology.md#Application) and [Agents](/docs/terminology.md#Runtime-Agent) can communicate with the [Gateway](/docs/terminology.md#MP-Gateway) component or [Connector](/docs/terminology.md#MP-Connector) component. [Admin](/docs/terminology.md#Administrator) uses UI to configure Management Plane.
 
 ![Management Plane Components](./assets/mp-components.svg)
 
 ### Compass
 
-Compass component consists of three components: Connector, Gateway, and Director.
+Compass is the Management Plane Core that consists of three components: Connector, Gateway, and [Director](/docs/terminology.md#MP-Director).
 
 #### Connector
 
-Connector component exposes GraphQL API that can be accessed directly, its responsibility is establishing trust among Applications, Management Plane and Runtimes.
+Connector component exposes GraphQL API that can be accessed directly, its responsibility is establishing trust among Applications, Management Plane and [Runtimes](/docs/terminology.md#Runtime).
 
 #### Gateway
 
-Gateway component serves as the main API Gateway that extracts token from incoming requests and proxies the requests to the Director component.
+Gateway component serves as the main API Gateway that extracts [Tenant](/docs/terminology.md#MP-Tenant) from incoming requests and proxies the requests to the Director component.
 
 #### Director
 
-Director component exposes GraphQL API that can be accessed through the Gateway component. It contains all business logic required to handle Applications and Runtimes registration as well as health checks. It also requests Application Webhook API for credentials. This component has access to external to storage.
+Director component exposes GraphQL API that can be accessed through the Gateway component. It contains all business logic required to handle Applications and Runtimes registration as well as health checks. It also requests Application [Webhook API](/docs/terminology.md#Application-Webhook-API) for credentials. This component has access to storage.
 
 ### UI
 
