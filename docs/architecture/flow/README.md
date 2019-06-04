@@ -22,55 +22,30 @@ API registration phase is a process of registering new API and Event API definit
 
 ![](./assets/api-registration.svg)
 
-
 ## Runtime creation
 
 To create a new Runtime, Administrator sends proper request to the Runtime Provisioner. Runtime Provisioner requests Runtime configuration from Director, and one-time token from Connector. Runtime Provisioner provisions Runtime, and then injects the configuration with one-time token. Runtime uses this token to set-up trusted connection between Management Plane and Runtime.
 
 ![](./assets/runtime-creation.svg)
 
-## Application and Runtime configuration updates
+When Runtime is ready, it notifies Director about its status. When the Director receives notification that a Runtime is ready, it passes the notification for every Application in group assigned to the Runtime via Application webhook. See the [Application configuration update diagram](#application-configuration-update) for runtime ready notification example.
 
-TODO
+## Configuration change
 
+The following section describes configuration update flows for Application and Runtime.
 
-If Runtimes assigned to a group of applications has been modified, Application is notified via webhook that new configuration details are available.
+### Application configuration update
 
-Runtime gets configuration details from Management Plane, including application list with theirs credentials, and applies the configuration asynchronously. Runtime checks periodically for new configuration details and applies them, if they changes.
+Application periodically pulls configuration details for connected Runtimes, such as `eventURL`.
 
------
+![](./assets/app-configuration-update.svg)
 
+Application exposes a webhook, which is called when configuration is updated. If any connected Runtime changes, Application is notified via this webhook that new configuration details are available. The following diagram shows the interaction between Runtime Agent, Director and Connector, when a new Runtime is provisioned and configured successfully:
 
-TODO: Terminology
+![](./assets/runtime-notification.svg)
 
+### Runtime configuration update
 
+Runtime gets configuration details from Director, including application list with theirs credentials, and applies the configuration asynchronously. Runtime checks periodically for new configuration details and applies them, if they changes.
 
-
-
-
-
-
-
-
-
-
-
-
-
-## Application registration flow
-
-Application registration begins with Administrator's request to the Management Plane. Management Plane generates one-time token, and sends it to the application. The one-time token is used to set-up trusted connection between Application and Management plane. Next, Application periodically pulls Runtime configuration details, such as `eventURL`.
-
-![](./assets/app-registration-flow.svg)
-
-If there are any changes in Application grouping, Application is notified via webhook that new configuration details are available. To learn about the notification flow, see the [Runtime creation flow](#runtime-creation-flow) diagram.
-
-## Runtime creation flow
-
-To create a new Runtime, Administrator sends proper request to the Management Plane. Management Plane generates one-time token and passes it, along with other Runtime configuration details, to the Runtime Provisioner. Runtime Provisioner provisions Runtime, and then injects the one-time token. Runtime uses this token to set-up trusted connection between Management Plane and Runtime. Next, Runtime notifies Management Plane, that the Runtime is ready.
-
-When the Management Plane receives notification that a Runtime is ready, it passes the notification for every Application in group assigned to the Runtime via Application webhook.
-
-In the meantime, Runtime gets configuration details from Management Plane, including application list with theirs credentials, and applies the configuration asynchronously. Runtime checks periodically for new configuration details and applies them, if they changes.
-
-![](./assets/runtime-creation-flow.svg)
+![](./assets/runtime-configuration-update.svg)
