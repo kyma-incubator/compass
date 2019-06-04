@@ -8,9 +8,9 @@ Application connection consists of two phases: Application pairing and API regis
 
 ### Application pairing phase
 
-Application pairing phase is a process of creating new Application in Management Plane's registry and establishing trusted connection between Application and Management Plane. 
+Application pairing phase is a process of creating new Application in Management Plane and establishing trusted connection between Application and Management Plane. 
 
-Administrator requests Director to create a new Application in the registry. Director sends back Application details, along with its unique ID. Then, Administrator requests Application pairing to the Connector. Connector generates one-time token, and sends it to the Application. Application uses this token to establish a trusted relation between Application and Management Plane.
+Administrator requests Director to create a new Application in the Management Plane. Director sends back Application details, along with its unique ID. Then, Administrator requests Application pairing to the Connector. Connector generates one-time token, and sends it to the Application. Application uses this token to establish a trusted relation between Application and Management Plane.
 
 ![](./assets/app-pairing.svg)
 
