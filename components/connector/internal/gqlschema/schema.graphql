@@ -41,6 +41,9 @@ type Mutation {
     # mutation that will be aware of those two protection mechanisms
     signCSR(csr: String!, token: String): Certificate
 
+    # If we decide to reuse signCSR mutation then we can skip this one
+    renewCertificate(csr: String!): Certificate
+
     # Revokes certificate with which the request was issued
     revokeCertificate(): Boolean
 }
