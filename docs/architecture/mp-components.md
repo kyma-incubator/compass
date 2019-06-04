@@ -12,7 +12,7 @@ Management Plane consists of Compass, Runtime Provisioners, Service Mesh and UI 
 
 ### Compass
 
-Compass component consists of three components: Connector, Gateway and Director.
+Compass component consists of three components: Connector, Gateway, and Director.
 
 #### Connector
 
@@ -24,16 +24,16 @@ Gateway component serves as the main API Gateway that extracts token from incomi
 
 #### Director
 
-Director component exposes GraphQL API that can be accessed through the Gateway component. It contains all business logic required to handle Applications and Runtimes registration. It also requests Application Webhook API for credentials. This component has access external to storage.
+Director component exposes GraphQL API that can be accessed through the Gateway component. It contains all business logic required to handle Applications and Runtimes registration. It also requests Application Webhook API for credentials. This component has access to external to storage.
 
 ### UI
 
-TODO
+UI component calls Management Plane APIs. This component is interchangeable.
 
 ### Service Mesh
 
-TODO
+Service Mesh component serves as an infrastructure layer allowing communication between services. This component is interchangeable.
 
 ### Runtime Provisioner
 
-TODO
+Runtime Provisioner handles the creation, modification, and deletion of Runtimes. This component is interchangeable.
