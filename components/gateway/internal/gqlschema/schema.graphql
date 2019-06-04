@@ -57,8 +57,9 @@ type Application {
     apis(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage!
     """ group allows to find different versions of the same event API """
     eventAPIs(group: String, first: Int = 100, after: PageCursor): EventAPIDefinitionPage!
-    documents: [Document!]!
+    documents(first: Int = 100, after: PageCursor): DocumentPage!
 }
+
 interface Pageable {
     pageInfo: PageInfo!
     totalCount: Int!
@@ -66,7 +67,7 @@ interface Pageable {
 
 type PageInfo {
     startCursor: PageCursor!
-    endCursor: PageCursor
+    endCursor: PageCursor!
     hasNextPage: Boolean!
 }
 
@@ -99,6 +100,17 @@ type EventAPIDefinitionPage implements Pageable {
     totalCount: Int!
 }
 
+type DocumentPage implements Pageable {
+    data: [Document!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+
+type RuntimeAuthPage implements Pageable {
+    data: [RuntimeAuth!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
 
 
 type ApplicationStatus {
@@ -145,7 +157,7 @@ type APIDefinition {
     """"If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified."""
     auth(runtimeID: ID!): RuntimeAuth
     """Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified."""
-    auths: [RuntimeAuth!]!
+    auths(first: Int = 100, after: PageCursor): RuntimeAuthPage
     """If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly."""
     defaultAuth: Auth
     version: Version

@@ -25,7 +25,7 @@ type APIDefinition struct {
 	// "If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified.
 	Auth *RuntimeAuth `json:"auth"`
 	// Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified.
-	Auths []*RuntimeAuth `json:"auths"`
+	Auths *RuntimeAuthPage `json:"auths"`
 	// If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly.
 	DefaultAuth *Auth    `json:"defaultAuth"`
 	Version     *Version `json:"version"`
@@ -76,7 +76,7 @@ type Application struct {
 	Apis *APIDefinitionPage `json:"apis"`
 	//  group allows to find different versions of the same event API
 	EventAPIs *EventAPIDefinitionPage `json:"eventAPIs"`
-	Documents []*Document             `json:"documents"`
+	Documents *DocumentPage           `json:"documents"`
 }
 
 type ApplicationInput struct {
@@ -186,6 +186,14 @@ type DocumentInput struct {
 	FetchRequest *FetchRequestInput `json:"fetchRequest"`
 }
 
+type DocumentPage struct {
+	Data       []*Document `json:"data"`
+	PageInfo   *PageInfo   `json:"pageInfo"`
+	TotalCount int         `json:"totalCount"`
+}
+
+func (DocumentPage) IsPageable() {}
+
 type EventAPIDefinition struct {
 	ID string `json:"id"`
 	// group allows you to find the same API but in different version
@@ -279,9 +287,9 @@ type OAuthCredentialDataInput struct {
 }
 
 type PageInfo struct {
-	StartCursor string  `json:"startCursor"`
-	EndCursor   *string `json:"endCursor"`
-	HasNextPage bool    `json:"hasNextPage"`
+	StartCursor string `json:"startCursor"`
+	EndCursor   string `json:"endCursor"`
+	HasNextPage bool   `json:"hasNextPage"`
 }
 
 type Runtime struct {
@@ -300,6 +308,14 @@ type RuntimeAuth struct {
 	RuntimeID string `json:"runtimeID"`
 	Auth      *Auth  `json:"auth"`
 }
+
+type RuntimeAuthPage struct {
+	Data       []*RuntimeAuth `json:"data"`
+	PageInfo   *PageInfo      `json:"pageInfo"`
+	TotalCount int            `json:"totalCount"`
+}
+
+func (RuntimeAuthPage) IsPageable() {}
 
 type RuntimeInput struct {
 	Name        string       `json:"name"`
