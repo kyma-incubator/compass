@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/pkg/errors"
 	"log"
 	"net/http"
+
+	"github.com/pkg/errors"
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"

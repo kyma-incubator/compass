@@ -23,8 +23,8 @@ spec:
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: {{ .Values.deployment.args.containerPort}}
+              containerPort: {{ .Values.deployment.args.containerPort }}
               protocol: TCP
           env:
             - name: APP_ADDRESS
-                value: "0.0.0.0:{{ .Values.service.port }}"
+                value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
