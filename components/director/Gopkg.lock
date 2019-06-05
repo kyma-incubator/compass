@@ -103,6 +103,14 @@
   version = "v1.1.2"
 
 [[projects]]
+  digest = "1:1b8282c02f3cbf27de019d739246eaf8231f5dbcaaf9d0d7c7524184ee7b2d24"
+  name = "github.com/vrischmann/envconfig"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "7a443243d539c9595dd8aa7f03a6f68707b80e66"
+  version = "v1.1.0"
+
+[[projects]]
   branch = "master"
   digest = "1:135bbfba19e96a22bb998c7b50ec1a959f48d09c62060ce2eb71d49a22b4870c"
   name = "golang.org/x/tools"
@@ -145,6 +153,7 @@
     "github.com/pkg/errors",
     "github.com/vektah/gqlparser",
     "github.com/vektah/gqlparser/ast",
+    "github.com/vrischmann/envconfig",
     "golang.org/x/tools/cmd/goimports",
   ]
   solver-name = "gps-cdcl"
