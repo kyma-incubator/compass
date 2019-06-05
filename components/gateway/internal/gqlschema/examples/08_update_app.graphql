@@ -21,7 +21,7 @@ mutation {
                     },
                 }
             ],
-            events: [
+            eventAPIs: [
                 {
                     spec: {
                         eventSpecType: ASYNC_API,

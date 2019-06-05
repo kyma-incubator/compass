@@ -12,14 +12,6 @@ type CredentialData interface {
 	IsCredentialData()
 }
 
-//  Every query that implements pagination returns object that implements Pageable interface.
-// To specify page details, query specify two parameters: `first` and `after`.
-// `first` specify page size, `after` is a cursor for the next page. When requesting first page, set `after` to empty value.
-// For requesting next page, set `after` to `pageInfo.endCursor` returned from previous query.
-type Pageable interface {
-	IsPageable()
-}
-
 type APIDefinition struct {
 	ID        string   `json:"id"`
 	Spec      *APISpec `json:"spec"`
@@ -42,14 +34,6 @@ type APIDefinitionInput struct {
 	Version     *VersionInput `json:"version"`
 	DefaultAuth *AuthInput    `json:"defaultAuth"`
 }
-
-type APIDefinitionPage struct {
-	Data       []*APIDefinition `json:"data"`
-	PageInfo   *PageInfo        `json:"pageInfo"`
-	TotalCount int              `json:"totalCount"`
-}
-
-func (APIDefinitionPage) IsPageable() {}
 
 type APISpec struct {
 	// when fetch request specified, data will be automatically populated
@@ -77,10 +61,10 @@ type Application struct {
 	Webhooks       []*ApplicationWebhook `json:"webhooks"`
 	HealthCheckURL *string               `json:"healthCheckURL"`
 	//  group allows to find different versions of the same API
-	Apis *APIDefinitionPage `json:"apis"`
+	Apis []*APIDefinition `json:"apis"`
 	//  group allows to find different versions of the same event API
-	EventAPIs *EventAPIDefinitionPage `json:"eventAPIs"`
-	Documents *DocumentPage           `json:"documents"`
+	EventAPIs []*EventAPIDefinition `json:"eventAPIs"`
+	Documents []*Document           `json:"documents"`
 }
 
 type ApplicationInput struct {
@@ -91,17 +75,9 @@ type ApplicationInput struct {
 	Webhooks       []*ApplicationWebhookInput `json:"webhooks"`
 	HealthCheckURL *string                    `json:"healthCheckURL"`
 	Apis           []*APIDefinitionInput      `json:"apis"`
-	Events         []*EventDefinitionInput    `json:"events"`
+	EventAPIs      []*EventDefinitionInput    `json:"eventAPIs"`
 	Documents      []*DocumentInput           `json:"documents"`
 }
-
-type ApplicationPage struct {
-	Data       []*Application `json:"data"`
-	PageInfo   *PageInfo      `json:"pageInfo"`
-	TotalCount int            `json:"totalCount"`
-}
-
-func (ApplicationPage) IsPageable() {}
 
 type ApplicationStatus struct {
 	Condition ApplicationStatusCondition `json:"condition"`
@@ -148,13 +124,11 @@ type BasicCredentialDataInput struct {
 }
 
 type CSRFTokenCredentialRequestAuth struct {
-	TokenEndpointURL string `json:"tokenEndpointURL"`
-	Auth             *Auth  `json:"auth"`
+	Token string `json:"token"`
 }
 
 type CSRFTokenCredentialRequestAuthInput struct {
-	TokenEndpointURL string     `json:"tokenEndpointURL"`
-	Auth             *AuthInput `json:"auth"`
+	Token string `json:"token"`
 }
 
 type CredentialDataInput struct {
@@ -163,10 +137,12 @@ type CredentialDataInput struct {
 }
 
 type CredentialRequestAuth struct {
+	Type CredentialRequestAuthType       `json:"type"`
 	Csrf *CSRFTokenCredentialRequestAuth `json:"csrf"`
 }
 
 type CredentialRequestAuthInput struct {
+	Type CredentialRequestAuthType            `json:"type"`
 	Csrf *CSRFTokenCredentialRequestAuthInput `json:"csrf"`
 }
 
@@ -190,14 +166,6 @@ type DocumentInput struct {
 	FetchRequest *FetchRequestInput `json:"fetchRequest"`
 }
 
-type DocumentPage struct {
-	Data       []*Document `json:"data"`
-	PageInfo   *PageInfo   `json:"pageInfo"`
-	TotalCount int         `json:"totalCount"`
-}
-
-func (DocumentPage) IsPageable() {}
-
 type EventAPIDefinition struct {
 	ID string `json:"id"`
 	// group allows you to find the same API but in different version
@@ -205,14 +173,6 @@ type EventAPIDefinition struct {
 	Spec    *EventSpec `json:"spec"`
 	Version *Version   `json:"version"`
 }
-
-type EventAPIDefinitionPage struct {
-	Data       []*EventAPIDefinition `json:"data"`
-	PageInfo   *PageInfo             `json:"pageInfo"`
-	TotalCount int                   `json:"totalCount"`
-}
-
-func (EventAPIDefinitionPage) IsPageable() {}
 
 type EventDefinitionInput struct {
 	Spec    *EventSpecInput `json:"spec"`
@@ -262,14 +222,6 @@ type HealthCheck struct {
 	Timestamp Timestamp                  `json:"timestamp"`
 }
 
-type HealthCheckPage struct {
-	Data       []*HealthCheck `json:"data"`
-	PageInfo   *PageInfo      `json:"pageInfo"`
-	TotalCount int            `json:"totalCount"`
-}
-
-func (HealthCheckPage) IsPageable() {}
-
 type LabelFilter struct {
 	Label    string          `json:"label"`
 	Values   []string        `json:"values"`
@@ -288,12 +240,6 @@ type OAuthCredentialDataInput struct {
 	ClientID     string `json:"clientId"`
 	ClientSecret string `json:"clientSecret"`
 	URL          string `json:"url"`
-}
-
-type PageInfo struct {
-	StartCursor string `json:"startCursor"`
-	EndCursor   string `json:"endCursor"`
-	HasNextPage bool   `json:"hasNextPage"`
 }
 
 type Runtime struct {
@@ -319,14 +265,6 @@ type RuntimeInput struct {
 	Labels      *Labels      `json:"labels"`
 	Annotations *Annotations `json:"annotations"`
 }
-
-type RuntimePage struct {
-	Data       []*Runtime `json:"data"`
-	PageInfo   *PageInfo  `json:"pageInfo"`
-	TotalCount int        `json:"totalCount"`
-}
-
-func (RuntimePage) IsPageable() {}
 
 type RuntimeStatus struct {
 	Condition RuntimeStatusCondition `json:"condition"`
@@ -472,6 +410,45 @@ func (e *ApplicationWebhookType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e ApplicationWebhookType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type CredentialRequestAuthType string
+
+const (
+	CredentialRequestAuthTypeCsrfToken CredentialRequestAuthType = "CSRF_TOKEN"
+)
+
+var AllCredentialRequestAuthType = []CredentialRequestAuthType{
+	CredentialRequestAuthTypeCsrfToken,
+}
+
+func (e CredentialRequestAuthType) IsValid() bool {
+	switch e {
+	case CredentialRequestAuthTypeCsrfToken:
+		return true
+	}
+	return false
+}
+
+func (e CredentialRequestAuthType) String() string {
+	return string(e)
+}
+
+func (e *CredentialRequestAuthType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = CredentialRequestAuthType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid CredentialRequestAuthType", str)
+	}
+	return nil
+}
+
+func (e CredentialRequestAuthType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
