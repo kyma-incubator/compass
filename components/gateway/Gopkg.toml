@@ -3,14 +3,6 @@ required = [
     "github.com/kisielk/errcheck",
 ]
 
-[[constraint]]
-  name = "github.com/kisielk/errcheck"
-  revision = "e14f8d59a22d460d56c5ee92507cd94c78fbf274"
-
-[[constraint]]
-  name = "github.com/99designs/gqlgen"
-  version = "0.9.0"
-
 [prune]
   go-tests = true
   unused-packages = true
