@@ -19,12 +19,6 @@ mutation {
                     url
                 }
             }
-            requestAuth {
-                type
-                csrf {
-                    token
-                }
-            }
         }
         # ...
     }

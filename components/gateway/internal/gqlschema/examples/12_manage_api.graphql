@@ -32,6 +32,20 @@ mutation {
     }
 
     firstSet: setAPIAuth(apiID:  "456", runtimeID: "999",in: {
+        additionalQueryParams: "my-custom-tenant: 999",
+        requestAuth: {
+            csrf: {
+                tokenEndpointURL: "http://google.com",
+                auth: {
+                    credential: {
+                        basic: {
+                            password: "pwd",
+                            username: "usr"
+                        }
+                    }
+                }
+            }
+        }
         credential: {
             basic: {
                 username: "aaa",
