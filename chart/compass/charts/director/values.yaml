@@ -5,4 +5,4 @@ deployment:
     containerPort: &port 3000
 
 service:
-  directorPort: *port
+  port: *port

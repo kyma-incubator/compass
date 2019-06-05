@@ -17,3 +17,8 @@ global:
     e2e:
       dir: develop/
       version: "ec80b7e4"
+
+  ingress:
+    domainName: kyma.local
+  istio:
+    gateway: kyma-gateway

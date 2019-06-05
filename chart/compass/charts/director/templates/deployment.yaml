@@ -1,7 +1,8 @@
 apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
-  name: {{ .Chart.Name }}
+  name: {{ template "fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
@@ -24,3 +25,6 @@ spec:
             - name: http
               containerPort: {{ .Values.deployment.args.containerPort}}
               protocol: TCP
+          env:
+            - name: APP_ADDRESS
+                value: "0.0.0.0:{{ .Values.service.port }}"
