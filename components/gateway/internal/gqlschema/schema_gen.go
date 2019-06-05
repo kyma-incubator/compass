@@ -1572,7 +1572,7 @@ scalar QueryParams # -> map[string][]string
 
 scalar CLOB # TBD
 
-scalar PageCursor
+scalar PageCursor # -> String
 
 # Runtime
 

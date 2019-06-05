@@ -1,3 +1,15 @@
+fragment givenPage on ApplicationPage {
+    data
+    {
+        name
+    }
+    totalCount
+    pageInfo {
+        startCursor
+        endCursor
+        hasNextPage
+    }
+}
 
 query {
      firstPage: applications(
@@ -7,16 +19,7 @@ query {
         ],
          first: 10, # return only 10 items. First == SQL limit
     ) {
-        data
-        {
-          name
-        }
-        totalCount
-        pageInfo {
-            startCursor
-            endCursor
-            hasNextPage
-        }
+       ...givenPage
     }
 
      nextPage: applications(
@@ -27,15 +30,6 @@ query {
         first: 10,
         after: "aW5kZXg9MA==" # returned from previous call pageInfo.endCursor
     ) {
-        data
-        {
-            name
-        }
-        totalCount
-        pageInfo {
-            startCursor
-            endCursor
-            hasNextPage
-        }
+       ...givenPage
     }
 }
