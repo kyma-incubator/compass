@@ -27,6 +27,7 @@ func main() {
 	directorUrl, err := url.Parse(cfg.DirectorOrigin)
 	exitOnError(err, "Error while parsing Director URL")
 
+	log.Printf("Proxying requests to Director: %s\n", cfg.DirectorOrigin)
 	directorProxy := httputil.NewSingleHostReverseProxy(directorUrl)
 
 	router := mux.NewRouter()

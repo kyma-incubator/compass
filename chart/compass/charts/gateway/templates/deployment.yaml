@@ -28,5 +28,5 @@ spec:
           env:
             - name: APP_ADDRESS
               value: "0.0.0.0:{{ .Values.deployment.args.containerPort}}"
-            - name: APP_DIRECTOR_EORIGIN
-              value: "https://compass-director.kyma-system.svc.cluster.local:3000"
+            - name: APP_DIRECTOR_ORIGIN
+              value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:3000"

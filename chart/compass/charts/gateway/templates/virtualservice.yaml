@@ -10,9 +10,9 @@ metadata:
     release: {{ .Release.Name }}
 spec:
   hosts:
-    - {{ .Values.virtualService.host }}.{{ .Values.global.ingress.domainName }}'
+    - '{{ .Values.virtualService.host }}.{{ .Values.global.ingress.domainName }}'
   gateways:
-    - {{ .Values.global.istio.gateway }}'
+    - {{ .Values.global.istio.gateway }}
   http:
     - match:
         - uri:
@@ -21,7 +21,7 @@ spec:
         - destination:
             host: {{ .Values.virtualService.host }}
             port:
-              number: 3000
+              number: {{ .Values.service.port }}
       corsPolicy:
         allowOrigin:
           - "*"
