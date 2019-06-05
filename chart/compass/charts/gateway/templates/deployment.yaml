@@ -30,3 +30,9 @@ spec:
               value: "0.0.0.0:{{ .Values.deployment.args.containerPort}}"
             - name: APP_DIRECTOR_ORIGIN
               value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:3000"
+          volumeMounts:
+            - name: ingress-tls-cert
+              mountPath: /etc/ingress-tls-cert/
+      volumes:
+        - name: ingress-tls-cert
+          secret:

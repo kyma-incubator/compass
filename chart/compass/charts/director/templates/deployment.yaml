@@ -28,3 +28,9 @@ spec:
           env:
             - name: APP_ADDRESS
               value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
+          volumeMounts:
+            - name: ingress-tls-cert
+              mountPath: /etc/ingress-tls-cert/
+      volumes:
+        - name: ingress-tls-cert
+          secret:

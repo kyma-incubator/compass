@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"net/http/httptest"
 	"net/http/httputil"
 	"net/url"
 
@@ -31,7 +33,29 @@ func main() {
 	directorProxy := httputil.NewSingleHostReverseProxy(directorUrl)
 
 	router := mux.NewRouter()
-	router.HandleFunc("/", directorProxy.ServeHTTP) // GraphQL Playground
+	router.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
+
+		x, err := httputil.DumpRequest(request, true)
+		if err != nil {
+			http.Error(writer, fmt.Sprint(err), http.StatusInternalServerError)
+			return
+		}
+		log.Printf(fmt.Sprintf("request:\n%q\n\n", x))
+		rec := httptest.NewRecorder()
+		directorProxy.ServeHTTP(rec, request)
+		log.Printf(fmt.Sprintf("response\n%q\n\n", rec.Body))
+
+		// this copies the recorded response to the response writer
+		for k, v := range rec.HeaderMap {
+			writer.Header()[k] = v
+		}
+		writer.WriteHeader(rec.Code)
+		_, err = rec.Body.WriteTo(writer)
+		if err != nil {
+			fmt.Println("err")
+		}
+
+	}) // GraphQL Playground
 
 	// TODO: To proxy Subscriptions, recompile against Go 1.12: https://github.com/golang/go/issues/26937
 	router.HandleFunc("/graphql", directorProxy.ServeHTTP) // GraphQL API Endpoint
