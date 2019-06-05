@@ -48,7 +48,7 @@ type ComplexityRoot struct {
 		Subject             func(childComplexity int) int
 	}
 
-	Certificates struct {
+	CertificationResult struct {
 		CaCertificate     func(childComplexity int) int
 		Certificate       func(childComplexity int) int
 		ClientCertificate func(childComplexity int) int
@@ -78,8 +78,8 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	GenerateApplicationToken(ctx context.Context, appID string) (*Token, error)
 	GenerateRuntimeToken(ctx context.Context, runtimeID string) (*Token, error)
-	SignCertificateSigningRequest(ctx context.Context, csr string, token *string) (*Certificates, error)
-	RenewCertificate(ctx context.Context, csr string) (*Certificates, error)
+	SignCertificateSigningRequest(ctx context.Context, csr string, token *string) (*CertificationResult, error)
+	RenewCertificate(ctx context.Context, csr string) (*CertificationResult, error)
 	RevokeCertificate(ctx context.Context) (bool, error)
 }
 type QueryResolver interface {
@@ -122,26 +122,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.CertificateSigningRequestInfo.Subject(childComplexity), true
 
-	case "Certificates.caCertificate":
-		if e.complexity.Certificates.CaCertificate == nil {
+	case "CertificationResult.caCertificate":
+		if e.complexity.CertificationResult.CaCertificate == nil {
 			break
 		}
 
-		return e.complexity.Certificates.CaCertificate(childComplexity), true
+		return e.complexity.CertificationResult.CaCertificate(childComplexity), true
 
-	case "Certificates.certificate":
-		if e.complexity.Certificates.Certificate == nil {
+	case "CertificationResult.certificate":
+		if e.complexity.CertificationResult.Certificate == nil {
 			break
 		}
 
-		return e.complexity.Certificates.Certificate(childComplexity), true
+		return e.complexity.CertificationResult.Certificate(childComplexity), true
 
-	case "Certificates.clientCertificate":
-		if e.complexity.Certificates.ClientCertificate == nil {
+	case "CertificationResult.clientCertificate":
+		if e.complexity.CertificationResult.ClientCertificate == nil {
 			break
 		}
 
-		return e.complexity.Certificates.ClientCertificate(childComplexity), true
+		return e.complexity.CertificationResult.ClientCertificate(childComplexity), true
 
 	case "ManagementPlaneInfo.directorURL":
 		if e.complexity.ManagementPlaneInfo.DirectorURL == nil {
@@ -306,8 +306,8 @@ type Token {
     token: String! # eg.: "1edfc34g"
 }
 
-# Certificates
-type Certificates {
+# CertificationResult
+type CertificationResult {
     certificate: String!
     caCertificate: String!
     clientCertificate: String!
@@ -328,7 +328,7 @@ type CertificateSigningRequestInfo {
 type Query {
     # Client-Certificates
     
-    # Retuns subject that should be placed in the signing request
+    """returns subject that should be placed in the signing request"""
     getCertificateSignignRequestInfo(token: String): CertificateSigningRequestInfo!
 }
 
@@ -339,16 +339,16 @@ type Mutation {
 
     # Client-Certificates
     
-    # Signs CSR, currently we have two very similar endpoints. One for signing new CSR
+    # Currently we have two very similar endpoints. One for signing new CSR
     # protected by one-time token and second for certificates renewals protected by 
     # client-certificate. We may consider chaning the implementation to have only one
     # mutation that will be aware of those two protection mechanisms
-    signCertificateSigningRequest(csr: String!, token: String): Certificates!
+    signCertificateSigningRequest(csr: String!, token: String): CertificationResult!
 
     # If we decide to reuse signCSR mutation then we can skip this one
-    renewCertificate(csr: String!): Certificates!
+    renewCertificate(csr: String!): CertificationResult!
 
-    # Revokes certificate with which the request was issued
+    """revokes certificate with which the request was issued"""
     revokeCertificate: Boolean!
 }`},
 )
@@ -562,11 +562,11 @@ func (ec *executionContext) _CertificateSigningRequestInfo_keyAlgorithm(ctx cont
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Certificates_certificate(ctx context.Context, field graphql.CollectedField, obj *Certificates) graphql.Marshaler {
+func (ec *executionContext) _CertificationResult_certificate(ctx context.Context, field graphql.CollectedField, obj *CertificationResult) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object:   "Certificates",
+		Object:   "CertificationResult",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -589,11 +589,11 @@ func (ec *executionContext) _Certificates_certificate(ctx context.Context, field
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Certificates_caCertificate(ctx context.Context, field graphql.CollectedField, obj *Certificates) graphql.Marshaler {
+func (ec *executionContext) _CertificationResult_caCertificate(ctx context.Context, field graphql.CollectedField, obj *CertificationResult) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object:   "Certificates",
+		Object:   "CertificationResult",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -616,11 +616,11 @@ func (ec *executionContext) _Certificates_caCertificate(ctx context.Context, fie
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Certificates_clientCertificate(ctx context.Context, field graphql.CollectedField, obj *Certificates) graphql.Marshaler {
+func (ec *executionContext) _CertificationResult_clientCertificate(ctx context.Context, field graphql.CollectedField, obj *CertificationResult) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object:   "Certificates",
+		Object:   "CertificationResult",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -766,10 +766,10 @@ func (ec *executionContext) _Mutation_signCertificateSigningRequest(ctx context.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*Certificates)
+	res := resTmp.(*CertificationResult)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNCertificates2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋconnectorᚋinternalᚋgqlschemaᚐCertificates(ctx, field.Selections, res)
+	return ec.marshalNCertificationResult2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋconnectorᚋinternalᚋgqlschemaᚐCertificationResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_renewCertificate(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -800,10 +800,10 @@ func (ec *executionContext) _Mutation_renewCertificate(ctx context.Context, fiel
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*Certificates)
+	res := resTmp.(*CertificationResult)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNCertificates2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋconnectorᚋinternalᚋgqlschemaᚐCertificates(ctx, field.Selections, res)
+	return ec.marshalNCertificationResult2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋconnectorᚋinternalᚋgqlschemaᚐCertificationResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_revokeCertificate(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -1825,29 +1825,29 @@ func (ec *executionContext) _CertificateSigningRequestInfo(ctx context.Context, 
 	return out
 }
 
-var certificatesImplementors = []string{"Certificates"}
+var certificationResultImplementors = []string{"CertificationResult"}
 
-func (ec *executionContext) _Certificates(ctx context.Context, sel ast.SelectionSet, obj *Certificates) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, certificatesImplementors)
+func (ec *executionContext) _CertificationResult(ctx context.Context, sel ast.SelectionSet, obj *CertificationResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, certificationResultImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("Certificates")
+			out.Values[i] = graphql.MarshalString("CertificationResult")
 		case "certificate":
-			out.Values[i] = ec._Certificates_certificate(ctx, field, obj)
+			out.Values[i] = ec._CertificationResult_certificate(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "caCertificate":
-			out.Values[i] = ec._Certificates_caCertificate(ctx, field, obj)
+			out.Values[i] = ec._CertificationResult_caCertificate(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "clientCertificate":
-			out.Values[i] = ec._Certificates_clientCertificate(ctx, field, obj)
+			out.Values[i] = ec._CertificationResult_clientCertificate(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -2284,18 +2284,18 @@ func (ec *executionContext) marshalNCertificateSigningRequestInfo2ᚖgithubᚗco
 	return ec._CertificateSigningRequestInfo(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNCertificates2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋconnectorᚋinternalᚋgqlschemaᚐCertificates(ctx context.Context, sel ast.SelectionSet, v Certificates) graphql.Marshaler {
-	return ec._Certificates(ctx, sel, &v)
+func (ec *executionContext) marshalNCertificationResult2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋconnectorᚋinternalᚋgqlschemaᚐCertificationResult(ctx context.Context, sel ast.SelectionSet, v CertificationResult) graphql.Marshaler {
+	return ec._CertificationResult(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNCertificates2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋconnectorᚋinternalᚋgqlschemaᚐCertificates(ctx context.Context, sel ast.SelectionSet, v *Certificates) graphql.Marshaler {
+func (ec *executionContext) marshalNCertificationResult2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋconnectorᚋinternalᚋgqlschemaᚐCertificationResult(ctx context.Context, sel ast.SelectionSet, v *CertificationResult) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
 		return graphql.Null
 	}
-	return ec._Certificates(ctx, sel, v)
+	return ec._CertificationResult(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {

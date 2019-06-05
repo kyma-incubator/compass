@@ -8,7 +8,7 @@ type CertificateSigningRequestInfo struct {
 	KeyAlgorithm        string               `json:"keyAlgorithm"`
 }
 
-type Certificates struct {
+type CertificationResult struct {
 	Certificate       string `json:"certificate"`
 	CaCertificate     string `json:"caCertificate"`
 	ClientCertificate string `json:"clientCertificate"`
