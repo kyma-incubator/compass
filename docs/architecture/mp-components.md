@@ -2,11 +2,13 @@
 
 ## Overview
 
-This document describes the [Management Plane's](/docs/terminology.md#Management-Plane) components.
+This document describes the [Management Plane's](/docs/terminology.md#Management-Plane) components and the high-level concepts.
 
 ## Components
 
-Management Plane consists of [Compass](/docs/terminology.md#MP-Compass), [Runtime Provisioners](/docs/terminology.md#MP-Runtime-Provisioner) and [Cockpit](/docs/terminology.md#MP-Cockpit) components. [Applications](/docs/terminology.md#Application) and [Agents](/docs/terminology.md#Runtime-Agent) can communicate with the [Gateway](/docs/terminology.md#MP-Gateway) component or [Connector](/docs/terminology.md#MP-Connector) component. [Administrator](/docs/terminology.md#Administrator) uses Cockpit to configure Management Plane.
+The Management Plane is an abstract definition and set of exposed functionality on how users can managed different aspects of their application landscape allowing flexible approaches of extending, customizing and integrating their existing application solutions. 
+
+The Management Plane consists of the Management Plane Services (Project [Compass](/docs/terminology.md#MP-Compass)), Manage Plane Integration Services, [Runtime Provisioners](/docs/terminology.md#MP-Runtime-Provisioner) and [Cockpit](/docs/terminology.md#MP-Cockpit) components. The Management Plane Services (Project [Compass](/docs/terminology.md#MP-Compass)) are a set of headless services covering all the generic functionality while optionally leveraging different application specific Management Plane Integration Services to configure and instrument the application to be integrated or extended. All communication, whether it comes from a [Applications](/docs/terminology.md#Application) or other external component is flowing through the [API-Gateway](/docs/terminology.md#MP-Gateway) component. [Administrator](/docs/terminology.md#Administrator) uses Cockpit to configure Management Plane.
 
 ![Management Plane Components](./assets/mp-components.svg)
 
