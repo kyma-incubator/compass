@@ -201,9 +201,10 @@ func (DocumentPage) IsPageable() {}
 type EventAPIDefinition struct {
 	ID string `json:"id"`
 	// group allows you to find the same API but in different version
-	Group   *string    `json:"group"`
-	Spec    *EventSpec `json:"spec"`
-	Version *Version   `json:"version"`
+	Group         *string              `json:"group"`
+	Spec          *EventSpec           `json:"spec"`
+	Subscriptions []*EventSubscription `json:"subscriptions"`
+	Version       *Version             `json:"version"`
 }
 
 type EventAPIDefinitionPage struct {
@@ -215,9 +216,10 @@ type EventAPIDefinitionPage struct {
 func (EventAPIDefinitionPage) IsPageable() {}
 
 type EventDefinitionInput struct {
-	Spec    *EventSpecInput `json:"spec"`
-	Group   *string         `json:"group"`
-	Version *VersionInput   `json:"version"`
+	Spec          *EventSpecInput           `json:"spec"`
+	Group         *string                   `json:"group"`
+	Subscriptions []*EventSubscriptionInput `json:"subscriptions"`
+	Version       *VersionInput             `json:"version"`
 }
 
 type EventSpec struct {
@@ -231,6 +233,20 @@ type EventSpecInput struct {
 	Data          *string            `json:"data"`
 	EventSpecType EventSpecType      `json:"eventSpecType"`
 	FetchRequest  *FetchRequestInput `json:"fetchRequest"`
+}
+
+type EventSubscription struct {
+	URL        string  `json:"url"`
+	Auth       *Auth   `json:"auth"`
+	Topic      string  `json:"topic"`
+	Attributes *string `json:"attributes"`
+}
+
+type EventSubscriptionInput struct {
+	URL        string     `json:"url"`
+	Auth       *AuthInput `json:"auth"`
+	Topic      string     `json:"topic"`
+	Attributes *string    `json:"attributes"`
 }
 
 //  Compass performs fetch to validate if request is correct and stores a copy
