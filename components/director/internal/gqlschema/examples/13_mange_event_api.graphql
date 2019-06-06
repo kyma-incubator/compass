@@ -22,7 +22,7 @@ mutation {
         id
     }
 
-    refetchEventSpec(eventID: 456) {
+    refetchEventAPISpec(eventID: 456) {
         fetchRequest {
             status {
                 condition

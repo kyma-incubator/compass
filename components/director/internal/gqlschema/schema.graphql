@@ -183,7 +183,7 @@ enum APISpecType {
     OPEN_API
 }
 
-enum EventSpecType {
+enum EventAPISpecType {
     ASYNC_API
 }
 
@@ -193,13 +193,13 @@ type EventAPIDefinition {
     id: ID!
     """group allows you to find the same API but in different version"""
     group: String
-    spec: EventSpec!
+    spec: EventAPISpec!
     version: Version
 }
 
-type EventSpec {
+type EventAPISpec {
     data: CLOB
-    type: EventSpecType!
+    type: EventAPISpecType!
     format: SpecFormat
     fetchRequest: FetchRequest
 }
@@ -310,7 +310,7 @@ input ApplicationInput {
     webhooks: [ApplicationWebhookInput]
     healthCheckURL: String
     apis: [APIDefinitionInput!]
-    events: [EventDefinitionInput!]
+    events: [EventAPIDefinitionInput!]
     documents: [DocumentInput!]
 }
 
@@ -368,15 +368,15 @@ input APISpecInput {
 
 # Event Input
 
-input EventDefinitionInput {
-    spec: EventSpecInput!
+input EventAPIDefinitionInput {
+    spec: EventAPISpecInput!
     group: String
     version: VersionInput
 }
 
-input EventSpecInput {
+input EventAPISpecInput {
     data: CLOB
-    eventSpecType: EventSpecType!
+    eventSpecType: EventAPISpecType!
     fetchRequest: FetchRequestInput
 }
 
@@ -479,10 +479,10 @@ type Mutation {
     deleteAPIAuth(apiID: ID!, runtimeID: ID!): RuntimeAuth!
 
 
-    addEvent(applicationID: ID!, in: EventDefinitionInput!): EventAPIDefinition!
-    updateEvent(id: ID!, in: EventDefinitionInput!): EventAPIDefinition!
-    deleteEvent(id: ID!): EventAPIDefinition
-    refetchEventSpec(eventID: ID!): EventSpec
+    addEventAPI(applicationID: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition!
+    updateEventAPI(id: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition!
+    deleteEventAPI(id: ID!): EventAPIDefinition
+    refetchEventAPISpec(eventID: ID!): EventAPISpec
 
     # Runtime
     createRuntime(in: RuntimeInput!): Runtime!

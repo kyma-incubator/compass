@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/kyma-incubator/compass/components/director/internal/resolver"
 	"log"
 	"net/http"
 
@@ -24,7 +25,7 @@ func main() {
 	exitOnError(err, "Error while loading app config")
 
 	gqlCfg := gqlschema.Config{
-		Resolvers: &gqlschema.Resolver{},
+		Resolvers: resolver.New(),
 	}
 	executableSchema := gqlschema.NewExecutableSchema(gqlCfg)
 

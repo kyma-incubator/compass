@@ -63,16 +63,16 @@ func (r *mutationResolver) SetAPIAuth(ctx context.Context, apiID string, runtime
 func (r *mutationResolver) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*RuntimeAuth, error) {
 	panic("not implemented")
 }
-func (r *mutationResolver) AddEvent(ctx context.Context, applicationID string, in EventDefinitionInput) (*EventAPIDefinition, error) {
+func (r *mutationResolver) AddEventAPI(ctx context.Context, applicationID string, in EventAPIDefinitionInput) (*EventAPIDefinition, error) {
 	panic("not implemented")
 }
-func (r *mutationResolver) UpdateEvent(ctx context.Context, id string, in EventDefinitionInput) (*EventAPIDefinition, error) {
+func (r *mutationResolver) UpdateEventAPI(ctx context.Context, id string, in EventAPIDefinitionInput) (*EventAPIDefinition, error) {
 	panic("not implemented")
 }
-func (r *mutationResolver) DeleteEvent(ctx context.Context, id string) (*EventAPIDefinition, error) {
+func (r *mutationResolver) DeleteEventAPI(ctx context.Context, id string) (*EventAPIDefinition, error) {
 	panic("not implemented")
 }
-func (r *mutationResolver) RefetchEventSpec(ctx context.Context, eventID string) (*EventSpec, error) {
+func (r *mutationResolver) RefetchEventAPISpec(ctx context.Context, eventID string) (*EventAPISpec, error) {
 	panic("not implemented")
 }
 func (r *mutationResolver) CreateRuntime(ctx context.Context, in RuntimeInput) (*Runtime, error) {
@@ -100,13 +100,7 @@ func (r *mutationResolver) DeleteRuntimeAnnotation(ctx context.Context, id strin
 type queryResolver struct{ *Resolver }
 
 func (r *queryResolver) Applications(ctx context.Context, filter []*LabelFilter, first *int, after *string) (*ApplicationPage, error) {
-	return &ApplicationPage{
-		Data:       []*Application{},
-		TotalCount: 0,
-		PageInfo: &PageInfo{
-			HasNextPage: false,
-		},
-	}, nil
+	panic("not implemented")
 }
 func (r *queryResolver) Application(ctx context.Context, id string) (*Application, error) {
 	panic("not implemented")
