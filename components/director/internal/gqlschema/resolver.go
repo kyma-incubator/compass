@@ -45,31 +45,31 @@ func (r *mutationResolver) UpdateApplicationWebhook(ctx context.Context, webhook
 func (r *mutationResolver) DeleteApplicationWebhook(ctx context.Context, webhookID string) (*ApplicationWebhook, error) {
 	panic("not implemented")
 }
-func (r *mutationResolver) AddAPIDefinition(ctx context.Context, applicationID string, in APIDefinitionInput) (*APIDefinition, error) {
+func (r *mutationResolver) AddAPI(ctx context.Context, applicationID string, in APIDefinitionInput) (*APIDefinition, error) {
 	panic("not implemented")
 }
-func (r *mutationResolver) UpdateAPIDefinition(ctx context.Context, id string, in APIDefinitionInput) (*APIDefinition, error) {
+func (r *mutationResolver) UpdateAPI(ctx context.Context, id string, in APIDefinitionInput) (*APIDefinition, error) {
 	panic("not implemented")
 }
-func (r *mutationResolver) DeleteAPIDefinition(ctx context.Context, id string) (*APIDefinition, error) {
+func (r *mutationResolver) DeleteAPI(ctx context.Context, id string) (*APIDefinition, error) {
 	panic("not implemented")
 }
 func (r *mutationResolver) RefetchAPISpec(ctx context.Context, apiID string) (*APISpec, error) {
 	panic("not implemented")
 }
-func (r *mutationResolver) SetAPIAuth(ctx context.Context, apiID string, runtimeID string, in AuthInput) ([]*RuntimeAuth, error) {
+func (r *mutationResolver) SetAPIAuth(ctx context.Context, apiID string, runtimeID string, in AuthInput) (*RuntimeAuth, error) {
 	panic("not implemented")
 }
-func (r *mutationResolver) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) ([]*RuntimeAuth, error) {
+func (r *mutationResolver) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*RuntimeAuth, error) {
 	panic("not implemented")
 }
-func (r *mutationResolver) AddEventDefinition(ctx context.Context, applicationID string, in EventDefinitionInput) (*EventAPIDefinition, error) {
+func (r *mutationResolver) AddEvent(ctx context.Context, applicationID string, in EventDefinitionInput) (*EventAPIDefinition, error) {
 	panic("not implemented")
 }
-func (r *mutationResolver) UpdateEventDefinition(ctx context.Context, id string, in EventDefinitionInput) (*EventAPIDefinition, error) {
+func (r *mutationResolver) UpdateEvent(ctx context.Context, id string, in EventDefinitionInput) (*EventAPIDefinition, error) {
 	panic("not implemented")
 }
-func (r *mutationResolver) DeleteEventDefinition(ctx context.Context, id string) (*EventAPIDefinition, error) {
+func (r *mutationResolver) DeleteEvent(ctx context.Context, id string) (*EventAPIDefinition, error) {
 	panic("not implemented")
 }
 func (r *mutationResolver) RefetchEventSpec(ctx context.Context, eventID string) (*EventSpec, error) {
@@ -99,18 +99,24 @@ func (r *mutationResolver) DeleteRuntimeAnnotation(ctx context.Context, id strin
 
 type queryResolver struct{ *Resolver }
 
-func (r *queryResolver) Applications(ctx context.Context, filter []*LabelFilter) ([]*Application, error) {
-	return []*Application{}, nil
+func (r *queryResolver) Applications(ctx context.Context, filter []*LabelFilter, first *int, after *string) (*ApplicationPage, error) {
+	return &ApplicationPage{
+		Data:       []*Application{},
+		TotalCount: 0,
+		PageInfo: &PageInfo{
+			HasNextPage: false,
+		},
+	}, nil
 }
 func (r *queryResolver) Application(ctx context.Context, id string) (*Application, error) {
 	panic("not implemented")
 }
-func (r *queryResolver) Runtimes(ctx context.Context, filter []*LabelFilter) ([]*Runtime, error) {
+func (r *queryResolver) Runtimes(ctx context.Context, filter []*LabelFilter, first *int, after *string) (*RuntimePage, error) {
 	panic("not implemented")
 }
 func (r *queryResolver) Runtime(ctx context.Context, id string) (*Runtime, error) {
 	panic("not implemented")
 }
-func (r *queryResolver) HealthChecks(ctx context.Context, types []HealthCheckType, origin *string) ([]*HealthCheck, error) {
+func (r *queryResolver) HealthChecks(ctx context.Context, types []HealthCheckType, origin *string, first *int, after *string) (*HealthCheckPage, error) {
 	panic("not implemented")
 }
