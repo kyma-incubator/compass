@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
-	"github.com/pkg/errors"
 	"log"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
+	"github.com/pkg/errors"
 
 	"github.com/gorilla/mux"
 	"github.com/vrischmann/envconfig"
@@ -28,7 +29,7 @@ func main() {
 	log.Printf("Proxying requests to Director: %s\n", cfg.DirectorOrigin)
 
 	router := mux.NewRouter()
-	router.HandleFunc("/", directorProxy.ServeHTTP) // GraphQL Playground
+	router.HandleFunc("/", directorProxy.ServeHTTP)        // GraphQL Playground
 	router.HandleFunc("/graphql", directorProxy.ServeHTTP) // GraphQL API Endpoint
 
 	router.HandleFunc("/healthz", func(writer http.ResponseWriter, request *http.Request) {
