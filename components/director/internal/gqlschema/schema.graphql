@@ -495,4 +495,3 @@ type Mutation {
     addRuntimeAnnotation(runtimeID: ID!, key: String!, value: String!): String!
     deleteRuntimeAnnotation(id: ID!, key: String!): String
 }
-

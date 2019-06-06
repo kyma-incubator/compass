@@ -1,15 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Chart.Name }}
+  name: {{ template "fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
 spec:
   type: ClusterIP
   ports:
-    - port: {{ .Values.service.directorPort }}
-      targetPort: http
+    - port: {{ .Values.global.director.port }}
       protocol: TCP
       name: http
   selector:

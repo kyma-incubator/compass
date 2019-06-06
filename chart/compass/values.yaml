@@ -1,19 +1,30 @@
 global:
-  containerRegistry:
-    path: eu.gcr.io/kyma-project/incubator
-  director:
-    dir: develop/
-    version: "6d888e37"
-  gateway:
-    dir: develop/
-    version: "6d888e37"
-  healthchecker:
-    dir: develop/
-    version: "6d888e37"
-  registry:
-    dir: develop/
-    version: "6d888e37"
-  tests:
-    e2e:
+  images:
+    containerRegistry:
+      path: eu.gcr.io/kyma-project/incubator
+    director:
+      dir: pr/
+      version: "PR-39"
+    gateway:
+      dir: pr/
+      version: "PR-39"
+    healthchecker:
       dir: develop/
-      version: "ec80b7e4"
+      version: "6d888e37"
+    registry:
+      dir: develop/
+      version: "6d888e37"
+    tests:
+      e2e:
+        dir: develop/
+        version: "ec80b7e4"
+
+  director:
+    port: 3000
+
+  ingress:
+    domainName: kyma.local
+  istio:
+    gateway: compass-istio-gateway
+
+

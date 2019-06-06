@@ -2,63 +2,12 @@
 
 
 [[projects]]
-  digest = "1:36a35bcd0d31f5082578d975e0c23e5e14c98be262b3832fc2c30f35ca5fc776"
-  name = "github.com/99designs/gqlgen"
-  packages = [
-    "api",
-    "cmd",
-    "codegen",
-    "codegen/config",
-    "codegen/templates",
-    "complexity",
-    "graphql",
-    "graphql/introspection",
-    "handler",
-    "internal/code",
-    "internal/imports",
-    "plugin",
-    "plugin/modelgen",
-    "plugin/resolvergen",
-    "plugin/servergen",
-  ]
-  pruneopts = "UT"
-  revision = "ea4652d223c441dc77b31882781ce08488763d67"
-  version = "v0.9.0"
-
-[[projects]]
-  digest = "1:786e862ec180708b60ee670723e3edd969fd4309e7b1c315cd7de058ac62a011"
-  name = "github.com/agnivade/levenshtein"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "51b298ff305e72cfd29166dccc3f9878e82f9fdc"
-  version = "v1.0.2"
-
-[[projects]]
   digest = "1:3af6be4fee7c08f81f13d36f04ffb63ad4b6b5aaba12cce96095c7c2863d4912"
   name = "github.com/gorilla/mux"
   packages = ["."]
   pruneopts = "UT"
   revision = "ed099d42384823742bba0bf9a72b53b55c9e2e38"
   version = "v1.7.2"
-
-[[projects]]
-  digest = "1:7b5c6e2eeaa9ae5907c391a91c132abfd5c9e8a784a341b5625e750c67e6825d"
-  name = "github.com/gorilla/websocket"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "66b9c49e59c6c48f0ffce28c2d8b8a5678502c6d"
-  version = "v1.4.0"
-
-[[projects]]
-  digest = "1:d15ee511aa0f56baacc1eb4c6b922fa1c03b38413b6be18166b996d82a0156ea"
-  name = "github.com/hashicorp/golang-lru"
-  packages = [
-    ".",
-    "simplelru",
-  ]
-  pruneopts = "UT"
-  revision = "7087cb70de9f7a8bc0a10c375cb0d2280a8edf9c"
-  version = "v0.5.1"
 
 [[projects]]
   digest = "1:b472339040c571f1085e429ad08d94218bc3fc7a635c99fd95e3f80382413317"
@@ -69,6 +18,7 @@
   ]
   pruneopts = "UT"
   revision = "e14f8d59a22d460d56c5ee92507cd94c78fbf274"
+  version = "v1.2.0"
 
 [[projects]]
   digest = "1:cf31692c14422fa27c83a05292eb5cbe0fb2775972e8f1f8446a71549bd8980b"
@@ -79,32 +29,16 @@
   version = "v0.8.1"
 
 [[projects]]
-  digest = "1:b24d38b282bacf9791408a080f606370efa3d364e4b5fd9ba0f7b87786d3b679"
-  name = "github.com/urfave/cli"
+  digest = "1:1b8282c02f3cbf27de019d739246eaf8231f5dbcaaf9d0d7c7524184ee7b2d24"
+  name = "github.com/vrischmann/envconfig"
   packages = ["."]
   pruneopts = "UT"
-  revision = "cfb38830724cc34fedffe9a2a29fb54fa9169cd1"
-  version = "v1.20.0"
-
-[[projects]]
-  digest = "1:b4e8aaca88f799355f4ac560bce4293fb85ff21003dd0d5741ca503f7a788e91"
-  name = "github.com/vektah/gqlparser"
-  packages = [
-    ".",
-    "ast",
-    "gqlerror",
-    "lexer",
-    "parser",
-    "validator",
-    "validator/rules",
-  ]
-  pruneopts = "UT"
-  revision = "05741cdb0871330d8bc980d4afd21ab34eceee83"
-  version = "v1.1.2"
+  revision = "7a443243d539c9595dd8aa7f03a6f68707b80e66"
+  version = "v1.1.0"
 
 [[projects]]
   branch = "master"
-  digest = "1:135bbfba19e96a22bb998c7b50ec1a959f48d09c62060ce2eb71d49a22b4870c"
+  digest = "1:e2dc842b529b217bc0a51508d37e235256b1f2a3edb86d003e7eb9f1771993cf"
   name = "golang.org/x/tools"
   packages = [
     "cmd/goimports",
@@ -114,7 +48,6 @@
     "go/internal/packagesdriver",
     "go/packages",
     "go/types/typeutil",
-    "imports",
     "internal/fastwalk",
     "internal/gopathwalk",
     "internal/imports",
@@ -122,29 +55,16 @@
     "internal/semver",
   ]
   pruneopts = "UT"
-  revision = "521d6ed310dd2348b2d3c64b91c55df233c52860"
-
-[[projects]]
-  digest = "1:4d2e5a73dc1500038e504a8d78b986630e3626dc027bc030ba5c75da257cdb96"
-  name = "gopkg.in/yaml.v2"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "51d6538a90f86fe93ac480b35f37b2be17fef232"
-  version = "v2.2.2"
+  revision = "8aaa1484dc108aa23dcf2d4a09371c0c9e280f6b"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/99designs/gqlgen/cmd",
-    "github.com/99designs/gqlgen/graphql",
-    "github.com/99designs/gqlgen/graphql/introspection",
-    "github.com/99designs/gqlgen/handler",
     "github.com/gorilla/mux",
     "github.com/kisielk/errcheck",
     "github.com/pkg/errors",
-    "github.com/vektah/gqlparser",
-    "github.com/vektah/gqlparser/ast",
+    "github.com/vrischmann/envconfig",
     "golang.org/x/tools/cmd/goimports",
   ]
   solver-name = "gps-cdcl"

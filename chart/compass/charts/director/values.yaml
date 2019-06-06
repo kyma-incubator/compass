@@ -2,7 +2,4 @@ deployment:
   image:
     pullPolicy: IfNotPresent
   args:
-    containerPort: &port 3000
-
-service:
-  directorPort: *port
+    containerPort: 3000
