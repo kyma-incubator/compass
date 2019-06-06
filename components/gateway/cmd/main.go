@@ -18,19 +18,17 @@ type config struct {
 }
 
 func main() {
-
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Error while loading app config")
 
-	directorProxy, err := proxy.New(cfg.DirectorOrigin)
+	directorProxy, err := proxy.New(cfg.DirectorOrigin, "/director")
 	exitOnError(err, "Error while initializing proxy")
 
 	log.Printf("Proxying requests to Director: %s\n", cfg.DirectorOrigin)
 
 	router := mux.NewRouter()
-	router.HandleFunc("/", directorProxy.ServeHTTP)        // GraphQL Playground
-	router.HandleFunc("/graphql", directorProxy.ServeHTTP) // GraphQL API Endpoint
+	router.PathPrefix("/director").HandlerFunc(directorProxy.ServeHTTP)
 
 	router.HandleFunc("/healthz", func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(200)
