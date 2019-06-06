@@ -43,7 +43,7 @@ func main() {
 	}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/", directorProxy.ServeHTTP) // GraphQL Playground
+	router.HandleFunc("/", directorProxy.ServeHTTP)        // GraphQL Playground
 	router.HandleFunc("/graphql", directorProxy.ServeHTTP) // GraphQL API Endpoint
 
 	router.HandleFunc("/healthz", func(writer http.ResponseWriter, request *http.Request) {
