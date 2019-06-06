@@ -4,7 +4,7 @@ ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
 
 KYMA_RELEASE="1.1.0"
 COMPASS_HELM_RELEASE_NAME="compass"
-COMPASS_HELM_RELEASE_NAMESPACE="kyma-system"
+COMPASS_HELM_RELEASE_NAMESPACE="compass-system"
 
 kyma provision minikube
 

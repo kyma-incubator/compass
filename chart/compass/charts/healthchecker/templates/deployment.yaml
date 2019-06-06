@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: {{ .Chart.Name }}
-          image: {{ .Values.global.containerRegistry.path }}/{{ .Values.global.healthchecker.dir }}compass-healthchecker:{{ .Values.global.healthchecker.version }}
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.healthchecker.dir }}compass-healthchecker:{{ .Values.global.images.healthchecker.version }}
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - name: http

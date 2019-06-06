@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: {{ .Chart.Name }}
-          image: {{ .Values.global.containerRegistry.path }}/{{ .Values.global.director.dir }}compass-director:{{ .Values.global.director.version }}
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.director.dir }}compass-director:{{ .Values.global.images.director.version }}
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - name: http
@@ -28,9 +28,3 @@ spec:
           env:
             - name: APP_ADDRESS
               value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
-          volumeMounts:
-            - name: ingress-tls-cert
-              mountPath: /etc/ingress-tls-cert/
-      volumes:
-        - name: ingress-tls-cert
-          secret:
