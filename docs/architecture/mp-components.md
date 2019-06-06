@@ -12,7 +12,7 @@ The Management Plane consists of the Management Plane Services (Project [Compass
 
 ![Management Plane Components](./assets/mp-components.svg)
 
-### Compass
+### Management Plane Services Compass
 
 Compass is the project name of the Management Plane Services that consists of three components: Connector, Gateway, Regsitry and [Director](/docs/terminology.md#MP-Director).
 
@@ -27,15 +27,15 @@ There are different level of Integration:
 - **proxy** - A proxy component colocated to the application is providing the Management Plane Integration and is controlling the application. The proxy can be highly application specific.
 - **service** - A central service is providing the Management Plane Integration for a class of application managing multiple instances of these applications. Multiple service can be integrated to support different type of applications.
 
-#### Connector
+### Connector
 
 Connector component exposes GraphQL API that can be accessed directly, its responsibility is establishing trust among Applications, Management Plane and [Runtimes](/docs/terminology.md#Runtime).
 
-#### API-Gateway
+### API-Gateway
 
 API-Gateway component serves as the main Gateway that extracts [Tenant](/docs/terminology.md#MP-Tenant) from incoming requests and proxies the requests to the Director component.
 
-#### Director
+### Director
 
 Director component exposes GraphQL API that can be accessed through the Gateway component. It contains all business logic required to handle Applications and Runtimes registration as well as health checks. It also requests Application [Webhook API](/docs/terminology.md#Application-Webhook-API) for credentials. This component has access to storage.
 
