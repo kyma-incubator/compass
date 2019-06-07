@@ -1,19 +1,21 @@
-# Postgres
-
-## Schema
+# PostgreSQL Evaluation
 
 
-Our GraphQL API allows clients to perform very sophisticated queries, like get all applications with API, event definitions and all documentation. In this document, we evaluate how Postgres will handle such queries.
+Our GraphQL API allows clients to perform very sophisticated queries, like get all applications with API, event definitions and all documentation.
+In addition to that, we plan to extend our schema with schemaless data provided by clients. 
+In this document, we evaluate if Postgres meets our expectations. 
 
-## Run
+## Usage
 To run Postgres with populated data, use a `run_postgres.sh` script. This script performs the following tasks:
 
 - generate data by using `gen.go` as CSV files and stores them in `sql` directory. In `gen.go` you can decide how
 many entities to create. 
-- run Postgres as a Docker image with mounted `sql` directory. This directory contains data in CSV files, schema definition and commands
-to populate DB with data.
+- run Postgres as a Docker image with mounted `sql` directory. This directory is mounted in `docker-entrypoint-initdb.d`
+ and thanks to that all `SQL` files will be executed automatically on the DB startup. 
+ The directory contains data in CSV files, schema definition and commands
+to populate DB.
 
-## Benchmark
+## Queries Performance
 1. The query for all details of the given application.
 To run a query, `select.go` was used.
 Every application has 10 APIs, 10 events definition and 10 documents.
