@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes communication between [Management Plane](./../terminology.md#management-plane), [Applications](./../terminology.md#application) and [Runtimes](./../terminology.md#runtime). 
+This document describes communication between [Management Plane](/docs/terminology.md#management-plane), [Applications](/docs/terminology.md#application) and [Runtimes](/docs/terminology.md#runtime). 
 
 ## Components
 Management Plane is a central place which stores configuration about Applications and Runtimes and is responsible for propagating that information to Applications and Runtimes. 
@@ -11,9 +11,9 @@ Management Plane plays crucial role in establishing trusted connection between A
 ![](./assets/components-high-level.svg)
 
 An administrator adds Runtimes, Applications and configures them through Management Plane GraphQL API. 
-To keep Runtimes in-sync with the configuration, [an agent](./../terminology.md#runtime-agent) installed on a Runtime is responsible for fetching actual configuration. 
+To keep Runtimes in-sync with the configuration, [an agent](/docs/terminology.md#runtime-agent) installed on a Runtime is responsible for fetching actual configuration. 
 An Agent sends information about Runtime health checks to Management Plane. 
-In case an Application has configured optional [Webhooks](./../terminology.md#application-webhook-api), Management Plane notifies an Application about any events that concern given Application.
+In case an Application has configured optional [Webhooks](/docs/terminology.md#application-webhook-api), Management Plane notifies an Application about any events that concern given Application.
 Management Plane does not participate in any business flow. After establishing a trusted connection between Application
 and Runtime, they communicate directly, with omitting Management Plane. 
 
