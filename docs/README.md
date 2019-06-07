@@ -4,7 +4,7 @@
 
 This folder contains documents that relate to the project.
 
-- [Terminology](terminology.md)
+- [Terminology](./terminology.md)
 
 Architecture:
 -   [Components - High Level Architecture](./architecture/high-level-components.md)

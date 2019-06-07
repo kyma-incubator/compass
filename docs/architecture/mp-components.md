@@ -2,29 +2,29 @@
 
 ## Overview
 
-This document describes the [Management Plane's](/docs/terminology.md#Management-Plane) components.
+This document describes the [Management Plane's](./../terminology.md#Management-Plane) components.
 
 ## Components
 
-Management Plane consists of [Compass](/docs/terminology.md#MP-Compass), [Runtime Provisioners](/docs/terminology.md#MP-Runtime-Provisioner) and [Cockpit](/docs/terminology.md#MP-Cockpit) components. [Applications](/docs/terminology.md#Application) and [Agents](/docs/terminology.md#Runtime-Agent) can communicate with the [Gateway](/docs/terminology.md#MP-Gateway) component or [Connector](/docs/terminology.md#MP-Connector) component. [Administrator](/docs/terminology.md#Administrator) uses Cockpit to configure Management Plane.
+Management Plane consists of [Compass](./../terminology.md#MP-Compass), [Runtime Provisioners](./../terminology.md#MP-Runtime-Provisioner) and [Cockpit](./../terminology.md#MP-Cockpit) components. [Applications](./../terminology.md#Application) and [Agents](./../terminology.md#Runtime-Agent) can communicate with the [Gateway](./../terminology.md#MP-Gateway) component or [Connector](./../terminology.md#MP-Connector) component. [Administrator](./../terminology.md#Administrator) uses Cockpit to configure Management Plane.
 
 ![Management Plane Components](./assets/mp-components.svg)
 
 ### Compass
 
-Compass is the Management Plane Core that consists of three components: Connector, Gateway, and [Director](/docs/terminology.md#MP-Director).
+Compass is the Management Plane Core that consists of three components: Connector, Gateway, and [Director](./../terminology.md#MP-Director).
 
 #### Connector
 
-Connector component exposes GraphQL API that can be accessed directly, its responsibility is establishing trust among Applications, Management Plane and [Runtimes](/docs/terminology.md#Runtime).
+Connector component exposes GraphQL API that can be accessed directly, its responsibility is establishing trust among Applications, Management Plane and [Runtimes](./../terminology.md#Runtime).
 
 #### Gateway
 
-Gateway component serves as the main API Gateway that extracts [Tenant](/docs/terminology.md#MP-Tenant) from incoming requests and proxies the requests to the Director component.
+Gateway component serves as the main API Gateway that extracts [Tenant](./../terminology.md#MP-Tenant) from incoming requests and proxies the requests to the Director component.
 
 #### Director
 
-Director component exposes GraphQL API that can be accessed through the Gateway component. It contains all business logic required to handle Applications and Runtimes registration as well as health checks. It also requests Application [Webhook API](/docs/terminology.md#Application-Webhook-API) for credentials. This component has access to storage.
+Director component exposes GraphQL API that can be accessed through the Gateway component. It contains all business logic required to handle Applications and Runtimes registration as well as health checks. It also requests Application [Webhook API](./../terminology.md#Application-Webhook-API) for credentials. This component has access to storage.
 
 ### Cockpit
 
