@@ -104,4 +104,5 @@ and support rich queries.
 
 ## Summary
 According to our research, Postgres suits the best our requirements about persisting data for Compass.
-Postgres is a widely used the relational database that allows storing also unstructured data as JSON documents.
+Postgres is a widely used the relational database that allows storing also unstructured data as JSON documents. 
+Thanks to that, we can benefit from SQL and noSQL advantages at the same time.  
