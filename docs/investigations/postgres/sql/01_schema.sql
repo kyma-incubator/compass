@@ -46,6 +46,5 @@ CREATE INDEX  apps_documents ON documents (app_id);
 
 create table custom (
   id int,
-  f1 jsonb,
-  f2 jsonb
+  data jsonb
 );
