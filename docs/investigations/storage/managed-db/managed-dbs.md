@@ -1,5 +1,9 @@
-# Managed DB Comparison
+# Managed DBs Evaluation
 
+Following document describes the evaluation of managed databases that can be used as a
+persistence layer for Compass. 
+
+## Requirements
 To find out the best storage solution for Compass, we defined the following requirements: 
 1. Fully managed solution - we don't want to spend time on managing DB
 2. Extensible "schema" that allow searching by specifying JSON Path. 
@@ -18,7 +22,9 @@ Below you can find a list of the evaluated solutions.
 > **NOTE**: Question mark next to the requirements mean that it given requirement was not evaluated, because
 we find other blockers to use given solution.
 
-## Cloud Spanner - GCP
+## Evaluated Solutions
+
+### Cloud Spanner - GCP
 Cloud Spanner has many blockers: no support for local development, vendor lock-in, no possibility to replace it with solution running inside a k8s cluster. In addition to that, it seems to be very expensive.
 
 1. No operations - Yes
@@ -45,7 +51,7 @@ Monthly multi-regional cost: 3$ * 3 nodes * 720h = 6480$
 
 9. ?
 
-## Cloud SQL (Postgres SQL) - GCP
+### Cloud SQL (Postgres SQL) - GCP
 Cloud SQL Postgres meets all our requirements.
 
 1. No operations - YES
@@ -71,7 +77,7 @@ https://cloud.google.com/sql/docs/postgres/replication/
 
 9. SQL
 
-## Cloud Bigtable - GCP
+### Cloud Bigtable - GCP
 Bigtable is a petabyte-scale, fully managed NoSQL database service for large analytical and operational workloads.
 >  is not a good solution for storing less than 1 TB of data.
 
@@ -80,18 +86,22 @@ https://cloud.google.com/bigtable/docs/overview#storage-model
 It seems that it is designed for different use-case than ours.
 
 
-## Cloud Firestore - GCP
+### Cloud Firestore - GCP
 Firestore is GCP Specific Product - vendor lock-in. You can run it locally by using 
 Firestore emulator but I do not see options to install it inside k8s cluster.
 
-## Firebase Realtime Database - GCP
+### Firebase Realtime Database - GCP
 This database is best suited for real-time notifications, synchronization apps state but has
 very limited query capabilities. 
 
 Source: https://www.codementor.io/cultofmetatron/when-you-should-and-shouldn-t-use-firebase-f62bo3gxv
 
-## Cloud Memorystore - GCP
+### Cloud Memorystore - GCP
 > Fully-managed in-memory data store service for Redis
 
 Redis does not suite our requirements, because it will be difficult to store our model in key-value DB 
 and support rich queries. 
+
+## Summary
+According to our research, Postgres suits the best our requirements about persisting data for Compass.
+Postgres is a widely used the relational database that allows storing also unstructured data as JSON documents.
