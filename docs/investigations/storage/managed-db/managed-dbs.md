@@ -8,8 +8,8 @@ We plan to allow clients storing metadata for Runtime or Application as a JSON o
 4. Have an alternative that can be installed in k8s cluster.
 5. Store big documents ~10MB
 6. No vendor lock-in.
-At the moment we focus only on offerings provided by GCP, but need to be able to migrate
-to other hyperscalers.
+At the moment we focus only on offerings provided by GCP, but migration
+to other hyperscalers has to be easy.
 7. Cross-region replication
 8. Cost-effective
 9. Support rich queries
