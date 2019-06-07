@@ -1,9 +1,9 @@
 # Managed DB Comparison
 
-To find out best storage solution for Compass, we defined following requirements: 
+To find out the best storage solution for Compass, we defined the following requirements: 
 1. Fully managed solution - we don't want to spend time on managing DB
 2. Extensible "schema" that allow searching by specifying JSON Path. 
-We plan to allow clients storing  metadata for Runtime or Application as a JSON objects in labels or annotations. 
+We plan to allow clients storing metadata for Runtime or Application as a JSON object in labels or annotations. 
 3. Easy local development
 4. Have an alternative that can be installed in k8s cluster.
 5. Store big documents ~10MB
@@ -14,13 +14,12 @@ to other hyperscalers.
 8. Cost-effective
 9. Support rich queries
 
-Below you can find list of the evaluated solutions.
+Below you can find a list of the evaluated solutions.
 > **NOTE**: Question mark next to the requirements mean that it given requirement was not evaluated, because
 we find other blockers to use given solution.
 
 ## Cloud Spanner - GCP
-Cloud Spanner has many blockers: no support for local development, vendor lock-in, no possibility to replace it with 
-solution running inside a k8s cluster. In addition to that, it seems to be very expensive.
+Cloud Spanner has many blockers: no support for local development, vendor lock-in, no possibility to replace it with solution running inside a k8s cluster. In addition to that, it seems to be very expensive.
 
 1. No operations - Yes
 2. ? 
@@ -30,13 +29,13 @@ The closest we got was a docker image of CockroachDB, which is similar in princi
 For example, CockroachDB can use PostgreSQL JDBC. As it is imperative for a development environment to be as close a match as possible to production, Cloud Spanner is not ideal as one needs to rely on a full Spanner instance.
 To save costs you can select a single region instance.
 
-Source: https://www.lightspeedhq.com/blog/google-cloud-spanner-good-bad-ugly/ updated on: 2018-03-21
+Source: https://www.lightspeedhq.com/blog/google-cloud-spanner-good-bad-ugly/ updated on 2018-03-21
 
 4. No
 5. ?
 6. No
 7. ?
-8. Expensive: ~6480$ per month for production environment
+8. Expensive: ~6480$ per month for a production environment
 Regional: 0.9$ per node per hour
 Multi-regional: 3$ per node per hour
 > Minimum of 3 nodes recommended for production environments
@@ -50,7 +49,7 @@ Monthly multi-regional cost: 3$ * 3 nodes * 720h = 6480$
 Cloud SQL Postgres meets all our requirements.
 
 1. No operations - YES
-2. Postgres has JSON and JSONB column that is searchable. 
+2. Postgres has a JSON and JSONB column that is searchable. 
 According to [this article](https://hackernoon.com/how-to-query-jsonb-beginner-sheet-cheat-4da3aa5082a3) querying on JSONB objects is almost as simple as classic SQL queries.
 It seems to be possible to apply JSON schema validation as a PL SQL function: https://github.com/gavinwahl/postgres-json-schema
 
@@ -78,7 +77,7 @@ Bigtable is a petabyte-scale, fully managed NoSQL database service for large ana
 
 https://cloud.google.com/bigtable/docs/overview#storage-model
 
-It seems that it is designed for different use-case than our.
+It seems that it is designed for different use-case than ours.
 
 
 ## Cloud Firestore - GCP
