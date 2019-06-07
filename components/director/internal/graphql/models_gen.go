@@ -70,6 +70,11 @@ type APISpecInput struct {
 	FetchRequest *FetchRequestInput `json:"fetchRequest"`
 }
 
+type Annotation struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
 type Application struct {
 	ID             string                `json:"id"`
 	Tenant         Tenant                `json:"tenant"`
@@ -277,6 +282,11 @@ type HealthCheckPage struct {
 }
 
 func (HealthCheckPage) IsPageable() {}
+
+type Label struct {
+	Key    string   `json:"key"`
+	Values []string `json:"values"`
+}
 
 type LabelFilter struct {
 	Label    string          `json:"label"`

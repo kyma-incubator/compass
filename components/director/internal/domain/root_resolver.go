@@ -12,6 +12,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/graphql"
 )
 
+var _ graphql.ResolverRoot = &RootResolver{}
+
 type RootResolver struct {
 	app         *application.Resolver
 	api         *api.Resolver
@@ -21,12 +23,15 @@ type RootResolver struct {
 }
 
 func NewRootResolver() *RootResolver {
+	healthcheckRepo := healthcheck.NewRepository()
+	runtimeRepo := runtime.NewRuntimeRepository()
+
 	appSvc := application.NewService()
 	apiSvc := api.NewService()
 	eventAPISvc := eventapi.NewService()
 	docSvc := document.NewService()
-	runtimeSvc := runtime.NewService()
-	healthCheckSvc := healthcheck.NewService()
+	runtimeSvc := runtime.NewService(runtimeRepo)
+	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 
 	return &RootResolver{
 		app:         application.NewResolver(appSvc, apiSvc, eventAPISvc, docSvc),
@@ -141,17 +146,17 @@ func (r *mutationResolver) UpdateRuntime(ctx context.Context, id string, in grap
 func (r *mutationResolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runtime, error) {
 	return r.runtime.DeleteRuntime(ctx, id)
 }
-func (r *mutationResolver) AddRuntimeLabel(ctx context.Context, runtimeID string, key string, values []string) ([]string, error) {
+func (r *mutationResolver) AddRuntimeLabel(ctx context.Context, runtimeID string, key string, values []string) (*graphql.Label, error) {
 	return r.runtime.AddRuntimeLabel(ctx, runtimeID, key, values)
 }
-func (r *mutationResolver) DeleteRuntimeLabel(ctx context.Context, id string, key string, values []string) ([]string, error) {
-	return r.runtime.DeleteRuntimeLabel(ctx, id, key, values)
+func (r *mutationResolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string, values []string) (*graphql.Label, error) {
+	return r.runtime.DeleteRuntimeLabel(ctx, runtimeID, key, values)
 }
-func (r *mutationResolver) AddRuntimeAnnotation(ctx context.Context, runtimeID string, key string, value string) (string, error) {
+func (r *mutationResolver) AddRuntimeAnnotation(ctx context.Context, runtimeID string, key string, value string) (*graphql.Annotation, error) {
 	return r.runtime.AddRuntimeAnnotation(ctx, runtimeID, key, value)
 }
-func (r *mutationResolver) DeleteRuntimeAnnotation(ctx context.Context, id string, key string) (*string, error) {
-	return r.runtime.DeleteRuntimeAnnotation(ctx, id, key)
+func (r *mutationResolver) DeleteRuntimeAnnotation(ctx context.Context, runtimeID string, key string) (*graphql.Annotation, error) {
+	return r.runtime.DeleteRuntimeAnnotation(ctx, runtimeID, key)
 }
 
 type applicationResolver struct {
