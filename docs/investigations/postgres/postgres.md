@@ -3,21 +3,20 @@
 ## Schema
 
 
-Our GraphQL API allows clients to perform very sophisticated queries, like get all applications with API, event 
-definitions and all documentation. In this document we evaluate how Postgres will handle such queries.
+Our GraphQL API allows clients to perform very sophisticated queries, like get all applications with API, event definitions and all documentation. In this document, we evaluate how Postgres will handle such queries.
 
 ## Run
-To run postgres with populated data, use a `run_postgres.sh` script. This script performs following tasks:
+To run Postgres with populated data, use a `run_postgres.sh` script. This script performs the following tasks:
 
-- generate data by using `gen.go` as a csv files and stores them in `sql` directory. In `gen.go` you can decide how
+- generate data by using `gen.go` as CSV files and stores them in `sql` directory. In `gen.go` you can decide how
 many entities to create. 
-- run Postgres as a Docker image with mounted `sql` directory. This directory contains data in CSV files, schema and commands
+- run Postgres as a Docker image with mounted `sql` directory. This directory contains data in CSV files, schema definition and commands
 to populate DB with data.
 
 ## Benchmark
-1. Query for all details of given application.
-To run query, `select.go` was used.
-Every application has 10 apis, 10 events definition and 10 documents.
+1. The query for all details of the given application.
+To run a query, `select.go` was used.
+Every application has 10 APIs, 10 events definition and 10 documents.
 
 | Apps No.  | With indexes | Without indexes  |
 |---------- |--------------|------------------|
@@ -25,8 +24,8 @@ Every application has 10 apis, 10 events definition and 10 documents.
 | 10 000    | 1.4 ms       | 7.5 ms           |
 | 100 000   | 1.4 ms       | 8-10 ms          |
 
-2. Query for all details of all applications.
-To run query, use `select.go` and remove from query `where` clause.
+2. The query for all details of all applications.
+To run a query, use `select.go` and remove from query `where` clause.
 
 | Apps No.  | With indexes | Without indexes  |
 |---------- |--------------|------------------|
@@ -78,8 +77,8 @@ compass=# explain SELECT app.id, app.tenant, app.name from applications app join
          ->  Seq Scan on documents d  (cost=0.00..163.00 rows=10000 width=4)
 ```
 
-3. Query for all details of all applications with page size = 100.
-To run query, use `select.go` and remove from query `where` clause and add `LIMIT 100`.
+3. The query for all details of all applications with page size = 100.
+To run a query, use `select.go` and remove from query `where` clause and add `LIMIT 100`.
 
 | Apps No.  | With indexes |
 |---------- |--------------|
@@ -87,7 +86,7 @@ To run query, use `select.go` and remove from query `where` clause and add `LIMI
 | 10 000    | 200 us       |                   
 | 100 000   | 200 us       |                         
 
-As you can see, in this case `limit` protects us from long-running queries. 
+As you can see, in this case, `limit` protects us from long-running queries. 
 
 ## PostgreSQL JSON
 Postgres support querying on JSON fields. Run `select_josn.go` to see it in action.
