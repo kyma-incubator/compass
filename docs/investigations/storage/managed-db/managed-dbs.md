@@ -11,9 +11,7 @@ We plan to allow clients storing metadata for Runtime or Application as a JSON o
 3. Easy local development.
 4. Have an alternative that can be installed in k8s cluster.
 5. Store big documents ~10MB.
-6. No vendor lock-in.
-At the moment we focus only on offerings provided by GCP, but migration.
-to other hyperscalers has to be easy.
+6. No vendor lock-in. At the moment we focus only on offerings provided by GCP, but migration to other hyperscalers has to be easy.
 7. Cross-region replication.
 8. Cost-effective.
 9. Support rich queries.
@@ -65,7 +63,7 @@ It seems to be possible to apply JSON schema validation as a PL SQL function: ht
    In addition to that:
    > Different from other database systems, in PostgreSQL, there is no performance difference among three character types. In most situation, you should use text or varchar, and varchar(n) if you want PostgreSQL to check for the length limit.
 
-6. Example Amazon RDS: https://aws.amazon.com/rds/postgresql/
+6. [Amazon RDS](https://aws.amazon.com/rds/postgresql/) or [Azure DB for PostgreSQL](https://azure.microsoft.com/en-in/services/postgresql/).
 7. Replication: Yes
 > Cloud SQL provides the ability to replicate a master instance to one or more read replicas. A read replica is a copy of the master that reflects changes to the master instance in almost real time.
 
