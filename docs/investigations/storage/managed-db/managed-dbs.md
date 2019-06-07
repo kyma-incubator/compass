@@ -5,18 +5,18 @@ persistence layer for Compass.
 
 ## Requirements
 To find out the best storage solution for Compass, we defined the following requirements: 
-1. Fully managed solution - we don't want to spend time on managing DB
+1. Fully managed solution - we don't want to spend time on managing DB.
 2. Extensible "schema" that allow searching by specifying JSON Path. 
 We plan to allow clients storing metadata for Runtime or Application as a JSON object in labels or annotations. 
-3. Easy local development
+3. Easy local development.
 4. Have an alternative that can be installed in k8s cluster.
-5. Store big documents ~10MB
+5. Store big documents ~10MB.
 6. No vendor lock-in.
-At the moment we focus only on offerings provided by GCP, but migration
+At the moment we focus only on offerings provided by GCP, but migration.
 to other hyperscalers has to be easy.
-7. Cross-region replication
-8. Cost-effective
-9. Support rich queries
+7. Cross-region replication.
+8. Cost-effective.
+9. Support rich queries.
 
 Below you can find a list of the evaluated solutions.
 > **NOTE**: Question mark next to the requirements mean that it given requirement was not evaluated, because
@@ -27,7 +27,7 @@ we find other blockers to use given solution.
 ### Cloud Spanner - GCP
 Cloud Spanner has many blockers: no support for local development, vendor lock-in, no possibility to replace it with solution running inside a k8s cluster. In addition to that, it seems to be very expensive.
 
-1. No operations - Yes
+1. Yes
 2. ? 
 3. No
 > We didn’t find a way to create a Cloud Spanner instance in a local environment. 
@@ -54,7 +54,7 @@ Monthly multi-regional cost: 3$ * 3 nodes * 720h = 6480$
 ### Cloud SQL (Postgres SQL) - GCP
 Cloud SQL Postgres meets all our requirements.
 
-1. No operations - YES
+1. YES
 2. Postgres has a JSON and JSONB column that is searchable. 
 According to [this article](https://hackernoon.com/how-to-query-jsonb-beginner-sheet-cheat-4da3aa5082a3) querying on JSONB objects is almost as simple as classic SQL queries.
 It seems to be possible to apply JSON schema validation as a PL SQL function: https://github.com/gavinwahl/postgres-json-schema
