@@ -1,19 +1,22 @@
-# GCP Managed DB Comparison
+# Managed DB Comparison
 
 To find out best storage solution for Compass, we defined following requirements: 
-1. Fully managed solution
-2. Search by JSON Path  
+1. Fully managed solution - we don't want to spend time on managing DB
+2. Extensible "schema" that allow searching by specifying JSON Path. 
+We plan to allow clients storing  metadata for Runtime or Application as a JSON objects in labels or annotations. 
 3. Easy local development
-4. Can be installed in k8s cluster
+4. Have an alternative that can be installed in k8s cluster.
 5. Store big documents ~10MB
-6. No vendor lock-in
+6. No vendor lock-in.
+At the moment we focus only on offerings provided by GCP, but need to be able to migrate
+to other hyperscalers.
 7. Cross-region replication
 8. Cost-effective
 9. Support rich queries
 
 Below you can find list of the evaluated solutions.
-> **NOTE**: Question mark next to the requirements mean that it given requirement was not evaluated, for example because
-we find other blockers to use given solution
+> **NOTE**: Question mark next to the requirements mean that it given requirement was not evaluated, because
+we find other blockers to use given solution.
 
 ## Cloud Spanner - GCP
 Cloud Spanner has many blockers: no support for local development, vendor lock-in, no possibility to replace it with 
@@ -47,13 +50,13 @@ Monthly multi-regional cost: 3$ * 3 nodes * 720h = 6480$
 Cloud SQL Postgres meets all our requirements.
 
 1. No operations - YES
-2. Postgres has JSON and JSONB column
+2. Postgres has JSON and JSONB column that is searchable. 
 According to [this article](https://hackernoon.com/how-to-query-jsonb-beginner-sheet-cheat-4da3aa5082a3) querying on JSONB objects is almost as simple as classic SQL queries.
 It seems to be possible to apply JSON schema validation as a PL SQL function: https://github.com/gavinwahl/postgres-json-schema
 
-3. Postgres or MySQL can be run locally.
-4. Yes, use Postgres chart
-5.  According to the [documentation(http://www.postgresqltutorial.com/postgresql-char-varchar-text/)  text data type can store a string with unlimited length.
+3. Postgres can be run locally.
+4. Postgres chart can be used.
+5.  According to the [this discussion](https://dba.stackexchange.com/questions/189876/size-limit-of-character-varying-postgresql)  text data type can store a string with 1GB size.
    In addition to that:
    > Different from other database systems, in PostgreSQL, there is no performance difference among three character types. In most situation, you should use text or varchar, and varchar(n) if you want PostgreSQL to check for the length limit.
 
@@ -62,9 +65,10 @@ It seems to be possible to apply JSON schema validation as a PL SQL function: ht
 > Cloud SQL provides the ability to replicate a master instance to one or more read replicas. A read replica is a copy of the master that reflects changes to the master instance in almost real time.
 
 https://cloud.google.com/sql/docs/postgres/replication/
-8. Low
 
-3 instances db-pg-f1-micro with 10GB Storage and 10GB backup = 70$ per month
+8. Yes
+
+3 instances `db-pg-f1-micro` with 10GB Storage and 10GB backup = 70$ per month
 
 9. SQL
 
