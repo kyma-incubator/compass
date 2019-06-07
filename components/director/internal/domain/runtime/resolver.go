@@ -2,36 +2,39 @@ package runtime
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/internal/gqlschema"
+
+	"github.com/kyma-incubator/compass/components/director/internal/graphql"
 )
 
+type svc interface{}
+
 type Resolver struct {
-	svc       *Service
+	svc       svc
 	converter *Converter
 }
 
-func NewResolver(svc *Service) *Resolver {
+func NewResolver(svc svc) *Resolver {
 	return &Resolver{
 		svc:       svc,
 		converter: &Converter{},
 	}
 }
 
-func (r *Resolver) Runtimes(ctx context.Context, filter []*gqlschema.LabelFilter, first *int, after *string) (*gqlschema.RuntimePage, error) {
+func (r *Resolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *string) (*graphql.RuntimePage, error) {
 	panic("not implemented")
 }
 
-func (r *Resolver) Runtime(ctx context.Context, id string) (*gqlschema.Runtime, error) {
+func (r *Resolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, error) {
 	panic("not implemented")
 }
 
-func (r *Resolver) CreateRuntime(ctx context.Context, in gqlschema.RuntimeInput) (*gqlschema.Runtime, error) {
+func (r *Resolver) CreateRuntime(ctx context.Context, in graphql.RuntimeInput) (*graphql.Runtime, error) {
 	panic("not implemented")
 }
-func (r *Resolver) UpdateRuntime(ctx context.Context, id string, in gqlschema.RuntimeInput) (*gqlschema.Runtime, error) {
+func (r *Resolver) UpdateRuntime(ctx context.Context, id string, in graphql.RuntimeInput) (*graphql.Runtime, error) {
 	panic("not implemented")
 }
-func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*gqlschema.Runtime, error) {
+func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runtime, error) {
 	panic("not implemented")
 }
 func (r *Resolver) AddRuntimeLabel(ctx context.Context, runtimeID string, key string, values []string) ([]string, error) {

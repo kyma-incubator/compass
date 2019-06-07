@@ -1,7 +1,6 @@
 package healthcheck
 
 type Service struct {
-
 }
 
 func NewService() *Service {

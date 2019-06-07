@@ -1,4 +1,4 @@
-package eventapi
+package document
 
 type Service struct {
 }

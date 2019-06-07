@@ -1,4 +1,4 @@
-package healthcheck
+package document
 
 type Converter struct {
 }

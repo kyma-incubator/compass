@@ -1,4 +1,4 @@
-package gqlschema
+package graphql
 
 import (
 	"context"
@@ -6,11 +6,26 @@ import (
 
 type Resolver struct{}
 
+func (r *Resolver) Application() ApplicationResolver {
+	return &applicationResolver{r}
+}
 func (r *Resolver) Mutation() MutationResolver {
 	return &mutationResolver{r}
 }
 func (r *Resolver) Query() QueryResolver {
 	return &queryResolver{r}
+}
+
+type applicationResolver struct{ *Resolver }
+
+func (r *applicationResolver) Apis(ctx context.Context, obj *Application, group *string, first *int, after *string) (*APIDefinitionPage, error) {
+	panic("not implemented")
+}
+func (r *applicationResolver) EventAPIs(ctx context.Context, obj *Application, group *string, first *int, after *string) (*EventAPIDefinitionPage, error) {
+	panic("not implemented")
+}
+func (r *applicationResolver) Documents(ctx context.Context, obj *Application, first *int, after *string) (*DocumentPage, error) {
+	panic("not implemented")
 }
 
 type mutationResolver struct{ *Resolver }
