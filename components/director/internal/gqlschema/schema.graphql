@@ -12,8 +12,6 @@ scalar HttpHeaders # -> map[string][]string
 
 scalar QueryParams # -> map[string][]string
 
-scalar EventSubscriptionAttributes # -> map[string]string
-
 scalar CLOB # TBD
 
 scalar PageCursor # -> String
@@ -196,7 +194,6 @@ type EventAPIDefinition {
     """group allows you to find the same API but in different version"""
     group: String
     spec: EventSpec!
-    subscriptions: [EventSubscription!]!
     version: Version
 }
 
@@ -205,13 +202,6 @@ type EventSpec {
     type: EventSpecType!
     format: SpecFormat
     fetchRequest: FetchRequest
-}
-
-type EventSubscription {
-    url: String!
-    auth: Auth
-    topic: String!
-    attributes: EventSubscriptionAttributes
 }
 
 # Document
@@ -381,7 +371,6 @@ input APISpecInput {
 input EventDefinitionInput {
     spec: EventSpecInput!
     group: String
-    subscriptions: [EventSubscriptionInput!]
     version: VersionInput
 }
 
@@ -389,13 +378,6 @@ input EventSpecInput {
     data: CLOB
     eventSpecType: EventSpecType!
     fetchRequest: FetchRequestInput
-}
-
-input EventSubscriptionInput {
-    url: String!
-    auth: AuthInput
-    topic: String!
-    attributes: EventSubscriptionAttributes
 }
 
 # Document Input

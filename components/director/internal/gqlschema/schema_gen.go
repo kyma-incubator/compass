@@ -137,11 +137,10 @@ type ComplexityRoot struct {
 	}
 
 	EventAPIDefinition struct {
-		Group         func(childComplexity int) int
-		ID            func(childComplexity int) int
-		Spec          func(childComplexity int) int
-		Subscriptions func(childComplexity int) int
-		Version       func(childComplexity int) int
+		Group   func(childComplexity int) int
+		ID      func(childComplexity int) int
+		Spec    func(childComplexity int) int
+		Version func(childComplexity int) int
 	}
 
 	EventAPIDefinitionPage struct {
@@ -155,13 +154,6 @@ type ComplexityRoot struct {
 		FetchRequest func(childComplexity int) int
 		Format       func(childComplexity int) int
 		Type         func(childComplexity int) int
-	}
-
-	EventSubscription struct {
-		Attributes func(childComplexity int) int
-		Auth       func(childComplexity int) int
-		Topic      func(childComplexity int) int
-		URL        func(childComplexity int) int
 	}
 
 	FetchRequest struct {
@@ -757,13 +749,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.EventAPIDefinition.Spec(childComplexity), true
 
-	case "EventAPIDefinition.subscriptions":
-		if e.complexity.EventAPIDefinition.Subscriptions == nil {
-			break
-		}
-
-		return e.complexity.EventAPIDefinition.Subscriptions(childComplexity), true
-
 	case "EventAPIDefinition.version":
 		if e.complexity.EventAPIDefinition.Version == nil {
 			break
@@ -819,34 +804,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EventSpec.Type(childComplexity), true
-
-	case "EventSubscription.attributes":
-		if e.complexity.EventSubscription.Attributes == nil {
-			break
-		}
-
-		return e.complexity.EventSubscription.Attributes(childComplexity), true
-
-	case "EventSubscription.auth":
-		if e.complexity.EventSubscription.Auth == nil {
-			break
-		}
-
-		return e.complexity.EventSubscription.Auth(childComplexity), true
-
-	case "EventSubscription.topic":
-		if e.complexity.EventSubscription.Topic == nil {
-			break
-		}
-
-		return e.complexity.EventSubscription.Topic(childComplexity), true
-
-	case "EventSubscription.url":
-		if e.complexity.EventSubscription.URL == nil {
-			break
-		}
-
-		return e.complexity.EventSubscription.URL(childComplexity), true
 
 	case "FetchRequest.auth":
 		if e.complexity.FetchRequest.Auth == nil {
@@ -1613,8 +1570,6 @@ scalar HttpHeaders # -> map[string][]string
 
 scalar QueryParams # -> map[string][]string
 
-scalar EventSubscriptionAttributes # -> map[string]string
-
 scalar CLOB # TBD
 
 scalar PageCursor # -> String
@@ -1797,7 +1752,6 @@ type EventAPIDefinition {
     """group allows you to find the same API but in different version"""
     group: String
     spec: EventSpec!
-    subscriptions: [EventSubscription!]!
     version: Version
 }
 
@@ -1806,13 +1760,6 @@ type EventSpec {
     type: EventSpecType!
     format: SpecFormat
     fetchRequest: FetchRequest
-}
-
-type EventSubscription {
-    url: String!
-    auth: Auth
-    topic: String!
-    attributes: EventSubscriptionAttributes
 }
 
 # Document
@@ -1982,7 +1929,6 @@ input APISpecInput {
 input EventDefinitionInput {
     spec: EventSpecInput!
     group: String
-    subscriptions: [EventSubscriptionInput!]
     version: VersionInput
 }
 
@@ -1990,13 +1936,6 @@ input EventSpecInput {
     data: CLOB
     eventSpecType: EventSpecType!
     fetchRequest: FetchRequestInput
-}
-
-input EventSubscriptionInput {
-    url: String!
-    auth: AuthInput
-    topic: String!
-    attributes: EventSubscriptionAttributes
 }
 
 # Document Input
@@ -4544,33 +4483,6 @@ func (ec *executionContext) _EventAPIDefinition_spec(ctx context.Context, field 
 	return ec.marshalNEventSpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgqlschemaᚐEventSpec(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _EventAPIDefinition_subscriptions(ctx context.Context, field graphql.CollectedField, obj *EventAPIDefinition) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "EventAPIDefinition",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Subscriptions, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*EventSubscription)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNEventSubscription2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgqlschemaᚐEventSubscription(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _EventAPIDefinition_version(ctx context.Context, field graphql.CollectedField, obj *EventAPIDefinition) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -4773,108 +4685,6 @@ func (ec *executionContext) _EventSpec_fetchRequest(ctx context.Context, field g
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOFetchRequest2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgqlschemaᚐFetchRequest(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _EventSubscription_url(ctx context.Context, field graphql.CollectedField, obj *EventSubscription) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "EventSubscription",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.URL, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _EventSubscription_auth(ctx context.Context, field graphql.CollectedField, obj *EventSubscription) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "EventSubscription",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Auth, nil
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*Auth)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgqlschemaᚐAuth(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _EventSubscription_topic(ctx context.Context, field graphql.CollectedField, obj *EventSubscription) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "EventSubscription",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Topic, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _EventSubscription_attributes(ctx context.Context, field graphql.CollectedField, obj *EventSubscription) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "EventSubscription",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Attributes, nil
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOEventSubscriptionAttributes2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FetchRequest_url(ctx context.Context, field graphql.CollectedField, obj *FetchRequest) graphql.Marshaler {
@@ -8251,12 +8061,6 @@ func (ec *executionContext) unmarshalInputEventDefinitionInput(ctx context.Conte
 			if err != nil {
 				return it, err
 			}
-		case "subscriptions":
-			var err error
-			it.Subscriptions, err = ec.unmarshalOEventSubscriptionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgqlschemaᚐEventSubscriptionInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "version":
 			var err error
 			it.Version, err = ec.unmarshalOVersionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgqlschemaᚐVersionInput(ctx, v)
@@ -8290,42 +8094,6 @@ func (ec *executionContext) unmarshalInputEventSpecInput(ctx context.Context, v 
 		case "fetchRequest":
 			var err error
 			it.FetchRequest, err = ec.unmarshalOFetchRequestInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgqlschemaᚐFetchRequestInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputEventSubscriptionInput(ctx context.Context, v interface{}) (EventSubscriptionInput, error) {
-	var it EventSubscriptionInput
-	var asMap = v.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "url":
-			var err error
-			it.URL, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "auth":
-			var err error
-			it.Auth, err = ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgqlschemaᚐAuthInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "topic":
-			var err error
-			it.Topic, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "attributes":
-			var err error
-			it.Attributes, err = ec.unmarshalOEventSubscriptionAttributes2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9087,11 +8855,6 @@ func (ec *executionContext) _EventAPIDefinition(ctx context.Context, sel ast.Sel
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "subscriptions":
-			out.Values[i] = ec._EventAPIDefinition_subscriptions(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "version":
 			out.Values[i] = ec._EventAPIDefinition_version(ctx, field, obj)
 		default:
@@ -9164,42 +8927,6 @@ func (ec *executionContext) _EventSpec(ctx context.Context, sel ast.SelectionSet
 			out.Values[i] = ec._EventSpec_format(ctx, field, obj)
 		case "fetchRequest":
 			out.Values[i] = ec._EventSpec_fetchRequest(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var eventSubscriptionImplementors = []string{"EventSubscription"}
-
-func (ec *executionContext) _EventSubscription(ctx context.Context, sel ast.SelectionSet, obj *EventSubscription) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, eventSubscriptionImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("EventSubscription")
-		case "url":
-			out.Values[i] = ec._EventSubscription_url(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "auth":
-			out.Values[i] = ec._EventSubscription_auth(ctx, field, obj)
-		case "topic":
-			out.Values[i] = ec._EventSubscription_topic(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "attributes":
-			out.Values[i] = ec._EventSubscription_attributes(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -10590,69 +10317,6 @@ func (ec *executionContext) marshalNEventSpecType2githubᚗcomᚋkymaᚑincubato
 	return v
 }
 
-func (ec *executionContext) marshalNEventSubscription2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgqlschemaᚐEventSubscription(ctx context.Context, sel ast.SelectionSet, v EventSubscription) graphql.Marshaler {
-	return ec._EventSubscription(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNEventSubscription2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgqlschemaᚐEventSubscription(ctx context.Context, sel ast.SelectionSet, v []*EventSubscription) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		rctx := &graphql.ResolverContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithResolverContext(ctx, rctx)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNEventSubscription2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgqlschemaᚐEventSubscription(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
-func (ec *executionContext) marshalNEventSubscription2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgqlschemaᚐEventSubscription(ctx context.Context, sel ast.SelectionSet, v *EventSubscription) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._EventSubscription(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNEventSubscriptionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgqlschemaᚐEventSubscriptionInput(ctx context.Context, v interface{}) (EventSubscriptionInput, error) {
-	return ec.unmarshalInputEventSubscriptionInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNEventSubscriptionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgqlschemaᚐEventSubscriptionInput(ctx context.Context, v interface{}) (*EventSubscriptionInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNEventSubscriptionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgqlschemaᚐEventSubscriptionInput(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) unmarshalNFetchMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgqlschemaᚐFetchMode(ctx context.Context, v interface{}) (FetchMode, error) {
 	var res FetchMode
 	return res, res.UnmarshalGQL(v)
@@ -11603,49 +11267,6 @@ func (ec *executionContext) marshalOEventSpec2ᚖgithubᚗcomᚋkymaᚑincubator
 		return graphql.Null
 	}
 	return ec._EventSpec(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOEventSubscriptionAttributes2string(ctx context.Context, v interface{}) (string, error) {
-	return graphql.UnmarshalString(v)
-}
-
-func (ec *executionContext) marshalOEventSubscriptionAttributes2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	return graphql.MarshalString(v)
-}
-
-func (ec *executionContext) unmarshalOEventSubscriptionAttributes2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOEventSubscriptionAttributes2string(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOEventSubscriptionAttributes2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec.marshalOEventSubscriptionAttributes2string(ctx, sel, *v)
-}
-
-func (ec *executionContext) unmarshalOEventSubscriptionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgqlschemaᚐEventSubscriptionInput(ctx context.Context, v interface{}) ([]*EventSubscriptionInput, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*EventSubscriptionInput, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalNEventSubscriptionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgqlschemaᚐEventSubscriptionInput(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
 }
 
 func (ec *executionContext) unmarshalOFetchMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgqlschemaᚐFetchMode(ctx context.Context, v interface{}) (FetchMode, error) {
