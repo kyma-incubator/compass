@@ -1,6 +1,6 @@
 # Scalars
 
-scalar Timestamp
+scalar Timestamp # -> time.Time
 
 scalar Tenant # -> String
 

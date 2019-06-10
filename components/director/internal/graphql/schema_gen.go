@@ -1564,7 +1564,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 var parsedSchema = gqlparser.MustLoadSchema(
 	&ast.Source{Name: "schema.graphql", Input: `# Scalars
 
-scalar Timestamp
+scalar Timestamp # -> time.Time
 
 scalar Tenant # -> String
 
