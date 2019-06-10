@@ -11,7 +11,7 @@ We plan to allow clients storing metadata for Runtime or Application as a JSON o
 3. Easy local development. Priority: High.
 4. Have an alternative that can be installed in k8s cluster. Priority: High.
 5. Store big documents ~10MB. Priority: Super-high.
-6. No vendor lock-in. At the moment we focus only on offerings provided by GCP, but migration to other hyperscalers has to be easy. Priority: High.
+6. No vendor lock-in. At the moment we focus only on offerings provided by GCP, but the migration to other hyperscalers has to be easy. Priority: High.
 7. Cross-region replication. Priority: Medium.
 8. Cost-effective. Priority: Medium.
 9. Support rich queries. Priority: Super high.
@@ -90,6 +90,7 @@ Detailed instruction can be found [here](https://medium.com/searce/how-to-config
 8. YES
 
 3 instances `db-f1-micro` with 10GB storage nad 10 GB backup = 30.5$ per month.
+
 9. YES
 
 ### Cloud Bigtable - GCP
@@ -102,7 +103,7 @@ It seems that it is designed for different use-case than ours.
 
 
 ### Cloud Firestore - GCP
-Firestore is GCP Specific Product - vendor lock-in. It seems that local development is also very, limited,
+Firestore is GCP Specific Product - vendor lock-in. It seems that local development is also very, limited, for example
 according to [this discussion](https://stackoverflow.com/questions/46563885/running-firestore-local-e-g-for-testing) you can run 
 Firestore emulator to test security rules. 
 
@@ -122,5 +123,5 @@ and support rich queries.
 CloudSQL Postgres or MySQL suits the best our requirements about persisting data for Compass.
 MySQL can be configured manually to replicate data across regions, but 
 according to [PostgreSQL vs MySQL article](https://www.2ndquadrant.com/en/postgresql/postgresql-vs-mysql/), PostgreSQL is 
-more SQL compliant, provides better performance, implements more NoSQL features and because of that PostgreSQL 
-is our front-runner. 
+more SQL compliant, provides a better performance, implements more NoSQL features and because of that PostgreSQL 
+is our first-choice DB.
