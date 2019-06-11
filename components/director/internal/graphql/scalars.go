@@ -21,12 +21,13 @@ func (y *Timestamp) UnmarshalGQL(v interface{}) error {
 	tmpStr, ok := v.(string)
 
 	if !ok {
-		return errors.New("Error: can't convert input to string")
+		return errors.Errorf("unexpected input type: %T, should be string", v)
+
 	}
 
 	t, err := time.Parse(time.RFC3339, tmpStr)
 	if err != nil {
-		return errors.New("Error: can't parse time")
+		return err
 	}
 
 	*y = Timestamp(t)
@@ -54,29 +55,43 @@ func (y *Tenant) UnmarshalGQL(v interface{}) error {
 }
 
 func (y Tenant) MarshalGQL(w io.Writer) {
-	err := writeResponse(y, w)
+	result := make(map[string]string)
+	result["tenant"] = string(y)
+
+	bytes, err := json.Marshal(result)
 	if err != nil {
-		log.Print(err)
-		return
+		log.Printf("error with marshalling %v", reflect.TypeOf(y))
+	}
+
+	_, err = w.Write(bytes)
+	if err != nil {
+		log.Printf("Error with writing %v", reflect.TypeOf(y))
 	}
 }
 
 type Labels map[string][]string
 
 func (y *Labels) UnmarshalGQL(v interface{}) error {
+	if v == nil {
+		return nil
+	}
 
-	labels, err := convertToMapStringArrString(v)
+	labels, err := convertToMapStringStringArray(v)
 	if err != nil {
 		return err
 	}
-
 	*y = labels
 
 	return nil
 }
 
 func (y Labels) MarshalGQL(w io.Writer) {
-	err := writeResponse(y, w)
+	bytes, err := json.Marshal(y)
+	if err != nil {
+		log.Print(err)
+		return
+	}
+	_, err = w.Write(bytes)
 	if err != nil {
 		log.Print(err)
 		return
@@ -89,20 +104,12 @@ func (y *Annotations) UnmarshalGQL(v interface{}) error {
 	if v == nil {
 		return nil
 	}
-
-	val, ok := v.(string)
+	value, ok := v.(map[string]interface{})
 	if !ok {
-		return errors.New("Error: can't convert input to byte array")
+		return errors.Errorf("unexpected Annotations type: %T, should be map[string]interface{}", v)
 	}
 
-	var result map[string]interface{}
-
-	err := json.Unmarshal([]byte(val), &result)
-	if err != nil {
-		return errors.Errorf("Error with unmarshaling: %v", err)
-	}
-
-	*y = result
+	*y = value
 
 	return nil
 }
@@ -117,7 +124,7 @@ func (y Annotations) MarshalGQL(w io.Writer) {
 type HttpHeaders map[string][]string
 
 func (y *HttpHeaders) UnmarshalGQL(v interface{}) error {
-	headers, err := convertToMapStringArrString(v)
+	headers, err := convertToMapStringStringArray(v)
 	if err != nil {
 		return err
 	}
@@ -138,7 +145,7 @@ type QueryParams map[string][]string
 
 func (y *QueryParams) UnmarshalGQL(v interface{}) error {
 
-	params, err := convertToMapStringArrString(v)
+	params, err := convertToMapStringStringArray(v)
 	if err != nil {
 		return err
 	}
@@ -167,10 +174,17 @@ func (y *CLOB) UnmarshalGQL(v interface{}) error {
 	return nil
 }
 func (y CLOB) MarshalGQL(w io.Writer) {
-	err := writeResponse(y, w)
+	result := make(map[string]string)
+	result["CLOB"] = string(y)
+
+	bytes, err := json.Marshal(result)
 	if err != nil {
-		log.Print(err)
-		return
+		log.Printf("error with marshalling %v", reflect.TypeOf(y))
+	}
+
+	_, err = w.Write(bytes)
+	if err != nil {
+		log.Printf("Error with writing %v", reflect.TypeOf(y))
 	}
 }
 
@@ -186,17 +200,24 @@ func (y *PageCursor) UnmarshalGQL(v interface{}) error {
 	return nil
 }
 func (y PageCursor) MarshalGQL(w io.Writer) {
-	err := writeResponse(y, w)
+	result := make(map[string]string)
+	result["pageCursor"] = string(y)
+
+	bytes, err := json.Marshal(result)
 	if err != nil {
-		log.Print(err)
-		return
+		log.Printf("error with marshalling %v", reflect.TypeOf(y))
+	}
+
+	_, err = w.Write(bytes)
+	if err != nil {
+		log.Printf("Error with writing %v", reflect.TypeOf(y))
 	}
 }
 
 func writeResponse(in interface{}, w io.Writer) error {
 	bytes, err := json.Marshal(in)
 	if err != nil {
-		return errors.Errorf("Error with marshalling %v", reflect.TypeOf(in))
+		return errors.Errorf("error with marshalling %v", reflect.TypeOf(in))
 	}
 
 	_, err = w.Write(bytes)
@@ -208,33 +229,31 @@ func writeResponse(in interface{}, w io.Writer) error {
 
 func convertToString(in interface{}) (string, error) {
 	if in == nil {
-		return "", errors.New("error")
+		return "", errors.New("input should not be nil")
 	}
 
 	value, ok := in.(string)
 	if !ok {
-		return "", errors.New("Error with unmarshalling Tenant")
+		return "", errors.Errorf("unexpected input type: %T, should be map[string][]string", in)
 	}
 
 	return value, nil
 }
 
-func convertToMapStringArrString(in interface{}) (map[string][]string, error) {
-	if in == nil {
-		return nil, errors.New("Error: input is nil")
-	}
+func convertToMapStringStringArray(in interface{}) (map[string][]string, error) {
+	result := make(map[string][]string)
 
-	val, ok := in.(string)
+	value, ok := in.(map[string]interface{})
 	if !ok {
-		return nil, errors.New("Error: input is not a string")
+		return nil, errors.Errorf("unexpected input type: %T, should be map[string][]string", in)
 	}
 
-	var result map[string][]string
-
-	err := json.Unmarshal([]byte(val), &result)
-	if err != nil {
-		return nil, errors.Errorf("Error with converting string to map[string][]string: %v", err)
+	for k, v := range value {
+		val, ok := v.([]string)
+		if !ok {
+			return nil, errors.Errorf("given value `%v` must be a string array", v)
+		}
+		result[k] = val
 	}
-
 	return result, nil
 }

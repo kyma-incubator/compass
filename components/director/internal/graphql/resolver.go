@@ -1,12 +1,14 @@
-package gqlschema
+package graphql
 
 import (
 	"context"
-	"time"
 ) // THIS CODE IS A STARTING POINT ONLY. IT WILL NOT BE UPDATED WITH SCHEMA CHANGES.
 
 type Resolver struct{}
 
+func (r *Resolver) Application() ApplicationResolver {
+	return &applicationResolver{r}
+}
 func (r *Resolver) Mutation() MutationResolver {
 	return &mutationResolver{r}
 }
@@ -14,19 +16,22 @@ func (r *Resolver) Query() QueryResolver {
 	return &queryResolver{r}
 }
 
+type applicationResolver struct{ *Resolver }
+
+func (r *applicationResolver) Apis(ctx context.Context, obj *Application, group *string, first *int, after *string) (*APIDefinitionPage, error) {
+	panic("not implemented")
+}
+func (r *applicationResolver) EventAPIs(ctx context.Context, obj *Application, group *string, first *int, after *string) (*EventAPIDefinitionPage, error) {
+	panic("not implemented")
+}
+func (r *applicationResolver) Documents(ctx context.Context, obj *Application, first *int, after *string) (*DocumentPage, error) {
+	panic("not implemented")
+}
+
 type mutationResolver struct{ *Resolver }
 
 func (r *mutationResolver) CreateApplication(ctx context.Context, in ApplicationInput) (*Application, error) {
-	app := &Application{
-		ID:     "1",
-		Tenant: "abc",
-		Status: &ApplicationStatus{
-			Condition: ApplicationStatusConditionReady,
-			Timestamp: Timestamp(time.Now()),
-		},
-		Annotations: *in.Annotations,
-	}
-	return app, nil
+	panic("not implemented")
 }
 func (r *mutationResolver) UpdateApplication(ctx context.Context, id string, in ApplicationInput) (*Application, error) {
 	panic("not implemented")
@@ -68,42 +73,25 @@ func (r *mutationResolver) RefetchAPISpec(ctx context.Context, apiID string) (*A
 	panic("not implemented")
 }
 func (r *mutationResolver) SetAPIAuth(ctx context.Context, apiID string, runtimeID string, in AuthInput) (*RuntimeAuth, error) {
-	return &RuntimeAuth{
-		RuntimeID: "1",
-		Auth: &Auth{
-			AdditionalHeaders: in.AdditionalHeaders,
-		},
-	}, nil
+	panic("not implemented")
 }
 func (r *mutationResolver) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*RuntimeAuth, error) {
 	panic("not implemented")
 }
-func (r *mutationResolver) AddEvent(ctx context.Context, applicationID string, in EventDefinitionInput) (*EventAPIDefinition, error) {
+func (r *mutationResolver) AddEventAPI(ctx context.Context, applicationID string, in EventAPIDefinitionInput) (*EventAPIDefinition, error) {
 	panic("not implemented")
 }
-func (r *mutationResolver) UpdateEvent(ctx context.Context, id string, in EventDefinitionInput) (*EventAPIDefinition, error) {
+func (r *mutationResolver) UpdateEventAPI(ctx context.Context, id string, in EventAPIDefinitionInput) (*EventAPIDefinition, error) {
 	panic("not implemented")
 }
-func (r *mutationResolver) DeleteEvent(ctx context.Context, id string) (*EventAPIDefinition, error) {
+func (r *mutationResolver) DeleteEventAPI(ctx context.Context, id string) (*EventAPIDefinition, error) {
 	panic("not implemented")
 }
-func (r *mutationResolver) RefetchEventSpec(ctx context.Context, eventID string) (*EventSpec, error) {
+func (r *mutationResolver) RefetchEventAPISpec(ctx context.Context, eventID string) (*EventAPISpec, error) {
 	panic("not implemented")
 }
 func (r *mutationResolver) CreateRuntime(ctx context.Context, in RuntimeInput) (*Runtime, error) {
-	return &Runtime{
-		ID: "1",
-		AgentAuth: &Auth{
-			Credential: nil,
-			AdditionalQueryParams: &QueryParams{
-				"additional": []string{"param1", "param2"},
-			},
-			AdditionalHeaders: &HttpHeaders{
-				"additional": []string{"header1", "header2"},
-			},
-		},
-		Name: in.Name,
-	}, nil
+	panic("not implemented")
 }
 func (r *mutationResolver) UpdateRuntime(ctx context.Context, id string, in RuntimeInput) (*Runtime, error) {
 	panic("not implemented")
@@ -127,53 +115,13 @@ func (r *mutationResolver) DeleteRuntimeAnnotation(ctx context.Context, id strin
 type queryResolver struct{ *Resolver }
 
 func (r *queryResolver) Applications(ctx context.Context, filter []*LabelFilter, first *int, after *string) (*ApplicationPage, error) {
-
-	app := &Application{
-		Tenant: Tenant("abc"),
-		Status: &ApplicationStatus{
-			Condition: ApplicationStatusConditionReady,
-			Timestamp: Timestamp(time.Now()),
-		},
-		Annotations: Annotations{
-			"abc":  "def",
-			"abcd": 123,
-		},
-	}
-
-	return &ApplicationPage{
-		Data:       []*Application{app},
-		TotalCount: 0,
-		PageInfo: &PageInfo{
-			HasNextPage: false,
-		},
-	}, nil
+	panic("not implemented")
 }
 func (r *queryResolver) Application(ctx context.Context, id string) (*Application, error) {
 	panic("not implemented")
 }
 func (r *queryResolver) Runtimes(ctx context.Context, filter []*LabelFilter, first *int, after *string) (*RuntimePage, error) {
-
-	rt := &Runtime{
-		ID: "1",
-		AgentAuth: &Auth{
-			Credential: nil,
-			AdditionalQueryParams: &QueryParams{
-				"additional": []string{"param1", "param2"},
-			},
-			AdditionalHeaders: &HttpHeaders{
-				"additional": []string{"header1", "header2"},
-			},
-		},
-		Name: "name",
-	}
-
-	return &RuntimePage{
-		Data:       []*Runtime{rt},
-		TotalCount: 0,
-		PageInfo: &PageInfo{
-			HasNextPage: false,
-		},
-	}, nil
+	panic("not implemented")
 }
 func (r *queryResolver) Runtime(ctx context.Context, id string) (*Runtime, error) {
 	panic("not implemented")
