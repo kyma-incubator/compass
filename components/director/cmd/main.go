@@ -4,11 +4,13 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain"
+
 	"github.com/pkg/errors"
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/director/internal/gqlschema"
+	"github.com/kyma-incubator/compass/components/director/internal/graphql"
 	"github.com/vrischmann/envconfig"
 )
 
@@ -23,10 +25,10 @@ func main() {
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Error while loading app config")
 
-	gqlCfg := gqlschema.Config{
-		Resolvers: &gqlschema.Resolver{},
+	gqlCfg := graphql.Config{
+		Resolvers: domain.NewRootResolver(),
 	}
-	executableSchema := gqlschema.NewExecutableSchema(gqlCfg)
+	executableSchema := graphql.NewExecutableSchema(gqlCfg)
 
 	log.Printf("Registering endpoint on %s...", cfg.APIEndpoint)
 	router := mux.NewRouter()
