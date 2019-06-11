@@ -14,7 +14,8 @@ import (
 type config struct {
 	Address string `envconfig:"default=127.0.0.1:3001"`
 
-	DirectorOrigin string `envconfig:"default=http://127.0.0.1:3000"`
+	DirectorOrigin  string `envconfig:"default=http://127.0.0.1:3000"`
+	ConnectorOrigin string `envconfig:"default=http://127.0.0.1:3000"`
 }
 
 func main() {
@@ -23,12 +24,18 @@ func main() {
 	exitOnError(err, "Error while loading app config")
 
 	directorProxy, err := proxy.New(cfg.DirectorOrigin, "/director")
-	exitOnError(err, "Error while initializing proxy")
+	exitOnError(err, "Error while initializing proxy for director")
 
 	log.Printf("Proxying requests to Director: %s\n", cfg.DirectorOrigin)
 
+	connectorProxy, err := proxy.New(cfg.ConnectorOrigin, "/connector")
+	exitOnError(err, "Error while initializing proxy for connector")
+
+	log.Printf("Proxying requests to Connector: %s\n", cfg.ConnectorOrigin)
+
 	router := mux.NewRouter()
 	router.PathPrefix("/director").HandlerFunc(directorProxy.ServeHTTP)
+	router.PathPrefix("/connector").HandlerFunc(connectorProxy.ServeHTTP)
 
 	router.HandleFunc("/healthz", func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(200)
