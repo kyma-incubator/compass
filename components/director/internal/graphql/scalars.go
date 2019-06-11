@@ -35,10 +35,17 @@ func (y *Timestamp) UnmarshalGQL(v interface{}) error {
 	return nil
 }
 func (y Timestamp) MarshalGQL(w io.Writer) {
-	err := writeResponse(time.Time(y), w)
+	result := make(map[string]string)
+	result["timestamp"] = time.Time(y).Format(time.RFC3339)
+
+	bytes, err := json.Marshal(result)
 	if err != nil {
-		log.Print(err)
-		return
+		log.Printf("error with marshalling %v", reflect.TypeOf(y))
+	}
+
+	_, err = w.Write(bytes)
+	if err != nil {
+		log.Printf("Error with writing %v", reflect.TypeOf(y))
 	}
 }
 

@@ -25,6 +25,21 @@ func TestTimestamp_UnmarshalGQL(t *testing.T) {
 	assert.Equal(t, expectedTimestamp, timestamp)
 }
 
+func TestTimestamp_MarshalGQL(t *testing.T) {
+	//given
+	parsedTime, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
+	assert.NoError(t,err)
+	fixTimestamp := Timestamp(parsedTime)
+	expectedTimestamp := `{"timestamp":"2002-10-02T10:00:00-05:00"}`
+	buf := bytes.Buffer{}
+
+	//when
+	fixTimestamp.MarshalGQL(&buf)
+
+	//then
+	assert.Equal(t,expectedTimestamp,buf.String())
+}
+
 func TestTenant_UnmarshalGQL(t *testing.T) {
 	//given
 	var tenant Tenant
@@ -195,7 +210,7 @@ func TestQueryParams_MarshalGQL(t *testing.T) {
 	assert.Equal(t, expectedParams, buf.String())
 }
 
-func TestClob_UnmarshalGQL(t *testing.T) {
+func TestCLOB_UnmarshalGQL(t *testing.T) {
 	//given
 	var clob CLOB
 	fixClob := "very_big_clob"
