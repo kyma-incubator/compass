@@ -1576,7 +1576,7 @@ scalar HttpHeaders # -> map[string][]string
 
 scalar QueryParams # -> map[string][]string
 
-scalar CLOB # TBD
+scalar CLOB # -> String
 
 scalar PageCursor # -> String
 

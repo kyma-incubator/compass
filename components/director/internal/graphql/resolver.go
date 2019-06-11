@@ -21,8 +21,8 @@ func (r *mutationResolver) CreateApplication(ctx context.Context, in Application
 		ID:     "1",
 		Tenant: "abc",
 		Status: &ApplicationStatus{
-			Condition:ApplicationStatusConditionReady,
-			Timestamp:Timestamp(time.Now()),
+			Condition: ApplicationStatusConditionReady,
+			Timestamp: Timestamp(time.Now()),
 		},
 		Annotations: *in.Annotations,
 	}
@@ -70,10 +70,10 @@ func (r *mutationResolver) RefetchAPISpec(ctx context.Context, apiID string) (*A
 func (r *mutationResolver) SetAPIAuth(ctx context.Context, apiID string, runtimeID string, in AuthInput) (*RuntimeAuth, error) {
 	return &RuntimeAuth{
 		RuntimeID: "1",
-		Auth:&Auth{
-			AdditionalHeaders:in.AdditionalHeaders,
+		Auth: &Auth{
+			AdditionalHeaders: in.AdditionalHeaders,
 		},
-	},nil
+	}, nil
 }
 func (r *mutationResolver) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*RuntimeAuth, error) {
 	panic("not implemented")
@@ -91,7 +91,19 @@ func (r *mutationResolver) RefetchEventSpec(ctx context.Context, eventID string)
 	panic("not implemented")
 }
 func (r *mutationResolver) CreateRuntime(ctx context.Context, in RuntimeInput) (*Runtime, error) {
-	panic("not implemented")
+	return &Runtime{
+		ID: "1",
+		AgentAuth: &Auth{
+			Credential: nil,
+			AdditionalQueryParams: &QueryParams{
+				"additional": []string{"param1", "param2"},
+			},
+			AdditionalHeaders: &HttpHeaders{
+				"additional": []string{"header1", "header2"},
+			},
+		},
+		Name: in.Name,
+	}, nil
 }
 func (r *mutationResolver) UpdateRuntime(ctx context.Context, id string, in RuntimeInput) (*Runtime, error) {
 	panic("not implemented")
@@ -122,11 +134,10 @@ func (r *queryResolver) Applications(ctx context.Context, filter []*LabelFilter,
 			Condition: ApplicationStatusConditionReady,
 			Timestamp: Timestamp(time.Now()),
 		},
-		Annotations:Annotations{
-			"abc":"def",
-			"abcd":123,
+		Annotations: Annotations{
+			"abc":  "def",
+			"abcd": 123,
 		},
-
 	}
 
 	return &ApplicationPage{
@@ -143,16 +154,17 @@ func (r *queryResolver) Application(ctx context.Context, id string) (*Applicatio
 func (r *queryResolver) Runtimes(ctx context.Context, filter []*LabelFilter, first *int, after *string) (*RuntimePage, error) {
 
 	rt := &Runtime{
-		ID:"1",
-		AgentAuth:&Auth{
-			Credential:nil,
-			AdditionalQueryParams:&QueryParams{
-				"additional":[]string{"param1","param2"},
+		ID: "1",
+		AgentAuth: &Auth{
+			Credential: nil,
+			AdditionalQueryParams: &QueryParams{
+				"additional": []string{"param1", "param2"},
 			},
 			AdditionalHeaders: &HttpHeaders{
-				"additional":[]string{"header1","header2"},
+				"additional": []string{"header1", "header2"},
 			},
 		},
+		Name: "name",
 	}
 
 	return &RuntimePage{
