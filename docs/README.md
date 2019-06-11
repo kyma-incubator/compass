@@ -17,4 +17,5 @@ Investigations:
 -   [Storage - S3](./investigations/storage/s3/README.md)
 -   [Storage - S3 - Parquet](./investigations/storage/s3/parquet.md)
 -   [Storage - Managed DB](./investigations/storage/managed-db/managed-dbs.md)
+-   [Storage - PostgreSQL Evaluation](./investigations/storage/postgres/postgres.md)
 -   [GraphQL - File Upload](./investigations/graphql-file-upload/file-upload-with-graphql.md)

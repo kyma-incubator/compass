@@ -57,4 +57,4 @@ local/tmp/
 
 # Changelog temporary directory
 .changelog/
-docs/investigations/postgres/sql/*.csv
+docs/investigations/storage/postgres/sql/*.csv
