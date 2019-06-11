@@ -10,7 +10,7 @@ This document shows a proposal of two ways of eventing flow we want to support w
 
 1. The event is registered using **Management Plane** API.
 2. The **Director** sends an event url to Application.
-3. The **Agent** fetches the event data and passes it to Kyma Event Bus through Event Gateway. It will support multiple protocols like HTTP, MQTT along with multiple authentication (e.g. OpenID Connect) and authorization (e.g. OAuth2) types.  
+3. The **Agent** fetches the event data and passes it to Kyma Event Bus through Event Gateway. It will support multiple protocols like HTTP, MQTT along with multiple authentication (e.g. OpenID Connect) and authorization (e.g. OAuth2) methods.  
 4. The Application publishes an event.
 
 ## Eventing with external Event Bus
