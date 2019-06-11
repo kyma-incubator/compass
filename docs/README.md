@@ -10,7 +10,9 @@ Architecture:
 -   [Components - High Level Architecture](./architecture/high-level-components.md)
 -   [Components - Management Plane Components](./architecture/mp-components.md)
 -   [Application and Runtime Flows](./architecture/app-runtime-flows.md)
+-   [Establishing a trusted connection](./architecture/establishing-trusted-connection.md)
 -   [API Credentials Flow](./architecture/api-credentials-flows.md)
+-   [Support for legacy REST API](./architecture/support-for-legacy-rest-api.md)
 
 Investigations:
 -   [Storage - Requirements](./investigations/storage/requirements.md)
