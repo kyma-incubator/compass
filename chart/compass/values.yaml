@@ -4,7 +4,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir: pr/
-      version: "PR-32"
+      version: "PR-59"
     director:
       dir: pr/
       version: "PR-41"
