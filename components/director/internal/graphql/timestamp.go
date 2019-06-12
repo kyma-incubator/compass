@@ -1,10 +1,11 @@
 package graphql
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
 	"io"
 	"log"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
 )
 
 type Timestamp time.Time
