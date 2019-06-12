@@ -147,6 +147,8 @@ type Version {
 
 type APIDefinition {
     id: ID!
+    name: String!
+    description: String
     spec: APISpec
     targetURL: String!
     """ group allows you to find the same API but in different version """
@@ -191,6 +193,8 @@ enum EventAPISpecType {
 
 type EventAPIDefinition {
     id: ID!
+    name: String!
+    description: String
     """group allows you to find the same API but in different version"""
     group: String
     spec: EventAPISpec!
@@ -344,6 +348,8 @@ input ApplicationWebhookInput {
 # You can specify defaultAuth to specify Auth used for all runtimes. If you want to specify auth only for a dedicated Runtime,
 # you need to perform separate mutation setAPIAuth.
 input APIDefinitionInput {
+    name: String!
+    description: String
     targetURL: String!
     group: String
     spec: APISpecInput
@@ -369,6 +375,8 @@ input APISpecInput {
 # Event Input
 
 input EventAPIDefinitionInput {
+    name: String!
+    description: String
     spec: EventAPISpecInput!
     group: String
     version: VersionInput
