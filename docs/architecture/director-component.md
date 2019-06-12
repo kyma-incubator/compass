@@ -17,6 +17,7 @@ Root Resolver is a type, which composes of Domain Resolver types. In a result, R
 ### Domain Resolver
 
 Domain Resolver is a set of GraphQL resolvers related to a specific domain. For example, Runtime Domain Resolver contains all GraphQL resolvers related to Runtime type, including queries, mutations and field resolvers.
+
 Domain Resolver uses Services. To convert from domain model to GraphQL types, Domain Resolver uses converters, which are types that contain conversion methods.
 
 ### Service
