@@ -1,7 +1,6 @@
 package scalars
 
 import (
-	"encoding/json"
 	"io"
 	"log"
 )
@@ -18,15 +17,7 @@ func (y *CLOB) UnmarshalGQL(v interface{}) error {
 	return nil
 }
 func (y CLOB) MarshalGQL(w io.Writer) {
-	result := make(map[string]string)
-	result["CLOB"] = string(y)
-
-	bytes, err := json.Marshal(result)
-	if err != nil {
-		log.Printf("error with marshalling %T", y)
-	}
-
-	_, err = w.Write(bytes)
+	_, err := w.Write([]byte(y))
 	if err != nil {
 		log.Printf("error with writing %T", y)
 	}

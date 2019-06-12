@@ -1,7 +1,6 @@
 package scalars
 
 import (
-	"encoding/json"
 	"io"
 	"log"
 	"time"
@@ -34,15 +33,7 @@ func (y *Timestamp) UnmarshalGQL(v interface{}) error {
 	return nil
 }
 func (y Timestamp) MarshalGQL(w io.Writer) {
-	result := make(map[string]string)
-	result["timestamp"] = time.Time(y).Format(time.RFC3339)
-
-	bytes, err := json.Marshal(result)
-	if err != nil {
-		log.Printf("error with marshalling %T", y)
-	}
-
-	_, err = w.Write(bytes)
+	_, err := w.Write([]byte(time.Time(y).Format(time.RFC3339)))
 	if err != nil {
 		log.Printf("Error with writing %T", y)
 	}

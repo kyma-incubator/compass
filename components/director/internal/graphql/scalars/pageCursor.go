@@ -1,7 +1,6 @@
 package scalars
 
 import (
-	"encoding/json"
 	"io"
 	"log"
 )
@@ -18,15 +17,7 @@ func (y *PageCursor) UnmarshalGQL(v interface{}) error {
 	return nil
 }
 func (y PageCursor) MarshalGQL(w io.Writer) {
-	result := make(map[string]string)
-	result["pageCursor"] = string(y)
-
-	bytes, err := json.Marshal(result)
-	if err != nil {
-		log.Printf("error with marshalling %T", y)
-	}
-
-	_, err = w.Write(bytes)
+	_, err := w.Write([]byte(y))
 	if err != nil {
 		log.Printf("Error with writing %T", y)
 	}

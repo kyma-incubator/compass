@@ -26,7 +26,7 @@ func TestCLOB_MarshalGQL(t *testing.T) {
 	//given
 	fixClob := CLOB("very_big_clob")
 
-	expectedClob := `{"CLOB":"very_big_clob"}`
+	expectedClob := `very_big_clob`
 	buf := bytes.Buffer{}
 	//when
 	fixClob.MarshalGQL(&buf)
