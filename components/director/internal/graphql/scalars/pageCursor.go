@@ -12,10 +12,12 @@ func (y *PageCursor) UnmarshalGQL(v interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	*y = PageCursor(val)
 
 	return nil
 }
+
 func (y PageCursor) MarshalGQL(w io.Writer) {
 	_, err := w.Write([]byte(y))
 	if err != nil {

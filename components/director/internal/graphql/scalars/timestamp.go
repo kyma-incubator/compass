@@ -4,23 +4,14 @@ import (
 	"io"
 	"log"
 	"time"
-
-	"github.com/pkg/errors"
 )
 
 type Timestamp time.Time
 
 func (y *Timestamp) UnmarshalGQL(v interface{}) error {
-
-	if v == nil {
-		return nil
-	}
-
-	tmpStr, ok := v.(string)
-
-	if !ok {
-		return errors.Errorf("unexpected input type: %T, should be string", v)
-
+	tmpStr,err := convertToString(v)
+	if err != nil {
+		return err
 	}
 
 	t, err := time.Parse(time.RFC3339, tmpStr)
@@ -32,6 +23,7 @@ func (y *Timestamp) UnmarshalGQL(v interface{}) error {
 
 	return nil
 }
+
 func (y Timestamp) MarshalGQL(w io.Writer) {
 	_, err := w.Write([]byte(time.Time(y).Format(time.RFC3339)))
 	if err != nil {

@@ -26,26 +26,35 @@ func TestAnnotations_UnmarshalGQL(t *testing.T) {
 	assert.Equal(t, a, expectedAnnotations)
 }
 
-func TestAnnotations_MarshalGQL(t *testing.T) {
+func TestAnnotations_MarshalGQL_Int(t *testing.T) {
 	//given
-	fixAnnotations1 := Annotations{
-		"annotation1": 123,
-	}
-	fixAnnotations2 := Annotations{
-		"annotation2": []string{"val1", "val2"},
+	fixAnnotations := Annotations{
+		"annotation": 123,
 	}
 
-	expectedAnnotations1 := `{"annotation1":123}`
-	expectedAnnotations2 := `{"annotation2":["val1","val2"]}`
-	buf1 := bytes.Buffer{}
-	buf2 := bytes.Buffer{}
+
+	expectedAnnotations := `{"annotation":123}`
+	buf := bytes.Buffer{}
 	//when
-	fixAnnotations1.MarshalGQL(&buf1)
-	fixAnnotations2.MarshalGQL(&buf2)
+	fixAnnotations.MarshalGQL(&buf)
 
 	//then
-	assert.NotNil(t, buf1)
-	assert.NotNil(t, buf2)
-	assert.Equal(t, expectedAnnotations1, buf1.String())
-	assert.Equal(t, expectedAnnotations2, buf2.String())
+	assert.NotNil(t, buf)
+	assert.Equal(t, expectedAnnotations, buf.String())
+}
+
+func TestAnnotations_MarshalGQL_StringArray(t *testing.T) {
+	//given
+	fixAnnotations := Annotations{
+		"annotation": []string{"val1", "val2"},
+	}
+
+	expectedAnnotations2 := `{"annotation":["val1","val2"]}`
+	buf := bytes.Buffer{}
+	//when
+	fixAnnotations.MarshalGQL(&buf)
+
+	//then
+	assert.NotNil(t, buf)
+	assert.Equal(t, expectedAnnotations2, buf.String())
 }

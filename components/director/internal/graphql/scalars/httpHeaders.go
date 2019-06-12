@@ -17,8 +17,9 @@ func (y *HttpHeaders) UnmarshalGQL(v interface{}) error {
 
 	return nil
 }
+
 func (y HttpHeaders) MarshalGQL(w io.Writer) {
-	err := writeResponse(y, w)
+	err := marshalAndWrite(y, w)
 	if err != nil {
 		log.Print(err)
 		return

@@ -1,7 +1,6 @@
 package scalars
 
 import (
-	"encoding/json"
 	"io"
 	"log"
 )
@@ -17,18 +16,14 @@ func (y *Labels) UnmarshalGQL(v interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	*y = labels
 
 	return nil
 }
 
 func (y Labels) MarshalGQL(w io.Writer) {
-	bytes, err := json.Marshal(y)
-	if err != nil {
-		log.Print(err)
-		return
-	}
-	_, err = w.Write(bytes)
+	err := marshalAndWrite(y, w)
 	if err != nil {
 		log.Print(err)
 		return

@@ -12,10 +12,12 @@ func (y *CLOB) UnmarshalGQL(v interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	*y = CLOB(val)
 
 	return nil
 }
+
 func (y CLOB) MarshalGQL(w io.Writer) {
 	_, err := w.Write([]byte(y))
 	if err != nil {

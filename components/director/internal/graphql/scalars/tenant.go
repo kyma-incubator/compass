@@ -12,13 +12,13 @@ func (y *Tenant) UnmarshalGQL(v interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	*y = Tenant(val)
 
 	return nil
 }
 
 func (y Tenant) MarshalGQL(w io.Writer) {
-
 	_, err := w.Write([]byte(y))
 	if err != nil {
 		log.Printf("error with writing %T", y)

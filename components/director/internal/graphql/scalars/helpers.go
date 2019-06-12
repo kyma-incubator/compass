@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func writeResponse(in interface{}, w io.Writer) error {
+func marshalAndWrite(in interface{}, w io.Writer) error {
 	bytes, err := json.Marshal(in)
 	if err != nil {
 		return errors.Errorf("error with marshalling %T", in)
@@ -15,7 +15,7 @@ func writeResponse(in interface{}, w io.Writer) error {
 
 	_, err = w.Write(bytes)
 	if err != nil {
-		return errors.Errorf("Error with writing %T", in)
+		return errors.Errorf("error with writing %T", in)
 	}
 	return nil
 }
@@ -27,7 +27,7 @@ func convertToString(in interface{}) (string, error) {
 
 	value, ok := in.(string)
 	if !ok {
-		return "", errors.Errorf("unexpected input type: %T, should be map[string][]string", in)
+		return "", errors.Errorf("unexpected input type: %T, should be string", in)
 	}
 
 	return value, nil
