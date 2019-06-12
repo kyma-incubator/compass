@@ -15,10 +15,9 @@ func TestAnnotations_UnmarshalGQL(t *testing.T) {
 		expected Annotations
 	}{
 		//given
-		{	map[string]interface{}{"annotation": "val1"},Annotations{"annotation": "val1"}},
-		{	map[string]interface{}{"annotation": 123},Annotations{"annotation": 123}},
-		{	map[string]interface{}{"annotation": []string{"val1","val2"}},Annotations{"annotation": []string{"val1","val2"}}},
-
+		{map[string]interface{}{"annotation": "val1"}, Annotations{"annotation": "val1"}},
+		{map[string]interface{}{"annotation": 123}, Annotations{"annotation": 123}},
+		{map[string]interface{}{"annotation": []string{"val1", "val2"}}, Annotations{"annotation": []string{"val1", "val2"}}},
 	}
 
 	for _, test := range tests {
@@ -28,7 +27,7 @@ func TestAnnotations_UnmarshalGQL(t *testing.T) {
 
 		//then
 		as.NoError(err)
-		as.Equal(test.expected,a)
+		as.Equal(test.expected, a)
 	}
 }
 
@@ -40,9 +39,8 @@ func TestAnnotations_MarshalGQL(t *testing.T) {
 		expected string
 	}{
 		//given
-		{	Annotations{"annotation": 123},`{"annotation":123}`},
-		{	Annotations{"annotation": []string{"val1", "val2"}},`{"annotation":["val1","val2"]}`},
-
+		{Annotations{"annotation": 123}, `{"annotation":123}`},
+		{Annotations{"annotation": []string{"val1", "val2"}}, `{"annotation":["val1","val2"]}`},
 	}
 
 	for _, test := range tests {
@@ -52,6 +50,6 @@ func TestAnnotations_MarshalGQL(t *testing.T) {
 
 		//then
 		as.NotNil(buf)
-		as.Equal(test.expected,buf.String())
+		as.Equal(test.expected, buf.String())
 	}
 }
