@@ -2,6 +2,8 @@ package graphql
 
 import (
 	"context"
+
+	"github.com/kyma-incubator/compass/components/director/internal/graphql/scalars"
 ) // THIS CODE IS A STARTING POINT ONLY. IT WILL NOT BE UPDATED WITH SCHEMA CHANGES.
 
 type Resolver struct{}
@@ -18,13 +20,13 @@ func (r *Resolver) Query() QueryResolver {
 
 type applicationResolver struct{ *Resolver }
 
-func (r *applicationResolver) Apis(ctx context.Context, obj *Application, group *string, first *int, after *string) (*APIDefinitionPage, error) {
+func (r *applicationResolver) Apis(ctx context.Context, obj *Application, group *string, first *int, after *scalars.PageCursor) (*APIDefinitionPage, error) {
 	panic("not implemented")
 }
-func (r *applicationResolver) EventAPIs(ctx context.Context, obj *Application, group *string, first *int, after *string) (*EventAPIDefinitionPage, error) {
+func (r *applicationResolver) EventAPIs(ctx context.Context, obj *Application, group *string, first *int, after *scalars.PageCursor) (*EventAPIDefinitionPage, error) {
 	panic("not implemented")
 }
-func (r *applicationResolver) Documents(ctx context.Context, obj *Application, first *int, after *string) (*DocumentPage, error) {
+func (r *applicationResolver) Documents(ctx context.Context, obj *Application, first *int, after *scalars.PageCursor) (*DocumentPage, error) {
 	panic("not implemented")
 }
 
@@ -114,18 +116,18 @@ func (r *mutationResolver) DeleteRuntimeAnnotation(ctx context.Context, id strin
 
 type queryResolver struct{ *Resolver }
 
-func (r *queryResolver) Applications(ctx context.Context, filter []*LabelFilter, first *int, after *string) (*ApplicationPage, error) {
+func (r *queryResolver) Applications(ctx context.Context, filter []*LabelFilter, first *int, after *scalars.PageCursor) (*ApplicationPage, error) {
 	panic("not implemented")
 }
 func (r *queryResolver) Application(ctx context.Context, id string) (*Application, error) {
 	panic("not implemented")
 }
-func (r *queryResolver) Runtimes(ctx context.Context, filter []*LabelFilter, first *int, after *string) (*RuntimePage, error) {
+func (r *queryResolver) Runtimes(ctx context.Context, filter []*LabelFilter, first *int, after *scalars.PageCursor) (*RuntimePage, error) {
 	panic("not implemented")
 }
 func (r *queryResolver) Runtime(ctx context.Context, id string) (*Runtime, error) {
 	panic("not implemented")
 }
-func (r *queryResolver) HealthChecks(ctx context.Context, types []HealthCheckType, origin *string, first *int, after *string) (*HealthCheckPage, error) {
+func (r *queryResolver) HealthChecks(ctx context.Context, types []HealthCheckType, origin *string, first *int, after *scalars.PageCursor) (*HealthCheckPage, error) {
 	panic("not implemented")
 }
