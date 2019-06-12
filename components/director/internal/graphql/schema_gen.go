@@ -48,8 +48,10 @@ type ComplexityRoot struct {
 		Auth        func(childComplexity int, runtimeID string) int
 		Auths       func(childComplexity int) int
 		DefaultAuth func(childComplexity int) int
+		Description func(childComplexity int) int
 		Group       func(childComplexity int) int
 		ID          func(childComplexity int) int
+		Name        func(childComplexity int) int
 		Spec        func(childComplexity int) int
 		TargetURL   func(childComplexity int) int
 		Version     func(childComplexity int) int
@@ -138,10 +140,12 @@ type ComplexityRoot struct {
 	}
 
 	EventAPIDefinition struct {
-		Group   func(childComplexity int) int
-		ID      func(childComplexity int) int
-		Spec    func(childComplexity int) int
-		Version func(childComplexity int) int
+		Description func(childComplexity int) int
+		Group       func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Name        func(childComplexity int) int
+		Spec        func(childComplexity int) int
+		Version     func(childComplexity int) int
 	}
 
 	EventAPIDefinitionPage struct {
@@ -352,6 +356,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.APIDefinition.DefaultAuth(childComplexity), true
 
+	case "APIDefinition.description":
+		if e.complexity.APIDefinition.Description == nil {
+			break
+		}
+
+		return e.complexity.APIDefinition.Description(childComplexity), true
+
 	case "APIDefinition.group":
 		if e.complexity.APIDefinition.Group == nil {
 			break
@@ -365,6 +376,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.APIDefinition.ID(childComplexity), true
+
+	case "APIDefinition.name":
+		if e.complexity.APIDefinition.Name == nil {
+			break
+		}
+
+		return e.complexity.APIDefinition.Name(childComplexity), true
 
 	case "APIDefinition.spec":
 		if e.complexity.APIDefinition.Spec == nil {
@@ -734,6 +752,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DocumentPage.TotalCount(childComplexity), true
 
+	case "EventAPIDefinition.description":
+		if e.complexity.EventAPIDefinition.Description == nil {
+			break
+		}
+
+		return e.complexity.EventAPIDefinition.Description(childComplexity), true
+
 	case "EventAPIDefinition.group":
 		if e.complexity.EventAPIDefinition.Group == nil {
 			break
@@ -747,6 +772,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EventAPIDefinition.ID(childComplexity), true
+
+	case "EventAPIDefinition.name":
+		if e.complexity.EventAPIDefinition.Name == nil {
+			break
+		}
+
+		return e.complexity.EventAPIDefinition.Name(childComplexity), true
 
 	case "EventAPIDefinition.spec":
 		if e.complexity.EventAPIDefinition.Spec == nil {
@@ -1711,6 +1743,8 @@ type Version {
 
 type APIDefinition {
     id: ID!
+    name: String!
+    description: String
     spec: APISpec
     targetURL: String!
     """ group allows you to find the same API but in different version """
@@ -1755,6 +1789,8 @@ enum EventAPISpecType {
 
 type EventAPIDefinition {
     id: ID!
+    name: String!
+    description: String
     """group allows you to find the same API but in different version"""
     group: String
     spec: EventAPISpec!
@@ -1908,6 +1944,8 @@ input ApplicationWebhookInput {
 # You can specify defaultAuth to specify Auth used for all runtimes. If you want to specify auth only for a dedicated Runtime,
 # you need to perform separate mutation setAPIAuth.
 input APIDefinitionInput {
+    name: String!
+    description: String
     targetURL: String!
     group: String
     spec: APISpecInput
@@ -1933,6 +1971,8 @@ input APISpecInput {
 # Event Input
 
 input EventAPIDefinitionInput {
+    name: String!
+    description: String
     spec: EventAPISpecInput!
     group: String
     version: VersionInput
@@ -2993,6 +3033,57 @@ func (ec *executionContext) _APIDefinition_id(ctx context.Context, field graphql
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _APIDefinition_name(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "APIDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _APIDefinition_description(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "APIDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APIDefinition_spec(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) graphql.Marshaler {
@@ -4436,6 +4527,57 @@ func (ec *executionContext) _EventAPIDefinition_id(ctx context.Context, field gr
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EventAPIDefinition_name(ctx context.Context, field graphql.CollectedField, obj *EventAPIDefinition) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "EventAPIDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EventAPIDefinition_description(ctx context.Context, field graphql.CollectedField, obj *EventAPIDefinition) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "EventAPIDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EventAPIDefinition_group(ctx context.Context, field graphql.CollectedField, obj *EventAPIDefinition) graphql.Marshaler {
@@ -7701,6 +7843,18 @@ func (ec *executionContext) unmarshalInputAPIDefinitionInput(ctx context.Context
 
 	for k, v := range asMap {
 		switch k {
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "description":
+			var err error
+			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "targetURL":
 			var err error
 			it.TargetURL, err = ec.unmarshalNString2string(ctx, v)
@@ -8055,6 +8209,18 @@ func (ec *executionContext) unmarshalInputEventAPIDefinitionInput(ctx context.Co
 
 	for k, v := range asMap {
 		switch k {
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "description":
+			var err error
+			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "spec":
 			var err error
 			it.Spec, err = ec.unmarshalNEventAPISpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgraphqlᚐEventAPISpecInput(ctx, v)
@@ -8355,6 +8521,13 @@ func (ec *executionContext) _APIDefinition(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "name":
+			out.Values[i] = ec._APIDefinition_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "description":
+			out.Values[i] = ec._APIDefinition_description(ctx, field, obj)
 		case "spec":
 			out.Values[i] = ec._APIDefinition_spec(ctx, field, obj)
 		case "targetURL":
@@ -8881,6 +9054,13 @@ func (ec *executionContext) _EventAPIDefinition(ctx context.Context, sel ast.Sel
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "name":
+			out.Values[i] = ec._EventAPIDefinition_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "description":
+			out.Values[i] = ec._EventAPIDefinition_description(ctx, field, obj)
 		case "group":
 			out.Values[i] = ec._EventAPIDefinition_group(ctx, field, obj)
 		case "spec":
