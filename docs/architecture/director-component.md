@@ -26,7 +26,7 @@ Service contains business logic related to a specific domain. Single Resolver ca
 
 ### Repository
 
-Repository is an abstraction over storage access. It is used for CRUD operations on database. In future, it may be separated from the Director as an additional component.
+Repository is an abstraction over storage access. It is used for CRUD operations on database. In future, it may be separated from the Director as an additional component called Registry.
 
 As an example, the following Repository interface is defined for Runtime:
 
