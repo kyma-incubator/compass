@@ -9,7 +9,7 @@ import (
 type Timestamp time.Time
 
 func (y *Timestamp) UnmarshalGQL(v interface{}) error {
-	tmpStr,err := convertToString(v)
+	tmpStr, err := convertToString(v)
 	if err != nil {
 		return err
 	}

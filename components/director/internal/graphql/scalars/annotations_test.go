@@ -32,7 +32,6 @@ func TestAnnotations_MarshalGQL_Int(t *testing.T) {
 		"annotation": 123,
 	}
 
-
 	expectedAnnotations := `{"annotation":123}`
 	buf := bytes.Buffer{}
 	//when
