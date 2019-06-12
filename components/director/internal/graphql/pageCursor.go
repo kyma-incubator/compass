@@ -1,6 +1,7 @@
 package graphql
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
 	"io"
 	"log"
 )
@@ -8,7 +9,7 @@ import (
 type PageCursor string
 
 func (y *PageCursor) UnmarshalGQL(v interface{}) error {
-	val, err := convertToString(v)
+	val, err := scalar.ConvertToString(v)
 	if err != nil {
 		return err
 	}

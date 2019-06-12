@@ -1,6 +1,7 @@
 package graphql
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
 	"io"
 	"log"
 
@@ -24,7 +25,7 @@ func (y *Annotations) UnmarshalGQL(v interface{}) error {
 }
 
 func (y Annotations) MarshalGQL(w io.Writer) {
-	err := marshalToWriter(y, w)
+	err := scalar.WriteMarshalled(y, w)
 	if err != nil {
 		log.Print(err)
 		return

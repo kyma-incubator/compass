@@ -11,7 +11,7 @@ import (
 func TestCLOB_UnmarshalGQL(t *testing.T) {
 	//given
 	var clob CLOB
-	fixClob := "very_big_clob"
+	fixClob := []byte("very_big_clob")
 	expectedClob := CLOB("very_big_clob")
 
 	//when
@@ -26,12 +26,12 @@ func TestCLOB_MarshalGQL(t *testing.T) {
 	//given
 	fixClob := CLOB("very_big_clob")
 
-	expectedClob := `very_big_clob`
+	expectedClob := []byte("very_big_clob")
 	buf := bytes.Buffer{}
 	//when
 	fixClob.MarshalGQL(&buf)
 
 	//then
 	assert.NotNil(t, buf)
-	assert.Equal(t, expectedClob, buf.String())
+	assert.Equal(t, expectedClob, buf.Bytes())
 }

@@ -1,6 +1,7 @@
 package graphql
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
 	"io"
 	"log"
 	"time"
@@ -9,7 +10,7 @@ import (
 type Timestamp time.Time
 
 func (y *Timestamp) UnmarshalGQL(v interface{}) error {
-	tmpStr, err := convertToString(v)
+	tmpStr, err := scalar.ConvertToString(v)
 	if err != nil {
 		return err
 	}

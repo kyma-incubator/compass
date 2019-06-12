@@ -1,4 +1,4 @@
-package graphql
+package scalar
 
 import (
 	"encoding/json"
@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func marshalToWriter(in interface{}, w io.Writer) error {
+func WriteMarshalled(in interface{}, w io.Writer) error {
 	bytes, err := json.Marshal(in)
 	if err != nil {
 		return errors.Errorf("error with marshalling %T", in)
@@ -20,7 +20,7 @@ func marshalToWriter(in interface{}, w io.Writer) error {
 	return nil
 }
 
-func convertToString(in interface{}) (string, error) {
+func ConvertToString(in interface{}) (string, error) {
 	if in == nil {
 		return "", errors.New("input should not be nil")
 	}
@@ -33,7 +33,20 @@ func convertToString(in interface{}) (string, error) {
 	return value, nil
 }
 
-func convertToMapStringStringArray(in interface{}) (map[string][]string, error) {
+func ConvertToByteArray(in interface{}) ([]byte,error){
+	if in == nil {
+		return nil, errors.New("input should not be nil")
+	}
+
+	value, ok := in.([]byte)
+	if !ok {
+		return nil, errors.Errorf("unexpected input type: %T, should be byte array", in)
+	}
+
+	return value,nil
+}
+
+func ConvertToMapStringStringArray(in interface{}) (map[string][]string, error) {
 	result := make(map[string][]string)
 
 	value, ok := in.(map[string]interface{})

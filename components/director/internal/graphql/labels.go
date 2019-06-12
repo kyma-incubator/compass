@@ -1,6 +1,7 @@
 package graphql
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
 	"io"
 	"log"
 )
@@ -12,7 +13,7 @@ func (y *Labels) UnmarshalGQL(v interface{}) error {
 		return nil
 	}
 
-	labels, err := convertToMapStringStringArray(v)
+	labels, err := scalar.ConvertToMapStringStringArray(v)
 	if err != nil {
 		return err
 	}
@@ -23,7 +24,7 @@ func (y *Labels) UnmarshalGQL(v interface{}) error {
 }
 
 func (y Labels) MarshalGQL(w io.Writer) {
-	err := marshalToWriter(y, w)
+	err := scalar.WriteMarshalled(y, w)
 	if err != nil {
 		log.Print(err)
 		return

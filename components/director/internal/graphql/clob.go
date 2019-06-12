@@ -1,14 +1,15 @@
 package graphql
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
 	"io"
 	"log"
 )
 
-type CLOB string
+type CLOB []byte
 
 func (y *CLOB) UnmarshalGQL(v interface{}) error {
-	val, err := convertToString(v)
+	val, err := scalar.ConvertToByteArray(v)
 	if err != nil {
 		return err
 	}
@@ -19,7 +20,7 @@ func (y *CLOB) UnmarshalGQL(v interface{}) error {
 }
 
 func (y CLOB) MarshalGQL(w io.Writer) {
-	_, err := w.Write([]byte(y))
+	_, err := w.Write(y)
 	if err != nil {
 		log.Printf("error with writing %T", y)
 	}
