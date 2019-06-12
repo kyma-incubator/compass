@@ -1,4 +1,4 @@
-package scalars
+package graphql
 
 import (
 	"bytes"

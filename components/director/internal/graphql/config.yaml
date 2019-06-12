@@ -17,21 +17,21 @@ struct_tag: json
 # graphql. These normally come from the db or a remote api.
 models:
   Labels:
-    model: "github.com/kyma-incubator/compass/components/director/internal/graphql/scalars.Labels"
+    model: "github.com/kyma-incubator/compass/components/director/internal/graphql.Labels"
   Timestamp:
-    model: "github.com/kyma-incubator/compass/components/director/internal/graphql/scalars.Timestamp"
+    model: "github.com/kyma-incubator/compass/components/director/internal/graphql.Timestamp"
   Tenant:
-    model: "github.com/kyma-incubator/compass/components/director/internal/graphql/scalars.Tenant"
+    model: "github.com/kyma-incubator/compass/components/director/internal/graphql.Tenant"
   Annotations:
-    model: "github.com/kyma-incubator/compass/components/director/internal/graphql/scalars.Annotations"
+    model: "github.com/kyma-incubator/compass/components/director/internal/graphql.Annotations"
   HttpHeaders:
-    model: "github.com/kyma-incubator/compass/components/director/internal/graphql/scalars.HttpHeaders"
+    model: "github.com/kyma-incubator/compass/components/director/internal/graphql.HttpHeaders"
   QueryParams:
-    model: "github.com/kyma-incubator/compass/components/director/internal/graphql/scalars.QueryParams"
+    model: "github.com/kyma-incubator/compass/components/director/internal/graphql.QueryParams"
   CLOB:
-    model: "github.com/kyma-incubator/compass/components/director/internal/graphql/scalars.CLOB"
+    model: "github.com/kyma-incubator/compass/components/director/internal/graphql.CLOB"
   PageCursor:
-    model: "github.com/kyma-incubator/compass/components/director/internal/graphql/scalars.PageCursor"
+    model: "github.com/kyma-incubator/compass/components/director/internal/graphql.PageCursor"
   Application:
     fields:
       documents:

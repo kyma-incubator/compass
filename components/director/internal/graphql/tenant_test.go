@@ -1,4 +1,4 @@
-package scalars
+package graphql
 
 import (
 	"bytes"
@@ -27,6 +27,7 @@ func TestTenant_MarshalGQL(t *testing.T) {
 	fixTenant := Tenant("tenant1")
 	expectedTenant := `tenant1`
 	buf := bytes.Buffer{}
+
 	//when
 	fixTenant.MarshalGQL(&buf)
 

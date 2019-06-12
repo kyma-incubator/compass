@@ -3,8 +3,6 @@ package runtime
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/graphql/scalars"
-
 	"github.com/kyma-incubator/compass/components/director/internal/graphql"
 )
 
@@ -22,7 +20,7 @@ func NewResolver(svc svc) *Resolver {
 	}
 }
 
-func (r *Resolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *scalars.PageCursor) (*graphql.RuntimePage, error) {
+func (r *Resolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.RuntimePage, error) {
 	panic("not implemented")
 }
 

@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io"
 	"strconv"
-
-	"github.com/kyma-incubator/compass/components/director/internal/graphql/scalars"
 )
 
 type CredentialData interface {
@@ -55,14 +53,14 @@ func (APIDefinitionPage) IsPageable() {}
 
 type APISpec struct {
 	// when fetch request specified, data will be automatically populated
-	Data         *scalars.CLOB `json:"data"`
+	Data         *CLOB         `json:"data"`
 	Format       *SpecFormat   `json:"format"`
 	Type         APISpecType   `json:"type"`
 	FetchRequest *FetchRequest `json:"fetchRequest"`
 }
 
 type APISpecInput struct {
-	Data         *scalars.CLOB      `json:"data"`
+	Data         *CLOB              `json:"data"`
 	Type         APISpecType        `json:"type"`
 	Format       SpecFormat         `json:"format"`
 	FetchRequest *FetchRequestInput `json:"fetchRequest"`
@@ -70,11 +68,11 @@ type APISpecInput struct {
 
 type Application struct {
 	ID             string                `json:"id"`
-	Tenant         scalars.Tenant        `json:"tenant"`
+	Tenant         Tenant                `json:"tenant"`
 	Name           string                `json:"name"`
 	Description    *string               `json:"description"`
-	Labels         scalars.Labels        `json:"labels"`
-	Annotations    scalars.Annotations   `json:"annotations"`
+	Labels         Labels                `json:"labels"`
+	Annotations    Annotations           `json:"annotations"`
 	Status         *ApplicationStatus    `json:"status"`
 	Webhooks       []*ApplicationWebhook `json:"webhooks"`
 	HealthCheckURL *string               `json:"healthCheckURL"`
@@ -88,8 +86,8 @@ type Application struct {
 type ApplicationInput struct {
 	Name           string                     `json:"name"`
 	Description    *string                    `json:"description"`
-	Labels         *scalars.Labels            `json:"labels"`
-	Annotations    *scalars.Annotations       `json:"annotations"`
+	Labels         *Labels                    `json:"labels"`
+	Annotations    *Annotations               `json:"annotations"`
 	Webhooks       []*ApplicationWebhookInput `json:"webhooks"`
 	HealthCheckURL *string                    `json:"healthCheckURL"`
 	Apis           []*APIDefinitionInput      `json:"apis"`
@@ -107,7 +105,7 @@ func (ApplicationPage) IsPageable() {}
 
 type ApplicationStatus struct {
 	Condition ApplicationStatusCondition `json:"condition"`
-	Timestamp scalars.Timestamp          `json:"timestamp"`
+	Timestamp Timestamp                  `json:"timestamp"`
 }
 
 type ApplicationWebhook struct {
@@ -125,15 +123,15 @@ type ApplicationWebhookInput struct {
 
 type Auth struct {
 	Credential            CredentialData         `json:"credential"`
-	AdditionalHeaders     *scalars.HttpHeaders   `json:"additionalHeaders"`
-	AdditionalQueryParams *scalars.QueryParams   `json:"additionalQueryParams"`
+	AdditionalHeaders     *HttpHeaders           `json:"additionalHeaders"`
+	AdditionalQueryParams *QueryParams           `json:"additionalQueryParams"`
 	RequestAuth           *CredentialRequestAuth `json:"requestAuth"`
 }
 
 type AuthInput struct {
 	Credential            *CredentialDataInput        `json:"credential"`
-	AdditionalHeaders     *scalars.HttpHeaders        `json:"additionalHeaders"`
-	AdditionalQueryParams *scalars.QueryParams        `json:"additionalQueryParams"`
+	AdditionalHeaders     *HttpHeaders                `json:"additionalHeaders"`
+	AdditionalQueryParams *QueryParams                `json:"additionalQueryParams"`
 	RequestAuth           *CredentialRequestAuthInput `json:"requestAuth"`
 }
 
@@ -178,7 +176,7 @@ type Document struct {
 	Format DocumentFormat `json:"format"`
 	// for example Service Class, API etc
 	Kind         *string       `json:"kind"`
-	Data         *scalars.CLOB `json:"data"`
+	Data         *CLOB         `json:"data"`
 	FetchRequest *FetchRequest `json:"fetchRequest"`
 }
 
@@ -188,7 +186,7 @@ type DocumentInput struct {
 	Description  string             `json:"description"`
 	Format       DocumentFormat     `json:"format"`
 	Kind         *string            `json:"kind"`
-	Data         *scalars.CLOB      `json:"data"`
+	Data         *CLOB              `json:"data"`
 	FetchRequest *FetchRequestInput `json:"fetchRequest"`
 }
 
@@ -223,14 +221,14 @@ type EventAPIDefinitionPage struct {
 func (EventAPIDefinitionPage) IsPageable() {}
 
 type EventAPISpec struct {
-	Data         *scalars.CLOB    `json:"data"`
+	Data         *CLOB            `json:"data"`
 	Type         EventAPISpecType `json:"type"`
 	Format       *SpecFormat      `json:"format"`
 	FetchRequest *FetchRequest    `json:"fetchRequest"`
 }
 
 type EventAPISpecInput struct {
-	Data          *scalars.CLOB      `json:"data"`
+	Data          *CLOB              `json:"data"`
 	EventSpecType EventAPISpecType   `json:"eventSpecType"`
 	FetchRequest  *FetchRequestInput `json:"fetchRequest"`
 }
@@ -253,7 +251,7 @@ type FetchRequestInput struct {
 
 type FetchRequestStatus struct {
 	Condition FetchRequestStatusCondition `json:"condition"`
-	Timestamp scalars.Timestamp           `json:"timestamp"`
+	Timestamp Timestamp                   `json:"timestamp"`
 }
 
 type HealthCheck struct {
@@ -261,7 +259,7 @@ type HealthCheck struct {
 	Condition HealthCheckStatusCondition `json:"condition"`
 	Origin    *string                    `json:"origin"`
 	Message   *string                    `json:"message"`
-	Timestamp scalars.Timestamp          `json:"timestamp"`
+	Timestamp Timestamp                  `json:"timestamp"`
 }
 
 type HealthCheckPage struct {
@@ -293,19 +291,19 @@ type OAuthCredentialDataInput struct {
 }
 
 type PageInfo struct {
-	StartCursor scalars.PageCursor `json:"startCursor"`
-	EndCursor   scalars.PageCursor `json:"endCursor"`
-	HasNextPage bool               `json:"hasNextPage"`
+	StartCursor PageCursor `json:"startCursor"`
+	EndCursor   PageCursor `json:"endCursor"`
+	HasNextPage bool       `json:"hasNextPage"`
 }
 
 type Runtime struct {
-	ID          string              `json:"id"`
-	Name        string              `json:"name"`
-	Description *string             `json:"description"`
-	Tenant      scalars.Tenant      `json:"tenant"`
-	Labels      scalars.Labels      `json:"labels"`
-	Annotations scalars.Annotations `json:"annotations"`
-	Status      *RuntimeStatus      `json:"status"`
+	ID          string         `json:"id"`
+	Name        string         `json:"name"`
+	Description *string        `json:"description"`
+	Tenant      Tenant         `json:"tenant"`
+	Labels      Labels         `json:"labels"`
+	Annotations Annotations    `json:"annotations"`
+	Status      *RuntimeStatus `json:"status"`
 	// directive for checking auth
 	AgentAuth *Auth `json:"agentAuth"`
 }
@@ -316,10 +314,10 @@ type RuntimeAuth struct {
 }
 
 type RuntimeInput struct {
-	Name        string               `json:"name"`
-	Description *string              `json:"description"`
-	Labels      *scalars.Labels      `json:"labels"`
-	Annotations *scalars.Annotations `json:"annotations"`
+	Name        string       `json:"name"`
+	Description *string      `json:"description"`
+	Labels      *Labels      `json:"labels"`
+	Annotations *Annotations `json:"annotations"`
 }
 
 type RuntimePage struct {
@@ -332,7 +330,7 @@ func (RuntimePage) IsPageable() {}
 
 type RuntimeStatus struct {
 	Condition RuntimeStatusCondition `json:"condition"`
-	Timestamp scalars.Timestamp      `json:"timestamp"`
+	Timestamp Timestamp              `json:"timestamp"`
 }
 
 type Version struct {

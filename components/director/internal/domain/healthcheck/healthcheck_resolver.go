@@ -3,8 +3,6 @@ package healthcheck
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/graphql/scalars"
-
 	"github.com/kyma-incubator/compass/components/director/internal/graphql"
 )
 
@@ -22,6 +20,6 @@ func NewResolver(svc svc) *Resolver {
 	}
 }
 
-func (r *Resolver) HealthChecks(ctx context.Context, types []graphql.HealthCheckType, origin *string, first *int, after *scalars.PageCursor) (*graphql.HealthCheckPage, error) {
+func (r *Resolver) HealthChecks(ctx context.Context, types []graphql.HealthCheckType, origin *string, first *int, after *graphql.PageCursor) (*graphql.HealthCheckPage, error) {
 	panic("not implemented")
 }

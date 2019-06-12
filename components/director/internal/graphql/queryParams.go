@@ -1,4 +1,4 @@
-package scalars
+package graphql
 
 import (
 	"io"
@@ -19,7 +19,7 @@ func (y *QueryParams) UnmarshalGQL(v interface{}) error {
 }
 
 func (y QueryParams) MarshalGQL(w io.Writer) {
-	err := marshalAndWrite(y, w)
+	err := marshalToWriter(y, w)
 	if err != nil {
 		log.Print(err)
 		return

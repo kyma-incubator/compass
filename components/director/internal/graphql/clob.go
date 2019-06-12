@@ -1,24 +1,24 @@
-package scalars
+package graphql
 
 import (
 	"io"
 	"log"
 )
 
-type Tenant string
+type CLOB string
 
-func (y *Tenant) UnmarshalGQL(v interface{}) error {
+func (y *CLOB) UnmarshalGQL(v interface{}) error {
 	val, err := convertToString(v)
 	if err != nil {
 		return err
 	}
 
-	*y = Tenant(val)
+	*y = CLOB(val)
 
 	return nil
 }
 
-func (y Tenant) MarshalGQL(w io.Writer) {
+func (y CLOB) MarshalGQL(w io.Writer) {
 	_, err := w.Write([]byte(y))
 	if err != nil {
 		log.Printf("error with writing %T", y)

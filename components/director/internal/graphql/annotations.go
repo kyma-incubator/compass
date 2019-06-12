@@ -1,4 +1,4 @@
-package scalars
+package graphql
 
 import (
 	"io"
@@ -24,7 +24,7 @@ func (y *Annotations) UnmarshalGQL(v interface{}) error {
 }
 
 func (y Annotations) MarshalGQL(w io.Writer) {
-	err := marshalAndWrite(y, w)
+	err := marshalToWriter(y, w)
 	if err != nil {
 		log.Print(err)
 		return

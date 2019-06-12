@@ -1,4 +1,4 @@
-package scalars
+package graphql
 
 import (
 	"encoding/json"
@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func marshalAndWrite(in interface{}, w io.Writer) error {
+func marshalToWriter(in interface{}, w io.Writer) error {
 	bytes, err := json.Marshal(in)
 	if err != nil {
 		return errors.Errorf("error with marshalling %T", in)
