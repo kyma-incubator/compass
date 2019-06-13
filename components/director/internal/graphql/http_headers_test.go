@@ -16,7 +16,7 @@ func TestHttpHeaders_UnmarshalGQL(t *testing.T) {
 	}{
 		//given
 		"correct input": {
-			input:    map[string]interface{}{"header1": []string{"val1", "val2"}},
+			input:    map[string]interface{}{"header1": []interface{}{"val1", "val2"}},
 			err:      false,
 			expected: HttpHeaders{"header1": []string{"val1", "val2"}},
 		},

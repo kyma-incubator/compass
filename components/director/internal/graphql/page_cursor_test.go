@@ -52,7 +52,7 @@ func TestPageCursor_UnmarshalGQL(t *testing.T) {
 func TestPageCursor_MarshalGQL(t *testing.T) {
 	//given
 	fixCursor := PageCursor("cursor")
-	expectedCursor := `cursor`
+	expectedCursor := `"cursor"`
 	buf := bytes.Buffer{}
 
 	//when

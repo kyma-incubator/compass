@@ -17,7 +17,7 @@ func TestQueryParams_UnmarshalGQL(t *testing.T) {
 	}{
 		//given
 		"correct input": {
-			input:    map[string]interface{}{"param1": []string{"val1", "val2"}},
+			input:    map[string]interface{}{"param1": []interface{}{"val1", "val2"}},
 			err:      false,
 			expected: QueryParams{"param1": []string{"val1", "val2"}},
 		},
