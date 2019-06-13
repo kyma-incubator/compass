@@ -26,6 +26,36 @@ func TestLabels_UnmarshalGQL(t *testing.T) {
 	assert.Equal(t, l, expectedLabels)
 }
 
+func TestLabels_UnmarshalGQL_Error(t *testing.T) {
+	t.Run("should return error on invalid map", func(t *testing.T) {
+		//given
+		a := Labels{}
+		fixLabels := map[string]interface{}{
+			"label": "invalid type",
+		}
+
+		//when
+		err := a.UnmarshalGQL(fixLabels)
+
+		//then
+		require.Error(t, err)
+		assert.Empty(t, a)
+	})
+
+	t.Run("should return error on invalid input type", func(t *testing.T) {
+		//given
+		a := Labels{}
+		invalidLabels := "invalidLabels"
+
+		//when
+		err := a.UnmarshalGQL(invalidLabels)
+
+		//then
+		require.Error(t, err)
+		assert.Empty(t, a)
+	})
+}
+
 func TestLabels_MarshalGQL(t *testing.T) {
 	//given
 	fixLabels := Labels{

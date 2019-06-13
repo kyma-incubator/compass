@@ -22,12 +22,25 @@ func TestCLOB_UnmarshalGQL(t *testing.T) {
 	assert.Equal(t, clob, expectedClob)
 }
 
+func TestCLOB_UnmarshalGQL_Error(t *testing.T) {
+	//given
+	c := CLOB{}
+	invalidClob := 123
+
+	//when
+	err := c.UnmarshalGQL(invalidClob)
+
+	//then
+	require.Error(t, err)
+	assert.Empty(t, c)
+}
+
 func TestCLOB_MarshalGQL(t *testing.T) {
 	//given
 	fixClob := CLOB("very_big_clob")
-
 	expectedClob := []byte("very_big_clob")
 	buf := bytes.Buffer{}
+
 	//when
 	fixClob.MarshalGQL(&buf)
 

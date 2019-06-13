@@ -47,6 +47,10 @@ func ConvertToByteArray(in interface{}) ([]byte,error){
 }
 
 func ConvertToMapStringStringArray(in interface{}) (map[string][]string, error) {
+	if in == nil {
+		return nil, errors.New("input should not be nil")
+	}
+
 	result := make(map[string][]string)
 
 	value, ok := in.(map[string]interface{})

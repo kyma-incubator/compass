@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAnnotations_UnmarshalGQL(t *testing.T) {
+func TestAnnotations_UnmarshalGQL_Success(t *testing.T) {
 	as := assert.New(t)
 
 	var tests = []struct {
@@ -29,6 +31,36 @@ func TestAnnotations_UnmarshalGQL(t *testing.T) {
 		as.NoError(err)
 		as.Equal(test.expected, a)
 	}
+}
+
+func TestAnnotations_UnmarshalGQL_Error(t *testing.T) {
+	t.Run("should return error on invalid map", func(t *testing.T) {
+		//given
+		a := Annotations{}
+		fixAnnotations := map[int]interface{}{
+			123: "invalid map",
+		}
+
+		//when
+		err := a.UnmarshalGQL(fixAnnotations)
+
+		//then
+		require.Error(t, err)
+		assert.Empty(t, a)
+	})
+
+	t.Run("should return error on invalid input type", func(t *testing.T) {
+		//given
+		a := Annotations{}
+		invalidAnnotations := "invalidAnnotations"
+
+		//when
+		err := a.UnmarshalGQL(invalidAnnotations)
+
+		//then
+		require.Error(t, err)
+		assert.Empty(t, a)
+	})
 }
 
 func TestAnnotations_MarshalGQL(t *testing.T) {

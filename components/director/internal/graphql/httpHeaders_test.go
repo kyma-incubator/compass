@@ -26,14 +26,43 @@ func TestHttpHeaders_UnmarshalGQL(t *testing.T) {
 	assert.Equal(t, h, expectedHeaders)
 }
 
+func TestHttpHeaders_UnmarshalGQL_Error(t *testing.T) {
+	t.Run("should return error on invalid map", func(t *testing.T) {
+		//given
+		h := HttpHeaders{}
+		fixHeaders := map[string]interface{}{
+			"header": "invalid type",
+		}
+		//when
+		err := h.UnmarshalGQL(fixHeaders)
+
+		//then
+		require.Error(t, err)
+		assert.Empty(t, h)
+	})
+
+	t.Run("should return error on invalid input type", func(t *testing.T) {
+		//given
+		h := HttpHeaders{}
+		invalidHeaders := "headers"
+
+		//when
+		err := h.UnmarshalGQL(invalidHeaders)
+
+		//then
+		require.Error(t, err)
+		assert.Empty(t, h)
+	})
+}
+
 func TestHttpHeaders_MarshalGQL(t *testing.T) {
 	//given
 	fixHeaders := HttpHeaders{
 		"header": []string{"val1", "val2"},
 	}
-
 	expectedHeaders := `{"header":["val1","val2"]}`
 	buf := bytes.Buffer{}
+
 	//when
 	fixHeaders.MarshalGQL(&buf)
 

@@ -10,10 +10,6 @@ import (
 type Labels map[string][]string
 
 func (y *Labels) UnmarshalGQL(v interface{}) error {
-	if v == nil {
-		return nil
-	}
-
 	labels, err := scalar.ConvertToMapStringStringArray(v)
 	if err != nil {
 		return err

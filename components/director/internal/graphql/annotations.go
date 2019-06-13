@@ -15,6 +15,7 @@ func (y *Annotations) UnmarshalGQL(v interface{}) error {
 	if v == nil {
 		return nil
 	}
+
 	value, ok := v.(map[string]interface{})
 	if !ok {
 		return errors.Errorf("unexpected Annotations type: %T, should be map[string]interface{}", v)

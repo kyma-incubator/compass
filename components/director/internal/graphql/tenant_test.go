@@ -22,6 +22,19 @@ func TestTenant_UnmarshalGQL(t *testing.T) {
 	assert.Equal(t, expectedTenant, tenant)
 }
 
+func TestTenant_UnmarshalGQL_Error(t *testing.T) {
+	//given
+	var tenant Tenant
+	invalidTenant := []string{"invalid", "tenant"}
+
+	//when
+	err := tenant.UnmarshalGQL(invalidTenant)
+
+	//then
+	require.Error(t, err)
+	assert.Empty(t, tenant)
+}
+
 func TestTenant_MarshalGQL(t *testing.T) {
 	//given
 	fixTenant := Tenant("tenant1")

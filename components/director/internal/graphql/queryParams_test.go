@@ -26,14 +26,43 @@ func TestQueryParams_UnmarshalGQL(t *testing.T) {
 	assert.Equal(t, p, expectedParams)
 }
 
+func TestQueryParams_UnmarshalGQL_Error(t *testing.T) {
+	t.Run("should return error on invalid map", func(t *testing.T) {
+		//given
+		params := QueryParams{}
+		fixParams := map[string]interface{}{
+			"param": "invalid type",
+		}
+		//when
+		err := params.UnmarshalGQL(fixParams)
+
+		//then
+		require.Error(t, err)
+		assert.Empty(t, params)
+	})
+
+	t.Run("should return error on invalid input type", func(t *testing.T) {
+		//given
+		params := QueryParams{}
+		invalidParams := "params"
+
+		//when
+		err := params.UnmarshalGQL(invalidParams)
+
+		//then
+		require.Error(t, err)
+		assert.Empty(t, params)
+	})
+}
+
 func TestQueryParams_MarshalGQL(t *testing.T) {
 	//given
 	fixParams := QueryParams{
 		"param": []string{"val1", "val2"},
 	}
-
 	expectedParams := `{"param":["val1","val2"]}`
 	buf := bytes.Buffer{}
+
 	//when
 	fixParams.MarshalGQL(&buf)
 

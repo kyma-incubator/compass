@@ -25,6 +25,36 @@ func TestTimestamp_UnmarshalGQL(t *testing.T) {
 	assert.Equal(t, expectedTimestamp, timestamp)
 }
 
+func TestTimestamp_UnmarshalGQL_Error(t *testing.T) {
+	t.Run("should return error on invalid input", func(t *testing.T) {
+		//given
+		var timestamp Timestamp
+		invalidInput := 123
+
+		//when
+		err := timestamp.UnmarshalGQL(invalidInput)
+
+		//then
+		require.Error(t, err)
+		assert.Empty(t, timestamp)
+
+	})
+
+	t.Run("should return error when can't parse time", func(t *testing.T) {
+		//given
+		var timestamp Timestamp
+		invalidTime := "invalid time"
+
+		//when
+		err := timestamp.UnmarshalGQL(invalidTime)
+
+		//then
+		require.Error(t, err)
+		assert.Empty(t, timestamp)
+
+	})
+}
+
 func TestTimestamp_MarshalGQL(t *testing.T) {
 	//given
 	parsedTime, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
