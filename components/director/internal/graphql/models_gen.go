@@ -57,14 +57,14 @@ func (APIDefinitionPage) IsPageable() {}
 
 type APISpec struct {
 	// when fetch request specified, data will be automatically populated
-	Data         *string       `json:"data"`
+	Data         *CLOB         `json:"data"`
 	Format       *SpecFormat   `json:"format"`
 	Type         APISpecType   `json:"type"`
 	FetchRequest *FetchRequest `json:"fetchRequest"`
 }
 
 type APISpecInput struct {
-	Data         *string            `json:"data"`
+	Data         *CLOB              `json:"data"`
 	Type         APISpecType        `json:"type"`
 	Format       SpecFormat         `json:"format"`
 	FetchRequest *FetchRequestInput `json:"fetchRequest"`
@@ -180,7 +180,7 @@ type Document struct {
 	Format DocumentFormat `json:"format"`
 	// for example Service Class, API etc
 	Kind         *string       `json:"kind"`
-	Data         *string       `json:"data"`
+	Data         *CLOB         `json:"data"`
 	FetchRequest *FetchRequest `json:"fetchRequest"`
 }
 
@@ -190,7 +190,7 @@ type DocumentInput struct {
 	Description  string             `json:"description"`
 	Format       DocumentFormat     `json:"format"`
 	Kind         *string            `json:"kind"`
-	Data         *string            `json:"data"`
+	Data         *CLOB              `json:"data"`
 	FetchRequest *FetchRequestInput `json:"fetchRequest"`
 }
 
@@ -229,14 +229,14 @@ type EventAPIDefinitionPage struct {
 func (EventAPIDefinitionPage) IsPageable() {}
 
 type EventAPISpec struct {
-	Data         *string          `json:"data"`
+	Data         *CLOB            `json:"data"`
 	Type         EventAPISpecType `json:"type"`
 	Format       *SpecFormat      `json:"format"`
 	FetchRequest *FetchRequest    `json:"fetchRequest"`
 }
 
 type EventAPISpecInput struct {
-	Data          *string            `json:"data"`
+	Data          *CLOB              `json:"data"`
 	EventSpecType EventAPISpecType   `json:"eventSpecType"`
 	FetchRequest  *FetchRequestInput `json:"fetchRequest"`
 }
@@ -299,9 +299,9 @@ type OAuthCredentialDataInput struct {
 }
 
 type PageInfo struct {
-	StartCursor string `json:"startCursor"`
-	EndCursor   string `json:"endCursor"`
-	HasNextPage bool   `json:"hasNextPage"`
+	StartCursor PageCursor `json:"startCursor"`
+	EndCursor   PageCursor `json:"endCursor"`
+	HasNextPage bool       `json:"hasNextPage"`
 }
 
 type Runtime struct {

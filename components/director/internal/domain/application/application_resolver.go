@@ -33,7 +33,7 @@ func NewResolver(svc *Service, apiSvc apiSvc, eventAPISvc eventAPISvc, documentS
 	}
 }
 
-func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *string) (*graphql.ApplicationPage, error) {
+func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
 	return &graphql.ApplicationPage{
 		Data:       []*graphql.Application{},
 		TotalCount: 0,
@@ -78,12 +78,12 @@ func (r *Resolver) DeleteApplicationWebhook(ctx context.Context, webhookID strin
 	panic("not implemented")
 }
 
-func (r *Resolver) Apis(ctx context.Context, obj *graphql.Application, group *string, first *int, after *string) (*graphql.APIDefinitionPage, error) {
+func (r *Resolver) Apis(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
 	panic("not implemented")
 }
-func (r *Resolver) EventAPIs(ctx context.Context, obj *graphql.Application, group *string, first *int, after *string) (*graphql.EventAPIDefinitionPage, error) {
+func (r *Resolver) EventAPIs(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.EventAPIDefinitionPage, error) {
 	panic("not implemented")
 }
-func (r *Resolver) Documents(ctx context.Context, obj *graphql.Application, first *int, after *string) (*graphql.DocumentPage, error) {
+func (r *Resolver) Documents(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {
 	panic("not implemented")
 }

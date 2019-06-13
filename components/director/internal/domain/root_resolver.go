@@ -52,19 +52,19 @@ type queryResolver struct {
 	*RootResolver
 }
 
-func (r *queryResolver) Applications(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *string) (*graphql.ApplicationPage, error) {
+func (r *queryResolver) Applications(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
 	return r.app.Applications(ctx, filter, first, after)
 }
 func (r *queryResolver) Application(ctx context.Context, id string) (*graphql.Application, error) {
 	return r.app.Application(ctx, id)
 }
-func (r *queryResolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *string) (*graphql.RuntimePage, error) {
+func (r *queryResolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.RuntimePage, error) {
 	return r.runtime.Runtimes(ctx, filter, first, after)
 }
 func (r *queryResolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, error) {
 	return r.runtime.Runtime(ctx, id)
 }
-func (r *queryResolver) HealthChecks(ctx context.Context, types []graphql.HealthCheckType, origin *string, first *int, after *string) (*graphql.HealthCheckPage, error) {
+func (r *queryResolver) HealthChecks(ctx context.Context, types []graphql.HealthCheckType, origin *string, first *int, after *graphql.PageCursor) (*graphql.HealthCheckPage, error) {
 	return r.healthCheck.HealthChecks(ctx, types, origin, first, after)
 }
 
@@ -158,12 +158,12 @@ type applicationResolver struct {
 	*RootResolver
 }
 
-func (r *applicationResolver) Apis(ctx context.Context, obj *graphql.Application, group *string, first *int, after *string) (*graphql.APIDefinitionPage, error) {
+func (r *applicationResolver) Apis(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
 	return r.app.Apis(ctx, obj, group, first, after)
 }
-func (r *applicationResolver) EventAPIs(ctx context.Context, obj *graphql.Application, group *string, first *int, after *string) (*graphql.EventAPIDefinitionPage, error) {
+func (r *applicationResolver) EventAPIs(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.EventAPIDefinitionPage, error) {
 	return r.app.EventAPIs(ctx, obj, group, first, after)
 }
-func (r *applicationResolver) Documents(ctx context.Context, obj *graphql.Application, first *int, after *string) (*graphql.DocumentPage, error) {
+func (r *applicationResolver) Documents(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {
 	return r.app.Documents(ctx, obj, first, after)
 }

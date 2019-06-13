@@ -28,6 +28,10 @@ models:
     model: "github.com/kyma-incubator/compass/components/director/internal/graphql.HttpHeaders"
   QueryParams:
     model: "github.com/kyma-incubator/compass/components/director/internal/graphql.QueryParams"
+  CLOB:
+    model: "github.com/kyma-incubator/compass/components/director/internal/graphql.CLOB"
+  PageCursor:
+    model: "github.com/kyma-incubator/compass/components/director/internal/graphql.PageCursor"
   Application:
     fields:
       documents:

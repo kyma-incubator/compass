@@ -11,6 +11,9 @@ required = [
   name = "github.com/99designs/gqlgen"
   version = "0.9.0"
 
+[[constraint]]
+  name = "github.com/stretchr/testify"
+  version = "1.3.0"
 [prune]
   go-tests = true
   unused-packages = true
