@@ -28,7 +28,8 @@ func TestAnnotations_UnmarshalGQL(t *testing.T) {
 		"correct input map[string][]string": {
 			input:    map[string]interface{}{"annotation": []string{"val1", "val2"}},
 			err:      false,
-			expected: Annotations{"annotation": []string{"val1", "val2"}}},
+			expected: Annotations{"annotation": []string{"val1", "val2"}},
+		},
 		"error: input is nil": {
 			input:  nil,
 			err:    true,
