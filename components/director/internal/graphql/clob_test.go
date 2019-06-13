@@ -5,34 +5,48 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestCLOB_UnmarshalGQL(t *testing.T) {
-	//given
-	var clob CLOB
-	fixClob := []byte("very_big_clob")
-	expectedClob := CLOB("very_big_clob")
+	for name, tc := range map[string]struct {
+		input    interface{}
+		err      bool
+		errmsg   string
+		expected CLOB
+	}{
+		//given
+		"correct input": {
+			input:    []byte("very_big_clob"),
+			err:      false,
+			expected: CLOB("very_big_clob"),
+		},
+		"error: input is nil": {
+			input:  nil,
+			err:    true,
+			errmsg: "input should not be nil",
+		},
+		"error: invalid input": {
+			input:  123,
+			err:    true,
+			errmsg: "unexpected input type: int, should be byte array",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			//when
+			var c CLOB
+			err := c.UnmarshalGQL(tc.input)
 
-	//when
-	err := clob.UnmarshalGQL(fixClob)
-
-	//then
-	require.NoError(t, err)
-	assert.Equal(t, clob, expectedClob)
-}
-
-func TestCLOB_UnmarshalGQL_Error(t *testing.T) {
-	//given
-	c := CLOB{}
-	invalidClob := 123
-
-	//when
-	err := c.UnmarshalGQL(invalidClob)
-
-	//then
-	require.Error(t, err)
-	assert.Empty(t, c)
+			//then
+			if tc.err {
+				assert.Error(t, err)
+				assert.EqualError(t, err, tc.errmsg)
+				assert.Empty(t, c)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expected, c)
+			}
+		})
+	}
 }
 
 func TestCLOB_MarshalGQL(t *testing.T) {

@@ -26,7 +26,7 @@ func TestTimestamp_UnmarshalGQL(t *testing.T) {
 }
 
 func TestTimestamp_UnmarshalGQL_Error(t *testing.T) {
-	t.Run("should return error on invalid input", func(t *testing.T) {
+	t.Run("invalid input", func(t *testing.T) {
 		//given
 		var timestamp Timestamp
 		invalidInput := 123
@@ -40,7 +40,7 @@ func TestTimestamp_UnmarshalGQL_Error(t *testing.T) {
 
 	})
 
-	t.Run("should return error when can't parse time", func(t *testing.T) {
+	t.Run("can't parse time", func(t *testing.T) {
 		//given
 		var timestamp Timestamp
 		invalidTime := "invalid time"

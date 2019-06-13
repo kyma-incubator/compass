@@ -13,7 +13,7 @@ type Annotations map[string]interface{}
 
 func (y *Annotations) UnmarshalGQL(v interface{}) error {
 	if v == nil {
-		return nil
+		return errors.New("input should not be nil")
 	}
 
 	value, ok := v.(map[string]interface{})

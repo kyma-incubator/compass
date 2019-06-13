@@ -5,54 +5,54 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestQueryParams_UnmarshalGQL(t *testing.T) {
-	//given
-	p := QueryParams{}
-	fixParams := map[string]interface{}{
-		"param1": []string{"val1", "val2"},
-	}
-	expectedParams := QueryParams{
-		"param1": []string{"val1", "val2"},
-	}
 
-	//when
-	err := p.UnmarshalGQL(fixParams)
-
-	//then
-	require.NoError(t, err)
-	assert.Equal(t, p, expectedParams)
-}
-
-func TestQueryParams_UnmarshalGQL_Error(t *testing.T) {
-	t.Run("should return error on invalid map", func(t *testing.T) {
+	for name, tc := range map[string]struct {
+		input    interface{}
+		err      bool
+		errmsg   string
+		expected QueryParams
+	}{
 		//given
-		params := QueryParams{}
-		fixParams := map[string]interface{}{
-			"param": "invalid type",
-		}
-		//when
-		err := params.UnmarshalGQL(fixParams)
+		"correct input": {
+			input:    map[string]interface{}{"param1": []string{"val1", "val2"}},
+			err:      false,
+			expected: QueryParams{"param1": []string{"val1", "val2"}},
+		},
+		"error: input is nil": {
+			input:  nil,
+			err:    true,
+			errmsg: "input should not be nil",
+		},
+		"error: invalid input map type": {
+			input:  map[string]interface{}{"header": "invalid type"},
+			err:    true,
+			errmsg: "given value `string` must be a string array",
+		},
+		"error: invalid input": {
+			input:  "invalid params",
+			err:    true,
+			errmsg: "unexpected input type: string, should be map[string][]string",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			//when
+			params := QueryParams{}
+			err := params.UnmarshalGQL(tc.input)
 
-		//then
-		require.Error(t, err)
-		assert.Empty(t, params)
-	})
-
-	t.Run("should return error on invalid input type", func(t *testing.T) {
-		//given
-		params := QueryParams{}
-		invalidParams := "params"
-
-		//when
-		err := params.UnmarshalGQL(invalidParams)
-
-		//then
-		require.Error(t, err)
-		assert.Empty(t, params)
-	})
+			//then
+			if tc.err {
+				assert.Error(t, err)
+				assert.EqualError(t, err, tc.errmsg)
+				assert.Empty(t, params)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expected, params)
+			}
+		})
+	}
 }
 
 func TestQueryParams_MarshalGQL(t *testing.T) {

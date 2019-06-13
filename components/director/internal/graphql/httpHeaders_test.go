@@ -5,54 +5,53 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestHttpHeaders_UnmarshalGQL(t *testing.T) {
-	//given
-	h := HttpHeaders{}
-	fixHeaders := map[string]interface{}{
-		"header1": []string{"val1", "val2"},
-	}
-	expectedHeaders := HttpHeaders{
-		"header1": []string{"val1", "val2"},
-	}
-
-	//when
-	err := h.UnmarshalGQL(fixHeaders)
-
-	//then
-	require.NoError(t, err)
-	assert.Equal(t, h, expectedHeaders)
-}
-
-func TestHttpHeaders_UnmarshalGQL_Error(t *testing.T) {
-	t.Run("should return error on invalid map", func(t *testing.T) {
+	for name, tc := range map[string]struct {
+		input    interface{}
+		err      bool
+		errmsg   string
+		expected HttpHeaders
+	}{
 		//given
-		h := HttpHeaders{}
-		fixHeaders := map[string]interface{}{
-			"header": "invalid type",
-		}
-		//when
-		err := h.UnmarshalGQL(fixHeaders)
+		"correct input": {
+			input:    map[string]interface{}{"header1": []string{"val1", "val2"}},
+			err:      false,
+			expected: HttpHeaders{"header1": []string{"val1", "val2"}},
+		},
+		"error: input is nil": {
+			input:  nil,
+			err:    true,
+			errmsg: "input should not be nil",
+		},
+		"error: invalid input map type": {
+			input:  map[string]interface{}{"header": "invalid type"},
+			err:    true,
+			errmsg: "given value `string` must be a string array",
+		},
+		"error: invalid input": {
+			input:  "invalid headers",
+			err:    true,
+			errmsg: "unexpected input type: string, should be map[string][]string",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			//when
+			h := HttpHeaders{}
+			err := h.UnmarshalGQL(tc.input)
 
-		//then
-		require.Error(t, err)
-		assert.Empty(t, h)
-	})
-
-	t.Run("should return error on invalid input type", func(t *testing.T) {
-		//given
-		h := HttpHeaders{}
-		invalidHeaders := "headers"
-
-		//when
-		err := h.UnmarshalGQL(invalidHeaders)
-
-		//then
-		require.Error(t, err)
-		assert.Empty(t, h)
-	})
+			//then
+			if tc.err {
+				assert.Error(t, err)
+				assert.EqualError(t, err, tc.errmsg)
+				assert.Empty(t, h)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expected, h)
+			}
+		})
+	}
 }
 
 func TestHttpHeaders_MarshalGQL(t *testing.T) {

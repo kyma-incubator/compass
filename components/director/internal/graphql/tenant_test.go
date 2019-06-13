@@ -5,34 +5,48 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestTenant_UnmarshalGQL(t *testing.T) {
-	//given
-	var tenant Tenant
-	fixTenant := "tenant1"
-	expectedTenant := Tenant("tenant1")
+	for name, tc := range map[string]struct {
+		input    interface{}
+		err      bool
+		errmsg   string
+		expected Tenant
+	}{
+		//given
+		"correct input": {
+			input:    "tenant",
+			err:      false,
+			expected: Tenant("tenant"),
+		},
+		"error: input is nil": {
+			input:  nil,
+			err:    true,
+			errmsg: "input should not be nil",
+		},
+		"error: invalid input": {
+			input:  123,
+			err:    true,
+			errmsg: "unexpected input type: int, should be string",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			//when
+			var tenant Tenant
+			err := tenant.UnmarshalGQL(tc.input)
 
-	//when
-	err := tenant.UnmarshalGQL(fixTenant)
-
-	//then
-	require.NoError(t, err)
-	assert.Equal(t, expectedTenant, tenant)
-}
-
-func TestTenant_UnmarshalGQL_Error(t *testing.T) {
-	//given
-	var tenant Tenant
-	invalidTenant := []string{"invalid", "tenant"}
-
-	//when
-	err := tenant.UnmarshalGQL(invalidTenant)
-
-	//then
-	require.Error(t, err)
-	assert.Empty(t, tenant)
+			//then
+			if tc.err {
+				assert.Error(t, err)
+				assert.EqualError(t, err, tc.errmsg)
+				assert.Empty(t, tenant)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expected, tenant)
+			}
+		})
+	}
 }
 
 func TestTenant_MarshalGQL(t *testing.T) {
