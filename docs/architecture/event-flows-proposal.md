@@ -2,16 +2,17 @@
 
 ## Overview
 
-This document shows a proposal of two ways of eventing flow we want to support with use of the [Management Plane](./terminology.md#management-plane)
+This document is a proposal for eventing flows we want to support with use of the [Management Plane](./terminology.md#management-plane)
 
 ## Eventing with Kyma internal Event Bus
 
 ![Management Plane Components](assets/internal-event-flow.svg)
 
 1. The event is registered using **Management Plane** API.
-2. The **Director** sends an event url to Application.
-3. The **Agent** fetches the event data and passes it to Kyma Event Bus through Event Gateway. It will support multiple protocols like HTTP, MQTT along with multiple authentication (e.g. OpenID Connect) and authorization (e.g. OAuth2) methods.  
+2. The **Director** sends an event url to EventGateway.
+3. The **Agent** fetches the event data and passes it to Kyma Event Bus.  
 4. The Application publishes an event.
+5. The Event Gateway will support multiple protocols like HTTP, MQTT along with multiple authentication (e.g. OpenID Connect) and authorization (e.g. OAuth2) methods.
 
 ## Eventing with external Event Bus
 
@@ -39,7 +40,7 @@ type EventAPIDefinition {
 }
 
 enum Protocol {
-  MQTT,HTTP,NATS
+  MQTT,HTTP
 }
 
 type EventSpec {
@@ -55,13 +56,22 @@ type EventSubscription {
     topic: String!
     attributes: EventSubscriptionAttributes
 }
+
+type EventSubscriptionAttributes {
+
+}
+
+enum EventSpecType {
+    ASYNC_API
+}
+
 ```
 
 ### Input Types
 
 ```graphql
 
-input EventDefinitionInput {
+input EventAPIDefinitionInput {
     spec: EventSpecInput!
     group: String
     protocol: Protocol
@@ -83,3 +93,5 @@ input EventSubscriptionInput {
     attributes: EventSubscriptionAttributes
 }
 ```
+
+The `Protocol` and the `EventSpecType` types are the same as in `Types` section.
