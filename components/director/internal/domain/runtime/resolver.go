@@ -19,7 +19,7 @@ type RuntimeService interface {
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*RuntimePage, error)
 	AddLabel(ctx context.Context, runtimeID string, key string, values []string) error
 	DeleteLabel(ctx context.Context, runtimeID string, key string, values []string) error
-	AddAnnotation(ctx context.Context, runtimeID string, key string, value string) error
+	AddAnnotation(ctx context.Context, runtimeID string, key string, value interface{}) error
 	DeleteAnnotation(ctx context.Context, runtimeID string, key string) error
 }
 
@@ -45,10 +45,15 @@ func NewResolver(svc RuntimeService) *Resolver {
 // TODO: Proper error handling
 // TODO: Pagination
 
-func (r *Resolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *string) (*graphql.RuntimePage, error) {
+func (r *Resolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.RuntimePage, error) {
 	labelFilter := labelfilter.MultipleFromGraphQL(filter)
 
-	runtimesPage, err := r.svc.List(ctx, labelFilter, first, after)
+	var cursor string
+	if after != nil {
+		cursor = string(*after)
+	}
+
+	runtimesPage, err := r.svc.List(ctx, labelFilter, first, &cursor)
 	if err != nil {
 		return nil, err
 	}
@@ -60,8 +65,8 @@ func (r *Resolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, 
 		Data:       gqlRuntimes,
 		TotalCount: totalCount,
 		PageInfo: &graphql.PageInfo{
-			StartCursor: runtimesPage.PageInfo.StartCursor,
-			EndCursor:   runtimesPage.PageInfo.EndCursor,
+			StartCursor: graphql.PageCursor(runtimesPage.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(runtimesPage.PageInfo.EndCursor),
 			HasNextPage: runtimesPage.PageInfo.HasNextPage,
 		},
 	}, nil
@@ -156,7 +161,7 @@ func (r *Resolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key
 		Values: oldValues, //TODO: Should we pass new values, if someone just deletes a few of them?
 	}, nil
 }
-func (r *Resolver) AddRuntimeAnnotation(ctx context.Context, runtimeID string, key string, value string) (*graphql.Annotation, error) {
+func (r *Resolver) AddRuntimeAnnotation(ctx context.Context, runtimeID string, key string, value interface{}) (*graphql.Annotation, error) {
 	err := r.svc.AddAnnotation(ctx, runtimeID, key, value)
 	if err != nil {
 		return nil, err

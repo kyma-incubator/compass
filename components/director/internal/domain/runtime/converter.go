@@ -17,9 +17,9 @@ func (c *Converter) ToGraphQL(in *model.Runtime) *graphql.Runtime {
 		Status:      c.statusToGraphQL(in.Status),
 		Name:        in.Name,
 		Description: in.Description,
-		// Tenant:      in.Tenant, //TODO: Wait for scalar marshalling
-		//Annotations:in.Annotations, //TODO: Wait for scalar marshalling
-		//Labels:in.Labels, //TODO: Wait for scalar marshalling
+		Tenant:      graphql.Tenant(in.Tenant),
+		Annotations: in.Annotations,
+		Labels:      in.Labels,
 	}
 }
 
@@ -37,11 +37,21 @@ func (c *Converter) MultipleToGraphQL(in []*model.Runtime) []*graphql.Runtime {
 }
 
 func (c *Converter) InputFromGraphQL(in graphql.RuntimeInput) model.RuntimeInput {
+	var annotations map[string]interface{}
+	if in.Annotations != nil {
+		annotations = *in.Annotations
+	}
+
+	var labels map[string][]string
+	if in.Labels != nil {
+		labels = *in.Labels
+	}
+
 	return model.RuntimeInput{
 		Name:        in.Name,
 		Description: in.Description,
-		//Annotations: in.Annotations, //TODO: Wait for scalar unmarshalling
-		//Labels: in.Labels, //TODO: Wait for scalar unmarshalling
+		Annotations: annotations,
+		Labels:      labels,
 	}
 }
 
@@ -67,6 +77,6 @@ func (c *Converter) statusToGraphQL(in *model.RuntimeStatus) *graphql.RuntimeSta
 
 	return &graphql.RuntimeStatus{
 		Condition: condition,
-		//Timestamp: in.Timestamp, //TODO: Wait for scalar unmarshalling
+		Timestamp: graphql.Timestamp(in.Timestamp),
 	}
 }

@@ -3,6 +3,8 @@ package runtime_test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -13,7 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestService_Create(t *testing.T) {
@@ -85,7 +86,7 @@ func TestService_Update(t *testing.T) {
 
 	desc := "Lorem ipsum"
 	modelInput := model.RuntimeInput{
-		Name:        "Bar",
+		Name: "Bar",
 	}
 
 	inputRuntimeModel := mock.MatchedBy(func(rtm *model.Runtime) bool {
@@ -93,8 +94,8 @@ func TestService_Update(t *testing.T) {
 	})
 
 	runtimeModel := &model.Runtime{
-		ID: "foo",
-		Name: "Foo",
+		ID:          "foo",
+		Name:        "Foo",
 		Description: &desc,
 	}
 
@@ -102,11 +103,11 @@ func TestService_Update(t *testing.T) {
 	ctx = tenant.SaveToContext(ctx, "tenant")
 
 	testCases := []struct {
-		Name         string
-		RepositoryFn func() *automock.RuntimeRepository
-		Input        model.RuntimeInput
-		InputID      string
-		ExpectedErrMessage  string
+		Name               string
+		RepositoryFn       func() *automock.RuntimeRepository
+		Input              model.RuntimeInput
+		InputID            string
+		ExpectedErrMessage string
 	}{
 		{
 			Name: "Success",
@@ -116,8 +117,8 @@ func TestService_Update(t *testing.T) {
 				repo.On("Update", inputRuntimeModel).Return(nil).Once()
 				return repo
 			},
-			InputID: "foo",
-			Input:       modelInput,
+			InputID:            "foo",
+			Input:              modelInput,
 			ExpectedErrMessage: "",
 		},
 		{
@@ -128,8 +129,8 @@ func TestService_Update(t *testing.T) {
 				repo.On("Update", inputRuntimeModel).Return(testErr).Once()
 				return repo
 			},
-			InputID: "foo",
-			Input:       modelInput,
+			InputID:            "foo",
+			Input:              modelInput,
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
@@ -139,8 +140,8 @@ func TestService_Update(t *testing.T) {
 				repo.On("GetByID", "foo").Return(nil, testErr).Once()
 				return repo
 			},
-			InputID: "foo",
-			Input:       modelInput,
+			InputID:            "foo",
+			Input:              modelInput,
 			ExpectedErrMessage: testErr.Error(),
 		},
 	}
@@ -175,8 +176,8 @@ func TestService_Delete(t *testing.T) {
 	desc := "Lorem ipsum"
 
 	runtimeModel := &model.Runtime{
-		ID: "foo",
-		Name: "Foo",
+		ID:          "foo",
+		Name:        "Foo",
 		Description: &desc,
 	}
 
@@ -184,11 +185,11 @@ func TestService_Delete(t *testing.T) {
 	ctx = tenant.SaveToContext(ctx, "tenant")
 
 	testCases := []struct {
-		Name         string
-		RepositoryFn func() *automock.RuntimeRepository
-		Input        model.RuntimeInput
-		InputID      string
-		ExpectedErrMessage  string
+		Name               string
+		RepositoryFn       func() *automock.RuntimeRepository
+		Input              model.RuntimeInput
+		InputID            string
+		ExpectedErrMessage string
 	}{
 		{
 			Name: "Success",
@@ -198,7 +199,7 @@ func TestService_Delete(t *testing.T) {
 				repo.On("Delete", runtimeModel).Return(nil).Once()
 				return repo
 			},
-			InputID: id,
+			InputID:            id,
 			ExpectedErrMessage: "",
 		},
 		{
@@ -209,7 +210,7 @@ func TestService_Delete(t *testing.T) {
 				repo.On("Delete", runtimeModel).Return(testErr).Once()
 				return repo
 			},
-			InputID: id,
+			InputID:            id,
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
@@ -219,7 +220,7 @@ func TestService_Delete(t *testing.T) {
 				repo.On("GetByID", id).Return(nil, testErr).Once()
 				return repo
 			},
-			InputID: id,
+			InputID:            id,
 			ExpectedErrMessage: testErr.Error(),
 		},
 	}
@@ -254,8 +255,8 @@ func TestService_Get(t *testing.T) {
 	desc := "Lorem ipsum"
 
 	runtimeModel := &model.Runtime{
-		ID: "foo",
-		Name: "Foo",
+		ID:          "foo",
+		Name:        "Foo",
 		Description: &desc,
 	}
 
@@ -263,12 +264,12 @@ func TestService_Get(t *testing.T) {
 	ctx = tenant.SaveToContext(ctx, "tenant")
 
 	testCases := []struct {
-		Name         string
-		RepositoryFn func() *automock.RuntimeRepository
-		Input        model.RuntimeInput
-		InputID      string
-		ExpectedRuntime *model.Runtime
-		ExpectedErrMessage  string
+		Name               string
+		RepositoryFn       func() *automock.RuntimeRepository
+		Input              model.RuntimeInput
+		InputID            string
+		ExpectedRuntime    *model.Runtime
+		ExpectedErrMessage string
 	}{
 		{
 			Name: "Success",
@@ -277,8 +278,8 @@ func TestService_Get(t *testing.T) {
 				repo.On("GetByID", id).Return(runtimeModel, nil).Once()
 				return repo
 			},
-			InputID: id,
-			ExpectedRuntime:runtimeModel,
+			InputID:            id,
+			ExpectedRuntime:    runtimeModel,
 			ExpectedErrMessage: "",
 		},
 		{
@@ -288,8 +289,8 @@ func TestService_Get(t *testing.T) {
 				repo.On("GetByID", id).Return(nil, testErr).Once()
 				return repo
 			},
-			InputID: id,
-			ExpectedRuntime:runtimeModel,
+			InputID:            id,
+			ExpectedRuntime:    runtimeModel,
 			ExpectedErrMessage: testErr.Error(),
 		},
 	}
@@ -325,11 +326,11 @@ func TestService_List(t *testing.T) {
 		fixModelRuntime("bar", "Bar", "Lorem Ipsum"),
 	}
 	runtimePage := &runtime.RuntimePage{
-		Data:modelRuntimes,
+		Data:       modelRuntimes,
 		TotalCount: len(modelRuntimes),
 		PageInfo: &pagination.Page{
 			HasNextPage: false,
-			EndCursor: "end",
+			EndCursor:   "end",
 			StartCursor: "start",
 		},
 	}
@@ -412,7 +413,7 @@ func TestService_AddAnnotation(t *testing.T) {
 	desc := "Lorem ipsum"
 
 	runtimeID := "foo"
-	modifiedRuntimeModel := fixModelRuntimeWithAnnotations(runtimeID, "Foo", map[string]string{
+	modifiedRuntimeModel := fixModelRuntimeWithAnnotations(runtimeID, "Foo", map[string]interface{}{
 		"key": "value",
 	})
 	modifiedRuntimeModel.Description = &desc
@@ -440,7 +441,7 @@ func TestService_AddAnnotation(t *testing.T) {
 			InputRuntimeID:     runtimeID,
 			InputKey:           annotationKey,
 			InputValue:         annotationValue,
-			ExpectedErrMessage:        "",
+			ExpectedErrMessage: "",
 		},
 		{
 			Name: "Update Error",
@@ -454,7 +455,7 @@ func TestService_AddAnnotation(t *testing.T) {
 			InputRuntimeID:     runtimeID,
 			InputKey:           annotationKey,
 			InputValue:         annotationValue,
-			ExpectedErrMessage:        testErr.Error(),
+			ExpectedErrMessage: testErr.Error(),
 		},
 		{
 			Name: "Get Error",
@@ -467,7 +468,7 @@ func TestService_AddAnnotation(t *testing.T) {
 			InputRuntimeID:     runtimeID,
 			InputKey:           annotationKey,
 			InputValue:         annotationValue,
-			ExpectedErrMessage:        testErr.Error(),
+			ExpectedErrMessage: testErr.Error(),
 		},
 	}
 
@@ -500,7 +501,7 @@ func TestService_DeleteAnnotation(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	runtimeID := "foo"
-	modifiedRuntimeModel := fixModelRuntimeWithAnnotations(runtimeID, "Foo", map[string]string{})
+	modifiedRuntimeModel := fixModelRuntimeWithAnnotations(runtimeID, "Foo", map[string]interface{}{})
 
 	annotationKey := "key"
 
@@ -516,32 +517,32 @@ func TestService_DeleteAnnotation(t *testing.T) {
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("GetByID", runtimeID).Return(
-					fixModelRuntimeWithAnnotations(runtimeID, "Foo", map[string]string{
+					fixModelRuntimeWithAnnotations(runtimeID, "Foo", map[string]interface{}{
 						"key": "value",
-					}), nil, ).Once()
+					}), nil).Once()
 				repo.On("Update", modifiedRuntimeModel).Return(nil).Once()
 
 				return repo
 			},
 			InputRuntimeID:     runtimeID,
 			InputKey:           annotationKey,
-			ExpectedErrMessage:        "",
+			ExpectedErrMessage: "",
 		},
 		{
 			Name: "Update Error",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("GetByID", runtimeID).Return(
-					fixModelRuntimeWithAnnotations(runtimeID, "Foo", map[string]string{
+					fixModelRuntimeWithAnnotations(runtimeID, "Foo", map[string]interface{}{
 						"key": "value",
-					}), nil, ).Once()
+					}), nil).Once()
 				repo.On("Update", modifiedRuntimeModel).Return(testErr).Once()
 
 				return repo
 			},
 			InputRuntimeID:     runtimeID,
 			InputKey:           annotationKey,
-			ExpectedErrMessage:        testErr.Error(),
+			ExpectedErrMessage: testErr.Error(),
 		},
 		{
 			Name: "Get Error",
@@ -553,7 +554,7 @@ func TestService_DeleteAnnotation(t *testing.T) {
 			},
 			InputRuntimeID:     runtimeID,
 			InputKey:           annotationKey,
-			ExpectedErrMessage:        testErr.Error(),
+			ExpectedErrMessage: testErr.Error(),
 		},
 	}
 
@@ -589,19 +590,19 @@ func TestService_AddLabel(t *testing.T) {
 
 	runtimeID := "foo"
 	modifiedRuntimeModel := fixModelRuntimeWithLabels(runtimeID, "Foo", map[string][]string{
-		"key": {"value1", "value2"},
+		"key": {"value1"},
 	})
 	modifiedRuntimeModel.Description = &desc
 
 	labelKey := "key"
-	labelValues := []string{"value1", "value2"}
+	labelValues := []string{"value1"}
 
 	testCases := []struct {
 		Name               string
 		RepositoryFn       func() *automock.RuntimeRepository
 		InputRuntimeID     string
 		InputKey           string
-		InputValues         []string
+		InputValues        []string
 		ExpectedErrMessage string
 	}{
 		{
@@ -615,7 +616,7 @@ func TestService_AddLabel(t *testing.T) {
 			},
 			InputRuntimeID:     runtimeID,
 			InputKey:           labelKey,
-			InputValues:         labelValues,
+			InputValues:        labelValues,
 			ExpectedErrMessage: "",
 		},
 		{
@@ -629,7 +630,7 @@ func TestService_AddLabel(t *testing.T) {
 			},
 			InputRuntimeID:     runtimeID,
 			InputKey:           labelKey,
-			InputValues:         labelValues,
+			InputValues:        labelValues,
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
@@ -642,7 +643,7 @@ func TestService_AddLabel(t *testing.T) {
 			},
 			InputRuntimeID:     runtimeID,
 			InputKey:           labelKey,
-			InputValues:         labelValues,
+			InputValues:        labelValues,
 			ExpectedErrMessage: testErr.Error(),
 		},
 	}
@@ -686,7 +687,7 @@ func TestService_DeleteLabel(t *testing.T) {
 		RepositoryFn       func() *automock.RuntimeRepository
 		InputRuntimeID     string
 		InputKey           string
-		InputValues         []string
+		InputValues        []string
 		ExpectedErrMessage string
 	}{
 		{
@@ -696,14 +697,14 @@ func TestService_DeleteLabel(t *testing.T) {
 				repo.On("GetByID", runtimeID).Return(
 					fixModelRuntimeWithLabels(runtimeID, "Foo", map[string][]string{
 						"key": {"value1", "value2"},
-					}), nil, ).Once()
+					}), nil).Once()
 				repo.On("Update", modifiedRuntimeModel).Return(nil).Once()
 
 				return repo
 			},
 			InputRuntimeID:     runtimeID,
 			InputKey:           labelKey,
-			InputValues:         labelValues,
+			InputValues:        labelValues,
 			ExpectedErrMessage: "",
 		},
 		{
@@ -713,14 +714,14 @@ func TestService_DeleteLabel(t *testing.T) {
 				repo.On("GetByID", runtimeID).Return(
 					fixModelRuntimeWithLabels(runtimeID, "Foo", map[string][]string{
 						"key": {"value1", "value2"},
-					}), nil, ).Once()
+					}), nil).Once()
 				repo.On("Update", modifiedRuntimeModel).Return(testErr).Once()
 
 				return repo
 			},
 			InputRuntimeID:     runtimeID,
 			InputKey:           labelKey,
-			InputValues:         labelValues,
+			InputValues:        labelValues,
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
@@ -733,7 +734,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			},
 			InputRuntimeID:     runtimeID,
 			InputKey:           labelKey,
-			InputValues:         labelValues,
+			InputValues:        labelValues,
 			ExpectedErrMessage: testErr.Error(),
 		},
 	}

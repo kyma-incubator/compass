@@ -129,7 +129,7 @@ func (s *Service) DeleteLabel(ctx context.Context, runtimeID string, key string,
 	return nil
 }
 
-func (s *Service) AddAnnotation(ctx context.Context, runtimeID string, key string, value string) error {
+func (s *Service) AddAnnotation(ctx context.Context, runtimeID string, key string, value interface{}) error {
 	rtm, err := s.Get(ctx, runtimeID)
 	if err != nil {
 		return errors.Wrap(err, "while getting Runtime")

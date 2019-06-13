@@ -204,7 +204,7 @@ type ComplexityRoot struct {
 		AddApplicationLabel         func(childComplexity int, applicationID string, label string, values []string) int
 		AddApplicationWebhook       func(childComplexity int, applicationID string, in ApplicationWebhookInput) int
 		AddEventAPI                 func(childComplexity int, applicationID string, in EventAPIDefinitionInput) int
-		AddRuntimeAnnotation        func(childComplexity int, runtimeID string, key string, value string) int
+		AddRuntimeAnnotation        func(childComplexity int, runtimeID string, key string, value interface{}) int
 		AddRuntimeLabel             func(childComplexity int, runtimeID string, key string, values []string) int
 		CreateApplication           func(childComplexity int, in ApplicationInput) int
 		CreateRuntime               func(childComplexity int, in RuntimeInput) int
@@ -314,7 +314,7 @@ type MutationResolver interface {
 	DeleteRuntime(ctx context.Context, id string) (*Runtime, error)
 	AddRuntimeLabel(ctx context.Context, runtimeID string, key string, values []string) (*Label, error)
 	DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string, values []string) (*Label, error)
-	AddRuntimeAnnotation(ctx context.Context, runtimeID string, key string, value string) (*Annotation, error)
+	AddRuntimeAnnotation(ctx context.Context, runtimeID string, key string, value interface{}) (*Annotation, error)
 	DeleteRuntimeAnnotation(ctx context.Context, runtimeID string, key string) (*Annotation, error)
 }
 type QueryResolver interface {
@@ -1056,7 +1056,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AddRuntimeAnnotation(childComplexity, args["runtimeID"].(string), args["key"].(string), args["value"].(string)), true
+		return e.complexity.Mutation.AddRuntimeAnnotation(childComplexity, args["runtimeID"].(string), args["key"].(string), args["value"].(interface{})), true
 
 	case "Mutation.addRuntimeLabel":
 		if e.complexity.Mutation.AddRuntimeLabel == nil {
@@ -1634,6 +1634,8 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 var parsedSchema = gqlparser.MustLoadSchema(
 	&ast.Source{Name: "schema.graphql", Input: `# Scalars
 
+scalar Any # -> interface{}
+
 scalar Timestamp # -> time.Time
 
 scalar Tenant # -> String
@@ -1657,7 +1659,7 @@ type Label {
 
 type Annotation {
     key: String!
-    value: String!
+    value: Any!
 }
 
 # Runtime
@@ -2148,7 +2150,7 @@ type Mutation {
     deleteRuntimeLabel(runtimeID: ID!, key: String!, values: [String!]): Label
 
     """If the annotation key exists, it returns an error."""
-    addRuntimeAnnotation(runtimeID: ID!, key: String!, value: String!): Annotation!
+    addRuntimeAnnotation(runtimeID: ID!, key: String!, value: Any!): Annotation!
 
     """If values are not specified, it deletes the annotation. If values are specified, it deletes values from a specific annotation."""
     deleteRuntimeAnnotation(runtimeID: ID!, key: String!): Annotation
@@ -2429,9 +2431,9 @@ func (ec *executionContext) field_Mutation_addRuntimeAnnotation_args(ctx context
 		}
 	}
 	args["key"] = arg1
-	var arg2 string
+	var arg2 interface{}
 	if tmp, ok := rawArgs["value"]; ok {
-		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		arg2, err = ec.unmarshalNAny2interface(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -3549,10 +3551,10 @@ func (ec *executionContext) _Annotation_value(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(interface{})
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNAny2interface(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_id(ctx context.Context, field graphql.CollectedField, obj *Application) graphql.Marshaler {
@@ -6230,7 +6232,7 @@ func (ec *executionContext) _Mutation_addRuntimeAnnotation(ctx context.Context, 
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().AddRuntimeAnnotation(rctx, args["runtimeID"].(string), args["key"].(string), args["value"].(string))
+		return ec.resolvers.Mutation().AddRuntimeAnnotation(rctx, args["runtimeID"].(string), args["key"].(string), args["value"].(interface{}))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -10366,6 +10368,29 @@ func (ec *executionContext) unmarshalNAnnotations2githubᚗcomᚋkymaᚑincubato
 
 func (ec *executionContext) marshalNAnnotations2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgraphqlᚐAnnotations(ctx context.Context, sel ast.SelectionSet, v Annotations) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) unmarshalNAny2interface(ctx context.Context, v interface{}) (interface{}, error) {
+	if v == nil {
+		return nil, nil
+	}
+	return graphql.UnmarshalAny(v)
+}
+
+func (ec *executionContext) marshalNAny2interface(ctx context.Context, sel ast.SelectionSet, v interface{}) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := graphql.MarshalAny(v)
+	if res == graphql.Null {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNApplication2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgraphqlᚐApplication(ctx context.Context, sel ast.SelectionSet, v Application) graphql.Marshaler {

@@ -2,11 +2,12 @@ package runtime_test
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/graphql"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestConverter_ToGraphQL(t *testing.T) {
@@ -18,8 +19,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	}{
 		{
 			Name:     "All properties given",
-			Input:    fixModelRuntime("foo", "Foo", "Lorem ipsum"),
-			Expected: fixGQLRuntime("foo", "Foo", "Lorem ipsum"),
+			Input:    fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum"),
+			Expected: fixDetailedGQLRuntime(t, "foo", "Foo", "Lorem ipsum"),
 		},
 		{
 			Name:  "Empty",
@@ -82,12 +83,12 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 	}{
 		{
 			Name:     "All properties given",
-			Input: fixGQLRuntimeInput("foo", "Lorem ipsum"),
-			Expected:    fixModelRuntimeInput("foo", "Lorem ipsum"),
+			Input:    fixGQLRuntimeInput("foo", "Lorem ipsum"),
+			Expected: fixModelRuntimeInput("foo", "Lorem ipsum"),
 		},
 		{
-			Name:  "Empty",
-			Input: graphql.RuntimeInput{},
+			Name:     "Empty",
+			Input:    graphql.RuntimeInput{},
 			Expected: model.RuntimeInput{},
 		},
 	}

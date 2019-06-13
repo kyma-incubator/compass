@@ -11,7 +11,7 @@ type Runtime struct {
 	Description *string
 	Tenant      string
 	Labels      map[string][]string
-	Annotations map[string]string
+	Annotations map[string]interface{}
 	Status      *RuntimeStatus
 	// directive for checking auth
 	AgentAuth interface{}
@@ -70,9 +70,9 @@ func (r *Runtime) DeleteLabel(key string, valuesToDelete []string) error {
 	return nil
 }
 
-func (r *Runtime) AddAnnotation(key string, value string) error {
+func (r *Runtime) AddAnnotation(key string, value interface{}) error {
 	if r.Annotations == nil {
-		r.Annotations = make(map[string]string)
+		r.Annotations = make(map[string]interface{})
 	}
 
 	if _, exists := r.Annotations[key]; exists {
@@ -119,6 +119,5 @@ type RuntimeInput struct {
 	Name        string
 	Description *string
 	Labels      map[string][]string
-	Annotations map[string]string
+	Annotations map[string]interface{}
 }
-

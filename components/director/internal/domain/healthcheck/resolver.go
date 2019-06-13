@@ -24,7 +24,7 @@ func NewResolver(svc HealthCheckService) *Resolver {
 	}
 }
 
-func (r *Resolver) HealthChecks(ctx context.Context, types []graphql.HealthCheckType, origin *string, first *int, after *string) (*graphql.HealthCheckPage, error) {
+func (r *Resolver) HealthChecks(ctx context.Context, types []graphql.HealthCheckType, origin *string, first *int, after *graphql.PageCursor) (*graphql.HealthCheckPage, error) {
 	return &graphql.HealthCheckPage{
 		Data: []*graphql.HealthCheck{},
 		PageInfo: &graphql.PageInfo{

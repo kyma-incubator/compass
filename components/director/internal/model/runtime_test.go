@@ -2,10 +2,11 @@ package model_test
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestRuntime_AddLabel(t *testing.T) {
@@ -18,13 +19,13 @@ func TestRuntime_AddLabel(t *testing.T) {
 		ExpectedLabels map[string][]string
 	}{
 		{
-			Name:     "New Label",
+			Name: "New Label",
 			InitialRuntime: model.Runtime{
 				Labels: map[string][]string{
 					"test": {"testVal"},
 				},
 			},
-			InputKey: "foo",
+			InputKey:    "foo",
 			InputValues: []string{"bar", "baz", "bar"},
 			ExpectedLabels: map[string][]string{
 				"test": {"testVal"},
@@ -32,24 +33,24 @@ func TestRuntime_AddLabel(t *testing.T) {
 			},
 		},
 		{
-			Name:     "Nil map",
+			Name: "Nil map",
 			InitialRuntime: model.Runtime{
 				Labels: nil,
 			},
-			InputKey: "foo",
+			InputKey:    "foo",
 			InputValues: []string{"bar", "baz"},
 			ExpectedLabels: map[string][]string{
 				"foo": {"bar", "baz"},
 			},
 		},
 		{
-			Name:     "Append Values",
+			Name: "Append Values",
 			InitialRuntime: model.Runtime{
 				Labels: map[string][]string{
 					"foo": {"bar", "baz"},
 				},
 			},
-			InputKey: "foo",
+			InputKey:    "foo",
 			InputValues: []string{"zzz", "bar"},
 			ExpectedLabels: map[string][]string{
 				"foo": {"bar", "baz", "zzz"},
@@ -158,47 +159,47 @@ func TestRuntime_AddAnnotation(t *testing.T) {
 		InputRuntime        model.Runtime
 		InputKey            string
 		InputValue          string
-		ExpectedAnnotations map[string]string
+		ExpectedAnnotations map[string]interface{}
 		ExpectedErr         error
 	}{
 		{
-			Name:     "Success",
-			InputKey: "foo",
+			Name:       "Success",
+			InputKey:   "foo",
 			InputValue: "bar",
 			InputRuntime: model.Runtime{
-				Annotations: map[string]string{
-					"test":  "val",
+				Annotations: map[string]interface{}{
+					"test": "val",
 				},
 			},
 			ExpectedErr: nil,
-			ExpectedAnnotations: map[string]string{
-				"test":  "val",
-				"foo": "bar",
+			ExpectedAnnotations: map[string]interface{}{
+				"test": "val",
+				"foo":  "bar",
 			},
 		},
 		{
-			Name:     "Nil map",
-			InputKey: "foo",
+			Name:       "Nil map",
+			InputKey:   "foo",
 			InputValue: "bar",
 			InputRuntime: model.Runtime{
 				Annotations: nil,
 			},
 			ExpectedErr: nil,
-			ExpectedAnnotations: map[string]string{
+			ExpectedAnnotations: map[string]interface{}{
 				"foo": "bar",
 			},
 		},
 		{
-			Name:     "Error",
-			InputKey: "foo",
+			Name:       "Error",
+			InputKey:   "foo",
 			InputValue: "bar",
 			InputRuntime: model.Runtime{
-				Annotations: map[string]string{
+				Annotations: map[string]interface{}{
 					"foo": "val",
 				},
 			},
 			ExpectedErr: fmt.Errorf("annotation %s does already exist", "foo"),
-			ExpectedAnnotations: map[string]string{
+			ExpectedAnnotations: map[string]interface{}{
 				"foo": "val",
 			},
 		},
@@ -226,21 +227,20 @@ func TestRuntime_DeleteAnnotation(t *testing.T) {
 		Name                string
 		InputRuntime        model.Runtime
 		InputKey            string
-		ExpectedAnnotations map[string]string
+		ExpectedAnnotations map[string]interface{}
 		ExpectedErr         error
 	}{
 		{
 			Name:     "Success",
 			InputKey: "foo",
 			InputRuntime: model.Runtime{
-				Annotations: map[string]string{
+				Annotations: map[string]interface{}{
 					"no":  "delete",
 					"foo": "bar",
 				},
 			},
-			ExpectedErr:
-			nil,
-			ExpectedAnnotations: map[string]string{
+			ExpectedErr: nil,
+			ExpectedAnnotations: map[string]interface{}{
 				"no": "delete",
 			},
 		},
@@ -248,12 +248,12 @@ func TestRuntime_DeleteAnnotation(t *testing.T) {
 			Name:     "Error",
 			InputKey: "foobar",
 			InputRuntime: model.Runtime{
-				Annotations: map[string]string{
+				Annotations: map[string]interface{}{
 					"no": "delete",
 				},
 			},
 			ExpectedErr: fmt.Errorf("annotation %s doesn't exist", "foobar"),
-			ExpectedAnnotations: map[string]string{
+			ExpectedAnnotations: map[string]interface{}{
 				"no": "delete",
 			},
 		},

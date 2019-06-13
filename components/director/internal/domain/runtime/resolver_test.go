@@ -3,6 +3,8 @@ package runtime_test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/graphql"
@@ -10,7 +12,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestResolver_CreateRuntime(t *testing.T) {
@@ -401,6 +402,7 @@ func TestResolver_Runtimes(t *testing.T) {
 	}
 
 	first := 2
+	gqlAfter := graphql.PageCursor("test")
 	after := "test"
 	filter := []*labelfilter.LabelFilter{
 		{Label: "", Values: []string{"foo", "bar"}, Operator: labelfilter.FilterOperatorAll},
@@ -416,7 +418,7 @@ func TestResolver_Runtimes(t *testing.T) {
 		ConverterFn       func() *automock.RuntimeConverter
 		InputLabelFilters []*graphql.LabelFilter
 		InputFirst        *int
-		InputAfter        *string
+		InputAfter        *graphql.PageCursor
 		ExpectedResult    *graphql.RuntimePage
 		ExpectedErr       error
 	}{
@@ -433,7 +435,7 @@ func TestResolver_Runtimes(t *testing.T) {
 				return conv
 			},
 			InputFirst:        &first,
-			InputAfter:        &after,
+			InputAfter:        &gqlAfter,
 			InputLabelFilters: gqlFilter,
 			ExpectedResult:    fixGQLRuntimePage(gqlRuntimes),
 			ExpectedErr:       nil,
@@ -450,7 +452,7 @@ func TestResolver_Runtimes(t *testing.T) {
 				return conv
 			},
 			InputFirst:        &first,
-			InputAfter:        &after,
+			InputAfter:        &gqlAfter,
 			InputLabelFilters: gqlFilter,
 			ExpectedResult:    nil,
 			ExpectedErr:       testErr,
@@ -669,7 +671,7 @@ func TestResolver_AddRuntimeAnnotation(t *testing.T) {
 		ConverterFn        func() *automock.RuntimeConverter
 		InputRuntimeID     string
 		InputKey           string
-		InputValue         string
+		InputValue         interface{}
 		ExpectedAnnotation *graphql.Annotation
 		ExpectedErr        error
 	}{
@@ -735,7 +737,7 @@ func TestResolver_DeleteRuntimeAnnotation(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	runtimeID := "foo"
-	rtm := fixModelRuntimeWithAnnotations(runtimeID, "Foo", map[string]string{"key": "value"})
+	rtm := fixModelRuntimeWithAnnotations(runtimeID, "Foo", map[string]interface{}{"key": "value"})
 
 	gqlAnnotation := &graphql.Annotation{
 		Key:   "key",

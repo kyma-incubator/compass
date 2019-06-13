@@ -1,5 +1,7 @@
 # Scalars
 
+scalar Any # -> interface{}
+
 scalar Timestamp # -> time.Time
 
 scalar Tenant # -> String
@@ -23,7 +25,7 @@ type Label {
 
 type Annotation {
     key: String!
-    value: String!
+    value: Any!
 }
 
 # Runtime
@@ -514,7 +516,7 @@ type Mutation {
     deleteRuntimeLabel(runtimeID: ID!, key: String!, values: [String!]): Label
 
     """If the annotation key exists, it returns an error."""
-    addRuntimeAnnotation(runtimeID: ID!, key: String!, value: String!): Annotation!
+    addRuntimeAnnotation(runtimeID: ID!, key: String!, value: Any!): Annotation!
 
     """If values are not specified, it deletes the annotation. If values are specified, it deletes values from a specific annotation."""
     deleteRuntimeAnnotation(runtimeID: ID!, key: String!): Annotation

@@ -152,7 +152,7 @@ func (r *mutationResolver) AddRuntimeLabel(ctx context.Context, runtimeID string
 func (r *mutationResolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string, values []string) (*graphql.Label, error) {
 	return r.runtime.DeleteRuntimeLabel(ctx, runtimeID, key, values)
 }
-func (r *mutationResolver) AddRuntimeAnnotation(ctx context.Context, runtimeID string, key string, value string) (*graphql.Annotation, error) {
+func (r *mutationResolver) AddRuntimeAnnotation(ctx context.Context, runtimeID string, key string, value interface{}) (*graphql.Annotation, error) {
 	return r.runtime.AddRuntimeAnnotation(ctx, runtimeID, key, value)
 }
 func (r *mutationResolver) DeleteRuntimeAnnotation(ctx context.Context, runtimeID string, key string) (*graphql.Annotation, error) {

@@ -13,11 +13,11 @@ type RuntimeService struct {
 }
 
 // AddAnnotation provides a mock function with given fields: ctx, runtimeID, key, value
-func (_m *RuntimeService) AddAnnotation(ctx context.Context, runtimeID string, key string, value string) error {
+func (_m *RuntimeService) AddAnnotation(ctx context.Context, runtimeID string, key string, value interface{}) error {
 	ret := _m.Called(ctx, runtimeID, key, value)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, interface{}) error); ok {
 		r0 = rf(ctx, runtimeID, key, value)
 	} else {
 		r0 = ret.Error(0)
