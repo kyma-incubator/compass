@@ -9,18 +9,19 @@ This document is a proposal for eventing flows we want to support with use of th
 ![Management Plane Components](assets/internal-event-flow.svg)
 
 1. The event is registered using **Management Plane** API.
-2. The **Director** sends an event url to EventGateway.
-3. The **Agent** fetches the event data and passes it to Kyma Event Bus.  
-4. The Application publishes an event.
-5. The Event Gateway will support multiple protocols like HTTP, MQTT along with multiple authentication (e.g. OpenID Connect) and authorization (e.g. OAuth2) methods.
+2. The **Director** sends an event url to **EventGateway**.
+3. The **Agent** fetches the event data and exposes it inside **Runtime**.  
+4. The **Application** publishes an event.
 
+>**NOTE** The Event Gateway will support multiple protocols like HTTP or MQTT which can be specified inside EventSpec data.
+It will also support many authentication (e.g. OpenID Connect) and authorization (e.g. OAuth2) methods.
 ## Eventing with external Event Bus
 
 ![Management Plane Components](assets/external-event-flow.svg)
 
 1. The event is registered using **Management Plane** API with external event bus data.
-2. The **Agent** fetches the event and passes information to eventing system (E.g Google's Cloud PubSub).
-3. Eventing system subscribes on external event bus.
+2. The **Agent** fetches the event and exposes it inside **Runtime**.
+3. **Eventing system** subscribes on external event bus.
 4. The application publishes an event.
 
 ## GraphQL Schema  
@@ -28,19 +29,16 @@ This document is a proposal for eventing flows we want to support with use of th
 ### Types
 ```graphql
 
+scalar EventSubscriptionAttributes # -> map[string]string
+
 type EventAPIDefinition {
     id: ID!
     """group allows you to find the same API but in different version"""
     group: String
     spec: EventSpec!
-    protocol: Protocol
     auth: Auth
-    subscriptions: [EventSubscription!]!
+    externalSubscriptions: [EventSubscription!]!
     version: Version
-}
-
-enum Protocol {
-  MQTT,HTTP
 }
 
 type EventSpec {
@@ -57,9 +55,6 @@ type EventSubscription {
     attributes: EventSubscriptionAttributes
 }
 
-type EventSubscriptionAttributes {
-
-}
 
 enum EventSpecType {
     ASYNC_API
@@ -76,7 +71,7 @@ input EventAPIDefinitionInput {
     group: String
     protocol: Protocol
     auth: AuthInput
-    subscriptions: [EventSubscriptionInput!]
+    externalSubscriptions: [EventSubscriptionInput!]
     version: VersionInput
 }
 
@@ -94,4 +89,4 @@ input EventSubscriptionInput {
 }
 ```
 
-The `Protocol` and the `EventSpecType` types are the same as in `Types` section.
+The `EventSpecType` type is the same as in `Types` section.
