@@ -34,3 +34,35 @@ type OAuthCredentialData struct {
 }
 
 func (OAuthCredentialData) IsCredentialData() {}
+
+type AuthInput struct {
+	Credential            *CredentialDataInput
+	AdditionalHeaders     map[string][]string
+	AdditionalQueryParams map[string][]string
+	RequestAuth           *CredentialRequestAuthInput
+}
+
+type CredentialDataInput struct {
+	Basic *BasicCredentialDataInput
+	Oauth *OAuthCredentialDataInput
+}
+
+type BasicCredentialDataInput struct {
+	Username string
+	Password string
+}
+
+type OAuthCredentialDataInput struct {
+	ClientID     string
+	ClientSecret string
+	URL          string
+}
+
+type CredentialRequestAuthInput struct {
+	Csrf *CSRFTokenCredentialRequestAuthInput
+}
+
+type CSRFTokenCredentialRequestAuthInput struct {
+	TokenEndpointURL string
+	Auth             *AuthInput
+}

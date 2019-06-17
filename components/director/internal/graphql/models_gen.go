@@ -75,23 +75,6 @@ type Annotation struct {
 	Value interface{} `json:"value"`
 }
 
-type Application struct {
-	ID             string                `json:"id"`
-	Tenant         Tenant                `json:"tenant"`
-	Name           string                `json:"name"`
-	Description    *string               `json:"description"`
-	Labels         Labels                `json:"labels"`
-	Annotations    Annotations           `json:"annotations"`
-	Status         *ApplicationStatus    `json:"status"`
-	Webhooks       []*ApplicationWebhook `json:"webhooks"`
-	HealthCheckURL *string               `json:"healthCheckURL"`
-	//  group allows to find different versions of the same API
-	Apis *APIDefinitionPage `json:"apis"`
-	//  group allows to find different versions of the same event API
-	EventAPIs *EventAPIDefinitionPage `json:"eventAPIs"`
-	Documents *DocumentPage           `json:"documents"`
-}
-
 type ApplicationInput struct {
 	Name           string                     `json:"name"`
 	Description    *string                    `json:"description"`

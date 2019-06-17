@@ -84,6 +84,7 @@ func (r *Resolver) DeleteApplicationWebhook(ctx context.Context, webhookID strin
 	panic("not implemented")
 }
 
+
 func (r *Resolver) Apis(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
 	panic("not implemented")
 }

@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -37,11 +38,11 @@ func (r *Runtime) AddLabel(key string, values []string) {
 	}
 
 	if _, exists := r.Labels[key]; !exists {
-		r.Labels[key] = r.uniqueStrings(values)
+		r.Labels[key] = strings.Unique(values)
 		return
 	}
 
-	r.Labels[key] = r.uniqueStrings(append(r.Labels[key], values...))
+	r.Labels[key] = strings.Unique(append(r.Labels[key], values...))
 }
 
 func (r *Runtime) DeleteLabel(key string, valuesToDelete []string) error {
@@ -56,12 +57,12 @@ func (r *Runtime) DeleteLabel(key string, valuesToDelete []string) error {
 		return nil
 	}
 
-	set := r.mapFromSlice(currentValues)
+	set := strings.SliceToMap(currentValues)
 	for _, val := range valuesToDelete {
 		delete(set, val)
 	}
 
-	filteredValues := r.sliceFromMap(set)
+	filteredValues := strings.MapToSlice(set)
 	if len(filteredValues) == 0 {
 		delete(r.Labels, key)
 		return nil
@@ -91,29 +92,6 @@ func (r *Runtime) DeleteAnnotation(key string) error {
 
 	delete(r.Annotations, key)
 	return nil
-}
-
-func (r *Runtime) uniqueStrings(in []string) []string {
-	set := r.mapFromSlice(in)
-	return r.sliceFromMap(set)
-}
-
-func (r *Runtime) mapFromSlice(in []string) map[string]struct{} {
-	set := make(map[string]struct{})
-	for _, i := range in {
-		set[i] = struct{}{}
-	}
-
-	return set
-}
-
-func (r *Runtime) sliceFromMap(set map[string]struct{}) []string {
-	var items []string
-	for key := range set {
-		items = append(items, key)
-	}
-
-	return items
 }
 
 type RuntimeInput struct {
