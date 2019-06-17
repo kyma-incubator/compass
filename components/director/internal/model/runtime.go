@@ -2,8 +2,9 @@ package model
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
 type Runtime struct {
@@ -14,6 +15,7 @@ type Runtime struct {
 	Labels      map[string][]string
 	Annotations map[string]interface{}
 	Status      *RuntimeStatus
+	AgentAuth   *Auth
 }
 
 type RuntimeStatus struct {

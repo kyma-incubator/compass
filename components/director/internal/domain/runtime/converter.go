@@ -20,6 +20,7 @@ func (c *converter) ToGraphQL(in *model.Runtime) *graphql.Runtime {
 		Tenant:      graphql.Tenant(in.Tenant),
 		Annotations: in.Annotations,
 		Labels:      in.Labels,
+		AgentAuth:   nil, //TODO: https://github.com/kyma-incubator/compass/issues/67
 	}
 }
 

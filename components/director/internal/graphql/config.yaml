@@ -34,8 +34,6 @@ models:
     model: "github.com/kyma-incubator/compass/components/director/internal/graphql.PageCursor"
   Application:
     fields:
-      agentAuth:
-        resolver: true
       documents:
         resolver: true
       eventAPIs:
@@ -44,5 +42,3 @@ models:
         resolver: true
       webhooks:
         resolver: true
-#  Annotations:
-#    model: "github.com/kyma-incubator/compass/internal/graphql.Annotations"

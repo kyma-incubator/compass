@@ -37,7 +37,7 @@ func (r *inMemoryRepository) List(filter []*labelfilter.LabelFilter, pageSize *i
 	}, nil
 }
 
-func (r *inMemoryRepository) Create(item *model.Runtime ) error {
+func (r *inMemoryRepository) Create(item *model.Runtime) error {
 	r.store[item.ID] = item
 
 	return nil
