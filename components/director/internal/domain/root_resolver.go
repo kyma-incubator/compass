@@ -27,9 +27,10 @@ type RootResolver struct {
 
 func NewRootResolver() *RootResolver {
 	healthcheckRepo := healthcheck.NewRepository()
-	runtimeRepo := runtime.NewRuntimeRepository()
+	runtimeRepo := runtime.NewRepository()
+	applicationRepo := application.NewRepository()
 
-	appSvc := application.NewService()
+	appSvc := application.NewService(applicationRepo)
 	apiSvc := api.NewService()
 	eventAPISvc := eventapi.NewService()
 	webhookSvc := webhook.NewService()

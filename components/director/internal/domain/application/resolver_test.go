@@ -463,7 +463,7 @@ func TestResolver_Applications(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(svc)
+			resolver := application.NewResolver(svc, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
