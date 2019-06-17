@@ -48,7 +48,10 @@ func main() {
 	router.PathPrefix("/{application}/v1/metadata").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		app := mux.Vars(r)["application"]
 		w.WriteHeader(200)
-		w.Write([]byte("OK! " + app))
+		_, err := w.Write([]byte("OK! " + app))
+		if err != nil {
+			log.Println(errors.Wrapf(err, "while writing to response body").Error())
+		}
 	})
 
 	http.Handle("/", router)
