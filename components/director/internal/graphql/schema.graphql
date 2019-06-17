@@ -326,7 +326,7 @@ input ApplicationInput {
     webhooks: [ApplicationWebhookInput!]
     healthCheckURL: String
     apis: [APIDefinitionInput!]
-    events: [EventAPIDefinitionInput!]
+    eventAPIs: [EventAPIDefinitionInput!]
     documents: [DocumentInput!]
 }
 
@@ -498,11 +498,13 @@ type Mutation {
     setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput!): RuntimeAuth!
     deleteAPIAuth(apiID: ID!, runtimeID: ID!): RuntimeAuth!
 
-
     addEventAPI(applicationID: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition!
     updateEventAPI(id: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition!
     deleteEventAPI(id: ID!): EventAPIDefinition
     refetchEventAPISpec(eventID: ID!): EventAPISpec
+
+    addDocument(applicationID: ID!, in: DocumentInput!): Document!
+    deleteDocument(id: ID!): Document
 
     # Runtime
     createRuntime(in: RuntimeInput!): Runtime!

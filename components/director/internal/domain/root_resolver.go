@@ -3,6 +3,8 @@ package domain
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
@@ -18,6 +20,7 @@ type RootResolver struct {
 	app         *application.Resolver
 	api         *api.Resolver
 	eventAPI    *eventapi.Resolver
+	doc         *document.Resolver
 	runtime     *runtime.Resolver
 	healthCheck *healthcheck.Resolver
 }
@@ -29,14 +32,16 @@ func NewRootResolver() *RootResolver {
 	appSvc := application.NewService()
 	apiSvc := api.NewService()
 	eventAPISvc := eventapi.NewService()
+	webhookSvc := webhook.NewService()
 	docSvc := document.NewService()
 	runtimeSvc := runtime.NewService(runtimeRepo)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 
 	return &RootResolver{
-		app:         application.NewResolver(appSvc, apiSvc, eventAPISvc, docSvc),
+		app:         application.NewResolver(appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc),
 		api:         api.NewResolver(apiSvc),
 		eventAPI:    eventapi.NewResolver(eventAPISvc),
+		doc:         document.NewResolver(docSvc),
 		runtime:     runtime.NewResolver(runtimeSvc),
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
 	}
@@ -157,6 +162,13 @@ func (r *mutationResolver) AddRuntimeAnnotation(ctx context.Context, runtimeID s
 }
 func (r *mutationResolver) DeleteRuntimeAnnotation(ctx context.Context, runtimeID string, key string) (*graphql.Annotation, error) {
 	return r.runtime.DeleteRuntimeAnnotation(ctx, runtimeID, key)
+}
+
+func (r *mutationResolver) AddDocument(ctx context.Context, applicationID string, in graphql.DocumentInput) (*graphql.Document, error) {
+	return r.doc.AddDocument(ctx, applicationID, in)
+}
+func (r *mutationResolver) DeleteDocument(ctx context.Context, id string) (*graphql.Document, error) {
+	return r.doc.DeleteDocument(ctx, id)
 }
 
 type applicationResolver struct {

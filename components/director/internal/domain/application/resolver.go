@@ -14,21 +14,25 @@ type eventAPISvc interface{}
 
 type documentSvc interface{}
 
+type webhookSvc interface{}
+
 type Resolver struct {
 	svc       svc
 	converter *Converter
 
 	apiSvc      apiSvc
 	eventAPISvc eventAPISvc
+	webhookSvc  webhookSvc
 	documentSvc documentSvc
 }
 
-func NewResolver(svc *Service, apiSvc apiSvc, eventAPISvc eventAPISvc, documentSvc documentSvc) *Resolver {
+func NewResolver(svc *Service, apiSvc apiSvc, eventAPISvc eventAPISvc, documentSvc documentSvc, webhookSvc webhookSvc) *Resolver {
 	return &Resolver{
 		svc:         svc,
 		apiSvc:      apiSvc,
 		eventAPISvc: eventAPISvc,
 		documentSvc: documentSvc,
+		webhookSvc:  webhookSvc,
 		converter:   &Converter{},
 	}
 }

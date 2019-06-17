@@ -100,7 +100,7 @@ type ApplicationInput struct {
 	Webhooks       []*ApplicationWebhookInput `json:"webhooks"`
 	HealthCheckURL *string                    `json:"healthCheckURL"`
 	Apis           []*APIDefinitionInput      `json:"apis"`
-	Events         []*EventAPIDefinitionInput `json:"events"`
+	EventAPIs      []*EventAPIDefinitionInput `json:"eventAPIs"`
 	Documents      []*DocumentInput           `json:"documents"`
 }
 

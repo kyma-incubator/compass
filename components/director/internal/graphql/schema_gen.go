@@ -203,6 +203,7 @@ type ComplexityRoot struct {
 		AddApplicationAnnotation    func(childComplexity int, applicationID string, annotation string, value string) int
 		AddApplicationLabel         func(childComplexity int, applicationID string, label string, values []string) int
 		AddApplicationWebhook       func(childComplexity int, applicationID string, in ApplicationWebhookInput) int
+		AddDocument                 func(childComplexity int, applicationID string, in DocumentInput) int
 		AddEventAPI                 func(childComplexity int, applicationID string, in EventAPIDefinitionInput) int
 		AddRuntimeAnnotation        func(childComplexity int, runtimeID string, key string, value interface{}) int
 		AddRuntimeLabel             func(childComplexity int, runtimeID string, key string, values []string) int
@@ -214,6 +215,7 @@ type ComplexityRoot struct {
 		DeleteApplicationAnnotation func(childComplexity int, applicationID string, annotation string) int
 		DeleteApplicationLabel      func(childComplexity int, applicationID string, label string, values []string) int
 		DeleteApplicationWebhook    func(childComplexity int, webhookID string) int
+		DeleteDocument              func(childComplexity int, id string) int
 		DeleteEventAPI              func(childComplexity int, id string) int
 		DeleteRuntime               func(childComplexity int, id string) int
 		DeleteRuntimeAnnotation     func(childComplexity int, runtimeID string, key string) int
@@ -311,6 +313,8 @@ type MutationResolver interface {
 	UpdateEventAPI(ctx context.Context, id string, in EventAPIDefinitionInput) (*EventAPIDefinition, error)
 	DeleteEventAPI(ctx context.Context, id string) (*EventAPIDefinition, error)
 	RefetchEventAPISpec(ctx context.Context, eventID string) (*EventAPISpec, error)
+	AddDocument(ctx context.Context, applicationID string, in DocumentInput) (*Document, error)
+	DeleteDocument(ctx context.Context, id string) (*Document, error)
 	CreateRuntime(ctx context.Context, in RuntimeInput) (*Runtime, error)
 	UpdateRuntime(ctx context.Context, id string, in RuntimeInput) (*Runtime, error)
 	DeleteRuntime(ctx context.Context, id string) (*Runtime, error)
@@ -1036,6 +1040,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.AddApplicationWebhook(childComplexity, args["applicationID"].(string), args["in"].(ApplicationWebhookInput)), true
 
+	case "Mutation.addDocument":
+		if e.complexity.Mutation.AddDocument == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_addDocument_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddDocument(childComplexity, args["applicationID"].(string), args["in"].(DocumentInput)), true
+
 	case "Mutation.addEventAPI":
 		if e.complexity.Mutation.AddEventAPI == nil {
 			break
@@ -1167,6 +1183,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteApplicationWebhook(childComplexity, args["webhookID"].(string)), true
+
+	case "Mutation.deleteDocument":
+		if e.complexity.Mutation.DeleteDocument == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteDocument_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteDocument(childComplexity, args["id"].(string)), true
 
 	case "Mutation.deleteEventAPI":
 		if e.complexity.Mutation.DeleteEventAPI == nil {
@@ -1962,7 +1990,7 @@ input ApplicationInput {
     webhooks: [ApplicationWebhookInput!]
     healthCheckURL: String
     apis: [APIDefinitionInput!]
-    events: [EventAPIDefinitionInput!]
+    eventAPIs: [EventAPIDefinitionInput!]
     documents: [DocumentInput!]
 }
 
@@ -2134,11 +2162,13 @@ type Mutation {
     setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput!): RuntimeAuth!
     deleteAPIAuth(apiID: ID!, runtimeID: ID!): RuntimeAuth!
 
-
     addEventAPI(applicationID: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition!
     updateEventAPI(id: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition!
     deleteEventAPI(id: ID!): EventAPIDefinition
     refetchEventAPISpec(eventID: ID!): EventAPISpec
+
+    addDocument(applicationID: ID!, in: DocumentInput!): Document!
+    deleteDocument(id: ID!): Document
 
     # Runtime
     createRuntime(in: RuntimeInput!): Runtime!
@@ -2392,6 +2422,28 @@ func (ec *executionContext) field_Mutation_addApplicationWebhook_args(ctx contex
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_addDocument_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["applicationID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["applicationID"] = arg0
+	var arg1 DocumentInput
+	if tmp, ok := rawArgs["in"]; ok {
+		arg1, err = ec.unmarshalNDocumentInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgraphqlᚐDocumentInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["in"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_addEventAPI_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -2605,6 +2657,20 @@ func (ec *executionContext) field_Mutation_deleteApplicationWebhook_args(ctx con
 }
 
 func (ec *executionContext) field_Mutation_deleteApplication_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteDocument_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -6050,6 +6116,71 @@ func (ec *executionContext) _Mutation_refetchEventAPISpec(ctx context.Context, f
 	return ec.marshalOEventAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgraphqlᚐEventAPISpec(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_addDocument(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_addDocument_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().AddDocument(rctx, args["applicationID"].(string), args["in"].(DocumentInput))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Document)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNDocument2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgraphqlᚐDocument(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_deleteDocument(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_deleteDocument_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteDocument(rctx, args["id"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Document)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalODocument2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgraphqlᚐDocument(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_createRuntime(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -8141,9 +8272,9 @@ func (ec *executionContext) unmarshalInputApplicationInput(ctx context.Context, 
 			if err != nil {
 				return it, err
 			}
-		case "events":
+		case "eventAPIs":
 			var err error
-			it.Events, err = ec.unmarshalOEventAPIDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgraphqlᚐEventAPIDefinitionInput(ctx, v)
+			it.EventAPIs, err = ec.unmarshalOEventAPIDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgraphqlᚐEventAPIDefinitionInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9632,6 +9763,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_deleteEventAPI(ctx, field)
 		case "refetchEventAPISpec":
 			out.Values[i] = ec._Mutation_refetchEventAPISpec(ctx, field)
+		case "addDocument":
+			out.Values[i] = ec._Mutation_addDocument(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "deleteDocument":
+			out.Values[i] = ec._Mutation_deleteDocument(ctx, field)
 		case "createRuntime":
 			out.Values[i] = ec._Mutation_createRuntime(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -11711,6 +11849,17 @@ func (ec *executionContext) unmarshalOCredentialRequestAuthInput2ᚖgithubᚗcom
 	}
 	res, err := ec.unmarshalOCredentialRequestAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgraphqlᚐCredentialRequestAuthInput(ctx, v)
 	return &res, err
+}
+
+func (ec *executionContext) marshalODocument2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgraphqlᚐDocument(ctx context.Context, sel ast.SelectionSet, v Document) graphql.Marshaler {
+	return ec._Document(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalODocument2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgraphqlᚐDocument(ctx context.Context, sel ast.SelectionSet, v *Document) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Document(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalODocumentInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgraphqlᚐDocumentInput(ctx context.Context, v interface{}) ([]*DocumentInput, error) {
