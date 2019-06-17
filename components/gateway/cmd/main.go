@@ -45,6 +45,12 @@ func main() {
 		}
 	})
 
+	router.PathPrefix("/{application}/v1/metadata").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		app := mux.Vars(r)["application"]
+		w.WriteHeader(200)
+		w.Write([]byte("OK! " + app))
+	})
+
 	http.Handle("/", router)
 
 	log.Printf("Listening on %s", cfg.Address)
