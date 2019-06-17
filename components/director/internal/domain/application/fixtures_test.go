@@ -124,31 +124,31 @@ func fixDetailedGQLApplication(t *testing.T, id, name, description string) *grap
 	}
 }
 
-//func fixModelApplicationInput(name, description string) model.ApplicationInput {
-//	return model.ApplicationInput{
-//		Name:        name,
-//		Description: &description,
-//		Annotations: map[string]interface{}{
-//			"key": "value",
-//		},
-//		Labels: map[string][]string{
-//			"test": {"val", "val2"},
-//		},
-//	}
-//}
-//
-//func fixGQLApplicationInput(name, description string) graphql.ApplicationInput {
-//	labels := graphql.Labels{
-//		"test": {"val", "val2"},
-//	}
-//	annotations := graphql.Annotations{
-//		"key": "value",
-//	}
-//
-//	return graphql.ApplicationInput{
-//		Name:        name,
-//		Description: &description,
-//		Annotations: &annotations,
-//		Labels:      &labels,
-//	}
-//}
+func fixModelApplicationInput(name, description string) model.ApplicationInput {
+	return model.ApplicationInput{
+		Name:        name,
+		Description: &description,
+		Annotations: map[string]interface{}{
+			"key": "value",
+		},
+		Labels: map[string][]string{
+			"test": {"val", "val2"},
+		},
+	}
+}
+
+func fixGQLApplicationInput(name, description string) graphql.ApplicationInput {
+	labels := graphql.Labels{
+		"test": {"val", "val2"},
+	}
+	annotations := graphql.Annotations{
+		"key": "value",
+	}
+
+	return graphql.ApplicationInput{
+		Name:        name,
+		Description: &description,
+		Annotations: &annotations,
+		Labels:      &labels,
+	}
+}
