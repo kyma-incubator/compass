@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain"
@@ -25,19 +25,21 @@ func main() {
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Error while loading app config")
 
+	configureLogger()
+
 	gqlCfg := graphql.Config{
 		Resolvers: domain.NewRootResolver(),
 	}
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
 
-	log.Printf("Registering endpoint on %s...", cfg.APIEndpoint)
+	log.Info("Registering endpoint on %s...", cfg.APIEndpoint)
 	router := mux.NewRouter()
 	router.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 	router.HandleFunc(cfg.APIEndpoint, handler.GraphQL(executableSchema))
 
 	http.Handle("/", router)
 
-	log.Printf("Listening on %s...", cfg.Address)
+	log.Info("Listening on %s...", cfg.Address)
 	if err := http.ListenAndServe(cfg.Address, nil); err != nil {
 		panic(err)
 	}
@@ -48,4 +50,11 @@ func exitOnError(err error, context string) {
 		wrappedError := errors.Wrap(err, context)
 		log.Fatal(wrappedError)
 	}
+}
+
+func configureLogger() {
+	log.SetFormatter(&log.TextFormatter{
+		FullTimestamp: true,
+	})
+	log.SetReportCaller(true)
 }
