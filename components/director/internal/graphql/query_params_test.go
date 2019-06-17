@@ -7,18 +7,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestHttpHeaders_UnmarshalGQL(t *testing.T) {
+func TestQueryParams_UnmarshalGQL(t *testing.T) {
+
 	for name, tc := range map[string]struct {
 		input    interface{}
 		err      bool
 		errmsg   string
-		expected HttpHeaders
+		expected QueryParams
 	}{
 		//given
 		"correct input": {
-			input:    map[string]interface{}{"header1": []string{"val1", "val2"}},
+			input:    map[string]interface{}{"param1": []interface{}{"val1", "val2"}},
 			err:      false,
-			expected: HttpHeaders{"header1": []string{"val1", "val2"}},
+			expected: QueryParams{"param1": []string{"val1", "val2"}},
 		},
 		"error: input is nil": {
 			input:  nil,
@@ -31,41 +32,41 @@ func TestHttpHeaders_UnmarshalGQL(t *testing.T) {
 			errmsg: "given value `string` must be a string array",
 		},
 		"error: invalid input": {
-			input:  "invalid headers",
+			input:  "invalid params",
 			err:    true,
 			errmsg: "unexpected input type: string, should be map[string][]string",
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			//when
-			h := HttpHeaders{}
-			err := h.UnmarshalGQL(tc.input)
+			params := QueryParams{}
+			err := params.UnmarshalGQL(tc.input)
 
 			//then
 			if tc.err {
 				assert.Error(t, err)
 				assert.EqualError(t, err, tc.errmsg)
-				assert.Empty(t, h)
+				assert.Empty(t, params)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tc.expected, h)
+				assert.Equal(t, tc.expected, params)
 			}
 		})
 	}
 }
 
-func TestHttpHeaders_MarshalGQL(t *testing.T) {
+func TestQueryParams_MarshalGQL(t *testing.T) {
 	//given
-	fixHeaders := HttpHeaders{
-		"header": []string{"val1", "val2"},
+	fixParams := QueryParams{
+		"param": []string{"val1", "val2"},
 	}
-	expectedHeaders := `{"header":["val1","val2"]}`
+	expectedParams := `{"param":["val1","val2"]}`
 	buf := bytes.Buffer{}
 
 	//when
-	fixHeaders.MarshalGQL(&buf)
+	fixParams.MarshalGQL(&buf)
 
 	//then
 	assert.NotNil(t, buf)
-	assert.Equal(t, expectedHeaders, buf.String())
+	assert.Equal(t, expectedParams, buf.String())
 }

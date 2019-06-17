@@ -1,12 +1,14 @@
 # Scalars
 
+scalar Any # -> interface{}
+
 scalar Timestamp # -> time.Time
 
 scalar Tenant # -> String
 
 scalar Labels # -> map[string][]string
 
-scalar Annotations # -> map[string]interface{}
+scalar Annotations # -> map[string]string
 
 scalar HttpHeaders # -> map[string][]string
 
@@ -15,6 +17,16 @@ scalar QueryParams # -> map[string][]string
 scalar CLOB # -> String
 
 scalar PageCursor # -> String
+
+type Label {
+    key: String!
+    values: [String!]!
+}
+
+type Annotation {
+    key: String!
+    value: Any!
+}
 
 # Runtime
 
@@ -26,7 +38,7 @@ type Runtime {
     labels(key: String): Labels!
     annotations(key: String): Annotations!
     status: RuntimeStatus!
-    """directive for checking auth"""
+    """TODO: directive for checking auth"""
     agentAuth: Auth!
 }
 
@@ -311,10 +323,10 @@ input ApplicationInput {
     description: String
     labels: Labels
     annotations: Annotations
-    webhooks: [ApplicationWebhookInput]
+    webhooks: [ApplicationWebhookInput!]
     healthCheckURL: String
     apis: [APIDefinitionInput!]
-    events: [EventAPIDefinitionInput!]
+    eventAPIs: [EventAPIDefinitionInput!]
     documents: [DocumentInput!]
 }
 
@@ -486,20 +498,28 @@ type Mutation {
     setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput!): RuntimeAuth!
     deleteAPIAuth(apiID: ID!, runtimeID: ID!): RuntimeAuth!
 
-
     addEventAPI(applicationID: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition!
     updateEventAPI(id: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition!
     deleteEventAPI(id: ID!): EventAPIDefinition
     refetchEventAPISpec(eventID: ID!): EventAPISpec
+
+    addDocument(applicationID: ID!, in: DocumentInput!): Document!
+    deleteDocument(id: ID!): Document
 
     # Runtime
     createRuntime(in: RuntimeInput!): Runtime!
     updateRuntime(id: ID!, in: RuntimeInput!): Runtime!
     deleteRuntime(id: ID!): Runtime
 
-    addRuntimeLabel(runtimeID: ID!, key: String!, values: [String!]!): [String!]!
-    deleteRuntimeLabel(id: ID!, key: String!, values: [String!]!): [String!]
+    """If the label key exists, it appends values to existing label."""
+    addRuntimeLabel(runtimeID: ID!, key: String!, values: [String!]!): Label!
 
-    addRuntimeAnnotation(runtimeID: ID!, key: String!, value: String!): String!
-    deleteRuntimeAnnotation(id: ID!, key: String!): String
+    """If values are not specified, it deletes the label. If values are specified, it deletes values from a specific label."""
+    deleteRuntimeLabel(runtimeID: ID!, key: String!, values: [String!]): Label
+
+    """If the annotation key exists, it returns an error."""
+    addRuntimeAnnotation(runtimeID: ID!, key: String!, value: Any!): Annotation!
+
+    """If values are not specified, it deletes the annotation. If values are specified, it deletes values from a specific annotation."""
+    deleteRuntimeAnnotation(runtimeID: ID!, key: String!): Annotation
 }

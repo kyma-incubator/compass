@@ -70,6 +70,11 @@ type APISpecInput struct {
 	FetchRequest *FetchRequestInput `json:"fetchRequest"`
 }
 
+type Annotation struct {
+	Key   string      `json:"key"`
+	Value interface{} `json:"value"`
+}
+
 type Application struct {
 	ID             string                `json:"id"`
 	Tenant         Tenant                `json:"tenant"`
@@ -95,7 +100,7 @@ type ApplicationInput struct {
 	Webhooks       []*ApplicationWebhookInput `json:"webhooks"`
 	HealthCheckURL *string                    `json:"healthCheckURL"`
 	Apis           []*APIDefinitionInput      `json:"apis"`
-	Events         []*EventAPIDefinitionInput `json:"events"`
+	EventAPIs      []*EventAPIDefinitionInput `json:"eventAPIs"`
 	Documents      []*DocumentInput           `json:"documents"`
 }
 
@@ -278,6 +283,11 @@ type HealthCheckPage struct {
 
 func (HealthCheckPage) IsPageable() {}
 
+type Label struct {
+	Key    string   `json:"key"`
+	Values []string `json:"values"`
+}
+
 type LabelFilter struct {
 	Label    string          `json:"label"`
 	Values   []string        `json:"values"`
@@ -312,7 +322,7 @@ type Runtime struct {
 	Labels      Labels         `json:"labels"`
 	Annotations Annotations    `json:"annotations"`
 	Status      *RuntimeStatus `json:"status"`
-	// directive for checking auth
+	// TODO: directive for checking auth
 	AgentAuth *Auth `json:"agentAuth"`
 }
 

@@ -1,4 +1,4 @@
 package api
 
-type Converter struct {
+type converter struct {
 }

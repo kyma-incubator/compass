@@ -3,6 +3,8 @@ package domain
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
@@ -12,26 +14,34 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/graphql"
 )
 
+var _ graphql.ResolverRoot = &RootResolver{}
+
 type RootResolver struct {
 	app         *application.Resolver
 	api         *api.Resolver
 	eventAPI    *eventapi.Resolver
+	doc         *document.Resolver
 	runtime     *runtime.Resolver
 	healthCheck *healthcheck.Resolver
 }
 
 func NewRootResolver() *RootResolver {
+	healthcheckRepo := healthcheck.NewRepository()
+	runtimeRepo := runtime.NewRuntimeRepository()
+
 	appSvc := application.NewService()
 	apiSvc := api.NewService()
 	eventAPISvc := eventapi.NewService()
+	webhookSvc := webhook.NewService()
 	docSvc := document.NewService()
-	runtimeSvc := runtime.NewService()
-	healthCheckSvc := healthcheck.NewService()
+	runtimeSvc := runtime.NewService(runtimeRepo)
+	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 
 	return &RootResolver{
-		app:         application.NewResolver(appSvc, apiSvc, eventAPISvc, docSvc),
+		app:         application.NewResolver(appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc),
 		api:         api.NewResolver(apiSvc),
 		eventAPI:    eventapi.NewResolver(eventAPISvc),
+		doc:         document.NewResolver(docSvc),
 		runtime:     runtime.NewResolver(runtimeSvc),
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
 	}
@@ -141,21 +151,32 @@ func (r *mutationResolver) UpdateRuntime(ctx context.Context, id string, in grap
 func (r *mutationResolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runtime, error) {
 	return r.runtime.DeleteRuntime(ctx, id)
 }
-func (r *mutationResolver) AddRuntimeLabel(ctx context.Context, runtimeID string, key string, values []string) ([]string, error) {
+func (r *mutationResolver) AddRuntimeLabel(ctx context.Context, runtimeID string, key string, values []string) (*graphql.Label, error) {
 	return r.runtime.AddRuntimeLabel(ctx, runtimeID, key, values)
 }
-func (r *mutationResolver) DeleteRuntimeLabel(ctx context.Context, id string, key string, values []string) ([]string, error) {
-	return r.runtime.DeleteRuntimeLabel(ctx, id, key, values)
+func (r *mutationResolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string, values []string) (*graphql.Label, error) {
+	return r.runtime.DeleteRuntimeLabel(ctx, runtimeID, key, values)
 }
-func (r *mutationResolver) AddRuntimeAnnotation(ctx context.Context, runtimeID string, key string, value string) (string, error) {
+func (r *mutationResolver) AddRuntimeAnnotation(ctx context.Context, runtimeID string, key string, value interface{}) (*graphql.Annotation, error) {
 	return r.runtime.AddRuntimeAnnotation(ctx, runtimeID, key, value)
 }
-func (r *mutationResolver) DeleteRuntimeAnnotation(ctx context.Context, id string, key string) (*string, error) {
-	return r.runtime.DeleteRuntimeAnnotation(ctx, id, key)
+func (r *mutationResolver) DeleteRuntimeAnnotation(ctx context.Context, runtimeID string, key string) (*graphql.Annotation, error) {
+	return r.runtime.DeleteRuntimeAnnotation(ctx, runtimeID, key)
+}
+
+func (r *mutationResolver) AddDocument(ctx context.Context, applicationID string, in graphql.DocumentInput) (*graphql.Document, error) {
+	return r.doc.AddDocument(ctx, applicationID, in)
+}
+func (r *mutationResolver) DeleteDocument(ctx context.Context, id string) (*graphql.Document, error) {
+	return r.doc.DeleteDocument(ctx, id)
 }
 
 type applicationResolver struct {
 	*RootResolver
+}
+
+func (r *applicationResolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*graphql.ApplicationWebhook, error) {
+	return r.app.Webhooks(ctx, obj)
 }
 
 func (r *applicationResolver) Apis(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {

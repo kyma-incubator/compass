@@ -6,30 +6,36 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/graphql"
 )
 
-type svc interface{}
+type ApplicationService interface{}
 
-type apiSvc interface{}
+type ApplicationConverter interface{}
 
-type eventAPISvc interface{}
+type APIService interface{}
 
-type documentSvc interface{}
+type EventAPIService interface{}
+
+type DocumentService interface{}
+
+type WebhookService interface{}
 
 type Resolver struct {
-	svc       svc
-	converter *Converter
+	svc       ApplicationService
+	converter ApplicationConverter
 
-	apiSvc      apiSvc
-	eventAPISvc eventAPISvc
-	documentSvc documentSvc
+	apiSvc      APIService
+	eventAPISvc EventAPIService
+	webhookSvc  WebhookService
+	documentSvc DocumentService
 }
 
-func NewResolver(svc *Service, apiSvc apiSvc, eventAPISvc eventAPISvc, documentSvc documentSvc) *Resolver {
+func NewResolver(svc *service, apiSvc APIService, eventAPISvc EventAPIService, documentSvc DocumentService, webhookSvc WebhookService) *Resolver {
 	return &Resolver{
 		svc:         svc,
 		apiSvc:      apiSvc,
 		eventAPISvc: eventAPISvc,
 		documentSvc: documentSvc,
-		converter:   &Converter{},
+		webhookSvc:  webhookSvc,
+		converter:   &converter{},
 	}
 }
 
@@ -85,5 +91,9 @@ func (r *Resolver) EventAPIs(ctx context.Context, obj *graphql.Application, grou
 	panic("not implemented")
 }
 func (r *Resolver) Documents(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {
+	panic("not implemented")
+}
+
+func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*graphql.ApplicationWebhook, error) {
 	panic("not implemented")
 }

@@ -16,7 +16,7 @@ func TestLabels_UnmarshalGQL(t *testing.T) {
 	}{
 		//given
 		"correct input": {
-			input:    map[string]interface{}{"label1": []string{"val1", "val2"}},
+			input:    map[string]interface{}{"label1": []interface{}{"val1", "val2"}},
 			err:      false,
 			expected: Labels{"label1": []string{"val1", "val2"}},
 		},

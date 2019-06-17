@@ -1,4 +1,4 @@
 package eventapi
 
-type Converter struct {
+type converter struct {
 }

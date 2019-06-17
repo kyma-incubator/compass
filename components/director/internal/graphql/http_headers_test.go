@@ -7,19 +7,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestQueryParams_UnmarshalGQL(t *testing.T) {
-
+func TestHttpHeaders_UnmarshalGQL(t *testing.T) {
 	for name, tc := range map[string]struct {
 		input    interface{}
 		err      bool
 		errmsg   string
-		expected QueryParams
+		expected HttpHeaders
 	}{
 		//given
 		"correct input": {
-			input:    map[string]interface{}{"param1": []string{"val1", "val2"}},
+			input:    map[string]interface{}{"header1": []interface{}{"val1", "val2"}},
 			err:      false,
-			expected: QueryParams{"param1": []string{"val1", "val2"}},
+			expected: HttpHeaders{"header1": []string{"val1", "val2"}},
 		},
 		"error: input is nil": {
 			input:  nil,
@@ -32,41 +31,41 @@ func TestQueryParams_UnmarshalGQL(t *testing.T) {
 			errmsg: "given value `string` must be a string array",
 		},
 		"error: invalid input": {
-			input:  "invalid params",
+			input:  "invalid headers",
 			err:    true,
 			errmsg: "unexpected input type: string, should be map[string][]string",
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			//when
-			params := QueryParams{}
-			err := params.UnmarshalGQL(tc.input)
+			h := HttpHeaders{}
+			err := h.UnmarshalGQL(tc.input)
 
 			//then
 			if tc.err {
 				assert.Error(t, err)
 				assert.EqualError(t, err, tc.errmsg)
-				assert.Empty(t, params)
+				assert.Empty(t, h)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tc.expected, params)
+				assert.Equal(t, tc.expected, h)
 			}
 		})
 	}
 }
 
-func TestQueryParams_MarshalGQL(t *testing.T) {
+func TestHttpHeaders_MarshalGQL(t *testing.T) {
 	//given
-	fixParams := QueryParams{
-		"param": []string{"val1", "val2"},
+	fixHeaders := HttpHeaders{
+		"header": []string{"val1", "val2"},
 	}
-	expectedParams := `{"param":["val1","val2"]}`
+	expectedHeaders := `{"header":["val1","val2"]}`
 	buf := bytes.Buffer{}
 
 	//when
-	fixParams.MarshalGQL(&buf)
+	fixHeaders.MarshalGQL(&buf)
 
 	//then
 	assert.NotNil(t, buf)
-	assert.Equal(t, expectedParams, buf.String())
+	assert.Equal(t, expectedHeaders, buf.String())
 }

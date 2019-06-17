@@ -1,8 +1,8 @@
 package eventapi
 
-type Service struct {
+type service struct {
 }
 
-func NewService() *Service {
-	return &Service{}
+func NewService() *service {
+	return &service{}
 }

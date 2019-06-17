@@ -52,7 +52,7 @@ func TestTenant_UnmarshalGQL(t *testing.T) {
 func TestTenant_MarshalGQL(t *testing.T) {
 	//given
 	fixTenant := Tenant("tenant1")
-	expectedTenant := `tenant1`
+	expectedTenant := `"tenant1"`
 	buf := bytes.Buffer{}
 
 	//when

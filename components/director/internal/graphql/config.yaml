@@ -40,5 +40,5 @@ models:
         resolver: true
       apis:
         resolver: true
-#  Annotations:
-#    model: "github.com/kyma-incubator/compass/internal/graphql.Annotations"
+      webhooks:
+        resolver: true

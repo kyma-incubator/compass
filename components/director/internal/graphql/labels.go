@@ -23,7 +23,7 @@ func (y *Labels) UnmarshalGQL(v interface{}) error {
 func (y Labels) MarshalGQL(w io.Writer) {
 	err := scalar.WriteMarshalled(y, w)
 	if err != nil {
-		log.Print(err)
+		log.Printf("while writing %T: %s", y, err)
 		return
 	}
 }

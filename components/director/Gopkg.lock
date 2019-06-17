@@ -42,6 +42,14 @@
   version = "v1.1.1"
 
 [[projects]]
+  digest = "1:582b704bebaa06b48c29b0cec224a6058a09c86883aaddabde889cd1a5f73e1b"
+  name = "github.com/google/uuid"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "0cd6bf5da1e1c83f8b45653022c74f71af0538a4"
+  version = "v1.1.1"
+
+[[projects]]
   digest = "1:3af6be4fee7c08f81f13d36f04ffb63ad4b6b5aaba12cce96095c7c2863d4912"
   name = "github.com/gorilla/mux"
   packages = ["."]
@@ -95,10 +103,19 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:5da8ce674952566deae4dbc23d07c85caafc6cfa815b0b3e03e41979cedb8750"
+  digest = "1:ac83cf90d08b63ad5f7e020ef480d319ae890c208f8524622a2f3136e2686b02"
+  name = "github.com/stretchr/objx"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "477a77ecc69700c7cdeb1fa9e129548e1c1c393c"
+  version = "v0.1.1"
+
+[[projects]]
+  digest = "1:b762f96c1183763894e8dabbac5f8e8d5821754b6e2686a8c398a174b7a58ff5"
   name = "github.com/stretchr/testify"
   packages = [
     "assert",
+    "mock",
     "require",
   ]
   pruneopts = "UT"
@@ -139,7 +156,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:135bbfba19e96a22bb998c7b50ec1a959f48d09c62060ce2eb71d49a22b4870c"
+  digest = "1:ebcfcfdf594b6bb6fddb7dca5a2bac6b56891b8d9249d9c8e6fb8084e83b7e6b"
   name = "golang.org/x/tools"
   packages = [
     "cmd/goimports",
@@ -157,7 +174,7 @@
     "internal/semver",
   ]
   pruneopts = "UT"
-  revision = "521d6ed310dd2348b2d3c64b91c55df233c52860"
+  revision = "d4e310b4a8a5f0fe33e0a7e813a14ff19b433da4"
 
 [[projects]]
   digest = "1:4d2e5a73dc1500038e504a8d78b986630e3626dc027bc030ba5c75da257cdb96"
@@ -175,10 +192,12 @@
     "github.com/99designs/gqlgen/graphql",
     "github.com/99designs/gqlgen/graphql/introspection",
     "github.com/99designs/gqlgen/handler",
+    "github.com/google/uuid",
     "github.com/gorilla/mux",
     "github.com/kisielk/errcheck",
     "github.com/pkg/errors",
     "github.com/stretchr/testify/assert",
+    "github.com/stretchr/testify/mock",
     "github.com/stretchr/testify/require",
     "github.com/vektah/gqlparser",
     "github.com/vektah/gqlparser/ast",

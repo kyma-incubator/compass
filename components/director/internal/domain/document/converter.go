@@ -1,4 +1,4 @@
 package document
 
-type Converter struct {
+type converter struct {
 }
