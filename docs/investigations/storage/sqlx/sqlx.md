@@ -17,3 +17,21 @@ qs.Filter("name__icontains", "slene")
 ```
 err = d.ormer.Begin()
 ```
+## Testing
+https://medium.com/@romanyx90/testing-database-interactions-using-go-d9512b6bb449
+
+testfixtures: 
+
+- store data in fixtures filess that are used to populate db at the beginning of test
+
+https://github.com/DATA-DOG/go-sqlmock
+
+## Migration
+https://flywaydb.org/download/
+Community edition does not provide:
+- dry run
+- undo
+
+https://stackoverflow.com/questions/33622214/what-package-to-use-for-database-migrations-in-go
+FYI, goose is dead, but there is a maintained fork: https://github.com/pressly/goose (887 stars on github)
+

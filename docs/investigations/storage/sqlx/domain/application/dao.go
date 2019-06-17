@@ -24,8 +24,9 @@ type Dao struct {
 func (d *Dao) GetApplications(ctx context.Context, p model.PageRequest, sel model.Filer) (*model.ApplicationPage, error) {
 	var apps []dto.ApplicationDTO
 
-	// TODO squirrel usage example
+	// squirrel usage example
 	selBuilder := sq.Select("*").From("applications").OrderBy("id").Limit(uint64(p.PageSize))
+	// how to generate "totalCount" query
 	//totalCnt := d.getTotalCountQuery(selBuilder)
 
 	str, args, err := selBuilder.ToSql()
