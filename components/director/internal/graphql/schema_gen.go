@@ -200,8 +200,8 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		AddAPI                      func(childComplexity int, applicationID string, in APIDefinitionInput) int
-		AddApplicationAnnotation    func(childComplexity int, applicationID string, annotation string, value string) int
-		AddApplicationLabel         func(childComplexity int, applicationID string, label string, values []string) int
+		AddApplicationAnnotation    func(childComplexity int, applicationID string, key string, value string) int
+		AddApplicationLabel         func(childComplexity int, applicationID string, key string, values []string) int
 		AddApplicationWebhook       func(childComplexity int, applicationID string, in ApplicationWebhookInput) int
 		AddDocument                 func(childComplexity int, applicationID string, in DocumentInput) int
 		AddEventAPI                 func(childComplexity int, applicationID string, in EventAPIDefinitionInput) int
@@ -212,8 +212,8 @@ type ComplexityRoot struct {
 		DeleteAPI                   func(childComplexity int, id string) int
 		DeleteAPIAuth               func(childComplexity int, apiID string, runtimeID string) int
 		DeleteApplication           func(childComplexity int, id string) int
-		DeleteApplicationAnnotation func(childComplexity int, applicationID string, annotation string) int
-		DeleteApplicationLabel      func(childComplexity int, applicationID string, label string, values []string) int
+		DeleteApplicationAnnotation func(childComplexity int, applicationID string, key string) int
+		DeleteApplicationLabel      func(childComplexity int, applicationID string, key string, values []string) int
 		DeleteApplicationWebhook    func(childComplexity int, webhookID string) int
 		DeleteDocument              func(childComplexity int, id string) int
 		DeleteEventAPI              func(childComplexity int, id string) int
@@ -296,10 +296,10 @@ type MutationResolver interface {
 	CreateApplication(ctx context.Context, in ApplicationInput) (*Application, error)
 	UpdateApplication(ctx context.Context, id string, in ApplicationInput) (*Application, error)
 	DeleteApplication(ctx context.Context, id string) (*Application, error)
-	AddApplicationLabel(ctx context.Context, applicationID string, label string, values []string) ([]string, error)
-	DeleteApplicationLabel(ctx context.Context, applicationID string, label string, values []string) ([]string, error)
-	AddApplicationAnnotation(ctx context.Context, applicationID string, annotation string, value string) (string, error)
-	DeleteApplicationAnnotation(ctx context.Context, applicationID string, annotation string) (*string, error)
+	AddApplicationLabel(ctx context.Context, applicationID string, key string, values []string) (*Label, error)
+	DeleteApplicationLabel(ctx context.Context, applicationID string, key string, values []string) (*Label, error)
+	AddApplicationAnnotation(ctx context.Context, applicationID string, key string, value string) (*Annotation, error)
+	DeleteApplicationAnnotation(ctx context.Context, applicationID string, key string) (*Annotation, error)
 	AddApplicationWebhook(ctx context.Context, applicationID string, in ApplicationWebhookInput) (*ApplicationWebhook, error)
 	UpdateApplicationWebhook(ctx context.Context, webhookID string, in ApplicationWebhookInput) (*ApplicationWebhook, error)
 	DeleteApplicationWebhook(ctx context.Context, webhookID string) (*ApplicationWebhook, error)
@@ -1014,7 +1014,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AddApplicationAnnotation(childComplexity, args["applicationID"].(string), args["annotation"].(string), args["value"].(string)), true
+		return e.complexity.Mutation.AddApplicationAnnotation(childComplexity, args["applicationID"].(string), args["key"].(string), args["value"].(string)), true
 
 	case "Mutation.addApplicationLabel":
 		if e.complexity.Mutation.AddApplicationLabel == nil {
@@ -1026,7 +1026,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AddApplicationLabel(childComplexity, args["applicationID"].(string), args["label"].(string), args["values"].([]string)), true
+		return e.complexity.Mutation.AddApplicationLabel(childComplexity, args["applicationID"].(string), args["key"].(string), args["values"].([]string)), true
 
 	case "Mutation.addApplicationWebhook":
 		if e.complexity.Mutation.AddApplicationWebhook == nil {
@@ -1158,7 +1158,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteApplicationAnnotation(childComplexity, args["applicationID"].(string), args["annotation"].(string)), true
+		return e.complexity.Mutation.DeleteApplicationAnnotation(childComplexity, args["applicationID"].(string), args["key"].(string)), true
 
 	case "Mutation.deleteApplicationLabel":
 		if e.complexity.Mutation.DeleteApplicationLabel == nil {
@@ -1170,7 +1170,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteApplicationLabel(childComplexity, args["applicationID"].(string), args["label"].(string), args["values"].([]string)), true
+		return e.complexity.Mutation.DeleteApplicationLabel(childComplexity, args["applicationID"].(string), args["key"].(string), args["values"].([]string)), true
 
 	case "Mutation.deleteApplicationWebhook":
 		if e.complexity.Mutation.DeleteApplicationWebhook == nil {
@@ -2140,12 +2140,12 @@ type Mutation {
     updateApplication(id: ID!, in: ApplicationInput!): Application!
     deleteApplication(id: ID!): Application
 
-    addApplicationLabel(applicationID: ID!, label: String!, values: [String!]!): [String!]!
+    addApplicationLabel(applicationID: ID!, key: String!, values: [String!]!): Label!
     # if application does not exist, return error
-    deleteApplicationLabel(applicationID: ID!, label: String!, values: [String!]!): [String!]
+    deleteApplicationLabel(applicationID: ID!, key: String!, values: [String!]!): Label
 
-    addApplicationAnnotation(applicationID: ID!, annotation: String!, value: String!): String!
-    deleteApplicationAnnotation(applicationID: ID!, annotation: String!): String
+    addApplicationAnnotation(applicationID: ID!, key: String!, value: String!): Annotation!
+    deleteApplicationAnnotation(applicationID: ID!, key: String!): Annotation
 
     addApplicationWebhook(applicationID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
     updateApplicationWebhook(webhookID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
@@ -2352,13 +2352,13 @@ func (ec *executionContext) field_Mutation_addApplicationAnnotation_args(ctx con
 	}
 	args["applicationID"] = arg0
 	var arg1 string
-	if tmp, ok := rawArgs["annotation"]; ok {
+	if tmp, ok := rawArgs["key"]; ok {
 		arg1, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["annotation"] = arg1
+	args["key"] = arg1
 	var arg2 string
 	if tmp, ok := rawArgs["value"]; ok {
 		arg2, err = ec.unmarshalNString2string(ctx, tmp)
@@ -2382,13 +2382,13 @@ func (ec *executionContext) field_Mutation_addApplicationLabel_args(ctx context.
 	}
 	args["applicationID"] = arg0
 	var arg1 string
-	if tmp, ok := rawArgs["label"]; ok {
+	if tmp, ok := rawArgs["key"]; ok {
 		arg1, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["label"] = arg1
+	args["key"] = arg1
 	var arg2 []string
 	if tmp, ok := rawArgs["values"]; ok {
 		arg2, err = ec.unmarshalNString2ᚕstring(ctx, tmp)
@@ -2602,13 +2602,13 @@ func (ec *executionContext) field_Mutation_deleteApplicationAnnotation_args(ctx 
 	}
 	args["applicationID"] = arg0
 	var arg1 string
-	if tmp, ok := rawArgs["annotation"]; ok {
+	if tmp, ok := rawArgs["key"]; ok {
 		arg1, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["annotation"] = arg1
+	args["key"] = arg1
 	return args, nil
 }
 
@@ -2624,13 +2624,13 @@ func (ec *executionContext) field_Mutation_deleteApplicationLabel_args(ctx conte
 	}
 	args["applicationID"] = arg0
 	var arg1 string
-	if tmp, ok := rawArgs["label"]; ok {
+	if tmp, ok := rawArgs["key"]; ok {
 		arg1, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["label"] = arg1
+	args["key"] = arg1
 	var arg2 []string
 	if tmp, ok := rawArgs["values"]; ok {
 		arg2, err = ec.unmarshalNString2ᚕstring(ctx, tmp)
@@ -5579,7 +5579,7 @@ func (ec *executionContext) _Mutation_addApplicationLabel(ctx context.Context, f
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().AddApplicationLabel(rctx, args["applicationID"].(string), args["label"].(string), args["values"].([]string))
+		return ec.resolvers.Mutation().AddApplicationLabel(rctx, args["applicationID"].(string), args["key"].(string), args["values"].([]string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -5587,10 +5587,10 @@ func (ec *executionContext) _Mutation_addApplicationLabel(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]string)
+	res := resTmp.(*Label)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2ᚕstring(ctx, field.Selections, res)
+	return ec.marshalNLabel2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgraphqlᚐLabel(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteApplicationLabel(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -5613,15 +5613,15 @@ func (ec *executionContext) _Mutation_deleteApplicationLabel(ctx context.Context
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteApplicationLabel(rctx, args["applicationID"].(string), args["label"].(string), args["values"].([]string))
+		return ec.resolvers.Mutation().DeleteApplicationLabel(rctx, args["applicationID"].(string), args["key"].(string), args["values"].([]string))
 	})
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]string)
+	res := resTmp.(*Label)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚕstring(ctx, field.Selections, res)
+	return ec.marshalOLabel2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgraphqlᚐLabel(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_addApplicationAnnotation(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -5644,7 +5644,7 @@ func (ec *executionContext) _Mutation_addApplicationAnnotation(ctx context.Conte
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().AddApplicationAnnotation(rctx, args["applicationID"].(string), args["annotation"].(string), args["value"].(string))
+		return ec.resolvers.Mutation().AddApplicationAnnotation(rctx, args["applicationID"].(string), args["key"].(string), args["value"].(string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -5652,10 +5652,10 @@ func (ec *executionContext) _Mutation_addApplicationAnnotation(ctx context.Conte
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*Annotation)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNAnnotation2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgraphqlᚐAnnotation(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteApplicationAnnotation(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -5678,15 +5678,15 @@ func (ec *executionContext) _Mutation_deleteApplicationAnnotation(ctx context.Co
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteApplicationAnnotation(rctx, args["applicationID"].(string), args["annotation"].(string))
+		return ec.resolvers.Mutation().DeleteApplicationAnnotation(rctx, args["applicationID"].(string), args["key"].(string))
 	})
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*Annotation)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOAnnotation2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgraphqlᚐAnnotation(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_addApplicationWebhook(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {

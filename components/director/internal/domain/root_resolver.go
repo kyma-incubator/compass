@@ -91,17 +91,17 @@ func (r *mutationResolver) UpdateApplication(ctx context.Context, id string, in 
 func (r *mutationResolver) DeleteApplication(ctx context.Context, id string) (*graphql.Application, error) {
 	return r.app.DeleteApplication(ctx, id)
 }
-func (r *mutationResolver) AddApplicationLabel(ctx context.Context, applicationID string, label string, values []string) ([]string, error) {
-	return r.app.AddApplicationLabel(ctx, applicationID, label, values)
+func (r *mutationResolver) AddApplicationLabel(ctx context.Context, applicationID string, key string, values []string) (*graphql.Label, error) {
+	return r.app.AddApplicationLabel(ctx, applicationID, key, values)
 }
-func (r *mutationResolver) DeleteApplicationLabel(ctx context.Context, applicationID string, label string, values []string) ([]string, error) {
-	return r.app.DeleteApplicationLabel(ctx, applicationID, label, values)
+func (r *mutationResolver) DeleteApplicationLabel(ctx context.Context, applicationID string, key string, values []string) (*graphql.Label, error) {
+	return r.app.DeleteApplicationLabel(ctx, applicationID, key, values)
 }
-func (r *mutationResolver) AddApplicationAnnotation(ctx context.Context, applicationID string, annotation string, value string) (string, error) {
-	return r.app.AddApplicationAnnotation(ctx, applicationID, annotation, value)
+func (r *mutationResolver) AddApplicationAnnotation(ctx context.Context, applicationID string, key string, value string) (*graphql.Annotation, error) {
+	return r.app.AddApplicationAnnotation(ctx, applicationID, key, value)
 }
-func (r *mutationResolver) DeleteApplicationAnnotation(ctx context.Context, applicationID string, annotation string) (*string, error) {
-	return r.app.DeleteApplicationAnnotation(ctx, applicationID, annotation)
+func (r *mutationResolver) DeleteApplicationAnnotation(ctx context.Context, applicationID string, key string) (*graphql.Annotation, error) {
+	return r.app.DeleteApplicationAnnotation(ctx, applicationID, key)
 }
 func (r *mutationResolver) AddApplicationWebhook(ctx context.Context, applicationID string, in graphql.ApplicationWebhookInput) (*graphql.ApplicationWebhook, error) {
 	return r.app.AddApplicationWebhook(ctx, applicationID, in)

@@ -106,3 +106,8 @@ func (a *Application) DeleteAnnotation(key string) error {
 	delete(a.Annotations, key)
 	return nil
 }
+
+
+type ApplicationInput struct {
+	//TODO:
+}

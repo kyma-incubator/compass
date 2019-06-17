@@ -476,12 +476,12 @@ type Mutation {
     updateApplication(id: ID!, in: ApplicationInput!): Application!
     deleteApplication(id: ID!): Application
 
-    addApplicationLabel(applicationID: ID!, label: String!, values: [String!]!): [String!]!
+    addApplicationLabel(applicationID: ID!, key: String!, values: [String!]!): Label!
     # if application does not exist, return error
-    deleteApplicationLabel(applicationID: ID!, label: String!, values: [String!]!): [String!]
+    deleteApplicationLabel(applicationID: ID!, key: String!, values: [String!]!): Label
 
-    addApplicationAnnotation(applicationID: ID!, annotation: String!, value: String!): String!
-    deleteApplicationAnnotation(applicationID: ID!, annotation: String!): String
+    addApplicationAnnotation(applicationID: ID!, key: String!, value: String!): Annotation!
+    deleteApplicationAnnotation(applicationID: ID!, key: String!): Annotation
 
     addApplicationWebhook(applicationID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
     updateApplicationWebhook(webhookID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
