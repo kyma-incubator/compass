@@ -1,6 +1,6 @@
 package model
 
-import "github.com/jmoiron/sqlx/types"
+import "github.com/jmoiron/sqlx/types" //TODO
 
 type Application struct {
 	ID          string

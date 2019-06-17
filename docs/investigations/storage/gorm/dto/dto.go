@@ -1,8 +1,8 @@
 package dto
 
 import (
-	"github.com/jmoiron/sqlx/types"
-	"github.com/kyma-incubator/compass/docs/investigations/storage/sqlx/model"
+	"github.com/jmoiron/sqlx/types" //TODO
+	"github.com/kyma-incubator/compass/docs/investigations/storage/gorm/model"
 )
 
 type ApplicationDTO struct {
@@ -13,20 +13,34 @@ type ApplicationDTO struct {
 	Labels      types.NullJSONText // JSON
 }
 
+func (app *ApplicationDTO) TableName() string {
+	return "applications"
+}
+
+
+
 type APIDTO struct {
 	ID        string
 	AppID     string
-	Targeturl string
+	TargetURL string	`gorm:"column:target_url"`
+}
 
+func (a *APIDTO) TableName() string {
+	return "apis"
 }
 
 type DocumentDTO struct {
 	ID     string
-	Appid  string `json:"app_id"`
+	AppID  string `json:"app_id"`
 	Title  string
 	Format string
 	Data   string
 }
+
+func (d *DocumentDTO) TableName() string {
+	return "documents"
+}
+
 
 func (d *DocumentDTO) ToModel() model.Document {
 	return model.Document{
@@ -39,7 +53,7 @@ func (d *DocumentDTO) ToModel() model.Document {
 
 func  DocumentFromModel(appID string, in model.Document) *DocumentDTO {
 	return &DocumentDTO{
-		Appid:  appID,
+		AppID:  appID,
 		Data:   in.Data,
 		Title:  in.Title,
 		ID:     in.ID,
@@ -50,14 +64,14 @@ func  DocumentFromModel(appID string, in model.Document) *DocumentDTO {
 func (a *APIDTO) ToModel() model.API {
 	return model.API{
 		ID:        a.ID,
-		TargetURL: a.Targeturl,
+		TargetURL: a.TargetURL,
 	}
 }
 
 func  APIFromModel(appID string, in model.API) *APIDTO {
 	return &APIDTO{
 		ID:        in.ID,
-		Targeturl: in.TargetURL,
+		TargetURL: in.TargetURL,
 		AppID:     appID,
 	}
 }

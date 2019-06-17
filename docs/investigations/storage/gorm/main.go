@@ -3,23 +3,26 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/jmoiron/sqlx"
+	"github.com/jinzhu/gorm"
 	"github.com/jmoiron/sqlx/types"
-	"github.com/kyma-incubator/compass/docs/investigations/storage/sqlx/domain/application"
-	"github.com/kyma-incubator/compass/docs/investigations/storage/sqlx/model"
+	"github.com/kyma-incubator/compass/docs/investigations/storage/gorm/domain/application"
+	"github.com/kyma-incubator/compass/docs/investigations/storage/gorm/model"
 	_ "github.com/lib/pq"
 )
 
 func main() {
 	connStr := "user=postgres password=mysecretpassword dbname=compass sslmode=disable"
 
-	db, err := sqlx.Connect("postgres", connStr)
+
+	db, err := gorm.Open("postgres", connStr)
 
 	if err != nil {
 		panic(err)
 	}
 
 	defer db.Close()
+	// migrate the schema:  run auto migration for given models, will only add missing fields, won't delete/change current data
+	db.AutoMigrate()
 
 	d := application.NewApplicationDao(db)
 	app := model.Application{

@@ -2,29 +2,38 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
-	"github.com/jmoiron/sqlx"
-	"github.com/jmoiron/sqlx/types"
-	"github.com/kyma-incubator/compass/docs/investigations/storage/sqlx/domain/application"
-	"github.com/kyma-incubator/compass/docs/investigations/storage/sqlx/model"
+	"github.com/astaxie/beego/orm"
+	"github.com/kyma-incubator/compass/docs/investigations/storage/beego/domain/application"
+	"github.com/kyma-incubator/compass/docs/investigations/storage/beego/dto"
+	"github.com/kyma-incubator/compass/docs/investigations/storage/beego/model"
 	_ "github.com/lib/pq"
 )
 
 func main() {
 	connStr := "user=postgres password=mysecretpassword dbname=compass sslmode=disable"
 
-	db, err := sqlx.Connect("postgres", connStr)
+	orm.RegisterModel(new(dto.ApplicationDTO), new(dto.APIDTO), new(dto.DocumentDTO))
 
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		panic(err)
+	}
+	if db.Ping() != nil {
+		panic("ping failed")
+	}
+	o, err := orm.NewOrmWithDB("postgres", "default", db)
 	if err != nil {
 		panic(err)
 	}
 
 	defer db.Close()
 
-	d := application.NewApplicationDao(db)
+	d := application.NewApplicationDao(o)
 	app := model.Application{
 		Name:   "my-app",
-		Labels: types.NullJSONText{JSONText: []byte("{}")},
+		Labels: "{}",
 	}
 	app.Documents = model.DocumentPage{
 		Data: []model.Document{
@@ -45,6 +54,8 @@ func main() {
 		},
 	}
 	ctx := context.TODO()
+	// TODO It does not work: https://github.com/astaxie/beego/issues/3070
+	// TODO panic: no LastInsertId available
 	brandNewApp, err := d.CreateApplication(ctx, app)
 	if err != nil {
 		panic(err)
