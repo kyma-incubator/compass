@@ -163,6 +163,10 @@ type applicationResolver struct {
 	*RootResolver
 }
 
+func (r *applicationResolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*graphql.ApplicationWebhook, error) {
+	return r.app.Webhooks(ctx, obj)
+}
+
 func (r *applicationResolver) Apis(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
 	return r.app.Apis(ctx, obj, group, first, after)
 }

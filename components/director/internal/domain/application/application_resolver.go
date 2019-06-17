@@ -87,3 +87,7 @@ func (r *Resolver) EventAPIs(ctx context.Context, obj *graphql.Application, grou
 func (r *Resolver) Documents(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {
 	panic("not implemented")
 }
+
+func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*graphql.ApplicationWebhook, error) {
+	panic("not implemented")
+}

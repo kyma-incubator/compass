@@ -284,6 +284,8 @@ type ComplexityRoot struct {
 }
 
 type ApplicationResolver interface {
+	Webhooks(ctx context.Context, obj *Application) ([]*ApplicationWebhook, error)
+
 	Apis(ctx context.Context, obj *Application, group *string, first *int, after *PageCursor) (*APIDefinitionPage, error)
 	EventAPIs(ctx context.Context, obj *Application, group *string, first *int, after *PageCursor) (*EventAPIDefinitionPage, error)
 	Documents(ctx context.Context, obj *Application, first *int, after *PageCursor) (*DocumentPage, error)
@@ -3764,13 +3766,13 @@ func (ec *executionContext) _Application_webhooks(ctx context.Context, field gra
 		Object:   "Application",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Webhooks, nil
+		return ec.resolvers.Application().Webhooks(rctx, obj)
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -8869,10 +8871,19 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "webhooks":
-			out.Values[i] = ec._Application_webhooks(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Application_webhooks(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "healthCheckURL":
 			out.Values[i] = ec._Application_healthCheckURL(ctx, field, obj)
 		case "apis":
