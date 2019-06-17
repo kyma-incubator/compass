@@ -20,7 +20,7 @@ type Resolver struct {
 func NewResolver(svc HealthCheckService) *Resolver {
 	return &Resolver{
 		svc:       svc,
-		converter: &Converter{},
+		converter: &converter{},
 	}
 }
 

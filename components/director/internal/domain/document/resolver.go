@@ -6,17 +6,19 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/graphql"
 )
 
-type svc interface{}
+type DocumentService interface{}
+
+type DocumentConverter interface{}
 
 type Resolver struct {
-	svc       svc
-	converter *Converter
+	svc       DocumentService
+	converter DocumentConverter
 }
 
-func NewResolver(svc svc) *Resolver {
+func NewResolver(svc DocumentService) *Resolver {
 	return &Resolver{
 		svc:       svc,
-		converter: &Converter{},
+		converter: &converter{},
 	}
 }
 

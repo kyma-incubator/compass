@@ -38,7 +38,7 @@ type Runtime {
     labels(key: String): Labels!
     annotations(key: String): Annotations!
     status: RuntimeStatus!
-    """directive for checking auth"""
+    """TODO: directive for checking auth"""
     agentAuth: Auth!
 }
 

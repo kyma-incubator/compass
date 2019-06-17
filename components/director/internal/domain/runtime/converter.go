@@ -5,9 +5,9 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-type Converter struct{}
+type converter struct{}
 
-func (c *Converter) ToGraphQL(in *model.Runtime) *graphql.Runtime {
+func (c *converter) ToGraphQL(in *model.Runtime) *graphql.Runtime {
 	if in == nil {
 		return nil
 	}
@@ -23,7 +23,7 @@ func (c *Converter) ToGraphQL(in *model.Runtime) *graphql.Runtime {
 	}
 }
 
-func (c *Converter) MultipleToGraphQL(in []*model.Runtime) []*graphql.Runtime {
+func (c *converter) MultipleToGraphQL(in []*model.Runtime) []*graphql.Runtime {
 	var runtimes []*graphql.Runtime
 	for _, r := range in {
 		if r == nil {
@@ -36,7 +36,7 @@ func (c *Converter) MultipleToGraphQL(in []*model.Runtime) []*graphql.Runtime {
 	return runtimes
 }
 
-func (c *Converter) InputFromGraphQL(in graphql.RuntimeInput) model.RuntimeInput {
+func (c *converter) InputFromGraphQL(in graphql.RuntimeInput) model.RuntimeInput {
 	var annotations map[string]interface{}
 	if in.Annotations != nil {
 		annotations = *in.Annotations
@@ -55,7 +55,7 @@ func (c *Converter) InputFromGraphQL(in graphql.RuntimeInput) model.RuntimeInput
 	}
 }
 
-func (c *Converter) statusToGraphQL(in *model.RuntimeStatus) *graphql.RuntimeStatus {
+func (c *converter) statusToGraphQL(in *model.RuntimeStatus) *graphql.RuntimeStatus {
 	if in == nil {
 		return &graphql.RuntimeStatus{
 			Condition: graphql.RuntimeStatusConditionInitial,

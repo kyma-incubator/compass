@@ -41,7 +41,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 			// when
-			converter := runtime.Converter{}
+			converter := runtime.NewConverter()
 			res := converter.ToGraphQL(testCase.Input)
 
 			// then
@@ -54,11 +54,13 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// given
 	input := []*model.Runtime{
 		fixModelRuntime("foo", "Foo", "Lorem ipsum"),
+		fixModelRuntime("bar", "Bar", "Dolor sit amet"),
 		{},
 		nil,
 	}
 	expected := []*graphql.Runtime{
 		fixGQLRuntime("foo", "Foo", "Lorem ipsum"),
+		fixGQLRuntime("bar", "Bar", "Dolor sit amet"),
 		{
 			Status: &graphql.RuntimeStatus{
 				Condition: graphql.RuntimeStatusConditionInitial,
@@ -67,7 +69,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	}
 
 	// when
-	converter := runtime.Converter{}
+	converter := runtime.NewConverter()
 	res := converter.MultipleToGraphQL(input)
 
 	// then
@@ -96,7 +98,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 			// when
-			converter := runtime.Converter{}
+			converter := runtime.NewConverter()
 			res := converter.InputFromGraphQL(testCase.Input)
 
 			// then

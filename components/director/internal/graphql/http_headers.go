@@ -23,7 +23,7 @@ func (y *HttpHeaders) UnmarshalGQL(v interface{}) error {
 func (y HttpHeaders) MarshalGQL(w io.Writer) {
 	err := scalar.WriteMarshalled(y, w)
 	if err != nil {
-		log.Print(err)
+		log.Printf("while writing %T: %s", y, err)
 		return
 	}
 }

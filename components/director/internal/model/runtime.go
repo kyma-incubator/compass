@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"time"
 )
 
@@ -13,8 +14,6 @@ type Runtime struct {
 	Labels      map[string][]string
 	Annotations map[string]interface{}
 	Status      *RuntimeStatus
-	// directive for checking auth
-	AgentAuth interface{}
 }
 
 type RuntimeStatus struct {
@@ -120,4 +119,10 @@ type RuntimeInput struct {
 	Description *string
 	Labels      map[string][]string
 	Annotations map[string]interface{}
+}
+
+type RuntimePage struct {
+	Data       []*Runtime
+	PageInfo   *pagination.Page
+	TotalCount int
 }

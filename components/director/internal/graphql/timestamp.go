@@ -29,6 +29,6 @@ func (y *Timestamp) UnmarshalGQL(v interface{}) error {
 func (y Timestamp) MarshalGQL(w io.Writer) {
 	_, err := w.Write([]byte(time.Time(y).Format(time.RFC3339)))
 	if err != nil {
-		log.Printf("Error with writing %T", y)
+		log.Printf("while writing %T: %s", y, err)
 	}
 }

@@ -24,6 +24,6 @@ func (y *PageCursor) UnmarshalGQL(v interface{}) error {
 func (y PageCursor) MarshalGQL(w io.Writer) {
 	_, err := io.WriteString(w, strconv.Quote(string(y)))
 	if err != nil {
-		log.Printf("Error with writing %T", y)
+		log.Printf("while writing %T: %s", y, err)
 	}
 }

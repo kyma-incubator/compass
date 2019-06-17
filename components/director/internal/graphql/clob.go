@@ -23,6 +23,6 @@ func (y *CLOB) UnmarshalGQL(v interface{}) error {
 func (y CLOB) MarshalGQL(w io.Writer) {
 	_, err := w.Write(y)
 	if err != nil {
-		log.Printf("error with writing %T", y)
+		log.Printf("while writing %T: %s", y, err)
 	}
 }

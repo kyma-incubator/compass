@@ -4,10 +4,10 @@ package healthcheck
 type HealthCheckRepository interface {
 }
 
-type Service struct {
+type service struct {
 	repo HealthCheckRepository
 }
 
-func NewService(repo HealthCheckRepository) *Service {
-	return &Service{repo: repo}
+func NewService(repo HealthCheckRepository) *service {
+	return &service{repo: repo}
 }

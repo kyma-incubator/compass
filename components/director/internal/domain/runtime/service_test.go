@@ -325,7 +325,7 @@ func TestService_List(t *testing.T) {
 		fixModelRuntime("foo", "Foo", "Lorem Ipsum"),
 		fixModelRuntime("bar", "Bar", "Lorem Ipsum"),
 	}
-	runtimePage := &runtime.RuntimePage{
+	runtimePage := &model.RuntimePage{
 		Data:       modelRuntimes,
 		TotalCount: len(modelRuntimes),
 		PageInfo: &pagination.Page{
@@ -350,7 +350,7 @@ func TestService_List(t *testing.T) {
 		InputLabelFilters  []*labelfilter.LabelFilter
 		InputPageSize      *int
 		InputCursor        *string
-		ExpectedResult     *runtime.RuntimePage
+		ExpectedResult     *model.RuntimePage
 		ExpectedErrMessage string
 	}{
 		{

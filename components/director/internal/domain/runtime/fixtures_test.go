@@ -4,15 +4,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/graphql"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/stretchr/testify/require"
 )
 
-func fixRuntimePage(runtimes []*model.Runtime) *runtime.RuntimePage {
-	return &runtime.RuntimePage{
+func fixRuntimePage(runtimes []*model.Runtime) *model.RuntimePage {
+	return &model.RuntimePage{
 		Data: runtimes,
 		PageInfo: &pagination.Page{
 			StartCursor: "start",

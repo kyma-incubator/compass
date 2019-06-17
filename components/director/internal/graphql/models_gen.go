@@ -322,7 +322,7 @@ type Runtime struct {
 	Labels      Labels         `json:"labels"`
 	Annotations Annotations    `json:"annotations"`
 	Status      *RuntimeStatus `json:"status"`
-	// directive for checking auth
+	// TODO: directive for checking auth
 	AgentAuth *Auth `json:"agentAuth"`
 }
 

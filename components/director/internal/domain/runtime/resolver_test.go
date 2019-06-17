@@ -441,7 +441,7 @@ func TestResolver_Runtimes(t *testing.T) {
 			ExpectedErr:       nil,
 		},
 		{
-			Name: "Service Error",
+			Name: "service Error",
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("List", context.TODO(), filter, &first, &after).Return(nil, testErr).Once()

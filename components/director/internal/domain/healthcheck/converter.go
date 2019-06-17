@@ -1,4 +1,4 @@
 package healthcheck
 
-type Converter struct {
+type converter struct {
 }

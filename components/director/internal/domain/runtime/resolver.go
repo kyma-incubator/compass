@@ -16,7 +16,7 @@ type RuntimeService interface {
 	Update(ctx context.Context, id string, in model.RuntimeInput) error
 	Get(ctx context.Context, id string) (*model.Runtime, error)
 	Delete(ctx context.Context, id string) error
-	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*RuntimePage, error)
+	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error)
 	AddLabel(ctx context.Context, runtimeID string, key string, values []string) error
 	DeleteLabel(ctx context.Context, runtimeID string, key string, values []string) error
 	AddAnnotation(ctx context.Context, runtimeID string, key string, value interface{}) error
@@ -38,7 +38,7 @@ type Resolver struct {
 func NewResolver(svc RuntimeService) *Resolver {
 	return &Resolver{
 		svc:       svc,
-		converter: &Converter{},
+		converter: &converter{},
 	}
 }
 

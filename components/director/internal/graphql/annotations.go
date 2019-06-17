@@ -29,7 +29,7 @@ func (y *Annotations) UnmarshalGQL(v interface{}) error {
 func (y Annotations) MarshalGQL(w io.Writer) {
 	err := scalar.WriteMarshalled(y, w)
 	if err != nil {
-		log.Print(err)
+		log.Printf("while writing %T: %s", y, err)
 		return
 	}
 }

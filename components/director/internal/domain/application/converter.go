@@ -1,4 +1,4 @@
 package application
 
-type Converter struct {
+type converter struct {
 }
