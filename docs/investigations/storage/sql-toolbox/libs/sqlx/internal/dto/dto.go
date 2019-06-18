@@ -66,7 +66,17 @@ func (app *ApplicationDTO) ToModel() model.Application {
 		ID:          app.ID,
 		Tenant:      app.Tenant,
 		Name:        app.Name,
-		Labels:      app.Labels,
+		Labels:      app.Labels.String(),
 		Description: app.Description,
+	}
+}
+
+func ApplicationFromModel(in model.Application) ApplicationDTO {
+	return ApplicationDTO{
+		Tenant:      in.Tenant,
+		Description: in.Description,
+		ID:          in.ID,
+		Name:        in.Name,
+		Labels:      types.NullJSONText{Valid: true, JSONText: ([]byte)(in.Labels)},
 	}
 }

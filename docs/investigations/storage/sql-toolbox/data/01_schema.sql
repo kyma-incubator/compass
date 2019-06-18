@@ -5,7 +5,6 @@ create database compass;
 create table applications (
   id varchar(100),
   tenant varchar(100),
---   name varchar(100)
   name varchar(100),
   description varchar (100),
   labels JSON,
@@ -16,7 +15,6 @@ create table applications (
 create table apis (
   id varchar(100),
   target_url varchar(100),
---   app_id varchar(100)
   app_id varchar(100),
   primary key (id),
   FOREIGN KEY (app_id) REFERENCES applications(id) on DELETE CASCADE
@@ -25,7 +23,6 @@ create table apis (
 create table events (
   id varchar(100),
   name varchar(100),
---   app_id varchar(100)
   app_id varchar(100),
   primary key (id),
   FOREIGN KEY (app_id) REFERENCES applications(id) on DELETE CASCADE
@@ -34,7 +31,6 @@ create table events (
 
 create table documents (
   id varchar(100),
---   app_id varchar(100)
   app_id varchar(100),
   title varchar(100),
   format varchar (100),

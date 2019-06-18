@@ -50,8 +50,6 @@ func (d *Dao) CreateApplication(ctx context.Context, app model.Application) (*mo
 	}
 	app.ID = id
 
-	//TODO handle storing dependant objects
-
 	tx := d.db.Begin()
 	if tx.Error != nil {
 		return nil, err
@@ -109,9 +107,6 @@ func (d *Dao) DeleteApplication(ctx context.Context, id string) (bool, error) {
 	// TODO WARNING When deleting a record, you need to ensure its primary field has value, and GORM will use the primary key to delete the record, if the primary key field is blank, GORM will delete all records for the model
 
 	// TODO we cannot use db.First because primary key is not an integer
-
-	// TODO placeholder differs between DBs, so it is better to use named params, but I cannot find it in gorm
-
 	app := dto.ApplicationDTO{ID: id}
 
 	res := d.db.Delete(app)

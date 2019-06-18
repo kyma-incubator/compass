@@ -6,7 +6,7 @@ type Application struct {
 	Tenant      string
 	Name        string
 	Description string
-	Labels      string // JSON
+	Labels      string
 	Apis        APIPage
 	Documents   DocumentPage
 }

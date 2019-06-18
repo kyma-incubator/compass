@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/jinzhu/gorm"
-	"github.com/jmoiron/sqlx/types"
 	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/gorm/internal/domain/application"
 	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/gorm/internal/model"
 	_ "github.com/lib/pq"
@@ -27,7 +26,7 @@ func main() {
 	d := application.NewApplicationDao(db)
 	app := model.Application{
 		Name:   "my-app",
-		Labels: types.NullJSONText{JSONText: []byte("{}")},
+		Labels: "{}",
 	}
 	app.Documents = model.DocumentPage{
 		Data: []model.Document{

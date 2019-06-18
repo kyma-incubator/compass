@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/jmoiron/sqlx"
-	"github.com/jmoiron/sqlx/types"
 	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/sqlx/internal/domain/application"
 	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/sqlx/internal/model"
 	_ "github.com/lib/pq"
@@ -24,7 +23,7 @@ func main() {
 	d := application.NewApplicationDao(db)
 	app := model.Application{
 		Name:        "my-app",
-		Labels:      types.NullJSONText{Valid: true, JSONText: []byte("{\"group\":\"default\"}")},
+		Labels:      "{\"group\":\"default\"}",
 		Description: "desc",
 		Tenant:      "tenant",
 	}

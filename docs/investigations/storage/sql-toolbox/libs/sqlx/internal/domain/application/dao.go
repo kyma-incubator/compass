@@ -52,6 +52,8 @@ func (d *Dao) CreateApplication(ctx context.Context, app model.Application) (*mo
 	if err != nil {
 		return nil, err
 	}
+	appDTO := dto.ApplicationFromModel(app)
+	appDTO.ID = id
 	app.ID = id
 
 	txx, err := d.db.Beginx()
@@ -63,7 +65,7 @@ func (d *Dao) CreateApplication(ctx context.Context, app model.Application) (*mo
 	defer d.rollbackIfNeeded(txStatus, txx) // TODO I have to implement it on my own, to avoid rollbacking on every error
 
 	// TODO: I have to specify all fields explicitly here to be persisted
-	_, err = txx.NamedExecContext(ctx, "insert into applications(id,tenant,name,description,labels) values (:id, :tenant, :name, :description, :labels)", app)
+	_, err = txx.NamedExecContext(ctx, "insert into applications(id,tenant,name,description,labels) values (:id, :tenant, :name, :description, :labels)", appDTO)
 	if err != nil {
 		return nil, err
 	}

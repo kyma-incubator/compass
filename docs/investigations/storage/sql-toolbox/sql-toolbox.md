@@ -1,11 +1,10 @@
 # SQL Toolbox
 
-In this document, you can find consideratons about which Golang library to use for DAO layer and 
-how to handle testing and database migration. 
+This document consists of review Golang libraries for communication with SQL database, as well as how to handle testing and database migration. 
 
 ## Go Libraries Comparison
 
-Three the most popular libraries were evaluated:
+Three of the most popular libraries were evaluated:
 - sqlx + Squirrel
 - beego
 - gorm
@@ -20,7 +19,7 @@ qs.Filter("name__icontains", "slene")
 ```
 err = d.ormer.Begin()
 ```
-In contrast to other libraries, starting transaction does not create explicit Transaction object. If a developer forget to commit or rollback transaction, it can interfere with another transaction. 
+In contrast to other libraries, starting transaction does not create an explicit transaction object. If a developer forgets to commit or rollback transaction, it can interfere with another transaction. 
 
 4. According to their [documentation](https://beego.me/docs/mvc/model/overview.md):
 
@@ -61,7 +60,7 @@ On the other hand, I found also some drawbacks:
 3. Some people [claim](https://www.reddit.com/r/golang/comments/8j3219/anyone_using_gorm_in_production_is_it_slow/) that GORM is not performant and too complex.  
 
 ### Sqlx + Squirrel
-1. Helper functions very similar to standard library
+1. Helper functions are very similar to the standard library
 2. Good [documentation](https://jmoiron.github.io/sqlx/)
 3. For building SQL Queries,  [squirrel](github.com/Masterminds/squirrel) can be used.
 ```
@@ -82,7 +81,10 @@ On the other hand, I found also some drawbacks:
 
 No one library provides support for JSON queries. 
 
-Sqlx and Squirrel is our first-choice library because of it's simplicity and explicity. 
+Sqlx and Squirrel is our first-choice library because of its simplicity and explicitly. 
+Before any developer starts working with DB, he should familiarize with these two excellent documents:
+- [Go database/sql tutorial](http://go-database-sql.org/)
+- [Ilustrated guide to SQLX](https://jmoiron.github.io/sqlx/)
 
 ## Testing
 For mocking interactions with DB, we can use [go-sqlmock](https://github.com/DATA-DOG/go-sqlmock)
@@ -117,7 +119,7 @@ For pre-populating DB with test data, we can use [testfixtures](https://github.c
 
 ## Schema updates
 Schema updated can be performed using helm hooks `pre-upgrade` and `pre-install`. 
-For performing migration, there are 2 interesting projects written in Go:
+For performing a migration, there are 2 interesting projects written in Go:
 1. [Golang-migrate](https://github.com/golang-migrate/migrate) with 2301 stars on Github
 - for every migration, 2 files are created: `up` and `down`
 - supports only SQL 
@@ -128,4 +130,4 @@ For performing migration, there are 2 interesting projects written in Go:
 - supports SQL and Go binaries
 - creates additional table: `goose_db_version`
 
-Go-migrate seems to be more popular, is easier (use file names, instead of custom comments). It does not support Go binaries but at the moment I don't see advantages of them over plain SQL, so I suggest to use `golang-migrate`. 
+Go-migrate seems to be more popular, is easier (use file names, instead of custom comments). It does not support Go binaries but at the moment I don't see the advantages of them over plain SQL, so I suggest to use `golang-migrate`. 

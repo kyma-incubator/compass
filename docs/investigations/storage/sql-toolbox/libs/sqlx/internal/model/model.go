@@ -1,13 +1,11 @@
 package model
 
-import "github.com/jmoiron/sqlx/types"
-
 type Application struct {
 	ID          string
 	Tenant      string
 	Name        string
 	Description string
-	Labels      types.NullJSONText // JSON
+	Labels      string
 	Apis        APIPage
 	Documents   DocumentPage
 }

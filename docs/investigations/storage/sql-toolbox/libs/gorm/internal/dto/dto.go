@@ -1,7 +1,7 @@
 package dto
 
 import (
-	"github.com/jmoiron/sqlx/types" //TODO
+	"database/sql"
 	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/gorm/internal/model"
 )
 
@@ -10,7 +10,7 @@ type ApplicationDTO struct {
 	Tenant      string
 	Name        string
 	Description string
-	Labels      types.NullJSONText // JSON
+	Labels      sql.NullString
 }
 
 func (app *ApplicationDTO) TableName() string {
@@ -81,7 +81,7 @@ func (app *ApplicationDTO) ToModel() model.Application {
 		ID:          app.ID,
 		Tenant:      app.Tenant,
 		Name:        app.Name,
-		Labels:      app.Labels,
+		Labels:      app.Labels.String,
 		Description: app.Description,
 	}
 }
