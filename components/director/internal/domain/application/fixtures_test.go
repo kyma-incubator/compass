@@ -84,6 +84,7 @@ func fixDetailedModelApplication(t *testing.T, id, name, description string) *mo
 	time, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
 
+	url := "https://foo.bar"
 	return &model.Application{
 		ID: id,
 		Status: &model.ApplicationStatus{
@@ -99,12 +100,14 @@ func fixDetailedModelApplication(t *testing.T, id, name, description string) *mo
 		Labels: map[string][]string{
 			"test": {"val", "val2"},
 		},
+		HealthCheckURL: &url,
 	}
 }
 
 func fixDetailedGQLApplication(t *testing.T, id, name, description string) *graphql.Application {
 	time, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
+	url := "https://foo.bar"
 
 	return &graphql.Application{
 		ID: id,
@@ -121,10 +124,15 @@ func fixDetailedGQLApplication(t *testing.T, id, name, description string) *grap
 		Labels: map[string][]string{
 			"test": {"val", "val2"},
 		},
+		HealthCheckURL: &url,
 	}
 }
 
 func fixModelApplicationInput(name, description string) model.ApplicationInput {
+	url := "https://foo.bar"
+
+	kind := "test"
+	desc := "Sample"
 	return model.ApplicationInput{
 		Name:        name,
 		Description: &description,
@@ -133,6 +141,45 @@ func fixModelApplicationInput(name, description string) model.ApplicationInput {
 		},
 		Labels: map[string][]string{
 			"test": {"val", "val2"},
+		},
+		HealthCheckURL: &url,
+		Webhooks: []*model.ApplicationWebhookInput{
+			{
+				URL: "webhook1.foo.bar",
+			},
+			{
+				URL: "webhook2.foo.bar",
+			},
+		},
+		Apis: []*model.APIDefinitionInput{
+			{
+				Name:      "api1",
+				TargetURL: "foo.bar",
+			},
+			{
+				Name:      "api2",
+				TargetURL: "foo.bar2",
+			},
+		},
+		EventAPIs: []*model.EventAPIDefinitionInput{
+			{
+				Name:        "event1",
+				Description: &desc,
+			},
+			{
+				Name:        "event2",
+				Description: &desc,
+			},
+		},
+		Documents: []*model.DocumentInput{
+			{
+				DisplayName: "doc1",
+				Kind:        &kind,
+			},
+			{
+				DisplayName: "doc2",
+				Kind:        &kind,
+			},
 		},
 	}
 }
@@ -144,11 +191,52 @@ func fixGQLApplicationInput(name, description string) graphql.ApplicationInput {
 	annotations := graphql.Annotations{
 		"key": "value",
 	}
-
+	url := "https://foo.bar"
+	kind := "test"
+	desc := "Sample"
 	return graphql.ApplicationInput{
-		Name:        name,
-		Description: &description,
-		Annotations: &annotations,
-		Labels:      &labels,
+		Name:           name,
+		Description:    &description,
+		Annotations:    &annotations,
+		Labels:         &labels,
+		HealthCheckURL: &url,
+		Webhooks: []*graphql.ApplicationWebhookInput{
+			{
+				URL: "webhook1.foo.bar",
+			},
+			{
+				URL: "webhook2.foo.bar",
+			},
+		},
+		Apis: []*graphql.APIDefinitionInput{
+			{
+				Name:      "api1",
+				TargetURL: "foo.bar",
+			},
+			{
+				Name:      "api2",
+				TargetURL: "foo.bar2",
+			},
+		},
+		EventAPIs: []*graphql.EventAPIDefinitionInput{
+			{
+				Name:        "event1",
+				Description: &desc,
+			},
+			{
+				Name:        "event2",
+				Description: &desc,
+			},
+		},
+		Documents: []*graphql.DocumentInput{
+			{
+				DisplayName: "doc1",
+				Kind:        &kind,
+			},
+			{
+				DisplayName: "doc2",
+				Kind:        &kind,
+			},
+		},
 	}
 }

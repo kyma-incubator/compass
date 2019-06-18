@@ -480,7 +480,10 @@ type Mutation {
     # if application does not exist, return error
     deleteApplicationLabel(applicationID: ID!, key: String!, values: [String!]!): Label
 
-    addApplicationAnnotation(applicationID: ID!, key: String!, value: String!): Annotation!
+    """If the annotation key exists, it returns an error."""
+    addApplicationAnnotation(applicationID: ID!, key: String!, value: Any!): Annotation!
+
+    """If the annotation key exists, it returns an error."""
     deleteApplicationAnnotation(applicationID: ID!, key: String!): Annotation
 
     addApplicationWebhook(applicationID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!

@@ -38,13 +38,6 @@ type ApplicationPage struct {
 	TotalCount int
 }
 
-type ApplicationWebhookType string
-
-const (
-	ApplicationWebhookTypeConfigurationChanged ApplicationWebhookType = "CONFIGURATION_CHANGED"
-)
-
-
 func (a *Application) AddLabel(key string, values []string) {
 	if a.Labels == nil {
 		a.Labels = make(map[string][]string)
@@ -107,7 +100,15 @@ func (a *Application) DeleteAnnotation(key string) error {
 	return nil
 }
 
-
 type ApplicationInput struct {
-	//TODO:
+	Name           string
+	Description    *string
+	Labels         map[string][]string
+	Annotations    map[string]interface{}
+	Webhooks       []*ApplicationWebhookInput
+	HealthCheckURL *string
+	Apis           []*APIDefinitionInput
+	EventAPIs      []*EventAPIDefinitionInput
+	Documents      []*DocumentInput
 }
+

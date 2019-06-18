@@ -5,7 +5,35 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
+//go:generate mockery -name=WebhookConverter -output=automock -outpkg=automock -case=underscore
+type WebhookConverter interface {
+	MultipleInputFromGraphQL(in []*graphql.ApplicationWebhookInput) []*model.ApplicationWebhookInput
+}
+
+//go:generate mockery -name=DocumentConverter -output=automock -outpkg=automock -case=underscore
+type DocumentConverter interface {
+	MultipleInputFromGraphQL(in []*graphql.DocumentInput) []*model.DocumentInput
+}
+
+//go:generate mockery -name=APIConverter -output=automock -outpkg=automock -case=underscore
+type APIConverter interface {
+	MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) []*model.APIDefinitionInput
+}
+
+//go:generate mockery -name=EventAPIConverter -output=automock -outpkg=automock -case=underscore
+type EventAPIConverter interface {
+	MultipleInputFromGraphQL(in []*graphql.EventAPIDefinitionInput) []*model.EventAPIDefinitionInput
+}
+
 type converter struct {
+	webhook WebhookConverter
+	api APIConverter
+	eventAPI EventAPIConverter
+	document DocumentConverter
+}
+
+func NewConverter(webhook WebhookConverter, api APIConverter, eventAPI EventAPIConverter, document DocumentConverter) *converter {
+	return &converter{webhook: webhook, api: api, eventAPI: eventAPI, document: document}
 }
 
 func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
@@ -21,6 +49,7 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 		Tenant:      graphql.Tenant(in.Tenant),
 		Annotations: in.Annotations,
 		Labels:      in.Labels,
+		HealthCheckURL: in.HealthCheckURL,
 	}
 }
 
@@ -53,6 +82,11 @@ func (c *converter) InputFromGraphQL(in graphql.ApplicationInput) model.Applicat
 		Description: in.Description,
 		Annotations: annotations,
 		Labels:      labels,
+		HealthCheckURL: in.HealthCheckURL,
+		Webhooks: c.webhook.MultipleInputFromGraphQL(in.Webhooks),
+		Documents: c.document.MultipleInputFromGraphQL(in.Documents),
+		EventAPIs: c.eventAPI.MultipleInputFromGraphQL(in.EventAPIs),
+		Apis: c.api.MultipleInputFromGraphQL(in.Apis),
 	}
 }
 

@@ -95,7 +95,7 @@ func TestResolver_CreateApplication(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(svc)
+			resolver := application.NewResolver(svc, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -198,7 +198,7 @@ func TestResolver_UpdateApplication(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(svc)
+			resolver := application.NewResolver(svc, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -284,7 +284,7 @@ func TestResolver_DeleteApplication(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(svc)
+			resolver := application.NewResolver(svc, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -372,7 +372,7 @@ func TestResolver_Application(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(svc)
+			resolver := application.NewResolver(svc, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -540,7 +540,7 @@ func TestResolver_AddApplicationLabel(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(svc)
+			resolver := application.NewResolver(svc, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -561,7 +561,7 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	applicationID := "foo"
-	rtm := fixModelApplicationWithLabels(applicationID, "Foo", map[string][]string{"key": {"foo", "bar"}})
+	app := fixModelApplicationWithLabels(applicationID, "Foo", map[string][]string{"key": {"foo", "bar"}})
 
 	gqlLabel := &graphql.Label{
 		Key:    "key",
@@ -582,7 +582,7 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 			Name: "Success",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", context.TODO(), applicationID).Return(rtm, nil).Once()
+				svc.On("Get", context.TODO(), applicationID).Return(app, nil).Once()
 				svc.On("DeleteLabel", context.TODO(), applicationID, gqlLabel.Key, gqlLabel.Values).Return(nil).Once()
 				return svc
 			},
@@ -600,6 +600,7 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 			Name: "Get Error",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
+				svc.On("DeleteLabel", context.TODO(), applicationID, gqlLabel.Key, gqlLabel.Values).Return(nil).Once()
 				svc.On("Get", context.TODO(), applicationID).Return(nil, testErr).Once()
 				return svc
 			},
@@ -617,7 +618,6 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 			Name: "Delete Error",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", context.TODO(), applicationID).Return(rtm, nil).Once()
 				svc.On("DeleteLabel", context.TODO(), applicationID, gqlLabel.Key, gqlLabel.Values).Return(testErr).Once()
 				return svc
 			},
@@ -638,7 +638,7 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(svc)
+			resolver := application.NewResolver(svc, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -715,7 +715,7 @@ func TestResolver_AddApplicationAnnotation(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(svc)
+			resolver := application.NewResolver(svc, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -736,7 +736,7 @@ func TestResolver_DeleteApplicationAnnotation(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	applicationID := "foo"
-	rtm := fixModelApplicationWithAnnotations(applicationID, "Foo", map[string]interface{}{"key": "value"})
+	app := fixModelApplicationWithAnnotations(applicationID, "Foo", map[string]interface{}{"key": "value"})
 
 	gqlAnnotation := &graphql.Annotation{
 		Key:   "key",
@@ -756,7 +756,7 @@ func TestResolver_DeleteApplicationAnnotation(t *testing.T) {
 			Name: "Success",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", context.TODO(), applicationID).Return(rtm, nil).Once()
+				svc.On("Get", context.TODO(), applicationID).Return(app, nil).Once()
 				svc.On("DeleteAnnotation", context.TODO(), applicationID, gqlAnnotation.Key).Return(nil).Once()
 				return svc
 			},
@@ -789,7 +789,7 @@ func TestResolver_DeleteApplicationAnnotation(t *testing.T) {
 			Name: "Delete Error",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", context.TODO(), applicationID).Return(rtm, nil).Once()
+				svc.On("Get", context.TODO(), applicationID).Return(app, nil).Once()
 				svc.On("DeleteAnnotation", context.TODO(), applicationID, gqlAnnotation.Key).Return(testErr).Once()
 				return svc
 			},
@@ -809,7 +809,7 @@ func TestResolver_DeleteApplicationAnnotation(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(svc)
+			resolver := application.NewResolver(svc, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -824,3 +824,12 @@ func TestResolver_DeleteApplicationAnnotation(t *testing.T) {
 		})
 	}
 }
+
+// TODO: Test Resolvers for:
+// 	- AddApplicationWebhook
+// 	- UpdateApplicationWebhook
+// 	- DeleteApplicationWebhook
+// 	- Apis
+// 	- EventAPIs
+// 	- Documents
+// 	- Webhooks

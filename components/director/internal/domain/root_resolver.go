@@ -98,7 +98,7 @@ func (r *mutationResolver) AddApplicationLabel(ctx context.Context, applicationI
 func (r *mutationResolver) DeleteApplicationLabel(ctx context.Context, applicationID string, key string, values []string) (*graphql.Label, error) {
 	return r.app.DeleteApplicationLabel(ctx, applicationID, key, values)
 }
-func (r *mutationResolver) AddApplicationAnnotation(ctx context.Context, applicationID string, key string, value string) (*graphql.Annotation, error) {
+func (r *mutationResolver) AddApplicationAnnotation(ctx context.Context, applicationID string, key string, value interface{}) (*graphql.Annotation, error) {
 	return r.app.AddApplicationAnnotation(ctx, applicationID, key, value)
 }
 func (r *mutationResolver) DeleteApplicationAnnotation(ctx context.Context, applicationID string, key string) (*graphql.Annotation, error) {

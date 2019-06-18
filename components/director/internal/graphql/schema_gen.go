@@ -200,7 +200,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		AddAPI                      func(childComplexity int, applicationID string, in APIDefinitionInput) int
-		AddApplicationAnnotation    func(childComplexity int, applicationID string, key string, value string) int
+		AddApplicationAnnotation    func(childComplexity int, applicationID string, key string, value interface{}) int
 		AddApplicationLabel         func(childComplexity int, applicationID string, key string, values []string) int
 		AddApplicationWebhook       func(childComplexity int, applicationID string, in ApplicationWebhookInput) int
 		AddDocument                 func(childComplexity int, applicationID string, in DocumentInput) int
@@ -298,7 +298,7 @@ type MutationResolver interface {
 	DeleteApplication(ctx context.Context, id string) (*Application, error)
 	AddApplicationLabel(ctx context.Context, applicationID string, key string, values []string) (*Label, error)
 	DeleteApplicationLabel(ctx context.Context, applicationID string, key string, values []string) (*Label, error)
-	AddApplicationAnnotation(ctx context.Context, applicationID string, key string, value string) (*Annotation, error)
+	AddApplicationAnnotation(ctx context.Context, applicationID string, key string, value interface{}) (*Annotation, error)
 	DeleteApplicationAnnotation(ctx context.Context, applicationID string, key string) (*Annotation, error)
 	AddApplicationWebhook(ctx context.Context, applicationID string, in ApplicationWebhookInput) (*ApplicationWebhook, error)
 	UpdateApplicationWebhook(ctx context.Context, webhookID string, in ApplicationWebhookInput) (*ApplicationWebhook, error)
@@ -1014,7 +1014,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AddApplicationAnnotation(childComplexity, args["applicationID"].(string), args["key"].(string), args["value"].(string)), true
+		return e.complexity.Mutation.AddApplicationAnnotation(childComplexity, args["applicationID"].(string), args["key"].(string), args["value"].(interface{})), true
 
 	case "Mutation.addApplicationLabel":
 		if e.complexity.Mutation.AddApplicationLabel == nil {
@@ -2144,7 +2144,10 @@ type Mutation {
     # if application does not exist, return error
     deleteApplicationLabel(applicationID: ID!, key: String!, values: [String!]!): Label
 
-    addApplicationAnnotation(applicationID: ID!, key: String!, value: String!): Annotation!
+    """If the annotation key exists, it returns an error."""
+    addApplicationAnnotation(applicationID: ID!, key: String!, value: Any!): Annotation!
+
+    """If the annotation key exists, it returns an error."""
     deleteApplicationAnnotation(applicationID: ID!, key: String!): Annotation
 
     addApplicationWebhook(applicationID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
@@ -2359,9 +2362,9 @@ func (ec *executionContext) field_Mutation_addApplicationAnnotation_args(ctx con
 		}
 	}
 	args["key"] = arg1
-	var arg2 string
+	var arg2 interface{}
 	if tmp, ok := rawArgs["value"]; ok {
-		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		arg2, err = ec.unmarshalNAny2interface(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -5644,7 +5647,7 @@ func (ec *executionContext) _Mutation_addApplicationAnnotation(ctx context.Conte
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().AddApplicationAnnotation(rctx, args["applicationID"].(string), args["key"].(string), args["value"].(string))
+		return ec.resolvers.Mutation().AddApplicationAnnotation(rctx, args["applicationID"].(string), args["key"].(string), args["value"].(interface{}))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {

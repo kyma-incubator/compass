@@ -19,19 +19,19 @@ type ApplicationRepository interface {
 }
 
 type service struct {
-	repo ApplicationRepository
+	appRepo ApplicationRepository
 }
 
 func NewService(repo ApplicationRepository) *service {
-	return &service{repo: repo}
+	return &service{appRepo: repo}
 }
 
 func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
-	return s.repo.List(filter, pageSize, cursor)
+	return s.appRepo.List(filter, pageSize, cursor)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.Application, error) {
-	app, err := s.repo.GetByID(id)
+	app, err := s.appRepo.GetByID(id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Application with ID %s", id)
 	}
@@ -55,7 +55,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string
 		//Annotations: in.Annotations,
 	}
 
-	err = s.repo.Create(app)
+	err = s.appRepo.Create(app)
 	if err != nil {
 		return "", err
 	}
@@ -74,7 +74,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationInp
 	//app.Labels = in.Labels
 	//app.Annotations = in.Annotations
 
-	err = s.repo.Update(app)
+	err = s.appRepo.Update(app)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Application")
 	}
@@ -88,7 +88,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrap(err, "while getting Application")
 	}
 
-	return s.repo.Delete(app)
+	return s.appRepo.Delete(app)
 }
 
 func (s *service) AddLabel(ctx context.Context, applicationID string, key string, values []string) error {
@@ -99,7 +99,7 @@ func (s *service) AddLabel(ctx context.Context, applicationID string, key string
 
 	app.AddLabel(key, values)
 
-	err = s.repo.Update(app)
+	err = s.appRepo.Update(app)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Application")
 	}
@@ -118,7 +118,7 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 		return errors.Wrapf(err, "while deleting label with key %s", key)
 	}
 
-	err = s.repo.Update(app)
+	err = s.appRepo.Update(app)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Application")
 	}
@@ -137,7 +137,7 @@ func (s *service) AddAnnotation(ctx context.Context, applicationID string, key s
 		return errors.Wrapf(err, "while adding new annotation %s", key)
 	}
 
-	err = s.repo.Update(app)
+	err = s.appRepo.Update(app)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Application")
 	}
@@ -156,7 +156,7 @@ func (s *service) DeleteAnnotation(ctx context.Context, applicationID string, ke
 		return errors.Wrapf(err, "while deleting annotation with key %s", key)
 	}
 
-	err = s.repo.Update(app)
+	err = s.appRepo.Update(app)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Application with ID %s", applicationID)
 	}

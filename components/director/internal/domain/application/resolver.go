@@ -94,13 +94,53 @@ func (r *Resolver) Application(ctx context.Context, id string) (*graphql.Applica
 }
 
 func (r *Resolver) CreateApplication(ctx context.Context, in graphql.ApplicationInput) (*graphql.Application, error) {
-	panic("not implemented")
+	convertedIn := r.converter.InputFromGraphQL(in)
+
+	id, err := r.svc.Create(ctx, convertedIn)
+	if err != nil {
+		return nil, err
+	}
+
+	app, err := r.svc.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	gqlApp := r.converter.ToGraphQL(app)
+
+	return gqlApp, nil
 }
 func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.ApplicationInput) (*graphql.Application, error) {
-	panic("not implemented")
+	convertedIn := r.converter.InputFromGraphQL(in)
+
+	err := r.svc.Update(ctx, id, convertedIn)
+	if err != nil {
+		return nil, err
+	}
+
+	app, err := r.svc.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	gqlApp := r.converter.ToGraphQL(app)
+
+	return gqlApp, nil
 }
 func (r *Resolver) DeleteApplication(ctx context.Context, id string) (*graphql.Application, error) {
-	panic("not implemented")
+	app, err := r.svc.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	deletedApp := r.converter.ToGraphQL(app)
+
+	err = r.svc.Delete(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return deletedApp, nil
 }
 func (r *Resolver) AddApplicationLabel(ctx context.Context, applicationID string, key string, values []string) (*graphql.Label, error) {
 	err := r.svc.AddLabel(ctx, applicationID, key, values)
@@ -131,7 +171,7 @@ func (r *Resolver) DeleteApplicationLabel(ctx context.Context, applicationID str
 	}, nil
 }
 
-func (r *Resolver) AddApplicationAnnotation(ctx context.Context, applicationID string, key string, value string) (*graphql.Annotation, error) {
+func (r *Resolver) AddApplicationAnnotation(ctx context.Context, applicationID string, key string, value interface{}) (*graphql.Annotation, error) {
 	err := r.svc.AddAnnotation(ctx, applicationID, key, value)
 	if err != nil {
 		return nil, err

@@ -3,6 +3,7 @@ package application_test
 import (
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/graphql"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/assert"
@@ -40,7 +41,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 			// when
-			converter := application.NewConverter()
+			converter := application.NewConverter(nil, nil, nil, nil)
 			res := converter.ToGraphQL(testCase.Input)
 
 			// then
@@ -68,7 +69,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	}
 
 	// when
-	converter := application.NewConverter()
+	converter := application.NewConverter(nil, nil, nil, nil)
 	res := converter.MultipleToGraphQL(input)
 
 	// then
@@ -76,28 +77,80 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 }
 
 func TestConverter_InputFromGraphQL(t *testing.T) {
+	allPropsInput := fixGQLApplicationInput("foo", "Lorem ipsum")
+	allPropsExpected := fixModelApplicationInput("foo", "Lorem ipsum")
+
 	// given
 	testCases := []struct {
-		Name     string
-		Input    graphql.ApplicationInput
-		Expected model.ApplicationInput
+		Name                string
+		Input               graphql.ApplicationInput
+		Expected            model.ApplicationInput
+		WebhookConverterFn  func() *automock.WebhookConverter
+		DocumentConverterFn func() *automock.DocumentConverter
+		APIConverterFn      func() *automock.APIConverter
+		EventAPIConverterFn func() *automock.EventAPIConverter
 	}{
 		{
 			Name:     "All properties given",
-			Input:    fixGQLApplicationInput("foo", "Lorem ipsum"),
-			Expected: fixModelApplicationInput("foo", "Lorem ipsum"),
+			Input:    allPropsInput,
+			Expected: allPropsExpected,
+			WebhookConverterFn: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("MultipleInputFromGraphQL", allPropsInput.Webhooks).Return(allPropsExpected.Webhooks)
+				return conv
+			},
+			APIConverterFn: func() *automock.APIConverter {
+				conv := &automock.APIConverter{}
+				conv.On("MultipleInputFromGraphQL", allPropsInput.Apis).Return(allPropsExpected.Apis)
+				return conv
+			},
+			EventAPIConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				conv.On("MultipleInputFromGraphQL", allPropsInput.EventAPIs).Return(allPropsExpected.EventAPIs)
+				return conv
+			},
+			DocumentConverterFn: func() *automock.DocumentConverter {
+				conv := &automock.DocumentConverter{}
+				conv.On("MultipleInputFromGraphQL", allPropsInput.Documents).Return(allPropsExpected.Documents)
+				return conv
+			},
 		},
 		{
 			Name:     "Empty",
 			Input:    graphql.ApplicationInput{},
 			Expected: model.ApplicationInput{},
+			WebhookConverterFn: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("MultipleInputFromGraphQL", []*graphql.ApplicationWebhookInput(nil)).Return(nil)
+				return conv
+			},
+			APIConverterFn: func() *automock.APIConverter {
+				conv := &automock.APIConverter{}
+				conv.On("MultipleInputFromGraphQL", []*graphql.APIDefinitionInput(nil)).Return(nil)
+				return conv
+			},
+			EventAPIConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				conv.On("MultipleInputFromGraphQL", []*graphql.EventAPIDefinitionInput(nil)).Return(nil)
+				return conv
+			},
+			DocumentConverterFn: func() *automock.DocumentConverter {
+				conv := &automock.DocumentConverter{}
+				conv.On("MultipleInputFromGraphQL", []*graphql.DocumentInput(nil)).Return(nil)
+				return conv
+			},
 		},
 	}
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 			// when
-			converter := application.NewConverter()
+			converter := application.NewConverter(
+				testCase.WebhookConverterFn(),
+				testCase.APIConverterFn(),
+				testCase.EventAPIConverterFn(),
+				testCase.DocumentConverterFn(),
+			)
 			res := converter.InputFromGraphQL(testCase.Input)
 
 			// then
