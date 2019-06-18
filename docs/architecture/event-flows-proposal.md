@@ -29,34 +29,34 @@ It will also support many authentication (e.g. OpenID Connect) and authorization
 ### Types
 ```graphql
 
-scalar EventSubscriptionAttributes # -> map[string]string
+scalar EventAPISubscriptionAttributes # -> map[string]string
 
 type EventAPIDefinition {
     id: ID!
     """group allows you to find the same API but in different version"""
     group: String
-    spec: EventSpec!
+    spec: EventAPISpec!
     auth: Auth
-    externalSubscriptions: [EventSubscription!]!
+    externalSubscriptions: [EventAPISubscription!]!
     version: Version
 }
 
-type EventSpec {
+type EventAPISpec {
     data: CLOB
-    type: EventSpecType!
+    type: EventAPISpecType!
     format: SpecFormat
     fetchRequest: FetchRequest
 }
 
-type EventSubscription {
+type EventAPISubscription {
     url: String!
     auth: Auth
     topic: String!
-    attributes: EventSubscriptionAttributes
+    attributes: EventAPISubscriptionAttributes
 }
 
 
-enum EventSpecType {
+enum EventAPISpecType {
     ASYNC_API
 }
 
@@ -67,25 +67,24 @@ enum EventSpecType {
 ```graphql
 
 input EventAPIDefinitionInput {
-    spec: EventSpecInput!
+    spec: EventAPISpecInput!
     group: String
-    protocol: Protocol
     auth: AuthInput
-    externalSubscriptions: [EventSubscriptionInput!]
+    externalSubscriptions: [EventAPISubscriptionInput!]
     version: VersionInput
 }
 
-input EventSpecInput {
+input EventAPISpecInput {
     data: CLOB
-    eventSpecType: EventSpecType!
+    eventSpecType: EventAPISpecType!
     fetchRequest: FetchRequestInput
 }
 
-input EventSubscriptionInput {
+input EventAPISubscriptionInput {
     url: String!
     auth: AuthInput
     topic: String!
-    attributes: EventSubscriptionAttributes
+    attributes: EventAPISubscriptionAttributes
 }
 ```
 
