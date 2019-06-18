@@ -3,9 +3,9 @@ package application
 import (
 	"context"
 	"github.com/astaxie/beego/orm"
-	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/beegooolbox/libs/beego/db"
-	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/beegooolbox/libs/beego/dto"
-	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/beegooolbox/libs/beego/model"
+	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/beego/internal/db"
+	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/beego/internal/dto"
+	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/beego/internal/model"
 	"github.com/pkg/errors"
 )
 
@@ -67,7 +67,6 @@ func (d *Dao) CreateApplication(ctx context.Context, app model.Application) (*mo
 	//			d.ormer.Rollback()
 	//			return nil, err
 	//		}
-	//		fmt.Println("TUTUAJ", id)
 	//		apiDTO.ID = id
 	//		a.ID = id
 	//		apiDTO.AppID = app.ID

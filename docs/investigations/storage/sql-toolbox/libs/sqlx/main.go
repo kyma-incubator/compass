@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/jmoiron/sqlx/types"
-	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/sqlxtoolbox/libs/sqlx/domain/application"
-	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/sqlxtoolbox/libs/sqlx/model"
+	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/sqlx/internal/domain/application"
+	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/sqlx/internal/model"
 	_ "github.com/lib/pq"
 )
 
@@ -15,7 +15,6 @@ func main() {
 
 	db, err := sqlx.Connect("postgres", connStr)
 
-	db.conn
 	if err != nil {
 		panic(err)
 	}

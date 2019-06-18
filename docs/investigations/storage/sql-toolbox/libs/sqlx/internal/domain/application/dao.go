@@ -5,9 +5,9 @@ import (
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
-	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/sqlxtoolbox/libs/sqlx/db"
-	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/sqlxtoolbox/libs/sqlx/dto"
-	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/sqlxtoolbox/libs/sqlx/model"
+	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/sqlx/internal/db"
+	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/sqlx/internal/dto"
+	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/sqlx/internal/model"
 	"github.com/lann/builder"
 )
 
@@ -25,7 +25,7 @@ func (d *Dao) GetApplications(ctx context.Context, p model.PageRequest, sel mode
 	var apps []dto.ApplicationDTO
 
 	// squirrel usage example
-	selBuilder := sq.Select("*").From("applications").OrderBy("id").Limit(uint64(p.PageSize)).Where()
+	selBuilder := sq.Select("*").From("applications").OrderBy("id").Limit(uint64(p.PageSize))
 	// how to generate "totalCount" query
 	//totalCnt := d.getTotalCountQuery(selBuilder)
 

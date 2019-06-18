@@ -1,6 +1,5 @@
 package model
 
-//TODO
 
 type Application struct {
 	ID          string

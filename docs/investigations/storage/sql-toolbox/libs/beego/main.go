@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/astaxie/beego/orm"
-	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/beegooolbox/libs/beego/domain/application"
-	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/beegooolbox/libs/beego/dto"
-	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/beegooolbox/libs/beego/model"
+	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/beego/internal/domain/application"
+	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/beego/internal/dto"
+	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/beego/internal/model"
 	_ "github.com/lib/pq"
 )
 

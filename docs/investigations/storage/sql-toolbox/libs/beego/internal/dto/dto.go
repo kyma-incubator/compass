@@ -2,7 +2,7 @@ package dto
 
 import (
 	"database/sql"
-	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/beegooolbox/libs/beego/model"
+	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/beego/internal/model"
 )
 
 type ApplicationDTO struct {

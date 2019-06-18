@@ -2,7 +2,7 @@ package dto
 
 import (
 	"github.com/jmoiron/sqlx/types" //TODO
-	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/gormtoolbox/libs/gorm/model"
+	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/gorm/internal/model"
 )
 
 type ApplicationDTO struct {

@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/jinzhu/gorm"
-	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/gormtoolbox/libs/gorm/db"
-	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/gormtoolbox/libs/gorm/dto"
-	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/gormtoolbox/libs/gorm/model"
+	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/gorm/internal/db"
+	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/gorm/internal/dto"
+	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/gorm/internal/model"
 )
 
 func NewApplicationDao(db *gorm.DB) *Dao {

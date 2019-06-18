@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/jmoiron/sqlx/types"
-	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/gormtoolbox/libs/gorm/domain/application"
-	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/gormtoolbox/libs/gorm/model"
+	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/gorm/internal/domain/application"
+	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/gorm/internal/model"
 	_ "github.com/lib/pq"
 )
 

@@ -2,7 +2,7 @@ package dto
 
 import (
 	"github.com/jmoiron/sqlx/types"
-	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/sqlxtoolbox/libs/sqlx/model"
+	"github.com/kyma-incubator/compass/docs/investigations/storage/sql-toolbox/libs/sqlx/internal/model"
 )
 
 type ApplicationDTO struct {
@@ -17,7 +17,6 @@ type APIDTO struct {
 	ID        string
 	AppID     string
 	Targeturl string
-
 }
 
 type DocumentDTO struct {
@@ -37,7 +36,7 @@ func (d *DocumentDTO) ToModel() model.Document {
 	}
 }
 
-func  DocumentFromModel(appID string, in model.Document) *DocumentDTO {
+func DocumentFromModel(appID string, in model.Document) *DocumentDTO {
 	return &DocumentDTO{
 		Appid:  appID,
 		Data:   in.Data,
@@ -54,7 +53,7 @@ func (a *APIDTO) ToModel() model.API {
 	}
 }
 
-func  APIFromModel(appID string, in model.API) *APIDTO {
+func APIFromModel(appID string, in model.API) *APIDTO {
 	return &APIDTO{
 		ID:        in.ID,
 		Targeturl: in.TargetURL,

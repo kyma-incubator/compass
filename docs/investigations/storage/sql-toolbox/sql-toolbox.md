@@ -128,6 +128,4 @@ For performing migration, there are 2 interesting projects written in Go:
 - supports SQL and Go binaries
 - creates additional table: `goose_db_version`
 
-
-
 Go-migrate seems to be more popular, is easier (use file names, instead of custom comments). It does not support Go binaries but at the moment I don't see advantages of them over plain SQL, so I suggest to use `golang-migrate`. 
