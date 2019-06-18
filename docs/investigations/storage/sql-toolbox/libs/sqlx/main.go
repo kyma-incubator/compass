@@ -23,8 +23,10 @@ func main() {
 
 	d := application.NewApplicationDao(db)
 	app := model.Application{
-		Name:   "my-app",
-		Labels: types.NullJSONText{JSONText: []byte("{}")},
+		Name:        "my-app",
+		Labels:      types.NullJSONText{Valid: true, JSONText: []byte("{\"group\":\"default\"}")},
+		Description: "desc",
+		Tenant:      "tenant",
 	}
 	app.Documents = model.DocumentPage{
 		Data: []model.Document{
@@ -50,6 +52,7 @@ func main() {
 		panic(err)
 	}
 
+	fmt.Println(brandNewApp)
 	appPage, err := d.GetApplications(ctx, model.PageRequest{
 		PageSize: 50,
 	}, model.Filer{})

@@ -25,7 +25,7 @@ func (d *Dao) GetApplications(ctx context.Context, p model.PageRequest, sel mode
 	var apps []dto.ApplicationDTO
 
 	// squirrel usage example
-	selBuilder := sq.Select("*").From("applications").OrderBy("id").Limit(uint64(p.PageSize))
+	selBuilder := sq.Select("*").From("applications").Where("labels->>'group'=$1","default")
 	// how to generate "totalCount" query
 	//totalCnt := d.getTotalCountQuery(selBuilder)
 
