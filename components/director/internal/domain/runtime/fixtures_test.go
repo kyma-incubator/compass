@@ -103,9 +103,11 @@ func fixDetailedModelRuntime(t *testing.T, id, name, description string) *model.
 			AdditionalHeaders: map[string][]string{
 				"test": {"bar"},
 			},
-			Credential: model.BasicCredentialData{
-				Username:"foo",
-				Password: "bar",
+			Credential: model.CredentialData{
+				Basic: &model.BasicCredentialData{
+					Username: "foo",
+					Password: "bar",
+				},
 			},
 		},
 	}
@@ -137,7 +139,7 @@ func fixDetailedGQLRuntime(t *testing.T, id, name, description string) *graphql.
 		AgentAuth: &graphql.Auth{
 			AdditionalHeaders: &headers,
 			Credential: graphql.BasicCredentialData{
-				Username:"foo",
+				Username: "foo",
 				Password: "bar",
 			},
 		},

@@ -40,6 +40,10 @@ type AuthInput struct {
 	RequestAuth           *CredentialRequestAuthInput
 }
 
+func (i *AuthInput) ToAuth() *Auth {
+	//TODO: Implement it
+}
+
 type CredentialDataInput struct {
 	Basic *BasicCredentialDataInput
 	Oauth *OAuthCredentialDataInput

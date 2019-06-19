@@ -101,6 +101,17 @@ type RuntimeInput struct {
 	Annotations map[string]interface{}
 }
 
+func (i *RuntimeInput) ToRuntime(id string, tenant string) *Runtime {
+	return &Runtime{
+		ID:          id,
+		Name:        i.Name,
+		Description: i.Description,
+		Tenant:      tenant,
+		Labels:      i.Labels,
+		Annotations: i.Annotations,
+	}
+}
+
 type RuntimePage struct {
 	Data       []*Runtime
 	PageInfo   *pagination.Page
