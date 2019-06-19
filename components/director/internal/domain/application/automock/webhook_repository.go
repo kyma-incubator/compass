@@ -9,12 +9,12 @@ type WebhookRepository struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: item
-func (_m *WebhookRepository) Create(item *model.ApplicationWebhookInput) error {
+// CreateMany provides a mock function with given fields: item
+func (_m *WebhookRepository) CreateMany(item []*model.ApplicationWebhook) error {
 	ret := _m.Called(item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*model.ApplicationWebhookInput) error); ok {
+	if rf, ok := ret.Get(0).(func([]*model.ApplicationWebhook) error); ok {
 		r0 = rf(item)
 	} else {
 		r0 = ret.Error(0)
@@ -23,13 +23,13 @@ func (_m *WebhookRepository) Create(item *model.ApplicationWebhookInput) error {
 	return r0
 }
 
-// DeleteMultiple provides a mock function with given fields: items
-func (_m *WebhookRepository) DeleteMultiple(items []*model.ApplicationWebhook) error {
-	ret := _m.Called(items)
+// DeleteAllByApplicationID provides a mock function with given fields: id
+func (_m *WebhookRepository) DeleteAllByApplicationID(id string) error {
+	ret := _m.Called(id)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func([]*model.ApplicationWebhook) error); ok {
-		r0 = rf(items)
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(id)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -58,18 +58,4 @@ func (_m *WebhookRepository) ListByApplicationID(applicationID string) ([]*model
 	}
 
 	return r0, r1
-}
-
-// Update provides a mock function with given fields: item
-func (_m *WebhookRepository) Update(item *model.ApplicationWebhookInput) error {
-	ret := _m.Called(item)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(*model.ApplicationWebhookInput) error); ok {
-		r0 = rf(item)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
 }

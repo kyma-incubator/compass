@@ -34,8 +34,12 @@ func NewRootResolver() *RootResolver {
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewRepository()
 	applicationRepo := application.NewRepository()
+	webhookRepo := webhook.NewRepository()
+	apiRepo := api.NewRepository()
+	eventAPIRepo := eventapi.NewRepository()
+	documentRepo := document.NewRepository()
 
-	appSvc := application.NewService(applicationRepo)
+	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo)
 	apiSvc := api.NewService()
 	eventAPISvc := eventapi.NewService()
 	webhookSvc := webhook.NewService()

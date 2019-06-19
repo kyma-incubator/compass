@@ -21,41 +21,41 @@ type ApplicationRepository interface {
 //go:generate mockery -name=DocumentRepository -output=automock -outpkg=automock -case=underscore
 type DocumentRepository interface {
 	ListByApplicationID(applicationID string) ([]*model.Document, error)
-	CreateMany(item []*model.Document) error
+	CreateMany(items []*model.Document) error
 	DeleteAllByApplicationID(id string) error
 }
 
 //go:generate mockery -name=WebhookRepository -output=automock -outpkg=automock -case=underscore
 type WebhookRepository interface {
 	ListByApplicationID(applicationID string) ([]*model.ApplicationWebhook, error)
-	CreateMany(item []*model.ApplicationWebhook) error
+	CreateMany(items []*model.ApplicationWebhook) error
 	DeleteAllByApplicationID(id string) error
 }
 
 //go:generate mockery -name=APIRepository -output=automock -outpkg=automock -case=underscore
 type APIRepository interface {
 	ListByApplicationID(applicationID string) ([]*model.APIDefinition, error)
-	CreateMany(item []*model.APIDefinition) error
+	CreateMany(items []*model.APIDefinition) error
 	DeleteAllByApplicationID(id string) error
 }
 
-//go:generate mockery -name=DocumentRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery -name=EventAPIRepository -output=automock -outpkg=automock -case=underscore
 type EventAPIRepository interface {
 	ListByApplicationID(applicationID string) ([]*model.EventAPIDefinition, error)
-	CreateMany(item *model.EventAPIDefinition) error
+	CreateMany(items []*model.EventAPIDefinition) error
 	DeleteAllByApplicationID(id string) error
 }
 
 type service struct {
-	app ApplicationRepository
-	document DocumentRepository
-	webhook WebhookRepository
-	api APIRepository
-	eventAPI EventAPIRepository
+	app          ApplicationRepository
+	api          APIRepository
+	eventAPI     EventAPIRepository
+	document     DocumentRepository
+	webhook      WebhookRepository
 }
 
-func NewService(app ApplicationRepository, document DocumentRepository, webhook WebhookRepository, api APIRepository, eventAPI EventAPIRepository) *service {
-	return &service{app: app, document: document, webhook: webhook, api: api, eventAPI: eventAPI}
+func NewService(app ApplicationRepository, webhook WebhookRepository, api APIRepository, eventAPI EventAPIRepository, document DocumentRepository) *service {
+	return &service{app: app, webhook: webhook, api: api, eventAPI: eventAPI, document: document}
 }
 
 func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
@@ -79,12 +79,12 @@ func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string
 	}
 
 	app := &model.Application{
-		ID: id,
-		Name:        in.Name,
-		Description: in.Description,
-		Tenant: applicationTenant,
-		Labels:      in.Labels,
-		Annotations: in.Annotations,
+		ID:             id,
+		Name:           in.Name,
+		Description:    in.Description,
+		Tenant:         applicationTenant,
+		Labels:         in.Labels,
+		Annotations:    in.Annotations,
 		HealthCheckURL: in.HealthCheckURL,
 	}
 
@@ -93,11 +93,9 @@ func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string
 		return "", err
 	}
 
-	for _, api := range in.Apis {
-		err = s.api.CreateMany(api)
-		if err != nil {
-			return "", errors.Wrapf(err, "while creating API")
-		}
+	err = s.createRelatedResources(in)
+	if err != nil {
+		return "", errors.Wrapf(err, "while creating related Application resources")
 	}
 
 	return id, nil
@@ -120,14 +118,17 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationInp
 		return errors.Wrapf(err, "while updating Application")
 	}
 
+	err = s.deleteRelatedResources(id)
+	if err != nil {
+		return errors.Wrapf(err, "while deleting related Application resources")
+	}
 
-
+	err = s.createRelatedResources(in)
+	if err != nil {
+		return errors.Wrapf(err, "while creating related Application resources")
+	}
 
 	return nil
-}
-
-func (s *service) upsertApplication(id string, in model.ApplicationInput) error {
-
 }
 
 func (s *service) Delete(ctx context.Context, id string) error {
@@ -136,24 +137,9 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "while getting Application with ID %s", id)
 	}
 
-	err = s.api.DeleteAllByApplicationID(id)
+	err = s.deleteRelatedResources(id)
 	if err != nil {
-		return errors.Wrapf(err, "while deleting APIs for application %s", id)
-	}
-
-	err = s.eventAPI.DeleteAllByApplicationID(id)
-	if err != nil {
-		return errors.Wrapf(err, "while deleting EventAPIs for application %s", id)
-	}
-
-	err = s.document.DeleteAllByApplicationID(id)
-	if err != nil {
-		return errors.Wrapf(err, "while deleting Documents for application %s", id)
-	}
-
-	err = s.webhook.DeleteAllByApplicationID(id)
-	if err != nil {
-		return errors.Wrapf(err, "while deleting Webhooks for application %s", id)
+		return errors.Wrapf(err, "while deleting related Application resources")
 	}
 
 	return s.app.Delete(app)
@@ -227,6 +213,75 @@ func (s *service) DeleteAnnotation(ctx context.Context, applicationID string, ke
 	err = s.app.Update(app)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Application with ID %s", applicationID)
+	}
+
+	return nil
+}
+
+func (s *service) createRelatedResources(in model.ApplicationInput) error {
+	var err error
+
+	var webhooks []*model.ApplicationWebhook
+	for _, item := range in.Webhooks {
+		webhooks = append(webhooks, item.ToWebhook())
+	}
+	err = s.webhook.CreateMany(webhooks)
+	if err != nil {
+		return errors.Wrapf(err, "while creating Webhooks for application")
+	}
+
+	var apis []*model.APIDefinition
+	for _, item := range in.Apis {
+		apis = append(apis, item.ToAPIDefinition())
+	}
+
+	err = s.api.CreateMany(apis)
+	if err != nil {
+		return errors.Wrapf(err, "while creating APIs for application")
+	}
+
+	var eventAPIs []*model.EventAPIDefinition
+	for _, item := range in.EventAPIs {
+		eventAPIs = append(eventAPIs, item.ToEventAPIDefinition())
+	}
+	err = s.eventAPI.CreateMany(eventAPIs)
+	if err != nil {
+		return errors.Wrapf(err, "while creating EventAPIs for application")
+	}
+
+	var documents []*model.Document
+	for _, item := range in.Documents {
+		documents = append(documents, item.ToDocument())
+	}
+	err = s.document.CreateMany(documents)
+	if err != nil {
+		return errors.Wrapf(err, "while creating Documents for application")
+	}
+
+	return nil
+}
+
+func (s *service) deleteRelatedResources(applicationID string) error {
+	var err error
+
+	err = s.api.DeleteAllByApplicationID(applicationID)
+	if err != nil {
+		return errors.Wrapf(err, "while deleting APIs for application %s", applicationID)
+	}
+
+	err = s.eventAPI.DeleteAllByApplicationID(applicationID)
+	if err != nil {
+		return errors.Wrapf(err, "while deleting EventAPIs for application %s", applicationID)
+	}
+
+	err = s.document.DeleteAllByApplicationID(applicationID)
+	if err != nil {
+		return errors.Wrapf(err, "while deleting Documents for application %s", applicationID)
+	}
+
+	err = s.webhook.DeleteAllByApplicationID(applicationID)
+	if err != nil {
+		return errors.Wrapf(err, "while deleting Webhooks for application %s", applicationID)
 	}
 
 	return nil

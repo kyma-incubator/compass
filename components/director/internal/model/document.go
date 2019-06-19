@@ -15,3 +15,10 @@ type DocumentInput struct {
 	Data        *[]byte `json:"data"`
 	// TODO: Replace with actual model
 }
+
+func (d *DocumentInput) ToDocument() *Document {
+	// TODO: Replace with actual model
+	return &Document{
+
+	}
+}

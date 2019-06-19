@@ -26,7 +26,7 @@ type EventAPIConverter interface {
 }
 
 type converter struct {
-	webhook WebhookConverter
+	webhook  WebhookConverter
 	api APIConverter
 	eventAPI EventAPIConverter
 	document DocumentConverter

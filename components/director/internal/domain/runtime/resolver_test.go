@@ -96,8 +96,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(svc)
-			resolver.SetConverter(converter)
+			resolver := runtime.NewResolver(svc, converter)
 
 			// when
 			result, err := resolver.CreateRuntime(context.TODO(), testCase.Input)
@@ -199,8 +198,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(svc)
-			resolver.SetConverter(converter)
+			resolver := runtime.NewResolver(svc, converter)
 
 			// when
 			result, err := resolver.UpdateRuntime(context.TODO(), testCase.RuntimeID, testCase.Input)
@@ -285,8 +283,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(svc)
-			resolver.SetConverter(converter)
+			resolver := runtime.NewResolver(svc, converter)
 
 			// when
 			result, err := resolver.DeleteRuntime(context.TODO(), testCase.InputID)
@@ -373,8 +370,7 @@ func TestResolver_Runtime(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(svc)
-			resolver.SetConverter(converter)
+			resolver := runtime.NewResolver(svc, converter)
 
 			// when
 			result, err := resolver.Runtime(context.TODO(), testCase.InputID)
@@ -464,8 +460,7 @@ func TestResolver_Runtimes(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(svc)
-			resolver.SetConverter(converter)
+			resolver := runtime.NewResolver(svc, converter)
 
 			// when
 			result, err := resolver.Runtimes(context.TODO(), testCase.InputLabelFilters, testCase.InputFirst, testCase.InputAfter)
@@ -541,8 +536,7 @@ func TestResolver_AddRuntimeLabel(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(svc)
-			resolver.SetConverter(converter)
+			resolver := runtime.NewResolver(svc, converter)
 
 			// when
 			result, err := resolver.AddRuntimeLabel(context.TODO(), testCase.InputRuntimeID, testCase.InputKey, testCase.InputValues)
@@ -639,8 +633,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(svc)
-			resolver.SetConverter(converter)
+			resolver := runtime.NewResolver(svc, converter)
 
 			// when
 			result, err := resolver.DeleteRuntimeLabel(context.TODO(), testCase.InputRuntimeID, testCase.InputKey, testCase.InputValues)
@@ -716,8 +709,7 @@ func TestResolver_AddRuntimeAnnotation(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(svc)
-			resolver.SetConverter(converter)
+			resolver := runtime.NewResolver(svc, converter)
 
 			// when
 			result, err := resolver.AddRuntimeAnnotation(context.TODO(), testCase.InputRuntimeID, testCase.InputKey, testCase.InputValue)
@@ -810,8 +802,7 @@ func TestResolver_DeleteRuntimeAnnotation(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(svc)
-			resolver.SetConverter(converter)
+			resolver := runtime.NewResolver(svc, converter)
 
 			// when
 			result, err := resolver.DeleteRuntimeAnnotation(context.TODO(), testCase.InputRuntimeID, testCase.InputKey)

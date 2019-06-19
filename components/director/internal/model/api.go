@@ -1,7 +1,6 @@
 package model
 
 type APIDefinitionInput struct {
-
 	Name        string
 	Description *string
 	TargetURL   string
@@ -15,4 +14,11 @@ type APIDefinition struct {
 	Description *string
 	TargetURL   string
 	// TODO: Replace with actual model
+}
+
+func (d *APIDefinitionInput) ToAPIDefinition() *APIDefinition {
+	// TODO: Replace with actual model
+	return &APIDefinition{
+
+	}
 }

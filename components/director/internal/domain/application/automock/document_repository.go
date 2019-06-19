@@ -9,12 +9,12 @@ type DocumentRepository struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: item
-func (_m *DocumentRepository) Create(item *model.DocumentInput) error {
+// CreateMany provides a mock function with given fields: item
+func (_m *DocumentRepository) CreateMany(item []*model.Document) error {
 	ret := _m.Called(item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*model.DocumentInput) error); ok {
+	if rf, ok := ret.Get(0).(func([]*model.Document) error); ok {
 		r0 = rf(item)
 	} else {
 		r0 = ret.Error(0)
@@ -23,13 +23,13 @@ func (_m *DocumentRepository) Create(item *model.DocumentInput) error {
 	return r0
 }
 
-// DeleteMultiple provides a mock function with given fields: items
-func (_m *DocumentRepository) DeleteMultiple(items []*model.Document) error {
-	ret := _m.Called(items)
+// DeleteAllByApplicationID provides a mock function with given fields: id
+func (_m *DocumentRepository) DeleteAllByApplicationID(id string) error {
+	ret := _m.Called(id)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func([]*model.Document) error); ok {
-		r0 = rf(items)
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(id)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -58,18 +58,4 @@ func (_m *DocumentRepository) ListByApplicationID(applicationID string) ([]*mode
 	}
 
 	return r0, r1
-}
-
-// Update provides a mock function with given fields: item
-func (_m *DocumentRepository) Update(item *model.DocumentInput) error {
-	ret := _m.Called(item)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(*model.DocumentInput) error); ok {
-		r0 = rf(item)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
 }

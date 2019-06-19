@@ -105,10 +105,11 @@ type ApplicationInput struct {
 	Description    *string
 	Labels         map[string][]string
 	Annotations    map[string]interface{}
-	Webhooks       []*ApplicationWebhookInput
 	HealthCheckURL *string
+	Webhooks       []*ApplicationWebhookInput
 	Apis           []*APIDefinitionInput
 	EventAPIs      []*EventAPIDefinitionInput
 	Documents      []*DocumentInput
 }
+
 

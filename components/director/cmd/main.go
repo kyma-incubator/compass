@@ -32,14 +32,14 @@ func main() {
 	}
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
 
-	log.Info("Registering endpoint on %s...", cfg.APIEndpoint)
+	log.Infof("Registering endpoint on %s...", cfg.APIEndpoint)
 	router := mux.NewRouter()
 	router.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 	router.HandleFunc(cfg.APIEndpoint, handler.GraphQL(executableSchema))
 
 	http.Handle("/", router)
 
-	log.Info("Listening on %s...", cfg.Address)
+	log.Infof("Listening on %s...", cfg.Address)
 	if err := http.ListenAndServe(cfg.Address, nil); err != nil {
 		panic(err)
 	}

@@ -12,8 +12,6 @@ func NewConverter() *converter {
 	return &converter{}
 }
 
-//TODO: Fix
-
 func (c *converter) ToGraphQL(in *model.Auth) *graphql.Auth {
 	if in == nil {
 		return nil
@@ -26,24 +24,20 @@ func (c *converter) ToGraphQL(in *model.Auth) *graphql.Auth {
 	params = in.AdditionalQueryParams
 
 	return &graphql.Auth{
-		Credential:            in.Credential,
+		Credential:            c.credentialToGraphQL(in.Credential),
 		AdditionalHeaders:     &headers,
 		AdditionalQueryParams: &params,
 		RequestAuth:           c.requestAuthToGraphQL(in.RequestAuth),
 	}
 }
 
-func (c *converter) InputFromGraphQL(in graphql.AuthInput) model.AuthInput {
-	var credential *model.CredentialDataInput
-	if in.Credential != nil {
-
-		credential = &model.CredentialDataInput{
-			Basic: in.Credential.Basic,
-			Oauth: in.Credential.Oauth,
-		}
+func (c *converter) InputFromGraphQL(in *graphql.AuthInput) *model.AuthInput {
+	if in == nil {
+		return nil
 	}
 
-	return model.AuthInput{
+	credential := c.credentialInputFromGraphQL(in.Credential)
+	return &model.AuthInput{
 		Credential:            credential,
 		AdditionalHeaders:     c.headersFromGraphQL(in.AdditionalHeaders),
 		AdditionalQueryParams: c.queryParamsFromGraphQL(in.AdditionalQueryParams),
@@ -68,7 +62,7 @@ func (c *converter) requestAuthToGraphQL(in *model.CredentialRequestAuth) *graph
 			TokenEndpointURL:      in.Csrf.TokenEndpointURL,
 			AdditionalQueryParams: &params,
 			AdditionalHeaders:     &headers,
-			Credential:            in.Csrf.Credential,
+			Credential:            c.credentialToGraphQL(in.Csrf.Credential),
 		}
 	}
 
@@ -88,7 +82,7 @@ func (c *converter) requestAuthInputFromGraphQL(in *graphql.CredentialRequestAut
 			TokenEndpointURL:      in.Csrf.TokenEndpointURL,
 			AdditionalQueryParams: c.queryParamsFromGraphQL(in.Csrf.AdditionalQueryParams),
 			AdditionalHeaders:     c.headersFromGraphQL(in.Csrf.AdditionalHeaders),
-			Credential:            in.Csrf.Credential,
+			Credential:            c.credentialInputFromGraphQL(in.Csrf.Credential),
 		}
 	}
 
@@ -113,4 +107,49 @@ func (c *converter) queryParamsFromGraphQL(params *graphql.QueryParams) map[stri
 	}
 
 	return h
+}
+
+func (c *converter) credentialInputFromGraphQL(in *graphql.CredentialDataInput) *model.CredentialDataInput {
+	if in == nil {
+		return nil
+	}
+
+	var basic model.BasicCredentialDataInput
+	var oauth model.OAuthCredentialDataInput
+
+	if in.Basic != nil {
+		basic = model.BasicCredentialDataInput{
+			Username: in.Basic.Username,
+			Password: in.Basic.Password,
+		}
+	} else if in.Oauth != nil {
+		oauth = model.OAuthCredentialDataInput{
+			URL:          in.Oauth.URL,
+			ClientID:     in.Oauth.ClientID,
+			ClientSecret: in.Oauth.ClientSecret,
+		}
+	}
+
+	return &model.CredentialDataInput{
+		Basic: &basic,
+		Oauth: &oauth,
+	}
+}
+
+func (c *converter) credentialToGraphQL(in model.CredentialData) graphql.CredentialData {
+	var credential graphql.CredentialData
+	if in.Basic != nil {
+		credential = graphql.BasicCredentialData{
+			Username: in.Basic.Username,
+			Password: in.Basic.Password,
+		}
+	} else if in.Oauth != nil {
+		credential = graphql.OAuthCredentialData{
+			URL:          in.Oauth.URL,
+			ClientID:     in.Oauth.ClientID,
+			ClientSecret: in.Oauth.ClientSecret,
+		}
+	}
+
+	return credential
 }

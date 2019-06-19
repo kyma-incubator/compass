@@ -14,3 +14,10 @@ type EventAPIDefinitionInput struct {
 	Description *string            `json:"description"`
 	// TODO: Replace with actual model
 }
+
+func (e *EventAPIDefinitionInput) ToEventAPIDefinition() *EventAPIDefinition {
+	// TODO: Replace with actual model
+	return &EventAPIDefinition{
+
+	}
+}

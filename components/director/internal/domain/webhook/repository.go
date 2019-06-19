@@ -1,36 +1,26 @@
 package webhook
 
 import (
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
 type inMemoryRepository struct {
-	store map[string]*model.Webhook
+	store map[string]*model.ApplicationWebhook
 }
 
 func NewRepository() *inMemoryRepository {
-	return &inMemoryRepository{store: make(map[string]*model.Webhook)}
+	return &inMemoryRepository{store: make(map[string]*model.ApplicationWebhook)}
 }
 
-func (r *inMemoryRepository) GetByID(id string) (*model.Webhook, error) {
-	panic("not implemented")
+func (inMemoryRepository) ListByApplicationID(applicationID string) ([]*model.ApplicationWebhook, error) {
+	panic("implement me")
 }
 
-// TODO: Make filtering and paging
-func (r *inMemoryRepository) List(filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) ([]*model.Webhook, error) {
-	panic("not implemented")
+func (inMemoryRepository) CreateMany(items []*model.ApplicationWebhook) error {
+	panic("implement me")
 }
 
-func (r *inMemoryRepository) Create(item *model.ApplicationWebhookInput) error {
-	panic("not implemented")
-}
-
-func (r *inMemoryRepository) Update(item *model.Webhook) error {
-	panic("not implemented")
-}
-
-func (r *inMemoryRepository) Delete(item *model.Webhook) error {
-	panic("not implemented")
+func (inMemoryRepository) DeleteAllByApplicationID(id string) error {
+	panic("implement me")
 }
 
