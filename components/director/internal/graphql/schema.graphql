@@ -290,11 +290,12 @@ type CredentialRequestAuth {
 
 type CSRFTokenCredentialRequestAuth {
     tokenEndpointURL: String!
-    auth: Auth
+    credential: CredentialData!
+    additionalHeaders: HttpHeaders
+    additionalQueryParams: QueryParams
 }
 
 # HealthCheck
-
 
 enum HealthCheckStatusCondition {
     SUCCEEDED
@@ -417,7 +418,7 @@ input DocumentInput {
 
 input AuthInput {
     credential: CredentialDataInput!
-    additionalHeaders: HttpHeaders #
+    additionalHeaders: HttpHeaders
     additionalQueryParams: QueryParams
     requestAuth: CredentialRequestAuthInput
 }
@@ -428,7 +429,9 @@ input CredentialRequestAuthInput {
 
 input CSRFTokenCredentialRequestAuthInput {
     tokenEndpointURL: String!
-    auth: AuthInput
+    credential: CredentialDataInput!
+    additionalHeaders: HttpHeaders
+    additionalQueryParams: QueryParams
 }
 
 input CredentialDataInput {

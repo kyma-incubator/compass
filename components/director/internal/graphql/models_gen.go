@@ -140,13 +140,17 @@ type BasicCredentialDataInput struct {
 }
 
 type CSRFTokenCredentialRequestAuth struct {
-	TokenEndpointURL string `json:"tokenEndpointURL"`
-	Auth             *Auth  `json:"auth"`
+	TokenEndpointURL      string         `json:"tokenEndpointURL"`
+	Credential            CredentialData `json:"credential"`
+	AdditionalHeaders     *HttpHeaders   `json:"additionalHeaders"`
+	AdditionalQueryParams *QueryParams   `json:"additionalQueryParams"`
 }
 
 type CSRFTokenCredentialRequestAuthInput struct {
-	TokenEndpointURL string     `json:"tokenEndpointURL"`
-	Auth             *AuthInput `json:"auth"`
+	TokenEndpointURL      string               `json:"tokenEndpointURL"`
+	Credential            *CredentialDataInput `json:"credential"`
+	AdditionalHeaders     *HttpHeaders         `json:"additionalHeaders"`
+	AdditionalQueryParams *QueryParams         `json:"additionalQueryParams"`
 }
 
 type CredentialDataInput struct {

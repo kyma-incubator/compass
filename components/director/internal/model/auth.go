@@ -13,27 +13,25 @@ type CredentialRequestAuth struct {
 
 type CSRFTokenCredentialRequestAuth struct {
 	TokenEndpointURL string
-	Auth             *Auth
+	Credential            CredentialData
+	AdditionalHeaders     map[string][]string
+	AdditionalQueryParams map[string][]string
 }
 
-type CredentialData interface {
-	IsCredentialData()
+type CredentialData struct {
+	Basic *BasicCredentialData
+	Oauth *OAuthCredentialData
 }
 
 type BasicCredentialData struct {
 	Username string
 	Password string
 }
-
-func (BasicCredentialData) IsCredentialData() {}
-
 type OAuthCredentialData struct {
 	ClientID     string
 	ClientSecret string
 	URL          string
 }
-
-func (OAuthCredentialData) IsCredentialData() {}
 
 type AuthInput struct {
 	Credential            *CredentialDataInput
@@ -64,5 +62,7 @@ type CredentialRequestAuthInput struct {
 
 type CSRFTokenCredentialRequestAuthInput struct {
 	TokenEndpointURL string
-	Auth             *AuthInput
+	Credential            *CredentialDataInput
+	AdditionalHeaders     map[string][]string
+	AdditionalQueryParams map[string][]string
 }

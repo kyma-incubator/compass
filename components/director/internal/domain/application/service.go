@@ -18,20 +18,52 @@ type ApplicationRepository interface {
 	Delete(item *model.Application) error
 }
 
-type service struct {
-	appRepo ApplicationRepository
+//go:generate mockery -name=DocumentRepository -output=automock -outpkg=automock -case=underscore
+type DocumentRepository interface {
+	ListByApplicationID(applicationID string) ([]*model.Document, error)
+	CreateMany(item []*model.Document) error
+	DeleteAllByApplicationID(id string) error
 }
 
-func NewService(repo ApplicationRepository) *service {
-	return &service{appRepo: repo}
+//go:generate mockery -name=WebhookRepository -output=automock -outpkg=automock -case=underscore
+type WebhookRepository interface {
+	ListByApplicationID(applicationID string) ([]*model.ApplicationWebhook, error)
+	CreateMany(item []*model.ApplicationWebhook) error
+	DeleteAllByApplicationID(id string) error
+}
+
+//go:generate mockery -name=APIRepository -output=automock -outpkg=automock -case=underscore
+type APIRepository interface {
+	ListByApplicationID(applicationID string) ([]*model.APIDefinition, error)
+	CreateMany(item []*model.APIDefinition) error
+	DeleteAllByApplicationID(id string) error
+}
+
+//go:generate mockery -name=DocumentRepository -output=automock -outpkg=automock -case=underscore
+type EventAPIRepository interface {
+	ListByApplicationID(applicationID string) ([]*model.EventAPIDefinition, error)
+	CreateMany(item *model.EventAPIDefinition) error
+	DeleteAllByApplicationID(id string) error
+}
+
+type service struct {
+	app ApplicationRepository
+	document DocumentRepository
+	webhook WebhookRepository
+	api APIRepository
+	eventAPI EventAPIRepository
+}
+
+func NewService(app ApplicationRepository, document DocumentRepository, webhook WebhookRepository, api APIRepository, eventAPI EventAPIRepository) *service {
+	return &service{app: app, document: document, webhook: webhook, api: api, eventAPI: eventAPI}
 }
 
 func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
-	return s.appRepo.List(filter, pageSize, cursor)
+	return s.app.List(filter, pageSize, cursor)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.Application, error) {
-	app, err := s.appRepo.GetByID(id)
+	app, err := s.app.GetByID(id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Application with ID %s", id)
 	}
@@ -47,17 +79,25 @@ func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string
 	}
 
 	app := &model.Application{
-		ID:          id,
-		//Name:        in.Name,
-		//Description: in.Description,
-		Tenant:      applicationTenant,
-		//Labels:      in.Labels,
-		//Annotations: in.Annotations,
+		ID: id,
+		Name:        in.Name,
+		Description: in.Description,
+		Tenant: applicationTenant,
+		Labels:      in.Labels,
+		Annotations: in.Annotations,
+		HealthCheckURL: in.HealthCheckURL,
 	}
 
-	err = s.appRepo.Create(app)
+	err = s.app.Create(app)
 	if err != nil {
 		return "", err
+	}
+
+	for _, api := range in.Apis {
+		err = s.api.CreateMany(api)
+		if err != nil {
+			return "", errors.Wrapf(err, "while creating API")
+		}
 	}
 
 	return id, nil
@@ -69,26 +109,54 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationInp
 		return errors.Wrap(err, "while getting Application")
 	}
 
-	//app.Name = in.Name
-	//app.Description = in.Description
-	//app.Labels = in.Labels
-	//app.Annotations = in.Annotations
+	app.Name = in.Name
+	app.Description = in.Description
+	app.Labels = in.Labels
+	app.Annotations = in.Annotations
+	app.HealthCheckURL = in.HealthCheckURL
 
-	err = s.appRepo.Update(app)
+	err = s.app.Update(app)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Application")
 	}
 
+
+
+
 	return nil
+}
+
+func (s *service) upsertApplication(id string, in model.ApplicationInput) error {
+
 }
 
 func (s *service) Delete(ctx context.Context, id string) error {
 	app, err := s.Get(ctx, id)
 	if err != nil {
-		return errors.Wrap(err, "while getting Application")
+		return errors.Wrapf(err, "while getting Application with ID %s", id)
 	}
 
-	return s.appRepo.Delete(app)
+	err = s.api.DeleteAllByApplicationID(id)
+	if err != nil {
+		return errors.Wrapf(err, "while deleting APIs for application %s", id)
+	}
+
+	err = s.eventAPI.DeleteAllByApplicationID(id)
+	if err != nil {
+		return errors.Wrapf(err, "while deleting EventAPIs for application %s", id)
+	}
+
+	err = s.document.DeleteAllByApplicationID(id)
+	if err != nil {
+		return errors.Wrapf(err, "while deleting Documents for application %s", id)
+	}
+
+	err = s.webhook.DeleteAllByApplicationID(id)
+	if err != nil {
+		return errors.Wrapf(err, "while deleting Webhooks for application %s", id)
+	}
+
+	return s.app.Delete(app)
 }
 
 func (s *service) AddLabel(ctx context.Context, applicationID string, key string, values []string) error {
@@ -99,7 +167,7 @@ func (s *service) AddLabel(ctx context.Context, applicationID string, key string
 
 	app.AddLabel(key, values)
 
-	err = s.appRepo.Update(app)
+	err = s.app.Update(app)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Application")
 	}
@@ -118,7 +186,7 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 		return errors.Wrapf(err, "while deleting label with key %s", key)
 	}
 
-	err = s.appRepo.Update(app)
+	err = s.app.Update(app)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Application")
 	}
@@ -137,7 +205,7 @@ func (s *service) AddAnnotation(ctx context.Context, applicationID string, key s
 		return errors.Wrapf(err, "while adding new annotation %s", key)
 	}
 
-	err = s.appRepo.Update(app)
+	err = s.app.Update(app)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Application")
 	}
@@ -156,7 +224,7 @@ func (s *service) DeleteAnnotation(ctx context.Context, applicationID string, ke
 		return errors.Wrapf(err, "while deleting annotation with key %s", key)
 	}
 
-	err = s.appRepo.Update(app)
+	err = s.app.Update(app)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Application with ID %s", applicationID)
 	}

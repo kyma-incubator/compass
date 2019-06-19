@@ -121,8 +121,10 @@ type ComplexityRoot struct {
 	}
 
 	CSRFTokenCredentialRequestAuth struct {
-		Auth             func(childComplexity int) int
-		TokenEndpointURL func(childComplexity int) int
+		AdditionalHeaders     func(childComplexity int) int
+		AdditionalQueryParams func(childComplexity int) int
+		Credential            func(childComplexity int) int
+		TokenEndpointURL      func(childComplexity int) int
 	}
 
 	CredentialRequestAuth struct {
@@ -698,12 +700,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.BasicCredentialData.Username(childComplexity), true
 
-	case "CSRFTokenCredentialRequestAuth.auth":
-		if e.complexity.CSRFTokenCredentialRequestAuth.Auth == nil {
+	case "CSRFTokenCredentialRequestAuth.additionalHeaders":
+		if e.complexity.CSRFTokenCredentialRequestAuth.AdditionalHeaders == nil {
 			break
 		}
 
-		return e.complexity.CSRFTokenCredentialRequestAuth.Auth(childComplexity), true
+		return e.complexity.CSRFTokenCredentialRequestAuth.AdditionalHeaders(childComplexity), true
+
+	case "CSRFTokenCredentialRequestAuth.additionalQueryParams":
+		if e.complexity.CSRFTokenCredentialRequestAuth.AdditionalQueryParams == nil {
+			break
+		}
+
+		return e.complexity.CSRFTokenCredentialRequestAuth.AdditionalQueryParams(childComplexity), true
+
+	case "CSRFTokenCredentialRequestAuth.credential":
+		if e.complexity.CSRFTokenCredentialRequestAuth.Credential == nil {
+			break
+		}
+
+		return e.complexity.CSRFTokenCredentialRequestAuth.Credential(childComplexity), true
 
 	case "CSRFTokenCredentialRequestAuth.tokenEndpointURL":
 		if e.complexity.CSRFTokenCredentialRequestAuth.TokenEndpointURL == nil {
@@ -1954,11 +1970,12 @@ type CredentialRequestAuth {
 
 type CSRFTokenCredentialRequestAuth {
     tokenEndpointURL: String!
-    auth: Auth
+    credential: CredentialData!
+    additionalHeaders: HttpHeaders
+    additionalQueryParams: QueryParams
 }
 
 # HealthCheck
-
 
 enum HealthCheckStatusCondition {
     SUCCEEDED
@@ -2081,7 +2098,7 @@ input DocumentInput {
 
 input AuthInput {
     credential: CredentialDataInput!
-    additionalHeaders: HttpHeaders #
+    additionalHeaders: HttpHeaders
     additionalQueryParams: QueryParams
     requestAuth: CredentialRequestAuthInput
 }
@@ -2092,7 +2109,9 @@ input CredentialRequestAuthInput {
 
 input CSRFTokenCredentialRequestAuthInput {
     tokenEndpointURL: String!
-    auth: AuthInput
+    credential: CredentialDataInput!
+    additionalHeaders: HttpHeaders
+    additionalQueryParams: QueryParams
 }
 
 input CredentialDataInput {
@@ -4401,7 +4420,7 @@ func (ec *executionContext) _CSRFTokenCredentialRequestAuth_tokenEndpointURL(ctx
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _CSRFTokenCredentialRequestAuth_auth(ctx context.Context, field graphql.CollectedField, obj *CSRFTokenCredentialRequestAuth) graphql.Marshaler {
+func (ec *executionContext) _CSRFTokenCredentialRequestAuth_credential(ctx context.Context, field graphql.CollectedField, obj *CSRFTokenCredentialRequestAuth) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -4414,15 +4433,66 @@ func (ec *executionContext) _CSRFTokenCredentialRequestAuth_auth(ctx context.Con
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Auth, nil
+		return obj.Credential, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(CredentialData)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNCredentialData2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgraphqlᚐCredentialData(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _CSRFTokenCredentialRequestAuth_additionalHeaders(ctx context.Context, field graphql.CollectedField, obj *CSRFTokenCredentialRequestAuth) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "CSRFTokenCredentialRequestAuth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AdditionalHeaders, nil
 	})
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*Auth)
+	res := resTmp.(*HttpHeaders)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgraphqlᚐAuth(ctx, field.Selections, res)
+	return ec.marshalOHttpHeaders2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgraphqlᚐHttpHeaders(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _CSRFTokenCredentialRequestAuth_additionalQueryParams(ctx context.Context, field graphql.CollectedField, obj *CSRFTokenCredentialRequestAuth) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "CSRFTokenCredentialRequestAuth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AdditionalQueryParams, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*QueryParams)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOQueryParams2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgraphqlᚐQueryParams(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _CredentialRequestAuth_csrf(ctx context.Context, field graphql.CollectedField, obj *CredentialRequestAuth) graphql.Marshaler {
@@ -8395,9 +8465,21 @@ func (ec *executionContext) unmarshalInputCSRFTokenCredentialRequestAuthInput(ct
 			if err != nil {
 				return it, err
 			}
-		case "auth":
+		case "credential":
 			var err error
-			it.Auth, err = ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgraphqlᚐAuthInput(ctx, v)
+			it.Credential, err = ec.unmarshalNCredentialDataInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgraphqlᚐCredentialDataInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "additionalHeaders":
+			var err error
+			it.AdditionalHeaders, err = ec.unmarshalOHttpHeaders2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgraphqlᚐHttpHeaders(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "additionalQueryParams":
+			var err error
+			it.AdditionalQueryParams, err = ec.unmarshalOQueryParams2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋinternalᚋgraphqlᚐQueryParams(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9262,8 +9344,15 @@ func (ec *executionContext) _CSRFTokenCredentialRequestAuth(ctx context.Context,
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "auth":
-			out.Values[i] = ec._CSRFTokenCredentialRequestAuth_auth(ctx, field, obj)
+		case "credential":
+			out.Values[i] = ec._CSRFTokenCredentialRequestAuth_credential(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "additionalHeaders":
+			out.Values[i] = ec._CSRFTokenCredentialRequestAuth_additionalHeaders(ctx, field, obj)
+		case "additionalQueryParams":
+			out.Values[i] = ec._CSRFTokenCredentialRequestAuth_additionalQueryParams(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

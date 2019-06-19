@@ -35,10 +35,10 @@ type Resolver struct {
 	converter RuntimeConverter
 }
 
-func NewResolver(svc RuntimeService) *Resolver {
+func NewResolver(svc RuntimeService, conv RuntimeConverter) *Resolver {
 	return &Resolver{
 		svc:       svc,
-		converter: &converter{},
+		converter: conv,
 	}
 }
 

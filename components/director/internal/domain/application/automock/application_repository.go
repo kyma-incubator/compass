@@ -11,11 +11,11 @@ type ApplicationRepository struct {
 }
 
 // Create provides a mock function with given fields: item
-func (_m *ApplicationRepository) Create(item *model.Application) error {
+func (_m *ApplicationRepository) Create(item *model.ApplicationInput) error {
 	ret := _m.Called(item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*model.Application) error); ok {
+	if rf, ok := ret.Get(0).(func(*model.ApplicationInput) error); ok {
 		r0 = rf(item)
 	} else {
 		r0 = ret.Error(0)
@@ -85,11 +85,11 @@ func (_m *ApplicationRepository) List(filter []*labelfilter.LabelFilter, pageSiz
 }
 
 // Update provides a mock function with given fields: item
-func (_m *ApplicationRepository) Update(item *model.Application) error {
+func (_m *ApplicationRepository) Update(item *model.ApplicationInput) error {
 	ret := _m.Called(item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*model.Application) error); ok {
+	if rf, ok := ret.Get(0).(func(*model.ApplicationInput) error); ok {
 		r0 = rf(item)
 	} else {
 		r0 = ret.Error(0)

@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 
@@ -26,6 +27,10 @@ type RootResolver struct {
 }
 
 func NewRootResolver() *RootResolver {
+	authConverter := auth.NewConverter()
+
+	runtimeConverter := runtime.NewConverter(authConverter)
+
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewRepository()
 	applicationRepo := application.NewRepository()
@@ -43,7 +48,7 @@ func NewRootResolver() *RootResolver {
 		api:         api.NewResolver(apiSvc),
 		eventAPI:    eventapi.NewResolver(eventAPISvc),
 		doc:         document.NewResolver(docSvc),
-		runtime:     runtime.NewResolver(runtimeSvc),
+		runtime:     runtime.NewResolver(runtimeSvc, runtimeConverter),
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
 	}
 }
