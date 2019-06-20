@@ -112,4 +112,15 @@ type ApplicationInput struct {
 	Documents      []*DocumentInput
 }
 
+func (i *ApplicationInput) ToApplication(id, tenant string) *Application {
+	return &Application{
+		ID:             id,
+		Name:           i.Name,
+		Description:    i.Description,
+		Tenant:         tenant,
+		Labels:         i.Labels,
+		Annotations:    i.Annotations,
+		HealthCheckURL: i.HealthCheckURL,
+	}
+}
 

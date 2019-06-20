@@ -274,3 +274,7 @@ func TestApplication_DeleteAnnotation(t *testing.T) {
 		})
 	}
 }
+
+func TestApplicationInput_ToApplication(t *testing.T) {
+	// TODO: Implement it
+}

@@ -73,20 +73,12 @@ func (s *service) Get(ctx context.Context, id string) (*model.Application, error
 
 func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string, error) {
 	id := uuid.New().String()
-	applicationTenant, err := tenant.LoadFromContext(ctx)
+	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	app := &model.Application{
-		ID:             id,
-		Name:           in.Name,
-		Description:    in.Description,
-		Tenant:         applicationTenant,
-		Labels:         in.Labels,
-		Annotations:    in.Annotations,
-		HealthCheckURL: in.HealthCheckURL,
-	}
+	app := in.ToApplication(id, appTenant)
 
 	err = s.app.Create(app)
 	if err != nil {
@@ -107,11 +99,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationInp
 		return errors.Wrap(err, "while getting Application")
 	}
 
-	app.Name = in.Name
-	app.Description = in.Description
-	app.Labels = in.Labels
-	app.Annotations = in.Annotations
-	app.HealthCheckURL = in.HealthCheckURL
+	app = in.ToApplication(app.ID, app.Tenant)
 
 	err = s.app.Update(app)
 	if err != nil {
