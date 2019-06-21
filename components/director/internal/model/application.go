@@ -114,6 +114,10 @@ type ApplicationInput struct {
 }
 
 func (i *ApplicationInput) ToApplication(id, tenant string) *Application {
+	if i == nil {
+		return nil
+	}
+
 	return &Application{
 		ID:             id,
 		Name:           i.Name,
