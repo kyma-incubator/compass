@@ -2,8 +2,9 @@ package graphql
 
 import (
 	"io"
-	"log"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
 )
@@ -29,6 +30,6 @@ func (y *Timestamp) UnmarshalGQL(v interface{}) error {
 func (y Timestamp) MarshalGQL(w io.Writer) {
 	_, err := w.Write([]byte(time.Time(y).Format(time.RFC3339)))
 	if err != nil {
-		log.Printf("while writing %T: %s", y, err)
+		log.Errorf("while writing %T: %s", y, err)
 	}
 }

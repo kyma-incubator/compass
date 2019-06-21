@@ -290,11 +290,12 @@ type CredentialRequestAuth {
 
 type CSRFTokenCredentialRequestAuth {
     tokenEndpointURL: String!
-    auth: Auth
+    credential: CredentialData!
+    additionalHeaders: HttpHeaders
+    additionalQueryParams: QueryParams
 }
 
 # HealthCheck
-
 
 enum HealthCheckStatusCondition {
     SUCCEEDED
@@ -417,7 +418,7 @@ input DocumentInput {
 
 input AuthInput {
     credential: CredentialDataInput!
-    additionalHeaders: HttpHeaders #
+    additionalHeaders: HttpHeaders
     additionalQueryParams: QueryParams
     requestAuth: CredentialRequestAuthInput
 }
@@ -428,7 +429,9 @@ input CredentialRequestAuthInput {
 
 input CSRFTokenCredentialRequestAuthInput {
     tokenEndpointURL: String!
-    auth: AuthInput
+    credential: CredentialDataInput!
+    additionalHeaders: HttpHeaders
+    additionalQueryParams: QueryParams
 }
 
 input CredentialDataInput {
@@ -476,12 +479,15 @@ type Mutation {
     updateApplication(id: ID!, in: ApplicationInput!): Application!
     deleteApplication(id: ID!): Application
 
-    addApplicationLabel(applicationID: ID!, label: String!, values: [String!]!): [String!]!
+    addApplicationLabel(applicationID: ID!, key: String!, values: [String!]!): Label!
     # if application does not exist, return error
-    deleteApplicationLabel(applicationID: ID!, label: String!, values: [String!]!): [String!]
+    deleteApplicationLabel(applicationID: ID!, key: String!, values: [String!]!): Label
 
-    addApplicationAnnotation(applicationID: ID!, annotation: String!, value: String!): String!
-    deleteApplicationAnnotation(applicationID: ID!, annotation: String!): String
+    """If the annotation key exists, it returns an error."""
+    addApplicationAnnotation(applicationID: ID!, key: String!, value: Any!): Annotation!
+
+    """If the annotation key exists, it returns an error."""
+    deleteApplicationAnnotation(applicationID: ID!, key: String!): Annotation
 
     addApplicationWebhook(applicationID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
     updateApplicationWebhook(webhookID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!

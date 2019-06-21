@@ -3,6 +3,8 @@ package domain
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
@@ -26,10 +28,19 @@ type RootResolver struct {
 }
 
 func NewRootResolver() *RootResolver {
-	healthcheckRepo := healthcheck.NewRepository()
-	runtimeRepo := runtime.NewRuntimeRepository()
+	authConverter := auth.NewConverter()
 
-	appSvc := application.NewService()
+	runtimeConverter := runtime.NewConverter(authConverter)
+
+	healthcheckRepo := healthcheck.NewRepository()
+	runtimeRepo := runtime.NewRepository()
+	applicationRepo := application.NewRepository()
+	webhookRepo := webhook.NewRepository()
+	apiRepo := api.NewRepository()
+	eventAPIRepo := eventapi.NewRepository()
+	documentRepo := document.NewRepository()
+
+	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo)
 	apiSvc := api.NewService()
 	eventAPISvc := eventapi.NewService()
 	webhookSvc := webhook.NewService()
@@ -42,7 +53,7 @@ func NewRootResolver() *RootResolver {
 		api:         api.NewResolver(apiSvc),
 		eventAPI:    eventapi.NewResolver(eventAPISvc),
 		doc:         document.NewResolver(docSvc),
-		runtime:     runtime.NewResolver(runtimeSvc),
+		runtime:     runtime.NewResolver(runtimeSvc, runtimeConverter),
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
 	}
 }
@@ -91,17 +102,17 @@ func (r *mutationResolver) UpdateApplication(ctx context.Context, id string, in 
 func (r *mutationResolver) DeleteApplication(ctx context.Context, id string) (*graphql.Application, error) {
 	return r.app.DeleteApplication(ctx, id)
 }
-func (r *mutationResolver) AddApplicationLabel(ctx context.Context, applicationID string, label string, values []string) ([]string, error) {
-	return r.app.AddApplicationLabel(ctx, applicationID, label, values)
+func (r *mutationResolver) AddApplicationLabel(ctx context.Context, applicationID string, key string, values []string) (*graphql.Label, error) {
+	return r.app.AddApplicationLabel(ctx, applicationID, key, values)
 }
-func (r *mutationResolver) DeleteApplicationLabel(ctx context.Context, applicationID string, label string, values []string) ([]string, error) {
-	return r.app.DeleteApplicationLabel(ctx, applicationID, label, values)
+func (r *mutationResolver) DeleteApplicationLabel(ctx context.Context, applicationID string, key string, values []string) (*graphql.Label, error) {
+	return r.app.DeleteApplicationLabel(ctx, applicationID, key, values)
 }
-func (r *mutationResolver) AddApplicationAnnotation(ctx context.Context, applicationID string, annotation string, value string) (string, error) {
-	return r.app.AddApplicationAnnotation(ctx, applicationID, annotation, value)
+func (r *mutationResolver) AddApplicationAnnotation(ctx context.Context, applicationID string, key string, value interface{}) (*graphql.Annotation, error) {
+	return r.app.AddApplicationAnnotation(ctx, applicationID, key, value)
 }
-func (r *mutationResolver) DeleteApplicationAnnotation(ctx context.Context, applicationID string, annotation string) (*string, error) {
-	return r.app.DeleteApplicationAnnotation(ctx, applicationID, annotation)
+func (r *mutationResolver) DeleteApplicationAnnotation(ctx context.Context, applicationID string, key string) (*graphql.Annotation, error) {
+	return r.app.DeleteApplicationAnnotation(ctx, applicationID, key)
 }
 func (r *mutationResolver) AddApplicationWebhook(ctx context.Context, applicationID string, in graphql.ApplicationWebhookInput) (*graphql.ApplicationWebhook, error) {
 	return r.app.AddApplicationWebhook(ctx, applicationID, in)

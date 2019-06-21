@@ -2,8 +2,9 @@ package graphql
 
 import (
 	"io"
-	"log"
 	"strconv"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
 )
@@ -24,6 +25,6 @@ func (y *Tenant) UnmarshalGQL(v interface{}) error {
 func (y Tenant) MarshalGQL(w io.Writer) {
 	_, err := io.WriteString(w, strconv.Quote(string(y)))
 	if err != nil {
-		log.Printf("while writing %T: %s", y, err)
+		log.Errorf("while writing %T: %s", y, err)
 	}
 }

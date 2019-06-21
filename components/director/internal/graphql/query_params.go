@@ -2,7 +2,8 @@ package graphql
 
 import (
 	"io"
-	"log"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
 )
@@ -23,7 +24,7 @@ func (y *QueryParams) UnmarshalGQL(v interface{}) error {
 func (y QueryParams) MarshalGQL(w io.Writer) {
 	err := scalar.WriteMarshalled(y, w)
 	if err != nil {
-		log.Printf("while writing %T: %s", y, err)
+		log.Errorf("while writing %T: %s", y, err)
 		return
 	}
 }

@@ -2,7 +2,7 @@ mutation {
     createApplication(
         in: {
             name: "EC",
-            description: "TODO",
+            description: "Lorem ipsum",
             labels: "",
             annotations: "",
             webhooks: [{type:CONFIGURATION_CHANGED,url: "",auth: {credential: { basic: {

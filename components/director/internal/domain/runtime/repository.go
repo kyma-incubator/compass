@@ -10,7 +10,7 @@ type inMemoryRepository struct {
 	store map[string]*model.Runtime
 }
 
-func NewRuntimeRepository() *inMemoryRepository {
+func NewRepository() *inMemoryRepository {
 	return &inMemoryRepository{store: make(map[string]*model.Runtime)}
 }
 

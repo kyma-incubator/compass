@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	rtmautomock "github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/graphql"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -11,16 +13,26 @@ import (
 )
 
 func TestConverter_ToGraphQL(t *testing.T) {
+	allDetailsInput := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum")
+	allDetailsExpected := fixDetailedGQLRuntime(t, "foo", "Foo", "Lorem ipsum")
+	var modelAuth *model.Auth
+
 	// given
 	testCases := []struct {
-		Name     string
-		Input    *model.Runtime
-		Expected *graphql.Runtime
+		Name            string
+		Input           *model.Runtime
+		Expected        *graphql.Runtime
+		AuthConverterFn func() *rtmautomock.AuthConverter
 	}{
 		{
 			Name:     "All properties given",
-			Input:    fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum"),
-			Expected: fixDetailedGQLRuntime(t, "foo", "Foo", "Lorem ipsum"),
+			Input:    allDetailsInput,
+			Expected: allDetailsExpected,
+			AuthConverterFn: func() *rtmautomock.AuthConverter {
+				conv := &rtmautomock.AuthConverter{}
+				conv.On("ToGraphQL", allDetailsInput.AgentAuth).Return(allDetailsExpected.AgentAuth).Once()
+				return conv
+			},
 		},
 		{
 			Name:  "Empty",
@@ -30,28 +42,45 @@ func TestConverter_ToGraphQL(t *testing.T) {
 					Condition: graphql.RuntimeStatusConditionInitial,
 				},
 			},
+			AuthConverterFn: func() *rtmautomock.AuthConverter {
+				conv := &rtmautomock.AuthConverter{}
+				conv.On("ToGraphQL", modelAuth).Return(nil).Once()
+				return conv
+			},
 		},
 		{
 			Name:     "Nil",
 			Input:    nil,
 			Expected: nil,
+			AuthConverterFn: func() *rtmautomock.AuthConverter {
+				conv := &rtmautomock.AuthConverter{}
+				return conv
+			},
 		},
 	}
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+			authConverter := testCase.AuthConverterFn()
+
 			// when
-			converter := runtime.NewConverter()
+			converter := runtime.NewConverter(authConverter)
 			res := converter.ToGraphQL(testCase.Input)
 
 			// then
 			assert.Equal(t, testCase.Expected, res)
+
+			authConverter.AssertExpectations(t)
 		})
 	}
 }
 
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// given
+	var modelAuth *model.Auth
+	authConverter := &rtmautomock.AuthConverter{}
+	authConverter.On("ToGraphQL", modelAuth).Return(nil)
+
 	input := []*model.Runtime{
 		fixModelRuntime("foo", "Foo", "Lorem ipsum"),
 		fixModelRuntime("bar", "Bar", "Dolor sit amet"),
@@ -69,7 +98,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	}
 
 	// when
-	converter := runtime.NewConverter()
+	converter := runtime.NewConverter(authConverter)
 	res := converter.MultipleToGraphQL(input)
 
 	// then
@@ -78,6 +107,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 
 func TestConverter_InputFromGraphQL(t *testing.T) {
 	// given
+	authConverter := &rtmautomock.AuthConverter{}
 	testCases := []struct {
 		Name     string
 		Input    graphql.RuntimeInput
@@ -98,7 +128,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 			// when
-			converter := runtime.NewConverter()
+			converter := runtime.NewConverter(authConverter)
 			res := converter.InputFromGraphQL(testCase.Input)
 
 			// then

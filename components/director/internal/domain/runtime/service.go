@@ -49,14 +49,7 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 		return "", errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	rtm := &model.Runtime{
-		ID:          id,
-		Name:        in.Name,
-		Description: in.Description,
-		Tenant:      runtimeTenant,
-		Labels:      in.Labels,
-		Annotations: in.Annotations,
-	}
+	rtm := in.ToRuntime(id, runtimeTenant)
 
 	err = s.repo.Create(rtm)
 	if err != nil {

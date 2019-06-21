@@ -35,10 +35,10 @@ type Resolver struct {
 	converter RuntimeConverter
 }
 
-func NewResolver(svc RuntimeService) *Resolver {
+func NewResolver(svc RuntimeService, conv RuntimeConverter) *Resolver {
 	return &Resolver{
 		svc:       svc,
-		converter: &converter{},
+		converter: conv,
 	}
 }
 
@@ -144,21 +144,19 @@ func (r *Resolver) AddRuntimeLabel(ctx context.Context, runtimeID string, key st
 	}, nil
 }
 func (r *Resolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string, values []string) (*graphql.Label, error) {
-	runtime, err := r.svc.Get(ctx, runtimeID)
+	err := r.svc.DeleteLabel(ctx, runtimeID, key, values)
 	if err != nil {
 		return nil, err
 	}
 
-	oldValues := runtime.Labels[key]
-
-	err = r.svc.DeleteLabel(ctx, runtimeID, key, values)
+	runtime, err := r.svc.Get(ctx, runtimeID)
 	if err != nil {
 		return nil, err
 	}
 
 	return &graphql.Label{
 		Key:    key,
-		Values: oldValues, //TODO: Should we pass new values, if someone just deletes a few of them?
+		Values: runtime.Labels[key],
 	}, nil
 }
 func (r *Resolver) AddRuntimeAnnotation(ctx context.Context, runtimeID string, key string, value interface{}) (*graphql.Annotation, error) {

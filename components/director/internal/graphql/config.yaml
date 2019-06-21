@@ -33,6 +33,7 @@ models:
   PageCursor:
     model: "github.com/kyma-incubator/compass/components/director/internal/graphql.PageCursor"
   Application:
+    model: "github.com/kyma-incubator/compass/components/director/internal/graphql.Application"
     fields:
       documents:
         resolver: true

@@ -12,25 +12,134 @@ type CredentialRequestAuth struct {
 }
 
 type CSRFTokenCredentialRequestAuth struct {
-	TokenEndpointURL string
-	Auth             *Auth
+	TokenEndpointURL      string
+	Credential            CredentialData
+	AdditionalHeaders     map[string][]string
+	AdditionalQueryParams map[string][]string
 }
 
-type CredentialData interface {
-	IsCredentialData()
+type CredentialData struct {
+	Basic *BasicCredentialData
+	Oauth *OAuthCredentialData
 }
 
 type BasicCredentialData struct {
 	Username string
 	Password string
 }
-
-func (BasicCredentialData) IsCredentialData() {}
-
 type OAuthCredentialData struct {
 	ClientID     string
 	ClientSecret string
 	URL          string
 }
 
-func (OAuthCredentialData) IsCredentialData() {}
+type AuthInput struct {
+	Credential            *CredentialDataInput
+	AdditionalHeaders     map[string][]string
+	AdditionalQueryParams map[string][]string
+	RequestAuth           *CredentialRequestAuthInput
+}
+
+func (i *AuthInput) ToAuth() *Auth {
+	var credential CredentialData
+	if i.Credential != nil {
+		credential = *i.Credential.ToCredentialData()
+	}
+
+	var requestAuth *CredentialRequestAuth
+	if i.RequestAuth != nil {
+		requestAuth = i.RequestAuth.ToCredentialRequestAuth()
+	}
+
+	return &Auth{
+		Credential:            credential,
+		AdditionalQueryParams: i.AdditionalQueryParams,
+		AdditionalHeaders:     i.AdditionalHeaders,
+		RequestAuth:           requestAuth,
+	}
+}
+
+type CredentialDataInput struct {
+	Basic *BasicCredentialDataInput
+	Oauth *OAuthCredentialDataInput
+}
+
+func (i *CredentialDataInput) ToCredentialData() *CredentialData {
+	var basic *BasicCredentialData
+	var oauth *OAuthCredentialData
+
+	if i.Basic != nil {
+		basic = i.Basic.ToBasicCredentialData()
+	}
+
+	if i.Oauth != nil {
+		oauth = i.Oauth.ToOAuthCredentialData()
+	}
+
+	return &CredentialData{
+		Basic: basic,
+		Oauth: oauth,
+	}
+}
+
+type BasicCredentialDataInput struct {
+	Username string
+	Password string
+}
+
+func (i *BasicCredentialDataInput) ToBasicCredentialData() *BasicCredentialData {
+	return &BasicCredentialData{
+		Username: i.Username,
+		Password: i.Password,
+	}
+}
+
+type OAuthCredentialDataInput struct {
+	ClientID     string
+	ClientSecret string
+	URL          string
+}
+
+func (i *OAuthCredentialDataInput) ToOAuthCredentialData() *OAuthCredentialData {
+	return &OAuthCredentialData{
+		ClientID:     i.ClientID,
+		ClientSecret: i.ClientSecret,
+		URL:          i.URL,
+	}
+}
+
+type CredentialRequestAuthInput struct {
+	Csrf *CSRFTokenCredentialRequestAuthInput
+}
+
+func (i *CredentialRequestAuthInput) ToCredentialRequestAuth() *CredentialRequestAuth {
+	var csrf *CSRFTokenCredentialRequestAuth
+	if i.Csrf != nil {
+		csrf = i.Csrf.ToCSRFTokenCredentialRequestAuth()
+	}
+
+	return &CredentialRequestAuth{
+		Csrf: csrf,
+	}
+}
+
+type CSRFTokenCredentialRequestAuthInput struct {
+	TokenEndpointURL      string
+	Credential            *CredentialDataInput
+	AdditionalHeaders     map[string][]string
+	AdditionalQueryParams map[string][]string
+}
+
+func (i *CSRFTokenCredentialRequestAuthInput) ToCSRFTokenCredentialRequestAuth() *CSRFTokenCredentialRequestAuth {
+	var credential CredentialData
+	if i.Credential != nil {
+		credential = *i.Credential.ToCredentialData()
+	}
+
+	return &CSRFTokenCredentialRequestAuth{
+		Credential:            credential,
+		AdditionalHeaders:     i.AdditionalHeaders,
+		AdditionalQueryParams: i.AdditionalQueryParams,
+		TokenEndpointURL:      i.TokenEndpointURL,
+	}
+}

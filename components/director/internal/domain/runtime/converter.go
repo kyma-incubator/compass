@@ -5,7 +5,18 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-type converter struct{}
+//go:generate mockery -name=AuthConverter -output=automock -outpkg=automock -case=underscore
+type AuthConverter interface {
+	ToGraphQL(in *model.Auth) *graphql.Auth
+}
+
+type converter struct {
+	auth AuthConverter
+}
+
+func NewConverter(auth AuthConverter) *converter {
+	return &converter{auth: auth}
+}
 
 func (c *converter) ToGraphQL(in *model.Runtime) *graphql.Runtime {
 	if in == nil {
@@ -20,7 +31,7 @@ func (c *converter) ToGraphQL(in *model.Runtime) *graphql.Runtime {
 		Tenant:      graphql.Tenant(in.Tenant),
 		Annotations: in.Annotations,
 		Labels:      in.Labels,
-		AgentAuth:   nil, //TODO: https://github.com/kyma-incubator/compass/issues/67
+		AgentAuth:   c.auth.ToGraphQL(in.AgentAuth),
 	}
 }
 

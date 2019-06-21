@@ -99,12 +99,27 @@ func fixDetailedModelRuntime(t *testing.T, id, name, description string) *model.
 		Labels: map[string][]string{
 			"test": {"val", "val2"},
 		},
+		AgentAuth: &model.Auth{
+			AdditionalHeaders: map[string][]string{
+				"test": {"bar"},
+			},
+			Credential: model.CredentialData{
+				Basic: &model.BasicCredentialData{
+					Username: "foo",
+					Password: "bar",
+				},
+			},
+		},
 	}
 }
 
 func fixDetailedGQLRuntime(t *testing.T, id, name, description string) *graphql.Runtime {
 	time, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
+
+	headers := graphql.HttpHeaders{
+		"test": {"bar"},
+	}
 
 	return &graphql.Runtime{
 		ID: id,
@@ -120,6 +135,13 @@ func fixDetailedGQLRuntime(t *testing.T, id, name, description string) *graphql.
 		},
 		Labels: map[string][]string{
 			"test": {"val", "val2"},
+		},
+		AgentAuth: &graphql.Auth{
+			AdditionalHeaders: &headers,
+			Credential: graphql.BasicCredentialData{
+				Username: "foo",
+				Password: "bar",
+			},
 		},
 	}
 }
