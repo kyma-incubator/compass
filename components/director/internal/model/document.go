@@ -1,22 +1,56 @@
 package model
 
+import (
+	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+)
+
 type Document struct {
-	ID    string  `json:"id"`
-	Title string  `json:"title"`
-	Kind  *string `json:"kind"`
-	// TODO: Replace with actual model
+	ApplicationID string
+	ID            string
+	Title         string
+	Format        DocumentFormat
+	// for example Service Class, API etc
+	Kind         *string
+	Data         *string
+	FetchRequest *FetchRequest
 }
 
 type DocumentInput struct {
-	Title       string  `json:"title"`
-	DisplayName string  `json:"displayName"`
-	Description string  `json:"description"`
-	Kind        *string `json:"kind"`
-	Data        *[]byte `json:"data"`
-	// TODO: Replace with actual model
+	Title        string
+	DisplayName  string
+	Description  string
+	Format       DocumentFormat
+	Kind         *string
+	Data         *string
+	FetchRequest *FetchRequestInput
 }
 
-func (d *DocumentInput) ToDocument() *Document {
-	// TODO: Replace with actual model
-	return &Document{}
+type DocumentFormat string
+
+const (
+	DocumentFormatMarkdown DocumentFormat = "MARKDOWN"
+)
+
+type DocumentPage struct {
+	Data       []*Document
+	PageInfo   *pagination.Page
+	TotalCount int
+}
+
+func (d *DocumentInput) ToDocument(id, applicationID string) *Document {
+	if d == nil {
+		return nil
+	}
+
+	return &Document{
+		ApplicationID: applicationID,
+		ID:            id,
+		Title:         d.Title,
+		Format:        d.Format,
+		Kind:          d.Kind,
+		Data:          d.Data,
+		FetchRequest:  d.FetchRequest.ToFetchRequest(time.Now()),
+	}
 }

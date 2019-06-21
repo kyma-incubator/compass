@@ -5,16 +5,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-//go:generate mockery -name=WebhookConverter -output=automock -outpkg=automock -case=underscore
-type WebhookConverter interface {
-	MultipleInputFromGraphQL(in []*graphql.ApplicationWebhookInput) []*model.ApplicationWebhookInput
-}
-
-//go:generate mockery -name=DocumentConverter -output=automock -outpkg=automock -case=underscore
-type DocumentConverter interface {
-	MultipleInputFromGraphQL(in []*graphql.DocumentInput) []*model.DocumentInput
-}
-
 //go:generate mockery -name=APIConverter -output=automock -outpkg=automock -case=underscore
 type APIConverter interface {
 	MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) []*model.APIDefinitionInput

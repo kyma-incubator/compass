@@ -2025,7 +2025,7 @@ input RuntimeInput {
 input FetchRequestInput {
     url: String!
     auth: AuthInput
-    mode: FetchMode
+    mode: FetchMode = SINGLE
     filter: String
 }
 
@@ -8660,6 +8660,10 @@ func (ec *executionContext) unmarshalInputEventAPISpecInput(ctx context.Context,
 func (ec *executionContext) unmarshalInputFetchRequestInput(ctx context.Context, v interface{}) (FetchRequestInput, error) {
 	var it FetchRequestInput
 	var asMap = v.(map[string]interface{})
+
+	if _, present := asMap["mode"]; !present {
+		asMap["mode"] = "SINGLE"
+	}
 
 	for k, v := range asMap {
 		switch k {

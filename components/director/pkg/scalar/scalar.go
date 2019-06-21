@@ -38,6 +38,16 @@ func ConvertToByteArray(in interface{}) ([]byte,error){
 		return nil, errors.New("input should not be nil")
 	}
 
+	//var value []byte
+	//switch v := in.(type) {
+	//case []byte:
+	//	value = v
+	//case string:
+	//	value = []byte(v)
+	//default:
+	//	return nil, errors.Errorf("can not convert input type %T to byte array", in)
+	//}
+
 	value, ok := in.([]byte)
 	if !ok {
 		return nil, errors.Errorf("unexpected input type: %T, should be byte array", in)

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/google/uuid"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -37,8 +39,9 @@ func TestService_Create(t *testing.T) {
 			{Name: "foo"}, {Name: "bar"},
 		},
 	}
+	id := "foo"
 
-	appModel := modelFromInput(modelInput)
+	appModel := modelFromInput(modelInput, id)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, "tenant")
@@ -62,7 +65,7 @@ func TestService_Create(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", appModel.Webhooks).Return(nil).Once()
+				repo.On("CreateMany", mock.Anything).Return(nil).Once()
 				return repo
 			},
 			APIRepoFn: func() *automock.APIRepository {
@@ -77,7 +80,7 @@ func TestService_Create(t *testing.T) {
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("CreateMany", appModel.Documents).Return(nil).Once()
+				repo.On("CreateMany", mock.Anything).Return(nil).Once()
 				return repo
 			},
 			Input:       modelInput,
@@ -147,7 +150,7 @@ func TestService_Update(t *testing.T) {
 	}
 	id := "foo"
 
-	appModel := modelFromInput(modelInput)
+	appModel := modelFromInput(modelInput, id)
 
 	inputApplicationModel := mock.MatchedBy(func(app *model.Application) bool {
 		return app.Name == modelInput.Name
@@ -1020,14 +1023,15 @@ type testModel struct {
 	Documents            []*model.Document
 }
 
-func modelFromInput(in model.ApplicationInput) testModel {
+func modelFromInput(in model.ApplicationInput, applicationID string) testModel {
 	applicationModelMatcherFn := func(app *model.Application) bool {
 		return app.Name == in.Name && app.Description == in.Description
 	}
 
 	var webhooksModel []*model.ApplicationWebhook
 	for _, item := range in.Webhooks {
-		webhooksModel = append(webhooksModel, item.ToWebhook())
+		id := uuid.New().String()
+		webhooksModel = append(webhooksModel, item.ToWebhook(id, applicationID))
 	}
 
 	var apisModel []*model.APIDefinition
@@ -1042,7 +1046,8 @@ func modelFromInput(in model.ApplicationInput) testModel {
 
 	var documentsModel []*model.Document
 	for _, item := range in.Documents {
-		documentsModel = append(documentsModel, item.ToDocument())
+		id := uuid.New().String()
+		documentsModel = append(documentsModel, item.ToDocument(id, applicationID))
 	}
 
 	return testModel{

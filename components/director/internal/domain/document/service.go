@@ -1,8 +1,72 @@
 package document
 
-type service struct {
+import (
+	"context"
+	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
+	"github.com/google/uuid"
+	"github.com/pkg/errors"
+)
+
+//go:generate mockery -name=DocumentRepository -output=automock -outpkg=automock -case=underscore
+type DocumentRepository interface {
+	GetByID(id string) (*model.Document, error)
+	ListByApplicationID(applicationID string, pageSize *int, cursor *string) (*model.DocumentPage, error)
+	Create(item *model.Document) error
+	Delete(item *model.Document) error
 }
 
-func NewService() *service {
-	return &service{}
+type service struct {
+	repo DocumentRepository
+}
+
+func NewService(repo DocumentRepository) *service {
+	return &service{
+		repo: repo,
+	}
+}
+
+func (s *service) Get(ctx context.Context, id string) (*model.Document, error) {
+	document, err := s.repo.GetByID(id)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Document with ID %s", id)
+	}
+
+	return document, nil
+}
+
+func (s *service) List(ctx context.Context, applicationID string, pageSize *int, cursor *string) (*model.DocumentPage, error) {
+	return s.repo.ListByApplicationID(applicationID, pageSize, cursor)
+}
+
+func (s *service) Create(ctx context.Context, applicationID string, in model.DocumentInput) (string, error) {
+	id := uuid.New().String()
+
+	document := &model.Document{
+		ApplicationID: applicationID,
+		ID:            id,
+		Title:         in.Title,
+		Format:        in.Format,
+		Kind:          in.Kind,
+		Data:          in.Data,
+		FetchRequest:  in.FetchRequest.ToFetchRequest(time.Now()),
+	}
+
+	err := s.repo.Create(document)
+	if err != nil {
+		return "", err
+	}
+
+	return id, nil
+}
+
+func (s *service) Delete(ctx context.Context, id string) error {
+	document, err := s.Get(ctx, id)
+	if err != nil {
+		return errors.Wrap(err, "while getting Document")
+	}
+
+	return s.repo.Delete(document)
 }

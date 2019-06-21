@@ -3,16 +3,15 @@ package domain
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventapi"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/healthcheck"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"github.com/kyma-incubator/compass/components/director/internal/graphql"
 )
 
@@ -29,8 +28,14 @@ type RootResolver struct {
 
 func NewRootResolver() *RootResolver {
 	authConverter := auth.NewConverter()
+	var apiConverter application.APIConverter = nil           //TODO: Initialize converter
+	var eventAPIConverter application.EventAPIConverter = nil //TODO: Initialize converter
 
 	runtimeConverter := runtime.NewConverter(authConverter)
+	frConverter := fetchrequest.NewConverter(authConverter)
+	docConverter := document.NewConverter(frConverter)
+	webhookConverter := webhook.NewConverter(authConverter)
+	appConverter := application.NewConverter(webhookConverter, apiConverter, eventAPIConverter, docConverter)
 
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewRepository()
@@ -38,21 +43,21 @@ func NewRootResolver() *RootResolver {
 	webhookRepo := webhook.NewRepository()
 	apiRepo := api.NewRepository()
 	eventAPIRepo := eventapi.NewRepository()
-	documentRepo := document.NewRepository()
+	docRepo := document.NewRepository()
 
-	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo)
+	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo)
 	apiSvc := api.NewService()
 	eventAPISvc := eventapi.NewService()
-	webhookSvc := webhook.NewService()
-	docSvc := document.NewService()
+	webhookSvc := webhook.NewService(webhookRepo)
+	docSvc := document.NewService(docRepo)
 	runtimeSvc := runtime.NewService(runtimeRepo)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 
 	return &RootResolver{
-		app:         application.NewResolver(appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc),
+		app:         application.NewResolver(appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, appConverter, docConverter, webhookConverter),
 		api:         api.NewResolver(apiSvc),
 		eventAPI:    eventapi.NewResolver(eventAPISvc),
-		doc:         document.NewResolver(docSvc),
+		doc:         document.NewResolver(docSvc, frConverter),
 		runtime:     runtime.NewResolver(runtimeSvc, runtimeConverter),
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
 	}
@@ -189,7 +194,6 @@ type applicationResolver struct {
 func (r *applicationResolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*graphql.ApplicationWebhook, error) {
 	return r.app.Webhooks(ctx, obj)
 }
-
 func (r *applicationResolver) Apis(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
 	return r.app.Apis(ctx, obj, group, first, after)
 }
