@@ -9,13 +9,13 @@ type DocumentRepository struct {
 	mock.Mock
 }
 
-// CreateMany provides a mock function with given fields: item
-func (_m *DocumentRepository) CreateMany(item []*model.Document) error {
-	ret := _m.Called(item)
+// CreateMany provides a mock function with given fields: items
+func (_m *DocumentRepository) CreateMany(items []*model.Document) error {
+	ret := _m.Called(items)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func([]*model.Document) error); ok {
-		r0 = rf(item)
+		r0 = rf(items)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -252,6 +252,11 @@ func (s *service) createRelatedResources(in model.ApplicationInput) error {
 func (s *service) deleteRelatedResources(applicationID string) error {
 	var err error
 
+	err = s.webhook.DeleteAllByApplicationID(applicationID)
+	if err != nil {
+		return errors.Wrapf(err, "while deleting Webhooks for application %s", applicationID)
+	}
+
 	err = s.api.DeleteAllByApplicationID(applicationID)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting APIs for application %s", applicationID)
@@ -265,11 +270,6 @@ func (s *service) deleteRelatedResources(applicationID string) error {
 	err = s.document.DeleteAllByApplicationID(applicationID)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting Documents for application %s", applicationID)
-	}
-
-	err = s.webhook.DeleteAllByApplicationID(applicationID)
-	if err != nil {
-		return errors.Wrapf(err, "while deleting Webhooks for application %s", applicationID)
 	}
 
 	return nil

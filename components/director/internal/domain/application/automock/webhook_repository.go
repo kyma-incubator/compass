@@ -9,13 +9,13 @@ type WebhookRepository struct {
 	mock.Mock
 }
 
-// CreateMany provides a mock function with given fields: item
-func (_m *WebhookRepository) CreateMany(item []*model.ApplicationWebhook) error {
-	ret := _m.Called(item)
+// CreateMany provides a mock function with given fields: items
+func (_m *WebhookRepository) CreateMany(items []*model.ApplicationWebhook) error {
+	ret := _m.Called(items)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func([]*model.ApplicationWebhook) error); ok {
-		r0 = rf(item)
+		r0 = rf(items)
 	} else {
 		r0 = ret.Error(0)
 	}

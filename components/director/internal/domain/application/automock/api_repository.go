@@ -9,13 +9,13 @@ type APIRepository struct {
 	mock.Mock
 }
 
-// CreateMany provides a mock function with given fields: item
-func (_m *APIRepository) CreateMany(item []*model.APIDefinition) error {
-	ret := _m.Called(item)
+// CreateMany provides a mock function with given fields: items
+func (_m *APIRepository) CreateMany(items []*model.APIDefinition) error {
+	ret := _m.Called(items)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func([]*model.APIDefinition) error); ok {
-		r0 = rf(item)
+		r0 = rf(items)
 	} else {
 		r0 = ret.Error(0)
 	}
