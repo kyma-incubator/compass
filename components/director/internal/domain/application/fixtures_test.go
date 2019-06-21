@@ -144,42 +144,20 @@ func fixModelApplicationInput(name, description string) model.ApplicationInput {
 		},
 		HealthCheckURL: &url,
 		Webhooks: []*model.ApplicationWebhookInput{
-			{
-				URL: "webhook1.foo.bar",
-			},
-			{
-				URL: "webhook2.foo.bar",
-			},
+			{URL: "webhook1.foo.bar"},
+			{URL: "webhook2.foo.bar"},
 		},
 		Apis: []*model.APIDefinitionInput{
-			{
-				Name:      "api1",
-				TargetURL: "foo.bar",
-			},
-			{
-				Name:      "api2",
-				TargetURL: "foo.bar2",
-			},
+			{Name: "api1", TargetURL: "foo.bar"},
+			{Name: "api2", TargetURL: "foo.bar2"},
 		},
 		EventAPIs: []*model.EventAPIDefinitionInput{
-			{
-				Name:        "event1",
-				Description: &desc,
-			},
-			{
-				Name:        "event2",
-				Description: &desc,
-			},
+			{Name: "event1", Description: &desc},
+			{Name: "event2", Description: &desc},
 		},
 		Documents: []*model.DocumentInput{
-			{
-				DisplayName: "doc1",
-				Kind:        &kind,
-			},
-			{
-				DisplayName: "doc2",
-				Kind:        &kind,
-			},
+			{DisplayName: "doc1", Kind: &kind},
+			{DisplayName: "doc2", Kind: &kind},
 		},
 	}
 }
@@ -201,42 +179,20 @@ func fixGQLApplicationInput(name, description string) graphql.ApplicationInput {
 		Labels:         &labels,
 		HealthCheckURL: &url,
 		Webhooks: []*graphql.ApplicationWebhookInput{
-			{
-				URL: "webhook1.foo.bar",
-			},
-			{
-				URL: "webhook2.foo.bar",
-			},
+			{URL: "webhook1.foo.bar"},
+			{URL: "webhook2.foo.bar"},
 		},
 		Apis: []*graphql.APIDefinitionInput{
-			{
-				Name:      "api1",
-				TargetURL: "foo.bar",
-			},
-			{
-				Name:      "api2",
-				TargetURL: "foo.bar2",
-			},
+			{Name: "api1", TargetURL: "foo.bar"},
+			{Name: "api2", TargetURL: "foo.bar2"},
 		},
 		EventAPIs: []*graphql.EventAPIDefinitionInput{
-			{
-				Name:        "event1",
-				Description: &desc,
-			},
-			{
-				Name:        "event2",
-				Description: &desc,
-			},
+			{Name: "event1", Description: &desc},
+			{Name: "event2", Description: &desc},
 		},
 		Documents: []*graphql.DocumentInput{
-			{
-				DisplayName: "doc1",
-				Kind:        &kind,
-			},
-			{
-				DisplayName: "doc2",
-				Kind:        &kind,
-			},
+			{DisplayName: "doc1", Kind: &kind},
+			{DisplayName: "doc2", Kind: &kind},
 		},
 	}
 }

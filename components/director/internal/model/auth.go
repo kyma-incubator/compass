@@ -41,6 +41,10 @@ type AuthInput struct {
 }
 
 func (i *AuthInput) ToAuth() *Auth {
+	if i == nil {
+		return nil
+	}
+
 	var credential CredentialData
 	if i.Credential != nil {
 		credential = *i.Credential.ToCredentialData()
@@ -65,6 +69,10 @@ type CredentialDataInput struct {
 }
 
 func (i *CredentialDataInput) ToCredentialData() *CredentialData {
+	if i == nil {
+		return nil
+	}
+
 	var basic *BasicCredentialData
 	var oauth *OAuthCredentialData
 
@@ -88,6 +96,10 @@ type BasicCredentialDataInput struct {
 }
 
 func (i *BasicCredentialDataInput) ToBasicCredentialData() *BasicCredentialData {
+	if i == nil {
+		return nil
+	}
+
 	return &BasicCredentialData{
 		Username: i.Username,
 		Password: i.Password,
@@ -101,6 +113,10 @@ type OAuthCredentialDataInput struct {
 }
 
 func (i *OAuthCredentialDataInput) ToOAuthCredentialData() *OAuthCredentialData {
+	if i == nil {
+		return nil
+	}
+
 	return &OAuthCredentialData{
 		ClientID:     i.ClientID,
 		ClientSecret: i.ClientSecret,
@@ -113,6 +129,10 @@ type CredentialRequestAuthInput struct {
 }
 
 func (i *CredentialRequestAuthInput) ToCredentialRequestAuth() *CredentialRequestAuth {
+	if i == nil {
+		return nil
+	}
+
 	var csrf *CSRFTokenCredentialRequestAuth
 	if i.Csrf != nil {
 		csrf = i.Csrf.ToCSRFTokenCredentialRequestAuth()
@@ -131,6 +151,10 @@ type CSRFTokenCredentialRequestAuthInput struct {
 }
 
 func (i *CSRFTokenCredentialRequestAuthInput) ToCSRFTokenCredentialRequestAuth() *CSRFTokenCredentialRequestAuth {
+	if i == nil {
+		return nil
+	}
+
 	var credential CredentialData
 	if i.Credential != nil {
 		credential = *i.Credential.ToCredentialData()
