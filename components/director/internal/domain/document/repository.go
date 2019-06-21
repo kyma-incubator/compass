@@ -23,4 +23,3 @@ func (inMemoryRepository) CreateMany(items []*model.Document) error {
 func (inMemoryRepository) DeleteAllByApplicationID(id string) error {
 	panic("implement me")
 }
-

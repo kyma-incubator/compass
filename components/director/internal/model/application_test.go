@@ -12,11 +12,11 @@ import (
 func TestApplication_AddLabel(t *testing.T) {
 	// given
 	testCases := []struct {
-		Name           string
+		Name               string
 		InitialApplication model.Application
-		InputKey       string
-		InputValues    []string
-		ExpectedLabels map[string][]string
+		InputKey           string
+		InputValues        []string
+		ExpectedLabels     map[string][]string
 	}{
 		{
 			Name: "New Label",
@@ -80,7 +80,7 @@ func TestApplication_DeleteLabel(t *testing.T) {
 	// given
 	testCases := []struct {
 		Name                string
-		InputApplication        model.Application
+		InputApplication    model.Application
 		InputKey            string
 		InputValuesToDelete []string
 		ExpectedLabels      map[string][]string
@@ -156,7 +156,7 @@ func TestApplication_AddAnnotation(t *testing.T) {
 	// given
 	testCases := []struct {
 		Name                string
-		InputApplication        model.Application
+		InputApplication    model.Application
 		InputKey            string
 		InputValue          string
 		ExpectedAnnotations map[string]interface{}
@@ -225,7 +225,7 @@ func TestApplication_DeleteAnnotation(t *testing.T) {
 	// given
 	testCases := []struct {
 		Name                string
-		InputApplication        model.Application
+		InputApplication    model.Application
 		InputKey            string
 		ExpectedAnnotations map[string]interface{}
 		ExpectedErr         error

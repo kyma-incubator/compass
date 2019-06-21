@@ -23,4 +23,3 @@ func (inMemoryRepository) CreateMany(items []*model.ApplicationWebhook) error {
 func (inMemoryRepository) DeleteAllByApplicationID(id string) error {
 	panic("implement me")
 }
-

@@ -2,9 +2,10 @@ package model
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/strings"
-	"time"
 )
 
 type Application struct {
@@ -123,4 +124,3 @@ func (i *ApplicationInput) ToApplication(id, tenant string) *Application {
 		HealthCheckURL: i.HealthCheckURL,
 	}
 }
-

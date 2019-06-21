@@ -2,8 +2,9 @@ package runtime_test
 
 import (
 	"fmt"
-	rtmautomock "github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
 	"testing"
+
+	rtmautomock "github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/graphql"

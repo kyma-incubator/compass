@@ -2,8 +2,9 @@ package model
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )

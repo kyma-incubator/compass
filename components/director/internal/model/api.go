@@ -18,7 +18,5 @@ type APIDefinition struct {
 
 func (d *APIDefinitionInput) ToAPIDefinition() *APIDefinition {
 	// TODO: Replace with actual model
-	return &APIDefinition{
-
-	}
+	return &APIDefinition{}
 }

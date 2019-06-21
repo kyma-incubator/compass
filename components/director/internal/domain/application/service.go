@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -47,11 +48,11 @@ type EventAPIRepository interface {
 }
 
 type service struct {
-	app          ApplicationRepository
-	api          APIRepository
-	eventAPI     EventAPIRepository
-	document     DocumentRepository
-	webhook      WebhookRepository
+	app      ApplicationRepository
+	api      APIRepository
+	eventAPI EventAPIRepository
+	document DocumentRepository
+	webhook  WebhookRepository
 }
 
 func NewService(app ApplicationRepository, webhook WebhookRepository, api APIRepository, eventAPI EventAPIRepository, document DocumentRepository) *service {

@@ -18,7 +18,5 @@ type DocumentInput struct {
 
 func (d *DocumentInput) ToDocument() *Document {
 	// TODO: Replace with actual model
-	return &Document{
-
-	}
+	return &Document{}
 }

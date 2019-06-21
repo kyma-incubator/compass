@@ -3,6 +3,8 @@ package application_test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -13,21 +15,20 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestService_Create(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 	modelInput := model.ApplicationInput{
-		Name:        "Foo",
+		Name: "Foo",
 		Webhooks: []*model.ApplicationWebhookInput{
 			{URL: "test.foo.com"},
 			{URL: "test.bar.com"},
 		},
 		Documents: []*model.DocumentInput{
-			{Title:"foo", Description: "test"},
-			{Title:"bar", Description: "test"},
+			{Title: "foo", Description: "test"},
+			{Title: "bar", Description: "test"},
 		},
 		Apis: []*model.APIDefinitionInput{
 			{Name: "foo"}, {Name: "bar"},
@@ -342,11 +343,11 @@ func TestService_Delete(t *testing.T) {
 
 	testCases := []struct {
 		Name               string
-		AppRepoFn      func() *automock.ApplicationRepository
-		WebhookRepoFn  func() *automock.WebhookRepository
-		APIRepoFn      func() *automock.APIRepository
-		EventAPIRepoFn func() *automock.EventAPIRepository
-		DocumentRepoFn func() *automock.DocumentRepository
+		AppRepoFn          func() *automock.ApplicationRepository
+		WebhookRepoFn      func() *automock.WebhookRepository
+		APIRepoFn          func() *automock.APIRepository
+		EventAPIRepoFn     func() *automock.EventAPIRepository
+		DocumentRepoFn     func() *automock.DocumentRepository
 		Input              model.ApplicationInput
 		InputID            string
 		ExpectedErrMessage string
@@ -1013,10 +1014,10 @@ func TestService_DeleteLabel(t *testing.T) {
 
 type testModel struct {
 	ApplicationMatcherFn func(app *model.Application) bool
-	Webhooks []*model.ApplicationWebhook
-	Apis []*model.APIDefinition
-	EventAPIs []*model.EventAPIDefinition
-	Documents []*model.Document
+	Webhooks             []*model.ApplicationWebhook
+	Apis                 []*model.APIDefinition
+	EventAPIs            []*model.EventAPIDefinition
+	Documents            []*model.Document
 }
 
 func modelFromInput(in model.ApplicationInput) testModel {
@@ -1046,9 +1047,9 @@ func modelFromInput(in model.ApplicationInput) testModel {
 
 	return testModel{
 		ApplicationMatcherFn: applicationModelMatcherFn,
-		Documents:documentsModel,
-		Apis:apisModel,
-		EventAPIs:eventAPIsModel,
-		Webhooks:webhooksModel,
+		Documents:            documentsModel,
+		Apis:                 apisModel,
+		EventAPIs:            eventAPIsModel,
+		Webhooks:             webhooksModel,
 	}
 }

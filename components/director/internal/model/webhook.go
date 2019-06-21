@@ -6,14 +6,10 @@ type ApplicationWebhookInput struct {
 	Auth *AuthInput
 }
 
-
 func (i *ApplicationWebhookInput) ToWebhook() *ApplicationWebhook {
 	// TODO: Replace with actual model
-	return &ApplicationWebhook{
-
-	}
+	return &ApplicationWebhook{}
 }
-
 
 type ApplicationWebhook struct {
 	ID   string                 `json:"id"`

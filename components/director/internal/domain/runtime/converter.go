@@ -10,7 +10,7 @@ type AuthConverter interface {
 	ToGraphQL(in *model.Auth) *graphql.Auth
 }
 
-type converter struct{
+type converter struct {
 	auth AuthConverter
 }
 

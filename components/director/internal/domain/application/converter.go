@@ -27,7 +27,7 @@ type EventAPIConverter interface {
 
 type converter struct {
 	webhook  WebhookConverter
-	api APIConverter
+	api      APIConverter
 	eventAPI EventAPIConverter
 	document DocumentConverter
 }
@@ -42,13 +42,13 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 	}
 
 	return &graphql.Application{
-		ID:          in.ID,
-		Status:      c.statusToGraphQL(in.Status),
-		Name:        in.Name,
-		Description: in.Description,
-		Tenant:      graphql.Tenant(in.Tenant),
-		Annotations: in.Annotations,
-		Labels:      in.Labels,
+		ID:             in.ID,
+		Status:         c.statusToGraphQL(in.Status),
+		Name:           in.Name,
+		Description:    in.Description,
+		Tenant:         graphql.Tenant(in.Tenant),
+		Annotations:    in.Annotations,
+		Labels:         in.Labels,
 		HealthCheckURL: in.HealthCheckURL,
 	}
 }
@@ -78,15 +78,15 @@ func (c *converter) InputFromGraphQL(in graphql.ApplicationInput) model.Applicat
 	}
 
 	return model.ApplicationInput{
-		Name:        in.Name,
-		Description: in.Description,
-		Annotations: annotations,
-		Labels:      labels,
+		Name:           in.Name,
+		Description:    in.Description,
+		Annotations:    annotations,
+		Labels:         labels,
 		HealthCheckURL: in.HealthCheckURL,
-		Webhooks: c.webhook.MultipleInputFromGraphQL(in.Webhooks),
-		Documents: c.document.MultipleInputFromGraphQL(in.Documents),
-		EventAPIs: c.eventAPI.MultipleInputFromGraphQL(in.EventAPIs),
-		Apis: c.api.MultipleInputFromGraphQL(in.Apis),
+		Webhooks:       c.webhook.MultipleInputFromGraphQL(in.Webhooks),
+		Documents:      c.document.MultipleInputFromGraphQL(in.Documents),
+		EventAPIs:      c.eventAPI.MultipleInputFromGraphQL(in.EventAPIs),
+		Apis:           c.api.MultipleInputFromGraphQL(in.Apis),
 	}
 }
 
