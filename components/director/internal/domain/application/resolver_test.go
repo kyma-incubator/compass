@@ -1004,7 +1004,7 @@ func TestResolver_AddApplicationWebhook(t *testing.T) {
 			Name: "Success",
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Create", context.TODO(), *modelWebhookInput, applicationID).Return(id, nil).Once()
+				svc.On("Create", context.TODO(), applicationID, *modelWebhookInput).Return(id, nil).Once()
 				svc.On("Get", context.TODO(), id).Return(modelWebhook, nil).Once()
 				return svc
 			},
@@ -1012,7 +1012,6 @@ func TestResolver_AddApplicationWebhook(t *testing.T) {
 				conv := &automock.WebhookConverter{}
 				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput).Once()
 				conv.On("ToGraphQL", modelWebhook).Return(gqlWebhook).Once()
-
 				return conv
 			},
 			InputApplicationID: applicationID,
@@ -1024,7 +1023,7 @@ func TestResolver_AddApplicationWebhook(t *testing.T) {
 			Name: "Create Error",
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Create", context.TODO(), *modelWebhookInput, applicationID).Return("", testErr).Once()
+				svc.On("Create", context.TODO(), applicationID, *modelWebhookInput).Return("", testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
@@ -1041,7 +1040,7 @@ func TestResolver_AddApplicationWebhook(t *testing.T) {
 			Name: "Get Error",
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Create", context.TODO(), *modelWebhookInput, applicationID).Return(id, nil).Once()
+				svc.On("Create", context.TODO(), applicationID, *modelWebhookInput).Return(id, nil).Once()
 				svc.On("Get", context.TODO(), id).Return(nil, testErr).Once()
 				return svc
 			},
@@ -1109,7 +1108,6 @@ func TestResolver_UpdateApplicationWebhook(t *testing.T) {
 				conv := &automock.WebhookConverter{}
 				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput).Once()
 				conv.On("ToGraphQL", modelWebhook).Return(gqlWebhook).Once()
-
 				return conv
 			},
 			InputWebhookID:  id,

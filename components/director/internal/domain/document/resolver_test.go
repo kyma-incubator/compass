@@ -34,7 +34,7 @@ func TestResolver_AddDocument(t *testing.T) {
 			Name: "Success",
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("Create", context.TODO(), *modelInput, applicationID).Return(id, nil).Once()
+				svc.On("Create", context.TODO(), applicationID, *modelInput).Return(id, nil).Once()
 				svc.On("Get", context.TODO(), id).Return(modelDocument, nil).Once()
 				return svc
 			},
@@ -51,7 +51,7 @@ func TestResolver_AddDocument(t *testing.T) {
 			Name: "Create Error",
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("Create", context.TODO(), *modelInput, applicationID).Return("", testErr).Once()
+				svc.On("Create", context.TODO(), applicationID, *modelInput).Return("", testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -66,7 +66,7 @@ func TestResolver_AddDocument(t *testing.T) {
 			Name: "Get Error",
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("Create", context.TODO(), *modelInput, applicationID).Return(id, nil).Once()
+				svc.On("Create", context.TODO(), applicationID, *modelInput).Return(id, nil).Once()
 				svc.On("Get", context.TODO(), id).Return(nil, testErr).Once()
 				return svc
 			},

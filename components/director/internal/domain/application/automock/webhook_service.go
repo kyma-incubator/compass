@@ -11,20 +11,20 @@ type WebhookService struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: ctx, in, applicationID
+// Create provides a mock function with given fields: ctx, applicationID, in
 func (_m *WebhookService) Create(ctx context.Context, applicationID string, in model.ApplicationWebhookInput) (string, error) {
-	ret := _m.Called(ctx, in, applicationID)
+	ret := _m.Called(ctx, applicationID, in)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationWebhookInput, string) string); ok {
-		r0 = rf(ctx, in, applicationID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.ApplicationWebhookInput) string); ok {
+		r0 = rf(ctx, applicationID, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, model.ApplicationWebhookInput, string) error); ok {
-		r1 = rf(ctx, in, applicationID)
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.ApplicationWebhookInput) error); ok {
+		r1 = rf(ctx, applicationID, in)
 	} else {
 		r1 = ret.Error(1)
 	}
