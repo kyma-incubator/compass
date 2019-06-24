@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
@@ -38,6 +39,10 @@ func (r *inMemoryRepository) ListByApplicationID(applicationID string) ([]*model
 func (r *inMemoryRepository) Create(item *model.ApplicationWebhook) error {
 	if item == nil {
 		return errors.New("item can not be empty")
+	}
+
+	if r.store[item.ApplicationID] == nil {
+		return errors.New(fmt.Sprintf("application with ID %s not found", item.ApplicationID))
 	}
 
 	r.store[item.ID] = item

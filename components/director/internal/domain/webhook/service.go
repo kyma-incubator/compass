@@ -54,7 +54,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.App
 
 	err := s.repo.Create(webhook)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "while creating Webhook")
 	}
 
 	return id, nil

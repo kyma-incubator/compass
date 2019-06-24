@@ -56,7 +56,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Doc
 
 	err := s.repo.Create(document)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "while creating Document")
 	}
 
 	return id, nil

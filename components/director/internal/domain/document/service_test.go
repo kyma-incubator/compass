@@ -218,7 +218,11 @@ func TestService_Create(t *testing.T) {
 
 			// then
 			assert.IsType(t, "string", result)
-			assert.Equal(t, testCase.ExpectedErr, err)
+			if testCase.ExpectedErr == nil {
+				require.NoError(t, err)
+			} else {
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			}
 
 			repo.AssertExpectations(t)
 		})
