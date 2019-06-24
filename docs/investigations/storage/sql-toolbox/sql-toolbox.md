@@ -80,6 +80,7 @@ tx.RollbackUnlessCommitted()
 	_, err = txx.NamedExecContext(ctx, "insert into applications(id,tenant,name,description,labels) values (:id, :tenant, :name, :description, :labels)", app)
 ```
 
+### Summary
 No one library provides support for JSON queries. 
 
 Sqlx and Squirrel is our first-choice library because of its simplicity and explicitly. 
@@ -131,4 +132,5 @@ For performing a migration, there are 2 interesting projects written in Go:
     - supports SQL and Go binaries
     - creates additional table: `goose_db_version`
 
+### Summary
 Go-migrate seems to be more popular, is easier (use file names, instead of custom comments). It does not support Go binaries but at the moment I don't see the advantages of them over plain SQL, so I suggest to use `golang-migrate`. 
