@@ -7,7 +7,7 @@ global:
       version: "PR-59"
     director:
       dir: pr/
-      version: "PR-60"
+      version: "PR-79"
     gateway:
       dir: pr/
       version: "PR-59"
