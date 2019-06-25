@@ -3,10 +3,10 @@ package application
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/pkg/errors"
 )
 
@@ -21,7 +21,7 @@ type ApplicationRepository interface {
 
 //go:generate mockery -name=DocumentRepository -output=automock -outpkg=automock -case=underscore
 type DocumentRepository interface {
-	ListByApplicationID(applicationID string) ([]*model.Document, error)
+	ListAllByApplicationID(applicationID string) ([]*model.Document, error)
 	CreateMany(items []*model.Document) error
 	DeleteAllByApplicationID(id string) error
 }
@@ -73,7 +73,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.Application, error
 }
 
 func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string, error) {
-	id := uuid.New().String()
+	id := uid.Generate()
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", errors.Wrapf(err, "while loading tenant from context")
@@ -86,7 +86,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string
 		return "", err
 	}
 
-	err = s.createRelatedResources(in)
+	err = s.createRelatedResources(in, app.ID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while creating related Application resources")
 	}
@@ -112,7 +112,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationInp
 		return errors.Wrapf(err, "while deleting related Application resources")
 	}
 
-	err = s.createRelatedResources(in)
+	err = s.createRelatedResources(in, app.ID)
 	if err != nil {
 		return errors.Wrapf(err, "while creating related Application resources")
 	}
@@ -207,12 +207,12 @@ func (s *service) DeleteAnnotation(ctx context.Context, applicationID string, ke
 	return nil
 }
 
-func (s *service) createRelatedResources(in model.ApplicationInput) error {
+func (s *service) createRelatedResources(in model.ApplicationInput, applicationID string) error {
 	var err error
 
 	var webhooks []*model.ApplicationWebhook
 	for _, item := range in.Webhooks {
-		webhooks = append(webhooks, item.ToWebhook())
+		webhooks = append(webhooks, item.ToWebhook(uid.Generate(), applicationID))
 	}
 	err = s.webhook.CreateMany(webhooks)
 	if err != nil {
@@ -240,7 +240,7 @@ func (s *service) createRelatedResources(in model.ApplicationInput) error {
 
 	var documents []*model.Document
 	for _, item := range in.Documents {
-		documents = append(documents, item.ToDocument())
+		documents = append(documents, item.ToDocument(uid.Generate(), applicationID))
 	}
 	err = s.document.CreateMany(documents)
 	if err != nil {

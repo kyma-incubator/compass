@@ -345,7 +345,7 @@ input RuntimeInput {
 input FetchRequestInput {
     url: String!
     auth: AuthInput
-    mode: FetchMode
+    mode: FetchMode = SINGLE
     filter: String
 }
 

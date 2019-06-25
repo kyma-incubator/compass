@@ -2,7 +2,6 @@ package runtime_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
@@ -51,7 +50,7 @@ func TestService_Create(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "Error",
+			Name: "Returns error when runtime creation failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("Create", runtimeModel).Return(testErr).Once()
@@ -62,8 +61,8 @@ func TestService_Create(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := runtime.NewService(repo)
@@ -122,7 +121,7 @@ func TestService_Update(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Update Error",
+			Name: "Returns error when application update failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("GetByID", "foo").Return(runtimeModel, nil).Once()
@@ -134,7 +133,7 @@ func TestService_Update(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when runtime retrieval failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("GetByID", "foo").Return(nil, testErr).Once()
@@ -146,8 +145,8 @@ func TestService_Update(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := runtime.NewService(repo)
@@ -203,7 +202,7 @@ func TestService_Delete(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Delete Error",
+			Name: "Returns error when runtime deletion failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("GetByID", id).Return(runtimeModel, nil).Once()
@@ -214,7 +213,7 @@ func TestService_Delete(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when runtime retrieval failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("GetByID", id).Return(nil, testErr).Once()
@@ -225,8 +224,8 @@ func TestService_Delete(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := runtime.NewService(repo)
@@ -283,7 +282,7 @@ func TestService_Get(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when runtime retrieval failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("GetByID", id).Return(nil, testErr).Once()
@@ -295,8 +294,8 @@ func TestService_Get(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := runtime.NewService(repo)
@@ -367,7 +366,7 @@ func TestService_List(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when runtime listing failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("List", filter, &first, &after).Return(nil, testErr).Once()
@@ -381,8 +380,8 @@ func TestService_List(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := runtime.NewService(repo)
@@ -444,7 +443,7 @@ func TestService_AddAnnotation(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Update Error",
+			Name: "Returns error when runtime update failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("GetByID", runtimeID).Return(fixModelRuntime(runtimeID, "Foo", desc), nil).Once()
@@ -458,7 +457,7 @@ func TestService_AddAnnotation(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when runtime retrieval failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("GetByID", runtimeID).Return(nil, testErr).Once()
@@ -472,8 +471,8 @@ func TestService_AddAnnotation(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := runtime.NewService(repo)
@@ -529,7 +528,7 @@ func TestService_DeleteAnnotation(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Update Error",
+			Name: "Returns error when runtime update failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("GetByID", runtimeID).Return(
@@ -545,7 +544,7 @@ func TestService_DeleteAnnotation(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when runtime retrieval failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("GetByID", runtimeID).Return(nil, testErr).Once()
@@ -558,8 +557,8 @@ func TestService_DeleteAnnotation(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := runtime.NewService(repo)
@@ -620,7 +619,7 @@ func TestService_AddLabel(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Update Error",
+			Name: "Returns error when runtime update failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("GetByID", runtimeID).Return(fixModelRuntime(runtimeID, "Foo", desc), nil).Once()
@@ -634,7 +633,7 @@ func TestService_AddLabel(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when runtime retrieval failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("GetByID", runtimeID).Return(nil, testErr).Once()
@@ -648,8 +647,8 @@ func TestService_AddLabel(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := runtime.NewService(repo)
@@ -708,7 +707,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Update Error",
+			Name: "Returns error when runtime update failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("GetByID", runtimeID).Return(
@@ -725,7 +724,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when runtime retrieval failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("GetByID", runtimeID).Return(nil, testErr).Once()
@@ -739,8 +738,8 @@ func TestService_DeleteLabel(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := runtime.NewService(repo)

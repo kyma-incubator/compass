@@ -196,3 +196,92 @@ func fixGQLApplicationInput(name, description string) graphql.ApplicationInput {
 		},
 	}
 }
+
+var (
+	docKind  = "fookind"
+	docTitle = "footitle"
+	docData  = "foodata"
+	docCLOB  = graphql.CLOB(docData)
+)
+
+func fixModelDocument(applicationID, id string) *model.Document {
+	return &model.Document{
+		ApplicationID: applicationID,
+		ID:            id,
+		Title:         docTitle,
+		Format:        model.DocumentFormatMarkdown,
+		Kind:          &docKind,
+		Data:          &docData,
+		FetchRequest:  &model.FetchRequest{},
+	}
+}
+
+func fixModelDocumentPage(documents []*model.Document) *model.DocumentPage {
+	return &model.DocumentPage{
+		Data: documents,
+		PageInfo: &pagination.Page{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(documents),
+	}
+}
+
+func fixGQLDocument(id string) *graphql.Document {
+	return &graphql.Document{
+		ID:           id,
+		Title:        docTitle,
+		Format:       graphql.DocumentFormatMarkdown,
+		Kind:         &docKind,
+		Data:         &docCLOB,
+		FetchRequest: &graphql.FetchRequest{},
+	}
+}
+
+func fixGQLDocumentPage(documents []*graphql.Document) *graphql.DocumentPage {
+	return &graphql.DocumentPage{
+		Data: documents,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(documents),
+	}
+}
+
+func fixModelWebhook(appID, id string) *model.ApplicationWebhook {
+	return &model.ApplicationWebhook{
+		ApplicationID: appID,
+		ID:            id,
+		Type:          model.ApplicationWebhookTypeConfigurationChanged,
+		URL:           "foourl",
+		Auth:          &model.Auth{},
+	}
+}
+
+func fixGQLWebhook(id string) *graphql.ApplicationWebhook {
+	return &graphql.ApplicationWebhook{
+		ID:   id,
+		Type: graphql.ApplicationWebhookTypeConfigurationChanged,
+		URL:  "foourl",
+		Auth: &graphql.Auth{},
+	}
+}
+
+func fixModelWebhookInput() *model.ApplicationWebhookInput {
+	return &model.ApplicationWebhookInput{
+		Type: model.ApplicationWebhookTypeConfigurationChanged,
+		URL:  "foourl",
+		Auth: &model.AuthInput{},
+	}
+}
+
+func fixGQLWebhookInput() *graphql.ApplicationWebhookInput {
+	return &graphql.ApplicationWebhookInput{
+		Type: graphql.ApplicationWebhookTypeConfigurationChanged,
+		URL:  "foourl",
+		Auth: &graphql.AuthInput{},
+	}
+}

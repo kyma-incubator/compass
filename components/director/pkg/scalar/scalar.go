@@ -33,19 +33,6 @@ func ConvertToString(in interface{}) (string, error) {
 	return value, nil
 }
 
-func ConvertToByteArray(in interface{}) ([]byte,error){
-	if in == nil {
-		return nil, errors.New("input should not be nil")
-	}
-
-	value, ok := in.([]byte)
-	if !ok {
-		return nil, errors.Errorf("unexpected input type: %T, should be byte array", in)
-	}
-
-	return value,nil
-}
-
 func ConvertToMapStringStringArray(in interface{}) (map[string][]string, error) {
 	if in == nil {
 		return nil, errors.New("input should not be nil")

@@ -3,11 +3,12 @@ package runtime
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
-	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"github.com/pkg/errors"
 )
@@ -43,7 +44,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.Runtime, error) {
 }
 
 func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, error) {
-	id := uuid.New().String()
+	id := uid.Generate()
 	runtimeTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", errors.Wrapf(err, "while loading tenant from context")

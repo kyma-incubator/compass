@@ -16,7 +16,7 @@ func TestCLOB_UnmarshalGQL(t *testing.T) {
 	}{
 		//given
 		"correct input": {
-			input:    []byte("very_big_clob"),
+			input:    "very_big_clob",
 			err:      false,
 			expected: CLOB("very_big_clob"),
 		},
@@ -28,7 +28,7 @@ func TestCLOB_UnmarshalGQL(t *testing.T) {
 		"error: invalid input": {
 			input:  123,
 			err:    true,
-			errmsg: "unexpected input type: int, should be byte array",
+			errmsg: "unexpected input type: int, should be string",
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -52,7 +52,7 @@ func TestCLOB_UnmarshalGQL(t *testing.T) {
 func TestCLOB_MarshalGQL(t *testing.T) {
 	//given
 	fixClob := CLOB("very_big_clob")
-	expectedClob := []byte("very_big_clob")
+	expectedClob := `"very_big_clob"`
 	buf := bytes.Buffer{}
 
 	//when
@@ -60,5 +60,5 @@ func TestCLOB_MarshalGQL(t *testing.T) {
 
 	//then
 	assert.NotNil(t, buf)
-	assert.Equal(t, expectedClob, buf.Bytes())
+	assert.Equal(t, expectedClob, buf.String())
 }

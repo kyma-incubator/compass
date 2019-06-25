@@ -3,10 +3,9 @@ package application
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/graphql"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-
-	"github.com/kyma-incubator/compass/components/director/internal/graphql"
 )
 
 //go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
@@ -33,28 +32,57 @@ type APIService interface{}
 
 type EventAPIService interface{}
 
-type DocumentService interface{}
+//go:generate mockery -name=DocumentService -output=automock -outpkg=automock -case=underscore
+type DocumentService interface {
+	List(ctx context.Context, applicationID string, pageSize *int, cursor *string) (*model.DocumentPage, error)
+}
 
-type WebhookService interface{}
+//go:generate mockery -name=WebhookService -output=automock -outpkg=automock -case=underscore
+type WebhookService interface {
+	Get(ctx context.Context, id string) (*model.ApplicationWebhook, error)
+	List(ctx context.Context, applicationID string) ([]*model.ApplicationWebhook, error)
+	Create(ctx context.Context, applicationID string, in model.ApplicationWebhookInput) (string, error)
+	Update(ctx context.Context, id string, in model.ApplicationWebhookInput) error
+	Delete(ctx context.Context, id string) error
+}
+
+//go:generate mockery -name=DocumentConverter -output=automock -outpkg=automock -case=underscore
+type DocumentConverter interface {
+	MultipleToGraphQL(in []*model.Document) []*graphql.Document
+	MultipleInputFromGraphQL(in []*graphql.DocumentInput) []*model.DocumentInput
+}
+
+//go:generate mockery -name=WebhookConverter -output=automock -outpkg=automock -case=underscore
+type WebhookConverter interface {
+	ToGraphQL(in *model.ApplicationWebhook) *graphql.ApplicationWebhook
+	MultipleToGraphQL(in []*model.ApplicationWebhook) []*graphql.ApplicationWebhook
+	InputFromGraphQL(in *graphql.ApplicationWebhookInput) *model.ApplicationWebhookInput
+	MultipleInputFromGraphQL(in []*graphql.ApplicationWebhookInput) []*model.ApplicationWebhookInput
+}
 
 type Resolver struct {
-	svc       ApplicationService
-	converter ApplicationConverter
+	appSvc       ApplicationService
+	appConverter ApplicationConverter
 
 	apiSvc      APIService
 	eventAPISvc EventAPIService
 	webhookSvc  WebhookService
 	documentSvc DocumentService
+
+	documentConverter DocumentConverter
+	webhookConverter  WebhookConverter
 }
 
-func NewResolver(svc ApplicationService, apiSvc APIService, eventAPISvc EventAPIService, documentSvc DocumentService, webhookSvc WebhookService) *Resolver {
+func NewResolver(svc ApplicationService, apiSvc APIService, eventAPISvc EventAPIService, documentSvc DocumentService, webhookSvc WebhookService, appConverter ApplicationConverter, documentConverter DocumentConverter, webhookConverter WebhookConverter) *Resolver {
 	return &Resolver{
-		svc:         svc,
-		apiSvc:      apiSvc,
-		eventAPISvc: eventAPISvc,
-		documentSvc: documentSvc,
-		webhookSvc:  webhookSvc,
-		converter:   &converter{},
+		appSvc:            svc,
+		apiSvc:            apiSvc,
+		eventAPISvc:       eventAPISvc,
+		documentSvc:       documentSvc,
+		webhookSvc:        webhookSvc,
+		appConverter:      appConverter,
+		documentConverter: documentConverter,
+		webhookConverter:  webhookConverter,
 	}
 }
 
@@ -66,12 +94,12 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 		cursor = string(*after)
 	}
 
-	appPage, err := r.svc.List(ctx, labelFilter, first, &cursor)
+	appPage, err := r.appSvc.List(ctx, labelFilter, first, &cursor)
 	if err != nil {
 		return nil, err
 	}
 
-	gqlApps := r.converter.MultipleToGraphQL(appPage.Data)
+	gqlApps := r.appConverter.MultipleToGraphQL(appPage.Data)
 	totalCount := len(gqlApps)
 
 	return &graphql.ApplicationPage{
@@ -86,57 +114,57 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 }
 
 func (r *Resolver) Application(ctx context.Context, id string) (*graphql.Application, error) {
-	app, err := r.svc.Get(ctx, id)
+	app, err := r.appSvc.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	return r.converter.ToGraphQL(app), nil
+	return r.appConverter.ToGraphQL(app), nil
 }
 
 func (r *Resolver) CreateApplication(ctx context.Context, in graphql.ApplicationInput) (*graphql.Application, error) {
-	convertedIn := r.converter.InputFromGraphQL(in)
+	convertedIn := r.appConverter.InputFromGraphQL(in)
 
-	id, err := r.svc.Create(ctx, convertedIn)
+	id, err := r.appSvc.Create(ctx, convertedIn)
 	if err != nil {
 		return nil, err
 	}
 
-	app, err := r.svc.Get(ctx, id)
+	app, err := r.appSvc.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	gqlApp := r.converter.ToGraphQL(app)
+	gqlApp := r.appConverter.ToGraphQL(app)
 
 	return gqlApp, nil
 }
 func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.ApplicationInput) (*graphql.Application, error) {
-	convertedIn := r.converter.InputFromGraphQL(in)
+	convertedIn := r.appConverter.InputFromGraphQL(in)
 
-	err := r.svc.Update(ctx, id, convertedIn)
+	err := r.appSvc.Update(ctx, id, convertedIn)
 	if err != nil {
 		return nil, err
 	}
 
-	app, err := r.svc.Get(ctx, id)
+	app, err := r.appSvc.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	gqlApp := r.converter.ToGraphQL(app)
+	gqlApp := r.appConverter.ToGraphQL(app)
 
 	return gqlApp, nil
 }
 func (r *Resolver) DeleteApplication(ctx context.Context, id string) (*graphql.Application, error) {
-	app, err := r.svc.Get(ctx, id)
+	app, err := r.appSvc.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	deletedApp := r.converter.ToGraphQL(app)
+	deletedApp := r.appConverter.ToGraphQL(app)
 
-	err = r.svc.Delete(ctx, id)
+	err = r.appSvc.Delete(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +172,7 @@ func (r *Resolver) DeleteApplication(ctx context.Context, id string) (*graphql.A
 	return deletedApp, nil
 }
 func (r *Resolver) AddApplicationLabel(ctx context.Context, applicationID string, key string, values []string) (*graphql.Label, error) {
-	err := r.svc.AddLabel(ctx, applicationID, key, values)
+	err := r.appSvc.AddLabel(ctx, applicationID, key, values)
 	if err != nil {
 		return nil, err
 	}
@@ -156,12 +184,12 @@ func (r *Resolver) AddApplicationLabel(ctx context.Context, applicationID string
 }
 
 func (r *Resolver) DeleteApplicationLabel(ctx context.Context, applicationID string, key string, values []string) (*graphql.Label, error) {
-	err := r.svc.DeleteLabel(ctx, applicationID, key, values)
+	err := r.appSvc.DeleteLabel(ctx, applicationID, key, values)
 	if err != nil {
 		return nil, err
 	}
 
-	app, err := r.svc.Get(ctx, applicationID)
+	app, err := r.appSvc.Get(ctx, applicationID)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +201,7 @@ func (r *Resolver) DeleteApplicationLabel(ctx context.Context, applicationID str
 }
 
 func (r *Resolver) AddApplicationAnnotation(ctx context.Context, applicationID string, key string, value interface{}) (*graphql.Annotation, error) {
-	err := r.svc.AddAnnotation(ctx, applicationID, key, value)
+	err := r.appSvc.AddAnnotation(ctx, applicationID, key, value)
 	if err != nil {
 		return nil, err
 	}
@@ -185,14 +213,14 @@ func (r *Resolver) AddApplicationAnnotation(ctx context.Context, applicationID s
 }
 
 func (r *Resolver) DeleteApplicationAnnotation(ctx context.Context, applicationID string, key string) (*graphql.Annotation, error) {
-	app, err := r.svc.Get(ctx, applicationID)
+	app, err := r.appSvc.Get(ctx, applicationID)
 	if err != nil {
 		return nil, err
 	}
 
 	value := app.Annotations[key]
 
-	err = r.svc.DeleteAnnotation(ctx, applicationID, key)
+	err = r.appSvc.DeleteAnnotation(ctx, applicationID, key)
 	if err != nil {
 		return nil, err
 	}
@@ -203,26 +231,100 @@ func (r *Resolver) DeleteApplicationAnnotation(ctx context.Context, applicationI
 	}, nil
 }
 
-func (r *Resolver) AddApplicationWebhook(ctx context.Context, applicationID string, in graphql.ApplicationWebhookInput) (*graphql.ApplicationWebhook, error) {
-	panic("not implemented")
-}
-func (r *Resolver) UpdateApplicationWebhook(ctx context.Context, webhookID string, in graphql.ApplicationWebhookInput) (*graphql.ApplicationWebhook, error) {
-	panic("not implemented")
-}
-func (r *Resolver) DeleteApplicationWebhook(ctx context.Context, webhookID string) (*graphql.ApplicationWebhook, error) {
-	panic("not implemented")
-}
-
 func (r *Resolver) Apis(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
 	panic("not implemented")
 }
 func (r *Resolver) EventAPIs(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.EventAPIDefinitionPage, error) {
 	panic("not implemented")
 }
+
+// TODO: Proper error handling
+// TODO: Pagination
 func (r *Resolver) Documents(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {
-	panic("not implemented")
+	var cursor string
+	if after != nil {
+		cursor = string(*after)
+	}
+
+	documentsPage, err := r.documentSvc.List(ctx, obj.ID, first, &cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	gqlDocuments := r.documentConverter.MultipleToGraphQL(documentsPage.Data)
+	totalCount := len(gqlDocuments)
+
+	return &graphql.DocumentPage{
+		Data:       gqlDocuments,
+		TotalCount: totalCount,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(documentsPage.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(documentsPage.PageInfo.EndCursor),
+			HasNextPage: documentsPage.PageInfo.HasNextPage,
+		},
+	}, nil
 }
 
+// TODO: Proper error handling
 func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*graphql.ApplicationWebhook, error) {
-	panic("not implemented")
+	webhooks, err := r.webhookSvc.List(ctx, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	gqlWebhooks := r.webhookConverter.MultipleToGraphQL(webhooks)
+
+	return gqlWebhooks, nil
+}
+
+func (r *Resolver) AddApplicationWebhook(ctx context.Context, applicationID string, in graphql.ApplicationWebhookInput) (*graphql.ApplicationWebhook, error) {
+	convertedIn := r.webhookConverter.InputFromGraphQL(&in)
+
+	id, err := r.webhookSvc.Create(ctx, applicationID, *convertedIn)
+	if err != nil {
+		return nil, err
+	}
+
+	webhook, err := r.webhookSvc.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	gqlWebhook := r.webhookConverter.ToGraphQL(webhook)
+
+	return gqlWebhook, nil
+}
+
+func (r *Resolver) UpdateApplicationWebhook(ctx context.Context, webhookID string, in graphql.ApplicationWebhookInput) (*graphql.ApplicationWebhook, error) {
+	convertedIn := r.webhookConverter.InputFromGraphQL(&in)
+
+	err := r.webhookSvc.Update(ctx, webhookID, *convertedIn)
+	if err != nil {
+		return nil, err
+	}
+
+	webhook, err := r.webhookSvc.Get(ctx, webhookID)
+	if err != nil {
+		return nil, err
+	}
+
+	gqlWebhook := r.webhookConverter.ToGraphQL(webhook)
+
+	return gqlWebhook, nil
+}
+
+func (r *Resolver) DeleteApplicationWebhook(ctx context.Context, webhookID string) (*graphql.ApplicationWebhook, error) {
+	webhook, err := r.webhookSvc.Get(ctx, webhookID)
+	if err != nil {
+		return nil, err
+	}
+
+	deletedWebhook := r.webhookConverter.ToGraphQL(webhook)
+
+	err = r.webhookSvc.Delete(ctx, webhookID)
+	if err != nil {
+		return nil, err
+	}
+
+	return deletedWebhook, nil
 }
