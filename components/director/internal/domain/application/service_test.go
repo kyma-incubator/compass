@@ -85,7 +85,7 @@ func TestService_Create(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "Error",
+			Name: "Returns error when application creation failed",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("Create", mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(testErr).Once()
@@ -211,7 +211,7 @@ func TestService_Update(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Update Error",
+			Name: "Returns error when application update failed",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", "foo").Return(applicationModel, nil).Once()
@@ -239,7 +239,7 @@ func TestService_Update(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when application retrieval failed",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", "foo").Return(nil, testErr).Once()
@@ -266,7 +266,7 @@ func TestService_Update(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Delete Subresource Error",
+			Name: "Returns error when deleting apllication's subresource failed",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", "foo").Return(applicationModel, nil).Once()
@@ -385,7 +385,7 @@ func TestService_Delete(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Delete Error",
+			Name: "Returns error when application deletion failed",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", id).Return(applicationModel, nil).Once()
@@ -416,7 +416,7 @@ func TestService_Delete(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Delete Subresource Error",
+			Name: "Returns error when deleting application's subresource failed",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", id).Return(applicationModel, nil).Once()
@@ -443,7 +443,7 @@ func TestService_Delete(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when application retrieval failed",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", id).Return(nil, testErr).Once()
@@ -536,7 +536,7 @@ func TestService_Get(t *testing.T) {
 			ExpectedErrMessage:  "",
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when application retrieval failed",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", id).Return(nil, testErr).Once()
@@ -620,7 +620,7 @@ func TestService_List(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when application listing failed",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("List", filter, &first, &after).Return(nil, testErr).Once()
@@ -697,7 +697,7 @@ func TestService_AddAnnotation(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Update Error",
+			Name: "Returns error when application update failed",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", applicationID).Return(fixModelApplication(applicationID, "Foo", desc), nil).Once()
@@ -711,7 +711,7 @@ func TestService_AddAnnotation(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when application retrieval failed",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", applicationID).Return(nil, testErr).Once()
@@ -782,7 +782,7 @@ func TestService_DeleteAnnotation(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Update Error",
+			Name: "Returns error when application update failed",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", applicationID).Return(
@@ -798,7 +798,7 @@ func TestService_DeleteAnnotation(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when application retrieval failed",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", applicationID).Return(nil, testErr).Once()
@@ -873,7 +873,7 @@ func TestService_AddLabel(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Update Error",
+			Name: "Returns error when application update failed",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", applicationID).Return(fixModelApplication(applicationID, "Foo", desc), nil).Once()
@@ -887,7 +887,7 @@ func TestService_AddLabel(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when application retrieval failed",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", applicationID).Return(nil, testErr).Once()
@@ -961,7 +961,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Update Error",
+			Name: "Returns error when application update failed",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", applicationID).Return(
@@ -978,7 +978,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when application retrieval failed",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", applicationID).Return(nil, testErr).Once()

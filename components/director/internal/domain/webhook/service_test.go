@@ -46,7 +46,7 @@ func TestService_Create(t *testing.T) {
 			ExpectedErr:   nil,
 		},
 		{
-			Name: "Error",
+			Name: "Returns error when webhook creation failed",
 			RepositoryFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
 				repo.On("Create", webhookModel).Return(testErr).Once()
@@ -111,7 +111,7 @@ func TestService_Get(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when webhook retrieval failed",
 			RepositoryFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
 				repo.On("GetByID", id).Return(nil, testErr).Once()
@@ -174,7 +174,7 @@ func TestService_List(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when webhook listing failed",
 			RepositoryFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
 				repo.On("ListByApplicationID", applicationID).Return(nil, testErr).Once()
@@ -243,7 +243,7 @@ func TestService_Update(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Update Error",
+			Name: "Returns error when webhook update failed",
 			RepositoryFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
 				repo.On("GetByID", id).Return(webhookModel, nil).Once()
@@ -255,7 +255,7 @@ func TestService_Update(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when webhook retrieval failed",
 			RepositoryFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
 				repo.On("GetByID", id).Return(nil, testErr).Once()
@@ -318,7 +318,7 @@ func TestService_Delete(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Delete Error",
+			Name: "Returns error when webhook deletion failed",
 			RepositoryFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
 				repo.On("GetByID", id).Return(webhookModel, nil).Once()
@@ -329,7 +329,7 @@ func TestService_Delete(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when webhook retrieval failed",
 			RepositoryFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
 				repo.On("GetByID", id).Return(nil, testErr).Once()

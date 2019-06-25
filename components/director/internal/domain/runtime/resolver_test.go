@@ -56,7 +56,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			ExpectedErr:     nil,
 		},
 		{
-			Name: "Create Error",
+			Name: "Returns error when runtime creation failed",
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Create", context.TODO(), modelInput).Return("", testErr).Once()
@@ -72,7 +72,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			ExpectedErr:     testErr,
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when runtime retrieval failed",
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Create", context.TODO(), modelInput).Return("foo", nil).Once()
@@ -156,7 +156,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 			ExpectedErr:     nil,
 		},
 		{
-			Name: "Update Error",
+			Name: "Returns error when runtime update failed",
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Update", context.TODO(), runtimeID, modelInput).Return(testErr).Once()
@@ -173,7 +173,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 			ExpectedErr:     testErr,
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when runtime retrieval failed",
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Update", context.TODO(), runtimeID, modelInput).Return(nil).Once()
@@ -244,7 +244,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			ExpectedErr:     nil,
 		},
 		{
-			Name: "Delete Error",
+			Name: "Returns error when runtime deletion failed",
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", context.TODO(), "foo").Return(modelRuntime, nil).Once()
@@ -261,7 +261,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			ExpectedErr:     testErr,
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when runtime retrieval failed",
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", context.TODO(), "foo").Return(nil, testErr).Once()
@@ -329,7 +329,7 @@ func TestResolver_Runtime(t *testing.T) {
 			ExpectedErr:     nil,
 		},
 		{
-			Name: "Error",
+			Name: "Returns error when runtime retrieval failed",
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", context.TODO(), "foo").Return(nil, testErr).Once()
@@ -418,7 +418,7 @@ func TestResolver_Runtimes(t *testing.T) {
 			ExpectedErr:       nil,
 		},
 		{
-			Name: "service Error",
+			Name: "Returns error when runtime listing failed",
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("List", context.TODO(), filter, &first, &after).Return(nil, testErr).Once()
@@ -494,7 +494,7 @@ func TestResolver_AddRuntimeLabel(t *testing.T) {
 			ExpectedErr:    nil,
 		},
 		{
-			Name: "Error",
+			Name: "Returns error when adding label to runtime failed",
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("AddLabel", context.TODO(), runtimeID, gqlLabel.Key, gqlLabel.Values).Return(testErr).Once()
@@ -573,7 +573,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			ExpectedErr:    nil,
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when runtime retrieval failed",
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("DeleteLabel", context.TODO(), runtimeID, gqlLabel.Key, gqlLabel.Values).Return(nil).Once()
@@ -591,7 +591,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			ExpectedErr:    testErr,
 		},
 		{
-			Name: "Error",
+			Name: "Returns error when deleting runtime's label failed",
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("DeleteLabel", context.TODO(), runtimeID, gqlLabel.Key, gqlLabel.Values).Return(testErr).Once()
@@ -667,7 +667,7 @@ func TestResolver_AddRuntimeAnnotation(t *testing.T) {
 			ExpectedErr:        nil,
 		},
 		{
-			Name: "Error",
+			Name: "Returns error when adding annotation to runtime failed",
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("AddAnnotation", context.TODO(), runtimeID, gqlAnnotation.Key, gqlAnnotation.Value).Return(testErr).Once()
@@ -744,7 +744,7 @@ func TestResolver_DeleteRuntimeAnnotation(t *testing.T) {
 			ExpectedErr:        nil,
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when runtime retrieval failed",
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", context.TODO(), runtimeID).Return(nil, testErr).Once()
@@ -760,7 +760,7 @@ func TestResolver_DeleteRuntimeAnnotation(t *testing.T) {
 			ExpectedErr:        testErr,
 		},
 		{
-			Name: "Delete Error",
+			Name: "Returns error when deleting runtime's annotation failed",
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", context.TODO(), runtimeID).Return(rtm, nil).Once()

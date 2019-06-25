@@ -56,7 +56,7 @@ func TestResolver_CreateApplication(t *testing.T) {
 			ExpectedErr:         nil,
 		},
 		{
-			Name: "Create Error",
+			Name: "Returns error when application creation failed",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
 				svc.On("Create", context.TODO(), modelInput).Return("", testErr).Once()
@@ -72,7 +72,7 @@ func TestResolver_CreateApplication(t *testing.T) {
 			ExpectedErr:         testErr,
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when application creation failed",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
 				svc.On("Create", context.TODO(), modelInput).Return("foo", nil).Once()
@@ -157,7 +157,7 @@ func TestResolver_UpdateApplication(t *testing.T) {
 			ExpectedErr:         nil,
 		},
 		{
-			Name: "Update Error",
+			Name: "Returns error when application update failed",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
 				svc.On("Update", context.TODO(), applicationID, modelInput).Return(testErr).Once()
@@ -174,7 +174,7 @@ func TestResolver_UpdateApplication(t *testing.T) {
 			ExpectedErr:         testErr,
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when application retrieval failed",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
 				svc.On("Update", context.TODO(), applicationID, modelInput).Return(nil).Once()
@@ -246,7 +246,7 @@ func TestResolver_DeleteApplication(t *testing.T) {
 			ExpectedErr:         nil,
 		},
 		{
-			Name: "Delete Error",
+			Name: "Returns error when application deletion failed",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
 				svc.On("Get", context.TODO(), "foo").Return(modelApplication, nil).Once()
@@ -263,7 +263,7 @@ func TestResolver_DeleteApplication(t *testing.T) {
 			ExpectedErr:         testErr,
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when application retrieval failed",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
 				svc.On("Get", context.TODO(), "foo").Return(nil, testErr).Once()
@@ -332,7 +332,7 @@ func TestResolver_Application(t *testing.T) {
 			ExpectedErr:         nil,
 		},
 		{
-			Name: "Error",
+			Name: "Returns error when application retrieval failed",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
 				svc.On("Get", context.TODO(), "foo").Return(nil, testErr).Once()
@@ -422,7 +422,7 @@ func TestResolver_Applications(t *testing.T) {
 			ExpectedErr:       nil,
 		},
 		{
-			Name: "service Error",
+			Name: "Returns error when application listing failed",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
 				svc.On("List", context.TODO(), filter, &first, &after).Return(nil, testErr).Once()
@@ -499,7 +499,7 @@ func TestResolver_AddApplicationLabel(t *testing.T) {
 			ExpectedErr:        nil,
 		},
 		{
-			Name: "Error",
+			Name: "Returns error when adding label to application failed",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
 				svc.On("AddLabel", context.TODO(), applicationID, gqlLabel.Key, gqlLabel.Values).Return(testErr).Once()
@@ -579,7 +579,7 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 			ExpectedErr:        nil,
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when application retrieval failed",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
 				svc.On("DeleteLabel", context.TODO(), applicationID, gqlLabel.Key, gqlLabel.Values).Return(nil).Once()
@@ -597,7 +597,7 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 			ExpectedErr:        testErr,
 		},
 		{
-			Name: "Delete Error",
+			Name: "Returns error when deleting application's label failed",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
 				svc.On("DeleteLabel", context.TODO(), applicationID, gqlLabel.Key, gqlLabel.Values).Return(testErr).Once()
@@ -674,7 +674,7 @@ func TestResolver_AddApplicationAnnotation(t *testing.T) {
 			ExpectedErr:        nil,
 		},
 		{
-			Name: "Error",
+			Name: "Returns error when adding annotation to application failed",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
 				svc.On("AddAnnotation", context.TODO(), applicationID, gqlAnnotation.Key, gqlAnnotation.Value).Return(testErr).Once()
@@ -752,7 +752,7 @@ func TestResolver_DeleteApplicationAnnotation(t *testing.T) {
 			ExpectedErr:        nil,
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when application retrieval failed",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
 				svc.On("Get", context.TODO(), applicationID).Return(nil, testErr).Once()
@@ -768,7 +768,7 @@ func TestResolver_DeleteApplicationAnnotation(t *testing.T) {
 			ExpectedErr:        testErr,
 		},
 		{
-			Name: "Delete Error",
+			Name: "Returns error when deleting application's annotation failed",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
 				svc.On("Get", context.TODO(), applicationID).Return(app, nil).Once()
@@ -852,7 +852,7 @@ func TestResolver_Documents(t *testing.T) {
 			ExpectedErr:    nil,
 		},
 		{
-			Name: "service Error",
+			Name: "Returns error when document listing failed",
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
 				svc.On("List", context.TODO(), applicationID, &first, &after).Return(nil, testErr).Once()
@@ -926,7 +926,7 @@ func TestResolver_Webhooks(t *testing.T) {
 			ExpectedErr:    nil,
 		},
 		{
-			Name: "service Error",
+			Name: "Returns error when webhook listing failed",
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
 				svc.On("List", context.TODO(), applicationID).Return(nil, testErr).Once()
@@ -1001,7 +1001,7 @@ func TestResolver_AddApplicationWebhook(t *testing.T) {
 			ExpectedErr:        nil,
 		},
 		{
-			Name: "Create Error",
+			Name: "Returns error when webhook creation failed",
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
 				svc.On("Create", context.TODO(), applicationID, *modelWebhookInput).Return("", testErr).Once()
@@ -1018,7 +1018,7 @@ func TestResolver_AddApplicationWebhook(t *testing.T) {
 			ExpectedErr:        testErr,
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when webhook retrieval failed",
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
 				svc.On("Create", context.TODO(), applicationID, *modelWebhookInput).Return(id, nil).Once()
@@ -1097,7 +1097,7 @@ func TestResolver_UpdateApplicationWebhook(t *testing.T) {
 			ExpectedErr:     nil,
 		},
 		{
-			Name: "Update Error",
+			Name: "Returns error when webhook update failed",
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
 				svc.On("Update", context.TODO(), id, *modelWebhookInput).Return(testErr).Once()
@@ -1114,7 +1114,7 @@ func TestResolver_UpdateApplicationWebhook(t *testing.T) {
 			ExpectedErr:     testErr,
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when webhook retrieval failed",
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
 				svc.On("Update", context.TODO(), id, *modelWebhookInput).Return(nil).Once()
@@ -1191,7 +1191,7 @@ func TestResolver_DeleteApplicationWebhook(t *testing.T) {
 			ExpectedErr:     nil,
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when webhook retrieval failed",
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
 				svc.On("Get", context.TODO(), id).Return(nil, testErr).Once()
@@ -1207,7 +1207,7 @@ func TestResolver_DeleteApplicationWebhook(t *testing.T) {
 			ExpectedErr:     testErr,
 		},
 		{
-			Name: "Delete Error",
+			Name: "Returns error when webhook deletion failed",
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
 				svc.On("Get", context.TODO(), id).Return(modelWebhook, nil).Once()

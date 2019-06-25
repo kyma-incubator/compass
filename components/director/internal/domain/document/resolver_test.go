@@ -47,7 +47,7 @@ func TestResolver_AddDocument(t *testing.T) {
 			ExpectedErr:      nil,
 		},
 		{
-			Name: "Create Error",
+			Name: "Returns error when document creation failed",
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
 				svc.On("Create", context.TODO(), applicationID, *modelInput).Return("", testErr).Once()
@@ -62,7 +62,7 @@ func TestResolver_AddDocument(t *testing.T) {
 			ExpectedErr:      testErr,
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when document retrieval failed",
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
 				svc.On("Create", context.TODO(), applicationID, *modelInput).Return(id, nil).Once()
@@ -133,7 +133,7 @@ func TestResolver_DeleteDocument(t *testing.T) {
 			ExpectedErr:      nil,
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when document retrieval failed",
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
 				svc.On("Get", context.TODO(), id).Return(nil, testErr).Once()
@@ -147,7 +147,7 @@ func TestResolver_DeleteDocument(t *testing.T) {
 			ExpectedErr:      testErr,
 		},
 		{
-			Name: "Delete Error",
+			Name: "Returns error when document deletion failed",
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
 				svc.On("Get", context.TODO(), id).Return(modelDocument, nil).Once()

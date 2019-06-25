@@ -46,7 +46,7 @@ func TestService_Get(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when document retrieval failed",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
 				repo.On("GetByID", id).Return(nil, testErr).Once()
@@ -128,7 +128,7 @@ func TestService_List(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when document listing failed",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
 				repo.On("ListByApplicationID", applicationID, &first, &after).Return(nil, testErr).Once()
@@ -195,7 +195,7 @@ func TestService_Create(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "Error",
+			Name: "Returns error when document creation failed",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
 				repo.On("Create", documentModel).Return(testErr).Once()
@@ -258,7 +258,7 @@ func TestService_Delete(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Delete Error",
+			Name: "Returns error when document deletion failed",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
 				repo.On("GetByID", id).Return(documentModel, nil).Once()
@@ -269,7 +269,7 @@ func TestService_Delete(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Get Error",
+			Name: "Returns error when document retrieval failed",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
 				repo.On("GetByID", id).Return(nil, testErr).Once()
