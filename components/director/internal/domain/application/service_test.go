@@ -2,10 +2,8 @@ package application_test
 
 import (
 	"context"
-	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"testing"
-
-	"github.com/google/uuid"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application/automock"
@@ -114,8 +112,8 @@ func TestService_Create(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			appRepo := testCase.AppRepoFn()
 			webhookRepo := testCase.WebhookRepoFn()
 			apiRepo := testCase.APIRepoFn()
@@ -298,8 +296,8 @@ func TestService_Update(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			appRepo := testCase.AppRepoFn()
 			webhookRepo := testCase.WebhookRepoFn()
 			apiRepo := testCase.APIRepoFn()
@@ -472,8 +470,8 @@ func TestService_Delete(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			appRepo := testCase.AppRepoFn()
 			webhookRepo := testCase.WebhookRepoFn()
 			apiRepo := testCase.APIRepoFn()
@@ -550,8 +548,8 @@ func TestService_Get(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := application.NewService(repo, nil, nil, nil, nil)
@@ -636,8 +634,8 @@ func TestService_List(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := application.NewService(repo, nil, nil, nil, nil)
@@ -727,8 +725,8 @@ func TestService_AddAnnotation(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := application.NewService(repo, nil, nil, nil, nil)
@@ -813,8 +811,8 @@ func TestService_DeleteAnnotation(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := application.NewService(repo, nil, nil, nil, nil)
@@ -903,8 +901,8 @@ func TestService_AddLabel(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := application.NewService(repo, nil, nil, nil, nil)
@@ -994,8 +992,8 @@ func TestService_DeleteLabel(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := application.NewService(repo, nil, nil, nil, nil)
@@ -1030,8 +1028,7 @@ func modelFromInput(in model.ApplicationInput, applicationID string) testModel {
 
 	var webhooksModel []*model.ApplicationWebhook
 	for _, item := range in.Webhooks {
-		id := uuid.New().String()
-		webhooksModel = append(webhooksModel, item.ToWebhook(id, applicationID))
+		webhooksModel = append(webhooksModel, item.ToWebhook(uid.Generate(), applicationID))
 	}
 
 	var apisModel []*model.APIDefinition
@@ -1046,8 +1043,7 @@ func modelFromInput(in model.ApplicationInput, applicationID string) testModel {
 
 	var documentsModel []*model.Document
 	for _, item := range in.Documents {
-		id := uuid.New().String()
-		documentsModel = append(documentsModel, item.ToDocument(id, applicationID))
+		documentsModel = append(documentsModel, item.ToDocument(uid.Generate(), applicationID))
 	}
 
 	return testModel{

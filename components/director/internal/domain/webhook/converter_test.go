@@ -1,7 +1,6 @@
 package webhook_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
@@ -35,14 +34,15 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			authConv := &automock.AuthConverter{}
 			if testCase.Input != nil {
 				authConv.On("ToGraphQL", testCase.Input.Auth).Return(testCase.Expected.Auth)
 			}
 			converter := webhook.NewConverter(authConv)
+
+			// when
 			res := converter.ToGraphQL(testCase.Input)
 
 			// then
@@ -65,13 +65,12 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 		fixGQLWebhook("bar", "bez"),
 		{},
 	}
-	var nilAuth *model.Auth
-
-	// when
 	authConv := &automock.AuthConverter{}
 	authConv.On("ToGraphQL", input[0].Auth).Return(expected[0].Auth)
-	authConv.On("ToGraphQL", nilAuth).Return(nil)
+	authConv.On("ToGraphQL", (*model.Auth)(nil)).Return(nil)
 	converter := webhook.NewConverter(authConv)
+
+	// when
 	res := converter.MultipleToGraphQL(input)
 
 	// then
@@ -103,14 +102,15 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			authConv := &automock.AuthConverter{}
 			if testCase.Input != nil {
 				authConv.On("InputFromGraphQL", testCase.Input.Auth).Return(testCase.Expected.Auth)
 			}
 			converter := webhook.NewConverter(authConv)
+
+			// when
 			res := converter.InputFromGraphQL(testCase.Input)
 
 			// then
@@ -133,13 +133,12 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 		fixModelWebhookInput("bar"),
 		{},
 	}
-	var nilAuthInput *graphql.AuthInput
-
-	// when
 	authConv := &automock.AuthConverter{}
 	authConv.On("InputFromGraphQL", input[0].Auth).Return(expected[0].Auth)
-	authConv.On("InputFromGraphQL", nilAuthInput).Return(nil)
+	authConv.On("InputFromGraphQL", (*graphql.AuthInput)(nil)).Return(nil)
 	converter := webhook.NewConverter(authConv)
+
+	// when
 	res := converter.MultipleInputFromGraphQL(input)
 
 	// then

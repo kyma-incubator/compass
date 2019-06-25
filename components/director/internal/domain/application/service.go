@@ -3,10 +3,10 @@ package application
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/pkg/errors"
 )
 
@@ -73,7 +73,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.Application, error
 }
 
 func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string, error) {
-	id := uuid.New().String()
+	id := uid.Generate()
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", errors.Wrapf(err, "while loading tenant from context")
@@ -212,8 +212,7 @@ func (s *service) createRelatedResources(in model.ApplicationInput, applicationI
 
 	var webhooks []*model.ApplicationWebhook
 	for _, item := range in.Webhooks {
-		id := uuid.New().String()
-		webhooks = append(webhooks, item.ToWebhook(id, applicationID))
+		webhooks = append(webhooks, item.ToWebhook(uid.Generate(), applicationID))
 	}
 	err = s.webhook.CreateMany(webhooks)
 	if err != nil {
@@ -241,8 +240,7 @@ func (s *service) createRelatedResources(in model.ApplicationInput, applicationI
 
 	var documents []*model.Document
 	for _, item := range in.Documents {
-		id := uuid.New().String()
-		documents = append(documents, item.ToDocument(id, applicationID))
+		documents = append(documents, item.ToDocument(uid.Generate(), applicationID))
 	}
 	err = s.document.CreateMany(documents)
 	if err != nil {

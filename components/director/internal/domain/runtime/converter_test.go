@@ -1,7 +1,6 @@
 package runtime_test
 
 import (
-	"fmt"
 	"testing"
 
 	rtmautomock "github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
@@ -59,8 +58,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			authConverter := testCase.AuthConverterFn()
 
 			// when
@@ -125,8 +124,8 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// when
 			converter := runtime.NewConverter(authConverter)
 			res := converter.InputFromGraphQL(testCase.Input)

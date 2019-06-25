@@ -2,7 +2,6 @@ package application_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -91,8 +90,8 @@ func TestResolver_CreateApplication(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
@@ -194,8 +193,8 @@ func TestResolver_UpdateApplication(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
@@ -280,8 +279,8 @@ func TestResolver_DeleteApplication(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
@@ -333,24 +332,6 @@ func TestResolver_Application(t *testing.T) {
 			ExpectedErr:         nil,
 		},
 		{
-			Name: "Not Found",
-			ServiceFn: func() *automock.ApplicationService {
-				svc := &automock.ApplicationService{}
-				svc.On("Get", context.TODO(), "foo").Return(nil, nil).Once()
-
-				return svc
-			},
-			ConverterFn: func() *automock.ApplicationConverter {
-				conv := &automock.ApplicationConverter{}
-				var param *model.Application
-				conv.On("ToGraphQL", param).Return(nil).Once()
-				return conv
-			},
-			InputID:             "foo",
-			ExpectedApplication: nil,
-			ExpectedErr:         nil,
-		},
-		{
 			Name: "Error",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
@@ -368,8 +349,8 @@ func TestResolver_Application(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
@@ -459,8 +440,8 @@ func TestResolver_Applications(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
@@ -536,8 +517,8 @@ func TestResolver_AddApplicationLabel(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
@@ -634,8 +615,8 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
@@ -711,8 +692,8 @@ func TestResolver_AddApplicationAnnotation(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
@@ -805,8 +786,8 @@ func TestResolver_DeleteApplicationAnnotation(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
@@ -888,8 +869,8 @@ func TestResolver_Documents(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
@@ -960,8 +941,8 @@ func TestResolver_Webhooks(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
@@ -1056,8 +1037,8 @@ func TestResolver_AddApplicationWebhook(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
@@ -1152,8 +1133,8 @@ func TestResolver_UpdateApplicationWebhook(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
@@ -1245,8 +1226,8 @@ func TestResolver_DeleteApplicationWebhook(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 

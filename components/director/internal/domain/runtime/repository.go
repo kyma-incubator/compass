@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"errors"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -16,6 +17,11 @@ func NewRepository() *inMemoryRepository {
 
 func (r *inMemoryRepository) GetByID(id string) (*model.Runtime, error) {
 	runtime := r.store[id]
+
+	if runtime == nil {
+		return nil, errors.New("runtime not found")
+	}
+
 	return runtime, nil
 }
 
@@ -38,18 +44,34 @@ func (r *inMemoryRepository) List(filter []*labelfilter.LabelFilter, pageSize *i
 }
 
 func (r *inMemoryRepository) Create(item *model.Runtime) error {
+	if item == nil {
+		return errors.New("item can not be empty")
+	}
+
 	r.store[item.ID] = item
 
 	return nil
 }
 
 func (r *inMemoryRepository) Update(item *model.Runtime) error {
+	if item == nil {
+		return errors.New("item can not be empty")
+	}
+
+	if r.store[item.ID] == nil {
+		return errors.New("application not found")
+	}
+
 	r.store[item.ID] = item
 
 	return nil
 }
 
 func (r *inMemoryRepository) Delete(item *model.Runtime) error {
+	if item == nil {
+		return nil
+	}
+
 	delete(r.store, item.ID)
 
 	return nil

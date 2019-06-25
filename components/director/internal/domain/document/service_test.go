@@ -3,7 +3,6 @@ package document_test
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
@@ -59,8 +58,8 @@ func TestService_Get(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := document.NewService(repo)
@@ -142,19 +141,19 @@ func TestService_List(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := document.NewService(repo)
 
 			// when
-			rtm, err := svc.List(ctx, applicationID, testCase.InputPageSize, testCase.InputCursor)
+			docs, err := svc.List(ctx, applicationID, testCase.InputPageSize, testCase.InputCursor)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
-				assert.Equal(t, testCase.ExpectedResult, rtm)
+				assert.Equal(t, testCase.ExpectedResult, docs)
 			} else {
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
@@ -207,8 +206,8 @@ func TestService_Create(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := document.NewService(repo)
@@ -281,8 +280,8 @@ func TestService_Delete(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := document.NewService(repo)

@@ -1,7 +1,6 @@
 package document_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
@@ -35,14 +34,15 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			frConv := &automock.FetchRequestConverter{}
 			if testCase.Input != nil {
 				frConv.On("ToGraphQL", testCase.Input.FetchRequest).Return(testCase.Expected.FetchRequest)
 			}
 			converter := document.NewConverter(frConv)
+
+			// when
 			res := converter.ToGraphQL(testCase.Input)
 
 			// then
@@ -65,13 +65,12 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 		fixGQLDocument("bar"),
 		{},
 	}
-	var nilPointer *model.FetchRequest
-
-	// when
 	frConv := &automock.FetchRequestConverter{}
 	frConv.On("ToGraphQL", input[0].FetchRequest).Return(expected[0].FetchRequest)
-	frConv.On("ToGraphQL", nilPointer).Return(nil)
+	frConv.On("ToGraphQL", (*model.FetchRequest)(nil)).Return(nil)
 	converter := document.NewConverter(frConv)
+
+	// when
 	res := converter.MultipleToGraphQL(input)
 
 	// then
@@ -103,14 +102,15 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			frConv := &automock.FetchRequestConverter{}
 			if testCase.Input != nil {
 				frConv.On("InputFromGraphQL", testCase.Input.FetchRequest).Return(testCase.Expected.FetchRequest)
 			}
 			converter := document.NewConverter(frConv)
+
+			// when
 			res := converter.InputFromGraphQL(testCase.Input)
 
 			// then
@@ -133,13 +133,12 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 		fixModelDocumentInput("bar"),
 		{},
 	}
-	var nilPointer *graphql.FetchRequestInput
-
-	// when
 	frConv := &automock.FetchRequestConverter{}
 	frConv.On("InputFromGraphQL", input[0].FetchRequest).Return(expected[0].FetchRequest)
-	frConv.On("InputFromGraphQL", nilPointer).Return(nil)
+	frConv.On("InputFromGraphQL", (*graphql.FetchRequestInput)(nil)).Return(nil)
 	converter := document.NewConverter(frConv)
+
+	// when
 	res := converter.MultipleInputFromGraphQL(input)
 
 	// then

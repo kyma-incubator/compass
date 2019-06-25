@@ -3,7 +3,6 @@ package document_test
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
@@ -80,8 +79,8 @@ func TestResolver_AddDocument(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
@@ -134,20 +133,6 @@ func TestResolver_DeleteDocument(t *testing.T) {
 			ExpectedErr:      nil,
 		},
 		{
-			Name: "Not Found",
-			ServiceFn: func() *automock.DocumentService {
-				svc := &automock.DocumentService{}
-				svc.On("Get", context.TODO(), id).Return(nil, nil).Once()
-				return svc
-			},
-			ConverterFn: func() *automock.DocumentConverter {
-				conv := &automock.DocumentConverter{}
-				return conv
-			},
-			ExpectedDocument: nil,
-			ExpectedErr:      nil,
-		},
-		{
 			Name: "Get Error",
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
@@ -179,8 +164,8 @@ func TestResolver_DeleteDocument(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 

@@ -1,7 +1,6 @@
 package fetchrequest_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
@@ -39,14 +38,15 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			authConv := &automock.AuthConverter{}
 			if testCase.Input != nil {
 				authConv.On("ToGraphQL", testCase.Input.Auth).Return(testCase.Expected.Auth)
 			}
 			converter := fetchrequest.NewConverter(authConv)
+
+			// when
 			res := converter.ToGraphQL(testCase.Input)
 
 			// then
@@ -80,14 +80,15 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			authConv := &automock.AuthConverter{}
 			if testCase.Input != nil {
 				authConv.On("InputFromGraphQL", testCase.Input.Auth).Return(testCase.Expected.Auth)
 			}
 			converter := fetchrequest.NewConverter(authConv)
+
+			// when
 			res := converter.InputFromGraphQL(testCase.Input)
 
 			// then

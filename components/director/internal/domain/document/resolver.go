@@ -55,9 +55,6 @@ func (r *Resolver) DeleteDocument(ctx context.Context, id string) (*graphql.Docu
 	if err != nil {
 		return nil, err
 	}
-	if document == nil {
-		return nil, nil
-	}
 
 	deletedDocument := r.converter.ToGraphQL(document)
 

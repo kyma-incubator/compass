@@ -2,7 +2,6 @@ package runtime_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
@@ -62,8 +61,8 @@ func TestService_Create(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := runtime.NewService(repo)
@@ -146,8 +145,8 @@ func TestService_Update(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := runtime.NewService(repo)
@@ -225,8 +224,8 @@ func TestService_Delete(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := runtime.NewService(repo)
@@ -295,8 +294,8 @@ func TestService_Get(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := runtime.NewService(repo)
@@ -381,8 +380,8 @@ func TestService_List(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := runtime.NewService(repo)
@@ -472,8 +471,8 @@ func TestService_AddAnnotation(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := runtime.NewService(repo)
@@ -558,8 +557,8 @@ func TestService_DeleteAnnotation(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := runtime.NewService(repo)
@@ -648,8 +647,8 @@ func TestService_AddLabel(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := runtime.NewService(repo)
@@ -739,8 +738,8 @@ func TestService_DeleteLabel(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
 			svc := runtime.NewService(repo)

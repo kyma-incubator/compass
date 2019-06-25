@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
 
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 )
 
@@ -42,11 +42,9 @@ func (s *service) List(ctx context.Context, applicationID string, pageSize *int,
 }
 
 func (s *service) Create(ctx context.Context, applicationID string, in model.DocumentInput) (string, error) {
-	id := uuid.New().String()
-
 	document := &model.Document{
 		ApplicationID: applicationID,
-		ID:            id,
+		ID:            uid.Generate(),
 		Title:         in.Title,
 		Format:        in.Format,
 		Kind:          in.Kind,
@@ -59,7 +57,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Doc
 		return "", errors.Wrap(err, "while creating Document")
 	}
 
-	return id, nil
+	return document.ID, nil
 }
 
 func (s *service) Delete(ctx context.Context, id string) error {

@@ -66,6 +66,10 @@ func (r *inMemoryRepository) Update(item *model.ApplicationWebhook) error {
 		return errors.New("item can not be empty")
 	}
 
+	if r.store[item.ID] == nil {
+		return errors.New("webhook not found")
+	}
+
 	r.store[item.ID] = item
 
 	return nil

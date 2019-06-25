@@ -1,7 +1,6 @@
 package auth_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
@@ -34,8 +33,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// when
 			converter := auth.NewConverter()
 			res := converter.ToGraphQL(testCase.Input)
@@ -65,8 +64,8 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// when
 			converter := auth.NewConverter()
 			res := converter.InputFromGraphQL(testCase.Input)

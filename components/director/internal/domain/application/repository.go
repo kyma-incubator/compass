@@ -58,6 +58,10 @@ func (r *inMemoryRepository) Update(item *model.Application) error {
 		return errors.New("item can not be empty")
 	}
 
+	if r.store[item.ID] == nil {
+		return errors.New("application not found")
+	}
+
 	r.store[item.ID] = item
 
 	return nil
