@@ -2,8 +2,9 @@ package application_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application/automock"
