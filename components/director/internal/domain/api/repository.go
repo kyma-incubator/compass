@@ -1,25 +1,94 @@
 package api
 
 import (
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/pkg/errors"
 )
 
 type inMemoryRepository struct {
 	store map[string]*model.APIDefinition
 }
 
-func NewRepository() *inMemoryRepository {
+func NewAPIRepository() *inMemoryRepository {
 	return &inMemoryRepository{store: make(map[string]*model.APIDefinition)}
 }
 
-func (inMemoryRepository) ListByApplicationID(applicationID string) ([]*model.APIDefinition, error) {
-	panic("implement me")
+func (r *inMemoryRepository) GetByID(id string) (*model.APIDefinition, error) {
+
+	if api, ok := r.store[id]; ok {
+		return api,nil
+	}
+	return nil, errors.Errorf("error: APIDefinition with %s ID does not exist",id)
 }
 
-func (inMemoryRepository) CreateMany(items []*model.APIDefinition) error {
-	panic("implement me")
+// TODO: Make filtering and paging
+func (r *inMemoryRepository) List(filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.APIDefinitionPage, error) {
+	var items []*model.APIDefinition
+	for _, r := range r.store {
+		items = append(items, r)
+	}
+
+	return &model.APIDefinitionPage{
+		Data:       items,
+		TotalCount: len(items),
+		PageInfo: &pagination.Page{
+			StartCursor: "",
+			EndCursor:   "",
+			HasNextPage: false,
+		},
+	}, nil
 }
 
-func (inMemoryRepository) DeleteAllByApplicationID(id string) error {
-	panic("implement me")
+func (r *inMemoryRepository) ListByApplicationID(applicationID string) ([]*model.APIDefinition, error) {
+	var items []*model.APIDefinition
+	for _, a := range r.store {
+		if a.ApplicationID == applicationID{
+			items = append(items, a)
+		}
+	}
+
+	return items,nil
 }
+
+func (r *inMemoryRepository) Create(item *model.APIDefinition) error {
+	r.store[item.ID] = item
+
+	return nil
+}
+
+func (r *inMemoryRepository) CreateMany(items []*model.APIDefinition) error {
+	for _, item := range items {
+		err := r.Create(item)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *inMemoryRepository) Update(item *model.APIDefinition) error {
+	r.store[item.ID] = item
+
+	return nil
+}
+
+func (r *inMemoryRepository) Delete(item *model.APIDefinition) error {
+	delete(r.store, item.ID)
+
+	return nil
+}
+
+func (r *inMemoryRepository) DeleteAllByApplicationID(id string) error {
+	for _, item := range r.store{
+		if item.ApplicationID == id {
+			err := r.Delete(item)
+			if err != nil{
+				return err
+			}
+		}
+	}
+	return nil
+}
+

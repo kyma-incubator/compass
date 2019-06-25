@@ -118,3 +118,9 @@ type RuntimePage struct {
 	PageInfo   *pagination.Page
 	TotalCount int
 }
+
+type RuntimeAuth struct {
+	RuntimeID string
+	Auth      *Auth
+}
+

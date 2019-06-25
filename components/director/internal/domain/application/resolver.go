@@ -28,7 +28,12 @@ type ApplicationConverter interface {
 	InputFromGraphQL(in graphql.ApplicationInput) model.ApplicationInput
 }
 
-type APIService interface{}
+type APIService interface{
+	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.APIDefinitionPage, error)
+	Create(ctx context.Context, in model.APIDefinitionInput) (string, error)
+	Update(ctx context.Context, id string, in model.APIDefinitionInput) error
+	Delete(ctx context.Context, id string) error
+}
 
 type EventAPIService interface{}
 
@@ -232,12 +237,35 @@ func (r *Resolver) DeleteApplicationAnnotation(ctx context.Context, applicationI
 }
 
 func (r *Resolver) Apis(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
-	panic("not implemented")
+
+	labelFilter := labelfilter.MultipleFromGraphQL([]*graphql.LabelFilter{})
+
+	var cursor string
+	if after != nil {
+		cursor = string(*after)
+	}
+
+	apisPage, err := r.svc.List(ctx, labelFilter, first, &cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	gqlApis := r.converter.MultipleToGraphQL(apisPage.Data)
+	totalCount := len(gqlApis)
+
+	return &graphql.APIDefinitionPage{
+		Data:       []*graphql.APIDefinition{},
+		TotalCount: totalCount,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(apisPage.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(apisPage.PageInfo.EndCursor),
+			HasNextPage: apisPage.PageInfo.HasNextPage,
+		},
+	}, nil
 }
 func (r *Resolver) EventAPIs(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.EventAPIDefinitionPage, error) {
 	panic("not implemented")
 }
-
 // TODO: Proper error handling
 // TODO: Pagination
 func (r *Resolver) Documents(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {

@@ -11,6 +11,22 @@ type AuthConverter struct {
 	mock.Mock
 }
 
+// InputFromGraphQL provides a mock function with given fields: in
+func (_m *AuthConverter) InputFromGraphQL(in *graphql.AuthInput) *model.AuthInput {
+	ret := _m.Called(in)
+
+	var r0 *model.AuthInput
+	if rf, ok := ret.Get(0).(func(*graphql.AuthInput) *model.AuthInput); ok {
+		r0 = rf(in)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.AuthInput)
+		}
+	}
+
+	return r0
+}
+
 // ToGraphQL provides a mock function with given fields: in
 func (_m *AuthConverter) ToGraphQL(in *model.Auth) *graphql.Auth {
 	ret := _m.Called(in)
