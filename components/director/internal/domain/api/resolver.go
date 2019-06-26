@@ -18,7 +18,7 @@ type APIService interface {
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.APIDefinitionPage, error)
 	SetAPIAuth(ctx context.Context, apiID string, runtimeID string, in model.AuthInput) (*model.RuntimeAuth, error)
-	DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*model.RuntimeAuth,error)
+	DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*model.RuntimeAuth, error)
 	RefetchAPISpec(ctx context.Context, id string) (*model.APISpec, error)
 }
 

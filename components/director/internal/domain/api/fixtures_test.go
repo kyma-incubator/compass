@@ -1,9 +1,10 @@
 package api_test
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/graphql"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"testing"
 )
 
 func fixModelAPIDefinition(id, name, description string) *model.APIDefinition {
@@ -29,9 +30,9 @@ func fixDetailedModelAPIDefinition(t *testing.T, id, name, description string, g
 	format := model.SpecFormatJSON
 
 	spec := &model.APISpec{
-		Data:   &data,
-		Format: &format,
-		Type:   model.APISpecTypeOpenAPI,
+		Data:         &data,
+		Format:       &format,
+		Type:         model.APISpecTypeOpenAPI,
 		FetchRequest: &model.FetchRequest{},
 	}
 
@@ -47,7 +48,7 @@ func fixDetailedModelAPIDefinition(t *testing.T, id, name, description string, g
 	}
 
 	auth1 := model.Auth{
-		AdditionalHeaders:     map[string][]string{"testHeader": {"hval1", "hval2"}},
+		AdditionalHeaders: map[string][]string{"testHeader": {"hval1", "hval2"}},
 	}
 	auth2 := model.Auth{
 		AdditionalQueryParams: map[string][]string{"testParam": {"pval1", "pval2"}},
@@ -70,7 +71,7 @@ func fixDetailedModelAPIDefinition(t *testing.T, id, name, description string, g
 		Spec:          spec,
 		TargetURL:     "https://test-url.com",
 		Group:         &group,
-		Auths:         []*model.RuntimeAuth{&runtimeAuth1,&runtimeAuth2},
+		Auths:         []*model.RuntimeAuth{&runtimeAuth1, &runtimeAuth2},
 		DefaultAuth:   &auth1,
 		Version:       version,
 	}
@@ -81,9 +82,9 @@ func fixDetailedGQLAPIDefinition(t *testing.T, id, name, description string, gro
 	format := graphql.SpecFormatJSON
 
 	spec := &graphql.APISpec{
-		Data:   &data,
-		Format: &format,
-		Type:   graphql.APISpecTypeOpenAPI,
+		Data:         &data,
+		Format:       &format,
+		Type:         graphql.APISpecTypeOpenAPI,
 		FetchRequest: &graphql.FetchRequest{},
 	}
 
@@ -102,7 +103,7 @@ func fixDetailedGQLAPIDefinition(t *testing.T, id, name, description string, gro
 	params := graphql.QueryParams{"testParam": {"pval1", "pval2"}}
 
 	auth1 := graphql.Auth{
-		AdditionalHeaders:     &headers,
+		AdditionalHeaders: &headers,
 	}
 	auth2 := graphql.Auth{
 		AdditionalQueryParams: &params,
@@ -126,7 +127,7 @@ func fixDetailedGQLAPIDefinition(t *testing.T, id, name, description string, gro
 		TargetURL:     "https://test-url.com",
 		Group:         &group,
 		Auth:          nil,
-		Auths:         []*graphql.RuntimeAuth{&runtimeAuth1,&runtimeAuth2},
+		Auths:         []*graphql.RuntimeAuth{&runtimeAuth1, &runtimeAuth2},
 		DefaultAuth:   &auth1,
 		Version:       version,
 	}
@@ -137,9 +138,9 @@ func fixModelAPIDefinitionInput(name, description string, group string) *model.A
 	format := model.SpecFormatYaml
 
 	spec := &model.APISpecInput{
-		Data:   &data,
-		Type:   model.APISpecTypeOpenAPI,
-		Format: &format,
+		Data:         &data,
+		Type:         model.APISpecTypeOpenAPI,
+		Format:       &format,
 		FetchRequest: &model.FetchRequestInput{},
 	}
 
@@ -159,7 +160,7 @@ func fixModelAPIDefinitionInput(name, description string, group string) *model.A
 		Password: "pwd",
 	}
 	authInput := model.AuthInput{
-		Credential:            &model.CredentialDataInput{Basic: &basicCredentialDataInput},
+		Credential: &model.CredentialDataInput{Basic: &basicCredentialDataInput},
 	}
 
 	return &model.APIDefinitionInput{
@@ -178,9 +179,9 @@ func fixGQLAPIDefinitionInput(name, description string, group string) *graphql.A
 	data := graphql.CLOB("data")
 
 	spec := &graphql.APISpecInput{
-		Data:   &data,
-		Type:   graphql.APISpecTypeOpenAPI,
-		Format: graphql.SpecFormatYaml,
+		Data:         &data,
+		Type:         graphql.APISpecTypeOpenAPI,
+		Format:       graphql.SpecFormatYaml,
 		FetchRequest: &graphql.FetchRequestInput{},
 	}
 
@@ -202,7 +203,7 @@ func fixGQLAPIDefinitionInput(name, description string, group string) *graphql.A
 
 	credentialDataInput := graphql.CredentialDataInput{Basic: &basicCredentialDataInput}
 	defaultAuth := graphql.AuthInput{
-		Credential:            &credentialDataInput,
+		Credential: &credentialDataInput,
 	}
 
 	return &graphql.APIDefinitionInput{

@@ -169,7 +169,7 @@ func (c *converter) runtimeAuthToGraphQL(in *model.RuntimeAuth) *graphql.Runtime
 }
 
 func (c *converter) runtimeAuthArrToGraphQL(in []*model.RuntimeAuth) []*graphql.RuntimeAuth {
-	var	auths []*graphql.RuntimeAuth
+	var auths []*graphql.RuntimeAuth
 	for _, item := range in {
 		auths = append(auths, &graphql.RuntimeAuth{
 			RuntimeID: item.RuntimeID,

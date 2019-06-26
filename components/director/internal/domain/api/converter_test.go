@@ -2,8 +2,9 @@ package api_test
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api/automock"
@@ -15,16 +16,15 @@ import (
 func TestConverter_ToGraphQL(t *testing.T) {
 	// given
 
-
 	//data := graphql.CLOB("")
 	modelAPIDefinition := fixDetailedModelAPIDefinition(t, "foo", "Foo", "Lorem ipsum", "group")
 	gqlAPIDefinition := fixDetailedGQLAPIDefinition(t, "foo", "Foo", "Lorem ipsum", "group")
 
 	testCases := []struct {
-		Name     string
-		Input    *model.APIDefinition
-		Expected *graphql.APIDefinition
-		AuthConverterFn func() *automock.AuthConverter
+		Name                  string
+		Input                 *model.APIDefinition
+		Expected              *graphql.APIDefinition
+		AuthConverterFn       func() *automock.AuthConverter
 		FetchRequestConverter func() *automock.FetchRequestConverter
 	}{
 		{

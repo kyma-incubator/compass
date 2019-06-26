@@ -42,7 +42,7 @@ func (s *service) List(ctx context.Context, applicationID string) ([]*model.Appl
 }
 
 func (s *service) Create(ctx context.Context, applicationID string, in model.ApplicationWebhookInput) (string, error) {
-	webhook := in.ToWebhook(uid.Generate(),applicationID)
+	webhook := in.ToWebhook(uid.Generate(), applicationID)
 
 	err := s.repo.Create(webhook)
 	if err != nil {
@@ -58,7 +58,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationWeb
 		return errors.Wrap(err, "while getting Webhook")
 	}
 
-	webhook = in.ToWebhook(id,webhook.ApplicationID)
+	webhook = in.ToWebhook(id, webhook.ApplicationID)
 
 	err = s.repo.Update(webhook)
 	if err != nil {

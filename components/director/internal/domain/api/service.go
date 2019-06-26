@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -80,7 +81,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return s.repo.Delete(api)
 }
 
-func (s *service) SetAPIAuth(ctx context.Context, apiID string, runtimeID string, in model.AuthInput) (*model.RuntimeAuth,error) {
+func (s *service) SetAPIAuth(ctx context.Context, apiID string, runtimeID string, in model.AuthInput) (*model.RuntimeAuth, error) {
 	api, err := s.Get(ctx, apiID)
 	if err != nil {
 		return nil, err
@@ -115,10 +116,10 @@ func (s *service) SetAPIAuth(ctx context.Context, apiID string, runtimeID string
 	return runtimeAuth, nil
 }
 
-func (s *service) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*model.RuntimeAuth,error) {
+func (s *service) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*model.RuntimeAuth, error) {
 	api, err := s.Get(ctx, apiID)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 
 	var runtimeAuth *model.RuntimeAuth
@@ -136,7 +137,7 @@ func (s *service) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID str
 		}
 	}
 
-	return runtimeAuth,nil
+	return runtimeAuth, nil
 
 }
 
