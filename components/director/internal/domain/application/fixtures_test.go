@@ -132,7 +132,6 @@ func fixModelApplicationInput(name, description string) model.ApplicationInput {
 	url := "https://foo.bar"
 
 	kind := "test"
-	desc := "Sample"
 	return model.ApplicationInput{
 		Name:        name,
 		Description: &description,
@@ -151,10 +150,12 @@ func fixModelApplicationInput(name, description string) model.ApplicationInput {
 			{Name: "api1", TargetURL: "foo.bar"},
 			{Name: "api2", TargetURL: "foo.bar2"},
 		},
-		EventAPIs: []*model.EventAPIDefinitionInput{
-			{Name: "event1", Description: &desc},
-			{Name: "event2", Description: &desc},
-		},
+		// TODO
+		//desc := "Sample"
+		//EventAPIs: []*model.EventAPIDefinitionInput{
+		//	{Name: "event1", Description: &desc},
+		//	{Name: "event2", Description: &desc},
+		//},
 		Documents: []*model.DocumentInput{
 			{DisplayName: "doc1", Kind: &kind},
 			{DisplayName: "doc2", Kind: &kind},

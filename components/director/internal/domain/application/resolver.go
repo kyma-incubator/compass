@@ -275,7 +275,16 @@ func (r *Resolver) Apis(ctx context.Context, obj *graphql.Application, group *st
 	}, nil
 }
 func (r *Resolver) EventAPIs(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.EventAPIDefinitionPage, error) {
-	panic("not implemented")
+	//TODO panic("not implemented")
+	return &graphql.EventAPIDefinitionPage{
+		Data:       make([]*graphql.EventAPIDefinition, 0),
+		TotalCount: 0,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor("1"),
+			EndCursor:   graphql.PageCursor("2"),
+			HasNextPage: false,
+		},
+	}, nil
 }
 
 // TODO: Proper error handling

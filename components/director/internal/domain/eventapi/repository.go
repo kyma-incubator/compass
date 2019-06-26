@@ -13,13 +13,16 @@ func NewRepository() *inMemoryRepository {
 }
 
 func (inMemoryRepository) ListByApplicationID(applicationID string) ([]*model.EventAPIDefinition, error) {
-	panic("implement me")
+	//TODO panic("implement me")
+	return nil, nil
 }
 
 func (inMemoryRepository) CreateMany(items []*model.EventAPIDefinition) error {
-	panic("implement me")
+	//TODO panic("implement me")
+	return nil
 }
 
 func (inMemoryRepository) DeleteAllByApplicationID(id string) error {
-	panic("implement me")
+	//TODO panic("implement me")
+	return nil
 }
