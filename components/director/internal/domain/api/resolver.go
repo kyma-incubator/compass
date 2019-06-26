@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -10,7 +11,7 @@ import (
 )
 
 //go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
-type APIService interface{
+type APIService interface {
 	Create(ctx context.Context, in model.APIDefinitionInput) (string, error)
 	Update(ctx context.Context, id string, in model.APIDefinitionInput) error
 	Get(ctx context.Context, id string) (*model.APIDefinition, error)
@@ -18,11 +19,11 @@ type APIService interface{
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.APIDefinitionPage, error)
 	SetApiAuth(ctx context.Context, apiID string, runtimeID string, in model.AuthInput) error
 	DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) error
-	RefetchAPISpec(ctx context.Context, id string) (*model.APISpec,error)
+	RefetchAPISpec(ctx context.Context, id string) (*model.APISpec, error)
 }
 
 //go:generate mockery -name=APIConverter -output=automock -outpkg=automock -case=underscore
-type APIConverter interface{
+type APIConverter interface {
 	ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition
 	MultipleToGraphQL(in []*model.APIDefinition) []*graphql.APIDefinition
 	MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) []*model.APIDefinitionInput
@@ -34,7 +35,6 @@ type Resolver struct {
 	converter APIConverter
 }
 
-
 func NewResolver(svc APIService, converter APIConverter) *Resolver {
 	return &Resolver{
 		svc:       svc,
@@ -42,7 +42,7 @@ func NewResolver(svc APIService, converter APIConverter) *Resolver {
 	}
 }
 
-func (r *Resolver) ApiDefinitions(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage,error){
+func (r *Resolver) ApiDefinitions(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
 	labelFilter := labelfilter.MultipleFromGraphQL(filter)
 
 	var cursor string
@@ -69,67 +69,67 @@ func (r *Resolver) ApiDefinitions(ctx context.Context, filter []*graphql.LabelFi
 	}, nil
 }
 
-func (r *Resolver) ApiDefinition(ctx context.Context, id string) (*graphql.APIDefinition,error){
-	api, err := r.svc.Get(ctx,id)
+func (r *Resolver) ApiDefinition(ctx context.Context, id string) (*graphql.APIDefinition, error) {
+	api, err := r.svc.Get(ctx, id)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 
-	return r.converter.ToGraphQL(api),nil
+	return r.converter.ToGraphQL(api), nil
 }
 
 func (r *Resolver) AddAPI(ctx context.Context, applicationID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
 	convertedIn := r.converter.InputFromGraphQL(&in)
 
-	id, err := r.svc.Create(ctx,*convertedIn)
+	id, err := r.svc.Create(ctx, *convertedIn)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 
-	api, err := r.svc.Get(ctx,id)
+	api, err := r.svc.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
 	gqlApi := r.converter.ToGraphQL(api)
 
-	return gqlApi,nil
+	return gqlApi, nil
 
 }
 func (r *Resolver) UpdateAPI(ctx context.Context, id string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
 	convertedIn := r.converter.InputFromGraphQL(&in)
 
-	err := r.svc.Update(ctx,id,*convertedIn)
+	err := r.svc.Update(ctx, id, *convertedIn)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 
-	api, err := r.svc.Get(ctx,id)
+	api, err := r.svc.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
 	gqlApi := r.converter.ToGraphQL(api)
 
-	return gqlApi,nil
+	return gqlApi, nil
 }
 func (r *Resolver) DeleteAPI(ctx context.Context, id string) (*graphql.APIDefinition, error) {
-	api, err := r.svc.Get(ctx,id)
+	api, err := r.svc.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
 	deletedApi := r.converter.ToGraphQL(api)
 
-	err = r.svc.Delete(ctx,id)
+	err = r.svc.Delete(ctx, id)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 
-	return deletedApi,nil
+	return deletedApi, nil
 }
 func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.APISpec, error) {
-	spec, err := r.svc.RefetchAPISpec(ctx,apiID)
+	spec, err := r.svc.RefetchAPISpec(ctx, apiID)
 	if err != nil {
 		return nil, err
 	}
@@ -144,12 +144,12 @@ func (r *Resolver) SetAPIAuth(ctx context.Context, apiID string, runtimeID strin
 	conv := auth.NewConverter()
 	convertedIn := conv.InputFromGraphQL(&in)
 
-	err := r.svc.SetApiAuth(ctx,apiID,runtimeID,*convertedIn)
+	err := r.svc.SetApiAuth(ctx, apiID, runtimeID, *convertedIn)
 	if err != nil {
-		return  nil, err
+		return nil, err
 	}
 
-	api, err := r.svc.Get(ctx,apiID)
+	api, err := r.svc.Get(ctx, apiID)
 	if err != nil {
 		return nil, err
 	}
@@ -164,12 +164,12 @@ func (r *Resolver) SetAPIAuth(ctx context.Context, apiID string, runtimeID strin
 func (r *Resolver) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*graphql.RuntimeAuth, error) {
 	conv := auth.NewConverter()
 
-	err := r.svc.DeleteAPIAuth(ctx,apiID,runtimeID)
+	err := r.svc.DeleteAPIAuth(ctx, apiID, runtimeID)
 	if err != nil {
 		return nil, err
 	}
 
-	api, err := r.svc.Get(ctx,apiID)
+	api, err := r.svc.Get(ctx, apiID)
 	if err != nil {
 		return nil, err
 	}

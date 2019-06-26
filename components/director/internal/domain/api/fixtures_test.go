@@ -12,24 +12,24 @@ import (
 func fixModelApiDefinition(id, name, description string) *model.APIDefinition {
 
 	data := []byte("")
-	spec:= &model.APISpec{
+	spec := &model.APISpec{
 		Data: &data,
 		FetchRequest: &model.FetchRequest{
-			Mode:model.FetchModeSingle,
-			Status:&model.FetchRequestStatus{
-				Condition:model.FetchRequestStatusConditionInitial,
+			Mode: model.FetchModeSingle,
+			Status: &model.FetchRequestStatus{
+				Condition: model.FetchRequestStatusConditionInitial,
 			},
 		},
 	}
-	version:= &model.Version{}
+	version := &model.Version{}
 
 	return &model.APIDefinition{
-		ID: id,
+		ID:            id,
 		ApplicationID: "applicationID",
-		Name:        name,
-		Description: &description,
-		Spec:spec,
-		Version:version,
+		Name:          name,
+		Description:   &description,
+		Spec:          spec,
+		Version:       version,
 	}
 }
 
@@ -39,7 +39,7 @@ func fixGQLApiDefinition(id, name, description string) *graphql.APIDefinition {
 	spec := &graphql.APISpec{
 		Data: &data,
 		FetchRequest: &graphql.FetchRequest{
-			Mode:graphql.FetchModeSingle,
+			Mode: graphql.FetchModeSingle,
 			Status: &graphql.FetchRequestStatus{
 				Condition: graphql.FetchRequestStatusConditionInitial,
 			},
@@ -48,24 +48,24 @@ func fixGQLApiDefinition(id, name, description string) *graphql.APIDefinition {
 	version := &graphql.Version{}
 
 	return &graphql.APIDefinition{
-		ID: id,
+		ID:            id,
 		ApplicationID: "applicationID",
-		Name:        name,
-		Description: &description,
-		Spec:spec,
-		Version:version,
-		Auth:&graphql.RuntimeAuth{},
-		Auths:[]*graphql.RuntimeAuth{},
-		DefaultAuth:&graphql.Auth{},
+		Name:          name,
+		Description:   &description,
+		Spec:          spec,
+		Version:       version,
+		Auth:          &graphql.RuntimeAuth{},
+		Auths:         []*graphql.RuntimeAuth{},
+		DefaultAuth:   &graphql.Auth{},
 	}
 }
 
 func fixModelApiDefinitionWithSpec(id, name string, spec model.APISpec) *model.APIDefinition {
 	return &model.APIDefinition{
-		ID: id,
+		ID:          id,
 		Name:        name,
 		Description: nil,
-		Spec: &spec,
+		Spec:        &spec,
 	}
 }
 
@@ -79,16 +79,16 @@ func fixDetailedModelApiDefinition(t *testing.T, id, name, description string, g
 	format := model.SpecFormatJSON
 
 	spec := &model.APISpec{
-		Data: &data,
+		Data:   &data,
 		Format: &format,
-		Type:model.APISpecTypeOpenAPI,
+		Type:   model.APISpecTypeOpenAPI,
 		FetchRequest: &model.FetchRequest{
-			URL: "https://test-fetch-request.com",
-			Auth:nil,
-			Mode:model.FetchModeSingle,
-			Filter:&filter,
+			URL:    "https://test-fetch-request.com",
+			Auth:   nil,
+			Mode:   model.FetchModeSingle,
+			Filter: &filter,
 			Status: &model.FetchRequestStatus{
-				Condition:model.FetchRequestStatusConditionInitial,
+				Condition: model.FetchRequestStatusConditionInitial,
 				Timestamp: time,
 			},
 		},
@@ -99,21 +99,21 @@ func fixDetailedModelApiDefinition(t *testing.T, id, name, description string, g
 	forRemoval := false
 
 	version := &model.Version{
-		Value: "1.0.0",
-		Deprecated:&deprecated,
+		Value:           "1.0.0",
+		Deprecated:      &deprecated,
 		DeprecatedSince: &deprecatedSince,
-		ForRemoval: &forRemoval,
+		ForRemoval:      &forRemoval,
 	}
 
 	auth1 := model.Auth{
 		Credential: model.CredentialData{
-			Basic:&model.BasicCredentialData{
+			Basic: &model.BasicCredentialData{
 				Username: "test",
 				Password: "pwd",
 			},
 		},
-		AdditionalHeaders:     map[string][]string{"testHeader":{"hval1","hval2"}},
-		AdditionalQueryParams: map[string][]string{"testParam":{"pval1","pval2"}},
+		AdditionalHeaders:     map[string][]string{"testHeader": {"hval1", "hval2"}},
+		AdditionalQueryParams: map[string][]string{"testParam": {"pval1", "pval2"}},
 		RequestAuth:           &model.CredentialRequestAuth{},
 	}
 	auth2 := model.Auth{
@@ -134,7 +134,7 @@ func fixDetailedModelApiDefinition(t *testing.T, id, name, description string, g
 	}
 	runtimeAuth2 := model.RuntimeAuth{
 		RuntimeID: "2",
-		Auth: &auth2,
+		Auth:      &auth2,
 	}
 
 	return &model.APIDefinition{
@@ -145,9 +145,9 @@ func fixDetailedModelApiDefinition(t *testing.T, id, name, description string, g
 		Spec:          spec,
 		TargetURL:     "https://test-url.com",
 		Group:         &group,
-		Auth:          &runtimeAuth1,                                               //TODO: https://github.com/kyma-incubator/compass/issues/67
-		Auths:         []*model.RuntimeAuth{&runtimeAuth1,&runtimeAuth2}, //TODO: https://github.com/kyma-incubator/compass/issues/67
-		DefaultAuth:   &auth1,                                            //TODO: https://github.com/kyma-incubator/compass/issues/67
+		Auth:          &runtimeAuth1,                                      //TODO: https://github.com/kyma-incubator/compass/issues/67
+		Auths:         []*model.RuntimeAuth{&runtimeAuth1, &runtimeAuth2}, //TODO: https://github.com/kyma-incubator/compass/issues/67
+		DefaultAuth:   &auth1,                                             //TODO: https://github.com/kyma-incubator/compass/issues/67
 		Version:       version,
 	}
 }
@@ -161,16 +161,16 @@ func fixDetailedGQLApiDefinition(t *testing.T, id, name, description string, gro
 	format := graphql.SpecFormatJSON
 
 	spec := &graphql.APISpec{
-		Data: &data,
+		Data:   &data,
 		Format: &format,
-		Type: graphql.APISpecTypeOpenAPI,
+		Type:   graphql.APISpecTypeOpenAPI,
 		FetchRequest: &graphql.FetchRequest{
-			URL: "https://test-fetch-request.com",
-			Auth:nil,
-			Mode:graphql.FetchModeSingle,
-			Filter:&filter,
+			URL:    "https://test-fetch-request.com",
+			Auth:   nil,
+			Mode:   graphql.FetchModeSingle,
+			Filter: &filter,
 			Status: &graphql.FetchRequestStatus{
-				Condition:graphql.FetchRequestStatusConditionInitial,
+				Condition: graphql.FetchRequestStatusConditionInitial,
 				Timestamp: graphql.Timestamp(time),
 			},
 		},
@@ -181,23 +181,22 @@ func fixDetailedGQLApiDefinition(t *testing.T, id, name, description string, gro
 	forRemoval := false
 
 	version := &graphql.Version{
-		Value: "1.0.0",
-		Deprecated: &deprecated,
+		Value:           "1.0.0",
+		Deprecated:      &deprecated,
 		DeprecatedSince: &deprecatedSince,
-		ForRemoval:&forRemoval,
+		ForRemoval:      &forRemoval,
 	}
 
-	headers1 := graphql.HttpHeaders{"testHeader":{"hval1","hval2"}}
-	headers2 := graphql.HttpHeaders{"testHeader":{"hval1","hval2"}}
-	params1 := graphql.QueryParams{"testParam":{"pval1","pval2"}}
-	params2 := graphql.QueryParams{"testParam":{"pval1","pval2"}}
-
+	headers1 := graphql.HttpHeaders{"testHeader": {"hval1", "hval2"}}
+	headers2 := graphql.HttpHeaders{"testHeader": {"hval1", "hval2"}}
+	params1 := graphql.QueryParams{"testParam": {"pval1", "pval2"}}
+	params2 := graphql.QueryParams{"testParam": {"pval1", "pval2"}}
 
 	auth1 := graphql.Auth{
 		Credential: &graphql.BasicCredentialData{
-				Username: "test",
-				Password: "pwd",
-			},
+			Username: "test",
+			Password: "pwd",
+		},
 		AdditionalHeaders:     &headers1,
 		AdditionalQueryParams: &params1,
 		RequestAuth:           &graphql.CredentialRequestAuth{},
@@ -218,21 +217,21 @@ func fixDetailedGQLApiDefinition(t *testing.T, id, name, description string, gro
 	}
 	runtimeAuth2 := graphql.RuntimeAuth{
 		RuntimeID: "2",
-		Auth: &auth2,
+		Auth:      &auth2,
 	}
 
 	return &graphql.APIDefinition{
-		ID: id,
+		ID:            id,
 		ApplicationID: "applicationID",
-		Name:        name,
-		Description: &description,
-		Spec: spec,
-		TargetURL: "https://test-url.com",
-		Group: &group,
-		Auth: &runtimeAuth1,          //TODO: https://github.com/kyma-incubator/compass/issues/67
-		Auths: []*graphql.RuntimeAuth{&runtimeAuth1,&runtimeAuth2},         //TODO: https://github.com/kyma-incubator/compass/issues/67
-		DefaultAuth: &auth1, //TODO: https://github.com/kyma-incubator/compass/issues/67
-		Version: version,
+		Name:          name,
+		Description:   &description,
+		Spec:          spec,
+		TargetURL:     "https://test-url.com",
+		Group:         &group,
+		Auth:          &runtimeAuth1,                                        //TODO: https://github.com/kyma-incubator/compass/issues/67
+		Auths:         []*graphql.RuntimeAuth{&runtimeAuth1, &runtimeAuth2}, //TODO: https://github.com/kyma-incubator/compass/issues/67
+		DefaultAuth:   &auth1,                                               //TODO: https://github.com/kyma-incubator/compass/issues/67
+		Version:       version,
 	}
 }
 
@@ -244,14 +243,14 @@ func fixModelApiDefinitionInput(name, description string, group string) *model.A
 	filter := "filter"
 
 	spec := &model.APISpecInput{
-		Data: &data,
-		Type: model.APISpecTypeOpenAPI,
+		Data:   &data,
+		Type:   model.APISpecTypeOpenAPI,
 		Format: &format,
 		FetchRequest: &model.FetchRequestInput{
-			URL: "https://test-fetch-request.com",
-			Auth:nil,//TODO: https://github.com/kyma-incubator/compass/issues/67
-			Mode: &mode,
-			Filter:&filter,
+			URL:    "https://test-fetch-request.com",
+			Auth:   nil, //TODO: https://github.com/kyma-incubator/compass/issues/67
+			Mode:   &mode,
+			Filter: &filter,
 		},
 	}
 
@@ -260,10 +259,10 @@ func fixModelApiDefinitionInput(name, description string, group string) *model.A
 	forRemoval := false
 
 	version := &model.VersionInput{
-		Value: "1.0.0",
-		Deprecated:&deprecated,
+		Value:           "1.0.0",
+		Deprecated:      &deprecated,
 		DeprecatedSince: &deprecatedSince,
-		ForRemoval: &forRemoval,
+		ForRemoval:      &forRemoval,
 	}
 
 	credentialRequestAuthInput := model.CredentialRequestAuthInput{}
@@ -273,19 +272,19 @@ func fixModelApiDefinitionInput(name, description string, group string) *model.A
 	}
 	authInput := model.AuthInput{
 		Credential:            &model.CredentialDataInput{Basic: &basicCredentialDataInput},
-		AdditionalHeaders:     map[string][]string{"testHeader":{"hval1","hval2"}},
-		AdditionalQueryParams: map[string][]string{"testParam":{"pval1","pval2"}},
+		AdditionalHeaders:     map[string][]string{"testHeader": {"hval1", "hval2"}},
+		AdditionalQueryParams: map[string][]string{"testParam": {"pval1", "pval2"}},
 		RequestAuth:           &credentialRequestAuthInput,
 	}
 	return &model.APIDefinitionInput{
 		ApplicationID: "applicationID",
-		Name:        name,
-		Description: &description,
-		TargetURL: "https://test-url.com",
-		Group: &group,
-		Spec: spec,
-		Version: version,
-		DefaultAuth: &authInput, //TODO: https://github.com/kyma-incubator/compass/issues/67
+		Name:          name,
+		Description:   &description,
+		TargetURL:     "https://test-url.com",
+		Group:         &group,
+		Spec:          spec,
+		Version:       version,
+		DefaultAuth:   &authInput, //TODO: https://github.com/kyma-incubator/compass/issues/67
 	}
 }
 
@@ -296,14 +295,14 @@ func fixGQLApiDefinitionInput(name, description string, group string) *graphql.A
 	filter := "filter"
 
 	spec := &graphql.APISpecInput{
-		Data: &data,
-		Type: graphql.APISpecTypeOpenAPI,
+		Data:   &data,
+		Type:   graphql.APISpecTypeOpenAPI,
 		Format: graphql.SpecFormatYaml,
 		FetchRequest: &graphql.FetchRequestInput{
-			URL: "https://test-fetch-request.com",
-			Auth:nil,//TODO: https://github.com/kyma-incubator/compass/issues/67
-			Mode: &mode,
-			Filter:&filter,
+			URL:    "https://test-fetch-request.com",
+			Auth:   nil, //TODO: https://github.com/kyma-incubator/compass/issues/67
+			Mode:   &mode,
+			Filter: &filter,
 		},
 	}
 
@@ -312,14 +311,14 @@ func fixGQLApiDefinitionInput(name, description string, group string) *graphql.A
 	forRemoval := false
 
 	version := &graphql.VersionInput{
-		Value: "1.0.0",
-		Deprecated:&deprecated,
+		Value:           "1.0.0",
+		Deprecated:      &deprecated,
 		DeprecatedSince: &deprecatedSince,
-		ForRemoval: &forRemoval,
+		ForRemoval:      &forRemoval,
 	}
 
-	headers := graphql.HttpHeaders{"testHeader":{"hval1","hval2"}}
-	params := graphql.QueryParams{"testParam":{"pval1","pval2"}}
+	headers := graphql.HttpHeaders{"testHeader": {"hval1", "hval2"}}
+	params := graphql.QueryParams{"testParam": {"pval1", "pval2"}}
 	basicCredentialDataInput := graphql.BasicCredentialDataInput{
 		Username: "test",
 		Password: "pwd",
@@ -334,12 +333,12 @@ func fixGQLApiDefinitionInput(name, description string, group string) *graphql.A
 
 	return &graphql.APIDefinitionInput{
 		ApplicationID: "applicationID",
-		Name:        name,
-		Description: &description,
-		TargetURL:   "https://test-url.com",
-		Group:       &group,
-		Spec:        spec,
-		Version:     version,
-		DefaultAuth: &defaultAuth, //TODO: https://github.com/kyma-incubator/compass/issues/67
+		Name:          name,
+		Description:   &description,
+		TargetURL:     "https://test-url.com",
+		Group:         &group,
+		Spec:          spec,
+		Version:       version,
+		DefaultAuth:   &defaultAuth, //TODO: https://github.com/kyma-incubator/compass/issues/67
 	}
 }

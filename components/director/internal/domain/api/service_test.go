@@ -3,6 +3,8 @@ package api_test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -11,21 +13,18 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestService_Create(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
-
 	modelInput := model.APIDefinitionInput{
-		Name:        "Foo",
+		Name:          "Foo",
 		ApplicationID: "id",
-		TargetURL: "https://test-url.com",
-		Spec: &model.APISpecInput{},
-		Version: &model.VersionInput{
-		},
+		TargetURL:     "https://test-url.com",
+		Spec:          &model.APISpecInput{},
+		Version:       &model.VersionInput{},
 	}
 
 	apiDefinitionModel := mock.MatchedBy(func(api *model.APIDefinition) bool {
@@ -87,16 +86,16 @@ func TestService_Update(t *testing.T) {
 
 	//mode := model.FetchModeSingle
 	modelInput := model.APIDefinitionInput{
-		Name:        "Foo",
+		Name:          "Foo",
 		ApplicationID: "id",
-		TargetURL: "https://test-url.com",
+		TargetURL:     "https://test-url.com",
 		Spec: &model.APISpecInput{
-			FetchRequest:&model.FetchRequestInput{
-				Auth:   &model.AuthInput{},
+			FetchRequest: &model.FetchRequestInput{
+				Auth: &model.AuthInput{},
 			},
 		},
-		DefaultAuth:&model.AuthInput{},
-		Version: &model.VersionInput{},
+		DefaultAuth: &model.AuthInput{},
+		Version:     &model.VersionInput{},
 	}
 	//modelInput := fixModelApiDefinitionInput("foo", "lorem","group")
 
@@ -105,14 +104,14 @@ func TestService_Update(t *testing.T) {
 	})
 
 	apiDefinitionModel := &model.APIDefinition{
-		Name:        "Bar",
+		Name:          "Bar",
 		ApplicationID: "id",
-		TargetURL: "https://test-url-updated.com",
+		TargetURL:     "https://test-url-updated.com",
 		Spec: &model.APISpec{
-			FetchRequest:&model.FetchRequest{},
+			FetchRequest: &model.FetchRequest{},
 		},
-		DefaultAuth:&model.Auth{},
-		Version: &model.Version{},
+		DefaultAuth: &model.Auth{},
+		Version:     &model.Version{},
 	}
 
 	ctx := context.TODO()
@@ -127,7 +126,7 @@ func TestService_Update(t *testing.T) {
 	}{
 		{
 			Name: "Success",
-			RepositoryFn: func() *automock.APIRepository{
+			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("GetByID", "foo").Return(apiDefinitionModel, nil).Once()
 				repo.On("Update", inputApiDefinitionModel).Return(nil).Once()
@@ -183,7 +182,6 @@ func TestService_Update(t *testing.T) {
 	}
 }
 
-
 func TestService_Delete(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
@@ -191,12 +189,12 @@ func TestService_Delete(t *testing.T) {
 	id := "foo"
 
 	apiDefinitionModel := &model.APIDefinition{
-		Name:        "Bar",
+		Name:          "Bar",
 		ApplicationID: "id",
-		TargetURL: "https://test-url-updated.com",
+		TargetURL:     "https://test-url-updated.com",
 		Spec: &model.APISpec{
 			FetchRequest: &model.FetchRequest{
-				Mode:model.FetchModePackage,
+				Mode: model.FetchModePackage,
 			},
 		},
 		Version: &model.Version{},
@@ -266,5 +264,3 @@ func TestService_Delete(t *testing.T) {
 		})
 	}
 }
-
-

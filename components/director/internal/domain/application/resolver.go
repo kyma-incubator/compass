@@ -29,7 +29,7 @@ type ApplicationConverter interface {
 }
 
 //go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
-type APIService interface{
+type APIService interface {
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.APIDefinitionPage, error)
 	Create(ctx context.Context, in model.APIDefinitionInput) (string, error)
 	Update(ctx context.Context, id string, in model.APIDefinitionInput) error
@@ -37,7 +37,7 @@ type APIService interface{
 }
 
 //go:generate mockery -name=APIConverter -output=automock -outpkg=automock -case=underscore
-type APIConverter interface{
+type APIConverter interface {
 	ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition
 	MultipleToGraphQL(in []*model.APIDefinition) []*graphql.APIDefinition
 	MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) []*model.APIDefinitionInput
@@ -85,7 +85,7 @@ type Resolver struct {
 
 	documentConverter DocumentConverter
 	webhookConverter  WebhookConverter
-	apiConverter APIConverter
+	apiConverter      APIConverter
 }
 
 func NewResolver(svc ApplicationService, apiSvc APIService, eventAPISvc EventAPIService, documentSvc DocumentService, webhookSvc WebhookService, appConverter ApplicationConverter, documentConverter DocumentConverter, webhookConverter WebhookConverter, apiConverter APIConverter) *Resolver {
@@ -98,7 +98,7 @@ func NewResolver(svc ApplicationService, apiSvc APIService, eventAPISvc EventAPI
 		appConverter:      appConverter,
 		documentConverter: documentConverter,
 		webhookConverter:  webhookConverter,
-		apiConverter:apiConverter,
+		apiConverter:      apiConverter,
 	}
 }
 
@@ -277,6 +277,7 @@ func (r *Resolver) Apis(ctx context.Context, obj *graphql.Application, group *st
 func (r *Resolver) EventAPIs(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.EventAPIDefinitionPage, error) {
 	panic("not implemented")
 }
+
 // TODO: Proper error handling
 // TODO: Pagination
 func (r *Resolver) Documents(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {

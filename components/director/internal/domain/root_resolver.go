@@ -34,7 +34,7 @@ func NewRootResolver() *RootResolver {
 	frConverter := fetchrequest.NewConverter(authConverter)
 	docConverter := document.NewConverter(frConverter)
 	webhookConverter := webhook.NewConverter(authConverter)
-	apiConverter := api.NewConverter(authConverter,frConverter)
+	apiConverter := api.NewConverter(authConverter, frConverter)
 	appConverter := application.NewConverter(webhookConverter, apiConverter, eventAPIConverter, docConverter)
 
 	healthcheckRepo := healthcheck.NewRepository()
@@ -54,8 +54,8 @@ func NewRootResolver() *RootResolver {
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 
 	return &RootResolver{
-		app:         application.NewResolver(appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, appConverter, docConverter, webhookConverter,apiConverter),
-		api:         api.NewResolver(apiSvc,apiConverter),
+		app:         application.NewResolver(appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, appConverter, docConverter, webhookConverter, apiConverter),
+		api:         api.NewResolver(apiSvc, apiConverter),
 		eventAPI:    eventapi.NewResolver(eventAPISvc),
 		doc:         document.NewResolver(docSvc, frConverter),
 		runtime:     runtime.NewResolver(runtimeSvc, runtimeConverter),

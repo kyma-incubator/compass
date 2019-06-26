@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -24,7 +25,7 @@ type service struct {
 	repo APIRepository
 }
 
-func NewService(repo APIRepository) *service{
+func NewService(repo APIRepository) *service {
 	return &service{repo: repo}
 }
 
@@ -45,10 +46,10 @@ func (s *service) Create(ctx context.Context, in model.APIDefinitionInput) (stri
 	id := uuid.New().String()
 
 	api := &model.APIDefinition{
-		ID: id,
-		Name: in.Name,
+		ID:          id,
+		Name:        in.Name,
 		Description: in.Description,
-		Spec: in.Spec.ToAPISpec(),
+		Spec:        in.Spec.ToAPISpec(),
 	}
 
 	err := s.repo.Create(api)
@@ -91,7 +92,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 }
 
 func (s *service) SetApiAuth(ctx context.Context, apiID string, runtimeID string, in model.AuthInput) error {
-	api, err := s.Get(ctx,apiID)
+	api, err := s.Get(ctx, apiID)
 	if err != nil {
 		return err
 	}
@@ -116,7 +117,7 @@ func (s *service) SetApiAuth(ctx context.Context, apiID string, runtimeID string
 		Auth:      in.ToAuth(),
 	}
 	api.Auth = auth
-	api.Auths = append(api.Auths,auth)
+	api.Auths = append(api.Auths, auth)
 
 	err = s.repo.Update(api)
 	if err != nil {
@@ -126,8 +127,8 @@ func (s *service) SetApiAuth(ctx context.Context, apiID string, runtimeID string
 	return nil
 }
 
-func (s *service) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) error{
-	api, err := s.Get(ctx,apiID)
+func (s *service) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) error {
+	api, err := s.Get(ctx, apiID)
 	if err != nil {
 		return err
 	}
@@ -147,11 +148,11 @@ func (s *service) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID str
 
 }
 
-func (s *service) RefetchAPISpec(ctx context.Context, id string) (*model.APISpec,error) {
+func (s *service) RefetchAPISpec(ctx context.Context, id string) (*model.APISpec, error) {
 	api, err := s.repo.GetByID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	return api.Spec,nil
+	return api.Spec, nil
 }

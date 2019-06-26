@@ -23,7 +23,7 @@ func (y *CLOB) UnmarshalGQL(v interface{}) error {
 }
 
 func (y CLOB) MarshalGQL(w io.Writer) {
-	json := fmt.Sprintf(`"%s"`,y)
+	json := fmt.Sprintf(`"%s"`, y)
 	_, err := w.Write([]byte(json))
 	if err != nil {
 		log.Errorf("while writing %T: %s", y, err)

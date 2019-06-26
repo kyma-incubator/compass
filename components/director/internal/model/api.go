@@ -1,17 +1,18 @@
 package model
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
 type APIDefinition struct {
-	ID          string
+	ID            string
 	ApplicationID string
-	Name        string
-	Description *string
-	Spec        *APISpec
-	TargetURL   string
+	Name          string
+	Description   *string
+	Spec          *APISpec
+	TargetURL     string
 	//  group allows you to find the same API but in different version
 	Group *string
 	// "If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified.
@@ -59,15 +60,14 @@ type Version struct {
 
 type APIDefinitionInput struct {
 	ApplicationID string
-	Name        string
-	Description *string
-	TargetURL   string
-	Group       *string
-	Spec        *APISpecInput
-	Version     *VersionInput
-	DefaultAuth *AuthInput
+	Name          string
+	Description   *string
+	TargetURL     string
+	Group         *string
+	Spec          *APISpecInput
+	Version       *VersionInput
+	DefaultAuth   *AuthInput
 }
-
 
 type APISpecInput struct {
 	Data         *[]byte
@@ -104,9 +104,9 @@ func (a *APIDefinitionInput) ToAPIDefinition() *APIDefinition {
 		Spec:          a.Spec.ToAPISpec(),
 		TargetURL:     a.TargetURL,
 		Group:         a.Group,
-		Auth:          nil,//TODO: https://github.com/kyma-incubator/compass/issues/67
-		Auths:         nil,//TODO: https://github.com/kyma-incubator/compass/issues/67
-		DefaultAuth:   a.DefaultAuth.ToAuth(),//TODO: https://github.com/kyma-incubator/compass/issues/67
+		Auth:          nil,                    //TODO: https://github.com/kyma-incubator/compass/issues/67
+		Auths:         nil,                    //TODO: https://github.com/kyma-incubator/compass/issues/67
+		DefaultAuth:   a.DefaultAuth.ToAuth(), //TODO: https://github.com/kyma-incubator/compass/issues/67
 		Version:       a.Version.ToVersion(),
 	}
 }
