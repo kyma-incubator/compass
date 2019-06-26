@@ -2,7 +2,6 @@ package document
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -60,10 +59,6 @@ func (r *inMemoryRepository) ListByApplicationID(applicationID string, pageSize 
 func (r *inMemoryRepository) Create(item *model.Document) error {
 	if item == nil {
 		return errors.New("item can not be empty")
-	}
-
-	if r.store[item.ApplicationID] == nil {
-		return errors.New(fmt.Sprintf("application with ID %s not found", item.ApplicationID))
 	}
 
 	r.store[item.ID] = item
