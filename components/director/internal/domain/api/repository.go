@@ -16,11 +16,11 @@ func NewAPIRepository() *inMemoryRepository {
 }
 
 func (r *inMemoryRepository) GetByID(id string) (*model.APIDefinition, error) {
-
 	if api, ok := r.store[id]; ok {
 		return api, nil
 	}
-	return nil, errors.Errorf("error: APIDefinition with %s ID does not exist", id)
+
+	return nil, errors.Errorf("APIDefinition with %s ID does not exist", id)
 }
 
 // TODO: Make filtering and paging
@@ -65,6 +65,7 @@ func (r *inMemoryRepository) CreateMany(items []*model.APIDefinition) error {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -89,5 +90,6 @@ func (r *inMemoryRepository) DeleteAllByApplicationID(id string) error {
 			}
 		}
 	}
+
 	return nil
 }

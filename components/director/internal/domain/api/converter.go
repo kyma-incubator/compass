@@ -39,7 +39,6 @@ func (c *converter) ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition {
 		Spec:          c.apiSpecToGraphQL(in.Spec),
 		TargetURL:     in.TargetURL,
 		Group:         in.Group,
-		Auth:          c.runtimeAuthToGraphQL(in.Auth),
 		Auths:         c.runtimeAuthArrToGraphQL(in.Auths),
 		DefaultAuth:   c.auth.ToGraphQL(in.DefaultAuth),
 		Version:       c.versionToGraphQL(in.Version),
@@ -47,7 +46,7 @@ func (c *converter) ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition {
 }
 
 func (c *converter) MultipleToGraphQL(in []*model.APIDefinition) []*graphql.APIDefinition {
-	apis := make([]*graphql.APIDefinition, 0)
+	var apis []*graphql.APIDefinition
 	for _, a := range in {
 		if a == nil {
 			continue
@@ -59,7 +58,7 @@ func (c *converter) MultipleToGraphQL(in []*model.APIDefinition) []*graphql.APID
 }
 
 func (c *converter) MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) []*model.APIDefinitionInput {
-	arr := make([]*model.APIDefinitionInput, 0)
+	var arr []*model.APIDefinitionInput
 	for _, item := range in {
 		api := c.InputFromGraphQL(item)
 		arr = append(arr, api)
@@ -87,9 +86,7 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) *model.APID
 
 func (c *converter) apiSpecToGraphQL(in *model.APISpec) *graphql.APISpec {
 	if in == nil {
-		return &graphql.APISpec{
-			FetchRequest: &graphql.FetchRequest{},
-		}
+		return nil
 	}
 
 	var data graphql.CLOB
@@ -112,11 +109,8 @@ func (c *converter) apiSpecToGraphQL(in *model.APISpec) *graphql.APISpec {
 }
 
 func (c *converter) apiSpecInputFromGraphQL(in *graphql.APISpecInput) *model.APISpecInput {
-
 	if in == nil {
-		return &model.APISpecInput{
-			FetchRequest: &model.FetchRequestInput{},
-		}
+		return nil
 	}
 
 	var data []byte
@@ -139,7 +133,7 @@ func (c *converter) apiSpecInputFromGraphQL(in *graphql.APISpecInput) *model.API
 
 func (c *converter) versionToGraphQL(in *model.Version) *graphql.Version {
 	if in == nil {
-		return &graphql.Version{}
+		return nil
 	}
 
 	return &graphql.Version{
@@ -152,7 +146,7 @@ func (c *converter) versionToGraphQL(in *model.Version) *graphql.Version {
 
 func (c *converter) versionFromGraphQL(in *graphql.VersionInput) *model.VersionInput {
 	if in == nil {
-		return &model.VersionInput{}
+		return nil
 	}
 
 	return &model.VersionInput{
@@ -165,7 +159,7 @@ func (c *converter) versionFromGraphQL(in *graphql.VersionInput) *model.VersionI
 
 func (c *converter) runtimeAuthToGraphQL(in *model.RuntimeAuth) *graphql.RuntimeAuth {
 	if in == nil {
-		return &graphql.RuntimeAuth{}
+		return nil
 	}
 
 	return &graphql.RuntimeAuth{
@@ -175,7 +169,7 @@ func (c *converter) runtimeAuthToGraphQL(in *model.RuntimeAuth) *graphql.Runtime
 }
 
 func (c *converter) runtimeAuthArrToGraphQL(in []*model.RuntimeAuth) []*graphql.RuntimeAuth {
-	auths := make([]*graphql.RuntimeAuth, 0)
+	var	auths []*graphql.RuntimeAuth
 	for _, item := range in {
 		auths = append(auths, &graphql.RuntimeAuth{
 			RuntimeID: item.RuntimeID,

@@ -15,8 +15,6 @@ type APIDefinition struct {
 	TargetURL     string
 	//  group allows you to find the same API but in different version
 	Group *string
-	// "If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified.
-	Auth *RuntimeAuth
 	// Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified.
 	Auths []*RuntimeAuth
 	// If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly.
@@ -91,29 +89,28 @@ type APIDefinitionPage struct {
 
 func (APIDefinitionPage) IsPageable() {}
 
-func (a *APIDefinitionInput) ToAPIDefinition() *APIDefinition {
+func (a *APIDefinitionInput) ToAPIDefinition(id string) *APIDefinition {
 	if a == nil {
-		return &APIDefinition{}
+		return nil
 	}
 
 	return &APIDefinition{
-		ID:            "",
+		ID:            id,
 		ApplicationID: a.ApplicationID,
 		Name:          a.Name,
 		Description:   a.Description,
 		Spec:          a.Spec.ToAPISpec(),
 		TargetURL:     a.TargetURL,
 		Group:         a.Group,
-		Auth:          nil,                    //TODO: https://github.com/kyma-incubator/compass/issues/67
-		Auths:         nil,                    //TODO: https://github.com/kyma-incubator/compass/issues/67
-		DefaultAuth:   a.DefaultAuth.ToAuth(), //TODO: https://github.com/kyma-incubator/compass/issues/67
+		Auths:         nil,
+		DefaultAuth:   a.DefaultAuth.ToAuth(),
 		Version:       a.Version.ToVersion(),
 	}
 }
 
 func (a *APISpecInput) ToAPISpec() *APISpec {
 	if a == nil {
-		return &APISpec{}
+		return nil
 	}
 
 	return &APISpec{
@@ -126,7 +123,7 @@ func (a *APISpecInput) ToAPISpec() *APISpec {
 
 func (v *VersionInput) ToVersion() *Version {
 	if v == nil {
-		return &Version{}
+		return nil
 	}
 
 	return &Version{

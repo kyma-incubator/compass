@@ -16,10 +16,10 @@ func TestResolver_AddAPI(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "bar"
-	modelApi := fixModelApiDefinition(id, "foo", "bar")
-	gqlApi := fixGQLApiDefinition(id, "foo", "bar")
-	gqlApiInput := fixGQLApiDefinitionInput(id, "foo", "bar")
-	modelApiInput := fixModelApiDefinitionInput(id, "foo", "bar")
+	modelApi := fixModelAPIDefinition(id, "foo", "bar")
+	gqlApi := fixGQLAPIDefinition(id, "foo", "bar")
+	gqlApiInput := fixGQLAPIDefinitionInput(id, "foo", "bar")
+	modelApiInput := fixModelAPIDefinitionInput(id, "foo", "bar")
 
 	testCases := []struct {
 		Name        string
@@ -83,8 +83,7 @@ func TestResolver_AddAPI(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := api.NewResolver(svc, nil)
-			resolver.SetConverter(converter)
+			resolver := api.NewResolver(svc, converter)
 
 			// when
 			result, err := resolver.AddAPI(context.TODO(), "1", *gqlApiInput)
@@ -104,8 +103,8 @@ func TestResolver_DeleteAPI(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "bar"
-	modelApiDefinition := fixModelApiDefinition(id, "foo", "bar")
-	gqlApiDefinition := fixGQLApiDefinition(id, "foo", "bar")
+	modelApiDefinition := fixModelAPIDefinition(id, "foo", "bar")
+	gqlApiDefinition := fixGQLAPIDefinition(id, "foo", "bar")
 
 	testCases := []struct {
 		Name        string
@@ -167,8 +166,7 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := api.NewResolver(svc, nil)
-			resolver.SetConverter(converter)
+			resolver := api.NewResolver(svc, converter)
 
 			// when
 			result, err := resolver.DeleteAPI(context.TODO(), id)
@@ -188,10 +186,10 @@ func TestResolver_UpdateAPI(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "bar"
-	gqlApiDefinitionInput := fixGQLApiDefinitionInput(id, "foo", "bar")
-	modelApiDefinitionInput := fixModelApiDefinitionInput(id, "foo", "bar")
-	gqlApiDefinition := fixGQLApiDefinition(id, "foo", "bar")
-	modelApiDefinition := fixModelApiDefinition(id, "foo", "bar")
+	gqlApiDefinitionInput := fixGQLAPIDefinitionInput(id, "foo", "bar")
+	modelApiDefinitionInput := fixModelAPIDefinitionInput(id, "foo", "bar")
+	gqlApiDefinition := fixGQLAPIDefinition(id, "foo", "bar")
+	modelApiDefinition := fixModelAPIDefinition(id, "foo", "bar")
 
 	testCases := []struct {
 		Name                  string
@@ -263,8 +261,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := api.NewResolver(svc, nil)
-			resolver.SetConverter(converter)
+			resolver := api.NewResolver(svc, converter)
 
 			// when
 			result, err := resolver.UpdateAPI(context.TODO(), id, *gqlApiDefinitionInput)

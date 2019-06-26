@@ -48,17 +48,26 @@ func (_m *APIService) Delete(ctx context.Context, id string) error {
 }
 
 // DeleteAPIAuth provides a mock function with given fields: ctx, apiID, runtimeID
-func (_m *APIService) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) error {
+func (_m *APIService) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*model.RuntimeAuth, error) {
 	ret := _m.Called(ctx, apiID, runtimeID)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+	var r0 *model.RuntimeAuth
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.RuntimeAuth); ok {
 		r0 = rf(ctx, apiID, runtimeID)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.RuntimeAuth)
+		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, apiID, runtimeID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Get provides a mock function with given fields: ctx, id
@@ -130,18 +139,27 @@ func (_m *APIService) RefetchAPISpec(ctx context.Context, id string) (*model.API
 	return r0, r1
 }
 
-// SetApiAuth provides a mock function with given fields: ctx, apiID, runtimeID, in
-func (_m *APIService) SetApiAuth(ctx context.Context, apiID string, runtimeID string, in model.AuthInput) error {
+// SetAPIAuth provides a mock function with given fields: ctx, apiID, runtimeID, in
+func (_m *APIService) SetAPIAuth(ctx context.Context, apiID string, runtimeID string, in model.AuthInput) (*model.RuntimeAuth, error) {
 	ret := _m.Called(ctx, apiID, runtimeID, in)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.AuthInput) error); ok {
+	var r0 *model.RuntimeAuth
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.AuthInput) *model.RuntimeAuth); ok {
 		r0 = rf(ctx, apiID, runtimeID, in)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.RuntimeAuth)
+		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, model.AuthInput) error); ok {
+		r1 = rf(ctx, apiID, runtimeID, in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Update provides a mock function with given fields: ctx, id, in

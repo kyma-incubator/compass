@@ -2,8 +2,8 @@ package api
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
 
-	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
@@ -43,14 +43,9 @@ func (s *service) Get(ctx context.Context, id string) (*model.APIDefinition, err
 }
 
 func (s *service) Create(ctx context.Context, in model.APIDefinitionInput) (string, error) {
-	id := uuid.New().String()
+	id := uid.Generate()
 
-	api := &model.APIDefinition{
-		ID:          id,
-		Name:        in.Name,
-		Description: in.Description,
-		Spec:        in.Spec.ToAPISpec(),
-	}
+	api := in.ToAPIDefinition(id)
 
 	err := s.repo.Create(api)
 	if err != nil {
@@ -66,13 +61,7 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 		return err
 	}
 
-	api.Name = in.Name
-	api.Description = in.Description
-	api.TargetURL = in.TargetURL
-	api.Group = in.Group
-	api.Spec = in.Spec.ToAPISpec()
-	api.DefaultAuth = in.DefaultAuth.ToAuth()
-	api.Version = in.Version.ToVersion()
+	api = in.ToAPIDefinition(id)
 
 	err = s.repo.Update(api)
 	if err != nil {
@@ -91,60 +80,63 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return s.repo.Delete(api)
 }
 
-func (s *service) SetApiAuth(ctx context.Context, apiID string, runtimeID string, in model.AuthInput) error {
+func (s *service) SetAPIAuth(ctx context.Context, apiID string, runtimeID string, in model.AuthInput) (*model.RuntimeAuth,error) {
 	api, err := s.Get(ctx, apiID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	for i, item := range api.Auths {
-		if item.RuntimeID == runtimeID {
-			//apiAuth = item
-			api.Auth = item
-			api.Auths[i] = item
+	for i, rtAuth := range api.Auths {
+		if rtAuth.RuntimeID == runtimeID {
+			api.DefaultAuth = rtAuth.Auth
+			api.Auths[i] = rtAuth
 
 			err = s.repo.Update(api)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
-			return nil
+			return rtAuth, nil
 		}
 	}
 
-	auth := &model.RuntimeAuth{
+	runtimeAuth := &model.RuntimeAuth{
 		RuntimeID: runtimeID,
 		Auth:      in.ToAuth(),
 	}
-	api.Auth = auth
-	api.Auths = append(api.Auths, auth)
+	api.DefaultAuth = runtimeAuth.Auth
+	api.Auths = append(api.Auths, runtimeAuth)
 
 	err = s.repo.Update(api)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return runtimeAuth, nil
 }
 
-func (s *service) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) error {
+func (s *service) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*model.RuntimeAuth,error) {
 	api, err := s.Get(ctx, apiID)
 	if err != nil {
-		return err
+		return nil,err
 	}
 
-	for i, item := range api.Auths {
-		if item.RuntimeID == runtimeID {
+	var runtimeAuth *model.RuntimeAuth
+	for i, rtAuth := range api.Auths {
+		if rtAuth.RuntimeID == runtimeID {
+			runtimeAuth = rtAuth
+
 			api.Auths = append(api.Auths[:i], api.Auths[i+1:]...)
+			api.DefaultAuth = nil
 
 			err := s.repo.Update(api)
 			if err != nil {
-				return err
+				return nil, err
 			}
 		}
 	}
 
-	return nil
+	return runtimeAuth,nil
 
 }
 

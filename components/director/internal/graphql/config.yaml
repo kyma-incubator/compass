@@ -43,3 +43,7 @@ models:
         resolver: true
       webhooks:
         resolver: true
+  APIDefinition:
+     fields:
+       auth:
+         resolver: true

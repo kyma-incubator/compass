@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
@@ -221,7 +220,7 @@ func (s *service) createRelatedResources(in model.ApplicationInput, applicationI
 
 	var apis []*model.APIDefinition
 	for _, item := range in.Apis {
-		apis = append(apis, item.ToAPIDefinition())
+		apis = append(apis, item.ToAPIDefinition(uid.Generate()))
 	}
 
 	err = s.api.CreateMany(apis)

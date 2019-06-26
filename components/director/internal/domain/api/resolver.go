@@ -17,8 +17,8 @@ type APIService interface {
 	Get(ctx context.Context, id string) (*model.APIDefinition, error)
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.APIDefinitionPage, error)
-	SetApiAuth(ctx context.Context, apiID string, runtimeID string, in model.AuthInput) error
-	DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) error
+	SetAPIAuth(ctx context.Context, apiID string, runtimeID string, in model.AuthInput) (*model.RuntimeAuth, error)
+	DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*model.RuntimeAuth,error)
 	RefetchAPISpec(ctx context.Context, id string) (*model.APISpec, error)
 }
 
@@ -58,7 +58,6 @@ func (r *Resolver) AddAPI(ctx context.Context, applicationID string, in graphql.
 	gqlApi := r.converter.ToGraphQL(api)
 
 	return gqlApi, nil
-
 }
 func (r *Resolver) UpdateAPI(ctx context.Context, id string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
 	convertedIn := r.converter.InputFromGraphQL(&in)
@@ -104,23 +103,17 @@ func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.A
 }
 
 func (r *Resolver) SetAPIAuth(ctx context.Context, apiID string, runtimeID string, in graphql.AuthInput) (*graphql.RuntimeAuth, error) {
-
 	conv := auth.NewConverter()
 	convertedIn := conv.InputFromGraphQL(&in)
 
-	err := r.svc.SetApiAuth(ctx, apiID, runtimeID, *convertedIn)
-	if err != nil {
-		return nil, err
-	}
-
-	api, err := r.svc.Get(ctx, apiID)
+	runtimeAuth, err := r.svc.SetAPIAuth(ctx, apiID, runtimeID, *convertedIn)
 	if err != nil {
 		return nil, err
 	}
 
 	convertedOut := &graphql.RuntimeAuth{
-		RuntimeID: api.Auth.RuntimeID,
-		Auth:      conv.ToGraphQL(api.Auth.Auth),
+		RuntimeID: runtimeAuth.RuntimeID,
+		Auth:      conv.ToGraphQL(runtimeAuth.Auth),
 	}
 
 	return convertedOut, nil
@@ -128,19 +121,15 @@ func (r *Resolver) SetAPIAuth(ctx context.Context, apiID string, runtimeID strin
 func (r *Resolver) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*graphql.RuntimeAuth, error) {
 	conv := auth.NewConverter()
 
-	err := r.svc.DeleteAPIAuth(ctx, apiID, runtimeID)
-	if err != nil {
-		return nil, err
-	}
-
-	api, err := r.svc.Get(ctx, apiID)
+	runtimeAuth, err := r.svc.DeleteAPIAuth(ctx, apiID, runtimeID)
 	if err != nil {
 		return nil, err
 	}
 
 	convertedOut := &graphql.RuntimeAuth{
-		RuntimeID: api.Auth.RuntimeID,
-		Auth:      conv.ToGraphQL(api.Auth.Auth),
+		RuntimeID: runtimeAuth.RuntimeID,
+		Auth:      conv.ToGraphQL(runtimeAuth.Auth),
 	}
+
 	return convertedOut, nil
 }
