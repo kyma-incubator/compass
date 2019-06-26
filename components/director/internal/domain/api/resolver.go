@@ -42,42 +42,6 @@ func NewResolver(svc APIService, converter APIConverter) *Resolver {
 	}
 }
 
-func (r *Resolver) ApiDefinitions(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
-	labelFilter := labelfilter.MultipleFromGraphQL(filter)
-
-	var cursor string
-	if after != nil {
-		cursor = string(*after)
-	}
-
-	apisPage, err := r.svc.List(ctx, labelFilter, first, &cursor)
-	if err != nil {
-		return nil, err
-	}
-
-	gqlApis := r.converter.MultipleToGraphQL(apisPage.Data)
-	totalCount := len(gqlApis)
-
-	return &graphql.APIDefinitionPage{
-		Data:       gqlApis,
-		TotalCount: totalCount,
-		PageInfo: &graphql.PageInfo{
-			StartCursor: graphql.PageCursor(apisPage.PageInfo.StartCursor),
-			EndCursor:   graphql.PageCursor(apisPage.PageInfo.EndCursor),
-			HasNextPage: apisPage.PageInfo.HasNextPage,
-		},
-	}, nil
-}
-
-func (r *Resolver) ApiDefinition(ctx context.Context, id string) (*graphql.APIDefinition, error) {
-	api, err := r.svc.Get(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	return r.converter.ToGraphQL(api), nil
-}
-
 func (r *Resolver) AddAPI(ctx context.Context, applicationID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
 	convertedIn := r.converter.InputFromGraphQL(&in)
 
