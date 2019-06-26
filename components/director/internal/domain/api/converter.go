@@ -39,9 +39,9 @@ func (c *converter) ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition {
 		Spec:          c.apiSpecToGraphQL(in.Spec),
 		TargetURL:     in.TargetURL,
 		Group:         in.Group,
-		Auth:          c.runtimeAuthToGraphQL(in.Auth),     //TODO: https://github.com/kyma-incubator/compass/issues/67
-		Auths:         c.runtimeAuthArrToGraphQL(in.Auths), //TODO: https://github.com/kyma-incubator/compass/issues/67
-		DefaultAuth:   c.auth.ToGraphQL(in.DefaultAuth),    //TODO: https://github.com/kyma-incubator/compass/issues/67
+		Auth:          c.runtimeAuthToGraphQL(in.Auth),
+		Auths:         c.runtimeAuthArrToGraphQL(in.Auths),
+		DefaultAuth:   c.auth.ToGraphQL(in.DefaultAuth),
 		Version:       c.versionToGraphQL(in.Version),
 	}
 }
@@ -81,7 +81,7 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) *model.APID
 		Group:         in.Group,
 		Spec:          c.apiSpecInputFromGraphQL(in.Spec),
 		Version:       c.versionFromGraphQL(in.Version),
-		DefaultAuth:   c.auth.InputFromGraphQL(in.DefaultAuth), //TODO: https://github.com/kyma-incubator/compass/issues/67
+		DefaultAuth:   c.auth.InputFromGraphQL(in.DefaultAuth),
 	}
 }
 

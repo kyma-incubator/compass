@@ -71,7 +71,7 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 	api.TargetURL = in.TargetURL
 	api.Group = in.Group
 	api.Spec = in.Spec.ToAPISpec()
-	api.DefaultAuth = in.DefaultAuth.ToAuth() //TODO: https://github.com/kyma-incubator/compass/issues/67
+	api.DefaultAuth = in.DefaultAuth.ToAuth()
 	api.Version = in.Version.ToVersion()
 
 	err = s.repo.Update(api)

@@ -60,15 +60,6 @@ func fixGQLApiDefinition(id, name, description string) *graphql.APIDefinition {
 	}
 }
 
-func fixModelApiDefinitionWithSpec(id, name string, spec model.APISpec) *model.APIDefinition {
-	return &model.APIDefinition{
-		ID:          id,
-		Name:        name,
-		Description: nil,
-		Spec:        &spec,
-	}
-}
-
 func fixDetailedModelApiDefinition(t *testing.T, id, name, description string, group string) *model.APIDefinition {
 
 	time, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")

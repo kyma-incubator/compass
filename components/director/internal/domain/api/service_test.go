@@ -84,7 +84,6 @@ func TestService_Update(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
-	//mode := model.FetchModeSingle
 	modelInput := model.APIDefinitionInput{
 		Name:          "Foo",
 		ApplicationID: "id",
@@ -97,7 +96,6 @@ func TestService_Update(t *testing.T) {
 		DefaultAuth: &model.AuthInput{},
 		Version:     &model.VersionInput{},
 	}
-	//modelInput := fixModelApiDefinitionInput("foo", "lorem","group")
 
 	inputApiDefinitionModel := mock.MatchedBy(func(api *model.APIDefinition) bool {
 		return api.Name == modelInput.Name
