@@ -21,11 +21,12 @@ type Pageable interface {
 }
 
 type APIDefinition struct {
-	ID          string   `json:"id"`
-	Name        string   `json:"name"`
-	Description *string  `json:"description"`
-	Spec        *APISpec `json:"spec"`
-	TargetURL   string   `json:"targetURL"`
+	ID            string   `json:"id"`
+	ApplicationID string   `json:"applicationID"`
+	Name          string   `json:"name"`
+	Description   *string  `json:"description"`
+	Spec          *APISpec `json:"spec"`
+	TargetURL     string   `json:"targetURL"`
 	//  group allows you to find the same API but in different version
 	Group *string `json:"group"`
 	// "If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified.
@@ -38,13 +39,14 @@ type APIDefinition struct {
 }
 
 type APIDefinitionInput struct {
-	Name        string        `json:"name"`
-	Description *string       `json:"description"`
-	TargetURL   string        `json:"targetURL"`
-	Group       *string       `json:"group"`
-	Spec        *APISpecInput `json:"spec"`
-	Version     *VersionInput `json:"version"`
-	DefaultAuth *AuthInput    `json:"defaultAuth"`
+	ApplicationID string        `json:"applicationID"`
+	Name          string        `json:"name"`
+	Description   *string       `json:"description"`
+	TargetURL     string        `json:"targetURL"`
+	Group         *string       `json:"group"`
+	Spec          *APISpecInput `json:"spec"`
+	Version       *VersionInput `json:"version"`
+	DefaultAuth   *AuthInput    `json:"defaultAuth"`
 }
 
 type APIDefinitionPage struct {

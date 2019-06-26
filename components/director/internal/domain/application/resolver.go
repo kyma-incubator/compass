@@ -28,11 +28,20 @@ type ApplicationConverter interface {
 	InputFromGraphQL(in graphql.ApplicationInput) model.ApplicationInput
 }
 
+//go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
 type APIService interface{
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.APIDefinitionPage, error)
 	Create(ctx context.Context, in model.APIDefinitionInput) (string, error)
 	Update(ctx context.Context, id string, in model.APIDefinitionInput) error
 	Delete(ctx context.Context, id string) error
+}
+
+//go:generate mockery -name=APIConverter -output=automock -outpkg=automock -case=underscore
+type APIConverter interface{
+	ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition
+	MultipleToGraphQL(in []*model.APIDefinition) []*graphql.APIDefinition
+	MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) []*model.APIDefinitionInput
+	InputFromGraphQL(in *graphql.APIDefinitionInput) *model.APIDefinitionInput
 }
 
 type EventAPIService interface{}
@@ -76,9 +85,10 @@ type Resolver struct {
 
 	documentConverter DocumentConverter
 	webhookConverter  WebhookConverter
+	apiConverter APIConverter
 }
 
-func NewResolver(svc ApplicationService, apiSvc APIService, eventAPISvc EventAPIService, documentSvc DocumentService, webhookSvc WebhookService, appConverter ApplicationConverter, documentConverter DocumentConverter, webhookConverter WebhookConverter) *Resolver {
+func NewResolver(svc ApplicationService, apiSvc APIService, eventAPISvc EventAPIService, documentSvc DocumentService, webhookSvc WebhookService, appConverter ApplicationConverter, documentConverter DocumentConverter, webhookConverter WebhookConverter, apiConverter APIConverter) *Resolver {
 	return &Resolver{
 		appSvc:            svc,
 		apiSvc:            apiSvc,
@@ -88,6 +98,7 @@ func NewResolver(svc ApplicationService, apiSvc APIService, eventAPISvc EventAPI
 		appConverter:      appConverter,
 		documentConverter: documentConverter,
 		webhookConverter:  webhookConverter,
+		apiConverter:apiConverter,
 	}
 }
 
@@ -245,12 +256,12 @@ func (r *Resolver) Apis(ctx context.Context, obj *graphql.Application, group *st
 		cursor = string(*after)
 	}
 
-	apisPage, err := r.svc.List(ctx, labelFilter, first, &cursor)
+	apisPage, err := r.apiSvc.List(ctx, labelFilter, first, &cursor)
 	if err != nil {
 		return nil, err
 	}
 
-	gqlApis := r.converter.MultipleToGraphQL(apisPage.Data)
+	gqlApis := r.apiConverter.MultipleToGraphQL(apisPage.Data)
 	totalCount := len(gqlApis)
 
 	return &graphql.APIDefinitionPage{

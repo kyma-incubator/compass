@@ -54,7 +54,7 @@ func NewRootResolver() *RootResolver {
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 
 	return &RootResolver{
-		app:         application.NewResolver(appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, appConverter, docConverter, webhookConverter),
+		app:         application.NewResolver(appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, appConverter, docConverter, webhookConverter,apiConverter),
 		api:         api.NewResolver(apiSvc,apiConverter),
 		eventAPI:    eventapi.NewResolver(eventAPISvc),
 		doc:         document.NewResolver(docSvc, frConverter),

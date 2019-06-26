@@ -92,8 +92,12 @@ type APIDefinitionPage struct {
 func (APIDefinitionPage) IsPageable() {}
 
 func (a *APIDefinitionInput) ToAPIDefinition() *APIDefinition {
+	if a == nil {
+		return &APIDefinition{}
+	}
+
 	return &APIDefinition{
-		ID:            "?",
+		ID:            "",
 		ApplicationID: a.ApplicationID,
 		Name:          a.Name,
 		Description:   a.Description,
@@ -108,6 +112,10 @@ func (a *APIDefinitionInput) ToAPIDefinition() *APIDefinition {
 }
 
 func (a *APISpecInput) ToAPISpec() *APISpec {
+	if a == nil {
+		return &APISpec{}
+	}
+
 	return &APISpec{
 		Data:         a.Data,
 		Format:       a.Format,
@@ -117,6 +125,10 @@ func (a *APISpecInput) ToAPISpec() *APISpec {
 }
 
 func (v *VersionInput) ToVersion() *Version {
+	if v == nil {
+		return &Version{}
+	}
+
 	return &Version{
 		Value:           v.Value,
 		Deprecated:      v.Deprecated,
