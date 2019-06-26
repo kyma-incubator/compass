@@ -183,7 +183,6 @@ func TestResolver_DeleteAPI(t *testing.T) {
 	}
 }
 
-
 func TestResolver_UpdateAPI(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
@@ -195,13 +194,13 @@ func TestResolver_UpdateAPI(t *testing.T) {
 	modelApiDefinition := fixModelApiDefinition(id, "foo", "bar")
 
 	testCases := []struct {
-		Name            string
-		ServiceFn       func() *automock.APIService
-		ConverterFn     func() *automock.APIConverter
-		InputWebhookID  string
-		InputApi    graphql.APIDefinitionInput
+		Name                  string
+		ServiceFn             func() *automock.APIService
+		ConverterFn           func() *automock.APIConverter
+		InputWebhookID        string
+		InputApi              graphql.APIDefinitionInput
 		ExpectedApiDefinition *graphql.APIDefinition
-		ExpectedErr     error
+		ExpectedErr           error
 	}{
 		{
 			Name: "Success",
@@ -217,10 +216,10 @@ func TestResolver_UpdateAPI(t *testing.T) {
 				conv.On("ToGraphQL", modelApiDefinition).Return(gqlApiDefinition).Once()
 				return conv
 			},
-			InputWebhookID:  id,
-			InputApi:    *gqlApiDefinitionInput,
+			InputWebhookID:        id,
+			InputApi:              *gqlApiDefinitionInput,
 			ExpectedApiDefinition: gqlApiDefinition,
-			ExpectedErr:     nil,
+			ExpectedErr:           nil,
 		},
 		{
 			Name: "Returns error when API update failed",
@@ -234,10 +233,10 @@ func TestResolver_UpdateAPI(t *testing.T) {
 				conv.On("InputFromGraphQL", gqlApiDefinitionInput).Return(modelApiDefinitionInput).Once()
 				return conv
 			},
-			InputWebhookID:  id,
-			InputApi:    *gqlApiDefinitionInput,
+			InputWebhookID:        id,
+			InputApi:              *gqlApiDefinitionInput,
 			ExpectedApiDefinition: nil,
-			ExpectedErr:     testErr,
+			ExpectedErr:           testErr,
 		},
 		{
 			Name: "Returns error when API retrieval failed",
@@ -252,10 +251,10 @@ func TestResolver_UpdateAPI(t *testing.T) {
 				conv.On("InputFromGraphQL", gqlApiDefinitionInput).Return(modelApiDefinitionInput).Once()
 				return conv
 			},
-			InputWebhookID:  id,
-			InputApi:    *gqlApiDefinitionInput,
+			InputWebhookID:        id,
+			InputApi:              *gqlApiDefinitionInput,
 			ExpectedApiDefinition: nil,
-			ExpectedErr:     testErr,
+			ExpectedErr:           testErr,
 		},
 	}
 
