@@ -77,7 +77,7 @@ func (c *converter) InputFromGraphQL(in graphql.ApplicationInput) model.Applicat
 		Webhooks:       c.webhook.MultipleInputFromGraphQL(in.Webhooks),
 		Documents:      c.document.MultipleInputFromGraphQL(in.Documents),
 		//EventAPIs:      c.eventAPI.MultipleInputFromGraphQL(in.EventAPIs),
-		Apis:           c.api.MultipleInputFromGraphQL(in.Apis),
+		Apis: c.api.MultipleInputFromGraphQL(in.Apis),
 	}
 }
 
