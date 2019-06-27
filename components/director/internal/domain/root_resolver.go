@@ -12,7 +12,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/healthcheck"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
-	"github.com/kyma-incubator/compass/components/director/internal/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
 var _ graphql.ResolverRoot = &RootResolver{}
