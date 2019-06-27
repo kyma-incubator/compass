@@ -1,6 +1,6 @@
 package labelfilter
 
-import "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+import "github.com/kyma-incubator/compass/components/director/internal/graphql"
 
 type LabelFilter struct {
 	Label    string

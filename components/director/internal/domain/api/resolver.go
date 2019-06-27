@@ -7,12 +7,12 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/internal/graphql"
 )
 
 //go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
 type APIService interface {
-	Create(ctx context.Context, in model.APIDefinitionInput) (string, error)
+	Create(ctx context.Context, applicationID string, in model.APIDefinitionInput) (string, error)
 	Update(ctx context.Context, id string, in model.APIDefinitionInput) error
 	Get(ctx context.Context, id string) (*model.APIDefinition, error)
 	Delete(ctx context.Context, id string) error
@@ -45,7 +45,7 @@ func NewResolver(svc APIService, converter APIConverter) *Resolver {
 func (r *Resolver) AddAPI(ctx context.Context, applicationID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
 	convertedIn := r.converter.InputFromGraphQL(&in)
 
-	id, err := r.svc.Create(ctx, *convertedIn)
+	id, err := r.svc.Create(ctx, applicationID, *convertedIn)
 	if err != nil {
 		return nil, err
 	}

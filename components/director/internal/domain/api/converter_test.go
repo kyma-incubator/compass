@@ -9,7 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api/automock"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/internal/graphql"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -91,8 +91,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// given
 	input := []*model.APIDefinition{
-		fixModelAPIDefinition("foo", "Foo", "Lorem ipsum"),
-		fixModelAPIDefinition("bar", "Bar", "Dolor sit amet"),
+		fixModelAPIDefinition("foo", "1", "Foo", "Lorem ipsum"),
+		fixModelAPIDefinition("bar", "1", "Bar", "Dolor sit amet"),
 		{},
 		nil,
 	}

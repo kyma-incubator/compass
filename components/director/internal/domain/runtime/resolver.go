@@ -7,7 +7,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/internal/graphql"
 )
 
 //go:generate mockery -name=RuntimeService -output=automock -outpkg=automock -case=underscore

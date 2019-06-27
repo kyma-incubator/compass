@@ -43,10 +43,10 @@ func (s *service) Get(ctx context.Context, id string) (*model.APIDefinition, err
 	return api, nil
 }
 
-func (s *service) Create(ctx context.Context, in model.APIDefinitionInput) (string, error) {
+func (s *service) Create(ctx context.Context, applicationID string, in model.APIDefinitionInput) (string, error) {
 	id := uid.Generate()
 
-	api := in.ToAPIDefinition(id)
+	api := in.ToAPIDefinition(id, applicationID)
 
 	err := s.repo.Create(api)
 	if err != nil {
@@ -62,7 +62,7 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 		return err
 	}
 
-	api = in.ToAPIDefinition(id)
+	api = in.ToAPIDefinition(id, api.ApplicationID)
 
 	err = s.repo.Update(api)
 	if err != nil {

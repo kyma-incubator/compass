@@ -1,8 +1,8 @@
 package api
 
 import (
+	"github.com/kyma-incubator/compass/components/director/internal/graphql"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
 //go:generate mockery -name=AuthConverter -output=automock -outpkg=automock -case=underscore
@@ -73,14 +73,13 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) *model.APID
 	}
 
 	return &model.APIDefinitionInput{
-		ApplicationID: in.ApplicationID,
-		Name:          in.Name,
-		Description:   in.Description,
-		TargetURL:     in.TargetURL,
-		Group:         in.Group,
-		Spec:          c.apiSpecInputFromGraphQL(in.Spec),
-		Version:       c.versionFromGraphQL(in.Version),
-		DefaultAuth:   c.auth.InputFromGraphQL(in.DefaultAuth),
+		Name:        in.Name,
+		Description: in.Description,
+		TargetURL:   in.TargetURL,
+		Group:       in.Group,
+		Spec:        c.apiSpecInputFromGraphQL(in.Spec),
+		Version:     c.versionFromGraphQL(in.Version),
+		DefaultAuth: c.auth.InputFromGraphQL(in.DefaultAuth),
 	}
 }
 

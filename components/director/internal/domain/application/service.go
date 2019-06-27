@@ -221,7 +221,7 @@ func (s *service) createRelatedResources(in model.ApplicationInput, applicationI
 
 	var apis []*model.APIDefinition
 	for _, item := range in.Apis {
-		apis = append(apis, item.ToAPIDefinition(uid.Generate()))
+		apis = append(apis, item.ToAPIDefinition(uid.Generate(), applicationID))
 	}
 
 	err = s.api.CreateMany(apis)

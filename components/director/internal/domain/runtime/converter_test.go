@@ -6,8 +6,8 @@ import (
 	rtmautomock "github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
+	"github.com/kyma-incubator/compass/components/director/internal/graphql"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -2,7 +2,7 @@
 
 package automock
 
-import "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+import "github.com/kyma-incubator/compass/components/director/internal/graphql"
 import "github.com/stretchr/testify/mock"
 import "github.com/kyma-incubator/compass/components/director/internal/model"
 

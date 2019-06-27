@@ -25,11 +25,10 @@ func TestAPIDefinitionInput_ToAPIDefinition(t *testing.T) {
 		{
 			Name: "All properties given",
 			Input: &model.APIDefinitionInput{
-				ApplicationID: appID,
-				Name:          name,
-				Description:   &desc,
-				TargetURL:     targetUrl,
-				Group:         &group,
+				Name:        name,
+				Description: &desc,
+				TargetURL:   targetUrl,
+				Group:       &group,
 			},
 			Expected: &model.APIDefinition{
 				ID:            id,
@@ -51,7 +50,7 @@ func TestAPIDefinitionInput_ToAPIDefinition(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToAPIDefinition(id)
+			result := testCase.Input.ToAPIDefinition(id, appID)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

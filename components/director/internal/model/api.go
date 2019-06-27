@@ -89,14 +89,14 @@ type APIDefinitionPage struct {
 
 func (APIDefinitionPage) IsPageable() {}
 
-func (a *APIDefinitionInput) ToAPIDefinition(id string) *APIDefinition {
+func (a *APIDefinitionInput) ToAPIDefinition(id string, appID string) *APIDefinition {
 	if a == nil {
 		return nil
 	}
 
 	return &APIDefinition{
 		ID:            id,
-		ApplicationID: a.ApplicationID,
+		ApplicationID: appID,
 		Name:          a.Name,
 		Description:   a.Description,
 		Spec:          a.Spec.ToAPISpec(),

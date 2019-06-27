@@ -3,14 +3,14 @@ package api_test
 import (
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/graphql"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-func fixModelAPIDefinition(id, name, description string) *model.APIDefinition {
+func fixModelAPIDefinition(id, appId, name, description string) *model.APIDefinition {
 	return &model.APIDefinition{
 		ID:            id,
-		ApplicationID: "applicationID",
+		ApplicationID: appId,
 		Name:          name,
 		Description:   &description,
 	}
@@ -19,7 +19,7 @@ func fixModelAPIDefinition(id, name, description string) *model.APIDefinition {
 func fixGQLAPIDefinition(id, name, description string) *graphql.APIDefinition {
 	return &graphql.APIDefinition{
 		ID:            id,
-		ApplicationID: "applicationID",
+		ApplicationID: "1",
 		Name:          name,
 		Description:   &description,
 	}
@@ -65,7 +65,7 @@ func fixDetailedModelAPIDefinition(t *testing.T, id, name, description string, g
 
 	return &model.APIDefinition{
 		ID:            id,
-		ApplicationID: "applicationID",
+		ApplicationID: "1",
 		Name:          name,
 		Description:   &description,
 		Spec:          spec,
@@ -120,7 +120,7 @@ func fixDetailedGQLAPIDefinition(t *testing.T, id, name, description string, gro
 
 	return &graphql.APIDefinition{
 		ID:            id,
-		ApplicationID: "applicationID",
+		ApplicationID: "1",
 		Name:          name,
 		Description:   &description,
 		Spec:          spec,
@@ -164,14 +164,13 @@ func fixModelAPIDefinitionInput(name, description string, group string) *model.A
 	}
 
 	return &model.APIDefinitionInput{
-		ApplicationID: "applicationID",
-		Name:          name,
-		Description:   &description,
-		TargetURL:     "https://test-url.com",
-		Group:         &group,
-		Spec:          spec,
-		Version:       version,
-		DefaultAuth:   &authInput,
+		Name:        name,
+		Description: &description,
+		TargetURL:   "https://test-url.com",
+		Group:       &group,
+		Spec:        spec,
+		Version:     version,
+		DefaultAuth: &authInput,
 	}
 }
 
@@ -207,13 +206,12 @@ func fixGQLAPIDefinitionInput(name, description string, group string) *graphql.A
 	}
 
 	return &graphql.APIDefinitionInput{
-		ApplicationID: "applicationID",
-		Name:          name,
-		Description:   &description,
-		TargetURL:     "https://test-url.com",
-		Group:         &group,
-		Spec:          spec,
-		Version:       version,
-		DefaultAuth:   &defaultAuth,
+		Name:        name,
+		Description: &description,
+		TargetURL:   "https://test-url.com",
+		Group:       &group,
+		Spec:        spec,
+		Version:     version,
+		DefaultAuth: &defaultAuth,
 	}
 }

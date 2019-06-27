@@ -39,14 +39,13 @@ type APIDefinition struct {
 }
 
 type APIDefinitionInput struct {
-	ApplicationID string        `json:"applicationID"`
-	Name          string        `json:"name"`
-	Description   *string       `json:"description"`
-	TargetURL     string        `json:"targetURL"`
-	Group         *string       `json:"group"`
-	Spec          *APISpecInput `json:"spec"`
-	Version       *VersionInput `json:"version"`
-	DefaultAuth   *AuthInput    `json:"defaultAuth"`
+	Name        string        `json:"name"`
+	Description *string       `json:"description"`
+	TargetURL   string        `json:"targetURL"`
+	Group       *string       `json:"group"`
+	Spec        *APISpecInput `json:"spec"`
+	Version     *VersionInput `json:"version"`
+	DefaultAuth *AuthInput    `json:"defaultAuth"`
 }
 
 type APIDefinitionPage struct {

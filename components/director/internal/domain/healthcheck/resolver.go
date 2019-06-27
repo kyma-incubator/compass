@@ -3,7 +3,7 @@ package healthcheck
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/internal/graphql"
 )
 
 //go:generate mockery -name=HealthCheckService -output=automock -outpkg=automock -case=underscore

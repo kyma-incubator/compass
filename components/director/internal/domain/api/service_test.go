@@ -19,16 +19,17 @@ func TestService_Create(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
+	applicationID := "appid"
+
 	modelInput := model.APIDefinitionInput{
-		Name:          "Foo",
-		ApplicationID: "id",
-		TargetURL:     "https://test-url.com",
-		Spec:          &model.APISpecInput{},
-		Version:       &model.VersionInput{},
+		Name:      "Foo",
+		TargetURL: "https://test-url.com",
+		Spec:      &model.APISpecInput{},
+		Version:   &model.VersionInput{},
 	}
 
 	apiDefinitionModel := mock.MatchedBy(func(api *model.APIDefinition) bool {
-		return api.Name == modelInput.Name && api.ApplicationID == api.ApplicationID
+		return api.Name == modelInput.Name
 	})
 
 	ctx := context.TODO()
@@ -69,7 +70,7 @@ func TestService_Create(t *testing.T) {
 			svc := api.NewService(repo)
 
 			// when
-			result, err := svc.Create(ctx, testCase.Input)
+			result, err := svc.Create(ctx, applicationID, testCase.Input)
 
 			// then
 			assert.IsType(t, "string", result)

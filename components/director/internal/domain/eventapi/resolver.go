@@ -3,7 +3,7 @@ package eventapi
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/internal/graphql"
 )
 
 type EventAPIService interface{}

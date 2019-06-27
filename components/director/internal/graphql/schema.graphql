@@ -362,7 +362,6 @@ input ApplicationWebhookInput {
 # You can specify defaultAuth to specify Auth used for all runtimes. If you want to specify auth only for a dedicated Runtime,
 # you need to perform separate mutation setAPIAuth.
 input APIDefinitionInput {
-    applicationID: ID!
     name: String!
     description: String
     targetURL: String!
