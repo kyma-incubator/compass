@@ -57,14 +57,13 @@ type Version struct {
 }
 
 type APIDefinitionInput struct {
-	ApplicationID string
-	Name          string
-	Description   *string
-	TargetURL     string
-	Group         *string
-	Spec          *APISpecInput
-	Version       *VersionInput
-	DefaultAuth   *AuthInput
+	Name        string
+	Description *string
+	TargetURL   string
+	Group       *string
+	Spec        *APISpecInput
+	Version     *VersionInput
+	DefaultAuth *AuthInput
 }
 
 type APISpecInput struct {

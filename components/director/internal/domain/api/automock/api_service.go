@@ -3,7 +3,6 @@
 package automock
 
 import context "context"
-import labelfilter "github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 import mock "github.com/stretchr/testify/mock"
 import model "github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -86,29 +85,6 @@ func (_m *APIService) Get(ctx context.Context, id string) (*model.APIDefinition,
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// List provides a mock function with given fields: ctx, filter, pageSize, cursor
-func (_m *APIService) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.APIDefinitionPage, error) {
-	ret := _m.Called(ctx, filter, pageSize, cursor)
-
-	var r0 *model.APIDefinitionPage
-	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter, *int, *string) *model.APIDefinitionPage); ok {
-		r0 = rf(ctx, filter, pageSize, cursor)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.APIDefinitionPage)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter, *int, *string) error); ok {
-		r1 = rf(ctx, filter, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

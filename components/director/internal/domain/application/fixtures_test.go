@@ -286,3 +286,61 @@ func fixGQLWebhookInput() *graphql.ApplicationWebhookInput {
 		Auth: &graphql.AuthInput{},
 	}
 }
+
+func fixAPIDefinitionPage(apiDefinitions []*model.APIDefinition) *model.APIDefinitionPage {
+	return &model.APIDefinitionPage{
+		Data: apiDefinitions,
+		PageInfo: &pagination.Page{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(apiDefinitions),
+	}
+}
+
+func fixGQLAPIDefinitionPage(apiDefinitions []*graphql.APIDefinition) *graphql.APIDefinitionPage {
+	return &graphql.APIDefinitionPage{
+		Data: apiDefinitions,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(apiDefinitions),
+	}
+}
+
+func fixModelAPIDefinition(id, appId, name, description string, group string) *model.APIDefinition {
+	return &model.APIDefinition{
+		ID:            id,
+		ApplicationID: appId,
+		Name:          name,
+		Description:   &description,
+		Group:         &group,
+	}
+}
+
+func fixGQLAPIDefinition(id, appId, name, description string, group string) *graphql.APIDefinition {
+	return &graphql.APIDefinition{
+		ID:            id,
+		ApplicationID: appId,
+		Name:          name,
+		Description:   &description,
+		Group:         &group,
+	}
+}
+
+func fixModelAPIDefinitionInput(name, description string) *model.APIDefinitionInput {
+	return &model.APIDefinitionInput{
+		Name:        name,
+		Description: &description,
+	}
+}
+
+func fixGQLAPIDefinitionInput(name, description string) *graphql.APIDefinitionInput {
+	return &graphql.APIDefinitionInput{
+		Name:        name,
+		Description: &description,
+	}
+}

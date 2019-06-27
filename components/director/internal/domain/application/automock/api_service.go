@@ -3,7 +3,6 @@
 package automock
 
 import context "context"
-import labelfilter "github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 import mock "github.com/stretchr/testify/mock"
 import model "github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -47,13 +46,13 @@ func (_m *APIService) Delete(ctx context.Context, id string) error {
 	return r0
 }
 
-// List provides a mock function with given fields: ctx, filter, pageSize, cursor
-func (_m *APIService) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.APIDefinitionPage, error) {
-	ret := _m.Called(ctx, filter, pageSize, cursor)
+// List provides a mock function with given fields: ctx, applicationID, pageSize, cursor
+func (_m *APIService) List(ctx context.Context, applicationID string, pageSize *int, cursor *string) (*model.APIDefinitionPage, error) {
+	ret := _m.Called(ctx, applicationID, pageSize, cursor)
 
 	var r0 *model.APIDefinitionPage
-	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter, *int, *string) *model.APIDefinitionPage); ok {
-		r0 = rf(ctx, filter, pageSize, cursor)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *int, *string) *model.APIDefinitionPage); ok {
+		r0 = rf(ctx, applicationID, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.APIDefinitionPage)
@@ -61,8 +60,8 @@ func (_m *APIService) List(ctx context.Context, filter []*labelfilter.LabelFilte
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter, *int, *string) error); ok {
-		r1 = rf(ctx, filter, pageSize, cursor)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *int, *string) error); ok {
+		r1 = rf(ctx, applicationID, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

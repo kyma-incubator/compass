@@ -98,8 +98,8 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	}
 
 	expected := []*graphql.APIDefinition{
-		fixGQLAPIDefinition("foo", "Foo", "Lorem ipsum"),
-		fixGQLAPIDefinition("bar", "Bar", "Dolor sit amet"),
+		fixGQLAPIDefinition("foo", "1", "Foo", "Lorem ipsum"),
+		fixGQLAPIDefinition("bar", "1", "Bar", "Dolor sit amet"),
 		{},
 	}
 

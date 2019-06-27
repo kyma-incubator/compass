@@ -41,7 +41,7 @@ func (r *inMemoryRepository) List(filter []*labelfilter.LabelFilter, pageSize *i
 	}, nil
 }
 
-func (r *inMemoryRepository) ListByApplicationID(applicationID string) ([]*model.APIDefinition, error) {
+func (r *inMemoryRepository) ListByApplicationID(applicationID string, pageSize *int, cursor *string) (*model.APIDefinitionPage, error) {
 	var items []*model.APIDefinition
 	for _, a := range r.store {
 		if a.ApplicationID == applicationID {
@@ -49,7 +49,15 @@ func (r *inMemoryRepository) ListByApplicationID(applicationID string) ([]*model
 		}
 	}
 
-	return items, nil
+	return &model.APIDefinitionPage{
+		Data:       items,
+		TotalCount: len(items),
+		PageInfo: &pagination.Page{
+			StartCursor: "",
+			EndCursor:   "",
+			HasNextPage: false,
+		},
+	}, nil
 }
 
 func (r *inMemoryRepository) Create(item *model.APIDefinition) error {

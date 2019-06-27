@@ -38,22 +38,22 @@ func (_m *APIRepository) DeleteAllByApplicationID(id string) error {
 	return r0
 }
 
-// ListByApplicationID provides a mock function with given fields: applicationID
-func (_m *APIRepository) ListByApplicationID(applicationID string) ([]*model.APIDefinition, error) {
-	ret := _m.Called(applicationID)
+// ListByApplicationID provides a mock function with given fields: applicationID, pageSize, cursor
+func (_m *APIRepository) ListByApplicationID(applicationID string, pageSize *int, cursor *string) (*model.APIDefinitionPage, error) {
+	ret := _m.Called(applicationID, pageSize, cursor)
 
-	var r0 []*model.APIDefinition
-	if rf, ok := ret.Get(0).(func(string) []*model.APIDefinition); ok {
-		r0 = rf(applicationID)
+	var r0 *model.APIDefinitionPage
+	if rf, ok := ret.Get(0).(func(string, *int, *string) *model.APIDefinitionPage); ok {
+		r0 = rf(applicationID, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.APIDefinition)
+			r0 = ret.Get(0).(*model.APIDefinitionPage)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(applicationID)
+	if rf, ok := ret.Get(1).(func(string, *int, *string) error); ok {
+		r1 = rf(applicationID, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

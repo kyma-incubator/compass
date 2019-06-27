@@ -30,7 +30,7 @@ type ApplicationConverter interface {
 
 //go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
 type APIService interface {
-	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.APIDefinitionPage, error)
+	List(ctx context.Context, applicationID string, pageSize *int, cursor *string) (*model.APIDefinitionPage, error)
 	Create(ctx context.Context, applicationID string, in model.APIDefinitionInput) (string, error)
 	Update(ctx context.Context, id string, in model.APIDefinitionInput) error
 	Delete(ctx context.Context, id string) error
@@ -249,14 +249,12 @@ func (r *Resolver) DeleteApplicationAnnotation(ctx context.Context, applicationI
 
 func (r *Resolver) Apis(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
 
-	labelFilter := labelfilter.MultipleFromGraphQL([]*graphql.LabelFilter{})
-
 	var cursor string
 	if after != nil {
 		cursor = string(*after)
 	}
 
-	apisPage, err := r.apiSvc.List(ctx, labelFilter, first, &cursor)
+	apisPage, err := r.apiSvc.List(ctx, obj.ID, first, &cursor)
 	if err != nil {
 		return nil, err
 	}
@@ -265,7 +263,7 @@ func (r *Resolver) Apis(ctx context.Context, obj *graphql.Application, group *st
 	totalCount := len(gqlApis)
 
 	return &graphql.APIDefinitionPage{
-		Data:       []*graphql.APIDefinition{},
+		Data:       gqlApis,
 		TotalCount: totalCount,
 		PageInfo: &graphql.PageInfo{
 			StartCursor: graphql.PageCursor(apisPage.PageInfo.StartCursor),

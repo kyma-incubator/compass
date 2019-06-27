@@ -18,7 +18,7 @@ func TestResolver_AddAPI(t *testing.T) {
 	id := "bar"
 	appId := "1"
 	modelApi := fixModelAPIDefinition(id, appId, "foo", "bar")
-	gqlApi := fixGQLAPIDefinition(id, "foo", "bar")
+	gqlApi := fixGQLAPIDefinition(id, appId, "foo", "bar")
 	gqlApiInput := fixGQLAPIDefinitionInput(id, "foo", "bar")
 	modelApiInput := fixModelAPIDefinitionInput(id, "foo", "bar")
 
@@ -105,7 +105,7 @@ func TestResolver_DeleteAPI(t *testing.T) {
 
 	id := "bar"
 	modelApiDefinition := fixModelAPIDefinition(id, "1", "foo", "bar")
-	gqlApiDefinition := fixGQLAPIDefinition(id, "foo", "bar")
+	gqlApiDefinition := fixGQLAPIDefinition(id, "1", "foo", "bar")
 
 	testCases := []struct {
 		Name        string
@@ -189,7 +189,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 	id := "bar"
 	gqlApiDefinitionInput := fixGQLAPIDefinitionInput(id, "foo", "bar")
 	modelApiDefinitionInput := fixModelAPIDefinitionInput(id, "foo", "bar")
-	gqlApiDefinition := fixGQLAPIDefinition(id, "foo", "bar")
+	gqlApiDefinition := fixGQLAPIDefinition(id, "1", "foo", "bar")
 	modelApiDefinition := fixModelAPIDefinition(id, "1", "foo", "bar")
 
 	testCases := []struct {

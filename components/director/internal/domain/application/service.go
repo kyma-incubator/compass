@@ -35,7 +35,7 @@ type WebhookRepository interface {
 
 //go:generate mockery -name=APIRepository -output=automock -outpkg=automock -case=underscore
 type APIRepository interface {
-	ListByApplicationID(applicationID string) ([]*model.APIDefinition, error)
+	ListByApplicationID(applicationID string, pageSize *int, cursor *string) (*model.APIDefinitionPage, error)
 	CreateMany(items []*model.APIDefinition) error
 	DeleteAllByApplicationID(id string) error
 }

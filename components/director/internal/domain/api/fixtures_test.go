@@ -16,10 +16,10 @@ func fixModelAPIDefinition(id, appId, name, description string) *model.APIDefini
 	}
 }
 
-func fixGQLAPIDefinition(id, name, description string) *graphql.APIDefinition {
+func fixGQLAPIDefinition(id, appId, name, description string) *graphql.APIDefinition {
 	return &graphql.APIDefinition{
 		ID:            id,
-		ApplicationID: "1",
+		ApplicationID: appId,
 		Name:          name,
 		Description:   &description,
 	}

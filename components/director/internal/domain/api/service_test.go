@@ -28,7 +28,7 @@ func TestService_Create(t *testing.T) {
 		Version:   &model.VersionInput{},
 	}
 
-	apiDefinitionModel := mock.MatchedBy(func(api *model.APIDefinition) bool {
+	matchedApiDefinitionModel := mock.MatchedBy(func(api *model.APIDefinition) bool {
 		return api.Name == modelInput.Name
 	})
 
@@ -45,7 +45,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", apiDefinitionModel).Return(nil).Once()
+				repo.On("Create", matchedApiDefinitionModel).Return(nil).Once()
 				return repo
 			},
 			Input:       modelInput,
@@ -55,7 +55,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", apiDefinitionModel).Return(testErr).Once()
+				repo.On("Create", matchedApiDefinitionModel).Return(testErr).Once()
 				return repo
 			},
 			Input:       modelInput,
@@ -86,9 +86,8 @@ func TestService_Update(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	modelInput := model.APIDefinitionInput{
-		Name:          "Foo",
-		ApplicationID: "id",
-		TargetURL:     "https://test-url.com",
+		Name:      "Foo",
+		TargetURL: "https://test-url.com",
 		Spec: &model.APISpecInput{
 			FetchRequest: &model.FetchRequestInput{
 				Auth: &model.AuthInput{},
@@ -117,11 +116,11 @@ func TestService_Update(t *testing.T) {
 	ctx = tenant.SaveToContext(ctx, "tenant")
 
 	testCases := []struct {
-		Name               string
-		RepositoryFn       func() *automock.APIRepository
-		Input              model.APIDefinitionInput
-		InputID            string
-		ExpectedErrMessage string
+		Name         string
+		RepositoryFn func() *automock.APIRepository
+		Input        model.APIDefinitionInput
+		InputID      string
+		ExpectedErr  error
 	}{
 		{
 			Name: "Success",
@@ -131,9 +130,9 @@ func TestService_Update(t *testing.T) {
 				repo.On("Update", inputApiDefinitionModel).Return(nil).Once()
 				return repo
 			},
-			InputID:            "foo",
-			Input:              modelInput,
-			ExpectedErrMessage: "",
+			InputID:     "foo",
+			Input:       modelInput,
+			ExpectedErr: nil,
 		},
 		{
 			Name: "Update Error",
@@ -143,9 +142,9 @@ func TestService_Update(t *testing.T) {
 				repo.On("Update", inputApiDefinitionModel).Return(testErr).Once()
 				return repo
 			},
-			InputID:            "foo",
-			Input:              modelInput,
-			ExpectedErrMessage: testErr.Error(),
+			InputID:     "foo",
+			Input:       modelInput,
+			ExpectedErr: testErr,
 		},
 		{
 			Name: "Get Error",
@@ -154,9 +153,9 @@ func TestService_Update(t *testing.T) {
 				repo.On("GetByID", "foo").Return(nil, testErr).Once()
 				return repo
 			},
-			InputID:            "foo",
-			Input:              modelInput,
-			ExpectedErrMessage: testErr.Error(),
+			InputID:     "foo",
+			Input:       modelInput,
+			ExpectedErr: testErr,
 		},
 	}
 
@@ -170,10 +169,10 @@ func TestService_Update(t *testing.T) {
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
 
 			// then
-			if testCase.ExpectedErrMessage == "" {
+			if testCase.ExpectedErr == nil {
 				require.NoError(t, err)
 			} else {
-				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
 			}
 
 			repo.AssertExpectations(t)
@@ -203,11 +202,11 @@ func TestService_Delete(t *testing.T) {
 	ctx = tenant.SaveToContext(ctx, "tenant")
 
 	testCases := []struct {
-		Name               string
-		RepositoryFn       func() *automock.APIRepository
-		Input              model.APIDefinitionInput
-		InputID            string
-		ExpectedErrMessage string
+		Name         string
+		RepositoryFn func() *automock.APIRepository
+		Input        model.APIDefinitionInput
+		InputID      string
+		ExpectedErr  error
 	}{
 		{
 			Name: "Success",
@@ -217,8 +216,8 @@ func TestService_Delete(t *testing.T) {
 				repo.On("Delete", apiDefinitionModel).Return(nil).Once()
 				return repo
 			},
-			InputID:            id,
-			ExpectedErrMessage: "",
+			InputID:     id,
+			ExpectedErr: nil,
 		},
 		{
 			Name: "Delete Error",
@@ -228,8 +227,8 @@ func TestService_Delete(t *testing.T) {
 				repo.On("Delete", apiDefinitionModel).Return(testErr).Once()
 				return repo
 			},
-			InputID:            id,
-			ExpectedErrMessage: testErr.Error(),
+			InputID:     id,
+			ExpectedErr: testErr,
 		},
 		{
 			Name: "Get Error",
@@ -238,8 +237,8 @@ func TestService_Delete(t *testing.T) {
 				repo.On("GetByID", id).Return(nil, testErr).Once()
 				return repo
 			},
-			InputID:            id,
-			ExpectedErrMessage: testErr.Error(),
+			InputID:     id,
+			ExpectedErr: testErr,
 		},
 	}
 
@@ -253,10 +252,10 @@ func TestService_Delete(t *testing.T) {
 			err := svc.Delete(ctx, testCase.InputID)
 
 			// then
-			if testCase.ExpectedErrMessage == "" {
+			if testCase.ExpectedErr == nil {
 				require.NoError(t, err)
 			} else {
-				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
 			}
 
 			repo.AssertExpectations(t)

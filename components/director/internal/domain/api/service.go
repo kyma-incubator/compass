@@ -13,7 +13,7 @@ import (
 //go:generate mockery -name=APIRepository -output=automock -outpkg=automock -case=underscore
 type APIRepository interface {
 	GetByID(id string) (*model.APIDefinition, error)
-	ListByApplicationID(applicationID string) ([]*model.APIDefinition, error)
+	ListByApplicationID(applicationID string, pageSize *int, cursor *string) (*model.APIDefinitionPage, error)
 	CreateMany(item []*model.APIDefinition) error
 	List(filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.APIDefinitionPage, error)
 	Create(item *model.APIDefinition) error
@@ -30,8 +30,8 @@ func NewService(repo APIRepository) *service {
 	return &service{repo: repo}
 }
 
-func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.APIDefinitionPage, error) {
-	return s.repo.List(filter, pageSize, cursor)
+func (s *service) List(ctx context.Context, applicationID string, pageSize *int, cursor *string) (*model.APIDefinitionPage, error) {
+	return s.repo.ListByApplicationID(applicationID, pageSize, cursor)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.APIDefinition, error) {

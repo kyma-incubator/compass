@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/graphql"
@@ -16,7 +15,6 @@ type APIService interface {
 	Update(ctx context.Context, id string, in model.APIDefinitionInput) error
 	Get(ctx context.Context, id string) (*model.APIDefinition, error)
 	Delete(ctx context.Context, id string) error
-	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.APIDefinitionPage, error)
 	SetAPIAuth(ctx context.Context, apiID string, runtimeID string, in model.AuthInput) (*model.RuntimeAuth, error)
 	DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*model.RuntimeAuth, error)
 	RefetchAPISpec(ctx context.Context, id string) (*model.APISpec, error)
