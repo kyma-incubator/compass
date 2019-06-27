@@ -2,15 +2,9 @@ package eventapi
 
 
 import (
-"github.com/kyma-incubator/compass/components/director/internal/graphql"
-"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
-
-//go:generate mockery -name=AuthConverter -output=automock -outpkg=automock -case=underscore
-type AuthConverter interface {
-	ToGraphQL(in *model.Auth) *graphql.Auth
-	InputFromGraphQL(in *graphql.AuthInput) *model.AuthInput
-}
 
 //go:generate mockery -name=FetchRequestConverter -output=automock -outpkg=automock -case=underscore
 type FetchRequestConverter interface {
@@ -19,12 +13,11 @@ type FetchRequestConverter interface {
 }
 
 type converter struct {
-	auth AuthConverter
 	fr   FetchRequestConverter
 }
 
-func NewConverter(auth AuthConverter, fr FetchRequestConverter) *converter {
-	return &converter{auth: auth, fr: fr}
+func NewConverter(fr FetchRequestConverter) *converter {
+	return &converter{fr: fr}
 }
 
 func (c *converter) ToGraphQL(in *model.EventAPIDefinition) *graphql.EventAPIDefinition {
@@ -38,13 +31,13 @@ func (c *converter) ToGraphQL(in *model.EventAPIDefinition) *graphql.EventAPIDef
 		Name:          in.Name,
 		Description:   in.Description,
 		Group:         in.Group,
-		Spec:          in.Spec,
-		Version:       in.Version,
+		Spec:          c.eventApiSpecToGraphQL(in.Spec),
+		Version:       c.versionToGraphQL(in.Version),
 	}
 }
 
-func (c *converter) MultipleToGraphQL(in []*model.APIDefinition) []*graphql.APIDefinition {
-	var apis []*graphql.APIDefinition
+func (c *converter) MultipleToGraphQL(in []*model.EventAPIDefinition) []*graphql.EventAPIDefinition {
+	var apis []*graphql.EventAPIDefinition
 	for _, a := range in {
 		if a == nil {
 			continue
@@ -55,8 +48,8 @@ func (c *converter) MultipleToGraphQL(in []*model.APIDefinition) []*graphql.APID
 	return apis
 }
 
-func (c *converter) MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) []*model.APIDefinitionInput {
-	var arr []*model.APIDefinitionInput
+func (c *converter) MultipleInputFromGraphQL(in []*graphql.EventAPIDefinitionInput) []*model.EventAPIDefinitionInput {
+	var arr []*model.EventAPIDefinitionInput
 	for _, item := range in {
 		api := c.InputFromGraphQL(item)
 		arr = append(arr, api)
@@ -65,20 +58,18 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) [
 	return arr
 }
 
-func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) *model.APIDefinitionInput {
+func (c *converter) InputFromGraphQL(in *graphql.EventAPIDefinitionInput) *model.EventAPIDefinitionInput {
 	if in == nil {
 		return nil
 	}
 
-	return &model.APIDefinitionInput{
+	return &model.EventAPIDefinitionInput{
 		ApplicationID: in.ApplicationID,
 		Name:          in.Name,
 		Description:   in.Description,
-		TargetURL:     in.TargetURL,
+		Spec:          c.eventApiSpecInputFromGraphQL(in.Spec),
 		Group:         in.Group,
-		Spec:          c.apiSpecInputFromGraphQL(in.Spec),
 		Version:       c.versionFromGraphQL(in.Version),
-		DefaultAuth:   c.auth.InputFromGraphQL(in.DefaultAuth),
 	}
 }
 
@@ -106,7 +97,7 @@ func (c *converter) eventApiSpecToGraphQL(in *model.EventAPISpec) *graphql.Event
 	}
 }
 
-func (c *converter) eventApiSpecInputFromGraphQL(in *graphql.APISpecInput) *model.EventAPISpecInput {
+func (c *converter) eventApiSpecInputFromGraphQL(in *graphql.EventAPISpecInput) *model.EventAPISpecInput {
 	if in == nil {
 		return nil
 	}
@@ -116,14 +107,15 @@ func (c *converter) eventApiSpecInputFromGraphQL(in *graphql.APISpecInput) *mode
 		data = []byte(*in.Data)
 	}
 
-	var format model.SpecFormat
-	if in.Format != "" {
-		format = model.SpecFormat(in.Format)
-	}
+	//TODO how to specify format?
+	//var format model.SpecFormat
+	//if in.Format != "" {
+	//	format = model.SpecFormat(in.Format)
+	//}
 
 	return &model.EventAPISpecInput{
 		Data:          &data,
-		EventSpecType: model.EventAPISpecType(in.Type),
+		EventSpecType: model.EventAPISpecType(in.EventSpecType),
 		FetchRequest:  c.fr.InputFromGraphQL(in.FetchRequest),
 	}
 }
@@ -152,27 +144,4 @@ func (c *converter) versionFromGraphQL(in *graphql.VersionInput) *model.VersionI
 		DeprecatedSince: in.DeprecatedSince,
 		ForRemoval:      in.ForRemoval,
 	}
-}
-
-func (c *converter) runtimeAuthToGraphQL(in *model.RuntimeAuth) *graphql.RuntimeAuth {
-	if in == nil {
-		return nil
-	}
-
-	return &graphql.RuntimeAuth{
-		RuntimeID: in.RuntimeID,
-		Auth:      c.auth.ToGraphQL(in.Auth),
-	}
-}
-
-func (c *converter) runtimeAuthArrToGraphQL(in []*model.RuntimeAuth) []*graphql.RuntimeAuth {
-	var auths []*graphql.RuntimeAuth
-	for _, item := range in {
-		auths = append(auths, &graphql.RuntimeAuth{
-			RuntimeID: item.RuntimeID,
-			Auth:      c.auth.ToGraphQL(item.Auth),
-		})
-	}
-
-	return auths
 }
