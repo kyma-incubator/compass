@@ -75,10 +75,15 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 func (s *service) Delete(ctx context.Context, id string) error {
 	api, err := s.Get(ctx, id)
 	if err != nil {
-		return errors.Wrapf(err, "while updating APIDefinition with ID %s", id)
+		return errors.Wrapf(err, "while receiving APIDefinition with ID %s", id)
 	}
 
-	return s.repo.Delete(api)
+	err = s.repo.Delete(api)
+	if err != nil {
+		return errors.Wrapf(err, "while deleting APIDefinition with ID %s", id)
+	}
+
+	return nil
 }
 
 func (s *service) SetAPIAuth(ctx context.Context, apiID string, runtimeID string, in model.AuthInput) (*model.RuntimeAuth, error) {
