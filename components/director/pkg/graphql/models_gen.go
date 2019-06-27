@@ -196,9 +196,10 @@ type DocumentPage struct {
 func (DocumentPage) IsPageable() {}
 
 type EventAPIDefinition struct {
-	ID          string  `json:"id"`
-	Name        string  `json:"name"`
-	Description *string `json:"description"`
+	ID            string  `json:"id"`
+	ApplicationID string  `json:"applicationID"`
+	Name          string  `json:"name"`
+	Description   *string `json:"description"`
 	// group allows you to find the same API but in different version
 	Group   *string       `json:"group"`
 	Spec    *EventAPISpec `json:"spec"`
@@ -206,11 +207,12 @@ type EventAPIDefinition struct {
 }
 
 type EventAPIDefinitionInput struct {
-	Name        string             `json:"name"`
-	Description *string            `json:"description"`
-	Spec        *EventAPISpecInput `json:"spec"`
-	Group       *string            `json:"group"`
-	Version     *VersionInput      `json:"version"`
+	ApplicationID string             `json:"applicationID"`
+	Name          string             `json:"name"`
+	Description   *string            `json:"description"`
+	Spec          *EventAPISpecInput `json:"spec"`
+	Group         *string            `json:"group"`
+	Version       *VersionInput      `json:"version"`
 }
 
 type EventAPIDefinitionPage struct {

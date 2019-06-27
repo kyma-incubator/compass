@@ -206,6 +206,7 @@ enum EventAPISpecType {
 
 type EventAPIDefinition {
     id: ID!
+    applicationID: ID!
     name: String!
     description: String
     """group allows you to find the same API but in different version"""
@@ -389,6 +390,7 @@ input APISpecInput {
 # Event Input
 
 input EventAPIDefinitionInput {
+    applicationID: ID!
     name: String!
     description: String
     spec: EventAPISpecInput!

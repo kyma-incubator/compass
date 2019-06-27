@@ -148,12 +148,13 @@ type ComplexityRoot struct {
 	}
 
 	EventAPIDefinition struct {
-		Description func(childComplexity int) int
-		Group       func(childComplexity int) int
-		ID          func(childComplexity int) int
-		Name        func(childComplexity int) int
-		Spec        func(childComplexity int) int
-		Version     func(childComplexity int) int
+		ApplicationID func(childComplexity int) int
+		Description   func(childComplexity int) int
+		Group         func(childComplexity int) int
+		ID            func(childComplexity int) int
+		Name          func(childComplexity int) int
+		Spec          func(childComplexity int) int
+		Version       func(childComplexity int) int
 	}
 
 	EventAPIDefinitionPage struct {
@@ -805,6 +806,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DocumentPage.TotalCount(childComplexity), true
+
+	case "EventAPIDefinition.applicationID":
+		if e.complexity.EventAPIDefinition.ApplicationID == nil {
+			break
+		}
+
+		return e.complexity.EventAPIDefinition.ApplicationID(childComplexity), true
 
 	case "EventAPIDefinition.description":
 		if e.complexity.EventAPIDefinition.Description == nil {
@@ -1894,6 +1902,7 @@ enum EventAPISpecType {
 
 type EventAPIDefinition {
     id: ID!
+    applicationID: ID!
     name: String!
     description: String
     """group allows you to find the same API but in different version"""
@@ -2077,6 +2086,7 @@ input APISpecInput {
 # Event Input
 
 input EventAPIDefinitionInput {
+    applicationID: ID!
     name: String!
     description: String
     spec: EventAPISpecInput!
@@ -4803,6 +4813,33 @@ func (ec *executionContext) _EventAPIDefinition_id(ctx context.Context, field gr
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.ID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EventAPIDefinition_applicationID(ctx context.Context, field graphql.CollectedField, obj *EventAPIDefinition) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "EventAPIDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ApplicationID, nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -8627,6 +8664,12 @@ func (ec *executionContext) unmarshalInputEventAPIDefinitionInput(ctx context.Co
 
 	for k, v := range asMap {
 		switch k {
+		case "applicationID":
+			var err error
+			it.ApplicationID, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "name":
 			var err error
 			it.Name, err = ec.unmarshalNString2string(ctx, v)
@@ -9526,6 +9569,11 @@ func (ec *executionContext) _EventAPIDefinition(ctx context.Context, sel ast.Sel
 			out.Values[i] = graphql.MarshalString("EventAPIDefinition")
 		case "id":
 			out.Values[i] = ec._EventAPIDefinition_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "applicationID":
+			out.Values[i] = ec._EventAPIDefinition_applicationID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
