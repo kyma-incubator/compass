@@ -2,6 +2,7 @@ package runtime_test
 
 import (
 	"context"
+	"github.com/stretchr/testify/mock"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
@@ -42,7 +43,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", context.TODO(), "foo").Return(modelRuntime, nil).Once()
-				svc.On("Create", context.TODO(), modelInput).Return("foo", nil).Once()
+				svc.On("Create", context.TODO(), mock.Anything, modelInput).Return("foo", nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -59,7 +60,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			Name: "Returns error when runtime creation failed",
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("Create", context.TODO(), modelInput).Return("", testErr).Once()
+				svc.On("Create", context.TODO(), mock.Anything, modelInput).Return("", testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -75,7 +76,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			Name: "Returns error when runtime retrieval failed",
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("Create", context.TODO(), modelInput).Return("foo", nil).Once()
+				svc.On("Create", context.TODO(), mock.Anything, modelInput).Return("foo", nil).Once()
 				svc.On("Get", context.TODO(), "foo").Return(nil, testErr).Once()
 				return svc
 			},

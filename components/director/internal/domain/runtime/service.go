@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/uid"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -44,8 +42,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.Runtime, error) {
 	return runtime, nil
 }
 
-func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, error) {
-	id := uid.Generate()
+func (s *service) Create(ctx context.Context,id string, in model.RuntimeInput) (string, error) {
 	runtimeTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", errors.Wrapf(err, "while loading tenant from context")

@@ -20,6 +20,7 @@ func TestService_Create(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
+	id := "foo"
 	desc := "Lorem ipsum"
 	modelInput := model.RuntimeInput{
 		Name:        "Foo",
@@ -70,7 +71,7 @@ func TestService_Create(t *testing.T) {
 			svc := runtime.NewService(repo)
 
 			// when
-			result, err := svc.Create(ctx, testCase.Input)
+			result, err := svc.Create(ctx,id, testCase.Input)
 
 			// then
 			assert.IsType(t, "string", result)
