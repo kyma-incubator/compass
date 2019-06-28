@@ -19,18 +19,26 @@ func TestService_Create(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
+	id := "foo"
 	applicationID := "appid"
+	name := "Foo"
+	targetUrl := "https://test-url.com"
 
 	modelInput := model.APIDefinitionInput{
-		Name:      "Foo",
-		TargetURL: "https://test-url.com",
+		Name:      name,
+		TargetURL: targetUrl,
 		Spec:      &model.APISpecInput{},
 		Version:   &model.VersionInput{},
 	}
 
-	matchedApiDefinitionModel := mock.MatchedBy(func(api *model.APIDefinition) bool {
-		return api.Name == modelInput.Name
-	})
+	modelApiDefinition := &model.APIDefinition{
+		ID:            id,
+		ApplicationID: applicationID,
+		Name:          name,
+		TargetURL:     targetUrl,
+		Spec:		   &model.APISpec{},
+		Version:       &model.Version{},
+	}
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, "tenant")
@@ -45,7 +53,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", matchedApiDefinitionModel).Return(nil).Once()
+				repo.On("Create", modelApiDefinition).Return(nil).Once()
 				return repo
 			},
 			Input:       modelInput,
@@ -55,7 +63,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", matchedApiDefinitionModel).Return(testErr).Once()
+				repo.On("Create", modelApiDefinition).Return(testErr).Once()
 				return repo
 			},
 			Input:       modelInput,
@@ -70,7 +78,7 @@ func TestService_Create(t *testing.T) {
 			svc := api.NewService(repo)
 
 			// when
-			result, err := svc.Create(ctx, applicationID, testCase.Input)
+			result, err := svc.Create(ctx,id, applicationID, testCase.Input)
 
 			// then
 			assert.IsType(t, "string", result)

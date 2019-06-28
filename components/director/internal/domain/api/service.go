@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	//"github.com/kyma-incubator/compass/components/director/internal/uid"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -43,8 +43,8 @@ func (s *service) Get(ctx context.Context, id string) (*model.APIDefinition, err
 	return api, nil
 }
 
-func (s *service) Create(ctx context.Context, applicationID string, in model.APIDefinitionInput) (string, error) {
-	id := uid.Generate()
+func (s *service) Create(ctx context.Context,id string, applicationID string, in model.APIDefinitionInput) (string, error) {
+	//id := uid.Generate()
 
 	api := in.ToAPIDefinition(id, applicationID)
 

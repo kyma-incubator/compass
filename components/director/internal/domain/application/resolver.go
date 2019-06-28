@@ -31,7 +31,7 @@ type ApplicationConverter interface {
 //go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
 type APIService interface {
 	List(ctx context.Context, applicationID string, pageSize *int, cursor *string) (*model.APIDefinitionPage, error)
-	Create(ctx context.Context, applicationID string, in model.APIDefinitionInput) (string, error)
+	Create(ctx context.Context,id string, applicationID string, in model.APIDefinitionInput) (string, error)
 	Update(ctx context.Context, id string, in model.APIDefinitionInput) error
 	Delete(ctx context.Context, id string) error
 }

@@ -215,3 +215,31 @@ func fixGQLAPIDefinitionInput(name, description string, group string) *graphql.A
 		DefaultAuth: &defaultAuth,
 	}
 }
+
+func fixModelAuthInput(headers map[string][]string ) *model.AuthInput {
+	return &model.AuthInput{
+		AdditionalHeaders:     headers,
+	}
+}
+
+func fixGQLAuthInput(headers map[string][]string ) *graphql.AuthInput {
+	httpHeaders := graphql.HttpHeaders(headers)
+
+	return &graphql.AuthInput{
+		AdditionalHeaders:     &httpHeaders,
+	}
+}
+
+func fixModelRuntimeAuth(id string, auth *model.Auth) *model.RuntimeAuth {
+	return &model.RuntimeAuth{
+		RuntimeID: id,
+		Auth:      auth,
+	}
+}
+
+func fixGQLRuntimeAuth(id string, auth *graphql.Auth) *graphql.RuntimeAuth {
+	return &graphql.RuntimeAuth{
+		RuntimeID: id,
+		Auth:      auth,
+	}
+}
