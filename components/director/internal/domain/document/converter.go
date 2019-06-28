@@ -1,8 +1,8 @@
 package document
 
 import (
-	"github.com/kyma-incubator/compass/components/director/internal/graphql"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
 //go:generate mockery -name=FetchRequestConverter -output=automock -outpkg=automock -case=underscore

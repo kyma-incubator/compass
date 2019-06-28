@@ -11,7 +11,7 @@ import (
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/director/internal/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/vrischmann/envconfig"
 )
 
