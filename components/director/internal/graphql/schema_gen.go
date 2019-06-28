@@ -45,16 +45,17 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	APIDefinition struct {
-		Auth        func(childComplexity int, runtimeID string) int
-		Auths       func(childComplexity int) int
-		DefaultAuth func(childComplexity int) int
-		Description func(childComplexity int) int
-		Group       func(childComplexity int) int
-		ID          func(childComplexity int) int
-		Name        func(childComplexity int) int
-		Spec        func(childComplexity int) int
-		TargetURL   func(childComplexity int) int
-		Version     func(childComplexity int) int
+		ApplicationID func(childComplexity int) int
+		Auth          func(childComplexity int, runtimeID string) int
+		Auths         func(childComplexity int) int
+		DefaultAuth   func(childComplexity int) int
+		Description   func(childComplexity int) int
+		Group         func(childComplexity int) int
+		ID            func(childComplexity int) int
+		Name          func(childComplexity int) int
+		Spec          func(childComplexity int) int
+		TargetURL     func(childComplexity int) int
+		Version       func(childComplexity int) int
 	}
 
 	APIDefinitionPage struct {
@@ -347,6 +348,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "APIDefinition.applicationID":
+		if e.complexity.APIDefinition.ApplicationID == nil {
+			break
+		}
+
+		return e.complexity.APIDefinition.ApplicationID(childComplexity), true
 
 	case "APIDefinition.auth":
 		if e.complexity.APIDefinition.Auth == nil {
@@ -1839,6 +1847,7 @@ type Version {
 
 type APIDefinition {
     id: ID!
+    applicationID: ID!
     name: String!
     description: String
     spec: APISpec
@@ -3168,6 +3177,33 @@ func (ec *executionContext) _APIDefinition_id(ctx context.Context, field graphql
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.ID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _APIDefinition_applicationID(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "APIDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ApplicationID, nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -8904,6 +8940,11 @@ func (ec *executionContext) _APIDefinition(ctx context.Context, sel ast.Selectio
 			out.Values[i] = graphql.MarshalString("APIDefinition")
 		case "id":
 			out.Values[i] = ec._APIDefinition_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "applicationID":
+			out.Values[i] = ec._APIDefinition_applicationID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

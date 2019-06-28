@@ -28,7 +28,21 @@ type ApplicationConverter interface {
 	InputFromGraphQL(in graphql.ApplicationInput) model.ApplicationInput
 }
 
-type APIService interface{}
+//go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
+type APIService interface {
+	List(ctx context.Context, applicationID string, pageSize *int, cursor *string) (*model.APIDefinitionPage, error)
+	Create(ctx context.Context, id string, applicationID string, in model.APIDefinitionInput) (string, error)
+	Update(ctx context.Context, id string, in model.APIDefinitionInput) error
+	Delete(ctx context.Context, id string) error
+}
+
+//go:generate mockery -name=APIConverter -output=automock -outpkg=automock -case=underscore
+type APIConverter interface {
+	ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition
+	MultipleToGraphQL(in []*model.APIDefinition) []*graphql.APIDefinition
+	MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) []*model.APIDefinitionInput
+	InputFromGraphQL(in *graphql.APIDefinitionInput) *model.APIDefinitionInput
+}
 
 type EventAPIService interface{}
 
@@ -71,9 +85,10 @@ type Resolver struct {
 
 	documentConverter DocumentConverter
 	webhookConverter  WebhookConverter
+	apiConverter      APIConverter
 }
 
-func NewResolver(svc ApplicationService, apiSvc APIService, eventAPISvc EventAPIService, documentSvc DocumentService, webhookSvc WebhookService, appConverter ApplicationConverter, documentConverter DocumentConverter, webhookConverter WebhookConverter) *Resolver {
+func NewResolver(svc ApplicationService, apiSvc APIService, eventAPISvc EventAPIService, documentSvc DocumentService, webhookSvc WebhookService, appConverter ApplicationConverter, documentConverter DocumentConverter, webhookConverter WebhookConverter, apiConverter APIConverter) *Resolver {
 	return &Resolver{
 		appSvc:            svc,
 		apiSvc:            apiSvc,
@@ -83,6 +98,7 @@ func NewResolver(svc ApplicationService, apiSvc APIService, eventAPISvc EventAPI
 		appConverter:      appConverter,
 		documentConverter: documentConverter,
 		webhookConverter:  webhookConverter,
+		apiConverter:      apiConverter,
 	}
 }
 
@@ -232,10 +248,40 @@ func (r *Resolver) DeleteApplicationAnnotation(ctx context.Context, applicationI
 }
 
 func (r *Resolver) Apis(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
-	panic("not implemented")
+	var cursor string
+	if after != nil {
+		cursor = string(*after)
+	}
+
+	apisPage, err := r.apiSvc.List(ctx, obj.ID, first, &cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	gqlApis := r.apiConverter.MultipleToGraphQL(apisPage.Data)
+	totalCount := len(gqlApis)
+
+	return &graphql.APIDefinitionPage{
+		Data:       gqlApis,
+		TotalCount: totalCount,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(apisPage.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(apisPage.PageInfo.EndCursor),
+			HasNextPage: apisPage.PageInfo.HasNextPage,
+		},
+	}, nil
 }
 func (r *Resolver) EventAPIs(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.EventAPIDefinitionPage, error) {
-	panic("not implemented")
+	//TODO panic("not implemented")
+	return &graphql.EventAPIDefinitionPage{
+		Data:       make([]*graphql.EventAPIDefinition, 0),
+		TotalCount: 0,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor("1"),
+			EndCursor:   graphql.PageCursor("2"),
+			HasNextPage: false,
+		},
+	}, nil
 }
 
 // TODO: Proper error handling

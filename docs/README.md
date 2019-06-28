@@ -16,6 +16,7 @@ This folder contains documents that relate to the project.
 - [Establishing a trusted connection](./architecture/establishing-trusted-connection.md)
 - [API Credentials Flow](./architecture/api-credentials-flows.md)
 - [Support for legacy REST API](./architecture/support-for-legacy-rest-api.md)
+- [Event flows proposal](./architecture/event-flows-proposal.md)
 - [Director component](./architecture/director-component.md)
 
 ## Investigations
@@ -25,4 +26,5 @@ This folder contains documents that relate to the project.
 - [Storage - S3 - Parquet](./investigations/storage/s3/parquet.md)
 - [Storage - Managed DB](./investigations/storage/managed-db/managed-dbs.md)
 - [Storage - PostgreSQL Evaluation](./investigations/storage/postgres/postgres.md)
+- [Storage - SQL Toolbox](./investigations/storage/sql-toolbox/sql-toolbox.md)
 - [GraphQL - File Upload](./investigations/graphql-file-upload/file-upload-with-graphql.md)

@@ -88,7 +88,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 		WebhookConverterFn  func() *automock.WebhookConverter
 		DocumentConverterFn func() *automock.DocumentConverter
 		APIConverterFn      func() *automock.APIConverter
-		EventAPIConverterFn func() *automock.EventAPIConverter
+		//EventAPIConverterFn func() *automock.EventAPIConverter
 	}{
 		{
 			Name:     "All properties given",
@@ -104,11 +104,11 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 				conv.On("MultipleInputFromGraphQL", allPropsInput.Apis).Return(allPropsExpected.Apis)
 				return conv
 			},
-			EventAPIConverterFn: func() *automock.EventAPIConverter {
-				conv := &automock.EventAPIConverter{}
-				conv.On("MultipleInputFromGraphQL", allPropsInput.EventAPIs).Return(allPropsExpected.EventAPIs)
-				return conv
-			},
+			//EventAPIConverterFn: func() *automock.EventAPIConverter {
+			//	conv := &automock.EventAPIConverter{}
+			//	conv.On("MultipleInputFromGraphQL", allPropsInput.EventAPIs).Return(allPropsExpected.EventAPIs)
+			//	return conv
+			//},
 			DocumentConverterFn: func() *automock.DocumentConverter {
 				conv := &automock.DocumentConverter{}
 				conv.On("MultipleInputFromGraphQL", allPropsInput.Documents).Return(allPropsExpected.Documents)
@@ -129,11 +129,11 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 				conv.On("MultipleInputFromGraphQL", []*graphql.APIDefinitionInput(nil)).Return(nil)
 				return conv
 			},
-			EventAPIConverterFn: func() *automock.EventAPIConverter {
-				conv := &automock.EventAPIConverter{}
-				conv.On("MultipleInputFromGraphQL", []*graphql.EventAPIDefinitionInput(nil)).Return(nil)
-				return conv
-			},
+			//EventAPIConverterFn: func() *automock.EventAPIConverter {
+			//	conv := &automock.EventAPIConverter{}
+			//	conv.On("MultipleInputFromGraphQL", []*graphql.EventAPIDefinitionInput(nil)).Return(nil)
+			//	return conv
+			//},
 			DocumentConverterFn: func() *automock.DocumentConverter {
 				conv := &automock.DocumentConverter{}
 				conv.On("MultipleInputFromGraphQL", []*graphql.DocumentInput(nil)).Return(nil)
@@ -148,7 +148,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			converter := application.NewConverter(
 				testCase.WebhookConverterFn(),
 				testCase.APIConverterFn(),
-				testCase.EventAPIConverterFn(),
+				nil,
 				testCase.DocumentConverterFn(),
 			)
 			res := converter.InputFromGraphQL(testCase.Input)

@@ -69,7 +69,7 @@ func TestService_Create(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("CreateMany", appModel.Apis).Return(nil).Once()
+				repo.On("CreateMany", mock.Anything).Return(nil).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
@@ -1034,7 +1034,7 @@ func modelFromInput(in model.ApplicationInput, applicationID string) testModel {
 
 	var apisModel []*model.APIDefinition
 	for _, item := range in.Apis {
-		apisModel = append(apisModel, item.ToAPIDefinition())
+		apisModel = append(apisModel, item.ToAPIDefinition(uid.Generate(), applicationID))
 	}
 
 	var eventAPIsModel []*model.EventAPIDefinition

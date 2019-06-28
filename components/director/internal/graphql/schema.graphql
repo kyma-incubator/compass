@@ -159,6 +159,7 @@ type Version {
 
 type APIDefinition {
     id: ID!
+    applicationID: ID!
     name: String!
     description: String
     spec: APISpec

@@ -1,8 +1,8 @@
 package graphql
 
 import (
-	"fmt"
 	"io"
+	"strconv"
 
 	log "github.com/sirupsen/logrus"
 
@@ -23,8 +23,7 @@ func (y *CLOB) UnmarshalGQL(v interface{}) error {
 }
 
 func (y CLOB) MarshalGQL(w io.Writer) {
-	json := fmt.Sprintf(`"%s"`, y)
-	_, err := w.Write([]byte(json))
+	_, err := io.WriteString(w, strconv.Quote(string(y)))
 	if err != nil {
 		log.Errorf("while writing %T: %s", y, err)
 	}

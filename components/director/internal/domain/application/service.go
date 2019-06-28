@@ -35,7 +35,7 @@ type WebhookRepository interface {
 
 //go:generate mockery -name=APIRepository -output=automock -outpkg=automock -case=underscore
 type APIRepository interface {
-	ListByApplicationID(applicationID string) ([]*model.APIDefinition, error)
+	ListByApplicationID(applicationID string, pageSize *int, cursor *string) (*model.APIDefinitionPage, error)
 	CreateMany(items []*model.APIDefinition) error
 	DeleteAllByApplicationID(id string) error
 }
@@ -221,7 +221,7 @@ func (s *service) createRelatedResources(in model.ApplicationInput, applicationI
 
 	var apis []*model.APIDefinition
 	for _, item := range in.Apis {
-		apis = append(apis, item.ToAPIDefinition())
+		apis = append(apis, item.ToAPIDefinition(uid.Generate(), applicationID))
 	}
 
 	err = s.api.CreateMany(apis)

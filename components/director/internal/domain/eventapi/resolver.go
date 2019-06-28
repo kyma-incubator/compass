@@ -23,14 +23,18 @@ func NewResolver(svc EventAPIService) *Resolver {
 }
 
 func (r *Resolver) AddEventAPI(ctx context.Context, applicationID string, in graphql.EventAPIDefinitionInput) (*graphql.EventAPIDefinition, error) {
-	panic("not implemented")
+	// TODO panic("not implemented")
+	return &graphql.EventAPIDefinition{}, nil
 }
 func (r *Resolver) UpdateEventAPI(ctx context.Context, id string, in graphql.EventAPIDefinitionInput) (*graphql.EventAPIDefinition, error) {
-	panic("not implemented")
+	//TODO panic("not implemented")
+	return &graphql.EventAPIDefinition{}, nil
 }
 func (r *Resolver) DeleteEventAPI(ctx context.Context, id string) (*graphql.EventAPIDefinition, error) {
-	panic("not implemented")
+	//TODO panic("not implemented")
+	return &graphql.EventAPIDefinition{}, nil
 }
 func (r *Resolver) RefetchEventAPISpec(ctx context.Context, eventID string) (*graphql.EventAPISpec, error) {
-	panic("not implemented")
+	//TODO panic("not implemented")
+	return &graphql.EventAPISpec{}, nil
 }
