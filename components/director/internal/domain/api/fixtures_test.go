@@ -3,8 +3,8 @@ package api_test
 import (
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/graphql"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
 func fixModelAPIDefinition(id, appId, name, description string) *model.APIDefinition {
