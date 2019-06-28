@@ -56,9 +56,9 @@ func (r *Resolver) AddAPI(ctx context.Context, applicationID string, in graphql.
 		return nil, err
 	}
 
-	gqlApi := r.converter.ToGraphQL(api)
+	gqlAPI := r.converter.ToGraphQL(api)
 
-	return gqlApi, nil
+	return gqlAPI, nil
 }
 func (r *Resolver) UpdateAPI(ctx context.Context, id string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
 	convertedIn := r.converter.InputFromGraphQL(&in)
@@ -73,9 +73,9 @@ func (r *Resolver) UpdateAPI(ctx context.Context, id string, in graphql.APIDefin
 		return nil, err
 	}
 
-	gqlApi := r.converter.ToGraphQL(api)
+	gqlAPI := r.converter.ToGraphQL(api)
 
-	return gqlApi, nil
+	return gqlAPI, nil
 }
 func (r *Resolver) DeleteAPI(ctx context.Context, id string) (*graphql.APIDefinition, error) {
 	api, err := r.svc.Get(ctx, id)
@@ -83,14 +83,14 @@ func (r *Resolver) DeleteAPI(ctx context.Context, id string) (*graphql.APIDefini
 		return nil, err
 	}
 
-	deletedApi := r.converter.ToGraphQL(api)
+	deletedAPI := r.converter.ToGraphQL(api)
 
 	err = r.svc.Delete(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	return deletedApi, nil
+	return deletedAPI, nil
 }
 func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.APISpec, error) {
 	spec, err := r.svc.RefetchAPISpec(ctx, apiID)

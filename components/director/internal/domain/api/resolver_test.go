@@ -21,64 +21,64 @@ func TestResolver_AddAPI(t *testing.T) {
 	id := "bar"
 	appId := "1"
 
-	modelApi := fixModelAPIDefinition(id, appId, "name", "bar")
-	gqlApi := fixGQLAPIDefinition(id, appId, "name", "bar")
-	gqlApiInput := fixGQLAPIDefinitionInput("name", "foo", "bar")
-	modelApiInput := fixModelAPIDefinitionInput("name", "foo", "bar")
+	modelAPI := fixModelAPIDefinition(id, appId, "name", "bar")
+	gqlAPI := fixGQLAPIDefinition(id, appId, "name", "bar")
+	gqlAPIInput := fixGQLAPIDefinitionInput("name", "foo", "bar")
+	modelAPIInput := fixModelAPIDefinitionInput("name", "foo", "bar")
 
 	testCases := []struct {
 		Name        string
 		ServiceFn   func() *automock.APIService
 		ConverterFn func() *automock.APIConverter
-		ExpectedApi *graphql.APIDefinition
+		ExpectedAPI *graphql.APIDefinition
 		ExpectedErr error
 	}{
 		{
 			Name: "Success",
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Create", context.TODO(), mock.Anything, appId, *modelApiInput).Return(id, nil).Once()
-				svc.On("Get", context.TODO(), id).Return(modelApi, nil).Once()
+				svc.On("Create", context.TODO(), mock.Anything, appId, *modelAPIInput).Return(id, nil).Once()
+				svc.On("Get", context.TODO(), id).Return(modelAPI, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("InputFromGraphQL", gqlApiInput).Return(modelApiInput).Once()
-				conv.On("ToGraphQL", modelApi).Return(gqlApi).Once()
+				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
+				conv.On("ToGraphQL", modelAPI).Return(gqlAPI).Once()
 				return conv
 			},
-			ExpectedApi: gqlApi,
+			ExpectedAPI: gqlAPI,
 			ExpectedErr: nil,
 		},
 		{
 			Name: "Returns error when API creation failed",
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Create", context.TODO(), mock.Anything, appId, *modelApiInput).Return("", testErr).Once()
+				svc.On("Create", context.TODO(), mock.Anything, appId, *modelAPIInput).Return("", testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("InputFromGraphQL", gqlApiInput).Return(modelApiInput).Once()
+				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
 				return conv
 			},
-			ExpectedApi: nil,
+			ExpectedAPI: nil,
 			ExpectedErr: testErr,
 		},
 		{
 			Name: "Returns error when API retrieval failed",
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Create", context.TODO(), mock.Anything, appId, *modelApiInput).Return(id, nil).Once()
+				svc.On("Create", context.TODO(), mock.Anything, appId, *modelAPIInput).Return(id, nil).Once()
 				svc.On("Get", context.TODO(), id).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("InputFromGraphQL", gqlApiInput).Return(modelApiInput).Once()
+				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
 				return conv
 			},
-			ExpectedApi: nil,
+			ExpectedAPI: nil,
 			ExpectedErr: testErr,
 		},
 	}
@@ -92,10 +92,10 @@ func TestResolver_AddAPI(t *testing.T) {
 			resolver := api.NewResolver(svc, converter, nil)
 
 			// when
-			result, err := resolver.AddAPI(context.TODO(), appId, *gqlApiInput)
+			result, err := resolver.AddAPI(context.TODO(), appId, *gqlAPIInput)
 
 			// then
-			assert.Equal(t, testCase.ExpectedApi, result)
+			assert.Equal(t, testCase.ExpectedAPI, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
 			svc.AssertExpectations(t)
@@ -109,30 +109,30 @@ func TestResolver_DeleteAPI(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "bar"
-	modelApiDefinition := fixModelAPIDefinition(id, "1", "foo", "bar")
-	gqlApiDefinition := fixGQLAPIDefinition(id, "1", "foo", "bar")
+	modelAPIDefinition := fixModelAPIDefinition(id, "1", "foo", "bar")
+	gqlAPIDefinition := fixGQLAPIDefinition(id, "1", "foo", "bar")
 
 	testCases := []struct {
 		Name        string
 		ServiceFn   func() *automock.APIService
 		ConverterFn func() *automock.APIConverter
-		ExpectedApi *graphql.APIDefinition
+		ExpectedAPI *graphql.APIDefinition
 		ExpectedErr error
 	}{
 		{
 			Name: "Success",
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Get", context.TODO(), id).Return(modelApiDefinition, nil).Once()
+				svc.On("Get", context.TODO(), id).Return(modelAPIDefinition, nil).Once()
 				svc.On("Delete", context.TODO(), id).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("ToGraphQL", modelApiDefinition).Return(gqlApiDefinition).Once()
+				conv.On("ToGraphQL", modelAPIDefinition).Return(gqlAPIDefinition).Once()
 				return conv
 			},
-			ExpectedApi: gqlApiDefinition,
+			ExpectedAPI: gqlAPIDefinition,
 			ExpectedErr: nil,
 		},
 		{
@@ -146,23 +146,23 @@ func TestResolver_DeleteAPI(t *testing.T) {
 				conv := &automock.APIConverter{}
 				return conv
 			},
-			ExpectedApi: nil,
+			ExpectedAPI: nil,
 			ExpectedErr: testErr,
 		},
 		{
 			Name: "Returns error when API deletion failed",
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Get", context.TODO(), id).Return(modelApiDefinition, nil).Once()
+				svc.On("Get", context.TODO(), id).Return(modelAPIDefinition, nil).Once()
 				svc.On("Delete", context.TODO(), id).Return(testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("ToGraphQL", modelApiDefinition).Return(gqlApiDefinition).Once()
+				conv.On("ToGraphQL", modelAPIDefinition).Return(gqlAPIDefinition).Once()
 				return conv
 			},
-			ExpectedApi: nil,
+			ExpectedAPI: nil,
 			ExpectedErr: testErr,
 		},
 	}
@@ -179,7 +179,7 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			result, err := resolver.DeleteAPI(context.TODO(), id)
 
 			// then
-			assert.Equal(t, testCase.ExpectedApi, result)
+			assert.Equal(t, testCase.ExpectedAPI, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
 			svc.AssertExpectations(t)
@@ -193,72 +193,72 @@ func TestResolver_UpdateAPI(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "bar"
-	gqlApiDefinitionInput := fixGQLAPIDefinitionInput(id, "foo", "bar")
-	modelApiDefinitionInput := fixModelAPIDefinitionInput(id, "foo", "bar")
-	gqlApiDefinition := fixGQLAPIDefinition(id, "1", "foo", "bar")
-	modelApiDefinition := fixModelAPIDefinition(id, "1", "foo", "bar")
+	gqlAPIDefinitionInput := fixGQLAPIDefinitionInput(id, "foo", "bar")
+	modelAPIDefinitionInput := fixModelAPIDefinitionInput(id, "foo", "bar")
+	gqlAPIDefinition := fixGQLAPIDefinition(id, "1", "foo", "bar")
+	modelAPIDefinition := fixModelAPIDefinition(id, "1", "foo", "bar")
 
 	testCases := []struct {
 		Name                  string
 		ServiceFn             func() *automock.APIService
 		ConverterFn           func() *automock.APIConverter
 		InputWebhookID        string
-		InputApi              graphql.APIDefinitionInput
-		ExpectedApiDefinition *graphql.APIDefinition
+		InputAPI              graphql.APIDefinitionInput
+		ExpectedAPIDefinition *graphql.APIDefinition
 		ExpectedErr           error
 	}{
 		{
 			Name: "Success",
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Update", context.TODO(), id, *modelApiDefinitionInput).Return(nil).Once()
-				svc.On("Get", context.TODO(), id).Return(modelApiDefinition, nil).Once()
+				svc.On("Update", context.TODO(), id, *modelAPIDefinitionInput).Return(nil).Once()
+				svc.On("Get", context.TODO(), id).Return(modelAPIDefinition, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("InputFromGraphQL", gqlApiDefinitionInput).Return(modelApiDefinitionInput).Once()
-				conv.On("ToGraphQL", modelApiDefinition).Return(gqlApiDefinition).Once()
+				conv.On("InputFromGraphQL", gqlAPIDefinitionInput).Return(modelAPIDefinitionInput).Once()
+				conv.On("ToGraphQL", modelAPIDefinition).Return(gqlAPIDefinition).Once()
 				return conv
 			},
 			InputWebhookID:        id,
-			InputApi:              *gqlApiDefinitionInput,
-			ExpectedApiDefinition: gqlApiDefinition,
+			InputAPI:              *gqlAPIDefinitionInput,
+			ExpectedAPIDefinition: gqlAPIDefinition,
 			ExpectedErr:           nil,
 		},
 		{
 			Name: "Returns error when API update failed",
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Update", context.TODO(), id, *modelApiDefinitionInput).Return(testErr).Once()
+				svc.On("Update", context.TODO(), id, *modelAPIDefinitionInput).Return(testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("InputFromGraphQL", gqlApiDefinitionInput).Return(modelApiDefinitionInput).Once()
+				conv.On("InputFromGraphQL", gqlAPIDefinitionInput).Return(modelAPIDefinitionInput).Once()
 				return conv
 			},
 			InputWebhookID:        id,
-			InputApi:              *gqlApiDefinitionInput,
-			ExpectedApiDefinition: nil,
+			InputAPI:              *gqlAPIDefinitionInput,
+			ExpectedAPIDefinition: nil,
 			ExpectedErr:           testErr,
 		},
 		{
 			Name: "Returns error when API retrieval failed",
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Update", context.TODO(), id, *modelApiDefinitionInput).Return(nil).Once()
+				svc.On("Update", context.TODO(), id, *modelAPIDefinitionInput).Return(nil).Once()
 				svc.On("Get", context.TODO(), id).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("InputFromGraphQL", gqlApiDefinitionInput).Return(modelApiDefinitionInput).Once()
+				conv.On("InputFromGraphQL", gqlAPIDefinitionInput).Return(modelAPIDefinitionInput).Once()
 				return conv
 			},
 			InputWebhookID:        id,
-			InputApi:              *gqlApiDefinitionInput,
-			ExpectedApiDefinition: nil,
+			InputAPI:              *gqlAPIDefinitionInput,
+			ExpectedAPIDefinition: nil,
 			ExpectedErr:           testErr,
 		},
 	}
@@ -272,10 +272,10 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			resolver := api.NewResolver(svc, converter, nil)
 
 			// when
-			result, err := resolver.UpdateAPI(context.TODO(), id, *gqlApiDefinitionInput)
+			result, err := resolver.UpdateAPI(context.TODO(), id, *gqlAPIDefinitionInput)
 
 			// then
-			assert.Equal(t, testCase.ExpectedApiDefinition, result)
+			assert.Equal(t, testCase.ExpectedAPIDefinition, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
 			svc.AssertExpectations(t)
@@ -444,21 +444,21 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 	apiID := "apiID"
 
 	dataBytes := []byte("data")
-	modelApiSpec := &model.APISpec{
+	modelAPISpec := &model.APISpec{
 		Data: &dataBytes,
 	}
 
-	modelApiDefinition := &model.APIDefinition{
-		Spec: modelApiSpec,
+	modelAPIDefinition := &model.APIDefinition{
+		Spec: modelAPISpec,
 	}
 
 	clob := graphql.CLOB(dataBytes)
-	gqlApiSpec := &graphql.APISpec{
+	gqlAPISpec := &graphql.APISpec{
 		Data: &clob,
 	}
 
 	gqlAPIDefinition := &graphql.APIDefinition{
-		Spec: gqlApiSpec,
+		Spec: gqlAPISpec,
 	}
 
 	testCases := []struct {
@@ -472,15 +472,15 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			Name: "Success",
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("RefetchAPISpec", context.TODO(), apiID).Return(modelApiSpec, nil).Once()
+				svc.On("RefetchAPISpec", context.TODO(), apiID).Return(modelAPISpec, nil).Once()
 				return svc
 			},
 			ConvFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("ToGraphQL", modelApiDefinition).Return(gqlAPIDefinition).Once()
+				conv.On("ToGraphQL", modelAPIDefinition).Return(gqlAPIDefinition).Once()
 				return conv
 			},
-			ExpectedAPISpec: gqlApiSpec,
+			ExpectedAPISpec: gqlAPISpec,
 			ExpectedErr:     nil,
 		},
 		{
@@ -492,7 +492,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			},
 			ConvFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("ToGraphQL", modelApiDefinition).Return(gqlAPIDefinition).Once()
+				conv.On("ToGraphQL", modelAPIDefinition).Return(gqlAPIDefinition).Once()
 				return conv
 			},
 			ExpectedAPISpec: nil,

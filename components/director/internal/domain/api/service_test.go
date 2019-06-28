@@ -31,7 +31,7 @@ func TestService_Create(t *testing.T) {
 		Version:   &model.VersionInput{},
 	}
 
-	modelApiDefinition := &model.APIDefinition{
+	modelAPIDefinition := &model.APIDefinition{
 		ID:            id,
 		ApplicationID: applicationID,
 		Name:          name,
@@ -53,7 +53,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", modelApiDefinition).Return(nil).Once()
+				repo.On("Create", modelAPIDefinition).Return(nil).Once()
 				return repo
 			},
 			Input:       modelInput,
@@ -63,7 +63,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", modelApiDefinition).Return(testErr).Once()
+				repo.On("Create", modelAPIDefinition).Return(testErr).Once()
 				return repo
 			},
 			Input:       modelInput,
@@ -106,7 +106,7 @@ func TestService_Update(t *testing.T) {
 		Version:     &model.VersionInput{},
 	}
 
-	inputApiDefinitionModel := mock.MatchedBy(func(api *model.APIDefinition) bool {
+	inputAPIDefinitionModel := mock.MatchedBy(func(api *model.APIDefinition) bool {
 		return api.Name == modelInput.Name
 	})
 
@@ -136,7 +136,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("GetByID", "foo").Return(apiDefinitionModel, nil).Once()
-				repo.On("Update", inputApiDefinitionModel).Return(nil).Once()
+				repo.On("Update", inputAPIDefinitionModel).Return(nil).Once()
 				return repo
 			},
 			InputID:     "foo",
@@ -148,7 +148,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("GetByID", "foo").Return(apiDefinitionModel, nil).Once()
-				repo.On("Update", inputApiDefinitionModel).Return(testErr).Once()
+				repo.On("Update", inputAPIDefinitionModel).Return(testErr).Once()
 				return repo
 			},
 			InputID:     "foo",

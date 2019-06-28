@@ -183,14 +183,14 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 
 func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 	// given
-	gqlApi1 := fixGQLAPIDefinitionInput("foo", "lorem", "group")
-	gqlApi2 := fixGQLAPIDefinitionInput("bar", "ipsum", "group2")
+	gqlAPI1 := fixGQLAPIDefinitionInput("foo", "lorem", "group")
+	gqlAPI2 := fixGQLAPIDefinitionInput("bar", "ipsum", "group2")
 
-	modelApi1 := fixModelAPIDefinitionInput("foo", "lorem", "group")
-	modelApi2 := fixModelAPIDefinitionInput("bar", "ipsum", "group2")
+	modelAPI1 := fixModelAPIDefinitionInput("foo", "lorem", "group")
+	modelAPI2 := fixModelAPIDefinitionInput("bar", "ipsum", "group2")
 
-	gqlAPIDefinitionInputs := []*graphql.APIDefinitionInput{gqlApi1, gqlApi2}
-	modelAPIDefinitionInputs := []*model.APIDefinitionInput{modelApi1, modelApi2}
+	gqlAPIDefinitionInputs := []*graphql.APIDefinitionInput{gqlAPI1, gqlAPI2}
+	modelAPIDefinitionInputs := []*model.APIDefinitionInput{modelAPI1, modelAPI2}
 	testCases := []struct {
 		Name                  string
 		Input                 []*graphql.APIDefinitionInput
