@@ -26,3 +26,11 @@ func (a *Auth) UnmarshalJSON(data []byte) error {
 
 	return nil
 }
+
+type ApplicationExt struct {
+	Application
+	Webhooks  []ApplicationWebhook
+	Apis      APIDefinitionPage
+	EventAPIs EventAPIDefinitionPage
+	Documents DocumentPage
+}

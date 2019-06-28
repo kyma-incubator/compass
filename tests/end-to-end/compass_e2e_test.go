@@ -42,12 +42,12 @@ func TestCreateApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 			}`, appInputGQL, ts.fieldsProvider.ForApplication()))
 
 	storeExampleQuery(t, request.Query(), "create application")
-	actualApp := graphql.Application{}
+	actualApp := graphql.ApplicationExt{}
 	resp := resultMapperFor(&actualApp)
 	err = ts.cli.Run(ctx, request, &resp)
 	// THEN
 	require.NoError(t, err)
-	assert.NotEmpty(t, actualApp.ID)
+	require.NotEmpty(t, actualApp.ID)
 	defer deleteApplication(t, ts.cli, actualApp.ID)
 
 	assert.Equal(t, in.Name, actualApp.Name)
@@ -87,13 +87,13 @@ func TestCreateApplicationWithWebhooks(t *testing.T) {
 			ts.fieldsProvider.ForApplication(),
 		))
 	storeExampleQuery(t, request.Query(), "create application with webhooks")
-	actualApp := graphql.Application{}
+	actualApp := graphql.ApplicationExt{}
 	createResp := resultMapperFor(&actualApp)
 	err = ts.cli.Run(ctx, request, &createResp)
 	// THEN
 	require.NoError(t, err)
 
-	assert.NotEmpty(t, actualApp.ID)
+	require.NotEmpty(t, actualApp.ID)
 	defer deleteApplication(t, ts.cli, actualApp.ID)
 
 	assert.Len(t, actualApp.Webhooks, 1)
@@ -161,12 +161,12 @@ func TestCreateApplicationWithAPIs(t *testing.T) {
 			ts.fieldsProvider.ForApplication(),
 		))
 	storeExampleQuery(t, request.Query(), "create application with APIs")
-	actualApp := graphql.Application{}
+	actualApp := graphql.ApplicationExt{}
 	createResp := resultMapperFor(&actualApp)
 	err = ts.cli.Run(ctx, request, &createResp)
 	// THEN
 	require.NoError(t, err)
-	assert.NotEmpty(t, actualApp.ID)
+	require.NotEmpty(t, actualApp.ID)
 	defer deleteApplication(t, ts.cli, actualApp.ID)
 
 	require.Len(t, actualApp.Apis.Data, 2)
@@ -241,12 +241,12 @@ func TestCreateApplicationWithEventAPIs(t *testing.T) {
 			ts.fieldsProvider.ForApplication(),
 		))
 	storeExampleQuery(t, request.Query(), "create application with event APIs")
-	actualApp := graphql.Application{}
+	actualApp := graphql.ApplicationExt{}
 	createResp := resultMapperFor(&actualApp)
 	err = ts.cli.Run(ctx, request, &createResp)
 	// THEN
 	require.NoError(t, err)
-	assert.NotEmpty(t, actualApp.ID)
+	require.NotEmpty(t, actualApp.ID)
 	defer deleteApplication(t, ts.cli, actualApp.ID)
 
 	assert.Len(t, actualApp.EventAPIs.Data, 2)
@@ -311,12 +311,12 @@ func TestCreateApplicationWithDocuments(t *testing.T) {
 			ts.fieldsProvider.ForApplication(),
 		))
 	storeExampleQuery(t, request.Query(), "create application with documents")
-	actualApp := graphql.Application{}
-	createResp := resultMapperFor(actualApp)
+	actualApp := graphql.ApplicationExt{}
+	createResp := resultMapperFor(&actualApp)
 	err = ts.cli.Run(ctx, request, &createResp)
 	// THEN
 	require.NoError(t, err)
-	assert.NotEmpty(t, actualApp.ID)
+	require.NotEmpty(t, actualApp.ID)
 	defer deleteApplication(t, ts.cli, actualApp.ID)
 
 	assert.Len(t, actualApp.Documents.Data, 2)
@@ -453,7 +453,7 @@ func TestCreateApplicationWithAllDependencies(t *testing.T) {
 			ts.fieldsProvider.ForApplication(),
 		))
 	storeExampleQuery(t, request.Query(), "create application full")
-	var actualApp graphql.Application
+	var actualApp graphql.ApplicationExt
 	resp := resultMapperFor(&actualApp)
 
 	err = ts.cli.Run(ctx, request, &resp)
@@ -479,7 +479,7 @@ func TestUpdateApplication(t *testing.T) {
 			`mutation {
   				result: createApplication(in: %s) {
     				id}}`, appInputGQL))
-	actualApp := graphql.Application{}
+	actualApp := graphql.ApplicationExt{}
 	createResp := resultMapperFor(&actualApp)
 	err = ts.cli.Run(ctx, request, &createResp)
 	// THEN
@@ -531,7 +531,7 @@ func TestDeleteApplication(t *testing.T) {
 			`mutation {
   				result: createApplication(in: %s) {
     				id}}`, appInputGQL))
-	actualApp := graphql.Application{}
+	actualApp := graphql.ApplicationExt{}
 	createResp := resultMapperFor(actualApp)
 	err = ts.cli.Run(ctx, createReq, &createResp)
 	require.NoError(t, err)
@@ -555,7 +555,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 			`mutation {
   				result: createApplication(in: %s) {
     				id}}`, appInputGQL))
-	actualApp := graphql.Application{}
+	actualApp := graphql.ApplicationExt{}
 	createAppResp := resultMapperFor(&actualApp)
 	err = ts.cli.Run(ctx, createReq, &createAppResp)
 	require.NoError(t, err)
@@ -828,9 +828,9 @@ func TestTenantSeparation(t *testing.T) {
 	//TODO
 }
 
-func getApp(ctx context.Context, t *testing.T, id string, cli *gcli.Client) graphql.Application {
+func getApp(ctx context.Context, t *testing.T, id string, cli *gcli.Client) graphql.ApplicationExt {
 	q := gcli.NewRequest(fmt.Sprintf(`query {result: application(id: "%s") {%s} }`, id, ts.fieldsProvider.ForApplication()))
-	var app graphql.Application
+	var app graphql.ApplicationExt
 	resp := resultMapperFor(&app)
 	require.NoError(t, cli.Run(ctx, q, &resp))
 	return app
@@ -870,13 +870,13 @@ func deleteApplication(t *testing.T, cli *gcli.Client, id string) {
 	require.NoError(t, cli.Run(context.Background(), req, nil))
 }
 
-func assertApplication(t *testing.T, in graphql.ApplicationInput, actualApp graphql.Application) {
+func assertApplication(t *testing.T, in graphql.ApplicationInput, actualApp graphql.ApplicationExt) {
 	assert.NotEmpty(t, actualApp.ID)
 
 	assert.Equal(t, in.Name, actualApp.Name)
 	assert.Equal(t, *in.Description, *actualApp.Description)
-	assert.Equal(t, in.Annotations, actualApp.Annotations)
-	assert.Equal(t, in.Labels, actualApp.Labels)
+	assert.Equal(t, *in.Annotations, actualApp.Annotations)
+	assert.Equal(t, *in.Labels, actualApp.Labels)
 	assert.Equal(t, in.HealthCheckURL, actualApp.HealthCheckURL)
 	assert.Len(t, actualApp.Apis.Data, len(in.Apis))
 	assert.Equal(t, len(in.Apis), actualApp.Apis.TotalCount)
@@ -993,3 +993,4 @@ func resultMapperFor(target interface{}) genericGQLResponse {
 type genericGQLResponse struct {
 	Result interface{} `json:"result"`
 }
+
