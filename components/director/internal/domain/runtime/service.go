@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"context"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 
@@ -60,6 +61,10 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 				Password: "bar",
 			},
 		},
+	}
+	rtm.Status = &model.RuntimeStatus{
+		Condition: model.RuntimeStatusConditionInitial,
+		Timestamp: time.Now(),
 	}
 
 	err = s.repo.Create(rtm)

@@ -114,11 +114,8 @@ func (i *RuntimeInput) ToRuntime(id string, tenant string) *Runtime {
 		Tenant:      tenant,
 		Labels:      i.Labels,
 		Annotations: i.Annotations,
-		AgentAuth: &Auth{},
-		Status: &RuntimeStatus{
-			Condition: RuntimeStatusConditionInitial,
-			Timestamp: time.Now(),
-		},
+		AgentAuth:   &Auth{},
+		Status:      &RuntimeStatus{},
 	}
 }
 

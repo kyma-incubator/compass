@@ -3,7 +3,6 @@ package model_test
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/assert"
@@ -281,7 +280,6 @@ func TestRuntimeInput_ToRuntime(t *testing.T) {
 	desc := "Sample"
 	id := "foo"
 	tenant := "sample"
-	timestamp := time.Now()
 	testCases := []struct {
 		Name     string
 		Input    *model.RuntimeInput
@@ -310,10 +308,7 @@ func TestRuntimeInput_ToRuntime(t *testing.T) {
 				Labels: map[string][]string{
 					"test": {"val", "val2"},
 				},
-				Status: &model.RuntimeStatus{
-					Condition: model.RuntimeStatusConditionInitial,
-					Timestamp: timestamp,
-				},
+				Status:    &model.RuntimeStatus{},
 				AgentAuth: &model.Auth{},
 			},
 		},
@@ -328,9 +323,6 @@ func TestRuntimeInput_ToRuntime(t *testing.T) {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 			// when
 			result := testCase.Input.ToRuntime(id, tenant)
-			if result != nil && result.Status != nil {
-				result.Status.Timestamp = timestamp
-			}
 
 			// then
 			assert.Equal(t, testCase.Expected, result)
