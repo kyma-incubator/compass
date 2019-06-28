@@ -11,7 +11,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -168,12 +167,9 @@ func TestService_Create(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	modelInput := fixModelDocumentInput("foo")
-
+	id := "foo"
 	applicationID := "foo"
-
-	documentModel := mock.MatchedBy(func(doc *model.Document) bool {
-		return doc.Title == modelInput.Title && doc.Data == modelInput.Data
-	})
+	modelDoc := modelInput.ToDocument(id,applicationID)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, "tenant")
@@ -188,7 +184,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("Create", documentModel).Return(nil).Once()
+				repo.On("Create", modelDoc).Return(nil).Once()
 				return repo
 			},
 			Input:       *modelInput,
@@ -198,7 +194,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Returns error when document creation failed",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("Create", documentModel).Return(testErr).Once()
+				repo.On("Create", modelDoc).Return(testErr).Once()
 				return repo
 			},
 			Input:       *modelInput,
@@ -213,7 +209,7 @@ func TestService_Create(t *testing.T) {
 			svc := document.NewService(repo)
 
 			// when
-			result, err := svc.Create(ctx, applicationID, testCase.Input)
+			result, err := svc.Create(ctx,id, applicationID, testCase.Input)
 
 			// then
 			assert.IsType(t, "string", result)

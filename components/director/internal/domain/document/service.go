@@ -2,11 +2,7 @@ package document
 
 import (
 	"context"
-	"time"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/uid"
-
 	"github.com/pkg/errors"
 )
 
@@ -41,16 +37,19 @@ func (s *service) List(ctx context.Context, applicationID string, pageSize *int,
 	return s.repo.ListByApplicationID(applicationID, pageSize, cursor)
 }
 
-func (s *service) Create(ctx context.Context, applicationID string, in model.DocumentInput) (string, error) {
-	document := &model.Document{
-		ApplicationID: applicationID,
-		ID:            uid.Generate(),
-		Title:         in.Title,
-		Format:        in.Format,
-		Kind:          in.Kind,
-		Data:          in.Data,
-		FetchRequest:  in.FetchRequest.ToFetchRequest(time.Now()),
-	}
+func (s *service) Create(ctx context.Context,id string, applicationID string, in model.DocumentInput) (string, error) {
+
+	document := in.ToDocument(id,applicationID)
+
+	//document := &model.Document{
+	//	ApplicationID: applicationID,
+	//	ID:            uid.Generate(),
+	//	Title:         in.Title,
+	//	Format:        in.Format,
+	//	Kind:          in.Kind,
+	//	Data:          in.Data,
+	//	FetchRequest:  in.FetchRequest.ToFetchRequest(time.Now()),
+	//}
 
 	err := s.repo.Create(document)
 	if err != nil {
