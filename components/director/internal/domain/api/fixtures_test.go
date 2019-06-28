@@ -47,20 +47,13 @@ func fixDetailedModelAPIDefinition(t *testing.T, id, name, description string, g
 		ForRemoval:      &forRemoval,
 	}
 
-	auth1 := model.Auth{
+	auth := model.Auth{
 		AdditionalHeaders: map[string][]string{"testHeader": {"hval1", "hval2"}},
 	}
-	auth2 := model.Auth{
-		AdditionalQueryParams: map[string][]string{"testParam": {"pval1", "pval2"}},
-	}
 
-	runtimeAuth1 := model.RuntimeAuth{
+	runtimeAuth := model.RuntimeAuth{
 		RuntimeID: "1",
-		Auth:      &auth1,
-	}
-	runtimeAuth2 := model.RuntimeAuth{
-		RuntimeID: "2",
-		Auth:      &auth2,
+		Auth:      &auth,
 	}
 
 	return &model.APIDefinition{
@@ -71,8 +64,8 @@ func fixDetailedModelAPIDefinition(t *testing.T, id, name, description string, g
 		Spec:          spec,
 		TargetURL:     "https://test-url.com",
 		Group:         &group,
-		Auths:         []*model.RuntimeAuth{&runtimeAuth1, &runtimeAuth2},
-		DefaultAuth:   &auth1,
+		Auths:         []*model.RuntimeAuth{&runtimeAuth, &runtimeAuth},
+		DefaultAuth:   &auth,
 		Version:       version,
 	}
 }
@@ -100,22 +93,14 @@ func fixDetailedGQLAPIDefinition(t *testing.T, id, name, description string, gro
 	}
 
 	headers := graphql.HttpHeaders{"testHeader": {"hval1", "hval2"}}
-	params := graphql.QueryParams{"testParam": {"pval1", "pval2"}}
 
-	auth1 := graphql.Auth{
+	auth := graphql.Auth{
 		AdditionalHeaders: &headers,
 	}
-	auth2 := graphql.Auth{
-		AdditionalQueryParams: &params,
-	}
 
-	runtimeAuth1 := graphql.RuntimeAuth{
+	runtimeAuth := graphql.RuntimeAuth{
 		RuntimeID: "1",
-		Auth:      &auth1,
-	}
-	runtimeAuth2 := graphql.RuntimeAuth{
-		RuntimeID: "2",
-		Auth:      &auth2,
+		Auth:      &auth,
 	}
 
 	return &graphql.APIDefinition{
@@ -127,8 +112,8 @@ func fixDetailedGQLAPIDefinition(t *testing.T, id, name, description string, gro
 		TargetURL:     "https://test-url.com",
 		Group:         &group,
 		Auth:          nil,
-		Auths:         []*graphql.RuntimeAuth{&runtimeAuth1, &runtimeAuth2},
-		DefaultAuth:   &auth1,
+		Auths:         []*graphql.RuntimeAuth{&runtimeAuth, &runtimeAuth},
+		DefaultAuth:   &auth,
 		Version:       version,
 	}
 }
