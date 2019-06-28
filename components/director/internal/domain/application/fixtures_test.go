@@ -330,17 +330,3 @@ func fixGQLAPIDefinition(id, appId, name, description string, group string) *gra
 		Group:         &group,
 	}
 }
-
-func fixModelAPIDefinitionInput(name, description string) *model.APIDefinitionInput {
-	return &model.APIDefinitionInput{
-		Name:        name,
-		Description: &description,
-	}
-}
-
-func fixGQLAPIDefinitionInput(name, description string) *graphql.APIDefinitionInput {
-	return &graphql.APIDefinitionInput{
-		Name:        name,
-		Description: &description,
-	}
-}

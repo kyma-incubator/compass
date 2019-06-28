@@ -216,17 +216,17 @@ func fixGQLAPIDefinitionInput(name, description string, group string) *graphql.A
 	}
 }
 
-func fixModelAuthInput(headers map[string][]string ) *model.AuthInput {
+func fixModelAuthInput(headers map[string][]string) *model.AuthInput {
 	return &model.AuthInput{
-		AdditionalHeaders:     headers,
+		AdditionalHeaders: headers,
 	}
 }
 
-func fixGQLAuthInput(headers map[string][]string ) *graphql.AuthInput {
+func fixGQLAuthInput(headers map[string][]string) *graphql.AuthInput {
 	httpHeaders := graphql.HttpHeaders(headers)
 
 	return &graphql.AuthInput{
-		AdditionalHeaders:     &httpHeaders,
+		AdditionalHeaders: &httpHeaders,
 	}
 }
 

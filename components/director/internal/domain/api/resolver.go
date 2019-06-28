@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -11,7 +12,7 @@ import (
 
 //go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
 type APIService interface {
-	Create(ctx context.Context,id string, applicationID string, in model.APIDefinitionInput) (string, error)
+	Create(ctx context.Context, id string, applicationID string, in model.APIDefinitionInput) (string, error)
 	Update(ctx context.Context, id string, in model.APIDefinitionInput) error
 	Get(ctx context.Context, id string) (*model.APIDefinition, error)
 	Delete(ctx context.Context, id string) error
@@ -29,23 +30,23 @@ type APIConverter interface {
 }
 
 type Resolver struct {
-	svc       APIService
-	converter APIConverter
+	svc           APIService
+	converter     APIConverter
 	authConverter AuthConverter
 }
 
 func NewResolver(svc APIService, converter APIConverter, authConverter AuthConverter) *Resolver {
 	return &Resolver{
-		svc:       svc,
-		converter: converter,
-		authConverter:authConverter,
+		svc:           svc,
+		converter:     converter,
+		authConverter: authConverter,
 	}
 }
 
 func (r *Resolver) AddAPI(ctx context.Context, applicationID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
 	convertedIn := r.converter.InputFromGraphQL(&in)
 
-	id, err := r.svc.Create(ctx,uid.Generate(), applicationID, *convertedIn)
+	id, err := r.svc.Create(ctx, uid.Generate(), applicationID, *convertedIn)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +119,6 @@ func (r *Resolver) SetAPIAuth(ctx context.Context, apiID string, runtimeID strin
 	return convertedOut, nil
 }
 func (r *Resolver) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*graphql.RuntimeAuth, error) {
-
 	runtimeAuth, err := r.svc.DeleteAPIAuth(ctx, apiID, runtimeID)
 	if err != nil {
 		return nil, err

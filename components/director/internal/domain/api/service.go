@@ -3,8 +3,6 @@ package api
 import (
 	"context"
 
-	//"github.com/kyma-incubator/compass/components/director/internal/uid"
-
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
@@ -43,9 +41,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.APIDefinition, err
 	return api, nil
 }
 
-func (s *service) Create(ctx context.Context,id string, applicationID string, in model.APIDefinitionInput) (string, error) {
-	//id := uid.Generate()
-
+func (s *service) Create(ctx context.Context, id string, applicationID string, in model.APIDefinitionInput) (string, error) {
 	api := in.ToAPIDefinition(id, applicationID)
 
 	err := s.repo.Create(api)
@@ -141,9 +137,7 @@ func (s *service) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID str
 			}
 		}
 	}
-
 	return runtimeAuth, nil
-
 }
 
 func (s *service) RefetchAPISpec(ctx context.Context, id string) (*model.APISpec, error) {
