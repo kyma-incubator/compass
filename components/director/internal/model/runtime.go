@@ -103,6 +103,10 @@ type RuntimeInput struct {
 }
 
 func (i *RuntimeInput) ToRuntime(id string, tenant string) *Runtime {
+	if i == nil {
+		return nil
+	}
+
 	return &Runtime{
 		ID:          id,
 		Name:        i.Name,
@@ -110,6 +114,11 @@ func (i *RuntimeInput) ToRuntime(id string, tenant string) *Runtime {
 		Tenant:      tenant,
 		Labels:      i.Labels,
 		Annotations: i.Annotations,
+		AgentAuth: &Auth{},
+		Status: &RuntimeStatus{
+			Condition: RuntimeStatusConditionInitial,
+			Timestamp: time.Now(),
+		},
 	}
 }
 

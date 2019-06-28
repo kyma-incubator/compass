@@ -52,6 +52,16 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 
 	rtm := in.ToRuntime(id, runtimeTenant)
 
+	// TODO: Generate AgentAuth: https://github.com/kyma-incubator/compass/issues/91
+	rtm.AgentAuth = &model.Auth{
+		Credential: model.CredentialData{
+			Basic: &model.BasicCredentialData{
+				Username: "foo",
+				Password: "bar",
+			},
+		},
+	}
+
 	err = s.repo.Create(rtm)
 	if err != nil {
 		return "", err
