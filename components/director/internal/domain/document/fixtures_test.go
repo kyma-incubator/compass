@@ -16,8 +16,8 @@ var (
 
 func fixModelDocument(id, applicationID string) *model.Document {
 	return &model.Document{
-		ApplicationID: applicationID,
 		ID:            id,
+		ApplicationID: applicationID,
 		Title:         docTitle,
 		Format:        model.DocumentFormatMarkdown,
 		Kind:          &docKind,

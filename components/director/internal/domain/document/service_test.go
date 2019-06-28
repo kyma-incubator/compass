@@ -169,7 +169,7 @@ func TestService_Create(t *testing.T) {
 	modelInput := fixModelDocumentInput("foo")
 	id := "foo"
 	applicationID := "foo"
-	modelDoc := modelInput.ToDocument(id,applicationID)
+	modelDoc := modelInput.ToDocument(id, applicationID)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, "tenant")
@@ -209,7 +209,7 @@ func TestService_Create(t *testing.T) {
 			svc := document.NewService(repo)
 
 			// when
-			result, err := svc.Create(ctx,id, applicationID, testCase.Input)
+			result, err := svc.Create(ctx, id, applicationID, testCase.Input)
 
 			// then
 			assert.IsType(t, "string", result)

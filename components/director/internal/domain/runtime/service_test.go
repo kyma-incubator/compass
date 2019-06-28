@@ -71,7 +71,7 @@ func TestService_Create(t *testing.T) {
 			svc := runtime.NewService(repo)
 
 			// when
-			result, err := svc.Create(ctx,id, testCase.Input)
+			result, err := svc.Create(ctx, id, testCase.Input)
 
 			// then
 			assert.IsType(t, "string", result)

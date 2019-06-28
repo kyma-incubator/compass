@@ -19,6 +19,7 @@ func TestService_Create(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	modelInput := fixModelWebhookInput("foo")
+	id := "foo"
 
 	webhookModel := mock.MatchedBy(func(webhook *model.ApplicationWebhook) bool {
 		return webhook.Type == modelInput.Type && webhook.URL == modelInput.URL
@@ -31,6 +32,7 @@ func TestService_Create(t *testing.T) {
 		Name          string
 		RepositoryFn  func() *automock.WebhookRepository
 		Input         model.ApplicationWebhookInput
+		ID            string
 		ApplicationID string
 		ExpectedErr   error
 	}{
@@ -42,6 +44,7 @@ func TestService_Create(t *testing.T) {
 				return repo
 			},
 			Input:         *modelInput,
+			ID:            id,
 			ApplicationID: "1",
 			ExpectedErr:   nil,
 		},
@@ -53,6 +56,7 @@ func TestService_Create(t *testing.T) {
 				return repo
 			},
 			Input:         *modelInput,
+			ID:            id,
 			ApplicationID: "1",
 			ExpectedErr:   testErr,
 		},
@@ -64,7 +68,7 @@ func TestService_Create(t *testing.T) {
 			svc := webhook.NewService(repo)
 
 			// when
-			result, err := svc.Create(ctx, testCase.ApplicationID, testCase.Input)
+			result, err := svc.Create(ctx, testCase.ID, testCase.ApplicationID, testCase.Input)
 
 			// then
 			assert.IsType(t, "string", result)

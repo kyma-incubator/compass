@@ -42,7 +42,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.Runtime, error) {
 	return runtime, nil
 }
 
-func (s *service) Create(ctx context.Context,id string, in model.RuntimeInput) (string, error) {
+func (s *service) Create(ctx context.Context, id string, in model.RuntimeInput) (string, error) {
 	runtimeTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", errors.Wrapf(err, "while loading tenant from context")

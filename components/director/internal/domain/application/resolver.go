@@ -3,6 +3,8 @@ package application
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
+
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -69,7 +71,7 @@ type DocumentService interface {
 type WebhookService interface {
 	Get(ctx context.Context, id string) (*model.ApplicationWebhook, error)
 	List(ctx context.Context, applicationID string) ([]*model.ApplicationWebhook, error)
-	Create(ctx context.Context, applicationID string, in model.ApplicationWebhookInput) (string, error)
+	Create(ctx context.Context, id string, applicationID string, in model.ApplicationWebhookInput) (string, error)
 	Update(ctx context.Context, id string, in model.ApplicationWebhookInput) error
 	Delete(ctx context.Context, id string) error
 }
@@ -354,7 +356,7 @@ func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*g
 func (r *Resolver) AddApplicationWebhook(ctx context.Context, applicationID string, in graphql.ApplicationWebhookInput) (*graphql.ApplicationWebhook, error) {
 	convertedIn := r.webhookConverter.InputFromGraphQL(&in)
 
-	id, err := r.webhookSvc.Create(ctx, applicationID, *convertedIn)
+	id, err := r.webhookSvc.Create(ctx, uid.Generate(), applicationID, *convertedIn)
 	if err != nil {
 		return nil, err
 	}

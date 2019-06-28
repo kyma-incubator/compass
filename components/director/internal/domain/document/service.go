@@ -2,6 +2,7 @@ package document
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
 )
@@ -37,9 +38,9 @@ func (s *service) List(ctx context.Context, applicationID string, pageSize *int,
 	return s.repo.ListByApplicationID(applicationID, pageSize, cursor)
 }
 
-func (s *service) Create(ctx context.Context,id string, applicationID string, in model.DocumentInput) (string, error) {
+func (s *service) Create(ctx context.Context, id string, applicationID string, in model.DocumentInput) (string, error) {
 
-	document := in.ToDocument(id,applicationID)
+	document := in.ToDocument(id, applicationID)
 
 	//document := &model.Document{
 	//	ApplicationID: applicationID,

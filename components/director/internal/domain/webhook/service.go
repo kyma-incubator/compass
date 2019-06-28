@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/uid"
-
 	"github.com/pkg/errors"
 )
 
@@ -41,8 +39,8 @@ func (s *service) List(ctx context.Context, applicationID string) ([]*model.Appl
 	return s.repo.ListByApplicationID(applicationID)
 }
 
-func (s *service) Create(ctx context.Context, applicationID string, in model.ApplicationWebhookInput) (string, error) {
-	webhook := in.ToWebhook(uid.Generate(), applicationID)
+func (s *service) Create(ctx context.Context, id string, applicationID string, in model.ApplicationWebhookInput) (string, error) {
+	webhook := in.ToWebhook(id, applicationID)
 
 	err := s.repo.Create(webhook)
 	if err != nil {

@@ -2,6 +2,7 @@ package document
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
