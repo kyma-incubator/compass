@@ -33,5 +33,3 @@ global:
   istio:
     gateway:
       name: compass-istio-gateway
-
-
