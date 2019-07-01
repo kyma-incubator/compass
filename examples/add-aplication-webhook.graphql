@@ -1,5 +1,5 @@
 mutation {
-			result: addApplicationWebhook(applicationID: "38a548e0-fa7d-4b65-a6e3-a5bef7695727", in: {
+			result: addApplicationWebhook(applicationID: "bf211ca6-8936-4e3c-9ff3-32dec92e7441", in: {
 		type: CONFIGURATION_CHANGED,
 		url: "new-webhook",
 

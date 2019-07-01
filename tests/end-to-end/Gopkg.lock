@@ -95,24 +95,15 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "director-integration-tests-req-changes"
-  digest = "1:19fd03262ef54391b454f7f45bd36cadb70a379044dd098a989cff57382426f8"
+  branch = "master"
+  digest = "1:fd27bfa14cdb7d9557bcf61f5deca6c8622f906994f0096ae905094f8be3f8b6"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/pkg/graphql",
     "components/director/pkg/scalar",
   ]
   pruneopts = "UT"
-  revision = "89398e396f5f7d2cf788a455f2f03e2e982406e5"
-  source = "github.com/aszecowka/compass"
-
-[[projects]]
-  digest = "1:7c320a8eb9c5a83351ba64af7a974b871c15e1267c54dbad9049670d0c0fb1a1"
-  name = "github.com/kyma-project/kyma"
-  packages = ["components/helm-broker/platform/ptr"]
-  pruneopts = "UT"
-  revision = "bbcfb15d31130b85a063efd31bb12d379314e6bc"
-  version = "1.2.2"
+  revision = "6218a08f71fe19b4ebefe09ededeeef83f15c728"
 
 [[projects]]
   branch = "master"
@@ -220,7 +211,6 @@
     "github.com/Masterminds/sprig",
     "github.com/kisielk/errcheck",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
-    "github.com/kyma-project/kyma/components/helm-broker/platform/ptr",
     "github.com/machinebox/graphql",
     "github.com/pkg/errors",
     "github.com/stretchr/testify/assert",

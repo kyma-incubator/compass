@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-project/kyma/components/helm-broker/platform/ptr"
 	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -114,7 +113,7 @@ func TestCreateApplicationWithAPIs(t *testing.T) {
 				Name:        "comments/v1",
 				Description: ptrString("api for adding comments"),
 				TargetURL:   "http://mywordpress.com/comments",
-				Group:       ptr.String("comments"),
+				Group:       ptrString("comments"),
 				DefaultAuth: fixBasicAuth(),
 				Version:     fixDepracatedVersion1(),
 				Spec: &graphql.APISpecInput{
