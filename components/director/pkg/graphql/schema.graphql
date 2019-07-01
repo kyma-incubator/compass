@@ -34,7 +34,6 @@ type Runtime {
     id: ID!
     name: String!
     description: String
-    tenant: Tenant!
     labels(key: String): Labels!
     annotations(key: String): Annotations!
     status: RuntimeStatus!
@@ -57,7 +56,6 @@ enum RuntimeStatusCondition {
 
 type Application {
     id: ID!
-    tenant: Tenant!
     name: String!
     description: String
     labels(key: String): Labels!

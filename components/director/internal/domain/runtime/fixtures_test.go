@@ -129,7 +129,6 @@ func fixDetailedGQLRuntime(t *testing.T, id, name, description string) *graphql.
 		},
 		Name:        name,
 		Description: &description,
-		Tenant:      graphql.Tenant("tenant"),
 		Annotations: map[string]interface{}{
 			"key": "value",
 		},

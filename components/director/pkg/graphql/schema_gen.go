@@ -87,7 +87,6 @@ type ComplexityRoot struct {
 		Labels         func(childComplexity int, key *string) int
 		Name           func(childComplexity int) int
 		Status         func(childComplexity int) int
-		Tenant         func(childComplexity int) int
 		Webhooks       func(childComplexity int) int
 	}
 
@@ -264,7 +263,6 @@ type ComplexityRoot struct {
 		Labels      func(childComplexity int, key *string) int
 		Name        func(childComplexity int) int
 		Status      func(childComplexity int) int
-		Tenant      func(childComplexity int) int
 	}
 
 	RuntimeAuth struct {
@@ -591,13 +589,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.Status(childComplexity), true
-
-	case "Application.tenant":
-		if e.complexity.Application.Tenant == nil {
-			break
-		}
-
-		return e.complexity.Application.Tenant(childComplexity), true
 
 	case "Application.webhooks":
 		if e.complexity.Application.Webhooks == nil {
@@ -1549,13 +1540,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Runtime.Status(childComplexity), true
 
-	case "Runtime.tenant":
-		if e.complexity.Runtime.Tenant == nil {
-			break
-		}
-
-		return e.complexity.Runtime.Tenant(childComplexity), true
-
 	case "RuntimeAuth.auth":
 		if e.complexity.RuntimeAuth.Auth == nil {
 			break
@@ -1746,7 +1730,6 @@ type Runtime {
     id: ID!
     name: String!
     description: String
-    tenant: Tenant!
     labels(key: String): Labels!
     annotations(key: String): Annotations!
     status: RuntimeStatus!
@@ -1769,7 +1752,6 @@ enum RuntimeStatusCondition {
 
 type Application {
     id: ID!
-    tenant: Tenant!
     name: String!
     description: String
     labels(key: String): Labels!
@@ -3736,33 +3718,6 @@ func (ec *executionContext) _Application_id(ctx context.Context, field graphql.C
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Application_tenant(ctx context.Context, field graphql.CollectedField, obj *Application) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "Application",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Tenant, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(Tenant)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNTenant2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_name(ctx context.Context, field graphql.CollectedField, obj *Application) graphql.Marshaler {
@@ -7087,33 +7042,6 @@ func (ec *executionContext) _Runtime_description(ctx context.Context, field grap
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Runtime_tenant(ctx context.Context, field graphql.CollectedField, obj *Runtime) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "Runtime",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Tenant, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(Tenant)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNTenant2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Runtime_labels(ctx context.Context, field graphql.CollectedField, obj *Runtime) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -9219,11 +9147,6 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "tenant":
-			out.Values[i] = ec._Application_tenant(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		case "name":
 			out.Values[i] = ec._Application_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -10265,11 +10188,6 @@ func (ec *executionContext) _Runtime(ctx context.Context, sel ast.SelectionSet, 
 			}
 		case "description":
 			out.Values[i] = ec._Runtime_description(ctx, field, obj)
-		case "tenant":
-			out.Values[i] = ec._Runtime_tenant(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "labels":
 			out.Values[i] = ec._Runtime_labels(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -11613,15 +11531,6 @@ func (ec *executionContext) marshalNString2ᚕstring(ctx context.Context, sel as
 	}
 
 	return ret
-}
-
-func (ec *executionContext) unmarshalNTenant2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx context.Context, v interface{}) (Tenant, error) {
-	var res Tenant
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalNTenant2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx context.Context, sel ast.SelectionSet, v Tenant) graphql.Marshaler {
-	return v
 }
 
 func (ec *executionContext) unmarshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx context.Context, v interface{}) (Timestamp, error) {

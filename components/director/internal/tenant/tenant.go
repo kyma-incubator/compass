@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"context"
+	"github.com/pkg/errors"
 )
 
 type key int
@@ -14,8 +15,7 @@ func LoadFromContext(ctx context.Context) (string, error) {
 	str, ok := value.(string)
 
 	if !ok {
-		//return "", errors.New("Cannot read tenant from context")
-		return "sample", nil //TODO: Remove sample tenant
+		return "", errors.New("Cannot read tenant from context")
 	}
 
 	return str, nil
