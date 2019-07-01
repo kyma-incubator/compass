@@ -11,6 +11,10 @@ required = [
   name = "github.com/machinebox/graphql"
   branch = "master"
 
+[[constraint]]
+  name = "github.com/kyma-incubator/compass"
+  branch = "director-integration-tests-req-changes"
+  source = "github.com/aszecowka/compass"
 
 [prune]
   go-tests = true
