@@ -31,6 +31,6 @@ global:
   ingress:
     domainName: kyma.local
   istio:
-    gateway: compass-istio-gateway
-
-
+    gateway:
+      name: compass-istio-gateway
+      namespace: compass-system
