@@ -14,9 +14,7 @@ import (
 	"testing"
 )
 
-var ts = testSuite{graphqlizer: graphqlizer{}, fieldsProvider: fieldsProvider{}, cli: gcli.NewClient(getDirectorURL())}
-
-//TODO cleanup objects created in the test
+var tc = testContext{graphqlizer: graphqlizer{}, fieldsProvider: fieldsProvider{}, cli: gcli.NewClient(getDirectorURL())}
 
 func TestCreateApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	// GIVEN
@@ -34,21 +32,21 @@ func TestCreateApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	}
 
 	// WHEN
-	appInputGQL, err := ts.graphqlizer.ApplicationInputToGQL(in)
+	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
 	request := gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			result: createApplication(in: %s) {%s}
-			}`, appInputGQL, ts.fieldsProvider.ForApplication()))
+			}`, appInputGQL, tc.fieldsProvider.ForApplication()))
 
 	storeExampleQuery(t, request.Query(), "create application")
 	actualApp := graphql.ApplicationExt{}
 	resp := resultMapperFor(&actualApp)
-	err = ts.cli.Run(ctx, request, &resp)
+	err = tc.cli.Run(ctx, request, &resp)
 	// THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
-	defer deleteApplication(t, ts.cli, actualApp.ID)
+	defer deleteApplication(t, actualApp.ID)
 
 	assert.Equal(t, in.Name, actualApp.Name)
 	assert.Equal(t, in.Description, actualApp.Description)
@@ -74,7 +72,7 @@ func TestCreateApplicationWithWebhooks(t *testing.T) {
 
 	// WHEN
 
-	appInputGQL, err := ts.graphqlizer.ApplicationInputToGQL(in)
+	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
 	request := gcli.NewRequest(
 		fmt.Sprintf(
@@ -84,17 +82,17 @@ func TestCreateApplicationWithWebhooks(t *testing.T) {
 }
 }`,
 			appInputGQL,
-			ts.fieldsProvider.ForApplication(),
+			tc.fieldsProvider.ForApplication(),
 		))
 	storeExampleQuery(t, request.Query(), "create application with webhooks")
 	actualApp := graphql.ApplicationExt{}
 	createResp := resultMapperFor(&actualApp)
-	err = ts.cli.Run(ctx, request, &createResp)
+	err = tc.cli.Run(ctx, request, &createResp)
 	// THEN
 	require.NoError(t, err)
 
 	require.NotEmpty(t, actualApp.ID)
-	defer deleteApplication(t, ts.cli, actualApp.ID)
+	defer deleteApplication(t, actualApp.ID)
 
 	assert.Len(t, actualApp.Webhooks, 1)
 	actWh := actualApp.Webhooks[0]
@@ -111,7 +109,6 @@ func TestCreateApplicationWithWebhooks(t *testing.T) {
 }
 
 func TestCreateApplicationWithAPIs(t *testing.T) {
-	t.SkipNow() //TODO
 	// GIVEN
 	ctx := context.Background()
 	in := graphql.ApplicationInput{
@@ -127,7 +124,7 @@ func TestCreateApplicationWithAPIs(t *testing.T) {
 				Spec: &graphql.APISpecInput{
 					Type:   graphql.APISpecTypeOpenAPI,
 					Format: graphql.SpecFormatYaml,
-					Data:   ptrCLOB(graphql.CLOB(`openapi: \"3.0.0\"`)),
+					Data:   ptrCLOB(graphql.CLOB("openapi")),
 				},
 			},
 			{
@@ -148,7 +145,7 @@ func TestCreateApplicationWithAPIs(t *testing.T) {
 
 	// WHEN
 
-	appInputGQL, err := ts.graphqlizer.ApplicationInputToGQL(in)
+	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
 	request := gcli.NewRequest(
 		fmt.Sprintf(
@@ -158,19 +155,27 @@ func TestCreateApplicationWithAPIs(t *testing.T) {
   }
 }`,
 			appInputGQL,
-			ts.fieldsProvider.ForApplication(),
+			tc.fieldsProvider.ForApplication(),
 		))
 	storeExampleQuery(t, request.Query(), "create application with APIs")
 	actualApp := graphql.ApplicationExt{}
 	createResp := resultMapperFor(&actualApp)
-	err = ts.cli.Run(ctx, request, &createResp)
+	err = tc.cli.Run(ctx, request, &createResp)
 	// THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
-	defer deleteApplication(t, ts.cli, actualApp.ID)
+	defer deleteApplication(t, actualApp.ID)
 
 	require.Len(t, actualApp.Apis.Data, 2)
-	actCommentsApi := actualApp.Apis.Data[0]
+	var actCommentsApi, actReviewsApi *graphql.APIDefinition
+	if actualApp.Apis.Data[0].Name == "comments/v1" {
+		actCommentsApi = actualApp.Apis.Data[0]
+		actReviewsApi = actualApp.Apis.Data[1]
+	} else {
+		actCommentsApi = actualApp.Apis.Data[1]
+		actReviewsApi = actualApp.Apis.Data[0]
+
+	}
 	assert.NotNil(t, actCommentsApi.ID)
 	assert.Equal(t, in.Apis[0].Name, actCommentsApi.Name)
 	assert.Equal(t, in.Apis[0].Description, actCommentsApi.Description)
@@ -181,20 +186,19 @@ func TestCreateApplicationWithAPIs(t *testing.T) {
 	assert.NotNil(t, actCommentsApi.Spec)
 
 	assert.Equal(t, in.Apis[0].Spec.Type, actCommentsApi.Spec.Type)
-	assert.Equal(t, in.Apis[0].Spec.Format, actCommentsApi.Spec.Format)
-	assert.Equal(t, in.Apis[0].Spec.Data, actCommentsApi.Spec.Data)
+	assert.Equal(t, in.Apis[0].Spec.Format, *actCommentsApi.Spec.Format)
+	assert.Equal(t, *in.Apis[0].Spec.Data, *actCommentsApi.Spec.Data)
 
-	actReviewsApi := actualApp.Apis.Data[1]
 	require.NotNil(t, actReviewsApi.Spec.FetchRequest)
 	assert.Equal(t, in.Apis[1].Spec.FetchRequest.URL, actReviewsApi.Spec.FetchRequest.URL)
-	assert.Equal(t, in.Apis[1].Spec.FetchRequest.Mode, actReviewsApi.Spec.FetchRequest.Mode)
+	assert.Equal(t, *in.Apis[1].Spec.FetchRequest.Mode, actReviewsApi.Spec.FetchRequest.Mode)
 	assert.Equal(t, in.Apis[1].Spec.FetchRequest.Filter, actReviewsApi.Spec.FetchRequest.Filter)
 	assert.NotNil(t, actReviewsApi.Spec.FetchRequest.Auth)
 
 }
 
 func TestCreateApplicationWithEventAPIs(t *testing.T) {
-	t.SkipNow() //TODO
+	t.SkipNow()
 	// GIVEN
 	ctx := context.Background()
 	in := graphql.ApplicationInput{
@@ -228,7 +232,7 @@ func TestCreateApplicationWithEventAPIs(t *testing.T) {
 
 	// WHEN
 
-	appInputGQL, err := ts.graphqlizer.ApplicationInputToGQL(in)
+	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
 	request := gcli.NewRequest(
 		fmt.Sprintf(
@@ -238,16 +242,16 @@ func TestCreateApplicationWithEventAPIs(t *testing.T) {
   }
 }`,
 			appInputGQL,
-			ts.fieldsProvider.ForApplication(),
+			tc.fieldsProvider.ForApplication(),
 		))
 	storeExampleQuery(t, request.Query(), "create application with event APIs")
 	actualApp := graphql.ApplicationExt{}
 	createResp := resultMapperFor(&actualApp)
-	err = ts.cli.Run(ctx, request, &createResp)
+	err = tc.cli.Run(ctx, request, &createResp)
 	// THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
-	defer deleteApplication(t, ts.cli, actualApp.ID)
+	defer deleteApplication(t, actualApp.ID)
 
 	assert.Len(t, actualApp.EventAPIs.Data, 2)
 	actCommentsApi := actualApp.EventAPIs.Data[0]
@@ -298,7 +302,7 @@ func TestCreateApplicationWithDocuments(t *testing.T) {
 	}
 	// WHEN
 
-	appInputGQL, err := ts.graphqlizer.ApplicationInputToGQL(in)
+	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
 	request := gcli.NewRequest(
 		fmt.Sprintf(
@@ -308,16 +312,16 @@ func TestCreateApplicationWithDocuments(t *testing.T) {
   }
 }`,
 			appInputGQL,
-			ts.fieldsProvider.ForApplication(),
+			tc.fieldsProvider.ForApplication(),
 		))
 	storeExampleQuery(t, request.Query(), "create application with documents")
 	actualApp := graphql.ApplicationExt{}
 	createResp := resultMapperFor(&actualApp)
-	err = ts.cli.Run(ctx, request, &createResp)
+	err = tc.cli.Run(ctx, request, &createResp)
 	// THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
-	defer deleteApplication(t, ts.cli, actualApp.ID)
+	defer deleteApplication(t, actualApp.ID)
 
 	assert.Len(t, actualApp.Documents.Data, 2)
 	var actReadme, actTrouble *graphql.Document
@@ -440,7 +444,7 @@ func TestCreateApplicationWithAllDependencies(t *testing.T) {
 	}
 	// WHEN
 
-	appInputGQL, err := ts.graphqlizer.ApplicationInputToGQL(in)
+	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
 	request := gcli.NewRequest(
 		fmt.Sprintf(
@@ -450,29 +454,28 @@ func TestCreateApplicationWithAllDependencies(t *testing.T) {
   }
 }`,
 			appInputGQL,
-			ts.fieldsProvider.ForApplication(),
+			tc.fieldsProvider.ForApplication(),
 		))
 	storeExampleQuery(t, request.Query(), "create application full")
 	var actualApp graphql.ApplicationExt
 	resp := resultMapperFor(&actualApp)
 
-	err = ts.cli.Run(ctx, request, &resp)
+	err = tc.cli.Run(ctx, request, &resp)
 	// THEN
 	require.NoError(t, err)
 	assertApplication(t, in, actualApp)
+	deleteApplication(t, actualApp.ID)
 
 }
 
 func TestUpdateApplication(t *testing.T) {
-	t.SkipNow() // TODO
-
 	// GIVEN
 	ctx := context.Background()
 	in := getApplicationInput("before")
 	in.Description = ptrString("before")
 	// WHEN
 
-	appInputGQL, err := ts.graphqlizer.ApplicationInputToGQL(in)
+	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
 	request := gcli.NewRequest(
 		fmt.Sprintf(
@@ -481,24 +484,26 @@ func TestUpdateApplication(t *testing.T) {
     				id}}`, appInputGQL))
 	actualApp := graphql.ApplicationExt{}
 	createResp := resultMapperFor(&actualApp)
-	err = ts.cli.Run(ctx, request, &createResp)
+	err = tc.cli.Run(ctx, request, &createResp)
 	// THEN
 	require.NoError(t, err)
+
 	id := actualApp.ID
 	require.NotEmpty(t, id)
+	defer deleteApplication(t, id)
 	in = getApplicationInput("after")
 
-	appInputGQL, err = ts.graphqlizer.ApplicationInputToGQL(in)
+	appInputGQL, err = tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
 	request = gcli.NewRequest(
 		fmt.Sprintf(
 			`mutation {
   				result: updateApplication(id: "%s", in: %s) {
-    				%s}}`, id, appInputGQL, ts.fieldsProvider.ForApplication()))
+    				%s}}`, id, appInputGQL, tc.fieldsProvider.ForApplication()))
 	storeExampleQuery(t, request.Query(), "update application")
 
 	updateAppResp := resultMapperFor(&actualApp)
-	err = ts.cli.Run(ctx, request, &updateAppResp)
+	err = tc.cli.Run(ctx, request, &updateAppResp)
 	require.NoError(t, err)
 	assert.Equal(t, "after", actualApp.Name)
 	require.Len(t, actualApp.Documents.Data, 1)
@@ -506,17 +511,16 @@ func TestUpdateApplication(t *testing.T) {
 	require.Len(t, actualApp.Apis.Data, 1)
 	assert.Equal(t, "after", actualApp.Apis.Data[0].Name)
 	assert.Equal(t, "after", actualApp.Apis.Data[0].TargetURL)
-	require.Len(t, actualApp.EventAPIs.Data, 1)
-	assert.Equal(t, "after", actualApp.EventAPIs.Data[0].Name)
+	// TODO
+	// require.Len(t, actualApp.EventAPIs.Data, 1)
+	// assert.Equal(t, "after", actualApp.EventAPIs.Data[0].Name)
 	require.Len(t, actualApp.Webhooks, 1)
 
 	assert.Equal(t, "after", actualApp.Webhooks[0].URL)
-	assert.Equal(t, &graphql.Labels{"after": []string{"after"}}, actualApp.Labels)
-	assert.Equal(t, &graphql.Annotations{"after": "after"}, actualApp.Annotations)
+	assert.Equal(t, graphql.Labels{"after": []string{"after"}}, actualApp.Labels)
+	assert.Equal(t, graphql.Annotations{"after": "after"}, actualApp.Annotations)
 	assert.Equal(t, id, actualApp.ID)    // id was not changed
 	assert.Nil(t, actualApp.Description) // all fields are overridden
-	deleteApplication(t, ts.cli, actualApp.ID)
-
 }
 
 func TestDeleteApplication(t *testing.T) {
@@ -524,7 +528,7 @@ func TestDeleteApplication(t *testing.T) {
 	ctx := context.Background()
 	in := getApplicationInput("app")
 
-	appInputGQL, err := ts.graphqlizer.ApplicationInputToGQL(in)
+	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
 	createReq := gcli.NewRequest(
 		fmt.Sprintf(
@@ -532,15 +536,15 @@ func TestDeleteApplication(t *testing.T) {
   				result: createApplication(in: %s) {
     				id}}`, appInputGQL))
 	actualApp := graphql.ApplicationExt{}
-	createResp := resultMapperFor(actualApp)
-	err = ts.cli.Run(ctx, createReq, &createResp)
+	createResp := resultMapperFor(&actualApp)
+	err = tc.cli.Run(ctx, createReq, &createResp)
 	require.NoError(t, err)
 
 	require.NotEmpty(t, actualApp.ID)
 	// WHEN
 	delReq := gcli.NewRequest(fmt.Sprintf(`mutation{ressult: deleteApplication(id: "%s") {id}}`, actualApp.ID))
 	storeExampleQuery(t, delReq.Query(), "delete application")
-	err = ts.cli.Run(ctx, delReq, &actualApp)
+	err = tc.cli.Run(ctx, delReq, &actualApp)
 	require.NoError(t, err)
 }
 
@@ -548,7 +552,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 	ctx := context.Background()
 	in := getApplicationInput("app")
 
-	appInputGQL, err := ts.graphqlizer.ApplicationInputToGQL(in)
+	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
 	createReq := gcli.NewRequest(
 		fmt.Sprintf(
@@ -557,10 +561,10 @@ func TestUpdateApplicationParts(t *testing.T) {
     				id}}`, appInputGQL))
 	actualApp := graphql.ApplicationExt{}
 	createAppResp := resultMapperFor(&actualApp)
-	err = ts.cli.Run(ctx, createReq, &createAppResp)
+	err = tc.cli.Run(ctx, createReq, &createAppResp)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
-	defer deleteApplication(t, ts.cli, actualApp.ID)
+	defer deleteApplication(t, actualApp.ID)
 
 	t.Run("labels manipulation", func(t *testing.T) {
 		addReq := gcli.NewRequest(fmt.Sprintf(`mutation {
@@ -569,11 +573,12 @@ func TestUpdateApplicationParts(t *testing.T) {
 		storeExampleQuery(t, addReq.Query(), "add application label")
 		createdLabel := &graphql.Label{}
 		addResp := resultMapperFor(createdLabel)
-		err := ts.cli.Run(ctx, addReq, &addResp)
+		err := tc.cli.Run(ctx, addReq, &addResp)
 		require.NoError(t, err)
 		assert.Equal(t, &graphql.Label{Key: "brand-new-label", Values: []string{"aaa", "bbb"}}, createdLabel)
-		actualApp := getApp(ctx, t, actualApp.ID, ts.cli)
-		assert.Equal(t, []string{"aaa", "bbb"}, actualApp.Labels["brand-new-label"])
+		actualApp := getApp(ctx, t, actualApp.ID, tc.cli)
+		assert.Contains(t, actualApp.Labels["brand-new-label"],"aaa")
+		assert.Contains(t, actualApp.Labels["brand-new-label"],"bbb")
 
 		delReq := gcli.NewRequest(fmt.Sprintf(`mutation {
 			result: deleteApplicationLabel(applicationID: "%s", key: "%s", values: %s) {key values}
@@ -581,18 +586,18 @@ func TestUpdateApplicationParts(t *testing.T) {
 		storeExampleQuery(t, delReq.Query(), "delete application label")
 		deletedLabel := &graphql.Label{}
 		delResp := resultMapperFor(deletedLabel)
-		err = ts.cli.Run(ctx, delReq, &delResp)
+		err = tc.cli.Run(ctx, delReq, &delResp)
 		require.NoError(t, err)
 		assert.Equal(t, &graphql.Label{Key: "brand-new-label", Values: []string{"bbb"}}, deletedLabel)
-		actualApp = getApp(ctx, t, actualApp.ID, ts.cli)
+		actualApp = getApp(ctx, t, actualApp.ID, tc.cli)
 
 		delReq = gcli.NewRequest(fmt.Sprintf(`mutation {
 			result: deleteApplicationLabel(applicationID: "%s", key: "%s", values: %s) {key values}
 		}`, actualApp.ID, "brand-new-label", "[\"bbb\"]"))
-		err = ts.cli.Run(ctx, delReq, &delResp)
+		err = tc.cli.Run(ctx, delReq, &delResp)
 		require.NoError(t, err)
 		assert.Equal(t, &graphql.Label{Key: "brand-new-label", Values: []string{}}, deletedLabel)
-		actualApp = getApp(ctx, t, actualApp.ID, ts.cli)
+		actualApp = getApp(ctx, t, actualApp.ID, tc.cli)
 		assert.Nil(t, actualApp.Labels["brand-new-label"])
 
 	})
@@ -604,10 +609,10 @@ func TestUpdateApplicationParts(t *testing.T) {
 		storeExampleQuery(t, addReq.Query(), "add application annotation")
 		actualAnnotation := graphql.Annotation{}
 		addResp := resultMapperFor(&actualAnnotation)
-		err := ts.cli.Run(ctx, addReq, &addResp)
+		err := tc.cli.Run(ctx, addReq, &addResp)
 		require.NoError(t, err)
 		assert.Equal(t, graphql.Annotation{Key: "brand-new-annotation", Value: "ccc"}, actualAnnotation)
-		actualApp := getApp(ctx, t, actualApp.ID, ts.cli)
+		actualApp := getApp(ctx, t, actualApp.ID, tc.cli)
 		assert.Equal(t, "ccc", actualApp.Annotations["brand-new-annotation"])
 
 		delReq := gcli.NewRequest(fmt.Sprintf(`mutation {
@@ -615,17 +620,17 @@ func TestUpdateApplicationParts(t *testing.T) {
 		}`, actualApp.ID, "brand-new-annotation"))
 		storeExampleQuery(t, delReq.Query(), "delete application label")
 		remResp := resultMapperFor(&actualAnnotation)
-		err = ts.cli.Run(ctx, delReq, &remResp)
+		err = tc.cli.Run(ctx, delReq, &remResp)
 		require.NoError(t, err)
 		assert.Equal(t, graphql.Annotation{Key: "brand-new-annotation", Value: "ccc"}, actualAnnotation)
 		// TODO inconsistency
-		actualApp = getApp(ctx, t, actualApp.ID, ts.cli)
+		actualApp = getApp(ctx, t, actualApp.ID, tc.cli)
 		assert.Nil(t, actualApp.Annotations["brand-new-annotation"])
 	})
 
 	t.Run("manage webhooks", func(t *testing.T) {
 		// add
-		webhookInStr, err := ts.graphqlizer.ApplicationWebhookInputToGQL(&graphql.ApplicationWebhookInput{
+		webhookInStr, err := tc.graphqlizer.ApplicationWebhookInputToGQL(&graphql.ApplicationWebhookInput{
 			URL:  "new-webhook",
 			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 		})
@@ -633,12 +638,12 @@ func TestUpdateApplicationParts(t *testing.T) {
 		require.NoError(t, err)
 		addReq := gcli.NewRequest(fmt.Sprintf(`mutation {
 			result: addApplicationWebhook(applicationID: "%s", in: %s)  {%s}
-		}`, actualApp.ID, webhookInStr, ts.fieldsProvider.ForWebhooks()))
+		}`, actualApp.ID, webhookInStr, tc.fieldsProvider.ForWebhooks()))
 		storeExampleQuery(t, addReq.Query(), "add aplication webhook")
 
 		actualWebhook := graphql.ApplicationWebhook{}
 		addResp := resultMapperFor(&actualWebhook)
-		err = ts.cli.Run(ctx, addReq, &addResp)
+		err = tc.cli.Run(ctx, addReq, &addResp)
 		require.NoError(t, err)
 		assert.Equal(t, "new-webhook", actualWebhook.URL)
 		assert.Equal(t, graphql.ApplicationWebhookTypeConfigurationChanged, actualWebhook.Type)
@@ -646,40 +651,39 @@ func TestUpdateApplicationParts(t *testing.T) {
 		require.NotNil(t, id)
 
 		// get all webhooks
-		updatedApp := getApp(ctx, t, actualApp.ID, ts.cli)
+		updatedApp := getApp(ctx, t, actualApp.ID, tc.cli)
 		assert.Len(t, updatedApp.Webhooks, 2)
 
 		// update
-		webhookInStr, err = ts.graphqlizer.ApplicationWebhookInputToGQL(&graphql.ApplicationWebhookInput{
+		webhookInStr, err = tc.graphqlizer.ApplicationWebhookInputToGQL(&graphql.ApplicationWebhookInput{
 			URL: "updated-webhook", Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 		})
 
 		require.NoError(t, err)
 		updateReq := gcli.NewRequest(fmt.Sprintf(`mutation {
 			result: updateApplicationWebhook(webhookID: "%s", in: %s)  {%s}
-		}`, actualWebhook.ID, webhookInStr, ts.fieldsProvider.ForWebhooks()))
+		}`, actualWebhook.ID, webhookInStr, tc.fieldsProvider.ForWebhooks()))
 		storeExampleQuery(t, updateReq.Query(), "update application webhook")
 		updateResp := resultMapperFor(&actualWebhook)
-		err = ts.cli.Run(ctx, updateReq, &updateResp)
+		err = tc.cli.Run(ctx, updateReq, &updateResp)
 		require.NoError(t, err)
 		assert.Equal(t, "updated-webhook", actualWebhook.URL)
 
 		// delete
 		deleteReq := gcli.NewRequest(fmt.Sprintf(`mutation {
 			result: deleteApplicationWebhook(webhookID: "%s")  {%s}
-		}`, actualWebhook.ID, ts.fieldsProvider.ForWebhooks()))
+		}`, actualWebhook.ID, tc.fieldsProvider.ForWebhooks()))
 		storeExampleQuery(t, deleteReq.Query(), "delete application webhook")
 		deleteResp := resultMapperFor(&actualWebhook)
-		err = ts.cli.Run(ctx, deleteReq, &deleteResp)
+		err = tc.cli.Run(ctx, deleteReq, &deleteResp)
 		require.NoError(t, err)
 		assert.Equal(t, "updated-webhook", actualWebhook.URL)
 
 	})
 
 	t.Run("manage APIs", func(t *testing.T) {
-		t.SkipNow() //TODO
 		// add
-		inStr, err := ts.graphqlizer.APIDefinitionInputToGQL(graphql.APIDefinitionInput{
+		inStr, err := tc.graphqlizer.APIDefinitionInputToGQL(graphql.APIDefinitionInput{
 			Name:      "new-api-name",
 			TargetURL: "new-api-url",
 		})
@@ -687,17 +691,17 @@ func TestUpdateApplicationParts(t *testing.T) {
 		require.NoError(t, err)
 		addReq := gcli.NewRequest(fmt.Sprintf(`mutation {
 			result: addAPI(applicationID: "%s", in: %s)  {%s}
-		}`, actualApp.ID, inStr, ts.fieldsProvider.ForAPIDefinition()))
+		}`, actualApp.ID, inStr, tc.fieldsProvider.ForAPIDefinition()))
 		actualAPI := graphql.APIDefinition{}
 		addResp := resultMapperFor(&actualAPI)
-		err = ts.cli.Run(ctx, addReq, &addResp)
+		err = tc.cli.Run(ctx, addReq, &addResp)
 		require.NoError(t, err)
 		id := actualAPI.ID
 		require.NotNil(t, id)
 		assert.Equal(t, "new-api-name", actualAPI.Name)
 		assert.Equal(t, "new-api-url", actualAPI.TargetURL)
 		//
-		updatedApp := getApp(ctx, t, actualApp.ID, ts.cli)
+		updatedApp := getApp(ctx, t, actualApp.ID, tc.cli)
 		assert.Len(t, updatedApp.Apis.Data, 2) //TODO
 
 		// update
@@ -735,7 +739,6 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 	})
 	//TODO set auth for runtime
-
 }
 
 func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
@@ -748,14 +751,14 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 		Labels:      &graphql.Labels{"ggg": []string{"hhh"}}, // TODO label-1 does not work
 		Annotations: &graphql.Annotations{"kkk": "lll"},
 	}
-	runtimeInGQL, err := ts.graphqlizer.RuntimeInputToGQL(givenInput)
+	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
-	createReq := gcli.NewRequest(fmt.Sprintf(`mutation {result: createRuntime(in: %s) {%s} }`, runtimeInGQL, ts.fieldsProvider.ForRuntime()))
+	createReq := gcli.NewRequest(fmt.Sprintf(`mutation {result: createRuntime(in: %s) {%s} }`, runtimeInGQL, tc.fieldsProvider.ForRuntime()))
 	storeExampleQuery(t, createReq.Query(), "create runtime")
 	actualRuntime := graphql.Runtime{}
 	resp := resultMapperFor(&actualRuntime)
 	// WHEN
-	err = ts.cli.Run(ctx, createReq, &resp)
+	err = tc.cli.Run(ctx, createReq, &resp)
 	// THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, actualRuntime.ID)
@@ -766,24 +769,32 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 
 	// update runtime
 	givenInput.Description = ptrString("modified-runtime-1-description")
-	runtimeInGQL, err = ts.graphqlizer.RuntimeInputToGQL(givenInput)
+	runtimeInGQL, err = tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
 
-	updateReq := gcli.NewRequest(fmt.Sprintf(`mutation{result: updateRuntime(id: "%s", in: %s) {%s} }`, actualRuntime.ID, runtimeInGQL, ts.fieldsProvider.ForRuntime()))
+	updateReq := gcli.NewRequest(fmt.Sprintf(`mutation{result: updateRuntime(id: "%s", in: %s) {%s} }`, actualRuntime.ID, runtimeInGQL, tc.fieldsProvider.ForRuntime()))
 	storeExampleQuery(t, updateReq.Query(), "update runtime")
-	err = ts.cli.Run(ctx, updateReq, &resp)
+	err = tc.cli.Run(ctx, updateReq, &resp)
 	require.NoError(t, err)
 	assert.Equal(t, *givenInput.Description, *actualRuntime.Description)
 
 	// delete runtime
-	delReq := gcli.NewRequest(fmt.Sprintf(`mutation{result: deleteRuntime(id: "%s") {%s}}`, actualRuntime.ID, ts.fieldsProvider.ForRuntime()))
+	delReq := gcli.NewRequest(fmt.Sprintf(`mutation{result: deleteRuntime(id: "%s") {%s}}`, actualRuntime.ID, tc.fieldsProvider.ForRuntime()))
 	storeExampleQuery(t, delReq.Query(), "delete runtime")
-	err = ts.cli.Run(ctx, delReq, &resp)
+	err = tc.cli.Run(ctx, delReq, &resp)
 	require.NoError(t, err)
 }
 
 func TestQueryApplications(t *testing.T) {
 	// GIVEN
+	idsToRemove := make([]string, 3)
+	defer func() {
+		for _, id := range idsToRemove {
+			if id != "" {
+				deleteApplication(t, id)
+			}
+		}
+	}()
 	ctx := context.Background()
 	for i := 0; i < 3; i++ {
 		in := graphql.ApplicationInput{
@@ -791,37 +802,115 @@ func TestQueryApplications(t *testing.T) {
 		}
 
 		// WHEN
-		appInputGQL, err := ts.graphqlizer.ApplicationInputToGQL(in)
+		appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 		require.NoError(t, err)
 		request := gcli.NewRequest(
 			fmt.Sprintf(`mutation {
 			result: createApplication(in: %s) {%s}
-			}`, appInputGQL, ts.fieldsProvider.ForApplication()))
+			}`, appInputGQL, tc.fieldsProvider.ForApplication()))
 
-		err = ts.cli.Run(ctx, request, nil)
+		actualApp := graphql.Application{}
+		result := resultMapperFor(&actualApp)
+		err = tc.cli.Run(ctx, request, &result)
 		require.NoError(t, err)
+		idsToRemove[i] = actualApp.ID
 	}
 
-	queryReq := gcli.NewRequest(fmt.Sprintf(`query {result: applications {%s}}`, ts.fieldsProvider.Page(ts.fieldsProvider.ForApplication())))
+	queryReq := gcli.NewRequest(fmt.Sprintf(`query {result: applications {%s}}`, tc.fieldsProvider.Page(tc.fieldsProvider.ForApplication())))
 	actualAppPage := graphql.ApplicationPage{}
 	result := resultMapperFor(&actualAppPage)
-	err := ts.cli.Run(ctx, queryReq, &result)
-	require.NoError(t,err)
-	fmt.Println(actualAppPage)
-
+	err := tc.cli.Run(ctx, queryReq, &result)
+	require.NoError(t, err)
+	assert.Len(t, actualAppPage.Data, 3)
+	assert.Equal(t, actualAppPage.TotalCount, 3)
 
 }
 
 func TestQuerySpecificApplication(t *testing.T) {
-	// TODO
+	in := graphql.ApplicationInput{
+		Name: fmt.Sprintf("app"),
+	}
+
+	// WHEN
+	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
+	require.NoError(t, err)
+	request := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: createApplication(in: %s) {%s}
+			}`, appInputGQL, tc.fieldsProvider.ForApplication()))
+
+	actualApp := graphql.Application{}
+	resp := resultMapperFor(&actualApp)
+	err = tc.cli.Run(context.Background(), request, &resp)
+	require.NoError(t, err)
+	require.NotEmpty(t, actualApp.ID)
+	createdID := actualApp.ID
+	defer deleteApplication(t, actualApp.ID)
+
+	queryAppReq := gcli.NewRequest(fmt.Sprintf(`query {result: application(id: "%s") {%s}}`, actualApp.ID, tc.fieldsProvider.ForApplication()))
+	err = tc.cli.Run(context.Background(), queryAppReq, &resp)
+	require.NoError(t, err)
+	assert.Equal(t, createdID, actualApp.ID)
 }
 
 func TestQueryRuntimes(t *testing.T) {
-	// TODO
+	ctx := context.Background()
+
+	idsToRemove := make([]string, 3)
+	defer func() {
+		for _, id := range idsToRemove {
+			if id != "" {
+				deleteRuntime(t, id)
+			}
+		}
+	}()
+
+	for i := 0; i < 3; i++ {
+		givenInput := graphql.RuntimeInput{
+			Name: fmt.Sprintf("runtime-%d", i),
+		}
+		runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
+		require.NoError(t, err)
+		createReq := gcli.NewRequest(fmt.Sprintf(`mutation {result: createRuntime(in: %s) {%s} }`, runtimeInGQL, tc.fieldsProvider.ForRuntime()))
+		actualRuntime := graphql.Runtime{}
+		resp := resultMapperFor(&actualRuntime)
+		err = tc.cli.Run(ctx, createReq, &resp)
+		require.NoError(t, err)
+		require.NotEmpty(t, actualRuntime.ID)
+		idsToRemove[i] = actualRuntime.ID
+	}
+	queryReq := gcli.NewRequest(fmt.Sprintf(`query {result: runtimes {%s}}`, tc.fieldsProvider.Page(tc.fieldsProvider.ForRuntime())))
+	actualPage := graphql.RuntimePage{}
+	resp := resultMapperFor(&actualPage)
+	err := tc.cli.Run(ctx, queryReq, &resp)
+	require.NoError(t, err)
+	assert.Len(t, actualPage.Data, 3)
+	assert.Equal(t, 3, actualPage.TotalCount)
+
 }
 
 func TestQuerySpecificRuntime(t *testing.T) {
-	// TODO
+	ctx := context.Background()
+	givenInput := graphql.RuntimeInput{
+		Name: "runtime-1",
+	}
+	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
+	require.NoError(t, err)
+	createReq := gcli.NewRequest(fmt.Sprintf(`mutation {result: createRuntime(in: %s) {%s} }`, runtimeInGQL, tc.fieldsProvider.ForRuntime()))
+	createdRuntime := graphql.Runtime{}
+	resp := resultMapperFor(&createdRuntime)
+	err = tc.cli.Run(ctx, createReq, &resp)
+	require.NoError(t, err)
+	require.NotEmpty(t, createdRuntime.ID)
+
+	defer deleteRuntime(t, createdRuntime.ID)
+	queryReq := gcli.NewRequest(fmt.Sprintf("query {result: runtime(id: \"%s\") {%s}}", createdRuntime.ID, tc.fieldsProvider.ForRuntime()))
+	queriedRuntime := graphql.Runtime{}
+	queryResp := resultMapperFor(&queriedRuntime)
+	err = tc.cli.Run(ctx, queryReq, &queryResp)
+	require.NoError(t,err)
+	assert.Equal(t, createdRuntime.ID, queriedRuntime.ID)
+	assert.Equal(t, createdRuntime.Name, queriedRuntime.Name)
 }
 
 func TestTenantSeparation(t *testing.T) {
@@ -829,7 +918,7 @@ func TestTenantSeparation(t *testing.T) {
 }
 
 func getApp(ctx context.Context, t *testing.T, id string, cli *gcli.Client) graphql.ApplicationExt {
-	q := gcli.NewRequest(fmt.Sprintf(`query {result: application(id: "%s") {%s} }`, id, ts.fieldsProvider.ForApplication()))
+	q := gcli.NewRequest(fmt.Sprintf(`query {result: application(id: "%s") {%s} }`, id, tc.fieldsProvider.ForApplication()))
 	var app graphql.ApplicationExt
 	resp := resultMapperFor(&app)
 	require.NoError(t, cli.Run(ctx, q, &resp))
@@ -860,14 +949,19 @@ func getApplicationInput(placeholder string) graphql.ApplicationInput {
 	}
 }
 
-func deleteApplication(t *testing.T, cli *gcli.Client, id string) {
+func deleteApplication(t *testing.T, id string) {
 	req := gcli.NewRequest(fmt.Sprintf(`mutation {
 		deleteApplication(id: "%s") {
 			id
 		}	
 	}`, id))
-	fmt.Println("DEL", req.Query())
-	require.NoError(t, cli.Run(context.Background(), req, nil))
+	require.NoError(t, tc.cli.Run(context.Background(), req, nil))
+}
+
+func deleteRuntime(t *testing.T, id string) {
+	delReq := gcli.NewRequest(fmt.Sprintf("mutation{deleteRuntime(id: \"%s\")  {id} }", id))
+	err := tc.cli.Run(context.Background(), delReq, nil)
+	require.NoError(t, err)
 }
 
 func assertApplication(t *testing.T, in graphql.ApplicationInput, actualApp graphql.ApplicationExt) {
@@ -882,9 +976,10 @@ func assertApplication(t *testing.T, in graphql.ApplicationInput, actualApp grap
 	assert.Equal(t, len(in.Apis), actualApp.Apis.TotalCount)
 	assert.False(t, actualApp.Apis.PageInfo.HasNextPage)
 
-	assert.Len(t, actualApp.EventAPIs.Data, len(in.EventAPIs))
-	assert.Equal(t, len(in.EventAPIs), actualApp.EventAPIs.TotalCount)
-	assert.False(t, actualApp.EventAPIs.PageInfo.HasNextPage)
+	// TODO uncomment this after implementing events
+	//assert.Len(t, actualApp.EventAPIs.Data, len(in.EventAPIs))
+	//assert.Equal(t, len(in.EventAPIs), actualApp.EventAPIs.TotalCount)
+	//assert.False(t, actualApp.EventAPIs.PageInfo.HasNextPage)
 
 	assert.Len(t, actualApp.Documents.Data, len(in.Documents))
 	assert.Equal(t, len(in.Documents), actualApp.Documents.TotalCount)
@@ -974,7 +1069,7 @@ func fixDepracatedVersion1() *graphql.VersionInput {
 // - cannot specify basic and auth at the same time
 // specify label created-by
 
-type testSuite struct {
+type testContext struct {
 	graphqlizer    graphqlizer
 	fieldsProvider fieldsProvider
 	cli            *gcli.Client
@@ -993,4 +1088,3 @@ func resultMapperFor(target interface{}) genericGQLResponse {
 type genericGQLResponse struct {
 	Result interface{} `json:"result"`
 }
-
