@@ -1,7 +1,41 @@
-mutation{result: deleteRuntime(id: "5b8b99c4-a3ad-417a-9ed3-16d43ccf1c6a") {id
+mutation{result: deleteRuntime(id: "cded0f0f-5a03-47b7-b6a8-c4a05d7b00d4") {id
 		name
 		description
 		tenant
 		labels 
 		annotations
-		status {condition timestamp}}}
+		status {condition timestamp}
+		agentAuth {credential {
+				... on BasicCredentialData {
+					username
+					password
+				}
+				...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				}
+			}
+			additionalHeaders
+			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
+		}}}

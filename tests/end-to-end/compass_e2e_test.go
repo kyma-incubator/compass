@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -42,8 +43,8 @@ func TestCreateApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 			}`, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
 	err = tc.cli.Run(ctx, request, &resp)
 	// THEN
-	require.NoError(t, err)
 	saveQueryInExamples(t, request.Query(), "create application")
+	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
 	defer deleteApplication(t, actualApp.ID)
 
@@ -692,6 +693,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	assert.Equal(t, *givenInput.Description, *actualRuntime.Description)
 	assert.Equal(t, *givenInput.Labels, actualRuntime.Labels)
 	assert.Equal(t, *givenInput.Annotations, actualRuntime.Annotations)
+	assert.NotNil(t, actualRuntime.AgentAuth)
 
 	// update runtime
 	givenInput.Description = ptrString("modified-runtime-1-description")
@@ -904,13 +906,6 @@ func deleteRuntime(t *testing.T, id string) {
 	require.NoError(t, err)
 }
 
-func saveQueryInExamples(t *testing.T, query string, exampleName string) {
-	t.Helper()
-	sanitizedName := strings.Replace(exampleName, " ", "-", -1)
-	err := ioutil.WriteFile(fmt.Sprintf("%s/src/github.com/kyma-incubator/compass/examples/%s.graphql", os.Getenv("GOPATH"), sanitizedName), []byte(query), 0660)
-	require.NoError(t, err)
-}
-
 func fixBasicAuth() *graphql.AuthInput {
 	return &graphql.AuthInput{
 		Credential: &graphql.CredentialDataInput{
@@ -955,6 +950,7 @@ func fixDepracatedVersion1() *graphql.VersionInput {
 // - cannot specify basic and auth at the same time
 // specify label created-by
 
+// testContext contains dependencies that help executing tests
 type testContext struct {
 	graphqlizer       graphqlizer
 	gqlFieldsProvider gqlFieldsProvider
@@ -962,10 +958,19 @@ type testContext struct {
 }
 
 func getDirectorURL() string {
-	return "http://127.0.0.1:3000/graphql"
+	url := os.Getenv("DIRECTOR_GRAPHQL_API")
+	if url == "" {
+		url = "http://127.0.0.1:3000/graphql"
+	}
+	return url
 }
 
+// resultMapperFor returns generic object that can be passed to Run method for storing response.
+// In GraphQL, set `result` alias for your query
 func resultMapperFor(target interface{}) genericGQLResponse {
+	if reflect.ValueOf(target).Kind() != reflect.Ptr {
+		panic("target has to be a pointer")
+	}
 	return genericGQLResponse{
 		Result: target,
 	}
@@ -973,4 +978,11 @@ func resultMapperFor(target interface{}) genericGQLResponse {
 
 type genericGQLResponse struct {
 	Result interface{} `json:"result"`
+}
+
+func saveQueryInExamples(t *testing.T, query string, exampleName string) {
+	t.Helper()
+	sanitizedName := strings.Replace(exampleName, " ", "-", -1)
+	err := ioutil.WriteFile(fmt.Sprintf("%s/src/github.com/kyma-incubator/compass/examples/%s.graphql", os.Getenv("GOPATH"), sanitizedName), []byte(query), 0660)
+	require.NoError(t, err)
 }

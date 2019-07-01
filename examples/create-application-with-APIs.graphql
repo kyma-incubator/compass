@@ -91,6 +91,25 @@ mutation {
 			}
 			additionalHeaders
 			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
 		
 		}}
 		healthCheckURL
@@ -116,6 +135,25 @@ mutation {
 			}
 			additionalHeaders
 			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
 		}
 		mode
 		filter
@@ -137,6 +175,25 @@ mutation {
 			}
 			additionalHeaders
 			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
 		}}
 		defaultAuth {credential {
 				... on BasicCredentialData {
@@ -152,6 +209,25 @@ mutation {
 			}
 			additionalHeaders
 			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
 		}
 		version {value
 		deprecated
@@ -187,6 +263,25 @@ mutation {
 			}
 			additionalHeaders
 			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
 		}
 		mode
 		filter
@@ -224,6 +319,25 @@ mutation {
 			}
 			additionalHeaders
 			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
 		}
 		mode
 		filter

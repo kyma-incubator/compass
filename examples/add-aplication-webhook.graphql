@@ -1,5 +1,5 @@
 mutation {
-			result: addApplicationWebhook(applicationID: "b4f3bd21-2a54-4a9a-a953-29cb76b63d02", in: {
+			result: addApplicationWebhook(applicationID: "38a548e0-fa7d-4b65-a6e3-a5bef7695727", in: {
 		type: CONFIGURATION_CHANGED,
 		url: "new-webhook",
 
@@ -21,6 +21,25 @@ mutation {
 			}
 			additionalHeaders
 			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
 		
 		}}
 		}

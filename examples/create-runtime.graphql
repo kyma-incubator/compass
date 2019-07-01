@@ -15,4 +15,38 @@ mutation {result: createRuntime(in: {
 		tenant
 		labels 
 		annotations
-		status {condition timestamp}} }
+		status {condition timestamp}
+		agentAuth {credential {
+				... on BasicCredentialData {
+					username
+					password
+				}
+				...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				}
+			}
+			additionalHeaders
+			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
+		}} }

@@ -24,6 +24,25 @@ query {result: applications {data {
 			}
 			additionalHeaders
 			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
 		
 		}}
 		healthCheckURL
@@ -49,6 +68,25 @@ query {result: applications {data {
 			}
 			additionalHeaders
 			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
 		}
 		mode
 		filter
@@ -70,6 +108,25 @@ query {result: applications {data {
 			}
 			additionalHeaders
 			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
 		}}
 		defaultAuth {credential {
 				... on BasicCredentialData {
@@ -85,6 +142,25 @@ query {result: applications {data {
 			}
 			additionalHeaders
 			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
 		}
 		version {value
 		deprecated
@@ -120,6 +196,25 @@ query {result: applications {data {
 			}
 			additionalHeaders
 			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
 		}
 		mode
 		filter
@@ -157,6 +252,25 @@ query {result: applications {data {
 			}
 			additionalHeaders
 			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
 		}
 		mode
 		filter

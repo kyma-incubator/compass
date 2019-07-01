@@ -1,7 +1,41 @@
-query {result: runtime(id: "3562757d-ec15-43bc-af81-f02dd8fb6f8c") {id
+query {result: runtime(id: "b2211e35-b48a-4ae6-a3f8-7ba36ce0317f") {id
 		name
 		description
 		tenant
 		labels 
 		annotations
-		status {condition timestamp}}}
+		status {condition timestamp}
+		agentAuth {credential {
+				... on BasicCredentialData {
+					username
+					password
+				}
+				...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				}
+			}
+			additionalHeaders
+			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
+		}}}

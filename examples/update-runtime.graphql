@@ -1,4 +1,4 @@
-mutation{result: updateRuntime(id: "5b8b99c4-a3ad-417a-9ed3-16d43ccf1c6a", in: {
+mutation{result: updateRuntime(id: "cded0f0f-5a03-47b7-b6a8-c4a05d7b00d4", in: {
 		name: "runtime-1",
 		description: "modified-runtime-1-description",
 		labels: {
@@ -15,4 +15,38 @@ mutation{result: updateRuntime(id: "5b8b99c4-a3ad-417a-9ed3-16d43ccf1c6a", in: {
 		tenant
 		labels 
 		annotations
-		status {condition timestamp}} }
+		status {condition timestamp}
+		agentAuth {credential {
+				... on BasicCredentialData {
+					username
+					password
+				}
+				...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				}
+			}
+			additionalHeaders
+			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
+		}} }

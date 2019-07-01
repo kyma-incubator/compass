@@ -1,5 +1,5 @@
 mutation {
-			result: deleteApplicationWebhook(webhookID: "ecdef34c-b89c-410d-8598-84380d3caf77")  {id
+			result: deleteApplicationWebhook(webhookID: "6d4baac5-fa76-4136-8614-869fdc583571")  {id
 		type
 		url
 		auth {
@@ -17,6 +17,25 @@ mutation {
 			}
 			additionalHeaders
 			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
 		
 		}}
 		}

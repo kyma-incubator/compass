@@ -8,7 +8,7 @@ import (
 	"text/template"
 )
 
-// graphqlizer is responsible for creating parts of GraphQL queries from Go objects
+// graphqlizer is responsible for converting Go objects to input arguments in graphql format
 type graphqlizer struct{}
 
 func (g *graphqlizer) ApplicationInputToGQL(in graphql.ApplicationInput) (string, error) {

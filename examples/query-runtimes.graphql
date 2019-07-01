@@ -6,6 +6,40 @@ query {result: runtimes {data {
 		labels 
 		annotations
 		status {condition timestamp}
+		agentAuth {credential {
+				... on BasicCredentialData {
+					username
+					password
+				}
+				...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				}
+			}
+			additionalHeaders
+			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
+		}
 	}
 	pageInfo {startCursor
 		endCursor

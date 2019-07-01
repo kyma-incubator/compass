@@ -1,4 +1,4 @@
-query {result: application(id: "a34d2e66-d269-4478-86e4-ab7003ee6282") {id
+query {result: application(id: "2b85c2fa-1ef7-49b5-ad9c-c196f76552f8") {id
 		tenant
 		name
 		description
@@ -23,6 +23,25 @@ query {result: application(id: "a34d2e66-d269-4478-86e4-ab7003ee6282") {id
 			}
 			additionalHeaders
 			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
 		
 		}}
 		healthCheckURL
@@ -48,6 +67,25 @@ query {result: application(id: "a34d2e66-d269-4478-86e4-ab7003ee6282") {id
 			}
 			additionalHeaders
 			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
 		}
 		mode
 		filter
@@ -69,6 +107,25 @@ query {result: application(id: "a34d2e66-d269-4478-86e4-ab7003ee6282") {id
 			}
 			additionalHeaders
 			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
 		}}
 		defaultAuth {credential {
 				... on BasicCredentialData {
@@ -84,6 +141,25 @@ query {result: application(id: "a34d2e66-d269-4478-86e4-ab7003ee6282") {id
 			}
 			additionalHeaders
 			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
 		}
 		version {value
 		deprecated
@@ -119,6 +195,25 @@ query {result: application(id: "a34d2e66-d269-4478-86e4-ab7003ee6282") {id
 			}
 			additionalHeaders
 			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
 		}
 		mode
 		filter
@@ -156,6 +251,25 @@ query {result: application(id: "a34d2e66-d269-4478-86e4-ab7003ee6282") {id
 			}
 			additionalHeaders
 			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
 		}
 		mode
 		filter

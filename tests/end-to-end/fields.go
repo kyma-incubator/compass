@@ -114,7 +114,6 @@ func (fp *gqlFieldsProvider) ForDocument() string {
 }
 
 func (fp *gqlFieldsProvider) ForAuth() string {
-	// TODO request auth
 	return fmt.Sprintf(`credential {
 				... on BasicCredentialData {
 					username
@@ -129,6 +128,25 @@ func (fp *gqlFieldsProvider) ForAuth() string {
 			}
 			additionalHeaders
 			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
 		`, )
 }
 
@@ -139,6 +157,6 @@ func (fp *gqlFieldsProvider) ForRuntime() string {
 		tenant
 		labels 
 		annotations
-		status {condition timestamp}`)
-	//TODO agentAuth {%s}`, fp.ForAuth())
+		status {condition timestamp}
+		agentAuth {%s}`, fp.ForAuth())
 }
