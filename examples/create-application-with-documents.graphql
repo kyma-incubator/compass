@@ -1,0 +1,209 @@
+mutation {
+			result: createApplication(in: {
+		name: "wordpress", 
+		documents: [{
+		title: "Readme",
+		displayName: "",
+		description: "Detailed description of project",
+		format: MARKDOWN,
+		fetchRequest:{
+		url: "kyma-project.io",
+		auth:{
+		credential:{
+			basic: {
+				username: "admin",
+				password: "secret",
+			}
+		},
+		additionalHeaders: {
+			headerA: ["ha1","ha2" ],
+			headerB: ["hb1","hb2" ],
+	}
+		,
+		additionalQueryParams: {
+			qA: ["qa1","qa2" ],
+			qB: ["qb1","qb2" ],
+	}
+		,
+	}
+		mode: PACKAGE,
+		filter: "/docs/README.md",
+	}
+		
+},{
+		title: "Troubleshooting",
+		displayName: "",
+		description: "Troubleshooting description",
+		format: MARKDOWN,
+		data: "No problems, everything works on my machine",
+		
+} ]
+	}) { id
+		tenant
+		name
+		description
+		labels
+		annotations
+		status {condition timestamp}
+		webhooks {id
+		type
+		url
+		auth {
+		  credential {
+				... on BasicCredentialData {
+					username
+					password
+				}
+				...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				}
+			}
+			additionalHeaders
+			additionalQueryParams
+		
+		}}
+		healthCheckURL
+		apis {data {
+				id
+		name
+		description
+		spec {data
+		format
+		type
+		fetchRequest {url
+		auth {credential {
+				... on BasicCredentialData {
+					username
+					password
+				}
+				...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				}
+			}
+			additionalHeaders
+			additionalQueryParams
+		}
+		mode
+		filter
+		status {condition timestamp}}}
+		targetURL
+		group
+		auths {runtimeID
+		auth {credential {
+				... on BasicCredentialData {
+					username
+					password
+				}
+				...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				}
+			}
+			additionalHeaders
+			additionalQueryParams
+		}}
+		defaultAuth {credential {
+				... on BasicCredentialData {
+					username
+					password
+				}
+				...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				}
+			}
+			additionalHeaders
+			additionalQueryParams
+		}
+		version {value
+		deprecated
+		deprecatedSince
+		forRemoval}
+	}
+	pageInfo {startCursor
+		endCursor
+		hasNextPage}
+	totalCount
+	}
+		eventAPIs {data {
+		
+			id
+			name
+			description
+			group 
+			spec {data
+		type
+		format
+		fetchRequest {url
+		auth {credential {
+				... on BasicCredentialData {
+					username
+					password
+				}
+				...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				}
+			}
+			additionalHeaders
+			additionalQueryParams
+		}
+		mode
+		filter
+		status {condition timestamp}}}
+			version {value
+		deprecated
+		deprecatedSince
+		forRemoval}
+		
+	}
+	pageInfo {startCursor
+		endCursor
+		hasNextPage}
+	totalCount
+	}
+		documents {data {
+		
+		id
+		title
+		format
+		kind
+		data
+		fetchRequest {url
+		auth {credential {
+				... on BasicCredentialData {
+					username
+					password
+				}
+				...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				}
+			}
+			additionalHeaders
+			additionalQueryParams
+		}
+		mode
+		filter
+		status {condition timestamp}}
+	}
+	pageInfo {startCursor
+		endCursor
+		hasNextPage}
+	totalCount
+	}
+	 }}

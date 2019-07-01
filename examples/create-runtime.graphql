@@ -1,0 +1,18 @@
+mutation {result: createRuntime(in: {
+		name: "runtime-1",
+		description: "runtime-1-description",
+		labels: {
+			ggg: ["hhh" ]
+	}
+		,
+		annotations: {
+			kkk: "lll"
+	}
+		
+	}) {id
+		name
+		description
+		tenant
+		labels 
+		annotations
+		status {condition timestamp}} }

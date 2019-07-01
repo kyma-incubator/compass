@@ -1,0 +1,26 @@
+mutation {
+			result: updateApplicationWebhook(webhookID: "ecdef34c-b89c-410d-8598-84380d3caf77", in: {
+		type: CONFIGURATION_CHANGED,
+		url: "updated-webhook",
+
+	})  {id
+		type
+		url
+		auth {
+		  credential {
+				... on BasicCredentialData {
+					username
+					password
+				}
+				...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				}
+			}
+			additionalHeaders
+			additionalQueryParams
+		
+		}}
+		}

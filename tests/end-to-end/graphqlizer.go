@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/Masterminds/sprig"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/pkg/errors"
 	"text/template"
 )
 
@@ -72,7 +73,6 @@ func (g *graphqlizer) DocumentInputToGQL(in *graphql.DocumentInput) (string, err
 }
 
 func (g *graphqlizer) FetchRequestInputToGQL(in *graphql.FetchRequestInput) (string, error) {
-	// TODO simplfied
 	return g.genericToGQL(in, `{
 		url: "{{.URL}}",
 		{{- if .Auth }}
@@ -113,7 +113,7 @@ func (g *graphqlizer) AuthInputToGQL(in *graphql.AuthInput) (string, error) {
 		{{- if .RequestAuth }}
 
 		{{- end }}
-	}`) // TODO simplified
+	}`)
 }
 
 func (g *graphqlizer) LabelsToGQL(in graphql.Labels) (string, error) {
@@ -251,7 +251,7 @@ func (g *graphqlizer) VersionInputToGQL(in graphql.VersionInput) (string, error)
 }
 
 func (g *graphqlizer) RuntimeInputToGQL(in graphql.RuntimeInput) (string, error) {
-	return g.genericToGQL(in,`{
+	return g.genericToGQL(in, `{
 		name: "{{.Name}}",
 		{{- if .Description }}
 		description: "{{.Description}}",
@@ -283,13 +283,13 @@ func (g *graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "while parsing template")
 	}
 
 	var b bytes.Buffer
 
 	if err := t.Execute(&b, obj); err != nil {
-		return "", err
+		return "", errors.Wrap(err, "while executing template")
 	}
 	return b.String(), nil
 }

@@ -1,0 +1,7 @@
+query {result: runtime(id: "3562757d-ec15-43bc-af81-f02dd8fb6f8c") {id
+		name
+		description
+		tenant
+		labels 
+		annotations
+		status {condition timestamp}}}

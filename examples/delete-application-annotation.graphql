@@ -1,0 +1,3 @@
+mutation {
+			result: deleteApplicationAnnotation(applicationID: "b4f3bd21-2a54-4a9a-a953-29cb76b63d02", key: "brand-new-annotation") {key value}
+		}

@@ -2,9 +2,10 @@ package end_to_end
 
 import "fmt"
 
-type fieldsProvider struct{}
+// gqlFieldsProvider is responsible for generating GraphQL queries that request for all fields for given tyle
+type gqlFieldsProvider struct{}
 
-func (fp *fieldsProvider) Page(item string) string {
+func (fp *gqlFieldsProvider) Page(item string) string {
 	return fmt.Sprintf(`data {
 		%s
 	}
@@ -13,7 +14,7 @@ func (fp *fieldsProvider) Page(item string) string {
 	`, item, fp.ForPageInfo())
 }
 
-func (fp *fieldsProvider) ForApplication() string {
+func (fp *gqlFieldsProvider) ForApplication() string {
 	return fmt.Sprintf(`id
 		tenant
 		name
@@ -26,10 +27,10 @@ func (fp *fieldsProvider) ForApplication() string {
 		apis {%s}
 		eventAPIs {%s}
 		documents {%s}
-	`, fp.ForWebhooks(), fp.ForApiDefinitionPage(), fp.ForEventAPIPage(), fp.ForDocumentPage())
+	`, fp.ForWebhooks(), fp.Page(fp.ForAPIDefinition()), fp.Page(fp.ForEventAPI()), fp.Page(fp.ForDocument()))
 }
 
-func (fp *fieldsProvider) ForWebhooks() string {
+func (fp *gqlFieldsProvider) ForWebhooks() string {
 	return fmt.Sprintf(
 		`id
 		type
@@ -39,7 +40,7 @@ func (fp *fieldsProvider) ForWebhooks() string {
 		}`, fp.ForAuth())
 }
 
-func (fp *fieldsProvider) ForAPIDefinition() string {
+func (fp *gqlFieldsProvider) ForAPIDefinition() string {
 	return fmt.Sprintf(`		id
 		name
 		description
@@ -51,23 +52,14 @@ func (fp *fieldsProvider) ForAPIDefinition() string {
 		version {%s}`, fp.ForApiSpec(), fp.ForAuthRuntime(), fp.ForAuth(), fp.ForVersion())
 }
 
-func (fp *fieldsProvider) ForApiDefinitionPage() string {
-	return fmt.Sprintf(`data {
-		%s
-	}
-	pageInfo {%s}
-	totalCount
-	`, fp.ForAPIDefinition(), fp.ForPageInfo())
-}
-
-func (fp *fieldsProvider) ForApiSpec() string {
+func (fp *gqlFieldsProvider) ForApiSpec() string {
 	return fmt.Sprintf(`data
 		format
 		type
 		fetchRequest {%s}`, fp.ForFetchRequest())
 }
 
-func (fp *fieldsProvider) ForFetchRequest() string {
+func (fp *gqlFieldsProvider) ForFetchRequest() string {
 	return fmt.Sprintf(`url
 		auth {%s}
 		mode
@@ -75,58 +67,53 @@ func (fp *fieldsProvider) ForFetchRequest() string {
 		status {condition timestamp}`, fp.ForAuth())
 }
 
-func (fp *fieldsProvider) ForAuthRuntime() string {
+func (fp *gqlFieldsProvider) ForAuthRuntime() string {
 	return fmt.Sprintf(`runtimeID
 		auth {%s}`, fp.ForAuth())
 }
 
-func (fp *fieldsProvider) ForVersion() string {
+func (fp *gqlFieldsProvider) ForVersion() string {
 	return `value
 		deprecated
 		deprecatedSince
 		forRemoval`
 }
 
-func (fp *fieldsProvider) ForPageInfo() string {
+func (fp *gqlFieldsProvider) ForPageInfo() string {
 	return `startCursor
 		endCursor
 		hasNextPage`
 }
 
-func (fp *fieldsProvider) ForEventAPIPage() string {
-	return fmt.Sprintf(`data {
+func (fp *gqlFieldsProvider) ForEventAPI() string {
+	return fmt.Sprintf(`
 			id
 			name
 			description
 			group 
 			spec {%s}
 			version {%s}
-		}
-		pageInfo {%s}
-		totalCount`, fp.ForEventSpec(), fp.ForVersion(), fp.ForPageInfo())
+		`, fp.ForEventSpec(), fp.ForVersion())
 }
 
-func (fp *fieldsProvider) ForEventSpec() string {
+func (fp *gqlFieldsProvider) ForEventSpec() string {
 	return fmt.Sprintf(`data
 		type
 		format
 		fetchRequest {%s}`, fp.ForFetchRequest())
 }
-func (fp *fieldsProvider) ForDocumentPage() string {
-	return fmt.Sprintf(`data {
+
+func (fp *gqlFieldsProvider) ForDocument() string {
+	return fmt.Sprintf(`
 		id
 		title
 		format
 		kind
 		data
-		fetchRequest {%s}
-	}
-	pageInfo {%s}
-	totalCount
-	`, fp.ForFetchRequest(), fp.ForPageInfo())
+		fetchRequest {%s}`, fp.ForFetchRequest())
 }
 
-func (fp *fieldsProvider) ForAuth() string {
+func (fp *gqlFieldsProvider) ForAuth() string {
 	// TODO request auth
 	return fmt.Sprintf(`credential {
 				... on BasicCredentialData {
@@ -145,7 +132,7 @@ func (fp *fieldsProvider) ForAuth() string {
 		`, )
 }
 
-func (fp *fieldsProvider) ForRuntime() string {
+func (fp *gqlFieldsProvider) ForRuntime() string {
 	return fmt.Sprintf(`id
 		name
 		description

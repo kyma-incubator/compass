@@ -1,0 +1,14 @@
+query {result: runtimes {data {
+		id
+		name
+		description
+		tenant
+		labels 
+		annotations
+		status {condition timestamp}
+	}
+	pageInfo {startCursor
+		endCursor
+		hasNextPage}
+	totalCount
+	}}

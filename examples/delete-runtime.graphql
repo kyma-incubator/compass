@@ -1,0 +1,7 @@
+mutation{result: deleteRuntime(id: "5b8b99c4-a3ad-417a-9ed3-16d43ccf1c6a") {id
+		name
+		description
+		tenant
+		labels 
+		annotations
+		status {condition timestamp}}}

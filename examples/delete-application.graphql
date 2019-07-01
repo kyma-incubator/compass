@@ -1,0 +1,1 @@
+mutation{ressult: deleteApplication(id: "bc3fc712-0388-42b3-9115-45da33e698fd") {id}}

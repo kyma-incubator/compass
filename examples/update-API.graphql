@@ -1,0 +1,65 @@
+mutation { result: updateAPI(id: "9c7daed5-1675-4d12-ae04-fca694f35fda", in: {
+		name: "updated-api-name",
+		targetURL: "updated-api-url",
+	}) {		id
+		name
+		description
+		spec {data
+		format
+		type
+		fetchRequest {url
+		auth {credential {
+				... on BasicCredentialData {
+					username
+					password
+				}
+				...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				}
+			}
+			additionalHeaders
+			additionalQueryParams
+		}
+		mode
+		filter
+		status {condition timestamp}}}
+		targetURL
+		group
+		auths {runtimeID
+		auth {credential {
+				... on BasicCredentialData {
+					username
+					password
+				}
+				...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				}
+			}
+			additionalHeaders
+			additionalQueryParams
+		}}
+		defaultAuth {credential {
+				... on BasicCredentialData {
+					username
+					password
+				}
+				...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				}
+			}
+			additionalHeaders
+			additionalQueryParams
+		}
+		version {value
+		deprecated
+		deprecatedSince
+		forRemoval}}}
