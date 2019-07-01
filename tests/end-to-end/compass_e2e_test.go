@@ -3,16 +3,17 @@ package end_to_end
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-project/kyma/components/helm-broker/platform/ptr"
-	gcli "github.com/machinebox/graphql"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"os"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-project/kyma/components/helm-broker/platform/ptr"
+	gcli "github.com/machinebox/graphql"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var tc = testContext{graphqlizer: graphqlizer{}, gqlFieldsProvider: gqlFieldsProvider{}, cli: gcli.NewClient(getDirectorURL())}
@@ -34,7 +35,7 @@ func TestCreateApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
-	actualApp := graphql.ApplicationExt{}
+	actualApp := ApplicationExt{}
 	resp := resultMapperFor(&actualApp)
 	// WHEN
 	request := gcli.NewRequest(
@@ -72,7 +73,7 @@ func TestCreateApplicationWithWebhooks(t *testing.T) {
 
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
-	actualApp := graphql.ApplicationExt{}
+	actualApp := ApplicationExt{}
 	createResp := resultMapperFor(&actualApp)
 	// WHEN
 	request := gcli.NewRequest(
@@ -140,7 +141,7 @@ func TestCreateApplicationWithAPIs(t *testing.T) {
 
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
-	actualApp := graphql.ApplicationExt{}
+	actualApp := ApplicationExt{}
 	createResp := resultMapperFor(&actualApp)
 	// WHEN
 	request := gcli.NewRequest(
@@ -224,7 +225,7 @@ func TestCreateApplicationWithEventAPIs(t *testing.T) {
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
 
-	actualApp := graphql.ApplicationExt{}
+	actualApp := ApplicationExt{}
 	createResp := resultMapperFor(&actualApp)
 	// WHEN
 	request := gcli.NewRequest(
@@ -290,7 +291,7 @@ func TestCreateApplicationWithDocuments(t *testing.T) {
 	}
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
-	actualApp := graphql.ApplicationExt{}
+	actualApp := ApplicationExt{}
 	createResp := resultMapperFor(&actualApp)
 	// WHEN
 	request := gcli.NewRequest(
@@ -334,7 +335,7 @@ func TestUpdateApplication(t *testing.T) {
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
 
-	actualApp := graphql.ApplicationExt{}
+	actualApp := ApplicationExt{}
 	createResp := resultMapperFor(&actualApp)
 	// WHEN
 	request := gcli.NewRequest(
@@ -359,7 +360,7 @@ func TestUpdateApplication(t *testing.T) {
     				%s}}`, id, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
 	saveQueryInExamples(t, request.Query(), "update application")
 
-	updatedApp := graphql.ApplicationExt{}
+	updatedApp := ApplicationExt{}
 	updateAppResp := resultMapperFor(&updatedApp)
 	err = tc.cli.Run(ctx, request, &updateAppResp)
 	require.NoError(t, err)
@@ -393,7 +394,7 @@ func TestDeleteApplication(t *testing.T) {
 			`mutation {
   				result: createApplication(in: %s) {
     				id}}`, appInputGQL))
-	actualApp := graphql.ApplicationExt{}
+	actualApp := ApplicationExt{}
 	createResp := resultMapperFor(&actualApp)
 	err = tc.cli.Run(ctx, createReq, &createResp)
 	require.NoError(t, err)
@@ -419,7 +420,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 			`mutation {
   				result: createApplication(in: %s) {
     				id}}`, appInputGQL))
-	actualApp := graphql.ApplicationExt{}
+	actualApp := ApplicationExt{}
 	createAppResp := resultMapperFor(&actualApp)
 	err = tc.cli.Run(ctx, createReq, &createAppResp)
 	require.NoError(t, err)
@@ -859,9 +860,9 @@ func TestTenantSeparation(t *testing.T) {
 	//TODO
 }
 
-func getApp(ctx context.Context, t *testing.T, id string) graphql.ApplicationExt {
+func getApp(ctx context.Context, t *testing.T, id string) ApplicationExt {
 	q := gcli.NewRequest(fmt.Sprintf(`query {result: application(id: "%s") {%s} }`, id, tc.gqlFieldsProvider.ForApplication()))
-	var app graphql.ApplicationExt
+	var app ApplicationExt
 	resp := resultMapperFor(&app)
 	require.NoError(t, tc.cli.Run(ctx, q, &resp))
 	return app
@@ -873,21 +874,21 @@ func generateSampleApplicationInput(placeholder string) graphql.ApplicationInput
 		Name: placeholder,
 		Documents: []*graphql.DocumentInput{{
 			Title:  placeholder,
-			Format: graphql.DocumentFormatMarkdown,}},
+			Format: graphql.DocumentFormatMarkdown}},
 		Apis: []*graphql.APIDefinitionInput{{
 			Name:      placeholder,
-			TargetURL: placeholder,},},
+			TargetURL: placeholder}},
 		EventAPIs: []*graphql.EventAPIDefinitionInput{{
 			Name: placeholder,
 			Spec: &graphql.EventAPISpecInput{
 				EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
-			}},},
+			}}},
 		Webhooks: []*graphql.ApplicationWebhookInput{{
 			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
-			URL:  placeholder,},
+			URL:  placeholder},
 		},
-		Labels:      &graphql.Labels{placeholder: []string{placeholder},},
-		Annotations: &graphql.Annotations{placeholder: placeholder,},
+		Labels:      &graphql.Labels{placeholder: []string{placeholder}},
+		Annotations: &graphql.Annotations{placeholder: placeholder},
 	}
 }
 

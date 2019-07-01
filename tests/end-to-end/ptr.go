@@ -17,4 +17,3 @@ func ptrCLOB(c graphql.CLOB) *graphql.CLOB {
 func ptrBool(b bool) *bool {
 	return &b
 }
-

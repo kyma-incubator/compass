@@ -147,7 +147,7 @@ func (fp *gqlFieldsProvider) ForAuth() string {
 				additionalQueryParams
 			}
 			}
-		`, )
+		`)
 }
 
 func (fp *gqlFieldsProvider) ForRuntime() string {

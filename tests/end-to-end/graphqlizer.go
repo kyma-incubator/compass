@@ -2,10 +2,11 @@ package end_to_end
 
 import (
 	"bytes"
+	"text/template"
+
 	"github.com/Masterminds/sprig"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pkg/errors"
-	"text/template"
 )
 
 // graphqlizer is responsible for converting Go objects to input arguments in graphql format
