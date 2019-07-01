@@ -1,6 +1,5 @@
 package eventapi_test
 
-
 import (
 	"testing"
 
@@ -8,19 +7,19 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-func fixModelEventAPIDefinition(id, name, description string) *model.EventAPIDefinition {
+func fixModelEventAPIDefinition(id, appID, name, description string) *model.EventAPIDefinition {
 	return &model.EventAPIDefinition{
 		ID:            id,
-		ApplicationID: "applicationID",
+		ApplicationID: appID,
 		Name:          name,
 		Description:   &description,
 	}
 }
 
-func fixGQLEventAPIDefinition(id, name, description string) *graphql.EventAPIDefinition {
+func fixGQLEventAPIDefinition(id, appID, name, description string) *graphql.EventAPIDefinition {
 	return &graphql.EventAPIDefinition{
 		ID:            id,
-		ApplicationID: "applicationID",
+		ApplicationID: appID,
 		Name:          name,
 		Description:   &description,
 	}
@@ -92,15 +91,15 @@ func fixDetailedGQLEventAPIDefinition(t *testing.T, id, name, description string
 	}
 }
 
-func fixModelAPIEventDefinitionInput(name, description string, group string) *model.EventAPIDefinitionInput {
+func fixModelEventAPIDefinitionInput(name, description string, group string) *model.EventAPIDefinitionInput {
 	data := []byte("data")
-	//format := model.SpecFormatYaml
+	format := model.SpecFormatYaml
 
 	spec := &model.EventAPISpecInput{
-		Data:         &data,
-		EventSpecType:         model.EventAPISpecTypeAsyncAPI,
-		//Format:       &format, //TODO format
-		FetchRequest: &model.FetchRequestInput{},
+		Data:          &data,
+		EventSpecType: model.EventAPISpecTypeAsyncAPI,
+		Format:        &format,
+		FetchRequest:  &model.FetchRequestInput{},
 	}
 
 	deprecated := false
@@ -115,23 +114,22 @@ func fixModelAPIEventDefinitionInput(name, description string, group string) *mo
 	}
 
 	return &model.EventAPIDefinitionInput{
-		ApplicationID: "applicationID",
-		Name:          name,
-		Description:   &description,
-		Group:         &group,
-		Spec:          spec,
-		Version:       version,
+		Name:        name,
+		Description: &description,
+		Group:       &group,
+		Spec:        spec,
+		Version:     version,
 	}
 }
 
-func fixGQLAPIEventDefinitionInput(name, description string, group string) *graphql.EventAPIDefinitionInput {
+func fixGQLEventAPIDefinitionInput(name, description string, group string) *graphql.EventAPIDefinitionInput {
 	data := graphql.CLOB("data")
 
 	spec := &graphql.EventAPISpecInput{
-		Data:         &data,
-		EventSpecType:         graphql.EventAPISpecTypeAsyncAPI,
-		//Format:       graphql.SpecFormatYaml, //TODO format
-		FetchRequest: &graphql.FetchRequestInput{},
+		Data:          &data,
+		EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
+		Format:        graphql.SpecFormatYaml,
+		FetchRequest:  &graphql.FetchRequestInput{},
 	}
 
 	deprecated := false
@@ -146,12 +144,10 @@ func fixGQLAPIEventDefinitionInput(name, description string, group string) *grap
 	}
 
 	return &graphql.EventAPIDefinitionInput{
-		ApplicationID: "applicationID",
-		Name:          name,
-		Description:   &description,
-		Group:         &group,
-		Spec:          spec,
-		Version:       version,
+		Name:        name,
+		Description: &description,
+		Group:       &group,
+		Spec:        spec,
+		Version:     version,
 	}
 }
-

@@ -1,10 +1,10 @@
 package eventapi_test
 
-
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/eventapi"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventapi"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -70,161 +70,130 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		})
 	}
 }
-//
-//func TestConverter_MultipleToGraphQL(t *testing.T) {
-//	// given
-//	input := []*model.APIDefinition{
-//		fixModelAPIDefinition("foo", "Foo", "Lorem ipsum"),
-//		fixModelAPIDefinition("bar", "Bar", "Dolor sit amet"),
-//		{},
-//		nil,
-//	}
-//
-//	expected := []*graphql.APIDefinition{
-//		fixGQLAPIDefinition("foo", "Foo", "Lorem ipsum"),
-//		fixGQLAPIDefinition("bar", "Bar", "Dolor sit amet"),
-//		{},
-//	}
-//
-//	authConverter := &automock.AuthConverter{}
-//	frConverter := &automock.FetchRequestConverter{}
-//
-//	authConverter.On("ToGraphQL", input[0].DefaultAuth).Return(expected[0].DefaultAuth).Once()
-//	authConverter.On("ToGraphQL", input[1].DefaultAuth).Return(expected[1].DefaultAuth).Once()
-//	authConverter.On("ToGraphQL", input[2].DefaultAuth).Return(nil).Once()
-//
-//	// when
-//	converter := api.NewConverter(authConverter, frConverter)
-//	res := converter.MultipleToGraphQL(input)
-//
-//	// then
-//	assert.Equal(t, expected, res)
-//	authConverter.AssertExpectations(t)
-//	frConverter.AssertExpectations(t)
-//}
-//
-//func TestConverter_InputFromGraphQL(t *testing.T) {
-//	// given
-//	gqlAPIDefinitionInput := fixGQLAPIDefinitionInput("foo", "Lorem ipsum", "group")
-//	modelAPIDefinitionInput := fixModelAPIDefinitionInput("foo", "Lorem ipsum", "group")
-//	emptyGQLAPIDefinition := &graphql.APIDefinitionInput{}
-//	emptyModelAPIDefinition := &model.APIDefinitionInput{}
-//	testCases := []struct {
-//		Name                  string
-//		Input                 *graphql.APIDefinitionInput
-//		Expected              *model.APIDefinitionInput
-//		AuthConverterFn       func() *automock.AuthConverter
-//		FetchRequestConverter func() *automock.FetchRequestConverter
-//	}{
-//		{
-//			Name:     "All properties given",
-//			Input:    gqlAPIDefinitionInput,
-//			Expected: modelAPIDefinitionInput,
-//			AuthConverterFn: func() *automock.AuthConverter {
-//				conv := &automock.AuthConverter{}
-//				conv.On("InputFromGraphQL", gqlAPIDefinitionInput.DefaultAuth).Return(modelAPIDefinitionInput.DefaultAuth).Once()
-//				return conv
-//			},
-//			FetchRequestConverter: func() *automock.FetchRequestConverter {
-//				conv := &automock.FetchRequestConverter{}
-//				conv.On("InputFromGraphQL", gqlAPIDefinitionInput.Spec.FetchRequest).Return(modelAPIDefinitionInput.Spec.FetchRequest).Once()
-//				return conv
-//			},
-//		},
-//		{
-//			Name:     "Empty",
-//			Input:    &graphql.APIDefinitionInput{},
-//			Expected: &model.APIDefinitionInput{},
-//			AuthConverterFn: func() *automock.AuthConverter {
-//				conv := &automock.AuthConverter{}
-//				conv.On("InputFromGraphQL", emptyGQLAPIDefinition.DefaultAuth).Return(emptyModelAPIDefinition.DefaultAuth).Once()
-//				return conv
-//			},
-//			FetchRequestConverter: func() *automock.FetchRequestConverter {
-//				return &automock.FetchRequestConverter{}
-//			},
-//		},
-//	}
-//
-//	for _, testCase := range testCases {
-//		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
-//			//given
-//			authConverter := testCase.AuthConverterFn()
-//			frConverter := testCase.FetchRequestConverter()
-//
-//			// when
-//			converter := api.NewConverter(authConverter, frConverter)
-//			res := converter.InputFromGraphQL(testCase.Input)
-//
-//			// then
-//			assert.Equal(t, testCase.Expected, res)
-//			authConverter.AssertExpectations(t)
-//			frConverter.AssertExpectations(t)
-//		})
-//	}
-//}
-//
-//func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
-//	// given
-//	gqlApi1 := fixGQLAPIDefinitionInput("foo", "lorem", "group")
-//	gqlApi2 := fixGQLAPIDefinitionInput("bar", "ipsum", "group2")
-//
-//	modelApi1 := fixModelAPIDefinitionInput("foo", "lorem", "group")
-//	modelApi2 := fixModelAPIDefinitionInput("bar", "ipsum", "group2")
-//
-//	gqlAPIDefinitionInputs := []*graphql.APIDefinitionInput{gqlApi1, gqlApi2}
-//	modelAPIDefinitionInputs := []*model.APIDefinitionInput{modelApi1, modelApi2}
-//	testCases := []struct {
-//		Name                  string
-//		Input                 []*graphql.APIDefinitionInput
-//		Expected              []*model.APIDefinitionInput
-//		AuthConverterFn       func() *automock.AuthConverter
-//		FetchRequestConverter func() *automock.FetchRequestConverter
-//	}{
-//		{
-//			Name:     "All properties given",
-//			Input:    gqlAPIDefinitionInputs,
-//			Expected: modelAPIDefinitionInputs,
-//			AuthConverterFn: func() *automock.AuthConverter {
-//				conv := &automock.AuthConverter{}
-//				conv.On("InputFromGraphQL", gqlAPIDefinitionInputs[0].DefaultAuth).Return(modelAPIDefinitionInputs[0].DefaultAuth).Once()
-//				conv.On("InputFromGraphQL", gqlAPIDefinitionInputs[1].DefaultAuth).Return(modelAPIDefinitionInputs[1].DefaultAuth).Once()
-//				return conv
-//			},
-//			FetchRequestConverter: func() *automock.FetchRequestConverter {
-//				conv := &automock.FetchRequestConverter{}
-//				conv.On("InputFromGraphQL", gqlAPIDefinitionInputs[0].Spec.FetchRequest).Return(modelAPIDefinitionInputs[0].Spec.FetchRequest).Once()
-//				conv.On("InputFromGraphQL", gqlAPIDefinitionInputs[1].Spec.FetchRequest).Return(modelAPIDefinitionInputs[1].Spec.FetchRequest).Once()
-//				return conv
-//			},
-//		},
-//		{
-//			Name:     "Empty",
-//			Input:    []*graphql.APIDefinitionInput{},
-//			Expected: nil,
-//			AuthConverterFn: func() *automock.AuthConverter {
-//				return &automock.AuthConverter{}
-//			},
-//			FetchRequestConverter: func() *automock.FetchRequestConverter {
-//				return &automock.FetchRequestConverter{}
-//			},
-//		},
-//	}
-//
-//	for _, testCase := range testCases {
-//		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
-//			//given
-//			authConverter := testCase.AuthConverterFn()
-//			frConverter := testCase.FetchRequestConverter()
-//
-//			// when
-//			converter := api.NewConverter(authConverter, frConverter)
-//			res := converter.MultipleInputFromGraphQL(testCase.Input)
-//
-//			// then
-//			assert.Equal(t, testCase.Expected, res)
-//			authConverter.AssertExpectations(t)
-//			frConverter.AssertExpectations(t)
-//		})
-//	}
-//}
+
+func TestConverter_MultipleToGraphQL(t *testing.T) {
+	// given
+	input := []*model.EventAPIDefinition{
+		fixModelEventAPIDefinition("foo", "Foo", "Lorem ipsum", "desc"),
+		fixModelEventAPIDefinition("bar", "Bar", "Dolor sit amet", "desc"),
+		{},
+		nil,
+	}
+
+	expected := []*graphql.EventAPIDefinition{
+		fixGQLEventAPIDefinition("foo", "Foo", "Lorem ipsum", "desc"),
+		fixGQLEventAPIDefinition("bar", "Bar", "Dolor sit amet", "desc"),
+		{},
+	}
+
+	frConverter := &automock.FetchRequestConverter{}
+
+	// when
+	converter := eventapi.NewConverter(frConverter)
+	res := converter.MultipleToGraphQL(input)
+
+	// then
+	assert.Equal(t, expected, res)
+	frConverter.AssertExpectations(t)
+}
+
+func TestConverter_InputFromGraphQL(t *testing.T) {
+	// given
+	gqlEventAPIDefinitionInput := fixGQLEventAPIDefinitionInput("foo", "Lorem ipsum", "group")
+	modelEventAPIDefinitionInput := fixModelEventAPIDefinitionInput("foo", "Lorem ipsum", "group")
+	emptyGQLEventAPIDefinition := &graphql.EventAPIDefinitionInput{}
+	emptyModelEventAPIDefinition := &model.EventAPIDefinitionInput{}
+	testCases := []struct {
+		Name                  string
+		Input                 *graphql.EventAPIDefinitionInput
+		Expected              *model.EventAPIDefinitionInput
+		FetchRequestConverter func() *automock.FetchRequestConverter
+	}{
+		{
+			Name:     "All properties given",
+			Input:    gqlEventAPIDefinitionInput,
+			Expected: modelEventAPIDefinitionInput,
+			FetchRequestConverter: func() *automock.FetchRequestConverter {
+				conv := &automock.FetchRequestConverter{}
+				conv.On("InputFromGraphQL", gqlEventAPIDefinitionInput.Spec.FetchRequest).Return(modelEventAPIDefinitionInput.Spec.FetchRequest).Once()
+				return conv
+			},
+		},
+		{
+			Name:     "Empty",
+			Input:    emptyGQLEventAPIDefinition,
+			Expected: emptyModelEventAPIDefinition,
+			FetchRequestConverter: func() *automock.FetchRequestConverter {
+				return &automock.FetchRequestConverter{}
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+			//given
+			frConverter := testCase.FetchRequestConverter()
+
+			// when
+			converter := eventapi.NewConverter(frConverter)
+			res := converter.InputFromGraphQL(testCase.Input)
+
+			// then
+			assert.Equal(t, testCase.Expected, res)
+			frConverter.AssertExpectations(t)
+		})
+	}
+}
+
+func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
+	// given
+	gqlApi1 := fixGQLEventAPIDefinitionInput("foo", "lorem", "group")
+	gqlApi2 := fixGQLEventAPIDefinitionInput("bar", "ipsum", "group2")
+
+	modelApi1 := fixModelEventAPIDefinitionInput("foo", "lorem", "group")
+	modelApi2 := fixModelEventAPIDefinitionInput("bar", "ipsum", "group2")
+
+	gqlAPIDefinitionInputs := []*graphql.EventAPIDefinitionInput{gqlApi1, gqlApi2}
+	modelAPIDefinitionInputs := []*model.EventAPIDefinitionInput{modelApi1, modelApi2}
+	testCases := []struct {
+		Name                  string
+		Input                 []*graphql.EventAPIDefinitionInput
+		Expected              []*model.EventAPIDefinitionInput
+		FetchRequestConverter func() *automock.FetchRequestConverter
+	}{
+		{
+			Name:     "All properties given",
+			Input:    gqlAPIDefinitionInputs,
+			Expected: modelAPIDefinitionInputs,
+			FetchRequestConverter: func() *automock.FetchRequestConverter {
+				conv := &automock.FetchRequestConverter{}
+				conv.On("InputFromGraphQL", gqlAPIDefinitionInputs[0].Spec.FetchRequest).Return(modelAPIDefinitionInputs[0].Spec.FetchRequest).Once()
+				conv.On("InputFromGraphQL", gqlAPIDefinitionInputs[1].Spec.FetchRequest).Return(modelAPIDefinitionInputs[1].Spec.FetchRequest).Once()
+				return conv
+			},
+		},
+		{
+			Name:     "Empty",
+			Input:    []*graphql.EventAPIDefinitionInput{},
+			Expected: nil,
+			FetchRequestConverter: func() *automock.FetchRequestConverter {
+				return &automock.FetchRequestConverter{}
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+			//given
+			frConverter := testCase.FetchRequestConverter()
+
+			// when
+			converter := eventapi.NewConverter(frConverter)
+			res := converter.MultipleInputFromGraphQL(testCase.Input)
+
+			// then
+			assert.Equal(t, testCase.Expected, res)
+			frConverter.AssertExpectations(t)
+		})
+	}
+}

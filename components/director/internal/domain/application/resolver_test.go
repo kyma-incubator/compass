@@ -95,7 +95,7 @@ func TestResolver_CreateApplication(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(svc, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -198,7 +198,7 @@ func TestResolver_UpdateApplication(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(svc, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -284,7 +284,7 @@ func TestResolver_DeleteApplication(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(svc, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -354,7 +354,7 @@ func TestResolver_Application(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(svc, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -445,7 +445,7 @@ func TestResolver_Applications(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(svc, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -522,7 +522,7 @@ func TestResolver_AddApplicationLabel(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(svc, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -620,7 +620,7 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(svc, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -697,7 +697,7 @@ func TestResolver_AddApplicationAnnotation(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(svc, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -791,7 +791,7 @@ func TestResolver_DeleteApplicationAnnotation(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(svc, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -874,7 +874,7 @@ func TestResolver_Documents(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(nil, nil, nil, svc, nil, nil, converter, nil, nil)
+			resolver := application.NewResolver(nil, nil, nil, svc, nil, nil, converter, nil, nil, nil)
 
 			// when
 			result, err := resolver.Documents(context.TODO(), app, testCase.InputFirst, testCase.InputAfter)
@@ -946,7 +946,7 @@ func TestResolver_Webhooks(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(nil, nil, nil, nil, svc, nil, nil, converter, nil)
+			resolver := application.NewResolver(nil, nil, nil, nil, svc, nil, nil, converter, nil, nil)
 
 			// when
 			result, err := resolver.Webhooks(context.TODO(), app)
@@ -1042,7 +1042,7 @@ func TestResolver_AddApplicationWebhook(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(nil, nil, nil, nil, svc, nil, nil, converter, nil)
+			resolver := application.NewResolver(nil, nil, nil, nil, svc, nil, nil, converter, nil, nil)
 
 			// when
 			result, err := resolver.AddApplicationWebhook(context.TODO(), testCase.InputApplicationID, testCase.InputWebhook)
@@ -1138,7 +1138,7 @@ func TestResolver_UpdateApplicationWebhook(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(nil, nil, nil, nil, svc, nil, nil, converter, nil)
+			resolver := application.NewResolver(nil, nil, nil, nil, svc, nil, nil, converter, nil, nil)
 
 			// when
 			result, err := resolver.UpdateApplicationWebhook(context.TODO(), testCase.InputWebhookID, testCase.InputWebhook)
@@ -1231,7 +1231,7 @@ func TestResolver_DeleteApplicationWebhook(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(nil, nil, nil, nil, svc, nil, nil, converter, nil)
+			resolver := application.NewResolver(nil, nil, nil, nil, svc, nil, nil, converter, nil, nil)
 
 			// when
 			result, err := resolver.DeleteApplicationWebhook(context.TODO(), testCase.InputWebhookID)
@@ -1317,7 +1317,7 @@ func TestResolver_Apis(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(nil, svc, nil, nil, nil, nil, nil, nil, converter)
+			resolver := application.NewResolver(nil, svc, nil, nil, nil, nil, nil, nil, converter, nil)
 			// when
 			result, err := resolver.Apis(context.TODO(), app, &group, testCase.InputFirst, testCase.InputAfter)
 

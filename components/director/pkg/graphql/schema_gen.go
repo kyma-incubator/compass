@@ -2086,7 +2086,6 @@ input APISpecInput {
 # Event Input
 
 input EventAPIDefinitionInput {
-    applicationID: ID!
     name: String!
     description: String
     spec: EventAPISpecInput!
@@ -2097,6 +2096,7 @@ input EventAPIDefinitionInput {
 input EventAPISpecInput {
     data: CLOB
     eventSpecType: EventAPISpecType!
+    format: SpecFormat!
     fetchRequest: FetchRequestInput
 }
 
@@ -8664,12 +8664,6 @@ func (ec *executionContext) unmarshalInputEventAPIDefinitionInput(ctx context.Co
 
 	for k, v := range asMap {
 		switch k {
-		case "applicationID":
-			var err error
-			it.ApplicationID, err = ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "name":
 			var err error
 			it.Name, err = ec.unmarshalNString2string(ctx, v)
@@ -8721,6 +8715,12 @@ func (ec *executionContext) unmarshalInputEventAPISpecInput(ctx context.Context,
 		case "eventSpecType":
 			var err error
 			it.EventSpecType, err = ec.unmarshalNEventAPISpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPISpecType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "format":
+			var err error
+			it.Format, err = ec.unmarshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx, v)
 			if err != nil {
 				return it, err
 			}

@@ -15,7 +15,6 @@ func NewRepository() *inMemoryRepository {
 	return &inMemoryRepository{store: make(map[string]*model.EventAPIDefinition)}
 }
 
-
 func (r *inMemoryRepository) GetByID(id string) (*model.EventAPIDefinition, error) {
 	if api, ok := r.store[id]; ok {
 		return api, nil
@@ -42,7 +41,7 @@ func (r *inMemoryRepository) List(filter []*labelfilter.LabelFilter, pageSize *i
 	}, nil
 }
 
-func (r *inMemoryRepository) ListByApplicationID(applicationID string) ([]*model.EventAPIDefinition, error) {
+func (r *inMemoryRepository) ListByApplicationID(applicationID string, pageSize *int, cursor *string) (*model.EventAPIDefinitionPage, error) {
 	var items []*model.EventAPIDefinition
 	for _, a := range r.store {
 		if a.ApplicationID == applicationID {
@@ -50,7 +49,15 @@ func (r *inMemoryRepository) ListByApplicationID(applicationID string) ([]*model
 		}
 	}
 
-	return items, nil
+	return &model.EventAPIDefinitionPage{
+		Data:       items,
+		TotalCount: len(items),
+		PageInfo: &pagination.Page{
+			StartCursor: "",
+			EndCursor:   "",
+			HasNextPage: false,
+		},
+	}, nil
 }
 
 func (r *inMemoryRepository) Create(item *model.EventAPIDefinition) error {

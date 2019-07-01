@@ -1,6 +1,5 @@
 package eventapi
 
-
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -13,7 +12,7 @@ type FetchRequestConverter interface {
 }
 
 type converter struct {
-	fr   FetchRequestConverter
+	fr FetchRequestConverter
 }
 
 func NewConverter(fr FetchRequestConverter) *converter {
@@ -64,12 +63,11 @@ func (c *converter) InputFromGraphQL(in *graphql.EventAPIDefinitionInput) *model
 	}
 
 	return &model.EventAPIDefinitionInput{
-		ApplicationID: in.ApplicationID,
-		Name:          in.Name,
-		Description:   in.Description,
-		Spec:          c.eventApiSpecInputFromGraphQL(in.Spec),
-		Group:         in.Group,
-		Version:       c.versionFromGraphQL(in.Version),
+		Name:        in.Name,
+		Description: in.Description,
+		Spec:        c.eventApiSpecInputFromGraphQL(in.Spec),
+		Group:       in.Group,
+		Version:     c.versionFromGraphQL(in.Version),
 	}
 }
 
@@ -107,14 +105,14 @@ func (c *converter) eventApiSpecInputFromGraphQL(in *graphql.EventAPISpecInput) 
 		data = []byte(*in.Data)
 	}
 
-	//TODO how to specify format?
-	//var format model.SpecFormat
-	//if in.Format != "" {
-	//	format = model.SpecFormat(in.Format)
-	//}
+	var format model.SpecFormat
+	if in.Format != "" {
+		format = model.SpecFormat(in.Format)
+	}
 
 	return &model.EventAPISpecInput{
 		Data:          &data,
+		Format:        &format,
 		EventSpecType: model.EventAPISpecType(in.EventSpecType),
 		FetchRequest:  c.fr.InputFromGraphQL(in.FetchRequest),
 	}

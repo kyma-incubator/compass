@@ -42,7 +42,7 @@ type APIRepository interface {
 
 //go:generate mockery -name=EventAPIRepository -output=automock -outpkg=automock -case=underscore
 type EventAPIRepository interface {
-	ListByApplicationID(applicationID string) ([]*model.EventAPIDefinition, error)
+	ListByApplicationID(applicationID string, pageSize *int, cursor *string) (*model.EventAPIDefinitionPage, error)
 	CreateMany(items []*model.EventAPIDefinition) error
 	DeleteAllByApplicationID(id string) error
 }
@@ -231,7 +231,7 @@ func (s *service) createRelatedResources(in model.ApplicationInput, applicationI
 
 	var eventAPIs []*model.EventAPIDefinition
 	for _, item := range in.EventAPIs {
-		eventAPIs = append(eventAPIs, item.ToEventAPIDefinition())
+		eventAPIs = append(eventAPIs, item.ToEventAPIDefinition(uid.Generate(), applicationID))
 	}
 	err = s.eventAPI.CreateMany(eventAPIs)
 	if err != nil {

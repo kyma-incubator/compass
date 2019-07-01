@@ -390,7 +390,6 @@ input APISpecInput {
 # Event Input
 
 input EventAPIDefinitionInput {
-    applicationID: ID!
     name: String!
     description: String
     spec: EventAPISpecInput!
@@ -401,6 +400,7 @@ input EventAPIDefinitionInput {
 input EventAPISpecInput {
     data: CLOB
     eventSpecType: EventAPISpecType!
+    format: SpecFormat!
     fetchRequest: FetchRequestInput
 }
 

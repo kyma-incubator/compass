@@ -207,12 +207,11 @@ type EventAPIDefinition struct {
 }
 
 type EventAPIDefinitionInput struct {
-	ApplicationID string             `json:"applicationID"`
-	Name          string             `json:"name"`
-	Description   *string            `json:"description"`
-	Spec          *EventAPISpecInput `json:"spec"`
-	Group         *string            `json:"group"`
-	Version       *VersionInput      `json:"version"`
+	Name        string             `json:"name"`
+	Description *string            `json:"description"`
+	Spec        *EventAPISpecInput `json:"spec"`
+	Group       *string            `json:"group"`
+	Version     *VersionInput      `json:"version"`
 }
 
 type EventAPIDefinitionPage struct {
@@ -233,6 +232,7 @@ type EventAPISpec struct {
 type EventAPISpecInput struct {
 	Data          *CLOB              `json:"data"`
 	EventSpecType EventAPISpecType   `json:"eventSpecType"`
+	Format        SpecFormat         `json:"format"`
 	FetchRequest  *FetchRequestInput `json:"fetchRequest"`
 }
 

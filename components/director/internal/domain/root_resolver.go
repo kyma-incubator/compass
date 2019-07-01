@@ -28,13 +28,13 @@ type RootResolver struct {
 
 func NewRootResolver() *RootResolver {
 	authConverter := auth.NewConverter()
-	var eventAPIConverter application.EventAPIConverter = nil //TODO: Initialize converter
 
 	runtimeConverter := runtime.NewConverter(authConverter)
 	frConverter := fetchrequest.NewConverter(authConverter)
 	docConverter := document.NewConverter(frConverter)
 	webhookConverter := webhook.NewConverter(authConverter)
 	apiConverter := api.NewConverter(authConverter, frConverter)
+	eventAPIConverter := eventapi.NewConverter(frConverter)
 	appConverter := application.NewConverter(webhookConverter, apiConverter, eventAPIConverter, docConverter)
 
 	healthcheckRepo := healthcheck.NewRepository()
@@ -47,16 +47,16 @@ func NewRootResolver() *RootResolver {
 
 	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo)
 	apiSvc := api.NewService(apiRepo)
-	eventAPISvc := eventapi.NewService()
+	eventAPISvc := eventapi.NewService(eventAPIRepo)
 	webhookSvc := webhook.NewService(webhookRepo)
 	docSvc := document.NewService(docRepo)
 	runtimeSvc := runtime.NewService(runtimeRepo)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 
 	return &RootResolver{
-		app:         application.NewResolver(appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, appConverter, docConverter, webhookConverter, apiConverter),
+		app:         application.NewResolver(appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter),
 		api:         api.NewResolver(apiSvc, apiConverter, authConverter),
-		eventAPI:    eventapi.NewResolver(eventAPISvc),
+		eventAPI:    eventapi.NewResolver(eventAPISvc, eventAPIConverter),
 		doc:         document.NewResolver(docSvc, frConverter),
 		runtime:     runtime.NewResolver(runtimeSvc, runtimeConverter),
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
