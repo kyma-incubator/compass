@@ -44,7 +44,7 @@ func TestResolver_CreateApplication(t *testing.T) {
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
 				svc.On("Get", context.TODO(), "foo").Return(modelApplication, nil).Once()
-				svc.On("Create", context.TODO(), modelInput).Return("foo", nil).Once()
+				svc.On("Create", context.TODO(), mock.Anything, modelInput).Return("foo", nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -61,7 +61,7 @@ func TestResolver_CreateApplication(t *testing.T) {
 			Name: "Returns error when application creation failed",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Create", context.TODO(), modelInput).Return("", testErr).Once()
+				svc.On("Create", context.TODO(), mock.Anything, modelInput).Return("", testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -77,7 +77,7 @@ func TestResolver_CreateApplication(t *testing.T) {
 			Name: "Returns error when application creation failed",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Create", context.TODO(), modelInput).Return("foo", nil).Once()
+				svc.On("Create", context.TODO(), mock.Anything, modelInput).Return("foo", nil).Once()
 				svc.On("Get", context.TODO(), "foo").Return(nil, testErr).Once()
 				return svc
 			},

@@ -42,16 +42,6 @@ func (s *service) Create(ctx context.Context, id string, applicationID string, i
 
 	document := in.ToDocument(id, applicationID)
 
-	//document := &model.Document{
-	//	ApplicationID: applicationID,
-	//	ID:            uid.Generate(),
-	//	Title:         in.Title,
-	//	Format:        in.Format,
-	//	Kind:          in.Kind,
-	//	Data:          in.Data,
-	//	FetchRequest:  in.FetchRequest.ToFetchRequest(time.Now()),
-	//}
-
 	err := s.repo.Create(document)
 	if err != nil {
 		return "", errors.Wrap(err, "while creating Document")

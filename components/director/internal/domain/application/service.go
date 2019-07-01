@@ -72,8 +72,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.Application, error
 	return app, nil
 }
 
-func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string, error) {
-	id := uid.Generate()
+func (s *service) Create(ctx context.Context, id string, in model.ApplicationInput) (string, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", errors.Wrapf(err, "while loading tenant from context")

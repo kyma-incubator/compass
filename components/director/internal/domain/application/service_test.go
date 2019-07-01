@@ -124,7 +124,7 @@ func TestService_Create(t *testing.T) {
 			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo)
 
 			// when
-			result, err := svc.Create(ctx, testCase.Input)
+			result, err := svc.Create(ctx, id, testCase.Input)
 
 			// then
 			assert.IsType(t, "string", result)
