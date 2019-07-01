@@ -1,5 +1,5 @@
 mutation {
-  				result: updateApplication(id: "9ce3ffe5-7c3f-4f22-800d-60438493684f", in: {
+  				result: updateApplication(id: "cd844897-2869-48e3-abfb-ac49f09b6115", in: {
 		name: "after",
 		labels: {
 			after: ["after" ]
