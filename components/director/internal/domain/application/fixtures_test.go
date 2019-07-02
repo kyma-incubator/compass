@@ -117,7 +117,6 @@ func fixDetailedGQLApplication(t *testing.T, id, name, description string) *grap
 		},
 		Name:        name,
 		Description: &description,
-		Tenant:      graphql.Tenant("tenant"),
 		Annotations: map[string]interface{}{
 			"key": "value",
 		},

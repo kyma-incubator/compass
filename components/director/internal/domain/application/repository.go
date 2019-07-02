@@ -15,10 +15,10 @@ func NewRepository() *inMemoryRepository {
 	return &inMemoryRepository{store: make(map[string]*model.Application)}
 }
 
-func (r *inMemoryRepository) GetByID(id string) (*model.Application, error) {
+func (r *inMemoryRepository) GetByID(tenant, id string) (*model.Application, error) {
 	application := r.store[id]
 
-	if application == nil {
+	if application == nil || application.Tenant != tenant {
 		return nil, errors.New("application not found")
 	}
 
@@ -26,10 +26,12 @@ func (r *inMemoryRepository) GetByID(id string) (*model.Application, error) {
 }
 
 // TODO: Make filtering and paging
-func (r *inMemoryRepository) List(filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
+func (r *inMemoryRepository) List(tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
 	var items []*model.Application
-	for _, r := range r.store {
-		items = append(items, r)
+	for _, item := range r.store {
+		if item.Tenant == tenant {
+			items = append(items, item)
+		}
 	}
 
 	return &model.ApplicationPage{

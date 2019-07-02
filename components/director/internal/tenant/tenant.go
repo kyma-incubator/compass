@@ -19,7 +19,7 @@ func LoadFromContext(ctx context.Context) (string, error) {
 	str, ok := value.(string)
 
 	if !ok {
-		return "", errors.New("Cannot read tenant from context")g
+		return "", errors.New("Cannot read tenant from context")
 	}
 
 	return str, nil
