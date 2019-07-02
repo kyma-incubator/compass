@@ -9,18 +9,28 @@ import (
 
 const TenantHeaderName = "tenant"
 
-func RequireTenantHeader(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		tenantValue := r.Header.Get(TenantHeaderName)
+func RequireTenantHeader(excludedMethods ...string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			tenantValue := r.Header.Get(TenantHeaderName)
 
-		if r.Method != http.MethodGet {
-			if tenantValue == "" {
+			if !isExcludedMethod(r.Method, excludedMethods) && tenantValue == "" {
 				errMessage := fmt.Sprintf("Header `%s` is required", TenantHeaderName)
 				http.Error(w, errMessage, http.StatusBadRequest)
 				return
 			}
-		}
 
-		next.ServeHTTP(w, r)
-	})
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func isExcludedMethod(method string, excludedMethods []string) bool {
+	for _, excluded := range excludedMethods {
+		if excluded == method {
+			return true
+		}
+	}
+
+	return false
 }
