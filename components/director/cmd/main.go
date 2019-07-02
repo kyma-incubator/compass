@@ -38,7 +38,7 @@ func main() {
 	router := mux.NewRouter()
 
 
-	router.Use(tenant.RequireHeaderMiddleware)
+	router.Use(tenant.RequireAndPassContext)
 	router.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 	router.HandleFunc(cfg.APIEndpoint, handler.GraphQL(executableSchema))
 

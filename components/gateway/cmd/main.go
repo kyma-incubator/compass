@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/kyma-incubator/compass/components/gateway/internal/tenant"
 	"log"
 	"net/http"
 
@@ -34,6 +35,7 @@ func main() {
 	log.Printf("Proxying requests to Connector: %s\n", cfg.ConnectorOrigin)
 
 	router := mux.NewRouter()
+	router.Use(tenant.RequireTenantHeader)
 	router.PathPrefix("/director").HandlerFunc(directorProxy.ServeHTTP)
 	router.PathPrefix("/connector").HandlerFunc(connectorProxy.ServeHTTP)
 

@@ -19,7 +19,7 @@ func LoadFromContext(ctx context.Context) (string, error) {
 	str, ok := value.(string)
 
 	if !ok {
-		return "", errors.New("Cannot read tenant from context")
+		return "", errors.New("Cannot read tenant from context")g
 	}
 
 	return str, nil
@@ -29,7 +29,7 @@ func SaveToContext(ctx context.Context, tenant string) context.Context {
 	return context.WithValue(ctx, TenantContextKey, tenant)
 }
 
-func RequireHeaderMiddleware(next http.Handler) http.Handler {
+func RequireAndPassContext(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tenantValue := r.Header.Get(TenantHeaderName)
 
@@ -47,3 +47,4 @@ func RequireHeaderMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+

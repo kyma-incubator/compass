@@ -66,7 +66,7 @@ func TestSaveToLoadFromContext(t *testing.T) {
 	assert.Equal(t, value, result.Value(tenant.TenantContextKey))
 }
 
-func TestRequireHeaderMiddleware(t *testing.T) {
+func TestRequireAndPassContext(t *testing.T) {
 	body := "Body"
 	sampleTenant := "foo"
 
@@ -166,7 +166,7 @@ func TestRequireHeaderMiddleware(t *testing.T) {
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 			recorder := httptest.NewRecorder()
-			middleware := tenant.RequireHeaderMiddleware(testCase.HandlerFn(t))
+			middleware := tenant.RequireAndPassContext(testCase.HandlerFn(t))
 
 			// when
 			middleware.ServeHTTP(recorder, testCase.InputRequestFn())
