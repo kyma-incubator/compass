@@ -1,7 +1,7 @@
 mutation {
 			result: createApplication(in: {
 		name: "wordpress",
-		description: "my first wordperss application",
+		description: "my first wordpress application",
 		labels: {
 			group: ["production","experimental" ]
 	}

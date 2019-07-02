@@ -49,7 +49,7 @@ func (fp *gqlFieldsProvider) ForAPIDefinition() string {
 		group
 		auths {%s}
 		defaultAuth {%s}
-		version {%s}`, fp.ForApiSpec(), fp.ForAuthRuntime(), fp.ForAuth(), fp.ForVersion())
+		version {%s}`, fp.ForApiSpec(), fp.ForRuntimeAuth(), fp.ForAuth(), fp.ForVersion())
 }
 
 func (fp *gqlFieldsProvider) ForApiSpec() string {
@@ -67,7 +67,7 @@ func (fp *gqlFieldsProvider) ForFetchRequest() string {
 		status {condition timestamp}`, fp.ForAuth())
 }
 
-func (fp *gqlFieldsProvider) ForAuthRuntime() string {
+func (fp *gqlFieldsProvider) ForRuntimeAuth() string {
 	return fmt.Sprintf(`runtimeID
 		auth {%s}`, fp.ForAuth())
 }

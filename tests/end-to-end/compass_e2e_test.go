@@ -23,7 +23,7 @@ func TestCreateApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	ctx := context.Background()
 	in := graphql.ApplicationInput{
 		Name:           "wordpress",
-		Description:    ptrString("my first wordperss application"),
+		Description:    ptrString("my first wordpress application"),
 		HealthCheckURL: ptrString("http://mywordpress.com/health"),
 		Labels: &graphql.Labels{
 			"group": []string{"production", "experimental"},
@@ -666,8 +666,10 @@ func TestUpdateApplicationParts(t *testing.T) {
 		require.Len(t, app.Documents.Data, 1)
 		assert.Equal(t, placeholder, app.Documents.Data[0].Title)
 	})
-	//TODO set auth for runtime
-	// TODO refetchAPI
+
+	t.Run("refetch API", func(t *testing.T) {
+		// TODO
+	})
 }
 
 func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
@@ -676,7 +678,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	givenInput := graphql.RuntimeInput{
 		Name:        "runtime-1",
 		Description: ptrString("runtime-1-description"),
-		Labels:      &graphql.Labels{"ggg": []string{"hhh"}}, // TODO label-1 does not work
+		Labels:      &graphql.Labels{"ggg": []string{"hhh"}},
 		Annotations: &graphql.Annotations{"kkk": "lll"},
 	}
 	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
@@ -708,6 +710,8 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, *givenInput.Description, *actualRuntime.Description)
 
+	// TODO addRuntimeLabel etc
+
 	// delete runtime
 	// WHEN
 	delReq := gcli.NewRequest(fmt.Sprintf(`mutation{result: deleteRuntime(id: "%s") {%s}}`, actualRuntime.ID, tc.gqlFieldsProvider.ForRuntime()))
@@ -715,6 +719,75 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	err = tc.cli.Run(ctx, delReq, &resp)
 	// THEN
 	require.NoError(t, err)
+}
+
+func TestSetAndDeleteAPIAuth(t *testing.T) {
+	// GIVEN
+	// create application
+	ctx := context.Background()
+	placeholder := "app"
+	in := generateSampleApplicationInput(placeholder)
+
+	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
+	require.NoError(t, err)
+	createReq := gcli.NewRequest(
+		fmt.Sprintf(
+			`mutation {
+  				result: createApplication(in: %s) {
+    				%s}}`, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
+	actualApp := ApplicationExt{}
+	createAppResp := resultMapperFor(&actualApp)
+	err = tc.cli.Run(ctx, createReq, &createAppResp)
+	require.NoError(t, err)
+	require.NotEmpty(t, actualApp.ID)
+	defer deleteApplication(t, actualApp.ID)
+
+	// create runtime
+	runtimeInput := graphql.RuntimeInput{
+		Name:        "runtime-1",
+		Description: ptrString("runtime-1-description"),
+		Labels:      &graphql.Labels{"ggg": []string{"hhh"}},
+		Annotations: &graphql.Annotations{"kkk": "lll"},
+	}
+	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInput)
+	require.NoError(t, err)
+	actualRuntime := graphql.Runtime{}
+	createRuntimeResp := resultMapperFor(&actualRuntime)
+	createRuntimeReq := gcli.NewRequest(fmt.Sprintf(`mutation {result: createRuntime(in: %s) {%s} }`, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
+	err = tc.cli.Run(ctx, createRuntimeReq, &createRuntimeResp)
+	require.NoError(t, err)
+	require.NotEmpty(t, actualRuntime.ID)
+
+	defer deleteRuntime(t, actualRuntime.ID)
+
+	actualRuntimeAuth := graphql.RuntimeAuth{}
+	setAuthResp := resultMapperFor(&actualRuntimeAuth)
+	// WHEN
+	// set Auth
+	authIn := graphql.AuthInput{
+		Credential: &graphql.CredentialDataInput{
+			Basic: &graphql.BasicCredentialDataInput{
+				Username: "x-men",
+				Password: "secret",
+			}}}
+
+	authInStr, err := tc.graphqlizer.AuthInputToGQL(&authIn)
+	require.NoError(t, err)
+	setAuthReq := gcli.NewRequest(fmt.Sprintf(`mutation {result: setAPIAuth(apiID: "%s", runtimeID: "%s", in: %s) {%s} }`, actualApp.Apis.Data[0].ID, actualRuntime.ID, authInStr, tc.gqlFieldsProvider.ForRuntimeAuth()))
+	err = tc.cli.Run(ctx, setAuthReq, &setAuthResp)
+	// THEN
+	require.NoError(t, err)
+	require.NotNil(t, actualRuntimeAuth.Auth)
+	assert.Equal(t, actualRuntime.ID, actualRuntimeAuth.RuntimeID)
+	actualBasic, ok := actualRuntimeAuth.Auth.Credential.(*graphql.BasicCredentialData)
+	require.True(t, ok)
+	assert.Equal(t, "x-men", actualBasic.Username)
+	assert.Equal(t, "secret", actualBasic.Password)
+	// delete Auth
+	delAuthReq := gcli.NewRequest(fmt.Sprintf(`mutation {ressult: deleteAPIAuth(apiID: "%s",runtimeID: "%s") {%s} } `, actualApp.Apis.Data[0].ID, actualRuntime.ID, tc.gqlFieldsProvider.ForRuntimeAuth()))
+	err = tc.cli.Run(ctx, delAuthReq, nil)
+	require.NoError(t, err)
+
 }
 
 func TestQueryApplications(t *testing.T) {
@@ -946,10 +1019,6 @@ func fixDepracatedVersion1() *graphql.VersionInput {
 		DeprecatedSince: ptrString("v5"),
 	}
 }
-
-// TODO: to test:
-// - cannot specify basic and auth at the same time
-// specify label created-by
 
 // testContext contains dependencies that help executing tests
 type testContext struct {
