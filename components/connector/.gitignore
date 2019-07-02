@@ -1,3 +1,4 @@
-connector
-vendor
+/bin
 .idea
+vendor
+/licenses
