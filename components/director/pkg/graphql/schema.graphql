@@ -136,6 +136,7 @@ enum ApplicationStatusCondition {
 
 type ApplicationWebhook {
     id: ID!
+    applicationID: ID!
     type: ApplicationWebhookType!
     url: String!
     auth: Auth
@@ -226,6 +227,7 @@ type EventAPISpec {
 
 type Document {
     id: ID!
+    applicationID: ID!
     title: String!
     format: DocumentFormat!
     """for example Service Class, API etc"""

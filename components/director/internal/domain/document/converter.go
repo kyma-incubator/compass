@@ -31,12 +31,13 @@ func (c *converter) ToGraphQL(in *model.Document) *graphql.Document {
 	}
 
 	return &graphql.Document{
-		ID:           in.ID,
-		Title:        in.Title,
-		Format:       graphql.DocumentFormat(in.Format),
-		Kind:         in.Kind,
-		Data:         clob,
-		FetchRequest: c.frConverter.ToGraphQL(in.FetchRequest),
+		ID:            in.ID,
+		ApplicationID: in.ApplicationID,
+		Title:         in.Title,
+		Format:        graphql.DocumentFormat(in.Format),
+		Kind:          in.Kind,
+		Data:          clob,
+		FetchRequest:  c.frConverter.ToGraphQL(in.FetchRequest),
 	}
 }
 

@@ -14,7 +14,7 @@ var (
 	docCLOB        = graphql.CLOB(docData)
 )
 
-func fixModelDocument(applicationID, id string) *model.Document {
+func fixModelDocument(id, applicationID string) *model.Document {
 	return &model.Document{
 		ApplicationID: applicationID,
 		ID:            id,
@@ -26,14 +26,15 @@ func fixModelDocument(applicationID, id string) *model.Document {
 	}
 }
 
-func fixGQLDocument(id string) *graphql.Document {
+func fixGQLDocument(id, applicationID string) *graphql.Document {
 	return &graphql.Document{
-		ID:           id,
-		Title:        docTitle,
-		Format:       graphql.DocumentFormatMarkdown,
-		Kind:         &docKind,
-		Data:         &docCLOB,
-		FetchRequest: &graphql.FetchRequest{},
+		ID:            id,
+		ApplicationID: applicationID,
+		Title:         docTitle,
+		Format:        graphql.DocumentFormatMarkdown,
+		Kind:          &docKind,
+		Data:          &docCLOB,
+		FetchRequest:  &graphql.FetchRequest{},
 	}
 }
 

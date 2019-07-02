@@ -20,7 +20,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		{
 			Name:     "All properties given",
 			Input:    fixModelDocument("1", "foo"),
-			Expected: fixGQLDocument("foo"),
+			Expected: fixGQLDocument("1", "foo"),
 		},
 		{
 			Name:     "Empty",
@@ -61,8 +61,8 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 		nil,
 	}
 	expected := []*graphql.Document{
-		fixGQLDocument("foo"),
-		fixGQLDocument("bar"),
+		fixGQLDocument("1", "foo"),
+		fixGQLDocument("2", "bar"),
 		{},
 	}
 	frConv := &automock.FetchRequestConverter{}

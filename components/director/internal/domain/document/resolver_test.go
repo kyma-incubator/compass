@@ -17,8 +17,8 @@ func TestResolver_AddDocument(t *testing.T) {
 
 	applicationID := "foo"
 	id := "bar"
-	modelDocument := fixModelDocument(applicationID, id)
-	gqlDocument := fixGQLDocument(id)
+	modelDocument := fixModelDocument(id, applicationID)
+	gqlDocument := fixGQLDocument(id, applicationID)
 	gqlInput := fixGQLDocumentInput(id)
 	modelInput := fixModelDocumentInput(id)
 
@@ -106,8 +106,8 @@ func TestResolver_DeleteDocument(t *testing.T) {
 
 	applicationID := "foo"
 	id := "bar"
-	modelDocument := fixModelDocument(applicationID, id)
-	gqlDocument := fixGQLDocument(id)
+	modelDocument := fixModelDocument(id, applicationID)
+	gqlDocument := fixGQLDocument(id, applicationID)
 
 	testCases := []struct {
 		Name             string

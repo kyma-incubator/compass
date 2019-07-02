@@ -103,10 +103,11 @@ type ComplexityRoot struct {
 	}
 
 	ApplicationWebhook struct {
-		Auth func(childComplexity int) int
-		ID   func(childComplexity int) int
-		Type func(childComplexity int) int
-		URL  func(childComplexity int) int
+		ApplicationID func(childComplexity int) int
+		Auth          func(childComplexity int) int
+		ID            func(childComplexity int) int
+		Type          func(childComplexity int) int
+		URL           func(childComplexity int) int
 	}
 
 	Auth struct {
@@ -133,12 +134,13 @@ type ComplexityRoot struct {
 	}
 
 	Document struct {
-		Data         func(childComplexity int) int
-		FetchRequest func(childComplexity int) int
-		Format       func(childComplexity int) int
-		ID           func(childComplexity int) int
-		Kind         func(childComplexity int) int
-		Title        func(childComplexity int) int
+		ApplicationID func(childComplexity int) int
+		Data          func(childComplexity int) int
+		FetchRequest  func(childComplexity int) int
+		Format        func(childComplexity int) int
+		ID            func(childComplexity int) int
+		Kind          func(childComplexity int) int
+		Title         func(childComplexity int) int
 	}
 
 	DocumentPage struct {
@@ -639,6 +641,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ApplicationStatus.Timestamp(childComplexity), true
 
+	case "ApplicationWebhook.applicationID":
+		if e.complexity.ApplicationWebhook.ApplicationID == nil {
+			break
+		}
+
+		return e.complexity.ApplicationWebhook.ApplicationID(childComplexity), true
+
 	case "ApplicationWebhook.auth":
 		if e.complexity.ApplicationWebhook.Auth == nil {
 			break
@@ -743,6 +752,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.CredentialRequestAuth.Csrf(childComplexity), true
+
+	case "Document.applicationID":
+		if e.complexity.Document.ApplicationID == nil {
+			break
+		}
+
+		return e.complexity.Document.ApplicationID(childComplexity), true
 
 	case "Document.data":
 		if e.complexity.Document.Data == nil {
@@ -1832,6 +1848,7 @@ enum ApplicationStatusCondition {
 
 type ApplicationWebhook {
     id: ID!
+    applicationID: ID!
     type: ApplicationWebhookType!
     url: String!
     auth: Auth
@@ -1922,6 +1939,7 @@ type EventAPISpec {
 
 type Document {
     id: ID!
+    applicationID: ID!
     title: String!
     format: DocumentFormat!
     """for example Service Class, API etc"""
@@ -4208,6 +4226,33 @@ func (ec *executionContext) _ApplicationWebhook_id(ctx context.Context, field gr
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _ApplicationWebhook_applicationID(ctx context.Context, field graphql.CollectedField, obj *ApplicationWebhook) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "ApplicationWebhook",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ApplicationID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _ApplicationWebhook_type(ctx context.Context, field graphql.CollectedField, obj *ApplicationWebhook) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -4579,6 +4624,33 @@ func (ec *executionContext) _Document_id(ctx context.Context, field graphql.Coll
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.ID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Document_applicationID(ctx context.Context, field graphql.CollectedField, obj *Document) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Document",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ApplicationID, nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -9328,6 +9400,11 @@ func (ec *executionContext) _ApplicationWebhook(ctx context.Context, sel ast.Sel
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "applicationID":
+			out.Values[i] = ec._ApplicationWebhook_applicationID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "type":
 			out.Values[i] = ec._ApplicationWebhook_type(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -9489,6 +9566,11 @@ func (ec *executionContext) _Document(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = graphql.MarshalString("Document")
 		case "id":
 			out.Values[i] = ec._Document_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "applicationID":
+			out.Values[i] = ec._Document_applicationID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
