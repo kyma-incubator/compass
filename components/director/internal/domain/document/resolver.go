@@ -3,15 +3,13 @@ package document
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/uid"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
 //go:generate mockery -name=DocumentService -output=automock -outpkg=automock -case=underscore
 type DocumentService interface {
-	Create(ctx context.Context, id string, applicationID string, in model.DocumentInput) (string, error)
+	Create(ctx context.Context, applicationID string, in model.DocumentInput) (string, error)
 	Get(ctx context.Context, id string) (*model.Document, error)
 	Delete(ctx context.Context, id string) error
 }
@@ -37,7 +35,7 @@ func NewResolver(svc DocumentService, frConverter FetchRequestConverter) *Resolv
 func (r *Resolver) AddDocument(ctx context.Context, applicationID string, in graphql.DocumentInput) (*graphql.Document, error) {
 	convertedIn := r.converter.InputFromGraphQL(&in)
 
-	id, err := r.svc.Create(ctx, uid.Generate(), applicationID, *convertedIn)
+	id, err := r.svc.Create(ctx, applicationID, *convertedIn)
 	if err != nil {
 		return nil, err
 	}

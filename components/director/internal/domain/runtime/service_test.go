@@ -39,6 +39,7 @@ func TestService_Create(t *testing.T) {
 	testCases := []struct {
 		Name         string
 		RepositoryFn func() *automock.RuntimeRepository
+		UIDServiceFn func() *automock.UIDService
 		Input        model.RuntimeInput
 		ExpectedErr  error
 	}{
@@ -48,6 +49,11 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.RuntimeRepository{}
 				repo.On("Create", runtimeModel).Return(nil).Once()
 				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id).Once()
+				return svc
 			},
 			Input:       modelInput,
 			ExpectedErr: nil,
@@ -59,6 +65,11 @@ func TestService_Create(t *testing.T) {
 				repo.On("Create", runtimeModel).Return(testErr).Once()
 				return repo
 			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return("").Once()
+				return svc
+			},
 			Input:       modelInput,
 			ExpectedErr: testErr,
 		},
@@ -67,11 +78,11 @@ func TestService_Create(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-
-			svc := runtime.NewService(repo)
+			idSvc := testCase.UIDServiceFn()
+			svc := runtime.NewService(repo, idSvc)
 
 			// when
-			result, err := svc.Create(ctx, id, testCase.Input)
+			result, err := svc.Create(ctx, testCase.Input)
 
 			// then
 			assert.IsType(t, "string", result)
@@ -152,7 +163,7 @@ func TestService_Update(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo)
+			svc := runtime.NewService(repo, nil)
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -231,7 +242,7 @@ func TestService_Delete(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo)
+			svc := runtime.NewService(repo, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -301,7 +312,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo)
+			svc := runtime.NewService(repo, nil)
 
 			// when
 			rtm, err := svc.Get(ctx, testCase.InputID)
@@ -387,7 +398,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo)
+			svc := runtime.NewService(repo, nil)
 
 			// when
 			rtm, err := svc.List(ctx, testCase.InputLabelFilters, testCase.InputPageSize, testCase.InputCursor)
@@ -478,7 +489,7 @@ func TestService_AddAnnotation(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo)
+			svc := runtime.NewService(repo, nil)
 
 			// when
 			err := svc.AddAnnotation(ctx, testCase.InputRuntimeID, testCase.InputKey, testCase.InputValue)
@@ -564,7 +575,7 @@ func TestService_DeleteAnnotation(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo)
+			svc := runtime.NewService(repo, nil)
 
 			// when
 			err := svc.DeleteAnnotation(ctx, testCase.InputRuntimeID, testCase.InputKey)
@@ -654,7 +665,7 @@ func TestService_AddLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo)
+			svc := runtime.NewService(repo, nil)
 
 			// when
 			err := svc.AddLabel(ctx, testCase.InputRuntimeID, testCase.InputKey, testCase.InputValues)
@@ -745,7 +756,7 @@ func TestService_DeleteLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo)
+			svc := runtime.NewService(repo, nil)
 
 			// when
 			err := svc.DeleteLabel(ctx, testCase.InputRuntimeID, testCase.InputKey, testCase.InputValues)

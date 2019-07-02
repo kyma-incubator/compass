@@ -3,8 +3,6 @@ package runtime
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/uid"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -14,7 +12,7 @@ import (
 
 //go:generate mockery -name=RuntimeService -output=automock -outpkg=automock -case=underscore
 type RuntimeService interface {
-	Create(ctx context.Context, id string, in model.RuntimeInput) (string, error)
+	Create(ctx context.Context, in model.RuntimeInput) (string, error)
 	Update(ctx context.Context, id string, in model.RuntimeInput) error
 	Get(ctx context.Context, id string) (*model.Runtime, error)
 	Delete(ctx context.Context, id string) error
@@ -86,7 +84,7 @@ func (r *Resolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, er
 func (r *Resolver) CreateRuntime(ctx context.Context, in graphql.RuntimeInput) (*graphql.Runtime, error) {
 	convertedIn := r.converter.InputFromGraphQL(in)
 
-	id, err := r.svc.Create(ctx, uid.Generate(), convertedIn)
+	id, err := r.svc.Create(ctx, convertedIn)
 	if err != nil {
 		return nil, err
 	}

@@ -15,13 +15,20 @@ type DocumentRepository interface {
 	Delete(item *model.Document) error
 }
 
-type service struct {
-	repo DocumentRepository
+//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+type UIDService interface {
+	Generate() string
 }
 
-func NewService(repo DocumentRepository) *service {
+type service struct {
+	repo       DocumentRepository
+	uidService UIDService
+}
+
+func NewService(repo DocumentRepository, uidService UIDService) *service {
 	return &service{
-		repo: repo,
+		repo:       repo,
+		uidService: uidService,
 	}
 }
 
@@ -38,8 +45,8 @@ func (s *service) List(ctx context.Context, applicationID string, pageSize *int,
 	return s.repo.ListByApplicationID(applicationID, pageSize, cursor)
 }
 
-func (s *service) Create(ctx context.Context, id string, applicationID string, in model.DocumentInput) (string, error) {
-
+func (s *service) Create(ctx context.Context, applicationID string, in model.DocumentInput) (string, error) {
+	id := s.uidService.Generate()
 	document := in.ToDocument(id, applicationID)
 
 	err := s.repo.Create(document)

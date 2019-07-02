@@ -19,7 +19,6 @@ func TestService_Create(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	modelInput := fixModelWebhookInput("foo")
-	id := "foo"
 
 	webhookModel := mock.MatchedBy(func(webhook *model.ApplicationWebhook) bool {
 		return webhook.Type == modelInput.Type && webhook.URL == modelInput.URL
@@ -31,6 +30,7 @@ func TestService_Create(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		RepositoryFn  func() *automock.WebhookRepository
+		UIDServiceFn  func() *automock.UIDService
 		Input         model.ApplicationWebhookInput
 		ID            string
 		ApplicationID string
@@ -43,8 +43,12 @@ func TestService_Create(t *testing.T) {
 				repo.On("Create", webhookModel).Return(nil).Once()
 				return repo
 			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return("foo").Once()
+				return svc
+			},
 			Input:         *modelInput,
-			ID:            id,
 			ApplicationID: "1",
 			ExpectedErr:   nil,
 		},
@@ -55,8 +59,12 @@ func TestService_Create(t *testing.T) {
 				repo.On("Create", webhookModel).Return(testErr).Once()
 				return repo
 			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return("").Once()
+				return svc
+			},
 			Input:         *modelInput,
-			ID:            id,
 			ApplicationID: "1",
 			ExpectedErr:   testErr,
 		},
@@ -65,10 +73,12 @@ func TestService_Create(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := webhook.NewService(repo)
+			uidSvc := testCase.UIDServiceFn()
+
+			svc := webhook.NewService(repo, uidSvc)
 
 			// when
-			result, err := svc.Create(ctx, testCase.ID, testCase.ApplicationID, testCase.Input)
+			result, err := svc.Create(ctx, testCase.ApplicationID, testCase.Input)
 
 			// then
 			assert.IsType(t, "string", result)
@@ -130,7 +140,7 @@ func TestService_Get(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := webhook.NewService(repo)
+			svc := webhook.NewService(repo, nil)
 
 			// when
 			webhook, err := svc.Get(ctx, testCase.InputID)
@@ -192,7 +202,7 @@ func TestService_List(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := webhook.NewService(repo)
+			svc := webhook.NewService(repo, nil)
 
 			// when
 			webhooks, err := svc.List(ctx, applicationID)
@@ -274,7 +284,7 @@ func TestService_Update(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := webhook.NewService(repo)
+			svc := webhook.NewService(repo, nil)
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -347,7 +357,7 @@ func TestService_Delete(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := webhook.NewService(repo)
+			svc := webhook.NewService(repo, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)

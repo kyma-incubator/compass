@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -48,12 +49,13 @@ func NewRootResolver() *RootResolver {
 	eventAPIRepo := eventapi.NewRepository()
 	docRepo := document.NewRepository()
 
-	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo)
-	apiSvc := api.NewService(apiRepo)
+	uidService := uid.NewService()
+	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo, uidService)
+	apiSvc := api.NewService(apiRepo, uidService)
 	eventAPISvc := eventapi.NewService(eventAPIRepo)
-	webhookSvc := webhook.NewService(webhookRepo)
-	docSvc := document.NewService(docRepo)
-	runtimeSvc := runtime.NewService(runtimeRepo)
+	webhookSvc := webhook.NewService(webhookRepo, uidService)
+	docSvc := document.NewService(docRepo, uidService)
+	runtimeSvc := runtime.NewService(runtimeRepo, uidService)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 
 	return &RootResolver{

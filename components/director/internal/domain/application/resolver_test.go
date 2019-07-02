@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/mock"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -44,7 +42,7 @@ func TestResolver_CreateApplication(t *testing.T) {
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
 				svc.On("Get", context.TODO(), "foo").Return(modelApplication, nil).Once()
-				svc.On("Create", context.TODO(), mock.Anything, modelInput).Return("foo", nil).Once()
+				svc.On("Create", context.TODO(), modelInput).Return("foo", nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -61,7 +59,7 @@ func TestResolver_CreateApplication(t *testing.T) {
 			Name: "Returns error when application creation failed",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Create", context.TODO(), mock.Anything, modelInput).Return("", testErr).Once()
+				svc.On("Create", context.TODO(), modelInput).Return("", testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -77,7 +75,7 @@ func TestResolver_CreateApplication(t *testing.T) {
 			Name: "Returns error when application creation failed",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Create", context.TODO(), mock.Anything, modelInput).Return("foo", nil).Once()
+				svc.On("Create", context.TODO(), modelInput).Return("foo", nil).Once()
 				svc.On("Get", context.TODO(), "foo").Return(nil, testErr).Once()
 				return svc
 			},
@@ -987,7 +985,7 @@ func TestResolver_AddApplicationWebhook(t *testing.T) {
 			Name: "Success",
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Create", context.TODO(), mock.Anything, applicationID, *modelWebhookInput).Return(id, nil).Once()
+				svc.On("Create", context.TODO(), applicationID, *modelWebhookInput).Return(id, nil).Once()
 				svc.On("Get", context.TODO(), id).Return(modelWebhook, nil).Once()
 				return svc
 			},
@@ -1006,7 +1004,7 @@ func TestResolver_AddApplicationWebhook(t *testing.T) {
 			Name: "Returns error when webhook creation failed",
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Create", context.TODO(), mock.Anything, applicationID, *modelWebhookInput).Return("", testErr).Once()
+				svc.On("Create", context.TODO(), applicationID, *modelWebhookInput).Return("", testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
@@ -1023,7 +1021,7 @@ func TestResolver_AddApplicationWebhook(t *testing.T) {
 			Name: "Returns error when webhook retrieval failed",
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Create", context.TODO(), mock.Anything, applicationID, *modelWebhookInput).Return(id, nil).Once()
+				svc.On("Create", context.TODO(), applicationID, *modelWebhookInput).Return(id, nil).Once()
 				svc.On("Get", context.TODO(), id).Return(nil, testErr).Once()
 				return svc
 			},

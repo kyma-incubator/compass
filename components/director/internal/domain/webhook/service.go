@@ -16,13 +16,20 @@ type WebhookRepository interface {
 	Delete(item *model.ApplicationWebhook) error
 }
 
-type service struct {
-	repo WebhookRepository
+//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+type UIDService interface {
+	Generate() string
 }
 
-func NewService(repo WebhookRepository) *service {
+type service struct {
+	repo   WebhookRepository
+	uidSvc UIDService
+}
+
+func NewService(repo WebhookRepository, uidSvc UIDService) *service {
 	return &service{
-		repo: repo,
+		repo:   repo,
+		uidSvc: uidSvc,
 	}
 }
 
@@ -39,7 +46,8 @@ func (s *service) List(ctx context.Context, applicationID string) ([]*model.Appl
 	return s.repo.ListByApplicationID(applicationID)
 }
 
-func (s *service) Create(ctx context.Context, id string, applicationID string, in model.ApplicationWebhookInput) (string, error) {
+func (s *service) Create(ctx context.Context, applicationID string, in model.ApplicationWebhookInput) (string, error) {
+	id := s.uidSvc.Generate()
 	webhook := in.ToWebhook(id, applicationID)
 
 	err := s.repo.Create(webhook)

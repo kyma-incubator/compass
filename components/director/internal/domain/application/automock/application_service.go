@@ -40,20 +40,20 @@ func (_m *ApplicationService) AddLabel(ctx context.Context, applicationID string
 	return r0
 }
 
-// Create provides a mock function with given fields: ctx, id, in
-func (_m *ApplicationService) Create(ctx context.Context, id string, in model.ApplicationInput) (string, error) {
-	ret := _m.Called(ctx, id, in)
+// Create provides a mock function with given fields: ctx, in
+func (_m *ApplicationService) Create(ctx context.Context, in model.ApplicationInput) (string, error) {
+	ret := _m.Called(ctx, in)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.ApplicationInput) string); ok {
-		r0 = rf(ctx, id, in)
+	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationInput) string); ok {
+		r0 = rf(ctx, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, model.ApplicationInput) error); ok {
-		r1 = rf(ctx, id, in)
+	if rf, ok := ret.Get(1).(func(context.Context, model.ApplicationInput) error); ok {
+		r1 = rf(ctx, in)
 	} else {
 		r1 = ret.Error(1)
 	}

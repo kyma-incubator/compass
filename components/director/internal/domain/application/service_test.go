@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	"github.com/google/uuid"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application/automock"
@@ -52,6 +52,7 @@ func TestService_Create(t *testing.T) {
 		APIRepoFn      func() *automock.APIRepository
 		EventAPIRepoFn func() *automock.EventAPIRepository
 		DocumentRepoFn func() *automock.DocumentRepository
+		UIDServiceFn   func() *automock.UIDService
 		Input          model.ApplicationInput
 		ExpectedErr    error
 	}{
@@ -82,6 +83,11 @@ func TestService_Create(t *testing.T) {
 				repo.On("CreateMany", mock.Anything).Return(nil).Once()
 				return repo
 			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
 			Input:       modelInput,
 			ExpectedErr: nil,
 		},
@@ -108,6 +114,11 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.DocumentRepository{}
 				return repo
 			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return("").Once()
+				return svc
+			},
 			Input:       modelInput,
 			ExpectedErr: testErr,
 		},
@@ -120,11 +131,11 @@ func TestService_Create(t *testing.T) {
 			apiRepo := testCase.APIRepoFn()
 			eventAPIRepo := testCase.EventAPIRepoFn()
 			documentRepo := testCase.DocumentRepoFn()
-
-			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo)
+			uidSvc := testCase.UIDServiceFn()
+			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo, uidSvc)
 
 			// when
-			result, err := svc.Create(ctx, id, testCase.Input)
+			result, err := svc.Create(ctx, testCase.Input)
 
 			// then
 			assert.IsType(t, "string", result)
@@ -135,6 +146,7 @@ func TestService_Create(t *testing.T) {
 			apiRepo.AssertExpectations(t)
 			eventAPIRepo.AssertExpectations(t)
 			documentRepo.AssertExpectations(t)
+			uidSvc.AssertExpectations(t)
 		})
 	}
 }
@@ -305,7 +317,7 @@ func TestService_Update(t *testing.T) {
 			eventAPIRepo := testCase.EventAPIRepoFn()
 			documentRepo := testCase.DocumentRepoFn()
 
-			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo)
+			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo, nil)
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -479,7 +491,7 @@ func TestService_Delete(t *testing.T) {
 			eventAPIRepo := testCase.EventAPIRepoFn()
 			documentRepo := testCase.DocumentRepoFn()
 
-			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo)
+			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -553,7 +565,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(repo, nil, nil, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil)
 
 			// when
 			app, err := svc.Get(ctx, testCase.InputID)
@@ -639,7 +651,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(repo, nil, nil, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil)
 
 			// when
 			app, err := svc.List(ctx, testCase.InputLabelFilters, testCase.InputPageSize, testCase.InputCursor)
@@ -730,7 +742,7 @@ func TestService_AddAnnotation(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(repo, nil, nil, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil)
 
 			// when
 			err := svc.AddAnnotation(ctx, testCase.InputApplicationID, testCase.InputKey, testCase.InputValue)
@@ -816,7 +828,7 @@ func TestService_DeleteAnnotation(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(repo, nil, nil, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil)
 
 			// when
 			err := svc.DeleteAnnotation(ctx, testCase.InputApplicationID, testCase.InputKey)
@@ -906,7 +918,7 @@ func TestService_AddLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(repo, nil, nil, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil)
 
 			// when
 			err := svc.AddLabel(ctx, testCase.InputApplicationID, testCase.InputKey, testCase.InputValues)
@@ -997,7 +1009,7 @@ func TestService_DeleteLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(repo, nil, nil, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil)
 
 			// when
 			err := svc.DeleteLabel(ctx, testCase.InputApplicationID, testCase.InputKey, testCase.InputValues)
@@ -1029,12 +1041,12 @@ func modelFromInput(in model.ApplicationInput, applicationID string) testModel {
 
 	var webhooksModel []*model.ApplicationWebhook
 	for _, item := range in.Webhooks {
-		webhooksModel = append(webhooksModel, item.ToWebhook(uid.Generate(), applicationID))
+		webhooksModel = append(webhooksModel, item.ToWebhook(uuid.New().String(), applicationID))
 	}
 
 	var apisModel []*model.APIDefinition
 	for _, item := range in.Apis {
-		apisModel = append(apisModel, item.ToAPIDefinition(uid.Generate(), applicationID))
+		apisModel = append(apisModel, item.ToAPIDefinition(uuid.New().String(), applicationID))
 	}
 
 	var eventAPIsModel []*model.EventAPIDefinition
@@ -1044,7 +1056,7 @@ func modelFromInput(in model.ApplicationInput, applicationID string) testModel {
 
 	var documentsModel []*model.Document
 	for _, item := range in.Documents {
-		documentsModel = append(documentsModel, item.ToDocument(uid.Generate(), applicationID))
+		documentsModel = append(documentsModel, item.ToDocument(uuid.New().String(), applicationID))
 	}
 
 	return testModel{

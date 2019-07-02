@@ -5,8 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/mock"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -35,7 +33,7 @@ func TestResolver_AddDocument(t *testing.T) {
 			Name: "Success",
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("Create", context.TODO(), mock.Anything, applicationID, *modelInput).Return(id, nil).Once()
+				svc.On("Create", context.TODO(), applicationID, *modelInput).Return(id, nil).Once()
 				svc.On("Get", context.TODO(), id).Return(modelDocument, nil).Once()
 				return svc
 			},
@@ -52,7 +50,7 @@ func TestResolver_AddDocument(t *testing.T) {
 			Name: "Returns error when document creation failed",
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("Create", context.TODO(), mock.Anything, applicationID, *modelInput).Return("", testErr).Once()
+				svc.On("Create", context.TODO(), applicationID, *modelInput).Return("", testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -67,7 +65,7 @@ func TestResolver_AddDocument(t *testing.T) {
 			Name: "Returns error when document retrieval failed",
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("Create", context.TODO(), mock.Anything, applicationID, *modelInput).Return(id, nil).Once()
+				svc.On("Create", context.TODO(), applicationID, *modelInput).Return(id, nil).Once()
 				svc.On("Get", context.TODO(), id).Return(nil, testErr).Once()
 				return svc
 			},
