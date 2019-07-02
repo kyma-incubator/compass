@@ -119,6 +119,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// then
 	assert.Equal(t, expected, res)
 	frConverter.AssertExpectations(t)
+	versionConverter.AssertExpectations(t)
 }
 
 func TestConverter_InputFromGraphQL(t *testing.T) {
@@ -177,6 +178,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			// then
 			assert.Equal(t, testCase.Expected, res)
 			frConverter.AssertExpectations(t)
+			versionConverter.AssertExpectations(t)
 		})
 	}
 }
@@ -245,6 +247,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 			// then
 			assert.Equal(t, testCase.Expected, res)
 			frConverter.AssertExpectations(t)
+			versionConverter.AssertExpectations(t)
 		})
 	}
 }

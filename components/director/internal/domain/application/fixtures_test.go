@@ -330,3 +330,46 @@ func fixGQLAPIDefinition(id, appId, name, description string, group string) *gra
 		Group:         &group,
 	}
 }
+func fixEventAPIDefinitionPage(eventAPIDefinitions []*model.EventAPIDefinition) *model.EventAPIDefinitionPage {
+	return &model.EventAPIDefinitionPage{
+		Data: eventAPIDefinitions,
+		PageInfo: &pagination.Page{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(eventAPIDefinitions),
+	}
+}
+
+func fixGQLEventAPIDefinitionPage(eventAPIDefinitions []*graphql.EventAPIDefinition) *graphql.EventAPIDefinitionPage {
+	return &graphql.EventAPIDefinitionPage{
+		Data: eventAPIDefinitions,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(eventAPIDefinitions),
+	}
+}
+
+func fixModelEventAPIDefinition(id, appId, name, description string, group string) *model.EventAPIDefinition {
+	return &model.EventAPIDefinition{
+		ID:            id,
+		ApplicationID: appId,
+		Name:          name,
+		Description:   &description,
+		Group:         &group,
+	}
+}
+
+func fixGQLEventAPIDefinition(id, appId, name, description string, group string) *graphql.EventAPIDefinition {
+	return &graphql.EventAPIDefinition{
+		ID:            id,
+		ApplicationID: appId,
+		Name:          name,
+		Description:   &description,
+		Group:         &group,
+	}
+}

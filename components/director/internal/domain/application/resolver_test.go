@@ -1331,5 +1331,90 @@ func TestResolver_Apis(t *testing.T) {
 	}
 }
 
+func TestResolver_EventAPIs(t *testing.T) {
+	// given
+	applicationID := "1"
+	group := "group"
+	app := fixGQLApplication(applicationID, "foo", "bar")
+	modelEventAPIDefinitions := []*model.EventAPIDefinition{
+
+		fixModelEventAPIDefinition("foo", applicationID, "Foo", "Lorem Ipsum", group),
+		fixModelEventAPIDefinition("bar", applicationID, "Bar", "Lorem Ipsum", group),
+	}
+
+	gqlEventAPIDefinitions := []*graphql.EventAPIDefinition{
+		fixGQLEventAPIDefinition("foo", applicationID, "Foo", "Lorem Ipsum", group),
+		fixGQLEventAPIDefinition("bar", applicationID, "Bar", "Lorem Ipsum", group),
+	}
+
+	first := 2
+	gqlAfter := graphql.PageCursor("test")
+	after := "test"
+	testErr := errors.New("Test error")
+
+	testCases := []struct {
+		Name           string
+		ServiceFn      func() *automock.EventAPIService
+		ConverterFn    func() *automock.EventAPIConverter
+		InputFirst     *int
+		InputAfter     *graphql.PageCursor
+		ExpectedResult *graphql.EventAPIDefinitionPage
+		ExpectedErr    error
+	}{
+		{
+			Name: "Success",
+			ServiceFn: func() *automock.EventAPIService {
+				svc := &automock.EventAPIService{}
+				svc.On("List", context.TODO(), applicationID, &first, &after).Return(fixEventAPIDefinitionPage(modelEventAPIDefinitions), nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				conv.On("MultipleToGraphQL", modelEventAPIDefinitions).Return(gqlEventAPIDefinitions).Once()
+				return conv
+			},
+			InputFirst:     &first,
+			InputAfter:     &gqlAfter,
+			ExpectedResult: fixGQLEventAPIDefinitionPage(gqlEventAPIDefinitions),
+			ExpectedErr:    nil,
+		},
+		{
+			Name: "Returns error when APIS listing failed",
+			ServiceFn: func() *automock.EventAPIService {
+				svc := &automock.EventAPIService{}
+				svc.On("List", context.TODO(), applicationID, &first, &after).Return(nil, testErr).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				return conv
+			},
+			InputFirst:     &first,
+			InputAfter:     &gqlAfter,
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// given
+			svc := testCase.ServiceFn()
+			converter := testCase.ConverterFn()
+
+			resolver := application.NewResolver(nil, nil, svc, nil, nil, nil, nil, nil, nil, converter)
+			// when
+			result, err := resolver.EventAPIs(context.TODO(), app, &group, testCase.InputFirst, testCase.InputAfter)
+
+			// then
+			assert.Equal(t, testCase.ExpectedResult, result)
+			assert.Equal(t, testCase.ExpectedErr, err)
+
+			svc.AssertExpectations(t)
+			converter.AssertExpectations(t)
+		})
+	}
+}
+
 // TODO: Test Resolvers for:
 // 	- EventAPIs

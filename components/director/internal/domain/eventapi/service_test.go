@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
@@ -16,6 +18,160 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestService_Get(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+
+	id := "foo"
+	appID := "bar"
+	name := "foo"
+	desc := "bar"
+
+	eventAPIDefinition := fixModelEventAPIDefinition(id, appID, name, desc)
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, "tenant")
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.EventAPIRepository
+		Input              model.EventAPIDefinitionInput
+		InputID            string
+		ExpectedDocument   *model.EventAPIDefinition
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				repo.On("GetByID", id).Return(eventAPIDefinition, nil).Once()
+				return repo
+			},
+			InputID:            id,
+			ExpectedDocument:   eventAPIDefinition,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when EventAPI retrieval failed",
+			RepositoryFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				repo.On("GetByID", id).Return(nil, testErr).Once()
+				return repo
+			},
+			InputID:            id,
+			ExpectedDocument:   eventAPIDefinition,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := eventapi.NewService(repo)
+
+			// when
+			document, err := svc.Get(ctx, testCase.InputID)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedDocument, document)
+			} else {
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_List(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+
+	id := "foo"
+	applicationID := "bar"
+	name := "foo"
+	desc := "bar"
+
+	eventAPIDefinitions := []*model.EventAPIDefinition{
+		fixModelEventAPIDefinition(id, applicationID, name, desc),
+		fixModelEventAPIDefinition(id, applicationID, name, desc),
+		fixModelEventAPIDefinition(id, applicationID, name, desc),
+	}
+	eventAPIDefinitionPage := &model.EventAPIDefinitionPage{
+		Data:       eventAPIDefinitions,
+		TotalCount: len(eventAPIDefinitions),
+		PageInfo: &pagination.Page{
+			HasNextPage: false,
+			EndCursor:   "end",
+			StartCursor: "start",
+		},
+	}
+
+	first := 2
+	after := "test"
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, "tenant")
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.EventAPIRepository
+		InputPageSize      *int
+		InputCursor        *string
+		ExpectedResult     *model.EventAPIDefinitionPage
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				repo.On("ListByApplicationID", applicationID, &first, &after).Return(eventAPIDefinitionPage, nil).Once()
+				return repo
+			},
+			InputPageSize:      &first,
+			InputCursor:        &after,
+			ExpectedResult:     eventAPIDefinitionPage,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when EventAPI listing failed",
+			RepositoryFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				repo.On("ListByApplicationID", applicationID, &first, &after).Return(nil, testErr).Once()
+				return repo
+			},
+			InputPageSize:      &first,
+			InputCursor:        &after,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := eventapi.NewService(repo)
+
+			// when
+			docs, err := svc.List(ctx, applicationID, testCase.InputPageSize, testCase.InputCursor)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, docs)
+			} else {
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+}
 
 func TestService_Create(t *testing.T) {
 	// given

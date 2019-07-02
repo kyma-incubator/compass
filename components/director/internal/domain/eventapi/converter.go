@@ -37,7 +37,7 @@ func (c *converter) ToGraphQL(in *model.EventAPIDefinition) *graphql.EventAPIDef
 		Name:          in.Name,
 		Description:   in.Description,
 		Group:         in.Group,
-		Spec:          c.eventApiSpecToGraphQL(in.Spec),
+		Spec:          c.eventAPISpecToGraphQL(in.Spec),
 		Version:       c.vc.ToGraphQL(in.Version),
 	}
 }
@@ -72,13 +72,13 @@ func (c *converter) InputFromGraphQL(in *graphql.EventAPIDefinitionInput) *model
 	return &model.EventAPIDefinitionInput{
 		Name:        in.Name,
 		Description: in.Description,
-		Spec:        c.eventApiSpecInputFromGraphQL(in.Spec),
+		Spec:        c.eventAPISpecInputFromGraphQL(in.Spec),
 		Group:       in.Group,
 		Version:     c.vc.InputFromGraphQL(in.Version),
 	}
 }
 
-func (c *converter) eventApiSpecToGraphQL(in *model.EventAPISpec) *graphql.EventAPISpec {
+func (c *converter) eventAPISpecToGraphQL(in *model.EventAPISpec) *graphql.EventAPISpec {
 	if in == nil {
 		return nil
 	}
@@ -102,7 +102,7 @@ func (c *converter) eventApiSpecToGraphQL(in *model.EventAPISpec) *graphql.Event
 	}
 }
 
-func (c *converter) eventApiSpecInputFromGraphQL(in *graphql.EventAPISpecInput) *model.EventAPISpecInput {
+func (c *converter) eventAPISpecInputFromGraphQL(in *graphql.EventAPISpecInput) *model.EventAPISpecInput {
 	if in == nil {
 		return nil
 	}

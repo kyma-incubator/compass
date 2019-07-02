@@ -8,34 +8,31 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAPIDefinitionInput_ToAPIDefinition(t *testing.T) {
+func TestEventAPIDefinitionInput_ToEventAPIDefinition(t *testing.T) {
 	// given
 	id := "foo"
 	appID := "bar"
 	desc := "Sample"
 	name := "sample"
-	targetUrl := "https://foo.bar"
 	group := "sampleGroup"
 
 	testCases := []struct {
 		Name     string
-		Input    *model.APIDefinitionInput
-		Expected *model.APIDefinition
+		Input    *model.EventAPIDefinitionInput
+		Expected *model.EventAPIDefinition
 	}{
 		{
 			Name: "All properties given",
-			Input: &model.APIDefinitionInput{
+			Input: &model.EventAPIDefinitionInput{
 				Name:        name,
 				Description: &desc,
-				TargetURL:   targetUrl,
 				Group:       &group,
 			},
-			Expected: &model.APIDefinition{
+			Expected: &model.EventAPIDefinition{
 				ID:            id,
 				ApplicationID: appID,
 				Name:          name,
 				Description:   &desc,
-				TargetURL:     targetUrl,
 				Group:         &group,
 			},
 		},
@@ -50,7 +47,7 @@ func TestAPIDefinitionInput_ToAPIDefinition(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToAPIDefinition(id, appID)
+			result := testCase.Input.ToEventAPIDefinition(id, appID)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)
@@ -58,25 +55,25 @@ func TestAPIDefinitionInput_ToAPIDefinition(t *testing.T) {
 	}
 }
 
-func TestAPIDefinitionInput_ToAPISpec(t *testing.T) {
+func TestEventAPIDefinitionInput_ToEventAPISpec(t *testing.T) {
 	// given
 	data := []byte("bar")
 	format := model.SpecFormat("Sample")
-	specType := model.APISpecType("sample")
+	specType := model.EventAPISpecType("sample")
 
 	testCases := []struct {
 		Name     string
-		Input    *model.APISpecInput
-		Expected *model.APISpec
+		Input    *model.EventAPISpecInput
+		Expected *model.EventAPISpec
 	}{
 		{
 			Name: "All properties given",
-			Input: &model.APISpecInput{
-				Data:   &data,
-				Format: &format,
-				Type:   specType,
+			Input: &model.EventAPISpecInput{
+				Data:          &data,
+				EventSpecType: specType,
+				Format:        &format,
 			},
-			Expected: &model.APISpec{
+			Expected: &model.EventAPISpec{
 				Data:   &data,
 				Format: &format,
 				Type:   specType,
@@ -93,7 +90,7 @@ func TestAPIDefinitionInput_ToAPISpec(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToAPISpec()
+			result := testCase.Input.ToEventAPISpec()
 
 			// then
 			assert.Equal(t, testCase.Expected, result)
