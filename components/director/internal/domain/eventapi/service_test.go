@@ -426,6 +426,8 @@ func TestService_Delete(t *testing.T) {
 
 func TestService_RefetchAPISpec(t *testing.T) {
 	// given
+	testErr := errors.New("Test error")
+
 	apiID := "foo"
 
 	ctx := context.TODO()
@@ -455,6 +457,16 @@ func TestService_RefetchAPISpec(t *testing.T) {
 			},
 			ExpectedAPISpec: modelAPISpec,
 			ExpectedErr:     nil,
+		},
+		{
+			Name: "Get from repository error",
+			RepositoryFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				repo.On("GetByID", apiID).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedAPISpec: nil,
+			ExpectedErr:     testErr,
 		},
 	}
 

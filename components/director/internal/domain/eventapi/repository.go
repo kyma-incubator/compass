@@ -16,11 +16,13 @@ func NewRepository() *inMemoryRepository {
 }
 
 func (r *inMemoryRepository) GetByID(id string) (*model.EventAPIDefinition, error) {
-	if api, ok := r.store[id]; ok {
-		return api, nil
+	eventAPIDefinition := r.store[id]
+
+	if eventAPIDefinition == nil {
+		return nil, errors.Errorf("EventAPIDefinition with %s ID does not exist", id)
 	}
 
-	return nil, errors.Errorf("APIDefinition with %s ID does not exist", id)
+	return eventAPIDefinition, nil
 }
 
 // TODO: Make filtering and paging
@@ -61,6 +63,10 @@ func (r *inMemoryRepository) ListByApplicationID(applicationID string, pageSize 
 }
 
 func (r *inMemoryRepository) Create(item *model.EventAPIDefinition) error {
+	if item == nil {
+		return errors.New("item can not be nil")
+	}
+
 	r.store[item.ID] = item
 
 	return nil
@@ -78,12 +84,20 @@ func (r *inMemoryRepository) CreateMany(items []*model.EventAPIDefinition) error
 }
 
 func (r *inMemoryRepository) Update(item *model.EventAPIDefinition) error {
+	if item == nil {
+		return errors.New("item can not be nil")
+	}
+
 	r.store[item.ID] = item
 
 	return nil
 }
 
 func (r *inMemoryRepository) Delete(item *model.EventAPIDefinition) error {
+	if item == nil {
+		return errors.New("item can not be nil")
+	}
+
 	delete(r.store, item.ID)
 
 	return nil

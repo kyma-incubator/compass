@@ -232,6 +232,17 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 				return &automock.VersionConverter{}
 			},
 		},
+		{
+			Name:     "Nil",
+			Input:    nil,
+			Expected: nil,
+			FetchRequestConverter: func() *automock.FetchRequestConverter {
+				return &automock.FetchRequestConverter{}
+			},
+			VersionConverter: func() *automock.VersionConverter {
+				return &automock.VersionConverter{}
+			},
+		},
 	}
 
 	for _, testCase := range testCases {
