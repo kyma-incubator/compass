@@ -26,6 +26,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		Input                 *model.EventAPIDefinition
 		Expected              *graphql.EventAPIDefinition
 		FetchRequestConverter func() *automock.FetchRequestConverter
+		VersionConverter      func() *automock.VersionConverter
 	}{
 		{
 			Name:     "All properties given",
@@ -36,6 +37,11 @@ func TestConverter_ToGraphQL(t *testing.T) {
 				conv.On("ToGraphQL", modelEventAPIDefinition.Spec.FetchRequest).Return(gqlEventAPIDefinition.Spec.FetchRequest).Once()
 				return conv
 			},
+			VersionConverter: func() *automock.VersionConverter {
+				conv := &automock.VersionConverter{}
+				conv.On("ToGraphQL", modelEventAPIDefinition.Version).Return(gqlEventAPIDefinition.Version).Once()
+				return conv
+			},
 		},
 		{
 			Name:     "Empty",
@@ -43,6 +49,11 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			Expected: emptyGraphQLEventAPIDefinition,
 			FetchRequestConverter: func() *automock.FetchRequestConverter {
 				return &automock.FetchRequestConverter{}
+			},
+			VersionConverter: func() *automock.VersionConverter {
+				conv := &automock.VersionConverter{}
+				conv.On("ToGraphQL", emptyModelEventAPIDefinition.Version).Return(nil).Once()
+				return conv
 			},
 		},
 		{
@@ -52,6 +63,9 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			FetchRequestConverter: func() *automock.FetchRequestConverter {
 				return &automock.FetchRequestConverter{}
 			},
+			VersionConverter: func() *automock.VersionConverter {
+				return &automock.VersionConverter{}
+			},
 		},
 	}
 
@@ -59,14 +73,16 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 			//given
 			frConverter := testCase.FetchRequestConverter()
+			versionConverter := testCase.VersionConverter()
 
 			// when
-			converter := eventapi.NewConverter(frConverter)
+			converter := eventapi.NewConverter(frConverter, versionConverter)
 			res := converter.ToGraphQL(testCase.Input)
 
 			// then
 			assert.EqualValues(t, testCase.Expected, res)
 			frConverter.AssertExpectations(t)
+			versionConverter.AssertExpectations(t)
 		})
 	}
 }
@@ -87,9 +103,17 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	}
 
 	frConverter := &automock.FetchRequestConverter{}
+	versionConverter := &automock.VersionConverter{}
+
+	for i, eventAPI := range input {
+		if eventAPI == nil {
+			continue
+		}
+		versionConverter.On("ToGraphQL", eventAPI.Version).Return(expected[i].Version).Once()
+	}
 
 	// when
-	converter := eventapi.NewConverter(frConverter)
+	converter := eventapi.NewConverter(frConverter, versionConverter)
 	res := converter.MultipleToGraphQL(input)
 
 	// then
@@ -108,6 +132,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 		Input                 *graphql.EventAPIDefinitionInput
 		Expected              *model.EventAPIDefinitionInput
 		FetchRequestConverter func() *automock.FetchRequestConverter
+		VersionConverter      func() *automock.VersionConverter
 	}{
 		{
 			Name:     "All properties given",
@@ -118,6 +143,11 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 				conv.On("InputFromGraphQL", gqlEventAPIDefinitionInput.Spec.FetchRequest).Return(modelEventAPIDefinitionInput.Spec.FetchRequest).Once()
 				return conv
 			},
+			VersionConverter: func() *automock.VersionConverter {
+				conv := &automock.VersionConverter{}
+				conv.On("InputFromGraphQL", gqlEventAPIDefinitionInput.Version).Return(modelEventAPIDefinitionInput.Version).Once()
+				return conv
+			},
 		},
 		{
 			Name:     "Empty",
@@ -126,6 +156,11 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			FetchRequestConverter: func() *automock.FetchRequestConverter {
 				return &automock.FetchRequestConverter{}
 			},
+			VersionConverter: func() *automock.VersionConverter {
+				conv := &automock.VersionConverter{}
+				conv.On("InputFromGraphQL", emptyGQLEventAPIDefinition.Version).Return(nil).Once()
+				return conv
+			},
 		},
 	}
 
@@ -133,9 +168,10 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 			//given
 			frConverter := testCase.FetchRequestConverter()
+			versionConverter := testCase.VersionConverter()
 
 			// when
-			converter := eventapi.NewConverter(frConverter)
+			converter := eventapi.NewConverter(frConverter, versionConverter)
 			res := converter.InputFromGraphQL(testCase.Input)
 
 			// then
@@ -153,22 +189,33 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 	modelApi1 := fixModelEventAPIDefinitionInput("foo", "lorem", "group")
 	modelApi2 := fixModelEventAPIDefinitionInput("bar", "ipsum", "group2")
 
-	gqlAPIDefinitionInputs := []*graphql.EventAPIDefinitionInput{gqlApi1, gqlApi2}
-	modelAPIDefinitionInputs := []*model.EventAPIDefinitionInput{modelApi1, modelApi2}
+	gqlEventAPIDefinitionInputs := []*graphql.EventAPIDefinitionInput{gqlApi1, gqlApi2}
+	modelEventAPIDefinitionInputs := []*model.EventAPIDefinitionInput{modelApi1, modelApi2}
 	testCases := []struct {
 		Name                  string
 		Input                 []*graphql.EventAPIDefinitionInput
 		Expected              []*model.EventAPIDefinitionInput
 		FetchRequestConverter func() *automock.FetchRequestConverter
+		VersionConverter      func() *automock.VersionConverter
 	}{
 		{
 			Name:     "All properties given",
-			Input:    gqlAPIDefinitionInputs,
-			Expected: modelAPIDefinitionInputs,
+			Input:    gqlEventAPIDefinitionInputs,
+			Expected: modelEventAPIDefinitionInputs,
 			FetchRequestConverter: func() *automock.FetchRequestConverter {
 				conv := &automock.FetchRequestConverter{}
-				conv.On("InputFromGraphQL", gqlAPIDefinitionInputs[0].Spec.FetchRequest).Return(modelAPIDefinitionInputs[0].Spec.FetchRequest).Once()
-				conv.On("InputFromGraphQL", gqlAPIDefinitionInputs[1].Spec.FetchRequest).Return(modelAPIDefinitionInputs[1].Spec.FetchRequest).Once()
+				for i, eventAPI := range gqlEventAPIDefinitionInputs {
+					conv.On("InputFromGraphQL", eventAPI.Spec.FetchRequest).Return(modelEventAPIDefinitionInputs[i].Spec.FetchRequest).Once()
+				}
+
+				return conv
+			},
+			VersionConverter: func() *automock.VersionConverter {
+				conv := &automock.VersionConverter{}
+				for i, eventAPI := range gqlEventAPIDefinitionInputs {
+					conv.On("InputFromGraphQL", eventAPI.Version).Return(modelEventAPIDefinitionInputs[i].Version).Once()
+				}
+
 				return conv
 			},
 		},
@@ -179,6 +226,9 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 			FetchRequestConverter: func() *automock.FetchRequestConverter {
 				return &automock.FetchRequestConverter{}
 			},
+			VersionConverter: func() *automock.VersionConverter {
+				return &automock.VersionConverter{}
+			},
 		},
 	}
 
@@ -186,9 +236,10 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 			//given
 			frConverter := testCase.FetchRequestConverter()
+			versionConverter := testCase.VersionConverter()
 
 			// when
-			converter := eventapi.NewConverter(frConverter)
+			converter := eventapi.NewConverter(frConverter, versionConverter)
 			res := converter.MultipleInputFromGraphQL(testCase.Input)
 
 			// then

@@ -3,6 +3,8 @@ package domain
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
@@ -31,10 +33,11 @@ func NewRootResolver() *RootResolver {
 
 	runtimeConverter := runtime.NewConverter(authConverter)
 	frConverter := fetchrequest.NewConverter(authConverter)
+	versionConverter := version.NewConverter()
 	docConverter := document.NewConverter(frConverter)
 	webhookConverter := webhook.NewConverter(authConverter)
-	apiConverter := api.NewConverter(authConverter, frConverter)
-	eventAPIConverter := eventapi.NewConverter(frConverter)
+	apiConverter := api.NewConverter(authConverter, frConverter, versionConverter)
+	eventAPIConverter := eventapi.NewConverter(frConverter, versionConverter)
 	appConverter := application.NewConverter(webhookConverter, apiConverter, eventAPIConverter, docConverter)
 
 	healthcheckRepo := healthcheck.NewRepository()

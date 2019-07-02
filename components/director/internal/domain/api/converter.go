@@ -17,13 +17,20 @@ type FetchRequestConverter interface {
 	InputFromGraphQL(in *graphql.FetchRequestInput) *model.FetchRequestInput
 }
 
-type converter struct {
-	auth AuthConverter
-	fr   FetchRequestConverter
+//go:generate mockery -name=VersionConverter -output=automock -outpkg=automock -case=underscore
+type VersionConverter interface {
+	ToGraphQL(in *model.Version) *graphql.Version
+	InputFromGraphQL(in *graphql.VersionInput) *model.VersionInput
 }
 
-func NewConverter(auth AuthConverter, fr FetchRequestConverter) *converter {
-	return &converter{auth: auth, fr: fr}
+type converter struct {
+	auth    AuthConverter
+	fr      FetchRequestConverter
+	version VersionConverter
+}
+
+func NewConverter(auth AuthConverter, fr FetchRequestConverter, version VersionConverter) *converter {
+	return &converter{auth: auth, fr: fr, version: version}
 }
 
 func (c *converter) ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition {
@@ -41,7 +48,7 @@ func (c *converter) ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition {
 		Group:         in.Group,
 		Auths:         c.runtimeAuthArrToGraphQL(in.Auths),
 		DefaultAuth:   c.auth.ToGraphQL(in.DefaultAuth),
-		Version:       c.versionToGraphQL(in.Version),
+		Version:       c.version.ToGraphQL(in.Version),
 	}
 }
 
@@ -78,7 +85,7 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) *model.APID
 		TargetURL:   in.TargetURL,
 		Group:       in.Group,
 		Spec:        c.apiSpecInputFromGraphQL(in.Spec),
-		Version:     c.versionFromGraphQL(in.Version),
+		Version:     c.version.InputFromGraphQL(in.Version),
 		DefaultAuth: c.auth.InputFromGraphQL(in.DefaultAuth),
 	}
 }
@@ -127,32 +134,6 @@ func (c *converter) apiSpecInputFromGraphQL(in *graphql.APISpecInput) *model.API
 		Type:         model.APISpecType(in.Type),
 		Format:       &format,
 		FetchRequest: c.fr.InputFromGraphQL(in.FetchRequest),
-	}
-}
-
-func (c *converter) versionToGraphQL(in *model.Version) *graphql.Version {
-	if in == nil {
-		return nil
-	}
-
-	return &graphql.Version{
-		Value:           in.Value,
-		Deprecated:      in.Deprecated,
-		DeprecatedSince: in.DeprecatedSince,
-		ForRemoval:      in.ForRemoval,
-	}
-}
-
-func (c *converter) versionFromGraphQL(in *graphql.VersionInput) *model.VersionInput {
-	if in == nil {
-		return nil
-	}
-
-	return &model.VersionInput{
-		Value:           in.Value,
-		Deprecated:      in.Deprecated,
-		DeprecatedSince: in.DeprecatedSince,
-		ForRemoval:      in.ForRemoval,
 	}
 }
 
