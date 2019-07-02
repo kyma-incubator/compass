@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"reflect"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -753,7 +754,7 @@ func TestQueryApplications(t *testing.T) {
 	// THEN
 	require.NoError(t, err)
 	assert.Len(t, actualAppPage.Data, 3)
-	assert.Equal(t, actualAppPage.TotalCount, 3)
+	assert.Equal(t, 3, actualAppPage.TotalCount)
 
 }
 
@@ -983,6 +984,10 @@ type genericGQLResponse struct {
 func saveQueryInExamples(t *testing.T, query string, exampleName string) {
 	t.Helper()
 	sanitizedName := strings.Replace(exampleName, " ", "-", -1)
-	err := ioutil.WriteFile(fmt.Sprintf("%s/src/github.com/kyma-incubator/compass/examples/%s.graphql", os.Getenv("GOPATH"), sanitizedName), []byte(query), 0660)
+	// replace uuids with constant value
+	r, err := regexp.Compile("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}")
+	require.NoError(t, err)
+	query = r.ReplaceAllString(query, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+	err = ioutil.WriteFile(fmt.Sprintf("%s/src/github.com/kyma-incubator/compass/examples/%s.graphql", os.Getenv("GOPATH"), sanitizedName), []byte(query), 0660)
 	require.NoError(t, err)
 }

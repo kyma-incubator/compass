@@ -1,4 +1,4 @@
-query {result: application(id: "98e7a5ba-12f6-40c4-8b41-4b888f6df837") {id
+query {result: application(id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") {id
 		tenant
 		name
 		description

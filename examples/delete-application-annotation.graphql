@@ -1,3 +1,3 @@
 mutation {
-			result: deleteApplicationAnnotation(applicationID: "bf211ca6-8936-4e3c-9ff3-32dec92e7441", key: "brand-new-annotation") {key value}
+			result: deleteApplicationAnnotation(applicationID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", key: "brand-new-annotation") {key value}
 		}

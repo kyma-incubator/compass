@@ -1,4 +1,4 @@
-mutation{result: updateRuntime(id: "211ddc82-01d7-4d2c-9b60-11c553776e35", in: {
+mutation{result: updateRuntime(id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", in: {
 		name: "runtime-1",
 		description: "modified-runtime-1-description",
 		labels: {

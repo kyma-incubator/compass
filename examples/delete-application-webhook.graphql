@@ -1,5 +1,5 @@
 mutation {
-			result: deleteApplicationWebhook(webhookID: "6c55fc57-9286-40fb-9461-dd2156c3d360")  {id
+			result: deleteApplicationWebhook(webhookID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")  {id
 		type
 		url
 		auth {

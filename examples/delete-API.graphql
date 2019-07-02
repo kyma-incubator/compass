@@ -1,1 +1,1 @@
-mutation {result: deleteAPI(id: "14074ad2-a5d0-413f-8d05-71e619cffc8a") {id}}
+mutation {result: deleteAPI(id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") {id}}

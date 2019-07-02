@@ -1,5 +1,5 @@
 mutation {
-			result: addAPI(applicationID: "e413f384-a724-4af4-a87f-e51133f1715a", in: {
+			result: addAPI(applicationID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", in: {
 		name: "new-api-name",
 		targetURL: "new-api-url",
 	})  {		id

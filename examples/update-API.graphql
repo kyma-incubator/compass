@@ -1,4 +1,4 @@
-mutation { result: updateAPI(id: "14074ad2-a5d0-413f-8d05-71e619cffc8a", in: {
+mutation { result: updateAPI(id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", in: {
 		name: "updated-api-name",
 		targetURL: "updated-api-url",
 	}) {		id

@@ -1,1 +1,1 @@
-mutation{ressult: deleteApplication(id: "bf1b6956-334c-435a-922c-302eeaa70865") {id}}
+mutation{ressult: deleteApplication(id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") {id}}
