@@ -470,7 +470,18 @@ func TestService_SetAPIAuth(t *testing.T) {
 			ExpectedErr:         nil,
 		},
 		{
-			Name: "Setting api auth failed",
+			Name: "Set api auth failed on get",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("GetByID", apiID).Return(nil, testErr).Once()
+				return repo
+			},
+			Input:               *modelAuthInput,
+			ExpectedRuntimeAuth: nil,
+			ExpectedErr:         testErr,
+		},
+		{
+			Name: "Set api auth failed on update",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("GetByID", apiID).Return(modelAPIDefinition, nil).Once()
@@ -506,15 +517,19 @@ func TestService_DeleteAPIAuth(t *testing.T) {
 	// given
 	apiID := "foo"
 	runtimeID := "bar"
-
+	invalidRuntimeID := "invalid"
 	headers := map[string][]string{"header": {"hval1", "hval2"}}
 	modelAuthInput := fixModelAuthInput(headers)
-
 	modelRuntimeAuth := fixModelRuntimeAuth(runtimeID, modelAuthInput.ToAuth())
+
 	modelAPIDefinition := &model.APIDefinition{
-		ID:          apiID,
-		Auths:       []*model.RuntimeAuth{modelRuntimeAuth},
-		DefaultAuth: modelAuthInput.ToAuth(),
+		ID:    apiID,
+		Auths: []*model.RuntimeAuth{modelRuntimeAuth},
+	}
+
+	modelAPIDefinitionWithInvalidRuntimeID := &model.APIDefinition{
+		ID:    apiID,
+		Auths: []*model.RuntimeAuth{fixModelRuntimeAuth(invalidRuntimeID, modelAuthInput.ToAuth())},
 	}
 
 	ctx := context.TODO()
@@ -536,8 +551,19 @@ func TestService_DeleteAPIAuth(t *testing.T) {
 				return repo
 			},
 			Input:               *modelAuthInput,
-			ExpectedRuntimeAuth: modelRuntimeAuth,
+			ExpectedRuntimeAuth: fixModelRuntimeAuth(runtimeID, modelAuthInput.ToAuth()),
 			ExpectedErr:         nil,
+		},
+		{
+			Name: "No auth found",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("GetByID", apiID).Return(modelAPIDefinitionWithInvalidRuntimeID, nil).Once()
+				return repo
+			},
+			Input:               *modelAuthInput,
+			ExpectedRuntimeAuth: nil,
+			ExpectedErr:         fmt.Errorf("RuntimeAuth for Runtime with %s ID not found", runtimeID),
 		},
 	}
 

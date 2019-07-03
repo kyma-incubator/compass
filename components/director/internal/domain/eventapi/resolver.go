@@ -10,8 +10,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-//type EventAPIService interface{}
-
 //go:generate mockery -name=EventAPIService -output=automock -outpkg=automock -case=underscore
 type EventAPIService interface {
 	Create(ctx context.Context, id string, applicationID string, in model.EventAPIDefinitionInput) (string, error)

@@ -196,6 +196,20 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 				return conv
 			},
 		},
+		{
+			Name:     "Nil",
+			Input:    nil,
+			Expected: nil,
+			AuthConverterFn: func() *automock.AuthConverter {
+				return &automock.AuthConverter{}
+			},
+			FetchRequestConverter: func() *automock.FetchRequestConverter {
+				return &automock.FetchRequestConverter{}
+			},
+			VersionConverter: func() *automock.VersionConverter {
+				return &automock.VersionConverter{}
+			},
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -268,6 +282,20 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 		{
 			Name:     "Empty",
 			Input:    []*graphql.APIDefinitionInput{},
+			Expected: nil,
+			AuthConverterFn: func() *automock.AuthConverter {
+				return &automock.AuthConverter{}
+			},
+			FetchRequestConverter: func() *automock.FetchRequestConverter {
+				return &automock.FetchRequestConverter{}
+			},
+			VersionConverter: func() *automock.VersionConverter {
+				return &automock.VersionConverter{}
+			},
+		},
+		{
+			Name:     "Nil",
+			Input:    nil,
 			Expected: nil,
 			AuthConverterFn: func() *automock.AuthConverter {
 				return &automock.AuthConverter{}

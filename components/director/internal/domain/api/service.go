@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -88,26 +89,26 @@ func (s *service) SetAPIAuth(ctx context.Context, apiID string, runtimeID string
 		return nil, err
 	}
 
-	for i, rtAuth := range api.Auths {
-		if rtAuth.RuntimeID == runtimeID {
-			api.DefaultAuth = rtAuth.Auth
-			api.Auths[i] = rtAuth
-
-			err = s.repo.Update(api)
-			if err != nil {
-				return nil, err
-			}
-
-			return rtAuth, nil
+	var runtimeAuth *model.RuntimeAuth
+	var runtimeAuthIndex int
+	for i, a := range api.Auths {
+		if a.RuntimeID == runtimeID {
+			runtimeAuth = a
+			runtimeAuthIndex = i
+			break
 		}
 	}
 
-	runtimeAuth := &model.RuntimeAuth{
+	newAuth := &model.RuntimeAuth{
 		RuntimeID: runtimeID,
 		Auth:      in.ToAuth(),
 	}
-	api.DefaultAuth = runtimeAuth.Auth
-	api.Auths = append(api.Auths, runtimeAuth)
+
+	if runtimeAuth == nil {
+		api.Auths = append(api.Auths, newAuth)
+	} else {
+		api.Auths[runtimeAuthIndex] = newAuth
+	}
 
 	err = s.repo.Update(api)
 	if err != nil {
@@ -124,19 +125,26 @@ func (s *service) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID str
 	}
 
 	var runtimeAuth *model.RuntimeAuth
-	for i, rtAuth := range api.Auths {
-		if rtAuth.RuntimeID == runtimeID {
-			runtimeAuth = rtAuth
-
-			api.Auths = append(api.Auths[:i], api.Auths[i+1:]...)
-			api.DefaultAuth = nil
-
-			err := s.repo.Update(api)
-			if err != nil {
-				return nil, err
-			}
+	var runtimeAuthIndex int
+	for i, a := range api.Auths {
+		if a.RuntimeID == runtimeID {
+			runtimeAuth = a
+			runtimeAuthIndex = i
+			break
 		}
 	}
+
+	if runtimeAuth == nil {
+		return nil, fmt.Errorf("RuntimeAuth for Runtime with %s ID not found", runtimeID)
+	}
+
+	api.Auths = append(api.Auths[:runtimeAuthIndex], api.Auths[runtimeAuthIndex+1:]...)
+
+	err = s.repo.Update(api)
+	if err != nil {
+		return nil, err
+	}
+
 	return runtimeAuth, nil
 }
 

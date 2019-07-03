@@ -163,6 +163,17 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 				return conv
 			},
 		},
+		{
+			Name:     "Nil",
+			Input:    nil,
+			Expected: nil,
+			FetchRequestConverter: func() *automock.FetchRequestConverter {
+				return &automock.FetchRequestConverter{}
+			},
+			VersionConverter: func() *automock.VersionConverter {
+				return &automock.VersionConverter{}
+			},
+		},
 	}
 
 	for _, testCase := range testCases {
