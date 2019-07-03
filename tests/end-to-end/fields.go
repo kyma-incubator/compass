@@ -2,7 +2,7 @@ package end_to_end
 
 import "fmt"
 
-// gqlFieldsProvider is responsible for generating GraphQL queries that request for all fields for given tyle
+// gqlFieldsProvider is responsible for generating GraphQL queries that request for all fields for given type
 type gqlFieldsProvider struct{}
 
 func (fp *gqlFieldsProvider) Page(item string) string {
