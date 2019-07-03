@@ -1,4 +1,4 @@
-package end_to_end
+package director
 
 import (
 	"bytes"
