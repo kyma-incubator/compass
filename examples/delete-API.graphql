@@ -1,1 +1,0 @@
-mutation {result: deleteAPI(id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") {id}}

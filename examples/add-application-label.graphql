@@ -1,3 +1,0 @@
-mutation {
-			result: addApplicationLabel(applicationID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", key: "brand-new-label", values: ["aaa","bbb"]) {key values}
-		}

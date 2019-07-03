@@ -1,1 +1,0 @@
-mutation{ressult: deleteApplication(id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") {id}}

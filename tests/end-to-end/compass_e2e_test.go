@@ -3,11 +3,8 @@ package end_to_end
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"reflect"
-	"regexp"
-	"strings"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -1051,12 +1048,14 @@ type genericGQLResponse struct {
 }
 
 func saveQueryInExamples(t *testing.T, query string, exampleName string) {
-	t.Helper()
-	sanitizedName := strings.Replace(exampleName, " ", "-", -1)
-	// replace uuids with constant value
-	r, err := regexp.Compile("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}")
-	require.NoError(t, err)
-	query = r.ReplaceAllString(query, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
-	err = ioutil.WriteFile(fmt.Sprintf("%s/src/github.com/kyma-incubator/compass/examples/%s.graphql", os.Getenv("GOPATH"), sanitizedName), []byte(query), 0660)
-	require.NoError(t, err)
+	// TODO uncomment this in https://github.com/kyma-incubator/compass/issues/77
+	//t.Helper()
+	//sanitizedName := strings.Replace(exampleName, " ", "-", -1)
+	//// replace uuids with constant value
+	//r, err := regexp.Compile("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}")
+	//require.NoError(t, err)
+	//query = r.ReplaceAllString(query, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+	//content := fmt.Sprintf("# This example is generated from test compass_e2e_test.go\n%s", query)
+	//err = ioutil.WriteFile(fmt.Sprintf("%s/src/github.com/kyma-incubator/compass/components/director/examples/%s.graphql", os.Getenv("GOPATH"), sanitizedName), []byte(content), 0660)
+	//require.NoError(t, err)
 }

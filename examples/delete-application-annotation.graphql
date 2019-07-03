@@ -1,3 +1,0 @@
-mutation {
-			result: deleteApplicationAnnotation(applicationID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", key: "brand-new-annotation") {key value}
-		}

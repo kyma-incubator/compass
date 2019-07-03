@@ -11,5 +11,4 @@ spec:
       containers:
         - name: "test-{{ .Release.Name }}-end-to-end"
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.e2e.dir }}compass-end-to-end-test:{{ .Values.global.images.tests.e2e.version }}
-
       restartPolicy: Never

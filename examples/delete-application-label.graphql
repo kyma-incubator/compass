@@ -1,3 +1,0 @@
-mutation {
-			result: deleteApplicationLabel(applicationID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", key: "brand-new-label", values: ["aaa"]) {key values}
-		}
