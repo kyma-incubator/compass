@@ -3,9 +3,10 @@ package tenant
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"net/http"
 )
 
 // TODO: Make one codebase for Director and Gateway

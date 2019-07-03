@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/gateway/internal/tenant"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/gateway/internal/tenant"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRequireTenantHeader(t *testing.T) {
@@ -58,7 +59,7 @@ func TestRequireTenantHeader(t *testing.T) {
 			HandlerFn: func(t *testing.T) http.HandlerFunc {
 				return successHandler(t, "")
 			},
-			InputExcludedMethods: []string{"GET"},
+			InputExcludedMethods:   []string{"GET"},
 			ExpectedStatusCode:     http.StatusOK,
 			ExpectedErrorMessage:   "",
 			ExpectedCtxTenantValue: "",
@@ -73,9 +74,9 @@ func TestRequireTenantHeader(t *testing.T) {
 			HandlerFn: func(t *testing.T) http.HandlerFunc {
 				return successHandler(t, "")
 			},
-			InputExcludedMethods: []string{"OPTIONS"},
-			ExpectedStatusCode:   http.StatusUnauthorized,
-			ExpectedErrorMessage: "Header `tenant` is required",
+			InputExcludedMethods:   []string{"OPTIONS"},
+			ExpectedStatusCode:     http.StatusUnauthorized,
+			ExpectedErrorMessage:   "Header `tenant` is required",
 			ExpectedCtxTenantValue: "",
 		},
 		{

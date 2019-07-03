@@ -90,7 +90,7 @@ func TestRequireAndPassContext(t *testing.T) {
 		}
 	}
 
-	 failHandler := func(t *testing.T) func(writer http.ResponseWriter, request *http.Request) {
+	failHandler := func(t *testing.T) func(writer http.ResponseWriter, request *http.Request) {
 		return func(writer http.ResponseWriter, request *http.Request) {
 			t.Error("It shouldn't occur")
 			t.FailNow()
@@ -157,7 +157,7 @@ func TestRequireAndPassContext(t *testing.T) {
 				return req
 			},
 			HandlerFn: func(t *testing.T) http.HandlerFunc {
-				return  failHandler(t)
+				return failHandler(t)
 			},
 			ExpectedStatusCode:   http.StatusUnauthorized,
 			ExpectedErrorMessage: "Header `tenant` is required",
