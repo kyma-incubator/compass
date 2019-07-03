@@ -441,10 +441,15 @@ func TestService_SetAPIAuth(t *testing.T) {
 	modelAuthInput := fixModelAuthInput(headers)
 
 	modelRuntimeAuth := fixModelRuntimeAuth(runtimeID, modelAuthInput.ToAuth())
+
 	modelAPIDefinition := &model.APIDefinition{
-		ID:          apiID,
-		Auths:       []*model.RuntimeAuth{modelRuntimeAuth},
-		DefaultAuth: modelAuthInput.ToAuth(),
+		ID:    apiID,
+		Auths: []*model.RuntimeAuth{modelRuntimeAuth},
+	}
+
+	modelAPIDefinitionWithEmptyAuths := &model.APIDefinition{
+		ID:    apiID,
+		Auths: []*model.RuntimeAuth{},
 	}
 
 	ctx := context.TODO()
@@ -458,11 +463,23 @@ func TestService_SetAPIAuth(t *testing.T) {
 		ExpectedErr         error
 	}{
 		{
-			Name: "Success",
+			Name: "Success on replacing existing auth",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("GetByID", apiID).Return(modelAPIDefinition, nil).Once()
 				repo.On("Update", modelAPIDefinition).Return(nil).Once()
+				return repo
+			},
+			Input:               *modelAuthInput,
+			ExpectedRuntimeAuth: modelRuntimeAuth,
+			ExpectedErr:         nil,
+		},
+		{
+			Name: "Success on appending new auth",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("GetByID", apiID).Return(modelAPIDefinitionWithEmptyAuths, nil).Once()
+				repo.On("Update", modelAPIDefinitionWithEmptyAuths).Return(nil).Once()
 				return repo
 			},
 			Input:               *modelAuthInput,
@@ -515,21 +532,23 @@ func TestService_SetAPIAuth(t *testing.T) {
 
 func TestService_DeleteAPIAuth(t *testing.T) {
 	// given
+	testErr := errors.New("Test error")
 	apiID := "foo"
 	runtimeID := "bar"
 	invalidRuntimeID := "invalid"
 	headers := map[string][]string{"header": {"hval1", "hval2"}}
 	modelAuthInput := fixModelAuthInput(headers)
-	modelRuntimeAuth := fixModelRuntimeAuth(runtimeID, modelAuthInput.ToAuth())
 
-	modelAPIDefinition := &model.APIDefinition{
-		ID:    apiID,
-		Auths: []*model.RuntimeAuth{modelRuntimeAuth},
+	fixModelAPIDefinition := func(runtimeID string) *model.APIDefinition {
+		return &model.APIDefinition{
+			ID:    apiID,
+			Auths: []*model.RuntimeAuth{fixModelRuntimeAuth(runtimeID, modelAuthInput.ToAuth())},
+		}
 	}
 
-	modelAPIDefinitionWithInvalidRuntimeID := &model.APIDefinition{
+	fixModelApiDefinitionWithEmptyAuths := &model.APIDefinition{
 		ID:    apiID,
-		Auths: []*model.RuntimeAuth{fixModelRuntimeAuth(invalidRuntimeID, modelAuthInput.ToAuth())},
+		Auths: []*model.RuntimeAuth{},
 	}
 
 	ctx := context.TODO()
@@ -546,8 +565,8 @@ func TestService_DeleteAPIAuth(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("GetByID", apiID).Return(modelAPIDefinition, nil).Once()
-				repo.On("Update", modelAPIDefinition).Return(nil).Once()
+				repo.On("GetByID", apiID).Return(fixModelAPIDefinition(runtimeID), nil).Once()
+				repo.On("Update", fixModelApiDefinitionWithEmptyAuths).Return(nil).Once()
 				return repo
 			},
 			Input:               *modelAuthInput,
@@ -555,15 +574,38 @@ func TestService_DeleteAPIAuth(t *testing.T) {
 			ExpectedErr:         nil,
 		},
 		{
-			Name: "No auth found",
+			Name: "Delete api auth failed on get",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("GetByID", apiID).Return(modelAPIDefinitionWithInvalidRuntimeID, nil).Once()
+				repo.On("GetByID", apiID).Return(nil, testErr).Once()
 				return repo
 			},
 			Input:               *modelAuthInput,
 			ExpectedRuntimeAuth: nil,
-			ExpectedErr:         fmt.Errorf("RuntimeAuth for Runtime with %s ID not found", runtimeID),
+			ExpectedErr:         testErr,
+		},
+		{
+			Name: "Delete api auth failed on update",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("GetByID", apiID).Return(fixModelAPIDefinition(runtimeID), nil).Once()
+				repo.On("Update", fixModelApiDefinitionWithEmptyAuths).Return(testErr).Once()
+				return repo
+			},
+			Input:               *modelAuthInput,
+			ExpectedRuntimeAuth: nil,
+			ExpectedErr:         testErr,
+		},
+		{
+			Name: "No auth found",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("GetByID", apiID).Return(fixModelAPIDefinition(invalidRuntimeID), nil).Once()
+				return repo
+			},
+			Input:               *modelAuthInput,
+			ExpectedRuntimeAuth: nil,
+			ExpectedErr:         nil,
 		},
 	}
 

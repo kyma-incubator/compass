@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -115,7 +114,7 @@ func (s *service) SetAPIAuth(ctx context.Context, apiID string, runtimeID string
 		return nil, err
 	}
 
-	return runtimeAuth, nil
+	return newAuth, nil
 }
 
 func (s *service) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*model.RuntimeAuth, error) {
@@ -135,7 +134,7 @@ func (s *service) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID str
 	}
 
 	if runtimeAuth == nil {
-		return nil, fmt.Errorf("RuntimeAuth for Runtime with %s ID not found", runtimeID)
+		return nil, nil
 	}
 
 	api.Auths = append(api.Auths[:runtimeAuthIndex], api.Auths[runtimeAuthIndex+1:]...)
