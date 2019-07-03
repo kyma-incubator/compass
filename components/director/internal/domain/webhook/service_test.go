@@ -89,6 +89,7 @@ func TestService_Create(t *testing.T) {
 			}
 
 			repo.AssertExpectations(t)
+			uidSvc.AssertExpectations(t)
 		})
 	}
 }

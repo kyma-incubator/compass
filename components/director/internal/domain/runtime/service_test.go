@@ -89,6 +89,7 @@ func TestService_Create(t *testing.T) {
 			assert.Equal(t, testCase.ExpectedErr, err)
 
 			repo.AssertExpectations(t)
+			idSvc.AssertExpectations(t)
 		})
 	}
 }
