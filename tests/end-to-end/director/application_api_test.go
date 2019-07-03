@@ -45,12 +45,7 @@ func TestCreateApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
 	defer deleteApplication(t, actualApp.ID)
-
-	assert.Equal(t, in.Name, actualApp.Name)
-	assert.Equal(t, in.Description, actualApp.Description)
-	assert.Equal(t, *in.Annotations, actualApp.Annotations)
-	assert.Equal(t, *in.Labels, actualApp.Labels)
-	assert.Equal(t, in.HealthCheckURL, actualApp.HealthCheckURL)
+	assertApplication(t, in, actualApp)
 }
 
 func TestCreateApplicationWithWebhooks(t *testing.T) {
@@ -89,19 +84,7 @@ func TestCreateApplicationWithWebhooks(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
 	defer deleteApplication(t, actualApp.ID)
-
-	assert.Len(t, actualApp.Webhooks, 1)
-	actWh := actualApp.Webhooks[0]
-	assert.NotEmpty(t, actWh.ID)
-	assert.Equal(t, in.Webhooks[0].URL, actWh.URL)
-	assert.Equal(t, in.Webhooks[0].Type, actWh.Type)
-	assert.Equal(t, in.Webhooks[0].Auth.AdditionalQueryParams, actWh.Auth.AdditionalQueryParams)
-	assert.Equal(t, in.Webhooks[0].Auth.AdditionalHeaders, actWh.Auth.AdditionalHeaders)
-
-	actBasic, ok := (actWh.Auth.Credential).(*graphql.BasicCredentialData)
-	require.True(t, ok)
-	assert.Equal(t, in.Webhooks[0].Auth.Credential.Basic.Username, actBasic.Username)
-	assert.Equal(t, in.Webhooks[0].Auth.Credential.Basic.Password, actBasic.Password)
+	assertApplication(t, in, actualApp)
 }
 
 func TestCreateApplicationWithAPIs(t *testing.T) {
@@ -155,42 +138,14 @@ func TestCreateApplicationWithAPIs(t *testing.T) {
 			tc.gqlFieldsProvider.ForApplication(),
 		))
 	saveQueryInExamples(t, request.Query(), "create application with APIs")
+
 	err = tc.RunQuery(ctx, request, &actualApp)
 
 	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
 	defer deleteApplication(t, actualApp.ID)
-
-	require.Len(t, actualApp.Apis.Data, 2)
-	var actCommentsApi, actReviewsApi *graphql.APIDefinition
-	if actualApp.Apis.Data[0].Name == "comments/v1" {
-		actCommentsApi = actualApp.Apis.Data[0]
-		actReviewsApi = actualApp.Apis.Data[1]
-	} else {
-		actCommentsApi = actualApp.Apis.Data[1]
-		actReviewsApi = actualApp.Apis.Data[0]
-
-	}
-	assert.NotNil(t, actCommentsApi.ID)
-	assert.Equal(t, in.Apis[0].Name, actCommentsApi.Name)
-	assert.Equal(t, in.Apis[0].Description, actCommentsApi.Description)
-	assert.Equal(t, in.Apis[0].TargetURL, actCommentsApi.TargetURL)
-	assert.Equal(t, in.Apis[0].Group, actCommentsApi.Group)
-	assert.NotNil(t, actCommentsApi.DefaultAuth)
-	assert.NotNil(t, actCommentsApi.Version)
-	assert.NotNil(t, actCommentsApi.Spec)
-
-	assert.Equal(t, in.Apis[0].Spec.Type, actCommentsApi.Spec.Type)
-	assert.Equal(t, in.Apis[0].Spec.Format, *actCommentsApi.Spec.Format)
-	assert.Equal(t, *in.Apis[0].Spec.Data, *actCommentsApi.Spec.Data)
-
-	require.NotNil(t, actReviewsApi.Spec.FetchRequest)
-	assert.Equal(t, in.Apis[1].Spec.FetchRequest.URL, actReviewsApi.Spec.FetchRequest.URL)
-	assert.Equal(t, *in.Apis[1].Spec.FetchRequest.Mode, actReviewsApi.Spec.FetchRequest.Mode)
-	assert.Equal(t, in.Apis[1].Spec.FetchRequest.Filter, actReviewsApi.Spec.FetchRequest.Filter)
-	assert.NotNil(t, actReviewsApi.Spec.FetchRequest.Auth)
-
+	assertApplication(t, in, actualApp)
 }
 
 func TestCreateApplicationWithEventAPIs(t *testing.T) {
@@ -248,26 +203,7 @@ func TestCreateApplicationWithEventAPIs(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
 	defer deleteApplication(t, actualApp.ID)
-
-	assert.Len(t, actualApp.EventAPIs.Data, 2)
-	actCommentsApi := actualApp.EventAPIs.Data[0]
-	assert.NotNil(t, actCommentsApi.ID)
-	assert.Equal(t, in.EventAPIs[0].Name, actCommentsApi.Name)
-	assert.Equal(t, in.EventAPIs[0].Description, actCommentsApi.Description)
-	assert.Equal(t, in.EventAPIs[0].Group, actCommentsApi.Group)
-	assert.NotNil(t, actCommentsApi.Version)
-	assert.NotNil(t, actCommentsApi.Spec)
-
-	assert.Equal(t, in.EventAPIs[0].Spec.EventSpecType, actCommentsApi.Spec.Type)
-	assert.Equal(t, in.EventAPIs[0].Spec.Data, actCommentsApi.Spec.Data)
-
-	actReviewsApi := actualApp.EventAPIs.Data[1]
-	require.NotNil(t, actReviewsApi.Spec.FetchRequest)
-	assert.Equal(t, in.EventAPIs[1].Spec.FetchRequest.URL, actReviewsApi.Spec.FetchRequest.URL)
-	assert.Equal(t, in.EventAPIs[1].Spec.FetchRequest.Mode, actReviewsApi.Spec.FetchRequest.Mode)
-	assert.Equal(t, in.EventAPIs[1].Spec.FetchRequest.Filter, actReviewsApi.Spec.FetchRequest.Filter)
-	assert.NotNil(t, actReviewsApi.Spec.FetchRequest.Auth)
-
+	assertApplication(t, in, actualApp)
 }
 
 func TestCreateApplicationWithDocuments(t *testing.T) {
@@ -318,23 +254,7 @@ func TestCreateApplicationWithDocuments(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
 	defer deleteApplication(t, actualApp.ID)
-
-	assert.Len(t, actualApp.Documents.Data, 2)
-	var actReadme, actTrouble *graphql.Document
-	if actualApp.Documents.Data[0].Title == "Readme" {
-		actReadme = actualApp.Documents.Data[0]
-		actTrouble = actualApp.Documents.Data[1]
-	} else {
-		actReadme = actualApp.Documents.Data[1]
-		actTrouble = actualApp.Documents.Data[0]
-	}
-	assert.Equal(t, in.Documents[0].Title, actReadme.Title)
-	require.NotNil(t, actReadme.FetchRequest)
-	assert.Equal(t, in.Documents[0].FetchRequest.URL, actReadme.FetchRequest.URL)
-
-	assert.Equal(t, in.Documents[1].Title, actTrouble.Title)
-	assert.Equal(t, in.Documents[1].Data, actTrouble.Data)
-
+	assertApplication(t, in, actualApp)
 }
 
 func TestUpdateApplication(t *testing.T) {
@@ -377,22 +297,8 @@ func TestUpdateApplication(t *testing.T) {
 	updatedApp := ApplicationExt{}
 	err = tc.RunQuery(ctx, request, &updatedApp)
 	require.NoError(t, err)
-	assert.Equal(t, "after", updatedApp.Name)
-	require.Len(t, updatedApp.Documents.Data, 1)
-	assert.Equal(t, "after", updatedApp.Documents.Data[0].Title)
-	require.Len(t, updatedApp.Apis.Data, 1)
-	assert.Equal(t, "after", updatedApp.Apis.Data[0].Name)
-	assert.Equal(t, "after", updatedApp.Apis.Data[0].TargetURL)
-	// TODO
-	// require.Len(t, updatedApp.EventAPIs.Data, 1)
-	// assert.Equal(t, "after", updatedApp.EventAPIs.Data[0].Name)
-	require.Len(t, updatedApp.Webhooks, 1)
 
-	assert.Equal(t, "after", updatedApp.Webhooks[0].URL)
-	assert.Equal(t, graphql.Labels{"after": []string{"after"}}, updatedApp.Labels)
-	assert.Equal(t, graphql.Annotations{"after": "after"}, updatedApp.Annotations)
-	assert.Equal(t, id, updatedApp.ID)    // id was not changed
-	assert.Nil(t, updatedApp.Description) // all fields are overridden
+	assertApplication(t, in, updatedApp)
 }
 
 func TestDeleteApplication(t *testing.T) {
@@ -826,7 +732,7 @@ func TestQuerySpecificApplication(t *testing.T) {
 }
 
 func TestTenantSeparation(t *testing.T) {
-	//TODO
+	//TODO later
 }
 
 func getApp(ctx context.Context, t *testing.T, id string) ApplicationExt {
@@ -875,42 +781,4 @@ func deleteApplication(t *testing.T, id string) {
 	require.NoError(t, tc.RunQuery(context.Background(), req, nil))
 }
 
-func fixBasicAuth() *graphql.AuthInput {
-	return &graphql.AuthInput{
-		Credential: &graphql.CredentialDataInput{
-			Basic: &graphql.BasicCredentialDataInput{
-				Username: "admin",
-				Password: "secret",
-			},
-		},
-		AdditionalHeaders: &graphql.HttpHeaders{
-			"headerA": []string{"ha1", "ha2"},
-			"headerB": []string{"hb1", "hb2"},
-		},
-		AdditionalQueryParams: &graphql.QueryParams{
-			"qA": []string{"qa1", "qa2"},
-			"qB": []string{"qb1", "qb2"},
-		},
-	}
-}
 
-func fixOauthAuth() *graphql.AuthInput {
-	return &graphql.AuthInput{
-		Credential: &graphql.CredentialDataInput{
-			Oauth: &graphql.OAuthCredentialDataInput{
-				URL:          "http://oauth/token",
-				ClientID:     "clientID",
-				ClientSecret: "clientSecret",
-			},
-		},
-	}
-}
-
-func fixDepracatedVersion1() *graphql.VersionInput {
-	return &graphql.VersionInput{
-		Value:           "v1",
-		Deprecated:      ptrBool(true),
-		ForRemoval:      ptrBool(true),
-		DeprecatedSince: ptrString("v5"),
-	}
-}
