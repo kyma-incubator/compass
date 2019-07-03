@@ -34,13 +34,18 @@ func TestCreateApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	require.NoError(t, err)
 	actualApp := ApplicationExt{}
 	resp := resultMapperFor(&actualApp)
+
 	// WHEN
 	request := gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: createApplication(in: %s) {%s}
-			}`, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
+			result: createApplication(in: %s) {
+					%s
+				}
+			}`,
+			appInputGQL, tc.gqlFieldsProvider.ForApplication()))
 	err = tc.cli.Run(ctx, request, &resp)
-	// THEN
+
+	//THEN
 	saveQueryInExamples(t, request.Query(), "create application")
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
@@ -51,7 +56,6 @@ func TestCreateApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	assert.Equal(t, *in.Annotations, actualApp.Annotations)
 	assert.Equal(t, *in.Labels, actualApp.Labels)
 	assert.Equal(t, in.HealthCheckURL, actualApp.HealthCheckURL)
-
 }
 
 func TestCreateApplicationWithWebhooks(t *testing.T) {
@@ -72,17 +76,22 @@ func TestCreateApplicationWithWebhooks(t *testing.T) {
 	require.NoError(t, err)
 	actualApp := ApplicationExt{}
 	createResp := resultMapperFor(&actualApp)
+
 	// WHEN
 	request := gcli.NewRequest(
 		fmt.Sprintf(
 			`mutation {
-			result: createApplication(in: %s) { %s } }`,
+				result: createApplication(in: %s) { 
+						%s 
+					} 
+				}`,
 			appInputGQL,
 			tc.gqlFieldsProvider.ForApplication(),
 		))
 	saveQueryInExamples(t, request.Query(), "create application with webhooks")
 	err = tc.cli.Run(ctx, request, &createResp)
-	// THEN
+
+	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
 	defer deleteApplication(t, actualApp.ID)
@@ -140,17 +149,22 @@ func TestCreateApplicationWithAPIs(t *testing.T) {
 	require.NoError(t, err)
 	actualApp := ApplicationExt{}
 	createResp := resultMapperFor(&actualApp)
+
 	// WHEN
 	request := gcli.NewRequest(
 		fmt.Sprintf(
 			`mutation {
- 			 result: createApplication(in: %s) { %s }}`,
+ 			 result: createApplication(in: %s) { 
+					%s 
+				}
+			}`,
 			appInputGQL,
 			tc.gqlFieldsProvider.ForApplication(),
 		))
 	saveQueryInExamples(t, request.Query(), "create application with APIs")
 	err = tc.cli.Run(ctx, request, &createResp)
-	// THEN
+
+	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
 	defer deleteApplication(t, actualApp.ID)
@@ -224,17 +238,22 @@ func TestCreateApplicationWithEventAPIs(t *testing.T) {
 
 	actualApp := ApplicationExt{}
 	createResp := resultMapperFor(&actualApp)
+
 	// WHEN
 	request := gcli.NewRequest(
 		fmt.Sprintf(
 			`mutation {
-  		result: createApplication(in: %s) { %s }}`,
+  			result: createApplication(in: %s) { 
+					%s 
+				}
+			}`,
 			appInputGQL,
 			tc.gqlFieldsProvider.ForApplication(),
 		))
 	saveQueryInExamples(t, request.Query(), "create application with event APIs")
 	err = tc.cli.Run(ctx, request, &createResp)
-	// THEN
+
+	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
 	defer deleteApplication(t, actualApp.ID)
@@ -290,17 +309,22 @@ func TestCreateApplicationWithDocuments(t *testing.T) {
 	require.NoError(t, err)
 	actualApp := ApplicationExt{}
 	createResp := resultMapperFor(&actualApp)
+
 	// WHEN
 	request := gcli.NewRequest(
 		fmt.Sprintf(
 			`mutation {
-			result: createApplication(in: %s) { %s }}`,
+				result: createApplication(in: %s) { 
+						%s 
+					}
+				}`,
 			appInputGQL,
 			tc.gqlFieldsProvider.ForApplication(),
 		))
 	saveQueryInExamples(t, request.Query(), "create application with documents")
 	err = tc.cli.Run(ctx, request, &createResp)
-	// THEN
+
+	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
 	defer deleteApplication(t, actualApp.ID)
@@ -334,14 +358,17 @@ func TestUpdateApplication(t *testing.T) {
 
 	actualApp := ApplicationExt{}
 	createResp := resultMapperFor(&actualApp)
+
 	// WHEN
 	request := gcli.NewRequest(
-		fmt.Sprintf(
-			`mutation {
-  				result: createApplication(in: %s) {
-    				id}}`, appInputGQL))
+		fmt.Sprintf(`mutation {
+				result: createApplication(in: %s) {
+    					id
+					}
+				}`, appInputGQL))
 	err = tc.cli.Run(ctx, request, &createResp)
-	// THEN
+
+	//THEN
 	require.NoError(t, err)
 	id := actualApp.ID
 	require.NotEmpty(t, id)
@@ -351,10 +378,11 @@ func TestUpdateApplication(t *testing.T) {
 	appInputGQL, err = tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
 	request = gcli.NewRequest(
-		fmt.Sprintf(
-			`mutation {
+		fmt.Sprintf(`mutation {
   				result: updateApplication(id: "%s", in: %s) {
-    				%s}}`, id, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
+    					%s
+					}
+				}`, id, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
 	saveQueryInExamples(t, request.Query(), "update application")
 
 	updatedApp := ApplicationExt{}
@@ -387,21 +415,29 @@ func TestDeleteApplication(t *testing.T) {
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
 	createReq := gcli.NewRequest(
-		fmt.Sprintf(
-			`mutation {
+		fmt.Sprintf(`mutation {
   				result: createApplication(in: %s) {
-    				id}}`, appInputGQL))
+    					id
+					}
+				}`, appInputGQL))
 	actualApp := ApplicationExt{}
 	createResp := resultMapperFor(&actualApp)
 	err = tc.cli.Run(ctx, createReq, &createResp)
 	require.NoError(t, err)
 
 	require.NotEmpty(t, actualApp.ID)
+
 	// WHEN
-	delReq := gcli.NewRequest(fmt.Sprintf(`mutation{ressult: deleteApplication(id: "%s") {id}}`, actualApp.ID))
+	delReq := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: deleteApplication(id: "%s") {
+					id
+				}
+			}`, actualApp.ID))
 	saveQueryInExamples(t, delReq.Query(), "delete application")
 	err = tc.cli.Run(ctx, delReq, &actualApp)
-	// THEN
+
+	//THEN
 	require.NoError(t, err)
 }
 
@@ -413,10 +449,11 @@ func TestUpdateApplicationParts(t *testing.T) {
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
 	createReq := gcli.NewRequest(
-		fmt.Sprintf(
-			`mutation {
+		fmt.Sprintf(`mutation {
   				result: createApplication(in: %s) {
-    				id}}`, appInputGQL))
+    					id
+					}
+				}`, appInputGQL))
 	actualApp := ApplicationExt{}
 	createAppResp := resultMapperFor(&actualApp)
 	err = tc.cli.Run(ctx, createReq, &createAppResp)
@@ -429,9 +466,13 @@ func TestUpdateApplicationParts(t *testing.T) {
 		createdLabel := &graphql.Label{}
 		addResp := resultMapperFor(createdLabel)
 
-		addReq := gcli.NewRequest(fmt.Sprintf(`mutation {
-			result: addApplicationLabel(applicationID: "%s", key: "%s", values: %s) {key values}
-		}`, actualApp.ID, "brand-new-label", "[\"aaa\",\"bbb\"]"))
+		addReq := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+			result: addApplicationLabel(applicationID: "%s", key: "%s", values: %s) {
+					key 
+					values
+				}
+			}`, actualApp.ID, "brand-new-label", "[\"aaa\",\"bbb\"]"))
 		saveQueryInExamples(t, addReq.Query(), "add application label")
 		err := tc.cli.Run(ctx, addReq, &addResp)
 		require.NoError(t, err)
@@ -441,9 +482,13 @@ func TestUpdateApplicationParts(t *testing.T) {
 		assert.Contains(t, actualApp.Labels["brand-new-label"], "bbb")
 
 		// delete first label value
-		delReq := gcli.NewRequest(fmt.Sprintf(`mutation {
-			result: deleteApplicationLabel(applicationID: "%s", key: "%s", values: %s) {key values}
-		}`, actualApp.ID, "brand-new-label", "[\"aaa\"]"))
+		delReq := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+				result: deleteApplicationLabel(applicationID: "%s", key: "%s", values: %s) {
+						key 
+						values
+					}
+				}`, actualApp.ID, "brand-new-label", "[\"aaa\"]"))
 		saveQueryInExamples(t, delReq.Query(), "delete application label")
 		deletedLabel := &graphql.Label{}
 		delResp := resultMapperFor(deletedLabel)
@@ -453,9 +498,13 @@ func TestUpdateApplicationParts(t *testing.T) {
 		actualApp = getApp(ctx, t, actualApp.ID)
 
 		// delete second label value
-		delReq = gcli.NewRequest(fmt.Sprintf(`mutation {
-			result: deleteApplicationLabel(applicationID: "%s", key: "%s", values: %s) {key values}
-		}`, actualApp.ID, "brand-new-label", "[\"bbb\"]"))
+		delReq = gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+			result: deleteApplicationLabel(applicationID: "%s", key: "%s", values: %s) {
+					key 
+					values
+				}
+			}`, actualApp.ID, "brand-new-label", "[\"bbb\"]"))
 		err = tc.cli.Run(ctx, delReq, &delResp)
 		require.NoError(t, err)
 		assert.Equal(t, &graphql.Label{Key: "brand-new-label", Values: []string{}}, deletedLabel)
@@ -466,9 +515,13 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 	t.Run("annotations manipulation", func(t *testing.T) {
 		// create label
-		addReq := gcli.NewRequest(fmt.Sprintf(`mutation {
-			result: addApplicationAnnotation(applicationID: "%s", key: "%s", value: "%s")  {key value}
-		}`, actualApp.ID, "brand-new-annotation", "ccc"))
+		addReq := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+			result: addApplicationAnnotation(applicationID: "%s", key: "%s", value: "%s") {
+					key 
+					value
+				}
+			}`, actualApp.ID, "brand-new-annotation", "ccc"))
 		saveQueryInExamples(t, addReq.Query(), "add application annotation")
 		actualAnnotation := graphql.Annotation{}
 		addResp := resultMapperFor(&actualAnnotation)
@@ -479,9 +532,13 @@ func TestUpdateApplicationParts(t *testing.T) {
 		assert.Equal(t, "ccc", actualApp.Annotations["brand-new-annotation"])
 
 		// delete label
-		delReq := gcli.NewRequest(fmt.Sprintf(`mutation {
-			result: deleteApplicationAnnotation(applicationID: "%s", key: "%s") {key value}
-		}`, actualApp.ID, "brand-new-annotation"))
+		delReq := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+			result: deleteApplicationAnnotation(applicationID: "%s", key: "%s") {
+					key 
+					value
+				}
+			}`, actualApp.ID, "brand-new-annotation"))
 		saveQueryInExamples(t, delReq.Query(), "delete application annotation")
 		remResp := resultMapperFor(&actualAnnotation)
 		err = tc.cli.Run(ctx, delReq, &remResp)
@@ -500,9 +557,12 @@ func TestUpdateApplicationParts(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		addReq := gcli.NewRequest(fmt.Sprintf(`mutation {
-			result: addApplicationWebhook(applicationID: "%s", in: %s)  {%s}
-		}`, actualApp.ID, webhookInStr, tc.gqlFieldsProvider.ForWebhooks()))
+		addReq := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+			result: addApplicationWebhook(applicationID: "%s", in: %s) {
+					%s
+				}
+			}`, actualApp.ID, webhookInStr, tc.gqlFieldsProvider.ForWebhooks()))
 		saveQueryInExamples(t, addReq.Query(), "add aplication webhook")
 
 		actualWebhook := graphql.ApplicationWebhook{}
@@ -524,9 +584,12 @@ func TestUpdateApplicationParts(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		updateReq := gcli.NewRequest(fmt.Sprintf(`mutation {
-			result: updateApplicationWebhook(webhookID: "%s", in: %s)  {%s}
-		}`, actualWebhook.ID, webhookInStr, tc.gqlFieldsProvider.ForWebhooks()))
+		updateReq := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+			result: updateApplicationWebhook(webhookID: "%s", in: %s) {
+					%s
+				}
+			}`, actualWebhook.ID, webhookInStr, tc.gqlFieldsProvider.ForWebhooks()))
 		saveQueryInExamples(t, updateReq.Query(), "update application webhook")
 		updateResp := resultMapperFor(&actualWebhook)
 		err = tc.cli.Run(ctx, updateReq, &updateResp)
@@ -534,9 +597,12 @@ func TestUpdateApplicationParts(t *testing.T) {
 		assert.Equal(t, "updated-webhook", actualWebhook.URL)
 
 		// delete
-		deleteReq := gcli.NewRequest(fmt.Sprintf(`mutation {
-			result: deleteApplicationWebhook(webhookID: "%s")  {%s}
-		}`, actualWebhook.ID, tc.gqlFieldsProvider.ForWebhooks()))
+		deleteReq := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+			result: deleteApplicationWebhook(webhookID: "%s") {
+					%s
+				}
+			}`, actualWebhook.ID, tc.gqlFieldsProvider.ForWebhooks()))
 		saveQueryInExamples(t, deleteReq.Query(), "delete application webhook")
 		deleteResp := resultMapperFor(&actualWebhook)
 		err = tc.cli.Run(ctx, deleteReq, &deleteResp)
@@ -555,13 +621,18 @@ func TestUpdateApplicationParts(t *testing.T) {
 		require.NoError(t, err)
 		actualAPI := graphql.APIDefinition{}
 		addResp := resultMapperFor(&actualAPI)
+
 		// WHEN
-		addReq := gcli.NewRequest(fmt.Sprintf(`mutation {
-			result: addAPI(applicationID: "%s", in: %s)  {%s}
-		}`, actualApp.ID, inStr, tc.gqlFieldsProvider.ForAPIDefinition()))
+		addReq := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+			result: addAPI(applicationID: "%s", in: %s) {
+					%s
+				}
+			}`, actualApp.ID, inStr, tc.gqlFieldsProvider.ForAPIDefinition()))
 		saveQueryInExamples(t, addReq.Query(), "add API")
 		err = tc.cli.Run(ctx, addReq, &addResp)
-		// THEN
+
+		//THEN
 		require.NoError(t, err)
 		id := actualAPI.ID
 		require.NotNil(t, id)
@@ -582,11 +653,18 @@ func TestUpdateApplicationParts(t *testing.T) {
 		require.NoError(t, err)
 		updatedAPI := graphql.APIDefinition{}
 		updateResp := resultMapperFor(&updatedAPI)
+
 		// WHEN
-		updateReq := gcli.NewRequest(fmt.Sprintf(`mutation { result: updateAPI(id: "%s", in: %s) {%s}}`, id, updateStr, tc.gqlFieldsProvider.ForAPIDefinition()))
+		updateReq := gcli.NewRequest(
+			fmt.Sprintf(`mutation { 
+				result: updateAPI(id: "%s", in: %s) {
+						%s
+					}
+				}`, id, updateStr, tc.gqlFieldsProvider.ForAPIDefinition()))
 		err = tc.cli.Run(ctx, updateReq, &updateResp)
 		saveQueryInExamples(t, updateReq.Query(), "update API")
-		// THEN
+
+		//THEN
 		require.NoError(t, err)
 		updatedApp = getApp(ctx, t, actualApp.ID)
 		assert.Len(t, updatedApp.Apis.Data, 2)
@@ -599,11 +677,18 @@ func TestUpdateApplicationParts(t *testing.T) {
 		// delete
 		delAPI := graphql.APIDefinition{}
 		deleteResp := resultMapperFor(&delAPI)
+
 		// WHEN
-		deleteReq := gcli.NewRequest(fmt.Sprintf(`mutation {result: deleteAPI(id: "%s") {id}}`, id))
+		deleteReq := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+				result: deleteAPI(id: "%s") {
+						id
+					}
+				}`, id))
 		err = tc.cli.Run(ctx, deleteReq, &deleteResp)
 		saveQueryInExamples(t, deleteReq.Query(), "delete API")
-		// THEN
+
+		//THEN
 		require.NoError(t, err)
 		assert.Equal(t, id, delAPI.ID)
 
@@ -627,13 +712,18 @@ func TestUpdateApplicationParts(t *testing.T) {
 		require.NoError(t, err)
 		actualDoc := graphql.Document{}
 		addResp := resultMapperFor(&actualDoc)
+
 		// WHEN
-		addReq := gcli.NewRequest(fmt.Sprintf(`mutation {
-			result: addDocument(applicationID: "%s", in: %s)  {%s}
-		}`, actualApp.ID, inStr, tc.gqlFieldsProvider.ForDocument()))
+		addReq := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+				result: addDocument(applicationID: "%s", in: %s) {
+						%s
+					}
+			}`, actualApp.ID, inStr, tc.gqlFieldsProvider.ForDocument()))
 		err = tc.cli.Run(ctx, addReq, &addResp)
 		saveQueryInExamples(t, addReq.Query(), "add Document")
-		// THEN
+
+		//THEN
 		require.NoError(t, err)
 		id := actualDoc.ID
 		require.NotNil(t, id)
@@ -651,11 +741,18 @@ func TestUpdateApplicationParts(t *testing.T) {
 		// delete
 		delDocument := graphql.Document{}
 		deleteResp := resultMapperFor(&delDocument)
+
 		// WHEN
-		deleteReq := gcli.NewRequest(fmt.Sprintf(`mutation {result: deleteDocument(id: "%s") {id}}`, id))
+		deleteReq := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+				result: deleteDocument(id: "%s") {
+						id
+					}
+				}`, id))
 		err = tc.cli.Run(ctx, deleteReq, &deleteResp)
 		saveQueryInExamples(t, deleteReq.Query(), "delete Document")
-		// THEN
+
+		//THEN
 		require.NoError(t, err)
 		assert.Equal(t, id, delDocument.ID)
 
@@ -682,11 +779,18 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	require.NoError(t, err)
 	actualRuntime := graphql.Runtime{}
 	resp := resultMapperFor(&actualRuntime)
+
 	// WHEN
-	createReq := gcli.NewRequest(fmt.Sprintf(`mutation {result: createRuntime(in: %s) {%s} }`, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
+	createReq := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: createRuntime(in: %s) {
+					%s
+				}
+			}`, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
 	saveQueryInExamples(t, createReq.Query(), "create runtime")
 	err = tc.cli.Run(ctx, createReq, &resp)
-	// THEN
+
+	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, actualRuntime.ID)
 	assert.Equal(t, givenInput.Name, actualRuntime.Name)
@@ -699,22 +803,107 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	givenInput.Description = ptrString("modified-runtime-1-description")
 	runtimeInGQL, err = tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
+
 	// WHEN
-	updateReq := gcli.NewRequest(fmt.Sprintf(`mutation{result: updateRuntime(id: "%s", in: %s) {%s} }`, actualRuntime.ID, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
+	updateReq := gcli.NewRequest(
+		fmt.Sprintf(`mutation{ 
+			result: updateRuntime(id: "%s", in: %s) {
+					%s
+				}
+			}`, actualRuntime.ID, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
 	saveQueryInExamples(t, updateReq.Query(), "update runtime")
 	err = tc.cli.Run(ctx, updateReq, &resp)
-	// THEN
+
+	//THEN
 	require.NoError(t, err)
 	assert.Equal(t, *givenInput.Description, *actualRuntime.Description)
 
-	// TODO addRuntimeLabel etc
+	// add Label
+	actualLabel := graphql.Label{}
+	addLabelResp := resultMapperFor(&actualLabel)
+
+	// WHEN
+	addLabelReq := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: addRuntimeLabel(runtimeID: "%s", key: "%s", values: %s) {
+					%s
+				}
+			}`, actualRuntime.ID, "new-label", "[\"bbb\"]", tc.gqlFieldsProvider.ForLabel()))
+	err = tc.cli.Run(ctx, addLabelReq, &addLabelResp)
+
+	//THEN
+	require.NoError(t, err)
+	assert.Equal(t, "new-label", actualLabel.Key)
+	assert.Len(t, actualLabel.Values, 1)
+	assert.Contains(t, actualLabel.Values, "bbb")
+
+	// add Annotation
+	actualAnnotation := graphql.Annotation{}
+	addAnnotationResp := resultMapperFor(&actualAnnotation)
+
+	// WHEN
+	addAnnotationReq := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: addRuntimeAnnotation(runtimeID: "%s", key: "%s", value: %s) {
+					%s
+				}
+			}`, actualRuntime.ID, "new-anno", `["zzz"]`, tc.gqlFieldsProvider.ForAnnotation()))
+	err = tc.cli.Run(ctx, addAnnotationReq, &addAnnotationResp)
+
+	//THEN
+	require.NoError(t, err)
+	assert.Equal(t, "new-anno", actualAnnotation.Key)
+	assert.Equal(t, []interface{}{"zzz"}, actualAnnotation.Value)
+
+	// get runtime and validate runtimes and annotations
+	getRuntimeResp := resultMapperFor(&actualRuntime)
+	getRuntimeReq := gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: runtime(id: "%s") {
+					%s
+				}
+			}`, actualRuntime.ID, tc.gqlFieldsProvider.ForRuntime()))
+	err = tc.cli.Run(ctx, getRuntimeReq, &getRuntimeResp)
+	require.NoError(t, err)
+	assert.Len(t, actualRuntime.Labels, 2)
+	assert.Len(t, actualRuntime.Annotations, 2)
+
+	// delete label
+
+	// WHEN
+	delLabelReq := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+				result: deleteRuntimeLabel(runtimeID: "%s", key: "%s") {
+						%s
+					}
+				}
+		`, actualRuntime.ID, "new-label", tc.gqlFieldsProvider.ForLabel()))
+	err = tc.cli.Run(ctx, delLabelReq, nil)
+
+	//THEN
+	require.NoError(t, err)
+	// delete annotation
+
+	// WHEN
+	delAnnoReq := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+				result: deleteRuntimeAnnotation(runtimeID: "%s", key: "%s") {
+						%s
+				}
+			}`, actualRuntime.ID, "new-anno", tc.gqlFieldsProvider.ForAnnotation()))
+	err = tc.cli.Run(ctx, delAnnoReq, nil)
+
+	//THEN
+	require.NoError(t, err)
 
 	// delete runtime
+
 	// WHEN
 	delReq := gcli.NewRequest(fmt.Sprintf(`mutation{result: deleteRuntime(id: "%s") {%s}}`, actualRuntime.ID, tc.gqlFieldsProvider.ForRuntime()))
 	saveQueryInExamples(t, delReq.Query(), "delete runtime")
 	err = tc.cli.Run(ctx, delReq, &resp)
-	// THEN
+
+	//THEN
 	require.NoError(t, err)
 }
 
@@ -728,10 +917,11 @@ func TestSetAndDeleteAPIAuth(t *testing.T) {
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
 	createReq := gcli.NewRequest(
-		fmt.Sprintf(
-			`mutation {
+		fmt.Sprintf(`mutation {
   				result: createApplication(in: %s) {
-    				%s}}`, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
+    					%s
+					}
+				}`, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
 	actualApp := ApplicationExt{}
 	createAppResp := resultMapperFor(&actualApp)
 	err = tc.cli.Run(ctx, createReq, &createAppResp)
@@ -750,7 +940,12 @@ func TestSetAndDeleteAPIAuth(t *testing.T) {
 	require.NoError(t, err)
 	actualRuntime := graphql.Runtime{}
 	createRuntimeResp := resultMapperFor(&actualRuntime)
-	createRuntimeReq := gcli.NewRequest(fmt.Sprintf(`mutation {result: createRuntime(in: %s) {%s} }`, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
+	createRuntimeReq := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+				result: createRuntime(in: %s) {
+						%s
+					}
+				}`, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
 	err = tc.cli.Run(ctx, createRuntimeReq, &createRuntimeResp)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualRuntime.ID)
@@ -759,6 +954,7 @@ func TestSetAndDeleteAPIAuth(t *testing.T) {
 
 	actualRuntimeAuth := graphql.RuntimeAuth{}
 	setAuthResp := resultMapperFor(&actualRuntimeAuth)
+
 	// WHEN
 	// set Auth
 	authIn := graphql.AuthInput{
@@ -770,9 +966,15 @@ func TestSetAndDeleteAPIAuth(t *testing.T) {
 
 	authInStr, err := tc.graphqlizer.AuthInputToGQL(&authIn)
 	require.NoError(t, err)
-	setAuthReq := gcli.NewRequest(fmt.Sprintf(`mutation {result: setAPIAuth(apiID: "%s", runtimeID: "%s", in: %s) {%s} }`, actualApp.Apis.Data[0].ID, actualRuntime.ID, authInStr, tc.gqlFieldsProvider.ForRuntimeAuth()))
+	setAuthReq := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: setAPIAuth(apiID: "%s", runtimeID: "%s", in: %s) {
+					%s
+				}
+			}`, actualApp.Apis.Data[0].ID, actualRuntime.ID, authInStr, tc.gqlFieldsProvider.ForRuntimeAuth()))
 	err = tc.cli.Run(ctx, setAuthReq, &setAuthResp)
-	// THEN
+
+	//THEN
 	require.NoError(t, err)
 	require.NotNil(t, actualRuntimeAuth.Auth)
 	assert.Equal(t, actualRuntime.ID, actualRuntimeAuth.RuntimeID)
@@ -781,7 +983,12 @@ func TestSetAndDeleteAPIAuth(t *testing.T) {
 	assert.Equal(t, "x-men", actualBasic.Username)
 	assert.Equal(t, "secret", actualBasic.Password)
 	// delete Auth
-	delAuthReq := gcli.NewRequest(fmt.Sprintf(`mutation {ressult: deleteAPIAuth(apiID: "%s",runtimeID: "%s") {%s} } `, actualApp.Apis.Data[0].ID, actualRuntime.ID, tc.gqlFieldsProvider.ForRuntimeAuth()))
+	delAuthReq := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: deleteAPIAuth(apiID: "%s",runtimeID: "%s") {
+					%s
+				} 
+			}`, actualApp.Apis.Data[0].ID, actualRuntime.ID, tc.gqlFieldsProvider.ForRuntimeAuth()))
 	err = tc.cli.Run(ctx, delAuthReq, nil)
 	require.NoError(t, err)
 
@@ -809,7 +1016,9 @@ func TestQueryApplications(t *testing.T) {
 		result := resultMapperFor(&actualApp)
 		request := gcli.NewRequest(
 			fmt.Sprintf(`mutation {
-			result: createApplication(in: %s) {%s}
+			result: createApplication(in: %s) {
+					%s
+				}
 			}`, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
 		err = tc.cli.Run(ctx, request, &result)
 		require.NoError(t, err)
@@ -817,11 +1026,18 @@ func TestQueryApplications(t *testing.T) {
 	}
 	actualAppPage := graphql.ApplicationPage{}
 	result := resultMapperFor(&actualAppPage)
+
 	// WHEN
-	queryReq := gcli.NewRequest(fmt.Sprintf(`query {result: applications {%s}}`, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication())))
+	queryReq := gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: applications {
+					%s
+				}
+			}`, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication())))
 	err := tc.cli.Run(ctx, queryReq, &result)
 	saveQueryInExamples(t, queryReq.Query(), "query applications")
-	// THEN
+
+	//THEN
 	require.NoError(t, err)
 	assert.Len(t, actualAppPage.Data, 3)
 	assert.Equal(t, 3, actualAppPage.TotalCount)
@@ -841,7 +1057,9 @@ func TestQuerySpecificApplication(t *testing.T) {
 	resp := resultMapperFor(&actualApp)
 	request := gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: createApplication(in: %s) {%s}
+			result: createApplication(in: %s) {
+					%s
+				}
 			}`, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
 	err = tc.cli.Run(context.Background(), request, &resp)
 	require.NoError(t, err)
@@ -850,10 +1068,16 @@ func TestQuerySpecificApplication(t *testing.T) {
 	defer deleteApplication(t, actualApp.ID)
 
 	// WHEN
-	queryAppReq := gcli.NewRequest(fmt.Sprintf(`query {result: application(id: "%s") {%s}}`, actualApp.ID, tc.gqlFieldsProvider.ForApplication()))
+	queryAppReq := gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+					%s
+				}
+			}`, actualApp.ID, tc.gqlFieldsProvider.ForApplication()))
 	err = tc.cli.Run(context.Background(), queryAppReq, &resp)
 	saveQueryInExamples(t, queryAppReq.Query(), "query specific application")
-	// THEN
+
+	//THEN
 	require.NoError(t, err)
 	assert.Equal(t, createdID, actualApp.ID)
 }
@@ -877,7 +1101,12 @@ func TestQueryRuntimes(t *testing.T) {
 		}
 		runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
 		require.NoError(t, err)
-		createReq := gcli.NewRequest(fmt.Sprintf(`mutation {result: createRuntime(in: %s) {%s} }`, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
+		createReq := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+				result: createRuntime(in: %s) {
+						%s
+					} 
+				}`, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
 		actualRuntime := graphql.Runtime{}
 		resp := resultMapperFor(&actualRuntime)
 		err = tc.cli.Run(ctx, createReq, &resp)
@@ -887,11 +1116,18 @@ func TestQueryRuntimes(t *testing.T) {
 	}
 	actualPage := graphql.RuntimePage{}
 	resp := resultMapperFor(&actualPage)
+
 	// WHEN
-	queryReq := gcli.NewRequest(fmt.Sprintf(`query {result: runtimes {%s}}`, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForRuntime())))
+	queryReq := gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: runtimes {
+					%s
+				}
+			}`, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForRuntime())))
 	err := tc.cli.Run(ctx, queryReq, &resp)
 	saveQueryInExamples(t, queryReq.Query(), "query runtimes")
-	// THEN
+
+	//THEN
 	require.NoError(t, err)
 	assert.Len(t, actualPage.Data, 3)
 	assert.Equal(t, 3, actualPage.TotalCount)
@@ -906,7 +1142,12 @@ func TestQuerySpecificRuntime(t *testing.T) {
 	}
 	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
-	createReq := gcli.NewRequest(fmt.Sprintf(`mutation {result: createRuntime(in: %s) {%s} }`, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
+	createReq := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: createRuntime(in: %s) {
+					%s
+				}
+			}`, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
 	createdRuntime := graphql.Runtime{}
 	resp := resultMapperFor(&createdRuntime)
 	err = tc.cli.Run(ctx, createReq, &resp)
@@ -916,11 +1157,18 @@ func TestQuerySpecificRuntime(t *testing.T) {
 	defer deleteRuntime(t, createdRuntime.ID)
 	queriedRuntime := graphql.Runtime{}
 	queryResp := resultMapperFor(&queriedRuntime)
+
 	// WHEN
-	queryReq := gcli.NewRequest(fmt.Sprintf("query {result: runtime(id: \"%s\") {%s}}", createdRuntime.ID, tc.gqlFieldsProvider.ForRuntime()))
+	queryReq := gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: runtime(id: "%s") {
+					%s
+				}
+			}`, createdRuntime.ID, tc.gqlFieldsProvider.ForRuntime()))
 	err = tc.cli.Run(ctx, queryReq, &queryResp)
-	saveQueryInExamples(t, queryReq.Query(), "query specific request")
-	// THEN
+	saveQueryInExamples(t, queryReq.Query(), "query specific runtime")
+
+	//THEN
 	require.NoError(t, err)
 	assert.Equal(t, createdRuntime.ID, queriedRuntime.ID)
 	assert.Equal(t, createdRuntime.Name, queriedRuntime.Name)
@@ -931,7 +1179,12 @@ func TestTenantSeparation(t *testing.T) {
 }
 
 func getApp(ctx context.Context, t *testing.T, id string) ApplicationExt {
-	q := gcli.NewRequest(fmt.Sprintf(`query {result: application(id: "%s") {%s} }`, id, tc.gqlFieldsProvider.ForApplication()))
+	q := gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+				%s
+			} 
+		}`, id, tc.gqlFieldsProvider.ForApplication()))
 	var app ApplicationExt
 	resp := resultMapperFor(&app)
 	require.NoError(t, tc.cli.Run(ctx, q, &resp))
@@ -963,7 +1216,8 @@ func generateSampleApplicationInput(placeholder string) graphql.ApplicationInput
 }
 
 func deleteApplication(t *testing.T, id string) {
-	req := gcli.NewRequest(fmt.Sprintf(`mutation {
+	req := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
 		deleteApplication(id: "%s") {
 			id
 		}	
@@ -972,7 +1226,11 @@ func deleteApplication(t *testing.T, id string) {
 }
 
 func deleteRuntime(t *testing.T, id string) {
-	delReq := gcli.NewRequest(fmt.Sprintf("mutation{deleteRuntime(id: \"%s\")  {id} }", id))
+	delReq := gcli.NewRequest(
+		fmt.Sprintf(`mutation{deleteRuntime(id: "%s") {
+				id
+			}
+		}`, id))
 	err := tc.cli.Run(context.Background(), delReq, nil)
 	require.NoError(t, err)
 }

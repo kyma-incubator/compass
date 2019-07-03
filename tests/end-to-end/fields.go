@@ -150,6 +150,16 @@ func (fp *gqlFieldsProvider) ForAuth() string {
 		`)
 }
 
+func (fp *gqlFieldsProvider) ForLabel() string {
+	return `key
+			values`
+}
+
+func (fp *gqlFieldsProvider) ForAnnotation() string {
+	return `key
+			value`
+}
+
 func (fp *gqlFieldsProvider) ForRuntime() string {
 	return fmt.Sprintf(`id
 		name
