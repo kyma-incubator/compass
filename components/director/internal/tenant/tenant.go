@@ -2,9 +2,12 @@ package tenant
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"net/http"
+
+	"github.com/pkg/errors"
 )
 
 type key int
@@ -36,7 +39,13 @@ func RequireAndPassContext(next http.Handler) http.Handler {
 		if r.Method != http.MethodGet {
 			if tenantValue == "" {
 				errMessage := fmt.Sprintf("Header `%s` is required", TenantHeaderName)
-				http.Error(w, errMessage, http.StatusBadRequest)
+				w.WriteHeader(http.StatusUnauthorized)
+				err := writeJSONError(w, errMessage)
+				if err != nil {
+					log.Error(errors.Wrap(err, "while writing JSON error"))
+					return
+				}
+
 				return
 			}
 
@@ -48,3 +57,9 @@ func RequireAndPassContext(next http.Handler) http.Handler {
 	})
 }
 
+func writeJSONError(w http.ResponseWriter, errMessage string) error {
+	w.Header().Set("Content-Type", "application/json")
+	return json.NewEncoder(w).Encode(map[string]interface{}{
+		"errors": []string{errMessage},
+	})
+}

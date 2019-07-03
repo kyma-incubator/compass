@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/kyma-incubator/compass/components/gateway/internal/tenant"
 	"log"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/gateway/internal/tenant"
 
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 	"github.com/pkg/errors"
@@ -57,7 +58,7 @@ func proxyRequestsForComponent(router *mux.Router, path string, targetOrigin str
 	}
 
 	connector := router.PathPrefix(path).Subrouter()
-	connector.PathPrefix("/").HandlerFunc(componentProxy.ServeHTTP)
+	connector.PathPrefix("").HandlerFunc(componentProxy.ServeHTTP)
 	connector.Use(tenant.RequireTenantHeader("GET"))
 
 	return nil

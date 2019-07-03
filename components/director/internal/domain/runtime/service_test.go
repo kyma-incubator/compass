@@ -140,7 +140,7 @@ func TestService_Update(t *testing.T) {
 			Name: "Returns error when application update failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("GetByID", tnt,"foo").Return(runtimeModel, nil).Once()
+				repo.On("GetByID", tnt, "foo").Return(runtimeModel, nil).Once()
 				repo.On("Update", inputRuntimeModel).Return(testErr).Once()
 				return repo
 			},
@@ -152,7 +152,7 @@ func TestService_Update(t *testing.T) {
 			Name: "Returns error when runtime retrieval failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("GetByID", tnt,"foo").Return(nil, testErr).Once()
+				repo.On("GetByID", tnt, "foo").Return(nil, testErr).Once()
 				return repo
 			},
 			InputID:            "foo",

@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 
 	log "github.com/sirupsen/logrus"
 
@@ -36,7 +37,6 @@ func main() {
 
 	log.Infof("Registering endpoint on %s...", cfg.APIEndpoint)
 	router := mux.NewRouter()
-
 
 	router.Use(tenant.RequireAndPassContext)
 	router.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
