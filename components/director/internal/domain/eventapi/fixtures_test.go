@@ -26,7 +26,7 @@ func fixGQLEventAPIDefinition(id, appID, name, description string) *graphql.Even
 }
 
 func fixDetailedModelEventAPIDefinition(t *testing.T, id, name, description string, group string) *model.EventAPIDefinition {
-	data := []byte("data")
+	data := "data"
 	format := model.SpecFormatJSON
 
 	spec := &model.EventAPISpec{
@@ -92,7 +92,7 @@ func fixDetailedGQLEventAPIDefinition(t *testing.T, id, name, description string
 }
 
 func fixModelEventAPIDefinitionInput(name, description string, group string) *model.EventAPIDefinitionInput {
-	data := []byte("data")
+	data := "data"
 	format := model.SpecFormatYaml
 
 	spec := &model.EventAPISpecInput{

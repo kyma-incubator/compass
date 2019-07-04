@@ -83,9 +83,10 @@ func (c *converter) eventAPISpecToGraphQL(in *model.EventAPISpec) *graphql.Event
 		return nil
 	}
 
-	var data graphql.CLOB
+	var data *graphql.CLOB
 	if in.Data != nil {
-		data = graphql.CLOB(*in.Data)
+		tmp := graphql.CLOB(*in.Data)
+		data = &tmp
 	}
 
 	var format *graphql.SpecFormat
@@ -95,7 +96,7 @@ func (c *converter) eventAPISpecToGraphQL(in *model.EventAPISpec) *graphql.Event
 	}
 
 	return &graphql.EventAPISpec{
-		Data:         &data,
+		Data:         data,
 		Type:         graphql.EventAPISpecType(in.Type),
 		Format:       format,
 		FetchRequest: c.fr.ToGraphQL(in.FetchRequest),
@@ -107,18 +108,13 @@ func (c *converter) eventAPISpecInputFromGraphQL(in *graphql.EventAPISpecInput) 
 		return nil
 	}
 
-	var data []byte
-	if in.Data != nil {
-		data = []byte(*in.Data)
-	}
-
 	var format model.SpecFormat
 	if in.Format != "" {
 		format = model.SpecFormat(in.Format)
 	}
 
 	return &model.EventAPISpecInput{
-		Data:          &data,
+		Data:          (*string)(in.Data),
 		Format:        &format,
 		EventSpecType: model.EventAPISpecType(in.EventSpecType),
 		FetchRequest:  c.fr.InputFromGraphQL(in.FetchRequest),

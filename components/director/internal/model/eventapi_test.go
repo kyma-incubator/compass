@@ -57,7 +57,7 @@ func TestEventAPIDefinitionInput_ToEventAPIDefinition(t *testing.T) {
 
 func TestEventAPIDefinitionInput_ToEventAPISpec(t *testing.T) {
 	// given
-	data := []byte("bar")
+	data := "bar"
 	format := model.SpecFormat("Sample")
 	specType := model.EventAPISpecType("sample")
 

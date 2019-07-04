@@ -26,7 +26,7 @@ func fixGQLAPIDefinition(id, appId, name, description string) *graphql.APIDefini
 }
 
 func fixDetailedModelAPIDefinition(t *testing.T, id, name, description string, group string) *model.APIDefinition {
-	data := []byte("data")
+	data := "data"
 	format := model.SpecFormatJSON
 
 	spec := &model.APISpec{
@@ -119,7 +119,7 @@ func fixDetailedGQLAPIDefinition(t *testing.T, id, name, description string, gro
 }
 
 func fixModelAPIDefinitionInput(name, description string, group string) *model.APIDefinitionInput {
-	data := []byte("data")
+	data := "data"
 	format := model.SpecFormatYaml
 
 	spec := &model.APISpecInput{

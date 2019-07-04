@@ -285,11 +285,11 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 
 func TestResolver_RefetchAPISpec(t *testing.T) {
 	// given
-	testErr := errors.New("Test error")
+	testErr := errors.New("test error")
 
 	apiID := "apiID"
 
-	dataBytes := []byte("data")
+	dataBytes := "data"
 	modelEventAPISpec := &model.EventAPISpec{
 		Data: &dataBytes,
 	}

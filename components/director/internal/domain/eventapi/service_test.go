@@ -445,7 +445,7 @@ func TestService_RefetchAPISpec(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, "tenant")
 
-	dataBytes := []byte("data")
+	dataBytes := "data"
 	modelAPISpec := &model.EventAPISpec{
 		Data: &dataBytes,
 	}
