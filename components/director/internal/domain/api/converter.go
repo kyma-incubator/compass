@@ -95,9 +95,10 @@ func (c *converter) apiSpecToGraphQL(in *model.APISpec) *graphql.APISpec {
 		return nil
 	}
 
-	var data graphql.CLOB
+	var data *graphql.CLOB
 	if in.Data != nil {
-		data = graphql.CLOB(*in.Data)
+		tmp := graphql.CLOB(*in.Data)
+		data = &tmp
 	}
 
 	var format *graphql.SpecFormat
@@ -107,7 +108,7 @@ func (c *converter) apiSpecToGraphQL(in *model.APISpec) *graphql.APISpec {
 	}
 
 	return &graphql.APISpec{
-		Data:         &data,
+		Data:         data,
 		Type:         graphql.APISpecType(in.Type),
 		Format:       format,
 		FetchRequest: c.fr.ToGraphQL(in.FetchRequest),
@@ -119,18 +120,13 @@ func (c *converter) apiSpecInputFromGraphQL(in *graphql.APISpecInput) *model.API
 		return nil
 	}
 
-	var data []byte
-	if in.Data != nil {
-		data = []byte(*in.Data)
-	}
-
 	var format model.SpecFormat
 	if in.Format != "" {
 		format = model.SpecFormat(in.Format)
 	}
 
 	return &model.APISpecInput{
-		Data:         &data,
+		Data:         (*string)(in.Data),
 		Type:         model.APISpecType(in.Type),
 		Format:       &format,
 		FetchRequest: c.fr.InputFromGraphQL(in.FetchRequest),

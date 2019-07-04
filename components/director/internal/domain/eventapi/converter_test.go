@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventapi"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -272,4 +275,29 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 			versionConverter.AssertExpectations(t)
 		})
 	}
+}
+
+func TestEventApiSpecDataConversionNilStaysNil(t *testing.T) {
+	// GIVEN
+	mockFrConv := &automock.FetchRequestConverter{}
+	defer mockFrConv.AssertExpectations(t)
+	mockFrConv.On("InputFromGraphQL", mock.Anything).Return(nil)
+	mockFrConv.On("ToGraphQL", mock.Anything).Return(nil)
+
+	mockVersionConv := &automock.VersionConverter{}
+	defer mockVersionConv.AssertExpectations(t)
+	mockVersionConv.On("InputFromGraphQL", mock.Anything).Return(nil)
+	mockVersionConv.On("ToGraphQL", mock.Anything).Return(nil)
+
+	converter := eventapi.NewConverter(mockFrConv, mockVersionConv)
+	// WHEN & THEN
+	convertedInputModel := converter.InputFromGraphQL(&graphql.EventAPIDefinitionInput{Spec: &graphql.EventAPISpecInput{}})
+	require.NotNil(t, convertedInputModel)
+	require.NotNil(t, convertedInputModel.Spec)
+	require.Nil(t, convertedInputModel.Spec.Data)
+	convertedEvAPIDef := convertedInputModel.ToEventAPIDefinition("id", "app_id")
+	require.NotNil(t, convertedEvAPIDef)
+	convertedGraphqlEvAPIDef := converter.ToGraphQL(convertedEvAPIDef)
+	require.NotNil(t, convertedGraphqlEvAPIDef)
+	assert.Nil(t, convertedGraphqlEvAPIDef.Spec.Data)
 }

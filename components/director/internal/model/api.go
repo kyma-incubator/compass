@@ -24,7 +24,7 @@ type APIDefinition struct {
 
 type APISpec struct {
 	// when fetch request specified, data will be automatically populated
-	Data         *[]byte
+	Data         *string
 	Format       *SpecFormat
 	Type         APISpecType
 	FetchRequest *FetchRequest
@@ -50,7 +50,7 @@ type APIDefinitionInput struct {
 }
 
 type APISpecInput struct {
-	Data         *[]byte
+	Data         *string
 	Type         APISpecType
 	Format       *SpecFormat
 	FetchRequest *FetchRequestInput

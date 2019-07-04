@@ -23,7 +23,7 @@ const (
 )
 
 type EventAPISpec struct {
-	Data         *[]byte
+	Data         *string
 	Type         EventAPISpecType
 	Format       *SpecFormat
 	FetchRequest *FetchRequest
@@ -46,7 +46,7 @@ type EventAPIDefinitionInput struct {
 }
 
 type EventAPISpecInput struct {
-	Data          *[]byte
+	Data          *string
 	EventSpecType EventAPISpecType
 	Format        *SpecFormat
 	FetchRequest  *FetchRequestInput

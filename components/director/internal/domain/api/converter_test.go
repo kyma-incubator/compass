@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
@@ -327,4 +330,34 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 			versionConverter.AssertExpectations(t)
 		})
 	}
+}
+
+func TestApiSpecDataConversionNilStaysNil(t *testing.T) {
+	// GIVEN
+	mockAuthConv := &automock.AuthConverter{}
+	defer mockAuthConv.AssertExpectations(t)
+	mockAuthConv.On("InputFromGraphQL", mock.Anything).Return(nil)
+	mockAuthConv.On("ToGraphQL", mock.Anything).Return(nil)
+
+	mockFrConv := &automock.FetchRequestConverter{}
+	defer mockFrConv.AssertExpectations(t)
+	mockFrConv.On("InputFromGraphQL", mock.Anything).Return(nil)
+	mockFrConv.On("ToGraphQL", mock.Anything).Return(nil)
+
+	mockVersionConv := &automock.VersionConverter{}
+	defer mockVersionConv.AssertExpectations(t)
+	mockVersionConv.On("InputFromGraphQL", mock.Anything).Return(nil)
+	mockVersionConv.On("ToGraphQL", mock.Anything).Return(nil)
+
+	converter := api.NewConverter(mockAuthConv, mockFrConv, mockVersionConv)
+	// WHEN & THEN
+	convertedInputModel := converter.InputFromGraphQL(&graphql.APIDefinitionInput{Spec: &graphql.APISpecInput{}})
+	require.NotNil(t, convertedInputModel)
+	require.NotNil(t, convertedInputModel.Spec)
+	require.Nil(t, convertedInputModel.Spec.Data)
+	convertedAPIDef := convertedInputModel.ToAPIDefinition("id", "app_id")
+	require.NotNil(t, convertedAPIDef)
+	convertedGraphqlAPIDef := converter.ToGraphQL(convertedAPIDef)
+	require.NotNil(t, convertedGraphqlAPIDef)
+	assert.Nil(t, convertedGraphqlAPIDef.Spec.Data)
 }

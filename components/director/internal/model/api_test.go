@@ -60,7 +60,7 @@ func TestAPIDefinitionInput_ToAPIDefinition(t *testing.T) {
 
 func TestAPIDefinitionInput_ToAPISpec(t *testing.T) {
 	// given
-	data := []byte("bar")
+	data := "bar"
 	format := model.SpecFormat("Sample")
 	specType := model.APISpecType("sample")
 
