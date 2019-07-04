@@ -277,7 +277,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 	}
 }
 
-func TestApiSpecDataConversionNilStaysNil(t *testing.T) {
+func TestEventApiSpecDataConversionNilStaysNil(t *testing.T) {
 	// GIVEN
 	mockFrConv := &automock.FetchRequestConverter{}
 	defer mockFrConv.AssertExpectations(t)
