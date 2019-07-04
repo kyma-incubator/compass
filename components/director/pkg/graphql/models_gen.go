@@ -310,7 +310,6 @@ type Runtime struct {
 	ID          string         `json:"id"`
 	Name        string         `json:"name"`
 	Description *string        `json:"description"`
-	Tenant      Tenant         `json:"tenant"`
 	Labels      Labels         `json:"labels"`
 	Annotations Annotations    `json:"annotations"`
 	Status      *RuntimeStatus `json:"status"`

@@ -7,10 +7,10 @@ global:
       version: "PR-99"
     director:
       dir: pr/
-      version: "PR-93"
+      version: "PR-100"
     gateway:
       dir: pr/
-      version: "PR-99"
+      version: "PR-100"
     healthchecker:
       dir: pr/
       version: "PR-99"

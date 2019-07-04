@@ -14,8 +14,8 @@ import (
 
 //go:generate mockery -name=RuntimeRepository -output=automock -outpkg=automock -case=underscore
 type RuntimeRepository interface {
-	GetByID(id string) (*model.Runtime, error)
-	List(filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error)
+	GetByID(tenant, id string) (*model.Runtime, error)
+	List(tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error)
 	Create(item *model.Runtime) error
 	Update(item *model.Runtime) error
 	Delete(item *model.Runtime) error
@@ -36,11 +36,21 @@ func NewService(repo RuntimeRepository, uidService UIDService) *service {
 }
 
 func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error) {
-	return s.repo.List(filter, pageSize, cursor)
+	rtmTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	return s.repo.List(rtmTenant, filter, pageSize, cursor)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.Runtime, error) {
-	runtime, err := s.repo.GetByID(id)
+	rtmTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	runtime, err := s.repo.GetByID(rtmTenant, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Runtime with ID %s", id)
 	}

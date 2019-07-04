@@ -16,21 +16,22 @@ func NewRepository() *inMemoryRepository {
 	return &inMemoryRepository{store: make(map[string]*model.Runtime)}
 }
 
-func (r *inMemoryRepository) GetByID(id string) (*model.Runtime, error) {
-	runtime := r.store[id]
-
-	if runtime == nil {
+func (r *inMemoryRepository) GetByID(tenant, id string) (*model.Runtime, error) {
+	rtm := r.store[id]
+	if rtm == nil || rtm.Tenant != tenant {
 		return nil, errors.New("runtime not found")
 	}
 
-	return runtime, nil
+	return rtm, nil
 }
 
 // TODO: Make filtering and paging
-func (r *inMemoryRepository) List(filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error) {
+func (r *inMemoryRepository) List(tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error) {
 	var items []*model.Runtime
-	for _, r := range r.store {
-		items = append(items, r)
+	for _, item := range r.store {
+		if item.Tenant == tenant {
+			items = append(items, item)
+		}
 	}
 
 	return &model.RuntimePage{

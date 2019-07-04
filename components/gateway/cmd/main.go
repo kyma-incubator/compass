@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/gateway/internal/tenant"
+
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 	"github.com/pkg/errors"
 
@@ -23,19 +25,13 @@ func main() {
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Error while loading app config")
 
-	directorProxy, err := proxy.New(cfg.DirectorOrigin, "/director")
-	exitOnError(err, "Error while initializing proxy for director")
-
-	log.Printf("Proxying requests to Director: %s\n", cfg.DirectorOrigin)
-
-	connectorProxy, err := proxy.New(cfg.ConnectorOrigin, "/connector")
-	exitOnError(err, "Error while initializing proxy for connector")
-
-	log.Printf("Proxying requests to Connector: %s\n", cfg.ConnectorOrigin)
-
 	router := mux.NewRouter()
-	router.PathPrefix("/director").HandlerFunc(directorProxy.ServeHTTP)
-	router.PathPrefix("/connector").HandlerFunc(connectorProxy.ServeHTTP)
+
+	err = proxyRequestsForComponent(router, "/connector", cfg.ConnectorOrigin)
+	exitOnError(err, "Error while initializing proxy for Connector")
+
+	err = proxyRequestsForComponent(router, "/director", cfg.DirectorOrigin)
+	exitOnError(err, "Error while initializing proxy for Director")
 
 	router.HandleFunc("/healthz", func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(200)
@@ -51,6 +47,21 @@ func main() {
 	if err := http.ListenAndServe(cfg.Address, nil); err != nil {
 		panic(err)
 	}
+}
+
+func proxyRequestsForComponent(router *mux.Router, path string, targetOrigin string) error {
+	log.Printf("Proxying requests on path `%s` to `%s`\n", path, targetOrigin)
+
+	componentProxy, err := proxy.New(targetOrigin, path)
+	if err != nil {
+		return errors.Wrapf(err, "while initializing proxy for component")
+	}
+
+	connector := router.PathPrefix(path).Subrouter()
+	connector.PathPrefix("").HandlerFunc(componentProxy.ServeHTTP)
+	connector.Use(tenant.RequireTenantHeader("GET"))
+
+	return nil
 }
 
 func exitOnError(err error, context string) {

@@ -11,8 +11,8 @@ import (
 
 //go:generate mockery -name=ApplicationRepository -output=automock -outpkg=automock -case=underscore
 type ApplicationRepository interface {
-	GetByID(id string) (*model.Application, error)
-	List(filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error)
+	GetByID(tenant, id string) (*model.Application, error)
+	List(tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error)
 	Create(item *model.Application) error
 	Update(item *model.Application) error
 	Delete(item *model.Application) error
@@ -65,11 +65,21 @@ func NewService(app ApplicationRepository, webhook WebhookRepository, api APIRep
 }
 
 func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
-	return s.app.List(filter, pageSize, cursor)
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	return s.app.List(appTenant, filter, pageSize, cursor)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.Application, error) {
-	app, err := s.app.GetByID(id)
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	app, err := s.app.GetByID(appTenant, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Application with ID %s", id)
 	}
@@ -82,6 +92,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string
 	if err != nil {
 		return "", errors.Wrapf(err, "while loading tenant from context")
 	}
+
 	id := s.uidService.Generate()
 	app := in.ToApplication(id, appTenant)
 
