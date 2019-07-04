@@ -9,20 +9,17 @@
 Compass (also known as Management Plane Services) is a multi-tenant system which consists of components that provide a way to register, group, and manage your applications across multiple Kyma runtimes. Using Compass, you can control and monitor your application landscape in one central place.
 
 Compass allows for registering different types of applications and runtimes.
-These are the types of applications due to the way of integration with Compass:
+These are the types of integration with Compass:
 - basic - administrator manually provides API/Events Metadata to Compass. This type of integration is used mainly for simple use-case scenarios and doesn't support all features.
 - application - integration with Compass is built-in inside the application.
 - proxy - a highly application-specific proxy component provides the integration.
 - service -  a central service provides the integration for a class of applications. It manages multiple instances of these applications. You can integrate multiple services to support different types of applications.
 
-You can also register different types of runtimes providing that they allow for integration with Compass. Your runtimes must allow for fetching application definitions and using applications in these runtimes. The example runtimes are Kyma, CP CloudFoundry, Serverless, etc.
+You can register any runtime, providing that it fulfills a contract with Compass and implements its flow. Your runtime must get a trusted connection to Compass in a given tenant, and allow for fetching application definitions and using these applications. The example runtimes are Kyma (Kubernetes), CloudFoundry, Serverless, etc.
 
-The example usage is Wordpress integration with Kyma Runtime. (?)
-
-This project also contains Compass UI Cockpit that exposes Compass APIs to users. (?)
+Compass is a part of Kyma and it uses a set of Kyma features, such as Istio, Prometheus, Monitoring, or Tracing. This project also contains Compass UI Cockpit that exposes Compass APIs to users.
 
 For more information about the Compass architecture and technical details, read the [documentation](./docs).
-
 
 ## Prerequisities
 
@@ -34,29 +31,45 @@ For more information about the Compass architecture and technical details, read 
 
 ## Installation
 
-### Chart installation  
+To install Compass along with Kyma, run:
 
-If you have already running Kyma 1.1.0 instance with created secrets which contains Tiller client certificates, run:
+```bash
+./installation/scripts/run.sh
+```
+<div tabs>
+ <details>
+ <summary>
+ Expand this tab to see the script details.
+ </summary>
+
+The `run.sh` script does the following:
+1. Provision local Kubernetes cluster on Minikube adjusted for Kyma installation via `Kyma CLI`.
+2. Install Kyma 1.1.0 on the cluster with custom list of components provided in `./installation/resources/installer-cr.yaml` file.  
+3. Download Helm client certificates created with Kyma installation.
+4. Perform installation of `compass` Helm chart.  
+  </details>
+
+If you already have a running Kyma 1.1.0 instance with created secrets which contains Tiller client certificates, you can install the Compass Helm chart using this command:
 ```bash
 helm install --name "compass" ./chart/compass --tls
 ```
 
-### Local installation with Kyma
+### Testing
 
-To install the Compass along with Kyma 1.1.0, run:
-```bash
-./installation/scripts/run.sh
-```
+Compass, as a part of Kyma, uses [Octopus](https://github.com/kyma-incubator/octopus/blob/master/README.md) for testing. To run the Compass tests, run:
 
-### Tests
-
-To run tests, install the Compass and run:
 ```bash
 ./installation/scripts/testing.sh
 ```
 
-To learn more about how the installation and testing are performed, check [this document](./installation/README.md)
+Read [this](https://kyma-project.io/docs/root/kyma#details-testing-kyma) document to learn more about testing in Kyma.
+
+> **NOTE:** After adding a new test, remember to add it also to `ClusterTestSuite` inside `testing.sh` script.
+
 
 ## Usage
 
-## Development
+Go to these URLs to see the documentation, GraphQL schemas, and to test some API operations:
+
+- `https://compass-gateway.{domain}/director`
+- `https://compass-gateway.{domain}/connector`
