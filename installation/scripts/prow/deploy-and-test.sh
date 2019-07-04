@@ -7,7 +7,7 @@
 set -o errexit
 
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-INSTALLATION_DIR=${CURRENT_DIR}/../
+INSTALLATION_DIR=${CURRENT_DIR}/../../
 
 sudo ${INSTALLATION_DIR}/cmd/run.sh
 sudo ${INSTALLATION_DIR}/scripts/testing.sh
