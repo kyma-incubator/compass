@@ -15,4 +15,4 @@ LABEL source=git@github.com:kyma-incubator/compass.git
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/end-to-end/director.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/end-to-end/licenses ./licenses
 
-CMD ["./end-to-end.test", "-test.v"]
+CMD ["./director.test", "-test.v"]
