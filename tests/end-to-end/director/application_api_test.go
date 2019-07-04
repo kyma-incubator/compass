@@ -149,7 +149,6 @@ func TestCreateApplicationWithAPIs(t *testing.T) {
 }
 
 func TestCreateApplicationWithEventAPIs(t *testing.T) {
-	t.SkipNow()
 	// GIVEN
 	ctx := context.Background()
 	in := graphql.ApplicationInput{
@@ -162,7 +161,8 @@ func TestCreateApplicationWithEventAPIs(t *testing.T) {
 				Group:       ptrString("comments"),
 				Spec: &graphql.EventAPISpecInput{
 					EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
-					Data:          ptrCLOB(graphql.CLOB([]byte(`asyncapi: \"1.0.0\"`))),
+					Format:        graphql.SpecFormatYaml,
+					Data:          ptrCLOB(graphql.CLOB([]byte("asyncapi"))),
 				},
 			},
 			{
@@ -170,6 +170,7 @@ func TestCreateApplicationWithEventAPIs(t *testing.T) {
 				Description: ptrString("review events"),
 				Spec: &graphql.EventAPISpecInput{
 					EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
+					Format:        graphql.SpecFormatYaml,
 					FetchRequest: &graphql.FetchRequestInput{
 						URL:    "http://mywordpress.com/events",
 						Mode:   ptrFetchMode(graphql.FetchModePackage),
@@ -196,6 +197,7 @@ func TestCreateApplicationWithEventAPIs(t *testing.T) {
 			appInputGQL,
 			tc.gqlFieldsProvider.ForApplication(),
 		))
+
 	saveQueryInExamples(t, request.Query(), "create application with event APIs")
 	err = tc.RunQuery(ctx, request, &actualApp)
 
@@ -247,6 +249,7 @@ func TestCreateApplicationWithDocuments(t *testing.T) {
 			appInputGQL,
 			tc.gqlFieldsProvider.ForApplication(),
 		))
+
 	saveQueryInExamples(t, request.Query(), "create application with documents")
 	err = tc.RunQuery(ctx, request, &actualApp)
 
@@ -581,14 +584,80 @@ func TestUpdateApplicationParts(t *testing.T) {
 	})
 
 	t.Run("manage event api", func(t *testing.T) {
-		// TODO
+		// add
+
+		// GIVEN
+		inStr, err := tc.graphqlizer.EventAPIDefinitionInputToGQL(graphql.EventAPIDefinitionInput{
+			Name: "new-event-api",
+			Spec: &graphql.EventAPISpecInput{
+				EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
+				Format:        graphql.SpecFormatYaml,
+			},
+		})
+
+		actualEventAPI := graphql.EventAPIDefinition{}
+		require.NoError(t, err)
+
+		// WHEN
+		addReq := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+				result: addEventAPI(applicationID: "%s", in: %s) {
+						%s	
+					}
+				}`, actualApp.ID, inStr, tc.gqlFieldsProvider.ForEventAPI()))
+		err = tc.RunQuery(ctx, addReq, &actualEventAPI)
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, "new-event-api", actualEventAPI.Name)
+		assert.NotEmpty(t, actualEventAPI.ID)
+		updatedApp := getApp(ctx, t, actualApp.ID)
+		assert.Len(t, updatedApp.EventAPIs.Data, 2)
+
+		// update
+
+		// GIVEN
+		updateStr, err := tc.graphqlizer.EventAPIDefinitionInputToGQL(graphql.EventAPIDefinitionInput{
+			Name: "updated-event-api",
+			Spec: &graphql.EventAPISpecInput{
+				EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
+				Format:        graphql.SpecFormatYaml,
+			}})
+		require.NoError(t, err)
+
+		// WHEN
+		updateReq := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+				result: updateEventAPI(id: "%s", in: %s) {
+						%s
+					}
+				}`, actualEventAPI.ID, updateStr, tc.gqlFieldsProvider.ForEventAPI()))
+		err = tc.RunQuery(ctx, updateReq, &actualEventAPI)
+
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, "updated-event-api", actualEventAPI.Name)
+
+		// delete
+		// WHEN
+		delReq := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+				result: deleteEventAPI(id: "%s") {
+					id
+				}
+			}`, actualEventAPI.ID))
+		err = tc.RunQuery(ctx, delReq, nil)
+		// THEN
+		require.NoError(t, err)
+
 	})
 
 	t.Run("manage documents", func(t *testing.T) {
-		t.SkipNow()
 		// add
 		inStr, err := tc.graphqlizer.DocumentInputToGQL(&graphql.DocumentInput{
-			Title: "new-document",
+			Title:       "new-document",
+			Format:      graphql.DocumentFormatMarkdown,
+			DisplayName: "new-document-display-name",
+			Description: "new-description",
 		})
 
 		require.NoError(t, err)
@@ -642,7 +711,11 @@ func TestUpdateApplicationParts(t *testing.T) {
 	})
 
 	t.Run("refetch API", func(t *testing.T) {
-		// TODO
+		// TODO later
+	})
+
+	t.Run("refetch Event API", func(t *testing.T) {
+		// TODO later
 	})
 }
 

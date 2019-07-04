@@ -16,7 +16,6 @@ func (fp *gqlFieldsProvider) Page(item string) string {
 
 func (fp *gqlFieldsProvider) ForApplication() string {
 	return fmt.Sprintf(`id
-		tenant
 		name
 		description
 		labels
@@ -167,7 +166,6 @@ func (fp *gqlFieldsProvider) ForRuntime() string {
 	return fmt.Sprintf(`id
 		name
 		description
-		tenant
 		labels 
 		annotations
 		status {condition timestamp}
