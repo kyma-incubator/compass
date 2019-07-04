@@ -14,8 +14,7 @@ required = [
 
 [[constraint]]
   name = "github.com/kyma-incubator/compass"
-  branch = "director-integration-tests-req-changes"
-  source = "github.com/aszecowka/compass" #TODO will be removed when this PR will be merged: https://github.com/kyma-incubator/compass/pull/97
+  branch = "master"
 
 [prune]
   go-tests = true

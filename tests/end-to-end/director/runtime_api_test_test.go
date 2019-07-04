@@ -37,10 +37,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, actualRuntime.ID)
-	assert.Equal(t, givenInput.Name, actualRuntime.Name)
-	assert.Equal(t, *givenInput.Description, *actualRuntime.Description)
-	assert.Equal(t, *givenInput.Labels, actualRuntime.Labels)
-	assert.Equal(t, *givenInput.Annotations, actualRuntime.Annotations)
+	assertRuntime(t, givenInput, actualRuntime)
 	assert.NotNil(t, actualRuntime.AgentAuth)
 
 	// update runtime

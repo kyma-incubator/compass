@@ -202,3 +202,10 @@ func assertEvents(t *testing.T, in []*graphql.EventAPIDefinitionInput, actual []
 		assert.True(t, found)
 	}
 }
+
+func assertRuntime(t *testing.T, in graphql.RuntimeInput, actual graphql.Runtime) {
+	assert.Equal(t, in.Name, actual.Name)
+	assert.Equal(t, *in.Description, *actual.Description)
+	assert.Equal(t, *in.Labels, actual.Labels)
+	assert.Equal(t, *in.Annotations, actual.Annotations)
+}
