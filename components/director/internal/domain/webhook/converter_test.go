@@ -20,7 +20,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		{
 			Name:     "All properties given",
 			Input:    fixModelWebhook("1", "foo", "bar"),
-			Expected: fixGQLWebhook("foo", "bar"),
+			Expected: fixGQLWebhook("1", "foo", "bar"),
 		},
 		{
 			Name:     "Empty",
@@ -61,8 +61,8 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 		nil,
 	}
 	expected := []*graphql.ApplicationWebhook{
-		fixGQLWebhook("foo", "baz"),
-		fixGQLWebhook("bar", "bez"),
+		fixGQLWebhook("1", "foo", "baz"),
+		fixGQLWebhook("2", "bar", "bez"),
 		{},
 	}
 	authConv := &automock.AuthConverter{}

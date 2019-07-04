@@ -25,10 +25,11 @@ func (c *converter) ToGraphQL(in *model.ApplicationWebhook) *graphql.Application
 	}
 
 	return &graphql.ApplicationWebhook{
-		ID:   in.ID,
-		Type: graphql.ApplicationWebhookType(in.Type),
-		URL:  in.URL,
-		Auth: c.authConverter.ToGraphQL(in.Auth),
+		ID:            in.ID,
+		ApplicationID: in.ApplicationID,
+		Type:          graphql.ApplicationWebhookType(in.Type),
+		URL:           in.URL,
+		Auth:          c.authConverter.ToGraphQL(in.Auth),
 	}
 }
 

@@ -5,11 +5,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-//go:generate mockery -name=EventAPIConverter -output=automock -outpkg=automock -case=underscore
-type EventAPIConverter interface {
-	MultipleInputFromGraphQL(in []*graphql.EventAPIDefinitionInput) []*model.EventAPIDefinitionInput
-}
-
 type converter struct {
 	webhook  WebhookConverter
 	api      APIConverter
@@ -70,8 +65,8 @@ func (c *converter) InputFromGraphQL(in graphql.ApplicationInput) model.Applicat
 		HealthCheckURL: in.HealthCheckURL,
 		Webhooks:       c.webhook.MultipleInputFromGraphQL(in.Webhooks),
 		Documents:      c.document.MultipleInputFromGraphQL(in.Documents),
-		//EventAPIs:      c.eventAPI.MultipleInputFromGraphQL(in.EventAPIs),
-		Apis: c.api.MultipleInputFromGraphQL(in.Apis),
+		EventAPIs:      c.eventAPI.MultipleInputFromGraphQL(in.EventAPIs),
+		Apis:           c.api.MultipleInputFromGraphQL(in.Apis),
 	}
 }
 

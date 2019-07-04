@@ -103,10 +103,11 @@ type ComplexityRoot struct {
 	}
 
 	ApplicationWebhook struct {
-		Auth func(childComplexity int) int
-		ID   func(childComplexity int) int
-		Type func(childComplexity int) int
-		URL  func(childComplexity int) int
+		ApplicationID func(childComplexity int) int
+		Auth          func(childComplexity int) int
+		ID            func(childComplexity int) int
+		Type          func(childComplexity int) int
+		URL           func(childComplexity int) int
 	}
 
 	Auth struct {
@@ -133,12 +134,13 @@ type ComplexityRoot struct {
 	}
 
 	Document struct {
-		Data         func(childComplexity int) int
-		FetchRequest func(childComplexity int) int
-		Format       func(childComplexity int) int
-		ID           func(childComplexity int) int
-		Kind         func(childComplexity int) int
-		Title        func(childComplexity int) int
+		ApplicationID func(childComplexity int) int
+		Data          func(childComplexity int) int
+		FetchRequest  func(childComplexity int) int
+		Format        func(childComplexity int) int
+		ID            func(childComplexity int) int
+		Kind          func(childComplexity int) int
+		Title         func(childComplexity int) int
 	}
 
 	DocumentPage struct {
@@ -148,12 +150,13 @@ type ComplexityRoot struct {
 	}
 
 	EventAPIDefinition struct {
-		Description func(childComplexity int) int
-		Group       func(childComplexity int) int
-		ID          func(childComplexity int) int
-		Name        func(childComplexity int) int
-		Spec        func(childComplexity int) int
-		Version     func(childComplexity int) int
+		ApplicationID func(childComplexity int) int
+		Description   func(childComplexity int) int
+		Group         func(childComplexity int) int
+		ID            func(childComplexity int) int
+		Name          func(childComplexity int) int
+		Spec          func(childComplexity int) int
+		Version       func(childComplexity int) int
 	}
 
 	EventAPIDefinitionPage struct {
@@ -638,6 +641,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ApplicationStatus.Timestamp(childComplexity), true
 
+	case "ApplicationWebhook.applicationID":
+		if e.complexity.ApplicationWebhook.ApplicationID == nil {
+			break
+		}
+
+		return e.complexity.ApplicationWebhook.ApplicationID(childComplexity), true
+
 	case "ApplicationWebhook.auth":
 		if e.complexity.ApplicationWebhook.Auth == nil {
 			break
@@ -743,6 +753,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.CredentialRequestAuth.Csrf(childComplexity), true
 
+	case "Document.applicationID":
+		if e.complexity.Document.ApplicationID == nil {
+			break
+		}
+
+		return e.complexity.Document.ApplicationID(childComplexity), true
+
 	case "Document.data":
 		if e.complexity.Document.Data == nil {
 			break
@@ -805,6 +822,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DocumentPage.TotalCount(childComplexity), true
+
+	case "EventAPIDefinition.applicationID":
+		if e.complexity.EventAPIDefinition.ApplicationID == nil {
+			break
+		}
+
+		return e.complexity.EventAPIDefinition.ApplicationID(childComplexity), true
 
 	case "EventAPIDefinition.description":
 		if e.complexity.EventAPIDefinition.Description == nil {
@@ -1824,6 +1848,7 @@ enum ApplicationStatusCondition {
 
 type ApplicationWebhook {
     id: ID!
+    applicationID: ID!
     type: ApplicationWebhookType!
     url: String!
     auth: Auth
@@ -1894,6 +1919,7 @@ enum EventAPISpecType {
 
 type EventAPIDefinition {
     id: ID!
+    applicationID: ID!
     name: String!
     description: String
     """group allows you to find the same API but in different version"""
@@ -1913,6 +1939,7 @@ type EventAPISpec {
 
 type Document {
     id: ID!
+    applicationID: ID!
     title: String!
     format: DocumentFormat!
     """for example Service Class, API etc"""
@@ -2087,6 +2114,7 @@ input EventAPIDefinitionInput {
 input EventAPISpecInput {
     data: CLOB
     eventSpecType: EventAPISpecType!
+    format: SpecFormat!
     fetchRequest: FetchRequestInput
 }
 
@@ -4198,6 +4226,33 @@ func (ec *executionContext) _ApplicationWebhook_id(ctx context.Context, field gr
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _ApplicationWebhook_applicationID(ctx context.Context, field graphql.CollectedField, obj *ApplicationWebhook) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "ApplicationWebhook",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ApplicationID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _ApplicationWebhook_type(ctx context.Context, field graphql.CollectedField, obj *ApplicationWebhook) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -4582,6 +4637,33 @@ func (ec *executionContext) _Document_id(ctx context.Context, field graphql.Coll
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Document_applicationID(ctx context.Context, field graphql.CollectedField, obj *Document) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Document",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ApplicationID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Document_title(ctx context.Context, field graphql.CollectedField, obj *Document) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -4803,6 +4885,33 @@ func (ec *executionContext) _EventAPIDefinition_id(ctx context.Context, field gr
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.ID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EventAPIDefinition_applicationID(ctx context.Context, field graphql.CollectedField, obj *EventAPIDefinition) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "EventAPIDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ApplicationID, nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -8681,6 +8790,12 @@ func (ec *executionContext) unmarshalInputEventAPISpecInput(ctx context.Context,
 			if err != nil {
 				return it, err
 			}
+		case "format":
+			var err error
+			it.Format, err = ec.unmarshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "fetchRequest":
 			var err error
 			it.FetchRequest, err = ec.unmarshalOFetchRequestInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchRequestInput(ctx, v)
@@ -9285,6 +9400,11 @@ func (ec *executionContext) _ApplicationWebhook(ctx context.Context, sel ast.Sel
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "applicationID":
+			out.Values[i] = ec._ApplicationWebhook_applicationID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "type":
 			out.Values[i] = ec._ApplicationWebhook_type(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -9449,6 +9569,11 @@ func (ec *executionContext) _Document(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "applicationID":
+			out.Values[i] = ec._Document_applicationID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "title":
 			out.Values[i] = ec._Document_title(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -9526,6 +9651,11 @@ func (ec *executionContext) _EventAPIDefinition(ctx context.Context, sel ast.Sel
 			out.Values[i] = graphql.MarshalString("EventAPIDefinition")
 		case "id":
 			out.Values[i] = ec._EventAPIDefinition_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "applicationID":
+			out.Values[i] = ec._EventAPIDefinition_applicationID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

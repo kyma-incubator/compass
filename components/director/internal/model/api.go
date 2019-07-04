@@ -37,24 +37,7 @@ const (
 	APISpecTypeOpenAPI APISpecType = "OPEN_API"
 )
 
-type SpecFormat string
-
-const (
-	SpecFormatYaml SpecFormat = "YAML"
-	SpecFormatJSON SpecFormat = "JSON"
-)
-
 type Timestamp time.Time
-
-type Version struct {
-	// for example 4.6
-	Value      string
-	Deprecated *bool
-	// for example 4.5
-	DeprecatedSince *string
-	// if true, will be removed in the next version
-	ForRemoval *bool
-}
 
 type APIDefinitionInput struct {
 	Name        string
@@ -71,13 +54,6 @@ type APISpecInput struct {
 	Type         APISpecType
 	Format       *SpecFormat
 	FetchRequest *FetchRequestInput
-}
-
-type VersionInput struct {
-	Value           string
-	Deprecated      *bool
-	DeprecatedSince *string
-	ForRemoval      *bool
 }
 
 type APIDefinitionPage struct {
@@ -117,18 +93,5 @@ func (a *APISpecInput) ToAPISpec() *APISpec {
 		Format:       a.Format,
 		Type:         a.Type,
 		FetchRequest: a.FetchRequest.ToFetchRequest(time.Now()),
-	}
-}
-
-func (v *VersionInput) ToVersion() *Version {
-	if v == nil {
-		return nil
-	}
-
-	return &Version{
-		Value:           v.Value,
-		Deprecated:      v.Deprecated,
-		DeprecatedSince: v.DeprecatedSince,
-		ForRemoval:      v.ForRemoval,
 	}
 }

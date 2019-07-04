@@ -136,6 +136,7 @@ enum ApplicationStatusCondition {
 
 type ApplicationWebhook {
     id: ID!
+    applicationID: ID!
     type: ApplicationWebhookType!
     url: String!
     auth: Auth
@@ -206,6 +207,7 @@ enum EventAPISpecType {
 
 type EventAPIDefinition {
     id: ID!
+    applicationID: ID!
     name: String!
     description: String
     """group allows you to find the same API but in different version"""
@@ -225,6 +227,7 @@ type EventAPISpec {
 
 type Document {
     id: ID!
+    applicationID: ID!
     title: String!
     format: DocumentFormat!
     """for example Service Class, API etc"""
@@ -399,6 +402,7 @@ input EventAPIDefinitionInput {
 input EventAPISpecInput {
     data: CLOB
     eventSpecType: EventAPISpecType!
+    format: SpecFormat!
     fetchRequest: FetchRequestInput
 }
 

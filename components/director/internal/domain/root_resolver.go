@@ -3,6 +3,8 @@ package domain
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
@@ -28,13 +30,14 @@ type RootResolver struct {
 
 func NewRootResolver() *RootResolver {
 	authConverter := auth.NewConverter()
-	var eventAPIConverter application.EventAPIConverter = nil //TODO: Initialize converter
 
 	runtimeConverter := runtime.NewConverter(authConverter)
 	frConverter := fetchrequest.NewConverter(authConverter)
+	versionConverter := version.NewConverter()
 	docConverter := document.NewConverter(frConverter)
 	webhookConverter := webhook.NewConverter(authConverter)
-	apiConverter := api.NewConverter(authConverter, frConverter)
+	apiConverter := api.NewConverter(authConverter, frConverter, versionConverter)
+	eventAPIConverter := eventapi.NewConverter(frConverter, versionConverter)
 	appConverter := application.NewConverter(webhookConverter, apiConverter, eventAPIConverter, docConverter)
 
 	healthcheckRepo := healthcheck.NewRepository()
@@ -47,16 +50,16 @@ func NewRootResolver() *RootResolver {
 
 	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo)
 	apiSvc := api.NewService(apiRepo)
-	eventAPISvc := eventapi.NewService()
+	eventAPISvc := eventapi.NewService(eventAPIRepo)
 	webhookSvc := webhook.NewService(webhookRepo)
 	docSvc := document.NewService(docRepo)
 	runtimeSvc := runtime.NewService(runtimeRepo)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 
 	return &RootResolver{
-		app:         application.NewResolver(appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, appConverter, docConverter, webhookConverter, apiConverter),
+		app:         application.NewResolver(appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter),
 		api:         api.NewResolver(apiSvc, apiConverter, authConverter),
-		eventAPI:    eventapi.NewResolver(eventAPISvc),
+		eventAPI:    eventapi.NewResolver(eventAPISvc, eventAPIConverter),
 		doc:         document.NewResolver(docSvc, frConverter),
 		runtime:     runtime.NewResolver(runtimeSvc, runtimeConverter),
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
