@@ -20,12 +20,18 @@ type APIRepository interface {
 	DeleteAllByApplicationID(id string) error
 }
 
-type service struct {
-	repo APIRepository
+//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+type UIDService interface {
+	Generate() string
 }
 
-func NewService(repo APIRepository) *service {
-	return &service{repo: repo}
+type service struct {
+	repo       APIRepository
+	uidService UIDService
+}
+
+func NewService(repo APIRepository, uidService UIDService) *service {
+	return &service{repo: repo, uidService: uidService}
 }
 
 func (s *service) List(ctx context.Context, applicationID string, pageSize *int, cursor *string) (*model.APIDefinitionPage, error) {
@@ -41,7 +47,8 @@ func (s *service) Get(ctx context.Context, id string) (*model.APIDefinition, err
 	return api, nil
 }
 
-func (s *service) Create(ctx context.Context, id string, applicationID string, in model.APIDefinitionInput) (string, error) {
+func (s *service) Create(ctx context.Context, applicationID string, in model.APIDefinitionInput) (string, error) {
+	id := s.uidService.Generate()
 	api := in.ToAPIDefinition(id, applicationID)
 
 	err := s.repo.Create(api)

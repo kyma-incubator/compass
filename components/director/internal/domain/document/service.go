@@ -2,11 +2,8 @@ package document
 
 import (
 	"context"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/uid"
-
 	"github.com/pkg/errors"
 )
 
@@ -18,13 +15,20 @@ type DocumentRepository interface {
 	Delete(item *model.Document) error
 }
 
-type service struct {
-	repo DocumentRepository
+//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+type UIDService interface {
+	Generate() string
 }
 
-func NewService(repo DocumentRepository) *service {
+type service struct {
+	repo       DocumentRepository
+	uidService UIDService
+}
+
+func NewService(repo DocumentRepository, uidService UIDService) *service {
 	return &service{
-		repo: repo,
+		repo:       repo,
+		uidService: uidService,
 	}
 }
 
@@ -42,15 +46,8 @@ func (s *service) List(ctx context.Context, applicationID string, pageSize *int,
 }
 
 func (s *service) Create(ctx context.Context, applicationID string, in model.DocumentInput) (string, error) {
-	document := &model.Document{
-		ApplicationID: applicationID,
-		ID:            uid.Generate(),
-		Title:         in.Title,
-		Format:        in.Format,
-		Kind:          in.Kind,
-		Data:          in.Data,
-		FetchRequest:  in.FetchRequest.ToFetchRequest(time.Now()),
-	}
+	id := s.uidService.Generate()
+	document := in.ToDocument(id, applicationID)
 
 	err := s.repo.Create(document)
 	if err != nil {

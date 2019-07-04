@@ -3,8 +3,6 @@ package eventapi
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/uid"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -12,7 +10,7 @@ import (
 
 //go:generate mockery -name=EventAPIService -output=automock -outpkg=automock -case=underscore
 type EventAPIService interface {
-	Create(ctx context.Context, id string, applicationID string, in model.EventAPIDefinitionInput) (string, error)
+	Create(ctx context.Context, applicationID string, in model.EventAPIDefinitionInput) (string, error)
 	Update(ctx context.Context, id string, in model.EventAPIDefinitionInput) error
 	Get(ctx context.Context, id string) (*model.EventAPIDefinition, error)
 	Delete(ctx context.Context, id string) error
@@ -42,7 +40,7 @@ func NewResolver(svc EventAPIService, converter EventAPIConverter) *Resolver {
 func (r *Resolver) AddEventAPI(ctx context.Context, applicationID string, in graphql.EventAPIDefinitionInput) (*graphql.EventAPIDefinition, error) {
 	convertedIn := r.converter.InputFromGraphQL(&in)
 
-	id, err := r.svc.Create(ctx, uid.Generate(), applicationID, *convertedIn)
+	id, err := r.svc.Create(ctx, applicationID, *convertedIn)
 	if err != nil {
 		return nil, err
 	}

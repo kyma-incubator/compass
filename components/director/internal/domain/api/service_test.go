@@ -7,14 +7,15 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 func TestService_Get(t *testing.T) {
@@ -67,7 +68,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := api.NewService(repo)
+			svc := api.NewService(repo, nil)
 
 			// when
 			document, err := svc.Get(ctx, testCase.InputID)
@@ -153,7 +154,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := api.NewService(repo)
+			svc := api.NewService(repo, nil)
 
 			// when
 			docs, err := svc.List(ctx, applicationID, testCase.InputPageSize, testCase.InputCursor)
@@ -202,6 +203,7 @@ func TestService_Create(t *testing.T) {
 	testCases := []struct {
 		Name         string
 		RepositoryFn func() *automock.APIRepository
+		UIDServiceFn func() *automock.UIDService
 		Input        model.APIDefinitionInput
 		ExpectedErr  error
 	}{
@@ -211,6 +213,11 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.APIRepository{}
 				repo.On("Create", modelAPIDefinition).Return(nil).Once()
 				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return("foo").Once()
+				return svc
 			},
 			Input:       modelInput,
 			ExpectedErr: nil,
@@ -222,6 +229,11 @@ func TestService_Create(t *testing.T) {
 				repo.On("Create", modelAPIDefinition).Return(testErr).Once()
 				return repo
 			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return("foo").Once()
+				return svc
+			},
 			Input:       modelInput,
 			ExpectedErr: testErr,
 		},
@@ -231,17 +243,18 @@ func TestService_Create(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
-
-			svc := api.NewService(repo)
+			idSvc := testCase.UIDServiceFn()
+			svc := api.NewService(repo, idSvc)
 
 			// when
-			result, err := svc.Create(ctx, id, applicationID, testCase.Input)
+			result, err := svc.Create(ctx, applicationID, testCase.Input)
 
 			// then
 			assert.IsType(t, "string", result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
 			repo.AssertExpectations(t)
+			idSvc.AssertExpectations(t)
 		})
 	}
 }
@@ -329,7 +342,7 @@ func TestService_Update(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := api.NewService(repo)
+			svc := api.NewService(repo, nil)
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -413,7 +426,7 @@ func TestService_Delete(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := api.NewService(repo)
+			svc := api.NewService(repo, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -516,7 +529,7 @@ func TestService_SetAPIAuth(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := api.NewService(repo)
+			svc := api.NewService(repo, nil)
 
 			// when
 			result, err := svc.SetAPIAuth(ctx, apiID, runtimeID, testCase.Input)
@@ -614,7 +627,7 @@ func TestService_DeleteAPIAuth(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := api.NewService(repo)
+			svc := api.NewService(repo, nil)
 
 			// when
 			result, err := svc.DeleteAPIAuth(ctx, apiID, runtimeID)
@@ -679,7 +692,7 @@ func TestService_RefetchAPISpec(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := api.NewService(repo)
+			svc := api.NewService(repo, nil)
 
 			// when
 			result, err := svc.RefetchAPISpec(ctx, apiID)

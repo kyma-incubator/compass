@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/uid"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -23,12 +21,18 @@ type RuntimeRepository interface {
 	Delete(item *model.Runtime) error
 }
 
-type service struct {
-	repo RuntimeRepository
+//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+type UIDService interface {
+	Generate() string
 }
 
-func NewService(repo RuntimeRepository) *service {
-	return &service{repo: repo}
+type service struct {
+	repo       RuntimeRepository
+	uidService UIDService
+}
+
+func NewService(repo RuntimeRepository, uidService UIDService) *service {
+	return &service{repo: repo, uidService: uidService}
 }
 
 func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error) {
@@ -45,12 +49,11 @@ func (s *service) Get(ctx context.Context, id string) (*model.Runtime, error) {
 }
 
 func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, error) {
-	id := uid.Generate()
 	runtimeTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", errors.Wrapf(err, "while loading tenant from context")
 	}
-
+	id := s.uidService.Generate()
 	rtm := in.ToRuntime(id, runtimeTenant)
 
 	// TODO: Generate AgentAuth: https://github.com/kyma-incubator/compass/issues/91

@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/uid"
-
 	"github.com/pkg/errors"
 )
 
@@ -18,13 +16,20 @@ type WebhookRepository interface {
 	Delete(item *model.ApplicationWebhook) error
 }
 
-type service struct {
-	repo WebhookRepository
+//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+type UIDService interface {
+	Generate() string
 }
 
-func NewService(repo WebhookRepository) *service {
+type service struct {
+	repo   WebhookRepository
+	uidSvc UIDService
+}
+
+func NewService(repo WebhookRepository, uidSvc UIDService) *service {
 	return &service{
-		repo: repo,
+		repo:   repo,
+		uidSvc: uidSvc,
 	}
 }
 
@@ -42,7 +47,8 @@ func (s *service) List(ctx context.Context, applicationID string) ([]*model.Appl
 }
 
 func (s *service) Create(ctx context.Context, applicationID string, in model.ApplicationWebhookInput) (string, error) {
-	webhook := in.ToWebhook(uid.Generate(), applicationID)
+	id := s.uidSvc.Generate()
+	webhook := in.ToWebhook(id, applicationID)
 
 	err := s.repo.Create(webhook)
 	if err != nil {
