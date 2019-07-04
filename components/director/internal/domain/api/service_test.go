@@ -68,7 +68,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := api.NewService(repo)
+			svc := api.NewService(repo, nil)
 
 			// when
 			document, err := svc.Get(ctx, testCase.InputID)
@@ -154,7 +154,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := api.NewService(repo)
+			svc := api.NewService(repo, nil)
 
 			// when
 			docs, err := svc.List(ctx, applicationID, testCase.InputPageSize, testCase.InputCursor)

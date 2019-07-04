@@ -235,7 +235,7 @@ func (s *service) createRelatedResources(in model.ApplicationInput, applicationI
 
 	var eventAPIs []*model.EventAPIDefinition
 	for _, item := range in.EventAPIs {
-		eventAPIs = append(eventAPIs, item.ToEventAPIDefinition(uid.Generate(), applicationID))
+		eventAPIs = append(eventAPIs, item.ToEventAPIDefinition(s.uidService.Generate(), applicationID))
 	}
 	err = s.eventAPI.CreateMany(eventAPIs)
 	if err != nil {

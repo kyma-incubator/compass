@@ -52,7 +52,7 @@ func NewRootResolver() *RootResolver {
 	uidService := uid.NewService()
 	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo, uidService)
 	apiSvc := api.NewService(apiRepo, uidService)
-	eventAPISvc := eventapi.NewService(eventAPIRepo)
+	eventAPISvc := eventapi.NewService(eventAPIRepo, uidService)
 	webhookSvc := webhook.NewService(webhookRepo, uidService)
 	docSvc := document.NewService(docRepo, uidService)
 	runtimeSvc := runtime.NewService(runtimeRepo, uidService)

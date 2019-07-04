@@ -1051,7 +1051,7 @@ func modelFromInput(in model.ApplicationInput, applicationID string) testModel {
 
 	var eventAPIsModel []*model.EventAPIDefinition
 	for _, item := range in.EventAPIs {
-		eventAPIsModel = append(eventAPIsModel, item.ToEventAPIDefinition(uid.Generate(), applicationID))
+		eventAPIsModel = append(eventAPIsModel, item.ToEventAPIDefinition(uuid.New().String(), applicationID))
 	}
 
 	var documentsModel []*model.Document

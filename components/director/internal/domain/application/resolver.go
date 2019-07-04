@@ -47,7 +47,7 @@ type APIConverter interface {
 //go:generate mockery -name=EventAPIService -output=automock -outpkg=automock -case=underscore
 type EventAPIService interface {
 	List(ctx context.Context, applicationID string, pageSize *int, cursor *string) (*model.EventAPIDefinitionPage, error)
-	Create(ctx context.Context, id string, applicationID string, in model.EventAPIDefinitionInput) (string, error)
+	Create(ctx context.Context, applicationID string, in model.EventAPIDefinitionInput) (string, error)
 	Update(ctx context.Context, id string, in model.EventAPIDefinitionInput) error
 	Delete(ctx context.Context, id string) error
 }

@@ -11,7 +11,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventapi/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestResolver_AddEventAPI(t *testing.T) {
@@ -37,7 +36,7 @@ func TestResolver_AddEventAPI(t *testing.T) {
 			Name: "Success",
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
-				svc.On("Create", context.TODO(), mock.Anything, appId, *modelAPIInput).Return(id, nil).Once()
+				svc.On("Create", context.TODO(), appId, *modelAPIInput).Return(id, nil).Once()
 				svc.On("Get", context.TODO(), id).Return(modelAPI, nil).Once()
 				return svc
 			},
@@ -54,7 +53,7 @@ func TestResolver_AddEventAPI(t *testing.T) {
 			Name: "Returns error when EventAPI creation failed",
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
-				svc.On("Create", context.TODO(), mock.Anything, appId, *modelAPIInput).Return("", testErr).Once()
+				svc.On("Create", context.TODO(), appId, *modelAPIInput).Return("", testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.EventAPIConverter {
@@ -69,7 +68,7 @@ func TestResolver_AddEventAPI(t *testing.T) {
 			Name: "Returns error when EventAPI retrieval failed",
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
-				svc.On("Create", context.TODO(), mock.Anything, appId, *modelAPIInput).Return(id, nil).Once()
+				svc.On("Create", context.TODO(), appId, *modelAPIInput).Return(id, nil).Once()
 				svc.On("Get", context.TODO(), id).Return(nil, testErr).Once()
 				return svc
 			},

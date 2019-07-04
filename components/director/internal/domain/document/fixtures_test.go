@@ -22,7 +22,6 @@ func fixModelDocument(id, applicationID string) *model.Document {
 		Format:        model.DocumentFormatMarkdown,
 		Kind:          &docKind,
 		Data:          &docData,
-		FetchRequest:  &model.FetchRequest{},
 	}
 }
 
@@ -34,30 +33,27 @@ func fixGQLDocument(id, applicationID string) *graphql.Document {
 		Format:        graphql.DocumentFormatMarkdown,
 		Kind:          &docKind,
 		Data:          &docCLOB,
-		FetchRequest:  &graphql.FetchRequest{},
 	}
 }
 
 func fixModelDocumentInput(id string) *model.DocumentInput {
 	return &model.DocumentInput{
-		Title:        docTitle,
-		DisplayName:  docDisplayName,
-		Description:  docDescription,
-		Format:       model.DocumentFormatMarkdown,
-		Kind:         &docKind,
-		Data:         &docData,
-		FetchRequest: &model.FetchRequestInput{},
+		Title:       docTitle,
+		DisplayName: docDisplayName,
+		Description: docDescription,
+		Format:      model.DocumentFormatMarkdown,
+		Kind:        &docKind,
+		Data:        &docData,
 	}
 }
 
 func fixGQLDocumentInput(id string) *graphql.DocumentInput {
 	return &graphql.DocumentInput{
-		Title:        docTitle,
-		DisplayName:  docDisplayName,
-		Description:  docDescription,
-		Format:       graphql.DocumentFormatMarkdown,
-		Kind:         &docKind,
-		Data:         &docCLOB,
-		FetchRequest: &graphql.FetchRequestInput{},
+		Title:       docTitle,
+		DisplayName: docDisplayName,
+		Description: docDescription,
+		Format:      graphql.DocumentFormatMarkdown,
+		Kind:        &docKind,
+		Data:        &docCLOB,
 	}
 }

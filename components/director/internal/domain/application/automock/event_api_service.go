@@ -11,20 +11,20 @@ type EventAPIService struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: ctx, id, applicationID, in
-func (_m *EventAPIService) Create(ctx context.Context, id string, applicationID string, in model.EventAPIDefinitionInput) (string, error) {
-	ret := _m.Called(ctx, id, applicationID, in)
+// Create provides a mock function with given fields: ctx, applicationID, in
+func (_m *EventAPIService) Create(ctx context.Context, applicationID string, in model.EventAPIDefinitionInput) (string, error) {
+	ret := _m.Called(ctx, applicationID, in)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.EventAPIDefinitionInput) string); ok {
-		r0 = rf(ctx, id, applicationID, in)
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.EventAPIDefinitionInput) string); ok {
+		r0 = rf(ctx, applicationID, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, model.EventAPIDefinitionInput) error); ok {
-		r1 = rf(ctx, id, applicationID, in)
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.EventAPIDefinitionInput) error); ok {
+		r1 = rf(ctx, applicationID, in)
 	} else {
 		r1 = ret.Error(1)
 	}

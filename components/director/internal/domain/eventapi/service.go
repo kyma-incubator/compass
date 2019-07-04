@@ -3,6 +3,8 @@ package eventapi
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
+
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -21,12 +23,18 @@ type EventAPIRepository interface {
 	DeleteAllByApplicationID(id string) error
 }
 
-type service struct {
-	repo EventAPIRepository
+//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+type UIDService interface {
+	Generate() string
 }
 
-func NewService(repo EventAPIRepository) *service {
-	return &service{repo: repo}
+type service struct {
+	repo       EventAPIRepository
+	uidService UIDService
+}
+
+func NewService(repo EventAPIRepository, uidService api.UIDService) *service {
+	return &service{repo: repo, uidService: uidService}
 }
 
 func (s *service) List(ctx context.Context, applicationID string, pageSize *int, cursor *string) (*model.EventAPIDefinitionPage, error) {
@@ -42,7 +50,8 @@ func (s *service) Get(ctx context.Context, id string) (*model.EventAPIDefinition
 	return eventAPI, nil
 }
 
-func (s *service) Create(ctx context.Context, id string, applicationID string, in model.EventAPIDefinitionInput) (string, error) {
+func (s *service) Create(ctx context.Context, applicationID string, in model.EventAPIDefinitionInput) (string, error) {
+	id := s.uidService.Generate()
 	eventAPI := in.ToEventAPIDefinition(id, applicationID)
 
 	err := s.repo.Create(eventAPI)

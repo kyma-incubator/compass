@@ -69,7 +69,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := eventapi.NewService(repo)
+			svc := eventapi.NewService(repo, nil)
 
 			// when
 			document, err := svc.Get(ctx, testCase.InputID)
@@ -155,7 +155,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := eventapi.NewService(repo)
+			svc := eventapi.NewService(repo, nil)
 
 			// when
 			docs, err := svc.List(ctx, applicationID, testCase.InputPageSize, testCase.InputCursor)
@@ -201,6 +201,7 @@ func TestService_Create(t *testing.T) {
 	testCases := []struct {
 		Name         string
 		RepositoryFn func() *automock.EventAPIRepository
+		UIDServiceFn func() *automock.UIDService
 		Input        model.EventAPIDefinitionInput
 		ExpectedErr  error
 	}{
@@ -210,6 +211,11 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.EventAPIRepository{}
 				repo.On("Create", modelEventAPIDefinition).Return(nil).Once()
 				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id).Once()
+				return svc
 			},
 			Input:       modelInput,
 			ExpectedErr: nil,
@@ -221,6 +227,11 @@ func TestService_Create(t *testing.T) {
 				repo.On("Create", modelEventAPIDefinition).Return(testErr).Once()
 				return repo
 			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id).Once()
+				return svc
+			},
 			Input:       modelInput,
 			ExpectedErr: testErr,
 		},
@@ -230,17 +241,18 @@ func TestService_Create(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
-
-			svc := eventapi.NewService(repo)
+			uidSvc := testCase.UIDServiceFn()
+			svc := eventapi.NewService(repo, uidSvc)
 
 			// when
-			result, err := svc.Create(ctx, id, applicationID, testCase.Input)
+			result, err := svc.Create(ctx, applicationID, testCase.Input)
 
 			// then
 			assert.IsType(t, "string", result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
 			repo.AssertExpectations(t)
+			uidSvc.AssertExpectations(t)
 		})
 	}
 }
@@ -324,7 +336,7 @@ func TestService_Update(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := eventapi.NewService(repo)
+			svc := eventapi.NewService(repo, nil)
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -407,7 +419,7 @@ func TestService_Delete(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := eventapi.NewService(repo)
+			svc := eventapi.NewService(repo, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -475,7 +487,7 @@ func TestService_RefetchAPISpec(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := eventapi.NewService(repo)
+			svc := eventapi.NewService(repo, nil)
 
 			// when
 			result, err := svc.RefetchAPISpec(ctx, apiID)
