@@ -20,8 +20,6 @@ models:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Labels"
   Timestamp:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Timestamp"
-  Tenant:
-    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Tenant"
   Annotations:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Annotations"
   HttpHeaders:

@@ -31,7 +31,7 @@ type ApplicationConverter interface {
 //go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
 type APIService interface {
 	List(ctx context.Context, applicationID string, pageSize *int, cursor *string) (*model.APIDefinitionPage, error)
-	Create(ctx context.Context, id string, applicationID string, in model.APIDefinitionInput) (string, error)
+	Create(ctx context.Context, applicationID string, in model.APIDefinitionInput) (string, error)
 	Update(ctx context.Context, id string, in model.APIDefinitionInput) error
 	Delete(ctx context.Context, id string) error
 }
@@ -44,7 +44,21 @@ type APIConverter interface {
 	InputFromGraphQL(in *graphql.APIDefinitionInput) *model.APIDefinitionInput
 }
 
-type EventAPIService interface{}
+//go:generate mockery -name=EventAPIService -output=automock -outpkg=automock -case=underscore
+type EventAPIService interface {
+	List(ctx context.Context, applicationID string, pageSize *int, cursor *string) (*model.EventAPIDefinitionPage, error)
+	Create(ctx context.Context, applicationID string, in model.EventAPIDefinitionInput) (string, error)
+	Update(ctx context.Context, id string, in model.EventAPIDefinitionInput) error
+	Delete(ctx context.Context, id string) error
+}
+
+//go:generate mockery -name=EventAPIConverter -output=automock -outpkg=automock -case=underscore
+type EventAPIConverter interface {
+	ToGraphQL(in *model.EventAPIDefinition) *graphql.EventAPIDefinition
+	MultipleToGraphQL(in []*model.EventAPIDefinition) []*graphql.EventAPIDefinition
+	MultipleInputFromGraphQL(in []*graphql.EventAPIDefinitionInput) []*model.EventAPIDefinitionInput
+	InputFromGraphQL(in *graphql.EventAPIDefinitionInput) *model.EventAPIDefinitionInput
+}
 
 //go:generate mockery -name=DocumentService -output=automock -outpkg=automock -case=underscore
 type DocumentService interface {
@@ -86,9 +100,10 @@ type Resolver struct {
 	documentConverter DocumentConverter
 	webhookConverter  WebhookConverter
 	apiConverter      APIConverter
+	eventApiConverter EventAPIConverter
 }
 
-func NewResolver(svc ApplicationService, apiSvc APIService, eventAPISvc EventAPIService, documentSvc DocumentService, webhookSvc WebhookService, appConverter ApplicationConverter, documentConverter DocumentConverter, webhookConverter WebhookConverter, apiConverter APIConverter) *Resolver {
+func NewResolver(svc ApplicationService, apiSvc APIService, eventAPISvc EventAPIService, documentSvc DocumentService, webhookSvc WebhookService, appConverter ApplicationConverter, documentConverter DocumentConverter, webhookConverter WebhookConverter, apiConverter APIConverter, eventAPIConverter EventAPIConverter) *Resolver {
 	return &Resolver{
 		appSvc:            svc,
 		apiSvc:            apiSvc,
@@ -99,6 +114,7 @@ func NewResolver(svc ApplicationService, apiSvc APIService, eventAPISvc EventAPI
 		documentConverter: documentConverter,
 		webhookConverter:  webhookConverter,
 		apiConverter:      apiConverter,
+		eventApiConverter: eventAPIConverter,
 	}
 }
 
@@ -272,14 +288,26 @@ func (r *Resolver) Apis(ctx context.Context, obj *graphql.Application, group *st
 	}, nil
 }
 func (r *Resolver) EventAPIs(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.EventAPIDefinitionPage, error) {
-	//TODO panic("not implemented")
+	var cursor string
+	if after != nil {
+		cursor = string(*after)
+	}
+
+	eventAPIPage, err := r.eventAPISvc.List(ctx, obj.ID, first, &cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	gqlApis := r.eventApiConverter.MultipleToGraphQL(eventAPIPage.Data)
+	totalCount := len(gqlApis)
+
 	return &graphql.EventAPIDefinitionPage{
-		Data:       make([]*graphql.EventAPIDefinition, 0),
-		TotalCount: 0,
+		Data:       gqlApis,
+		TotalCount: totalCount,
 		PageInfo: &graphql.PageInfo{
-			StartCursor: graphql.PageCursor("1"),
-			EndCursor:   graphql.PageCursor("2"),
-			HasNextPage: false,
+			StartCursor: graphql.PageCursor(eventAPIPage.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(eventAPIPage.PageInfo.EndCursor),
+			HasNextPage: eventAPIPage.PageInfo.HasNextPage,
 		},
 	}, nil
 }
@@ -325,7 +353,6 @@ func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*g
 
 func (r *Resolver) AddApplicationWebhook(ctx context.Context, applicationID string, in graphql.ApplicationWebhookInput) (*graphql.ApplicationWebhook, error) {
 	convertedIn := r.webhookConverter.InputFromGraphQL(&in)
-
 	id, err := r.webhookSvc.Create(ctx, applicationID, *convertedIn)
 	if err != nil {
 		return nil, err

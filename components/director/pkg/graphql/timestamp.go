@@ -34,3 +34,20 @@ func (y Timestamp) MarshalGQL(w io.Writer) {
 		log.Errorf("while writing %T: %s", y, err)
 	}
 }
+
+// UnmarshalJSON is used only by integration tests
+func (y *Timestamp) UnmarshalJSON(in []byte) error {
+	instr, err := strconv.Unquote(string(in))
+	if err != nil {
+		return err
+	}
+
+	t, err := time.Parse(time.RFC3339, instr)
+	if err != nil {
+		return err
+	}
+
+	*y = Timestamp(t)
+
+	return nil
+}

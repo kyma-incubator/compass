@@ -14,49 +14,46 @@ var (
 	docCLOB        = graphql.CLOB(docData)
 )
 
-func fixModelDocument(applicationID, id string) *model.Document {
+func fixModelDocument(id, applicationID string) *model.Document {
 	return &model.Document{
-		ApplicationID: applicationID,
 		ID:            id,
+		ApplicationID: applicationID,
 		Title:         docTitle,
 		Format:        model.DocumentFormatMarkdown,
 		Kind:          &docKind,
 		Data:          &docData,
-		FetchRequest:  &model.FetchRequest{},
 	}
 }
 
-func fixGQLDocument(id string) *graphql.Document {
+func fixGQLDocument(id, applicationID string) *graphql.Document {
 	return &graphql.Document{
-		ID:           id,
-		Title:        docTitle,
-		Format:       graphql.DocumentFormatMarkdown,
-		Kind:         &docKind,
-		Data:         &docCLOB,
-		FetchRequest: &graphql.FetchRequest{},
+		ID:            id,
+		ApplicationID: applicationID,
+		Title:         docTitle,
+		Format:        graphql.DocumentFormatMarkdown,
+		Kind:          &docKind,
+		Data:          &docCLOB,
 	}
 }
 
 func fixModelDocumentInput(id string) *model.DocumentInput {
 	return &model.DocumentInput{
-		Title:        docTitle,
-		DisplayName:  docDisplayName,
-		Description:  docDescription,
-		Format:       model.DocumentFormatMarkdown,
-		Kind:         &docKind,
-		Data:         &docData,
-		FetchRequest: &model.FetchRequestInput{},
+		Title:       docTitle,
+		DisplayName: docDisplayName,
+		Description: docDescription,
+		Format:      model.DocumentFormatMarkdown,
+		Kind:        &docKind,
+		Data:        &docData,
 	}
 }
 
 func fixGQLDocumentInput(id string) *graphql.DocumentInput {
 	return &graphql.DocumentInput{
-		Title:        docTitle,
-		DisplayName:  docDisplayName,
-		Description:  docDescription,
-		Format:       graphql.DocumentFormatMarkdown,
-		Kind:         &docKind,
-		Data:         &docCLOB,
-		FetchRequest: &graphql.FetchRequestInput{},
+		Title:       docTitle,
+		DisplayName: docDisplayName,
+		Description: docDescription,
+		Format:      graphql.DocumentFormatMarkdown,
+		Kind:        &docKind,
+		Data:        &docCLOB,
 	}
 }

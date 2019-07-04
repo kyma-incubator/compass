@@ -10,13 +10,15 @@ WORKDIR ${BASE_APP_DIR}
 COPY ./pkg/ ${BASE_APP_DIR}/pkg/
 COPY ./vendor/ ${BASE_APP_DIR}/vendor/
 COPY ./cmd/ ${BASE_APP_DIR}/cmd/
+COPY ./internal/ ${BASE_APP_DIR}/internal/
+COPY ./licenses ${BASE_APP_DIR}/licenses
 
 #
 # Build app
 #
 
 RUN go build -v -o main ./cmd/main.go
-RUN mkdir /app && mv ./main /app/main
+RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
 
 FROM alpine:3.9
 LABEL source = git@github.com:kyma-incubator/compass.git

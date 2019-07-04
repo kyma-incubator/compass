@@ -11,7 +11,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -62,7 +61,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := document.NewService(repo)
+			svc := document.NewService(repo, nil)
 
 			// when
 			document, err := svc.Get(ctx, testCase.InputID)
@@ -145,7 +144,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := document.NewService(repo)
+			svc := document.NewService(repo, nil)
 
 			// when
 			docs, err := svc.List(ctx, applicationID, testCase.InputPageSize, testCase.InputCursor)
@@ -168,12 +167,9 @@ func TestService_Create(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	modelInput := fixModelDocumentInput("foo")
-
+	id := "foo"
 	applicationID := "foo"
-
-	documentModel := mock.MatchedBy(func(doc *model.Document) bool {
-		return doc.Title == modelInput.Title && doc.Data == modelInput.Data
-	})
+	modelDoc := modelInput.ToDocument(id, applicationID)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, "tenant")
@@ -181,6 +177,7 @@ func TestService_Create(t *testing.T) {
 	testCases := []struct {
 		Name         string
 		RepositoryFn func() *automock.DocumentRepository
+		UIDServiceFn func() *automock.UIDService
 		Input        model.DocumentInput
 		ExpectedErr  error
 	}{
@@ -188,8 +185,13 @@ func TestService_Create(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("Create", documentModel).Return(nil).Once()
+				repo.On("Create", modelDoc).Return(nil).Once()
 				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id).Once()
+				return svc
 			},
 			Input:       *modelInput,
 			ExpectedErr: nil,
@@ -198,8 +200,13 @@ func TestService_Create(t *testing.T) {
 			Name: "Returns error when document creation failed",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("Create", documentModel).Return(testErr).Once()
+				repo.On("Create", modelDoc).Return(testErr).Once()
 				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id).Once()
+				return svc
 			},
 			Input:       *modelInput,
 			ExpectedErr: testErr,
@@ -209,8 +216,8 @@ func TestService_Create(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-
-			svc := document.NewService(repo)
+			idSvc := testCase.UIDServiceFn()
+			svc := document.NewService(repo, idSvc)
 
 			// when
 			result, err := svc.Create(ctx, applicationID, testCase.Input)
@@ -224,6 +231,7 @@ func TestService_Create(t *testing.T) {
 			}
 
 			repo.AssertExpectations(t)
+			idSvc.AssertExpectations(t)
 		})
 	}
 }
@@ -284,7 +292,7 @@ func TestService_Delete(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := document.NewService(repo)
+			svc := document.NewService(repo, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)

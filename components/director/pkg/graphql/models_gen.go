@@ -102,10 +102,11 @@ type ApplicationStatus struct {
 }
 
 type ApplicationWebhook struct {
-	ID   string                 `json:"id"`
-	Type ApplicationWebhookType `json:"type"`
-	URL  string                 `json:"url"`
-	Auth *Auth                  `json:"auth"`
+	ID            string                 `json:"id"`
+	ApplicationID string                 `json:"applicationID"`
+	Type          ApplicationWebhookType `json:"type"`
+	URL           string                 `json:"url"`
+	Auth          *Auth                  `json:"auth"`
 }
 
 type ApplicationWebhookInput struct {
@@ -168,9 +169,10 @@ type CredentialRequestAuthInput struct {
 }
 
 type Document struct {
-	ID     string         `json:"id"`
-	Title  string         `json:"title"`
-	Format DocumentFormat `json:"format"`
+	ID            string         `json:"id"`
+	ApplicationID string         `json:"applicationID"`
+	Title         string         `json:"title"`
+	Format        DocumentFormat `json:"format"`
 	// for example Service Class, API etc
 	Kind         *string       `json:"kind"`
 	Data         *CLOB         `json:"data"`
@@ -196,9 +198,10 @@ type DocumentPage struct {
 func (DocumentPage) IsPageable() {}
 
 type EventAPIDefinition struct {
-	ID          string  `json:"id"`
-	Name        string  `json:"name"`
-	Description *string `json:"description"`
+	ID            string  `json:"id"`
+	ApplicationID string  `json:"applicationID"`
+	Name          string  `json:"name"`
+	Description   *string `json:"description"`
 	// group allows you to find the same API but in different version
 	Group   *string       `json:"group"`
 	Spec    *EventAPISpec `json:"spec"`
@@ -231,6 +234,7 @@ type EventAPISpec struct {
 type EventAPISpecInput struct {
 	Data          *CLOB              `json:"data"`
 	EventSpecType EventAPISpecType   `json:"eventSpecType"`
+	Format        SpecFormat         `json:"format"`
 	FetchRequest  *FetchRequestInput `json:"fetchRequest"`
 }
 
@@ -306,7 +310,6 @@ type Runtime struct {
 	ID          string         `json:"id"`
 	Name        string         `json:"name"`
 	Description *string        `json:"description"`
-	Tenant      Tenant         `json:"tenant"`
 	Labels      Labels         `json:"labels"`
 	Annotations Annotations    `json:"annotations"`
 	Status      *RuntimeStatus `json:"status"`

@@ -20,12 +20,18 @@ type APIRepository interface {
 	DeleteAllByApplicationID(id string) error
 }
 
-type service struct {
-	repo APIRepository
+//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+type UIDService interface {
+	Generate() string
 }
 
-func NewService(repo APIRepository) *service {
-	return &service{repo: repo}
+type service struct {
+	repo       APIRepository
+	uidService UIDService
+}
+
+func NewService(repo APIRepository, uidService UIDService) *service {
+	return &service{repo: repo, uidService: uidService}
 }
 
 func (s *service) List(ctx context.Context, applicationID string, pageSize *int, cursor *string) (*model.APIDefinitionPage, error) {
@@ -41,7 +47,8 @@ func (s *service) Get(ctx context.Context, id string) (*model.APIDefinition, err
 	return api, nil
 }
 
-func (s *service) Create(ctx context.Context, id string, applicationID string, in model.APIDefinitionInput) (string, error) {
+func (s *service) Create(ctx context.Context, applicationID string, in model.APIDefinitionInput) (string, error) {
+	id := s.uidService.Generate()
 	api := in.ToAPIDefinition(id, applicationID)
 
 	err := s.repo.Create(api)
@@ -88,33 +95,33 @@ func (s *service) SetAPIAuth(ctx context.Context, apiID string, runtimeID string
 		return nil, err
 	}
 
-	for i, rtAuth := range api.Auths {
-		if rtAuth.RuntimeID == runtimeID {
-			api.DefaultAuth = rtAuth.Auth
-			api.Auths[i] = rtAuth
-
-			err = s.repo.Update(api)
-			if err != nil {
-				return nil, err
-			}
-
-			return rtAuth, nil
+	var runtimeAuth *model.RuntimeAuth
+	var runtimeAuthIndex int
+	for i, a := range api.Auths {
+		if a.RuntimeID == runtimeID {
+			runtimeAuth = a
+			runtimeAuthIndex = i
+			break
 		}
 	}
 
-	runtimeAuth := &model.RuntimeAuth{
+	newAuth := &model.RuntimeAuth{
 		RuntimeID: runtimeID,
 		Auth:      in.ToAuth(),
 	}
-	api.DefaultAuth = runtimeAuth.Auth
-	api.Auths = append(api.Auths, runtimeAuth)
+
+	if runtimeAuth == nil {
+		api.Auths = append(api.Auths, newAuth)
+	} else {
+		api.Auths[runtimeAuthIndex] = newAuth
+	}
 
 	err = s.repo.Update(api)
 	if err != nil {
 		return nil, err
 	}
 
-	return runtimeAuth, nil
+	return newAuth, nil
 }
 
 func (s *service) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*model.RuntimeAuth, error) {
@@ -124,19 +131,26 @@ func (s *service) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID str
 	}
 
 	var runtimeAuth *model.RuntimeAuth
-	for i, rtAuth := range api.Auths {
-		if rtAuth.RuntimeID == runtimeID {
-			runtimeAuth = rtAuth
-
-			api.Auths = append(api.Auths[:i], api.Auths[i+1:]...)
-			api.DefaultAuth = nil
-
-			err := s.repo.Update(api)
-			if err != nil {
-				return nil, err
-			}
+	var runtimeAuthIndex int
+	for i, a := range api.Auths {
+		if a.RuntimeID == runtimeID {
+			runtimeAuth = a
+			runtimeAuthIndex = i
+			break
 		}
 	}
+
+	if runtimeAuth == nil {
+		return nil, nil
+	}
+
+	api.Auths = append(api.Auths[:runtimeAuthIndex], api.Auths[runtimeAuthIndex+1:]...)
+
+	err = s.repo.Update(api)
+	if err != nil {
+		return nil, err
+	}
+
 	return runtimeAuth, nil
 }
 

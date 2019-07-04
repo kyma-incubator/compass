@@ -20,7 +20,13 @@ func (r *inMemoryRepository) GetByID(id string) (*model.APIDefinition, error) {
 		return api, nil
 	}
 
-	return nil, errors.Errorf("APIDefinition with %s ID does not exist", id)
+	api := r.store[id]
+
+	if api == nil {
+		return nil, errors.Errorf("APIDefinition with %s ID does not exist", id)
+	}
+
+	return api, nil
 }
 
 // TODO: Make filtering and paging
@@ -61,6 +67,10 @@ func (r *inMemoryRepository) ListByApplicationID(applicationID string, pageSize 
 }
 
 func (r *inMemoryRepository) Create(item *model.APIDefinition) error {
+	if item == nil {
+		return errors.New("item can not be nil")
+	}
+
 	r.store[item.ID] = item
 
 	return nil
@@ -78,12 +88,20 @@ func (r *inMemoryRepository) CreateMany(items []*model.APIDefinition) error {
 }
 
 func (r *inMemoryRepository) Update(item *model.APIDefinition) error {
+	if item == nil {
+		return errors.New("item can not be nil")
+	}
+
 	r.store[item.ID] = item
 
 	return nil
 }
 
 func (r *inMemoryRepository) Delete(item *model.APIDefinition) error {
+	if item == nil {
+		return errors.New("item can not be nil")
+	}
+
 	delete(r.store, item.ID)
 
 	return nil

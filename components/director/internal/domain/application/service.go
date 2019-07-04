@@ -6,14 +6,13 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
-	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/pkg/errors"
 )
 
 //go:generate mockery -name=ApplicationRepository -output=automock -outpkg=automock -case=underscore
 type ApplicationRepository interface {
-	GetByID(id string) (*model.Application, error)
-	List(filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error)
+	GetByID(tenant, id string) (*model.Application, error)
+	List(tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error)
 	Create(item *model.Application) error
 	Update(item *model.Application) error
 	Delete(item *model.Application) error
@@ -42,29 +41,45 @@ type APIRepository interface {
 
 //go:generate mockery -name=EventAPIRepository -output=automock -outpkg=automock -case=underscore
 type EventAPIRepository interface {
-	ListByApplicationID(applicationID string) ([]*model.EventAPIDefinition, error)
+	ListByApplicationID(applicationID string, pageSize *int, cursor *string) (*model.EventAPIDefinitionPage, error)
 	CreateMany(items []*model.EventAPIDefinition) error
 	DeleteAllByApplicationID(id string) error
 }
 
-type service struct {
-	app      ApplicationRepository
-	api      APIRepository
-	eventAPI EventAPIRepository
-	document DocumentRepository
-	webhook  WebhookRepository
+//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+type UIDService interface {
+	Generate() string
 }
 
-func NewService(app ApplicationRepository, webhook WebhookRepository, api APIRepository, eventAPI EventAPIRepository, document DocumentRepository) *service {
-	return &service{app: app, webhook: webhook, api: api, eventAPI: eventAPI, document: document}
+type service struct {
+	app        ApplicationRepository
+	api        APIRepository
+	eventAPI   EventAPIRepository
+	document   DocumentRepository
+	webhook    WebhookRepository
+	uidService UIDService
+}
+
+func NewService(app ApplicationRepository, webhook WebhookRepository, api APIRepository, eventAPI EventAPIRepository, document DocumentRepository, uidService UIDService) *service {
+	return &service{app: app, webhook: webhook, api: api, eventAPI: eventAPI, document: document, uidService: uidService}
 }
 
 func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
-	return s.app.List(filter, pageSize, cursor)
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	return s.app.List(appTenant, filter, pageSize, cursor)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.Application, error) {
-	app, err := s.app.GetByID(id)
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	app, err := s.app.GetByID(appTenant, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Application with ID %s", id)
 	}
@@ -73,12 +88,12 @@ func (s *service) Get(ctx context.Context, id string) (*model.Application, error
 }
 
 func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string, error) {
-	id := uid.Generate()
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", errors.Wrapf(err, "while loading tenant from context")
 	}
 
+	id := s.uidService.Generate()
 	app := in.ToApplication(id, appTenant)
 
 	err = s.app.Create(app)
@@ -212,7 +227,7 @@ func (s *service) createRelatedResources(in model.ApplicationInput, applicationI
 
 	var webhooks []*model.ApplicationWebhook
 	for _, item := range in.Webhooks {
-		webhooks = append(webhooks, item.ToWebhook(uid.Generate(), applicationID))
+		webhooks = append(webhooks, item.ToWebhook(s.uidService.Generate(), applicationID))
 	}
 	err = s.webhook.CreateMany(webhooks)
 	if err != nil {
@@ -221,7 +236,7 @@ func (s *service) createRelatedResources(in model.ApplicationInput, applicationI
 
 	var apis []*model.APIDefinition
 	for _, item := range in.Apis {
-		apis = append(apis, item.ToAPIDefinition(uid.Generate(), applicationID))
+		apis = append(apis, item.ToAPIDefinition(s.uidService.Generate(), applicationID))
 	}
 
 	err = s.api.CreateMany(apis)
@@ -231,7 +246,7 @@ func (s *service) createRelatedResources(in model.ApplicationInput, applicationI
 
 	var eventAPIs []*model.EventAPIDefinition
 	for _, item := range in.EventAPIs {
-		eventAPIs = append(eventAPIs, item.ToEventAPIDefinition())
+		eventAPIs = append(eventAPIs, item.ToEventAPIDefinition(s.uidService.Generate(), applicationID))
 	}
 	err = s.eventAPI.CreateMany(eventAPIs)
 	if err != nil {
@@ -240,7 +255,7 @@ func (s *service) createRelatedResources(in model.ApplicationInput, applicationI
 
 	var documents []*model.Document
 	for _, item := range in.Documents {
-		documents = append(documents, item.ToDocument(uid.Generate(), applicationID))
+		documents = append(documents, item.ToDocument(s.uidService.Generate(), applicationID))
 	}
 	err = s.document.CreateMany(documents)
 	if err != nil {

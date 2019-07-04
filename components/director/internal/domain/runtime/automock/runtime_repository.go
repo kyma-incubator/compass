@@ -39,13 +39,13 @@ func (_m *RuntimeRepository) Delete(item *model.Runtime) error {
 	return r0
 }
 
-// GetByID provides a mock function with given fields: id
-func (_m *RuntimeRepository) GetByID(id string) (*model.Runtime, error) {
-	ret := _m.Called(id)
+// GetByID provides a mock function with given fields: tenant, id
+func (_m *RuntimeRepository) GetByID(tenant string, id string) (*model.Runtime, error) {
+	ret := _m.Called(tenant, id)
 
 	var r0 *model.Runtime
-	if rf, ok := ret.Get(0).(func(string) *model.Runtime); ok {
-		r0 = rf(id)
+	if rf, ok := ret.Get(0).(func(string, string) *model.Runtime); ok {
+		r0 = rf(tenant, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.Runtime)
@@ -53,8 +53,8 @@ func (_m *RuntimeRepository) GetByID(id string) (*model.Runtime, error) {
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(id)
+	if rf, ok := ret.Get(1).(func(string, string) error); ok {
+		r1 = rf(tenant, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -62,13 +62,13 @@ func (_m *RuntimeRepository) GetByID(id string) (*model.Runtime, error) {
 	return r0, r1
 }
 
-// List provides a mock function with given fields: filter, pageSize, cursor
-func (_m *RuntimeRepository) List(filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error) {
-	ret := _m.Called(filter, pageSize, cursor)
+// List provides a mock function with given fields: tenant, filter, pageSize, cursor
+func (_m *RuntimeRepository) List(tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error) {
+	ret := _m.Called(tenant, filter, pageSize, cursor)
 
 	var r0 *model.RuntimePage
-	if rf, ok := ret.Get(0).(func([]*labelfilter.LabelFilter, *int, *string) *model.RuntimePage); ok {
-		r0 = rf(filter, pageSize, cursor)
+	if rf, ok := ret.Get(0).(func(string, []*labelfilter.LabelFilter, *int, *string) *model.RuntimePage); ok {
+		r0 = rf(tenant, filter, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.RuntimePage)
@@ -76,8 +76,8 @@ func (_m *RuntimeRepository) List(filter []*labelfilter.LabelFilter, pageSize *i
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func([]*labelfilter.LabelFilter, *int, *string) error); ok {
-		r1 = rf(filter, pageSize, cursor)
+	if rf, ok := ret.Get(1).(func(string, []*labelfilter.LabelFilter, *int, *string) error); ok {
+		r1 = rf(tenant, filter, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -5,11 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/stretchr/testify/mock"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/assert"
 )
@@ -37,7 +35,7 @@ func TestResolver_AddAPI(t *testing.T) {
 			Name: "Success",
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Create", context.TODO(), mock.Anything, appId, *modelAPIInput).Return(id, nil).Once()
+				svc.On("Create", context.TODO(), appId, *modelAPIInput).Return(id, nil).Once()
 				svc.On("Get", context.TODO(), id).Return(modelAPI, nil).Once()
 				return svc
 			},
@@ -54,7 +52,7 @@ func TestResolver_AddAPI(t *testing.T) {
 			Name: "Returns error when API creation failed",
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Create", context.TODO(), mock.Anything, appId, *modelAPIInput).Return("", testErr).Once()
+				svc.On("Create", context.TODO(), appId, *modelAPIInput).Return("", testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -69,7 +67,7 @@ func TestResolver_AddAPI(t *testing.T) {
 			Name: "Returns error when API retrieval failed",
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Create", context.TODO(), mock.Anything, appId, *modelAPIInput).Return(id, nil).Once()
+				svc.On("Create", context.TODO(), appId, *modelAPIInput).Return(id, nil).Once()
 				svc.On("Get", context.TODO(), id).Return(nil, testErr).Once()
 				return svc
 			},

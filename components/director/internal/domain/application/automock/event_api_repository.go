@@ -38,22 +38,22 @@ func (_m *EventAPIRepository) DeleteAllByApplicationID(id string) error {
 	return r0
 }
 
-// ListByApplicationID provides a mock function with given fields: applicationID
-func (_m *EventAPIRepository) ListByApplicationID(applicationID string) ([]*model.EventAPIDefinition, error) {
-	ret := _m.Called(applicationID)
+// ListByApplicationID provides a mock function with given fields: applicationID, pageSize, cursor
+func (_m *EventAPIRepository) ListByApplicationID(applicationID string, pageSize *int, cursor *string) (*model.EventAPIDefinitionPage, error) {
+	ret := _m.Called(applicationID, pageSize, cursor)
 
-	var r0 []*model.EventAPIDefinition
-	if rf, ok := ret.Get(0).(func(string) []*model.EventAPIDefinition); ok {
-		r0 = rf(applicationID)
+	var r0 *model.EventAPIDefinitionPage
+	if rf, ok := ret.Get(0).(func(string, *int, *string) *model.EventAPIDefinitionPage); ok {
+		r0 = rf(applicationID, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.EventAPIDefinition)
+			r0 = ret.Get(0).(*model.EventAPIDefinitionPage)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(applicationID)
+	if rf, ok := ret.Get(1).(func(string, *int, *string) error); ok {
+		r1 = rf(applicationID, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

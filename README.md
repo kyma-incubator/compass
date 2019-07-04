@@ -31,16 +31,29 @@ For more information about the Compass architecture and technical details, read 
 
 ## Installation
 
-To install Compass along with Kyma, run this script:
-
-```bash
-./installation/scripts/run.sh
-```
+### Chart installation
 
 If you already have a running Kyma 1.1.0 instance with created Secrets and Tiller client certificates, you can install the Compass Helm chart using this command:
 ```bash
 helm install --name "compass" ./chart/compass --tls
 ```
+
+### Local installation with Kyma
+
+To install Compass along with the minimal Kyma installation from the `master` branch, run this script:
+```bash
+./installation/scripts/run.sh
+```
+
+You can also specify Kyma version, such as 1.2.2 or newer:
+```bash
+./installation/cmd/run.sh {version}
+```
+
+### Kyma installation with the Compass module enabled
+
+To install Kyma with the experimental Compass module enabled, follow the instruction for [custom component installation](https://kyma-project.io/docs/root/kyma/#configuration-custom-component-installation) and enable the `compass` module.
+
 
 ### Testing
 

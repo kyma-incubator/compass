@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/uid"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -16,27 +14,43 @@ import (
 
 //go:generate mockery -name=RuntimeRepository -output=automock -outpkg=automock -case=underscore
 type RuntimeRepository interface {
-	GetByID(id string) (*model.Runtime, error)
-	List(filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error)
+	GetByID(tenant, id string) (*model.Runtime, error)
+	List(tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error)
 	Create(item *model.Runtime) error
 	Update(item *model.Runtime) error
 	Delete(item *model.Runtime) error
 }
 
-type service struct {
-	repo RuntimeRepository
+//go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
+type UIDService interface {
+	Generate() string
 }
 
-func NewService(repo RuntimeRepository) *service {
-	return &service{repo: repo}
+type service struct {
+	repo       RuntimeRepository
+	uidService UIDService
+}
+
+func NewService(repo RuntimeRepository, uidService UIDService) *service {
+	return &service{repo: repo, uidService: uidService}
 }
 
 func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error) {
-	return s.repo.List(filter, pageSize, cursor)
+	rtmTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	return s.repo.List(rtmTenant, filter, pageSize, cursor)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.Runtime, error) {
-	runtime, err := s.repo.GetByID(id)
+	rtmTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	runtime, err := s.repo.GetByID(rtmTenant, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Runtime with ID %s", id)
 	}
@@ -45,12 +59,11 @@ func (s *service) Get(ctx context.Context, id string) (*model.Runtime, error) {
 }
 
 func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, error) {
-	id := uid.Generate()
 	runtimeTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", errors.Wrapf(err, "while loading tenant from context")
 	}
-
+	id := s.uidService.Generate()
 	rtm := in.ToRuntime(id, runtimeTenant)
 
 	// TODO: Generate AgentAuth: https://github.com/kyma-incubator/compass/issues/91

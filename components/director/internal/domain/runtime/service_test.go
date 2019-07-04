@@ -20,6 +20,7 @@ func TestService_Create(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
+	id := "foo"
 	desc := "Lorem ipsum"
 	modelInput := model.RuntimeInput{
 		Name:        "Foo",
@@ -38,6 +39,7 @@ func TestService_Create(t *testing.T) {
 	testCases := []struct {
 		Name         string
 		RepositoryFn func() *automock.RuntimeRepository
+		UIDServiceFn func() *automock.UIDService
 		Input        model.RuntimeInput
 		ExpectedErr  error
 	}{
@@ -47,6 +49,11 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.RuntimeRepository{}
 				repo.On("Create", runtimeModel).Return(nil).Once()
 				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id).Once()
+				return svc
 			},
 			Input:       modelInput,
 			ExpectedErr: nil,
@@ -58,6 +65,11 @@ func TestService_Create(t *testing.T) {
 				repo.On("Create", runtimeModel).Return(testErr).Once()
 				return repo
 			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return("").Once()
+				return svc
+			},
 			Input:       modelInput,
 			ExpectedErr: testErr,
 		},
@@ -66,8 +78,8 @@ func TestService_Create(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-
-			svc := runtime.NewService(repo)
+			idSvc := testCase.UIDServiceFn()
+			svc := runtime.NewService(repo, idSvc)
 
 			// when
 			result, err := svc.Create(ctx, testCase.Input)
@@ -77,6 +89,7 @@ func TestService_Create(t *testing.T) {
 			assert.Equal(t, testCase.ExpectedErr, err)
 
 			repo.AssertExpectations(t)
+			idSvc.AssertExpectations(t)
 		})
 	}
 }
@@ -100,8 +113,9 @@ func TestService_Update(t *testing.T) {
 		Description: &desc,
 	}
 
+	tnt := "tenant"
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, "tenant")
+	ctx = tenant.SaveToContext(ctx, tnt)
 
 	testCases := []struct {
 		Name               string
@@ -114,7 +128,7 @@ func TestService_Update(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("GetByID", "foo").Return(runtimeModel, nil).Once()
+				repo.On("GetByID", tnt, "foo").Return(runtimeModel, nil).Once()
 				repo.On("Update", inputRuntimeModel).Return(nil).Once()
 				return repo
 			},
@@ -126,7 +140,7 @@ func TestService_Update(t *testing.T) {
 			Name: "Returns error when application update failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("GetByID", "foo").Return(runtimeModel, nil).Once()
+				repo.On("GetByID", tnt, "foo").Return(runtimeModel, nil).Once()
 				repo.On("Update", inputRuntimeModel).Return(testErr).Once()
 				return repo
 			},
@@ -138,7 +152,7 @@ func TestService_Update(t *testing.T) {
 			Name: "Returns error when runtime retrieval failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("GetByID", "foo").Return(nil, testErr).Once()
+				repo.On("GetByID", tnt, "foo").Return(nil, testErr).Once()
 				return repo
 			},
 			InputID:            "foo",
@@ -151,7 +165,7 @@ func TestService_Update(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo)
+			svc := runtime.NewService(repo, nil)
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -182,8 +196,10 @@ func TestService_Delete(t *testing.T) {
 		Description: &desc,
 	}
 
+	tnt := "tenant"
+
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, "tenant")
+	ctx = tenant.SaveToContext(ctx, tnt)
 
 	testCases := []struct {
 		Name               string
@@ -196,7 +212,7 @@ func TestService_Delete(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("GetByID", id).Return(runtimeModel, nil).Once()
+				repo.On("GetByID", tnt, id).Return(runtimeModel, nil).Once()
 				repo.On("Delete", runtimeModel).Return(nil).Once()
 				return repo
 			},
@@ -207,7 +223,7 @@ func TestService_Delete(t *testing.T) {
 			Name: "Returns error when runtime deletion failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("GetByID", id).Return(runtimeModel, nil).Once()
+				repo.On("GetByID", tnt, id).Return(runtimeModel, nil).Once()
 				repo.On("Delete", runtimeModel).Return(testErr).Once()
 				return repo
 			},
@@ -218,7 +234,7 @@ func TestService_Delete(t *testing.T) {
 			Name: "Returns error when runtime retrieval failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("GetByID", id).Return(nil, testErr).Once()
+				repo.On("GetByID", tnt, id).Return(nil, testErr).Once()
 				return repo
 			},
 			InputID:            id,
@@ -230,7 +246,7 @@ func TestService_Delete(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo)
+			svc := runtime.NewService(repo, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -252,8 +268,8 @@ func TestService_Get(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "foo"
-
 	desc := "Lorem ipsum"
+	tnt := "tenant"
 
 	runtimeModel := &model.Runtime{
 		ID:          "foo",
@@ -262,7 +278,7 @@ func TestService_Get(t *testing.T) {
 	}
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, "tenant")
+	ctx = tenant.SaveToContext(ctx, tnt)
 
 	testCases := []struct {
 		Name               string
@@ -276,7 +292,7 @@ func TestService_Get(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("GetByID", id).Return(runtimeModel, nil).Once()
+				repo.On("GetByID", tnt, id).Return(runtimeModel, nil).Once()
 				return repo
 			},
 			InputID:            id,
@@ -287,7 +303,7 @@ func TestService_Get(t *testing.T) {
 			Name: "Returns error when runtime retrieval failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("GetByID", id).Return(nil, testErr).Once()
+				repo.On("GetByID", tnt, id).Return(nil, testErr).Once()
 				return repo
 			},
 			InputID:            id,
@@ -300,7 +316,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo)
+			svc := runtime.NewService(repo, nil)
 
 			// when
 			rtm, err := svc.Get(ctx, testCase.InputID)
@@ -342,8 +358,10 @@ func TestService_List(t *testing.T) {
 		{Label: "", Values: []string{"foo", "bar"}, Operator: labelfilter.FilterOperatorAll},
 	}
 
+	tnt := "tenant"
+
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, "tenant")
+	ctx = tenant.SaveToContext(ctx, tnt)
 
 	testCases := []struct {
 		Name               string
@@ -358,7 +376,7 @@ func TestService_List(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("List", filter, &first, &after).Return(runtimePage, nil).Once()
+				repo.On("List", tnt, filter, &first, &after).Return(runtimePage, nil).Once()
 				return repo
 			},
 			InputLabelFilters:  filter,
@@ -371,7 +389,7 @@ func TestService_List(t *testing.T) {
 			Name: "Returns error when runtime listing failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("List", filter, &first, &after).Return(nil, testErr).Once()
+				repo.On("List", tnt, filter, &first, &after).Return(nil, testErr).Once()
 				return repo
 			},
 			InputLabelFilters:  filter,
@@ -386,7 +404,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo)
+			svc := runtime.NewService(repo, nil)
 
 			// when
 			rtm, err := svc.List(ctx, testCase.InputLabelFilters, testCase.InputPageSize, testCase.InputCursor)
@@ -406,8 +424,10 @@ func TestService_List(t *testing.T) {
 
 func TestService_AddAnnotation(t *testing.T) {
 	// given
+	tnt := "tenant"
+
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, "tenant")
+	ctx = tenant.SaveToContext(ctx, tnt)
 
 	testErr := errors.New("Test error")
 
@@ -434,7 +454,7 @@ func TestService_AddAnnotation(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("GetByID", runtimeID).Return(fixModelRuntime(runtimeID, "Foo", desc), nil).Once()
+				repo.On("GetByID", tnt, runtimeID).Return(fixModelRuntime(runtimeID, "Foo", desc), nil).Once()
 				repo.On("Update", modifiedRuntimeModel).Return(nil).Once()
 
 				return repo
@@ -448,7 +468,7 @@ func TestService_AddAnnotation(t *testing.T) {
 			Name: "Returns error when runtime update failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("GetByID", runtimeID).Return(fixModelRuntime(runtimeID, "Foo", desc), nil).Once()
+				repo.On("GetByID", tnt, runtimeID).Return(fixModelRuntime(runtimeID, "Foo", desc), nil).Once()
 				repo.On("Update", modifiedRuntimeModel).Return(testErr).Once()
 
 				return repo
@@ -462,7 +482,7 @@ func TestService_AddAnnotation(t *testing.T) {
 			Name: "Returns error when runtime retrieval failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("GetByID", runtimeID).Return(nil, testErr).Once()
+				repo.On("GetByID", tnt, runtimeID).Return(nil, testErr).Once()
 
 				return repo
 			},
@@ -477,7 +497,7 @@ func TestService_AddAnnotation(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo)
+			svc := runtime.NewService(repo, nil)
 
 			// when
 			err := svc.AddAnnotation(ctx, testCase.InputRuntimeID, testCase.InputKey, testCase.InputValue)
@@ -496,8 +516,9 @@ func TestService_AddAnnotation(t *testing.T) {
 
 func TestService_DeleteAnnotation(t *testing.T) {
 	// given
+	tnt := "tenant"
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, "tenant")
+	ctx = tenant.SaveToContext(ctx, tnt)
 
 	testErr := errors.New("Test error")
 
@@ -517,7 +538,7 @@ func TestService_DeleteAnnotation(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("GetByID", runtimeID).Return(
+				repo.On("GetByID", tnt, runtimeID).Return(
 					fixModelRuntimeWithAnnotations(runtimeID, "Foo", map[string]interface{}{
 						"key": "value",
 					}), nil).Once()
@@ -533,7 +554,7 @@ func TestService_DeleteAnnotation(t *testing.T) {
 			Name: "Returns error when runtime update failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("GetByID", runtimeID).Return(
+				repo.On("GetByID", tnt, runtimeID).Return(
 					fixModelRuntimeWithAnnotations(runtimeID, "Foo", map[string]interface{}{
 						"key": "value",
 					}), nil).Once()
@@ -549,7 +570,7 @@ func TestService_DeleteAnnotation(t *testing.T) {
 			Name: "Returns error when runtime retrieval failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("GetByID", runtimeID).Return(nil, testErr).Once()
+				repo.On("GetByID", tnt, runtimeID).Return(nil, testErr).Once()
 
 				return repo
 			},
@@ -563,7 +584,7 @@ func TestService_DeleteAnnotation(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo)
+			svc := runtime.NewService(repo, nil)
 
 			// when
 			err := svc.DeleteAnnotation(ctx, testCase.InputRuntimeID, testCase.InputKey)
@@ -582,8 +603,9 @@ func TestService_DeleteAnnotation(t *testing.T) {
 
 func TestService_AddLabel(t *testing.T) {
 	// given
+	tnt := "tenant"
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, "tenant")
+	ctx = tenant.SaveToContext(ctx, tnt)
 
 	testErr := errors.New("Test error")
 
@@ -610,7 +632,7 @@ func TestService_AddLabel(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("GetByID", runtimeID).Return(fixModelRuntime(runtimeID, "Foo", desc), nil).Once()
+				repo.On("GetByID", tnt, runtimeID).Return(fixModelRuntime(runtimeID, "Foo", desc), nil).Once()
 				repo.On("Update", modifiedRuntimeModel).Return(nil).Once()
 
 				return repo
@@ -624,7 +646,7 @@ func TestService_AddLabel(t *testing.T) {
 			Name: "Returns error when runtime update failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("GetByID", runtimeID).Return(fixModelRuntime(runtimeID, "Foo", desc), nil).Once()
+				repo.On("GetByID", tnt, runtimeID).Return(fixModelRuntime(runtimeID, "Foo", desc), nil).Once()
 				repo.On("Update", modifiedRuntimeModel).Return(testErr).Once()
 
 				return repo
@@ -638,7 +660,7 @@ func TestService_AddLabel(t *testing.T) {
 			Name: "Returns error when runtime retrieval failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("GetByID", runtimeID).Return(nil, testErr).Once()
+				repo.On("GetByID", tnt, runtimeID).Return(nil, testErr).Once()
 
 				return repo
 			},
@@ -653,7 +675,7 @@ func TestService_AddLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo)
+			svc := runtime.NewService(repo, nil)
 
 			// when
 			err := svc.AddLabel(ctx, testCase.InputRuntimeID, testCase.InputKey, testCase.InputValues)
@@ -672,8 +694,9 @@ func TestService_AddLabel(t *testing.T) {
 
 func TestService_DeleteLabel(t *testing.T) {
 	// given
+	tnt := "tenant"
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, "tenant")
+	ctx = tenant.SaveToContext(ctx, tnt)
 
 	testErr := errors.New("Test error")
 
@@ -695,7 +718,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("GetByID", runtimeID).Return(
+				repo.On("GetByID", tnt, runtimeID).Return(
 					fixModelRuntimeWithLabels(runtimeID, "Foo", map[string][]string{
 						"key": {"value1", "value2"},
 					}), nil).Once()
@@ -712,7 +735,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			Name: "Returns error when runtime update failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("GetByID", runtimeID).Return(
+				repo.On("GetByID", tnt, runtimeID).Return(
 					fixModelRuntimeWithLabels(runtimeID, "Foo", map[string][]string{
 						"key": {"value1", "value2"},
 					}), nil).Once()
@@ -729,7 +752,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			Name: "Returns error when runtime retrieval failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("GetByID", runtimeID).Return(nil, testErr).Once()
+				repo.On("GetByID", tnt, runtimeID).Return(nil, testErr).Once()
 
 				return repo
 			},
@@ -744,7 +767,7 @@ func TestService_DeleteLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo)
+			svc := runtime.NewService(repo, nil)
 
 			// when
 			err := svc.DeleteLabel(ctx, testCase.InputRuntimeID, testCase.InputKey, testCase.InputValues)

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	"github.com/google/uuid"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application/automock"
@@ -42,8 +42,9 @@ func TestService_Create(t *testing.T) {
 
 	appModel := modelFromInput(modelInput, id)
 
+	tnt := "tenant"
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, "tenant")
+	ctx = tenant.SaveToContext(ctx, tnt)
 
 	testCases := []struct {
 		Name           string
@@ -52,6 +53,7 @@ func TestService_Create(t *testing.T) {
 		APIRepoFn      func() *automock.APIRepository
 		EventAPIRepoFn func() *automock.EventAPIRepository
 		DocumentRepoFn func() *automock.DocumentRepository
+		UIDServiceFn   func() *automock.UIDService
 		Input          model.ApplicationInput
 		ExpectedErr    error
 	}{
@@ -74,13 +76,18 @@ func TestService_Create(t *testing.T) {
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("CreateMany", appModel.EventAPIs).Return(nil).Once()
+				repo.On("CreateMany", mock.Anything).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
 				repo.On("CreateMany", mock.Anything).Return(nil).Once()
 				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
 			},
 			Input:       modelInput,
 			ExpectedErr: nil,
@@ -108,6 +115,11 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.DocumentRepository{}
 				return repo
 			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return("").Once()
+				return svc
+			},
 			Input:       modelInput,
 			ExpectedErr: testErr,
 		},
@@ -120,8 +132,8 @@ func TestService_Create(t *testing.T) {
 			apiRepo := testCase.APIRepoFn()
 			eventAPIRepo := testCase.EventAPIRepoFn()
 			documentRepo := testCase.DocumentRepoFn()
-
-			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo)
+			uidSvc := testCase.UIDServiceFn()
+			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo, uidSvc)
 
 			// when
 			result, err := svc.Create(ctx, testCase.Input)
@@ -135,6 +147,7 @@ func TestService_Create(t *testing.T) {
 			apiRepo.AssertExpectations(t)
 			eventAPIRepo.AssertExpectations(t)
 			documentRepo.AssertExpectations(t)
+			uidSvc.AssertExpectations(t)
 		})
 	}
 }
@@ -161,8 +174,9 @@ func TestService_Update(t *testing.T) {
 		Description: &desc,
 	}
 
+	tnt := "tenant"
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, "tenant")
+	ctx = tenant.SaveToContext(ctx, tnt)
 
 	testCases := []struct {
 		Name               string
@@ -179,7 +193,7 @@ func TestService_Update(t *testing.T) {
 			Name: "Success",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", "foo").Return(applicationModel, nil).Once()
+				repo.On("GetByID", tnt, "foo").Return(applicationModel, nil).Once()
 				repo.On("Update", inputApplicationModel).Return(nil).Once()
 				return repo
 			},
@@ -215,7 +229,7 @@ func TestService_Update(t *testing.T) {
 			Name: "Returns error when application update failed",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", "foo").Return(applicationModel, nil).Once()
+				repo.On("GetByID", tnt, "foo").Return(applicationModel, nil).Once()
 				repo.On("Update", inputApplicationModel).Return(testErr).Once()
 				return repo
 			},
@@ -243,7 +257,7 @@ func TestService_Update(t *testing.T) {
 			Name: "Returns error when application retrieval failed",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", "foo").Return(nil, testErr).Once()
+				repo.On("GetByID", tnt, "foo").Return(nil, testErr).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
@@ -270,7 +284,7 @@ func TestService_Update(t *testing.T) {
 			Name: "Returns error when deleting apllication's subresource failed",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", "foo").Return(applicationModel, nil).Once()
+				repo.On("GetByID", tnt, "foo").Return(applicationModel, nil).Once()
 				repo.On("Update", inputApplicationModel).Return(nil).Once()
 				return repo
 			},
@@ -305,7 +319,7 @@ func TestService_Update(t *testing.T) {
 			eventAPIRepo := testCase.EventAPIRepoFn()
 			documentRepo := testCase.DocumentRepoFn()
 
-			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo)
+			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo, nil)
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -340,8 +354,9 @@ func TestService_Delete(t *testing.T) {
 		Description: &desc,
 	}
 
+	tnt := "tenant"
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, "tenant")
+	ctx = tenant.SaveToContext(ctx, tnt)
 
 	testCases := []struct {
 		Name               string
@@ -358,7 +373,7 @@ func TestService_Delete(t *testing.T) {
 			Name: "Success",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", id).Return(applicationModel, nil).Once()
+				repo.On("GetByID", tnt, id).Return(applicationModel, nil).Once()
 				repo.On("Delete", applicationModel).Return(nil).Once()
 				return repo
 			},
@@ -389,7 +404,7 @@ func TestService_Delete(t *testing.T) {
 			Name: "Returns error when application deletion failed",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", id).Return(applicationModel, nil).Once()
+				repo.On("GetByID", tnt, id).Return(applicationModel, nil).Once()
 				repo.On("Delete", applicationModel).Return(testErr).Once()
 				return repo
 			},
@@ -420,7 +435,7 @@ func TestService_Delete(t *testing.T) {
 			Name: "Returns error when deleting application's subresource failed",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", id).Return(applicationModel, nil).Once()
+				repo.On("GetByID", tnt, id).Return(applicationModel, nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
@@ -447,7 +462,7 @@ func TestService_Delete(t *testing.T) {
 			Name: "Returns error when application retrieval failed",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", id).Return(nil, testErr).Once()
+				repo.On("GetByID", tnt, id).Return(nil, testErr).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
@@ -479,7 +494,7 @@ func TestService_Delete(t *testing.T) {
 			eventAPIRepo := testCase.EventAPIRepoFn()
 			documentRepo := testCase.DocumentRepoFn()
 
-			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo)
+			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -514,8 +529,9 @@ func TestService_Get(t *testing.T) {
 		Description: &desc,
 	}
 
+	tnt := "tenant"
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, "tenant")
+	ctx = tenant.SaveToContext(ctx, tnt)
 
 	testCases := []struct {
 		Name                string
@@ -529,7 +545,7 @@ func TestService_Get(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", id).Return(applicationModel, nil).Once()
+				repo.On("GetByID", tnt, id).Return(applicationModel, nil).Once()
 				return repo
 			},
 			InputID:             id,
@@ -540,7 +556,7 @@ func TestService_Get(t *testing.T) {
 			Name: "Returns error when application retrieval failed",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", id).Return(nil, testErr).Once()
+				repo.On("GetByID", tnt, id).Return(nil, testErr).Once()
 				return repo
 			},
 			InputID:             id,
@@ -553,7 +569,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(repo, nil, nil, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil)
 
 			// when
 			app, err := svc.Get(ctx, testCase.InputID)
@@ -595,8 +611,9 @@ func TestService_List(t *testing.T) {
 		{Label: "", Values: []string{"foo", "bar"}, Operator: labelfilter.FilterOperatorAll},
 	}
 
+	tnt := "tenant"
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, "tenant")
+	ctx = tenant.SaveToContext(ctx, tnt)
 
 	testCases := []struct {
 		Name               string
@@ -611,7 +628,7 @@ func TestService_List(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("List", filter, &first, &after).Return(applicationPage, nil).Once()
+				repo.On("List", tnt, filter, &first, &after).Return(applicationPage, nil).Once()
 				return repo
 			},
 			InputLabelFilters:  filter,
@@ -624,7 +641,7 @@ func TestService_List(t *testing.T) {
 			Name: "Returns error when application listing failed",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("List", filter, &first, &after).Return(nil, testErr).Once()
+				repo.On("List", tnt, filter, &first, &after).Return(nil, testErr).Once()
 				return repo
 			},
 			InputLabelFilters:  filter,
@@ -639,7 +656,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(repo, nil, nil, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil)
 
 			// when
 			app, err := svc.List(ctx, testCase.InputLabelFilters, testCase.InputPageSize, testCase.InputCursor)
@@ -659,8 +676,9 @@ func TestService_List(t *testing.T) {
 
 func TestService_AddAnnotation(t *testing.T) {
 	// given
+	tnt := "tenant"
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, "tenant")
+	ctx = tenant.SaveToContext(ctx, tnt)
 
 	testErr := errors.New("Test error")
 
@@ -687,7 +705,7 @@ func TestService_AddAnnotation(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", applicationID).Return(fixModelApplication(applicationID, "Foo", desc), nil).Once()
+				repo.On("GetByID", tnt, applicationID).Return(fixModelApplication(applicationID, "Foo", desc), nil).Once()
 				repo.On("Update", modifiedApplicationModel).Return(nil).Once()
 
 				return repo
@@ -701,7 +719,7 @@ func TestService_AddAnnotation(t *testing.T) {
 			Name: "Returns error when application update failed",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", applicationID).Return(fixModelApplication(applicationID, "Foo", desc), nil).Once()
+				repo.On("GetByID", tnt, applicationID).Return(fixModelApplication(applicationID, "Foo", desc), nil).Once()
 				repo.On("Update", modifiedApplicationModel).Return(testErr).Once()
 
 				return repo
@@ -715,7 +733,7 @@ func TestService_AddAnnotation(t *testing.T) {
 			Name: "Returns error when application retrieval failed",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", applicationID).Return(nil, testErr).Once()
+				repo.On("GetByID", tnt, applicationID).Return(nil, testErr).Once()
 
 				return repo
 			},
@@ -730,7 +748,7 @@ func TestService_AddAnnotation(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(repo, nil, nil, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil)
 
 			// when
 			err := svc.AddAnnotation(ctx, testCase.InputApplicationID, testCase.InputKey, testCase.InputValue)
@@ -749,8 +767,9 @@ func TestService_AddAnnotation(t *testing.T) {
 
 func TestService_DeleteAnnotation(t *testing.T) {
 	// given
+	tnt := "tenant"
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, "tenant")
+	ctx = tenant.SaveToContext(ctx, tnt)
 
 	testErr := errors.New("Test error")
 
@@ -770,7 +789,7 @@ func TestService_DeleteAnnotation(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", applicationID).Return(
+				repo.On("GetByID", tnt, applicationID).Return(
 					fixModelApplicationWithAnnotations(applicationID, "Foo", map[string]interface{}{
 						"key": "value",
 					}), nil).Once()
@@ -786,7 +805,7 @@ func TestService_DeleteAnnotation(t *testing.T) {
 			Name: "Returns error when application update failed",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", applicationID).Return(
+				repo.On("GetByID", tnt, applicationID).Return(
 					fixModelApplicationWithAnnotations(applicationID, "Foo", map[string]interface{}{
 						"key": "value",
 					}), nil).Once()
@@ -802,7 +821,7 @@ func TestService_DeleteAnnotation(t *testing.T) {
 			Name: "Returns error when application retrieval failed",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", applicationID).Return(nil, testErr).Once()
+				repo.On("GetByID", tnt, applicationID).Return(nil, testErr).Once()
 
 				return repo
 			},
@@ -816,7 +835,7 @@ func TestService_DeleteAnnotation(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(repo, nil, nil, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil)
 
 			// when
 			err := svc.DeleteAnnotation(ctx, testCase.InputApplicationID, testCase.InputKey)
@@ -835,8 +854,9 @@ func TestService_DeleteAnnotation(t *testing.T) {
 
 func TestService_AddLabel(t *testing.T) {
 	// given
+	tnt := "tenant"
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, "tenant")
+	ctx = tenant.SaveToContext(ctx, tnt)
 
 	testErr := errors.New("Test error")
 
@@ -863,7 +883,7 @@ func TestService_AddLabel(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", applicationID).Return(fixModelApplication(applicationID, "Foo", desc), nil).Once()
+				repo.On("GetByID", tnt, applicationID).Return(fixModelApplication(applicationID, "Foo", desc), nil).Once()
 				repo.On("Update", modifiedApplicationModel).Return(nil).Once()
 
 				return repo
@@ -877,7 +897,7 @@ func TestService_AddLabel(t *testing.T) {
 			Name: "Returns error when application update failed",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", applicationID).Return(fixModelApplication(applicationID, "Foo", desc), nil).Once()
+				repo.On("GetByID", tnt, applicationID).Return(fixModelApplication(applicationID, "Foo", desc), nil).Once()
 				repo.On("Update", modifiedApplicationModel).Return(testErr).Once()
 
 				return repo
@@ -891,7 +911,7 @@ func TestService_AddLabel(t *testing.T) {
 			Name: "Returns error when application retrieval failed",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", applicationID).Return(nil, testErr).Once()
+				repo.On("GetByID", tnt, applicationID).Return(nil, testErr).Once()
 
 				return repo
 			},
@@ -906,7 +926,7 @@ func TestService_AddLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(repo, nil, nil, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil)
 
 			// when
 			err := svc.AddLabel(ctx, testCase.InputApplicationID, testCase.InputKey, testCase.InputValues)
@@ -925,8 +945,9 @@ func TestService_AddLabel(t *testing.T) {
 
 func TestService_DeleteLabel(t *testing.T) {
 	// given
+	tnt := "tenant"
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, "tenant")
+	ctx = tenant.SaveToContext(ctx, tnt)
 
 	testErr := errors.New("Test error")
 
@@ -948,7 +969,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", applicationID).Return(
+				repo.On("GetByID", tnt, applicationID).Return(
 					fixModelApplicationWithLabels(applicationID, "Foo", map[string][]string{
 						"key": {"value1", "value2"},
 					}), nil).Once()
@@ -965,7 +986,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			Name: "Returns error when application update failed",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", applicationID).Return(
+				repo.On("GetByID", tnt, applicationID).Return(
 					fixModelApplicationWithLabels(applicationID, "Foo", map[string][]string{
 						"key": {"value1", "value2"},
 					}), nil).Once()
@@ -982,7 +1003,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			Name: "Returns error when application retrieval failed",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", applicationID).Return(nil, testErr).Once()
+				repo.On("GetByID", tnt, applicationID).Return(nil, testErr).Once()
 
 				return repo
 			},
@@ -997,7 +1018,7 @@ func TestService_DeleteLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(repo, nil, nil, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil)
 
 			// when
 			err := svc.DeleteLabel(ctx, testCase.InputApplicationID, testCase.InputKey, testCase.InputValues)
@@ -1029,22 +1050,22 @@ func modelFromInput(in model.ApplicationInput, applicationID string) testModel {
 
 	var webhooksModel []*model.ApplicationWebhook
 	for _, item := range in.Webhooks {
-		webhooksModel = append(webhooksModel, item.ToWebhook(uid.Generate(), applicationID))
+		webhooksModel = append(webhooksModel, item.ToWebhook(uuid.New().String(), applicationID))
 	}
 
 	var apisModel []*model.APIDefinition
 	for _, item := range in.Apis {
-		apisModel = append(apisModel, item.ToAPIDefinition(uid.Generate(), applicationID))
+		apisModel = append(apisModel, item.ToAPIDefinition(uuid.New().String(), applicationID))
 	}
 
 	var eventAPIsModel []*model.EventAPIDefinition
 	for _, item := range in.EventAPIs {
-		eventAPIsModel = append(eventAPIsModel, item.ToEventAPIDefinition())
+		eventAPIsModel = append(eventAPIsModel, item.ToEventAPIDefinition(uuid.New().String(), applicationID))
 	}
 
 	var documentsModel []*model.Document
 	for _, item := range in.Documents {
-		documentsModel = append(documentsModel, item.ToDocument(uid.Generate(), applicationID))
+		documentsModel = append(documentsModel, item.ToDocument(uuid.New().String(), applicationID))
 	}
 
 	return testModel{
