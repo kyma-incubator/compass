@@ -33,6 +33,7 @@ func (fp *gqlFieldsProvider) ForApplication() string {
 func (fp *gqlFieldsProvider) ForWebhooks() string {
 	return fmt.Sprintf(
 		`id
+		applicationID
 		type
 		url
 		auth {
@@ -88,6 +89,7 @@ func (fp *gqlFieldsProvider) ForPageInfo() string {
 func (fp *gqlFieldsProvider) ForEventAPI() string {
 	return fmt.Sprintf(`
 			id
+			applicationID
 			name
 			description
 			group 
@@ -106,6 +108,7 @@ func (fp *gqlFieldsProvider) ForEventSpec() string {
 func (fp *gqlFieldsProvider) ForDocument() string {
 	return fmt.Sprintf(`
 		id
+		applicationID
 		title
 		format
 		kind

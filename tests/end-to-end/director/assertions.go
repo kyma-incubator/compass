@@ -149,7 +149,8 @@ func assertAPI(t *testing.T, in []*graphql.APIDefinitionInput, actual []*graphql
 			assertVersion(t, inApi.Version, actApi.Version)
 			if inApi.Spec != nil {
 				assert.Equal(t, inApi.Spec.Data, actApi.Spec.Data)
-				assert.Equal(t, inApi.Spec.Format, actApi.Spec.Format)
+				require.NotNil(t, actApi.Spec.Format)
+				assert.Equal(t, inApi.Spec.Format, *actApi.Spec.Format)
 				assert.Equal(t, inApi.Spec.Type, actApi.Spec.Type)
 				assertFetchRequest(t, inApi.Spec.FetchRequest, actApi.Spec.FetchRequest)
 

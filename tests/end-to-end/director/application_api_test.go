@@ -761,6 +761,7 @@ func generateSampleApplicationInput(placeholder string) graphql.ApplicationInput
 			Name: placeholder,
 			Spec: &graphql.EventAPISpecInput{
 				EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
+				Format:        graphql.SpecFormatYaml,
 			}}},
 		Webhooks: []*graphql.ApplicationWebhookInput{{
 			Type: graphql.ApplicationWebhookTypeConfigurationChanged,

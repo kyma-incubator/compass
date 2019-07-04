@@ -220,6 +220,7 @@ func (g *graphqlizer) EventAPISpecInputToGQL(in graphql.EventAPISpecInput) (stri
 		{{- if .FetchRequest }}
 		fetchRequest: {{- FetchRequesstInputToGQL .FetchRequest }},
 		{{- end }}
+		format: {{.Format}}
 	}`)
 }
 
