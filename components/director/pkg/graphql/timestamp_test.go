@@ -69,3 +69,14 @@ func TestTimestamp_MarshalGQL(t *testing.T) {
 	//then
 	assert.Equal(t, expectedTimestamp, buf.String())
 }
+
+func TestTimestamp_UmarshalJSON(t *testing.T) {
+	// given
+	ts := &Timestamp{}
+	// when
+	err := ts.UnmarshalJSON([]byte(`"2002-10-02T10:00:00-05:00"`))
+	// then
+	require.NoError(t, err)
+	tm := time.Time(*ts)
+	assert.Equal(t, 2002, tm.Year())
+}
