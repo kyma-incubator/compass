@@ -780,5 +780,3 @@ func deleteApplication(t *testing.T, id string) {
 	}`, id))
 	require.NoError(t, tc.RunQuery(context.Background(), req, nil))
 }
-
-

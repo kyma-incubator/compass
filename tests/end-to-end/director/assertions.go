@@ -1,10 +1,11 @@
 package director
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func assertApplication(t *testing.T, in graphql.ApplicationInput, actualApp ApplicationExt) {
@@ -132,7 +133,7 @@ func assertFetchRequest(t *testing.T, in *graphql.FetchRequestInput, actual *gra
 	assertAuth(t, in.Auth, actual.Auth)
 }
 
-func assertAPI(t *testing.T, in []*graphql.APIDefinitionInput, actual [] *graphql.APIDefinition) {
+func assertAPI(t *testing.T, in []*graphql.APIDefinitionInput, actual []*graphql.APIDefinition) {
 	assert.Equal(t, len(in), len(actual))
 	for _, inApi := range in {
 		found := false
