@@ -9,7 +9,7 @@
 Compass (also known as Management Plane Services) is a multi-tenant system which consists of components that provide a way to register, group, and manage your applications across multiple Kyma runtimes. Using Compass, you can control and monitor your application landscape in one central place.
 
 Compass allows for registering different types of applications and runtimes.
-These are the types of integration with Compass:
+These are the types of possible integration levels between an application and Compass:
 - basic - administrator manually provides API/Events Metadata to Compass. This type of integration is used mainly for simple use-case scenarios and doesn't support all features.
 - application - integration with Compass is built-in inside the application.
 - proxy - a highly application-specific proxy component provides the integration.
@@ -31,25 +31,13 @@ For more information about the Compass architecture and technical details, read 
 
 ## Installation
 
-To install Compass along with Kyma, run:
+To install Compass along with Kyma, run this script:
 
 ```bash
 ./installation/scripts/run.sh
 ```
-<div tabs>
- <details>
- <summary>
- Expand this tab to see the script details.
- </summary>
 
-The `run.sh` script does the following:
-1. Provision local Kubernetes cluster on Minikube adjusted for Kyma installation via `Kyma CLI`.
-2. Install Kyma 1.1.0 on the cluster with custom list of components provided in `./installation/resources/installer-cr.yaml` file.  
-3. Download Helm client certificates created with Kyma installation.
-4. Perform installation of `compass` Helm chart.  
-  </details>
-
-If you already have a running Kyma 1.1.0 instance with created secrets which contains Tiller client certificates, you can install the Compass Helm chart using this command:
+If you already have a running Kyma 1.1.0 instance with created Secrets and Tiller client certificates, you can install the Compass Helm chart using this command:
 ```bash
 helm install --name "compass" ./chart/compass --tls
 ```
@@ -63,9 +51,6 @@ Compass, as a part of Kyma, uses [Octopus](https://github.com/kyma-incubator/oct
 ```
 
 Read [this](https://kyma-project.io/docs/root/kyma#details-testing-kyma) document to learn more about testing in Kyma.
-
-> **NOTE:** After adding a new test, remember to add it also to `ClusterTestSuite` inside `testing.sh` script.
-
 
 ## Usage
 
