@@ -28,7 +28,6 @@ func assertApplication(t *testing.T, in graphql.ApplicationInput, actualApp Appl
 	assertDocuments(t, in.Documents, actualApp.Documents.Data)
 	assertAPI(t, in.Apis, actualApp.Apis.Data)
 	assertEvents(t, in.EventAPIs, actualApp.EventAPIs.Data)
-
 }
 
 func assertWebhooks(t *testing.T, in []*graphql.ApplicationWebhookInput, actual []graphql.ApplicationWebhook) {
@@ -45,7 +44,6 @@ func assertWebhooks(t *testing.T, in []*graphql.ApplicationWebhookInput, actual 
 		}
 		assert.True(t, found)
 	}
-
 }
 
 func assertAuth(t *testing.T, in *graphql.AuthInput, actual *graphql.Auth) {
@@ -69,7 +67,6 @@ func assertAuth(t *testing.T, in *graphql.AuthInput, actual *graphql.Auth) {
 			assert.Equal(t, in.Credential.Oauth.URL, o.URL)
 			assert.Equal(t, in.Credential.Oauth.ClientSecret, o.ClientSecret)
 			assert.Equal(t, in.Credential.Oauth.ClientID, o.ClientID)
-
 		}
 	}
 
@@ -89,13 +86,11 @@ func assertAuth(t *testing.T, in *graphql.AuthInput, actual *graphql.Auth) {
 				assert.Equal(t, in.RequestAuth.Csrf.Credential.Oauth.URL, o.URL)
 				assert.Equal(t, in.RequestAuth.Csrf.Credential.Oauth.ClientSecret, o.ClientSecret)
 				assert.Equal(t, in.RequestAuth.Csrf.Credential.Oauth.ClientID, o.ClientID)
-
 			}
 		}
 		assert.Equal(t, in.RequestAuth.Csrf.AdditionalQueryParams, actual.RequestAuth.Csrf.AdditionalQueryParams)
 		assert.Equal(t, in.RequestAuth.Csrf.AdditionalHeaders, actual.RequestAuth.Csrf.AdditionalHeaders)
 		assert.Equal(t, in.RequestAuth.Csrf.TokenEndpointURL, actual.RequestAuth.Csrf.TokenEndpointURL)
-
 	}
 }
 
@@ -116,6 +111,7 @@ func assertDocuments(t *testing.T, in []*graphql.DocumentInput, actual []*graphq
 		assert.True(t, found)
 	}
 }
+
 func assertFetchRequest(t *testing.T, in *graphql.FetchRequestInput, actual *graphql.FetchRequest) {
 	if in == nil {
 		assert.Nil(t, actual)
@@ -129,7 +125,6 @@ func assertFetchRequest(t *testing.T, in *graphql.FetchRequestInput, actual *gra
 	} else {
 		assert.Equal(t, graphql.FetchModeSingle, actual.Mode)
 	}
-
 	assertAuth(t, in.Auth, actual.Auth)
 }
 
@@ -153,15 +148,12 @@ func assertAPI(t *testing.T, in []*graphql.APIDefinitionInput, actual []*graphql
 				assert.Equal(t, inApi.Spec.Format, *actApi.Spec.Format)
 				assert.Equal(t, inApi.Spec.Type, actApi.Spec.Type)
 				assertFetchRequest(t, inApi.Spec.FetchRequest, actApi.Spec.FetchRequest)
-
 			} else {
 				assert.Nil(t, actApi.Spec)
 			}
-
 		}
 		assert.True(t, found)
 	}
-
 }
 
 func assertVersion(t *testing.T, in *graphql.VersionInput, actual *graphql.Version) {
@@ -171,7 +163,6 @@ func assertVersion(t *testing.T, in *graphql.VersionInput, actual *graphql.Versi
 		assert.Equal(t, in.DeprecatedSince, actual.DeprecatedSince)
 		assert.Equal(t, in.Deprecated, actual.Deprecated)
 		assert.Equal(t, in.ForRemoval, actual.ForRemoval)
-
 	} else {
 		assert.Nil(t, actual)
 	}
@@ -194,11 +185,9 @@ func assertEvents(t *testing.T, in []*graphql.EventAPIDefinitionInput, actual []
 				assert.Equal(t, inEv.Spec.Data, actEv.Spec.Data)
 				assert.Equal(t, inEv.Spec.EventSpecType, actEv.Spec.Type)
 				assertFetchRequest(t, inEv.Spec.FetchRequest, actEv.Spec.FetchRequest)
-
 			} else {
 				assert.Nil(t, actEv.Spec)
 			}
-
 		}
 		assert.True(t, found)
 	}
