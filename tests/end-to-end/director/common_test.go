@@ -12,7 +12,9 @@ import (
 var tc = testContext{graphqlizer: graphqlizer{}, gqlFieldsProvider: gqlFieldsProvider{}, cli: gcli.NewClient(getDirectorURL())}
 
 func (tc *testContext) RunQuery(ctx context.Context, req *gcli.Request, resp interface{}) error {
-	req.Header["Tenant"] = []string{"test-end-to-end"}
+	if req.Header["Tenant"] == nil {
+		req.Header["Tenant"] = []string{"test-end-to-end"}
+	}
 	m := resultMapperFor(&resp)
 	return tc.cli.Run(ctx, req, &m)
 }

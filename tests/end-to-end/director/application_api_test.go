@@ -805,7 +805,38 @@ func TestQuerySpecificApplication(t *testing.T) {
 }
 
 func TestTenantSeparation(t *testing.T) {
-	//TODO later
+	// GIVEN
+	appIn := generateSampleApplicationInput("adidas")
+	inStr, err := tc.graphqlizer.ApplicationInputToGQL(appIn)
+	require.NoError(t, err)
+	createReq := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+				result: createApplication(in: %s) {
+						%s
+					}
+				}`,
+			inStr, tc.gqlFieldsProvider.ForApplication()))
+	actualApp := ApplicationExt{}
+	ctx := context.Background()
+	err = tc.RunQuery(ctx, createReq, &actualApp)
+	require.NoError(t, err)
+	require.NotEmpty(t, actualApp.ID)
+	defer deleteApplication(t, actualApp.ID)
+
+	// WHEN
+	getAppReq := gcli.NewRequest(fmt.Sprintf(`query {
+			result: applications {
+				%s
+			}
+		}`,
+		tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication())))
+	getAppReq.Header["Tenant"] = []string{"completely-another-tenant"}
+	anotherTenantsApps := graphql.ApplicationPage{}
+	// THEN
+	err = tc.RunQuery(ctx, getAppReq, &anotherTenantsApps)
+	require.NoError(t, err)
+	assert.Empty(t, anotherTenantsApps.Data)
+
 }
 
 func getApp(ctx context.Context, t *testing.T, id string) ApplicationExt {
