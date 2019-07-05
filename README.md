@@ -5,9 +5,21 @@
 # Compass
 
 ## Overview
-A flexible and easy way to register, manage and group your Applications across Kyma Runtimes.
 
--   [Documentation](./docs/README.md)
+Compass (also known as Management Plane Services) is a multi-tenant system which consists of components that provide a way to register, group, and manage your applications across multiple Kyma runtimes. Using Compass, you can control and monitor your application landscape in one central place.
+
+Compass allows for registering different types of applications and runtimes.
+These are the types of possible integration levels between an application and Compass:
+- basic - administrator manually provides API/Events Metadata to Compass. This type of integration is used mainly for simple use-case scenarios and doesn't support all features.
+- application - integration with Compass is built-in inside the application.
+- proxy - a highly application-specific proxy component provides the integration.
+- service -  a central service provides the integration for a class of applications. It manages multiple instances of these applications. You can integrate multiple services to support different types of applications.
+
+You can register any runtime, providing that it fulfills a contract with Compass and implements its flow. First, your runtime must get a trusted connection to Compass. It must also allow for fetching application definitions and using these applications in a given tenant. The example runtimes are Kyma (Kubernetes), CloudFoundry, Serverless, etc.
+
+Compass is a part of Kyma and it uses a set of Kyma features, such as Istio, Prometheus, Monitoring, or Tracing. This project also contains Compass UI Cockpit that exposes Compass APIs to users.
+
+For more information about the Compass architecture and technical details, read the [documentation](./docs).
 
 ## Prerequisities
 
@@ -19,37 +31,43 @@ A flexible and easy way to register, manage and group your Applications across K
 
 ## Installation
 
-### Chart installation  
+### Chart installation
 
-If you have already running Kyma 1.1.0 instance with created secrets which contains Tiller client certificates, run:
+If you already have a running Kyma 1.1.0 instance with created Secrets and Tiller client certificates, you can install the Compass Helm chart using this command:
 ```bash
 helm install --name "compass" ./chart/compass --tls
 ```
 
 ### Local installation with Kyma
 
-To install the Compass with minimal Kyma installation from `master` branch, run:
+To install Compass along with the minimal Kyma installation from the `master` branch, run this script:
 ```bash
-./installation/cmd/run.sh
+./installation/scripts/run.sh
 ```
 
-You can specify Kyma version, such as `1.2.2` or newer:
+You can also specify Kyma version, such as 1.2.2 or newer:
 ```bash
 ./installation/cmd/run.sh {version}
 ```
 
-### Kyma installation with Compass module enabled
+### Kyma installation with the Compass module enabled
 
-To install Kyma with experimental Compass module enabled, follow the instructions for [custom component installation](https://kyma-project.io/docs/root/kyma/#configuration-custom-component-installation) and enable `compass` module.
+To install Kyma with the experimental Compass module enabled, follow the instruction for [custom component installation](https://kyma-project.io/docs/root/kyma/#configuration-custom-component-installation) and enable the `compass` module.
 
 
-## Tests
+### Testing
 
-To run tests, install the Compass and run:
+Compass, as a part of Kyma, uses [Octopus](https://github.com/kyma-incubator/octopus/blob/master/README.md) for testing. To run the Compass tests, run:
+
 ```bash
 ./installation/scripts/testing.sh
 ```
 
-## Deep dive
+Read [this](https://kyma-project.io/docs/root/kyma#details-testing-kyma) document to learn more about testing in Kyma.
 
-To learn more about how the installation and testing are performed, check [this document](./installation/README.md)
+## Usage
+
+Go to these URLs to see the documentation, GraphQL schemas, and to test some API operations:
+
+- `https://compass-gateway.{domain}/director`
+- `https://compass-gateway.{domain}/connector`
