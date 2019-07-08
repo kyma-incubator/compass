@@ -16,8 +16,8 @@ global:
       version: "PR-99"
     tests:
       e2e:
-        dir: pr/
-        version: "PR-99"
+        dir: develop/
+        version: "68f8e98a"
 
   director:
     port: 3000

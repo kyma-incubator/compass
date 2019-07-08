@@ -6,9 +6,16 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "false"
+        sidecar.istio.io/inject: "true"
     spec:
+      shareProcessNamespace: true
       containers:
         - name: "test-{{ .Release.Name }}-end-to-end"
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.e2e.dir }}compass-end-to-end-test:{{ .Values.global.images.tests.e2e.version }}
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh"]
+          args: ["-c", "sleep 10; /director.test -test.v; exit_code=$?; pkill -INT pilot-agent; sleep 4; exit $exit_code;"]
+          env:
+          - name: "DIRECTOR_GRAPHQL_API"
+            value: "http://compass-gateway.compass-system.svc.cluster.local:3000/director/graphql"
       restartPolicy: Never
