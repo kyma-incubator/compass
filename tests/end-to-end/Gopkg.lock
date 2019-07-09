@@ -94,6 +94,7 @@
   revision = "f55edac94c9bbba5d6182a4be46d86a2c9b5b50e"
   version = "v1.0.2"
 
+# TODO: Update types after merging PR
 [[projects]]
   branch = "master"
   digest = "1:325edadcaed57aeae3893e6aa09565899def59470c6ca368405aa3b65cf12164"

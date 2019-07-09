@@ -19,7 +19,6 @@ func (fp *gqlFieldsProvider) ForApplication() string {
 		name
 		description
 		labels
-		annotations
 		status {condition timestamp}
 		webhooks {%s}
 		healthCheckURL
@@ -167,7 +166,6 @@ func (fp *gqlFieldsProvider) ForRuntime() string {
 		name
 		description
 		labels 
-		annotations
 		status {condition timestamp}
 		agentAuth {%s}`, fp.ForAuth())
 }

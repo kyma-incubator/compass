@@ -77,23 +77,6 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	assert.Len(t, actualLabel.Values, 1)
 	assert.Contains(t, actualLabel.Values, "bbb")
 
-	// add Annotation
-	actualAnnotation := graphql.Annotation{}
-
-	// WHEN
-	addAnnotationReq := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			result: addRuntimeAnnotation(runtimeID: "%s", key: "%s", value: %s) {
-					%s
-				}
-			}`, actualRuntime.ID, "new-anno", `["zzz"]`, tc.gqlFieldsProvider.ForAnnotation()))
-	err = tc.RunQuery(ctx, addAnnotationReq, &actualAnnotation)
-
-	//THEN
-	require.NoError(t, err)
-	assert.Equal(t, "new-anno", actualAnnotation.Key)
-	assert.Equal(t, []interface{}{"zzz"}, actualAnnotation.Value)
-
 	// get runtime and validate runtimes and annotations
 	getRuntimeReq := gcli.NewRequest(
 		fmt.Sprintf(`query {
@@ -104,7 +87,6 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	err = tc.RunQuery(ctx, getRuntimeReq, &actualRuntime)
 	require.NoError(t, err)
 	assert.Len(t, actualRuntime.Labels, 2)
-	assert.Len(t, actualRuntime.Annotations, 2)
 
 	// delete label
 
@@ -117,19 +99,6 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 				}
 		`, actualRuntime.ID, "new-label", tc.gqlFieldsProvider.ForLabel()))
 	err = tc.RunQuery(ctx, delLabelReq, nil)
-
-	//THEN
-	require.NoError(t, err)
-	// delete annotation
-
-	// WHEN
-	delAnnoReq := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-				result: deleteRuntimeAnnotation(runtimeID: "%s", key: "%s") {
-						%s
-				}
-			}`, actualRuntime.ID, "new-anno", tc.gqlFieldsProvider.ForAnnotation()))
-	err = tc.RunQuery(ctx, delAnnoReq, nil)
 
 	//THEN
 	require.NoError(t, err)

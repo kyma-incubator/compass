@@ -406,40 +406,6 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 	})
 
-	t.Run("annotations manipulation", func(t *testing.T) {
-		// create label
-		addReq := gcli.NewRequest(
-			fmt.Sprintf(`mutation {
-			result: addApplicationAnnotation(applicationID: "%s", key: "%s", value: "%s") {
-					key 
-					value
-				}
-			}`, actualApp.ID, "brand-new-annotation", "ccc"))
-		saveQueryInExamples(t, addReq.Query(), "add application annotation")
-		actualAnnotation := graphql.Annotation{}
-		err := tc.RunQuery(ctx, addReq, &actualAnnotation)
-		require.NoError(t, err)
-		assert.Equal(t, graphql.Annotation{Key: "brand-new-annotation", Value: "ccc"}, actualAnnotation)
-		actualApp := getApp(ctx, t, actualApp.ID)
-		assert.Equal(t, "ccc", actualApp.Annotations["brand-new-annotation"])
-
-		// delete label
-		delReq := gcli.NewRequest(
-			fmt.Sprintf(`mutation {
-			result: deleteApplicationAnnotation(applicationID: "%s", key: "%s") {
-					key 
-					value
-				}
-			}`, actualApp.ID, "brand-new-annotation"))
-		saveQueryInExamples(t, delReq.Query(), "delete application annotation")
-		err = tc.RunQuery(ctx, delReq, &actualAnnotation)
-		require.NoError(t, err)
-		assert.Equal(t, graphql.Annotation{Key: "brand-new-annotation", Value: "ccc"}, actualAnnotation)
-		// TODO here we have inconsistency with labels
-		actualApp = getApp(ctx, t, actualApp.ID)
-		assert.Nil(t, actualApp.Annotations["brand-new-annotation"])
-	})
-
 	t.Run("manage webhooks", func(t *testing.T) {
 		// add
 		webhookInStr, err := tc.graphqlizer.ApplicationWebhookInputToGQL(&graphql.ApplicationWebhookInput{
