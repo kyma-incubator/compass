@@ -2,12 +2,6 @@
 
 
 [[projects]]
-  name = "github.com/gorilla/mux"
-  packages = ["."]
-  revision = "00bdffe0f3c77e27d2cf6f5c70232a2d3e4d9c15"
-  version = "v1.7.3"
-
-[[projects]]
   name = "github.com/kisielk/errcheck"
   packages = [
     ".",
@@ -16,16 +10,22 @@
   revision = "e14f8d59a22d460d56c5ee92507cd94c78fbf274"
 
 [[projects]]
-  name = "github.com/pkg/errors"
+  name = "github.com/konsorten/go-windows-terminal-sequences"
   packages = ["."]
-  revision = "ba968bfe8b2f7e042a574c888954fccecfa385b4"
-  version = "v0.8.1"
+  revision = "f55edac94c9bbba5d6182a4be46d86a2c9b5b50e"
+  version = "v1.0.2"
 
 [[projects]]
-  name = "github.com/vrischmann/envconfig"
+  name = "github.com/sirupsen/logrus"
   packages = ["."]
-  revision = "cf601e2565a0a7c7418ed014d28a507be6cb1e45"
-  version = "v1.2.0"
+  revision = "839c75faf7f98a33d445d181f3018b5c3409a45e"
+  version = "v1.4.2"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  revision = "04f50cda93cbb67f2afa353c52f342100e80e625"
 
 [[projects]]
   branch = "master"
@@ -49,6 +49,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f2da243b449ecd576e529697774f9feccf686cbbffd9c745bc7e6fbc50da698a"
+  inputs-digest = "b693109ed0ca56602d14aa3131d10e93ecb29c04ca381e867b72a3275e9b648f"
   solver-name = "gps-cdcl"
   solver-version = 1
