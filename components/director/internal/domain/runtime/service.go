@@ -149,4 +149,3 @@ func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string,
 
 	return nil
 }
-

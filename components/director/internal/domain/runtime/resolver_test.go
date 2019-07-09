@@ -628,4 +628,3 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 		})
 	}
 }
-
