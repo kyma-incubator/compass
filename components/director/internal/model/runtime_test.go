@@ -152,129 +152,6 @@ func TestRuntime_DeleteLabel(t *testing.T) {
 	}
 }
 
-func TestRuntime_AddAnnotation(t *testing.T) {
-	// given
-	testCases := []struct {
-		Name                string
-		InputRuntime        model.Runtime
-		InputKey            string
-		InputValue          string
-		ExpectedAnnotations map[string]interface{}
-		ExpectedErr         error
-	}{
-		{
-			Name:       "Success",
-			InputKey:   "foo",
-			InputValue: "bar",
-			InputRuntime: model.Runtime{
-				Annotations: map[string]interface{}{
-					"test": "val",
-				},
-			},
-			ExpectedErr: nil,
-			ExpectedAnnotations: map[string]interface{}{
-				"test": "val",
-				"foo":  "bar",
-			},
-		},
-		{
-			Name:       "Nil map",
-			InputKey:   "foo",
-			InputValue: "bar",
-			InputRuntime: model.Runtime{
-				Annotations: nil,
-			},
-			ExpectedErr: nil,
-			ExpectedAnnotations: map[string]interface{}{
-				"foo": "bar",
-			},
-		},
-		{
-			Name:       "Error",
-			InputKey:   "foo",
-			InputValue: "bar",
-			InputRuntime: model.Runtime{
-				Annotations: map[string]interface{}{
-					"foo": "val",
-				},
-			},
-			ExpectedErr: fmt.Errorf("annotation %s does already exist", "foo"),
-			ExpectedAnnotations: map[string]interface{}{
-				"foo": "val",
-			},
-		},
-	}
-
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			rtm := testCase.InputRuntime
-
-			// when
-
-			err := rtm.AddAnnotation(testCase.InputKey, testCase.InputValue)
-
-			// then
-
-			require.Equal(t, testCase.ExpectedErr, err)
-			assert.Equal(t, testCase.ExpectedAnnotations, rtm.Annotations)
-		})
-	}
-}
-
-func TestRuntime_DeleteAnnotation(t *testing.T) {
-	// given
-	testCases := []struct {
-		Name                string
-		InputRuntime        model.Runtime
-		InputKey            string
-		ExpectedAnnotations map[string]interface{}
-		ExpectedErr         error
-	}{
-		{
-			Name:     "Success",
-			InputKey: "foo",
-			InputRuntime: model.Runtime{
-				Annotations: map[string]interface{}{
-					"no":  "delete",
-					"foo": "bar",
-				},
-			},
-			ExpectedErr: nil,
-			ExpectedAnnotations: map[string]interface{}{
-				"no": "delete",
-			},
-		},
-		{
-			Name:     "Error",
-			InputKey: "foobar",
-			InputRuntime: model.Runtime{
-				Annotations: map[string]interface{}{
-					"no": "delete",
-				},
-			},
-			ExpectedErr: fmt.Errorf("annotation %s doesn't exist", "foobar"),
-			ExpectedAnnotations: map[string]interface{}{
-				"no": "delete",
-			},
-		},
-	}
-
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			rtm := testCase.InputRuntime
-
-			// when
-
-			err := rtm.DeleteAnnotation(testCase.InputKey)
-
-			// then
-
-			require.Equal(t, testCase.ExpectedErr, err)
-			assert.Equal(t, testCase.ExpectedAnnotations, rtm.Annotations)
-		})
-	}
-}
-
 func TestRuntimeInput_ToRuntime(t *testing.T) {
 	// given
 	desc := "Sample"
@@ -290,9 +167,6 @@ func TestRuntimeInput_ToRuntime(t *testing.T) {
 			Input: &model.RuntimeInput{
 				Name:        "Foo",
 				Description: &desc,
-				Annotations: map[string]interface{}{
-					"key": "value",
-				},
 				Labels: map[string][]string{
 					"test": {"val", "val2"},
 				},
@@ -302,9 +176,6 @@ func TestRuntimeInput_ToRuntime(t *testing.T) {
 				ID:          id,
 				Tenant:      tenant,
 				Description: &desc,
-				Annotations: map[string]interface{}{
-					"key": "value",
-				},
 				Labels: map[string][]string{
 					"test": {"val", "val2"},
 				},

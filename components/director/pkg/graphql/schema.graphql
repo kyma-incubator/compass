@@ -8,8 +8,6 @@ scalar Tenant # -> String
 
 scalar Labels # -> map[string][]string
 
-scalar Annotations # -> map[string]string
-
 scalar HttpHeaders # -> map[string][]string
 
 scalar QueryParams # -> map[string][]string
@@ -23,11 +21,6 @@ type Label {
     values: [String!]!
 }
 
-type Annotation {
-    key: String!
-    value: Any!
-}
-
 # Runtime
 
 type Runtime {
@@ -35,7 +28,6 @@ type Runtime {
     name: String!
     description: String
     labels(key: String): Labels!
-    annotations(key: String): Annotations!
     status: RuntimeStatus!
     """TODO: directive for checking auth"""
     agentAuth: Auth!
@@ -59,7 +51,6 @@ type Application {
     name: String!
     description: String
     labels(key: String): Labels!
-    annotations(key: String): Annotations!
     status: ApplicationStatus!
     webhooks: [ApplicationWebhook!]!
     healthCheckURL: String
@@ -325,7 +316,6 @@ input ApplicationInput {
     name: String!
     description: String
     labels: Labels
-    annotations: Annotations
     webhooks: [ApplicationWebhookInput!]
     healthCheckURL: String
     apis: [APIDefinitionInput!]
@@ -339,7 +329,6 @@ input RuntimeInput {
     name: String!
     description: String
     labels: Labels
-    annotations: Annotations
 }
 
 # FetchRequest Input
@@ -486,12 +475,6 @@ type Mutation {
     # if application does not exist, return error
     deleteApplicationLabel(applicationID: ID!, key: String!, values: [String!]!): Label
 
-    """If the annotation key exists, it returns an error."""
-    addApplicationAnnotation(applicationID: ID!, key: String!, value: Any!): Annotation!
-
-    """If the annotation key exists, it returns an error."""
-    deleteApplicationAnnotation(applicationID: ID!, key: String!): Annotation
-
     addApplicationWebhook(applicationID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
     updateApplicationWebhook(webhookID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
     deleteApplicationWebhook(webhookID: ID!): ApplicationWebhook
@@ -525,10 +508,4 @@ type Mutation {
 
     """If values are not specified, it deletes the label. If values are specified, it deletes values from a specific label."""
     deleteRuntimeLabel(runtimeID: ID!, key: String!, values: [String!]): Label
-
-    """If the annotation key exists, it returns an error."""
-    addRuntimeAnnotation(runtimeID: ID!, key: String!, value: Any!): Annotation!
-
-    """If values are not specified, it deletes the annotation. If values are specified, it deletes values from a specific annotation."""
-    deleteRuntimeAnnotation(runtimeID: ID!, key: String!): Annotation
 }

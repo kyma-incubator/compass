@@ -68,18 +68,6 @@ func fixModelRuntimeWithLabels(id, name string, labels map[string][]string) *mod
 	}
 }
 
-func fixModelRuntimeWithAnnotations(id, name string, annotations map[string]interface{}) *model.Runtime {
-	return &model.Runtime{
-		ID: id,
-		Status: &model.RuntimeStatus{
-			Condition: model.RuntimeStatusConditionInitial,
-		},
-		Name:        name,
-		Description: nil,
-		Annotations: annotations,
-	}
-}
-
 func fixDetailedModelRuntime(t *testing.T, id, name, description string) *model.Runtime {
 	time, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
@@ -93,9 +81,6 @@ func fixDetailedModelRuntime(t *testing.T, id, name, description string) *model.
 		Name:        name,
 		Description: &description,
 		Tenant:      "tenant",
-		Annotations: map[string]interface{}{
-			"key": "value",
-		},
 		Labels: map[string][]string{
 			"test": {"val", "val2"},
 		},
@@ -129,9 +114,6 @@ func fixDetailedGQLRuntime(t *testing.T, id, name, description string) *graphql.
 		},
 		Name:        name,
 		Description: &description,
-		Annotations: map[string]interface{}{
-			"key": "value",
-		},
 		Labels: map[string][]string{
 			"test": {"val", "val2"},
 		},
@@ -149,9 +131,6 @@ func fixModelRuntimeInput(name, description string) model.RuntimeInput {
 	return model.RuntimeInput{
 		Name:        name,
 		Description: &description,
-		Annotations: map[string]interface{}{
-			"key": "value",
-		},
 		Labels: map[string][]string{
 			"test": {"val", "val2"},
 		},
@@ -162,14 +141,10 @@ func fixGQLRuntimeInput(name, description string) graphql.RuntimeInput {
 	labels := graphql.Labels{
 		"test": {"val", "val2"},
 	}
-	annotations := graphql.Annotations{
-		"key": "value",
-	}
 
 	return graphql.RuntimeInput{
 		Name:        name,
 		Description: &description,
-		Annotations: &annotations,
 		Labels:      &labels,
 	}
 }

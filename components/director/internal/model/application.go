@@ -14,7 +14,6 @@ type Application struct {
 	Name           string
 	Description    *string
 	Labels         map[string][]string
-	Annotations    map[string]interface{}
 	Status         *ApplicationStatus
 	HealthCheckURL *string
 }
@@ -79,33 +78,10 @@ func (a *Application) DeleteLabel(key string, valuesToDelete []string) error {
 	return nil
 }
 
-func (a *Application) AddAnnotation(key string, value interface{}) error {
-	if a.Annotations == nil {
-		a.Annotations = make(map[string]interface{})
-	}
-
-	if _, exists := a.Annotations[key]; exists {
-		return fmt.Errorf("annotation %s does already exist", key)
-	}
-
-	a.Annotations[key] = value
-	return nil
-}
-
-func (a *Application) DeleteAnnotation(key string) error {
-	if _, exists := a.Annotations[key]; !exists {
-		return fmt.Errorf("annotation %s doesn't exist", key)
-	}
-
-	delete(a.Annotations, key)
-	return nil
-}
-
 type ApplicationInput struct {
 	Name           string
 	Description    *string
 	Labels         map[string][]string
-	Annotations    map[string]interface{}
 	HealthCheckURL *string
 	Webhooks       []*ApplicationWebhookInput
 	Apis           []*APIDefinitionInput
@@ -124,7 +100,6 @@ func (i *ApplicationInput) ToApplication(id, tenant string) *Application {
 		Description:    i.Description,
 		Tenant:         tenant,
 		Labels:         i.Labels,
-		Annotations:    i.Annotations,
 		HealthCheckURL: i.HealthCheckURL,
 	}
 }

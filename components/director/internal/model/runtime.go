@@ -15,7 +15,6 @@ type Runtime struct {
 	Description *string
 	Tenant      string
 	Labels      map[string][]string
-	Annotations map[string]interface{}
 	Status      *RuntimeStatus
 	AgentAuth   *Auth
 }
@@ -73,33 +72,10 @@ func (r *Runtime) DeleteLabel(key string, valuesToDelete []string) error {
 	return nil
 }
 
-func (r *Runtime) AddAnnotation(key string, value interface{}) error {
-	if r.Annotations == nil {
-		r.Annotations = make(map[string]interface{})
-	}
-
-	if _, exists := r.Annotations[key]; exists {
-		return fmt.Errorf("annotation %s does already exist", key)
-	}
-
-	r.Annotations[key] = value
-	return nil
-}
-
-func (r *Runtime) DeleteAnnotation(key string) error {
-	if _, exists := r.Annotations[key]; !exists {
-		return fmt.Errorf("annotation %s doesn't exist", key)
-	}
-
-	delete(r.Annotations, key)
-	return nil
-}
-
 type RuntimeInput struct {
 	Name        string
 	Description *string
 	Labels      map[string][]string
-	Annotations map[string]interface{}
 }
 
 func (i *RuntimeInput) ToRuntime(id string, tenant string) *Runtime {
@@ -113,7 +89,6 @@ func (i *RuntimeInput) ToRuntime(id string, tenant string) *Runtime {
 		Description: i.Description,
 		Tenant:      tenant,
 		Labels:      i.Labels,
-		Annotations: i.Annotations,
 		AgentAuth:   &Auth{},
 		Status:      &RuntimeStatus{},
 	}

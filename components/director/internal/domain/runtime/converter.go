@@ -28,7 +28,6 @@ func (c *converter) ToGraphQL(in *model.Runtime) *graphql.Runtime {
 		Status:      c.statusToGraphQL(in.Status),
 		Name:        in.Name,
 		Description: in.Description,
-		Annotations: in.Annotations,
 		Labels:      in.Labels,
 		AgentAuth:   c.auth.ToGraphQL(in.AgentAuth),
 	}
@@ -48,11 +47,6 @@ func (c *converter) MultipleToGraphQL(in []*model.Runtime) []*graphql.Runtime {
 }
 
 func (c *converter) InputFromGraphQL(in graphql.RuntimeInput) model.RuntimeInput {
-	var annotations map[string]interface{}
-	if in.Annotations != nil {
-		annotations = *in.Annotations
-	}
-
 	var labels map[string][]string
 	if in.Labels != nil {
 		labels = *in.Labels
@@ -61,7 +55,6 @@ func (c *converter) InputFromGraphQL(in graphql.RuntimeInput) model.RuntimeInput
 	return model.RuntimeInput{
 		Name:        in.Name,
 		Description: in.Description,
-		Annotations: annotations,
 		Labels:      labels,
 	}
 }

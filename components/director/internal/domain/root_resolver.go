@@ -118,12 +118,6 @@ func (r *mutationResolver) AddApplicationLabel(ctx context.Context, applicationI
 func (r *mutationResolver) DeleteApplicationLabel(ctx context.Context, applicationID string, key string, values []string) (*graphql.Label, error) {
 	return r.app.DeleteApplicationLabel(ctx, applicationID, key, values)
 }
-func (r *mutationResolver) AddApplicationAnnotation(ctx context.Context, applicationID string, key string, value interface{}) (*graphql.Annotation, error) {
-	return r.app.AddApplicationAnnotation(ctx, applicationID, key, value)
-}
-func (r *mutationResolver) DeleteApplicationAnnotation(ctx context.Context, applicationID string, key string) (*graphql.Annotation, error) {
-	return r.app.DeleteApplicationAnnotation(ctx, applicationID, key)
-}
 func (r *mutationResolver) AddApplicationWebhook(ctx context.Context, applicationID string, in graphql.ApplicationWebhookInput) (*graphql.ApplicationWebhook, error) {
 	return r.app.AddApplicationWebhook(ctx, applicationID, in)
 }
@@ -178,13 +172,6 @@ func (r *mutationResolver) AddRuntimeLabel(ctx context.Context, runtimeID string
 func (r *mutationResolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string, values []string) (*graphql.Label, error) {
 	return r.runtime.DeleteRuntimeLabel(ctx, runtimeID, key, values)
 }
-func (r *mutationResolver) AddRuntimeAnnotation(ctx context.Context, runtimeID string, key string, value interface{}) (*graphql.Annotation, error) {
-	return r.runtime.AddRuntimeAnnotation(ctx, runtimeID, key, value)
-}
-func (r *mutationResolver) DeleteRuntimeAnnotation(ctx context.Context, runtimeID string, key string) (*graphql.Annotation, error) {
-	return r.runtime.DeleteRuntimeAnnotation(ctx, runtimeID, key)
-}
-
 func (r *mutationResolver) AddDocument(ctx context.Context, applicationID string, in graphql.DocumentInput) (*graphql.Document, error) {
 	return r.doc.AddDocument(ctx, applicationID, in)
 }

@@ -97,7 +97,6 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 	rtm.Name = in.Name
 	rtm.Description = in.Description
 	rtm.Labels = in.Labels
-	rtm.Annotations = in.Annotations
 
 	err = s.repo.Update(rtm)
 	if err != nil {
@@ -151,40 +150,3 @@ func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string,
 	return nil
 }
 
-func (s *service) AddAnnotation(ctx context.Context, runtimeID string, key string, value interface{}) error {
-	rtm, err := s.Get(ctx, runtimeID)
-	if err != nil {
-		return errors.Wrap(err, "while getting Runtime")
-	}
-
-	err = rtm.AddAnnotation(key, value)
-	if err != nil {
-		return errors.Wrapf(err, "while adding new annotation %s", key)
-	}
-
-	err = s.repo.Update(rtm)
-	if err != nil {
-		return errors.Wrapf(err, "while updating Runtime")
-	}
-
-	return nil
-}
-
-func (s *service) DeleteAnnotation(ctx context.Context, runtimeID string, key string) error {
-	rtm, err := s.Get(ctx, runtimeID)
-	if err != nil {
-		return errors.Wrap(err, "while getting Runtime")
-	}
-
-	err = rtm.DeleteAnnotation(key)
-	if err != nil {
-		return errors.Wrapf(err, "while deleting annotation with key %s", key)
-	}
-
-	err = s.repo.Update(rtm)
-	if err != nil {
-		return errors.Wrapf(err, "while updating Runtime with ID %s", runtimeID)
-	}
-
-	return nil
-}
