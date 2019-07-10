@@ -16,8 +16,8 @@ global:
       version: "PR-99"
     tests:
       e2e:
-        dir: develop/
-        version: "68f8e98a"
+        dir: pr/
+        version: "PR-121"
 
   isLocalEnv: true
   
