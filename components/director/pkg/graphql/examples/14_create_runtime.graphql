@@ -2,7 +2,6 @@ mutation {
     createRuntime(in: {
         name: "name",
         labels: "",
-        annotations: "",
     }){
         id
         name

@@ -156,11 +156,6 @@ func (fp *gqlFieldsProvider) ForLabel() string {
 			values`
 }
 
-func (fp *gqlFieldsProvider) ForAnnotation() string {
-	return `key
-			value`
-}
-
 func (fp *gqlFieldsProvider) ForRuntime() string {
 	return fmt.Sprintf(`id
 		name

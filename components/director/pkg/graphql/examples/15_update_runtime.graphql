@@ -2,7 +2,6 @@ mutation {
     updateRuntime(id: "123", in: {
         name: "name",
         labels: "",
-        annotations: "",
     }){
         id
         name

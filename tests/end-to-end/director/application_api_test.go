@@ -21,9 +21,6 @@ func TestCreateApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 		Labels: &graphql.Labels{
 			"group": []string{"production", "experimental"},
 		},
-		Annotations: &graphql.Annotations{
-			"createdBy": "admin",
-		},
 	}
 
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
@@ -837,8 +834,7 @@ func generateSampleApplicationInput(placeholder string) graphql.ApplicationInput
 			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 			URL:  placeholder},
 		},
-		Labels:      &graphql.Labels{placeholder: []string{placeholder}},
-		Annotations: &graphql.Annotations{placeholder: placeholder},
+		Labels: &graphql.Labels{placeholder: []string{placeholder}},
 	}
 }
 

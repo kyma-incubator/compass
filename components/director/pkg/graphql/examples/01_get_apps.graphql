@@ -11,7 +11,6 @@ query {
         description
 
         labels
-        annotations
         status {
             condition
             timestamp

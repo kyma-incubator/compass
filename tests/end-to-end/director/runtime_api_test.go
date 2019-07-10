@@ -18,7 +18,6 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 		Name:        "runtime-1",
 		Description: ptrString("runtime-1-description"),
 		Labels:      &graphql.Labels{"ggg": []string{"hhh"}},
-		Annotations: &graphql.Annotations{"kkk": "lll"},
 	}
 	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
@@ -77,7 +76,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	assert.Len(t, actualLabel.Values, 1)
 	assert.Contains(t, actualLabel.Values, "bbb")
 
-	// get runtime and validate runtimes and annotations
+	// get runtime and validate runtimes
 	getRuntimeReq := gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: runtime(id: "%s") {
@@ -140,7 +139,6 @@ func TestSetAndDeleteAPIAuth(t *testing.T) {
 		Name:        "runtime-1",
 		Description: ptrString("runtime-1-description"),
 		Labels:      &graphql.Labels{"ggg": []string{"hhh"}},
-		Annotations: &graphql.Annotations{"kkk": "lll"},
 	}
 	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInput)
 	require.NoError(t, err)
