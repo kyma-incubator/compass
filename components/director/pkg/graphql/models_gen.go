@@ -172,6 +172,8 @@ type Document struct {
 	ID            string         `json:"id"`
 	ApplicationID string         `json:"applicationID"`
 	Title         string         `json:"title"`
+	DisplayName   string         `json:"displayName"`
+	Description   string         `json:"description"`
 	Format        DocumentFormat `json:"format"`
 	// for example Service Class, API etc
 	Kind         *string       `json:"kind"`

@@ -135,6 +135,8 @@ type ComplexityRoot struct {
 	Document struct {
 		ApplicationID func(childComplexity int) int
 		Data          func(childComplexity int) int
+		Description   func(childComplexity int) int
+		DisplayName   func(childComplexity int) int
 		FetchRequest  func(childComplexity int) int
 		Format        func(childComplexity int) int
 		ID            func(childComplexity int) int
@@ -757,6 +759,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Document.Data(childComplexity), true
+
+	case "Document.description":
+		if e.complexity.Document.Description == nil {
+			break
+		}
+
+		return e.complexity.Document.Description(childComplexity), true
+
+	case "Document.displayName":
+		if e.complexity.Document.DisplayName == nil {
+			break
+		}
+
+		return e.complexity.Document.DisplayName(childComplexity), true
 
 	case "Document.fetchRequest":
 		if e.complexity.Document.FetchRequest == nil {
@@ -1923,6 +1939,8 @@ type Document {
     id: ID!
     applicationID: ID!
     title: String!
+    displayName: String!
+    description: String!
     format: DocumentFormat!
     """for example Service Class, API etc"""
     kind: String
@@ -4633,6 +4651,60 @@ func (ec *executionContext) _Document_title(ctx context.Context, field graphql.C
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Title, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Document_displayName(ctx context.Context, field graphql.CollectedField, obj *Document) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Document",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DisplayName, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Document_description(ctx context.Context, field graphql.CollectedField, obj *Document) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Document",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -9499,6 +9571,16 @@ func (ec *executionContext) _Document(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "title":
 			out.Values[i] = ec._Document_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "displayName":
+			out.Values[i] = ec._Document_displayName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "description":
+			out.Values[i] = ec._Document_description(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

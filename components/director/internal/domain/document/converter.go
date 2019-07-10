@@ -34,6 +34,8 @@ func (c *converter) ToGraphQL(in *model.Document) *graphql.Document {
 		ID:            in.ID,
 		ApplicationID: in.ApplicationID,
 		Title:         in.Title,
+		DisplayName:   in.DisplayName,
+		Description:   in.Description,
 		Format:        graphql.DocumentFormat(in.Format),
 		Kind:          in.Kind,
 		Data:          clob,
