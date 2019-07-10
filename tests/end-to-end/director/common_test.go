@@ -2,14 +2,31 @@ package director
 
 import (
 	"context"
+	"crypto/tls"
+	"net/http"
 	"os"
 	"reflect"
 	"testing"
+	"time"
 
 	gcli "github.com/machinebox/graphql"
 )
 
-var tc = testContext{graphqlizer: graphqlizer{}, gqlFieldsProvider: gqlFieldsProvider{}, cli: gcli.NewClient(getDirectorURL())}
+var tc = testContext{graphqlizer: graphqlizer{}, gqlFieldsProvider: gqlFieldsProvider{}, cli: newGraphqlClient()}
+
+func newGraphqlClient() *gcli.Client {
+	return gcli.NewClient(getDirectorURL(), gcli.WithHTTPClient(newAuthorizedHttpClient()))
+}
+
+func newAuthorizedHttpClient() *http.Client {
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
+
+	return &http.Client{
+		Transport: transport,
+		Timeout:   time.Second * 30,
+	}
+}
 
 func (tc *testContext) RunQuery(ctx context.Context, req *gcli.Request, resp interface{}) error {
 	if req.Header["Tenant"] == nil {
