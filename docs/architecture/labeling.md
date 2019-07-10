@@ -5,9 +5,12 @@ The following documents describes the labeling feature.
 
 ## Use cases
 
+- Validating label values against JSON schema / type
+- Reading all label keys for tenant
+
 
 ## Terms
-There are few terms, which need to be defined, befor
+In this document there are few terms, which are used:
 
 **Label**
 
@@ -61,7 +64,9 @@ const (
 )
 ```
 
+**Scenario**
 
+It is a Label with key `scenarios`, which references LabelDefinition of type `Enum`. Based on the `scenarios` Label, Applications and Runtimes are connected. Runtime Agent does query for all Scenarios assigned to Application.
 
 ## Workflows
 
