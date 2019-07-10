@@ -182,7 +182,7 @@ type RuntimeAuth {
 type APISpec {
     """when fetch request specified, data will be automatically populated"""
     data: CLOB
-    format: SpecFormat
+    format: SpecFormat!
     type: APISpecType!
     fetchRequest: FetchRequest
 }
@@ -217,7 +217,7 @@ type EventAPIDefinition {
 type EventAPISpec {
     data: CLOB
     type: EventAPISpecType!
-    format: SpecFormat
+    format: SpecFormat!
     fetchRequest: FetchRequest
 }
 

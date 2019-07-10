@@ -31,7 +31,7 @@ func fixDetailedModelAPIDefinition(t *testing.T, id, name, description string, g
 
 	spec := &model.APISpec{
 		Data:         &data,
-		Format:       &format,
+		Format:       format,
 		Type:         model.APISpecTypeOpenAPI,
 		FetchRequest: &model.FetchRequest{},
 	}
@@ -76,7 +76,7 @@ func fixDetailedGQLAPIDefinition(t *testing.T, id, name, description string, gro
 
 	spec := &graphql.APISpec{
 		Data:         &data,
-		Format:       &format,
+		Format:       format,
 		Type:         graphql.APISpecTypeOpenAPI,
 		FetchRequest: &graphql.FetchRequest{},
 	}
@@ -125,7 +125,7 @@ func fixModelAPIDefinitionInput(name, description string, group string) *model.A
 	spec := &model.APISpecInput{
 		Data:         &data,
 		Type:         model.APISpecTypeOpenAPI,
-		Format:       &format,
+		Format:       format,
 		FetchRequest: &model.FetchRequestInput{},
 	}
 

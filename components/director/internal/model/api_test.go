@@ -73,12 +73,12 @@ func TestAPIDefinitionInput_ToAPISpec(t *testing.T) {
 			Name: "All properties given",
 			Input: &model.APISpecInput{
 				Data:   &data,
-				Format: &format,
+				Format: format,
 				Type:   specType,
 			},
 			Expected: &model.APISpec{
 				Data:   &data,
-				Format: &format,
+				Format: format,
 				Type:   specType,
 			},
 		},

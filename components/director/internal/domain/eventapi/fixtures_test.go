@@ -31,7 +31,7 @@ func fixDetailedModelEventAPIDefinition(t *testing.T, id, name, description stri
 
 	spec := &model.EventAPISpec{
 		Data:         &data,
-		Format:       &format,
+		Format:       format,
 		Type:         model.EventAPISpecTypeAsyncAPI,
 		FetchRequest: &model.FetchRequest{},
 	}
@@ -64,7 +64,7 @@ func fixDetailedGQLEventAPIDefinition(t *testing.T, id, name, description string
 
 	spec := &graphql.EventAPISpec{
 		Data:         &data,
-		Format:       &format,
+		Format:       format,
 		Type:         graphql.EventAPISpecTypeAsyncAPI,
 		FetchRequest: &graphql.FetchRequest{},
 	}
@@ -98,7 +98,7 @@ func fixModelEventAPIDefinitionInput(name, description string, group string) *mo
 	spec := &model.EventAPISpecInput{
 		Data:          &data,
 		EventSpecType: model.EventAPISpecTypeAsyncAPI,
-		Format:        &format,
+		Format:        format,
 		FetchRequest:  &model.FetchRequestInput{},
 	}
 

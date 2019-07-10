@@ -25,7 +25,7 @@ type APIDefinition struct {
 type APISpec struct {
 	// when fetch request specified, data will be automatically populated
 	Data         *string
-	Format       *SpecFormat
+	Format       SpecFormat
 	Type         APISpecType
 	FetchRequest *FetchRequest
 }
@@ -52,7 +52,7 @@ type APIDefinitionInput struct {
 type APISpecInput struct {
 	Data         *string
 	Type         APISpecType
-	Format       *SpecFormat
+	Format       SpecFormat
 	FetchRequest *FetchRequestInput
 }
 

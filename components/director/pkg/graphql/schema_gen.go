@@ -1894,7 +1894,7 @@ type RuntimeAuth {
 type APISpec {
     """when fetch request specified, data will be automatically populated"""
     data: CLOB
-    format: SpecFormat
+    format: SpecFormat!
     type: APISpecType!
     fetchRequest: FetchRequest
 }
@@ -1929,7 +1929,7 @@ type EventAPIDefinition {
 type EventAPISpec {
     data: CLOB
     type: EventAPISpecType!
-    format: SpecFormat
+    format: SpecFormat!
     fetchRequest: FetchRequest
 }
 
@@ -3598,12 +3598,15 @@ func (ec *executionContext) _APISpec_format(ctx context.Context, field graphql.C
 		return obj.Format, nil
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*SpecFormat)
+	res := resTmp.(SpecFormat)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOSpecFormat2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx, field.Selections, res)
+	return ec.marshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APISpec_type(ctx context.Context, field graphql.CollectedField, obj *APISpec) graphql.Marshaler {
@@ -5226,12 +5229,15 @@ func (ec *executionContext) _EventAPISpec_format(ctx context.Context, field grap
 		return obj.Format, nil
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*SpecFormat)
+	res := resTmp.(SpecFormat)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOSpecFormat2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx, field.Selections, res)
+	return ec.marshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EventAPISpec_fetchRequest(ctx context.Context, field graphql.CollectedField, obj *EventAPISpec) graphql.Marshaler {
@@ -9153,6 +9159,9 @@ func (ec *executionContext) _APISpec(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = ec._APISpec_data(ctx, field, obj)
 		case "format":
 			out.Values[i] = ec._APISpec_format(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "type":
 			out.Values[i] = ec._APISpec_type(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -9748,6 +9757,9 @@ func (ec *executionContext) _EventAPISpec(ctx context.Context, sel ast.Selection
 			}
 		case "format":
 			out.Values[i] = ec._EventAPISpec_format(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "fetchRequest":
 			out.Values[i] = ec._EventAPISpec_fetchRequest(ctx, field, obj)
 		default:
@@ -12518,30 +12530,6 @@ func (ec *executionContext) marshalORuntimeAuth2ᚖgithubᚗcomᚋkymaᚑincubat
 		return graphql.Null
 	}
 	return ec._RuntimeAuth(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx context.Context, v interface{}) (SpecFormat, error) {
-	var res SpecFormat
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalOSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx context.Context, sel ast.SelectionSet, v SpecFormat) graphql.Marshaler {
-	return v
-}
-
-func (ec *executionContext) unmarshalOSpecFormat2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx context.Context, v interface{}) (*SpecFormat, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOSpecFormat2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx context.Context, sel ast.SelectionSet, v *SpecFormat) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return v
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
