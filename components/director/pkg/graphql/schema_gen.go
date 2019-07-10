@@ -135,6 +135,8 @@ type ComplexityRoot struct {
 	Document struct {
 		ApplicationID func(childComplexity int) int
 		Data          func(childComplexity int) int
+		Description   func(childComplexity int) int
+		DisplayName   func(childComplexity int) int
 		FetchRequest  func(childComplexity int) int
 		Format        func(childComplexity int) int
 		ID            func(childComplexity int) int
@@ -757,6 +759,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Document.Data(childComplexity), true
+
+	case "Document.description":
+		if e.complexity.Document.Description == nil {
+			break
+		}
+
+		return e.complexity.Document.Description(childComplexity), true
+
+	case "Document.displayName":
+		if e.complexity.Document.DisplayName == nil {
+			break
+		}
+
+		return e.complexity.Document.DisplayName(childComplexity), true
 
 	case "Document.fetchRequest":
 		if e.complexity.Document.FetchRequest == nil {
@@ -1878,7 +1894,7 @@ type RuntimeAuth {
 type APISpec {
     """when fetch request specified, data will be automatically populated"""
     data: CLOB
-    format: SpecFormat
+    format: SpecFormat!
     type: APISpecType!
     fetchRequest: FetchRequest
 }
@@ -1913,7 +1929,7 @@ type EventAPIDefinition {
 type EventAPISpec {
     data: CLOB
     type: EventAPISpecType!
-    format: SpecFormat
+    format: SpecFormat!
     fetchRequest: FetchRequest
 }
 
@@ -1923,6 +1939,8 @@ type Document {
     id: ID!
     applicationID: ID!
     title: String!
+    displayName: String!
+    description: String!
     format: DocumentFormat!
     """for example Service Class, API etc"""
     kind: String
@@ -3580,12 +3598,15 @@ func (ec *executionContext) _APISpec_format(ctx context.Context, field graphql.C
 		return obj.Format, nil
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*SpecFormat)
+	res := resTmp.(SpecFormat)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOSpecFormat2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx, field.Selections, res)
+	return ec.marshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APISpec_type(ctx context.Context, field graphql.CollectedField, obj *APISpec) graphql.Marshaler {
@@ -4646,6 +4667,60 @@ func (ec *executionContext) _Document_title(ctx context.Context, field graphql.C
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Document_displayName(ctx context.Context, field graphql.CollectedField, obj *Document) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Document",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DisplayName, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Document_description(ctx context.Context, field graphql.CollectedField, obj *Document) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Document",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Document_format(ctx context.Context, field graphql.CollectedField, obj *Document) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -5154,12 +5229,15 @@ func (ec *executionContext) _EventAPISpec_format(ctx context.Context, field grap
 		return obj.Format, nil
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*SpecFormat)
+	res := resTmp.(SpecFormat)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOSpecFormat2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx, field.Selections, res)
+	return ec.marshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EventAPISpec_fetchRequest(ctx context.Context, field graphql.CollectedField, obj *EventAPISpec) graphql.Marshaler {
@@ -9081,6 +9159,9 @@ func (ec *executionContext) _APISpec(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = ec._APISpec_data(ctx, field, obj)
 		case "format":
 			out.Values[i] = ec._APISpec_format(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "type":
 			out.Values[i] = ec._APISpec_type(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -9502,6 +9583,16 @@ func (ec *executionContext) _Document(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "displayName":
+			out.Values[i] = ec._Document_displayName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "description":
+			out.Values[i] = ec._Document_description(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "format":
 			out.Values[i] = ec._Document_format(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -9666,6 +9757,9 @@ func (ec *executionContext) _EventAPISpec(ctx context.Context, sel ast.Selection
 			}
 		case "format":
 			out.Values[i] = ec._EventAPISpec_format(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "fetchRequest":
 			out.Values[i] = ec._EventAPISpec_fetchRequest(ctx, field, obj)
 		default:
@@ -12436,30 +12530,6 @@ func (ec *executionContext) marshalORuntimeAuth2ᚖgithubᚗcomᚋkymaᚑincubat
 		return graphql.Null
 	}
 	return ec._RuntimeAuth(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx context.Context, v interface{}) (SpecFormat, error) {
-	var res SpecFormat
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalOSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx context.Context, sel ast.SelectionSet, v SpecFormat) graphql.Marshaler {
-	return v
-}
-
-func (ec *executionContext) unmarshalOSpecFormat2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx context.Context, v interface{}) (*SpecFormat, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOSpecFormat2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx context.Context, sel ast.SelectionSet, v *SpecFormat) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return v
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {

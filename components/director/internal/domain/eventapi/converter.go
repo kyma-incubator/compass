@@ -89,16 +89,10 @@ func (c *converter) eventAPISpecToGraphQL(in *model.EventAPISpec) *graphql.Event
 		data = &tmp
 	}
 
-	var format *graphql.SpecFormat
-	if in.Format != nil {
-		f := graphql.SpecFormat(*in.Format)
-		format = &f
-	}
-
 	return &graphql.EventAPISpec{
 		Data:         data,
 		Type:         graphql.EventAPISpecType(in.Type),
-		Format:       format,
+		Format:       graphql.SpecFormat(in.Format),
 		FetchRequest: c.fr.ToGraphQL(in.FetchRequest),
 	}
 }
@@ -108,14 +102,9 @@ func (c *converter) eventAPISpecInputFromGraphQL(in *graphql.EventAPISpecInput) 
 		return nil
 	}
 
-	var format model.SpecFormat
-	if in.Format != "" {
-		format = model.SpecFormat(in.Format)
-	}
-
 	return &model.EventAPISpecInput{
 		Data:          (*string)(in.Data),
-		Format:        &format,
+		Format:        model.SpecFormat(in.Format),
 		EventSpecType: model.EventAPISpecType(in.EventSpecType),
 		FetchRequest:  c.fr.InputFromGraphQL(in.FetchRequest),
 	}

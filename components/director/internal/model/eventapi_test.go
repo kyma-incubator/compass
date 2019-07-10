@@ -71,11 +71,11 @@ func TestEventAPIDefinitionInput_ToEventAPISpec(t *testing.T) {
 			Input: &model.EventAPISpecInput{
 				Data:          &data,
 				EventSpecType: specType,
-				Format:        &format,
+				Format:        format,
 			},
 			Expected: &model.EventAPISpec{
 				Data:   &data,
-				Format: &format,
+				Format: format,
 				Type:   specType,
 			},
 		},

@@ -59,7 +59,7 @@ func (APIDefinitionPage) IsPageable() {}
 type APISpec struct {
 	// when fetch request specified, data will be automatically populated
 	Data         *CLOB         `json:"data"`
-	Format       *SpecFormat   `json:"format"`
+	Format       SpecFormat    `json:"format"`
 	Type         APISpecType   `json:"type"`
 	FetchRequest *FetchRequest `json:"fetchRequest"`
 }
@@ -172,6 +172,8 @@ type Document struct {
 	ID            string         `json:"id"`
 	ApplicationID string         `json:"applicationID"`
 	Title         string         `json:"title"`
+	DisplayName   string         `json:"displayName"`
+	Description   string         `json:"description"`
 	Format        DocumentFormat `json:"format"`
 	// for example Service Class, API etc
 	Kind         *string       `json:"kind"`
@@ -227,7 +229,7 @@ func (EventAPIDefinitionPage) IsPageable() {}
 type EventAPISpec struct {
 	Data         *CLOB            `json:"data"`
 	Type         EventAPISpecType `json:"type"`
-	Format       *SpecFormat      `json:"format"`
+	Format       SpecFormat       `json:"format"`
 	FetchRequest *FetchRequest    `json:"fetchRequest"`
 }
 

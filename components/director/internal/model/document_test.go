@@ -14,6 +14,9 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 	id := "bar"
 	kind := "fookind"
 	data := "foodata"
+	displayName := "foodisplay"
+	description := "foodescription"
+	title := "footitle"
 	testCases := []struct {
 		Name     string
 		Input    *model.DocumentInput
@@ -22,9 +25,9 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 		{
 			Name: "All properties given",
 			Input: &model.DocumentInput{
-				Title:        "footitle",
-				DisplayName:  "foodisplay",
-				Description:  "foodescription",
+				Title:        title,
+				DisplayName:  displayName,
+				Description:  description,
 				Format:       model.DocumentFormatMarkdown,
 				Kind:         &kind,
 				Data:         &data,
@@ -33,7 +36,9 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 			Expected: &model.Document{
 				ApplicationID: applicationID,
 				ID:            id,
-				Title:         "footitle",
+				Title:         title,
+				DisplayName:   displayName,
+				Description:   description,
 				Format:        model.DocumentFormatMarkdown,
 				Kind:          &kind,
 				Data:          &data,

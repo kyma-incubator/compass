@@ -10,6 +10,8 @@ type Document struct {
 	ApplicationID string
 	ID            string
 	Title         string
+	DisplayName   string
+	Description   string
 	Format        DocumentFormat
 	// for example Service Class, API etc
 	Kind         *string
@@ -48,6 +50,8 @@ func (d *DocumentInput) ToDocument(id, applicationID string) *Document {
 		ApplicationID: applicationID,
 		ID:            id,
 		Title:         d.Title,
+		DisplayName:   d.DisplayName,
+		Description:   d.Description,
 		Format:        d.Format,
 		Kind:          d.Kind,
 		Data:          d.Data,

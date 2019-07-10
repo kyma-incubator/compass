@@ -25,7 +25,7 @@ const (
 type EventAPISpec struct {
 	Data         *string
 	Type         EventAPISpecType
-	Format       *SpecFormat
+	Format       SpecFormat
 	FetchRequest *FetchRequest
 }
 
@@ -48,7 +48,7 @@ type EventAPIDefinitionInput struct {
 type EventAPISpecInput struct {
 	Data          *string
 	EventSpecType EventAPISpecType
-	Format        *SpecFormat
+	Format        SpecFormat
 	FetchRequest  *FetchRequestInput
 }
 
