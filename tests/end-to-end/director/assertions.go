@@ -27,7 +27,7 @@ func assertApplication(t *testing.T, in graphql.ApplicationInput, actualApp Appl
 	assertWebhooks(t, in.Webhooks, actualApp.Webhooks)
 	assertDocuments(t, in.Documents, actualApp.Documents.Data)
 	assertAPI(t, in.Apis, actualApp.Apis.Data)
-	assertEvents(t, in.EventAPIs, actualApp.EventAPIs.Data)
+	assertEventsAPI(t, in.EventAPIs, actualApp.EventAPIs.Data)
 }
 
 func assertWebhooks(t *testing.T, in []*graphql.ApplicationWebhookInput, actual []graphql.ApplicationWebhook) {
@@ -103,6 +103,8 @@ func assertDocuments(t *testing.T, in []*graphql.DocumentInput, actual []*graphq
 				continue
 			}
 			found = true
+			assert.Equal(t, inDocu.DisplayName, actDocu.DisplayName)
+			assert.Equal(t, inDocu.Description, actDocu.Description)
 			assert.Equal(t, inDocu.Data, actDocu.Data)
 			assert.Equal(t, inDocu.Kind, actDocu.Kind)
 			assert.Equal(t, inDocu.Format, actDocu.Format)
@@ -143,9 +145,9 @@ func assertAPI(t *testing.T, in []*graphql.APIDefinitionInput, actual []*graphql
 			assertAuth(t, inApi.DefaultAuth, actApi.DefaultAuth)
 			assertVersion(t, inApi.Version, actApi.Version)
 			if inApi.Spec != nil {
+				require.NotNil(t, actApi.Spec)
 				assert.Equal(t, inApi.Spec.Data, actApi.Spec.Data)
-				require.NotNil(t, actApi.Spec.Format)
-				assert.Equal(t, inApi.Spec.Format, *actApi.Spec.Format)
+				assert.Equal(t, inApi.Spec.Format, actApi.Spec.Format)
 				assert.Equal(t, inApi.Spec.Type, actApi.Spec.Type)
 				assertFetchRequest(t, inApi.Spec.FetchRequest, actApi.Spec.FetchRequest)
 			} else {
@@ -168,7 +170,7 @@ func assertVersion(t *testing.T, in *graphql.VersionInput, actual *graphql.Versi
 	}
 }
 
-func assertEvents(t *testing.T, in []*graphql.EventAPIDefinitionInput, actual []*graphql.EventAPIDefinition) {
+func assertEventsAPI(t *testing.T, in []*graphql.EventAPIDefinitionInput, actual []*graphql.EventAPIDefinition) {
 	assert.Equal(t, len(in), len(actual))
 	for _, inEv := range in {
 		found := false
@@ -181,8 +183,9 @@ func assertEvents(t *testing.T, in []*graphql.EventAPIDefinitionInput, actual []
 			assert.Equal(t, inEv.Description, actEv.Description)
 			assertVersion(t, inEv.Version, actEv.Version)
 			if inEv.Spec != nil {
-				assert.NotNil(t, actEv.Spec)
+				require.NotNil(t, actEv.Spec)
 				assert.Equal(t, inEv.Spec.Data, actEv.Spec.Data)
+				assert.Equal(t, inEv.Spec.Format, actEv.Spec.Format)
 				assert.Equal(t, inEv.Spec.EventSpecType, actEv.Spec.Type)
 				assertFetchRequest(t, inEv.Spec.FetchRequest, actEv.Spec.FetchRequest)
 			} else {

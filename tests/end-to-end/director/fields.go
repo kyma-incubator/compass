@@ -109,6 +109,8 @@ func (fp *gqlFieldsProvider) ForDocument() string {
 		id
 		applicationID
 		title
+		displayName
+		description
 		format
 		kind
 		data
