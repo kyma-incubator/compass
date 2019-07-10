@@ -1,0 +1,20 @@
+kind: Installation
+metadata:
+  name: kyma-installation
+  namespace: default
+spec:
+  components:
+    - name: "cluster-essentials"
+      namespace: "kyma-system"
+    - name: "testing"
+      namespace: "kyma-system"
+    - name: "istio-init"
+      namespace: "istio-system"
+    - name: "istio"
+      namespace: "istio-system"
+    - name: "xip-patch"
+      namespace: "kyma-installer"
+    - name: "istio-kyma-patch"
+      namespace: "istio-system"
+    - name: "dex"
+      namespace: "kyma-system"
