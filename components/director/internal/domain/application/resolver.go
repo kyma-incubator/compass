@@ -17,8 +17,6 @@ type ApplicationService interface {
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error)
 	AddLabel(ctx context.Context, applicationID string, key string, values []string) error
 	DeleteLabel(ctx context.Context, applicationID string, key string, values []string) error
-	AddAnnotation(ctx context.Context, applicationID string, key string, value interface{}) error
-	DeleteAnnotation(ctx context.Context, applicationID string, key string) error
 }
 
 //go:generate mockery -name=ApplicationConverter -output=automock -outpkg=automock -case=underscore
@@ -229,37 +227,6 @@ func (r *Resolver) DeleteApplicationLabel(ctx context.Context, applicationID str
 	return &graphql.Label{
 		Key:    key,
 		Values: app.Labels[key],
-	}, nil
-}
-
-func (r *Resolver) AddApplicationAnnotation(ctx context.Context, applicationID string, key string, value interface{}) (*graphql.Annotation, error) {
-	err := r.appSvc.AddAnnotation(ctx, applicationID, key, value)
-	if err != nil {
-		return nil, err
-	}
-
-	return &graphql.Annotation{
-		Key:   key,
-		Value: value,
-	}, nil
-}
-
-func (r *Resolver) DeleteApplicationAnnotation(ctx context.Context, applicationID string, key string) (*graphql.Annotation, error) {
-	app, err := r.appSvc.Get(ctx, applicationID)
-	if err != nil {
-		return nil, err
-	}
-
-	value := app.Annotations[key]
-
-	err = r.appSvc.DeleteAnnotation(ctx, applicationID, key)
-	if err != nil {
-		return nil, err
-	}
-
-	return &graphql.Annotation{
-		Key:   key,
-		Value: value,
 	}, nil
 }
 

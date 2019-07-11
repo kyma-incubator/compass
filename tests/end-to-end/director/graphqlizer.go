@@ -21,9 +21,6 @@ func (g *graphqlizer) ApplicationInputToGQL(in graphql.ApplicationInput) (string
         {{- if .Labels }}
 		labels: {{ LabelsToGQL .Labels}},
 		{{- end }}
-		{{- if .Annotations }}
-		annotations: {{ AnnotationsToGQL .Annotations}},
-		{{- end}}
 		{{- if .Webhooks }}
 		webhooks: [
 			{{- range $i, $e := .Webhooks }} 
@@ -153,15 +150,6 @@ func (g *graphqlizer) QueryParamsToGQL(in graphql.QueryParams) (string, error) {
 		`)
 }
 
-func (g *graphqlizer) AnnotationsToGQL(in graphql.Annotations) (string, error) {
-	return g.genericToGQL(in, `{
-		{{- range $k,$v := . }}
-			{{$k}}: "{{$v}}"
-		{{- end}}
-	}
-		`)
-}
-
 func (g *graphqlizer) ApplicationWebhookInputToGQL(in *graphql.ApplicationWebhookInput) (string, error) {
 	return g.genericToGQL(in, `{
 		type: {{.Type}},
@@ -261,9 +249,6 @@ func (g *graphqlizer) RuntimeInputToGQL(in graphql.RuntimeInput) (string, error)
 		{{- if .Labels }}
 		labels: {{ LabelsToGQL .Labels}},
 		{{- end }}
-		{{- if .Annotations }}
-		annotations: {{AnnotationsToGQL .Annotations}}
-		{{- end }}
 	}`)
 }
 
@@ -273,7 +258,6 @@ func (g *graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	fm["FetchRequesstInputToGQL"] = g.FetchRequestInputToGQL
 	fm["AuthInputToGQL"] = g.AuthInputToGQL
 	fm["LabelsToGQL"] = g.LabelsToGQL
-	fm["AnnotationsToGQL"] = g.AnnotationsToGQL
 	fm["ApplicationWebhookInputToGQL"] = g.ApplicationWebhookInputToGQL
 	fm["APIDefinitionInputToGQL"] = g.APIDefinitionInputToGQL
 	fm["EventAPIDefinitionInputToGQL"] = g.EventAPIDefinitionInputToGQL

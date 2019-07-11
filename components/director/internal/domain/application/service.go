@@ -184,44 +184,6 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 	return nil
 }
 
-func (s *service) AddAnnotation(ctx context.Context, applicationID string, key string, value interface{}) error {
-	app, err := s.Get(ctx, applicationID)
-	if err != nil {
-		return errors.Wrap(err, "while getting Application")
-	}
-
-	err = app.AddAnnotation(key, value)
-	if err != nil {
-		return errors.Wrapf(err, "while adding new annotation %s", key)
-	}
-
-	err = s.app.Update(app)
-	if err != nil {
-		return errors.Wrapf(err, "while updating Application")
-	}
-
-	return nil
-}
-
-func (s *service) DeleteAnnotation(ctx context.Context, applicationID string, key string) error {
-	app, err := s.Get(ctx, applicationID)
-	if err != nil {
-		return errors.Wrap(err, "while getting Application")
-	}
-
-	err = app.DeleteAnnotation(key)
-	if err != nil {
-		return errors.Wrapf(err, "while deleting annotation with key %s", key)
-	}
-
-	err = s.app.Update(app)
-	if err != nil {
-		return errors.Wrapf(err, "while updating Application with ID %s", applicationID)
-	}
-
-	return nil
-}
-
 func (s *service) createRelatedResources(in model.ApplicationInput, applicationID string) error {
 	var err error
 

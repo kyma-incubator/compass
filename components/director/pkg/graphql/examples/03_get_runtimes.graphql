@@ -9,7 +9,6 @@ query {
             name
             description
             labels
-            annotations
             status {
                 condition
                 timestamp

@@ -5,7 +5,6 @@ mutation {
             name: "EC",
             description: "Lorem ipsum",
             labels: "",
-            annotations: "",
             webhooks: [{type:CONFIGURATION_CHANGED,url: "",auth: {credential: { basic: {
                 password: "aaa",
                 username: "bbb",

@@ -1,0 +1,4 @@
+mutation {
+    addApplicationLabel(applicationID: "123",key: "groups",values: ["production","experimental"])
+    deleteApplicationLabel(applicationID: "123",key: "groups",values: ["experimental"])
+}

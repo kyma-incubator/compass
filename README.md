@@ -42,7 +42,7 @@ helm install --name "compass" ./chart/compass --tls
 
 To install Compass along with the minimal Kyma installation from the `master` branch, run this script:
 ```bash
-./installation/scripts/run.sh
+./installation/cmd/run.sh
 ```
 
 You can also specify Kyma version, such as 1.2.2 or newer:

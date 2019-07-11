@@ -26,7 +26,6 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 		Status:         c.statusToGraphQL(in.Status),
 		Name:           in.Name,
 		Description:    in.Description,
-		Annotations:    in.Annotations,
 		Labels:         in.Labels,
 		HealthCheckURL: in.HealthCheckURL,
 	}
@@ -46,11 +45,6 @@ func (c *converter) MultipleToGraphQL(in []*model.Application) []*graphql.Applic
 }
 
 func (c *converter) InputFromGraphQL(in graphql.ApplicationInput) model.ApplicationInput {
-	var annotations map[string]interface{}
-	if in.Annotations != nil {
-		annotations = *in.Annotations
-	}
-
 	var labels map[string][]string
 	if in.Labels != nil {
 		labels = *in.Labels
@@ -59,7 +53,6 @@ func (c *converter) InputFromGraphQL(in graphql.ApplicationInput) model.Applicat
 	return model.ApplicationInput{
 		Name:           in.Name,
 		Description:    in.Description,
-		Annotations:    annotations,
 		Labels:         labels,
 		HealthCheckURL: in.HealthCheckURL,
 		Webhooks:       c.webhook.MultipleInputFromGraphQL(in.Webhooks),

@@ -19,8 +19,6 @@ type RuntimeService interface {
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error)
 	AddLabel(ctx context.Context, runtimeID string, key string, values []string) error
 	DeleteLabel(ctx context.Context, runtimeID string, key string, values []string) error
-	AddAnnotation(ctx context.Context, runtimeID string, key string, value interface{}) error
-	DeleteAnnotation(ctx context.Context, runtimeID string, key string) error
 }
 
 //go:generate mockery -name=RuntimeConverter -output=automock -outpkg=automock -case=underscore
@@ -157,34 +155,5 @@ func (r *Resolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key
 	return &graphql.Label{
 		Key:    key,
 		Values: runtime.Labels[key],
-	}, nil
-}
-func (r *Resolver) AddRuntimeAnnotation(ctx context.Context, runtimeID string, key string, value interface{}) (*graphql.Annotation, error) {
-	err := r.svc.AddAnnotation(ctx, runtimeID, key, value)
-	if err != nil {
-		return nil, err
-	}
-
-	return &graphql.Annotation{
-		Key:   key,
-		Value: value,
-	}, nil
-}
-func (r *Resolver) DeleteRuntimeAnnotation(ctx context.Context, runtimeID string, key string) (*graphql.Annotation, error) {
-	runtime, err := r.svc.Get(ctx, runtimeID)
-	if err != nil {
-		return nil, err
-	}
-
-	value := runtime.Annotations[key]
-
-	err = r.svc.DeleteAnnotation(ctx, runtimeID, key)
-	if err != nil {
-		return nil, err
-	}
-
-	return &graphql.Annotation{
-		Key:   key,
-		Value: value,
 	}, nil
 }

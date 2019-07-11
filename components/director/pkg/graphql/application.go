@@ -5,7 +5,6 @@ type Application struct {
 	Name           string             `json:"name"`
 	Description    *string            `json:"description"`
 	Labels         Labels             `json:"labels"`
-	Annotations    Annotations        `json:"annotations"`
 	Status         *ApplicationStatus `json:"status"`
 	HealthCheckURL *string            `json:"healthCheckURL"`
 }

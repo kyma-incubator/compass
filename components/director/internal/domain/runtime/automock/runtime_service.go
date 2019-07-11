@@ -12,20 +12,6 @@ type RuntimeService struct {
 	mock.Mock
 }
 
-// AddAnnotation provides a mock function with given fields: ctx, runtimeID, key, value
-func (_m *RuntimeService) AddAnnotation(ctx context.Context, runtimeID string, key string, value interface{}) error {
-	ret := _m.Called(ctx, runtimeID, key, value)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, interface{}) error); ok {
-		r0 = rf(ctx, runtimeID, key, value)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // AddLabel provides a mock function with given fields: ctx, runtimeID, key, values
 func (_m *RuntimeService) AddLabel(ctx context.Context, runtimeID string, key string, values []string) error {
 	ret := _m.Called(ctx, runtimeID, key, values)
@@ -68,20 +54,6 @@ func (_m *RuntimeService) Delete(ctx context.Context, id string) error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
 		r0 = rf(ctx, id)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// DeleteAnnotation provides a mock function with given fields: ctx, runtimeID, key
-func (_m *RuntimeService) DeleteAnnotation(ctx context.Context, runtimeID string, key string) error {
-	ret := _m.Called(ctx, runtimeID, key)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
-		r0 = rf(ctx, runtimeID, key)
 	} else {
 		r0 = ret.Error(0)
 	}

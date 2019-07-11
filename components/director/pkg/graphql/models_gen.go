@@ -71,16 +71,10 @@ type APISpecInput struct {
 	FetchRequest *FetchRequestInput `json:"fetchRequest"`
 }
 
-type Annotation struct {
-	Key   string      `json:"key"`
-	Value interface{} `json:"value"`
-}
-
 type ApplicationInput struct {
 	Name           string                     `json:"name"`
 	Description    *string                    `json:"description"`
 	Labels         *Labels                    `json:"labels"`
-	Annotations    *Annotations               `json:"annotations"`
 	Webhooks       []*ApplicationWebhookInput `json:"webhooks"`
 	HealthCheckURL *string                    `json:"healthCheckURL"`
 	Apis           []*APIDefinitionInput      `json:"apis"`
@@ -313,7 +307,6 @@ type Runtime struct {
 	Name        string         `json:"name"`
 	Description *string        `json:"description"`
 	Labels      Labels         `json:"labels"`
-	Annotations Annotations    `json:"annotations"`
 	Status      *RuntimeStatus `json:"status"`
 	// TODO: directive for checking auth
 	AgentAuth *Auth `json:"agentAuth"`
@@ -325,10 +318,9 @@ type RuntimeAuth struct {
 }
 
 type RuntimeInput struct {
-	Name        string       `json:"name"`
-	Description *string      `json:"description"`
-	Labels      *Labels      `json:"labels"`
-	Annotations *Annotations `json:"annotations"`
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+	Labels      *Labels `json:"labels"`
 }
 
 type RuntimePage struct {

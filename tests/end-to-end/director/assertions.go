@@ -13,11 +13,6 @@ func assertApplication(t *testing.T, in graphql.ApplicationInput, actualApp Appl
 
 	assert.Equal(t, in.Name, actualApp.Name)
 	assert.Equal(t, in.Description, actualApp.Description)
-	if in.Annotations != nil {
-		assert.Equal(t, *in.Annotations, actualApp.Annotations)
-	} else {
-		assert.Empty(t, actualApp.Annotations)
-	}
 	if in.Labels != nil {
 		assert.Equal(t, *in.Labels, actualApp.Labels)
 	} else {
@@ -200,5 +195,4 @@ func assertRuntime(t *testing.T, in graphql.RuntimeInput, actual graphql.Runtime
 	assert.Equal(t, in.Name, actual.Name)
 	assert.Equal(t, *in.Description, *actual.Description)
 	assert.Equal(t, *in.Labels, actual.Labels)
-	assert.Equal(t, *in.Annotations, actual.Annotations)
 }
