@@ -79,49 +79,67 @@ To manage Labels and LabelDefinitions, the following GraphQL API is proposed:
 type Query {
     # (...)
     
-    labelDefinitions: LabelDefinition
-    labelKeys: [String!]!
+    labelDefinitions: [LabelDefinition!]!
+    labels: [Label!]!
+    label(key: String!): Label
 }
 
 type Mutation {
     # (...)
 
-    createLabelDefinition(in: LabelDefinitionInput!): Label
-    deleteLabelDefinition(id: ID!): Label
+    createLabelDefinition(in: LabelDefinitionInput!): LabelDefinition!
+
+
+    """It won't allow to delete LabelDefinition if some labels use it"""
+    deleteLabelDefinition(key: ID!): LabelDefinition
+
+    """It won't allow to create Label if LabelDefinition for the key is missing"""
+    addSingleLabel(runtimeID: ID, applicationID: ID, key: String!, value: String!): Label!
+    addArrayLabel(runtimeID: ID, applicationID: ID, key: String!, values: [String!]!): Label!
+
+    removeLabel(runtimeID: ID, applicationID: ID, key: String!): Label!
+
+    addArrayLabelValue(runtimeID: ID, applicationID: ID, key: String!, value: String!): Label!
+
+    """It won't allow to remove label value if the label is not of array type"""
+    removeArrayLabelValue(runtimeID: ID, applicationID: ID, key: String!, value: String!): Label!
 }
 
-interface LabelDefinition {
-    name: String!
+# Label Definition
+
+interface LabelDefinitionBase {
+    key: String!
     type: LabelDefinitionType!
 }
 
-type StringLabelDefinition implements LabelDefinition {
-    name: String!
+type GenericLabelDefinition implements LabelDefinitionBase {
+    key: String!
     type: LabelDefinitionType!
 }
 
-type NumberLabelDefinition implements LabelDefinition {
-    name: String!
-    type: LabelDefinitionType!
-}
-
-type EnumLabelDefinition implements LabelDefinition {
-    name: String!
+type EnumLabelDefinition implements LabelDefinitionBase {
+    key: String!
     type: LabelDefinitionType!
     enum: [String!]!
 }
 
-type JSONSchemaLabelDefinition implements LabelDefinition {
-    name: String!
+type JSONSchemaLabelDefinition implements LabelDefinitionBase {
+    key: String!
     type: LabelDefinitionType!
     schema: CLOB!
 }
 
+union LabelDefinition = GenericLabelDefinition | EnumLabelDefinition | JSONSchemaLabelDefinition
+
+enum LabelDefinitionType! {
+    JSON_SCHEMA
+    STRING
+    ENUM
+}
 
 type LabelDefinitionInput {
     name: String!
     type: LabelDefinitionType!
-
     jsonSchema: CLOB
     stringArray: [String!]
     enum: [String!]
@@ -129,25 +147,40 @@ type LabelDefinitionInput {
     string: String
 }
 
-type Label {
+# Label
+
+interface LabelBase {
     key: String!
+    definition: LabelDefinition!
     runtimeID: ID
     applicationID: ID
     runtime: Runtime # Resolver
     application: Application # Resolver
 }
 
-type JSONSchemaLabel {
-
+type SingleLabel implements LabelBase {
+    key: String!
+    definition: LabelDefinition!
+    runtimeID: ID
+    applicationID: ID
+    runtime: Runtime # Resolver
+    application: Application # Resolver
+    value: String!
 }
 
-enum LabelDefinitionType! {
-    JSON_SCHEMA
-    STRING
-    NUMBER
-    STRING_ARRAY
-    ENUM
+type ArrayLabel implements LabelBase {
+    key: String!
+    definition: LabelDefinition!
+    runtimeID: ID
+    applicationID: ID
+    runtime: Runtime # Resolver
+    application: Application # Resolver
+    values: [String!]!
 }
+
+union Label = SingleLabel | ArrayLabel
+
+
 
 ```
 
