@@ -20,20 +20,31 @@ type DocumentConverter interface {
 	InputFromGraphQL(in *graphql.DocumentInput) *model.DocumentInput
 }
 
+//go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
+type ApplicationService interface {
+	Get(ctx context.Context, id string) (*model.Application, error)
+}
 type Resolver struct {
 	svc       DocumentService
+	appSvc    ApplicationService
 	converter DocumentConverter
 }
 
-func NewResolver(svc DocumentService, frConverter FetchRequestConverter) *Resolver {
+func NewResolver(svc DocumentService, appSvc ApplicationService, frConverter FetchRequestConverter) *Resolver {
 	return &Resolver{
 		svc:       svc,
+		appSvc:    appSvc,
 		converter: &converter{frConverter: frConverter},
 	}
 }
 
 func (r *Resolver) AddDocument(ctx context.Context, applicationID string, in graphql.DocumentInput) (*graphql.Document, error) {
 	convertedIn := r.converter.InputFromGraphQL(&in)
+
+	_, err := r.appSvc.Get(ctx, applicationID)
+	if err != nil {
+		return nil, err
+	}
 
 	id, err := r.svc.Create(ctx, applicationID, *convertedIn)
 	if err != nil {

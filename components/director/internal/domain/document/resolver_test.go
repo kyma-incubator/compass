@@ -25,6 +25,7 @@ func TestResolver_AddDocument(t *testing.T) {
 	testCases := []struct {
 		Name             string
 		ServiceFn        func() *automock.DocumentService
+		AppSvcFn         func() *automock.ApplicationService
 		ConverterFn      func() *automock.DocumentConverter
 		ExpectedDocument *graphql.Document
 		ExpectedErr      error
@@ -37,6 +38,11 @@ func TestResolver_AddDocument(t *testing.T) {
 				svc.On("Get", context.TODO(), id).Return(modelDocument, nil).Once()
 				return svc
 			},
+			AppSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Get", context.TODO(), applicationID).Return(nil, nil)
+				return appSvc
+			},
 			ConverterFn: func() *automock.DocumentConverter {
 				conv := &automock.DocumentConverter{}
 				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
@@ -47,11 +53,36 @@ func TestResolver_AddDocument(t *testing.T) {
 			ExpectedErr:      nil,
 		},
 		{
+			Name: "Returns error when application not exits",
+			ServiceFn: func() *automock.DocumentService {
+				svc := &automock.DocumentService{}
+				return svc
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Get", context.TODO(), applicationID).Return(nil, testErr)
+				return appSvc
+			},
+			ConverterFn: func() *automock.DocumentConverter {
+				conv := &automock.DocumentConverter{}
+				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+				return conv
+			},
+
+			ExpectedDocument: nil,
+			ExpectedErr:      testErr,
+		},
+		{
 			Name: "Returns error when document creation failed",
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
 				svc.On("Create", context.TODO(), applicationID, *modelInput).Return("", testErr).Once()
 				return svc
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Get", context.TODO(), applicationID).Return(nil, nil)
+				return appSvc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
 				conv := &automock.DocumentConverter{}
@@ -69,6 +100,11 @@ func TestResolver_AddDocument(t *testing.T) {
 				svc.On("Get", context.TODO(), id).Return(nil, testErr).Once()
 				return svc
 			},
+			AppSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Get", context.TODO(), applicationID).Return(nil, nil)
+				return appSvc
+			},
 			ConverterFn: func() *automock.DocumentConverter {
 				conv := &automock.DocumentConverter{}
 				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
@@ -82,9 +118,10 @@ func TestResolver_AddDocument(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
+			appSvc := testCase.AppSvcFn()
 			converter := testCase.ConverterFn()
 
-			resolver := document.NewResolver(svc, nil)
+			resolver := document.NewResolver(svc, appSvc, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -95,6 +132,7 @@ func TestResolver_AddDocument(t *testing.T) {
 			assert.Equal(t, testCase.ExpectedErr, err)
 
 			svc.AssertExpectations(t)
+			appSvc.AssertExpectations(t)
 			converter.AssertExpectations(t)
 		})
 	}
@@ -169,7 +207,7 @@ func TestResolver_DeleteDocument(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := document.NewResolver(svc, nil)
+			resolver := document.NewResolver(svc, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when

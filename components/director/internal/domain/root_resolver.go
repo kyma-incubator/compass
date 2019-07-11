@@ -62,7 +62,7 @@ func NewRootResolver() *RootResolver {
 		app:         application.NewResolver(appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter),
 		api:         api.NewResolver(apiSvc, apiConverter, authConverter),
 		eventAPI:    eventapi.NewResolver(eventAPISvc, eventAPIConverter),
-		doc:         document.NewResolver(docSvc, frConverter),
+		doc:         document.NewResolver(docSvc, appSvc, frConverter),
 		runtime:     runtime.NewResolver(runtimeSvc, runtimeConverter),
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
 	}
