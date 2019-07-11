@@ -31,3 +31,6 @@ global:
     gateway:
       name: compass-istio-gateway
       namespace: compass-system
+
+  storage:
+    useEmbedded: true
