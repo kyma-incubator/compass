@@ -1,0 +1,113 @@
+apiVersion: v1
+data:
+    check-db-connection.sh: |
+        #!/usr/bin/env bash
+        apk add --no-cache postgresql-client
+
+        for var in DB_USER DB_HOST DB_NAME DB_PORT; do
+            if [ -z "${!var}" ] ; then
+                echo "ERROR: $var is not set"
+                discoverUnsetVar=true
+            fi
+        done
+        if [ "${discoverUnsetVar}" = true ] ; then
+            exit 1
+        fi
+
+        for i in {1..30}
+        do
+            pg_isready -U "$DB_USER" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME"
+            if [ $? -eq 0 ]
+            then
+                exit 0
+            fi
+            sleep 1
+        done
+
+        exit 1
+kind: ConfigMap
+metadata:
+    annotations:
+        "helm.sh/hook": post-install,post-upgrade
+        "helm.sh/hook-weight": "-1"
+        "helm.sh/hook-delete-policy": before-hook-creation
+    labels:
+        job: compass-migration
+    name: compass-migration-scripts
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+    name: compass-migration
+    labels:
+        app: {{ .Chart.Name }}
+        release: {{ .Release.Name }}
+    annotations:
+        "helm.sh/hook": post-install,post-upgrade
+        "helm.sh/hook-weight": "0"
+        "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+    template:
+        metadata:
+            labels:
+                app: {{ .Chart.Name }}
+                release: {{ .Release.Name }}
+        spec:
+            shareProcessNamespace: true
+            restartPolicy: OnFailure
+            containers:
+                - name: migrator
+{{/*                  image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.schema_migrator.dir }}compass-schema-migrator:{{ .Values.global.images.schema_migrator.version }}*/}}
+{{/*                  imagePullPolicy: IfNotPresent*/}}
+                  image: "docker.io/tgorgol/compass-schema-migrator:latest"
+                  imagePullPolicy: Always
+                  env:
+                      - name: DB_USER
+                        valueFrom:
+                            secretKeyRef:
+                                name: compass-postgresql
+                                key: postgresql-username
+                      - name: DB_PASSWORD
+                        valueFrom:
+                            secretKeyRef:
+                                name: compass-postgresql
+                                key: postgresql-password
+                      - name: DB_HOST
+                        valueFrom:
+                            secretKeyRef:
+                                name: compass-postgresql
+                                key: postgresql-serviceName
+                      - name: DB_PORT
+                        valueFrom:
+                            secretKeyRef:
+                                name: compass-postgresql
+                                key: postgresql-servicePort
+                      - name: DB_NAME
+                        valueFrom:
+                            secretKeyRef:
+                                name: compass-postgresql
+                                key: postgresql-databaseName
+                      - name: DB_SSL
+                        valueFrom:
+                            secretKeyRef:
+                                name: compass-postgresql
+                                key: postgresql-sslMode
+                  command:
+                    - "/bin/sh"
+                  args:
+                    - "-c"
+                    - "apk add --no-cache bash; \
+                       echo '# WAITING FOR CONNECTION WITH DATABASE #'; bash /scripts/check-db-connection.sh; exit_code=$?; \
+                       if [ $exit_code -ne 0 ]; then echo '# COULD NOT ESTABLISH CONNECTION TO DATABASE #' && exit $exit_code; fi; \
+                       echo '# STARTING MIGRATION #'; bash ./run.sh; exit_code=$?; \
+                       if [ $exit_code -ne 0 ]; then echo '# MIGRATION FAILED #' && exit $exit_code; fi; \
+                       echo '# KILLING PILOT-AGENT #'; pkill -TERM pilot-agent; sleep 4; exit $exit_code;"
+                  volumeMounts:
+                      - mountPath: /scripts
+                        name: scripts
+                        readOnly: true
+            volumes:
+                - configMap:
+                      defaultMode: 420
+                      name: compass-migration-scripts
+                  name: scripts
