@@ -12,13 +12,13 @@ import (
 	gcli "github.com/machinebox/graphql"
 )
 
-var tc = testContext{graphqlizer: graphqlizer{}, gqlFieldsProvider: gqlFieldsProvider{}, cli: newGraphqlClient()}
+var tc = testContext{graphqlizer: graphqlizer{}, gqlFieldsProvider: gqlFieldsProvider{}, cli: newGraphQLClient()}
 
-func newGraphqlClient() *gcli.Client {
-	return gcli.NewClient(getDirectorURL(), gcli.WithHTTPClient(newAuthorizedHttpClient()))
+func newGraphQLClient() *gcli.Client {
+	return gcli.NewClient(getDirectorURL(), gcli.WithHTTPClient(newAuthorizedHTTPClient()))
 }
 
-func newAuthorizedHttpClient() *http.Client {
+func newAuthorizedHTTPClient() *http.Client {
 	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
