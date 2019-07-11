@@ -15,8 +15,8 @@ COPY ./licenses ${BASE_APP_DIR}/licenses
 # Build app
 #
 
-RUN go build -v -o main ./cmd/main.go
-RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
+RUN go build -v -o runtime-agent ./cmd/main.go
+RUN mkdir /app && mv ./runtime-agent /app/runtime-agent && mv ./licenses /app/licenses
 
 FROM alpine:3.9
 LABEL source = git@github.com:kyma-incubator/compass.git
@@ -32,4 +32,4 @@ COPY --from=builder /app /app
 # Run app
 #
 
-CMD ["/app/main"]
+CMD ["/app/runtime-agent"]
