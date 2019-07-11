@@ -3,11 +3,13 @@
 The following documents describes the labeling feature.
 
 
-## Use cases
+## Requirements
 
-- Validating label values against JSON schema / type
+- Creating, Reading and deleting all labels within tenant
+- Defining `scenarios` label values and using them for labelling Applications and Runtimes
 - Reading all label keys for tenant
-
+- Validating label values against JSON schema / type
+- Labelling new Application/Runtime with `scenarios: default` label, if no scenario label is specified
 
 ## Terms
 In this document there are few terms, which are used:
@@ -35,7 +37,7 @@ type Label struct {
 Describes what's the type of value for a label key. Validation will be done against the LabelDefinition JSON Schema or type.
 Label definition contains `name`, which is unique and represents a label `key`.
 
-LabelDefinition is not reusable between two labels with different keys. LabelDefinition is tenant-specific.
+LabelDefinition is *not* reusable between two labels with different keys. LabelDefinition is tenant-specific.
 
 ```go
 type LabelDefinition struct {
@@ -68,7 +70,95 @@ const (
 
 It is a Label with key `scenarios`, which references LabelDefinition of type `Enum`. Based on the `scenarios` Label, Applications and Runtimes are connected. Runtime Agent does query for all Scenarios assigned to Application.
 
-## Workflows
+## API
+
+To manage Labels and LabelDefinitions, the following GraphQL API is proposed:
+
+```graphql
+
+type Query {
+    # (...)
+    
+    labelDefinitions: LabelDefinition
+    labelKeys: [String!]!
+}
+
+type Mutation {
+    # (...)
+
+    createLabelDefinition(in: LabelDefinitionInput!): Label
+    deleteLabelDefinition(id: ID!): Label
+}
+
+interface LabelDefinition {
+    name: String!
+    type: LabelDefinitionType!
+}
+
+type StringLabelDefinition implements LabelDefinition {
+    name: String!
+    type: LabelDefinitionType!
+}
+
+type NumberLabelDefinition implements LabelDefinition {
+    name: String!
+    type: LabelDefinitionType!
+}
+
+type EnumLabelDefinition implements LabelDefinition {
+    name: String!
+    type: LabelDefinitionType!
+    enum: [String!]!
+}
+
+type JSONSchemaLabelDefinition implements LabelDefinition {
+    name: String!
+    type: LabelDefinitionType!
+    schema: CLOB!
+}
+
+
+type LabelDefinitionInput {
+    name: String!
+    type: LabelDefinitionType!
+
+    jsonSchema: CLOB
+    stringArray: [String!]
+    enum: [String!]
+    number: Int
+    string: String
+}
+
+type Label {
+    key: String!
+    runtimeID: ID
+    applicationID: ID
+    runtime: Runtime # Resolver
+    application: Application # Resolver
+}
+
+type JSONSchemaLabel {
+
+}
+
+enum LabelDefinitionType! {
+    JSON_SCHEMA
+    STRING
+    NUMBER
+    STRING_ARRAY
+    ENUM
+}
+
+```
+
 
 ## Storage
 
+// TODO:
+
+## Workflows
+
+### Creating Application / Runtime without label
+
+1. User creates an Application without label.
+1. Label `scenarios` is automatically created with the reference
