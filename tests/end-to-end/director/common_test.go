@@ -20,7 +20,8 @@ func newGraphqlClient() *gcli.Client {
 
 func newAuthorizedHttpClient() *http.Client {
 	transport := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
 
 	return &http.Client{
 		Transport: transport,
