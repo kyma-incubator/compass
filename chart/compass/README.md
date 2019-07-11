@@ -18,4 +18,4 @@ To learn more about the Compass, see the [Overview](https://github.com/kyma-incu
 
 | Parameter | Description | Values | Default |
 | --- | --- | --- | --- |
-| `storage.useEmbedded` | Specifies whether `postgresql` chart should be installed | true/false | `true` |
+| `database.useEmbedded` | Specifies whether `postgresql` chart should be installed | true/false | `true` |
