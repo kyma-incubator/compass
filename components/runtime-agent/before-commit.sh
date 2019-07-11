@@ -35,7 +35,7 @@ fi
 
 ${buildEnv} go build -o runtime-agent ./cmd/main.go
 goBuildResult=$?
-rm director
+rm runtime-agent
 
 if [ ${goBuildResult} != 0 ]; then
 	echo -e "${RED}✗ go build${NC}\n$goBuildResult${NC}"
