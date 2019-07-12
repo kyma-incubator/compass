@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -27,22 +29,38 @@ type APIConverter interface {
 	InputFromGraphQL(in *graphql.APIDefinitionInput) *model.APIDefinitionInput
 }
 
-type Resolver struct {
-	svc           APIService
-	converter     APIConverter
-	authConverter AuthConverter
+//go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
+type ApplicationService interface {
+	Exist(ctx context.Context, id string) (bool, error)
 }
 
-func NewResolver(svc APIService, converter APIConverter, authConverter AuthConverter) *Resolver {
+type Resolver struct {
+	svc            APIService
+	applicationSvc ApplicationService
+	converter      APIConverter
+	authConverter  AuthConverter
+}
+
+func NewResolver(svc APIService, appSvc ApplicationService, converter APIConverter, authConverter AuthConverter) *Resolver {
 	return &Resolver{
-		svc:           svc,
-		converter:     converter,
-		authConverter: authConverter,
+		svc:            svc,
+		applicationSvc: appSvc,
+		converter:      converter,
+		authConverter:  authConverter,
 	}
 }
 
 func (r *Resolver) AddAPI(ctx context.Context, applicationID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
 	convertedIn := r.converter.InputFromGraphQL(&in)
+
+	found, err := r.applicationSvc.Exist(ctx, applicationID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while checking existence of Application")
+	}
+
+	if found == false {
+		return nil, errors.New("Cannot add API to not existing application")
+	}
 
 	id, err := r.svc.Create(ctx, applicationID, *convertedIn)
 	if err != nil {
