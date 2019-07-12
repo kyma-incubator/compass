@@ -1,10 +1,10 @@
 # Labeling
 
-The following documents describes the labeling feature.
+The following document describes the labeling feature.
 
 ## Requirements
 
-- Creating, Reading and deleting all labels within tenant
+- Creating, reading and deleting all labels within tenant
 - Defining `scenarios` label values and using them for labeling Applications and Runtimes
 - Reading all label keys for tenant
 - Validating label values against JSON schema / type
@@ -16,7 +16,7 @@ In this document there are few terms, which are used:
 **Label**
 
 Label is a tag in a form of `key:value`, which can be assigned to an Application or Runtime. Label references **LabelDefinition** which defines the shape for value.
-It holds actual label key and value. A single Label can be assigned to Runtime or Application. 
+It holds actual label key and value. A single Label can be assigned to single object: Runtime or Application. 
 
 Label is tenant specific. You cannot change the label key, once you created the label.
 
@@ -25,10 +25,17 @@ type Label struct {
     Key string // Key 
     Value interface{} // Value
     Tenant string
-    DefinitionID int // LabelDefinition reference
-    ApplicationIDs []*int
-    RuntimeIDs []*int
+    DefinitionID string // LabelDefinition reference
+    ObjectID string
+    ObjectType LabelObjectType
 }
+
+type LabelObjectType string
+
+const (
+    RuntimeLabelObjectType = "Runtime"
+    ApplicationLabelObjectType = "Application"
+)
 ```
 
 **LabelDefinition** 
@@ -40,11 +47,12 @@ LabelDefinition is *not* reusable between two labels with different keys. LabelD
 
 ```go
 type LabelDefinition struct {
+    ID string
     Key string
     Tenant string
     Type LabelDefinitionType
     Schema *string
-    enum []string
+    Enum *[]string
 }
 ```
 
@@ -87,32 +95,20 @@ type Mutation {
     """It won't allow to delete LabelDefinition if some labels use it"""
     deleteLabelDefinition(key: String!): LabelDefinition
 
+    """If the LabelDefinition for the key is not specified, it will create LabelDefinition to String"""
+    setSingleLabel(objectID: ID!, objectType: ObjectType!, key: String!, value: Any!): Label!
 
-#TODO: split to separate app and runtime mutations
-    """It won't allow to create Label if LabelDefinition for the key is missing. Also it doesn't allow to set Label if it does already exist"""
-    setSingleLabelForApplication(applicationID: ID!, key: String!, value: Any!): Label!
-    """It won't allow to create Label if LabelDefinition for the key is missing. Also it doesn't allow to set Label if it does already exist"""
-    setSingleLabelForRuntime(runtimeID: ID!, key: String!, value: Any!): Label!
-
-    """It won't allow to update the Label if the LabelDefinition for the key is missing."""
-    setArrayLabelForRuntime(runtimeID: ID!, key: String!, values: [Any!]!): Label!
-    """It won't allow to update the Label if the LabelDefinition for the key is missing."""
-    setArrayLabelForApplication(applicationID: ID!, key: String!, values: [Any!]!): Label!
+    """If the LabelDefinition for the key is not specified, it will create LabelDefinition to String"""
+    setArrayLabel(objectID: ID!, objectType: ObjectType!, key: String!, values: [Any!]!): Label!
 
     """Removes Label along with all its values. It doesn't remove LabelDefinition"""
-    removeApplicationLabel(applicationID: ID!, key: String!): Label!
-    """Removes Label along with all its values. It doesn't remove LabelDefinition"""
-    removeRuntimeLabel(runtimeID: ID!, key: String!): Label!
+    removeLabel(objectID: ID!, objectType: ObjectType!, key: String!): Label!
 
     """It won't allow to update the Label if the Label or LabelDefinition for the key is missing."""
-    addArrayLabelValuesForRuntime(runtimeID: ID!, key: String!, value: [Any!]!): Label!
-    """It won't allow to update the Label if the Label or LabelDefinition for the key is missing."""
-    addArrayLabelValuesForApplication(applicationID: ID!, key: String!, value: [Any!]!): Label!
+    addArrayLabelValues(objectID: ID!, objectType: ObjectType!, key: String!, value: [Any!]!): Label!
 
     """It won't allow to remove label value if the label is not of array type"""
-    removeArrayLabelValuesForApplication(applicationID: ID!, key: String!, values: [Any!]!): Label!
-    """It won't allow to remove label value if the label is not of array type"""
-    removeArrayLabelValuesForRuntime(runtimeID: ID!, key: String!, values: [Any!]!): Label!
+    removeArrayLabelValues(objectID: ID!, objectType: ObjectType!, key: String!, values: [Any!]!): Label!
 }
 
 # Label Definition
@@ -159,27 +155,37 @@ type LabelDefinitionInput {
 interface LabelBase {
     key: String!
     definition: LabelDefinition!
-    runtimes(first: Int = 100, after: PageCursor): RuntimePage! # Resolver
-    applications(first: Int = 100, after: PageCursor): ApplicationPage! # Resolver
+    objectID: ID!
+    objectType: ObjectType!
+    object: Object!
 }
 
 type SingleLabel implements LabelBase {
     key: String!
     definition: LabelDefinition!
     value: Any!
-    runtimes(first: Int = 100, after: PageCursor): RuntimePage! # Resolver
-    applications(first: Int = 100, after: PageCursor): ApplicationPage! # Resolver
+    objectID: ID!
+    objectType: ObjectType!
+    object: Object!
 }
 
 type ArrayLabel implements LabelBase {
     key: String!
     definition: LabelDefinition!
     values: [Any!]!
-    runtimes(first: Int = 100, after: PageCursor): RuntimePage! # Resolver
-    applications(first: Int = 100, after: PageCursor): ApplicationPage! # Resolver
+    objectID: ID!
+    objectType: ObjectType!
+    object: Object!
 }
 
 union Label = SingleLabel | ArrayLabel
+
+enum ObjectType {
+    RUNTIME,
+    APPLICATION
+}
+
+union Object = Runtime | Application
 
 ```
 
