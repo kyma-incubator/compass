@@ -27,8 +27,8 @@ type Label struct {
     Value interface{} // Value
     Tenant string
     DefinitionID int // LabelDefinition reference
-    ApplicationID *int
-    Runtime ID *int
+    ApplicationIDs []*int
+    RuntimeIDs []*int
 }
 ```
 
@@ -41,7 +41,7 @@ LabelDefinition is *not* reusable between two labels with different keys. LabelD
 
 ```go
 type LabelDefinition struct {
-    Name string // Key 
+    Key string
     Tenant string
     Data map[string]interface{}
     Type LabelDefinitionType
@@ -78,7 +78,6 @@ To manage Labels and LabelDefinitions, the following GraphQL API is proposed:
 
 type Query {
     # (...)
-    
     labelDefinitions: [LabelDefinition!]!
     labels: [Label!]!
     label(key: String!): Label
@@ -86,23 +85,21 @@ type Query {
 
 type Mutation {
     # (...)
-
     createLabelDefinition(in: LabelDefinitionInput!): LabelDefinition!
-
 
     """It won't allow to delete LabelDefinition if some labels use it"""
     deleteLabelDefinition(key: ID!): LabelDefinition
 
-    """It won't allow to create Label if LabelDefinition for the key is missing"""
-    addSingleLabel(runtimeID: ID, applicationID: ID, key: String!, value: String!): Label!
-    addArrayLabel(runtimeID: ID, applicationID: ID, key: String!, values: [String!]!): Label!
+    """It won't allow to create Label if LabelDefinition for the key is missing. Also it doesn't allow to set label if it does already exist"""
+    setSingleLabel(runtimeID: ID, applicationID: ID, key: String!, value: Any!): Label!
+    """It won't allow to create Label if LabelDefinition for the key is missing. Also it doesn't allow to set label if it does already exist"""
+    setArrayLabel(runtimeID: ID, applicationID: ID, key: String!, values: [Any!]!): Label!
 
     removeLabel(runtimeID: ID, applicationID: ID, key: String!): Label!
 
-    addArrayLabelValue(runtimeID: ID, applicationID: ID, key: String!, value: String!): Label!
-
+    addArrayLabelValues(runtimeID: ID, applicationID: ID, key: String!, value: [Any!]!): Label!
     """It won't allow to remove label value if the label is not of array type"""
-    removeArrayLabelValue(runtimeID: ID, applicationID: ID, key: String!, value: String!): Label!
+    removeArrayLabelValues(runtimeID: ID, applicationID: ID, key: String!, values: [Any!]!): Label!
 }
 
 # Label Definition
@@ -138,7 +135,7 @@ enum LabelDefinitionType! {
 }
 
 type LabelDefinitionInput {
-    name: String!
+    key: String!
     type: LabelDefinitionType!
     jsonSchema: CLOB
     stringArray: [String!]
@@ -152,35 +149,27 @@ type LabelDefinitionInput {
 interface LabelBase {
     key: String!
     definition: LabelDefinition!
-    runtimeID: ID
-    applicationID: ID
-    runtime: Runtime # Resolver
-    application: Application # Resolver
+    runtimes(first: Int = 100, after: PageCursor): RuntimePage! # Resolver
+    applications(first: Int = 100, after: PageCursor): ApplicationPage! # Resolver
 }
 
 type SingleLabel implements LabelBase {
     key: String!
     definition: LabelDefinition!
-    runtimeID: ID
-    applicationID: ID
-    runtime: Runtime # Resolver
-    application: Application # Resolver
-    value: String!
+    value: Any!
+    runtimes(first: Int = 100, after: PageCursor): RuntimePage! # Resolver
+    applications(first: Int = 100, after: PageCursor): ApplicationPage! # Resolver
 }
 
 type ArrayLabel implements LabelBase {
     key: String!
     definition: LabelDefinition!
-    runtimeID: ID
-    applicationID: ID
-    runtime: Runtime # Resolver
-    application: Application # Resolver
-    values: [String!]!
+    values: [Any!]!
+    runtimes(first: Int = 100, after: PageCursor): RuntimePage! # Resolver
+    applications(first: Int = 100, after: PageCursor): ApplicationPage! # Resolver
 }
 
 union Label = SingleLabel | ArrayLabel
-
-
 
 ```
 
