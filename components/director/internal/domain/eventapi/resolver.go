@@ -3,6 +3,8 @@ package eventapi
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -25,20 +27,36 @@ type EventAPIConverter interface {
 	InputFromGraphQL(in *graphql.EventAPIDefinitionInput) *model.EventAPIDefinitionInput
 }
 
-type Resolver struct {
-	svc       EventAPIService
-	converter EventAPIConverter
+//go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
+type ApplicationService interface {
+	Exist(ctx context.Context, id string) (bool, error)
 }
 
-func NewResolver(svc EventAPIService, converter EventAPIConverter) *Resolver {
+type Resolver struct {
+	svc            EventAPIService
+	applicationSvc ApplicationService
+	converter      EventAPIConverter
+}
+
+func NewResolver(svc EventAPIService, appSvc ApplicationService, converter EventAPIConverter) *Resolver {
 	return &Resolver{
-		svc:       svc,
-		converter: converter,
+		svc:            svc,
+		applicationSvc: appSvc,
+		converter:      converter,
 	}
 }
 
 func (r *Resolver) AddEventAPI(ctx context.Context, applicationID string, in graphql.EventAPIDefinitionInput) (*graphql.EventAPIDefinition, error) {
 	convertedIn := r.converter.InputFromGraphQL(&in)
+
+	found, err := r.applicationSvc.Exist(ctx, applicationID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while checking existence of Application")
+	}
+
+	if found == false {
+		return nil, errors.New("Cannot add document to not existing application")
+	}
 
 	id, err := r.svc.Create(ctx, applicationID, *convertedIn)
 	if err != nil {

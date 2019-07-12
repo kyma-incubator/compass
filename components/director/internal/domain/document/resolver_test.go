@@ -75,7 +75,7 @@ func TestResolver_AddDocument(t *testing.T) {
 			ExpectedErr:      errors.New("Cannot add document to not existing application"),
 		},
 		{
-			Name: "Returns error when application retrieval failed",
+			Name: "Returns error when application existence check failed",
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
 				return svc

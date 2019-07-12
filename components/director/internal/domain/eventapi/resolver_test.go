@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventapi"
@@ -26,11 +28,12 @@ func TestResolver_AddEventAPI(t *testing.T) {
 	modelAPIInput := fixModelEventAPIDefinitionInput("name", "foo", "bar")
 
 	testCases := []struct {
-		Name        string
-		ServiceFn   func() *automock.EventAPIService
-		ConverterFn func() *automock.EventAPIConverter
-		ExpectedAPI *graphql.EventAPIDefinition
-		ExpectedErr error
+		Name             string
+		ServiceFn        func() *automock.EventAPIService
+		ApplicationSvcFn func() *automock.ApplicationService
+		ConverterFn      func() *automock.EventAPIConverter
+		ExpectedAPI      *graphql.EventAPIDefinition
+		ExpectedErr      error
 	}{
 		{
 			Name: "Success",
@@ -39,6 +42,11 @@ func TestResolver_AddEventAPI(t *testing.T) {
 				svc.On("Create", context.TODO(), appId, *modelAPIInput).Return(id, nil).Once()
 				svc.On("Get", context.TODO(), id).Return(modelAPI, nil).Once()
 				return svc
+			},
+			ApplicationSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Exist", context.TODO(), appId).Return(true, nil)
+				return appSvc
 			},
 			ConverterFn: func() *automock.EventAPIConverter {
 				conv := &automock.EventAPIConverter{}
@@ -50,11 +58,54 @@ func TestResolver_AddEventAPI(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
+			Name: "Returns error when application not exist",
+			ServiceFn: func() *automock.EventAPIService {
+				svc := &automock.EventAPIService{}
+				return svc
+			},
+			ApplicationSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Exist", context.TODO(), appId).Return(false, nil)
+				return appSvc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
+				return conv
+			},
+			ExpectedAPI: nil,
+			ExpectedErr: errors.New("Cannot add document to not existing application"),
+		},
+		{
+			Name: "Returns error when application existence check failed",
+			ServiceFn: func() *automock.EventAPIService {
+				svc := &automock.EventAPIService{}
+				return svc
+			},
+			ApplicationSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Exist", context.TODO(), appId).Return(false, testErr)
+				return appSvc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
+				return conv
+			},
+			ExpectedAPI: nil,
+			ExpectedErr: testErr,
+		},
+		{
 			Name: "Returns error when EventAPI creation failed",
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
 				svc.On("Create", context.TODO(), appId, *modelAPIInput).Return("", testErr).Once()
 				return svc
+			},
+			ApplicationSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Exist", context.TODO(), appId).Return(true, nil)
+				return appSvc
 			},
 			ConverterFn: func() *automock.EventAPIConverter {
 				conv := &automock.EventAPIConverter{}
@@ -72,6 +123,11 @@ func TestResolver_AddEventAPI(t *testing.T) {
 				svc.On("Get", context.TODO(), id).Return(nil, testErr).Once()
 				return svc
 			},
+			ApplicationSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Exist", context.TODO(), appId).Return(true, nil)
+				return appSvc
+			},
 			ConverterFn: func() *automock.EventAPIConverter {
 				conv := &automock.EventAPIConverter{}
 				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
@@ -87,17 +143,23 @@ func TestResolver_AddEventAPI(t *testing.T) {
 			// given
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
+			appSvc := testCase.ApplicationSvcFn()
 
-			resolver := eventapi.NewResolver(svc, converter)
+			resolver := eventapi.NewResolver(svc, appSvc, converter)
 
 			// when
 			result, err := resolver.AddEventAPI(context.TODO(), appId, *gqlAPIInput)
 
 			// then
 			assert.Equal(t, testCase.ExpectedAPI, result)
-			assert.Equal(t, testCase.ExpectedErr, err)
+			if testCase.ExpectedErr != nil {
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				require.Nil(t, err)
+			}
 
 			svc.AssertExpectations(t)
+			appSvc.AssertExpectations(t)
 			converter.AssertExpectations(t)
 		})
 	}
@@ -172,7 +234,7 @@ func TestResolver_DeleteEventAPI(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := eventapi.NewResolver(svc, converter)
+			resolver := eventapi.NewResolver(svc, nil, converter)
 
 			// when
 			result, err := resolver.DeleteEventAPI(context.TODO(), id)
@@ -268,7 +330,7 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := eventapi.NewResolver(svc, converter)
+			resolver := eventapi.NewResolver(svc, nil, converter)
 
 			// when
 			result, err := resolver.UpdateEventAPI(context.TODO(), id, *gqlAPIDefinitionInput)
@@ -351,7 +413,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			// given
 			svc := testCase.ServiceFn()
 			conv := testCase.ConvFn()
-			resolver := eventapi.NewResolver(svc, conv)
+			resolver := eventapi.NewResolver(svc, nil, conv)
 
 			// when
 			result, err := resolver.RefetchEventAPISpec(context.TODO(), apiID)

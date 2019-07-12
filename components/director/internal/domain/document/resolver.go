@@ -45,7 +45,7 @@ func (r *Resolver) AddDocument(ctx context.Context, applicationID string, in gra
 
 	found, err := r.appSvc.Exist(ctx, applicationID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while loading tenant from context")
+		return nil, errors.Wrapf(err, "while checking existence of Application")
 	}
 
 	if found == false {
