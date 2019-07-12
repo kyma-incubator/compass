@@ -2,14 +2,13 @@
 
 The following documents describes the labeling feature.
 
-
 ## Requirements
 
 - Creating, Reading and deleting all labels within tenant
-- Defining `scenarios` label values and using them for labelling Applications and Runtimes
+- Defining `scenarios` label values and using them for labeling Applications and Runtimes
 - Reading all label keys for tenant
 - Validating label values against JSON schema / type
-- Labelling new Application/Runtime with `scenarios: default` label, if no scenario label is specified
+- Labeling new Application/Runtime with `scenarios: default` label, if no scenario label is specified
 
 ## Terms
 In this document there are few terms, which are used:
@@ -19,11 +18,11 @@ In this document there are few terms, which are used:
 Label is a tag in a form of `key:value`, which can be assigned to an Application or Runtime. Label references **LabelDefinition** which defines the shape for value.
 It holds actual label key and value. A single Label can be assigned to Runtime or Application. 
 
-Label is tenant specific. 
+Label is tenant specific. You cannot change the label key, once you created the label.
 
 ```go
 type Label struct {
-    Name string // Key 
+    Key string // Key 
     Value interface{} // Value
     Tenant string
     DefinitionID int // LabelDefinition reference
@@ -35,7 +34,7 @@ type Label struct {
 **LabelDefinition** 
 
 Describes what's the type of value for a label key. Validation will be done against the LabelDefinition JSON Schema or type.
-Label definition contains `name`, which is unique and represents a label `key`.
+Label definition contains `key` property, which is unique and represents a label key.
 
 LabelDefinition is *not* reusable between two labels with different keys. LabelDefinition is tenant-specific.
 
@@ -43,8 +42,9 @@ LabelDefinition is *not* reusable between two labels with different keys. LabelD
 type LabelDefinition struct {
     Key string
     Tenant string
-    Data map[string]interface{}
     Type LabelDefinitionType
+    Schema *string
+    enum []string
 }
 ```
 
@@ -60,8 +60,6 @@ type LabelDefinitionType string
 const (
     JSONSchemaLabelDefinition LabelDefinitionType = "JSONSchema"
     StringLabelDefinition LabelDefinitionType = "String"
-    NumberLabelDefinition LabelDefinitionType = "Number"
-    StringArrayLabelDefinition LabelDefinitionType = "StringArray"
     EnumLabelDefinition LabelDefinitionType = "Enum"
 )
 ```
@@ -75,7 +73,6 @@ It is a Label with key `scenarios`, which references LabelDefinition of type `En
 To manage Labels and LabelDefinitions, the following GraphQL API is proposed:
 
 ```graphql
-
 type Query {
     # (...)
     labelDefinitions: [LabelDefinition!]!
@@ -88,13 +85,15 @@ type Mutation {
     createLabelDefinition(in: LabelDefinitionInput!): LabelDefinition!
 
     """It won't allow to delete LabelDefinition if some labels use it"""
-    deleteLabelDefinition(key: ID!): LabelDefinition
+    deleteLabelDefinition(key: String!): LabelDefinition
 
+
+#TODO: wydzielić na aplikację albo runtime
     """It won't allow to create Label if LabelDefinition for the key is missing. Also it doesn't allow to set label if it does already exist"""
     setSingleLabel(runtimeID: ID, applicationID: ID, key: String!, value: Any!): Label!
     """It won't allow to create Label if LabelDefinition for the key is missing. Also it doesn't allow to set label if it does already exist"""
     setArrayLabel(runtimeID: ID, applicationID: ID, key: String!, values: [Any!]!): Label!
-
+#TODO: wydzielić na aplikację albo runtime
     removeLabel(runtimeID: ID, applicationID: ID, key: String!): Label!
 
     addArrayLabelValues(runtimeID: ID, applicationID: ID, key: String!, value: [Any!]!): Label!
@@ -138,10 +137,7 @@ type LabelDefinitionInput {
     key: String!
     type: LabelDefinitionType!
     jsonSchema: CLOB
-    stringArray: [String!]
     enum: [String!]
-    number: Int
-    string: String
 }
 
 # Label
