@@ -88,17 +88,31 @@ type Mutation {
     deleteLabelDefinition(key: String!): LabelDefinition
 
 
-#TODO: wydzielić na aplikację albo runtime
-    """It won't allow to create Label if LabelDefinition for the key is missing. Also it doesn't allow to set label if it does already exist"""
-    setSingleLabel(runtimeID: ID, applicationID: ID, key: String!, value: Any!): Label!
-    """It won't allow to create Label if LabelDefinition for the key is missing. Also it doesn't allow to set label if it does already exist"""
-    setArrayLabel(runtimeID: ID, applicationID: ID, key: String!, values: [Any!]!): Label!
-#TODO: wydzielić na aplikację albo runtime
-    removeLabel(runtimeID: ID, applicationID: ID, key: String!): Label!
+#TODO: split to separate app and runtime mutations
+    """It won't allow to create Label if LabelDefinition for the key is missing. Also it doesn't allow to set Label if it does already exist"""
+    setSingleLabelForApplication(applicationID: ID!, key: String!, value: Any!): Label!
+    """It won't allow to create Label if LabelDefinition for the key is missing. Also it doesn't allow to set Label if it does already exist"""
+    setSingleLabelForRuntime(runtimeID: ID!, key: String!, value: Any!): Label!
 
-    addArrayLabelValues(runtimeID: ID, applicationID: ID, key: String!, value: [Any!]!): Label!
+    """It won't allow to update the Label if the LabelDefinition for the key is missing."""
+    setArrayLabelForRuntime(runtimeID: ID!, key: String!, values: [Any!]!): Label!
+    """It won't allow to update the Label if the LabelDefinition for the key is missing."""
+    setArrayLabelForApplication(applicationID: ID!, key: String!, values: [Any!]!): Label!
+
+    """Removes Label along with all its values. It doesn't remove LabelDefinition"""
+    removeApplicationLabel(applicationID: ID!, key: String!): Label!
+    """Removes Label along with all its values. It doesn't remove LabelDefinition"""
+    removeRuntimeLabel(runtimeID: ID!, key: String!): Label!
+
+    """It won't allow to update the Label if the Label or LabelDefinition for the key is missing."""
+    addArrayLabelValuesForRuntime(runtimeID: ID!, key: String!, value: [Any!]!): Label!
+    """It won't allow to update the Label if the Label or LabelDefinition for the key is missing."""
+    addArrayLabelValuesForApplication(applicationID: ID!, key: String!, value: [Any!]!): Label!
+
     """It won't allow to remove label value if the label is not of array type"""
-    removeArrayLabelValues(runtimeID: ID, applicationID: ID, key: String!, values: [Any!]!): Label!
+    removeArrayLabelValuesForApplication(applicationID: ID!, key: String!, values: [Any!]!): Label!
+    """It won't allow to remove label value if the label is not of array type"""
+    removeArrayLabelValuesForRuntime(runtimeID: ID!, key: String!, values: [Any!]!): Label!
 }
 
 # Label Definition

@@ -504,7 +504,7 @@ type Mutation {
     """
     Sets Auth for given Application and Runtime. To set default Auth for API, use updateAPI mutation
     """
-    setAPIAuth(fapiID: ID!, runtimeID: ID!, in: AuthInput!): RuntimeAuth!
+    setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput!): RuntimeAuth!
     deleteAPIAuth(apiID: ID!, runtimeID: ID!): RuntimeAuth!
 
     addEventAPI(applicationID: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition!
