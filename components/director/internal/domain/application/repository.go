@@ -25,6 +25,16 @@ func (r *inMemoryRepository) GetByID(tenant, id string) (*model.Application, err
 	return application, nil
 }
 
+func (r *inMemoryRepository) Exist(tenant, id string) (bool, error) {
+	application := r.store[id]
+
+	if application == nil || application.Tenant != tenant {
+		return false, errors.New("application not found")
+	}
+
+	return true, nil
+}
+
 // TODO: Make filtering and paging
 func (r *inMemoryRepository) List(tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
 	var items []*model.Application

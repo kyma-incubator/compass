@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -25,7 +27,7 @@ func TestResolver_AddDocument(t *testing.T) {
 	testCases := []struct {
 		Name             string
 		ServiceFn        func() *automock.DocumentService
-		AppSvcFn         func() *automock.ApplicationService
+		ApplicationSvcFn func() *automock.ApplicationService
 		ConverterFn      func() *automock.DocumentConverter
 		ExpectedDocument *graphql.Document
 		ExpectedErr      error
@@ -38,9 +40,9 @@ func TestResolver_AddDocument(t *testing.T) {
 				svc.On("Get", context.TODO(), id).Return(modelDocument, nil).Once()
 				return svc
 			},
-			AppSvcFn: func() *automock.ApplicationService {
+			ApplicationSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Get", context.TODO(), applicationID).Return(nil, nil)
+				appSvc.On("Exist", context.TODO(), applicationID).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -58,9 +60,29 @@ func TestResolver_AddDocument(t *testing.T) {
 				svc := &automock.DocumentService{}
 				return svc
 			},
-			AppSvcFn: func() *automock.ApplicationService {
+			ApplicationSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Get", context.TODO(), applicationID).Return(nil, testErr)
+				appSvc.On("Exist", context.TODO(), applicationID).Return(false, nil)
+				return appSvc
+			},
+			ConverterFn: func() *automock.DocumentConverter {
+				conv := &automock.DocumentConverter{}
+				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+				return conv
+			},
+
+			ExpectedDocument: nil,
+			ExpectedErr:      errors.New("Cannot add document to not existing application"),
+		},
+		{
+			Name: "Returns error when application retrieval failed",
+			ServiceFn: func() *automock.DocumentService {
+				svc := &automock.DocumentService{}
+				return svc
+			},
+			ApplicationSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Exist", context.TODO(), applicationID).Return(false, testErr)
 				return appSvc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -79,9 +101,9 @@ func TestResolver_AddDocument(t *testing.T) {
 				svc.On("Create", context.TODO(), applicationID, *modelInput).Return("", testErr).Once()
 				return svc
 			},
-			AppSvcFn: func() *automock.ApplicationService {
+			ApplicationSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Get", context.TODO(), applicationID).Return(nil, nil)
+				appSvc.On("Exist", context.TODO(), applicationID).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -100,9 +122,9 @@ func TestResolver_AddDocument(t *testing.T) {
 				svc.On("Get", context.TODO(), id).Return(nil, testErr).Once()
 				return svc
 			},
-			AppSvcFn: func() *automock.ApplicationService {
+			ApplicationSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Get", context.TODO(), applicationID).Return(nil, nil)
+				appSvc.On("Exist", context.TODO(), applicationID).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -118,7 +140,7 @@ func TestResolver_AddDocument(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
-			appSvc := testCase.AppSvcFn()
+			appSvc := testCase.ApplicationSvcFn()
 			converter := testCase.ConverterFn()
 
 			resolver := document.NewResolver(svc, appSvc, nil)
@@ -129,7 +151,11 @@ func TestResolver_AddDocument(t *testing.T) {
 
 			// then
 			assert.Equal(t, testCase.ExpectedDocument, result)
-			assert.Equal(t, testCase.ExpectedErr, err)
+			if testCase.ExpectedErr == nil {
+				require.NoError(t, err)
+			} else {
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			}
 
 			svc.AssertExpectations(t)
 			appSvc.AssertExpectations(t)

@@ -3,6 +3,8 @@ package document
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
@@ -22,7 +24,7 @@ type DocumentConverter interface {
 
 //go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
 type ApplicationService interface {
-	Get(ctx context.Context, id string) (*model.Application, error)
+	Exist(ctx context.Context, id string) (bool, error)
 }
 type Resolver struct {
 	svc       DocumentService
@@ -41,9 +43,13 @@ func NewResolver(svc DocumentService, appSvc ApplicationService, frConverter Fet
 func (r *Resolver) AddDocument(ctx context.Context, applicationID string, in graphql.DocumentInput) (*graphql.Document, error) {
 	convertedIn := r.converter.InputFromGraphQL(&in)
 
-	_, err := r.appSvc.Get(ctx, applicationID)
+	found, err := r.appSvc.Exist(ctx, applicationID)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	if found == false {
+		return nil, errors.New("Cannot add document to not existing application")
 	}
 
 	id, err := r.svc.Create(ctx, applicationID, *convertedIn)

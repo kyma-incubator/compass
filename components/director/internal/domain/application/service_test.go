@@ -674,6 +674,78 @@ func TestService_List(t *testing.T) {
 	}
 }
 
+func TestService_Exist(t *testing.T) {
+	tnt := "tenant"
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt)
+	testError := errors.New("Test error")
+
+	applicationID := "id"
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.ApplicationRepository
+		InputApplicationID string
+		ExptectedValue     bool
+		ExpectedError      error
+	}{
+		{
+			Name: "Application exits",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Exist", tnt, applicationID).Return(true, nil)
+				return repo
+			},
+			InputApplicationID: applicationID,
+			ExptectedValue:     true,
+			ExpectedError:      nil,
+		},
+		{
+			Name: "Application not exits",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Exist", tnt, applicationID).Return(false, nil)
+				return repo
+			},
+			InputApplicationID: applicationID,
+			ExptectedValue:     false,
+			ExpectedError:      nil,
+		},
+		{
+			Name: "Returns error",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Exist", tnt, applicationID).Return(false, testError)
+				return repo
+			},
+			InputApplicationID: applicationID,
+			ExptectedValue:     false,
+			ExpectedError:      testError,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			appRepo := testCase.RepositoryFn()
+			svc := application.NewService(appRepo, nil, nil, nil, nil, nil)
+
+			// WHEN
+			value, err := svc.Exist(ctx, testCase.InputApplicationID)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				require.Nil(t, err)
+			}
+
+			assert.Equal(t, testCase.ExptectedValue, value)
+			appRepo.AssertExpectations(t)
+		})
+	}
+}
+
 func TestService_AddLabel(t *testing.T) {
 	// given
 	tnt := "tenant"
