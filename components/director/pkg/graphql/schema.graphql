@@ -477,9 +477,9 @@ type Mutation {
     # if application does not exist, return error
     deleteApplicationLabel(applicationID: ID!, key: String!, values: [String!]!): Label
 
-    addApplicationWebhook(applicationID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
-    updateApplicationWebhook(webhookID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
-    deleteApplicationWebhook(webhookID: ID!): ApplicationWebhook
+    addWebhook(applicationID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
+    updateWebhook(webhookID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
+    deleteWebhook(webhookID: ID!): ApplicationWebhook
 
     addAPI(applicationID: ID!, in: APIDefinitionInput!): APIDefinition!
     updateAPI(id: ID!, in: APIDefinitionInput!): APIDefinition!

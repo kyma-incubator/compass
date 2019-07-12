@@ -200,31 +200,31 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AddAPI                   func(childComplexity int, applicationID string, in APIDefinitionInput) int
-		AddApplicationLabel      func(childComplexity int, applicationID string, key string, values []string) int
-		AddApplicationWebhook    func(childComplexity int, applicationID string, in ApplicationWebhookInput) int
-		AddDocument              func(childComplexity int, applicationID string, in DocumentInput) int
-		AddEventAPI              func(childComplexity int, applicationID string, in EventAPIDefinitionInput) int
-		AddRuntimeLabel          func(childComplexity int, runtimeID string, key string, values []string) int
-		CreateApplication        func(childComplexity int, in ApplicationInput) int
-		CreateRuntime            func(childComplexity int, in RuntimeInput) int
-		DeleteAPI                func(childComplexity int, id string) int
-		DeleteAPIAuth            func(childComplexity int, apiID string, runtimeID string) int
-		DeleteApplication        func(childComplexity int, id string) int
-		DeleteApplicationLabel   func(childComplexity int, applicationID string, key string, values []string) int
-		DeleteApplicationWebhook func(childComplexity int, webhookID string) int
-		DeleteDocument           func(childComplexity int, id string) int
-		DeleteEventAPI           func(childComplexity int, id string) int
-		DeleteRuntime            func(childComplexity int, id string) int
-		DeleteRuntimeLabel       func(childComplexity int, runtimeID string, key string, values []string) int
-		RefetchAPISpec           func(childComplexity int, apiID string) int
-		RefetchEventAPISpec      func(childComplexity int, eventID string) int
-		SetAPIAuth               func(childComplexity int, apiID string, runtimeID string, in AuthInput) int
-		UpdateAPI                func(childComplexity int, id string, in APIDefinitionInput) int
-		UpdateApplication        func(childComplexity int, id string, in ApplicationInput) int
-		UpdateApplicationWebhook func(childComplexity int, webhookID string, in ApplicationWebhookInput) int
-		UpdateEventAPI           func(childComplexity int, id string, in EventAPIDefinitionInput) int
-		UpdateRuntime            func(childComplexity int, id string, in RuntimeInput) int
+		AddAPI                 func(childComplexity int, applicationID string, in APIDefinitionInput) int
+		AddApplicationLabel    func(childComplexity int, applicationID string, key string, values []string) int
+		AddDocument            func(childComplexity int, applicationID string, in DocumentInput) int
+		AddEventAPI            func(childComplexity int, applicationID string, in EventAPIDefinitionInput) int
+		AddRuntimeLabel        func(childComplexity int, runtimeID string, key string, values []string) int
+		AddWebhook             func(childComplexity int, applicationID string, in ApplicationWebhookInput) int
+		CreateApplication      func(childComplexity int, in ApplicationInput) int
+		CreateRuntime          func(childComplexity int, in RuntimeInput) int
+		DeleteAPI              func(childComplexity int, id string) int
+		DeleteAPIAuth          func(childComplexity int, apiID string, runtimeID string) int
+		DeleteApplication      func(childComplexity int, id string) int
+		DeleteApplicationLabel func(childComplexity int, applicationID string, key string, values []string) int
+		DeleteDocument         func(childComplexity int, id string) int
+		DeleteEventAPI         func(childComplexity int, id string) int
+		DeleteRuntime          func(childComplexity int, id string) int
+		DeleteRuntimeLabel     func(childComplexity int, runtimeID string, key string, values []string) int
+		DeleteWebhook          func(childComplexity int, webhookID string) int
+		RefetchAPISpec         func(childComplexity int, apiID string) int
+		RefetchEventAPISpec    func(childComplexity int, eventID string) int
+		SetAPIAuth             func(childComplexity int, apiID string, runtimeID string, in AuthInput) int
+		UpdateAPI              func(childComplexity int, id string, in APIDefinitionInput) int
+		UpdateApplication      func(childComplexity int, id string, in ApplicationInput) int
+		UpdateEventAPI         func(childComplexity int, id string, in EventAPIDefinitionInput) int
+		UpdateRuntime          func(childComplexity int, id string, in RuntimeInput) int
+		UpdateWebhook          func(childComplexity int, webhookID string, in ApplicationWebhookInput) int
 	}
 
 	OAuthCredentialData struct {
@@ -293,9 +293,9 @@ type MutationResolver interface {
 	DeleteApplication(ctx context.Context, id string) (*Application, error)
 	AddApplicationLabel(ctx context.Context, applicationID string, key string, values []string) (*Label, error)
 	DeleteApplicationLabel(ctx context.Context, applicationID string, key string, values []string) (*Label, error)
-	AddApplicationWebhook(ctx context.Context, applicationID string, in ApplicationWebhookInput) (*ApplicationWebhook, error)
-	UpdateApplicationWebhook(ctx context.Context, webhookID string, in ApplicationWebhookInput) (*ApplicationWebhook, error)
-	DeleteApplicationWebhook(ctx context.Context, webhookID string) (*ApplicationWebhook, error)
+	AddWebhook(ctx context.Context, applicationID string, in ApplicationWebhookInput) (*ApplicationWebhook, error)
+	UpdateWebhook(ctx context.Context, webhookID string, in ApplicationWebhookInput) (*ApplicationWebhook, error)
+	DeleteWebhook(ctx context.Context, webhookID string) (*ApplicationWebhook, error)
 	AddAPI(ctx context.Context, applicationID string, in APIDefinitionInput) (*APIDefinition, error)
 	UpdateAPI(ctx context.Context, id string, in APIDefinitionInput) (*APIDefinition, error)
 	DeleteAPI(ctx context.Context, id string) (*APIDefinition, error)
@@ -1030,18 +1030,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.AddApplicationLabel(childComplexity, args["applicationID"].(string), args["key"].(string), args["values"].([]string)), true
 
-	case "Mutation.addApplicationWebhook":
-		if e.complexity.Mutation.AddApplicationWebhook == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_addApplicationWebhook_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.AddApplicationWebhook(childComplexity, args["applicationID"].(string), args["in"].(ApplicationWebhookInput)), true
-
 	case "Mutation.addDocument":
 		if e.complexity.Mutation.AddDocument == nil {
 			break
@@ -1077,6 +1065,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.AddRuntimeLabel(childComplexity, args["runtimeID"].(string), args["key"].(string), args["values"].([]string)), true
+
+	case "Mutation.addWebhook":
+		if e.complexity.Mutation.AddWebhook == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_addWebhook_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddWebhook(childComplexity, args["applicationID"].(string), args["in"].(ApplicationWebhookInput)), true
 
 	case "Mutation.createApplication":
 		if e.complexity.Mutation.CreateApplication == nil {
@@ -1150,18 +1150,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteApplicationLabel(childComplexity, args["applicationID"].(string), args["key"].(string), args["values"].([]string)), true
 
-	case "Mutation.deleteApplicationWebhook":
-		if e.complexity.Mutation.DeleteApplicationWebhook == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_deleteApplicationWebhook_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.DeleteApplicationWebhook(childComplexity, args["webhookID"].(string)), true
-
 	case "Mutation.deleteDocument":
 		if e.complexity.Mutation.DeleteDocument == nil {
 			break
@@ -1209,6 +1197,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteRuntimeLabel(childComplexity, args["runtimeID"].(string), args["key"].(string), args["values"].([]string)), true
+
+	case "Mutation.deleteWebhook":
+		if e.complexity.Mutation.DeleteWebhook == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteWebhook_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteWebhook(childComplexity, args["webhookID"].(string)), true
 
 	case "Mutation.refetchAPISpec":
 		if e.complexity.Mutation.RefetchAPISpec == nil {
@@ -1270,18 +1270,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UpdateApplication(childComplexity, args["id"].(string), args["in"].(ApplicationInput)), true
 
-	case "Mutation.updateApplicationWebhook":
-		if e.complexity.Mutation.UpdateApplicationWebhook == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_updateApplicationWebhook_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.UpdateApplicationWebhook(childComplexity, args["webhookID"].(string), args["in"].(ApplicationWebhookInput)), true
-
 	case "Mutation.updateEventAPI":
 		if e.complexity.Mutation.UpdateEventAPI == nil {
 			break
@@ -1305,6 +1293,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdateRuntime(childComplexity, args["id"].(string), args["in"].(RuntimeInput)), true
+
+	case "Mutation.updateWebhook":
+		if e.complexity.Mutation.UpdateWebhook == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateWebhook_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateWebhook(childComplexity, args["webhookID"].(string), args["in"].(ApplicationWebhookInput)), true
 
 	case "OAuthCredentialData.clientId":
 		if e.complexity.OAuthCredentialData.ClientID == nil {
@@ -2088,9 +2088,9 @@ type Mutation {
     # if application does not exist, return error
     deleteApplicationLabel(applicationID: ID!, key: String!, values: [String!]!): Label
 
-    addApplicationWebhook(applicationID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
-    updateApplicationWebhook(webhookID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
-    deleteApplicationWebhook(webhookID: ID!): ApplicationWebhook
+    addWebhook(applicationID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
+    updateWebhook(webhookID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
+    deleteWebhook(webhookID: ID!): ApplicationWebhook
 
     addAPI(applicationID: ID!, in: APIDefinitionInput!): APIDefinition!
     updateAPI(id: ID!, in: APIDefinitionInput!): APIDefinition!
@@ -2291,28 +2291,6 @@ func (ec *executionContext) field_Mutation_addApplicationLabel_args(ctx context.
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_addApplicationWebhook_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["applicationID"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["applicationID"] = arg0
-	var arg1 ApplicationWebhookInput
-	if tmp, ok := rawArgs["in"]; ok {
-		arg1, err = ec.unmarshalNApplicationWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhookInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["in"] = arg1
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_addDocument_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -2384,6 +2362,28 @@ func (ec *executionContext) field_Mutation_addRuntimeLabel_args(ctx context.Cont
 		}
 	}
 	args["values"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_addWebhook_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["applicationID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["applicationID"] = arg0
+	var arg1 ApplicationWebhookInput
+	if tmp, ok := rawArgs["in"]; ok {
+		arg1, err = ec.unmarshalNApplicationWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhookInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["in"] = arg1
 	return args, nil
 }
 
@@ -2481,20 +2481,6 @@ func (ec *executionContext) field_Mutation_deleteApplicationLabel_args(ctx conte
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_deleteApplicationWebhook_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["webhookID"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["webhookID"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_deleteApplication_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -2581,6 +2567,20 @@ func (ec *executionContext) field_Mutation_deleteRuntime_args(ctx context.Contex
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_deleteWebhook_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["webhookID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["webhookID"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_refetchAPISpec_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -2661,28 +2661,6 @@ func (ec *executionContext) field_Mutation_updateAPI_args(ctx context.Context, r
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_updateApplicationWebhook_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["webhookID"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["webhookID"] = arg0
-	var arg1 ApplicationWebhookInput
-	if tmp, ok := rawArgs["in"]; ok {
-		arg1, err = ec.unmarshalNApplicationWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhookInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["in"] = arg1
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_updateApplication_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -2741,6 +2719,28 @@ func (ec *executionContext) field_Mutation_updateRuntime_args(ctx context.Contex
 	var arg1 RuntimeInput
 	if tmp, ok := rawArgs["in"]; ok {
 		arg1, err = ec.unmarshalNRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["in"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateWebhook_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["webhookID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["webhookID"] = arg0
+	var arg1 ApplicationWebhookInput
+	if tmp, ok := rawArgs["in"]; ok {
+		arg1, err = ec.unmarshalNApplicationWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhookInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -5531,7 +5531,7 @@ func (ec *executionContext) _Mutation_deleteApplicationLabel(ctx context.Context
 	return ec.marshalOLabel2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabel(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_addApplicationWebhook(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Mutation_addWebhook(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -5542,7 +5542,7 @@ func (ec *executionContext) _Mutation_addApplicationWebhook(ctx context.Context,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_addApplicationWebhook_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_addWebhook_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -5551,7 +5551,7 @@ func (ec *executionContext) _Mutation_addApplicationWebhook(ctx context.Context,
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().AddApplicationWebhook(rctx, args["applicationID"].(string), args["in"].(ApplicationWebhookInput))
+		return ec.resolvers.Mutation().AddWebhook(rctx, args["applicationID"].(string), args["in"].(ApplicationWebhookInput))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -5565,7 +5565,7 @@ func (ec *executionContext) _Mutation_addApplicationWebhook(ctx context.Context,
 	return ec.marshalNApplicationWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhook(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_updateApplicationWebhook(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Mutation_updateWebhook(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -5576,7 +5576,7 @@ func (ec *executionContext) _Mutation_updateApplicationWebhook(ctx context.Conte
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_updateApplicationWebhook_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_updateWebhook_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -5585,7 +5585,7 @@ func (ec *executionContext) _Mutation_updateApplicationWebhook(ctx context.Conte
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateApplicationWebhook(rctx, args["webhookID"].(string), args["in"].(ApplicationWebhookInput))
+		return ec.resolvers.Mutation().UpdateWebhook(rctx, args["webhookID"].(string), args["in"].(ApplicationWebhookInput))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -5599,7 +5599,7 @@ func (ec *executionContext) _Mutation_updateApplicationWebhook(ctx context.Conte
 	return ec.marshalNApplicationWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhook(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_deleteApplicationWebhook(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Mutation_deleteWebhook(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -5610,7 +5610,7 @@ func (ec *executionContext) _Mutation_deleteApplicationWebhook(ctx context.Conte
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_deleteApplicationWebhook_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_deleteWebhook_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -5619,7 +5619,7 @@ func (ec *executionContext) _Mutation_deleteApplicationWebhook(ctx context.Conte
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteApplicationWebhook(rctx, args["webhookID"].(string))
+		return ec.resolvers.Mutation().DeleteWebhook(rctx, args["webhookID"].(string))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -9433,18 +9433,18 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "deleteApplicationLabel":
 			out.Values[i] = ec._Mutation_deleteApplicationLabel(ctx, field)
-		case "addApplicationWebhook":
-			out.Values[i] = ec._Mutation_addApplicationWebhook(ctx, field)
+		case "addWebhook":
+			out.Values[i] = ec._Mutation_addWebhook(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "updateApplicationWebhook":
-			out.Values[i] = ec._Mutation_updateApplicationWebhook(ctx, field)
+		case "updateWebhook":
+			out.Values[i] = ec._Mutation_updateWebhook(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "deleteApplicationWebhook":
-			out.Values[i] = ec._Mutation_deleteApplicationWebhook(ctx, field)
+		case "deleteWebhook":
+			out.Values[i] = ec._Mutation_deleteWebhook(ctx, field)
 		case "addAPI":
 			out.Values[i] = ec._Mutation_addAPI(ctx, field)
 			if out.Values[i] == graphql.Null {
