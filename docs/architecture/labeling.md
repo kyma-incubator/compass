@@ -11,39 +11,48 @@ The following document describes the labeling feature.
 - Labeling new Application/Runtime with `scenarios: default` label, if no scenario label is specified
 
 ## Terms
+
 In this document there are few terms, which are used:
 
 **Label**
 
 Label is a tag in a form of `key:value`, which can be assigned to an Application or Runtime. Label references **LabelDefinition** which defines the shape for value.
-It holds actual label key and value. A single Label can be assigned to single object: Runtime or Application. 
+It holds actual label key and value. A single Label can be assigned to single labelable object: Runtime or Application.
 
 Label is tenant specific. You cannot change the label key, once you created the label.
 
 ```go
 type Label struct {
-    Key string // Key 
-    Value interface{} // Value
+    Key string // Key
+    Type LabelType // Type: array or single
+    Value interface{} // Stored Value(s)
     Tenant string
     DefinitionID string // LabelDefinition reference
-    ObjectID string
-    ObjectType LabelObjectType
+    ObjectID string // LabelableObject reference
+    ObjectType LabelableObjectType // LabelableObjectType
 }
 
-type LabelObjectType string
+type LabelType string
 
 const (
-    RuntimeLabelObjectType = "Runtime"
-    ApplicationLabelObjectType = "Application"
+    SingleLabelType LabelType = "Single"
+    ArrayLabelType LabelType = "Array"
+)
+
+type LabelableObjectType string
+
+const (
+    RuntimeLabelObjectType LabelableObjectType = "Runtime"
+    ApplicationLabelObjectType LabelableObjectType = "Application"
 )
 ```
 
-**LabelDefinition** 
+**LabelDefinition**
 
 Describes what's the type of value for a label key. Validation will be done against the LabelDefinition JSON Schema or type.
 Label definition contains `key` property, which is unique and represents a label key.
 
-LabelDefinition is *not* reusable between two labels with different keys. LabelDefinition is tenant-specific.
+LabelDefinition is _not_ reusable between two labels with different keys. LabelDefinition is tenant-specific.
 
 ```go
 type LabelDefinition struct {
@@ -96,19 +105,19 @@ type Mutation {
     deleteLabelDefinition(key: String!): LabelDefinition
 
     """If the LabelDefinition for the key is not specified, it will create LabelDefinition to String"""
-    setSingleLabel(objectID: ID!, objectType: ObjectType!, key: String!, value: Any!): Label!
+    setSingleLabel(objectID: ID!, objectType: LabelableObjectType!, key: String!, value: Any!): Label!
 
     """If the LabelDefinition for the key is not specified, it will create LabelDefinition to String"""
-    setArrayLabel(objectID: ID!, objectType: ObjectType!, key: String!, values: [Any!]!): Label!
+    setArrayLabel(objectID: ID!, objectType: LabelableObjectType!, key: String!, values: [Any!]!): Label!
 
     """Removes Label along with all its values. It doesn't remove LabelDefinition"""
-    removeLabel(objectID: ID!, objectType: ObjectType!, key: String!): Label!
+    removeLabel(objectID: ID!, objectType: LabelableObjectType!, key: String!): Label!
 
     """It won't allow to update the Label if the Label or LabelDefinition for the key is missing."""
-    addArrayLabelValues(objectID: ID!, objectType: ObjectType!, key: String!, value: [Any!]!): Label!
+    addArrayLabelValues(objectID: ID!, objectType: LabelableObjectType!, key: String!, value: [Any!]!): Label!
 
     """It won't allow to remove label value if the label is not of array type"""
-    removeArrayLabelValues(objectID: ID!, objectType: ObjectType!, key: String!, values: [Any!]!): Label!
+    removeArrayLabelValues(objectID: ID!, objectType: LabelableObjectType!, key: String!, values: [Any!]!): Label!
 }
 
 # Label Definition
@@ -156,8 +165,8 @@ interface LabelBase {
     key: String!
     definition: LabelDefinition!
     objectID: ID!
-    objectType: ObjectType!
-    object: Object!
+    objectType: LabelableObjectType!
+    referencedObject: LabelableObject! # resolver
 }
 
 type SingleLabel implements LabelBase {
@@ -165,8 +174,8 @@ type SingleLabel implements LabelBase {
     definition: LabelDefinition!
     value: Any!
     objectID: ID!
-    objectType: ObjectType!
-    object: Object!
+    objectType: LabelableObjectType!
+    referencedObject: LabelableObject! # resolver
 }
 
 type ArrayLabel implements LabelBase {
@@ -174,21 +183,20 @@ type ArrayLabel implements LabelBase {
     definition: LabelDefinition!
     values: [Any!]!
     objectID: ID!
-    objectType: ObjectType!
-    object: Object!
+    objectType: LabelableObjectType!
+    referencedObject: LabelableObject! # resolver
 }
 
 union Label = SingleLabel | ArrayLabel
 
-enum ObjectType {
+enum LabelableObjectType {
     RUNTIME,
     APPLICATION
 }
 
-union Object = Runtime | Application
+union LabelableObject = Runtime | Application
 
 ```
-
 
 ## Storage
 
