@@ -48,7 +48,7 @@ func (r *Resolver) AddDocument(ctx context.Context, applicationID string, in gra
 		return nil, errors.Wrapf(err, "while checking existence of Application")
 	}
 
-	if found == false {
+	if !found {
 		return nil, errors.New("Cannot add Document to not existing Application")
 	}
 

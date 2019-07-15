@@ -58,7 +58,7 @@ func (r *Resolver) AddAPI(ctx context.Context, applicationID string, in graphql.
 		return nil, errors.Wrapf(err, "while checking existence of Application")
 	}
 
-	if found == false {
+	if !found {
 		return nil, errors.New("Cannot add API to not existing Application")
 	}
 

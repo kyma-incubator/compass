@@ -54,7 +54,7 @@ func (r *Resolver) AddEventAPI(ctx context.Context, applicationID string, in gra
 		return nil, errors.Wrapf(err, "while checking existence of Application")
 	}
 
-	if found == false {
+	if !found {
 		return nil, errors.New("Cannot add EventAPI to not existing Application")
 	}
 

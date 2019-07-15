@@ -53,7 +53,7 @@ func (r *Resolver) AddApplicationWebhook(ctx context.Context, applicationID stri
 		return nil, errors.Wrapf(err, "while checking existence of Application")
 	}
 
-	if found == false {
+	if !found {
 		return nil, errors.New("Cannot add Webhook to not existing Application")
 	}
 
