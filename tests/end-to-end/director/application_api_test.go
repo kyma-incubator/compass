@@ -427,6 +427,29 @@ func TestUpdateApplicationParts(t *testing.T) {
 		id := actualWebhook.ID
 		require.NotNil(t, id)
 
+		// add to non exist application
+
+		//GIVEN
+		webhookInStr, err = tc.graphqlizer.ApplicationWebhookInputToGQL(&graphql.WebhookInput{
+			URL:  "new-webhook",
+			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
+		})
+		require.NoError(t, err)
+
+		//WHEN
+		addReq = gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+			result: addWebhook(applicationID: "%s", in: %s) {
+					%s
+				}
+			}`, "foo", webhookInStr, tc.gqlFieldsProvider.ForWebhooks()))
+		saveQueryInExamples(t, addReq.Query(), "add aplication webhook")
+
+		//THEN
+		tmpWebhook := graphql.Webhook{}
+		err = tc.RunQuery(ctx, addReq, &tmpWebhook)
+		require.Error(t, err)
+
 		// get all webhooks
 		updatedApp := getApp(ctx, t, actualApp.ID)
 		assert.Len(t, updatedApp.Webhooks, 2)
@@ -449,6 +472,8 @@ func TestUpdateApplicationParts(t *testing.T) {
 		assert.Equal(t, "updated-webhook", actualWebhook.URL)
 
 		// delete
+
+		//GIVEN
 		deleteReq := gcli.NewRequest(
 			fmt.Sprintf(`mutation {
 			result: deleteWebhook(webhookID: "%s") {
@@ -456,7 +481,11 @@ func TestUpdateApplicationParts(t *testing.T) {
 				}
 			}`, actualWebhook.ID, tc.gqlFieldsProvider.ForWebhooks()))
 		saveQueryInExamples(t, deleteReq.Query(), "delete application webhook")
+
+		//WHEN
 		err = tc.RunQuery(ctx, deleteReq, &actualWebhook)
+
+		//THEN
 		require.NoError(t, err)
 		assert.Equal(t, "updated-webhook", actualWebhook.URL)
 
@@ -498,7 +527,33 @@ func TestUpdateApplicationParts(t *testing.T) {
 		assert.Contains(t, actualAPINames, "new-api-name")
 		assert.Contains(t, actualAPINames, placeholder)
 
+		// add to non exist application
+
+		//GIVEN
+		inStr, err = tc.graphqlizer.APIDefinitionInputToGQL(graphql.APIDefinitionInput{
+			Name:      "new-api-name",
+			TargetURL: "new-api-url",
+		})
+		tmpAPI := graphql.APIDefinition{}
+		require.NoError(t, err)
+
+		// WHEN
+		addReq = gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+			result: addAPI(applicationID: "%s", in: %s) {
+					%s
+				}
+			}`, "foo", inStr, tc.gqlFieldsProvider.ForAPIDefinition()))
+		saveQueryInExamples(t, addReq.Query(), "add API")
+
+		err = tc.RunQuery(ctx, addReq, &tmpAPI)
+
+		//THEN
+		require.Error(t, err)
+
 		// update
+
+		//GIVEN
 		updateStr, err := tc.graphqlizer.APIDefinitionInputToGQL(graphql.APIDefinitionInput{Name: "updated-api-name", TargetURL: "updated-api-url"})
 		require.NoError(t, err)
 		updatedAPI := graphql.APIDefinition{}
@@ -576,6 +631,31 @@ func TestUpdateApplicationParts(t *testing.T) {
 		updatedApp := getApp(ctx, t, actualApp.ID)
 		assert.Len(t, updatedApp.EventAPIs.Data, 2)
 
+		// add to non exist application
+
+		// GIVEN
+		inStr, err = tc.graphqlizer.EventAPIDefinitionInputToGQL(graphql.EventAPIDefinitionInput{
+			Name: "new-event-api",
+			Spec: &graphql.EventAPISpecInput{
+				EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
+				Format:        graphql.SpecFormatYaml,
+			},
+		})
+		tmpEventAPI := graphql.EventAPIDefinition{}
+		require.NoError(t, err)
+
+		// WHEN
+		addReq = gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+				result: addEventAPI(applicationID: "%s", in: %s) {
+						%s	
+					}
+				}`, "foo", inStr, tc.gqlFieldsProvider.ForEventAPI()))
+		err = tc.RunQuery(ctx, addReq, &tmpEventAPI)
+
+		// THEN
+		require.Error(t, err)
+
 		// update
 
 		// GIVEN
@@ -616,6 +696,8 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 	t.Run("manage documents", func(t *testing.T) {
 		// add
+
+		//GIVEN
 		inStr, err := tc.graphqlizer.DocumentInputToGQL(&graphql.DocumentInput{
 			Title:       "new-document",
 			Format:      graphql.DocumentFormatMarkdown,
@@ -641,7 +723,33 @@ func TestUpdateApplicationParts(t *testing.T) {
 		id := actualDoc.ID
 		require.NotNil(t, id)
 		assert.Equal(t, "new-document", actualDoc.Title)
-		//
+
+		// add to non exists application
+
+		//GIVEN
+		inStr, err = tc.graphqlizer.DocumentInputToGQL(&graphql.DocumentInput{
+			Title:       "new-document",
+			Format:      graphql.DocumentFormatMarkdown,
+			DisplayName: "new-document-display-name",
+			Description: "new-description",
+		})
+
+		require.NoError(t, err)
+		tmpDoc := graphql.Document{}
+
+		// WHEN
+		addReq = gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+				result: addDocument(applicationID: "%s", in: %s) {
+						%s
+					}
+			}`, "foo", inStr, tc.gqlFieldsProvider.ForDocument()))
+		err = tc.RunQuery(ctx, addReq, &tmpDoc)
+		saveQueryInExamples(t, addReq.Query(), "add Document")
+
+		//THEN
+		require.Error(t, err)
+
 		updatedApp := getApp(ctx, t, actualApp.ID)
 		assert.Len(t, updatedApp.Documents.Data, 2)
 		actualDocuTitles := make(map[string]struct{})
