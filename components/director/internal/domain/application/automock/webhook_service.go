@@ -12,18 +12,18 @@ type WebhookService struct {
 }
 
 // Create provides a mock function with given fields: ctx, applicationID, in
-func (_m *WebhookService) Create(ctx context.Context, applicationID string, in model.ApplicationWebhookInput) (string, error) {
+func (_m *WebhookService) Create(ctx context.Context, applicationID string, in model.WebhookInput) (string, error) {
 	ret := _m.Called(ctx, applicationID, in)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.ApplicationWebhookInput) string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.WebhookInput) string); ok {
 		r0 = rf(ctx, applicationID, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, model.ApplicationWebhookInput) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.WebhookInput) error); ok {
 		r1 = rf(ctx, applicationID, in)
 	} else {
 		r1 = ret.Error(1)
@@ -47,15 +47,15 @@ func (_m *WebhookService) Delete(ctx context.Context, id string) error {
 }
 
 // Get provides a mock function with given fields: ctx, id
-func (_m *WebhookService) Get(ctx context.Context, id string) (*model.ApplicationWebhook, error) {
+func (_m *WebhookService) Get(ctx context.Context, id string) (*model.Webhook, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *model.ApplicationWebhook
-	if rf, ok := ret.Get(0).(func(context.Context, string) *model.ApplicationWebhook); ok {
+	var r0 *model.Webhook
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Webhook); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.ApplicationWebhook)
+			r0 = ret.Get(0).(*model.Webhook)
 		}
 	}
 
@@ -70,15 +70,15 @@ func (_m *WebhookService) Get(ctx context.Context, id string) (*model.Applicatio
 }
 
 // List provides a mock function with given fields: ctx, applicationID
-func (_m *WebhookService) List(ctx context.Context, applicationID string) ([]*model.ApplicationWebhook, error) {
+func (_m *WebhookService) List(ctx context.Context, applicationID string) ([]*model.Webhook, error) {
 	ret := _m.Called(ctx, applicationID)
 
-	var r0 []*model.ApplicationWebhook
-	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.ApplicationWebhook); ok {
+	var r0 []*model.Webhook
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Webhook); ok {
 		r0 = rf(ctx, applicationID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.ApplicationWebhook)
+			r0 = ret.Get(0).([]*model.Webhook)
 		}
 	}
 
@@ -93,11 +93,11 @@ func (_m *WebhookService) List(ctx context.Context, applicationID string) ([]*mo
 }
 
 // Update provides a mock function with given fields: ctx, id, in
-func (_m *WebhookService) Update(ctx context.Context, id string, in model.ApplicationWebhookInput) error {
+func (_m *WebhookService) Update(ctx context.Context, id string, in model.WebhookInput) error {
 	ret := _m.Called(ctx, id, in)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.ApplicationWebhookInput) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.WebhookInput) error); ok {
 		r0 = rf(ctx, id, in)
 	} else {
 		r0 = ret.Error(0)

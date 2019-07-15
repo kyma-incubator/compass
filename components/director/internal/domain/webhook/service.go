@@ -9,11 +9,11 @@ import (
 
 //go:generate mockery -name=WebhookRepository -output=automock -outpkg=automock -case=underscore
 type WebhookRepository interface {
-	GetByID(id string) (*model.ApplicationWebhook, error)
-	ListByApplicationID(applicationID string) ([]*model.ApplicationWebhook, error)
-	Create(item *model.ApplicationWebhook) error
-	Update(item *model.ApplicationWebhook) error
-	Delete(item *model.ApplicationWebhook) error
+	GetByID(id string) (*model.Webhook, error)
+	ListByApplicationID(applicationID string) ([]*model.Webhook, error)
+	Create(item *model.Webhook) error
+	Update(item *model.Webhook) error
+	Delete(item *model.Webhook) error
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -33,7 +33,7 @@ func NewService(repo WebhookRepository, uidSvc UIDService) *service {
 	}
 }
 
-func (s *service) Get(ctx context.Context, id string) (*model.ApplicationWebhook, error) {
+func (s *service) Get(ctx context.Context, id string) (*model.Webhook, error) {
 	webhook, err := s.repo.GetByID(id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Webhook with ID %s", id)
@@ -42,11 +42,11 @@ func (s *service) Get(ctx context.Context, id string) (*model.ApplicationWebhook
 	return webhook, nil
 }
 
-func (s *service) List(ctx context.Context, applicationID string) ([]*model.ApplicationWebhook, error) {
+func (s *service) List(ctx context.Context, applicationID string) ([]*model.Webhook, error) {
 	return s.repo.ListByApplicationID(applicationID)
 }
 
-func (s *service) Create(ctx context.Context, applicationID string, in model.ApplicationWebhookInput) (string, error) {
+func (s *service) Create(ctx context.Context, applicationID string, in model.WebhookInput) (string, error) {
 	id := s.uidSvc.Generate()
 	webhook := in.ToWebhook(id, applicationID)
 
@@ -58,7 +58,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.App
 	return webhook.ID, nil
 }
 
-func (s *service) Update(ctx context.Context, id string, in model.ApplicationWebhookInput) error {
+func (s *service) Update(ctx context.Context, id string, in model.WebhookInput) error {
 	webhook, err := s.Get(ctx, id)
 	if err != nil {
 		return errors.Wrap(err, "while getting Webhook")

@@ -32,8 +32,8 @@ func TestResolver_AddWebhook(t *testing.T) {
 		AppServiceFn       func() *automock.ApplicationService
 		ConverterFn        func() *automock.WebhookConverter
 		InputApplicationID string
-		InputWebhook       graphql.ApplicationWebhookInput
-		ExpectedWebhook    *graphql.ApplicationWebhook
+		InputWebhook       graphql.WebhookInput
+		ExpectedWebhook    *graphql.Webhook
 		ExpectedErr        error
 	}{
 		{
@@ -190,8 +190,8 @@ func TestResolver_UpdateWebhook(t *testing.T) {
 		ServiceFn       func() *automock.WebhookService
 		ConverterFn     func() *automock.WebhookConverter
 		InputWebhookID  string
-		InputWebhook    graphql.ApplicationWebhookInput
-		ExpectedWebhook *graphql.ApplicationWebhook
+		InputWebhook    graphql.WebhookInput
+		ExpectedWebhook *graphql.Webhook
 		ExpectedErr     error
 	}{
 		{
@@ -287,8 +287,8 @@ func TestResolver_DeleteWebhook(t *testing.T) {
 		ServiceFn       func() *automock.WebhookService
 		ConverterFn     func() *automock.WebhookConverter
 		InputWebhookID  string
-		InputWebhook    graphql.ApplicationWebhookInput
-		ExpectedWebhook *graphql.ApplicationWebhook
+		InputWebhook    graphql.WebhookInput
+		ExpectedWebhook *graphql.Webhook
 		ExpectedErr     error
 	}{
 		{

@@ -120,13 +120,13 @@ func (r *mutationResolver) AddApplicationLabel(ctx context.Context, applicationI
 func (r *mutationResolver) DeleteApplicationLabel(ctx context.Context, applicationID string, key string, values []string) (*graphql.Label, error) {
 	return r.app.DeleteApplicationLabel(ctx, applicationID, key, values)
 }
-func (r *mutationResolver) AddWebhook(ctx context.Context, applicationID string, in graphql.ApplicationWebhookInput) (*graphql.ApplicationWebhook, error) {
+func (r *mutationResolver) AddWebhook(ctx context.Context, applicationID string, in graphql.WebhookInput) (*graphql.Webhook, error) {
 	return r.webhook.AddApplicationWebhook(ctx, applicationID, in)
 }
-func (r *mutationResolver) UpdateWebhook(ctx context.Context, webhookID string, in graphql.ApplicationWebhookInput) (*graphql.ApplicationWebhook, error) {
+func (r *mutationResolver) UpdateWebhook(ctx context.Context, webhookID string, in graphql.WebhookInput) (*graphql.Webhook, error) {
 	return r.webhook.UpdateApplicationWebhook(ctx, webhookID, in)
 }
-func (r *mutationResolver) DeleteWebhook(ctx context.Context, webhookID string) (*graphql.ApplicationWebhook, error) {
+func (r *mutationResolver) DeleteWebhook(ctx context.Context, webhookID string) (*graphql.Webhook, error) {
 	return r.webhook.DeleteApplicationWebhook(ctx, webhookID)
 }
 func (r *mutationResolver) AddAPI(ctx context.Context, applicationID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
@@ -185,7 +185,7 @@ type applicationResolver struct {
 	*RootResolver
 }
 
-func (r *applicationResolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*graphql.ApplicationWebhook, error) {
+func (r *applicationResolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*graphql.Webhook, error) {
 	return r.app.Webhooks(ctx, obj)
 }
 func (r *applicationResolver) Apis(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {

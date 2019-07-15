@@ -14,13 +14,13 @@ func TestApplicationWebhookInput_ToWebhook(t *testing.T) {
 	id := "bar"
 	testCases := []struct {
 		Name     string
-		Input    *model.ApplicationWebhookInput
-		Expected *model.ApplicationWebhook
+		Input    *model.WebhookInput
+		Expected *model.Webhook
 	}{
 		{
 			Name: "All properties given",
-			Input: &model.ApplicationWebhookInput{
-				Type: model.ApplicationWebhookTypeConfigurationChanged,
+			Input: &model.WebhookInput{
+				Type: model.WebhookTypeConfigurationChanged,
 				URL:  "foourl",
 				Auth: &model.AuthInput{
 					AdditionalHeaders: map[string][]string{
@@ -29,10 +29,10 @@ func TestApplicationWebhookInput_ToWebhook(t *testing.T) {
 					},
 				},
 			},
-			Expected: &model.ApplicationWebhook{
+			Expected: &model.Webhook{
 				ApplicationID: applicationID,
 				ID:            id,
-				Type:          model.ApplicationWebhookTypeConfigurationChanged,
+				Type:          model.WebhookTypeConfigurationChanged,
 				URL:           "foourl",
 				Auth: &model.Auth{
 					AdditionalHeaders: map[string][]string{
@@ -44,8 +44,8 @@ func TestApplicationWebhookInput_ToWebhook(t *testing.T) {
 		},
 		{
 			Name:  "Empty",
-			Input: &model.ApplicationWebhookInput{},
-			Expected: &model.ApplicationWebhook{
+			Input: &model.WebhookInput{},
+			Expected: &model.Webhook{
 				ApplicationID: applicationID,
 				ID:            id,
 			},

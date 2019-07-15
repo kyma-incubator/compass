@@ -52,7 +52,7 @@ type Application {
     description: String
     labels(key: String): Labels!
     status: ApplicationStatus!
-    webhooks: [ApplicationWebhook!]!
+    webhooks: [Webhook!]!
     healthCheckURL: String
     """ group allows to find different versions of the same API """
     apis(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage!
@@ -123,7 +123,7 @@ enum ApplicationStatusCondition {
     FAILED
 }
 
-type ApplicationWebhook {
+type Webhook {
     id: ID!
     applicationID: ID!
     type: ApplicationWebhookType!
@@ -318,7 +318,7 @@ input ApplicationInput {
     name: String!
     description: String
     labels: Labels
-    webhooks: [ApplicationWebhookInput!]
+    webhooks: [WebhookInput!]
     healthCheckURL: String
     apis: [APIDefinitionInput!]
     eventAPIs: [EventAPIDefinitionInput!]
@@ -344,7 +344,7 @@ input FetchRequestInput {
 
 # Webhook Input
 
-input ApplicationWebhookInput {
+input WebhookInput {
     type: ApplicationWebhookType!
     url: String!
     auth: AuthInput
@@ -477,9 +477,9 @@ type Mutation {
     # if application does not exist, return error
     deleteApplicationLabel(applicationID: ID!, key: String!, values: [String!]!): Label
 
-    addWebhook(applicationID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
-    updateWebhook(webhookID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
-    deleteWebhook(webhookID: ID!): ApplicationWebhook
+    addWebhook(applicationID: ID!, in: WebhookInput!): Webhook!
+    updateWebhook(webhookID: ID!, in: WebhookInput!): Webhook!
+    deleteWebhook(webhookID: ID!): Webhook
 
     addAPI(applicationID: ID!, in: APIDefinitionInput!): APIDefinition!
     updateAPI(id: ID!, in: APIDefinitionInput!): APIDefinition!

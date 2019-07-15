@@ -721,11 +721,11 @@ func TestResolver_Documents(t *testing.T) {
 func TestResolver_Webhooks(t *testing.T) {
 	// given
 	applicationID := "fooid"
-	modelWebhooks := []*model.ApplicationWebhook{
+	modelWebhooks := []*model.Webhook{
 		fixModelWebhook(applicationID, "foo"),
 		fixModelWebhook(applicationID, "bar"),
 	}
-	gqlWebhooks := []*graphql.ApplicationWebhook{
+	gqlWebhooks := []*graphql.Webhook{
 		fixGQLWebhook("foo"),
 		fixGQLWebhook("bar"),
 	}
@@ -736,7 +736,7 @@ func TestResolver_Webhooks(t *testing.T) {
 		Name           string
 		ServiceFn      func() *automock.WebhookService
 		ConverterFn    func() *automock.WebhookConverter
-		ExpectedResult []*graphql.ApplicationWebhook
+		ExpectedResult []*graphql.Webhook
 		ExpectedErr    error
 	}{
 		{

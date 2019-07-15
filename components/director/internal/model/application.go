@@ -83,7 +83,7 @@ type ApplicationInput struct {
 	Description    *string
 	Labels         map[string][]string
 	HealthCheckURL *string
-	Webhooks       []*ApplicationWebhookInput
+	Webhooks       []*WebhookInput
 	Apis           []*APIDefinitionInput
 	EventAPIs      []*EventAPIDefinitionInput
 	Documents      []*DocumentInput

@@ -20,7 +20,7 @@ func TestService_Create(t *testing.T) {
 
 	modelInput := fixModelWebhookInput("foo")
 
-	webhookModel := mock.MatchedBy(func(webhook *model.ApplicationWebhook) bool {
+	webhookModel := mock.MatchedBy(func(webhook *model.Webhook) bool {
 		return webhook.Type == modelInput.Type && webhook.URL == modelInput.URL
 	})
 
@@ -31,7 +31,7 @@ func TestService_Create(t *testing.T) {
 		Name          string
 		RepositoryFn  func() *automock.WebhookRepository
 		UIDServiceFn  func() *automock.UIDService
-		Input         model.ApplicationWebhookInput
+		Input         model.WebhookInput
 		ID            string
 		ApplicationID string
 		ExpectedErr   error
@@ -109,9 +109,9 @@ func TestService_Get(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		RepositoryFn       func() *automock.WebhookRepository
-		Input              model.ApplicationWebhookInput
+		Input              model.WebhookInput
 		InputID            string
-		ExpectedWebhook    *model.ApplicationWebhook
+		ExpectedWebhook    *model.Webhook
 		ExpectedErrMessage string
 	}{
 		{
@@ -163,7 +163,7 @@ func TestService_List(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
-	modelWebhooks := []*model.ApplicationWebhook{
+	modelWebhooks := []*model.Webhook{
 		fixModelWebhook("1", "foo", "Foo"),
 		fixModelWebhook("2", "bar", "Bar"),
 	}
@@ -175,7 +175,7 @@ func TestService_List(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		RepositoryFn       func() *automock.WebhookRepository
-		ExpectedResult     []*model.ApplicationWebhook
+		ExpectedResult     []*model.Webhook
 		ExpectedErrMessage string
 	}{
 		{
@@ -229,7 +229,7 @@ func TestService_Update(t *testing.T) {
 	id := "bar"
 	modelInput := fixModelWebhookInput(url)
 
-	inputWebhookModel := mock.MatchedBy(func(webhook *model.ApplicationWebhook) bool {
+	inputWebhookModel := mock.MatchedBy(func(webhook *model.Webhook) bool {
 		return webhook.URL == modelInput.URL
 	})
 
@@ -241,7 +241,7 @@ func TestService_Update(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		RepositoryFn       func() *automock.WebhookRepository
-		Input              model.ApplicationWebhookInput
+		Input              model.WebhookInput
 		InputID            string
 		ExpectedErrMessage string
 	}{
@@ -317,7 +317,7 @@ func TestService_Delete(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		RepositoryFn       func() *automock.WebhookRepository
-		Input              model.ApplicationWebhookInput
+		Input              model.WebhookInput
 		InputID            string
 		ExpectedErrMessage string
 	}{

@@ -23,7 +23,7 @@ func TestService_Create(t *testing.T) {
 	testErr := errors.New("Test error")
 	modelInput := model.ApplicationInput{
 		Name: "Foo",
-		Webhooks: []*model.ApplicationWebhookInput{
+		Webhooks: []*model.WebhookInput{
 			{URL: "test.foo.com"},
 			{URL: "test.bar.com"},
 		},
@@ -931,7 +931,7 @@ func TestService_DeleteLabel(t *testing.T) {
 
 type testModel struct {
 	ApplicationMatcherFn func(app *model.Application) bool
-	Webhooks             []*model.ApplicationWebhook
+	Webhooks             []*model.Webhook
 	Apis                 []*model.APIDefinition
 	EventAPIs            []*model.EventAPIDefinition
 	Documents            []*model.Document
@@ -942,7 +942,7 @@ func modelFromInput(in model.ApplicationInput, applicationID string) testModel {
 		return app.Name == in.Name && app.Description == in.Description
 	}
 
-	var webhooksModel []*model.ApplicationWebhook
+	var webhooksModel []*model.Webhook
 	for _, item := range in.Webhooks {
 		webhooksModel = append(webhooksModel, item.ToWebhook(uuid.New().String(), applicationID))
 	}

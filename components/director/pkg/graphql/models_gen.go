@@ -75,7 +75,7 @@ type ApplicationInput struct {
 	Name           string                     `json:"name"`
 	Description    *string                    `json:"description"`
 	Labels         *Labels                    `json:"labels"`
-	Webhooks       []*ApplicationWebhookInput `json:"webhooks"`
+	Webhooks       []*WebhookInput            `json:"webhooks"`
 	HealthCheckURL *string                    `json:"healthCheckURL"`
 	Apis           []*APIDefinitionInput      `json:"apis"`
 	EventAPIs      []*EventAPIDefinitionInput `json:"eventAPIs"`
@@ -93,20 +93,6 @@ func (ApplicationPage) IsPageable() {}
 type ApplicationStatus struct {
 	Condition ApplicationStatusCondition `json:"condition"`
 	Timestamp Timestamp                  `json:"timestamp"`
-}
-
-type ApplicationWebhook struct {
-	ID            string                 `json:"id"`
-	ApplicationID string                 `json:"applicationID"`
-	Type          ApplicationWebhookType `json:"type"`
-	URL           string                 `json:"url"`
-	Auth          *Auth                  `json:"auth"`
-}
-
-type ApplicationWebhookInput struct {
-	Type ApplicationWebhookType `json:"type"`
-	URL  string                 `json:"url"`
-	Auth *AuthInput             `json:"auth"`
 }
 
 type Auth struct {
@@ -351,6 +337,20 @@ type VersionInput struct {
 	Deprecated      *bool   `json:"deprecated"`
 	DeprecatedSince *string `json:"deprecatedSince"`
 	ForRemoval      *bool   `json:"forRemoval"`
+}
+
+type Webhook struct {
+	ID            string                 `json:"id"`
+	ApplicationID string                 `json:"applicationID"`
+	Type          ApplicationWebhookType `json:"type"`
+	URL           string                 `json:"url"`
+	Auth          *Auth                  `json:"auth"`
+}
+
+type WebhookInput struct {
+	Type ApplicationWebhookType `json:"type"`
+	URL  string                 `json:"url"`
+	Auth *AuthInput             `json:"auth"`
 }
 
 type APISpecType string

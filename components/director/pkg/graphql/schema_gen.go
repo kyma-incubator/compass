@@ -95,14 +95,6 @@ type ComplexityRoot struct {
 		Timestamp func(childComplexity int) int
 	}
 
-	ApplicationWebhook struct {
-		ApplicationID func(childComplexity int) int
-		Auth          func(childComplexity int) int
-		ID            func(childComplexity int) int
-		Type          func(childComplexity int) int
-		URL           func(childComplexity int) int
-	}
-
 	Auth struct {
 		AdditionalHeaders     func(childComplexity int) int
 		AdditionalQueryParams func(childComplexity int) int
@@ -205,7 +197,7 @@ type ComplexityRoot struct {
 		AddDocument            func(childComplexity int, applicationID string, in DocumentInput) int
 		AddEventAPI            func(childComplexity int, applicationID string, in EventAPIDefinitionInput) int
 		AddRuntimeLabel        func(childComplexity int, runtimeID string, key string, values []string) int
-		AddWebhook             func(childComplexity int, applicationID string, in ApplicationWebhookInput) int
+		AddWebhook             func(childComplexity int, applicationID string, in WebhookInput) int
 		CreateApplication      func(childComplexity int, in ApplicationInput) int
 		CreateRuntime          func(childComplexity int, in RuntimeInput) int
 		DeleteAPI              func(childComplexity int, id string) int
@@ -224,7 +216,7 @@ type ComplexityRoot struct {
 		UpdateApplication      func(childComplexity int, id string, in ApplicationInput) int
 		UpdateEventAPI         func(childComplexity int, id string, in EventAPIDefinitionInput) int
 		UpdateRuntime          func(childComplexity int, id string, in RuntimeInput) int
-		UpdateWebhook          func(childComplexity int, webhookID string, in ApplicationWebhookInput) int
+		UpdateWebhook          func(childComplexity int, webhookID string, in WebhookInput) int
 	}
 
 	OAuthCredentialData struct {
@@ -278,10 +270,18 @@ type ComplexityRoot struct {
 		ForRemoval      func(childComplexity int) int
 		Value           func(childComplexity int) int
 	}
+
+	Webhook struct {
+		ApplicationID func(childComplexity int) int
+		Auth          func(childComplexity int) int
+		ID            func(childComplexity int) int
+		Type          func(childComplexity int) int
+		URL           func(childComplexity int) int
+	}
 }
 
 type ApplicationResolver interface {
-	Webhooks(ctx context.Context, obj *Application) ([]*ApplicationWebhook, error)
+	Webhooks(ctx context.Context, obj *Application) ([]*Webhook, error)
 
 	Apis(ctx context.Context, obj *Application, group *string, first *int, after *PageCursor) (*APIDefinitionPage, error)
 	EventAPIs(ctx context.Context, obj *Application, group *string, first *int, after *PageCursor) (*EventAPIDefinitionPage, error)
@@ -293,9 +293,9 @@ type MutationResolver interface {
 	DeleteApplication(ctx context.Context, id string) (*Application, error)
 	AddApplicationLabel(ctx context.Context, applicationID string, key string, values []string) (*Label, error)
 	DeleteApplicationLabel(ctx context.Context, applicationID string, key string, values []string) (*Label, error)
-	AddWebhook(ctx context.Context, applicationID string, in ApplicationWebhookInput) (*ApplicationWebhook, error)
-	UpdateWebhook(ctx context.Context, webhookID string, in ApplicationWebhookInput) (*ApplicationWebhook, error)
-	DeleteWebhook(ctx context.Context, webhookID string) (*ApplicationWebhook, error)
+	AddWebhook(ctx context.Context, applicationID string, in WebhookInput) (*Webhook, error)
+	UpdateWebhook(ctx context.Context, webhookID string, in WebhookInput) (*Webhook, error)
+	DeleteWebhook(ctx context.Context, webhookID string) (*Webhook, error)
 	AddAPI(ctx context.Context, applicationID string, in APIDefinitionInput) (*APIDefinition, error)
 	UpdateAPI(ctx context.Context, id string, in APIDefinitionInput) (*APIDefinition, error)
 	DeleteAPI(ctx context.Context, id string) (*APIDefinition, error)
@@ -592,41 +592,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ApplicationStatus.Timestamp(childComplexity), true
-
-	case "ApplicationWebhook.applicationID":
-		if e.complexity.ApplicationWebhook.ApplicationID == nil {
-			break
-		}
-
-		return e.complexity.ApplicationWebhook.ApplicationID(childComplexity), true
-
-	case "ApplicationWebhook.auth":
-		if e.complexity.ApplicationWebhook.Auth == nil {
-			break
-		}
-
-		return e.complexity.ApplicationWebhook.Auth(childComplexity), true
-
-	case "ApplicationWebhook.id":
-		if e.complexity.ApplicationWebhook.ID == nil {
-			break
-		}
-
-		return e.complexity.ApplicationWebhook.ID(childComplexity), true
-
-	case "ApplicationWebhook.type":
-		if e.complexity.ApplicationWebhook.Type == nil {
-			break
-		}
-
-		return e.complexity.ApplicationWebhook.Type(childComplexity), true
-
-	case "ApplicationWebhook.url":
-		if e.complexity.ApplicationWebhook.URL == nil {
-			break
-		}
-
-		return e.complexity.ApplicationWebhook.URL(childComplexity), true
 
 	case "Auth.additionalHeaders":
 		if e.complexity.Auth.AdditionalHeaders == nil {
@@ -1076,7 +1041,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AddWebhook(childComplexity, args["applicationID"].(string), args["in"].(ApplicationWebhookInput)), true
+		return e.complexity.Mutation.AddWebhook(childComplexity, args["applicationID"].(string), args["in"].(WebhookInput)), true
 
 	case "Mutation.createApplication":
 		if e.complexity.Mutation.CreateApplication == nil {
@@ -1304,7 +1269,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateWebhook(childComplexity, args["webhookID"].(string), args["in"].(ApplicationWebhookInput)), true
+		return e.complexity.Mutation.UpdateWebhook(childComplexity, args["webhookID"].(string), args["in"].(WebhookInput)), true
 
 	case "OAuthCredentialData.clientId":
 		if e.complexity.OAuthCredentialData.ClientID == nil {
@@ -1532,6 +1497,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Version.Value(childComplexity), true
 
+	case "Webhook.applicationID":
+		if e.complexity.Webhook.ApplicationID == nil {
+			break
+		}
+
+		return e.complexity.Webhook.ApplicationID(childComplexity), true
+
+	case "Webhook.auth":
+		if e.complexity.Webhook.Auth == nil {
+			break
+		}
+
+		return e.complexity.Webhook.Auth(childComplexity), true
+
+	case "Webhook.id":
+		if e.complexity.Webhook.ID == nil {
+			break
+		}
+
+		return e.complexity.Webhook.ID(childComplexity), true
+
+	case "Webhook.type":
+		if e.complexity.Webhook.Type == nil {
+			break
+		}
+
+		return e.complexity.Webhook.Type(childComplexity), true
+
+	case "Webhook.url":
+		if e.complexity.Webhook.URL == nil {
+			break
+		}
+
+		return e.complexity.Webhook.URL(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -1663,7 +1663,7 @@ type Application {
     description: String
     labels(key: String): Labels!
     status: ApplicationStatus!
-    webhooks: [ApplicationWebhook!]!
+    webhooks: [Webhook!]!
     healthCheckURL: String
     """ group allows to find different versions of the same API """
     apis(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage!
@@ -1734,7 +1734,7 @@ enum ApplicationStatusCondition {
     FAILED
 }
 
-type ApplicationWebhook {
+type Webhook {
     id: ID!
     applicationID: ID!
     type: ApplicationWebhookType!
@@ -1929,7 +1929,7 @@ input ApplicationInput {
     name: String!
     description: String
     labels: Labels
-    webhooks: [ApplicationWebhookInput!]
+    webhooks: [WebhookInput!]
     healthCheckURL: String
     apis: [APIDefinitionInput!]
     eventAPIs: [EventAPIDefinitionInput!]
@@ -1955,7 +1955,7 @@ input FetchRequestInput {
 
 # Webhook Input
 
-input ApplicationWebhookInput {
+input WebhookInput {
     type: ApplicationWebhookType!
     url: String!
     auth: AuthInput
@@ -2088,9 +2088,9 @@ type Mutation {
     # if application does not exist, return error
     deleteApplicationLabel(applicationID: ID!, key: String!, values: [String!]!): Label
 
-    addWebhook(applicationID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
-    updateWebhook(webhookID: ID!, in: ApplicationWebhookInput!): ApplicationWebhook!
-    deleteWebhook(webhookID: ID!): ApplicationWebhook
+    addWebhook(applicationID: ID!, in: WebhookInput!): Webhook!
+    updateWebhook(webhookID: ID!, in: WebhookInput!): Webhook!
+    deleteWebhook(webhookID: ID!): Webhook
 
     addAPI(applicationID: ID!, in: APIDefinitionInput!): APIDefinition!
     updateAPI(id: ID!, in: APIDefinitionInput!): APIDefinition!
@@ -2376,9 +2376,9 @@ func (ec *executionContext) field_Mutation_addWebhook_args(ctx context.Context, 
 		}
 	}
 	args["applicationID"] = arg0
-	var arg1 ApplicationWebhookInput
+	var arg1 WebhookInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg1, err = ec.unmarshalNApplicationWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhookInput(ctx, tmp)
+		arg1, err = ec.unmarshalNWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2738,9 +2738,9 @@ func (ec *executionContext) field_Mutation_updateWebhook_args(ctx context.Contex
 		}
 	}
 	args["webhookID"] = arg0
-	var arg1 ApplicationWebhookInput
+	var arg1 WebhookInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg1, err = ec.unmarshalNApplicationWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhookInput(ctx, tmp)
+		arg1, err = ec.unmarshalNWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -3564,10 +3564,10 @@ func (ec *executionContext) _Application_webhooks(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*ApplicationWebhook)
+	res := resTmp.([]*Webhook)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNApplicationWebhook2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhook(ctx, field.Selections, res)
+	return ec.marshalNWebhook2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_healthCheckURL(ctx context.Context, field graphql.CollectedField, obj *Application) graphql.Marshaler {
@@ -3829,138 +3829,6 @@ func (ec *executionContext) _ApplicationStatus_timestamp(ctx context.Context, fi
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ApplicationWebhook_id(ctx context.Context, field graphql.CollectedField, obj *ApplicationWebhook) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "ApplicationWebhook",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ApplicationWebhook_applicationID(ctx context.Context, field graphql.CollectedField, obj *ApplicationWebhook) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "ApplicationWebhook",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ApplicationID, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ApplicationWebhook_type(ctx context.Context, field graphql.CollectedField, obj *ApplicationWebhook) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "ApplicationWebhook",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Type, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(ApplicationWebhookType)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNApplicationWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhookType(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ApplicationWebhook_url(ctx context.Context, field graphql.CollectedField, obj *ApplicationWebhook) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "ApplicationWebhook",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.URL, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ApplicationWebhook_auth(ctx context.Context, field graphql.CollectedField, obj *ApplicationWebhook) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "ApplicationWebhook",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Auth, nil
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*Auth)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Auth_credential(ctx context.Context, field graphql.CollectedField, obj *Auth) graphql.Marshaler {
@@ -5551,7 +5419,7 @@ func (ec *executionContext) _Mutation_addWebhook(ctx context.Context, field grap
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().AddWebhook(rctx, args["applicationID"].(string), args["in"].(ApplicationWebhookInput))
+		return ec.resolvers.Mutation().AddWebhook(rctx, args["applicationID"].(string), args["in"].(WebhookInput))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -5559,10 +5427,10 @@ func (ec *executionContext) _Mutation_addWebhook(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*ApplicationWebhook)
+	res := resTmp.(*Webhook)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNApplicationWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhook(ctx, field.Selections, res)
+	return ec.marshalNWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_updateWebhook(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -5585,7 +5453,7 @@ func (ec *executionContext) _Mutation_updateWebhook(ctx context.Context, field g
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateWebhook(rctx, args["webhookID"].(string), args["in"].(ApplicationWebhookInput))
+		return ec.resolvers.Mutation().UpdateWebhook(rctx, args["webhookID"].(string), args["in"].(WebhookInput))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -5593,10 +5461,10 @@ func (ec *executionContext) _Mutation_updateWebhook(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*ApplicationWebhook)
+	res := resTmp.(*Webhook)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNApplicationWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhook(ctx, field.Selections, res)
+	return ec.marshalNWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteWebhook(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -5624,10 +5492,10 @@ func (ec *executionContext) _Mutation_deleteWebhook(ctx context.Context, field g
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*ApplicationWebhook)
+	res := resTmp.(*Webhook)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOApplicationWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhook(ctx, field.Selections, res)
+	return ec.marshalOWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_addAPI(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -7019,6 +6887,138 @@ func (ec *executionContext) _Version_forRemoval(ctx context.Context, field graph
 	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Webhook_id(ctx context.Context, field graphql.CollectedField, obj *Webhook) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Webhook",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Webhook_applicationID(ctx context.Context, field graphql.CollectedField, obj *Webhook) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Webhook",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ApplicationID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Webhook_type(ctx context.Context, field graphql.CollectedField, obj *Webhook) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Webhook",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(ApplicationWebhookType)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNApplicationWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhookType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Webhook_url(ctx context.Context, field graphql.CollectedField, obj *Webhook) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Webhook",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.URL, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Webhook_auth(ctx context.Context, field graphql.CollectedField, obj *Webhook) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Webhook",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Auth, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Auth)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -7966,7 +7966,7 @@ func (ec *executionContext) unmarshalInputApplicationInput(ctx context.Context, 
 			}
 		case "webhooks":
 			var err error
-			it.Webhooks, err = ec.unmarshalOApplicationWebhookInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhookInput(ctx, v)
+			it.Webhooks, err = ec.unmarshalOWebhookInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7991,36 +7991,6 @@ func (ec *executionContext) unmarshalInputApplicationInput(ctx context.Context, 
 		case "documents":
 			var err error
 			it.Documents, err = ec.unmarshalODocumentInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocumentInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputApplicationWebhookInput(ctx context.Context, v interface{}) (ApplicationWebhookInput, error) {
-	var it ApplicationWebhookInput
-	var asMap = v.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "type":
-			var err error
-			it.Type, err = ec.unmarshalNApplicationWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhookType(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "url":
-			var err error
-			it.URL, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "auth":
-			var err error
-			it.Auth, err = ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8470,6 +8440,36 @@ func (ec *executionContext) unmarshalInputVersionInput(ctx context.Context, v in
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputWebhookInput(ctx context.Context, v interface{}) (WebhookInput, error) {
+	var it WebhookInput
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "type":
+			var err error
+			it.Type, err = ec.unmarshalNApplicationWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhookType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "url":
+			var err error
+			it.URL, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "auth":
+			var err error
+			it.Auth, err = ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -8820,50 +8820,6 @@ func (ec *executionContext) _ApplicationStatus(ctx context.Context, sel ast.Sele
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var applicationWebhookImplementors = []string{"ApplicationWebhook"}
-
-func (ec *executionContext) _ApplicationWebhook(ctx context.Context, sel ast.SelectionSet, obj *ApplicationWebhook) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, applicationWebhookImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("ApplicationWebhook")
-		case "id":
-			out.Values[i] = ec._ApplicationWebhook_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "applicationID":
-			out.Values[i] = ec._ApplicationWebhook_applicationID(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "type":
-			out.Values[i] = ec._ApplicationWebhook_type(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "url":
-			out.Values[i] = ec._ApplicationWebhook_url(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "auth":
-			out.Values[i] = ec._ApplicationWebhook_auth(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9868,6 +9824,50 @@ func (ec *executionContext) _Version(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
+var webhookImplementors = []string{"Webhook"}
+
+func (ec *executionContext) _Webhook(ctx context.Context, sel ast.SelectionSet, obj *Webhook) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, webhookImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Webhook")
+		case "id":
+			out.Values[i] = ec._Webhook_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "applicationID":
+			out.Values[i] = ec._Webhook_applicationID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "type":
+			out.Values[i] = ec._Webhook_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "url":
+			out.Values[i] = ec._Webhook_url(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "auth":
+			out.Values[i] = ec._Webhook_auth(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var __DirectiveImplementors = []string{"__Directive"}
 
 func (ec *executionContext) ___Directive(ctx context.Context, sel ast.SelectionSet, obj *introspection.Directive) graphql.Marshaler {
@@ -10289,69 +10289,6 @@ func (ec *executionContext) unmarshalNApplicationStatusCondition2githubᚗcomᚋ
 
 func (ec *executionContext) marshalNApplicationStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatusCondition(ctx context.Context, sel ast.SelectionSet, v ApplicationStatusCondition) graphql.Marshaler {
 	return v
-}
-
-func (ec *executionContext) marshalNApplicationWebhook2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhook(ctx context.Context, sel ast.SelectionSet, v ApplicationWebhook) graphql.Marshaler {
-	return ec._ApplicationWebhook(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNApplicationWebhook2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhook(ctx context.Context, sel ast.SelectionSet, v []*ApplicationWebhook) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		rctx := &graphql.ResolverContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithResolverContext(ctx, rctx)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNApplicationWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhook(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
-func (ec *executionContext) marshalNApplicationWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhook(ctx context.Context, sel ast.SelectionSet, v *ApplicationWebhook) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._ApplicationWebhook(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNApplicationWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhookInput(ctx context.Context, v interface{}) (ApplicationWebhookInput, error) {
-	return ec.unmarshalInputApplicationWebhookInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNApplicationWebhookInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhookInput(ctx context.Context, v interface{}) (*ApplicationWebhookInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNApplicationWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhookInput(ctx, v)
-	return &res, err
 }
 
 func (ec *executionContext) unmarshalNApplicationWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhookType(ctx context.Context, v interface{}) (ApplicationWebhookType, error) {
@@ -11014,6 +10951,69 @@ func (ec *executionContext) marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋ
 	return v
 }
 
+func (ec *executionContext) marshalNWebhook2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx context.Context, sel ast.SelectionSet, v Webhook) graphql.Marshaler {
+	return ec._Webhook(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNWebhook2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx context.Context, sel ast.SelectionSet, v []*Webhook) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx context.Context, sel ast.SelectionSet, v *Webhook) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Webhook(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInput(ctx context.Context, v interface{}) (WebhookInput, error) {
+	return ec.unmarshalInputWebhookInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNWebhookInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInput(ctx context.Context, v interface{}) (*WebhookInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋvendorᚋgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
 	return ec.___Directive(ctx, sel, &v)
 }
@@ -11303,37 +11303,6 @@ func (ec *executionContext) marshalOApplication2ᚖgithubᚗcomᚋkymaᚑincubat
 		return graphql.Null
 	}
 	return ec._Application(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOApplicationWebhook2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhook(ctx context.Context, sel ast.SelectionSet, v ApplicationWebhook) graphql.Marshaler {
-	return ec._ApplicationWebhook(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOApplicationWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhook(ctx context.Context, sel ast.SelectionSet, v *ApplicationWebhook) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._ApplicationWebhook(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOApplicationWebhookInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhookInput(ctx context.Context, v interface{}) ([]*ApplicationWebhookInput, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*ApplicationWebhookInput, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalNApplicationWebhookInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhookInput(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
 }
 
 func (ec *executionContext) marshalOAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx context.Context, sel ast.SelectionSet, v Auth) graphql.Marshaler {
@@ -11951,6 +11920,37 @@ func (ec *executionContext) unmarshalOVersionInput2ᚖgithubᚗcomᚋkymaᚑincu
 	}
 	res, err := ec.unmarshalOVersionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐVersionInput(ctx, v)
 	return &res, err
+}
+
+func (ec *executionContext) marshalOWebhook2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx context.Context, sel ast.SelectionSet, v Webhook) graphql.Marshaler {
+	return ec._Webhook(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx context.Context, sel ast.SelectionSet, v *Webhook) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Webhook(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOWebhookInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInput(ctx context.Context, v interface{}) ([]*WebhookInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*WebhookInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNWebhookInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋvendorᚋgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValue(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

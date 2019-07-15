@@ -12,15 +12,15 @@ type WebhookConverter struct {
 }
 
 // InputFromGraphQL provides a mock function with given fields: in
-func (_m *WebhookConverter) InputFromGraphQL(in *graphql.ApplicationWebhookInput) *model.ApplicationWebhookInput {
+func (_m *WebhookConverter) InputFromGraphQL(in *graphql.WebhookInput) *model.WebhookInput {
 	ret := _m.Called(in)
 
-	var r0 *model.ApplicationWebhookInput
-	if rf, ok := ret.Get(0).(func(*graphql.ApplicationWebhookInput) *model.ApplicationWebhookInput); ok {
+	var r0 *model.WebhookInput
+	if rf, ok := ret.Get(0).(func(*graphql.WebhookInput) *model.WebhookInput); ok {
 		r0 = rf(in)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.ApplicationWebhookInput)
+			r0 = ret.Get(0).(*model.WebhookInput)
 		}
 	}
 
@@ -28,15 +28,15 @@ func (_m *WebhookConverter) InputFromGraphQL(in *graphql.ApplicationWebhookInput
 }
 
 // MultipleInputFromGraphQL provides a mock function with given fields: in
-func (_m *WebhookConverter) MultipleInputFromGraphQL(in []*graphql.ApplicationWebhookInput) []*model.ApplicationWebhookInput {
+func (_m *WebhookConverter) MultipleInputFromGraphQL(in []*graphql.WebhookInput) []*model.WebhookInput {
 	ret := _m.Called(in)
 
-	var r0 []*model.ApplicationWebhookInput
-	if rf, ok := ret.Get(0).(func([]*graphql.ApplicationWebhookInput) []*model.ApplicationWebhookInput); ok {
+	var r0 []*model.WebhookInput
+	if rf, ok := ret.Get(0).(func([]*graphql.WebhookInput) []*model.WebhookInput); ok {
 		r0 = rf(in)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.ApplicationWebhookInput)
+			r0 = ret.Get(0).([]*model.WebhookInput)
 		}
 	}
 
@@ -44,15 +44,15 @@ func (_m *WebhookConverter) MultipleInputFromGraphQL(in []*graphql.ApplicationWe
 }
 
 // MultipleToGraphQL provides a mock function with given fields: in
-func (_m *WebhookConverter) MultipleToGraphQL(in []*model.ApplicationWebhook) []*graphql.ApplicationWebhook {
+func (_m *WebhookConverter) MultipleToGraphQL(in []*model.Webhook) []*graphql.Webhook {
 	ret := _m.Called(in)
 
-	var r0 []*graphql.ApplicationWebhook
-	if rf, ok := ret.Get(0).(func([]*model.ApplicationWebhook) []*graphql.ApplicationWebhook); ok {
+	var r0 []*graphql.Webhook
+	if rf, ok := ret.Get(0).(func([]*model.Webhook) []*graphql.Webhook); ok {
 		r0 = rf(in)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*graphql.ApplicationWebhook)
+			r0 = ret.Get(0).([]*graphql.Webhook)
 		}
 	}
 
@@ -60,15 +60,15 @@ func (_m *WebhookConverter) MultipleToGraphQL(in []*model.ApplicationWebhook) []
 }
 
 // ToGraphQL provides a mock function with given fields: in
-func (_m *WebhookConverter) ToGraphQL(in *model.ApplicationWebhook) *graphql.ApplicationWebhook {
+func (_m *WebhookConverter) ToGraphQL(in *model.Webhook) *graphql.Webhook {
 	ret := _m.Called(in)
 
-	var r0 *graphql.ApplicationWebhook
-	if rf, ok := ret.Get(0).(func(*model.ApplicationWebhook) *graphql.ApplicationWebhook); ok {
+	var r0 *graphql.Webhook
+	if rf, ok := ret.Get(0).(func(*model.Webhook) *graphql.Webhook); ok {
 		r0 = rf(in)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*graphql.ApplicationWebhook)
+			r0 = ret.Get(0).(*graphql.Webhook)
 		}
 	}
 

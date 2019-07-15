@@ -11,11 +11,11 @@ type WebhookRepository struct {
 }
 
 // Create provides a mock function with given fields: item
-func (_m *WebhookRepository) Create(item *model.ApplicationWebhook) error {
+func (_m *WebhookRepository) Create(item *model.Webhook) error {
 	ret := _m.Called(item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*model.ApplicationWebhook) error); ok {
+	if rf, ok := ret.Get(0).(func(*model.Webhook) error); ok {
 		r0 = rf(item)
 	} else {
 		r0 = ret.Error(0)
@@ -25,11 +25,11 @@ func (_m *WebhookRepository) Create(item *model.ApplicationWebhook) error {
 }
 
 // Delete provides a mock function with given fields: item
-func (_m *WebhookRepository) Delete(item *model.ApplicationWebhook) error {
+func (_m *WebhookRepository) Delete(item *model.Webhook) error {
 	ret := _m.Called(item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*model.ApplicationWebhook) error); ok {
+	if rf, ok := ret.Get(0).(func(*model.Webhook) error); ok {
 		r0 = rf(item)
 	} else {
 		r0 = ret.Error(0)
@@ -39,15 +39,15 @@ func (_m *WebhookRepository) Delete(item *model.ApplicationWebhook) error {
 }
 
 // GetByID provides a mock function with given fields: id
-func (_m *WebhookRepository) GetByID(id string) (*model.ApplicationWebhook, error) {
+func (_m *WebhookRepository) GetByID(id string) (*model.Webhook, error) {
 	ret := _m.Called(id)
 
-	var r0 *model.ApplicationWebhook
-	if rf, ok := ret.Get(0).(func(string) *model.ApplicationWebhook); ok {
+	var r0 *model.Webhook
+	if rf, ok := ret.Get(0).(func(string) *model.Webhook); ok {
 		r0 = rf(id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.ApplicationWebhook)
+			r0 = ret.Get(0).(*model.Webhook)
 		}
 	}
 
@@ -62,15 +62,15 @@ func (_m *WebhookRepository) GetByID(id string) (*model.ApplicationWebhook, erro
 }
 
 // ListByApplicationID provides a mock function with given fields: applicationID
-func (_m *WebhookRepository) ListByApplicationID(applicationID string) ([]*model.ApplicationWebhook, error) {
+func (_m *WebhookRepository) ListByApplicationID(applicationID string) ([]*model.Webhook, error) {
 	ret := _m.Called(applicationID)
 
-	var r0 []*model.ApplicationWebhook
-	if rf, ok := ret.Get(0).(func(string) []*model.ApplicationWebhook); ok {
+	var r0 []*model.Webhook
+	if rf, ok := ret.Get(0).(func(string) []*model.Webhook); ok {
 		r0 = rf(applicationID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.ApplicationWebhook)
+			r0 = ret.Get(0).([]*model.Webhook)
 		}
 	}
 
@@ -85,11 +85,11 @@ func (_m *WebhookRepository) ListByApplicationID(applicationID string) ([]*model
 }
 
 // Update provides a mock function with given fields: item
-func (_m *WebhookRepository) Update(item *model.ApplicationWebhook) error {
+func (_m *WebhookRepository) Update(item *model.Webhook) error {
 	ret := _m.Called(item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*model.ApplicationWebhook) error); ok {
+	if rf, ok := ret.Get(0).(func(*model.Webhook) error); ok {
 		r0 = rf(item)
 	} else {
 		r0 = ret.Error(0)
