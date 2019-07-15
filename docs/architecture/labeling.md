@@ -9,6 +9,7 @@ The following document describes the labeling feature.
 - Reading all label keys for tenant
 - Validating label values against JSON schema / type
 - Labeling new Application/Runtime with `scenarios: default` label, if no scenario label is specified
+- Query Applications / Runtimes by particular scenario (key: value)
 
 ## Terms
 
@@ -85,14 +86,18 @@ const (
 
 It is a Label with key `scenarios`, which references LabelDefinition of type `ENUM`. Based on the `scenarios` Label, Applications and Runtimes are connected. Runtime Agent does query for all Scenarios assigned to Application.
 
+While adding new tenat, LabelDefinition `scenarios` is automatically created.
+
 ## API
 
 To manage Labels and LabelDefinitions, the following GraphQL API is proposed:
 
 ```graphql
+
 type Query {
     # (...)
     labelDefinitions: [LabelDefinition!]!
+    labelDefinition(key: String!): LabelDefinition
     labels: [Label!]!
     label(key: String!): Label
 }
@@ -108,113 +113,101 @@ type Mutation {
     deleteEnumLabelDefinitionValues(key: String!, values: [String!]!): LabelDefinition!
 
     """If the LabelDefinition for the key is not specified, it will create LabelDefinition to String"""
-    setSingleLabel(objectID: ID!, objectType: LabelableObjectType!, key: String!, value: Any!): Label!
-
-    """If the LabelDefinition for the key is not specified, it will create LabelDefinition to String"""
-    setArrayLabel(objectID: ID!, objectType: LabelableObjectType!, key: String!, values: [Any!]!): Label!
+    addLabel(objectID: ID!, objectType: LabelableObjectType!, key: String!, values: [Any!]!): Label!
 
     """Removes Label along with all its values. It doesn't remove LabelDefinition"""
     removeLabel(objectID: ID!, objectType: LabelableObjectType!, key: String!): Label!
 
     """It won't allow to update the Label if the Label or LabelDefinition for the key is missing."""
-    addArrayLabelValues(objectID: ID!, objectType: LabelableObjectType!, key: String!, value: [Any!]!): Label!
+    addLabelValues(objectID: ID!, objectType: LabelableObjectType!, key: String!, values: [Any!]!): Label!
+
+    """Overwrites array label values"""
+    updateLabelValues(objectID: ID!, objectType: LabelableObjectType!, key: String!, values: [Any!]!): Label!
 
     """It won't allow to remove label value if the label is not of array type"""
-    deleteArrayLabelValues(objectID: ID!, objectType: LabelableObjectType!, key: String!, values: [Any!]!): Label!
+    deleteLabelValues(objectID: ID!, objectType: LabelableObjectType!, key: String!, values: [Any!]!): Label!
 }
 
 # Label Definition
 
-interface LabelDefinitionBase {
+interface LabelDefinition {
     key: String!
-    type: LabelDefinitionType!
+    # type is stored in __typename
+    defaultValue: Any
 }
 
-type GenericLabelDefinition implements LabelDefinitionBase {
+type StringLabelDefinition implements LabelDefinition {
     key: String!
-    type: LabelDefinitionType!
+    defaultValue: Any
 }
 
-type EnumLabelDefinition implements LabelDefinitionBase {
+type EnumLabelDefinition implements LabelDefinition {
     key: String!
-    type: LabelDefinitionType!
     enum: [String!]!
+    defaultValue: Any
 }
 
-type JSONSchemaLabelDefinition implements LabelDefinitionBase {
+type JSONSchemaLabelDefinition implements LabelDefinition {
     key: String!
-    type: LabelDefinitionType!
     schema: CLOB!
-}
-
-union LabelDefinition = GenericLabelDefinition | EnumLabelDefinition | JSONSchemaLabelDefinition
-
-enum LabelDefinitionType! {
-    JSON_SCHEMA
-    STRING
-    ENUM
+    defaultValue: Any
 }
 
 type LabelDefinitionInput {
     key: String!
-    type: LabelDefinitionType!
     jsonSchema: CLOB
     enum: [String!]
 }
 
 # Label
-
-interface LabelBase {
+type Label {
     key: String!
     definition: LabelDefinition!
-    objectID: ID!
-    objectType: LabelableObjectType!
-    referencedObject: LabelableObject! # resolver
+    usages(filter: LabelUsageFilter): [LabelUsage!]!
 }
 
-type SingleLabel implements LabelBase {
+# used in Runtime and Application types
+type ObjectLabel {
     key: String!
     definition: LabelDefinition!
+    usage: LabelUsage!
+}
+
+interface LabelUsage {    
+    objectID: ID! #TODO:
+    objectType: LabelableObjectType!
+    referencedObject: LabelableObject # resolver
+}
+
+type SingleLabelUsage implements LabelUsage {
     value: Any!
     objectID: ID!
     objectType: LabelableObjectType!
-    referencedObject: LabelableObject! # resolver
+    referencedObject: LabelableObject # resolverver
 }
 
-type ArrayLabel implements LabelBase {
-    key: String!
-    definition: LabelDefinition!
+type ArrayLabelUsage implements LabelUsage {
     values: [Any!]! # If the LabelDefinition is set to JSON_SCHEMA one, validate every single object against that schema.
     objectID: ID!
     objectType: LabelableObjectType!
-    referencedObject: LabelableObject! # resolver
+    referencedObject: LabelableObject # resolver
 }
 
-union Label = SingleLabel | ArrayLabel
+input LabelUsageFilter {
+    values: [String!]
+    objectType: LabelableObjectType
+    operator: FilterOperator = ALL
+}
 
-enum LabelableObjectType {
-    RUNTIME,
-    APPLICATION
+enum FilterOperator {
+    ALL, ANY
 }
 
 union LabelableObject = Runtime | Application
 
-#
-# Changes in Runtime and Application inputs for creating and updating Application and Runtime
-#
-
-# Application Input
-
-input ApplicationInput {
-    # (...)
-    scenarios: [String!] # Instead of labels
-}
-
-# Runtime Input
-
-input RuntimeInput {
-    # (...)
-    scenarios: [String!] # Instead of labels
+enum LabelableObjectType {
+    RUNTIME,
+    APPLICATION
 }
 
 #
@@ -223,18 +216,15 @@ input RuntimeInput {
 
 type Runtime {
     # (...)
-    labels: [Label!]! # resolver
-    label(key: String!): Label # resolver
-    scenarios: [String!]! # resolver for convenience - returns the same thing what labels("scenarios").values has
+    labels: [ObjectLabel!]! # resolver
+    label(key: String!): ObjectLabel # resolver
 }
 
 type Application {
     # (...)
-    labels: [Label!]! # resolver
-    label(key: String!): Label # resolver
-    scenarios: [String!]! # resolver for convenience - returns the same thing what labels("scenarios").values has
+    labels: [ObjectLabel!]! # resolver
+    label(key: String!): ObjectLabel # resolver
 }
-
 ```
 
 ## Storage
