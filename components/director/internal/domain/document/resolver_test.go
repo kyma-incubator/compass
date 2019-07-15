@@ -27,7 +27,7 @@ func TestResolver_AddDocument(t *testing.T) {
 	testCases := []struct {
 		Name             string
 		ServiceFn        func() *automock.DocumentService
-		ApplicationSvcFn func() *automock.ApplicationService
+		AppServiceFn     func() *automock.ApplicationService
 		ConverterFn      func() *automock.DocumentConverter
 		ExpectedDocument *graphql.Document
 		ExpectedErr      error
@@ -40,7 +40,7 @@ func TestResolver_AddDocument(t *testing.T) {
 				svc.On("Get", context.TODO(), id).Return(modelDocument, nil).Once()
 				return svc
 			},
-			ApplicationSvcFn: func() *automock.ApplicationService {
+			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("Exist", context.TODO(), applicationID).Return(true, nil)
 				return appSvc
@@ -60,7 +60,7 @@ func TestResolver_AddDocument(t *testing.T) {
 				svc := &automock.DocumentService{}
 				return svc
 			},
-			ApplicationSvcFn: func() *automock.ApplicationService {
+			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("Exist", context.TODO(), applicationID).Return(false, nil)
 				return appSvc
@@ -72,7 +72,7 @@ func TestResolver_AddDocument(t *testing.T) {
 			},
 
 			ExpectedDocument: nil,
-			ExpectedErr:      errors.New("Cannot add document to not existing application"),
+			ExpectedErr:      errors.New("Cannot add Document to not existing Application"),
 		},
 		{
 			Name: "Returns error when application existence check failed",
@@ -80,7 +80,7 @@ func TestResolver_AddDocument(t *testing.T) {
 				svc := &automock.DocumentService{}
 				return svc
 			},
-			ApplicationSvcFn: func() *automock.ApplicationService {
+			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("Exist", context.TODO(), applicationID).Return(false, testErr)
 				return appSvc
@@ -101,7 +101,7 @@ func TestResolver_AddDocument(t *testing.T) {
 				svc.On("Create", context.TODO(), applicationID, *modelInput).Return("", testErr).Once()
 				return svc
 			},
-			ApplicationSvcFn: func() *automock.ApplicationService {
+			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("Exist", context.TODO(), applicationID).Return(true, nil)
 				return appSvc
@@ -122,7 +122,7 @@ func TestResolver_AddDocument(t *testing.T) {
 				svc.On("Get", context.TODO(), id).Return(nil, testErr).Once()
 				return svc
 			},
-			ApplicationSvcFn: func() *automock.ApplicationService {
+			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("Exist", context.TODO(), applicationID).Return(true, nil)
 				return appSvc
@@ -140,7 +140,7 @@ func TestResolver_AddDocument(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
-			appSvc := testCase.ApplicationSvcFn()
+			appSvc := testCase.AppServiceFn()
 			converter := testCase.ConverterFn()
 
 			resolver := document.NewResolver(svc, appSvc, nil)

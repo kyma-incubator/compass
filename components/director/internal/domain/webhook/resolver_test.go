@@ -29,7 +29,7 @@ func TestResolver_AddWebhook(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		ServiceFn          func() *automock.WebhookService
-		ApplicationSvcFn   func() *automock.ApplicationService
+		AppServiceFn       func() *automock.ApplicationService
 		ConverterFn        func() *automock.WebhookConverter
 		InputApplicationID string
 		InputWebhook       graphql.ApplicationWebhookInput
@@ -44,7 +44,7 @@ func TestResolver_AddWebhook(t *testing.T) {
 				svc.On("Get", context.TODO(), id).Return(modelWebhook, nil).Once()
 				return svc
 			},
-			ApplicationSvcFn: func() *automock.ApplicationService {
+			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("Exist", context.TODO(), applicationID).Return(true, nil).Once()
 				return appSvc
@@ -61,12 +61,32 @@ func TestResolver_AddWebhook(t *testing.T) {
 			ExpectedErr:        nil,
 		},
 		{
+			Name: "Returns error when application not exist",
+			ServiceFn: func() *automock.WebhookService {
+				svc := &automock.WebhookService{}
+				return svc
+			},
+			AppServiceFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Exist", context.TODO(), applicationID).Return(false, nil)
+				return appSvc
+			},
+			ConverterFn: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput).Once()
+				return conv
+			},
+			InputApplicationID: applicationID,
+			InputWebhook:       *gqlWebhookInput,
+			ExpectedWebhook:    nil, ExpectedErr: errors.New("Cannot add Webhook to not existing Application"),
+		},
+		{
 			Name: "Returns error when application existence check failed",
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
 				return svc
 			},
-			ApplicationSvcFn: func() *automock.ApplicationService {
+			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("Exist", context.TODO(), applicationID).Return(false, testErr).Once()
 				return appSvc
@@ -88,7 +108,7 @@ func TestResolver_AddWebhook(t *testing.T) {
 				svc.On("Create", context.TODO(), applicationID, *modelWebhookInput).Return("", testErr).Once()
 				return svc
 			},
-			ApplicationSvcFn: func() *automock.ApplicationService {
+			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("Exist", context.TODO(), applicationID).Return(true, nil).Once()
 				return appSvc
@@ -111,7 +131,7 @@ func TestResolver_AddWebhook(t *testing.T) {
 				svc.On("Get", context.TODO(), id).Return(nil, testErr).Once()
 				return svc
 			},
-			ApplicationSvcFn: func() *automock.ApplicationService {
+			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("Exist", context.TODO(), applicationID).Return(true, nil).Once()
 				return appSvc
@@ -131,7 +151,7 @@ func TestResolver_AddWebhook(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
-			appSvc := testCase.ApplicationSvcFn()
+			appSvc := testCase.AppServiceFn()
 			converter := testCase.ConverterFn()
 
 			resolver := webhook.NewResolver(svc, appSvc, converter)

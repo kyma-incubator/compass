@@ -54,7 +54,7 @@ func (r *Resolver) AddApplicationWebhook(ctx context.Context, applicationID stri
 	}
 
 	if found == false {
-		return nil, errors.New("Cannot add document to not existing application")
+		return nil, errors.New("Cannot add Webhook to not existing Application")
 	}
 
 	id, err := r.webhookSvc.Create(ctx, applicationID, *convertedIn)

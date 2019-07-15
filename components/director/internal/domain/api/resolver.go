@@ -35,31 +35,31 @@ type ApplicationService interface {
 }
 
 type Resolver struct {
-	svc            APIService
-	applicationSvc ApplicationService
-	converter      APIConverter
-	authConverter  AuthConverter
+	svc           APIService
+	appSvc        ApplicationService
+	converter     APIConverter
+	authConverter AuthConverter
 }
 
 func NewResolver(svc APIService, appSvc ApplicationService, converter APIConverter, authConverter AuthConverter) *Resolver {
 	return &Resolver{
-		svc:            svc,
-		applicationSvc: appSvc,
-		converter:      converter,
-		authConverter:  authConverter,
+		svc:           svc,
+		appSvc:        appSvc,
+		converter:     converter,
+		authConverter: authConverter,
 	}
 }
 
 func (r *Resolver) AddAPI(ctx context.Context, applicationID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
 	convertedIn := r.converter.InputFromGraphQL(&in)
 
-	found, err := r.applicationSvc.Exist(ctx, applicationID)
+	found, err := r.appSvc.Exist(ctx, applicationID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while checking existence of Application")
 	}
 
 	if found == false {
-		return nil, errors.New("Cannot add API to not existing application")
+		return nil, errors.New("Cannot add API to not existing Application")
 	}
 
 	id, err := r.svc.Create(ctx, applicationID, *convertedIn)

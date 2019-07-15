@@ -27,12 +27,12 @@ func TestResolver_AddAPI(t *testing.T) {
 	modelAPIInput := fixModelAPIDefinitionInput("name", "foo", "bar")
 
 	testCases := []struct {
-		Name             string
-		ServiceFn        func() *automock.APIService
-		ApplicationSvcFn func() *automock.ApplicationService
-		ConverterFn      func() *automock.APIConverter
-		ExpectedAPI      *graphql.APIDefinition
-		ExpectedErr      error
+		Name         string
+		ServiceFn    func() *automock.APIService
+		AppServiceFn func() *automock.ApplicationService
+		ConverterFn  func() *automock.APIConverter
+		ExpectedAPI  *graphql.APIDefinition
+		ExpectedErr  error
 	}{
 		{
 			Name: "Success",
@@ -42,7 +42,7 @@ func TestResolver_AddAPI(t *testing.T) {
 				svc.On("Get", context.TODO(), id).Return(modelAPI, nil).Once()
 				return svc
 			},
-			ApplicationSvcFn: func() *automock.ApplicationService {
+			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("Exist", context.TODO(), appId).Return(true, nil)
 				return appSvc
@@ -62,7 +62,7 @@ func TestResolver_AddAPI(t *testing.T) {
 				svc := &automock.APIService{}
 				return svc
 			},
-			ApplicationSvcFn: func() *automock.ApplicationService {
+			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("Exist", context.TODO(), appId).Return(false, nil)
 				return appSvc
@@ -73,7 +73,7 @@ func TestResolver_AddAPI(t *testing.T) {
 				return conv
 			},
 			ExpectedAPI: nil,
-			ExpectedErr: errors.New("Cannot add API to not existing application"),
+			ExpectedErr: errors.New("Cannot add API to not existing Application"),
 		},
 		{
 			Name: "Returns error when application existence check failed",
@@ -81,7 +81,7 @@ func TestResolver_AddAPI(t *testing.T) {
 				svc := &automock.APIService{}
 				return svc
 			},
-			ApplicationSvcFn: func() *automock.ApplicationService {
+			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("Exist", context.TODO(), appId).Return(false, testErr)
 				return appSvc
@@ -101,7 +101,7 @@ func TestResolver_AddAPI(t *testing.T) {
 				svc.On("Create", context.TODO(), appId, *modelAPIInput).Return("", testErr).Once()
 				return svc
 			},
-			ApplicationSvcFn: func() *automock.ApplicationService {
+			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("Exist", context.TODO(), appId).Return(true, nil)
 				return appSvc
@@ -122,7 +122,7 @@ func TestResolver_AddAPI(t *testing.T) {
 				svc.On("Get", context.TODO(), id).Return(nil, testErr).Once()
 				return svc
 			},
-			ApplicationSvcFn: func() *automock.ApplicationService {
+			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("Exist", context.TODO(), appId).Return(true, nil)
 				return appSvc
@@ -142,7 +142,7 @@ func TestResolver_AddAPI(t *testing.T) {
 			// given
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
-			appSvc := testCase.ApplicationSvcFn()
+			appSvc := testCase.AppServiceFn()
 
 			resolver := api.NewResolver(svc, appSvc, converter, nil)
 

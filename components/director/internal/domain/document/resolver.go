@@ -49,7 +49,7 @@ func (r *Resolver) AddDocument(ctx context.Context, applicationID string, in gra
 	}
 
 	if found == false {
-		return nil, errors.New("Cannot add document to not existing application")
+		return nil, errors.New("Cannot add Document to not existing Application")
 	}
 
 	id, err := r.svc.Create(ctx, applicationID, *convertedIn)
