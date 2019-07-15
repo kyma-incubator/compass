@@ -3,6 +3,8 @@ package webhook
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
@@ -16,6 +18,11 @@ type WebhookService interface {
 	Delete(ctx context.Context, id string) error
 }
 
+//go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
+type ApplicationService interface {
+	Exist(ctx context.Context, id string) (bool, error)
+}
+
 //go:generate mockery -name=WebhookConverter -output=automock -outpkg=automock -case=underscore
 type WebhookConverter interface {
 	ToGraphQL(in *model.ApplicationWebhook) *graphql.ApplicationWebhook
@@ -26,18 +33,30 @@ type WebhookConverter interface {
 
 type Resolver struct {
 	webhookSvc       WebhookService
+	appSvc           ApplicationService
 	webhookConverter WebhookConverter
 }
 
-func NewResolver(webhookSvc WebhookService, webhookConverter WebhookConverter) *Resolver {
+func NewResolver(webhookSvc WebhookService, applicationService ApplicationService, webhookConverter WebhookConverter) *Resolver {
 	return &Resolver{
 		webhookSvc:       webhookSvc,
+		appSvc:           applicationService,
 		webhookConverter: webhookConverter,
 	}
 }
 
 func (r *Resolver) AddApplicationWebhook(ctx context.Context, applicationID string, in graphql.ApplicationWebhookInput) (*graphql.ApplicationWebhook, error) {
 	convertedIn := r.webhookConverter.InputFromGraphQL(&in)
+
+	found, err := r.appSvc.Exist(ctx, applicationID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while checking existence of Application")
+	}
+
+	if found == false {
+		return nil, errors.New("Cannot add document to not existing application")
+	}
+
 	id, err := r.webhookSvc.Create(ctx, applicationID, *convertedIn)
 	if err != nil {
 		return nil, err

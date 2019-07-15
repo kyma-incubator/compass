@@ -33,23 +33,23 @@ type ApplicationService interface {
 }
 
 type Resolver struct {
-	svc            EventAPIService
-	applicationSvc ApplicationService
-	converter      EventAPIConverter
+	svc       EventAPIService
+	appSvc    ApplicationService
+	converter EventAPIConverter
 }
 
 func NewResolver(svc EventAPIService, appSvc ApplicationService, converter EventAPIConverter) *Resolver {
 	return &Resolver{
-		svc:            svc,
-		applicationSvc: appSvc,
-		converter:      converter,
+		svc:       svc,
+		appSvc:    appSvc,
+		converter: converter,
 	}
 }
 
 func (r *Resolver) AddEventAPI(ctx context.Context, applicationID string, in graphql.EventAPIDefinitionInput) (*graphql.EventAPIDefinition, error) {
 	convertedIn := r.converter.InputFromGraphQL(&in)
 
-	found, err := r.applicationSvc.Exist(ctx, applicationID)
+	found, err := r.appSvc.Exist(ctx, applicationID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while checking existence of Application")
 	}

@@ -66,7 +66,7 @@ func NewRootResolver() *RootResolver {
 		doc:         document.NewResolver(docSvc, appSvc, frConverter),
 		runtime:     runtime.NewResolver(runtimeSvc, runtimeConverter),
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
-		webhook:     webhook.NewResolver(webhookSvc, webhookConverter),
+		webhook:     webhook.NewResolver(webhookSvc, appSvc, webhookConverter),
 	}
 }
 
