@@ -150,7 +150,7 @@ func (g *graphqlizer) QueryParamsToGQL(in graphql.QueryParams) (string, error) {
 		`)
 }
 
-func (g *graphqlizer) ApplicationWebhookInputToGQL(in *graphql.ApplicationWebhookInput) (string, error) {
+func (g *graphqlizer) ApplicationWebhookInputToGQL(in *graphql.WebhookInput) (string, error) {
 	return g.genericToGQL(in, `{
 		type: {{.Type}},
 		url: "{{.URL }}",

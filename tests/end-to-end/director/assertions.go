@@ -25,7 +25,7 @@ func assertApplication(t *testing.T, in graphql.ApplicationInput, actualApp Appl
 	assertEventsAPI(t, in.EventAPIs, actualApp.EventAPIs.Data)
 }
 
-func assertWebhooks(t *testing.T, in []*graphql.ApplicationWebhookInput, actual []graphql.ApplicationWebhook) {
+func assertWebhooks(t *testing.T, in []*graphql.WebhookInput, actual []graphql.Webhook) {
 	assert.Equal(t, len(in), len(actual))
 	for _, inWh := range in {
 		found := false

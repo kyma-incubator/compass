@@ -50,7 +50,7 @@ func TestCreateApplicationWithWebhooks(t *testing.T) {
 	ctx := context.Background()
 	in := graphql.ApplicationInput{
 		Name: "wordpress",
-		Webhooks: []*graphql.ApplicationWebhookInput{
+		Webhooks: []*graphql.WebhookInput{
 			{
 				Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 				Auth: fixBasicAuth(),
@@ -405,7 +405,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 	t.Run("manage webhooks", func(t *testing.T) {
 		// add
-		webhookInStr, err := tc.graphqlizer.ApplicationWebhookInputToGQL(&graphql.ApplicationWebhookInput{
+		webhookInStr, err := tc.graphqlizer.ApplicationWebhookInputToGQL(&graphql.WebhookInput{
 			URL:  "new-webhook",
 			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 		})
@@ -413,13 +413,13 @@ func TestUpdateApplicationParts(t *testing.T) {
 		require.NoError(t, err)
 		addReq := gcli.NewRequest(
 			fmt.Sprintf(`mutation {
-			result: addApplicationWebhook(applicationID: "%s", in: %s) {
+			result: addWebhook(applicationID: "%s", in: %s) {
 					%s
 				}
 			}`, actualApp.ID, webhookInStr, tc.gqlFieldsProvider.ForWebhooks()))
 		saveQueryInExamples(t, addReq.Query(), "add aplication webhook")
 
-		actualWebhook := graphql.ApplicationWebhook{}
+		actualWebhook := graphql.Webhook{}
 		err = tc.RunQuery(ctx, addReq, &actualWebhook)
 		require.NoError(t, err)
 		assert.Equal(t, "new-webhook", actualWebhook.URL)
@@ -432,14 +432,14 @@ func TestUpdateApplicationParts(t *testing.T) {
 		assert.Len(t, updatedApp.Webhooks, 2)
 
 		// update
-		webhookInStr, err = tc.graphqlizer.ApplicationWebhookInputToGQL(&graphql.ApplicationWebhookInput{
+		webhookInStr, err = tc.graphqlizer.ApplicationWebhookInputToGQL(&graphql.WebhookInput{
 			URL: "updated-webhook", Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 		})
 
 		require.NoError(t, err)
 		updateReq := gcli.NewRequest(
 			fmt.Sprintf(`mutation {
-			result: updateApplicationWebhook(webhookID: "%s", in: %s) {
+			result: updateWebhook(webhookID: "%s", in: %s) {
 					%s
 				}
 			}`, actualWebhook.ID, webhookInStr, tc.gqlFieldsProvider.ForWebhooks()))
@@ -451,7 +451,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		// delete
 		deleteReq := gcli.NewRequest(
 			fmt.Sprintf(`mutation {
-			result: deleteApplicationWebhook(webhookID: "%s") {
+			result: deleteWebhook(webhookID: "%s") {
 					%s
 				}
 			}`, actualWebhook.ID, tc.gqlFieldsProvider.ForWebhooks()))
@@ -830,7 +830,7 @@ func generateSampleApplicationInput(placeholder string) graphql.ApplicationInput
 				EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
 				Format:        graphql.SpecFormatYaml,
 			}}},
-		Webhooks: []*graphql.ApplicationWebhookInput{{
+		Webhooks: []*graphql.WebhookInput{{
 			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 			URL:  placeholder},
 		},
