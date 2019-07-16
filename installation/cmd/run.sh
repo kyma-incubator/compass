@@ -6,8 +6,6 @@ defaultRelease="master"
 KYMA_RELEASE=${1:-$defaultRelease}
 COMPASS_HELM_RELEASE_NAME="compass"
 COMPASS_HELM_RELEASE_NAMESPACE="compass-system"
-COMPASS_RUNTIME_AGENT_HELM_RELEASE_NAME="compass-runtime-agent"
-COMPASS_RUNTIME_AGENT_HELM_RELEASE_NAMESPACE="compass-system"
 
 kyma provision minikube
 kyma install -o "${ROOT_PATH}"/installation/resources/installer-cr-without-compass.yaml -o "${ROOT_PATH}"/installation/resources/installer-config.yaml --release "${KYMA_RELEASE}"
@@ -19,5 +17,3 @@ kubectl get -n kyma-installer secret helm-secret -o jsonpath="{.data['global\.he
 echo "Secrets with Tiller tls client certificates have been created \n"
 
 minikubeIP=$(eval minikube ip)
-helm install --set=minikubeIP=${minikubeIP} --name "${COMPASS_HELM_RELEASE_NAME}" --namespace "${COMPASS_HELM_RELEASE_NAMESPACE}" "${ROOT_PATH}"/chart/compass --tls
-helm install --name "${COMPASS_RUNTIME_AGENT_HELM_RELEASE_NAME}" --namespace "${COMPASS_RUNTIME_AGENT_HELM_RELEASE_NAMESPACE}" "${ROOT_PATH}"/chart/compass-runtime-agent --tls
