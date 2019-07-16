@@ -18,6 +18,7 @@ This folder contains documents that relate to the project.
 - [Support for legacy REST API](./architecture/support-for-legacy-rest-api.md)
 - [Event flows proposal](./architecture/event-flows-proposal.md)
 - [Director component](./architecture/director-component.md)
+- [Runtime Agent contract](./architecture/runtime-agent-contract.md)
 
 ## Investigations
 

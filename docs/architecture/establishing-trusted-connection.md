@@ -14,3 +14,9 @@ The external system (Application / Runtime) requests from Connector detailed inf
 required to generate the Certificate Signing Request (CSR). In the response Connector also returns new one-time token that should be used when sending the CSR API call.
 
 The external system generates a CSR based on information provided by the Connector and sends the CSR to the Connector. In response, the external system receives a signed certificate. It can use the certificate to authenticate the further communication between Management Plane, Runtimes and Applications.
+
+## Client certificate flow - certificate renewal
+
+> **NOTE** All API calls to Connector during the certificate renewal process require a valid client certificate.
+
+The external system (Application / Runtime) generates a new Certificate Signing Request using the Subject matching the Subject of the existing client certificate. The external system sends the CSR to the Connector. In response, the external system receives a newly signed certificate. It can now replace the existing client certificate with the newly issued one.
