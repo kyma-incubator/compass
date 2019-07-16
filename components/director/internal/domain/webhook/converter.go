@@ -19,12 +19,12 @@ func NewConverter(authConverter AuthConverter) *converter {
 	return &converter{authConverter: authConverter}
 }
 
-func (c *converter) ToGraphQL(in *model.ApplicationWebhook) *graphql.ApplicationWebhook {
+func (c *converter) ToGraphQL(in *model.Webhook) *graphql.Webhook {
 	if in == nil {
 		return nil
 	}
 
-	return &graphql.ApplicationWebhook{
+	return &graphql.Webhook{
 		ID:            in.ID,
 		ApplicationID: in.ApplicationID,
 		Type:          graphql.ApplicationWebhookType(in.Type),
@@ -33,8 +33,8 @@ func (c *converter) ToGraphQL(in *model.ApplicationWebhook) *graphql.Application
 	}
 }
 
-func (c *converter) MultipleToGraphQL(in []*model.ApplicationWebhook) []*graphql.ApplicationWebhook {
-	var webhooks []*graphql.ApplicationWebhook
+func (c *converter) MultipleToGraphQL(in []*model.Webhook) []*graphql.Webhook {
+	var webhooks []*graphql.Webhook
 	for _, r := range in {
 		if r == nil {
 			continue
@@ -46,20 +46,20 @@ func (c *converter) MultipleToGraphQL(in []*model.ApplicationWebhook) []*graphql
 	return webhooks
 }
 
-func (c *converter) InputFromGraphQL(in *graphql.ApplicationWebhookInput) *model.ApplicationWebhookInput {
+func (c *converter) InputFromGraphQL(in *graphql.WebhookInput) *model.WebhookInput {
 	if in == nil {
 		return nil
 	}
 
-	return &model.ApplicationWebhookInput{
-		Type: model.ApplicationWebhookType(in.Type),
+	return &model.WebhookInput{
+		Type: model.WebhookType(in.Type),
 		URL:  in.URL,
 		Auth: c.authConverter.InputFromGraphQL(in.Auth),
 	}
 }
 
-func (c *converter) MultipleInputFromGraphQL(in []*graphql.ApplicationWebhookInput) []*model.ApplicationWebhookInput {
-	var inputs []*model.ApplicationWebhookInput
+func (c *converter) MultipleInputFromGraphQL(in []*graphql.WebhookInput) []*model.WebhookInput {
+	var inputs []*model.WebhookInput
 	for _, r := range in {
 		if r == nil {
 			continue

@@ -1,31 +1,31 @@
 package model
 
-type ApplicationWebhook struct {
+type Webhook struct {
 	ApplicationID string
 	ID            string
-	Type          ApplicationWebhookType
+	Type          WebhookType
 	URL           string
 	Auth          *Auth
 }
 
-type ApplicationWebhookInput struct {
-	Type ApplicationWebhookType
+type WebhookInput struct {
+	Type WebhookType
 	URL  string
 	Auth *AuthInput
 }
 
-type ApplicationWebhookType string
+type WebhookType string
 
 const (
-	ApplicationWebhookTypeConfigurationChanged ApplicationWebhookType = "CONFIGURATION_CHANGED"
+	WebhookTypeConfigurationChanged WebhookType = "CONFIGURATION_CHANGED"
 )
 
-func (i *ApplicationWebhookInput) ToWebhook(id, applicationID string) *ApplicationWebhook {
+func (i *WebhookInput) ToWebhook(id, applicationID string) *Webhook {
 	if i == nil {
 		return nil
 	}
 
-	return &ApplicationWebhook{
+	return &Webhook{
 		ApplicationID: applicationID,
 		ID:            id,
 		Type:          i.Type,

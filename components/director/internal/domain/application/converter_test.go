@@ -121,7 +121,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			Expected: model.ApplicationInput{},
 			WebhookConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
-				conv.On("MultipleInputFromGraphQL", []*graphql.ApplicationWebhookInput(nil)).Return(nil)
+				conv.On("MultipleInputFromGraphQL", []*graphql.WebhookInput(nil)).Return(nil)
 				return conv
 			},
 			APIConverterFn: func() *automock.APIConverter {

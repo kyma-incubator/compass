@@ -12,6 +12,7 @@ import (
 //go:generate mockery -name=ApplicationRepository -output=automock -outpkg=automock -case=underscore
 type ApplicationRepository interface {
 	GetByID(tenant, id string) (*model.Application, error)
+	Exist(tenant, id string) (bool, error)
 	List(tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error)
 	Create(item *model.Application) error
 	Update(item *model.Application) error
@@ -27,8 +28,8 @@ type DocumentRepository interface {
 
 //go:generate mockery -name=WebhookRepository -output=automock -outpkg=automock -case=underscore
 type WebhookRepository interface {
-	ListByApplicationID(applicationID string) ([]*model.ApplicationWebhook, error)
-	CreateMany(items []*model.ApplicationWebhook) error
+	ListByApplicationID(applicationID string) ([]*model.Webhook, error)
+	CreateMany(items []*model.Webhook) error
 	DeleteAllByApplicationID(id string) error
 }
 
@@ -85,6 +86,20 @@ func (s *service) Get(ctx context.Context, id string) (*model.Application, error
 	}
 
 	return app, nil
+}
+
+func (s *service) Exist(ctx context.Context, id string) (bool, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return false, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	exist, err := s.app.Exist(appTenant, id)
+	if err != nil {
+		return false, errors.Wrapf(err, "while getting Application with ID %s", id)
+	}
+
+	return exist, nil
 }
 
 func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string, error) {
@@ -187,7 +202,7 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 func (s *service) createRelatedResources(in model.ApplicationInput, applicationID string) error {
 	var err error
 
-	var webhooks []*model.ApplicationWebhook
+	var webhooks []*model.Webhook
 	for _, item := range in.Webhooks {
 		webhooks = append(webhooks, item.ToWebhook(s.uidService.Generate(), applicationID))
 	}

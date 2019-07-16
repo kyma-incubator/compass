@@ -7,14 +7,14 @@ import (
 )
 
 type inMemoryRepository struct {
-	store map[string]*model.ApplicationWebhook
+	store map[string]*model.Webhook
 }
 
 func NewRepository() *inMemoryRepository {
-	return &inMemoryRepository{store: make(map[string]*model.ApplicationWebhook)}
+	return &inMemoryRepository{store: make(map[string]*model.Webhook)}
 }
 
-func (r *inMemoryRepository) GetByID(id string) (*model.ApplicationWebhook, error) {
+func (r *inMemoryRepository) GetByID(id string) (*model.Webhook, error) {
 	webhook := r.store[id]
 
 	if webhook == nil {
@@ -24,8 +24,8 @@ func (r *inMemoryRepository) GetByID(id string) (*model.ApplicationWebhook, erro
 	return webhook, nil
 }
 
-func (r *inMemoryRepository) ListByApplicationID(applicationID string) ([]*model.ApplicationWebhook, error) {
-	var items []*model.ApplicationWebhook
+func (r *inMemoryRepository) ListByApplicationID(applicationID string) ([]*model.Webhook, error) {
+	var items []*model.Webhook
 	for _, r := range r.store {
 		if r.ApplicationID == applicationID {
 			items = append(items, r)
@@ -35,7 +35,7 @@ func (r *inMemoryRepository) ListByApplicationID(applicationID string) ([]*model
 	return items, nil
 }
 
-func (r *inMemoryRepository) Create(item *model.ApplicationWebhook) error {
+func (r *inMemoryRepository) Create(item *model.Webhook) error {
 	if item == nil {
 		return errors.New("item can not be empty")
 	}
@@ -45,7 +45,7 @@ func (r *inMemoryRepository) Create(item *model.ApplicationWebhook) error {
 	return nil
 }
 
-func (r *inMemoryRepository) CreateMany(items []*model.ApplicationWebhook) error {
+func (r *inMemoryRepository) CreateMany(items []*model.Webhook) error {
 	var err error
 	for _, item := range items {
 		if e := r.Create(item); e != nil {
@@ -56,7 +56,7 @@ func (r *inMemoryRepository) CreateMany(items []*model.ApplicationWebhook) error
 	return err
 }
 
-func (r *inMemoryRepository) Update(item *model.ApplicationWebhook) error {
+func (r *inMemoryRepository) Update(item *model.Webhook) error {
 	if item == nil {
 		return errors.New("item can not be empty")
 	}
@@ -70,7 +70,7 @@ func (r *inMemoryRepository) Update(item *model.ApplicationWebhook) error {
 	return nil
 }
 
-func (r *inMemoryRepository) Delete(item *model.ApplicationWebhook) error {
+func (r *inMemoryRepository) Delete(item *model.Webhook) error {
 	if item == nil {
 		return nil
 	}

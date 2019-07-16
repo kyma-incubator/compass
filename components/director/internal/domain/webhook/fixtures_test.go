@@ -5,18 +5,18 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-func fixModelWebhook(id, appID, url string) *model.ApplicationWebhook {
-	return &model.ApplicationWebhook{
+func fixModelWebhook(id, appID, url string) *model.Webhook {
+	return &model.Webhook{
 		ID:            id,
 		ApplicationID: appID,
-		Type:          model.ApplicationWebhookTypeConfigurationChanged,
+		Type:          model.WebhookTypeConfigurationChanged,
 		URL:           url,
 		Auth:          &model.Auth{},
 	}
 }
 
-func fixGQLWebhook(id, appID, url string) *graphql.ApplicationWebhook {
-	return &graphql.ApplicationWebhook{
+func fixGQLWebhook(id, appID, url string) *graphql.Webhook {
+	return &graphql.Webhook{
 		ID:            id,
 		ApplicationID: appID,
 		Type:          graphql.ApplicationWebhookTypeConfigurationChanged,
@@ -25,16 +25,16 @@ func fixGQLWebhook(id, appID, url string) *graphql.ApplicationWebhook {
 	}
 }
 
-func fixModelWebhookInput(url string) *model.ApplicationWebhookInput {
-	return &model.ApplicationWebhookInput{
-		Type: model.ApplicationWebhookTypeConfigurationChanged,
+func fixModelWebhookInput(url string) *model.WebhookInput {
+	return &model.WebhookInput{
+		Type: model.WebhookTypeConfigurationChanged,
 		URL:  url,
 		Auth: &model.AuthInput{},
 	}
 }
 
-func fixGQLWebhookInput(url string) *graphql.ApplicationWebhookInput {
-	return &graphql.ApplicationWebhookInput{
+func fixGQLWebhookInput(url string) *graphql.WebhookInput {
+	return &graphql.WebhookInput{
 		Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 		URL:  url,
 		Auth: &graphql.AuthInput{},

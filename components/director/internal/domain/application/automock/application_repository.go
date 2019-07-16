@@ -39,6 +39,27 @@ func (_m *ApplicationRepository) Delete(item *model.Application) error {
 	return r0
 }
 
+// Exist provides a mock function with given fields: tenant, id
+func (_m *ApplicationRepository) Exist(tenant string, id string) (bool, error) {
+	ret := _m.Called(tenant, id)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(string, string) bool); ok {
+		r0 = rf(tenant, id)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, string) error); ok {
+		r1 = rf(tenant, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetByID provides a mock function with given fields: tenant, id
 func (_m *ApplicationRepository) GetByID(tenant string, id string) (*model.Application, error) {
 	ret := _m.Called(tenant, id)

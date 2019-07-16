@@ -14,8 +14,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	// given
 	testCases := []struct {
 		Name     string
-		Input    *model.ApplicationWebhook
-		Expected *graphql.ApplicationWebhook
+		Input    *model.Webhook
+		Expected *graphql.Webhook
 	}{
 		{
 			Name:     "All properties given",
@@ -24,8 +24,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		},
 		{
 			Name:     "Empty",
-			Input:    &model.ApplicationWebhook{},
-			Expected: &graphql.ApplicationWebhook{},
+			Input:    &model.Webhook{},
+			Expected: &graphql.Webhook{},
 		},
 		{
 			Name:     "Nil",
@@ -54,13 +54,13 @@ func TestConverter_ToGraphQL(t *testing.T) {
 
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// given
-	input := []*model.ApplicationWebhook{
+	input := []*model.Webhook{
 		fixModelWebhook("1", "foo", "baz"),
 		fixModelWebhook("2", "bar", "bez"),
 		{},
 		nil,
 	}
-	expected := []*graphql.ApplicationWebhook{
+	expected := []*graphql.Webhook{
 		fixGQLWebhook("1", "foo", "baz"),
 		fixGQLWebhook("2", "bar", "bez"),
 		{},
@@ -82,8 +82,8 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 	// given
 	testCases := []struct {
 		Name     string
-		Input    *graphql.ApplicationWebhookInput
-		Expected *model.ApplicationWebhookInput
+		Input    *graphql.WebhookInput
+		Expected *model.WebhookInput
 	}{
 		{
 			Name:     "All properties given",
@@ -92,8 +92,8 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 		},
 		{
 			Name:     "Empty",
-			Input:    &graphql.ApplicationWebhookInput{},
-			Expected: &model.ApplicationWebhookInput{},
+			Input:    &graphql.WebhookInput{},
+			Expected: &model.WebhookInput{},
 		},
 		{
 			Name:     "Nil",
@@ -122,13 +122,13 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 
 func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 	// given
-	input := []*graphql.ApplicationWebhookInput{
+	input := []*graphql.WebhookInput{
 		fixGQLWebhookInput("foo"),
 		fixGQLWebhookInput("bar"),
 		{},
 		nil,
 	}
-	expected := []*model.ApplicationWebhookInput{
+	expected := []*model.WebhookInput{
 		fixModelWebhookInput("foo"),
 		fixModelWebhookInput("bar"),
 		{},

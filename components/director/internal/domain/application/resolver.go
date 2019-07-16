@@ -65,10 +65,10 @@ type DocumentService interface {
 
 //go:generate mockery -name=WebhookService -output=automock -outpkg=automock -case=underscore
 type WebhookService interface {
-	Get(ctx context.Context, id string) (*model.ApplicationWebhook, error)
-	List(ctx context.Context, applicationID string) ([]*model.ApplicationWebhook, error)
-	Create(ctx context.Context, applicationID string, in model.ApplicationWebhookInput) (string, error)
-	Update(ctx context.Context, id string, in model.ApplicationWebhookInput) error
+	Get(ctx context.Context, id string) (*model.Webhook, error)
+	List(ctx context.Context, applicationID string) ([]*model.Webhook, error)
+	Create(ctx context.Context, applicationID string, in model.WebhookInput) (string, error)
+	Update(ctx context.Context, id string, in model.WebhookInput) error
 	Delete(ctx context.Context, id string) error
 }
 
@@ -80,10 +80,10 @@ type DocumentConverter interface {
 
 //go:generate mockery -name=WebhookConverter -output=automock -outpkg=automock -case=underscore
 type WebhookConverter interface {
-	ToGraphQL(in *model.ApplicationWebhook) *graphql.ApplicationWebhook
-	MultipleToGraphQL(in []*model.ApplicationWebhook) []*graphql.ApplicationWebhook
-	InputFromGraphQL(in *graphql.ApplicationWebhookInput) *model.ApplicationWebhookInput
-	MultipleInputFromGraphQL(in []*graphql.ApplicationWebhookInput) []*model.ApplicationWebhookInput
+	ToGraphQL(in *model.Webhook) *graphql.Webhook
+	MultipleToGraphQL(in []*model.Webhook) []*graphql.Webhook
+	InputFromGraphQL(in *graphql.WebhookInput) *model.WebhookInput
+	MultipleInputFromGraphQL(in []*graphql.WebhookInput) []*model.WebhookInput
 }
 
 type Resolver struct {
@@ -307,7 +307,7 @@ func (r *Resolver) Documents(ctx context.Context, obj *graphql.Application, firs
 }
 
 // TODO: Proper error handling
-func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*graphql.ApplicationWebhook, error) {
+func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*graphql.Webhook, error) {
 	webhooks, err := r.webhookSvc.List(ctx, obj.ID)
 	if err != nil {
 		return nil, err
@@ -316,55 +316,4 @@ func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*g
 	gqlWebhooks := r.webhookConverter.MultipleToGraphQL(webhooks)
 
 	return gqlWebhooks, nil
-}
-
-func (r *Resolver) AddApplicationWebhook(ctx context.Context, applicationID string, in graphql.ApplicationWebhookInput) (*graphql.ApplicationWebhook, error) {
-	convertedIn := r.webhookConverter.InputFromGraphQL(&in)
-	id, err := r.webhookSvc.Create(ctx, applicationID, *convertedIn)
-	if err != nil {
-		return nil, err
-	}
-
-	webhook, err := r.webhookSvc.Get(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	gqlWebhook := r.webhookConverter.ToGraphQL(webhook)
-
-	return gqlWebhook, nil
-}
-
-func (r *Resolver) UpdateApplicationWebhook(ctx context.Context, webhookID string, in graphql.ApplicationWebhookInput) (*graphql.ApplicationWebhook, error) {
-	convertedIn := r.webhookConverter.InputFromGraphQL(&in)
-
-	err := r.webhookSvc.Update(ctx, webhookID, *convertedIn)
-	if err != nil {
-		return nil, err
-	}
-
-	webhook, err := r.webhookSvc.Get(ctx, webhookID)
-	if err != nil {
-		return nil, err
-	}
-
-	gqlWebhook := r.webhookConverter.ToGraphQL(webhook)
-
-	return gqlWebhook, nil
-}
-
-func (r *Resolver) DeleteApplicationWebhook(ctx context.Context, webhookID string) (*graphql.ApplicationWebhook, error) {
-	webhook, err := r.webhookSvc.Get(ctx, webhookID)
-	if err != nil {
-		return nil, err
-	}
-
-	deletedWebhook := r.webhookConverter.ToGraphQL(webhook)
-
-	err = r.webhookSvc.Delete(ctx, webhookID)
-	if err != nil {
-		return nil, err
-	}
-
-	return deletedWebhook, nil
 }

@@ -27,6 +27,7 @@ type RootResolver struct {
 	doc         *document.Resolver
 	runtime     *runtime.Resolver
 	healthCheck *healthcheck.Resolver
+	webhook     *webhook.Resolver
 }
 
 func NewRootResolver() *RootResolver {
@@ -60,11 +61,12 @@ func NewRootResolver() *RootResolver {
 
 	return &RootResolver{
 		app:         application.NewResolver(appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter),
-		api:         api.NewResolver(apiSvc, apiConverter, authConverter),
-		eventAPI:    eventapi.NewResolver(eventAPISvc, eventAPIConverter),
-		doc:         document.NewResolver(docSvc, frConverter),
+		api:         api.NewResolver(apiSvc, appSvc, apiConverter, authConverter),
+		eventAPI:    eventapi.NewResolver(eventAPISvc, appSvc, eventAPIConverter),
+		doc:         document.NewResolver(docSvc, appSvc, frConverter),
 		runtime:     runtime.NewResolver(runtimeSvc, runtimeConverter),
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
+		webhook:     webhook.NewResolver(webhookSvc, appSvc, webhookConverter),
 	}
 }
 
@@ -118,14 +120,14 @@ func (r *mutationResolver) AddApplicationLabel(ctx context.Context, applicationI
 func (r *mutationResolver) DeleteApplicationLabel(ctx context.Context, applicationID string, key string, values []string) (*graphql.Label, error) {
 	return r.app.DeleteApplicationLabel(ctx, applicationID, key, values)
 }
-func (r *mutationResolver) AddApplicationWebhook(ctx context.Context, applicationID string, in graphql.ApplicationWebhookInput) (*graphql.ApplicationWebhook, error) {
-	return r.app.AddApplicationWebhook(ctx, applicationID, in)
+func (r *mutationResolver) AddWebhook(ctx context.Context, applicationID string, in graphql.WebhookInput) (*graphql.Webhook, error) {
+	return r.webhook.AddApplicationWebhook(ctx, applicationID, in)
 }
-func (r *mutationResolver) UpdateApplicationWebhook(ctx context.Context, webhookID string, in graphql.ApplicationWebhookInput) (*graphql.ApplicationWebhook, error) {
-	return r.app.UpdateApplicationWebhook(ctx, webhookID, in)
+func (r *mutationResolver) UpdateWebhook(ctx context.Context, webhookID string, in graphql.WebhookInput) (*graphql.Webhook, error) {
+	return r.webhook.UpdateApplicationWebhook(ctx, webhookID, in)
 }
-func (r *mutationResolver) DeleteApplicationWebhook(ctx context.Context, webhookID string) (*graphql.ApplicationWebhook, error) {
-	return r.app.DeleteApplicationWebhook(ctx, webhookID)
+func (r *mutationResolver) DeleteWebhook(ctx context.Context, webhookID string) (*graphql.Webhook, error) {
+	return r.webhook.DeleteApplicationWebhook(ctx, webhookID)
 }
 func (r *mutationResolver) AddAPI(ctx context.Context, applicationID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
 	return r.api.AddAPI(ctx, applicationID, in)
@@ -183,7 +185,7 @@ type applicationResolver struct {
 	*RootResolver
 }
 
-func (r *applicationResolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*graphql.ApplicationWebhook, error) {
+func (r *applicationResolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*graphql.Webhook, error) {
 	return r.app.Webhooks(ctx, obj)
 }
 func (r *applicationResolver) Apis(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {

@@ -121,7 +121,7 @@ func fixModelApplicationInput(name, description string) model.ApplicationInput {
 			"test": {"val", "val2"},
 		},
 		HealthCheckURL: &url,
-		Webhooks: []*model.ApplicationWebhookInput{
+		Webhooks: []*model.WebhookInput{
 			{URL: "webhook1.foo.bar"},
 			{URL: "webhook2.foo.bar"},
 		},
@@ -152,7 +152,7 @@ func fixGQLApplicationInput(name, description string) graphql.ApplicationInput {
 		Description:    &description,
 		Labels:         &labels,
 		HealthCheckURL: &url,
-		Webhooks: []*graphql.ApplicationWebhookInput{
+		Webhooks: []*graphql.WebhookInput{
 			{URL: "webhook1.foo.bar"},
 			{URL: "webhook2.foo.bar"},
 		},
@@ -225,18 +225,18 @@ func fixGQLDocumentPage(documents []*graphql.Document) *graphql.DocumentPage {
 	}
 }
 
-func fixModelWebhook(appID, id string) *model.ApplicationWebhook {
-	return &model.ApplicationWebhook{
+func fixModelWebhook(appID, id string) *model.Webhook {
+	return &model.Webhook{
 		ApplicationID: appID,
 		ID:            id,
-		Type:          model.ApplicationWebhookTypeConfigurationChanged,
+		Type:          model.WebhookTypeConfigurationChanged,
 		URL:           "foourl",
 		Auth:          &model.Auth{},
 	}
 }
 
-func fixGQLWebhook(id string) *graphql.ApplicationWebhook {
-	return &graphql.ApplicationWebhook{
+func fixGQLWebhook(id string) *graphql.Webhook {
+	return &graphql.Webhook{
 		ID:   id,
 		Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 		URL:  "foourl",
@@ -244,16 +244,16 @@ func fixGQLWebhook(id string) *graphql.ApplicationWebhook {
 	}
 }
 
-func fixModelWebhookInput() *model.ApplicationWebhookInput {
-	return &model.ApplicationWebhookInput{
-		Type: model.ApplicationWebhookTypeConfigurationChanged,
+func fixModelWebhookInput() *model.WebhookInput {
+	return &model.WebhookInput{
+		Type: model.WebhookTypeConfigurationChanged,
 		URL:  "foourl",
 		Auth: &model.AuthInput{},
 	}
 }
 
-func fixGQLWebhookInput() *graphql.ApplicationWebhookInput {
-	return &graphql.ApplicationWebhookInput{
+func fixGQLWebhookInput() *graphql.WebhookInput {
+	return &graphql.WebhookInput{
 		Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 		URL:  "foourl",
 		Auth: &graphql.AuthInput{},
