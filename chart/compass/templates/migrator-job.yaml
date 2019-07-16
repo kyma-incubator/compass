@@ -57,10 +57,8 @@ spec:
             restartPolicy: OnFailure
             containers:
                 - name: migrator
-{{/*                  image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.schema_migrator.dir }}compass-schema-migrator:{{ .Values.global.images.schema_migrator.version }}*/}}
-{{/*                  imagePullPolicy: IfNotPresent*/}}
-                  image: "docker.io/tgorgol/compass-schema-migrator:latest"
-                  imagePullPolicy: Always
+                  image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.schema_migrator.dir }}compass-schema-migrator:{{ .Values.global.images.schema_migrator.version }}
+                  imagePullPolicy: IfNotPresent
                   env:
                       - name: DB_USER
                         valueFrom:
