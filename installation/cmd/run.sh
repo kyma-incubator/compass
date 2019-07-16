@@ -17,3 +17,4 @@ kubectl get -n kyma-installer secret helm-secret -o jsonpath="{.data['global\.he
 echo "Secrets with Tiller tls client certificates have been created \n"
 
 minikubeIP=$(eval minikube ip)
+helm install --set=minikubeIP=${minikubeIP} --name "${COMPASS_HELM_RELEASE_NAME}" --namespace "${COMPASS_HELM_RELEASE_NAMESPACE}" "${ROOT_PATH}"/chart/compass --tls
