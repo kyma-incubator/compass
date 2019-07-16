@@ -7,7 +7,7 @@ global:
       version: "PR-99"
     director:
       dir: pr/
-      version: "PR-128"
+      version: "PR-139"
     gateway:
       dir: pr/
       version: "PR-100"
@@ -17,7 +17,7 @@ global:
     tests:
       e2e:
         dir: pr/
-        version: "PR-121"
+        version: "PR-139"
 
   isLocalEnv: true
   

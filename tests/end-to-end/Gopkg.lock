@@ -94,17 +94,16 @@
   revision = "f55edac94c9bbba5d6182a4be46d86a2c9b5b50e"
   version = "v1.0.2"
 
-# TODO: Update types after merging PR
 [[projects]]
   branch = "master"
-  digest = "1:5514fdf66ae36ce11f494ae6c89ad0a5a65f9d02381a63a4e097b2f8aa10dd6a"
+  digest = "1:ef7b78e97c9c1cda2cce074638521c81d2ed83515c9d55831a1d420d7db5ead8"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/pkg/graphql",
     "components/director/pkg/scalar",
   ]
   pruneopts = "UT"
-  revision = "6fa95c3e1994917ebe92392ab64c9a2de607de97"
+  revision = "9952c644fad6b03bb6a91e6af40a6055db65833f"
 
 [[projects]]
   branch = "master"
@@ -174,19 +173,19 @@
     "scrypt",
   ]
   pruneopts = "UT"
-  revision = "cc06ce4a13d484c0101a9e92913248488a75786d"
+  revision = "4def268fd1a49955bfb3dda92fe3db4f924f2285"
 
 [[projects]]
   branch = "master"
-  digest = "1:730ba27cd66db3b98ec8f51a6f20d45ec277d490cca36b1f54e31d3fcaf4840e"
+  digest = "1:5632b0c4d972da51b5914f09fc5c1a8535e9d8d5d937e95ef83c423a0dd67f13"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "04f50cda93cbb67f2afa353c52f342100e80e625"
+  revision = "fae7ac547cb717d141c433a2a173315e216b64c4"
 
 [[projects]]
   branch = "master"
-  digest = "1:c1e9186d6ddadf42c4f2c4029d873dc4d8c875c360c50190c0e8b8977d5e0554"
+  digest = "1:5ce75e23ca7d6d3e6758cb475071749626a35e0154b48160093d47d5e6792189"
   name = "golang.org/x/tools"
   packages = [
     "cmd/goimports",
@@ -203,7 +202,7 @@
     "internal/semver",
   ]
   pruneopts = "UT"
-  revision = "7be61e1b0e514e106d83fc439d56a79143738603"
+  revision = "fefcef05abb16e5cc4907457d0008e26c57246ca"
 
 [solve-meta]
   analyzer-name = "dep"
