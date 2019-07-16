@@ -465,6 +465,7 @@ input LabelFilter {
     operator: FilterOperator = ALL
 }
 
+
 type Query {
     applications(filter: [LabelFilter!], first: Int = 100, after: PageCursor):  ApplicationPage!
     application(id: ID!): Application

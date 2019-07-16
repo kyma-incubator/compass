@@ -2,15 +2,6 @@
 
 The following document describes the labeling feature.
 
-## Requirements
-
-- Creating, reading and deleting all labels within tenant
-- Defining `scenarios` label values and using them for labeling Applications and Runtimes
-- Reading all label keys for tenant
-- Validating label values against JSON schema / type
-- Labeling new Application/Runtime with `scenarios: default` label, if no scenario label is specified
-- Query Applications / Runtimes by particular scenario (key: value)
-
 ## Terms
 
 In this document there are few terms, which are used:
@@ -18,27 +9,32 @@ In this document there are few terms, which are used:
 **Label**
 
 Label is a tag in a form of `key:value`, which can be assigned to an Application or Runtime. Label references **LabelDefinition** which defines the shape for value.
-It holds actual label key and value. A single Label can be assigned to single labelable object: Runtime or Application.
+
+Label key is unique
 
 Label is tenant specific. You cannot change the label key, once you created the label.
 
 ```go
 type Label struct {
-    Key string // Key
-    Type LabelType // Type: array or single
-    Value interface{} // Stored Value(s)
-    Tenant string
+    ID string
+    Key string // Unique
     DefinitionID string // LabelDefinition reference
+    Tenant string
+}
+```
+
+**LabelUsage**
+
+It holds actual label values. A single LabelUsage can be assigned to one labelable object: Runtime or Application. LabelUsage references **LabelID**.
+
+```go
+type LabelUsage struct {
+    ID string
+    LabelID string // or label key?
     ObjectID string // LabelableObject reference
     ObjectType LabelableObjectType // LabelableObjectType
+    Values []interface{}
 }
-
-type LabelType string
-
-const (
-    SingleLabelType LabelType = "Single"
-    ArrayLabelType LabelType = "Array"
-)
 
 type LabelableObjectType string
 
@@ -55,12 +51,14 @@ Label definition contains `key` property, which is unique and represents a label
 
 LabelDefinition is _not_ reusable between two labels with different keys. LabelDefinition is tenant-specific.
 
+It can store default value. When a new Runtime/Application is created, new LabelUsage will be created along with the value described in `DefaultValue` field.
+
 ```go
 type LabelDefinition struct {
-    ID string
-    Key string
+    Key string // unique
     Tenant string
     Type LabelDefinitionType
+    DefaultValue interface{}
     Schema *string
     Enum *[]string
 }
@@ -88,6 +86,15 @@ It is a Label with key `scenarios`, which references LabelDefinition of type `EN
 
 While adding new tenat, LabelDefinition `scenarios` is automatically created.
 
+## Requirements
+
+- Creating, reading and deleting all labels within tenant
+- Defining `scenarios` label values and using them for labeling Applications and Runtimes
+- Reading all label keys for tenant
+- Validating label values against JSON schema / type
+- Labeling new Application/Runtime with `scenarios: default` label, if no scenario label is specified
+- Query Applications / Runtimes by particular scenario (key: value)
+
 ## API
 
 To manage Labels and LabelDefinitions, the following GraphQL API is proposed:
@@ -98,8 +105,9 @@ type Query {
     # (...)
     labelDefinitions: [LabelDefinition!]!
     labelDefinition(key: String!): LabelDefinition
-    labels: [Label!]!
-    label(key: String!): Label
+
+    applications(filter)
+    runtimes(filter)
 }
 
 type Mutation {
@@ -113,19 +121,19 @@ type Mutation {
     deleteEnumLabelDefinitionValues(key: String!, values: [String!]!): LabelDefinition!
 
     """If the LabelDefinition for the key is not specified, it will create LabelDefinition to String"""
-    addLabel(objectID: ID!, objectType: LabelableObjectType!, key: String!, values: [Any!]!): Label!
+    addLabelUsage(objectID: ID!, objectType: LabelableObjectType!, key: String!, values: [Any!]!): LabelUsage!
 
     """Removes Label along with all its values. It doesn't remove LabelDefinition"""
-    removeLabel(objectID: ID!, objectType: LabelableObjectType!, key: String!): Label!
+    removeLabelUsage(objectID: ID!, objectType: LabelableObjectType!, key: String!): LabelUsage!
 
     """It won't allow to update the Label if the Label or LabelDefinition for the key is missing."""
-    addLabelValues(objectID: ID!, objectType: LabelableObjectType!, key: String!, values: [Any!]!): Label!
+    addLabelUsageValues(objectID: ID!, objectType: LabelableObjectType!, key: String!, values: [Any!]!): LabelUsage!
 
     """Overwrites array label values"""
-    updateLabelValues(objectID: ID!, objectType: LabelableObjectType!, key: String!, values: [Any!]!): Label!
+    updateLabelUsageValues(objectID: ID!, objectType: LabelableObjectType!, key: String!, values: [Any!]!): LabelUsage!
 
     """It won't allow to remove label value if the label is not of array type"""
-    deleteLabelValues(objectID: ID!, objectType: LabelableObjectType!, key: String!, values: [Any!]!): Label!
+    deleteLabelUsageValues(objectID: ID!, objectType: LabelableObjectType!, key: String!, values: [Any!]!): LabelUsage!
 }
 
 # Label Definition
@@ -133,7 +141,7 @@ type Mutation {
 interface LabelDefinition {
     key: String!
     # type is stored in __typename
-    defaultValue: Any
+    defaultValue: Any #TODO: Find better name
 }
 
 type StringLabelDefinition implements LabelDefinition {
@@ -155,40 +163,27 @@ type JSONSchemaLabelDefinition implements LabelDefinition {
 
 type LabelDefinitionInput {
     key: String!
+    type: LabelDefinitionType!
     jsonSchema: CLOB
     enum: [String!]
 }
 
-# Label
-type Label {
-    key: String!
-    definition: LabelDefinition!
-    usages(filter: LabelUsageFilter): [LabelUsage!]!
+enum LabelDefinitionType {
+    STRING,
+    ENUM,
+    JSON_SCHEMA
 }
 
 # used in Runtime and Application types
 type ObjectLabel {
     key: String!
-    definition: LabelDefinition!
-    usage: LabelUsage!
-}
-
-interface LabelUsage {    
-    objectID: ID! #TODO:
-    objectType: LabelableObjectType!
-    referencedObject: LabelableObject # resolver
-}
-
-type SingleLabelUsage implements LabelUsage {
-    value: Any!
-    objectID: ID!
-    objectType: LabelableObjectType!
-    referencedObject: LabelableObject # resolverver
-}
-
-type ArrayLabelUsage implements LabelUsage {
     values: [Any!]! # If the LabelDefinition is set to JSON_SCHEMA one, validate every single object against that schema.
-    objectID: ID!
+    definition: LabelDefinition! #resolver
+}
+
+interface LabelUsage {
+    values: [Any!]! # If the LabelDefinition is set to JSON_SCHEMA one, validate every single object against that schema.
+    objectID: ID! #TODO:
     objectType: LabelableObjectType!
     referencedObject: LabelableObject # resolver
 }
@@ -226,10 +221,6 @@ type Application {
     label(key: String!): ObjectLabel # resolver
 }
 ```
-
-## Storage
-
-// TODO:
 
 ## Workflows
 
