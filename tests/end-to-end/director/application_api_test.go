@@ -257,6 +257,101 @@ func TestCreateApplicationWithDocuments(t *testing.T) {
 	assertApplication(t, in, actualApp)
 }
 
+func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
+	applicationId := "foo"
+	//add webhook
+	//GIVEN
+	ctx := context.Background()
+	webhookInStr, err := tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
+		URL:  "new-webhook",
+		Type: graphql.ApplicationWebhookTypeConfigurationChanged,
+	})
+	tmpWebhook := graphql.Webhook{}
+	require.NoError(t, err)
+
+	//WHEN
+	addReq := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: addWebhook(applicationID: "%s", in: %s) {
+					%s
+				}
+			}`, applicationId, webhookInStr, tc.gqlFieldsProvider.ForWebhooks()))
+	err = tc.RunQuery(ctx, addReq, &tmpWebhook)
+
+	//THEN
+	require.Error(t, err)
+
+	//add API
+	//GIVEN
+	apiInStr, err := tc.graphqlizer.APIDefinitionInputToGQL(graphql.APIDefinitionInput{
+		Name:      "new-api-name",
+		TargetURL: "new-api-url",
+	})
+	tmpAPI := graphql.APIDefinition{}
+	require.NoError(t, err)
+
+	// WHEN
+	addReq = gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: addAPI(applicationID: "%s", in: %s) {
+					%s
+				}
+			}`, applicationId, apiInStr, tc.gqlFieldsProvider.ForAPIDefinition()))
+
+	err = tc.RunQuery(ctx, addReq, &tmpAPI)
+
+	//THEN
+	require.Error(t, err)
+
+	//add eventAPI
+	// GIVEN
+	eventApiInStr, err := tc.graphqlizer.EventAPIDefinitionInputToGQL(graphql.EventAPIDefinitionInput{
+		Name: "new-event-api",
+		Spec: &graphql.EventAPISpecInput{
+			EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
+			Format:        graphql.SpecFormatYaml,
+		},
+	})
+	tmpEventAPI := graphql.EventAPIDefinition{}
+	require.NoError(t, err)
+
+	// WHEN
+	addReq = gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+				result: addEventAPI(applicationID: "%s", in: %s) {
+						%s	
+					}
+				}`, applicationId, eventApiInStr, tc.gqlFieldsProvider.ForEventAPI()))
+	err = tc.RunQuery(ctx, addReq, &tmpEventAPI)
+
+	// THEN
+	require.Error(t, err)
+
+	//add document
+	//GIVEN
+	documentInStr, err := tc.graphqlizer.DocumentInputToGQL(&graphql.DocumentInput{
+		Title:       "new-document",
+		Format:      graphql.DocumentFormatMarkdown,
+		DisplayName: "new-document-display-name",
+		Description: "new-description",
+	})
+
+	require.NoError(t, err)
+	tmpDoc := graphql.Document{}
+
+	// WHEN
+	addReq = gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+				result: addDocument(applicationID: "%s", in: %s) {
+						%s
+					}
+			}`, applicationId, documentInStr, tc.gqlFieldsProvider.ForDocument()))
+	err = tc.RunQuery(ctx, addReq, &tmpDoc)
+
+	//THEN
+	require.Error(t, err)
+}
+
 func TestUpdateApplication(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -427,29 +522,6 @@ func TestUpdateApplicationParts(t *testing.T) {
 		id := actualWebhook.ID
 		require.NotNil(t, id)
 
-		// add to non exist application
-
-		//GIVEN
-		webhookInStr, err = tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
-			URL:  "new-webhook",
-			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
-		})
-		require.NoError(t, err)
-
-		//WHEN
-		addReq = gcli.NewRequest(
-			fmt.Sprintf(`mutation {
-			result: addWebhook(applicationID: "%s", in: %s) {
-					%s
-				}
-			}`, "foo", webhookInStr, tc.gqlFieldsProvider.ForWebhooks()))
-		saveQueryInExamples(t, addReq.Query(), "add aplication webhook")
-
-		//THEN
-		tmpWebhook := graphql.Webhook{}
-		err = tc.RunQuery(ctx, addReq, &tmpWebhook)
-		require.Error(t, err)
-
 		// get all webhooks
 		updatedApp := getApp(ctx, t, actualApp.ID)
 		assert.Len(t, updatedApp.Webhooks, 2)
@@ -526,30 +598,6 @@ func TestUpdateApplicationParts(t *testing.T) {
 		}
 		assert.Contains(t, actualAPINames, "new-api-name")
 		assert.Contains(t, actualAPINames, placeholder)
-
-		// add to non exist application
-
-		//GIVEN
-		inStr, err = tc.graphqlizer.APIDefinitionInputToGQL(graphql.APIDefinitionInput{
-			Name:      "new-api-name",
-			TargetURL: "new-api-url",
-		})
-		tmpAPI := graphql.APIDefinition{}
-		require.NoError(t, err)
-
-		// WHEN
-		addReq = gcli.NewRequest(
-			fmt.Sprintf(`mutation {
-			result: addAPI(applicationID: "%s", in: %s) {
-					%s
-				}
-			}`, "foo", inStr, tc.gqlFieldsProvider.ForAPIDefinition()))
-		saveQueryInExamples(t, addReq.Query(), "add API")
-
-		err = tc.RunQuery(ctx, addReq, &tmpAPI)
-
-		//THEN
-		require.Error(t, err)
 
 		// update
 
@@ -631,31 +679,6 @@ func TestUpdateApplicationParts(t *testing.T) {
 		updatedApp := getApp(ctx, t, actualApp.ID)
 		assert.Len(t, updatedApp.EventAPIs.Data, 2)
 
-		// add to non exist application
-
-		// GIVEN
-		inStr, err = tc.graphqlizer.EventAPIDefinitionInputToGQL(graphql.EventAPIDefinitionInput{
-			Name: "new-event-api",
-			Spec: &graphql.EventAPISpecInput{
-				EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
-				Format:        graphql.SpecFormatYaml,
-			},
-		})
-		tmpEventAPI := graphql.EventAPIDefinition{}
-		require.NoError(t, err)
-
-		// WHEN
-		addReq = gcli.NewRequest(
-			fmt.Sprintf(`mutation {
-				result: addEventAPI(applicationID: "%s", in: %s) {
-						%s	
-					}
-				}`, "foo", inStr, tc.gqlFieldsProvider.ForEventAPI()))
-		err = tc.RunQuery(ctx, addReq, &tmpEventAPI)
-
-		// THEN
-		require.Error(t, err)
-
 		// update
 
 		// GIVEN
@@ -724,31 +747,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		require.NotNil(t, id)
 		assert.Equal(t, "new-document", actualDoc.Title)
 
-		// add to non exists application
-
-		//GIVEN
-		inStr, err = tc.graphqlizer.DocumentInputToGQL(&graphql.DocumentInput{
-			Title:       "new-document",
-			Format:      graphql.DocumentFormatMarkdown,
-			DisplayName: "new-document-display-name",
-			Description: "new-description",
-		})
-
-		require.NoError(t, err)
-		tmpDoc := graphql.Document{}
-
-		// WHEN
-		addReq = gcli.NewRequest(
-			fmt.Sprintf(`mutation {
-				result: addDocument(applicationID: "%s", in: %s) {
-						%s
-					}
-			}`, "foo", inStr, tc.gqlFieldsProvider.ForDocument()))
-		err = tc.RunQuery(ctx, addReq, &tmpDoc)
-		saveQueryInExamples(t, addReq.Query(), "add Document")
-
-		//THEN
-		require.Error(t, err)
+		//delete
 
 		updatedApp := getApp(ctx, t, actualApp.ID)
 		assert.Len(t, updatedApp.Documents.Data, 2)
