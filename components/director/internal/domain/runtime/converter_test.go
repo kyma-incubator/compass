@@ -81,8 +81,8 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	authConverter.On("ToGraphQL", modelAuth).Return(nil)
 
 	input := []*model.Runtime{
-		fixModelRuntime("foo", "Foo", "Lorem ipsum"),
-		fixModelRuntime("bar", "Bar", "Dolor sit amet"),
+		fixModelRuntime("foo", "tenant-foo", "Foo", "Lorem ipsum"),
+		fixModelRuntime("bar", "tenant-bar", "Bar", "Dolor sit amet"),
 		{},
 		nil,
 	}

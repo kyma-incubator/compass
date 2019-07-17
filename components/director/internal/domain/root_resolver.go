@@ -3,6 +3,9 @@ package domain
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/persistence"
+
+	"github.com/kyma-incubator/compass/components/director/internal/appcontext"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 
@@ -30,7 +33,7 @@ type RootResolver struct {
 	webhook     *webhook.Resolver
 }
 
-func NewRootResolver() *RootResolver {
+func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 	authConverter := auth.NewConverter()
 
 	runtimeConverter := runtime.NewConverter(authConverter)
@@ -43,7 +46,7 @@ func NewRootResolver() *RootResolver {
 	appConverter := application.NewConverter(webhookConverter, apiConverter, eventAPIConverter, docConverter)
 
 	healthcheckRepo := healthcheck.NewRepository()
-	runtimeRepo := runtime.NewRepository()
+	runtimeRepo := runtime.NewPostgresRepository()
 	applicationRepo := application.NewRepository()
 	webhookRepo := webhook.NewRepository()
 	apiRepo := api.NewAPIRepository()
@@ -59,12 +62,14 @@ func NewRootResolver() *RootResolver {
 	runtimeSvc := runtime.NewService(runtimeRepo, uidService)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 
+	appCtx := appcontext.NewAppContext()
+
 	return &RootResolver{
 		app:         application.NewResolver(appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter),
 		api:         api.NewResolver(apiSvc, appSvc, apiConverter, authConverter),
 		eventAPI:    eventapi.NewResolver(eventAPISvc, appSvc, eventAPIConverter),
 		doc:         document.NewResolver(docSvc, appSvc, frConverter),
-		runtime:     runtime.NewResolver(runtimeSvc, runtimeConverter),
+		runtime:     runtime.NewResolver(transact, appCtx, runtimeSvc, runtimeConverter),
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
 		webhook:     webhook.NewResolver(webhookSvc, appSvc, webhookConverter),
 	}

@@ -34,9 +34,10 @@ func fixGQLRuntimePage(runtimes []*graphql.Runtime) *graphql.RuntimePage {
 	}
 }
 
-func fixModelRuntime(id, name, description string) *model.Runtime {
+func fixModelRuntime(id, tenant, name, description string) *model.Runtime {
 	return &model.Runtime{
-		ID: id,
+		ID:     id,
+		Tenant: tenant,
 		Status: &model.RuntimeStatus{
 			Condition: model.RuntimeStatusConditionInitial,
 		},
@@ -56,9 +57,10 @@ func fixGQLRuntime(id, name, description string) *graphql.Runtime {
 	}
 }
 
-func fixModelRuntimeWithLabels(id, name string, labels map[string]interface{}) *model.Runtime {
+func fixModelRuntimeWithLabels(id, tenant, name string, labels map[string]interface{}) *model.Runtime {
 	return &model.Runtime{
-		ID: id,
+		ID:     id,
+		Tenant: tenant,
 		Status: &model.RuntimeStatus{
 			Condition: model.RuntimeStatusConditionInitial,
 		},

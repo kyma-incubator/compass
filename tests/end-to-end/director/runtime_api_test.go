@@ -66,22 +66,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 			}`, actualRuntime.ID, tc.gqlFieldsProvider.ForRuntime()))
 	err = tc.RunQuery(ctx, getRuntimeReq, &actualRuntime)
 	require.NoError(t, err)
-	assert.Len(t, actualRuntime.Labels, 2)
-
-	// delete label
-
-	// WHEN
-	delLabelReq := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-				result: deleteRuntimeLabel(runtimeID: "%s", key: "%s") {
-						%s
-					}
-				}
-		`, actualRuntime.ID, "new-label", tc.gqlFieldsProvider.ForLabel()))
-	err = tc.RunQuery(ctx, delLabelReq, nil)
-
-	//THEN
-	require.NoError(t, err)
+	//assert.Len(t, actualRuntime.Labels, 2) // TODO: Make it work when labels are in place
 
 	// add agent auth
 	// GIVEN
@@ -161,7 +146,6 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, givenInput.Name, actualRuntime.Name)
 	assert.Equal(t, *givenInput.Description, *actualRuntime.Description)
-	assert.Equal(t, *givenInput.Labels, actualRuntime.Labels)
 	assert.NotNil(t, actualRuntime.AgentAuth)
 
 	// delete runtime
@@ -208,7 +192,6 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	givenInput = graphql.RuntimeInput{
 		Name:        firstRuntimeName,
 		Description: ptrString("runtime-1-description"),
-		Labels:      &graphql.Labels{"ggg": []string{"hhh"}},
 	}
 	runtimeInGQL, err = tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
@@ -225,7 +208,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "Runtime name is not unique within tenant")
+	assert.Contains(t, err.Error(), "runtime name is not unique within tenant")
 
 	// create second runtime
 	//GIVEN
@@ -261,7 +244,6 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	givenInput = graphql.RuntimeInput{
 		Name:        secondRuntimeName,
 		Description: ptrString("runtime-1-description"),
-		Labels:      &graphql.Labels{"ggg": []string{"hhh"}},
 	}
 	runtimeInGQL, err = tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
@@ -277,7 +259,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "Runtime name is not unique within tenant")
+	assert.Contains(t, err.Error(), "runtime name is not unique within tenant")
 }
 
 func TestSetAndDeleteAPIAuth(t *testing.T) {
@@ -305,7 +287,6 @@ func TestSetAndDeleteAPIAuth(t *testing.T) {
 	runtimeInput := graphql.RuntimeInput{
 		Name:        "runtime-set-delete-api",
 		Description: ptrString("runtime-1-description"),
-		Labels:      &graphql.Labels{"ggg": []string{"hhh"}},
 	}
 	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInput)
 	require.NoError(t, err)

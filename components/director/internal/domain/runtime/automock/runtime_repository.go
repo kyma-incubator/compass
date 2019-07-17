@@ -2,6 +2,7 @@
 
 package automock
 
+import context "context"
 import labelfilter "github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 import mock "github.com/stretchr/testify/mock"
 import model "github.com/kyma-incubator/compass/components/director/internal/model"
@@ -11,13 +12,13 @@ type RuntimeRepository struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: item
-func (_m *RuntimeRepository) Create(item *model.Runtime) error {
-	ret := _m.Called(item)
+// Create provides a mock function with given fields: ctx, item
+func (_m *RuntimeRepository) Create(ctx context.Context, item *model.Runtime) error {
+	ret := _m.Called(ctx, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*model.Runtime) error); ok {
-		r0 = rf(item)
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Runtime) error); ok {
+		r0 = rf(ctx, item)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -25,13 +26,13 @@ func (_m *RuntimeRepository) Create(item *model.Runtime) error {
 	return r0
 }
 
-// Delete provides a mock function with given fields: item
-func (_m *RuntimeRepository) Delete(item *model.Runtime) error {
-	ret := _m.Called(item)
+// Delete provides a mock function with given fields: ctx, id
+func (_m *RuntimeRepository) Delete(ctx context.Context, id string) error {
+	ret := _m.Called(ctx, id)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*model.Runtime) error); ok {
-		r0 = rf(item)
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, id)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -39,13 +40,13 @@ func (_m *RuntimeRepository) Delete(item *model.Runtime) error {
 	return r0
 }
 
-// GetByID provides a mock function with given fields: tenant, id
-func (_m *RuntimeRepository) GetByID(tenant string, id string) (*model.Runtime, error) {
-	ret := _m.Called(tenant, id)
+// GetByID provides a mock function with given fields: ctx, tenant, id
+func (_m *RuntimeRepository) GetByID(ctx context.Context, tenant string, id string) (*model.Runtime, error) {
+	ret := _m.Called(ctx, tenant, id)
 
 	var r0 *model.Runtime
-	if rf, ok := ret.Get(0).(func(string, string) *model.Runtime); ok {
-		r0 = rf(tenant, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Runtime); ok {
+		r0 = rf(ctx, tenant, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.Runtime)
@@ -53,8 +54,8 @@ func (_m *RuntimeRepository) GetByID(tenant string, id string) (*model.Runtime, 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = rf(tenant, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenant, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -62,13 +63,13 @@ func (_m *RuntimeRepository) GetByID(tenant string, id string) (*model.Runtime, 
 	return r0, r1
 }
 
-// List provides a mock function with given fields: tenant, filter, pageSize, cursor
-func (_m *RuntimeRepository) List(tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error) {
-	ret := _m.Called(tenant, filter, pageSize, cursor)
+// List provides a mock function with given fields: ctx, tenant, filter, pageSize, cursor
+func (_m *RuntimeRepository) List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error) {
+	ret := _m.Called(ctx, tenant, filter, pageSize, cursor)
 
 	var r0 *model.RuntimePage
-	if rf, ok := ret.Get(0).(func(string, []*labelfilter.LabelFilter, *int, *string) *model.RuntimePage); ok {
-		r0 = rf(tenant, filter, pageSize, cursor)
+	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter, *int, *string) *model.RuntimePage); ok {
+		r0 = rf(ctx, tenant, filter, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.RuntimePage)
@@ -76,8 +77,8 @@ func (_m *RuntimeRepository) List(tenant string, filter []*labelfilter.LabelFilt
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, []*labelfilter.LabelFilter, *int, *string) error); ok {
-		r1 = rf(tenant, filter, pageSize, cursor)
+	if rf, ok := ret.Get(1).(func(context.Context, string, []*labelfilter.LabelFilter, *int, *string) error); ok {
+		r1 = rf(ctx, tenant, filter, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -85,13 +86,13 @@ func (_m *RuntimeRepository) List(tenant string, filter []*labelfilter.LabelFilt
 	return r0, r1
 }
 
-// Update provides a mock function with given fields: item
-func (_m *RuntimeRepository) Update(item *model.Runtime) error {
-	ret := _m.Called(item)
+// Update provides a mock function with given fields: ctx, item
+func (_m *RuntimeRepository) Update(ctx context.Context, item *model.Runtime) error {
+	ret := _m.Called(ctx, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*model.Runtime) error); ok {
-		r0 = rf(item)
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Runtime) error); ok {
+		r0 = rf(ctx, item)
 	} else {
 		r0 = ret.Error(0)
 	}
