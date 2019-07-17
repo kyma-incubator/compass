@@ -267,7 +267,6 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 			URL:  "new-webhook",
 			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 		})
-		tmpWebhook := graphql.Webhook{}
 		require.NoError(t, err)
 
 		//WHEN
@@ -277,10 +276,10 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 					%s
 				}
 			}`, applicationId, webhookInStr, tc.gqlFieldsProvider.ForWebhooks()))
-		err = tc.RunQuery(ctx, addReq, &tmpWebhook)
+		err = tc.RunQuery(ctx, addReq, nil)
 
 		//THEN
-		require.Error(t, err)
+		require.EqualError(t, err, "graphql: while checking existence of Application: while getting Application with ID foo: application not found")
 	})
 
 	t.Run("add API", func(t *testing.T) {
@@ -290,7 +289,6 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 			Name:      "new-api-name",
 			TargetURL: "new-api-url",
 		})
-		tmpAPI := graphql.APIDefinition{}
 		require.NoError(t, err)
 
 		// WHEN
@@ -301,10 +299,10 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 				}
 			}`, applicationId, apiInStr, tc.gqlFieldsProvider.ForAPIDefinition()))
 
-		err = tc.RunQuery(ctx, addReq, &tmpAPI)
+		err = tc.RunQuery(ctx, addReq, nil)
 
 		//THEN
-		require.Error(t, err)
+		require.EqualError(t, err, "graphql: while checking existence of Application: while getting Application with ID foo: application not found")
 	})
 
 	t.Run("add Event API", func(t *testing.T) {
@@ -317,7 +315,6 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 				Format:        graphql.SpecFormatYaml,
 			},
 		})
-		tmpEventAPI := graphql.EventAPIDefinition{}
 		require.NoError(t, err)
 
 		// WHEN
@@ -327,10 +324,10 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 						%s	
 					}
 				}`, applicationId, eventApiInStr, tc.gqlFieldsProvider.ForEventAPI()))
-		err = tc.RunQuery(ctx, addReq, &tmpEventAPI)
+		err = tc.RunQuery(ctx, addReq, nil)
 
 		// THEN
-		require.Error(t, err)
+		require.EqualError(t, err, "graphql: while checking existence of Application: while getting Application with ID foo: application not found")
 	})
 	t.Run("add Document", func(t *testing.T) {
 		//GIVEN
@@ -341,9 +338,7 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 			DisplayName: "new-document-display-name",
 			Description: "new-description",
 		})
-
 		require.NoError(t, err)
-		tmpDoc := graphql.Document{}
 
 		// WHEN
 		addReq := gcli.NewRequest(
@@ -352,10 +347,10 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 						%s
 					}
 			}`, applicationId, documentInStr, tc.gqlFieldsProvider.ForDocument()))
-		err = tc.RunQuery(ctx, addReq, &tmpDoc)
+		err = tc.RunQuery(ctx, addReq, nil)
 
 		//THEN
-		require.Error(t, err)
+		require.EqualError(t, err, "graphql: while checking existence of Application: while getting Application with ID foo: application not found")
 	})
 }
 
