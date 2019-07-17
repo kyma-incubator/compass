@@ -405,7 +405,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 	t.Run("manage webhooks", func(t *testing.T) {
 		// add
-		webhookInStr, err := tc.graphqlizer.ApplicationWebhookInputToGQL(&graphql.WebhookInput{
+		webhookInStr, err := tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
 			URL:  "new-webhook",
 			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 		})
@@ -430,7 +430,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		// add to non exist application
 
 		//GIVEN
-		webhookInStr, err = tc.graphqlizer.ApplicationWebhookInputToGQL(&graphql.WebhookInput{
+		webhookInStr, err = tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
 			URL:  "new-webhook",
 			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 		})
@@ -455,7 +455,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		assert.Len(t, updatedApp.Webhooks, 2)
 
 		// update
-		webhookInStr, err = tc.graphqlizer.ApplicationWebhookInputToGQL(&graphql.WebhookInput{
+		webhookInStr, err = tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
 			URL: "updated-webhook", Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 		})
 
