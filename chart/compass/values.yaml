@@ -42,3 +42,12 @@ global:
 
   database:
     useEmbedded: true
+    # Values for GCP managed PostgreSQL database
+    gcpKey: ""
+    instanceConnectionName: ""
+    dbUser: ""
+    dbPassword: ""
+    dbName: ""
+    host: ""
+    hostPort: ""
+    sslMode: ""
