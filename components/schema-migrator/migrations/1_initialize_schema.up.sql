@@ -1,6 +1,6 @@
 CREATE TYPE runtime_status_condition AS ENUM ('INITIAL', 'READY', 'FAILED');
 
-CREATE TABLE runtime
+CREATE TABLE runtimes
 (
     id uuid NOT NULL CONSTRAINT runtime_pk PRIMARY KEY,
     tenant_id uuid NOT NULL,
@@ -11,5 +11,4 @@ CREATE TABLE runtime
     auth json
 );
 
-CREATE UNIQUE INDEX runtime_id_uindex ON runtime (id);
-CREATE UNIQUE INDEX runtime_id_name_uindex ON runtime (tenant_id, name);
+ALTER TABLE runtimes ADD CONSTRAINT runtimes_id_name_unique UNIQUE (tenant_id, name);
