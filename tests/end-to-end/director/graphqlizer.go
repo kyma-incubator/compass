@@ -24,7 +24,7 @@ func (g *graphqlizer) ApplicationInputToGQL(in graphql.ApplicationInput) (string
 		{{- if .Webhooks }}
 		webhooks: [
 			{{- range $i, $e := .Webhooks }} 
-				{{- if $i}}, {{- end}} {{ ApplicationWebhookInputToGQL $e }}
+				{{- if $i}}, {{- end}} {{ WebhookInputToGQL $e }}
 			{{- end }} ],
 		{{- end}}
 		{{- if .HealthCheckURL }}
@@ -150,7 +150,7 @@ func (g *graphqlizer) QueryParamsToGQL(in graphql.QueryParams) (string, error) {
 		`)
 }
 
-func (g *graphqlizer) ApplicationWebhookInputToGQL(in *graphql.ApplicationWebhookInput) (string, error) {
+func (g *graphqlizer) WebhookInputToGQL(in *graphql.WebhookInput) (string, error) {
 	return g.genericToGQL(in, `{
 		type: {{.Type}},
 		url: "{{.URL }}",
@@ -258,7 +258,7 @@ func (g *graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	fm["FetchRequesstInputToGQL"] = g.FetchRequestInputToGQL
 	fm["AuthInputToGQL"] = g.AuthInputToGQL
 	fm["LabelsToGQL"] = g.LabelsToGQL
-	fm["ApplicationWebhookInputToGQL"] = g.ApplicationWebhookInputToGQL
+	fm["WebhookInputToGQL"] = g.WebhookInputToGQL
 	fm["APIDefinitionInputToGQL"] = g.APIDefinitionInputToGQL
 	fm["EventAPIDefinitionInputToGQL"] = g.EventAPIDefinitionInputToGQL
 	fm["ApiSpecInputToGQL"] = g.ApiSpecInputToGQL

@@ -50,7 +50,7 @@ func TestCreateApplicationWithWebhooks(t *testing.T) {
 	ctx := context.Background()
 	in := graphql.ApplicationInput{
 		Name: "wordpress",
-		Webhooks: []*graphql.ApplicationWebhookInput{
+		Webhooks: []*graphql.WebhookInput{
 			{
 				Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 				Auth: fixBasicAuth(),
@@ -257,6 +257,103 @@ func TestCreateApplicationWithDocuments(t *testing.T) {
 	assertApplication(t, in, actualApp)
 }
 
+func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
+	applicationId := "foo"
+
+	t.Run("add Webhook", func(t *testing.T) {
+		//GIVEN
+		ctx := context.Background()
+		webhookInStr, err := tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
+			URL:  "new-webhook",
+			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
+		})
+		require.NoError(t, err)
+
+		//WHEN
+		addReq := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+			result: addWebhook(applicationID: "%s", in: %s) {
+					%s
+				}
+			}`, applicationId, webhookInStr, tc.gqlFieldsProvider.ForWebhooks()))
+		err = tc.RunQuery(ctx, addReq, nil)
+
+		//THEN
+		require.EqualError(t, err, "graphql: while checking existence of Application: while getting Application with ID foo: application not found")
+	})
+
+	t.Run("add API", func(t *testing.T) {
+		//GIVEN
+		ctx := context.Background()
+		apiInStr, err := tc.graphqlizer.APIDefinitionInputToGQL(graphql.APIDefinitionInput{
+			Name:      "new-api-name",
+			TargetURL: "new-api-url",
+		})
+		require.NoError(t, err)
+
+		// WHEN
+		addReq := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+			result: addAPI(applicationID: "%s", in: %s) {
+					%s
+				}
+			}`, applicationId, apiInStr, tc.gqlFieldsProvider.ForAPIDefinition()))
+
+		err = tc.RunQuery(ctx, addReq, nil)
+
+		//THEN
+		require.EqualError(t, err, "graphql: while checking existence of Application: while getting Application with ID foo: application not found")
+	})
+
+	t.Run("add Event API", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+		eventApiInStr, err := tc.graphqlizer.EventAPIDefinitionInputToGQL(graphql.EventAPIDefinitionInput{
+			Name: "new-event-api",
+			Spec: &graphql.EventAPISpecInput{
+				EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
+				Format:        graphql.SpecFormatYaml,
+			},
+		})
+		require.NoError(t, err)
+
+		// WHEN
+		addReq := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+				result: addEventAPI(applicationID: "%s", in: %s) {
+						%s	
+					}
+				}`, applicationId, eventApiInStr, tc.gqlFieldsProvider.ForEventAPI()))
+		err = tc.RunQuery(ctx, addReq, nil)
+
+		// THEN
+		require.EqualError(t, err, "graphql: while checking existence of Application: while getting Application with ID foo: application not found")
+	})
+	t.Run("add Document", func(t *testing.T) {
+		//GIVEN
+		ctx := context.Background()
+		documentInStr, err := tc.graphqlizer.DocumentInputToGQL(&graphql.DocumentInput{
+			Title:       "new-document",
+			Format:      graphql.DocumentFormatMarkdown,
+			DisplayName: "new-document-display-name",
+			Description: "new-description",
+		})
+		require.NoError(t, err)
+
+		// WHEN
+		addReq := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
+				result: addDocument(applicationID: "%s", in: %s) {
+						%s
+					}
+			}`, applicationId, documentInStr, tc.gqlFieldsProvider.ForDocument()))
+		err = tc.RunQuery(ctx, addReq, nil)
+
+		//THEN
+		require.EqualError(t, err, "graphql: while checking existence of Application: while getting Application with ID foo: application not found")
+	})
+}
+
 func TestUpdateApplication(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -405,7 +502,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 	t.Run("manage webhooks", func(t *testing.T) {
 		// add
-		webhookInStr, err := tc.graphqlizer.ApplicationWebhookInputToGQL(&graphql.ApplicationWebhookInput{
+		webhookInStr, err := tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
 			URL:  "new-webhook",
 			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 		})
@@ -413,13 +510,13 @@ func TestUpdateApplicationParts(t *testing.T) {
 		require.NoError(t, err)
 		addReq := gcli.NewRequest(
 			fmt.Sprintf(`mutation {
-			result: addApplicationWebhook(applicationID: "%s", in: %s) {
+			result: addWebhook(applicationID: "%s", in: %s) {
 					%s
 				}
 			}`, actualApp.ID, webhookInStr, tc.gqlFieldsProvider.ForWebhooks()))
 		saveQueryInExamples(t, addReq.Query(), "add aplication webhook")
 
-		actualWebhook := graphql.ApplicationWebhook{}
+		actualWebhook := graphql.Webhook{}
 		err = tc.RunQuery(ctx, addReq, &actualWebhook)
 		require.NoError(t, err)
 		assert.Equal(t, "new-webhook", actualWebhook.URL)
@@ -432,14 +529,14 @@ func TestUpdateApplicationParts(t *testing.T) {
 		assert.Len(t, updatedApp.Webhooks, 2)
 
 		// update
-		webhookInStr, err = tc.graphqlizer.ApplicationWebhookInputToGQL(&graphql.ApplicationWebhookInput{
+		webhookInStr, err = tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
 			URL: "updated-webhook", Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 		})
 
 		require.NoError(t, err)
 		updateReq := gcli.NewRequest(
 			fmt.Sprintf(`mutation {
-			result: updateApplicationWebhook(webhookID: "%s", in: %s) {
+			result: updateWebhook(webhookID: "%s", in: %s) {
 					%s
 				}
 			}`, actualWebhook.ID, webhookInStr, tc.gqlFieldsProvider.ForWebhooks()))
@@ -449,14 +546,20 @@ func TestUpdateApplicationParts(t *testing.T) {
 		assert.Equal(t, "updated-webhook", actualWebhook.URL)
 
 		// delete
+
+		//GIVEN
 		deleteReq := gcli.NewRequest(
 			fmt.Sprintf(`mutation {
-			result: deleteApplicationWebhook(webhookID: "%s") {
+			result: deleteWebhook(webhookID: "%s") {
 					%s
 				}
 			}`, actualWebhook.ID, tc.gqlFieldsProvider.ForWebhooks()))
 		saveQueryInExamples(t, deleteReq.Query(), "delete application webhook")
+
+		//WHEN
 		err = tc.RunQuery(ctx, deleteReq, &actualWebhook)
+
+		//THEN
 		require.NoError(t, err)
 		assert.Equal(t, "updated-webhook", actualWebhook.URL)
 
@@ -499,6 +602,8 @@ func TestUpdateApplicationParts(t *testing.T) {
 		assert.Contains(t, actualAPINames, placeholder)
 
 		// update
+
+		//GIVEN
 		updateStr, err := tc.graphqlizer.APIDefinitionInputToGQL(graphql.APIDefinitionInput{Name: "updated-api-name", TargetURL: "updated-api-url"})
 		require.NoError(t, err)
 		updatedAPI := graphql.APIDefinition{}
@@ -616,6 +721,8 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 	t.Run("manage documents", func(t *testing.T) {
 		// add
+
+		//GIVEN
 		inStr, err := tc.graphqlizer.DocumentInputToGQL(&graphql.DocumentInput{
 			Title:       "new-document",
 			Format:      graphql.DocumentFormatMarkdown,
@@ -641,7 +748,9 @@ func TestUpdateApplicationParts(t *testing.T) {
 		id := actualDoc.ID
 		require.NotNil(t, id)
 		assert.Equal(t, "new-document", actualDoc.Title)
-		//
+
+		//delete
+
 		updatedApp := getApp(ctx, t, actualApp.ID)
 		assert.Len(t, updatedApp.Documents.Data, 2)
 		actualDocuTitles := make(map[string]struct{})
@@ -830,7 +939,7 @@ func generateSampleApplicationInput(placeholder string) graphql.ApplicationInput
 				EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
 				Format:        graphql.SpecFormatYaml,
 			}}},
-		Webhooks: []*graphql.ApplicationWebhookInput{{
+		Webhooks: []*graphql.WebhookInput{{
 			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 			URL:  placeholder},
 		},
