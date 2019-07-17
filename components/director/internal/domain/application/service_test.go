@@ -22,7 +22,7 @@ func TestService_Create(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 	modelInput := model.ApplicationInput{
-		Name: "Foo",
+		Name: "foo.bar-not",
 		Webhooks: []*model.WebhookInput{
 			{URL: "test.foo.com"},
 			{URL: "test.bar.com"},
@@ -93,6 +93,93 @@ func TestService_Create(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
+			Name: "Returns error when application name is empty",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				return repo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				return repo
+			},
+			APIRepoFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				return repo
+			},
+			EventAPIRepoFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				return repo
+			},
+			DocumentRepoFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				return svc
+			},
+			Input:       model.ApplicationInput{Name: ""},
+			ExpectedErr: errors.New("Application name is not correct. You can only use lowercase letters, underscores and dots"),
+		},
+		{
+			Name: "Returns error when application name contains numbers",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				return repo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				return repo
+			},
+			APIRepoFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				return repo
+			},
+			EventAPIRepoFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				return repo
+			},
+			DocumentRepoFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				return svc
+			},
+			Input:       model.ApplicationInput{Name: "foo5bar"},
+			ExpectedErr: errors.New("Application name is not correct. You can only use lowercase letters, underscores and dots"),
+		},
+		{
+			Name: "Returns error when application name contains uppercase letter",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				return repo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				return repo
+			},
+			APIRepoFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				return repo
+			},
+			EventAPIRepoFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				return repo
+			},
+			DocumentRepoFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				return svc
+			},
+			Input:       model.ApplicationInput{Name: "upperCase"},
+			ExpectedErr: errors.New("Application name is not correct. You can only use lowercase letters, underscores and dots"),
+		},
+		{
 			Name: "Returns error when application creation failed",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
@@ -140,7 +227,11 @@ func TestService_Create(t *testing.T) {
 
 			// then
 			assert.IsType(t, "string", result)
-			assert.Equal(t, testCase.ExpectedErr, err)
+			if err == nil {
+				require.Nil(t, testCase.ExpectedErr)
+			} else {
+				assert.Error(t, testCase.ExpectedErr, err)
+			}
 
 			appRepo.AssertExpectations(t)
 			webhookRepo.AssertExpectations(t)
@@ -158,7 +249,7 @@ func TestService_Update(t *testing.T) {
 
 	desc := "Lorem ipsum"
 	modelInput := model.ApplicationInput{
-		Name: "Bar",
+		Name: "bar",
 	}
 	id := "foo"
 
@@ -170,7 +261,7 @@ func TestService_Update(t *testing.T) {
 
 	applicationModel := &model.Application{
 		ID:          id,
-		Name:        "Foo",
+		Name:        "foo",
 		Description: &desc,
 	}
 
@@ -252,6 +343,84 @@ func TestService_Update(t *testing.T) {
 			InputID:            "foo",
 			Input:              modelInput,
 			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when application name is empty",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				return repo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				return repo
+			},
+			APIRepoFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				return repo
+			},
+			EventAPIRepoFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				return repo
+			},
+			DocumentRepoFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				return repo
+			},
+			InputID:            "foo",
+			Input:              model.ApplicationInput{Name: ""},
+			ExpectedErrMessage: "Application name is not correct. You can only use lowercase letters, underscores and dots",
+		},
+		{
+			Name: "Returns error when application name contains numbers",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				return repo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				return repo
+			},
+			APIRepoFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				return repo
+			},
+			EventAPIRepoFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				return repo
+			},
+			DocumentRepoFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				return repo
+			},
+			InputID:            "foo",
+			Input:              model.ApplicationInput{Name: "foo5bar"},
+			ExpectedErrMessage: "Application name is not correct. You can only use lowercase letters, underscores and dots",
+		},
+		{
+			Name: "Returns error when application name contains upper case letter",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				return repo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				return repo
+			},
+			APIRepoFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				return repo
+			},
+			EventAPIRepoFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				return repo
+			},
+			DocumentRepoFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				return repo
+			},
+			InputID:            "foo",
+			Input:              model.ApplicationInput{Name: "upperCase"},
+			ExpectedErrMessage: "Application name is not correct. You can only use lowercase letters, underscores and dots",
 		},
 		{
 			Name: "Returns error when application retrieval failed",
@@ -350,7 +519,7 @@ func TestService_Delete(t *testing.T) {
 
 	applicationModel := &model.Application{
 		ID:          id,
-		Name:        "Foo",
+		Name:        "foo",
 		Description: &desc,
 	}
 
@@ -525,7 +694,7 @@ func TestService_Get(t *testing.T) {
 
 	applicationModel := &model.Application{
 		ID:          "foo",
-		Name:        "Foo",
+		Name:        "foo",
 		Description: &desc,
 	}
 
@@ -592,8 +761,8 @@ func TestService_List(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	modelApplications := []*model.Application{
-		fixModelApplication("foo", "Foo", "Lorem Ipsum"),
-		fixModelApplication("bar", "Bar", "Lorem Ipsum"),
+		fixModelApplication("foo", "foo", "Lorem Ipsum"),
+		fixModelApplication("bar", "bar", "Lorem Ipsum"),
 	}
 	applicationPage := &model.ApplicationPage{
 		Data:       modelApplications,
@@ -757,7 +926,7 @@ func TestService_AddLabel(t *testing.T) {
 	desc := "Lorem ipsum"
 
 	applicationID := "foo"
-	modifiedApplicationModel := fixModelApplicationWithLabels(applicationID, "Foo", map[string][]string{
+	modifiedApplicationModel := fixModelApplicationWithLabels(applicationID, "foo", map[string][]string{
 		"key": {"value1"},
 	})
 	modifiedApplicationModel.Description = &desc
@@ -777,7 +946,7 @@ func TestService_AddLabel(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", tnt, applicationID).Return(fixModelApplication(applicationID, "Foo", desc), nil).Once()
+				repo.On("GetByID", tnt, applicationID).Return(fixModelApplication(applicationID, "foo", desc), nil).Once()
 				repo.On("Update", modifiedApplicationModel).Return(nil).Once()
 
 				return repo
@@ -791,7 +960,7 @@ func TestService_AddLabel(t *testing.T) {
 			Name: "Returns error when application update failed",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", tnt, applicationID).Return(fixModelApplication(applicationID, "Foo", desc), nil).Once()
+				repo.On("GetByID", tnt, applicationID).Return(fixModelApplication(applicationID, "foo", desc), nil).Once()
 				repo.On("Update", modifiedApplicationModel).Return(testErr).Once()
 
 				return repo
@@ -846,7 +1015,7 @@ func TestService_DeleteLabel(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	applicationID := "foo"
-	modifiedApplicationModel := fixModelApplicationWithLabels(applicationID, "Foo", map[string][]string{})
+	modifiedApplicationModel := fixModelApplicationWithLabels(applicationID, "foo", map[string][]string{})
 
 	labelKey := "key"
 	labelValues := []string{"value1", "value2"}
@@ -864,7 +1033,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", tnt, applicationID).Return(
-					fixModelApplicationWithLabels(applicationID, "Foo", map[string][]string{
+					fixModelApplicationWithLabels(applicationID, "foo", map[string][]string{
 						"key": {"value1", "value2"},
 					}), nil).Once()
 				repo.On("Update", modifiedApplicationModel).Return(nil).Once()
@@ -881,7 +1050,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", tnt, applicationID).Return(
-					fixModelApplicationWithLabels(applicationID, "Foo", map[string][]string{
+					fixModelApplicationWithLabels(applicationID, "foo", map[string][]string{
 						"key": {"value1", "value2"},
 					}), nil).Once()
 				repo.On("Update", modifiedApplicationModel).Return(testErr).Once()

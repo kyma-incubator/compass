@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"regexp"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -108,6 +109,15 @@ func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string
 		return "", errors.Wrapf(err, "while loading tenant from context")
 	}
 
+	valid, err := validateApplicationName(in.Name)
+	if err != nil {
+		return "", errors.Wrap(err, "while validating Application name")
+	}
+
+	if !valid {
+		return "", errors.New("Application name is not correct. You can only use lowercase letters, underscores and dots")
+	}
+
 	id := s.uidService.Generate()
 	app := in.ToApplication(id, appTenant)
 
@@ -125,11 +135,19 @@ func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string
 }
 
 func (s *service) Update(ctx context.Context, id string, in model.ApplicationInput) error {
+	valid, err := validateApplicationName(in.Name)
+	if err != nil {
+		return errors.Wrap(err, "while validating Application name")
+	}
+
+	if !valid {
+		return errors.New("Application name is not correct. You can only use lowercase letters, underscores and dots")
+	}
+
 	app, err := s.Get(ctx, id)
 	if err != nil {
 		return errors.Wrap(err, "while getting Application")
 	}
-
 	app = in.ToApplication(app.ID, app.Tenant)
 
 	err = s.app.Update(app)
@@ -266,4 +284,17 @@ func (s *service) deleteRelatedResources(applicationID string) error {
 	}
 
 	return nil
+}
+
+func validateApplicationName(name string) (bool, error) {
+	match, err := regexp.MatchString("^[a-z\\.-]+$", name)
+	if err != nil {
+		return false, errors.Wrap(err, "while validating Application name with regex")
+	}
+
+	if !match {
+		return false, nil
+	}
+
+	return true, nil
 }
