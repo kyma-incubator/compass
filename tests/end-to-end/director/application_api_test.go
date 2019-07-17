@@ -259,97 +259,104 @@ func TestCreateApplicationWithDocuments(t *testing.T) {
 
 func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 	applicationId := "foo"
-	//add webhook
-	//GIVEN
-	ctx := context.Background()
-	webhookInStr, err := tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
-		URL:  "new-webhook",
-		Type: graphql.ApplicationWebhookTypeConfigurationChanged,
-	})
-	tmpWebhook := graphql.Webhook{}
-	require.NoError(t, err)
 
-	//WHEN
-	addReq := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
+	t.Run("add Webhook", func(t *testing.T) {
+		//GIVEN
+		ctx := context.Background()
+		webhookInStr, err := tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
+			URL:  "new-webhook",
+			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
+		})
+		tmpWebhook := graphql.Webhook{}
+		require.NoError(t, err)
+
+		//WHEN
+		addReq := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
 			result: addWebhook(applicationID: "%s", in: %s) {
 					%s
 				}
 			}`, applicationId, webhookInStr, tc.gqlFieldsProvider.ForWebhooks()))
-	err = tc.RunQuery(ctx, addReq, &tmpWebhook)
+		err = tc.RunQuery(ctx, addReq, &tmpWebhook)
 
-	//THEN
-	require.Error(t, err)
-
-	//add API
-	//GIVEN
-	apiInStr, err := tc.graphqlizer.APIDefinitionInputToGQL(graphql.APIDefinitionInput{
-		Name:      "new-api-name",
-		TargetURL: "new-api-url",
+		//THEN
+		require.Error(t, err)
 	})
-	tmpAPI := graphql.APIDefinition{}
-	require.NoError(t, err)
 
-	// WHEN
-	addReq = gcli.NewRequest(
-		fmt.Sprintf(`mutation {
+	t.Run("add API", func(t *testing.T) {
+		//GIVEN
+		ctx := context.Background()
+		apiInStr, err := tc.graphqlizer.APIDefinitionInputToGQL(graphql.APIDefinitionInput{
+			Name:      "new-api-name",
+			TargetURL: "new-api-url",
+		})
+		tmpAPI := graphql.APIDefinition{}
+		require.NoError(t, err)
+
+		// WHEN
+		addReq := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
 			result: addAPI(applicationID: "%s", in: %s) {
 					%s
 				}
 			}`, applicationId, apiInStr, tc.gqlFieldsProvider.ForAPIDefinition()))
 
-	err = tc.RunQuery(ctx, addReq, &tmpAPI)
+		err = tc.RunQuery(ctx, addReq, &tmpAPI)
 
-	//THEN
-	require.Error(t, err)
-
-	//add eventAPI
-	// GIVEN
-	eventApiInStr, err := tc.graphqlizer.EventAPIDefinitionInputToGQL(graphql.EventAPIDefinitionInput{
-		Name: "new-event-api",
-		Spec: &graphql.EventAPISpecInput{
-			EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
-			Format:        graphql.SpecFormatYaml,
-		},
+		//THEN
+		require.Error(t, err)
 	})
-	tmpEventAPI := graphql.EventAPIDefinition{}
-	require.NoError(t, err)
 
-	// WHEN
-	addReq = gcli.NewRequest(
-		fmt.Sprintf(`mutation {
+	t.Run("add Event API", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+		eventApiInStr, err := tc.graphqlizer.EventAPIDefinitionInputToGQL(graphql.EventAPIDefinitionInput{
+			Name: "new-event-api",
+			Spec: &graphql.EventAPISpecInput{
+				EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
+				Format:        graphql.SpecFormatYaml,
+			},
+		})
+		tmpEventAPI := graphql.EventAPIDefinition{}
+		require.NoError(t, err)
+
+		// WHEN
+		addReq := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
 				result: addEventAPI(applicationID: "%s", in: %s) {
 						%s	
 					}
 				}`, applicationId, eventApiInStr, tc.gqlFieldsProvider.ForEventAPI()))
-	err = tc.RunQuery(ctx, addReq, &tmpEventAPI)
+		err = tc.RunQuery(ctx, addReq, &tmpEventAPI)
 
-	// THEN
-	require.Error(t, err)
-
-	//add document
-	//GIVEN
-	documentInStr, err := tc.graphqlizer.DocumentInputToGQL(&graphql.DocumentInput{
-		Title:       "new-document",
-		Format:      graphql.DocumentFormatMarkdown,
-		DisplayName: "new-document-display-name",
-		Description: "new-description",
+		// THEN
+		require.Error(t, err)
 	})
+	t.Run("add Document", func(t *testing.T) {
+		//GIVEN
+		ctx := context.Background()
+		documentInStr, err := tc.graphqlizer.DocumentInputToGQL(&graphql.DocumentInput{
+			Title:       "new-document",
+			Format:      graphql.DocumentFormatMarkdown,
+			DisplayName: "new-document-display-name",
+			Description: "new-description",
+		})
 
-	require.NoError(t, err)
-	tmpDoc := graphql.Document{}
+		require.NoError(t, err)
+		tmpDoc := graphql.Document{}
 
-	// WHEN
-	addReq = gcli.NewRequest(
-		fmt.Sprintf(`mutation {
+		// WHEN
+		addReq := gcli.NewRequest(
+			fmt.Sprintf(`mutation {
 				result: addDocument(applicationID: "%s", in: %s) {
 						%s
 					}
 			}`, applicationId, documentInStr, tc.gqlFieldsProvider.ForDocument()))
-	err = tc.RunQuery(ctx, addReq, &tmpDoc)
+		err = tc.RunQuery(ctx, addReq, &tmpDoc)
 
-	//THEN
-	require.Error(t, err)
+		//THEN
+		require.Error(t, err)
+	})
 }
 
 func TestUpdateApplication(t *testing.T) {
