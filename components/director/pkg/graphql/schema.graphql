@@ -456,6 +456,15 @@ input LabelFilter {
     operator: FilterOperator = ALL
 }
 
+type LabelDefinition {
+    key: String!
+    schema: String
+}
+
+input LabelDefinitionInput {
+    key: String!
+    schema: String
+}
 
 type Query {
     applications(filter: [LabelFilter!], first: Int = 100, after: PageCursor):  ApplicationPage!
@@ -465,6 +474,9 @@ type Query {
     runtime(id: ID!): Runtime
 
     healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: PageCursor): HealthCheckPage!
+
+    labelDefinitions: [LabelDefinition!]!
+    labelDefinition(key: String!): LabelDefinition
 }
 
 type Mutation {
@@ -510,4 +522,9 @@ type Mutation {
 
     """If values are not specified, it deletes the label. If values are specified, it deletes values from a specific label."""
     deleteRuntimeLabel(runtimeID: ID!, key: String!, values: [String!]): Label
+
+    # Label Definitions
+    createLabelDefinition(in: LabelDefinitionInput!): LabelDefinition
+    updateLabelDefinition(in: LabelDefinitionInput!): LabelDefinition
+    deleteLabelDefinition(key: String!, force: Boolean=false): LabelDefinition
 }
