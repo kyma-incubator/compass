@@ -49,6 +49,6 @@ global:
       dbUser: ""
       dbPassword: ""
       dbName: ""
-      host: ""
-      hostPort: ""
+      host: "localhost"
+      hostPort: "5432"
       sslMode: ""
