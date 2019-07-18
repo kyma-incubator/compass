@@ -175,3 +175,85 @@ select * from application a join labels lab on a.id = lab.application_id where l
 ```
 
 TODO translation
+
+```sql
+create database compass;
+
+\connect compass
+
+
+create table labels (
+  id varchar(100),
+  tenant varchar(100),
+  app_id varchar(100),
+  runtime_id varchar(100),
+  label_key varchar(100),
+  label_id varchar(100),
+  value JSONB
+);
+
+insert into labels(id,tenant,app_id,label_key, label_id,value) values
+  ('1','adidas','app-1','scenarios','label-def-1','["aaa","bbb"]'),
+  ('2','adidas','app-2','scenarios', 'label-def-1','["bbb","ccc"]'),
+  ('3','adidas','app-3', 'abc','label-def-2','{"name": "John", "age": 32}'),
+  ('4','adidas','app-4', 'abc','label-def-2','{"name": "Pamela", "age": 48}');
+
+```
+
+Use script `./../investigations/storage/sql-toolbox/run_postgres.sh`
+
+Then, following query are possible:
+```sql
+
+select app_id,jsonb_path_query(value,'$[*] ? (@ == "bbb" )') from labels where label_key='scenarios';
+```
+
+Result:
+```
+ app_id | jsonb_path_query
+--------+------------------
+ app-1  | "bbb"
+ app-2  | "bbb"
+```
+
+
+https://www.depesz.com/2019/03/19/waiting-for-postgresql-12-partial-implementation-of-sql-json-path-language/
+
+https://www.postgresql.org/docs/12/functions-json.html
+
+https://www.postgresql.org/developer/roadmap/
+```
+The next major release of PostgreSQL is planned to be the 12 release. A tentative schedule for this version has a release in the third quarter of 2019.
+
+```
+
+https://www.postgresql.org/about/news/1943/
+
+```
+JSON path queries per SQL/JSON specification
+PostgreSQL 12 now allows execution of JSON path queries per the SQL/JSON specification in the SQL:2016 standard. Similar to XPath expressions for XML, JSON path expressions let you evaluate a variety of arithmetic expressions and functions in addition to comparing values within JSON documents.
+
+A subset of these expressions can be accelerated with GIN indexes, allowing the execution of highly performant lookups across sets of JSON data.
+```
+
+???
+security considerations
+
+
+https://kubernetes.io/docs/reference/kubectl/jsonpath/
+https://github.com/stedolan/jq/wiki/For-JSONPath-users
+
+https://github.com/kubernetes/kubernetes/blob/7faeee22b109d644f9a0ed736447e8867cae728e/staging/src/k8s.io/client-go/util/jsonpath/jsonpath.go
+
+
+```
+$[?(@ == "aaa")]
+```
+
+
+
+---
+https://news.ycombinator.com/item?id=19949240
+
+
+GCP: Postgres: 9.6, 11
