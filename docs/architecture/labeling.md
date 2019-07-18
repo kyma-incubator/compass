@@ -4,7 +4,7 @@
 
 - User can label every top-level entity like Application, Runtime
 - User can search Application/Runtime by specific label and its value
-- User can learn about all label keys used in given tenant
+- User can find out about all label keys used in given tenant
 - User can define validation rules for label with given key but it is optional
 - There is one special label: **Scenarios**, that has additional requirements:
     - Every object is labeled with **Scenarios**
@@ -13,14 +13,14 @@
     
 ## Proposed solution
 
-### 10 Commandments
-1. Every Label is validated against JSON schema.
+1. Application or Runtime can be tagged with label that consist of **key** and **value**.
+1. Label can have related LabelDefinition when user can define JSON schema for validation of values.
 Thanks to that our API is extremely simple and we can treat every label in the same way.
 Even UI developers can benefit from it, because there are libraries that render proper JS component
 on the JSON schema basis. See [this library](https://github.com/json-editor/json-editor).
 
 2. For given Label you can provide only one value. Still value can be JSON array, depending on LabelDefintions schema.
-3. LabelDefinition is optional, but it will be created automatically if user uses a new label.
+3. LabelDefinition is optional, but it will be created automatically if user uses add a label for which LabelDefinition does not exist.
  
 ### API Changes
 
@@ -53,7 +53,7 @@ type Mutation {
 LabelsDefinition key has to be unique for given tenant. Schema defines JSON schema used when user adds label
 to the Application or Runtime. 
 
-1. In JSON schema you are able to define if given label accepts one or many values. Because of that, we have to change
+1. In JSON schema user is able to define if given label accepts one or many values. Because of that, we have to change
 or API and allow to specify only one value for given label. This value can contains many elements, depending on LabelDefinition's schema.  
 Change from
 ```graphql
@@ -95,9 +95,9 @@ setApplicationLabel(applicationID: "123", key: "supportedLanguages", value:"[Go]
 
 ### Editing Label Definition
 Label definition can be edited. This will be used for example for label **Scenarios**.
-When editing definition, we need to ensure that all labels are comatible with a new definition.
-If this is not a case, such mutation has to be rejected, with clear message that currently exist Applicatiohns or Runtimes
-that have this value with invalid value.
+When editing definition, we need to ensure that all labels are compatible with the new definition.
+If this is not a case, such mutation has to be rejected, with clear message that there are Applications or Runtimes that
+have invalid label according to the new LabelDefinition.
 In such case user has two possibilities:
 - remove offending labels from specific App/Runtimes  
 - remove old LabelDefinition with cascading deletion of all Labels
@@ -108,7 +108,7 @@ deleteLabelDefinition(key: String!, force: Boolean=false): LabelDefinition
 
 ```
 By default, above mutation allows to remove only definitions that it is not used. If you want to 
-delete definition and all valuess, set `force` argument to `true`. 
+delete definition and all values, set `force` parameter to `true`. 
 
 ### Editing label definition
 Let assume that we have following label definition:
@@ -122,27 +122,67 @@ Let assume that we have following label definition:
               }
           }"
 ```
-and you application is already labeled with one language:
+
+If you want to add new language to this list, you have to provide full definition:
 ```
-setApplicationLabel(applicationID: "123", key: "priority", value:"[Go]") {...}
-```
-If you want to add new language to this list, you have to repeat previous values:
-```
-setApplicationLabel(applicationID: "123", key: "supportedLanguages", value:"[Go,Java]") {...}
+updateLabelDefinition(in: {
+                        key:"supportedLanguages",
+                        schema:"{
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string",
+                                        "enum": ["Go", "Java", "C#","ABAP"]
+                                    }
+                                }"
+                      }) {...}
 ```
 
 ### Getting list of possible labels
-Label definitions are created every time, even when user directly label Application or Runtime with a new key.
+Label definitions are created every time, even when a user directly label Application or Runtime with a new key.
 Thanks to that, to provide list of possible keys, we need to return all Label Definition for specific tenant.
 
 ### Search
-There are queries for Applications/Labels where use can define labelFilter.
-TODO fix schema
-LabelFilter can define:
-- label key
-- query expression similar to PostgreSQL JSON query language.
+There are queries for Applications/Runtimes where user can define LabelFilter:
+```graphql
+ applications(filter: [LabelFilter!], first: Int = 100, after: PageCursor):  ApplicationPage!
+```
 
-TODO test this!
+Because now every label is defined by JSON Schema, LabelFilter needs to be changed, from:
+```graphql
+input LabelFilter {
+    label: String!
+    values: [String!]!
+    operator: FilterOperator = ALL
+}
+```
+to: 
+```graphql
+input LabelFilter {
+    label: String!
+    query: String!
+}
+```
+
+Challenging part is how user will provide **query** field.
+There is no standard for query language for JSON, see [discussion](https://stackoverflow.com/questions/777455/is-there-a-query-language-for-json).
+We have many alternatives:
+- JSON Path (https://goessner.net/articles/JsonPath/)
+- jq
+- jmespath
+- mongo DB has it's own query language
+- kubectl does not mention which standard they are supporting: https://kubernetes.io/docs/reference/kubectl/jsonpath/
+but it looks the same as Goessner's JSON Path. It looks that they implemented parsing on they own:
+ https://github.com/kubernetes/kubernetes/blob/7faeee22b109d644f9a0ed736447e8867cae728e/staging/src/k8s.io/client-go/util/jsonpath/jsonpath.go
+
+- SQL/JSON Path Expressions (part of SQL-2016 specification http://www.sai.msu.su/~megera/postgres/talks/jsonpath-pgday.it-2019.pdf, https://news.ycombinator.com/item?id=19949240). 
+
+Options enumerated above are not compatible each other.
+
+The simplest solution will be to use SQL/JSON Path, then we can propagate that value directly to the PostgreSQL. 
+Unfortunately, this functionality is planned for PostgreSQL 12, which is going to be released in Q3 2019, see [roadmap](https://www.postgresql.org/developer/roadmap/) and [features highlights](https://www.postgresql.org/about/news/1943/).
+We don't know when this version will be available on GCP or AWS which currently allow to provision PostgreSQL 11.
+Also, not all relational databases support JSON Path Expressions, other than Postgres is [SQL Server](https://docs.microsoft.com/en-us/sql/relational-databases/json/json-path-expressions-sql-server?view=sql-server-2017) 
+See Database Schema section to learn how it can be implemented.
 
 ### Special case: Scenario Label
 For scenario label we have additional requirements:
@@ -157,25 +197,17 @@ For scenario label we have additional requirements:
 5. On creation/modification of Application/Runtime there is a step that ensures that `Scenario` label exist.
 
 
-TODO: 
-cascading delete - we need another table for that
 
-## Database
-When removing LabelDefinition or modyfing it, we need to perform cascading delete or check if all values are compliant with schema definition.
+
+## Database Schema
+When removing LabelDefinition or modifying it, we need to perform cascading delete or check if all values are compliant with schema definition.
 Because of that, it can be beneficial to have a separate table for storing labels.
 
 ```
 tenant_id | application_id | runtime_id | labelKey | labelID | value
 ```
 
-Searching by scenario `default`
-```sql
-select * from application a join labels lab on a.id = lab.application_id where lab.labelKey="scenario" 
-    and lab.value ? "default"
-```
-
-TODO translation
-
+Full example:
 ```sql
 create database compass;
 
@@ -200,9 +232,9 @@ insert into labels(id,tenant,app_id,label_key, label_id,value) values
 
 ```
 
-Use script `./../investigations/storage/sql-toolbox/run_postgres.sh`
+Use script `./../investigations/storage/sql-toolbox/run_postgres.sh` to run PostgreSQL in version 12.
 
-Then, following query are possible:
+Then, following query returns all applications that have **scenarios** `bbb`:
 ```sql
 
 select app_id,jsonb_path_query(value,'$[*] ? (@ == "bbb" )') from labels where label_key='scenarios';
@@ -217,43 +249,8 @@ Result:
 ```
 
 
-https://www.depesz.com/2019/03/19/waiting-for-postgresql-12-partial-implementation-of-sql-json-path-language/
-
-https://www.postgresql.org/docs/12/functions-json.html
-
-https://www.postgresql.org/developer/roadmap/
-```
-The next major release of PostgreSQL is planned to be the 12 release. A tentative schedule for this version has a release in the third quarter of 2019.
-
-```
-
-https://www.postgresql.org/about/news/1943/
-
-```
-JSON path queries per SQL/JSON specification
-PostgreSQL 12 now allows execution of JSON path queries per the SQL/JSON specification in the SQL:2016 standard. Similar to XPath expressions for XML, JSON path expressions let you evaluate a variety of arithmetic expressions and functions in addition to comparing values within JSON documents.
-
-A subset of these expressions can be accelerated with GIN indexes, allowing the execution of highly performant lookups across sets of JSON data.
-```
-
-???
-security considerations
+Full list of supported operations can be found [here](https://www.postgresql.org/docs/12/functions-json.html#FUNCTIONS-SQLJSON-PATH).
 
 
-https://kubernetes.io/docs/reference/kubectl/jsonpath/
-https://github.com/stedolan/jq/wiki/For-JSONPath-users
+TODO: security, SQL/JSON injection???
 
-https://github.com/kubernetes/kubernetes/blob/7faeee22b109d644f9a0ed736447e8867cae728e/staging/src/k8s.io/client-go/util/jsonpath/jsonpath.go
-
-
-```
-$[?(@ == "aaa")]
-```
-
-
-
----
-https://news.ycombinator.com/item?id=19949240
-
-
-GCP: Postgres: 9.6, 11
