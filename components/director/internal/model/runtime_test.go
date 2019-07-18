@@ -200,3 +200,49 @@ func TestRuntimeInput_ToRuntime(t *testing.T) {
 		})
 	}
 }
+
+func TestRuntimeInput_ValidateInput(t *testing.T) {
+	//GIVEN
+	validationErrorMsg := []string{"a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character"}
+	testCases := []struct {
+		Name           string
+		Input          model.RuntimeInput
+		ExpectedErrMsg []string
+	}{
+		{
+			Name:           "Correct Runtime name",
+			Input:          model.RuntimeInput{Name: "correct-name.yeah"},
+			ExpectedErrMsg: nil,
+		},
+		{
+			Name:           "Returns errors when Runtime name is empty",
+			Input:          model.RuntimeInput{Name: ""},
+			ExpectedErrMsg: validationErrorMsg,
+		},
+		{
+			Name:           "Returns errors when Runtime name contains UpperCase letter",
+			Input:          model.RuntimeInput{Name: "Not-correct-name.yeah"},
+			ExpectedErrMsg: validationErrorMsg,
+		},
+		{
+			Name:           "Returns errors when Runtime name contains special not allowed character",
+			Input:          model.RuntimeInput{Name: "not-correct-n@me.yeah"},
+			ExpectedErrMsg: validationErrorMsg,
+		},
+	}
+
+	for i, testCase := range testCases {
+		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+			//WHEN
+			errorMsg := testCase.Input.ValidateInput()
+
+			//THEN
+			if testCase.ExpectedErrMsg != nil {
+				require.Equal(t, 1, len(errorMsg))
+				assert.Contains(t, errorMsg[0], testCase.ExpectedErrMsg[0])
+			} else {
+				assert.Nil(t, errorMsg)
+			}
+		})
+	}
+}

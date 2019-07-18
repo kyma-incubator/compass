@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"k8s.io/apimachinery/pkg/api/validation"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
@@ -59,6 +60,11 @@ func (s *service) Get(ctx context.Context, id string) (*model.Runtime, error) {
 }
 
 func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, error) {
+	validationMsgs := validation.NameIsDNSSubdomain(in.Name, false)
+	if validationMsgs != nil {
+		return "", errors.Errorf("%v", validationMsgs)
+	}
+
 	runtimeTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", errors.Wrapf(err, "while loading tenant from context")
@@ -89,6 +95,11 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 }
 
 func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) error {
+	validationMsgs := validation.NameIsDNSSubdomain(in.Name, false)
+	if validationMsgs != nil {
+		return errors.Errorf("%v", validationMsgs)
+	}
+
 	rtm, err := s.Get(ctx, id)
 	if err != nil {
 		return errors.Wrap(err, "while getting Runtime")

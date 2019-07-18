@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"k8s.io/apimachinery/pkg/api/validation"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -92,6 +94,10 @@ func (i *RuntimeInput) ToRuntime(id string, tenant string) *Runtime {
 		AgentAuth:   &Auth{},
 		Status:      &RuntimeStatus{},
 	}
+}
+
+func (i *RuntimeInput) ValidateInput() []string {
+	return validation.NameIsDNSSubdomain(i.Name, false)
 }
 
 type RuntimePage struct {

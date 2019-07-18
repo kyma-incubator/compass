@@ -50,6 +50,11 @@ func (r *inMemoryRepository) Create(item *model.Runtime) error {
 		return errors.New("item can not be empty")
 	}
 
+	found := r.findRuntimeName(item.Name)
+	if found {
+		return errors.New("Runtime name is not unique")
+	}
+
 	r.store[item.ID] = item
 
 	return nil
@@ -60,8 +65,13 @@ func (r *inMemoryRepository) Update(item *model.Runtime) error {
 		return errors.New("item can not be empty")
 	}
 
+	found := r.findRuntimeName(item.Name)
+	if found {
+		return errors.New("Runtime name is not unique")
+	}
+
 	if r.store[item.ID] == nil {
-		return errors.New("application not found")
+		return errors.New("Runtime not found")
 	}
 
 	r.store[item.ID] = item
@@ -77,4 +87,13 @@ func (r *inMemoryRepository) Delete(item *model.Runtime) error {
 	delete(r.store, item.ID)
 
 	return nil
+}
+
+func (r *inMemoryRepository) findRuntimeName(name string) bool {
+	for _, runtime := range r.store {
+		if runtime.Name == name {
+			return true
+		}
+	}
+	return false
 }

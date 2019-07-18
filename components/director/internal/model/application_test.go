@@ -245,7 +245,6 @@ func TestApplicationInput_ValidateInput(t *testing.T) {
 			} else {
 				assert.Nil(t, errorMsg)
 			}
-
 		})
 	}
 }
