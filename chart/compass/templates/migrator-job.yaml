@@ -57,4 +57,4 @@ spec:
                     - "/bin/bash"
                   args:
                     - "-c"
-                    - "./run.sh; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -TERM pilot-agent; sleep 4; exit $exit_code;"
+                    - "./run.sh; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -TERM pilot-agent; exit $exit_code;"
