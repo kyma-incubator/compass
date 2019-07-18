@@ -60,6 +60,11 @@ func (r *inMemoryRepository) Create(item *model.Application) error {
 		return errors.New("item can not be empty")
 	}
 
+	found := r.findApplicationName(item.Name)
+	if found {
+		return errors.New("Application name is not unique")
+	}
+
 	r.store[item.ID] = item
 
 	return nil
@@ -68,6 +73,11 @@ func (r *inMemoryRepository) Create(item *model.Application) error {
 func (r *inMemoryRepository) Update(item *model.Application) error {
 	if item == nil {
 		return errors.New("item can not be empty")
+	}
+
+	found := r.findApplicationName(item.Name)
+	if found {
+		return errors.New("Application name is not unique")
 	}
 
 	if r.store[item.ID] == nil {
@@ -87,4 +97,13 @@ func (r *inMemoryRepository) Delete(item *model.Application) error {
 	delete(r.store, item.ID)
 
 	return nil
+}
+
+func (r *inMemoryRepository) findApplicationName(name string) bool {
+	for _, app := range r.store {
+		if app.Name == name {
+			return true
+		}
+	}
+	return false
 }

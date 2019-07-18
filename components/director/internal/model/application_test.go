@@ -202,3 +202,50 @@ func TestApplicationInput_ToApplication(t *testing.T) {
 		})
 	}
 }
+
+func TestApplicationInput_ValidateInput(t *testing.T) {
+	//GIVEN
+	validationErrorMsg := []string{"a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character"}
+	testCases := []struct {
+		Name           string
+		Input          model.ApplicationInput
+		ExpectedErrMsg []string
+	}{
+		{
+			Name:           "Correct Application name",
+			Input:          model.ApplicationInput{Name: "correct-name.yeah"},
+			ExpectedErrMsg: nil,
+		},
+		{
+			Name:           "Returns errors when Application name is empty",
+			Input:          model.ApplicationInput{Name: ""},
+			ExpectedErrMsg: validationErrorMsg,
+		},
+		{
+			Name:           "Returns errors when Application name contains UpperCase letter",
+			Input:          model.ApplicationInput{Name: "Not-correct-name.yeah"},
+			ExpectedErrMsg: validationErrorMsg,
+		},
+		{
+			Name:           "Returns errors when Application name contains special not allowed character",
+			Input:          model.ApplicationInput{Name: "not-correct-n@me.yeah"},
+			ExpectedErrMsg: validationErrorMsg,
+		},
+	}
+
+	for i, testCase := range testCases {
+		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+			//WHEN
+			errorMsg := testCase.Input.ValidateInput()
+
+			//THEN
+			if testCase.ExpectedErrMsg != nil {
+				require.Equal(t, 1, len(errorMsg))
+				assert.Contains(t, errorMsg[0], testCase.ExpectedErrMsg[0])
+			} else {
+				assert.Nil(t, errorMsg)
+			}
+
+		})
+	}
+}

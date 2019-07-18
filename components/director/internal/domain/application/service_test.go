@@ -119,36 +119,7 @@ func TestService_Create(t *testing.T) {
 				return svc
 			},
 			Input:       model.ApplicationInput{Name: ""},
-			ExpectedErr: errors.New("Application name is not correct. You can only use lowercase letters, underscores and dots"),
-		},
-		{
-			Name: "Returns error when application name contains numbers",
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				return repo
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				repo := &automock.WebhookRepository{}
-				return repo
-			},
-			APIRepoFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				return repo
-			},
-			EventAPIRepoFn: func() *automock.EventAPIRepository {
-				repo := &automock.EventAPIRepository{}
-				return repo
-			},
-			DocumentRepoFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				return repo
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				return svc
-			},
-			Input:       model.ApplicationInput{Name: "foo5bar"},
-			ExpectedErr: errors.New("Application name is not correct. You can only use lowercase letters, underscores and dots"),
+			ExpectedErr: errors.New("a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character"),
 		},
 		{
 			Name: "Returns error when application name contains uppercase letter",
@@ -177,7 +148,7 @@ func TestService_Create(t *testing.T) {
 				return svc
 			},
 			Input:       model.ApplicationInput{Name: "upperCase"},
-			ExpectedErr: errors.New("Application name is not correct. You can only use lowercase letters, underscores and dots"),
+			ExpectedErr: errors.New("a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character"),
 		},
 		{
 			Name: "Returns error when application creation failed",
@@ -230,7 +201,7 @@ func TestService_Create(t *testing.T) {
 			if err == nil {
 				require.Nil(t, testCase.ExpectedErr)
 			} else {
-				assert.Error(t, testCase.ExpectedErr, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
 			}
 
 			appRepo.AssertExpectations(t)
@@ -368,33 +339,7 @@ func TestService_Update(t *testing.T) {
 			},
 			InputID:            "foo",
 			Input:              model.ApplicationInput{Name: ""},
-			ExpectedErrMessage: "Application name is not correct. You can only use lowercase letters, underscores and dots",
-		},
-		{
-			Name: "Returns error when application name contains numbers",
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				return repo
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				repo := &automock.WebhookRepository{}
-				return repo
-			},
-			APIRepoFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				return repo
-			},
-			EventAPIRepoFn: func() *automock.EventAPIRepository {
-				repo := &automock.EventAPIRepository{}
-				return repo
-			},
-			DocumentRepoFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				return repo
-			},
-			InputID:            "foo",
-			Input:              model.ApplicationInput{Name: "foo5bar"},
-			ExpectedErrMessage: "Application name is not correct. You can only use lowercase letters, underscores and dots",
+			ExpectedErrMessage: "a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character",
 		},
 		{
 			Name: "Returns error when application name contains upper case letter",
@@ -420,7 +365,7 @@ func TestService_Update(t *testing.T) {
 			},
 			InputID:            "foo",
 			Input:              model.ApplicationInput{Name: "upperCase"},
-			ExpectedErrMessage: "Application name is not correct. You can only use lowercase letters, underscores and dots",
+			ExpectedErrMessage: "a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character",
 		},
 		{
 			Name: "Returns error when application retrieval failed",
