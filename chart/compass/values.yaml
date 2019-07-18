@@ -41,13 +41,14 @@ global:
       namespace: compass-system
 
   database:
-    useEmbedded: true
+    useEmbedded: false
     # Values for GCP managed PostgreSQL database
-    gcpKey: ""
-    instanceConnectionName: ""
-    dbUser: ""
-    dbPassword: ""
-    dbName: ""
-    host: ""
-    hostPort: ""
-    sslMode: ""
+    managedGCP:
+      serviceAccountKey: ""
+      instanceConnectionName: ""
+      dbUser: ""
+      dbPassword: ""
+      dbName: ""
+      host: ""
+      hostPort: ""
+      sslMode: ""
