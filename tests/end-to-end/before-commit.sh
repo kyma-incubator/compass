@@ -109,3 +109,8 @@ if [[ $(echo ${#goVetResult}) != 0 ]]
     	exit 1;
 	else echo -e "${GREEN}√ go vet${NC}"
 fi
+
+#
+# Keep examples up-to-date
+#
+./gen-examples.sh

@@ -1,0 +1,44 @@
+# This example is generated from test compass_e2e_test.go
+query {
+			result: runtime(id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") {
+					id
+		name
+		description
+		labels 
+		status {condition timestamp}
+		agentAuth {credential {
+				... on BasicCredentialData {
+					username
+					password
+				}
+				...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				}
+			}
+			additionalHeaders
+			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
+		}
+				}
+			}

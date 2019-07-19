@@ -1,0 +1,51 @@
+# This example is generated from test compass_e2e_test.go
+mutation{ 
+			result: updateRuntime(id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", in: {
+		name: "runtime-1",
+		description: "modified-runtime-1-description",
+		labels: {
+			ggg: ["hhh" ]
+	}
+		,
+	}) {
+					id
+		name
+		description
+		labels 
+		status {condition timestamp}
+		agentAuth {credential {
+				... on BasicCredentialData {
+					username
+					password
+				}
+				...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				}
+			}
+			additionalHeaders
+			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
+		}
+				}
+			}

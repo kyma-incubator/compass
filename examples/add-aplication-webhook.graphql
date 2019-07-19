@@ -1,0 +1,49 @@
+# This example is generated from test compass_e2e_test.go
+mutation {
+			result: addWebhook(applicationID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", in: {
+		type: CONFIGURATION_CHANGED,
+		url: "new-webhook",
+
+	}) {
+					id
+		applicationID
+		type
+		url
+		auth {
+		  credential {
+				... on BasicCredentialData {
+					username
+					password
+				}
+				...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				}
+			}
+			additionalHeaders
+			additionalQueryParams
+			requestAuth { 
+			  csrf {
+				tokenEndpointURL
+				credential {
+				  ... on BasicCredentialData {
+				  	username
+					password
+				  }
+				  ...  on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+					
+				  }
+			    }
+				additionalHeaders
+				additionalQueryParams
+			}
+			}
+		
+		}
+				}
+			}

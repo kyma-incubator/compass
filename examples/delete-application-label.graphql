@@ -1,0 +1,7 @@
+# This example is generated from test compass_e2e_test.go
+mutation {
+				result: deleteApplicationLabel(applicationID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", key: "brand-new-label", values: ["aaa"]) {
+						key 
+						values
+					}
+				}
