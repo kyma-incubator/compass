@@ -122,6 +122,8 @@ echo -e "${GREEN}? Checking GraphQL examples${NC}"
 if [[ "$1" == "$CI_FLAG" ]]; then
   if [[ -n $(git status -s) ]]; then
     echo -e "${RED}✗ Code and examples are out-of-sync${NC}"
+    # TODO
+    git diff
     exit 1
   fi
 fi
