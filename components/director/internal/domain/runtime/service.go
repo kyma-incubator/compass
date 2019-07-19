@@ -95,9 +95,9 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 }
 
 func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) error {
-	validationMsgs := validation.NameIsDNSSubdomain(in.Name, false)
-	if validationMsgs != nil {
-		return errors.Errorf("%v", validationMsgs)
+	err := in.Validate()
+	if err != nil {
+		return errors.Wrapf(err, "while validating Runtime input")
 	}
 
 	rtm, err := s.Get(ctx, id)

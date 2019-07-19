@@ -108,10 +108,10 @@ func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string
 		return "", errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	validationErrorMsgs := in.Validate()
+	err = in.Validate()
 
-	if validationErrorMsgs != nil {
-		return "", errors.Errorf("%v", validationErrorMsgs)
+	if err != nil {
+		return "", errors.Wrapf(err, "while validating Application input")
 	}
 
 	id := s.uidService.Generate()
