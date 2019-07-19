@@ -19,3 +19,5 @@ To learn more about the Compass, see the [Overview](https://github.com/kyma-incu
 | Parameter | Description | Values | Default |
 | --- | --- | --- | --- |
 | `database.useEmbedded` | Specifies whether `postgresql` chart should be installed | true/false | `true` |
+
+To learn how to use managed GCP database see [that document](../../docs/configure-managed-gcp-postgresql.md)

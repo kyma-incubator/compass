@@ -45,3 +45,13 @@ global:
 
   database:
     useEmbedded: true
+    # Values for GCP managed PostgreSQL database
+    managedGCP:
+      serviceAccountKey: ""
+      instanceConnectionName: ""
+      dbUser: ""
+      dbPassword: ""
+      dbName: ""
+      host: "localhost"
+      hostPort: "5432"
+      sslMode: ""
