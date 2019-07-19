@@ -113,7 +113,7 @@ fi
 #
 # Keep examples up-to-date
 #
-echo -e "? Checking GraphQL examples"
+echo -e "${GREEN}? Checking GraphQL examples${NC}"
 ./gen-examples.sh
 
 ##
