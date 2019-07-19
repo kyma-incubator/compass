@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
 
+set -e
+set -o errexit
+set -o nounset
+set -o pipefail
+
 #
 # Keep examples up-to-date
 #
 cd ./../../components/director/
 dep ensure -v -vendor-only
-go build -o director ./cmd/main.go
+go build -o directorBin ./cmd/main.go
 
-./director &
+./directorBin &
 DIRECTOR_PID=$!
 
 cd -
@@ -15,6 +20,8 @@ sleep 1 # wait for director to be up and running
 ./director.test
 
 kill ${DIRECTOR_PID}
+#remove binary
+rm ./../../components/director/directorBin
 
 img="prettier:latest"
 docker build -t ${img} ./prettier
