@@ -8,4 +8,5 @@ metadata:
     component: compass
     kyma-project.io/installation: ""
 data:
+  global.isLocalEnv: "true"
   global.minikubeIP: "IP_PLACEHOLDER"
