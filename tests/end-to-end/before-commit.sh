@@ -128,13 +128,8 @@ fi
 # Ensuring that examples are up-to-date
 ##
 if [[ "$1" == "$CI_FLAG" ]]; then
-echo "print status"
-git status -s
   if [[ -n $(git status -s) ]]; then
     echo -e "${RED}✗ Code and examples are out-of-sync${NC}"
-    # TODO
-    echo -e "GIT DIFF"
-    git diff
     exit 1
   fi
 fi
