@@ -2,7 +2,6 @@ package runtime
 
 import (
 	"errors"
-
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -50,9 +49,9 @@ func (r *inMemoryRepository) Create(item *model.Runtime) error {
 		return errors.New("item can not be empty")
 	}
 
-	found := r.findRuntimeName(item.Name)
+	found := r.findRuntimeNameWithinTenant(item.Tenant, item.Name)
 	if found {
-		return errors.New("Runtime name is not unique")
+		return errors.New("Runtime name is not unique within tenant")
 	}
 
 	r.store[item.ID] = item
@@ -65,13 +64,17 @@ func (r *inMemoryRepository) Update(item *model.Runtime) error {
 		return errors.New("item can not be empty")
 	}
 
-	found := r.findRuntimeName(item.Name)
-	if found {
-		return errors.New("Runtime name is not unique")
+	oldRuntine := r.store[item.ID]
+	if oldRuntine == nil {
+		return errors.New("Runtime not found")
 	}
 
-	if r.store[item.ID] == nil {
-		return errors.New("Runtime not found")
+	if oldRuntine.Name != item.Name {
+
+		found := r.findRuntimeNameWithinTenant(item.Tenant, item.Name)
+		if found {
+			return errors.New("Runtime name is not unique within tenant")
+		}
 	}
 
 	r.store[item.ID] = item
@@ -89,9 +92,9 @@ func (r *inMemoryRepository) Delete(item *model.Runtime) error {
 	return nil
 }
 
-func (r *inMemoryRepository) findRuntimeName(name string) bool {
+func (r *inMemoryRepository) findRuntimeNameWithinTenant(tenant, name string) bool {
 	for _, runtime := range r.store {
-		if runtime.Name == name {
+		if runtime.Name == name && runtime.Tenant == tenant {
 			return true
 		}
 	}

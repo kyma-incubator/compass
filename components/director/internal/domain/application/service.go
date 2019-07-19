@@ -108,7 +108,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string
 		return "", errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	validationErrorMsgs := in.ValidateInput()
+	validationErrorMsgs := in.Validate()
 
 	if validationErrorMsgs != nil {
 		return "", errors.Errorf("%v", validationErrorMsgs)
@@ -131,7 +131,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string
 }
 
 func (s *service) Update(ctx context.Context, id string, in model.ApplicationInput) error {
-	validationErrorMsgs := in.ValidateInput()
+	validationErrorMsgs := in.Validate()
 
 	if validationErrorMsgs != nil {
 		return errors.Errorf("%v", validationErrorMsgs)

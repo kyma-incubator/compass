@@ -96,7 +96,8 @@ func (i *RuntimeInput) ToRuntime(id string, tenant string) *Runtime {
 	}
 }
 
-func (i *RuntimeInput) ValidateInput() []string {
+//returns array of error messages, if returns nil model is correct
+func (i *RuntimeInput) Validate() []string {
 	return validation.NameIsDNSSubdomain(i.Name, false)
 }
 

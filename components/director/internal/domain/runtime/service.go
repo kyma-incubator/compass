@@ -105,9 +105,7 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 		return errors.Wrap(err, "while getting Runtime")
 	}
 
-	rtm.Name = in.Name
-	rtm.Description = in.Description
-	rtm.Labels = in.Labels
+	rtm = in.ToRuntime(id, rtm.Tenant)
 
 	err = s.repo.Update(rtm)
 	if err != nil {

@@ -106,6 +106,7 @@ func (i *ApplicationInput) ToApplication(id, tenant string) *Application {
 	}
 }
 
-func (i *ApplicationInput) ValidateInput() []string {
+//returns array of error messages, if returns nil model is correct
+func (i *ApplicationInput) Validate() []string {
 	return validation.NameIsDNSSubdomain(i.Name, false)
 }

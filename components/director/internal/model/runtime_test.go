@@ -234,11 +234,11 @@ func TestRuntimeInput_ValidateInput(t *testing.T) {
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 			//WHEN
-			errorMsg := testCase.Input.ValidateInput()
+			errorMsg := testCase.Input.Validate()
 
 			//THEN
 			if testCase.ExpectedErrMsg != nil {
-				require.Equal(t, 1, len(errorMsg))
+				require.Len(t, errorMsg, 1)
 				assert.Contains(t, errorMsg[0], testCase.ExpectedErrMsg[0])
 			} else {
 				assert.Nil(t, errorMsg)
