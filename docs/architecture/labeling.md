@@ -159,7 +159,7 @@ to:
 ```graphql
 input LabelFilter {
     label: String!
-    query: String!
+    query: String # optional, if not provided returns every object with given label regardless of its value. 
 }
 ```
 
