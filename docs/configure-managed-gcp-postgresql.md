@@ -1,4 +1,4 @@
-# Managed GCP PostgreSQL database connection
+# Configure Managed GCP PostgreSQL
 
 ## Prerequisites
 
@@ -16,7 +16,7 @@ To install the Compass with GCP managed Postgres database, set `database.useEmbe
 
 | Parameter | Description | Values | Default |
 | --- | --- | --- | --- |
-| `global.database.managedGCP.serviceAccountKey` | Specifies base64 encoded key with Google credentials | base64 encoded string | "" |
+| `global.database.managedGCP.serviceAccountKey` | Specifies base64 encoded the key for GCP Service Account mentioned in prerequisites. | base64 encoded string | "" |
 | `global.database.managedGCP.instanceConnectionName` | Specifies instance connection name to GCP PostgreSQL database | string | "" |
 | `global.database.managedGCP.dbUser` | Specifies database username | base64 encoded string | "" |
 | `global.database.managedGCP.dbPassword` | Specifies password for database user | base64 encoded string | "" |
@@ -27,8 +27,6 @@ To install the Compass with GCP managed Postgres database, set `database.useEmbe
 
 To connect to managed database, we use [cloudsql-proxy](https://cloud.google.com/sql/docs/postgres/sql-proxy) provided by Google, which consumes `serviceAccountKey` and `instanceConnectionName` values.
 
-Into `serviceAccountKey` value put the key for GCP Service Account mentioned in prerequisites.
-
 To find `Instance connection name`, go to the [SQL Instances page](https://console.cloud.google.com/sql/instances) and open desired database overview.
 ![Instance connection String](./assets/sql-instances-list.png)
 
@@ -36,7 +34,7 @@ Than look for `Instance connection name` box inside `Connect to this instance` s
 
 ![Instance connection String](./assets/instance-connection-string.png)
 
-For `dbUser` and `dbPassword` values, use one of accounts from `USERS` tab. The `dbName` value is name of database which can be found 
+For `dbUser` and `dbPassword` values, use one of accounts from `USERS` tab. The `dbName` value is name of database which you want to use. The available names can be found inside `DATABASES` tab.
 
 The `host` and the `hostPort` values specifies the cloudsql-proxy host and port. These are used directly by application to connect to proxy, and further to database.
 

@@ -41,7 +41,7 @@ global:
       namespace: compass-system
 
   database:
-    useEmbedded: false
+    useEmbedded: true
     # Values for GCP managed PostgreSQL database
     managedGCP:
       serviceAccountKey: ""
