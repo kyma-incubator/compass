@@ -4,10 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"k8s.io/apimachinery/pkg/api/validation"
-
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"github.com/pkg/errors"
@@ -60,9 +58,9 @@ func (s *service) Get(ctx context.Context, id string) (*model.Runtime, error) {
 }
 
 func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, error) {
-	validationMsgs := validation.NameIsDNSSubdomain(in.Name, false)
-	if validationMsgs != nil {
-		return "", errors.Errorf("%v", validationMsgs)
+	err := in.Validate()
+	if err != nil {
+		return "", errors.Wrap(err, "while validating Runtime input")
 	}
 
 	runtimeTenant, err := tenant.LoadFromContext(ctx)
@@ -97,7 +95,7 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) error {
 	err := in.Validate()
 	if err != nil {
-		return errors.Wrapf(err, "while validating Runtime input")
+		return errors.Wrap(err, "while validating Runtime input")
 	}
 
 	rtm, err := s.Get(ctx, id)
@@ -109,7 +107,7 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 
 	err = s.repo.Update(rtm)
 	if err != nil {
-		return errors.Wrapf(err, "while updating Runtime")
+		return errors.Wrap(err, "while updating Runtime")
 	}
 
 	return nil

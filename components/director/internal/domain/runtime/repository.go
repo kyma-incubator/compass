@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"errors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -64,20 +65,21 @@ func (r *inMemoryRepository) Update(item *model.Runtime) error {
 		return errors.New("item can not be empty")
 	}
 
-	oldRuntine := r.store[item.ID]
-	if oldRuntine == nil {
+	rtm := r.store[item.ID]
+	if rtm == nil {
 		return errors.New("Runtime not found")
 	}
 
-	if oldRuntine.Name != item.Name {
-
+	if rtm.Name != item.Name {
 		found := r.findRuntimeNameWithinTenant(item.Tenant, item.Name)
 		if found {
 			return errors.New("Runtime name is not unique within tenant")
 		}
 	}
 
-	r.store[item.ID] = item
+	rtm.Name = item.Name
+	rtm.Description = item.Description
+	rtm.Labels = item.Labels
 
 	return nil
 }

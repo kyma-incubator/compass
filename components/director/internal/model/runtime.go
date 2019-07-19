@@ -2,8 +2,9 @@ package model
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"k8s.io/apimachinery/pkg/api/validation"
 

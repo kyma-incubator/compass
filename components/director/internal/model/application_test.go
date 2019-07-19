@@ -2,8 +2,9 @@ package model_test
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"testing"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/assert"
@@ -243,7 +244,7 @@ func TestApplicationInput_ValidateInput(t *testing.T) {
 			if err != nil {
 				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
 			} else {
-				assert.Nil(t, testCase.ExpectedErr)
+				assert.NoError(t, testCase.ExpectedErr)
 			}
 		})
 	}

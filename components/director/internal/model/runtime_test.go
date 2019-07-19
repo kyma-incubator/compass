@@ -2,8 +2,9 @@ package model_test
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"testing"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/assert"
@@ -204,7 +205,7 @@ func TestRuntimeInput_ToRuntime(t *testing.T) {
 
 func TestRuntimeInput_ValidateInput(t *testing.T) {
 	//GIVEN
-	validationErrorMsg := errors.New("a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character")
+	testError := errors.New("a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character")
 	testCases := []struct {
 		Name        string
 		Input       model.RuntimeInput
@@ -218,17 +219,17 @@ func TestRuntimeInput_ValidateInput(t *testing.T) {
 		{
 			Name:        "Returns errors when Runtime name is empty",
 			Input:       model.RuntimeInput{Name: ""},
-			ExpectedErr: validationErrorMsg,
+			ExpectedErr: testError,
 		},
 		{
 			Name:        "Returns errors when Runtime name contains UpperCase letter",
 			Input:       model.RuntimeInput{Name: "Not-correct-name.yeah"},
-			ExpectedErr: validationErrorMsg,
+			ExpectedErr: testError,
 		},
 		{
 			Name:        "Returns errors when Runtime name contains special not allowed character",
 			Input:       model.RuntimeInput{Name: "not-correct-n@me.yeah"},
-			ExpectedErr: validationErrorMsg,
+			ExpectedErr: testError,
 		},
 	}
 
@@ -241,7 +242,7 @@ func TestRuntimeInput_ValidateInput(t *testing.T) {
 			if err != nil {
 				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
 			} else {
-				assert.Nil(t, testCase.ExpectedErr)
+				assert.NoError(t, testCase.ExpectedErr)
 			}
 		})
 	}

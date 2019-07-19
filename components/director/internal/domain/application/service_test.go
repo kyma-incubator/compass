@@ -2,6 +2,7 @@ package application_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/google/uuid"
@@ -93,64 +94,6 @@ func TestService_Create(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "Returns error when application name is empty",
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				return repo
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				repo := &automock.WebhookRepository{}
-				return repo
-			},
-			APIRepoFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				return repo
-			},
-			EventAPIRepoFn: func() *automock.EventAPIRepository {
-				repo := &automock.EventAPIRepository{}
-				return repo
-			},
-			DocumentRepoFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				return repo
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				return svc
-			},
-			Input:       model.ApplicationInput{Name: ""},
-			ExpectedErr: errors.New("a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character"),
-		},
-		{
-			Name: "Returns error when application name contains uppercase letter",
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				return repo
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				repo := &automock.WebhookRepository{}
-				return repo
-			},
-			APIRepoFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				return repo
-			},
-			EventAPIRepoFn: func() *automock.EventAPIRepository {
-				repo := &automock.EventAPIRepository{}
-				return repo
-			},
-			DocumentRepoFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				return repo
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				return svc
-			},
-			Input:       model.ApplicationInput{Name: "upperCase"},
-			ExpectedErr: errors.New("a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character"),
-		},
-		{
 			Name: "Returns error when application creation failed",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
@@ -239,7 +182,7 @@ func TestService_CreateWithInvalidNames(t *testing.T) {
 			ExpectedErrMessage: "a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character",
 		}}
 
-	for _, testCase := range (testCases) {
+	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			svc := application.NewService(nil, nil, nil, nil, nil, nil)
 
@@ -249,7 +192,6 @@ func TestService_CreateWithInvalidNames(t *testing.T) {
 			//THEN
 			assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 		})
-
 	}
 }
 
@@ -443,41 +385,42 @@ func TestService_Update(t *testing.T) {
 
 func TestService_UpdateWithInvalidNames(t *testing.T) {
 	//GIVEN
+	testError := errors.New("a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character")
 	tnt := "tenant"
 	appID := ""
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt)
 
 	testCases := []struct {
-		Name               string
-		InputID            string
-		Input              model.ApplicationInput
-		ExpectedErrMessage string
+		Name        string
+		InputID     string
+		Input       model.ApplicationInput
+		ExpectedErr error
 	}{
 		{
-			Name:               "Returns error when application name is empty",
-			InputID:            "foo",
-			Input:              model.ApplicationInput{Name: ""},
-			ExpectedErrMessage: "a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character",
+			Name:        "Returns error when application name is empty",
+			InputID:     "foo",
+			Input:       model.ApplicationInput{Name: ""},
+			ExpectedErr: testError,
 		},
 		{
-			Name:               "Returns error when application name contains upper case letter",
-			InputID:            "foo",
-			Input:              model.ApplicationInput{Name: "upperCase"},
-			ExpectedErrMessage: "a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character",
+			Name:        "Returns error when application name contains upper case letter",
+			InputID:     "foo",
+			Input:       model.ApplicationInput{Name: "upperCase"},
+			ExpectedErr: testError,
 		}}
 
-	for _, testCase := range (testCases) {
-		t.Run(testCase.Name, func(t *testing.T) {
+	for i, testCase := range testCases {
+		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 			svc := application.NewService(nil, nil, nil, nil, nil, nil)
 
 			//WHEN
 			err := svc.Update(ctx, appID, testCase.Input)
 
 			//THEN
-			assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
 		})
-
 	}
 }
 
