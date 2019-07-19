@@ -2,6 +2,8 @@ kind: Installation
 metadata:
   name: kyma-installation
   namespace: default
+finalizers:
+  - finalizer.installer.kyma-project.io
 spec:
   components:
     - name: "cluster-essentials"
