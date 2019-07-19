@@ -1,6 +1,6 @@
 # This example is generated from test compass_e2e_test.go
 mutation {
-				result: deleteAPI(id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") {
-						id
-					}
-				}
+  result: deleteAPI(id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") {
+    id
+  }
+}

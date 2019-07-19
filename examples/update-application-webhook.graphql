@@ -1,49 +1,45 @@
 # This example is generated from test compass_e2e_test.go
 mutation {
-			result: updateWebhook(webhookID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", in: {
-		type: CONFIGURATION_CHANGED,
-		url: "updated-webhook",
-
-	}) {
-					id
-		applicationID
-		type
-		url
-		auth {
-		  credential {
-				... on BasicCredentialData {
-					username
-					password
-				}
-				...  on OAuthCredentialData {
-					clientId
-					clientSecret
-					url
-					
-				}
-			}
-			additionalHeaders
-			additionalQueryParams
-			requestAuth { 
-			  csrf {
-				tokenEndpointURL
-				credential {
-				  ... on BasicCredentialData {
-				  	username
-					password
-				  }
-				  ...  on OAuthCredentialData {
-					clientId
-					clientSecret
-					url
-					
-				  }
-			    }
-				additionalHeaders
-				additionalQueryParams
-			}
-			}
-		
-		}
-				}
-			}
+  result: updateWebhook(
+    webhookID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+    in: { type: CONFIGURATION_CHANGED, url: "updated-webhook" }
+  ) {
+    id
+    applicationID
+    type
+    url
+    auth {
+      credential {
+        ... on BasicCredentialData {
+          username
+          password
+        }
+        ... on OAuthCredentialData {
+          clientId
+          clientSecret
+          url
+        }
+      }
+      additionalHeaders
+      additionalQueryParams
+      requestAuth {
+        csrf {
+          tokenEndpointURL
+          credential {
+            ... on BasicCredentialData {
+              username
+              password
+            }
+            ... on OAuthCredentialData {
+              clientId
+              clientSecret
+              url
+            }
+          }
+          additionalHeaders
+          additionalQueryParams
+        }
+      }
+    }
+  }
+}

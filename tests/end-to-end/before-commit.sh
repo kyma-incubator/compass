@@ -113,4 +113,15 @@ fi
 #
 # Keep examples up-to-date
 #
+echo -e "? Checking GraphQL examples"
 ./gen-examples.sh
+
+##
+# Ensuring that examples are up-to-date
+##
+if [[ "$1" == "$CI_FLAG" ]]; then
+  if [[ -n $(git status -s) ]]; then
+    echo -e "${RED}✗ Code and examples are out-of-sync${NC}"
+    exit 1
+  fi
+fi

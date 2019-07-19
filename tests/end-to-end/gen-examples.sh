@@ -11,11 +11,12 @@ go build -o director ./cmd/main.go
 DIRECTOR_PID=$!
 
 cd -
-sleep 1
-
+sleep 1 # wait for director to be up and running
 ./director.test
 
 kill ${DIRECTOR_PID}
 
-#docker build -f prettier.Dockerfile -t prettier:latest .
-#docker run -v ${GOPATH}/src/github.com/kyma-incubator/compass/examples:/prettier/examples  prettier:latest prettier ./examples/*.graphql
+img="prettier:latest"
+docker build -t ${img} ./prettier
+docker run -v ${GOPATH}/src/github.com/kyma-incubator/compass/examples:/prettier/examples \
+            ${img} prettier --write ./examples/*.graphql

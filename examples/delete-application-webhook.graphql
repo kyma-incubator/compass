@@ -1,45 +1,42 @@
 # This example is generated from test compass_e2e_test.go
 mutation {
-			result: deleteWebhook(webhookID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") {
-					id
-		applicationID
-		type
-		url
-		auth {
-		  credential {
-				... on BasicCredentialData {
-					username
-					password
-				}
-				...  on OAuthCredentialData {
-					clientId
-					clientSecret
-					url
-					
-				}
-			}
-			additionalHeaders
-			additionalQueryParams
-			requestAuth { 
-			  csrf {
-				tokenEndpointURL
-				credential {
-				  ... on BasicCredentialData {
-				  	username
-					password
-				  }
-				  ...  on OAuthCredentialData {
-					clientId
-					clientSecret
-					url
-					
-				  }
-			    }
-				additionalHeaders
-				additionalQueryParams
-			}
-			}
-		
-		}
-				}
-			}
+  result: deleteWebhook(webhookID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") {
+    id
+    applicationID
+    type
+    url
+    auth {
+      credential {
+        ... on BasicCredentialData {
+          username
+          password
+        }
+        ... on OAuthCredentialData {
+          clientId
+          clientSecret
+          url
+        }
+      }
+      additionalHeaders
+      additionalQueryParams
+      requestAuth {
+        csrf {
+          tokenEndpointURL
+          credential {
+            ... on BasicCredentialData {
+              username
+              password
+            }
+            ... on OAuthCredentialData {
+              clientId
+              clientSecret
+              url
+            }
+          }
+          additionalHeaders
+          additionalQueryParams
+        }
+      }
+    }
+  }
+}

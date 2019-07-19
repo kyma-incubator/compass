@@ -1,6 +1,6 @@
 # This example is generated from test compass_e2e_test.go
 mutation {
-			result: deleteApplication(id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") {
-					id
-				}
-			}
+  result: deleteApplication(id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") {
+    id
+  }
+}
