@@ -2,6 +2,7 @@ package model_test
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -203,45 +204,44 @@ func TestRuntimeInput_ToRuntime(t *testing.T) {
 
 func TestRuntimeInput_ValidateInput(t *testing.T) {
 	//GIVEN
-	validationErrorMsg := []string{"a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character"}
+	validationErrorMsg := errors.New("a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character")
 	testCases := []struct {
-		Name           string
-		Input          model.RuntimeInput
-		ExpectedErrMsg []string
+		Name        string
+		Input       model.RuntimeInput
+		ExpectedErr error
 	}{
 		{
-			Name:           "Correct Runtime name",
-			Input:          model.RuntimeInput{Name: "correct-name.yeah"},
-			ExpectedErrMsg: nil,
+			Name:        "Correct Runtime name",
+			Input:       model.RuntimeInput{Name: "correct-name.yeah"},
+			ExpectedErr: nil,
 		},
 		{
-			Name:           "Returns errors when Runtime name is empty",
-			Input:          model.RuntimeInput{Name: ""},
-			ExpectedErrMsg: validationErrorMsg,
+			Name:        "Returns errors when Runtime name is empty",
+			Input:       model.RuntimeInput{Name: ""},
+			ExpectedErr: validationErrorMsg,
 		},
 		{
-			Name:           "Returns errors when Runtime name contains UpperCase letter",
-			Input:          model.RuntimeInput{Name: "Not-correct-name.yeah"},
-			ExpectedErrMsg: validationErrorMsg,
+			Name:        "Returns errors when Runtime name contains UpperCase letter",
+			Input:       model.RuntimeInput{Name: "Not-correct-name.yeah"},
+			ExpectedErr: validationErrorMsg,
 		},
 		{
-			Name:           "Returns errors when Runtime name contains special not allowed character",
-			Input:          model.RuntimeInput{Name: "not-correct-n@me.yeah"},
-			ExpectedErrMsg: validationErrorMsg,
+			Name:        "Returns errors when Runtime name contains special not allowed character",
+			Input:       model.RuntimeInput{Name: "not-correct-n@me.yeah"},
+			ExpectedErr: validationErrorMsg,
 		},
 	}
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 			//WHEN
-			errorMsg := testCase.Input.Validate()
+			err := testCase.Input.Validate()
 
 			//THEN
-			if testCase.ExpectedErrMsg != nil {
-				require.Len(t, errorMsg, 1)
-				assert.Contains(t, errorMsg[0], testCase.ExpectedErrMsg[0])
+			if err != nil {
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
 			} else {
-				assert.Nil(t, errorMsg)
+				assert.Nil(t, testCase.ExpectedErr)
 			}
 		})
 	}

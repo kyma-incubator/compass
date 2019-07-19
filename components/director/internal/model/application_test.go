@@ -2,6 +2,7 @@ package model_test
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -205,45 +206,44 @@ func TestApplicationInput_ToApplication(t *testing.T) {
 
 func TestApplicationInput_ValidateInput(t *testing.T) {
 	//GIVEN
-	validationErrorMsg := []string{"a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character"}
+	testError := errors.New("a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character")
 	testCases := []struct {
-		Name           string
-		Input          model.ApplicationInput
-		ExpectedErrMsg []string
+		Name        string
+		Input       model.ApplicationInput
+		ExpectedErr error
 	}{
 		{
-			Name:           "Correct Application name",
-			Input:          model.ApplicationInput{Name: "correct-name.yeah"},
-			ExpectedErrMsg: nil,
+			Name:        "Correct Application name",
+			Input:       model.ApplicationInput{Name: "correct-name.yeah"},
+			ExpectedErr: nil,
 		},
 		{
-			Name:           "Returns errors when Application name is empty",
-			Input:          model.ApplicationInput{Name: ""},
-			ExpectedErrMsg: validationErrorMsg,
+			Name:        "Returns errors when Application name is empty",
+			Input:       model.ApplicationInput{Name: ""},
+			ExpectedErr: testError,
 		},
 		{
-			Name:           "Returns errors when Application name contains UpperCase letter",
-			Input:          model.ApplicationInput{Name: "Not-correct-name.yeah"},
-			ExpectedErrMsg: validationErrorMsg,
+			Name:        "Returns errors when Application name contains UpperCase letter",
+			Input:       model.ApplicationInput{Name: "Not-correct-name.yeah"},
+			ExpectedErr: testError,
 		},
 		{
-			Name:           "Returns errors when Application name contains special not allowed character",
-			Input:          model.ApplicationInput{Name: "not-correct-n@me.yeah"},
-			ExpectedErrMsg: validationErrorMsg,
+			Name:        "Returns errors when Application name contains special not allowed character",
+			Input:       model.ApplicationInput{Name: "not-correct-n@me.yeah"},
+			ExpectedErr: testError,
 		},
 	}
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 			//WHEN
-			errorMsg := testCase.Input.Validate()
+			err := testCase.Input.Validate()
 
 			//THEN
-			if testCase.ExpectedErrMsg != nil {
-				require.Len(t, errorMsg, 1)
-				assert.Contains(t, errorMsg[0], testCase.ExpectedErrMsg[0])
+			if err != nil {
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
 			} else {
-				assert.Nil(t, errorMsg)
+				assert.Nil(t, testCase.ExpectedErr)
 			}
 		})
 	}

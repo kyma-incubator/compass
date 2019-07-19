@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/validation"
@@ -96,9 +97,11 @@ func (i *RuntimeInput) ToRuntime(id string, tenant string) *Runtime {
 	}
 }
 
-//returns array of error messages, if returns nil model is correct
-func (i *RuntimeInput) Validate() []string {
-	return validation.NameIsDNSSubdomain(i.Name, false)
+func (i *RuntimeInput) Validate() error {
+	if errorMgs := validation.NameIsDNSSubdomain(i.Name, false); errorMgs != nil {
+		return errors.Errorf("%v", errorMgs)
+	}
+	return nil
 }
 
 type RuntimePage struct {

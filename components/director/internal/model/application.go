@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/validation"
@@ -106,7 +107,9 @@ func (i *ApplicationInput) ToApplication(id, tenant string) *Application {
 	}
 }
 
-//returns array of error messages, if returns nil model is correct
-func (i *ApplicationInput) Validate() []string {
-	return validation.NameIsDNSSubdomain(i.Name, false)
+func (i *ApplicationInput) Validate() error {
+	if errorMgs := validation.NameIsDNSSubdomain(i.Name, false); errorMgs != nil {
+		return errors.Errorf("%v", errorMgs)
+	}
+	return nil
 }
