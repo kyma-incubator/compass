@@ -18,8 +18,8 @@ To install the Compass with GCP managed Postgres database, set `database.useEmbe
 | --- | --- | --- | --- |
 | `global.database.managedGCP.serviceAccountKey` | Specifies base64 encoded the key for GCP Service Account mentioned in prerequisites. | base64 encoded string | "" |
 | `global.database.managedGCP.instanceConnectionName` | Specifies instance connection name to GCP PostgreSQL database | string | "" |
-| `global.database.managedGCP.dbUser` | Specifies database username | base64 encoded string | "" |
-| `global.database.managedGCP.dbPassword` | Specifies password for database user | base64 encoded string | "" |
+| `global.database.managedGCP.dbUser` | Specifies database username | string | "" |
+| `global.database.managedGCP.dbPassword` | Specifies password for database user | string | "" |
 | `global.database.managedGCP.dbName` | Specifies database name | string | "" |
 | `global.database.managedGCP.host` | Specifies cloudsql-proxy host | string | "localhost" |
 | `global.database.managedGCP.hostPort` | Specifies cloudsql-proxy port | string | "5432" |
