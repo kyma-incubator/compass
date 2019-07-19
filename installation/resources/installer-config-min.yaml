@@ -8,6 +8,4 @@ metadata:
     component: compass
     kyma-project.io/installation: ""
 data:
-  gateway.gateway.enabled: "false"
-  global.istio.gateway.name: "kyma-gateway"
-  global.istio.gateway.namespace: "kyma-system"
+  compass.integrationtest.minikubeIP: ""
