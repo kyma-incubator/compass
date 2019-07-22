@@ -141,10 +141,11 @@ func TestService_Create(t *testing.T) {
 
 			// then
 			assert.IsType(t, "string", result)
-			if err == nil {
-				require.Nil(t, testCase.ExpectedErr)
-			} else {
+			if testCase.ExpectedErr != nil {
+				require.NotNil(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				require.Nil(t, err)
 			}
 
 			appRepo.AssertExpectations(t)
@@ -190,6 +191,7 @@ func TestService_CreateWithInvalidNames(t *testing.T) {
 			_, err := svc.Create(ctx, testCase.Input)
 
 			//THEN
+			require.NotNil(t, err)
 			assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 		})
 	}
