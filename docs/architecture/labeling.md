@@ -7,7 +7,7 @@
 - User can find out about all label keys used in the given tenant
 - User can define validation rules for a label with a given key but it is optional
 - There is one special label: **Scenarios**, that has additional requirements:
-    - Every object is labeled with **Scenarios**
+    - Every Application is labeled with **Scenarios**
     - By default, **Scenarios** has one possible value: **default**
     
     
@@ -46,7 +46,7 @@ type Query {
 type Mutation {
     createLabelDefinition(in: LabelDefinitionInput!): LabelDefinition!
     updateLabelDefinition(in: LabelDefinitionInput!): LabelDefinition!
-    deleteLabelDefinition(key: String!, force: Boolean=false): LabelDefinition!
+    deleteLabelDefinition(key: String!, deleteRelatedLabels: Boolean=false): LabelDefinition!
 }
 ```
 
@@ -69,10 +69,7 @@ setApplicationLabel(applicationID: ID!, key: String!, value: String!): Label!
 #### Label an application without creation label definition
 We want to keep our API extremely simple. There can be a case that a user wants to label Application/Runtime without providing 
 validation rules. Because of that, adding LabelDefinition is optional, and will be created internally. 
-Schema in such case will be following: 
-```
-{ "type": "string" }
-```
+Schema in such case will empty, validation for label is not be performed and user is able to specify any value.
 
 #### Define a LabelDefinition and use that Label
 
@@ -95,22 +92,7 @@ setApplicationLabel(applicationID: "123", key: "supportedLanguages", value:"[Go]
 
 #### Editing Label Definition
 Label definition can be edited. This will be used for example for label **Scenarios**.
-When editing definition, we need to ensure that all labels are compatible with the new definition.
-If this is not a case, such mutation has to be rejected, with a clear message that there are Applications or Runtimes that
-have invalid label according to the new LabelDefinition.
-In such case a user has two possibilities:
-- remove offending labels from specific App/Runtimes  
-- remove old LabelDefinition with cascading deletion of all Labels
-
-#### Removing Label Definition
-```graphql
-deleteLabelDefinition(key: String!, force: Boolean=false): LabelDefinition
-
-```
-By default, the above mutation allows removing only definitions that it is not used. If you want to delete definition and all values, set the `force` parameter to `true`. 
-
-#### Editing label definition
-Let assume that we have following label definition:
+Let assume that we have the following label definition:
 ```graphql
  key:"supportedLanguages",
   schema:"{
@@ -135,6 +117,20 @@ updateLabelDefinition(in: {
                                 }"
                       }) {...}
 ```
+
+When editing definition, we need to ensure that all labels are compatible with the new definition.
+If this is not a case, such mutation has to be rejected, with a clear message that there are Applications or Runtimes that
+have invalid label according to the new LabelDefinition.
+In such case a user has two possibilities:
+- remove offending labels from specific App/Runtimes  
+- remove old LabelDefinition with cascading deletion of all Labels
+
+#### Removing Label Definition
+```graphql
+deleteLabelDefinition(key: String!, deleteRelatedLabels: Boolean=false): LabelDefinition
+
+```
+By default, the above mutation allows removing only definitions that it is not used. If you want to delete definition and all values, set the `deleteRelatedLabels` parameter to `true`. 
 
 #### Getting list of possible labels
 Label definitions are created every time, even when a user directly label Application or Runtime with a new key.
@@ -179,23 +175,25 @@ but it looks the same as Goessner's JSON Path. It looks that they implemented pa
 Options enumerated above are not compatible with each other.
 
 The simplest solution will be to use SQL/JSON Path, then we can propagate that value directly to the PostgreSQL. 
-See [this section](#database-schema)to learn how it can be implemented.
+See [this section](#database-schema) to learn how it can be implemented.
 Unfortunately, this functionality is planned for PostgreSQL 12, which is going to be released in Q3 2019, see [roadmap](https://www.postgresql.org/developer/roadmap/) and [features highlights](https://www.postgresql.org/about/news/1943/).
 We don't know when this version will be available on GCP or AWS, so, for now, we will be forced to use Postgres running inside the cluster.
 Also, not all relational databases support JSON Path Expressions, other than Postgres is [SQL Server](https://docs.microsoft.com/en-us/sql/relational-databases/json/json-path-expressions-sql-server?view=sql-server-2017) 
+Because of that, the safest approach will be to use limited SQL/JSON Path Expressions syntax, that supports currently only **Scenarios** label (`$[*] ? (@ == "default" )`) and internally translate it to PostgreSQL 11 JSON syntax.
+
 
 #### Special case: Scenario Label
 For scenario label we have additional requirements:
 
-- there is an always `default` scenario
-- every application/runtime has to be assigned to at least one scenario. If not specified explicitly, the `default` scenario is used.
+- there is always a `default` scenario
+- every Application has to be assigned to at least one scenario. If not specified explicitly, the `default` scenario is used.
 
 1. On creation of a new tenant, label `Scenario` is created. Because right now we don't have a mutation for creating tenant, we need to
 perform that on every Runtime/Application creation.
 2. Label `Scenario` cannot be removed. This requires additional custom validation.
 3. `Scenario` is implemented as a list of enums.
 4. For `Scenario` label definition, new enum values can be added or removed, but `default` value cannot be removed. This requires additional custom validation.
-5. On creation/modification of Application/Runtime, there is a step that ensures that `Scenario` label exists.
+5. On creation/modification of Application, there is a step that ensures that `Scenario` label exists.
 
 ### Database Schema
 When removing LabelDefinition or modifying it, we need to perform cascading delete or check if all values are compliant with the schema definition.
@@ -250,7 +248,3 @@ Result:
 
 
 Full list of supported operations can be found [here](https://www.postgresql.org/docs/12/functions-json.html#FUNCTIONS-SQLJSON-PATH).
-
-
-TODO: security, SQL/JSON injection???
-
