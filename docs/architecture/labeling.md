@@ -188,7 +188,7 @@ For scenario label we have additional requirements:
 - there is always a `default` scenario
 - every Application has to be assigned to at least one scenario. If not specified explicitly, the `default` scenario is used.
 
-1. On creation of a new tenant, label `Scenario` is created. Because right now we don't have a mutation for creating tenant, we need to
+1. On creation of a new tenant, a Label Definition `Scenario` is created. Because right now we don't have a mutation for creating tenant, we need to
 perform that on every Runtime/Application creation.
 2. Label `Scenario` cannot be removed. This requires additional custom validation.
 3. `Scenario` is implemented as a list of enums.
