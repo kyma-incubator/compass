@@ -2,7 +2,7 @@
 mutation {
   result: createRuntime(
     in: {
-      name: "runtime-1"
+      name: "unique-name-1"
       description: "runtime-1-description"
       labels: { ggg: ["hhh"] }
     }
