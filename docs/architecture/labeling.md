@@ -27,14 +27,16 @@ on the JSON schema basis. See [this library](https://github.com/json-editor/json
 1. Extend GraphQL API with  mutations and queries for a new type: **LabelDefinition** 
 
 ```graphql
+scalar JSON # the same as Any
+
 type LabelDefinition {
     key: String!
-    schema: String
+    schema: JSON
 }
 
 input LabelDefinitionInput {
     key: String!
-    schema: String
+    schema: JSON
 }
 
 
@@ -61,7 +63,7 @@ addApplicationLabel(applicationID: ID!, key: String!, values: [String!]!): Label
 ```
 to:
 ```graphql
-setApplicationLabel(applicationID: ID!, key: String!, value: String!): Label!
+setApplicationLabel(applicationID: ID!, key: String!, value: JSON!): Label!
 ```
 
 ### Workflows
@@ -86,7 +88,7 @@ createLabelDefinition(in: {
 }) {...}
 
 
-setApplicationLabel(applicationID: "123", key: "supportedLanguages", value:"[Go]") {...}
+setApplicationLabel(applicationID: "123", key: "supportedLanguages", value:["Go"]) {...}
 
 ```
 
@@ -95,26 +97,26 @@ Label definition can be edited. This will be used for example for label **Scenar
 Let assume that we have the following label definition:
 ```graphql
  key:"supportedLanguages",
-  schema:"{
+  schema:{
               "type": "array",
               "items": {
                   "type": "string",
                   "enum": ["Go", "Java", "C#"]
               }
-          }"
+          }
 ```
 
 If you want to add new language to this list, you have to provide a full definition:
 ```
 updateLabelDefinition(in: {
                         key:"supportedLanguages",
-                        schema:"{
+                        schema:{
                                     "type": "array",
                                     "items": {
                                         "type": "string",
                                         "enum": ["Go", "Java", "C#","ABAP"]
                                     }
-                                }"
+                                }
                       }) {...}
 ```
 
