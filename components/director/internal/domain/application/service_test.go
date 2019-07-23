@@ -176,12 +176,7 @@ func TestService_CreateWithInvalidNames(t *testing.T) {
 			Input:              model.ApplicationInput{Name: ""},
 			ExpectedErrMessage: "a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character",
 		},
-		{
-			Name:               "Returns error when application name contains upper case letter",
-			InputID:            "foo",
-			Input:              model.ApplicationInput{Name: "upperCase"},
-			ExpectedErrMessage: "a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character",
-		}}
+	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {

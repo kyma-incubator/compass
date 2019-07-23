@@ -379,8 +379,9 @@ func TestUpdateApplication(t *testing.T) {
 	id := actualApp.ID
 	require.NotEmpty(t, id)
 	defer deleteApplication(t, id)
-	in = generateSampleApplicationInput("after")
 
+	//GIVEN
+	in = generateSampleApplicationInput("after")
 	appInputGQL, err = tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
 	request = gcli.NewRequest(
@@ -392,10 +393,98 @@ func TestUpdateApplication(t *testing.T) {
 	saveQueryInExamples(t, request.Query(), "update application")
 
 	updatedApp := ApplicationExt{}
-	err = tc.RunQuery(ctx, request, &updatedApp)
-	require.NoError(t, err)
 
+	//WHEN
+	err = tc.RunQuery(ctx, request, &updatedApp)
+
+	//THEN
+	require.NoError(t, err)
 	assertApplication(t, in, updatedApp)
+}
+
+func TestCreateUpdateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	in := generateSampleApplicationInput("app")
+	in.Name = "application-1"
+	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
+	require.NoError(t, err)
+	createReq := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+  				result: createApplication(in: %s) {
+    					%s
+					}
+				}`, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
+	firstApp := graphql.Application{}
+
+	//WHEN
+	err = tc.RunQuery(ctx, createReq, &firstApp)
+
+	//THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, firstApp.ID)
+	defer deleteApplication(t, firstApp.ID)
+
+	//Create second application with first application name
+	//GIVEN
+	in = generateSampleApplicationInput("app")
+	in.Name = firstApp.Name
+	appInputGQL, err = tc.graphqlizer.ApplicationInputToGQL(in)
+	require.NoError(t, err)
+	createReq = gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+  				result: createApplication(in: %s) {
+    					%s
+					}
+				}`, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
+
+	//WHEN
+	err = tc.RunQuery(ctx, createReq, nil)
+
+	//THEN
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "Application name is not unique within tenant")
+
+	//Create second application with unique name
+	//GIVEN
+	in = generateSampleApplicationInput("app")
+	in.Name = "application-2"
+	appInputGQL, err = tc.graphqlizer.ApplicationInputToGQL(in)
+	require.NoError(t, err)
+	createReq = gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+  				result: createApplication(in: %s) {
+    					%s
+					}
+				}`, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
+	secondApp := graphql.Application{}
+	//WHEN
+	err = tc.RunQuery(ctx, createReq, &secondApp)
+
+	//THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, secondApp.ID)
+	defer deleteApplication(t, secondApp.ID)
+
+	// Try to update second app with name from first app
+	//GIVEN
+	in = generateSampleApplicationInput("app")
+	in.Name = firstApp.Name
+	appInputGQL, err = tc.graphqlizer.ApplicationInputToGQL(in)
+	require.NoError(t, err)
+	updateRequest := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+  				result: updateApplication(id: "%s", in: %s) {
+    					%s
+					}
+				}`, secondApp.ID, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
+
+	//WHEN
+	err = tc.RunQuery(ctx, updateRequest, nil)
+
+	//THEN
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "Application name is not unique within tenant")
 }
 
 func TestDeleteApplication(t *testing.T) {
