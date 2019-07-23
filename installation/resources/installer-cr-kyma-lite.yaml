@@ -1,3 +1,4 @@
+apiVersion: "installer.kyma-project.io/v1alpha1"
 kind: Installation
 metadata:
   name: kyma-installation
