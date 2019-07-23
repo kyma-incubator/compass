@@ -24,6 +24,11 @@ kill ${DIRECTOR_PID}
 rm ./../../components/director/directorBin
 
 img="prettier:latest"
-docker build -t ${img} ./prettier
+docker build -t ${img} ./tools/prettier
 docker run -v ${GOPATH}/src/github.com/kyma-incubator/compass/examples:/prettier/examples \
             ${img} prettier --write ./examples/*.graphql
+
+cd ./tools/example-index-generator/
+env EXAMPLES_DIRECTORY=${GOPATH}/src/github.com/kyma-incubator/compass/examples go run main.go
+
+cd -
