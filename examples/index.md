@@ -25,4 +25,3 @@ Below you can find a list of mock GraphQL queries and mutations:
 - [Update API](./update-API.graphql)
 - [Update Application Webhook](./update-application-webhook.graphql)
 - [Update Application](./update-application.graphql)
-- [Update Runtime](./update-runtime.graphql)

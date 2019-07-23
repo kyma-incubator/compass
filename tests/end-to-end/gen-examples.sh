@@ -50,6 +50,9 @@ if [[ "$directorIsUp" = false ]]; then
     exit -1
 fi
 
+# remove previous files
+rm -f "${GOPATH}/src/github.com/kyma-incubator/compass/examples/"*
+
 go test -c "${SCRIPT_DIR}/director/"
 ./director.test
 
