@@ -21,11 +21,12 @@ func main() {
 
 	data := make([]Data, 0)
 	for _, f := range files {
-		if strings.HasSuffix(f.Name(), ".graphql") {
-			withoutExt := strings.Replace(f.Name(), ".graphql", "", -1)
-			withoutDash := strings.Replace(withoutExt, "-", " ", -1)
-			data = append(data, Data{Description: strings.Title(withoutDash), FileName: f.Name()})
+		if !strings.HasSuffix(f.Name(), ".graphql") {
+			continue
 		}
+		withoutExt := strings.Replace(f.Name(), ".graphql", "", -1)
+		withoutDash := strings.Replace(withoutExt, "-", " ", -1)
+		data = append(data, Data{Description: strings.Title(withoutDash), FileName: f.Name()})
 	}
 
 	t, err := template.ParseFiles("./index.md.tpl")
