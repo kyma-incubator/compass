@@ -405,8 +405,7 @@ func TestUpdateApplication(t *testing.T) {
 func TestCreateUpdateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	in := generateSampleApplicationInput("app")
-	in.Name = "application-1"
+	in := generateSampleApplicationInput("first")
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
 	createReq := gcli.NewRequest(
@@ -427,8 +426,6 @@ func TestCreateUpdateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
 
 	//Create second application with first application name
 	//GIVEN
-	in = generateSampleApplicationInput("app")
-	in.Name = firstApp.Name
 	appInputGQL, err = tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
 	createReq = gcli.NewRequest(
@@ -447,8 +444,7 @@ func TestCreateUpdateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
 
 	//Create second application with unique name
 	//GIVEN
-	in = generateSampleApplicationInput("app")
-	in.Name = "application-2"
+	in.Name = "second"
 	appInputGQL, err = tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
 	createReq = gcli.NewRequest(
@@ -468,7 +464,6 @@ func TestCreateUpdateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
 
 	// Try to update second app with name from first app
 	//GIVEN
-	in = generateSampleApplicationInput("app")
 	in.Name = firstApp.Name
 	appInputGQL, err = tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
