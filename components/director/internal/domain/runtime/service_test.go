@@ -23,7 +23,7 @@ func TestService_Create(t *testing.T) {
 	id := "foo"
 	desc := "Lorem ipsum"
 	modelInput := model.RuntimeInput{
-		Name:        "Foo",
+		Name:        "foo.bar-not",
 		Description: &desc,
 	}
 
@@ -59,6 +59,31 @@ func TestService_Create(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
+			Name: "Returns error when name is empty",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				return svc
+			},
+			Input:       model.RuntimeInput{Name: ""},
+			ExpectedErr: errors.New("a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character")},
+		{
+			Name: "Returns error when name contains upper case letter",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				return svc
+			},
+			Input:       model.RuntimeInput{Name: "upperCase"},
+			ExpectedErr: errors.New("a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character"),
+		},
+		{
 			Name: "Returns error when runtime creation failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
@@ -86,7 +111,11 @@ func TestService_Create(t *testing.T) {
 
 			// then
 			assert.IsType(t, "string", result)
-			assert.Equal(t, testCase.ExpectedErr, err)
+			if err == nil {
+				require.Nil(t, testCase.ExpectedErr)
+			} else {
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			}
 
 			repo.AssertExpectations(t)
 			idSvc.AssertExpectations(t)
@@ -100,7 +129,7 @@ func TestService_Update(t *testing.T) {
 
 	desc := "Lorem ipsum"
 	modelInput := model.RuntimeInput{
-		Name: "Bar",
+		Name: "bar",
 	}
 
 	inputRuntimeModel := mock.MatchedBy(func(rtm *model.Runtime) bool {
@@ -135,6 +164,15 @@ func TestService_Update(t *testing.T) {
 			InputID:            "foo",
 			Input:              modelInput,
 			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when name is empty",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				return repo
+			},
+			Input:              model.RuntimeInput{Name: ""},
+			ExpectedErrMessage: "a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character",
 		},
 		{
 			Name: "Returns error when application update failed",

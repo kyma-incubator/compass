@@ -2,6 +2,7 @@ package application_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/google/uuid"
@@ -22,7 +23,7 @@ func TestService_Create(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 	modelInput := model.ApplicationInput{
-		Name: "Foo",
+		Name: "foo.bar-not",
 		Webhooks: []*model.WebhookInput{
 			{URL: "test.foo.com"},
 			{URL: "test.bar.com"},
@@ -140,7 +141,12 @@ func TestService_Create(t *testing.T) {
 
 			// then
 			assert.IsType(t, "string", result)
-			assert.Equal(t, testCase.ExpectedErr, err)
+			if testCase.ExpectedErr != nil {
+				require.NotNil(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				require.Nil(t, err)
+			}
 
 			appRepo.AssertExpectations(t)
 			webhookRepo.AssertExpectations(t)
@@ -152,13 +158,47 @@ func TestService_Create(t *testing.T) {
 	}
 }
 
+func TestService_CreateWithInvalidNames(t *testing.T) {
+	//GIVEN
+	tnt := "tenant"
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt)
+
+	testCases := []struct {
+		Name               string
+		InputID            string
+		Input              model.ApplicationInput
+		ExpectedErrMessage string
+	}{
+		{
+			Name:               "Returns error when application name is empty",
+			InputID:            "foo",
+			Input:              model.ApplicationInput{Name: ""},
+			ExpectedErrMessage: "a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			svc := application.NewService(nil, nil, nil, nil, nil, nil)
+
+			//WHEN
+			_, err := svc.Create(ctx, testCase.Input)
+
+			//THEN
+			require.NotNil(t, err)
+			assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+		})
+	}
+}
+
 func TestService_Update(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
 	desc := "Lorem ipsum"
 	modelInput := model.ApplicationInput{
-		Name: "Bar",
+		Name: "bar",
 	}
 	id := "foo"
 
@@ -170,7 +210,7 @@ func TestService_Update(t *testing.T) {
 
 	applicationModel := &model.Application{
 		ID:          id,
-		Name:        "Foo",
+		Name:        "foo",
 		Description: &desc,
 	}
 
@@ -340,6 +380,47 @@ func TestService_Update(t *testing.T) {
 	}
 }
 
+func TestService_UpdateWithInvalidNames(t *testing.T) {
+	//GIVEN
+	testError := errors.New("a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character")
+	tnt := "tenant"
+	appID := ""
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt)
+
+	testCases := []struct {
+		Name        string
+		InputID     string
+		Input       model.ApplicationInput
+		ExpectedErr error
+	}{
+		{
+			Name:        "Returns error when application name is empty",
+			InputID:     "foo",
+			Input:       model.ApplicationInput{Name: ""},
+			ExpectedErr: testError,
+		},
+		{
+			Name:        "Returns error when application name contains upper case letter",
+			InputID:     "foo",
+			Input:       model.ApplicationInput{Name: "upperCase"},
+			ExpectedErr: testError,
+		}}
+
+	for i, testCase := range testCases {
+		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+			svc := application.NewService(nil, nil, nil, nil, nil, nil)
+
+			//WHEN
+			err := svc.Update(ctx, appID, testCase.Input)
+
+			//THEN
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+		})
+	}
+}
+
 func TestService_Delete(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
@@ -350,7 +431,7 @@ func TestService_Delete(t *testing.T) {
 
 	applicationModel := &model.Application{
 		ID:          id,
-		Name:        "Foo",
+		Name:        "foo",
 		Description: &desc,
 	}
 
@@ -525,7 +606,7 @@ func TestService_Get(t *testing.T) {
 
 	applicationModel := &model.Application{
 		ID:          "foo",
-		Name:        "Foo",
+		Name:        "foo",
 		Description: &desc,
 	}
 
@@ -592,8 +673,8 @@ func TestService_List(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	modelApplications := []*model.Application{
-		fixModelApplication("foo", "Foo", "Lorem Ipsum"),
-		fixModelApplication("bar", "Bar", "Lorem Ipsum"),
+		fixModelApplication("foo", "foo", "Lorem Ipsum"),
+		fixModelApplication("bar", "bar", "Lorem Ipsum"),
 	}
 	applicationPage := &model.ApplicationPage{
 		Data:       modelApplications,
@@ -757,7 +838,7 @@ func TestService_AddLabel(t *testing.T) {
 	desc := "Lorem ipsum"
 
 	applicationID := "foo"
-	modifiedApplicationModel := fixModelApplicationWithLabels(applicationID, "Foo", map[string][]string{
+	modifiedApplicationModel := fixModelApplicationWithLabels(applicationID, "foo", map[string][]string{
 		"key": {"value1"},
 	})
 	modifiedApplicationModel.Description = &desc
@@ -777,7 +858,7 @@ func TestService_AddLabel(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", tnt, applicationID).Return(fixModelApplication(applicationID, "Foo", desc), nil).Once()
+				repo.On("GetByID", tnt, applicationID).Return(fixModelApplication(applicationID, "foo", desc), nil).Once()
 				repo.On("Update", modifiedApplicationModel).Return(nil).Once()
 
 				return repo
@@ -791,7 +872,7 @@ func TestService_AddLabel(t *testing.T) {
 			Name: "Returns error when application update failed",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", tnt, applicationID).Return(fixModelApplication(applicationID, "Foo", desc), nil).Once()
+				repo.On("GetByID", tnt, applicationID).Return(fixModelApplication(applicationID, "foo", desc), nil).Once()
 				repo.On("Update", modifiedApplicationModel).Return(testErr).Once()
 
 				return repo
@@ -846,7 +927,7 @@ func TestService_DeleteLabel(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	applicationID := "foo"
-	modifiedApplicationModel := fixModelApplicationWithLabels(applicationID, "Foo", map[string][]string{})
+	modifiedApplicationModel := fixModelApplicationWithLabels(applicationID, "foo", map[string][]string{})
 
 	labelKey := "key"
 	labelValues := []string{"value1", "value2"}
@@ -864,7 +945,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", tnt, applicationID).Return(
-					fixModelApplicationWithLabels(applicationID, "Foo", map[string][]string{
+					fixModelApplicationWithLabels(applicationID, "foo", map[string][]string{
 						"key": {"value1", "value2"},
 					}), nil).Once()
 				repo.On("Update", modifiedApplicationModel).Return(nil).Once()
@@ -881,7 +962,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", tnt, applicationID).Return(
-					fixModelApplicationWithLabels(applicationID, "Foo", map[string][]string{
+					fixModelApplicationWithLabels(applicationID, "foo", map[string][]string{
 						"key": {"value1", "value2"},
 					}), nil).Once()
 				repo.On("Update", modifiedApplicationModel).Return(testErr).Once()

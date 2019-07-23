@@ -50,6 +50,11 @@ func (r *inMemoryRepository) Create(item *model.Runtime) error {
 		return errors.New("item can not be empty")
 	}
 
+	found := r.findRuntimeNameWithinTenant(item.Tenant, item.Name)
+	if found {
+		return errors.New("Runtime name is not unique within tenant")
+	}
+
 	r.store[item.ID] = item
 
 	return nil
@@ -60,11 +65,21 @@ func (r *inMemoryRepository) Update(item *model.Runtime) error {
 		return errors.New("item can not be empty")
 	}
 
-	if r.store[item.ID] == nil {
-		return errors.New("application not found")
+	rtm := r.store[item.ID]
+	if rtm == nil {
+		return errors.New("Runtime not found")
 	}
 
-	r.store[item.ID] = item
+	if rtm.Name != item.Name {
+		found := r.findRuntimeNameWithinTenant(item.Tenant, item.Name)
+		if found {
+			return errors.New("Runtime name is not unique within tenant")
+		}
+	}
+
+	rtm.Name = item.Name
+	rtm.Description = item.Description
+	rtm.Labels = item.Labels
 
 	return nil
 }
@@ -77,4 +92,13 @@ func (r *inMemoryRepository) Delete(item *model.Runtime) error {
 	delete(r.store, item.ID)
 
 	return nil
+}
+
+func (r *inMemoryRepository) findRuntimeNameWithinTenant(tenant, name string) bool {
+	for _, runtime := range r.store {
+		if runtime.Name == name && runtime.Tenant == tenant {
+			return true
+		}
+	}
+	return false
 }

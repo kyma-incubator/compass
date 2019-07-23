@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
+
+	"k8s.io/apimachinery/pkg/api/validation"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/strings"
 )
@@ -102,4 +106,11 @@ func (i *ApplicationInput) ToApplication(id, tenant string) *Application {
 		Labels:         i.Labels,
 		HealthCheckURL: i.HealthCheckURL,
 	}
+}
+
+func (i *ApplicationInput) Validate() error {
+	if errorMgs := validation.NameIsDNSSubdomain(i.Name, false); errorMgs != nil {
+		return errors.Errorf("%v", errorMgs)
+	}
+	return nil
 }
