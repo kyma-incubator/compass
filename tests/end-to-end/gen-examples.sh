@@ -50,6 +50,7 @@ if [[ "$directorIsUp" = false ]]; then
     exit -1
 fi
 
+go test -c "${SCRIPT_DIR}/director/"
 ./director.test
 
 img="prettier:latest"
@@ -58,4 +59,4 @@ docker run -v "${GOPATH}/src/github.com/kyma-incubator/compass/examples":/pretti
             ${img} prettier --write ./examples/*.graphql
 
 cd "${SCRIPT_DIR}/tools/example-index-generator/"
-env EXAMPLES_DIRECTORY="${GOPATH}/src/github.com/kyma-incubator/compass/examples" go run main.go
+EXAMPLES_DIRECTORY="${GOPATH}/src/github.com/kyma-incubator/compass/examples" go run main.go
