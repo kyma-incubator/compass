@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: compass-overrides
+  namespace: kyma-installer
+  labels:
+    installer: overrides
+    component: compass
+    kyma-project.io/installation: ""
+data:
+  gateway.gateway.enabled: "true"
+  global.istio.gateway.name: "compass-istio-gateway"
+  global.istio.gateway.namespace: "compass-system"
