@@ -4,8 +4,8 @@
 Below you can find a list of mock GraphQL queries and mutations:
 - [Add API](./add-API.graphql)
 - [Add Document](./add-Document.graphql)
-- [Add Aplication Webhook](./add-aplication-webhook.graphql)
 - [Add Application Label](./add-application-label.graphql)
+- [Add Application Webhook](./add-application-webhook.graphql)
 - [Create Application With APIs](./create-application-with-APIs.graphql)
 - [Create Application With Documents](./create-application-with-documents.graphql)
 - [Create Application With Event APIs](./create-application-with-event-APIs.graphql)

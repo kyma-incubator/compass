@@ -598,7 +598,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 					%s
 				}
 			}`, actualApp.ID, webhookInStr, tc.gqlFieldsProvider.ForWebhooks()))
-		saveQueryInExamples(t, addReq.Query(), "add aplication webhook")
+		saveQueryInExamples(t, addReq.Query(), "add application webhook")
 
 		actualWebhook := graphql.Webhook{}
 		err = tc.RunQuery(ctx, addReq, &actualWebhook)
