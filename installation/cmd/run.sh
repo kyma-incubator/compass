@@ -7,7 +7,7 @@ KYMA_RELEASE=${1:-$defaultRelease}
 COMPASS_HELM_RELEASE_NAME="compass"
 COMPASS_HELM_RELEASE_NAMESPACE="compass-system"
 
-CR_KYMA_LITE_PATH="${ROOT_PATH}"/installation/resources/installer-cr-kyma-lite.yaml
+CR_KYMA_LITE_PATH="${ROOT_PATH}"/installation/resources/installer-cr-kyma-diet.yaml
 
 kyma provision minikube
 kyma install -o $CR_KYMA_LITE_PATH --release "${KYMA_RELEASE}"
