@@ -2159,7 +2159,7 @@ input LabelFilter {
     """
     Optional SQL/JSON Path expression. If query is not provided, returns every object with given label key regardless of its value.
     Currently only a limited subset of expressions is supported.
-    """ #TODO: Point to document describing expression subset that is supported
+    """ #TODO: Point to document describing expression subset that is supported: https://github.com/kyma-incubator/compass/issues/163
     query: String
 }
 
