@@ -2,11 +2,11 @@
 
 scalar Any # -> interface{}
 
+scalar JSON # -> interface{}
+
 scalar Timestamp # -> time.Time
 
 scalar Tenant # -> String
-
-scalar Labels # -> map[string][]string
 
 scalar HttpHeaders # -> map[string][]string
 
@@ -16,9 +16,23 @@ scalar CLOB # -> String
 
 scalar PageCursor # -> String
 
+# Label
+
 type Label {
     key: String!
-    values: [String!]!
+    value: Any!
+}
+
+scalar Labels # -> map[string]interface{}
+
+type LabelDefinition {
+    key: String!
+    schema: JSON
+}
+
+input LabelDefinitionInput {
+    key: String!
+    schema: JSON
 }
 
 # Runtime
@@ -444,16 +458,10 @@ input BasicCredentialDataInput {
     password: String!
 }
 
-# HealthCheck Input
-
-enum FilterOperator {
-    ALL, ANY
-}
-
 input LabelFilter {
     label: String!
-    values: [String!]!
-    operator: FilterOperator = ALL
+    """Optional SQL/JSON Path expression. If not provided, returns every object with given label regardless of its value."""
+    query: String
 }
 
 
@@ -464,6 +472,9 @@ type Query {
     runtimes(filter: [LabelFilter!], first: Int = 100, after: PageCursor): RuntimePage!
     runtime(id: ID!): Runtime
 
+    labelDefinitions: [LabelDefinition!]!
+    labelDefinition(key: String!): LabelDefinition
+
     healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: PageCursor): HealthCheckPage!
 }
 
@@ -473,41 +484,47 @@ type Mutation {
     updateApplication(id: ID!, in: ApplicationInput!): Application!
     deleteApplication(id: ID!): Application
 
-    addApplicationLabel(applicationID: ID!, key: String!, values: [String!]!): Label!
-    # if application does not exist, return error
-    deleteApplicationLabel(applicationID: ID!, key: String!, values: [String!]!): Label
-
-    addWebhook(applicationID: ID!, in: WebhookInput!): Webhook!
-    updateWebhook(webhookID: ID!, in: WebhookInput!): Webhook!
-    deleteWebhook(webhookID: ID!): Webhook
-
-    addAPI(applicationID: ID!, in: APIDefinitionInput!): APIDefinition!
-    updateAPI(id: ID!, in: APIDefinitionInput!): APIDefinition!
-    deleteAPI(id: ID!): APIDefinition
-    refetchAPISpec(apiID: ID!): APISpec
-
-    """
-    Sets Auth for given Application and Runtime. To set default Auth for API, use updateAPI mutation
-    """
-    setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput!): RuntimeAuth!
-    deleteAPIAuth(apiID: ID!, runtimeID: ID!): RuntimeAuth!
-
-    addEventAPI(applicationID: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition!
-    updateEventAPI(id: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition!
-    deleteEventAPI(id: ID!): EventAPIDefinition
-    refetchEventAPISpec(eventID: ID!): EventAPISpec
-
-    addDocument(applicationID: ID!, in: DocumentInput!): Document!
-    deleteDocument(id: ID!): Document
-
     # Runtime
     createRuntime(in: RuntimeInput!): Runtime!
     updateRuntime(id: ID!, in: RuntimeInput!): Runtime!
     deleteRuntime(id: ID!): Runtime
 
-    """If the label key exists, it appends values to existing label."""
-    addRuntimeLabel(runtimeID: ID!, key: String!, values: [String!]!): Label!
+    # Webhook
+    addWebhook(applicationID: ID!, in: WebhookInput!): Webhook!
+    updateWebhook(webhookID: ID!, in: WebhookInput!): Webhook!
+    deleteWebhook(webhookID: ID!): Webhook
 
-    """If values are not specified, it deletes the label. If values are specified, it deletes values from a specific label."""
-    deleteRuntimeLabel(runtimeID: ID!, key: String!, values: [String!]): Label
+    # API
+    addAPI(applicationID: ID!, in: APIDefinitionInput!): APIDefinition!
+    updateAPI(id: ID!, in: APIDefinitionInput!): APIDefinition!
+    deleteAPI(id: ID!): APIDefinition
+    refetchAPISpec(apiID: ID!): APISpec
+
+    """Sets Auth for given Application and Runtime. To set default Auth for API, use updateAPI mutation"""
+    setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput!): RuntimeAuth!
+    deleteAPIAuth(apiID: ID!, runtimeID: ID!): RuntimeAuth!
+
+    # Event API
+    addEventAPI(applicationID: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition!
+    updateEventAPI(id: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition!
+    deleteEventAPI(id: ID!): EventAPIDefinition
+    refetchEventAPISpec(eventID: ID!): EventAPISpec
+
+    # Document
+    addDocument(applicationID: ID!, in: DocumentInput!): Document!
+    deleteDocument(id: ID!): Document
+
+    # LabelDefinition
+    createLabelDefinition(in: LabelDefinitionInput!): LabelDefinition!
+    updateLabelDefinition(in: LabelDefinitionInput!): LabelDefinition!
+    deleteLabelDefinition(key: String!, deleteRelatedLabels: Boolean=false): LabelDefinition!
+
+    # Label
+    setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label!
+    """If Application does not exist, it returns an error."""
+    deleteApplicationLabel(applicationID: ID!, key: String!): Label!
+
+    setRuntimeLabel(runtimeID: ID!, key: String!, value: Any!): Label!
+    """If Runtime does not exist, it returns an error."""
+    deleteRuntimeLabel(runtimeID: ID!, key: String!): Label!
 }
