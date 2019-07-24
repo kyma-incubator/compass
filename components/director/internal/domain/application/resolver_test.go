@@ -581,7 +581,6 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 			Name: "Returns error when application retrieval failed",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("DeleteLabel", context.TODO(), applicationID, gqlLabel.Key).Return(nil).Once()
 				svc.On("Get", context.TODO(), applicationID).Return(nil, testErr).Once()
 				return svc
 			},
@@ -598,6 +597,7 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 			Name: "Returns error when deleting application's label failed",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
+				svc.On("Get", context.TODO(), applicationID).Return(app, nil).Once()
 				svc.On("DeleteLabel", context.TODO(), applicationID, gqlLabel.Key).Return(testErr).Once()
 				return svc
 			},

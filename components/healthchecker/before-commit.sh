@@ -73,9 +73,9 @@ filesToCheck=$(find . -type f -name "*.go" | egrep -v "\/vendor\/|_*/automock/|_
 #
 # GO IMPORTS
 #
-go build -o goimports-vendored ./vendor/golang.org/x/tools/cmd/goimports
-goImportsResult=$(echo "${filesToCheck}" | xargs -L1 ./goimports-vendored -w -l)
-rm goimports-vendored
+go build -o bin/goimports-vendored ./vendor/golang.org/x/tools/cmd/goimports
+goImportsResult=$(echo "${filesToCheck}" | xargs -L1 ./bin/goimports-vendored -w -l)
+rm bin/goimports-vendored
 
 if [ $(echo ${#goImportsResult}) != 0 ]
 	then
@@ -98,15 +98,15 @@ fi
 ##
 # ERRCHECK
 ##
-go build -o errcheck-vendored ./vendor/github.com/kisielk/errcheck
+go build -o bin/errcheck-vendored ./vendor/github.com/kisielk/errcheck
 buildErrCheckResult=$?
 if [[ ${buildErrCheckResult} != 0 ]]; then
     echo -e "${RED}✗ go build errcheck${NC}\n${buildErrCheckResult}${NC}"
     exit 1
 fi
 
-errCheckResult=$(./errcheck-vendored -blank -asserts -ignoregenerated ./...)
-rm errcheck-vendored
+errCheckResult=$(./bin/errcheck-vendored -blank -asserts -ignoregenerated ./...)
+rm bin/errcheck-vendored
 
 if [[ $(echo ${#errCheckResult}) != 0 ]]; then
     echo -e "${RED}✗ [errcheck] unchecked error in:${NC}\n${errCheckResult}${NC}"
