@@ -242,7 +242,7 @@ type ComplexityRoot struct {
 	Query struct {
 		Application            func(childComplexity int, id string) int
 		Applications           func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
-		ApplicationsForRuntime func(childComplexity int, runtimeID string) int
+		ApplicationsForRuntime func(childComplexity int, runtimeID string, first *int, after *PageCursor) int
 		HealthChecks           func(childComplexity int, types []HealthCheckType, origin *string, first *int, after *PageCursor) int
 		LabelDefinition        func(childComplexity int, key string) int
 		LabelDefinitions       func(childComplexity int) int
@@ -331,7 +331,7 @@ type MutationResolver interface {
 type QueryResolver interface {
 	Applications(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*ApplicationPage, error)
 	Application(ctx context.Context, id string) (*Application, error)
-	ApplicationsForRuntime(ctx context.Context, runtimeID string) ([]*Application, error)
+	ApplicationsForRuntime(ctx context.Context, runtimeID string, first *int, after *PageCursor) (*ApplicationPage, error)
 	Runtimes(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*RuntimePage, error)
 	Runtime(ctx context.Context, id string) (*Runtime, error)
 	LabelDefinitions(ctx context.Context) ([]*LabelDefinition, error)
@@ -1414,7 +1414,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.ApplicationsForRuntime(childComplexity, args["runtimeID"].(string)), true
+		return e.complexity.Query.ApplicationsForRuntime(childComplexity, args["runtimeID"].(string), args["first"].(*int), args["after"].(*PageCursor)), true
 
 	case "Query.healthChecks":
 		if e.complexity.Query.HealthChecks == nil {
@@ -2181,7 +2181,7 @@ input LabelFilter {
 type Query {
     applications(filter: [LabelFilter!], first: Int = 100, after: PageCursor):  ApplicationPage!
     application(id: ID!): Application
-    applicationsForRuntime(runtimeID: ID!): [Application]!
+    applicationsForRuntime(runtimeID: ID!, first: Int = 100, after: PageCursor): ApplicationPage!
 
 
     runtimes(filter: [LabelFilter!], first: Int = 100, after: PageCursor): RuntimePage!
@@ -2945,6 +2945,22 @@ func (ec *executionContext) field_Query_applicationsForRuntime_args(ctx context.
 		}
 	}
 	args["runtimeID"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg1
+	var arg2 *PageCursor
+	if tmp, ok := rawArgs["after"]; ok {
+		arg2, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg2
 	return args, nil
 }
 
@@ -6646,7 +6662,7 @@ func (ec *executionContext) _Query_applicationsForRuntime(ctx context.Context, f
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ApplicationsForRuntime(rctx, args["runtimeID"].(string))
+		return ec.resolvers.Query().ApplicationsForRuntime(rctx, args["runtimeID"].(string), args["first"].(*int), args["after"].(*PageCursor))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -6654,10 +6670,10 @@ func (ec *executionContext) _Query_applicationsForRuntime(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*Application)
+	res := resTmp.(*ApplicationPage)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNApplication2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx, field.Selections, res)
+	return ec.marshalNApplicationPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationPage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_runtimes(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -10789,7 +10805,7 @@ func (ec *executionContext) marshalNApplication2ᚕᚖgithubᚗcomᚋkymaᚑincu
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx, sel, v[i])
+			ret[i] = ec.marshalNApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)

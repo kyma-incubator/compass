@@ -1004,34 +1004,52 @@ func TestService_DeleteLabel(t *testing.T) {
 	}
 }
 
-func TestGetAllByRuntimeID(t *testing.T) {
+func TestService_ListByRuntimeID(t *testing.T) {
 	runtimeID := " idddd"
+	testError := errors.New("test error")
 
 	tenantName := "tenant"
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantName)
 
+	first := 10
+	cursor := "test"
+
 	applications := []*model.Application{
 		fixModelApplication("test1", "test1", "test1"),
 		fixModelApplication("test2", "test2", "test2"),
 	}
+	applicationPage := fixApplicationPage(applications)
 
 	testCases := []struct {
 		Name            string
 		Input           string
+		InputPageSize   *int
+		InputCursor     *string
 		AppRepositoryFn func() *automock.ApplicationRepository
-		ExpectedResult  []*model.Application
+		ExpectedResult  *model.ApplicationPage
 		ExpectedError   error
 	}{
 		{
 			Name: "Success",
 			AppRepositoryFn: func() *automock.ApplicationRepository {
 				appRepository := &automock.ApplicationRepository{}
-				appRepository.On("GetAllByTenantAndRuntimeID", tenantName, runtimeID).Return(applications, nil).Once()
+				appRepository.On("ListByRuntimeID", tenantName, runtimeID, &first, &cursor).Return(applicationPage, nil).Once()
 				return appRepository
 			},
 			ExpectedError:  nil,
-			ExpectedResult: applications,
+			ExpectedResult: applicationPage,
+			Input:          runtimeID,
+		},
+		{
+			Name: "Return error when listing application by RuntimeID failed",
+			AppRepositoryFn: func() *automock.ApplicationRepository {
+				appRepository := &automock.ApplicationRepository{}
+				appRepository.On("ListByRuntimeID", tenantName, runtimeID, &first, &cursor).Return(nil, testError).Once()
+				return appRepository
+			},
+			ExpectedError:  testError,
+			ExpectedResult: nil,
 			Input:          runtimeID,
 		},
 	}
@@ -1043,7 +1061,7 @@ func TestGetAllByRuntimeID(t *testing.T) {
 			svc := application.NewService(appRepository, nil, nil, nil, nil, nil)
 
 			//WHEN
-			results, err := svc.GetAllByRuntimeID(ctx, testCase.Input)
+			results, err := svc.ListByRuntimeID(ctx, testCase.Input, &first, &cursor)
 
 			//THEN
 			if testCase.ExpectedError != nil {
@@ -1056,7 +1074,6 @@ func TestGetAllByRuntimeID(t *testing.T) {
 			appRepository.AssertExpectations(t)
 		})
 	}
-
 }
 
 type testModel struct {

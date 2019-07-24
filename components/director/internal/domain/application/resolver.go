@@ -19,7 +19,7 @@ type ApplicationService interface {
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error)
 	SetLabel(ctx context.Context, applicationID string, key string, value interface{}) error
 	DeleteLabel(ctx context.Context, applicationID string, key string) error
-	GetAllByRuntimeID(ctx context.Context, runtimeId string) ([]*model.Application, error)
+	ListByRuntimeID(ctx context.Context, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error)
 }
 
 //go:generate mockery -name=ApplicationConverter -output=automock -outpkg=automock -case=underscore
@@ -323,12 +323,27 @@ func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*g
 	return gqlWebhooks, nil
 }
 
-func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string) ([]*graphql.Application, error) {
-	applications, err := r.appSvc.GetAllByRuntimeID(ctx, runtimeID)
+func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
+	var cursor string
+	if after != nil {
+		cursor = string(*after)
+	}
+
+	appPage, err := r.appSvc.ListByRuntimeID(ctx, runtimeID, first, &cursor)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting all Application for Runtime")
 	}
 
-	return r.appConverter.MultipleToGraphQL(applications), nil
+	gqlApps := r.appConverter.MultipleToGraphQL(appPage.Data)
+	totalCount := len(gqlApps)
 
+	return &graphql.ApplicationPage{
+		Data:       gqlApps,
+		TotalCount: totalCount,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(appPage.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(appPage.PageInfo.EndCursor),
+			HasNextPage: appPage.PageInfo.HasNextPage,
+		},
+	}, nil
 }

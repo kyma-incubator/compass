@@ -111,13 +111,22 @@ func (r *inMemoryRepository) findApplicationNameWithinTenant(tenant, name string
 	return false
 }
 
-func (r *inMemoryRepository) GetAllByTenantAndRuntimeID(tenant, runtimeID string) ([]*model.Application, error) {
-	var apps []*model.Application
-
-	for _, app := range r.store {
-		if app.Tenant == tenant {
-			apps = append(apps, app)
+// TODO: Make filtering and paging
+func (r *inMemoryRepository) ListByRuntimeID(tenant, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
+	var items []*model.Application
+	for _, item := range r.store {
+		if item.Tenant == tenant {
+			items = append(items, item)
 		}
 	}
-	return apps, nil
+
+	return &model.ApplicationPage{
+		Data:       items,
+		TotalCount: len(items),
+		PageInfo: &pagination.Page{
+			StartCursor: "",
+			EndCursor:   "",
+			HasNextPage: false,
+		},
+	}, nil
 }

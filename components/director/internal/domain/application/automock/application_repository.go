@@ -60,29 +60,6 @@ func (_m *ApplicationRepository) Exist(tenant string, id string) (bool, error) {
 	return r0, r1
 }
 
-// GetAllByTenantAndRuntimeID provides a mock function with given fields: tenant, runtimeID
-func (_m *ApplicationRepository) GetAllByTenantAndRuntimeID(tenant string, runtimeID string) ([]*model.Application, error) {
-	ret := _m.Called(tenant, runtimeID)
-
-	var r0 []*model.Application
-	if rf, ok := ret.Get(0).(func(string, string) []*model.Application); ok {
-		r0 = rf(tenant, runtimeID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Application)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = rf(tenant, runtimeID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetByID provides a mock function with given fields: tenant, id
 func (_m *ApplicationRepository) GetByID(tenant string, id string) (*model.Application, error) {
 	ret := _m.Called(tenant, id)
@@ -122,6 +99,29 @@ func (_m *ApplicationRepository) List(tenant string, filter []*labelfilter.Label
 	var r1 error
 	if rf, ok := ret.Get(1).(func(string, []*labelfilter.LabelFilter, *int, *string) error); ok {
 		r1 = rf(tenant, filter, pageSize, cursor)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListByRuntimeID provides a mock function with given fields: tenant, runtimeID, pageSize, cursor
+func (_m *ApplicationRepository) ListByRuntimeID(tenant string, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
+	ret := _m.Called(tenant, runtimeID, pageSize, cursor)
+
+	var r0 *model.ApplicationPage
+	if rf, ok := ret.Get(0).(func(string, string, *int, *string) *model.ApplicationPage); ok {
+		r0 = rf(tenant, runtimeID, pageSize, cursor)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.ApplicationPage)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, string, *int, *string) error); ok {
+		r1 = rf(tenant, runtimeID, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -963,55 +963,63 @@ func TestResolver_ApplicationsForRuntime(t *testing.T) {
 	ctx := context.TODO()
 	testError := errors.New("test error")
 
-	applicationModels := []*model.Application{
-		fixModelApplication("id", "name", "desc"),
-		fixModelApplication("id", "name", "desc"),
+	modelApplications := []*model.Application{
+		fixModelApplication("id1", "name", "desc"),
+		fixModelApplication("id2", "name", "desc"),
 	}
 
 	applicationGraphQL := []*graphql.Application{
-		fixGQLApplication("id", "name", "desc"),
-		fixGQLApplication("id", "name", "desc"),
+		fixGQLApplication("id1", "name", "desc"),
+		fixGQLApplication("id2", "name", "desc"),
 	}
+
+	first := 10
+	after := "test"
+	gqlAfter := graphql.PageCursor(after)
+
 	runtimeID := "foo"
 	testCases := []struct {
 		Name           string
 		AppConverterFn func() *automock.ApplicationConverter
 		AppServiceFn   func() *automock.ApplicationService
-		Input          string
-		ExpectedResult []*graphql.Application
+		InputRuntimeID string
+		InputFirst     *int
+		InputAfter     *graphql.PageCursor
+		ExpectedResult *graphql.ApplicationPage
 		ExpectedError  error
 	}{
 		{
 			Name: "Success",
 			AppServiceFn: func() *automock.ApplicationService {
 				appService := &automock.ApplicationService{}
-				appService.On("GetAllByRuntimeID", ctx, runtimeID).Return(applicationModels, nil).Once()
+				appService.On("ListByRuntimeID", ctx, runtimeID, &first, &after).Return(fixApplicationPage(modelApplications), nil).Once()
 				return appService
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
 				appConverter := &automock.ApplicationConverter{}
-				appConverter.On("MultipleToGraphQL", applicationModels).Return(applicationGraphQL).Once()
+				appConverter.On("MultipleToGraphQL", modelApplications).Return(applicationGraphQL).Once()
 				return appConverter
 			},
-			Input:          runtimeID,
-			ExpectedResult: applicationGraphQL,
+			InputRuntimeID: runtimeID,
+			InputFirst:     &first,
+			InputAfter:     &gqlAfter,
+			ExpectedResult: fixGQLApplicationPage(applicationGraphQL),
 			ExpectedError:  nil,
 		},
-		//{
-		//	Name: "Return empty array of Applications",
-		//},
 		{
-			Name: "Returns error while getting Application for given Runtime",
+			Name: "Returns error when application listing failed",
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("GetAllByRuntimeID", ctx, runtimeID).Return(nil, testError).Once()
+				appSvc.On("ListByRuntimeID", ctx, runtimeID, &first, &after).Return(nil, testError).Once()
 				return appSvc
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
 				appConverter := &automock.ApplicationConverter{}
 				return appConverter
 			},
-			Input:          runtimeID,
+			InputRuntimeID: runtimeID,
+			InputFirst:     &first,
+			InputAfter:     &gqlAfter,
 			ExpectedResult: nil,
 			ExpectedError:  testError,
 		},
@@ -1026,7 +1034,7 @@ func TestResolver_ApplicationsForRuntime(t *testing.T) {
 			resolver := application.NewResolver(applicationSvc, nil, nil, nil, nil, applicationConverter, nil, nil, nil, nil)
 
 			//WHEN
-			result, err := resolver.ApplicationsForRuntime(ctx, testCase.Input)
+			result, err := resolver.ApplicationsForRuntime(ctx, testCase.InputRuntimeID, testCase.InputFirst, testCase.InputAfter)
 
 			//THEN
 			if testCase.ExpectedError != nil {
@@ -1041,8 +1049,4 @@ func TestResolver_ApplicationsForRuntime(t *testing.T) {
 
 		})
 	}
-
 }
-
-// TODO: Test Resolvers for:
-// 	- EventAPIs
