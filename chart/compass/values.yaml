@@ -16,7 +16,7 @@ global:
       version: "PR-99"
     schema_migrator:
       dir: pr/
-      version: "PR-143"
+      version: "PR-161"
     tests:
       e2e:
         dir: pr/
