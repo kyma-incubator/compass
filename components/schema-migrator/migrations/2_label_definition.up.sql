@@ -6,5 +6,4 @@ create table label_definitions
     schema JSONB
 );
 
--- tenant_id, key unique
--- index: tenant_id, key
+create unique index on label_definitions(tenant_id,key);

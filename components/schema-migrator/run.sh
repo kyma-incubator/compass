@@ -10,6 +10,15 @@ if [ "${discoverUnsetVar}" = true ] ; then
     exit 1
 fi
 
+if [[ "${DIRECTION}" == "up" ]]; then
+    echo "Migration UP"
+elif [[ "${DIRECTION}" == "down" ]]; then
+    echo "Migration DOWN"
+else
+    echo "ERROR: DIRECTION variable accepts only two values: up or down"
+    exit 1
+fi
+
 echo '# WAITING FOR CONNECTION WITH DATABASE #'
 for i in {1..30}
 do
@@ -33,5 +42,10 @@ fi
 
 CONNECTION_STRING="postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME"
 
+CMD="migrate -path migrations -database "$CONNECTION_STRING" ${DIRECTION}"
 echo '# STARTING MIGRATION #'
-migrate -path migrations -database "$CONNECTION_STRING" up
+if [[ "${NON_INTERACTIVE}" == "true" ]]; then
+    yes | $CMD
+else
+    CMD
+fi
