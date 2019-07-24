@@ -547,7 +547,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 					value
 				}
 			}`, actualApp.ID, expectedLabel.Key, "[\"aaa\",\"bbb\"]"))
-		saveQueryInExamples(t, addReq.Query(), "add application label")
+		saveQueryInExamples(t, addReq.Query(), "set application label")
 		err := tc.RunQuery(ctx, addReq, &createdLabel)
 		require.NoError(t, err)
 		assert.Equal(t, &expectedLabel, createdLabel)
@@ -564,6 +564,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 					value
 				}
 			}`, actualApp.ID, expectedLabel.Key))
+		saveQueryInExamples(t, delReq.Query(), "delete application label")
 		err = tc.RunQuery(ctx, delReq, &deletedLabel)
 		require.NoError(t, err)
 		assert.Equal(t, expectedLabel, deletedLabel)

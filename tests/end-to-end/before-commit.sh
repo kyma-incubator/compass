@@ -1,4 +1,4 @@
-bin/#!/usr/bin/env bash
+#!/usr/bin/env bash
 
 readonly CI_FLAG=ci
 
