@@ -458,7 +458,7 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 
 	runtimeID := "foo"
 	gqlLabel := &graphql.Label{
-		Key:    "key",
+		Key:   "key",
 		Value: []string{"foo", "bar"},
 	}
 
@@ -536,7 +536,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 	rtm := fixModelRuntimeWithLabels(runtimeID, "Foo", map[string]interface{}{"key": []string{"foo", "bar"}})
 
 	gqlLabel := &graphql.Label{
-		Key:    "key",
+		Key:   "key",
 		Value: []string{"foo", "bar"},
 	}
 

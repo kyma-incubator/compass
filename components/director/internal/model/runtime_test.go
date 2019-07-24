@@ -68,11 +68,11 @@ func TestRuntime_SetLabel(t *testing.T) {
 func TestRuntime_DeleteLabel(t *testing.T) {
 	// given
 	testCases := []struct {
-		Name                string
-		InputRuntime        model.Runtime
-		InputKey            string
-		ExpectedLabels      map[string]interface{}
-		ExpectedErr         error
+		Name           string
+		InputRuntime   model.Runtime
+		InputKey       string
+		ExpectedLabels map[string]interface{}
+		ExpectedErr    error
 	}{
 		{
 			Name:     "Whole Label",
@@ -83,7 +83,7 @@ func TestRuntime_DeleteLabel(t *testing.T) {
 					"foo": []string{"bar", "baz"},
 				},
 			},
-			ExpectedErr:         nil,
+			ExpectedErr: nil,
 			ExpectedLabels: map[string]interface{}{
 				"no": "delete",
 			},
@@ -96,7 +96,7 @@ func TestRuntime_DeleteLabel(t *testing.T) {
 					"no": "delete",
 				},
 			},
-			ExpectedErr:         fmt.Errorf("label %s doesn't exist", "foobar"),
+			ExpectedErr: fmt.Errorf("label %s doesn't exist", "foobar"),
 			ExpectedLabels: map[string]interface{}{
 				"no": "delete",
 			},

@@ -137,7 +137,7 @@ func (r *Resolver) SetRuntimeLabel(ctx context.Context, runtimeID string, key st
 	}
 
 	return &graphql.Label{
-		Key:    key,
+		Key:   key,
 		Value: value,
 	}, nil
 }
@@ -153,7 +153,7 @@ func (r *Resolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key
 	}
 
 	return &graphql.Label{
-		Key:    key,
+		Key:   key,
 		Value: runtime.Labels[key],
 	}, nil
 }

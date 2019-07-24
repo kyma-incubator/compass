@@ -3,7 +3,7 @@ package graphql
 import (
 	"encoding/json"
 	"github.com/99designs/gqlgen/graphql"
-	"github.com/go-siris/siris/core/errors"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"io"
 )

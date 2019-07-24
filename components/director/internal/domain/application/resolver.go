@@ -208,7 +208,7 @@ func (r *Resolver) SetApplicationLabel(ctx context.Context, applicationID string
 	}
 
 	return &graphql.Label{
-		Key:    key,
+		Key:   key,
 		Value: value,
 	}, nil
 }
@@ -225,7 +225,7 @@ func (r *Resolver) DeleteApplicationLabel(ctx context.Context, applicationID str
 	}
 
 	return &graphql.Label{
-		Key:    key,
+		Key:   key,
 		Value: app.Labels[key],
 	}, nil
 }

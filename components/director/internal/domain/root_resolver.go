@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 

@@ -468,7 +468,7 @@ func TestResolver_SetApplicationLabel(t *testing.T) {
 
 	applicationID := "foo"
 	gqlLabel := &graphql.Label{
-		Key:    "key",
+		Key:   "key",
 		Value: []string{"foo", "bar"},
 	}
 
@@ -478,7 +478,7 @@ func TestResolver_SetApplicationLabel(t *testing.T) {
 		ConverterFn        func() *automock.ApplicationConverter
 		InputApplicationID string
 		InputKey           string
-		InputValue        interface{}
+		InputValue         interface{}
 		ExpectedLabel      *graphql.Label
 		ExpectedErr        error
 	}{
@@ -495,7 +495,7 @@ func TestResolver_SetApplicationLabel(t *testing.T) {
 			},
 			InputApplicationID: applicationID,
 			InputKey:           gqlLabel.Key,
-			InputValue:        gqlLabel.Value,
+			InputValue:         gqlLabel.Value,
 			ExpectedLabel:      gqlLabel,
 			ExpectedErr:        nil,
 		},
@@ -512,7 +512,7 @@ func TestResolver_SetApplicationLabel(t *testing.T) {
 			},
 			InputApplicationID: applicationID,
 			InputKey:           gqlLabel.Key,
-			InputValue:        gqlLabel.Value,
+			InputValue:         gqlLabel.Value,
 			ExpectedLabel:      nil,
 			ExpectedErr:        testErr,
 		},
@@ -547,7 +547,7 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 	app := fixModelApplicationWithLabels(applicationID, "Foo", map[string]interface{}{"key": []string{"foo", "bar"}})
 
 	gqlLabel := &graphql.Label{
-		Key:    "key",
+		Key:   "key",
 		Value: []string{"foo", "bar"},
 	}
 
