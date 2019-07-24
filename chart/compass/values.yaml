@@ -20,7 +20,7 @@ global:
     tests:
       e2e:
         dir: pr/
-        version: "PR-144"
+        version: "PR-170"
 
   isLocalEnv: false
   
