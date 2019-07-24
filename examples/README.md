@@ -13,7 +13,6 @@ Below you can find a list of mock GraphQL queries and mutations:
 - [create application](./create-application.graphql)
 - [create runtime](./create-runtime.graphql)
 - [delete api](./delete-api.graphql)
-- [delete application label](./delete-application-label.graphql)
 - [delete application webhook](./delete-application-webhook.graphql)
 - [delete application](./delete-application.graphql)
 - [delete document](./delete-document.graphql)
