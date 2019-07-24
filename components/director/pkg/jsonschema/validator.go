@@ -8,10 +8,21 @@ type validator struct {
 	schema *gojsonschema.Schema
 }
 
-func NewValidator(schema *gojsonschema.Schema) *validator {
+func NewValidator(jsonSchema string) (*validator, error) {
+	var schema *gojsonschema.Schema
+	var err error
+
+	if jsonSchema != "" {
+		sl := gojsonschema.NewStringLoader(jsonSchema)
+		schema, err = gojsonschema.NewSchema(sl)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &validator{
 		schema: schema,
-	}
+	}, nil
 }
 
 func (v *validator) Validate(json string) (bool, error) {

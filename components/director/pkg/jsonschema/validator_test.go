@@ -3,8 +3,6 @@ package jsonschema_test
 import (
 	"testing"
 
-	"github.com/xeipuuv/gojsonschema"
-
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
@@ -48,50 +46,40 @@ func TestValidator_Validate(t *testing.T) {
 		Name            string
 		InputJsonSchema string
 		InputJson       string
-		ExpectedBool    bool
+		ExpectedResult  bool
 	}{
 		{
 			Name:            "Success",
 			InputJsonSchema: validInputJsonSchema,
 			InputJson:       inputJson,
-			ExpectedBool:    true,
+			ExpectedResult:  true,
 		},
 		{
 			Name:            "Json schema and json doesn't match",
 			InputJsonSchema: validInputJsonSchema,
 			InputJson:       invalidInputJson,
-			ExpectedBool:    false,
+			ExpectedResult:  false,
 		},
 		{
 			Name:            "Empty",
 			InputJsonSchema: "",
 			InputJson:       "",
-			ExpectedBool:    true,
+			ExpectedResult:  true,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 
-			var schema *gojsonschema.Schema
-			var err error
-
-			if testCase.InputJsonSchema == "" {
-				schema = nil
-			} else {
-				stringLoader := gojsonschema.NewStringLoader(testCase.InputJsonSchema)
-				schema, err = gojsonschema.NewSchema(stringLoader)
-				require.NoError(t, err)
-			}
-
-			svc := jsonschema.NewValidator(schema)
+			svc, err := jsonschema.NewValidator(testCase.InputJsonSchema)
+			require.NoError(t, err)
 
 			// when
 			ok, err := svc.Validate(testCase.InputJson)
 			require.NoError(t, err)
 
 			// then
-			assert.Equal(t, testCase.ExpectedBool, ok)
+			assert.Equal(t, testCase.ExpectedResult, ok)
 		})
 	}
 }
