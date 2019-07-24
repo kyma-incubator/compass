@@ -13,8 +13,7 @@ kyma provision minikube
 MINIKUBE_IP=$(eval minikube ip)
 sed -i.bak 's/IP_PLACEHOLDER/'$MINIKUBE_IP'/g' $OVERRIDES_MINIKUBE_PATH
 kyma install -o $CR_KYMA_LITE_COMPASS_PATH -o $OVERRIDES_MINIKUBE_PATH -o OVERRIDES_COMPASS_GATEWAY --release "${KYMA_RELEASE}"
-sed -i.bak 's/'$MINIKUBE_IP'/IP_PLACEHOLDER/g' $OVERRIDES_MINIKUBE_PATH
-rm ${OVERRIDES_MINIKUBE_PATH}.bak
+mv -f ${OVERRIDES_MINIKUBE_PATH}.bak $OVERRIDES_MINIKUBE_PATH
 
 # TODO: Remove it after next CLI release
 echo "Adding Compass entries to /etc/hosts...\n"
