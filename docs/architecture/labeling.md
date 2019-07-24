@@ -63,8 +63,9 @@ addApplicationLabel(applicationID: ID!, key: String!, values: [String!]!): Label
 ```
 to:
 ```graphql
-setApplicationLabel(applicationID: ID!, key: String!, value: JSON!): Label!
+setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label!
 ```
+As you can see, type of label's value is `Any`, it can by `JSON`, `string`, `int`, etc.
 
 ### Workflows
 
