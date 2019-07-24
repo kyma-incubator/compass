@@ -3,13 +3,13 @@ package labelfilter
 import "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 type LabelFilter struct {
-	Label string
+	Key   string
 	Query *string
 }
 
 func FromGraphQL(in *graphql.LabelFilter) *LabelFilter {
 	return &LabelFilter{
-		Label: in.Label,
+		Key:   in.Key,
 		Query: in.Query,
 	}
 }

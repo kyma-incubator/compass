@@ -387,10 +387,10 @@ func TestResolver_Applications(t *testing.T) {
 	after := "test"
 	query := "foo"
 	filter := []*labelfilter.LabelFilter{
-		{Label: "", Query: &query},
+		{Key: "", Query: &query},
 	}
 	gqlFilter := []*graphql.LabelFilter{
-		{Label: "", Query: &query},
+		{Key: "", Query: &query},
 	}
 	testErr := errors.New("Test error")
 

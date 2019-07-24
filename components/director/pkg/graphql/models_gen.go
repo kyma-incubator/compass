@@ -273,8 +273,10 @@ type LabelDefinitionInput struct {
 }
 
 type LabelFilter struct {
-	Label string `json:"label"`
-	// Optional SQL/JSON Path expression. If not provided, returns every object with given label regardless of its value.
+	// Label key. If query for the filter is not provided, returns every object with given label key regardless of its value.
+	Key string `json:"key"`
+	// Optional SQL/JSON Path expression. If query is not provided, returns every object with given label key regardless of its value.
+	// Currently only a limited subset of expressions is supported.
 	Query *string `json:"query"`
 }
 

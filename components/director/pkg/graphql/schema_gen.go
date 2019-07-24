@@ -2154,8 +2154,12 @@ input BasicCredentialDataInput {
 }
 
 input LabelFilter {
-    label: String!
-    """Optional SQL/JSON Path expression. If not provided, returns every object with given label regardless of its value."""
+    """Label key. If query for the filter is not provided, returns every object with given label key regardless of its value."""
+    key: String!
+    """
+    Optional SQL/JSON Path expression. If query is not provided, returns every object with given label key regardless of its value.
+    Currently only a limited subset of expressions is supported.
+    """ #TODO: Point to document describing expression subset that is supported
     query: String
 }
 
@@ -2215,12 +2219,14 @@ type Mutation {
     deleteLabelDefinition(key: String!, deleteRelatedLabels: Boolean=false): LabelDefinition!
 
     # Label
+    """If a label with given key already exist, it will be replaced with provided value."""
     setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label!
-    """If Application does not exist, it returns an error."""
+    """If Application does not exist or the label key is not found, it returns an error."""
     deleteApplicationLabel(applicationID: ID!, key: String!): Label!
 
+    """If a label with given key already exist, it will be replaced with provided value."""
     setRuntimeLabel(runtimeID: ID!, key: String!, value: Any!): Label!
-    """If Runtime does not exist, it returns an error."""
+    """If Runtime does not exist or the label key is not found, it returns an error."""
     deleteRuntimeLabel(runtimeID: ID!, key: String!): Label!
 }
 `},
@@ -8706,9 +8712,9 @@ func (ec *executionContext) unmarshalInputLabelFilter(ctx context.Context, v int
 
 	for k, v := range asMap {
 		switch k {
-		case "label":
+		case "key":
 			var err error
-			it.Label, err = ec.unmarshalNString2string(ctx, v)
+			it.Key, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}

@@ -381,8 +381,8 @@ func TestResolver_Runtimes(t *testing.T) {
 	first := 2
 	gqlAfter := graphql.PageCursor("test")
 	after := "test"
-	filter := []*labelfilter.LabelFilter{{Label: ""}}
-	gqlFilter := []*graphql.LabelFilter{{Label: ""}}
+	filter := []*labelfilter.LabelFilter{{Key: ""}}
+	gqlFilter := []*graphql.LabelFilter{{Key: ""}}
 	testErr := errors.New("Test error")
 
 	testCases := []struct {

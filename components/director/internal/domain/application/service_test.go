@@ -688,7 +688,7 @@ func TestService_List(t *testing.T) {
 
 	first := 2
 	after := "test"
-	filter := []*labelfilter.LabelFilter{{Label: ""}}
+	filter := []*labelfilter.LabelFilter{{Key: ""}}
 
 	tnt := "tenant"
 	ctx := context.TODO()

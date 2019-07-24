@@ -12,12 +12,12 @@ func TestFromGraphQL(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		query := "foo"
 		in := &graphql.LabelFilter{
-			Label: "label",
+			Key:   "label",
 			Query: &query,
 		}
 
 		expected := &labelfilter.LabelFilter{
-			Label: "label",
+			Key:   "label",
 			Query: &query,
 		}
 
@@ -28,12 +28,12 @@ func TestFromGraphQL(t *testing.T) {
 
 	t.Run("Empty query", func(t *testing.T) {
 		in := &graphql.LabelFilter{
-			Label: "label",
+			Key:   "label",
 			Query: nil,
 		}
 
 		expected := &labelfilter.LabelFilter{
-			Label: "label",
+			Key:   "label",
 			Query: nil,
 		}
 
@@ -48,22 +48,22 @@ func TestMultipleFromGraphQL(t *testing.T) {
 	queryBar := "bar"
 	in := []*graphql.LabelFilter{
 		{
-			Label: "label",
+			Key:   "label",
 			Query: &queryFoo,
 		},
 		{
-			Label: "label2",
+			Key:   "label2",
 			Query: &queryBar,
 		},
 	}
 
 	expected := []*labelfilter.LabelFilter{
 		{
-			Label: "label",
+			Key:   "label",
 			Query: &queryFoo,
 		},
 		{
-			Label: "label2",
+			Key:   "label2",
 			Query: &queryBar,
 		},
 	}
