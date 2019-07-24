@@ -688,9 +688,7 @@ func TestService_List(t *testing.T) {
 
 	first := 2
 	after := "test"
-	filter := []*labelfilter.LabelFilter{
-		{Label: "", Values: []string{"foo", "bar"}, Operator: labelfilter.FilterOperatorAll},
-	}
+	filter := []*labelfilter.LabelFilter{{Label: ""}}
 
 	tnt := "tenant"
 	ctx := context.TODO()
@@ -827,7 +825,7 @@ func TestService_Exist(t *testing.T) {
 	}
 }
 
-func TestService_AddLabel(t *testing.T) {
+func TestService_SetLabel(t *testing.T) {
 	// given
 	tnt := "tenant"
 	ctx := context.TODO()
@@ -838,8 +836,8 @@ func TestService_AddLabel(t *testing.T) {
 	desc := "Lorem ipsum"
 
 	applicationID := "foo"
-	modifiedApplicationModel := fixModelApplicationWithLabels(applicationID, "foo", map[string][]string{
-		"key": {"value1"},
+	modifiedApplicationModel := fixModelApplicationWithLabels(applicationID, "foo", map[string]interface{}{
+		"key": []string{"value1"},
 	})
 	modifiedApplicationModel.Description = &desc
 
@@ -904,7 +902,7 @@ func TestService_AddLabel(t *testing.T) {
 			svc := application.NewService(repo, nil, nil, nil, nil, nil)
 
 			// when
-			err := svc.AddLabel(ctx, testCase.InputApplicationID, testCase.InputKey, testCase.InputValues)
+			err := svc.SetLabel(ctx, testCase.InputApplicationID, testCase.InputKey, testCase.InputValues)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -927,17 +925,15 @@ func TestService_DeleteLabel(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	applicationID := "foo"
-	modifiedApplicationModel := fixModelApplicationWithLabels(applicationID, "foo", map[string][]string{})
+	modifiedApplicationModel := fixModelApplicationWithLabels(applicationID, "foo", map[string]interface{}{})
 
 	labelKey := "key"
-	labelValues := []string{"value1", "value2"}
 
 	testCases := []struct {
 		Name               string
 		RepositoryFn       func() *automock.ApplicationRepository
 		InputApplicationID string
 		InputKey           string
-		InputValues        []string
 		ExpectedErrMessage string
 	}{
 		{
@@ -945,8 +941,8 @@ func TestService_DeleteLabel(t *testing.T) {
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", tnt, applicationID).Return(
-					fixModelApplicationWithLabels(applicationID, "foo", map[string][]string{
-						"key": {"value1", "value2"},
+					fixModelApplicationWithLabels(applicationID, "foo", map[string]interface{}{
+						"key": []string{"value1", "value2"},
 					}), nil).Once()
 				repo.On("Update", modifiedApplicationModel).Return(nil).Once()
 
@@ -954,7 +950,6 @@ func TestService_DeleteLabel(t *testing.T) {
 			},
 			InputApplicationID: applicationID,
 			InputKey:           labelKey,
-			InputValues:        labelValues,
 			ExpectedErrMessage: "",
 		},
 		{
@@ -962,8 +957,8 @@ func TestService_DeleteLabel(t *testing.T) {
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", tnt, applicationID).Return(
-					fixModelApplicationWithLabels(applicationID, "foo", map[string][]string{
-						"key": {"value1", "value2"},
+					fixModelApplicationWithLabels(applicationID, "foo", map[string]interface{}{
+						"key": []string{"value1", "value2"},
 					}), nil).Once()
 				repo.On("Update", modifiedApplicationModel).Return(testErr).Once()
 
@@ -971,7 +966,6 @@ func TestService_DeleteLabel(t *testing.T) {
 			},
 			InputApplicationID: applicationID,
 			InputKey:           labelKey,
-			InputValues:        labelValues,
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
@@ -984,7 +978,6 @@ func TestService_DeleteLabel(t *testing.T) {
 			},
 			InputApplicationID: applicationID,
 			InputKey:           labelKey,
-			InputValues:        labelValues,
 			ExpectedErrMessage: testErr.Error(),
 		},
 	}
@@ -996,7 +989,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			svc := application.NewService(repo, nil, nil, nil, nil, nil)
 
 			// when
-			err := svc.DeleteLabel(ctx, testCase.InputApplicationID, testCase.InputKey, testCase.InputValues)
+			err := svc.DeleteLabel(ctx, testCase.InputApplicationID, testCase.InputKey)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {

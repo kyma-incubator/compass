@@ -385,11 +385,12 @@ func TestResolver_Applications(t *testing.T) {
 	first := 2
 	gqlAfter := graphql.PageCursor("test")
 	after := "test"
+	query := "foo"
 	filter := []*labelfilter.LabelFilter{
-		{Label: "", Values: []string{"foo", "bar"}, Operator: labelfilter.FilterOperatorAll},
+		{Label: "", Query: &query},
 	}
 	gqlFilter := []*graphql.LabelFilter{
-		{Label: "", Values: []string{"foo", "bar"}},
+		{Label: "", Query: &query},
 	}
 	testErr := errors.New("Test error")
 
@@ -461,14 +462,14 @@ func TestResolver_Applications(t *testing.T) {
 	}
 }
 
-func TestResolver_AddApplicationLabel(t *testing.T) {
+func TestResolver_SetApplicationLabel(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
 	applicationID := "foo"
 	gqlLabel := &graphql.Label{
 		Key:    "key",
-		Values: []string{"foo", "bar"},
+		Value: []string{"foo", "bar"},
 	}
 
 	testCases := []struct {
@@ -477,7 +478,7 @@ func TestResolver_AddApplicationLabel(t *testing.T) {
 		ConverterFn        func() *automock.ApplicationConverter
 		InputApplicationID string
 		InputKey           string
-		InputValues        []string
+		InputValue        interface{}
 		ExpectedLabel      *graphql.Label
 		ExpectedErr        error
 	}{
@@ -485,7 +486,7 @@ func TestResolver_AddApplicationLabel(t *testing.T) {
 			Name: "Success",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("AddLabel", context.TODO(), applicationID, gqlLabel.Key, gqlLabel.Values).Return(nil).Once()
+				svc.On("SetLabel", context.TODO(), applicationID, gqlLabel.Key, gqlLabel.Value).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -494,7 +495,7 @@ func TestResolver_AddApplicationLabel(t *testing.T) {
 			},
 			InputApplicationID: applicationID,
 			InputKey:           gqlLabel.Key,
-			InputValues:        gqlLabel.Values,
+			InputValue:        gqlLabel.Value,
 			ExpectedLabel:      gqlLabel,
 			ExpectedErr:        nil,
 		},
@@ -502,7 +503,7 @@ func TestResolver_AddApplicationLabel(t *testing.T) {
 			Name: "Returns error when adding label to application failed",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("AddLabel", context.TODO(), applicationID, gqlLabel.Key, gqlLabel.Values).Return(testErr).Once()
+				svc.On("SetLabel", context.TODO(), applicationID, gqlLabel.Key, gqlLabel.Value).Return(testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -511,7 +512,7 @@ func TestResolver_AddApplicationLabel(t *testing.T) {
 			},
 			InputApplicationID: applicationID,
 			InputKey:           gqlLabel.Key,
-			InputValues:        gqlLabel.Values,
+			InputValue:        gqlLabel.Value,
 			ExpectedLabel:      nil,
 			ExpectedErr:        testErr,
 		},
@@ -526,7 +527,7 @@ func TestResolver_AddApplicationLabel(t *testing.T) {
 			resolver.SetConverter(converter)
 
 			// when
-			result, err := resolver.AddApplicationLabel(context.TODO(), testCase.InputApplicationID, testCase.InputKey, testCase.InputValues)
+			result, err := resolver.SetApplicationLabel(context.TODO(), testCase.InputApplicationID, testCase.InputKey, testCase.InputValue)
 
 			// then
 			assert.Equal(t, testCase.ExpectedLabel, result)
@@ -543,11 +544,11 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	applicationID := "foo"
-	app := fixModelApplicationWithLabels(applicationID, "Foo", map[string][]string{"key": {"foo", "bar"}})
+	app := fixModelApplicationWithLabels(applicationID, "Foo", map[string]interface{}{"key": []string{"foo", "bar"}})
 
 	gqlLabel := &graphql.Label{
 		Key:    "key",
-		Values: []string{"foo", "bar"},
+		Value: []string{"foo", "bar"},
 	}
 
 	testCases := []struct {
@@ -556,7 +557,6 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 		ConverterFn        func() *automock.ApplicationConverter
 		InputApplicationID string
 		InputKey           string
-		InputValues        []string
 		ExpectedLabel      *graphql.Label
 		ExpectedErr        error
 	}{
@@ -565,7 +565,7 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
 				svc.On("Get", context.TODO(), applicationID).Return(app, nil).Once()
-				svc.On("DeleteLabel", context.TODO(), applicationID, gqlLabel.Key, gqlLabel.Values).Return(nil).Once()
+				svc.On("DeleteLabel", context.TODO(), applicationID, gqlLabel.Key).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -574,7 +574,6 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 			},
 			InputApplicationID: applicationID,
 			InputKey:           gqlLabel.Key,
-			InputValues:        gqlLabel.Values,
 			ExpectedLabel:      gqlLabel,
 			ExpectedErr:        nil,
 		},
@@ -582,7 +581,7 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 			Name: "Returns error when application retrieval failed",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("DeleteLabel", context.TODO(), applicationID, gqlLabel.Key, gqlLabel.Values).Return(nil).Once()
+				svc.On("DeleteLabel", context.TODO(), applicationID, gqlLabel.Key).Return(nil).Once()
 				svc.On("Get", context.TODO(), applicationID).Return(nil, testErr).Once()
 				return svc
 			},
@@ -592,7 +591,6 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 			},
 			InputApplicationID: applicationID,
 			InputKey:           gqlLabel.Key,
-			InputValues:        gqlLabel.Values,
 			ExpectedLabel:      nil,
 			ExpectedErr:        testErr,
 		},
@@ -600,7 +598,7 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 			Name: "Returns error when deleting application's label failed",
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("DeleteLabel", context.TODO(), applicationID, gqlLabel.Key, gqlLabel.Values).Return(testErr).Once()
+				svc.On("DeleteLabel", context.TODO(), applicationID, gqlLabel.Key).Return(testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -609,7 +607,6 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 			},
 			InputApplicationID: applicationID,
 			InputKey:           gqlLabel.Key,
-			InputValues:        gqlLabel.Values,
 			ExpectedLabel:      nil,
 			ExpectedErr:        testErr,
 		},
@@ -624,7 +621,7 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 			resolver.SetConverter(converter)
 
 			// when
-			result, err := resolver.DeleteApplicationLabel(context.TODO(), testCase.InputApplicationID, testCase.InputKey, testCase.InputValues)
+			result, err := resolver.DeleteApplicationLabel(context.TODO(), testCase.InputApplicationID, testCase.InputKey)
 
 			// then
 			assert.Equal(t, testCase.ExpectedLabel, result)

@@ -10,23 +10,15 @@ import (
 
 func TestFromGraphQL(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
-		inOp := graphql.FilterOperatorAny
+		query := "foo"
 		in := &graphql.LabelFilter{
 			Label: "label",
-			Values: []string{
-				"foo",
-				"bar",
-			},
-			Operator: &inOp,
+			Query: &query,
 		}
 
 		expected := &labelfilter.LabelFilter{
 			Label: "label",
-			Values: []string{
-				"foo",
-				"bar",
-			},
-			Operator: labelfilter.FilterOperatorAny,
+			Query: &query,
 		}
 
 		result := labelfilter.FromGraphQL(in)
@@ -34,23 +26,15 @@ func TestFromGraphQL(t *testing.T) {
 		assert.Equal(t, expected, result)
 	})
 
-	t.Run("Default value", func(t *testing.T) {
+	t.Run("Empty query", func(t *testing.T) {
 		in := &graphql.LabelFilter{
 			Label: "label",
-			Values: []string{
-				"foo",
-				"bar",
-			},
-			Operator: nil,
+			Query: nil,
 		}
 
 		expected := &labelfilter.LabelFilter{
 			Label: "label",
-			Values: []string{
-				"foo",
-				"bar",
-			},
-			Operator: labelfilter.FilterOperatorAll,
+			Query: nil,
 		}
 
 		result := labelfilter.FromGraphQL(in)
@@ -60,40 +44,27 @@ func TestFromGraphQL(t *testing.T) {
 }
 
 func TestMultipleFromGraphQL(t *testing.T) {
-	inOp := graphql.FilterOperatorAll
+	queryFoo := "foo"
+	queryBar := "bar"
 	in := []*graphql.LabelFilter{
 		{
 			Label: "label",
-			Values: []string{
-				"foo",
-				"bar",
-			},
-			Operator: &inOp,
+			Query: &queryFoo,
 		},
 		{
 			Label: "label2",
-			Values: []string{
-				"test",
-			},
-			Operator: &inOp,
+			Query: &queryBar,
 		},
 	}
 
 	expected := []*labelfilter.LabelFilter{
 		{
 			Label: "label",
-			Values: []string{
-				"foo",
-				"bar",
-			},
-			Operator: labelfilter.FilterOperatorAll,
+			Query: &queryFoo,
 		},
 		{
 			Label: "label2",
-			Values: []string{
-				"test",
-			},
-			Operator: labelfilter.FilterOperatorAll,
+			Query: &queryBar,
 		},
 	}
 

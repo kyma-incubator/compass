@@ -97,6 +97,12 @@ func (r *queryResolver) Runtimes(ctx context.Context, filter []*graphql.LabelFil
 func (r *queryResolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, error) {
 	return r.runtime.Runtime(ctx, id)
 }
+func (r *queryResolver) LabelDefinitions(ctx context.Context) ([]*graphql.LabelDefinition, error) {
+	panic("not implemented")
+}
+func (r *queryResolver) LabelDefinition(ctx context.Context, key string) (*graphql.LabelDefinition, error) {
+	panic("not implemented")
+}
 func (r *queryResolver) HealthChecks(ctx context.Context, types []graphql.HealthCheckType, origin *string, first *int, after *graphql.PageCursor) (*graphql.HealthCheckPage, error) {
 	return r.healthCheck.HealthChecks(ctx, types, origin, first, after)
 }
@@ -113,12 +119,6 @@ func (r *mutationResolver) UpdateApplication(ctx context.Context, id string, in 
 }
 func (r *mutationResolver) DeleteApplication(ctx context.Context, id string) (*graphql.Application, error) {
 	return r.app.DeleteApplication(ctx, id)
-}
-func (r *mutationResolver) AddApplicationLabel(ctx context.Context, applicationID string, key string, values []string) (*graphql.Label, error) {
-	return r.app.AddApplicationLabel(ctx, applicationID, key, values)
-}
-func (r *mutationResolver) DeleteApplicationLabel(ctx context.Context, applicationID string, key string, values []string) (*graphql.Label, error) {
-	return r.app.DeleteApplicationLabel(ctx, applicationID, key, values)
 }
 func (r *mutationResolver) AddWebhook(ctx context.Context, applicationID string, in graphql.WebhookInput) (*graphql.Webhook, error) {
 	return r.webhook.AddApplicationWebhook(ctx, applicationID, in)
@@ -168,17 +168,32 @@ func (r *mutationResolver) UpdateRuntime(ctx context.Context, id string, in grap
 func (r *mutationResolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runtime, error) {
 	return r.runtime.DeleteRuntime(ctx, id)
 }
-func (r *mutationResolver) AddRuntimeLabel(ctx context.Context, runtimeID string, key string, values []string) (*graphql.Label, error) {
-	return r.runtime.AddRuntimeLabel(ctx, runtimeID, key, values)
-}
-func (r *mutationResolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string, values []string) (*graphql.Label, error) {
-	return r.runtime.DeleteRuntimeLabel(ctx, runtimeID, key, values)
-}
 func (r *mutationResolver) AddDocument(ctx context.Context, applicationID string, in graphql.DocumentInput) (*graphql.Document, error) {
 	return r.doc.AddDocument(ctx, applicationID, in)
 }
 func (r *mutationResolver) DeleteDocument(ctx context.Context, id string) (*graphql.Document, error) {
 	return r.doc.DeleteDocument(ctx, id)
+}
+func (r *mutationResolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDefinitionInput) (*graphql.LabelDefinition, error) {
+	panic("not implemented")
+}
+func (r *mutationResolver) UpdateLabelDefinition(ctx context.Context, in graphql.LabelDefinitionInput) (*graphql.LabelDefinition, error) {
+	panic("not implemented")
+}
+func (r *mutationResolver) DeleteLabelDefinition(ctx context.Context, key string, deleteRelatedLabels *bool) (*graphql.LabelDefinition, error) {
+	panic("not implemented")
+}
+func (r *mutationResolver) SetApplicationLabel(ctx context.Context, applicationID string, key string, value interface{}) (*graphql.Label, error) {
+	return r.app.SetApplicationLabel(ctx, applicationID, key, value)
+}
+func (r *mutationResolver) DeleteApplicationLabel(ctx context.Context, applicationID string, key string) (*graphql.Label, error) {
+	return r.app.DeleteApplicationLabel(ctx, applicationID, key)
+}
+func (r *mutationResolver) SetRuntimeLabel(ctx context.Context, runtimeID string, key string, value interface{}) (*graphql.Label, error) {
+	return r.runtime.SetRuntimeLabel(ctx, runtimeID, key, value)
+}
+func (r *mutationResolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string) (*graphql.Label, error) {
+	return r.runtime.DeleteRuntimeLabel(ctx, runtimeID, key)
 }
 
 type applicationResolver struct {
