@@ -2,8 +2,6 @@ package application
 
 import (
 	"context"
-	"log"
-
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -220,18 +218,16 @@ func (r *Resolver) DeleteApplicationLabel(ctx context.Context, applicationID str
 		return nil, err
 	}
 
-	log.Println(app.Labels[key])
+	value := app.Labels[key]
 
 	err = r.appSvc.DeleteLabel(ctx, applicationID, key)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Println(app.Labels[key])
-
 	return &graphql.Label{
 		Key:   key,
-		Value: app.Labels[key],
+		Value: value,
 	}, nil
 }
 

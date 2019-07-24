@@ -142,18 +142,20 @@ func (r *Resolver) SetRuntimeLabel(ctx context.Context, runtimeID string, key st
 	}, nil
 }
 func (r *Resolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string) (*graphql.Label, error) {
-	err := r.svc.DeleteLabel(ctx, runtimeID, key)
+	runtime, err := r.svc.Get(ctx, runtimeID)
 	if err != nil {
 		return nil, err
 	}
 
-	runtime, err := r.svc.Get(ctx, runtimeID)
+	value := runtime.Labels[key]
+
+	err = r.svc.DeleteLabel(ctx, runtimeID, key)
 	if err != nil {
 		return nil, err
 	}
 
 	return &graphql.Label{
 		Key:   key,
-		Value: runtime.Labels[key],
+		Value: value,
 	}, nil
 }

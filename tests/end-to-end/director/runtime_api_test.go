@@ -15,9 +15,9 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	givenInput := graphql.RuntimeInput{
-		Name:        "runtime-1",
+		Name:        "runtime-create-update-delete",
 		Description: ptrString("runtime-1-description"),
-		Labels:      &graphql.Labels{"ggg": []string{"hhh"}},
+		Labels:      &graphql.Labels{"ggg": []interface{}{"hhh"}},
 	}
 	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
@@ -45,7 +45,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	// WHEN
 	addLabelReq := gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: addRuntimeLabel(runtimeID: "%s", key: "%s", values: %s) {
+			result: setRuntimeLabel(runtimeID: "%s", key: "%s", value: %s) {
 					%s
 				}
 			}`, actualRuntime.ID, "new-label", "[\"bbb\"]", tc.gqlFieldsProvider.ForLabel()))
@@ -141,7 +141,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	givenInput.Name = "updated-name"
 	givenInput.Description = ptrString("updated-description")
 	givenInput.Labels = &graphql.Labels{
-		"key": []string{"values", "aabbcc"},
+		"key": []interface{}{"values", "aabbcc"},
 	}
 	runtimeInGQL, err = tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
@@ -182,7 +182,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	givenInput := graphql.RuntimeInput{
 		Name:        firstRuntimeName,
 		Description: ptrString("runtime-1-description"),
-		Labels:      &graphql.Labels{"ggg": []string{"hhh"}},
+		Labels:      &graphql.Labels{"ggg": []interface{}{"hhh"}},
 	}
 	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
@@ -233,7 +233,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	givenInput = graphql.RuntimeInput{
 		Name:        secondRuntimeName,
 		Description: ptrString("runtime-1-description"),
-		Labels:      &graphql.Labels{"ggg": []string{"hhh"}},
+		Labels:      &graphql.Labels{"ggg": []interface{}{"hhh"}},
 	}
 	runtimeInGQL, err = tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
@@ -303,7 +303,7 @@ func TestSetAndDeleteAPIAuth(t *testing.T) {
 
 	// create runtime
 	runtimeInput := graphql.RuntimeInput{
-		Name:        "runtime-1",
+		Name:        "runtime-set-delete-api",
 		Description: ptrString("runtime-1-description"),
 		Labels:      &graphql.Labels{"ggg": []string{"hhh"}},
 	}
@@ -378,7 +378,7 @@ func TestQueryRuntimes(t *testing.T) {
 
 	for i := 0; i < 3; i++ {
 		givenInput := graphql.RuntimeInput{
-			Name: fmt.Sprintf("runtime-%d", i),
+			Name: fmt.Sprintf("runtime-query-%d", i),
 		}
 		runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
 		require.NoError(t, err)
@@ -417,7 +417,7 @@ func TestQuerySpecificRuntime(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	givenInput := graphql.RuntimeInput{
-		Name: "runtime-1",
+		Name: "runtime-specific-runtime",
 	}
 	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)

@@ -535,7 +535,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 	defer deleteApplication(t, actualApp.ID)
 
 	t.Run("labels manipulation", func(t *testing.T) {
-		expectedLabel := &graphql.Label{Key: "brand-new-label", Value: []interface{}{"aaa", "bbb"}}
+		expectedLabel := graphql.Label{Key: "brand-new-label", Value: []interface{}{"aaa", "bbb"}}
 
 		// add label
 		createdLabel := &graphql.Label{}
@@ -550,7 +550,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		saveQueryInExamples(t, addReq.Query(), "add application label")
 		err := tc.RunQuery(ctx, addReq, &createdLabel)
 		require.NoError(t, err)
-		assert.Equal(t, expectedLabel, createdLabel)
+		assert.Equal(t, &expectedLabel, createdLabel)
 		actualApp := getApp(ctx, t, actualApp.ID)
 		assert.Contains(t, actualApp.Labels[expectedLabel.Key], "aaa")
 		assert.Contains(t, actualApp.Labels[expectedLabel.Key], "bbb")
