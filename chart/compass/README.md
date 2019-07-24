@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Compass consists of the following sub-charts:
+Compass is a multi-tenant system which consists of components that provide a way to register, group, and manage your applications across multiple Kyma runtimes. Compass consists of the following sub-charts:
 
 - `connector` 
 - `director` 
@@ -10,14 +10,14 @@ The Compass consists of the following sub-charts:
 - `healthchecker`
 - `postgresql`
 
+To learn more, read the [Compass documentation](https://github.com/kyma-incubator/compass/blob/master/README.md).
 ## Details
 
-To learn more about the Compass, see the [Overview](https://github.com/kyma-incubator/compass#overview) document.
-
-## Configuration
+### Configuration
+The following table lists the configurable parameters of the Compass chart and their default values.
 
 | Parameter | Description | Values | Default |
 | --- | --- | --- | --- |
-| `database.useEmbedded` | Specifies whether `postgresql` chart should be installed | true/false | `true` |
+| **database.useEmbedded** | Specifies whether `postgresql` chart should be installed. | true/false | `true` |
 
-To learn how to use managed GCP database see [this document](https://github.com/kyma-incubator/compass/blob/master/docs/configure-managed-gcp-postgresql.md)
+To learn how to use managed GCP database, read [this](https://github.com/kyma-incubator/compass/blob/master/docs/configure-managed-gcp-postgresql.md) document.
