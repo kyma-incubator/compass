@@ -153,7 +153,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 				}
 		}
 		`, actualRuntime.ID, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
-
+	saveQueryInExamples(t, updateRuntimeReq.Query(), "update runtime")
 	//WHEN
 	err = tc.RunQuery(ctx, updateRuntimeReq, &actualRuntime)
 
@@ -443,7 +443,7 @@ func TestQuerySpecificRuntime(t *testing.T) {
 				}
 			}`, createdRuntime.ID, tc.gqlFieldsProvider.ForRuntime()))
 	err = tc.RunQuery(ctx, queryReq, &queriedRuntime)
-	saveQueryInExamples(t, queryReq.Query(), "query specific runtime")
+	saveQueryInExamples(t, queryReq.Query(), "query runtime")
 
 	//THEN
 	require.NoError(t, err)

@@ -26,7 +26,7 @@ func main() {
 		}
 		withoutExt := strings.Replace(f.Name(), ".graphql", "", -1)
 		withoutDash := strings.Replace(withoutExt, "-", " ", -1)
-		data = append(data, Data{Description: strings.Title(withoutDash), FileName: f.Name()})
+		data = append(data, Data{Description: withoutDash, FileName: f.Name()})
 	}
 
 	t, err := template.ParseFiles("./index.md.tpl")

@@ -953,7 +953,7 @@ func TestQuerySpecificApplication(t *testing.T) {
 				}
 			}`, actualApp.ID, tc.gqlFieldsProvider.ForApplication()))
 	err = tc.RunQuery(context.Background(), queryAppReq, &actualApp)
-	saveQueryInExamples(t, queryAppReq.Query(), "query specific application")
+	saveQueryInExamples(t, queryAppReq.Query(), "query application")
 
 	//THEN
 	require.NoError(t, err)
