@@ -5429,10 +5429,10 @@ func (ec *executionContext) _LabelDefinition_schema(ctx context.Context, field g
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*interface{})
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOJSON2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOJSON2ᚖinterface(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_createApplication(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -8690,7 +8690,7 @@ func (ec *executionContext) unmarshalInputLabelDefinitionInput(ctx context.Conte
 			}
 		case "schema":
 			var err error
-			it.Schema, err = ec.unmarshalOJSON2ᚖstring(ctx, v)
+			it.Schema, err = ec.unmarshalOJSON2ᚖinterface(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -12187,27 +12187,33 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return ec.marshalOInt2int(ctx, sel, *v)
 }
 
-func (ec *executionContext) unmarshalOJSON2string(ctx context.Context, v interface{}) (string, error) {
-	return graphql.UnmarshalString(v)
-}
-
-func (ec *executionContext) marshalOJSON2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	return graphql.MarshalString(v)
-}
-
-func (ec *executionContext) unmarshalOJSON2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
+func (ec *executionContext) unmarshalOJSON2interface(ctx context.Context, v interface{}) (interface{}, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOJSON2string(ctx, v)
-	return &res, err
+	return UnmarshalJSON(v)
 }
 
-func (ec *executionContext) marshalOJSON2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+func (ec *executionContext) marshalOJSON2interface(ctx context.Context, sel ast.SelectionSet, v interface{}) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec.marshalOJSON2string(ctx, sel, *v)
+	return MarshalJSON(v)
+}
+
+func (ec *executionContext) unmarshalOJSON2ᚖinterface(ctx context.Context, v interface{}) (*interface{}, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOJSON2interface(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOJSON2ᚖinterface(ctx context.Context, sel ast.SelectionSet, v *interface{}) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOJSON2interface(ctx, sel, *v)
 }
 
 func (ec *executionContext) marshalOLabelDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelDefinition(ctx context.Context, sel ast.SelectionSet, v LabelDefinition) graphql.Marshaler {

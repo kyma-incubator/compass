@@ -263,13 +263,13 @@ type Label struct {
 }
 
 type LabelDefinition struct {
-	Key    string  `json:"key"`
-	Schema *string `json:"schema"`
+	Key    string       `json:"key"`
+	Schema *interface{} `json:"schema"`
 }
 
 type LabelDefinitionInput struct {
-	Key    string  `json:"key"`
-	Schema *string `json:"schema"`
+	Key    string       `json:"key"`
+	Schema *interface{} `json:"schema"`
 }
 
 type LabelFilter struct {
