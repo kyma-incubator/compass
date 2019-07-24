@@ -54,8 +54,8 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	//THEN
 	require.NoError(t, err)
 	assert.Equal(t, "new-label", actualLabel.Key)
-	assert.Len(t, actualLabel.Values, 1)
-	assert.Contains(t, actualLabel.Values, "bbb")
+	assert.Len(t, actualLabel.Value, 1)
+	assert.Contains(t, actualLabel.Value, "bbb")
 
 	// get runtime and validate runtimes
 	getRuntimeReq := gcli.NewRequest(
@@ -141,7 +141,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	givenInput.Name = "updated-name"
 	givenInput.Description = ptrString("updated-description")
 	givenInput.Labels = &graphql.Labels{
-		"key": {"values", "aabbcc"},
+		"key": []string{"values", "aabbcc"},
 	}
 	runtimeInGQL, err = tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)

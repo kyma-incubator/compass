@@ -19,7 +19,7 @@ func TestCreateApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 		Description:    ptrString("my first wordpress application"),
 		HealthCheckURL: ptrString("http://mywordpress.com/health"),
 		Labels: &graphql.Labels{
-			"group": []string{"production", "experimental"},
+			"group": []interface{}{"production", "experimental"},
 		},
 	}
 
@@ -535,52 +535,40 @@ func TestUpdateApplicationParts(t *testing.T) {
 	defer deleteApplication(t, actualApp.ID)
 
 	t.Run("labels manipulation", func(t *testing.T) {
+		expectedLabel := &graphql.Label{Key: "brand-new-label", Value: []interface{}{"aaa", "bbb"}}
+
 		// add label
 		createdLabel := &graphql.Label{}
 
 		addReq := gcli.NewRequest(
 			fmt.Sprintf(`mutation {
-			result: addApplicationLabel(applicationID: "%s", key: "%s", values: %s) {
+			result: setApplicationLabel(applicationID: "%s", key: "%s", value: %s) {
 					key 
-					values
+					value
 				}
-			}`, actualApp.ID, "brand-new-label", "[\"aaa\",\"bbb\"]"))
+			}`, actualApp.ID, expectedLabel.Key, "[\"aaa\",\"bbb\"]"))
 		saveQueryInExamples(t, addReq.Query(), "add application label")
 		err := tc.RunQuery(ctx, addReq, &createdLabel)
 		require.NoError(t, err)
-		assert.Equal(t, &graphql.Label{Key: "brand-new-label", Values: []string{"aaa", "bbb"}}, createdLabel)
+		assert.Equal(t, expectedLabel, createdLabel)
 		actualApp := getApp(ctx, t, actualApp.ID)
-		assert.Contains(t, actualApp.Labels["brand-new-label"], "aaa")
-		assert.Contains(t, actualApp.Labels["brand-new-label"], "bbb")
+		assert.Contains(t, actualApp.Labels[expectedLabel.Key], "aaa")
+		assert.Contains(t, actualApp.Labels[expectedLabel.Key], "bbb")
 
-		// delete first label value
+		// delete label value
+		deletedLabel := graphql.Label{}
 		delReq := gcli.NewRequest(
 			fmt.Sprintf(`mutation {
-				result: deleteApplicationLabel(applicationID: "%s", key: "%s", values: %s) {
-						key 
-						values
-					}
-				}`, actualApp.ID, "brand-new-label", "[\"aaa\"]"))
-		saveQueryInExamples(t, delReq.Query(), "delete application label")
-		deletedLabel := &graphql.Label{}
-		err = tc.RunQuery(ctx, delReq, &deletedLabel)
-		require.NoError(t, err)
-		assert.Equal(t, &graphql.Label{Key: "brand-new-label", Values: []string{"bbb"}}, deletedLabel)
-		actualApp = getApp(ctx, t, actualApp.ID)
-
-		// delete second label value
-		delReq = gcli.NewRequest(
-			fmt.Sprintf(`mutation {
-			result: deleteApplicationLabel(applicationID: "%s", key: "%s", values: %s) {
+			result: deleteApplicationLabel(applicationID: "%s", key: "%s") {
 					key 
-					values
+					value
 				}
-			}`, actualApp.ID, "brand-new-label", "[\"bbb\"]"))
+			}`, actualApp.ID, expectedLabel.Key))
 		err = tc.RunQuery(ctx, delReq, &deletedLabel)
 		require.NoError(t, err)
-		assert.Equal(t, &graphql.Label{Key: "brand-new-label", Values: []string{}}, deletedLabel)
+		assert.Equal(t, expectedLabel, deletedLabel)
 		actualApp = getApp(ctx, t, actualApp.ID)
-		assert.Nil(t, actualApp.Labels["brand-new-label"])
+		assert.Nil(t, actualApp.Labels[expectedLabel.Key])
 
 	})
 
@@ -1027,7 +1015,7 @@ func generateSampleApplicationInput(placeholder string) graphql.ApplicationInput
 			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 			URL:  placeholder},
 		},
-		Labels: &graphql.Labels{placeholder: []string{placeholder}},
+		Labels: &graphql.Labels{placeholder: []interface{}{placeholder}},
 	}
 }
 
