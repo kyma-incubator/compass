@@ -5,31 +5,26 @@ import (
 )
 
 type validator struct {
+	schema *gojsonschema.Schema
 }
 
-func NewValidator() *validator {
-	return &validator{}
+func NewValidator(schema *gojsonschema.Schema) *validator {
+	return &validator{
+		schema: schema,
+	}
 }
 
-func (v *validator) Validate(jsonschema string, jsons ...string) (bool, error) {
+func (v *validator) Validate(json string) (bool, error) {
 
-	stringLoader := gojsonschema.NewStringLoader(jsonschema)
-	schema, err := gojsonschema.NewSchema(stringLoader)
+	if v.schema == nil {
+		return true, nil
+	}
+
+	jsonLoader := gojsonschema.NewStringLoader(json)
+	result, err := v.schema.Validate(jsonLoader)
 	if err != nil {
 		return false, err
 	}
 
-	for _, json := range jsons {
-		jsonLoader := gojsonschema.NewStringLoader(json)
-		result, err := schema.Validate(jsonLoader)
-		if err != nil {
-			return false, err
-		}
-
-		if result.Valid() == false {
-			return false, nil
-		}
-	}
-
-	return true, nil
+	return result.Valid(), nil
 }

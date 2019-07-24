@@ -3,6 +3,8 @@ package jsonschema_test
 import (
 	"testing"
 
+	"github.com/xeipuuv/gojsonschema"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
@@ -46,83 +48,49 @@ func TestValidator_Validate(t *testing.T) {
 		Name            string
 		InputJsonSchema string
 		InputJson       string
-		SecondJsonInput string
 		ExpectedBool    bool
-		ExpectedErr     bool
-		ExpectedErrMsg  string
-		isMultipleInput bool
 	}{
 		{
 			Name:            "Success",
 			InputJsonSchema: validInputJsonSchema,
 			InputJson:       inputJson,
 			ExpectedBool:    true,
-			isMultipleInput: false,
-		},
-		{
-			Name:            "Success multiple - all jsons valid",
-			InputJsonSchema: validInputJsonSchema,
-			InputJson:       inputJson,
-			SecondJsonInput: inputJson,
-			ExpectedBool:    true,
-			isMultipleInput: true,
-		},
-		{
-			Name:            "Multiple invalid - one json valid and one json invalid",
-			InputJsonSchema: validInputJsonSchema,
-			InputJson:       inputJson,
-			SecondJsonInput: invalidInputJson,
-			ExpectedBool:    false,
-			isMultipleInput: true,
-		},
-		{
-			Name:            "Multiple invalid - multiple jsons invalid",
-			InputJsonSchema: validInputJsonSchema,
-			InputJson:       invalidInputJson,
-			SecondJsonInput: invalidInputJson,
-			ExpectedBool:    false,
-			isMultipleInput: true,
 		},
 		{
 			Name:            "Json schema and json doesn't match",
 			InputJsonSchema: validInputJsonSchema,
 			InputJson:       invalidInputJson,
 			ExpectedBool:    false,
-			isMultipleInput: false,
 		},
 		{
 			Name:            "Empty",
 			InputJsonSchema: "",
 			InputJson:       "",
-			ExpectedBool:    false,
-			ExpectedErr:     true,
-			ExpectedErrMsg:  "EOF",
-			isMultipleInput: false,
+			ExpectedBool:    true,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 
-			svc := jsonschema.NewValidator()
-
-			var ok bool
+			var schema *gojsonschema.Schema
 			var err error
 
-			// when
-			if testCase.isMultipleInput == true {
-				ok, err = svc.Validate(testCase.InputJsonSchema, testCase.InputJson, testCase.SecondJsonInput)
+			if testCase.InputJsonSchema == "" {
+				schema = nil
 			} else {
-				ok, err = svc.Validate(testCase.InputJsonSchema, testCase.InputJson)
-			}
-
-			// then
-			if testCase.ExpectedErr == true {
-				require.Error(t, err)
-				assert.Equal(t, testCase.ExpectedErrMsg, err.Error())
-			} else {
+				stringLoader := gojsonschema.NewStringLoader(testCase.InputJsonSchema)
+				schema, err = gojsonschema.NewSchema(stringLoader)
 				require.NoError(t, err)
 			}
+
+			svc := jsonschema.NewValidator(schema)
+
+			// when
+			ok, err := svc.Validate(testCase.InputJson)
+			require.NoError(t, err)
+
+			// then
 			assert.Equal(t, testCase.ExpectedBool, ok)
 		})
 	}
