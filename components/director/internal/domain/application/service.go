@@ -17,6 +17,7 @@ type ApplicationRepository interface {
 	Create(item *model.Application) error
 	Update(item *model.Application) error
 	Delete(item *model.Application) error
+	GetAllByTenantAndRuntimeID(tenant, runtimeID string) ([]*model.Application, error)
 }
 
 //go:generate mockery -name=DocumentRepository -output=automock -outpkg=automock -case=underscore
@@ -275,4 +276,13 @@ func (s *service) deleteRelatedResources(applicationID string) error {
 	}
 
 	return nil
+}
+
+func (s *service) GetAllByRuntimeID(ctx context.Context, runtimeId string) ([]*model.Application, error) {
+	tenantName, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	return s.app.GetAllByTenantAndRuntimeID(tenantName, runtimeId)
 }

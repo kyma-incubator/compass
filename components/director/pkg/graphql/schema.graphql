@@ -472,6 +472,8 @@ input LabelFilter {
 type Query {
     applications(filter: [LabelFilter!], first: Int = 100, after: PageCursor):  ApplicationPage!
     application(id: ID!): Application
+    applicationsForRuntime(runtimeID: ID!): [Application]!
+
 
     runtimes(filter: [LabelFilter!], first: Int = 100, after: PageCursor): RuntimePage!
     runtime(id: ID!): Runtime

@@ -3,6 +3,8 @@ package application
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -17,6 +19,7 @@ type ApplicationService interface {
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error)
 	SetLabel(ctx context.Context, applicationID string, key string, value interface{}) error
 	DeleteLabel(ctx context.Context, applicationID string, key string) error
+	GetAllByRuntimeID(ctx context.Context, runtimeId string) ([]*model.Application, error)
 }
 
 //go:generate mockery -name=ApplicationConverter -output=automock -outpkg=automock -case=underscore
@@ -318,4 +321,14 @@ func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*g
 	gqlWebhooks := r.webhookConverter.MultipleToGraphQL(webhooks)
 
 	return gqlWebhooks, nil
+}
+
+func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string) ([]*graphql.Application, error) {
+	applications, err := r.appSvc.GetAllByRuntimeID(ctx, runtimeID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting all Application for Runtime")
+	}
+
+	return r.appConverter.MultipleToGraphQL(applications), nil
+
 }

@@ -110,3 +110,14 @@ func (r *inMemoryRepository) findApplicationNameWithinTenant(tenant, name string
 	}
 	return false
 }
+
+func (r *inMemoryRepository) GetAllByTenantAndRuntimeID(tenant, runtimeID string) ([]*model.Application, error) {
+	var apps []*model.Application
+
+	for _, app := range r.store {
+		if app.Tenant == tenant {
+			apps = append(apps, app)
+		}
+	}
+	return apps, nil
+}
