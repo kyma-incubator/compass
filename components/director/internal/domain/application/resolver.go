@@ -15,8 +15,8 @@ type ApplicationService interface {
 	Get(ctx context.Context, id string) (*model.Application, error)
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error)
-	AddLabel(ctx context.Context, applicationID string, key string, values []string) error
-	DeleteLabel(ctx context.Context, applicationID string, key string, values []string) error
+	SetLabel(ctx context.Context, applicationID string, key string, value interface{}) error
+	DeleteLabel(ctx context.Context, applicationID string, key string) error
 }
 
 //go:generate mockery -name=ApplicationConverter -output=automock -outpkg=automock -case=underscore
@@ -201,20 +201,20 @@ func (r *Resolver) DeleteApplication(ctx context.Context, id string) (*graphql.A
 
 	return deletedApp, nil
 }
-func (r *Resolver) AddApplicationLabel(ctx context.Context, applicationID string, key string, values []string) (*graphql.Label, error) {
-	err := r.appSvc.AddLabel(ctx, applicationID, key, values)
+func (r *Resolver) SetApplicationLabel(ctx context.Context, applicationID string, key string, value interface{}) (*graphql.Label, error) {
+	err := r.appSvc.SetLabel(ctx, applicationID, key, value)
 	if err != nil {
 		return nil, err
 	}
 
 	return &graphql.Label{
-		Key:    key,
-		Values: values,
+		Key:   key,
+		Value: value,
 	}, nil
 }
 
-func (r *Resolver) DeleteApplicationLabel(ctx context.Context, applicationID string, key string, values []string) (*graphql.Label, error) {
-	err := r.appSvc.DeleteLabel(ctx, applicationID, key, values)
+func (r *Resolver) DeleteApplicationLabel(ctx context.Context, applicationID string, key string) (*graphql.Label, error) {
+	err := r.appSvc.DeleteLabel(ctx, applicationID, key)
 	if err != nil {
 		return nil, err
 	}
@@ -225,8 +225,8 @@ func (r *Resolver) DeleteApplicationLabel(ctx context.Context, applicationID str
 	}
 
 	return &graphql.Label{
-		Key:    key,
-		Values: app.Labels[key],
+		Key:   key,
+		Value: app.Labels[key],
 	}, nil
 }
 

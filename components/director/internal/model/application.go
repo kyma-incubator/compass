@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
+
+	"k8s.io/apimachinery/pkg/api/validation"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
-	"github.com/kyma-incubator/compass/components/director/pkg/strings"
 )
 
 type Application struct {
@@ -13,7 +16,7 @@ type Application struct {
 	Tenant         string
 	Name           string
 	Description    *string
-	Labels         map[string][]string
+	Labels         map[string]interface{}
 	Status         *ApplicationStatus
 	HealthCheckURL *string
 }
@@ -38,50 +41,29 @@ type ApplicationPage struct {
 	TotalCount int
 }
 
-func (a *Application) AddLabel(key string, values []string) {
+func (a *Application) SetLabel(key string, value interface{}) {
 	if a.Labels == nil {
-		a.Labels = make(map[string][]string)
+		a.Labels = make(map[string]interface{})
 	}
 
-	if _, exists := a.Labels[key]; !exists {
-		a.Labels[key] = strings.Unique(values)
-		return
-	}
-
-	a.Labels[key] = strings.Unique(append(a.Labels[key], values...))
+	a.Labels[key] = value
 }
 
-func (a *Application) DeleteLabel(key string, valuesToDelete []string) error {
-	currentValues, exists := a.Labels[key]
+func (a *Application) DeleteLabel(key string) error {
+	_, exists := a.Labels[key]
 
 	if !exists {
 		return fmt.Errorf("label %s doesn't exist", key)
 	}
 
-	if len(valuesToDelete) == 0 {
-		delete(a.Labels, key)
-		return nil
-	}
-
-	set := strings.SliceToMap(currentValues)
-	for _, val := range valuesToDelete {
-		delete(set, val)
-	}
-
-	filteredValues := strings.MapToSlice(set)
-	if len(filteredValues) == 0 {
-		delete(a.Labels, key)
-		return nil
-	}
-
-	a.Labels[key] = filteredValues
+	delete(a.Labels, key)
 	return nil
 }
 
 type ApplicationInput struct {
 	Name           string
 	Description    *string
-	Labels         map[string][]string
+	Labels         map[string]interface{}
 	HealthCheckURL *string
 	Webhooks       []*WebhookInput
 	Apis           []*APIDefinitionInput
@@ -102,4 +84,11 @@ func (i *ApplicationInput) ToApplication(id, tenant string) *Application {
 		Labels:         i.Labels,
 		HealthCheckURL: i.HealthCheckURL,
 	}
+}
+
+func (i *ApplicationInput) Validate() error {
+	if errorMgs := validation.NameIsDNSSubdomain(i.Name, false); errorMgs != nil {
+		return errors.Errorf("%v", errorMgs)
+	}
+	return nil
 }

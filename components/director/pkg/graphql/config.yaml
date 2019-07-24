@@ -26,6 +26,8 @@ models:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.QueryParams"
   CLOB:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.CLOB"
+  JSON:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.JSON"
   PageCursor:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.PageCursor"
   Application:

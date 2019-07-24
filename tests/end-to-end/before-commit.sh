@@ -33,7 +33,7 @@ if [ "$1" == "$CI_FLAG" ]; then
 	buildEnv="env CGO_ENABLED=0"
 fi
 
-${buildEnv} go test -c ./...
+${buildEnv} go test -c ./director/
 goBuildResult=$?
 
 if [ ${goBuildResult} != 0 ]; then
@@ -108,4 +108,29 @@ if [[ $(echo ${#goVetResult}) != 0 ]]
     	echo -e "${RED}✗ go vet${NC}\n$goVetResult${NC}"
     	exit 1;
 	else echo -e "${GREEN}√ go vet${NC}"
+fi
+
+#
+# Keep examples up-to-date
+#
+echo -e "${GREEN}? Checking GraphQL examples${NC}"
+./gen-examples.sh
+genExamplesResult=$?
+
+if [[ ${genExamplesResult} != 0 ]]
+	then
+    	echo -e "${RED}✗ Checking GraphQL examples${NC}\n$genExamplesResult${NC}"
+    	exit 1;
+	else echo -e "${GREEN}√ Checking GraphQL examples${NC}"
+fi
+
+##
+# Ensuring that examples are up-to-date
+##
+if [[ "$1" == "$CI_FLAG" ]]; then
+  if [[ -n $(git status -s) ]]; then
+    echo -e "${RED}✗ Code and examples are out-of-sync${NC}"
+    git status -s
+    exit 1
+  fi
 fi

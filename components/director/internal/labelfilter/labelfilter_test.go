@@ -10,23 +10,15 @@ import (
 
 func TestFromGraphQL(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
-		inOp := graphql.FilterOperatorAny
+		query := "foo"
 		in := &graphql.LabelFilter{
-			Label: "label",
-			Values: []string{
-				"foo",
-				"bar",
-			},
-			Operator: &inOp,
+			Key:   "label",
+			Query: &query,
 		}
 
 		expected := &labelfilter.LabelFilter{
-			Label: "label",
-			Values: []string{
-				"foo",
-				"bar",
-			},
-			Operator: labelfilter.FilterOperatorAny,
+			Key:   "label",
+			Query: &query,
 		}
 
 		result := labelfilter.FromGraphQL(in)
@@ -34,23 +26,15 @@ func TestFromGraphQL(t *testing.T) {
 		assert.Equal(t, expected, result)
 	})
 
-	t.Run("Default value", func(t *testing.T) {
+	t.Run("Empty query", func(t *testing.T) {
 		in := &graphql.LabelFilter{
-			Label: "label",
-			Values: []string{
-				"foo",
-				"bar",
-			},
-			Operator: nil,
+			Key:   "label",
+			Query: nil,
 		}
 
 		expected := &labelfilter.LabelFilter{
-			Label: "label",
-			Values: []string{
-				"foo",
-				"bar",
-			},
-			Operator: labelfilter.FilterOperatorAll,
+			Key:   "label",
+			Query: nil,
 		}
 
 		result := labelfilter.FromGraphQL(in)
@@ -60,40 +44,27 @@ func TestFromGraphQL(t *testing.T) {
 }
 
 func TestMultipleFromGraphQL(t *testing.T) {
-	inOp := graphql.FilterOperatorAll
+	queryFoo := "foo"
+	queryBar := "bar"
 	in := []*graphql.LabelFilter{
 		{
-			Label: "label",
-			Values: []string{
-				"foo",
-				"bar",
-			},
-			Operator: &inOp,
+			Key:   "label",
+			Query: &queryFoo,
 		},
 		{
-			Label: "label2",
-			Values: []string{
-				"test",
-			},
-			Operator: &inOp,
+			Key:   "label2",
+			Query: &queryBar,
 		},
 	}
 
 	expected := []*labelfilter.LabelFilter{
 		{
-			Label: "label",
-			Values: []string{
-				"foo",
-				"bar",
-			},
-			Operator: labelfilter.FilterOperatorAll,
+			Key:   "label",
+			Query: &queryFoo,
 		},
 		{
-			Label: "label2",
-			Values: []string{
-				"test",
-			},
-			Operator: labelfilter.FilterOperatorAll,
+			Key:   "label2",
+			Query: &queryBar,
 		},
 	}
 

@@ -4,9 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"github.com/pkg/errors"
@@ -59,6 +58,11 @@ func (s *service) Get(ctx context.Context, id string) (*model.Runtime, error) {
 }
 
 func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, error) {
+	err := in.Validate()
+	if err != nil {
+		return "", errors.Wrap(err, "while validating Runtime input")
+	}
+
 	runtimeTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", errors.Wrapf(err, "while loading tenant from context")
@@ -89,18 +93,21 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 }
 
 func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) error {
+	err := in.Validate()
+	if err != nil {
+		return errors.Wrap(err, "while validating Runtime input")
+	}
+
 	rtm, err := s.Get(ctx, id)
 	if err != nil {
 		return errors.Wrap(err, "while getting Runtime")
 	}
 
-	rtm.Name = in.Name
-	rtm.Description = in.Description
-	rtm.Labels = in.Labels
+	rtm = in.ToRuntime(id, rtm.Tenant)
 
 	err = s.repo.Update(rtm)
 	if err != nil {
-		return errors.Wrapf(err, "while updating Runtime")
+		return errors.Wrap(err, "while updating Runtime")
 	}
 
 	return nil
@@ -115,13 +122,13 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return s.repo.Delete(rtm)
 }
 
-func (s *service) AddLabel(ctx context.Context, runtimeID string, key string, values []string) error {
+func (s *service) SetLabel(ctx context.Context, runtimeID string, key string, value interface{}) error {
 	rtm, err := s.Get(ctx, runtimeID)
 	if err != nil {
 		return errors.Wrap(err, "while getting Runtime")
 	}
 
-	rtm.AddLabel(key, values)
+	rtm.SetLabel(key, value)
 
 	err = s.repo.Update(rtm)
 	if err != nil {
@@ -131,13 +138,13 @@ func (s *service) AddLabel(ctx context.Context, runtimeID string, key string, va
 	return nil
 }
 
-func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string, values []string) error {
+func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string) error {
 	rtm, err := s.Get(ctx, runtimeID)
 	if err != nil {
 		return errors.Wrap(err, "while getting Runtime")
 	}
 
-	err = rtm.DeleteLabel(key, values)
+	err = rtm.DeleteLabel(key)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting label with key %s", key)
 	}

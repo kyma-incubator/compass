@@ -39,25 +39,6 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	assertRuntime(t, givenInput, actualRuntime)
 	assert.NotNil(t, actualRuntime.AgentAuth)
 
-	// update runtime
-	givenInput.Description = ptrString("modified-runtime-1-description")
-	runtimeInGQL, err = tc.graphqlizer.RuntimeInputToGQL(givenInput)
-	require.NoError(t, err)
-
-	// WHEN
-	updateReq := gcli.NewRequest(
-		fmt.Sprintf(`mutation{ 
-			result: updateRuntime(id: "%s", in: %s) {
-					%s
-				}
-			}`, actualRuntime.ID, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
-	saveQueryInExamples(t, updateReq.Query(), "update runtime")
-	err = tc.RunQuery(ctx, updateReq, &actualRuntime)
-
-	//THEN
-	require.NoError(t, err)
-	assert.Equal(t, *givenInput.Description, *actualRuntime.Description)
-
 	// add Label
 	actualLabel := graphql.Label{}
 
@@ -102,6 +83,87 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	//THEN
 	require.NoError(t, err)
 
+	// add agent auth
+	// GIVEN
+	in := generateSampleApplicationInput("app")
+
+	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
+	require.NoError(t, err)
+	createAppReq := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+  				result: createApplication(in: %s) {
+    					%s
+					}
+				}`, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
+	actualApp := ApplicationExt{}
+
+	//WHEN
+	err = tc.RunQuery(ctx, createAppReq, &actualApp)
+
+	//THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, actualApp.ID)
+	defer deleteApplication(t, actualApp.ID)
+
+	// set Auth
+	// GIVEN
+	authIn := graphql.AuthInput{
+		Credential: &graphql.CredentialDataInput{
+			Basic: &graphql.BasicCredentialDataInput{
+				Username: "x-men",
+				Password: "secret",
+			}}}
+	actualRuntimeAuth := graphql.RuntimeAuth{}
+
+	authInStr, err := tc.graphqlizer.AuthInputToGQL(&authIn)
+	require.NoError(t, err)
+	setAuthReq := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: setAPIAuth(apiID: "%s", runtimeID: "%s", in: %s) {
+					%s
+				}
+			}`, actualApp.Apis.Data[0].ID, actualRuntime.ID, authInStr, tc.gqlFieldsProvider.ForRuntimeAuth()))
+
+	//WHEN
+	err = tc.RunQuery(ctx, setAuthReq, &actualRuntimeAuth)
+
+	//THEN
+	require.NoError(t, err)
+	require.NotNil(t, actualRuntimeAuth.Auth)
+	assert.Equal(t, actualRuntime.ID, actualRuntimeAuth.RuntimeID)
+	actualBasic, ok := actualRuntimeAuth.Auth.Credential.(*graphql.BasicCredentialData)
+	require.True(t, ok)
+	assert.Equal(t, "x-men", actualBasic.Username)
+	assert.Equal(t, "secret", actualBasic.Password)
+
+	// update runtime, check if only simple values are updated
+	//GIVEN
+	givenInput.Name = "updated-name"
+	givenInput.Description = ptrString("updated-description")
+	givenInput.Labels = &graphql.Labels{
+		"key": {"values", "aabbcc"},
+	}
+	runtimeInGQL, err = tc.graphqlizer.RuntimeInputToGQL(givenInput)
+	require.NoError(t, err)
+	actualRuntime = graphql.Runtime{ID: actualRuntime.ID}
+	updateRuntimeReq := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+				result: updateRuntime(id: "%s", in: %s) {
+					%s
+				}
+		}
+		`, actualRuntime.ID, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
+	saveQueryInExamples(t, updateRuntimeReq.Query(), "update runtime")
+	//WHEN
+	err = tc.RunQuery(ctx, updateRuntimeReq, &actualRuntime)
+
+	//THEN
+	require.NoError(t, err)
+	assert.Equal(t, givenInput.Name, actualRuntime.Name)
+	assert.Equal(t, *givenInput.Description, *actualRuntime.Description)
+	assert.Equal(t, *givenInput.Labels, actualRuntime.Labels)
+	assert.NotNil(t, actualRuntime.AgentAuth)
+
 	// delete runtime
 
 	// WHEN
@@ -111,6 +173,111 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 
 	//THEN
 	require.NoError(t, err)
+}
+
+func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	firstRuntimeName := "unique-name-1"
+	givenInput := graphql.RuntimeInput{
+		Name:        firstRuntimeName,
+		Description: ptrString("runtime-1-description"),
+		Labels:      &graphql.Labels{"ggg": []string{"hhh"}},
+	}
+	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
+	require.NoError(t, err)
+	firstRuntime := graphql.Runtime{}
+	createReq := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: createRuntime(in: %s) {
+					%s
+				}
+			}`, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
+	// WHEN
+	err = tc.RunQuery(ctx, createReq, &firstRuntime)
+
+	//THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, firstRuntime.ID)
+	assertRuntime(t, givenInput, firstRuntime)
+	assert.NotNil(t, firstRuntime.AgentAuth)
+	defer deleteRuntime(t, firstRuntime.ID)
+
+	// try to create second runtime with first runtime name
+	//GIVEN
+	givenInput = graphql.RuntimeInput{
+		Name:        firstRuntimeName,
+		Description: ptrString("runtime-1-description"),
+		Labels:      &graphql.Labels{"ggg": []string{"hhh"}},
+	}
+	runtimeInGQL, err = tc.graphqlizer.RuntimeInputToGQL(givenInput)
+	require.NoError(t, err)
+	createReq = gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: createRuntime(in: %s) {
+					%s
+				}
+			}`, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
+	saveQueryInExamples(t, createReq.Query(), "create runtime")
+
+	// WHEN
+	err = tc.RunQuery(ctx, createReq, nil)
+
+	//THEN
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "Runtime name is not unique within tenant")
+
+	// create second runtime
+	//GIVEN
+	secondRuntimeName := "unique-name-2"
+	givenInput = graphql.RuntimeInput{
+		Name:        secondRuntimeName,
+		Description: ptrString("runtime-1-description"),
+		Labels:      &graphql.Labels{"ggg": []string{"hhh"}},
+	}
+	runtimeInGQL, err = tc.graphqlizer.RuntimeInputToGQL(givenInput)
+	require.NoError(t, err)
+	secondRuntime := graphql.Runtime{}
+	createReq = gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: createRuntime(in: %s) {
+					%s
+				}
+			}`, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
+
+	// WHEN
+	err = tc.RunQuery(ctx, createReq, &secondRuntime)
+
+	//THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, secondRuntime.ID)
+	assertRuntime(t, givenInput, secondRuntime)
+	assert.NotNil(t, secondRuntime.AgentAuth)
+	defer deleteRuntime(t, secondRuntime.ID)
+
+	//Update first runtime with second runtime name, failed
+
+	//GIVEN
+	givenInput = graphql.RuntimeInput{
+		Name:        secondRuntimeName,
+		Description: ptrString("runtime-1-description"),
+		Labels:      &graphql.Labels{"ggg": []string{"hhh"}},
+	}
+	runtimeInGQL, err = tc.graphqlizer.RuntimeInputToGQL(givenInput)
+	require.NoError(t, err)
+	createReq = gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: updateRuntime(id: "%s", in :%s) {
+					%s
+				}
+			}`, firstRuntime.ID, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
+
+	// WHEN
+	err = tc.RunQuery(ctx, createReq, &secondRuntime)
+
+	//THEN
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "Runtime name is not unique within tenant")
 }
 
 func TestSetAndDeleteAPIAuth(t *testing.T) {
@@ -184,6 +351,7 @@ func TestSetAndDeleteAPIAuth(t *testing.T) {
 	require.True(t, ok)
 	assert.Equal(t, "x-men", actualBasic.Username)
 	assert.Equal(t, "secret", actualBasic.Password)
+
 	// delete Auth
 	delAuthReq := gcli.NewRequest(
 		fmt.Sprintf(`mutation {
@@ -193,7 +361,6 @@ func TestSetAndDeleteAPIAuth(t *testing.T) {
 			}`, actualApp.Apis.Data[0].ID, actualRuntime.ID, tc.gqlFieldsProvider.ForRuntimeAuth()))
 	err = tc.RunQuery(ctx, delAuthReq, nil)
 	require.NoError(t, err)
-
 }
 
 func TestQueryRuntimes(t *testing.T) {
@@ -276,7 +443,7 @@ func TestQuerySpecificRuntime(t *testing.T) {
 				}
 			}`, createdRuntime.ID, tc.gqlFieldsProvider.ForRuntime()))
 	err = tc.RunQuery(ctx, queryReq, &queriedRuntime)
-	saveQueryInExamples(t, queryReq.Query(), "query specific runtime")
+	saveQueryInExamples(t, queryReq.Query(), "query runtime")
 
 	//THEN
 	require.NoError(t, err)

@@ -381,12 +381,8 @@ func TestResolver_Runtimes(t *testing.T) {
 	first := 2
 	gqlAfter := graphql.PageCursor("test")
 	after := "test"
-	filter := []*labelfilter.LabelFilter{
-		{Label: "", Values: []string{"foo", "bar"}, Operator: labelfilter.FilterOperatorAll},
-	}
-	gqlFilter := []*graphql.LabelFilter{
-		{Label: "", Values: []string{"foo", "bar"}},
-	}
+	filter := []*labelfilter.LabelFilter{{Key: ""}}
+	gqlFilter := []*graphql.LabelFilter{{Key: ""}}
 	testErr := errors.New("Test error")
 
 	testCases := []struct {
@@ -456,14 +452,14 @@ func TestResolver_Runtimes(t *testing.T) {
 	}
 }
 
-func TestResolver_AddRuntimeLabel(t *testing.T) {
+func TestResolver_SetRuntimeLabel(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
 	runtimeID := "foo"
 	gqlLabel := &graphql.Label{
-		Key:    "key",
-		Values: []string{"foo", "bar"},
+		Key:   "key",
+		Value: []string{"foo", "bar"},
 	}
 
 	testCases := []struct {
@@ -472,7 +468,7 @@ func TestResolver_AddRuntimeLabel(t *testing.T) {
 		ConverterFn    func() *automock.RuntimeConverter
 		InputRuntimeID string
 		InputKey       string
-		InputValues    []string
+		InputValue     interface{}
 		ExpectedLabel  *graphql.Label
 		ExpectedErr    error
 	}{
@@ -480,7 +476,7 @@ func TestResolver_AddRuntimeLabel(t *testing.T) {
 			Name: "Success",
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("AddLabel", context.TODO(), runtimeID, gqlLabel.Key, gqlLabel.Values).Return(nil).Once()
+				svc.On("SetLabel", context.TODO(), runtimeID, gqlLabel.Key, gqlLabel.Value).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -489,7 +485,7 @@ func TestResolver_AddRuntimeLabel(t *testing.T) {
 			},
 			InputRuntimeID: runtimeID,
 			InputKey:       gqlLabel.Key,
-			InputValues:    gqlLabel.Values,
+			InputValue:     gqlLabel.Value,
 			ExpectedLabel:  gqlLabel,
 			ExpectedErr:    nil,
 		},
@@ -497,7 +493,7 @@ func TestResolver_AddRuntimeLabel(t *testing.T) {
 			Name: "Returns error when adding label to runtime failed",
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("AddLabel", context.TODO(), runtimeID, gqlLabel.Key, gqlLabel.Values).Return(testErr).Once()
+				svc.On("SetLabel", context.TODO(), runtimeID, gqlLabel.Key, gqlLabel.Value).Return(testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -506,7 +502,7 @@ func TestResolver_AddRuntimeLabel(t *testing.T) {
 			},
 			InputRuntimeID: runtimeID,
 			InputKey:       gqlLabel.Key,
-			InputValues:    gqlLabel.Values,
+			InputValue:     gqlLabel.Value,
 			ExpectedLabel:  nil,
 			ExpectedErr:    testErr,
 		},
@@ -520,7 +516,7 @@ func TestResolver_AddRuntimeLabel(t *testing.T) {
 			resolver := runtime.NewResolver(svc, converter)
 
 			// when
-			result, err := resolver.AddRuntimeLabel(context.TODO(), testCase.InputRuntimeID, testCase.InputKey, testCase.InputValues)
+			result, err := resolver.SetRuntimeLabel(context.TODO(), testCase.InputRuntimeID, testCase.InputKey, testCase.InputValue)
 
 			// then
 			assert.Equal(t, testCase.ExpectedLabel, result)
@@ -537,11 +533,11 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	runtimeID := "foo"
-	rtm := fixModelRuntimeWithLabels(runtimeID, "Foo", map[string][]string{"key": {"foo", "bar"}})
+	rtm := fixModelRuntimeWithLabels(runtimeID, "Foo", map[string]interface{}{"key": []string{"foo", "bar"}})
 
 	gqlLabel := &graphql.Label{
-		Key:    "key",
-		Values: []string{"foo", "bar"},
+		Key:   "key",
+		Value: []string{"foo", "bar"},
 	}
 
 	testCases := []struct {
@@ -550,7 +546,6 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 		ConverterFn    func() *automock.RuntimeConverter
 		InputRuntimeID string
 		InputKey       string
-		InputValues    []string
 		ExpectedLabel  *graphql.Label
 		ExpectedErr    error
 	}{
@@ -559,7 +554,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", context.TODO(), runtimeID).Return(rtm, nil).Once()
-				svc.On("DeleteLabel", context.TODO(), runtimeID, gqlLabel.Key, gqlLabel.Values).Return(nil).Once()
+				svc.On("DeleteLabel", context.TODO(), runtimeID, gqlLabel.Key).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -568,7 +563,6 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			},
 			InputRuntimeID: runtimeID,
 			InputKey:       gqlLabel.Key,
-			InputValues:    gqlLabel.Values,
 			ExpectedLabel:  gqlLabel,
 			ExpectedErr:    nil,
 		},
@@ -576,7 +570,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			Name: "Returns error when runtime retrieval failed",
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("DeleteLabel", context.TODO(), runtimeID, gqlLabel.Key, gqlLabel.Values).Return(nil).Once()
+				svc.On("DeleteLabel", context.TODO(), runtimeID, gqlLabel.Key).Return(nil).Once()
 				svc.On("Get", context.TODO(), runtimeID).Return(nil, testErr).Once()
 				return svc
 			},
@@ -586,7 +580,6 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			},
 			InputRuntimeID: runtimeID,
 			InputKey:       gqlLabel.Key,
-			InputValues:    gqlLabel.Values,
 			ExpectedLabel:  nil,
 			ExpectedErr:    testErr,
 		},
@@ -594,7 +587,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			Name: "Returns error when deleting runtime's label failed",
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("DeleteLabel", context.TODO(), runtimeID, gqlLabel.Key, gqlLabel.Values).Return(testErr).Once()
+				svc.On("DeleteLabel", context.TODO(), runtimeID, gqlLabel.Key).Return(testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -603,7 +596,6 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			},
 			InputRuntimeID: runtimeID,
 			InputKey:       gqlLabel.Key,
-			InputValues:    gqlLabel.Values,
 			ExpectedLabel:  nil,
 			ExpectedErr:    testErr,
 		},
@@ -617,7 +609,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			resolver := runtime.NewResolver(svc, converter)
 
 			// when
-			result, err := resolver.DeleteRuntimeLabel(context.TODO(), testCase.InputRuntimeID, testCase.InputKey, testCase.InputValues)
+			result, err := resolver.DeleteRuntimeLabel(context.TODO(), testCase.InputRuntimeID, testCase.InputKey)
 
 			// then
 			assert.Equal(t, testCase.ExpectedLabel, result)

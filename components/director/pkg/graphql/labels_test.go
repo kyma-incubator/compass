@@ -11,61 +11,71 @@ func TestLabels_UnmarshalGQL(t *testing.T) {
 	for name, tc := range map[string]struct {
 		input    interface{}
 		err      bool
-		errmsg   string
+		errMsg   string
 		expected Labels
 	}{
 		//given
-		"correct input": {
-			input:    map[string]interface{}{"label1": []interface{}{"val1", "val2"}},
+		"correct input map[string]string": {
+			input:    map[string]interface{}{"annotation": "val1"},
 			err:      false,
-			expected: Labels{"label1": []string{"val1", "val2"}},
+			expected: Labels{"annotation": "val1"},
+		},
+		"correct input map[string]int": {
+			input:    map[string]interface{}{"annotation": 123},
+			err:      false,
+			expected: Labels{"annotation": 123},
+		},
+		"correct input map[string][]string": {
+			input:    map[string]interface{}{"annotation": []string{"val1", "val2"}},
+			err:      false,
+			expected: Labels{"annotation": []string{"val1", "val2"}},
 		},
 		"error: input is nil": {
 			input:  nil,
 			err:    true,
-			errmsg: "input should not be nil",
-		},
-		"error: invalid input map type": {
-			input:  map[string]interface{}{"label": "invalid type"},
+			errMsg: "input should not be nil"},
+		"error: invalid input type": {
+			input:  map[int]interface{}{123: "invalid map"},
 			err:    true,
-			errmsg: "given value `string` must be a string array",
-		},
-		"error: invalid input": {
-			input:  "invalid labels",
-			err:    true,
-			errmsg: "unexpected input type: string, should be map[string][]string",
-		},
+			errMsg: "unexpected Labels type: map[int]interface {}, should be map[string]interface{}"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			//when
-			l := Labels{}
-			err := l.UnmarshalGQL(tc.input)
+			a := Labels{}
+			err := a.UnmarshalGQL(tc.input)
 
 			//then
 			if tc.err {
 				assert.Error(t, err)
-				assert.EqualError(t, err, tc.errmsg)
-				assert.Empty(t, l)
+				assert.EqualError(t, err, tc.errMsg)
+				assert.Empty(t, a)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tc.expected, l)
+				assert.Equal(t, tc.expected, a)
 			}
 		})
 	}
 }
 
 func TestLabels_MarshalGQL(t *testing.T) {
-	//given
-	fixLabels := Labels{
-		"label1": []string{"val1", "val2"},
+	as := assert.New(t)
+
+	var tests = []struct {
+		input    Labels
+		expected string
+	}{
+		//given
+		{Labels{"annotation": 123}, `{"annotation":123}`},
+		{Labels{"annotation": []string{"val1", "val2"}}, `{"annotation":["val1","val2"]}`},
 	}
-	expectedLabels := `{"label1":["val1","val2"]}`
-	buf := bytes.Buffer{}
 
-	//when
-	fixLabels.MarshalGQL(&buf)
+	for _, test := range tests {
+		//when
+		buf := bytes.Buffer{}
+		test.input.MarshalGQL(&buf)
 
-	//then
-	assert.NotNil(t, buf)
-	assert.Equal(t, buf.String(), expectedLabels)
+		//then
+		as.NotNil(buf)
+		as.Equal(test.expected, buf.String())
+	}
 }

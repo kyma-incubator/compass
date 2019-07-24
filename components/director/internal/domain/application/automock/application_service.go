@@ -12,20 +12,6 @@ type ApplicationService struct {
 	mock.Mock
 }
 
-// AddLabel provides a mock function with given fields: ctx, applicationID, key, values
-func (_m *ApplicationService) AddLabel(ctx context.Context, applicationID string, key string, values []string) error {
-	ret := _m.Called(ctx, applicationID, key, values)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, []string) error); ok {
-		r0 = rf(ctx, applicationID, key, values)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // Create provides a mock function with given fields: ctx, in
 func (_m *ApplicationService) Create(ctx context.Context, in model.ApplicationInput) (string, error) {
 	ret := _m.Called(ctx, in)
@@ -61,13 +47,13 @@ func (_m *ApplicationService) Delete(ctx context.Context, id string) error {
 	return r0
 }
 
-// DeleteLabel provides a mock function with given fields: ctx, applicationID, key, values
-func (_m *ApplicationService) DeleteLabel(ctx context.Context, applicationID string, key string, values []string) error {
-	ret := _m.Called(ctx, applicationID, key, values)
+// DeleteLabel provides a mock function with given fields: ctx, applicationID, key
+func (_m *ApplicationService) DeleteLabel(ctx context.Context, applicationID string, key string) error {
+	ret := _m.Called(ctx, applicationID, key)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, []string) error); ok {
-		r0 = rf(ctx, applicationID, key, values)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, applicationID, key)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -119,6 +105,20 @@ func (_m *ApplicationService) List(ctx context.Context, filter []*labelfilter.La
 	}
 
 	return r0, r1
+}
+
+// SetLabel provides a mock function with given fields: ctx, applicationID, key, value
+func (_m *ApplicationService) SetLabel(ctx context.Context, applicationID string, key string, value interface{}) error {
+	ret := _m.Called(ctx, applicationID, key, value)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, interface{}) error); ok {
+		r0 = rf(ctx, applicationID, key, value)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // Update provides a mock function with given fields: ctx, id, in

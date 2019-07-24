@@ -105,7 +105,12 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return "", errors.Wrapf(err, "while loading tenant from context")
+		return "", errors.Wrap(err, "while loading tenant from context")
+	}
+
+	err = in.Validate()
+	if err != nil {
+		return "", errors.Wrap(err, "while validating Application input")
 	}
 
 	id := s.uidService.Generate()
@@ -118,33 +123,37 @@ func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string
 
 	err = s.createRelatedResources(in, app.ID)
 	if err != nil {
-		return "", errors.Wrapf(err, "while creating related Application resources")
+		return "", errors.Wrap(err, "while creating related Application resources")
 	}
 
 	return id, nil
 }
 
 func (s *service) Update(ctx context.Context, id string, in model.ApplicationInput) error {
+	err := in.Validate()
+	if err != nil {
+		return errors.Wrap(err, "while validating Application input")
+	}
+
 	app, err := s.Get(ctx, id)
 	if err != nil {
 		return errors.Wrap(err, "while getting Application")
 	}
-
 	app = in.ToApplication(app.ID, app.Tenant)
 
 	err = s.app.Update(app)
 	if err != nil {
-		return errors.Wrapf(err, "while updating Application")
+		return errors.Wrap(err, "while updating Application")
 	}
 
 	err = s.deleteRelatedResources(id)
 	if err != nil {
-		return errors.Wrapf(err, "while deleting related Application resources")
+		return errors.Wrap(err, "while deleting related Application resources")
 	}
 
 	err = s.createRelatedResources(in, app.ID)
 	if err != nil {
-		return errors.Wrapf(err, "while creating related Application resources")
+		return errors.Wrap(err, "while creating related Application resources")
 	}
 
 	return nil
@@ -164,13 +173,13 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return s.app.Delete(app)
 }
 
-func (s *service) AddLabel(ctx context.Context, applicationID string, key string, values []string) error {
+func (s *service) SetLabel(ctx context.Context, applicationID string, key string, value interface{}) error {
 	app, err := s.Get(ctx, applicationID)
 	if err != nil {
 		return errors.Wrap(err, "while getting Application")
 	}
 
-	app.AddLabel(key, values)
+	app.SetLabel(key, value)
 
 	err = s.app.Update(app)
 	if err != nil {
@@ -180,13 +189,13 @@ func (s *service) AddLabel(ctx context.Context, applicationID string, key string
 	return nil
 }
 
-func (s *service) DeleteLabel(ctx context.Context, applicationID string, key string, values []string) error {
+func (s *service) DeleteLabel(ctx context.Context, applicationID string, key string) error {
 	app, err := s.Get(ctx, applicationID)
 	if err != nil {
 		return errors.Wrap(err, "while getting Application")
 	}
 
-	err = app.DeleteLabel(key, values)
+	err = app.DeleteLabel(key)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting label with key %s", key)
 	}

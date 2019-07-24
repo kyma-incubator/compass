@@ -56,7 +56,7 @@ func fixGQLRuntime(id, name, description string) *graphql.Runtime {
 	}
 }
 
-func fixModelRuntimeWithLabels(id, name string, labels map[string][]string) *model.Runtime {
+func fixModelRuntimeWithLabels(id, name string, labels map[string]interface{}) *model.Runtime {
 	return &model.Runtime{
 		ID: id,
 		Status: &model.RuntimeStatus{
@@ -81,8 +81,8 @@ func fixDetailedModelRuntime(t *testing.T, id, name, description string) *model.
 		Name:        name,
 		Description: &description,
 		Tenant:      "tenant",
-		Labels: map[string][]string{
-			"test": {"val", "val2"},
+		Labels: map[string]interface{}{
+			"test": []string{"val", "val2"},
 		},
 		AgentAuth: &model.Auth{
 			AdditionalHeaders: map[string][]string{
@@ -114,8 +114,8 @@ func fixDetailedGQLRuntime(t *testing.T, id, name, description string) *graphql.
 		},
 		Name:        name,
 		Description: &description,
-		Labels: map[string][]string{
-			"test": {"val", "val2"},
+		Labels: map[string]interface{}{
+			"test": []string{"val", "val2"},
 		},
 		AgentAuth: &graphql.Auth{
 			AdditionalHeaders: &headers,
@@ -131,15 +131,15 @@ func fixModelRuntimeInput(name, description string) model.RuntimeInput {
 	return model.RuntimeInput{
 		Name:        name,
 		Description: &description,
-		Labels: map[string][]string{
-			"test": {"val", "val2"},
+		Labels: map[string]interface{}{
+			"test": []string{"val", "val2"},
 		},
 	}
 }
 
 func fixGQLRuntimeInput(name, description string) graphql.RuntimeInput {
 	labels := graphql.Labels{
-		"test": {"val", "val2"},
+		"test": []string{"val", "val2"},
 	}
 
 	return graphql.RuntimeInput{
