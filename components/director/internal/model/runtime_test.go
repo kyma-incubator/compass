@@ -11,24 +11,24 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRuntime_AddLabel(t *testing.T) {
+func TestRuntime_SetLabel(t *testing.T) {
 	// given
 	testCases := []struct {
 		Name           string
 		InitialRuntime model.Runtime
 		InputKey       string
-		InputValues    []string
+		InputValue     interface{}
 		ExpectedLabels map[string][]string
 	}{
 		{
 			Name: "New Label",
 			InitialRuntime: model.Runtime{
-				Labels: map[string][]string{
-					"test": {"testVal"},
+				Labels: map[string]interface{}{
+					"test": []string{"testVal"},
 				},
 			},
-			InputKey:    "foo",
-			InputValues: []string{"bar", "baz", "bar"},
+			InputKey:   "foo",
+			InputValue: []string{"bar", "baz"},
 			ExpectedLabels: map[string][]string{
 				"test": {"testVal"},
 				"foo":  {"bar", "baz"},
@@ -39,23 +39,10 @@ func TestRuntime_AddLabel(t *testing.T) {
 			InitialRuntime: model.Runtime{
 				Labels: nil,
 			},
-			InputKey:    "foo",
-			InputValues: []string{"bar", "baz"},
+			InputKey:   "foo",
+			InputValue: []string{"bar", "baz"},
 			ExpectedLabels: map[string][]string{
 				"foo": {"bar", "baz"},
-			},
-		},
-		{
-			Name: "Append Values",
-			InitialRuntime: model.Runtime{
-				Labels: map[string][]string{
-					"foo": {"bar", "baz"},
-				},
-			},
-			InputKey:    "foo",
-			InputValues: []string{"zzz", "bar"},
-			ExpectedLabels: map[string][]string{
-				"foo": {"bar", "baz", "zzz"},
 			},
 		},
 	}
@@ -66,12 +53,12 @@ func TestRuntime_AddLabel(t *testing.T) {
 
 			// when
 
-			rtm.AddLabel(testCase.InputKey, testCase.InputValues)
+			rtm.SetLabel(testCase.InputKey, testCase.InputValue)
 
 			// then
 
 			for key, val := range testCase.ExpectedLabels {
-				assert.ElementsMatch(t, val, rtm.Labels[key])
+				assert.Equal(t, val, rtm.Labels[key])
 			}
 		})
 	}
@@ -84,53 +71,34 @@ func TestRuntime_DeleteLabel(t *testing.T) {
 		Name                string
 		InputRuntime        model.Runtime
 		InputKey            string
-		InputValuesToDelete []string
-		ExpectedLabels      map[string][]string
+		ExpectedLabels      map[string]interface{}
 		ExpectedErr         error
 	}{
 		{
 			Name:     "Whole Label",
 			InputKey: "foo",
 			InputRuntime: model.Runtime{
-				Labels: map[string][]string{
-					"no":  {"delete"},
-					"foo": {"bar", "baz"},
+				Labels: map[string]interface{}{
+					"no":  "delete",
+					"foo": []string{"bar", "baz"},
 				},
 			},
-			InputValuesToDelete: []string{},
 			ExpectedErr:         nil,
-			ExpectedLabels: map[string][]string{
-				"no": {"delete"},
-			},
-		},
-		{
-			Name:     "Label Values",
-			InputKey: "foo",
-			InputRuntime: model.Runtime{
-				Labels: map[string][]string{
-					"no":  {"delete"},
-					"foo": {"foo", "bar", "baz"},
-				},
-			},
-			InputValuesToDelete: []string{"bar", "baz"},
-			ExpectedErr:         nil,
-			ExpectedLabels: map[string][]string{
-				"no":  {"delete"},
-				"foo": {"foo"},
+			ExpectedLabels: map[string]interface{}{
+				"no": "delete",
 			},
 		},
 		{
 			Name:     "Error",
 			InputKey: "foobar",
 			InputRuntime: model.Runtime{
-				Labels: map[string][]string{
-					"no": {"delete"},
+				Labels: map[string]interface{}{
+					"no": "delete",
 				},
 			},
-			InputValuesToDelete: []string{"bar", "baz"},
 			ExpectedErr:         fmt.Errorf("label %s doesn't exist", "foobar"),
-			ExpectedLabels: map[string][]string{
-				"no": {"delete"},
+			ExpectedLabels: map[string]interface{}{
+				"no": "delete",
 			},
 		},
 	}
@@ -141,14 +109,14 @@ func TestRuntime_DeleteLabel(t *testing.T) {
 
 			// when
 
-			err := rtm.DeleteLabel(testCase.InputKey, testCase.InputValuesToDelete)
+			err := rtm.DeleteLabel(testCase.InputKey)
 
 			// then
 
 			require.Equal(t, testCase.ExpectedErr, err)
 
 			for key, val := range testCase.ExpectedLabels {
-				assert.ElementsMatch(t, val, rtm.Labels[key])
+				assert.Equal(t, val, rtm.Labels[key])
 			}
 		})
 	}
@@ -169,8 +137,8 @@ func TestRuntimeInput_ToRuntime(t *testing.T) {
 			Input: &model.RuntimeInput{
 				Name:        "Foo",
 				Description: &desc,
-				Labels: map[string][]string{
-					"test": {"val", "val2"},
+				Labels: map[string]interface{}{
+					"test": []string{"val", "val2"},
 				},
 			},
 			Expected: &model.Runtime{
@@ -178,8 +146,8 @@ func TestRuntimeInput_ToRuntime(t *testing.T) {
 				ID:          id,
 				Tenant:      tenant,
 				Description: &desc,
-				Labels: map[string][]string{
-					"test": {"val", "val2"},
+				Labels: map[string]interface{}{
+					"test": []string{"val", "val2"},
 				},
 				Status:    &model.RuntimeStatus{},
 				AgentAuth: &model.Auth{},

@@ -392,9 +392,7 @@ func TestService_List(t *testing.T) {
 
 	first := 2
 	after := "test"
-	filter := []*labelfilter.LabelFilter{
-		{Label: "", Values: []string{"foo", "bar"}, Operator: labelfilter.FilterOperatorAll},
-	}
+	filter := []*labelfilter.LabelFilter{{Label: ""}}
 
 	tnt := "tenant"
 
@@ -460,7 +458,7 @@ func TestService_List(t *testing.T) {
 	}
 }
 
-func TestService_AddLabel(t *testing.T) {
+func TestService_SetLabel(t *testing.T) {
 	// given
 	tnt := "tenant"
 	ctx := context.TODO()
@@ -471,8 +469,8 @@ func TestService_AddLabel(t *testing.T) {
 	desc := "Lorem ipsum"
 
 	runtimeID := "foo"
-	modifiedRuntimeModel := fixModelRuntimeWithLabels(runtimeID, "Foo", map[string][]string{
-		"key": {"value1"},
+	modifiedRuntimeModel := fixModelRuntimeWithLabels(runtimeID, "Foo", map[string]interface{}{
+		"key": []string{"value1"},
 	})
 	modifiedRuntimeModel.Description = &desc
 
@@ -484,7 +482,7 @@ func TestService_AddLabel(t *testing.T) {
 		RepositoryFn       func() *automock.RuntimeRepository
 		InputRuntimeID     string
 		InputKey           string
-		InputValues        []string
+		InputValue         interface{}
 		ExpectedErrMessage string
 	}{
 		{
@@ -498,7 +496,7 @@ func TestService_AddLabel(t *testing.T) {
 			},
 			InputRuntimeID:     runtimeID,
 			InputKey:           labelKey,
-			InputValues:        labelValues,
+			InputValue:         labelValues,
 			ExpectedErrMessage: "",
 		},
 		{
@@ -512,7 +510,7 @@ func TestService_AddLabel(t *testing.T) {
 			},
 			InputRuntimeID:     runtimeID,
 			InputKey:           labelKey,
-			InputValues:        labelValues,
+			InputValue:         labelValues,
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
@@ -525,7 +523,7 @@ func TestService_AddLabel(t *testing.T) {
 			},
 			InputRuntimeID:     runtimeID,
 			InputKey:           labelKey,
-			InputValues:        labelValues,
+			InputValue:         labelValues,
 			ExpectedErrMessage: testErr.Error(),
 		},
 	}
@@ -537,7 +535,7 @@ func TestService_AddLabel(t *testing.T) {
 			svc := runtime.NewService(repo, nil)
 
 			// when
-			err := svc.AddLabel(ctx, testCase.InputRuntimeID, testCase.InputKey, testCase.InputValues)
+			err := svc.SetLabel(ctx, testCase.InputRuntimeID, testCase.InputKey, testCase.InputValue)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -560,17 +558,15 @@ func TestService_DeleteLabel(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	runtimeID := "foo"
-	modifiedRuntimeModel := fixModelRuntimeWithLabels(runtimeID, "Foo", map[string][]string{})
+	modifiedRuntimeModel := fixModelRuntimeWithLabels(runtimeID, "Foo", map[string]interface{}{})
 
 	labelKey := "key"
-	labelValues := []string{"value1", "value2"}
 
 	testCases := []struct {
 		Name               string
 		RepositoryFn       func() *automock.RuntimeRepository
 		InputRuntimeID     string
 		InputKey           string
-		InputValues        []string
 		ExpectedErrMessage string
 	}{
 		{
@@ -578,8 +574,8 @@ func TestService_DeleteLabel(t *testing.T) {
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("GetByID", tnt, runtimeID).Return(
-					fixModelRuntimeWithLabels(runtimeID, "Foo", map[string][]string{
-						"key": {"value1", "value2"},
+					fixModelRuntimeWithLabels(runtimeID, "Foo", map[string]interface{}{
+						"key": []string{"value1", "value2"},
 					}), nil).Once()
 				repo.On("Update", modifiedRuntimeModel).Return(nil).Once()
 
@@ -587,7 +583,6 @@ func TestService_DeleteLabel(t *testing.T) {
 			},
 			InputRuntimeID:     runtimeID,
 			InputKey:           labelKey,
-			InputValues:        labelValues,
 			ExpectedErrMessage: "",
 		},
 		{
@@ -595,8 +590,8 @@ func TestService_DeleteLabel(t *testing.T) {
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("GetByID", tnt, runtimeID).Return(
-					fixModelRuntimeWithLabels(runtimeID, "Foo", map[string][]string{
-						"key": {"value1", "value2"},
+					fixModelRuntimeWithLabels(runtimeID, "Foo", map[string]interface{}{
+						"key": []string{"value1", "value2"},
 					}), nil).Once()
 				repo.On("Update", modifiedRuntimeModel).Return(testErr).Once()
 
@@ -604,7 +599,6 @@ func TestService_DeleteLabel(t *testing.T) {
 			},
 			InputRuntimeID:     runtimeID,
 			InputKey:           labelKey,
-			InputValues:        labelValues,
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
@@ -617,7 +611,6 @@ func TestService_DeleteLabel(t *testing.T) {
 			},
 			InputRuntimeID:     runtimeID,
 			InputKey:           labelKey,
-			InputValues:        labelValues,
 			ExpectedErrMessage: testErr.Error(),
 		},
 	}
@@ -629,7 +622,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			svc := runtime.NewService(repo, nil)
 
 			// when
-			err := svc.DeleteLabel(ctx, testCase.InputRuntimeID, testCase.InputKey, testCase.InputValues)
+			err := svc.DeleteLabel(ctx, testCase.InputRuntimeID, testCase.InputKey)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {

@@ -12,20 +12,6 @@ type RuntimeService struct {
 	mock.Mock
 }
 
-// AddLabel provides a mock function with given fields: ctx, runtimeID, key, values
-func (_m *RuntimeService) AddLabel(ctx context.Context, runtimeID string, key string, values []string) error {
-	ret := _m.Called(ctx, runtimeID, key, values)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, []string) error); ok {
-		r0 = rf(ctx, runtimeID, key, values)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // Create provides a mock function with given fields: ctx, in
 func (_m *RuntimeService) Create(ctx context.Context, in model.RuntimeInput) (string, error) {
 	ret := _m.Called(ctx, in)
@@ -61,13 +47,13 @@ func (_m *RuntimeService) Delete(ctx context.Context, id string) error {
 	return r0
 }
 
-// DeleteLabel provides a mock function with given fields: ctx, runtimeID, key, values
-func (_m *RuntimeService) DeleteLabel(ctx context.Context, runtimeID string, key string, values []string) error {
-	ret := _m.Called(ctx, runtimeID, key, values)
+// DeleteLabel provides a mock function with given fields: ctx, runtimeID, key
+func (_m *RuntimeService) DeleteLabel(ctx context.Context, runtimeID string, key string) error {
+	ret := _m.Called(ctx, runtimeID, key)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, []string) error); ok {
-		r0 = rf(ctx, runtimeID, key, values)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, runtimeID, key)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -119,6 +105,20 @@ func (_m *RuntimeService) List(ctx context.Context, filter []*labelfilter.LabelF
 	}
 
 	return r0, r1
+}
+
+// SetLabel provides a mock function with given fields: ctx, runtimeID, key, value
+func (_m *RuntimeService) SetLabel(ctx context.Context, runtimeID string, key string, value interface{}) error {
+	ret := _m.Called(ctx, runtimeID, key, value)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, interface{}) error); ok {
+		r0 = rf(ctx, runtimeID, key, value)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // Update provides a mock function with given fields: ctx, id, in
