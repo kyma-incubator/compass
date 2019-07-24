@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# This script is responsible for validating if migrations scripts are correct.
+# It starts Postgres, executes UP and DOWN migrations.
+# This script requires `compass-schema-migrator` Docker image.
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 INVERTED='\033[7m'
@@ -33,7 +37,8 @@ docker run -d --name ${POSTGRES_CONTAINER} \
             -e POSTGRES_DB="compass" \
             postgres:${POSTGRES_VERSION}
 
-echo -e "${GREEN}Run up migrations ${NC}"
+echo -e "${GREEN}Run UP migrations ${NC}"
+
 docker run --rm --network=${NETWORK} \
         -e DB_USER="usr" \
         -e DB_PASSWORD="pwd" \
@@ -44,10 +49,10 @@ docker run --rm --network=${NETWORK} \
         -e DIRECTION="up" \
     ${IMG_NAME}
 
-echo -e "${GREEN}Show schema_migrations table after up migrations${NC}"
+echo -e "${GREEN}Show schema_migrations table after UP migrations${NC}"
 docker exec ${POSTGRES_CONTAINER} psql -U usr compass -c "select * from schema_migrations"
 
-echo -e "${GREEN}Run down migrations ${NC}"
+echo -e "${GREEN}Run DOWN migrations ${NC}"
 docker run --rm --network=${NETWORK} \
         -e DB_USER="usr" \
         -e DB_PASSWORD="pwd" \
@@ -59,5 +64,5 @@ docker run --rm --network=${NETWORK} \
         -e NON_INTERACTIVE="true" \
     ${IMG_NAME}
 
-echo -e "${GREEN}Show schema_migrations table after down migrations${NC}"
+echo -e "${GREEN}Show schema_migrations table after DOWN migrations${NC}"
 docker exec ${POSTGRES_CONTAINER} psql -U usr compass -c "select * from schema_migrations"
