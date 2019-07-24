@@ -47,5 +47,5 @@ echo '# STARTING MIGRATION #'
 if [[ "${NON_INTERACTIVE}" == "true" ]]; then
     yes | $CMD
 else
-    CMD
+    $CMD
 fi
