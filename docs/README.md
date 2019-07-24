@@ -7,7 +7,7 @@ This folder contains documents that relate to the project.
 ## General
 
 - [Terminology](./terminology.md)
-- [Examples](./../examples/index.md)
+- [Examples](./../examples/README.md)
 
 ## Architecture
 

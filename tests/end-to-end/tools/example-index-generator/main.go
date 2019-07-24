@@ -29,12 +29,12 @@ func main() {
 		data = append(data, Data{Description: withoutDash, FileName: f.Name()})
 	}
 
-	t, err := template.ParseFiles("./index.md.tpl")
+	t, err := template.ParseFiles("./md.tpl")
 	if err != nil {
 		panic(err)
 	}
 
-	dest, err := os.Create(fmt.Sprintf("%s/index.md", dir))
+	dest, err := os.Create(fmt.Sprintf("%s/README.md", dir))
 	if err != nil {
 		panic(err)
 	}
