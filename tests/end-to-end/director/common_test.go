@@ -76,7 +76,7 @@ type genericGQLResponse struct {
 func saveQueryInExamples(t *testing.T, query string, exampleName string) {
 	t.Helper()
 	sanitizedName := strings.Replace(exampleName, " ", "-", -1)
-	sanitizedName = "zzz_" + strings.ToLower(sanitizedName)
+	sanitizedName = strings.ToLower(sanitizedName)
 	// replace uuids with constant value
 	r, err := regexp.Compile("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}")
 	require.NoError(t, err)
