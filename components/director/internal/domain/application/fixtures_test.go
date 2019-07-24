@@ -56,7 +56,7 @@ func fixGQLApplication(id, name, description string) *graphql.Application {
 	}
 }
 
-func fixModelApplicationWithLabels(id, name string, labels map[string][]string) *model.Application {
+func fixModelApplicationWithLabels(id, name string, labels map[string]interface{}) *model.Application {
 	return &model.Application{
 		ID: id,
 		Status: &model.ApplicationStatus{
@@ -82,8 +82,8 @@ func fixDetailedModelApplication(t *testing.T, id, name, description string) *mo
 		Name:        name,
 		Description: &description,
 		Tenant:      "tenant",
-		Labels: map[string][]string{
-			"test": {"val", "val2"},
+		Labels: map[string]interface{}{
+			"test": []string{"val", "val2"},
 		},
 		HealthCheckURL: &url,
 	}
@@ -102,8 +102,8 @@ func fixDetailedGQLApplication(t *testing.T, id, name, description string) *grap
 		},
 		Name:        name,
 		Description: &description,
-		Labels: map[string][]string{
-			"test": {"val", "val2"},
+		Labels: map[string]interface{}{
+			"test": []string{"val", "val2"},
 		},
 		HealthCheckURL: &url,
 	}
@@ -117,8 +117,8 @@ func fixModelApplicationInput(name, description string) model.ApplicationInput {
 	return model.ApplicationInput{
 		Name:        name,
 		Description: &description,
-		Labels: map[string][]string{
-			"test": {"val", "val2"},
+		Labels: map[string]interface{}{
+			"test": []string{"val", "val2"},
 		},
 		HealthCheckURL: &url,
 		Webhooks: []*model.WebhookInput{
@@ -142,7 +142,7 @@ func fixModelApplicationInput(name, description string) model.ApplicationInput {
 
 func fixGQLApplicationInput(name, description string) graphql.ApplicationInput {
 	labels := graphql.Labels{
-		"test": {"val", "val2"},
+		"test": []string{"val", "val2"},
 	}
 	url := "https://foo.bar"
 	kind := "test"

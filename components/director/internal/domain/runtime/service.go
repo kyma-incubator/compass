@@ -122,13 +122,13 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return s.repo.Delete(rtm)
 }
 
-func (s *service) AddLabel(ctx context.Context, runtimeID string, key string, values []string) error {
+func (s *service) SetLabel(ctx context.Context, runtimeID string, key string, value interface{}) error {
 	rtm, err := s.Get(ctx, runtimeID)
 	if err != nil {
 		return errors.Wrap(err, "while getting Runtime")
 	}
 
-	rtm.AddLabel(key, values)
+	rtm.SetLabel(key, value)
 
 	err = s.repo.Update(rtm)
 	if err != nil {
@@ -138,13 +138,13 @@ func (s *service) AddLabel(ctx context.Context, runtimeID string, key string, va
 	return nil
 }
 
-func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string, values []string) error {
+func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string) error {
 	rtm, err := s.Get(ctx, runtimeID)
 	if err != nil {
 		return errors.Wrap(err, "while getting Runtime")
 	}
 
-	err = rtm.DeleteLabel(key, values)
+	err = rtm.DeleteLabel(key)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting label with key %s", key)
 	}

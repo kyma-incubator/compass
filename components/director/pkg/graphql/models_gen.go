@@ -258,14 +258,26 @@ type HealthCheckPage struct {
 func (HealthCheckPage) IsPageable() {}
 
 type Label struct {
-	Key    string   `json:"key"`
-	Values []string `json:"values"`
+	Key   string      `json:"key"`
+	Value interface{} `json:"value"`
+}
+
+type LabelDefinition struct {
+	Key    string       `json:"key"`
+	Schema *interface{} `json:"schema"`
+}
+
+type LabelDefinitionInput struct {
+	Key    string       `json:"key"`
+	Schema *interface{} `json:"schema"`
 }
 
 type LabelFilter struct {
-	Label    string          `json:"label"`
-	Values   []string        `json:"values"`
-	Operator *FilterOperator `json:"operator"`
+	// Label key. If query for the filter is not provided, returns every object with given label key regardless of its value.
+	Key string `json:"key"`
+	// Optional SQL/JSON Path expression. If query is not provided, returns every object with given label key regardless of its value.
+	// Currently only a limited subset of expressions is supported.
+	Query *string `json:"query"`
 }
 
 type OAuthCredentialData struct {
@@ -639,47 +651,6 @@ func (e *FetchRequestStatusCondition) UnmarshalGQL(v interface{}) error {
 }
 
 func (e FetchRequestStatusCondition) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type FilterOperator string
-
-const (
-	FilterOperatorAll FilterOperator = "ALL"
-	FilterOperatorAny FilterOperator = "ANY"
-)
-
-var AllFilterOperator = []FilterOperator{
-	FilterOperatorAll,
-	FilterOperatorAny,
-}
-
-func (e FilterOperator) IsValid() bool {
-	switch e {
-	case FilterOperatorAll, FilterOperatorAny:
-		return true
-	}
-	return false
-}
-
-func (e FilterOperator) String() string {
-	return string(e)
-}
-
-func (e *FilterOperator) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = FilterOperator(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid FilterOperator", str)
-	}
-	return nil
-}
-
-func (e FilterOperator) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

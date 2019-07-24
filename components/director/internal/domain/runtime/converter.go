@@ -47,7 +47,7 @@ func (c *converter) MultipleToGraphQL(in []*model.Runtime) []*graphql.Runtime {
 }
 
 func (c *converter) InputFromGraphQL(in graphql.RuntimeInput) model.RuntimeInput {
-	var labels map[string][]string
+	var labels map[string]interface{}
 	if in.Labels != nil {
 		labels = *in.Labels
 	}

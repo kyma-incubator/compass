@@ -173,13 +173,13 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return s.app.Delete(app)
 }
 
-func (s *service) AddLabel(ctx context.Context, applicationID string, key string, values []string) error {
+func (s *service) SetLabel(ctx context.Context, applicationID string, key string, value interface{}) error {
 	app, err := s.Get(ctx, applicationID)
 	if err != nil {
 		return errors.Wrap(err, "while getting Application")
 	}
 
-	app.AddLabel(key, values)
+	app.SetLabel(key, value)
 
 	err = s.app.Update(app)
 	if err != nil {
@@ -189,13 +189,13 @@ func (s *service) AddLabel(ctx context.Context, applicationID string, key string
 	return nil
 }
 
-func (s *service) DeleteLabel(ctx context.Context, applicationID string, key string, values []string) error {
+func (s *service) DeleteLabel(ctx context.Context, applicationID string, key string) error {
 	app, err := s.Get(ctx, applicationID)
 	if err != nil {
 		return errors.Wrap(err, "while getting Application")
 	}
 
-	err = app.DeleteLabel(key, values)
+	err = app.DeleteLabel(key)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting label with key %s", key)
 	}

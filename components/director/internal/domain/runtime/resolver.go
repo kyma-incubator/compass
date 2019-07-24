@@ -17,8 +17,8 @@ type RuntimeService interface {
 	Get(ctx context.Context, id string) (*model.Runtime, error)
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error)
-	AddLabel(ctx context.Context, runtimeID string, key string, values []string) error
-	DeleteLabel(ctx context.Context, runtimeID string, key string, values []string) error
+	SetLabel(ctx context.Context, runtimeID string, key string, value interface{}) error
+	DeleteLabel(ctx context.Context, runtimeID string, key string) error
 }
 
 //go:generate mockery -name=RuntimeConverter -output=automock -outpkg=automock -case=underscore
@@ -130,19 +130,19 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 	return deletedRuntime, nil
 }
 
-func (r *Resolver) AddRuntimeLabel(ctx context.Context, runtimeID string, key string, values []string) (*graphql.Label, error) {
-	err := r.svc.AddLabel(ctx, runtimeID, key, values)
+func (r *Resolver) SetRuntimeLabel(ctx context.Context, runtimeID string, key string, value interface{}) (*graphql.Label, error) {
+	err := r.svc.SetLabel(ctx, runtimeID, key, value)
 	if err != nil {
 		return nil, err
 	}
 
 	return &graphql.Label{
-		Key:    key,
-		Values: values,
+		Key:   key,
+		Value: value,
 	}, nil
 }
-func (r *Resolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string, values []string) (*graphql.Label, error) {
-	err := r.svc.DeleteLabel(ctx, runtimeID, key, values)
+func (r *Resolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string) (*graphql.Label, error) {
+	err := r.svc.DeleteLabel(ctx, runtimeID, key)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +153,7 @@ func (r *Resolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key
 	}
 
 	return &graphql.Label{
-		Key:    key,
-		Values: runtime.Labels[key],
+		Key:   key,
+		Value: runtime.Labels[key],
 	}, nil
 }

@@ -11,27 +11,27 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestApplication_AddLabel(t *testing.T) {
+func TestApplication_SetLabel(t *testing.T) {
 	// given
 	testCases := []struct {
 		Name               string
 		InitialApplication model.Application
 		InputKey           string
-		InputValues        []string
-		ExpectedLabels     map[string][]string
+		InputValue         interface{}
+		ExpectedLabels     map[string]interface{}
 	}{
 		{
 			Name: "New Label",
 			InitialApplication: model.Application{
-				Labels: map[string][]string{
-					"test": {"testVal"},
+				Labels: map[string]interface{}{
+					"test": "testVal",
 				},
 			},
-			InputKey:    "foo",
-			InputValues: []string{"bar", "baz", "bar"},
-			ExpectedLabels: map[string][]string{
-				"test": {"testVal"},
-				"foo":  {"bar", "baz"},
+			InputKey:   "foo",
+			InputValue: []string{"bar", "baz", "bar"},
+			ExpectedLabels: map[string]interface{}{
+				"test": "testVal",
+				"foo":  []string{"bar", "baz", "bar"},
 			},
 		},
 		{
@@ -39,23 +39,10 @@ func TestApplication_AddLabel(t *testing.T) {
 			InitialApplication: model.Application{
 				Labels: nil,
 			},
-			InputKey:    "foo",
-			InputValues: []string{"bar", "baz"},
-			ExpectedLabels: map[string][]string{
-				"foo": {"bar", "baz"},
-			},
-		},
-		{
-			Name: "Append Values",
-			InitialApplication: model.Application{
-				Labels: map[string][]string{
-					"foo": {"bar", "baz"},
-				},
-			},
-			InputKey:    "foo",
-			InputValues: []string{"zzz", "bar"},
-			ExpectedLabels: map[string][]string{
-				"foo": {"bar", "baz", "zzz"},
+			InputKey:   "foo",
+			InputValue: []string{"bar", "baz"},
+			ExpectedLabels: map[string]interface{}{
+				"foo": []string{"bar", "baz"},
 			},
 		},
 	}
@@ -66,12 +53,12 @@ func TestApplication_AddLabel(t *testing.T) {
 
 			// when
 
-			app.AddLabel(testCase.InputKey, testCase.InputValues)
+			app.SetLabel(testCase.InputKey, testCase.InputValue)
 
 			// then
 
 			for key, val := range testCase.ExpectedLabels {
-				assert.ElementsMatch(t, val, app.Labels[key])
+				assert.Equal(t, val, app.Labels[key])
 			}
 		})
 	}
@@ -81,56 +68,37 @@ func TestApplication_AddLabel(t *testing.T) {
 func TestApplication_DeleteLabel(t *testing.T) {
 	// given
 	testCases := []struct {
-		Name                string
-		InputApplication    model.Application
-		InputKey            string
-		InputValuesToDelete []string
-		ExpectedLabels      map[string][]string
-		ExpectedErr         error
+		Name             string
+		InputApplication model.Application
+		InputKey         string
+		ExpectedLabels   map[string]interface{}
+		ExpectedErr      error
 	}{
 		{
 			Name:     "Whole Label",
 			InputKey: "foo",
 			InputApplication: model.Application{
-				Labels: map[string][]string{
-					"no":  {"delete"},
-					"foo": {"bar", "baz"},
+				Labels: map[string]interface{}{
+					"no":  "delete",
+					"foo": []string{"bar", "baz"},
 				},
 			},
-			InputValuesToDelete: []string{},
-			ExpectedErr:         nil,
-			ExpectedLabels: map[string][]string{
-				"no": {"delete"},
-			},
-		},
-		{
-			Name:     "Label Values",
-			InputKey: "foo",
-			InputApplication: model.Application{
-				Labels: map[string][]string{
-					"no":  {"delete"},
-					"foo": {"foo", "bar", "baz"},
-				},
-			},
-			InputValuesToDelete: []string{"bar", "baz"},
-			ExpectedErr:         nil,
-			ExpectedLabels: map[string][]string{
-				"no":  {"delete"},
-				"foo": {"foo"},
+			ExpectedErr: nil,
+			ExpectedLabels: map[string]interface{}{
+				"no": "delete",
 			},
 		},
 		{
 			Name:     "Error",
 			InputKey: "foobar",
 			InputApplication: model.Application{
-				Labels: map[string][]string{
-					"no": {"delete"},
+				Labels: map[string]interface{}{
+					"no": "delete",
 				},
 			},
-			InputValuesToDelete: []string{"bar", "baz"},
-			ExpectedErr:         fmt.Errorf("label %s doesn't exist", "foobar"),
-			ExpectedLabels: map[string][]string{
-				"no": {"delete"},
+			ExpectedErr: fmt.Errorf("label %s doesn't exist", "foobar"),
+			ExpectedLabels: map[string]interface{}{
+				"no": "delete",
 			},
 		},
 	}
@@ -141,14 +109,14 @@ func TestApplication_DeleteLabel(t *testing.T) {
 
 			// when
 
-			err := app.DeleteLabel(testCase.InputKey, testCase.InputValuesToDelete)
+			err := app.DeleteLabel(testCase.InputKey)
 
 			// then
 
 			require.Equal(t, testCase.ExpectedErr, err)
 
 			for key, val := range testCase.ExpectedLabels {
-				assert.ElementsMatch(t, val, app.Labels[key])
+				assert.Equal(t, val, app.Labels[key])
 			}
 		})
 	}
@@ -170,8 +138,10 @@ func TestApplicationInput_ToApplication(t *testing.T) {
 			Input: &model.ApplicationInput{
 				Name:        "Foo",
 				Description: &desc,
-				Labels: map[string][]string{
-					"test": {"val", "val2"},
+				Labels: map[string]interface{}{
+					"test": map[string]interface{}{
+						"test": "foo",
+					},
 				},
 				HealthCheckURL: &url,
 			},
@@ -180,8 +150,10 @@ func TestApplicationInput_ToApplication(t *testing.T) {
 				ID:          id,
 				Tenant:      tenant,
 				Description: &desc,
-				Labels: map[string][]string{
-					"test": {"val", "val2"},
+				Labels: map[string]interface{}{
+					"test": map[string]interface{}{
+						"test": "foo",
+					},
 				},
 				HealthCheckURL: &url,
 			},

@@ -6,17 +6,23 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
+
+	"github.com/pkg/errors"
 )
 
-type Labels map[string][]string
+type Labels map[string]interface{}
 
 func (y *Labels) UnmarshalGQL(v interface{}) error {
-	labels, err := scalar.ConvertToMapStringStringArray(v)
-	if err != nil {
-		return err
+	if v == nil {
+		return errors.New("input should not be nil")
 	}
 
-	*y = labels
+	value, ok := v.(map[string]interface{})
+	if !ok {
+		return errors.Errorf("unexpected Labels type: %T, should be map[string]interface{}", v)
+	}
+
+	*y = value
 
 	return nil
 }

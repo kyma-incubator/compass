@@ -8,8 +8,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/validation"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/strings"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
@@ -18,7 +16,7 @@ type Runtime struct {
 	Name        string
 	Description *string
 	Tenant      string
-	Labels      map[string][]string
+	Labels      map[string]interface{}
 	Status      *RuntimeStatus
 	AgentAuth   *Auth
 }
@@ -36,50 +34,29 @@ const (
 	RuntimeStatusConditionFailed  RuntimeStatusCondition = "FAILED"
 )
 
-func (r *Runtime) AddLabel(key string, values []string) {
+func (r *Runtime) SetLabel(key string, value interface{}) {
 	if r.Labels == nil {
-		r.Labels = make(map[string][]string)
+		r.Labels = make(map[string]interface{})
 	}
 
-	if _, exists := r.Labels[key]; !exists {
-		r.Labels[key] = strings.Unique(values)
-		return
-	}
-
-	r.Labels[key] = strings.Unique(append(r.Labels[key], values...))
+	r.Labels[key] = value
 }
 
-func (r *Runtime) DeleteLabel(key string, valuesToDelete []string) error {
-	currentValues, exists := r.Labels[key]
+func (r *Runtime) DeleteLabel(key string) error {
+	_, exists := r.Labels[key]
 
 	if !exists {
 		return fmt.Errorf("label %s doesn't exist", key)
 	}
 
-	if len(valuesToDelete) == 0 {
-		delete(r.Labels, key)
-		return nil
-	}
-
-	set := strings.SliceToMap(currentValues)
-	for _, val := range valuesToDelete {
-		delete(set, val)
-	}
-
-	filteredValues := strings.MapToSlice(set)
-	if len(filteredValues) == 0 {
-		delete(r.Labels, key)
-		return nil
-	}
-
-	r.Labels[key] = filteredValues
+	delete(r.Labels, key)
 	return nil
 }
 
 type RuntimeInput struct {
 	Name        string
 	Description *string
-	Labels      map[string][]string
+	Labels      map[string]interface{}
 }
 
 func (i *RuntimeInput) ToRuntime(id string, tenant string) *Runtime {
