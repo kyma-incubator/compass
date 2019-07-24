@@ -12,62 +12,83 @@ import (
 
 func TestValidator_Validate(t *testing.T) {
 	// given
+
+	validInputJsonSchema := `{
+	  "$id": "https://foo.com/bar.schema.json",
+	  "title": "foobarbaz",
+	  "type": "object",
+	  "properties": {
+		"foo": {
+		  "type": "string",
+		  "description": "foo"
+		},
+		"bar": {
+		  "type": "string",
+		  "description": "bar"
+		},
+		"baz": {
+		  "description": "baz",
+		  "type": "integer",
+		  "minimum": 0
+		}
+	  },
+      "required": ["foo", "bar", "baz"]
+	}`
+
+	inputJson := `{
+	  "foo": "test",
+	  "bar": "test",
+	  "baz": 123
+	}`
+	invalidInputJson := `{ "abc": 123 }`
+
 	testCases := []struct {
 		Name            string
 		InputJsonSchema string
 		InputJson       string
+		SecondJsonInput string
 		ExpectedBool    bool
 		ExpectedErr     bool
 		ExpectedErrMsg  string
+		isMultipleInput bool
 	}{
 		{
-			Name: "Success",
-			InputJsonSchema: `{
-			  "$id": "https://foo.com/bar.schema.json",
-			  "title": "foobarbaz",
-			  "type": "object",
-			  "properties": {
-				"foo": {
-				  "type": "string",
-				  "description": "foo"
-				},
-				"bar": {
-				  "type": "string",
-				  "description": "bar"
-				},
-				"baz": {
-				  "description": "baz",
-				  "type": "integer",
-				  "minimum": 0
-				}
-			  }
-			}`,
-			InputJson: `{
-			  "foo": "test",
-			  "bar": "test",
-			  "baz": 123
-			}`,
-			ExpectedBool:   true,
-			ExpectedErr:    false,
-			ExpectedErrMsg: "",
+			Name:            "Success",
+			InputJsonSchema: validInputJsonSchema,
+			InputJson:       inputJson,
+			ExpectedBool:    true,
+			isMultipleInput: false,
 		},
 		{
-			Name: "Json schema and json doesn't match",
-			InputJsonSchema: `{
-			  "$id": "https://foo.com/bar.schema.json",
-			  "title": "foo",
-			  "type": "object",
-			  "properties": {
-				"foo": {
-				  "type": "string",
-				  "description": "foo"
-				},
-			  }
-			}`,
-			InputJson:      `{ "foo": 123}`,
-			ExpectedBool:   false,
-			ExpectedErr:    true,
-			ExpectedErrMsg: "invalid character '}' looking for beginning of object key string",
+			Name:            "Success multiple - all jsons valid",
+			InputJsonSchema: validInputJsonSchema,
+			InputJson:       inputJson,
+			SecondJsonInput: inputJson,
+			ExpectedBool:    true,
+			isMultipleInput: true,
+		},
+		{
+			Name:            "Multiple invalid - one json valid and one json invalid",
+			InputJsonSchema: validInputJsonSchema,
+			InputJson:       inputJson,
+			SecondJsonInput: invalidInputJson,
+			ExpectedBool:    false,
+			isMultipleInput: true,
+		},
+		{
+			Name:            "Multiple invalid - multiple jsons invalid",
+			InputJsonSchema: validInputJsonSchema,
+			InputJson:       invalidInputJson,
+			SecondJsonInput: invalidInputJson,
+			ExpectedBool:    false,
+			isMultipleInput: true,
+		},
+		{
+			Name:            "Json schema and json doesn't match",
+			InputJsonSchema: validInputJsonSchema,
+			InputJson:       invalidInputJson,
+			ExpectedBool:    false,
+			isMultipleInput: false,
 		},
 		{
 			Name:            "Empty",
@@ -76,6 +97,7 @@ func TestValidator_Validate(t *testing.T) {
 			ExpectedBool:    false,
 			ExpectedErr:     true,
 			ExpectedErrMsg:  "EOF",
+			isMultipleInput: false,
 		},
 	}
 
@@ -84,8 +106,15 @@ func TestValidator_Validate(t *testing.T) {
 
 			svc := jsonschema.NewValidator()
 
+			var ok bool
+			var err error
+
 			// when
-			ok, err := svc.Validate(testCase.InputJsonSchema, testCase.InputJson)
+			if testCase.isMultipleInput == true {
+				ok, err = svc.Validate(testCase.InputJsonSchema, testCase.InputJson, testCase.SecondJsonInput)
+			} else {
+				ok, err = svc.Validate(testCase.InputJsonSchema, testCase.InputJson)
+			}
 
 			// then
 			if testCase.ExpectedErr == true {
