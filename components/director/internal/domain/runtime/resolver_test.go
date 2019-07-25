@@ -570,7 +570,6 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			Name: "Returns error when runtime retrieval failed",
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("DeleteLabel", context.TODO(), runtimeID, gqlLabel.Key).Return(nil).Once()
 				svc.On("Get", context.TODO(), runtimeID).Return(nil, testErr).Once()
 				return svc
 			},
@@ -587,6 +586,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			Name: "Returns error when deleting runtime's label failed",
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
+				svc.On("Get", context.TODO(), runtimeID).Return(rtm, nil).Once()
 				svc.On("DeleteLabel", context.TODO(), runtimeID, gqlLabel.Key).Return(testErr).Once()
 				return svc
 			},

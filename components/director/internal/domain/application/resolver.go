@@ -214,19 +214,21 @@ func (r *Resolver) SetApplicationLabel(ctx context.Context, applicationID string
 }
 
 func (r *Resolver) DeleteApplicationLabel(ctx context.Context, applicationID string, key string) (*graphql.Label, error) {
-	err := r.appSvc.DeleteLabel(ctx, applicationID, key)
+	app, err := r.appSvc.Get(ctx, applicationID)
 	if err != nil {
 		return nil, err
 	}
 
-	app, err := r.appSvc.Get(ctx, applicationID)
+	value := app.Labels[key]
+
+	err = r.appSvc.DeleteLabel(ctx, applicationID, key)
 	if err != nil {
 		return nil, err
 	}
 
 	return &graphql.Label{
 		Key:   key,
-		Value: app.Labels[key],
+		Value: value,
 	}, nil
 }
 

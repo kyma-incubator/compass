@@ -155,7 +155,7 @@ func (fp *gqlFieldsProvider) ForAuth() string {
 
 func (fp *gqlFieldsProvider) ForLabel() string {
 	return `key
-			values`
+			value`
 }
 
 func (fp *gqlFieldsProvider) ForRuntime() string {

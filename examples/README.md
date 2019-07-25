@@ -3,7 +3,6 @@
 
 Below you can find a list of mock GraphQL queries and mutations:
 - [add api](./add-api.graphql)
-- [add application label](./add-application-label.graphql)
 - [add application webhook](./add-application-webhook.graphql)
 - [add document](./add-document.graphql)
 - [create application with apis](./create-application-with-apis.graphql)
@@ -22,6 +21,7 @@ Below you can find a list of mock GraphQL queries and mutations:
 - [query applications](./query-applications.graphql)
 - [query runtime](./query-runtime.graphql)
 - [query runtimes](./query-runtimes.graphql)
+- [set application label](./set-application-label.graphql)
 - [update api](./update-api.graphql)
 - [update application webhook](./update-application-webhook.graphql)
 - [update application](./update-application.graphql)
