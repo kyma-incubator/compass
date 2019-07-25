@@ -11,4 +11,3 @@ data:
   gateway.gateway.enabled: "true"
   global.istio.gateway.name: "compass-istio-gateway"
   global.istio.gateway.namespace: "compass-system"
-  compass.integrationtest.minikubeIP: ""

@@ -22,7 +22,7 @@ global:
         dir: pr/
         version: "PR-164"
 
-  isLocalEnv: true
+  isLocalEnv: false
   
   director:
     port: 3000

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: compass-overrides
+  namespace: kyma-installer
+  labels:
+    installer: overrides
+    component: compass
+    kyma-project.io/installation: ""
+data:
+  global.isLocalEnv: "true"
+  global.minikubeIP: "IP_PLACEHOLDER"
