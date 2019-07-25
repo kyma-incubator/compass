@@ -41,3 +41,10 @@ models:
         resolver: true
       webhooks:
         resolver: true
+      labels:
+        resolver: true
+  Runtime:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Runtime"
+    fields:
+      labels:
+        resolver: true

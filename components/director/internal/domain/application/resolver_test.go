@@ -2,16 +2,21 @@ package application_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+
+	"github.com/kyma-incubator/compass/components/director/internal/persistence"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application/automock"
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	persistenceautomock "github.com/kyma-incubator/compass/components/director/internal/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/pkg/errors"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,8 +36,18 @@ func TestResolver_CreateApplication(t *testing.T) {
 		Description: &desc,
 	}
 
+	persistTx := &persistenceautomock.PersistenceTx{}
+	persistTx.On("Commit").Return(nil)
+
+	ctx := context.TODO()
+	ctxWithPersistenceTx := context.WithValue(ctx, persistence.PersistenceCtxKey, persistTx)
+
+	appCtx := &automock.ContextValueSetter{}
+	appCtx.On("WithValue", ctx, persistence.PersistenceCtxKey, persistTx).Return(ctxWithPersistenceTx)
+
 	testCases := []struct {
 		Name                string
+		TransactionerFn     func() *persistenceautomock.Transactioner
 		ServiceFn           func() *automock.ApplicationService
 		ConverterFn         func() *automock.ApplicationConverter
 		Input               graphql.ApplicationInput
@@ -41,10 +56,16 @@ func TestResolver_CreateApplication(t *testing.T) {
 	}{
 		{
 			Name: "Success",
+			TransactionerFn: func() *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+				return transact
+			},
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", context.TODO(), "foo").Return(modelApplication, nil).Once()
-				svc.On("Create", context.TODO(), modelInput).Return("foo", nil).Once()
+				svc.On("Get", ctxWithPersistenceTx, "foo").Return(modelApplication, nil).Once()
+				svc.On("Create", ctxWithPersistenceTx, modelInput).Return("foo", nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -59,9 +80,15 @@ func TestResolver_CreateApplication(t *testing.T) {
 		},
 		{
 			Name: "Returns error when application creation failed",
+			TransactionerFn: func() *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+				return transact
+			},
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Create", context.TODO(), modelInput).Return("", testErr).Once()
+				svc.On("Create", ctxWithPersistenceTx, modelInput).Return("", testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -75,10 +102,16 @@ func TestResolver_CreateApplication(t *testing.T) {
 		},
 		{
 			Name: "Returns error when application creation failed",
+			TransactionerFn: func() *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+				return transact
+			},
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Create", context.TODO(), modelInput).Return("foo", nil).Once()
-				svc.On("Get", context.TODO(), "foo").Return(nil, testErr).Once()
+				svc.On("Create", ctxWithPersistenceTx, modelInput).Return("foo", nil).Once()
+				svc.On("Get", ctxWithPersistenceTx, "foo").Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -96,8 +129,8 @@ func TestResolver_CreateApplication(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
-
-			resolver := application.NewResolver(svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			transactioner := testCase.TransactionerFn()
+			resolver := application.NewResolver(transactioner, appCtx, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -109,6 +142,7 @@ func TestResolver_CreateApplication(t *testing.T) {
 
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)
+			transactioner.AssertExpectations(t)
 		})
 	}
 }
@@ -130,8 +164,18 @@ func TestResolver_UpdateApplication(t *testing.T) {
 	}
 	applicationID := "foo"
 
+	persistTx := &persistenceautomock.PersistenceTx{}
+	persistTx.On("Commit").Return(nil)
+
+	ctx := context.TODO()
+	ctxWithPersistenceTx := context.WithValue(ctx, persistence.PersistenceCtxKey, persistTx)
+
+	appCtx := &automock.ContextValueSetter{}
+	appCtx.On("WithValue", ctx, persistence.PersistenceCtxKey, persistTx).Return(ctxWithPersistenceTx)
+
 	testCases := []struct {
 		Name                string
+		TransactionerFn     func() *persistenceautomock.Transactioner
 		ServiceFn           func() *automock.ApplicationService
 		ConverterFn         func() *automock.ApplicationConverter
 		ApplicationID       string
@@ -141,10 +185,16 @@ func TestResolver_UpdateApplication(t *testing.T) {
 	}{
 		{
 			Name: "Success",
+			TransactionerFn: func() *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+				return transact
+			},
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", context.TODO(), "foo").Return(modelApplication, nil).Once()
-				svc.On("Update", context.TODO(), applicationID, modelInput).Return(nil).Once()
+				svc.On("Get", ctxWithPersistenceTx, "foo").Return(modelApplication, nil).Once()
+				svc.On("Update", ctxWithPersistenceTx, applicationID, modelInput).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -160,9 +210,15 @@ func TestResolver_UpdateApplication(t *testing.T) {
 		},
 		{
 			Name: "Returns error when application update failed",
+			TransactionerFn: func() *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+				return transact
+			},
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Update", context.TODO(), applicationID, modelInput).Return(testErr).Once()
+				svc.On("Update", ctxWithPersistenceTx, applicationID, modelInput).Return(testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -177,10 +233,16 @@ func TestResolver_UpdateApplication(t *testing.T) {
 		},
 		{
 			Name: "Returns error when application retrieval failed",
+			TransactionerFn: func() *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+				return transact
+			},
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Update", context.TODO(), applicationID, modelInput).Return(nil).Once()
-				svc.On("Get", context.TODO(), "foo").Return(nil, testErr).Once()
+				svc.On("Update", ctxWithPersistenceTx, applicationID, modelInput).Return(nil).Once()
+				svc.On("Get", ctxWithPersistenceTx, "foo").Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -199,8 +261,9 @@ func TestResolver_UpdateApplication(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
+			transactioner := testCase.TransactionerFn()
 
-			resolver := application.NewResolver(svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(transactioner, appCtx, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -212,6 +275,7 @@ func TestResolver_UpdateApplication(t *testing.T) {
 
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)
+			transactioner.AssertExpectations(t)
 		})
 	}
 }
@@ -222,8 +286,18 @@ func TestResolver_DeleteApplication(t *testing.T) {
 	gqlApplication := fixGQLApplication("foo", "Foo", "Bar")
 	testErr := errors.New("Test error")
 
+	persistTx := &persistenceautomock.PersistenceTx{}
+	persistTx.On("Commit").Return(nil)
+
+	ctx := context.TODO()
+	ctxWithPersistenceTx := context.WithValue(ctx, persistence.PersistenceCtxKey, persistTx)
+
+	appCtx := &automock.ContextValueSetter{}
+	appCtx.On("WithValue", ctx, persistence.PersistenceCtxKey, persistTx).Return(ctxWithPersistenceTx)
+
 	testCases := []struct {
 		Name                string
+		TransactionerFn     func() *persistenceautomock.Transactioner
 		ServiceFn           func() *automock.ApplicationService
 		ConverterFn         func() *automock.ApplicationConverter
 		InputID             string
@@ -232,10 +306,16 @@ func TestResolver_DeleteApplication(t *testing.T) {
 	}{
 		{
 			Name: "Success",
+			TransactionerFn: func() *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+				return transact
+			},
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", context.TODO(), "foo").Return(modelApplication, nil).Once()
-				svc.On("Delete", context.TODO(), "foo").Return(nil).Once()
+				svc.On("Get", ctxWithPersistenceTx, "foo").Return(modelApplication, nil).Once()
+				svc.On("Delete", ctxWithPersistenceTx, "foo").Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -249,10 +329,16 @@ func TestResolver_DeleteApplication(t *testing.T) {
 		},
 		{
 			Name: "Returns error when application deletion failed",
+			TransactionerFn: func() *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+				return transact
+			},
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", context.TODO(), "foo").Return(modelApplication, nil).Once()
-				svc.On("Delete", context.TODO(), "foo").Return(testErr).Once()
+				svc.On("Get", ctxWithPersistenceTx, "foo").Return(modelApplication, nil).Once()
+				svc.On("Delete", ctxWithPersistenceTx, "foo").Return(testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -266,9 +352,15 @@ func TestResolver_DeleteApplication(t *testing.T) {
 		},
 		{
 			Name: "Returns error when application retrieval failed",
+			TransactionerFn: func() *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+				return transact
+			},
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", context.TODO(), "foo").Return(nil, testErr).Once()
+				svc.On("Get", ctxWithPersistenceTx, "foo").Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -285,8 +377,9 @@ func TestResolver_DeleteApplication(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
+			transactioner := testCase.TransactionerFn()
 
-			resolver := application.NewResolver(svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(transactioner, appCtx, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -356,7 +449,7 @@ func TestResolver_Application(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(nil, nil, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -448,7 +541,7 @@ func TestResolver_Applications(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(nil, nil, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -473,9 +566,25 @@ func TestResolver_SetApplicationLabel(t *testing.T) {
 		Key:   "key",
 		Value: []string{"foo", "bar"},
 	}
+	modelLabel := &model.LabelInput{
+		Key:        "key",
+		Value:      []string{"foo", "bar"},
+		ObjectID:   applicationID,
+		ObjectType: model.ApplicationLabelableObject,
+	}
+
+	persistTx := &persistenceautomock.PersistenceTx{}
+	persistTx.On("Commit").Return(nil)
+
+	ctx := context.TODO()
+	ctxWithPersistenceTx := context.WithValue(ctx, persistence.PersistenceCtxKey, persistTx)
+
+	appCtx := &automock.ContextValueSetter{}
+	appCtx.On("WithValue", ctx, persistence.PersistenceCtxKey, persistTx).Return(ctxWithPersistenceTx)
 
 	testCases := []struct {
 		Name               string
+		TransactionerFn    func() *persistenceautomock.Transactioner
 		ServiceFn          func() *automock.ApplicationService
 		ConverterFn        func() *automock.ApplicationConverter
 		InputApplicationID string
@@ -486,9 +595,15 @@ func TestResolver_SetApplicationLabel(t *testing.T) {
 	}{
 		{
 			Name: "Success",
+			TransactionerFn: func() *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+				return transact
+			},
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("SetLabel", context.TODO(), applicationID, gqlLabel.Key, gqlLabel.Value).Return(nil).Once()
+				svc.On("SetLabel", ctxWithPersistenceTx, modelLabel).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -503,9 +618,15 @@ func TestResolver_SetApplicationLabel(t *testing.T) {
 		},
 		{
 			Name: "Returns error when adding label to application failed",
+			TransactionerFn: func() *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+				return transact
+			},
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("SetLabel", context.TODO(), applicationID, gqlLabel.Key, gqlLabel.Value).Return(testErr).Once()
+				svc.On("SetLabel", ctxWithPersistenceTx, modelLabel).Return(testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -524,8 +645,9 @@ func TestResolver_SetApplicationLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
+			transactioner := testCase.TransactionerFn()
 
-			resolver := application.NewResolver(svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(transactioner, appCtx, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -546,15 +668,35 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	applicationID := "foo"
-	app := fixModelApplicationWithLabels(applicationID, "Foo", map[string]interface{}{"key": []string{"foo", "bar"}})
+
+	labelKey := "key"
 
 	gqlLabel := &graphql.Label{
-		Key:   "key",
+		Key:   labelKey,
 		Value: []string{"foo", "bar"},
 	}
 
+	modelLabel := &model.Label{
+		ID:         "b39ba24d-87fe-43fe-ac55-7f2e5ee04bcb",
+		Tenant:     "tnt",
+		Key:        labelKey,
+		Value:      []string{"foo", "bar"},
+		ObjectID:   applicationID,
+		ObjectType: model.ApplicationLabelableObject,
+	}
+
+	persistTx := &persistenceautomock.PersistenceTx{}
+	persistTx.On("Commit").Return(nil)
+
+	ctx := context.TODO()
+	ctxWithPersistenceTx := context.WithValue(ctx, persistence.PersistenceCtxKey, persistTx)
+
+	appCtx := &automock.ContextValueSetter{}
+	appCtx.On("WithValue", ctx, persistence.PersistenceCtxKey, persistTx).Return(ctxWithPersistenceTx)
+
 	testCases := []struct {
 		Name               string
+		TransactionerFn    func() *persistenceautomock.Transactioner
 		ServiceFn          func() *automock.ApplicationService
 		ConverterFn        func() *automock.ApplicationConverter
 		InputApplicationID string
@@ -564,10 +706,16 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 	}{
 		{
 			Name: "Success",
+			TransactionerFn: func() *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+				return transact
+			},
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", context.TODO(), applicationID).Return(app, nil).Once()
-				svc.On("DeleteLabel", context.TODO(), applicationID, gqlLabel.Key).Return(nil).Once()
+				svc.On("GetLabel", ctxWithPersistenceTx, applicationID, labelKey).Return(modelLabel, nil).Once()
+				svc.On("DeleteLabel", ctxWithPersistenceTx, applicationID, labelKey).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -580,10 +728,16 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 			ExpectedErr:        nil,
 		},
 		{
-			Name: "Returns error when application retrieval failed",
+			Name: "Returns error when label retrieval failed",
+			TransactionerFn: func() *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+				return transact
+			},
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", context.TODO(), applicationID).Return(nil, testErr).Once()
+				svc.On("GetLabel", ctxWithPersistenceTx, applicationID, labelKey).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -597,10 +751,16 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 		},
 		{
 			Name: "Returns error when deleting application's label failed",
+			TransactionerFn: func() *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+				return transact
+			},
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", context.TODO(), applicationID).Return(app, nil).Once()
-				svc.On("DeleteLabel", context.TODO(), applicationID, gqlLabel.Key).Return(testErr).Once()
+				svc.On("GetLabel", ctxWithPersistenceTx, applicationID, labelKey).Return(modelLabel, nil).Once()
+				svc.On("DeleteLabel", ctxWithPersistenceTx, applicationID, labelKey).Return(testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -618,8 +778,9 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
+			transactioner := testCase.TransactionerFn()
 
-			resolver := application.NewResolver(svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(transactioner, appCtx, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -631,6 +792,7 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)
+			transactioner.AssertExpectations(t)
 		})
 	}
 }
@@ -702,7 +864,7 @@ func TestResolver_Documents(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(nil, nil, nil, svc, nil, nil, converter, nil, nil, nil)
+			resolver := application.NewResolver(nil, nil, nil, nil, nil, svc, nil, nil, converter, nil, nil, nil)
 
 			// when
 			result, err := resolver.Documents(context.TODO(), app, testCase.InputFirst, testCase.InputAfter)
@@ -774,7 +936,7 @@ func TestResolver_Webhooks(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(nil, nil, nil, nil, svc, nil, nil, converter, nil, nil)
+			resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, svc, nil, nil, converter, nil, nil)
 
 			// when
 			result, err := resolver.Webhooks(context.TODO(), app)
@@ -860,7 +1022,7 @@ func TestResolver_Apis(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(nil, svc, nil, nil, nil, nil, nil, nil, converter, nil)
+			resolver := application.NewResolver(nil, nil, nil, svc, nil, nil, nil, nil, nil, nil, converter, nil)
 			// when
 			result, err := resolver.Apis(context.TODO(), app, &group, testCase.InputFirst, testCase.InputAfter)
 
@@ -945,7 +1107,7 @@ func TestResolver_EventAPIs(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(nil, nil, svc, nil, nil, nil, nil, nil, nil, converter)
+			resolver := application.NewResolver(nil, nil, nil, nil, svc, nil, nil, nil, nil, nil, nil, converter)
 			// when
 			result, err := resolver.EventAPIs(context.TODO(), app, &group, testCase.InputFirst, testCase.InputAfter)
 
@@ -1031,7 +1193,7 @@ func TestResolver_ApplicationsForRuntime(t *testing.T) {
 			applicationSvc := testCase.AppServiceFn()
 			applicationConverter := testCase.AppConverterFn()
 
-			resolver := application.NewResolver(applicationSvc, nil, nil, nil, nil, applicationConverter, nil, nil, nil, nil)
+			resolver := application.NewResolver(nil, nil, applicationSvc, nil, nil, nil, nil, applicationConverter, nil, nil, nil, nil)
 
 			//WHEN
 			result, err := resolver.ApplicationsForRuntime(ctx, testCase.InputRuntimeID, testCase.InputFirst, testCase.InputAfter)

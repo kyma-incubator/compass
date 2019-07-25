@@ -84,6 +84,29 @@ func (_m *RuntimeService) Get(ctx context.Context, id string) (*model.Runtime, e
 	return r0, r1
 }
 
+// GetLabel provides a mock function with given fields: ctx, runtimeID, key
+func (_m *RuntimeService) GetLabel(ctx context.Context, runtimeID string, key string) (*model.Label, error) {
+	ret := _m.Called(ctx, runtimeID, key)
+
+	var r0 *model.Label
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Label); ok {
+		r0 = rf(ctx, runtimeID, key)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Label)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, runtimeID, key)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // List provides a mock function with given fields: ctx, filter, pageSize, cursor
 func (_m *RuntimeService) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error) {
 	ret := _m.Called(ctx, filter, pageSize, cursor)
@@ -107,13 +130,36 @@ func (_m *RuntimeService) List(ctx context.Context, filter []*labelfilter.LabelF
 	return r0, r1
 }
 
-// SetLabel provides a mock function with given fields: ctx, runtimeID, key, value
-func (_m *RuntimeService) SetLabel(ctx context.Context, runtimeID string, key string, value interface{}) error {
-	ret := _m.Called(ctx, runtimeID, key, value)
+// ListLabels provides a mock function with given fields: ctx, runtimeID
+func (_m *RuntimeService) ListLabels(ctx context.Context, runtimeID string) (map[string]*model.Label, error) {
+	ret := _m.Called(ctx, runtimeID)
+
+	var r0 map[string]*model.Label
+	if rf, ok := ret.Get(0).(func(context.Context, string) map[string]*model.Label); ok {
+		r0 = rf(ctx, runtimeID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]*model.Label)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, runtimeID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SetLabel provides a mock function with given fields: ctx, label
+func (_m *RuntimeService) SetLabel(ctx context.Context, label *model.LabelInput) error {
+	ret := _m.Called(ctx, label)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, interface{}) error); ok {
-		r0 = rf(ctx, runtimeID, key, value)
+	if rf, ok := ret.Get(0).(func(context.Context, *model.LabelInput) error); ok {
+		r0 = rf(ctx, label)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -5,13 +5,18 @@ The Director exposes GraphQL API.
 ## Development
 
 After you introduce changes in the GraphQL schema, run the `gqlgen.sh` script.
-To run the Director, use the following command:
 
+To run Director with PostgreSQL container on local machine with latest DB schema, run the following command:
+
+```bash
+./run.sh
 ```
-go run cmd/main.go
-```
+
+The GraphQL API playground is available at `localhost:3000`.
 
 ### Prerequisites
+
+> **NOTE:** Use script `run.sh` to perform these steps automatically.
 
 Before you can run Director you have to configure access to PostgreSQL database. For development purpose you can run PostgreSQL instance in the docker container executing following command:
 
@@ -24,10 +29,6 @@ When you have PostgreSQL instance running you must import the database schema ru
 ```bash
 $ PGPASSWORD=pgsql@12345 psql -U postgres -W -h 127.0.0.1 -f <(cat components/schema-migrator/migrations/*.up.sql)
 ```
-
-There is a helper script `runWithDB.sh` that performs those steps automatically.
-
-The GraphQL API playground is available at `localhost:3000`.
 
 ## Configuration
 

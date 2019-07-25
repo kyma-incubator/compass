@@ -4,9 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/internal/persistence/automock"
@@ -609,7 +610,12 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 		Key:   "key",
 		Value: []string{"foo", "bar"},
 	}
-
+	modelLabel := &model.LabelInput{
+		Key:        "key",
+		Value:      []string{"foo", "bar"},
+		ObjectID:   runtimeID,
+		ObjectType: model.RuntimeLabelableObject,
+	}
 	persistTx := &persistenceautomock.PersistenceTx{}
 	persistTx.On("Commit").Return(nil)
 
@@ -641,7 +647,7 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 			},
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("SetLabel", ctxWithPersistenceTx, runtimeID, gqlLabel.Key, gqlLabel.Value).Return(nil).Once()
+				svc.On("SetLabel", ctxWithPersistenceTx, modelLabel).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -665,7 +671,7 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 			},
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("SetLabel", ctxWithPersistenceTx, runtimeID, gqlLabel.Key, gqlLabel.Value).Return(testErr).Once()
+				svc.On("SetLabel", ctxWithPersistenceTx, modelLabel).Return(testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -706,9 +712,12 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	runtimeID := "foo"
-	rtm := fixModelRuntimeWithLabels(runtimeID, "tenant-foo", "Foo", map[string]interface{}{"key": []string{"foo", "bar"}})
 
 	gqlLabel := &graphql.Label{
+		Key:   "key",
+		Value: []string{"foo", "bar"},
+	}
+	modelLabel := &model.Label{
 		Key:   "key",
 		Value: []string{"foo", "bar"},
 	}
@@ -743,7 +752,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			},
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("Get", ctxWithPersistenceTx, runtimeID).Return(rtm, nil).Once()
+				svc.On("GetLabel", ctxWithPersistenceTx, runtimeID, gqlLabel.Key).Return(modelLabel, nil).Once()
 				svc.On("DeleteLabel", ctxWithPersistenceTx, runtimeID, gqlLabel.Key).Return(nil).Once()
 				return svc
 			},
@@ -757,7 +766,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			ExpectedErr:    nil,
 		},
 		{
-			Name: "Returns error when runtime retrieval failed",
+			Name: "Returns error when label retrieval failed",
 			TransactionerFn: func() *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
@@ -767,7 +776,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			},
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("Get", ctxWithPersistenceTx, runtimeID).Return(nil, testErr).Once()
+				svc.On("GetLabel", ctxWithPersistenceTx, runtimeID, gqlLabel.Key).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -790,7 +799,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			},
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("Get", ctxWithPersistenceTx, runtimeID).Return(rtm, nil).Once()
+				svc.On("GetLabel", ctxWithPersistenceTx, runtimeID, gqlLabel.Key).Return(modelLabel, nil).Once()
 				svc.On("DeleteLabel", ctxWithPersistenceTx, runtimeID, gqlLabel.Key).Return(testErr).Once()
 				return svc
 			},

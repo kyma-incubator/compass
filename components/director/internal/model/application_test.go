@@ -8,119 +8,118 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-func TestApplication_SetLabel(t *testing.T) {
-	// given
-	testCases := []struct {
-		Name               string
-		InitialApplication model.Application
-		InputKey           string
-		InputValue         interface{}
-		ExpectedLabels     map[string]interface{}
-	}{
-		{
-			Name: "New Label",
-			InitialApplication: model.Application{
-				Labels: map[string]interface{}{
-					"test": "testVal",
-				},
-			},
-			InputKey:   "foo",
-			InputValue: []string{"bar", "baz", "bar"},
-			ExpectedLabels: map[string]interface{}{
-				"test": "testVal",
-				"foo":  []string{"bar", "baz", "bar"},
-			},
-		},
-		{
-			Name: "Nil map",
-			InitialApplication: model.Application{
-				Labels: nil,
-			},
-			InputKey:   "foo",
-			InputValue: []string{"bar", "baz"},
-			ExpectedLabels: map[string]interface{}{
-				"foo": []string{"bar", "baz"},
-			},
-		},
-	}
-
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			app := testCase.InitialApplication
-
-			// when
-
-			app.SetLabel(testCase.InputKey, testCase.InputValue)
-
-			// then
-
-			for key, val := range testCase.ExpectedLabels {
-				assert.Equal(t, val, app.Labels[key])
-			}
-		})
-	}
-
-}
-
-func TestApplication_DeleteLabel(t *testing.T) {
-	// given
-	testCases := []struct {
-		Name             string
-		InputApplication model.Application
-		InputKey         string
-		ExpectedLabels   map[string]interface{}
-		ExpectedErr      error
-	}{
-		{
-			Name:     "Whole Label",
-			InputKey: "foo",
-			InputApplication: model.Application{
-				Labels: map[string]interface{}{
-					"no":  "delete",
-					"foo": []string{"bar", "baz"},
-				},
-			},
-			ExpectedErr: nil,
-			ExpectedLabels: map[string]interface{}{
-				"no": "delete",
-			},
-		},
-		{
-			Name:     "Error",
-			InputKey: "foobar",
-			InputApplication: model.Application{
-				Labels: map[string]interface{}{
-					"no": "delete",
-				},
-			},
-			ExpectedErr: fmt.Errorf("label %s doesn't exist", "foobar"),
-			ExpectedLabels: map[string]interface{}{
-				"no": "delete",
-			},
-		},
-	}
-
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			app := testCase.InputApplication
-
-			// when
-
-			err := app.DeleteLabel(testCase.InputKey)
-
-			// then
-
-			require.Equal(t, testCase.ExpectedErr, err)
-
-			for key, val := range testCase.ExpectedLabels {
-				assert.Equal(t, val, app.Labels[key])
-			}
-		})
-	}
-}
+//func TestApplication_SetLabel(t *testing.T) {
+//	// given
+//	testCases := []struct {
+//		Name               string
+//		InitialApplication model.Application
+//		InputKey           string
+//		InputValue         interface{}
+//		ExpectedLabels     map[string]interface{}
+//	}{
+//		{
+//			Name: "New Label",
+//			InitialApplication: model.Application{
+//				Labels: map[string]interface{}{
+//					"test": "testVal",
+//				},
+//			},
+//			InputKey:   "foo",
+//			InputValue: []string{"bar", "baz", "bar"},
+//			ExpectedLabels: map[string]interface{}{
+//				"test": "testVal",
+//				"foo":  []string{"bar", "baz", "bar"},
+//			},
+//		},
+//		{
+//			Name: "Nil map",
+//			InitialApplication: model.Application{
+//				Labels: nil,
+//			},
+//			InputKey:   "foo",
+//			InputValue: []string{"bar", "baz"},
+//			ExpectedLabels: map[string]interface{}{
+//				"foo": []string{"bar", "baz"},
+//			},
+//		},
+//	}
+//
+//	for i, testCase := range testCases {
+//		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+//			app := testCase.InitialApplication
+//
+//			// when
+//
+//			app.SetLabel(testCase.InputKey, testCase.InputValue)
+//
+//			// then
+//
+//			for key, val := range testCase.ExpectedLabels {
+//				assert.Equal(t, val, app.Labels[key])
+//			}
+//		})
+//	}
+//
+//}
+//
+//func TestApplication_DeleteLabel(t *testing.T) {
+//	// given
+//	testCases := []struct {
+//		Name             string
+//		InputApplication model.Application
+//		InputKey         string
+//		ExpectedLabels   map[string]interface{}
+//		ExpectedErr      error
+//	}{
+//		{
+//			Name:     "Whole Label",
+//			InputKey: "foo",
+//			InputApplication: model.Application{
+//				Labels: map[string]interface{}{
+//					"no":  "delete",
+//					"foo": []string{"bar", "baz"},
+//				},
+//			},
+//			ExpectedErr: nil,
+//			ExpectedLabels: map[string]interface{}{
+//				"no": "delete",
+//			},
+//		},
+//		{
+//			Name:     "Error",
+//			InputKey: "foobar",
+//			InputApplication: model.Application{
+//				Labels: map[string]interface{}{
+//					"no": "delete",
+//				},
+//			},
+//			ExpectedErr: fmt.Errorf("label %s doesn't exist", "foobar"),
+//			ExpectedLabels: map[string]interface{}{
+//				"no": "delete",
+//			},
+//		},
+//	}
+//
+//	for i, testCase := range testCases {
+//		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+//			app := testCase.InputApplication
+//
+//			// when
+//
+//			err := app.DeleteLabel(testCase.InputKey)
+//
+//			// then
+//
+//			require.Equal(t, testCase.ExpectedErr, err)
+//
+//			for key, val := range testCase.ExpectedLabels {
+//				assert.Equal(t, val, app.Labels[key])
+//			}
+//		})
+//	}
+//}
 
 func TestApplicationInput_ToApplication(t *testing.T) {
 	// given
@@ -146,15 +145,10 @@ func TestApplicationInput_ToApplication(t *testing.T) {
 				HealthCheckURL: &url,
 			},
 			Expected: &model.Application{
-				Name:        "Foo",
-				ID:          id,
-				Tenant:      tenant,
-				Description: &desc,
-				Labels: map[string]interface{}{
-					"test": map[string]interface{}{
-						"test": "foo",
-					},
-				},
+				Name:           "Foo",
+				ID:             id,
+				Tenant:         tenant,
+				Description:    &desc,
 				HealthCheckURL: &url,
 			},
 		},

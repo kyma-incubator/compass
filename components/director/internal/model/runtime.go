@@ -1,7 +1,6 @@
 package model
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -16,7 +15,6 @@ type Runtime struct {
 	Name        string
 	Description *string
 	Tenant      string
-	Labels      map[string]interface{}
 	Status      *RuntimeStatus
 	AgentAuth   *Auth
 }
@@ -34,25 +32,6 @@ const (
 	RuntimeStatusConditionFailed  RuntimeStatusCondition = "FAILED"
 )
 
-func (r *Runtime) SetLabel(key string, value interface{}) {
-	if r.Labels == nil {
-		r.Labels = make(map[string]interface{})
-	}
-
-	r.Labels[key] = value
-}
-
-func (r *Runtime) DeleteLabel(key string) error {
-	_, exists := r.Labels[key]
-
-	if !exists {
-		return fmt.Errorf("label %s doesn't exist", key)
-	}
-
-	delete(r.Labels, key)
-	return nil
-}
-
 type RuntimeInput struct {
 	Name        string
 	Description *string
@@ -69,7 +48,6 @@ func (i *RuntimeInput) ToRuntime(id string, tenant string) *Runtime {
 		Name:        i.Name,
 		Description: i.Description,
 		Tenant:      tenant,
-		Labels:      i.Labels,
 		AgentAuth:   &Auth{},
 		Status:      &RuntimeStatus{},
 	}

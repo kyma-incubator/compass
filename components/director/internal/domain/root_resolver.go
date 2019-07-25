@@ -2,7 +2,7 @@ package domain
 
 import (
 	"context"
-
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
@@ -47,32 +47,34 @@ func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 	apiConverter := api.NewConverter(authConverter, frConverter, versionConverter)
 	eventAPIConverter := eventapi.NewConverter(frConverter, versionConverter)
 	appConverter := application.NewConverter(webhookConverter, apiConverter, eventAPIConverter, docConverter)
+	labelDefConverter := labeldef.NewConverter()
 
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewPostgresRepository()
 	applicationRepo := application.NewRepository()
+	labelRepo := label.NewRepository()
+	labelDefRepo := labeldef.NewRepository(labelDefConverter)
+
 	webhookRepo := webhook.NewRepository()
 	apiRepo := api.NewAPIRepository()
 	eventAPIRepo := eventapi.NewRepository()
 	docRepo := document.NewRepository()
 
 	uidService := uid.NewService()
-	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo, uidService)
+	labelUpsertService := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidService)
+	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo, labelRepo, labelUpsertService, uidService)
 	apiSvc := api.NewService(apiRepo, uidService)
 	eventAPISvc := eventapi.NewService(eventAPIRepo, uidService)
 	webhookSvc := webhook.NewService(webhookRepo, uidService)
 	docSvc := document.NewService(docRepo, uidService)
-	runtimeSvc := runtime.NewService(runtimeRepo, uidService)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelUpsertService, uidService)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
-
-	labelDefConverter := labeldef.NewConverter()
-	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 	labelDefService := labeldef.NewService(labelDefRepo, uidService)
 
 	appCtx := appcontext.NewAppContext()
 
 	return &RootResolver{
-		app:         application.NewResolver(appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter),
+		app:         application.NewResolver(transact, appCtx, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter),
 		api:         api.NewResolver(apiSvc, appSvc, apiConverter, authConverter),
 		eventAPI:    eventapi.NewResolver(eventAPISvc, appSvc, eventAPIConverter),
 		doc:         document.NewResolver(docSvc, appSvc, frConverter),
@@ -89,9 +91,11 @@ func (r *RootResolver) Mutation() graphql.MutationResolver {
 func (r *RootResolver) Query() graphql.QueryResolver {
 	return &queryResolver{r}
 }
-
 func (r *RootResolver) Application() graphql.ApplicationResolver {
 	return &applicationResolver{r}
+}
+func (r *RootResolver) Runtime() graphql.RuntimeResolver {
+	return &runtimeResolver{r}
 }
 
 type queryResolver struct {
@@ -252,6 +256,9 @@ type applicationResolver struct {
 	*RootResolver
 }
 
+func (r *applicationResolver) Labels(ctx context.Context, obj *graphql.Application, key *string) (graphql.Labels, error) {
+	return r.app.Labels(ctx, obj, key)
+}
 func (r *applicationResolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*graphql.Webhook, error) {
 	return r.app.Webhooks(ctx, obj)
 }
@@ -263,4 +270,12 @@ func (r *applicationResolver) EventAPIs(ctx context.Context, obj *graphql.Applic
 }
 func (r *applicationResolver) Documents(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {
 	return r.app.Documents(ctx, obj, first, after)
+}
+
+type runtimeResolver struct {
+	*RootResolver
+}
+
+func (r *runtimeResolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string) (graphql.Labels, error) {
+	return r.runtime.Labels(ctx, obj, key)
 }
