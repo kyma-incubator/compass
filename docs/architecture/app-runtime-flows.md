@@ -8,13 +8,13 @@ Application connection consists of two phases: Application pairing and API regis
 
 ### Application pairing phase
 
-Application pairing phase is a process of creating new Application in Management Plane and establishing trusted connection between Application and Management Plane. 
+Application pairing phase is a process of creating new Application in Management Plane and establishing trusted connection between Application and Management Plane.
 
 Administrator requests Director to create a new Application in the Management Plane. Director sends back Application details, along with its unique ID. Then, Administrator requests Application pairing to the Connector. Connector generates one-time token, and Administrator passes it to the Application. Application uses this token to establish a trusted relation between Application and Management Plane.
 
 ![](./assets/app-pairing.svg)
 
-To learn about implementation details of the pairing process, see the [Establishing trusted connection](./establishing-trusted-connection.md).
+To learn about implementation details of the pairing process, see the [Application Connector diagram](https://kyma-project.io/docs/components/application-connector#architecture-connector-service).
 
 ### API registration phase
 
