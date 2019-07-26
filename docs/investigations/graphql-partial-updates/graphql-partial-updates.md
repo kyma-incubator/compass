@@ -57,7 +57,7 @@ type Mutation {
 ```
 
 #### Description
-This approach is very similar to the previous one, with one difference: there has to be only one, unique input object. In the example linked below it is argued that it make client implementation easier.
+This approach is very similar to the previous one, with one difference: there has to be only one, unique input object. In the example linked below it is argued that it makes the client implementation easier.
 
 Patching logic is the same as in previous approach.
 
@@ -126,4 +126,4 @@ Personally I'm leaning towards the first presented solution. It's simple yet fun
 
 I'm not convinced by the "single input object" approach, having at least the `ID` of affected application as a mutation argument seems to me like a clearer option.
 
-The "Commands & Actions" approach seems like a good idea when ability to set the value to `nil` is a requirement, I don't think we need that.
+The "Commands & Actions" approach seems like a good idea when ability to set the value to `nil` is a requirement, I don't think in our case it's worth adding the additional boiler plate.
