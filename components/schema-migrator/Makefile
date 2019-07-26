@@ -4,14 +4,14 @@ TAG = $(DOCKER_TAG)
 
 .PHONY: ci-pr ci-master ci-release build-image push-image
 
-ci-pr: build-image validate push-image
-ci-master: build-image validate push-image
-ci-release: build-image validate push-image
+ci-pr: validate push-image
+ci-master: validate push-image
+ci-release: validate push-image
 
 build-image:
 	docker build -t $(IMG_NAME) .
 
-validate:
+validate: build-image
 	./validate.sh
 
 push-image:

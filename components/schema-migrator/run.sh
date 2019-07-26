@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-for var in DB_USER DB_HOST DB_NAME DB_PORT DB_PASSWORD; do
+for var in DB_USER DB_HOST DB_NAME DB_PORT DB_PASSWORD DIRECTION; do
     if [ -z "${!var}" ] ; then
         echo "ERROR: $var is not set"
         discoverUnsetVar=true

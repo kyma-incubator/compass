@@ -31,7 +31,6 @@ docker network create --driver bridge ${NETWORK}
 echo -e "${GREEN}Start Postgres in detached mode${NC}"
 docker run -d --name ${POSTGRES_CONTAINER} \
             --network=${NETWORK} \
-            -p 5432:5432 \
             -e POSTGRES_USER="usr" \
             -e POSTGRES_PASSWORD="pwd" \
             -e POSTGRES_DB="compass" \
