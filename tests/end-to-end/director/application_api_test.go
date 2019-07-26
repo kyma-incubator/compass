@@ -1014,18 +1014,18 @@ func TestApplicationsForRuntime(t *testing.T) {
 	defer deleteApplication(t, secondApplication.ID)
 
 	//create app in different tenant
-	tenantName := "completely-another-tenant"
+	differentTenant := "3b6f72ac-93e4-4659-bf9c-8903239e1e93"
 	appInputGQL, err = tc.graphqlizer.ApplicationInputToGQL(inputApp)
 	require.NoError(t, err)
 	createReq = fixCreateApplicationRequest(appInputGQL)
-	createReq.Header["Tenant"] = []string{tenantName}
+	createReq.Header["Tenant"] = []string{differentTenant}
 	application := graphql.Application{}
 
 	err = tc.RunQuery(ctx, createReq, &application)
 
 	require.NoError(t, err)
 	assert.NotEmpty(t, application.ID)
-	defer deleteApplicationInTenant(t, application.ID, tenantName)
+	defer deleteApplicationInTenant(t, application.ID, differentTenant)
 
 	// get all application within tenant
 	//WHEN
@@ -1046,6 +1046,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 
 	//THEN
 	require.NoError(t, err)
+	require.Len(t, applicationPage.Data, 2)
 	assert.EqualValues(t, applicationPage.Data, tenantApplications)
 }
 
