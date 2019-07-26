@@ -1890,6 +1890,7 @@ type APISpec {
 enum SpecFormat {
     YAML
     JSON
+    XML
 }
 
 enum APISpecType {
