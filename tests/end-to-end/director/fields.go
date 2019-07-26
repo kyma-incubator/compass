@@ -169,15 +169,3 @@ func (fp *gqlFieldsProvider) ForRuntime() string {
 		status {condition timestamp}
 		agentAuth {%s}`, fp.ForAuth())
 }
-
-func (fp *gqlFieldsProvider) ForApplicationPage() interface{} {
-	return fmt.Sprintf(`data { 
-		%s 
-	}
-	pageInfo {
-	  startCursor
-	  endCursor
-	  hasNextPage
-	}
-	totalCount`, fp.ForApplication())
-}

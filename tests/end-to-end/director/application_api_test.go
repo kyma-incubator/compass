@@ -986,7 +986,7 @@ func TestTenantSeparation(t *testing.T) {
 
 func TestApplicationsForRuntime(t *testing.T) {
 	//Create first app in first tenant
-	//Given
+	//GIVEN
 	ctx := context.Background()
 	inputApp := generateSampleApplicationInput("app1")
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(inputApp)
@@ -994,32 +994,26 @@ func TestApplicationsForRuntime(t *testing.T) {
 	createReq := fixCreateApplicationRequest(appInputGQL)
 	firstApplication := graphql.Application{}
 
-	//WHEN
 	err = tc.RunQuery(ctx, createReq, &firstApplication)
 
-	//THEN
 	require.NoError(t, err)
 	assert.NotEmpty(t, firstApplication.ID)
 	defer deleteApplication(t, firstApplication.ID)
 
-	//Create second firstApplication
-	//GIVEN
+	//Create second Application in first tenant
 	inputApp.Name = "app2"
 	appInputGQL, err = tc.graphqlizer.ApplicationInputToGQL(inputApp)
 	require.NoError(t, err)
 	createReq = fixCreateApplicationRequest(appInputGQL)
 	secondApplication := graphql.Application{}
 
-	//WHEN
 	err = tc.RunQuery(ctx, createReq, &secondApplication)
 
-	//THEN
 	require.NoError(t, err)
 	assert.NotEmpty(t, secondApplication.ID)
 	defer deleteApplication(t, secondApplication.ID)
 
 	//create app in different tenant
-	//GIVEN
 	tenantName := "completely-another-tenant"
 	appInputGQL, err = tc.graphqlizer.ApplicationInputToGQL(inputApp)
 	require.NoError(t, err)
@@ -1027,16 +1021,14 @@ func TestApplicationsForRuntime(t *testing.T) {
 	createReq.Header["Tenant"] = []string{tenantName}
 	application := graphql.Application{}
 
-	//WHEN
 	err = tc.RunQuery(ctx, createReq, &application)
 
-	//THEN
 	require.NoError(t, err)
 	assert.NotEmpty(t, application.ID)
 	defer deleteApplicationInTenant(t, application.ID, tenantName)
 
-	// get all application withing tenant
-	//GIVEN
+	// get all application within tenant
+	//WHEN
 	tenantApplications := []*graphql.Application{&firstApplication, &secondApplication}
 	request := gcli.NewRequest(
 		fmt.Sprintf(
@@ -1045,19 +1037,16 @@ func TestApplicationsForRuntime(t *testing.T) {
 					%s 
 				}
 			}`,
-			"rtm-id", 2, "next", tc.gqlFieldsProvider.ForApplicationPage(),
+			"rtm-id", 2, "next", tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication()),
 		))
 	applicationPage := graphql.ApplicationPage{}
 
-	fmt.Println(request)
-
-	//WHEN
 	err = tc.RunQuery(ctx, request, &applicationPage)
+	saveQueryInExamples(t, request.Query(), "query applications for runtime")
 
 	//THEN
 	require.NoError(t, err)
 	assert.EqualValues(t, applicationPage.Data, tenantApplications)
-
 }
 
 func getApp(ctx context.Context, t *testing.T, id string) ApplicationExt {
