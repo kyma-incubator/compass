@@ -6,6 +6,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	// Importing the database driver (postgresql)
 	_ "github.com/lib/pq"
 
@@ -16,8 +18,8 @@ import (
 const RetryCount int = 50
 
 // Configure returns the instance of the database
-func Configure(connString string) (Transactioner, func() error, error) {
-	db, closeFunc, err := waitForPersistance(connString, RetryCount)
+func Configure(logger *logrus.Logger, connString string) (Transactioner, func() error, error) {
+	db, closeFunc, err := waitForPersistance(logger, connString, RetryCount)
 
 	return db, closeFunc, err
 }
@@ -26,7 +28,7 @@ func SaveToContext(ctx context.Context, persistOp PersistenceOp) context.Context
 	return context.WithValue(ctx, PersistenceCtxKey, persistOp)
 }
 
-func waitForPersistance(connString string, retryCount int) (Transactioner, func() error, error) {
+func waitForPersistance(logger *logrus.Logger, connString string, retryCount int) (Transactioner, func() error, error) {
 	var sqlxDB *sqlx.DB
 	var err error
 	for ; retryCount > 0; retryCount-- {
@@ -43,7 +45,7 @@ func waitForPersistance(connString string, retryCount int) (Transactioner, func(
 		time.Sleep(5 * time.Second)
 	}
 
-	return &db{sqlDB: sqlxDB}, sqlxDB.Close, err
+	return &db{sqlDB: sqlxDB, logger: logger}, sqlxDB.Close, err
 }
 
 // FromCtx extracts DatabaseOp interface from context
@@ -60,10 +62,12 @@ func FromCtx(ctx context.Context) (PersistenceOp, error) {
 //go:generate mockery -name=Transactioner -output=automock -outpkg=automock -case=underscore
 type Transactioner interface {
 	Begin() (PersistenceTx, error)
+	RollbackUnlessCommited(tx PersistenceTx)
 }
 
 type db struct {
-	sqlDB *sqlx.DB
+	sqlDB  *sqlx.DB
+	logger *logrus.Logger
 }
 
 func (db *db) Begin() (PersistenceTx, error) {
@@ -71,8 +75,13 @@ func (db *db) Begin() (PersistenceTx, error) {
 	return PersistenceTx(tx), err
 }
 
-func (db *db) Close() error {
-	return db.sqlDB.Close()
+func (db *db) RollbackUnlessCommited(tx PersistenceTx) {
+	err := tx.Rollback()
+	if err == nil {
+		db.logger.Warn("transaction rolled back")
+	} else if err != sql.ErrTxDone {
+		db.logger.Warn(err)
+	}
 }
 
 //go:generate mockery -name=PersistenceTx -output=automock -outpkg=automock -case=underscore

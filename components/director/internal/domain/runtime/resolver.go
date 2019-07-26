@@ -66,6 +66,7 @@ func (r *Resolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, 
 	if err != nil {
 		return nil, err
 	}
+	defer r.transact.RollbackUnlessCommited(tx)
 
 	ctx = r.ctxvs.WithValue(ctx, persistence.PersistenceCtxKey, tx)
 
@@ -98,6 +99,7 @@ func (r *Resolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, er
 	if err != nil {
 		return nil, err
 	}
+	defer r.transact.RollbackUnlessCommited(tx)
 
 	ctx = r.ctxvs.WithValue(ctx, persistence.PersistenceCtxKey, tx)
 
@@ -121,6 +123,7 @@ func (r *Resolver) CreateRuntime(ctx context.Context, in graphql.RuntimeInput) (
 	if err != nil {
 		return nil, err
 	}
+	defer r.transact.RollbackUnlessCommited(tx)
 
 	ctx = r.ctxvs.WithValue(ctx, persistence.PersistenceCtxKey, tx)
 
@@ -150,6 +153,7 @@ func (r *Resolver) UpdateRuntime(ctx context.Context, id string, in graphql.Runt
 	if err != nil {
 		return nil, err
 	}
+	defer r.transact.RollbackUnlessCommited(tx)
 
 	ctx = r.ctxvs.WithValue(ctx, persistence.PersistenceCtxKey, tx)
 
@@ -178,6 +182,7 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 	if err != nil {
 		return nil, err
 	}
+	defer r.transact.RollbackUnlessCommited(tx)
 
 	ctx = r.ctxvs.WithValue(ctx, persistence.PersistenceCtxKey, tx)
 
@@ -206,6 +211,7 @@ func (r *Resolver) SetRuntimeLabel(ctx context.Context, runtimeID string, key st
 	if err != nil {
 		return nil, err
 	}
+	defer r.transact.RollbackUnlessCommited(tx)
 
 	ctx = r.ctxvs.WithValue(ctx, persistence.PersistenceCtxKey, tx)
 
@@ -229,6 +235,7 @@ func (r *Resolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key
 	if err != nil {
 		return nil, err
 	}
+	defer r.transact.RollbackUnlessCommited(tx)
 
 	ctx = r.ctxvs.WithValue(ctx, persistence.PersistenceCtxKey, tx)
 

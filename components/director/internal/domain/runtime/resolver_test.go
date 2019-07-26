@@ -54,6 +54,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TransactionerFn: func() *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
 
 				return transact
 			},
@@ -78,6 +79,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TransactionerFn: func() *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
 
 				return transact
 			},
@@ -100,6 +102,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TransactionerFn: func() *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
 
 				return transact
 			},
@@ -182,6 +185,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 			TransactionerFn: func() *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
 
 				return transact
 			},
@@ -207,6 +211,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 			TransactionerFn: func() *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
 
 				return transact
 			},
@@ -230,6 +235,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 			TransactionerFn: func() *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
 
 				return transact
 			},
@@ -301,6 +307,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			TransactionerFn: func() *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
 
 				return transact
 			},
@@ -324,6 +331,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			TransactionerFn: func() *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
 
 				return transact
 			},
@@ -347,6 +355,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			TransactionerFn: func() *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
 
 				return transact
 			},
@@ -415,6 +424,7 @@ func TestResolver_Runtime(t *testing.T) {
 			TransactionerFn: func() *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
 
 				return transact
 			},
@@ -438,6 +448,7 @@ func TestResolver_Runtime(t *testing.T) {
 			TransactionerFn: func() *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
 
 				return transact
 			},
@@ -522,6 +533,7 @@ func TestResolver_Runtimes(t *testing.T) {
 			TransactionerFn: func() *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
 
 				return transact
 			},
@@ -546,6 +558,7 @@ func TestResolver_Runtimes(t *testing.T) {
 			TransactionerFn: func() *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
 
 				return transact
 			},
@@ -622,6 +635,7 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 			TransactionerFn: func() *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
 
 				return transact
 			},
@@ -645,6 +659,7 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 			TransactionerFn: func() *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
 
 				return transact
 			},
@@ -722,6 +737,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			TransactionerFn: func() *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
 
 				return transact
 			},
@@ -745,6 +761,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			TransactionerFn: func() *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
 
 				return transact
 			},
@@ -767,6 +784,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			TransactionerFn: func() *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
 
 				return transact
 			},

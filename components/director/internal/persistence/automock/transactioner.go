@@ -32,3 +32,8 @@ func (_m *Transactioner) Begin() (persistence.PersistenceTx, error) {
 
 	return r0, r1
 }
+
+// RollbackUnlessCommited provides a mock function with given fields: tx
+func (_m *Transactioner) RollbackUnlessCommited(tx persistence.PersistenceTx) {
+	_m.Called(tx)
+}

@@ -44,7 +44,7 @@ func main() {
 
 	connString := fmt.Sprintf(connStringf, cfg.Database.Host, cfg.Database.Port, cfg.Database.User,
 		cfg.Database.Password, cfg.Database.Name, cfg.Database.SSLMode)
-	transact, closeFunc, err := persistence.Configure(connString)
+	transact, closeFunc, err := persistence.Configure(log.StandardLogger(), connString)
 	if err != nil {
 		panic(err)
 	}
