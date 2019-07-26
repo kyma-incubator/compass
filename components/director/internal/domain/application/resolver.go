@@ -3,6 +3,8 @@ package application
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -17,6 +19,7 @@ type ApplicationService interface {
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error)
 	SetLabel(ctx context.Context, applicationID string, key string, value interface{}) error
 	DeleteLabel(ctx context.Context, applicationID string, key string) error
+	ListByRuntimeID(ctx context.Context, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error)
 }
 
 //go:generate mockery -name=ApplicationConverter -output=automock -outpkg=automock -case=underscore
@@ -150,6 +153,31 @@ func (r *Resolver) Application(ctx context.Context, id string) (*graphql.Applica
 	}
 
 	return r.appConverter.ToGraphQL(app), nil
+}
+
+func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
+	var cursor string
+	if after != nil {
+		cursor = string(*after)
+	}
+
+	appPage, err := r.appSvc.ListByRuntimeID(ctx, runtimeID, first, &cursor)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting all Application for Runtime")
+	}
+
+	gqlApps := r.appConverter.MultipleToGraphQL(appPage.Data)
+	totalCount := len(gqlApps)
+
+	return &graphql.ApplicationPage{
+		Data:       gqlApps,
+		TotalCount: totalCount,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(appPage.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(appPage.PageInfo.EndCursor),
+			HasNextPage: appPage.PageInfo.HasNextPage,
+		},
+	}, nil
 }
 
 func (r *Resolver) CreateApplication(ctx context.Context, in graphql.ApplicationInput) (*graphql.Application, error) {

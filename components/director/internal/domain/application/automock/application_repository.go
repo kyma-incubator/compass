@@ -106,6 +106,29 @@ func (_m *ApplicationRepository) List(tenant string, filter []*labelfilter.Label
 	return r0, r1
 }
 
+// ListByRuntimeID provides a mock function with given fields: tenant, runtimeID, pageSize, cursor
+func (_m *ApplicationRepository) ListByRuntimeID(tenant string, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
+	ret := _m.Called(tenant, runtimeID, pageSize, cursor)
+
+	var r0 *model.ApplicationPage
+	if rf, ok := ret.Get(0).(func(string, string, *int, *string) *model.ApplicationPage); ok {
+		r0 = rf(tenant, runtimeID, pageSize, cursor)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.ApplicationPage)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, string, *int, *string) error); ok {
+		r1 = rf(tenant, runtimeID, pageSize, cursor)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Update provides a mock function with given fields: item
 func (_m *ApplicationRepository) Update(item *model.Application) error {
 	ret := _m.Called(item)

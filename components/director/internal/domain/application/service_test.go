@@ -995,10 +995,83 @@ func TestService_DeleteLabel(t *testing.T) {
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 			} else {
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
 			repo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_ListByRuntimeID(t *testing.T) {
+	runtimeID := " idddd"
+	testError := errors.New("test error")
+
+	tenantName := "tenant"
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantName)
+
+	first := 10
+	cursor := "test"
+
+	applications := []*model.Application{
+		fixModelApplication("test1", "test1", "test1"),
+		fixModelApplication("test2", "test2", "test2"),
+	}
+	applicationPage := fixApplicationPage(applications)
+
+	testCases := []struct {
+		Name            string
+		Input           string
+		InputPageSize   *int
+		InputCursor     *string
+		AppRepositoryFn func() *automock.ApplicationRepository
+		ExpectedResult  *model.ApplicationPage
+		ExpectedError   error
+	}{
+		{
+			Name: "Success",
+			AppRepositoryFn: func() *automock.ApplicationRepository {
+				appRepository := &automock.ApplicationRepository{}
+				appRepository.On("ListByRuntimeID", tenantName, runtimeID, &first, &cursor).Return(applicationPage, nil).Once()
+				return appRepository
+			},
+			ExpectedError:  nil,
+			ExpectedResult: applicationPage,
+			Input:          runtimeID,
+		},
+		{
+			Name: "Return error when listing application by RuntimeID failed",
+			AppRepositoryFn: func() *automock.ApplicationRepository {
+				appRepository := &automock.ApplicationRepository{}
+				appRepository.On("ListByRuntimeID", tenantName, runtimeID, &first, &cursor).Return(nil, testError).Once()
+				return appRepository
+			},
+			ExpectedError:  testError,
+			ExpectedResult: nil,
+			Input:          runtimeID,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			appRepository := testCase.AppRepositoryFn()
+			svc := application.NewService(appRepository, nil, nil, nil, nil, nil)
+
+			//WHEN
+			results, err := svc.ListByRuntimeID(ctx, testCase.Input, &first, &cursor)
+
+			//THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				require.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedResult, results)
+			appRepository.AssertExpectations(t)
 		})
 	}
 }

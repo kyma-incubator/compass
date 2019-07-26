@@ -17,6 +17,7 @@ type ApplicationRepository interface {
 	Create(item *model.Application) error
 	Update(item *model.Application) error
 	Delete(item *model.Application) error
+	ListByRuntimeID(tenant, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error)
 }
 
 //go:generate mockery -name=DocumentRepository -output=automock -outpkg=automock -case=underscore
@@ -72,6 +73,15 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 	}
 
 	return s.app.List(appTenant, filter, pageSize, cursor)
+}
+
+func (s *service) ListByRuntimeID(ctx context.Context, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	return s.app.ListByRuntimeID(tenantID, runtimeID, pageSize, cursor)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.Application, error) {

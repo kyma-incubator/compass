@@ -107,6 +107,29 @@ func (_m *ApplicationService) List(ctx context.Context, filter []*labelfilter.La
 	return r0, r1
 }
 
+// ListByRuntimeID provides a mock function with given fields: ctx, runtimeID, pageSize, cursor
+func (_m *ApplicationService) ListByRuntimeID(ctx context.Context, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
+	ret := _m.Called(ctx, runtimeID, pageSize, cursor)
+
+	var r0 *model.ApplicationPage
+	if rf, ok := ret.Get(0).(func(context.Context, string, *int, *string) *model.ApplicationPage); ok {
+		r0 = rf(ctx, runtimeID, pageSize, cursor)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.ApplicationPage)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *int, *string) error); ok {
+		r1 = rf(ctx, runtimeID, pageSize, cursor)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // SetLabel provides a mock function with given fields: ctx, applicationID, key, value
 func (_m *ApplicationService) SetLabel(ctx context.Context, applicationID string, key string, value interface{}) error {
 	ret := _m.Called(ctx, applicationID, key, value)
