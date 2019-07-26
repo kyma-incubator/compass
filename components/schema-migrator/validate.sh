@@ -17,6 +17,12 @@ NETWORK="migration-test-network"
 POSTGRES_CONTAINER="test-postgres"
 POSTGRES_VERSION="11"
 
+DB_USER="usr"
+DB_PWD="pwd"
+DB_NAME="compass"
+DB_PORT="5432"
+DB_SSL_PARAM="disable"
+
 function cleanup() {
     echo -e "${GREEN}Cleanup Postgres container and network${NC}"
     docker rm --force ${POSTGRES_CONTAINER}
@@ -31,20 +37,20 @@ docker network create --driver bridge ${NETWORK}
 echo -e "${GREEN}Start Postgres in detached mode${NC}"
 docker run -d --name ${POSTGRES_CONTAINER} \
             --network=${NETWORK} \
-            -e POSTGRES_USER="usr" \
-            -e POSTGRES_PASSWORD="pwd" \
-            -e POSTGRES_DB="compass" \
+            -e POSTGRES_USER=${DB_USER} \
+            -e POSTGRES_PASSWORD=${DB_PWD} \
+            -e POSTGRES_DB=${DB_NAME} \
             postgres:${POSTGRES_VERSION}
 
 echo -e "${GREEN}Run UP migrations ${NC}"
 
 docker run --rm --network=${NETWORK} \
-        -e DB_USER="usr" \
-        -e DB_PASSWORD="pwd" \
+        -e DB_USER=${DB_USER} \
+        -e DB_PASSWORD=${DB_PWD} \
         -e DB_HOST=${POSTGRES_CONTAINER} \
-        -e DB_PORT="5432" \
-        -e DB_NAME="compass" \
-        -e DB_SSL="disable" \
+        -e DB_PORT=${DB_PORT} \
+        -e DB_NAME=${DB_NAME} \
+        -e DB_SSL=${DB_SSL_PARAM} \
         -e DIRECTION="up" \
     ${IMG_NAME}
 
@@ -53,12 +59,12 @@ docker exec ${POSTGRES_CONTAINER} psql -U usr compass -c "select * from schema_m
 
 echo -e "${GREEN}Run DOWN migrations ${NC}"
 docker run --rm --network=${NETWORK} \
-        -e DB_USER="usr" \
-        -e DB_PASSWORD="pwd" \
+        -e DB_USER=${DB_USER} \
+        -e DB_PASSWORD=${DB_PWD} \
         -e DB_HOST=${POSTGRES_CONTAINER} \
-        -e DB_PORT="5432" \
-        -e DB_NAME="compass" \
-        -e DB_SSL="disable" \
+        -e DB_PORT=${DB_PORT} \
+        -e DB_NAME=${DB_NAME} \
+        -e DB_SSL=${DB_SSL_PARAM} \
         -e DIRECTION="down" \
         -e NON_INTERACTIVE="true" \
     ${IMG_NAME}
