@@ -13,11 +13,11 @@ import (
 
 //go:generate mockery -name=RuntimeRepository -output=automock -outpkg=automock -case=underscore
 type RuntimeRepository interface {
-	GetByID(tenant, id string) (*model.Runtime, error)
-	List(tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error)
-	Create(item *model.Runtime) error
-	Update(item *model.Runtime) error
-	Delete(item *model.Runtime) error
+	GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error)
+	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error)
+	Create(ctx context.Context, item *model.Runtime) error
+	Update(ctx context.Context, item *model.Runtime) error
+	Delete(ctx context.Context, id string) error
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -40,7 +40,7 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	return s.repo.List(rtmTenant, filter, pageSize, cursor)
+	return s.repo.List(ctx, rtmTenant, filter, pageSize, cursor)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.Runtime, error) {
@@ -49,7 +49,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.Runtime, error) {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	runtime, err := s.repo.GetByID(rtmTenant, id)
+	runtime, err := s.repo.GetByID(ctx, rtmTenant, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Runtime with ID %s", id)
 	}
@@ -84,7 +84,7 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 		Timestamp: time.Now(),
 	}
 
-	err = s.repo.Create(rtm)
+	err = s.repo.Create(ctx, rtm)
 	if err != nil {
 		return "", err
 	}
@@ -103,9 +103,15 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 		return errors.Wrap(err, "while getting Runtime")
 	}
 
+	currentStatuts := rtm.Status
+
 	rtm = in.ToRuntime(id, rtm.Tenant)
 
-	err = s.repo.Update(rtm)
+	if rtm.Status.Condition == "" {
+		rtm.Status = currentStatuts
+	}
+
+	err = s.repo.Update(ctx, rtm)
 	if err != nil {
 		return errors.Wrap(err, "while updating Runtime")
 	}
@@ -119,7 +125,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrap(err, "while getting Runtime")
 	}
 
-	return s.repo.Delete(rtm)
+	return s.repo.Delete(ctx, rtm.ID)
 }
 
 func (s *service) SetLabel(ctx context.Context, runtimeID string, key string, value interface{}) error {
@@ -130,7 +136,7 @@ func (s *service) SetLabel(ctx context.Context, runtimeID string, key string, va
 
 	rtm.SetLabel(key, value)
 
-	err = s.repo.Update(rtm)
+	err = s.repo.Update(ctx, rtm)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Runtime")
 	}
@@ -149,7 +155,7 @@ func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string)
 		return errors.Wrapf(err, "while deleting label with key %s", key)
 	}
 
-	err = s.repo.Update(rtm)
+	err = s.repo.Update(ctx, rtm)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Runtime")
 	}

@@ -1,37 +1,71 @@
 package runtime
 
 import (
-	"errors"
+	"context"
+	"fmt"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/lib/pq"
 )
 
-type inMemoryRepository struct {
-	store map[string]*model.Runtime
+const runtimeTable string = `"public"."runtimes"`
+
+type pgRepository struct{}
+
+func NewPostgresRepository() *pgRepository {
+	return &pgRepository{}
 }
 
-func NewRepository() *inMemoryRepository {
-	return &inMemoryRepository{store: make(map[string]*model.Runtime)}
-}
-
-func (r *inMemoryRepository) GetByID(tenant, id string) (*model.Runtime, error) {
-	rtm := r.store[id]
-	if rtm == nil || rtm.Tenant != tenant {
-		return nil, errors.New("runtime not found")
+func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error) {
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching DB from context")
 	}
 
-	return rtm, nil
+	stmt := fmt.Sprintf(`SELECT "id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth" FROM %s WHERE "id" = $1 AND "tenant_id" = $2`,
+		runtimeTable)
+
+	var runtimeEnt Runtime
+	err = persist.Get(&runtimeEnt, stmt, id, tenant)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching runtime from DB")
+	}
+
+	runtimeModel, err := runtimeEnt.ToModel()
+
+	return runtimeModel, errors.Wrap(err, "while creating runtime model from entity")
 }
 
 // TODO: Make filtering and paging
-func (r *inMemoryRepository) List(tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error) {
+func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error) {
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching DB from context")
+	}
+
+	stmt := fmt.Sprintf(`SELECT "id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth" FROM %s WHERE "tenant_id" = $1`,
+		runtimeTable)
+
+	var runtimesEnt []Runtime
+	err = persist.Select(&runtimesEnt, stmt, tenant)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching runtimes from DB")
+	}
+
 	var items []*model.Runtime
-	for _, item := range r.store {
-		if item.Tenant == tenant {
-			items = append(items, item)
+
+	for _, runtimeEnt := range runtimesEnt {
+		model, err := runtimeEnt.ToModel()
+		if err != nil {
+			return nil, errors.Wrap(err, "while creating runtime model from entity")
 		}
+
+		items = append(items, model)
 	}
 
 	return &model.RuntimePage{
@@ -45,60 +79,70 @@ func (r *inMemoryRepository) List(tenant string, filter []*labelfilter.LabelFilt
 	}, nil
 }
 
-func (r *inMemoryRepository) Create(item *model.Runtime) error {
+func (r *pgRepository) Create(ctx context.Context, item *model.Runtime) error {
 	if item == nil {
 		return errors.New("item can not be empty")
 	}
 
-	found := r.findRuntimeNameWithinTenant(item.Tenant, item.Name)
-	if found {
-		return errors.New("Runtime name is not unique within tenant")
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return errors.Wrap(err, "while fetching persistence from context")
 	}
 
-	r.store[item.ID] = item
+	runtimeEnt, err := EntityFromRuntimeModel(item)
+	if err != nil {
+		return errors.Wrap(err, "while creating runtime entity from model")
+	}
 
-	return nil
+	stmt := fmt.Sprintf(`INSERT INTO %s ("id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth") VALUES (:id, :tenant_id, :name, :description, :status_condition, :status_timestamp, :auth)`,
+		runtimeTable)
+
+	_, err = persist.NamedExec(stmt, runtimeEnt)
+	if pqerr, ok := err.(*pq.Error); ok {
+		if pqerr.Code == persistence.UniqueViolation {
+			return errors.New("runtime name is not unique within tenant")
+		}
+	}
+
+	return errors.Wrap(err, "while inserting the runtime entity to database")
 }
 
-func (r *inMemoryRepository) Update(item *model.Runtime) error {
+func (r *pgRepository) Update(ctx context.Context, item *model.Runtime) error {
 	if item == nil {
 		return errors.New("item can not be empty")
 	}
 
-	rtm := r.store[item.ID]
-	if rtm == nil {
-		return errors.New("Runtime not found")
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return errors.Wrap(err, "while fetching persistence from context")
 	}
 
-	if rtm.Name != item.Name {
-		found := r.findRuntimeNameWithinTenant(item.Tenant, item.Name)
-		if found {
-			return errors.New("Runtime name is not unique within tenant")
+	runtimeEnt, err := EntityFromRuntimeModel(item)
+	if err != nil {
+		return errors.Wrap(err, "while creating runtime entity from model")
+	}
+
+	stmt := fmt.Sprintf(`UPDATE %s SET "name" = :name, "description" = :description, "status_condition" = :status_condition, "status_timestamp" = :status_timestamp WHERE "id" = :id`,
+		runtimeTable)
+	_, err = persist.NamedExec(stmt, runtimeEnt)
+
+	if pqerr, ok := err.(*pq.Error); ok {
+		if pqerr.Code == persistence.UniqueViolation {
+			return errors.New("runtime name is not unique within tenant")
 		}
 	}
 
-	rtm.Name = item.Name
-	rtm.Description = item.Description
-	rtm.Labels = item.Labels
-
-	return nil
+	return errors.Wrap(err, "while updating the runtime entity in database")
 }
 
-func (r *inMemoryRepository) Delete(item *model.Runtime) error {
-	if item == nil {
-		return nil
+func (r *pgRepository) Delete(ctx context.Context, id string) error {
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return errors.Wrap(err, "while fetching persistence from context")
 	}
 
-	delete(r.store, item.ID)
+	stmt := fmt.Sprintf(`DELETE FROM %s WHERE "id" = $1`, runtimeTable)
+	_, err = persist.Exec(stmt, id)
 
-	return nil
-}
-
-func (r *inMemoryRepository) findRuntimeNameWithinTenant(tenant, name string) bool {
-	for _, runtime := range r.store {
-		if runtime.Name == name && runtime.Tenant == tenant {
-			return true
-		}
-	}
-	return false
+	return errors.Wrap(err, "while deleting the runtime entity from database")
 }
