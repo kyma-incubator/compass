@@ -155,6 +155,31 @@ func (r *Resolver) Application(ctx context.Context, id string) (*graphql.Applica
 	return r.appConverter.ToGraphQL(app), nil
 }
 
+func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
+	var cursor string
+	if after != nil {
+		cursor = string(*after)
+	}
+
+	appPage, err := r.appSvc.ListByRuntimeID(ctx, runtimeID, first, &cursor)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting all Application for Runtime")
+	}
+
+	gqlApps := r.appConverter.MultipleToGraphQL(appPage.Data)
+	totalCount := len(gqlApps)
+
+	return &graphql.ApplicationPage{
+		Data:       gqlApps,
+		TotalCount: totalCount,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(appPage.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(appPage.PageInfo.EndCursor),
+			HasNextPage: appPage.PageInfo.HasNextPage,
+		},
+	}, nil
+}
+
 func (r *Resolver) CreateApplication(ctx context.Context, in graphql.ApplicationInput) (*graphql.Application, error) {
 	convertedIn := r.appConverter.InputFromGraphQL(in)
 
@@ -321,29 +346,4 @@ func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*g
 	gqlWebhooks := r.webhookConverter.MultipleToGraphQL(webhooks)
 
 	return gqlWebhooks, nil
-}
-
-func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
-	var cursor string
-	if after != nil {
-		cursor = string(*after)
-	}
-
-	appPage, err := r.appSvc.ListByRuntimeID(ctx, runtimeID, first, &cursor)
-	if err != nil {
-		return nil, errors.Wrap(err, "while getting all Application for Runtime")
-	}
-
-	gqlApps := r.appConverter.MultipleToGraphQL(appPage.Data)
-	totalCount := len(gqlApps)
-
-	return &graphql.ApplicationPage{
-		Data:       gqlApps,
-		TotalCount: totalCount,
-		PageInfo: &graphql.PageInfo{
-			StartCursor: graphql.PageCursor(appPage.PageInfo.StartCursor),
-			EndCursor:   graphql.PageCursor(appPage.PageInfo.EndCursor),
-			HasNextPage: appPage.PageInfo.HasNextPage,
-		},
-	}, nil
 }

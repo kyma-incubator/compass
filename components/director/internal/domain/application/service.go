@@ -75,6 +75,15 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 	return s.app.List(appTenant, filter, pageSize, cursor)
 }
 
+func (s *service) ListByRuntimeID(ctx context.Context, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	return s.app.ListByRuntimeID(tenantID, runtimeID, pageSize, cursor)
+}
+
 func (s *service) Get(ctx context.Context, id string) (*model.Application, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -276,12 +285,4 @@ func (s *service) deleteRelatedResources(applicationID string) error {
 	}
 
 	return nil
-}
-func (s *service) ListByRuntimeID(ctx context.Context, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
-	tenantID, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while loading tenant from context")
-	}
-
-	return s.app.ListByRuntimeID(tenantID, runtimeID, pageSize, cursor)
 }

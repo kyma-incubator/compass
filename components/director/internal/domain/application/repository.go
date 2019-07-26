@@ -55,6 +55,26 @@ func (r *inMemoryRepository) List(tenant string, filter []*labelfilter.LabelFilt
 	}, nil
 }
 
+// TODO: Make filtering and paging
+func (r *inMemoryRepository) ListByRuntimeID(tenant, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
+	var items []*model.Application
+	for _, item := range r.store {
+		if item.Tenant == tenant {
+			items = append(items, item)
+		}
+	}
+
+	return &model.ApplicationPage{
+		Data:       items,
+		TotalCount: len(items),
+		PageInfo: &pagination.Page{
+			StartCursor: "",
+			EndCursor:   "",
+			HasNextPage: false,
+		},
+	}, nil
+}
+
 func (r *inMemoryRepository) Create(item *model.Application) error {
 	if item == nil {
 		return errors.New("item can not be empty")
@@ -109,24 +129,4 @@ func (r *inMemoryRepository) findApplicationNameWithinTenant(tenant, name string
 		}
 	}
 	return false
-}
-
-// TODO: Make filtering and paging
-func (r *inMemoryRepository) ListByRuntimeID(tenant, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
-	var items []*model.Application
-	for _, item := range r.store {
-		if item.Tenant == tenant {
-			items = append(items, item)
-		}
-	}
-
-	return &model.ApplicationPage{
-		Data:       items,
-		TotalCount: len(items),
-		PageInfo: &pagination.Page{
-			StartCursor: "",
-			EndCursor:   "",
-			HasNextPage: false,
-		},
-	}, nil
 }
