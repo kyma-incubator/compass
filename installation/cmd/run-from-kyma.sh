@@ -17,4 +17,4 @@ mv -f ${OVERRIDES_MINIKUBE_PATH}.bak $OVERRIDES_MINIKUBE_PATH
 
 # TODO: Remove it after next CLI release
 echo "Adding Compass entries to /etc/hosts...\n"
-sudo sh -c 'echo "\n$(minikube ip) compass-gateway.kyma.local" >> /etc/hosts'
+sudo sh -c 'echo "\n$(minikube ip) compass-gateway.kyma.local compass.kyma.local" >> /etc/hosts'

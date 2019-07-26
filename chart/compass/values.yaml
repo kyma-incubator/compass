@@ -17,6 +17,9 @@ global:
     schema_migrator:
       dir: pr/
       version: "PR-143"
+    ui:
+      dir: 
+      version: "7dd269c6"
     tests:
       e2e:
         dir: pr/
@@ -32,6 +35,9 @@ global:
 
   gateway:
     host: compass-gateway
+  
+  ui:
+    host: compass
     
   ingress:
     domainName: kyma.local
