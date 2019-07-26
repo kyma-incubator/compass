@@ -988,60 +988,58 @@ func TestApplicationsForRuntime(t *testing.T) {
 	//Create first app in first tenant
 	//GIVEN
 	ctx := context.Background()
-	inputApp := generateSampleApplicationInput("app1")
-	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(inputApp)
-	require.NoError(t, err)
-	createReq := fixCreateApplicationRequest(appInputGQL)
-	firstApplication := graphql.Application{}
+	tenantName := "90b9ccc8-7829-4511-ac17-5b0c872a41b5"
+	tenantApplications := []*graphql.Application{}
 
-	err = tc.RunQuery(ctx, createReq, &firstApplication)
+	applications := []struct {
+		ApplicationName string
+		Tenant          string
+		WithinTenant    bool
+		ApplicationId   string
+	}{
+		{
+			Tenant:          tenantName,
+			ApplicationName: "first",
+			WithinTenant:    true,
+		},
+		{
+			Tenant:          tenantName,
+			ApplicationName: "second",
+			WithinTenant:    true,
+		},
+		{
+			Tenant:          "3b6f72ac-93e4-4659-bf9c-8903239e1e93",
+			ApplicationName: "test",
+			WithinTenant:    false,
+		},
+	}
 
-	require.NoError(t, err)
-	assert.NotEmpty(t, firstApplication.ID)
-	defer deleteApplication(t, firstApplication.ID)
+	for _, testApp := range applications {
+		applicationInput := generateSampleApplicationInput(testApp.ApplicationName)
+		appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(applicationInput)
+		require.NoError(t, err)
+		createReq := fixCreateApplicationRequest(appInputGQL)
+		application := graphql.Application{}
+		createReq.Header["Tenant"] = []string{testApp.Tenant}
 
-	//Create second Application in first tenant
-	inputApp.Name = "app2"
-	appInputGQL, err = tc.graphqlizer.ApplicationInputToGQL(inputApp)
-	require.NoError(t, err)
-	createReq = fixCreateApplicationRequest(appInputGQL)
-	secondApplication := graphql.Application{}
+		err = tc.RunQuery(ctx, createReq, &application)
 
-	err = tc.RunQuery(ctx, createReq, &secondApplication)
+		require.NoError(t, err)
+		require.NotEmpty(t, application.ID)
+		testApp.ApplicationId = application.ID
+		defer deleteApplicationInTenant(t, testApp.ApplicationId, testApp.Tenant)
+		if testApp.WithinTenant {
+			tenantApplications = append(tenantApplications, &application)
+		}
+	}
 
-	require.NoError(t, err)
-	assert.NotEmpty(t, secondApplication.ID)
-	defer deleteApplication(t, secondApplication.ID)
-
-	//create app in different tenant
-	differentTenant := "3b6f72ac-93e4-4659-bf9c-8903239e1e93"
-	appInputGQL, err = tc.graphqlizer.ApplicationInputToGQL(inputApp)
-	require.NoError(t, err)
-	createReq = fixCreateApplicationRequest(appInputGQL)
-	createReq.Header["Tenant"] = []string{differentTenant}
-	application := graphql.Application{}
-
-	err = tc.RunQuery(ctx, createReq, &application)
-
-	require.NoError(t, err)
-	assert.NotEmpty(t, application.ID)
-	defer deleteApplicationInTenant(t, application.ID, differentTenant)
-
-	// get all application within tenant
+	// get all testApp within tenant
 	//WHEN
-	tenantApplications := []*graphql.Application{&firstApplication, &secondApplication}
-	request := gcli.NewRequest(
-		fmt.Sprintf(
-			`query {
-  			result: applicationsForRuntime(runtimeID: "%s", first:%d, after:"%s") { 
-					%s 
-				}
-			}`,
-			"rtm-id", 2, "next", tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication()),
-		))
+	request := fixCreateApplicationForRuntimeRequest("0e3504b1-068b-464d-86f3-813f3a3a1759")
+	request.Header["Tenant"] = []string{tenantName}
 	applicationPage := graphql.ApplicationPage{}
 
-	err = tc.RunQuery(ctx, request, &applicationPage)
+	err := tc.RunQuery(ctx, request, &applicationPage)
 	saveQueryInExamples(t, request.Query(), "query applications for runtime")
 
 	//THEN

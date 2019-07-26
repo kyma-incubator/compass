@@ -15,3 +15,15 @@ func fixCreateApplicationRequest(inStr string) *gcli.Request {
 			}`,
 			inStr, tc.gqlFieldsProvider.ForApplication()))
 }
+
+func fixCreateApplicationForRuntimeRequest(runtimeID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(
+			`query {
+  			result: applicationsForRuntime(runtimeID: "%s", first:%d, after:"%s") { 
+					%s 
+				}
+			}`,
+			runtimeID, 2, "next", tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication()),
+		))
+}
