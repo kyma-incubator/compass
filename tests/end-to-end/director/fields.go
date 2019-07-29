@@ -1,6 +1,8 @@
 package director
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // gqlFieldsProvider is responsible for generating GraphQL queries that request for all fields for given type
 type gqlFieldsProvider struct{}
@@ -159,7 +161,8 @@ func (fp *gqlFieldsProvider) ForLabel() string {
 }
 
 func (fp *gqlFieldsProvider) ForRuntime() string {
-	return fmt.Sprintf(`id
+	return fmt.Sprintf(`
+		id
 		name
 		description
 		labels 
