@@ -14,7 +14,7 @@ Administrator requests Director to create a new Application in the Management Pl
 
 ![](./assets/app-pairing.svg)
 
-To learn about implementation details of the pairing process, see the [Application Connector diagram](https://kyma-project.io/docs/components/application-connector#architecture-connector-service).
+To learn about implementation details of the pairing process, see [this](./establishing-trusted-connection.md) document.
 
 ### API registration phase
 
