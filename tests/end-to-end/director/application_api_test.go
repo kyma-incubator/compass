@@ -985,7 +985,6 @@ func TestTenantSeparation(t *testing.T) {
 }
 
 func TestApplicationsForRuntime(t *testing.T) {
-	//Create first app in first tenant
 	//GIVEN
 	ctx := context.Background()
 	tenantName := "90b9ccc8-7829-4511-ac17-5b0c872a41b5"
@@ -1035,7 +1034,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 
 	// get all testApp within tenant
 	//WHEN
-	request := fixCreateApplicationForRuntimeRequest("0e3504b1-068b-464d-86f3-813f3a3a1759")
+	request := fixApplicationForRuntimeRequest("0e3504b1-068b-464d-86f3-813f3a3a1759")
 	request.Header["Tenant"] = []string{tenantName}
 	applicationPage := graphql.ApplicationPage{}
 

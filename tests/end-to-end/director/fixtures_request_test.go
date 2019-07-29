@@ -16,7 +16,7 @@ func fixCreateApplicationRequest(inStr string) *gcli.Request {
 			inStr, tc.gqlFieldsProvider.ForApplication()))
 }
 
-func fixCreateApplicationForRuntimeRequest(runtimeID string) *gcli.Request {
+func fixApplicationForRuntimeRequest(runtimeID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(
 			`query {
