@@ -16,7 +16,7 @@ import (
 type RuntimeRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error)
-	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error)
+	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
 	Create(ctx context.Context, item *model.Runtime) error
 	Update(ctx context.Context, item *model.Runtime) error
 	Delete(ctx context.Context, id string) error
@@ -53,10 +53,14 @@ func NewService(repo RuntimeRepository, labelRepo LabelRepository, labelUpsertSe
 	return &service{repo: repo, labelRepo: labelRepo, labelUpsertService: labelUpsertService, uidService: uidService}
 }
 
-func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error) {
+func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error) {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	if pageSize < 1 {
+		return nil, errors.New("page size can not be less than 1")
 	}
 
 	return s.repo.List(ctx, rtmTenant, filter, pageSize, cursor)

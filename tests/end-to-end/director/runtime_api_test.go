@@ -453,6 +453,64 @@ func TestQuerySpecificRuntime(t *testing.T) {
 	assert.Equal(t, createdRuntime.Description, queriedRuntime.Description)
 }
 
+func TestQueryRuntimesWithPagination(t *testing.T) {
+	//GIVEN
+	ctx := context.Background()
+	runtimeNameSuffix := "runtime"
+	runtimesAmount := 10
+	for i := 0; i < runtimesAmount; i++ {
+		runtimeInput := graphql.RuntimeInput{
+			Name: fmt.Sprintf("%s-%d", runtimeNameSuffix, i),
+		}
+		runtimeInputGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInput)
+		require.NoError(t, err)
+
+		createReq := fixCreateRuntimeRequst(runtimeInputGQL)
+
+		runtime := graphql.Runtime{}
+		err = tc.RunQuery(ctx, createReq, &runtime)
+
+		require.NoError(t, err)
+		require.NotEmpty(t, runtime.ID)
+		defer deleteRuntime(t, runtime.ID)
+	}
+
+	after := 3
+	cursor := ""
+	fullQuiresAmount := int(runtimesAmount / after)
+
+	for i := 0; i < fullQuiresAmount; i++ {
+		runtimesRequest := fixRuntimesRequest(after, cursor)
+
+		//WHEN
+		runtimePage := graphql.RuntimePage{}
+		err := tc.RunQuery(ctx, runtimesRequest, &runtimePage)
+		require.NoError(t, err)
+
+		//THEN
+		assert.Equal(t, cursor, string(runtimePage.PageInfo.StartCursor))
+		assert.True(t, runtimePage.PageInfo.HasNextPage)
+		assert.Len(t, runtimePage.Data, after)
+		for _, runtime := range runtimePage.Data {
+			assert.Contains(t, runtime.Name, runtimeNameSuffix)
+		}
+		cursor = string(runtimePage.PageInfo.EndCursor)
+	}
+
+	//WHEN get last page with last runtime
+	runtimesRequest := fixRuntimesRequest(after, cursor)
+	lastRuntimePage := graphql.RuntimePage{}
+	err := tc.RunQuery(ctx, runtimesRequest, &lastRuntimePage)
+	require.NoError(t, err)
+	saveQueryInExamples(t, runtimesRequest.Query(), "query runtimes with pagination")
+
+	//THEN
+	assert.False(t, lastRuntimePage.PageInfo.HasNextPage)
+	assert.Empty(t, lastRuntimePage.PageInfo.EndCursor)
+	require.Len(t, lastRuntimePage.Data, 1)
+	assert.Contains(t, lastRuntimePage.Data[0].Name, "runtime")
+}
+
 func deleteRuntime(t *testing.T, id string) {
 	delReq := gcli.NewRequest(
 		fmt.Sprintf(`mutation{deleteRuntime(id: "%s") {

@@ -108,11 +108,11 @@ func (_m *RuntimeService) GetLabel(ctx context.Context, runtimeID string, key st
 }
 
 // List provides a mock function with given fields: ctx, filter, pageSize, cursor
-func (_m *RuntimeService) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error) {
+func (_m *RuntimeService) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error) {
 	ret := _m.Called(ctx, filter, pageSize, cursor)
 
 	var r0 *model.RuntimePage
-	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter, *int, *string) *model.RuntimePage); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter, int, string) *model.RuntimePage); ok {
 		r0 = rf(ctx, filter, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
@@ -121,7 +121,7 @@ func (_m *RuntimeService) List(ctx context.Context, filter []*labelfilter.LabelF
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter, *int, *string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter, int, string) error); ok {
 		r1 = rf(ctx, filter, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)

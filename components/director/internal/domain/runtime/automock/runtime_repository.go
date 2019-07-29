@@ -85,11 +85,11 @@ func (_m *RuntimeRepository) GetByID(ctx context.Context, tenant string, id stri
 }
 
 // List provides a mock function with given fields: ctx, tenant, filter, pageSize, cursor
-func (_m *RuntimeRepository) List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error) {
+func (_m *RuntimeRepository) List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error) {
 	ret := _m.Called(ctx, tenant, filter, pageSize, cursor)
 
 	var r0 *model.RuntimePage
-	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter, *int, *string) *model.RuntimePage); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter, int, string) *model.RuntimePage); ok {
 		r0 = rf(ctx, tenant, filter, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
@@ -98,7 +98,7 @@ func (_m *RuntimeRepository) List(ctx context.Context, tenant string, filter []*
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, []*labelfilter.LabelFilter, *int, *string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, []*labelfilter.LabelFilter, int, string) error); ok {
 		r1 = rf(ctx, tenant, filter, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)

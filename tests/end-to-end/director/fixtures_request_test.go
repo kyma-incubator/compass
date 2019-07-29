@@ -27,3 +27,22 @@ func fixApplicationForRuntimeRequest(runtimeID string) *gcli.Request {
 			runtimeID, 2, "next", tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication()),
 		))
 }
+
+func fixCreateRuntimeRequst(inStr string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: createRuntime(in: %s) {
+					%s
+				}
+			}`,
+			inStr, tc.gqlFieldsProvider.ForRuntime()))
+}
+
+func fixRuntimesRequest(after int, cursor string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: runtimes(first:%d, after:"%s") {
+					%s
+				}
+			}`, after, cursor, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForRuntime())))
+}

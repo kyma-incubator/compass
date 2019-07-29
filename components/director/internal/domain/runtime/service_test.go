@@ -466,8 +466,8 @@ func TestService_List(t *testing.T) {
 		Name               string
 		RepositoryFn       func() *automock.RuntimeRepository
 		InputLabelFilters  []*labelfilter.LabelFilter
-		InputPageSize      *int
-		InputCursor        *string
+		InputPageSize      int
+		InputCursor        string
 		ExpectedResult     *model.RuntimePage
 		ExpectedErrMessage string
 	}{
@@ -475,12 +475,12 @@ func TestService_List(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("List", ctx, tnt, filter, &first, &after).Return(runtimePage, nil).Once()
+				repo.On("List", ctx, tnt, filter, first, after).Return(runtimePage, nil).Once()
 				return repo
 			},
 			InputLabelFilters:  filter,
-			InputPageSize:      &first,
-			InputCursor:        &after,
+			InputPageSize:      first,
+			InputCursor:        after,
 			ExpectedResult:     runtimePage,
 			ExpectedErrMessage: "",
 		},
@@ -488,14 +488,26 @@ func TestService_List(t *testing.T) {
 			Name: "Returns error when runtime listing failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("List", ctx, tnt, filter, &first, &after).Return(nil, testErr).Once()
+				repo.On("List", ctx, tnt, filter, first, after).Return(nil, testErr).Once()
 				return repo
 			},
 			InputLabelFilters:  filter,
-			InputPageSize:      &first,
-			InputCursor:        &after,
+			InputPageSize:      first,
+			InputCursor:        after,
 			ExpectedResult:     nil,
 			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when pageSize is less than 1",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				return repo
+			},
+			InputLabelFilters:  filter,
+			InputPageSize:      -1,
+			InputCursor:        after,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: "page size can not be less than 1",
 		},
 	}
 

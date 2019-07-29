@@ -73,8 +73,8 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.R
 	return runtimeModel, nil
 }
 
-// TODO: Make filtering and paging
-func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error) {
+// TODO: Make filtering
+func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching DB from context")
@@ -83,6 +83,11 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 	tenantID, err := uuid.Parse(tenant)
 	if err != nil {
 		return nil, errors.Wrap(err, "while parsing tenant as UUID")
+	}
+
+	offset, err := pagination.DecodeOffsetCursor(cursor)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting cursor")
 	}
 
 	queryForRuntime, err := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filter)
@@ -94,8 +99,8 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 		queryForRuntime = fmt.Sprintf(` AND "id" IN (%s)`, queryForRuntime)
 	}
 
-	stmt := fmt.Sprintf(`SELECT "id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth" FROM %s WHERE "tenant_id"  = $1 %s`,
-		runtimeTable, queryForRuntime)
+	stmt := fmt.Sprintf(`SELECT "id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth" FROM %s WHERE "tenant_id"  = $1 %s %s`,
+		runtimeTable, queryForRuntime,pagination.ConvertOffsetLimitAndOrderedColumnToSQL(pageSize, offset, "id"))
 
 	var runtimesEnt []Runtime
 	err = persist.Select(&runtimesEnt, stmt, tenant)
@@ -114,13 +119,28 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 		items = append(items, model)
 	}
 
+	stmt = fmt.Sprintf(`SELECT COUNT (*) FROM %s WHERE "tenant_id" = $1`, runtimeTable)
+
+	var totalCount int
+	err = persist.Get(&totalCount, stmt, tenant)
+	if err != nil {
+		return nil, errors.Wrap(err, "while counting runtimes")
+	}
+
+	hasNextPage := false
+	endCursor := ""
+	if totalCount > offset+len(items) {
+		hasNextPage = true
+		endCursor = pagination.EncodeOffsetCursor(offset, pageSize)
+	}
+
 	return &model.RuntimePage{
 		Data:       items,
-		TotalCount: len(items),
+		TotalCount: totalCount,
 		PageInfo: &pagination.Page{
-			StartCursor: "",
-			EndCursor:   "",
-			HasNextPage: false,
+			StartCursor: cursor,
+			EndCursor:   endCursor,
+			HasNextPage: hasNextPage,
 		},
 	}, nil
 }
