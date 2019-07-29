@@ -116,7 +116,7 @@ In this approach we define commands (`updateApplication` in provided schema) and
 
 This way we are getting rid of restriction on `nil` values from previous examples, because if we don't want to update the current value we just don't use the action, and if we do specify it, the value of field nested inside can be a `nil`.
 
-The drawback of this solution is a lot o boilerplate needed for each mutation.
+The drawback of this solution is a lot of boilerplate needed for each mutation.
 
 Example: [link](https://techblog.commercetools.com/modeling-graphql-mutations-52d4369f73b1)
 
@@ -151,6 +151,6 @@ Personally I'm leaning towards the first presented solution. It's simple yet fun
 
 I'm not convinced by the "single input object" approach, having at least the `ID` of affected application as a mutation argument seems to me like a clearer option.
 
-The "Commands & Actions" approach seems like a good idea when ability to set the value to `nil` is a requirement, I don't think in our case it's worth adding the additional boiler plate.
+The "Commands & Actions" approach seems like a good idea when ability to set the value to `nil` is a requirement, I don't think in our case it's worth adding the additional boilerplate.
 
 The "PUT Approach" requires additional work on client side while limiting the functionality of API, so I don't think that's a good solution.
