@@ -2,7 +2,7 @@
 
 ## Overview
 
-This documents describes and compares different approaches to designing partial updates in graphql schema. Most of presented approaches have a link to an example they were based on. 
+This document describes and compares different approaches to designing partial updates in graphql schema. Most of the presented approaches have a link to an example they were based on. 
 
 ## Partial update mutation designs
 
@@ -25,8 +25,30 @@ type Mutation {
 }
 ```
 
+#### Usage
+
+**Set description to empty value**
+```graphql
+updateApplication(id: "52cc65fe-c94f-4d94-b59a-01c1ba865547", patch: {
+    description: ""
+}) {
+    id
+    description
+}
+```
+
+**Remove all EventAPIs for Application**
+```graphql
+updateApplication(id: "52cc65fe-c94f-4d94-b59a-01c1ba865547", patch: {
+    eventAPIs: []
+}) {
+    id
+    eventAPIs
+}
+```
+
 #### Description
-In this approach every field has to be optional. If the field is defined, we use the passed value to set the new value. If the field is not defined we don't change the current value.
+In this approach, every field has to be optional. If the field is defined, we use the passed value to set the new value. If the field is not defined we don't change the current value.
 
 Because we use the `nil` value to determine whether to change current value or not we lose the ability to set the actual value to `nil`. In the example linked below this limitation doesn't exist because in javascript we can distinguish `null` and `undefined` values.
 
@@ -56,10 +78,38 @@ type Mutation {
 }
 ```
 
-#### Description
-This approach is very similar to the previous one, with one difference: there has to be only one, unique input object. In the example linked below it is argued that it makes the client implementation easier.
+#### Usage
 
-Patching logic is the same as in previous approach.
+**Set description to empty value**
+```graphql
+updateApplication(in: {
+    id: "52cc65fe-c94f-4d94-b59a-01c1ba865547"
+    patch: {
+        description: ""        
+    }
+}) {
+    id
+    description
+}
+```
+
+**Remove all EventAPIs for Application**
+```graphql
+updateApplication(in: {
+    id: "52cc65fe-c94f-4d94-b59a-01c1ba865547"
+    patch: {
+        eventAPIs: []        
+    }
+}) {
+    id
+    eventAPIs
+}
+```
+
+#### Description
+This approach is very similar to the previous one, with one difference: there has to be only one, unique input object. In the example linked below, it is argued that it makes the client implementation easier.
+
+Patching logic is the same as in the previous approach.
 
 Example: [link](https://blog.apollographql.com/designing-graphql-mutations-e09de826ed97)
 
@@ -110,9 +160,35 @@ type Mutation {
 }
 ```
 
+#### Usage
+
+**Set description to empty value**
+```graphql
+updateApplication(id: "52cc65fe-c94f-4d94-b59a-01c1ba865547", actions: {
+    setDescription: {
+        description: nil # Can be either nil or empty string, depending on implementation
+    }
+}) {
+    id
+    description
+}
+```
+
+**Remove all EventAPIs for Application**
+```graphql
+updateApplication(id: "52cc65fe-c94f-4d94-b59a-01c1ba865547", actions: {
+    setEventAPIs: {
+        eventAPIs: nil # Can be either nil or empty array, depending on implementation 
+    }
+}) {
+    id
+    eventAPIs
+}
+```
+
 #### Description
 
-In this approach we define commands (`updateApplication` in provided schema) and actions (`ApplicationUpdateActions` in provided schema). Each action requires defining additional input type for it.
+In this approach, we define commands (`updateApplication` in the provided schema) and actions (`ApplicationUpdateActions` in the provided schema). Each action requires defining additional input type for it.
 
 This way we are getting rid of restriction on `nil` values from previous examples, because if we don't want to update the current value we just don't use the action, and if we do specify it, the value of field nested inside can be a `nil`.
 
@@ -139,18 +215,66 @@ type Mutation {
 }
 ```
 
+#### Usage
+
+**Set description to empty value**
+```graphql
+updateApplication(id: "52cc65fe-c94f-4d94-b59a-01c1ba865547", in: {
+    name: "Application"
+    description: nil # Can be either nil or empty string, depending on implementation
+    healthCheckURL: "https://health.check/"
+}) {
+    id
+    description
+}
+```
+
+**Remove all EventAPIs for Application**
+```graphql
+deleteAllApplicationEventAPIs(id: "52cc65fe-c94f-4d94-b59a-01c1ba865547") {
+    id
+    eventAPIs
+}
+```
+
 #### Description
 
-This solution works like PUT operation, we always change the value but limit the fields in input object. We need to first fetch the original on client side and modify the fields we want to update.
+This solution works like PUT operation, we always change the value but limit the fields in the input object. We need to first fetch the original on the client side and modify the fields we want to update.
 
 To delete all subresources of application (e.g. webhooks) we have separate mutations, but we lose the ability to replace them with different ones.
 
 ## Conclusion
 
-Personally I'm leaning towards the first presented solution. It's simple yet functional and in our case the drawback of inability of setting the value to `nil` doesn't seem concerning.
+Personally, I'm leaning towards the first presented solution. It's simple yet functional and in our case, the drawback of the inability of setting the value to `nil` doesn't seem concerning.
 
 I'm not convinced by the "single input object" approach, having at least the `ID` of affected application as a mutation argument seems to me like a clearer option.
 
-The "Commands & Actions" approach seems like a good idea when ability to set the value to `nil` is a requirement, I don't think in our case it's worth adding the additional boilerplate.
+The "Commands & Actions" approach seems like a good idea when the ability to set the value to `nil` is a requirement, I don't think in our case it's worth adding the additional boilerplate.
 
-The "PUT Approach" requires additional work on client side while limiting the functionality of API, so I don't think that's a good solution.
+The "PUT Approach" requires additional work on the client side while limiting the functionality of API, so I don't think that's a good solution.
+
+## Appendix
+We had to make some additional choices related to resource versioning and performing updates on the SQL database.
+
+### Resource versioning
+
+#### Overview
+
+Each resource that can be updated (Runtime, Application, API, Document, etc.) should have additional field `version` (name TBD) that would be updated each time its update mutation is executed, and the client would need that version each time it presents user some data that can be updated.
+
+If the client sends an update request with the version that doesn't match the version currently stored on the server, that update will be rejected (because someone else probably modified the resource since the user received his data).
+
+#### Versioning and SQL db tables
+
+Let's imagine a situation when a user sends `updateApplication` request that would set the Application's Document array to a different one. On the database level that wouldn't result in any changes to `applications` table, only to `documents`.
+We still need to update the Application's `version` field to avoid the situation when, for example, one user sets the new value to the Document array and other user sets that value to an empty array. 
+
+### SQL Update
+
+We considered two ways to perform updates on the SQL database.
+
+In the first approach, we would start with fetching the current version of the resource, then we would patch the fields that were sent in the request, increase the `version` field and save the updated resource in the database.
+
+The second approach would require implementing a SQL query builder that would dynamically build update queries modifying only the specified fields and increasing resource `version` field.
+
+After discussions in the team, we decided to implement the first approach.
