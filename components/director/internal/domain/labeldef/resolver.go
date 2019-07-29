@@ -36,6 +36,8 @@ type Converter interface {
 //go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
 type Service interface {
 	Create(ctx context.Context, ld model.LabelDefinition) (model.LabelDefinition, error)
+	Get(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error)
+	List(ctx context.Context, tenant string) ([]model.LabelDefinition, error)
 }
 
 func (r *Resolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDefinitionInput) (*graphql.LabelDefinition, error) {
@@ -63,4 +65,61 @@ func (r *Resolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDe
 	out := r.conv.ToGraphQL(createdLd)
 
 	return &out, nil
+}
+
+func (r *Resolver) LabelDefinitions(ctx context.Context) ([]*graphql.LabelDefinition, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	tx, err := r.transactioner.Begin()
+	if err != nil {
+		return nil, errors.Wrap(err, "while starting transaction")
+	}
+	defer r.transactioner.RollbackUnlessCommited(tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	defs, err := r.srv.List(ctx, tnt)
+	if err != nil {
+		return nil, errors.Wrap(err, "while listing Label Definitions")
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, errors.Wrap(err, "while committing transaction")
+	}
+
+	var out []*graphql.LabelDefinition
+	for _, def := range defs {
+		c := r.conv.ToGraphQL(def)
+		out = append(out, &c)
+	}
+	return out, nil
+}
+
+func (r *Resolver) LabelDefinition(ctx context.Context, key string) (*graphql.LabelDefinition, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := r.transactioner.Begin()
+	if err != nil {
+		return nil, errors.Wrap(err, "while starting transaction")
+	}
+	defer r.transactioner.RollbackUnlessCommited(tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+	def, err := r.srv.Get(ctx, tnt, key)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting Label Definition")
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, errors.Wrap(err, "while committing transaction")
+	}
+
+	if def == nil {
+		return nil, nil
+	}
+	c := r.conv.ToGraphQL(*def)
+	return &c, nil
 }

@@ -41,5 +41,12 @@ func (s *service) Create(ctx context.Context, def model.LabelDefinition) (model.
 	}
 	// TODO get from DB?
 	return def, nil
+}
 
+func (s *service) Get(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error) {
+	return &model.LabelDefinition{}, nil
+}
+
+func (s *service) List(ctx context.Context, tenant string) ([]model.LabelDefinition, error) {
+	return nil, nil
 }
