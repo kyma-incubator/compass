@@ -37,7 +37,7 @@ func newAuthorizedHTTPClient() *http.Client {
 
 func (tc *testContext) RunQuery(ctx context.Context, req *gcli.Request, resp interface{}) error {
 	if req.Header["Tenant"] == nil {
-		req.Header["Tenant"] = []string{"test-end-to-end"}
+		req.Header["Tenant"] = []string{"2a1502ba-aded-11e9-a2a3-2a2ae2dbcce4"}
 	}
 	m := resultMapperFor(&resp)
 	return tc.cli.Run(ctx, req, &m)

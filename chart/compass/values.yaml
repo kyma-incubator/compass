@@ -7,7 +7,7 @@ global:
       version: "PR-99"
     director:
       dir: pr/
-      version: "PR-158"
+      version: "PR-144"
     gateway:
       dir: pr/
       version: "PR-100"
@@ -16,14 +16,14 @@ global:
       version: "PR-99"
     schema_migrator:
       dir: pr/
-      version: "PR-143"
+      version: "PR-161"
     ui:
       dir: 
-      version: "7dd269c6"
+      version: "20739be5"
     tests:
       e2e:
         dir: pr/
-        version: "PR-164"
+        version: "PR-170"
 
   isLocalEnv: false
   

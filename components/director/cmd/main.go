@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 
 	log "github.com/sirupsen/logrus"
@@ -17,8 +19,18 @@ import (
 	"github.com/vrischmann/envconfig"
 )
 
+const connStringf string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
+
 type config struct {
-	Address               string `envconfig:"default=127.0.0.1:3000"`
+	Address  string `envconfig:"default=127.0.0.1:3000"`
+	Database struct {
+		User     string `envconfig:"default=postgres,APP_DB_USER"`
+		Password string `envconfig:"default=pgsql@12345,APP_DB_PASSWORD"`
+		Host     string `envconfig:"default=localhost,APP_DB_HOST"`
+		Port     string `envconfig:"default=5432,APP_DB_PORT"`
+		Name     string `envconfig:"default=postgres,APP_DB_NAME"`
+		SSLMode  string `envconfig:"default=disable,APP_DB_SSL"`
+	}
 	APIEndpoint           string `envconfig:"default=/graphql"`
 	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
 }
@@ -30,8 +42,22 @@ func main() {
 
 	configureLogger()
 
+	connString := fmt.Sprintf(connStringf, cfg.Database.Host, cfg.Database.Port, cfg.Database.User,
+		cfg.Database.Password, cfg.Database.Name, cfg.Database.SSLMode)
+	transact, closeFunc, err := persistence.Configure(log.StandardLogger(), connString)
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		err := closeFunc()
+		if err != nil {
+			panic(err)
+		}
+	}()
+
 	gqlCfg := graphql.Config{
-		Resolvers: domain.NewRootResolver(),
+		Resolvers: domain.NewRootResolver(transact),
 	}
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
 
