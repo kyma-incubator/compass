@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: {{ .Chart.Name }}
-          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.ui.dir }}compass-ui:{{ .Values.global.images.ui.version }}
+          image: {{ .Values.global.images.ui.path }}/{{ .Values.global.images.ui.dir }}compass-ui:{{ .Values.global.images.ui.version }}
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.service.internalPort }}

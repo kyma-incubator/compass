@@ -9,8 +9,9 @@ metadata:
 spec:
   ports:
     - port: {{ .Values.service.externalPort }}
-      name: http
       targetPort: {{ .Values.service.internalPort }}      
+      protocol: TCP
+      name: http2
   selector:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}

@@ -18,6 +18,7 @@ global:
       dir: pr/
       version: "PR-161"
     ui:
+      path: eu.gcr.io/kyma-project
       dir: 
       version: "20739be5"
     tests:
