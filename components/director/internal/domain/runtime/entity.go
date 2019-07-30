@@ -50,10 +50,11 @@ func EntityFromRuntimeModel(model *model.Runtime) (*Runtime, error) {
 }
 
 // ToModel converts Runtime entity to Runtime model
-func (e *Runtime) ToModel() (*model.Runtime, error) {
+func (e Runtime) ToModel() (*model.Runtime, error) {
 	var description *string
 	if e.Description.Valid {
-		description = &e.Description.String
+		description = new(string)
+		*description = e.Description.String
 	}
 
 	var agentAuth model.Auth
