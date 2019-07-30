@@ -71,11 +71,11 @@ func TestValidator_Validate(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 
-			svc, err := jsonschema.NewValidator(testCase.InputJsonSchema)
+			svc, err := jsonschema.NewValidatorFromStringSchema(testCase.InputJsonSchema)
 			require.NoError(t, err)
 
 			// when
-			ok, err := svc.Validate(testCase.InputJson)
+			ok, err := svc.ValidateString(testCase.InputJson)
 			require.NoError(t, err)
 
 			// then

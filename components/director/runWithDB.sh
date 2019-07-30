@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
-# This script is responsible for validating if migrations scripts are correct.
-# It starts Postgres, executes UP and DOWN migrations.
-# This script requires `compass-schema-migrator` Docker image.
+# This script is responsible for running Director with PostgreSQL.
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -21,15 +19,13 @@ DB_USER="usr"
 DB_PWD="pwd"
 DB_NAME="compass"
 DB_PORT="5432"
-DB_SSL_PARAM="disable"
 
 function cleanup() {
-    echo -e "${GREEN}Cleanup Postgres container and network${NC}"
+    echo -e "${GREEN}Cleanup Postgres container${NC}"
     docker rm --force ${POSTGRES_CONTAINER}
 }
 
 trap cleanup EXIT
-
 
 echo -e "${GREEN}Start Postgres in detached mode${NC}"
 docker run -d --name ${POSTGRES_CONTAINER} \
@@ -63,9 +59,4 @@ echo -e "${GREEN}Populate DB${NC}"
 
 PGPASSWORD=pwd psql -U ${DB_USER} -h 127.0.0.1 -f <(cat ${ROOT_PATH}/../schema-migrator/migrations/*.up.sql) ${DB_NAME}
 
-while true
-do
-	sleep 1
-done
-
-#APP_DB_USER=${DB_USER} APP_DB_PASSWORD=${DB_PWD} APP_DB_NAME=${DB_NAME} go run ${ROOT_PATH}/cmd/main.go
+APP_DB_USER=${DB_USER} APP_DB_PASSWORD=${DB_PWD} APP_DB_NAME=${DB_NAME} go run ${ROOT_PATH}/cmd/main.go

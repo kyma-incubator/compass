@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
@@ -64,7 +65,8 @@ func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 	runtimeSvc := runtime.NewService(runtimeRepo, uidService)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 
-	labelDefRepo := labeldef.NewRepository()
+	labelDefConverter := labeldef.NewConverter()
+	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 	labelDefService := labeldef.NewService(labelDefRepo, uidService)
 
 	appCtx := appcontext.NewAppContext()
@@ -77,7 +79,7 @@ func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 		runtime:     runtime.NewResolver(transact, appCtx, runtimeSvc, runtimeConverter),
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
 		webhook:     webhook.NewResolver(webhookSvc, appSvc, webhookConverter),
-		labelDef:    labeldef.NewResolver(labelDefService, labeldef.NewConverter(), transact),
+		labelDef:    labeldef.NewResolver(labelDefService, labelDefConverter, transact),
 	}
 }
 

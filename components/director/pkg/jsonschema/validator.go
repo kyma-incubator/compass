@@ -26,7 +26,7 @@ func NewValidatorFromStringSchema(jsonSchema string) (*validator, error) {
 	}, nil
 }
 
-func NewValidatorFromRawSchema(jsonSchema interface{}) (*validator, error) {
+func NewValidatorFromSchema(jsonSchema interface{}) (*validator, error) {
 	if jsonSchema == nil {
 		return &validator{}, nil
 	}
@@ -34,7 +34,7 @@ func NewValidatorFromRawSchema(jsonSchema interface{}) (*validator, error) {
 	var schema *gojsonschema.Schema
 	var err error
 
-	sl := gojsonschema.NewRawLoader(jsonSchema)
+	sl := gojsonschema.NewGoLoader(jsonSchema)
 	schema, err = gojsonschema.NewSchema(sl)
 	if err != nil {
 		return nil, err

@@ -2,6 +2,7 @@ package labeldef
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
@@ -24,11 +25,14 @@ func NewResolver(srv Service, conv Converter, transactioner persistence.Transact
 }
 
 // dependencies
+//go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
 	FromGraphQL(input graphql.LabelDefinitionInput, tenant string) model.LabelDefinition
 	ToGraphQL(definition model.LabelDefinition) graphql.LabelDefinition
+	ToEntity(in model.LabelDefinition) (Entity, error)
 }
 
+//go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
 type Service interface {
 	Create(ctx context.Context, ld model.LabelDefinition) (model.LabelDefinition, error)
 }
@@ -36,7 +40,7 @@ type Service interface {
 func (r *Resolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDefinitionInput) (*graphql.LabelDefinition, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while loading tenant from context")
+		return nil, err
 	}
 
 	tx, err := r.transactioner.Begin()
