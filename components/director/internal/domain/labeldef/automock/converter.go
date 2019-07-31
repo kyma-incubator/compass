@@ -12,6 +12,27 @@ type Converter struct {
 	mock.Mock
 }
 
+// FromEntity provides a mock function with given fields: in
+func (_m *Converter) FromEntity(in labeldef.Entity) (model.LabelDefinition, error) {
+	ret := _m.Called(in)
+
+	var r0 model.LabelDefinition
+	if rf, ok := ret.Get(0).(func(labeldef.Entity) model.LabelDefinition); ok {
+		r0 = rf(in)
+	} else {
+		r0 = ret.Get(0).(model.LabelDefinition)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(labeldef.Entity) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // FromGraphQL provides a mock function with given fields: input, tenant
 func (_m *Converter) FromGraphQL(input graphql.LabelDefinitionInput, tenant string) model.LabelDefinition {
 	ret := _m.Called(input, tenant)

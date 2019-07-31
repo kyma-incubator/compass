@@ -55,7 +55,7 @@ func TestValidateLabelDef(t *testing.T) {
 		t.SkipNow()
 		// GIVEN
 		var sch interface{} = "anything"
-		in := model.LabelDefinition{Key: "key", Tenant: "tenant", Schema: &sch}
+		in := model.LabelDefinition{ID: "id", Key: "key", Tenant: "tenant", Schema: &sch}
 		// WHEN
 		err := in.Validate()
 		// THEN

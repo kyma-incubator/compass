@@ -30,6 +30,7 @@ type Converter interface {
 	FromGraphQL(input graphql.LabelDefinitionInput, tenant string) model.LabelDefinition
 	ToGraphQL(definition model.LabelDefinition) graphql.LabelDefinition
 	ToEntity(in model.LabelDefinition) (Entity, error)
+	FromEntity(in Entity) (model.LabelDefinition, error)
 }
 
 //go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
