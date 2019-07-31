@@ -348,7 +348,7 @@ func TestQueryRuntimes(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	idsToRemove := make([]string, 3)
+	idsToRemove := make([]string, 0)
 	defer func() {
 		for _, id := range idsToRemove {
 			if id != "" {
@@ -363,10 +363,10 @@ func TestQueryRuntimes(t *testing.T) {
 		{Name: "runtime-query-3"},
 	}
 
-	for i := 0; i < 3; i++ {
+	for _, rtm := range inputRuntimes {
 		givenInput := graphql.RuntimeInput{
-			Name:        inputRuntimes[i].Name,
-			Description: inputRuntimes[i].Description,
+			Name:        rtm.Name,
+			Description: rtm.Description,
 		}
 		runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
 		require.NoError(t, err)
@@ -380,8 +380,8 @@ func TestQueryRuntimes(t *testing.T) {
 		err = tc.RunQuery(ctx, createReq, &actualRuntime)
 		require.NoError(t, err)
 		require.NotEmpty(t, actualRuntime.ID)
-		inputRuntimes[i].ID = actualRuntime.ID
-		idsToRemove[i] = actualRuntime.ID
+		rtm.ID = actualRuntime.ID
+		idsToRemove = append(idsToRemove, actualRuntime.ID)
 	}
 	actualPage := graphql.RuntimePage{}
 
@@ -397,9 +397,21 @@ func TestQueryRuntimes(t *testing.T) {
 
 	//THEN
 	require.NoError(t, err)
-	assert.Len(t, actualPage.Data, 3)
-	assert.Equal(t, 3, actualPage.TotalCount)
-	runtimesContain(t, actualPage.Data, inputRuntimes)
+	assert.Len(t, actualPage.Data, len(inputRuntimes))
+	assert.Equal(t, len(inputRuntimes), actualPage.TotalCount)
+
+	for _, inputRtm := range inputRuntimes {
+		found := false
+		for _, actualRtm := range actualPage.Data {
+			if inputRtm.ID == actualRtm.ID {
+				found = true
+				assert.Equal(t, inputRtm.Name, actualRtm.Name)
+				assert.Equal(t, inputRtm.Description, actualRtm.Description)
+				break
+			}
+		}
+		assert.True(t, found)
+	}
 }
 
 func TestQuerySpecificRuntime(t *testing.T) {
@@ -449,31 +461,4 @@ func deleteRuntime(t *testing.T, id string) {
 		}`, id))
 	err := tc.RunQuery(context.Background(), delReq, nil)
 	require.NoError(t, err)
-}
-
-// runtimesContain tests if every runtime from subset is present in set, comparing Name, ID and Description
-func runtimesContain(t *testing.T, set, subset []*graphql.Runtime) {
-	for _, subElement := range subset {
-		assert.Condition(t, func() (success bool) {
-			for _, superElement := range set {
-				// check ID and Name
-				if superElement.ID != subElement.ID || superElement.Name != subElement.Name {
-					continue
-				}
-				// check Description
-				if subElement.Description == nil || superElement.Description == nil {
-					if subElement.Description == superElement.Description {
-						return true
-					} else {
-						continue
-					}
-				}
-				if *subElement.Description != *superElement.Description {
-					continue
-				}
-				return true
-			}
-			return false
-		})
-	}
 }
