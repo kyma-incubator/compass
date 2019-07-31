@@ -357,9 +357,16 @@ func TestQueryRuntimes(t *testing.T) {
 		}
 	}()
 
+	inputRuntimes := []*graphql.Runtime{
+		{Name: "runtime-query-1", Description: ptrString("test description")},
+		{Name: "runtime-query-2", Description: ptrString("another description")},
+		{Name: "runtime-query-3"},
+	}
+
 	for i := 0; i < 3; i++ {
 		givenInput := graphql.RuntimeInput{
-			Name: fmt.Sprintf("runtime-query-%d", i),
+			Name:        inputRuntimes[i].Name,
+			Description: inputRuntimes[i].Description,
 		}
 		runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
 		require.NoError(t, err)
@@ -373,6 +380,7 @@ func TestQueryRuntimes(t *testing.T) {
 		err = tc.RunQuery(ctx, createReq, &actualRuntime)
 		require.NoError(t, err)
 		require.NotEmpty(t, actualRuntime.ID)
+		inputRuntimes[i].ID = actualRuntime.ID
 		idsToRemove[i] = actualRuntime.ID
 	}
 	actualPage := graphql.RuntimePage{}
@@ -391,7 +399,7 @@ func TestQueryRuntimes(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, actualPage.Data, 3)
 	assert.Equal(t, 3, actualPage.TotalCount)
-
+	runtimesContain(t, actualPage.Data, inputRuntimes)
 }
 
 func TestQuerySpecificRuntime(t *testing.T) {
@@ -430,6 +438,7 @@ func TestQuerySpecificRuntime(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, createdRuntime.ID, queriedRuntime.ID)
 	assert.Equal(t, createdRuntime.Name, queriedRuntime.Name)
+	assert.Equal(t, createdRuntime.Description, queriedRuntime.Description)
 }
 
 func deleteRuntime(t *testing.T, id string) {
@@ -440,4 +449,31 @@ func deleteRuntime(t *testing.T, id string) {
 		}`, id))
 	err := tc.RunQuery(context.Background(), delReq, nil)
 	require.NoError(t, err)
+}
+
+// runtimesContain tests if every runtime from subset is present in set, comparing Name, ID and Description
+func runtimesContain(t *testing.T, set, subset []*graphql.Runtime) {
+	for _, subElement := range subset {
+		assert.Condition(t, func() (success bool) {
+			for _, superElement := range set {
+				// check ID and Name
+				if superElement.ID != subElement.ID || superElement.Name != subElement.Name {
+					continue
+				}
+				// check Description
+				if subElement.Description == nil || superElement.Description == nil {
+					if subElement.Description == superElement.Description {
+						return true
+					} else {
+						continue
+					}
+				}
+				if *subElement.Description != *superElement.Description {
+					continue
+				}
+				return true
+			}
+			return false
+		})
+	}
 }
