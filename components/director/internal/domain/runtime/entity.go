@@ -51,9 +51,9 @@ func EntityFromRuntimeModel(model *model.Runtime) (*Runtime, error) {
 
 // ToModel converts Runtime entity to Runtime model
 func (e *Runtime) ToModel() (*model.Runtime, error) {
-	var description *string
+	var description string
 	if e.Description.Valid {
-		description = &e.Description.String
+		description = e.Description.String
 	}
 
 	var agentAuth model.Auth
@@ -66,7 +66,7 @@ func (e *Runtime) ToModel() (*model.Runtime, error) {
 		ID:          e.ID,
 		Tenant:      e.TenantID,
 		Name:        e.Name,
-		Description: description,
+		Description: &description,
 		Status: &model.RuntimeStatus{
 			Condition: model.RuntimeStatusCondition(e.StatusCondition),
 			Timestamp: e.StatusTimestamp,
