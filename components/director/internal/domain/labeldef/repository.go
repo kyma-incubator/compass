@@ -69,7 +69,7 @@ func (r *repo) GetByKey(ctx context.Context, tenant string, key string) (*model.
 	case err == sql.ErrNoRows:
 		return nil, nil
 	case err != nil:
-		return nil, errors.New("while querying Label Definition")
+		return nil, errors.Wrap(err, "while querying Label Definition")
 	}
 
 	ld, err := r.conv.FromEntity(dest)
