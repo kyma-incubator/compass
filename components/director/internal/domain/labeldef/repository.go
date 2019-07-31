@@ -80,12 +80,20 @@ func (r *repo) GetByKey(ctx context.Context, tenant string, key string) (*model.
 }
 
 func (r *repo) Exists(ctx context.Context, tenant string, key string) (bool, error) {
-	def, err := r.GetByKey(ctx, tenant, key)
+	db, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return false, err
 	}
-	if def != nil {
-		return true, nil
+
+	q := fmt.Sprintf("select 1 as exists from %s where tenant_id=$1 and key=$2 ", tableName)
+
+	var count int
+	err = db.Get(&count, q, tenant, key)
+	switch {
+	case err == sql.ErrNoRows:
+		return false, nil
+	case err != nil:
+		return false, errors.Wrap(err, "while querying Label Definition")
 	}
-	return false, nil
+	return true, nil
 }

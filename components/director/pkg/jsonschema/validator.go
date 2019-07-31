@@ -26,7 +26,7 @@ func NewValidatorFromStringSchema(jsonSchema string) (*validator, error) {
 	}, nil
 }
 
-func NewValidatorFromSchema(jsonSchema interface{}) (*validator, error) {
+func NewValidatorFromRawSchema(jsonSchema interface{}) (*validator, error) {
 	if jsonSchema == nil {
 		return &validator{}, nil
 	}

@@ -25,7 +25,7 @@ func (def *LabelDefinition) Validate() error {
 		return errors.New("missing Key field")
 	}
 	if def.Schema != nil {
-		if _, err := jsonschema.NewValidatorFromSchema(def.Schema); err != nil {
+		if _, err := jsonschema.NewValidatorFromRawSchema(def.Schema); err != nil {
 			return errors.Wrapf(err, "while validating schema: [%v]", def.Schema)
 		}
 	}

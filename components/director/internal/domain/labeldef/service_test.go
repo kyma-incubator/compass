@@ -80,26 +80,26 @@ func fixUID() string {
 
 func fixSchema(t *testing.T) *interface{} {
 	sch := `{
-  "$id": "https://example.com/person.schema.json",
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Person",
-  "type": "object",
-  "properties": {
-    "firstName": {
-      "type": "string",
-      "description": "The person's first name."
-    },
-    "lastName": {
-      "type": "string",
-      "description": "The person's last name."
-    },
-    "age": {
-      "description": "Age in years which must be equal to or greater than zero.",
-      "type": "integer",
-      "minimum": 0
-    }
-  }
-}`
+		"$id": "https://example.com/person.schema.json",
+  		"$schema": "http://json-schema.org/draft-07/schema#",
+  		"title": "Person",
+  		"type": "object",
+  		"properties": {
+  		  "firstName": {
+  		    "type": "string",
+  		    "description": "The person's first name."
+  		  },
+  		  "lastName": {
+  		    "type": "string",
+  		    "description": "The person's last name."
+  		  },
+  		  "age": {
+  		    "description": "Age in years which must be equal to or greater than zero.",
+  		    "type": "integer",
+  		    "minimum": 0
+  		  }
+  		}
+	  }`
 	var obj map[string]interface{}
 
 	err := json.Unmarshal([]byte(sch), &obj)
