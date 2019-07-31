@@ -5,8 +5,11 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/google/uuid"
+
 	"github.com/pkg/errors"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
@@ -77,8 +80,18 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 		return nil, errors.Wrap(err, "while fetching DB from context")
 	}
 
-	stmt := fmt.Sprintf(`SELECT "id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth" FROM %s WHERE "tenant_id" = $1`,
-		runtimeTable)
+	tenantID, err := uuid.Parse(tenant)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing tenant as UUID")
+	}
+
+	queryForRuntime := label.FilterQuery(label.QueryForRuntime, tenantID, filter)
+	if queryForRuntime != "" {
+		queryForRuntime = fmt.Sprintf(` AND "id" IN (%s)`, queryForRuntime)
+	}
+
+	stmt := fmt.Sprintf(`SELECT "id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth" FROM %s WHERE "tenant_id"  = $1 %s`,
+		runtimeTable, queryForRuntime)
 
 	var runtimesEnt []Runtime
 	err = persist.Select(&runtimesEnt, stmt, tenant)
