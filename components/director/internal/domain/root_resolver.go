@@ -77,7 +77,7 @@ func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 		api:         api.NewResolver(apiSvc, appSvc, apiConverter, authConverter),
 		eventAPI:    eventapi.NewResolver(eventAPISvc, appSvc, eventAPIConverter),
 		doc:         document.NewResolver(docSvc, appSvc, frConverter),
-		runtime:     runtime.NewResolver(transact, runtimeSvc, runtimeConverter),
+		runtime:     runtime.NewResolver(transact, runtimeSvc, appSvc, runtimeConverter, appConverter),
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
 		webhook:     webhook.NewResolver(webhookSvc, appSvc, webhookConverter),
 		labelDef:    labeldef.NewResolver(labelDefService, labelDefConverter, transact),
@@ -108,7 +108,7 @@ func (r *queryResolver) Application(ctx context.Context, id string) (*graphql.Ap
 	return r.app.Application(ctx, id)
 }
 func (r *queryResolver) ApplicationsForRuntime(ctx context.Context, runtimeID string, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
-	return r.app.ApplicationsForRuntime(ctx, runtimeID, first, after)
+	return r.runtime.ApplicationsForRuntime(ctx, runtimeID, first, after)
 }
 func (r *queryResolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.RuntimePage, error) {
 	return r.runtime.Runtimes(ctx, filter, first, after)

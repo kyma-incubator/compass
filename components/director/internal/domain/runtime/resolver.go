@@ -35,17 +35,31 @@ type RuntimeConverter interface {
 	InputFromGraphQL(in graphql.RuntimeInput) model.RuntimeInput
 }
 
-type Resolver struct {
-	transact  persistence.Transactioner
-	svc       RuntimeService
-	converter RuntimeConverter
+//go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
+type ApplicationService interface {
+	ListByRuntimeID(ctx context.Context, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error)
 }
 
-func NewResolver(transact persistence.Transactioner, svc RuntimeService, conv RuntimeConverter) *Resolver {
+//go:generate mockery -name=ApplicationConverter -output=automock -outpkg=automock -case=underscore
+type ApplicationConverter interface {
+	MultipleToGraphQL(in []*model.Application) []*graphql.Application
+}
+
+type Resolver struct {
+	transact     persistence.Transactioner
+	svc          RuntimeService
+	appSvc       ApplicationService
+	converter    RuntimeConverter
+	appConverter ApplicationConverter
+}
+
+func NewResolver(transact persistence.Transactioner, svc RuntimeService, appSvc ApplicationService, conv RuntimeConverter, appConverter ApplicationConverter) *Resolver {
 	return &Resolver{
-		transact:  transact,
-		svc:       svc,
-		converter: conv,
+		transact:     transact,
+		svc:          svc,
+		appSvc:       appSvc,
+		converter:    conv,
+		appConverter: appConverter,
 	}
 }
 
@@ -89,6 +103,45 @@ func (r *Resolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, 
 			StartCursor: graphql.PageCursor(runtimesPage.PageInfo.StartCursor),
 			EndCursor:   graphql.PageCursor(runtimesPage.PageInfo.EndCursor),
 			HasNextPage: runtimesPage.PageInfo.HasNextPage,
+		},
+	}, nil
+}
+
+func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
+	var cursor string
+	if after != nil {
+		cursor = string(*after)
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+
+	appPage, err := r.appSvc.ListByRuntimeID(ctx, runtimeID, first, &cursor)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting all Application for Runtime")
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	gqlApps := r.appConverter.MultipleToGraphQL(appPage.Data)
+	totalCount := len(gqlApps)
+
+	return &graphql.ApplicationPage{
+		Data:       gqlApps,
+		TotalCount: totalCount,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(appPage.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(appPage.PageInfo.EndCursor),
+			HasNextPage: appPage.PageInfo.HasNextPage,
 		},
 	}, nil
 }

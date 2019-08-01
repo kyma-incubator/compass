@@ -9,8 +9,6 @@ import (
 
 	"github.com/stretchr/testify/mock"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -1155,98 +1153,6 @@ func TestResolver_EventAPIs(t *testing.T) {
 
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)
-		})
-	}
-}
-
-func TestResolver_ApplicationsForRuntime(t *testing.T) {
-	ctx := context.TODO()
-	testError := errors.New("test error")
-
-	modelApplications := []*model.Application{
-		fixModelApplication("id1", "name", "desc"),
-		fixModelApplication("id2", "name", "desc"),
-	}
-
-	applicationGraphQL := []*graphql.Application{
-		fixGQLApplication("id1", "name", "desc"),
-		fixGQLApplication("id2", "name", "desc"),
-	}
-
-	first := 10
-	after := "test"
-	gqlAfter := graphql.PageCursor(after)
-
-	runtimeID := "foo"
-	testCases := []struct {
-		Name           string
-		AppConverterFn func() *automock.ApplicationConverter
-		AppServiceFn   func() *automock.ApplicationService
-		InputRuntimeID string
-		InputFirst     *int
-		InputAfter     *graphql.PageCursor
-		ExpectedResult *graphql.ApplicationPage
-		ExpectedError  error
-	}{
-		{
-			Name: "Success",
-			AppServiceFn: func() *automock.ApplicationService {
-				appService := &automock.ApplicationService{}
-				appService.On("ListByRuntimeID", ctx, runtimeID, &first, &after).Return(fixApplicationPage(modelApplications), nil).Once()
-				return appService
-			},
-			AppConverterFn: func() *automock.ApplicationConverter {
-				appConverter := &automock.ApplicationConverter{}
-				appConverter.On("MultipleToGraphQL", modelApplications).Return(applicationGraphQL).Once()
-				return appConverter
-			},
-			InputRuntimeID: runtimeID,
-			InputFirst:     &first,
-			InputAfter:     &gqlAfter,
-			ExpectedResult: fixGQLApplicationPage(applicationGraphQL),
-			ExpectedError:  nil,
-		},
-		{
-			Name: "Returns error when application listing failed",
-			AppServiceFn: func() *automock.ApplicationService {
-				appSvc := &automock.ApplicationService{}
-				appSvc.On("ListByRuntimeID", ctx, runtimeID, &first, &after).Return(nil, testError).Once()
-				return appSvc
-			},
-			AppConverterFn: func() *automock.ApplicationConverter {
-				appConverter := &automock.ApplicationConverter{}
-				return appConverter
-			},
-			InputRuntimeID: runtimeID,
-			InputFirst:     &first,
-			InputAfter:     &gqlAfter,
-			ExpectedResult: nil,
-			ExpectedError:  testError,
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			//GIVEN
-			applicationSvc := testCase.AppServiceFn()
-			applicationConverter := testCase.AppConverterFn()
-
-			resolver := application.NewResolver(nil, applicationSvc, nil, nil, nil, nil, applicationConverter, nil, nil, nil, nil)
-
-			//WHEN
-			result, err := resolver.ApplicationsForRuntime(ctx, testCase.InputRuntimeID, testCase.InputFirst, testCase.InputAfter)
-
-			//THEN
-			if testCase.ExpectedError != nil {
-				require.NotNil(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
-			} else {
-				require.NoError(t, err)
-			}
-			assert.Equal(t, testCase.ExpectedResult, result)
-			applicationSvc.AssertExpectations(t)
-			applicationConverter.AssertExpectations(t)
-
 		})
 	}
 }

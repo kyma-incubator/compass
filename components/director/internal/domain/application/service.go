@@ -15,7 +15,7 @@ type ApplicationRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error)
-	ListByRuntimeID(ctx context.Context, tenant, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error)
+	ListByScenariosFromRuntime(ctx context.Context, tenantID string, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error)
 	Create(ctx context.Context, item *model.Application) error
 	Update(ctx context.Context, item *model.Application) error
 	Delete(ctx context.Context, item *model.Application) error
@@ -99,7 +99,7 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID string, pageSiz
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	return s.appRepo.ListByRuntimeID(ctx, tenantID, runtimeID, pageSize, cursor)
+	return s.appRepo.ListByScenariosFromRuntime(ctx, tenantID, runtimeID, pageSize, cursor)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.Application, error) {

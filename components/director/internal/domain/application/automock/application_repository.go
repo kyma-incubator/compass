@@ -107,13 +107,13 @@ func (_m *ApplicationRepository) List(ctx context.Context, tenant string, filter
 	return r0, r1
 }
 
-// ListByRuntimeID provides a mock function with given fields: ctx, tenant, runtimeID, pageSize, cursor
-func (_m *ApplicationRepository) ListByRuntimeID(ctx context.Context, tenant string, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
-	ret := _m.Called(ctx, tenant, runtimeID, pageSize, cursor)
+// ListByScenariosFromRuntime provides a mock function with given fields: ctx, tenantID, runtimeID, pageSize, cursor
+func (_m *ApplicationRepository) ListByScenariosFromRuntime(ctx context.Context, tenantID string, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
+	ret := _m.Called(ctx, tenantID, runtimeID, pageSize, cursor)
 
 	var r0 *model.ApplicationPage
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, *int, *string) *model.ApplicationPage); ok {
-		r0 = rf(ctx, tenant, runtimeID, pageSize, cursor)
+		r0 = rf(ctx, tenantID, runtimeID, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.ApplicationPage)
@@ -122,7 +122,7 @@ func (_m *ApplicationRepository) ListByRuntimeID(ctx context.Context, tenant str
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, *int, *string) error); ok {
-		r1 = rf(ctx, tenant, runtimeID, pageSize, cursor)
+		r1 = rf(ctx, tenantID, runtimeID, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}
