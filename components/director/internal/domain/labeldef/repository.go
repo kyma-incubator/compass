@@ -107,11 +107,7 @@ func (r *repo) List(ctx context.Context, tenant string) ([]model.LabelDefinition
 
 	q := fmt.Sprintf("select * from %s where tenant_id=$1", tableName)
 
-	err = db.Select(&dest, q, tenant)
-	switch {
-	case err == sql.ErrNoRows: // TODO probably not needed: to test!!!
-		return nil, nil
-	case err != nil:
+	if err = db.Select(&dest, q, tenant); err != nil {
 		return nil, errors.Wrap(err, "while listing Label Definitions")
 	}
 
