@@ -55,25 +55,29 @@ func (s *labelUpsertService) UpsertMultipleLabels(ctx context.Context, tenant st
 }
 
 func (s *labelUpsertService) UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error {
-	exists, err := s.labelDefinitionRepo.Exists(ctx, tenant, labelInput.Key)
+	var labelDef *model.LabelDefinition
+
+	labelDef, err := s.labelDefinitionRepo.GetByKey(ctx, tenant, labelInput.Key)
 	if err != nil {
-		return errors.Wrapf(err, "while checking if LabelDefinition for key '%s' exists", labelInput.Key)
+		return errors.Wrapf(err, "while reading LabelDefinition for key '%s'", labelInput.Key)
 	}
 
-	if !exists {
+	if labelDef == nil {
+		// Create new LabelDefinition
 		labelDefinitionID := s.uidService.Generate()
-		err := s.labelDefinitionRepo.Create(ctx, model.LabelDefinition{
+		labelDef = &model.LabelDefinition{
 			ID:     labelDefinitionID,
 			Tenant: tenant,
 			Key:    labelInput.Key,
 			Schema: nil,
-		})
+		}
+		err := s.labelDefinitionRepo.Create(ctx, *labelDef)
 		if err != nil {
 			return errors.Wrapf(err, "while creating  a new LabelDefinition for Label '%s'", labelInput.Key)
 		}
 	}
 
-	err = s.validateLabelInputValue(ctx, tenant, labelInput)
+	err = s.validateLabelInputValue(ctx, tenant, labelInput, labelDef)
 	if err != nil {
 		return errors.Wrapf(err, "while validating Label value for '%s'", labelInput.Key)
 	}
@@ -100,12 +104,7 @@ func (s *labelUpsertService) UpsertLabel(ctx context.Context, tenant string, lab
 	return nil
 }
 
-func (s *labelUpsertService) validateLabelInputValue(ctx context.Context, tenant string, labelInput *model.LabelInput) error {
-	labelDef, err := s.labelDefinitionRepo.GetByKey(ctx, tenant, labelInput.Key)
-	if err != nil {
-		return errors.Wrapf(err, "while reading JSON schema for LabelDefinition for key '%s'", labelInput.Key)
-	}
-
+func (s *labelUpsertService) validateLabelInputValue(ctx context.Context, tenant string, labelInput *model.LabelInput, labelDef *model.LabelDefinition) error {
 	if labelDef == nil || labelDef.Schema == nil {
 		// nothing to validate
 		return nil

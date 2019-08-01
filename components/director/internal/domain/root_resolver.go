@@ -7,7 +7,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 
-	"github.com/kyma-incubator/compass/components/director/internal/appcontext"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 
