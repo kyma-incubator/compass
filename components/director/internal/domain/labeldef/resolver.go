@@ -2,6 +2,7 @@ package labeldef
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
@@ -118,7 +119,7 @@ func (r *Resolver) LabelDefinition(ctx context.Context, key string) (*graphql.La
 	}
 
 	if def == nil {
-		return nil, nil
+		return nil, fmt.Errorf("label defintion with key='%s' does not exist", key)
 	}
 	c := r.conv.ToGraphQL(*def)
 	return &c, nil

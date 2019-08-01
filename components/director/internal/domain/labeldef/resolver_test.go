@@ -326,7 +326,7 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 		assert.Nil(t, actual.Schema)
 	})
 
-	t.Run("returns nil if definition does not exist", func(t *testing.T) {
+	t.Run("returns error if definition does not exist", func(t *testing.T) {
 		// GIVEN
 		mockPersistanceCtx := &pautomock.PersistenceTxOp{}
 		defer mockPersistanceCtx.AssertExpectations(t)
@@ -347,10 +347,9 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 
 		sut := labeldef.NewResolver(mockService, nil, mockTransactioner)
 		// WHEN
-		actual, err := sut.LabelDefinition(ctx, "key")
+		_, err := sut.LabelDefinition(ctx, "key")
 		// THEN
-		require.NoError(t, err)
-		assert.Nil(t, actual)
+		require.EqualError(t, err, "label defintion with key='key' does not exist")
 	})
 
 	t.Run("got error on getting label definition from service", func(t *testing.T) {
