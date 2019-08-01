@@ -12,11 +12,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=ContextValueSetter -output=automock -outpkg=automock -case=underscore
-type ContextValueSetter interface {
-	WithValue(parent context.Context, key interface{}, val interface{}) context.Context
-}
-
 //go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
 type ApplicationService interface {
 	Create(ctx context.Context, in model.ApplicationInput) (string, error)
@@ -100,7 +95,6 @@ type WebhookConverter interface {
 
 type Resolver struct {
 	transact       persistence.Transactioner
-	ctxValueSetter ContextValueSetter
 
 	appSvc       ApplicationService
 	appConverter ApplicationConverter
@@ -116,10 +110,9 @@ type Resolver struct {
 	eventApiConverter EventAPIConverter
 }
 
-func NewResolver(transact persistence.Transactioner, ctxValueSetter ContextValueSetter, svc ApplicationService, apiSvc APIService, eventAPISvc EventAPIService, documentSvc DocumentService, webhookSvc WebhookService, appConverter ApplicationConverter, documentConverter DocumentConverter, webhookConverter WebhookConverter, apiConverter APIConverter, eventAPIConverter EventAPIConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc ApplicationService, apiSvc APIService, eventAPISvc EventAPIService, documentSvc DocumentService, webhookSvc WebhookService, appConverter ApplicationConverter, documentConverter DocumentConverter, webhookConverter WebhookConverter, apiConverter APIConverter, eventAPIConverter EventAPIConverter) *Resolver {
 	return &Resolver{
 		transact:          transact,
-		ctxValueSetter:    ctxValueSetter,
 		appSvc:            svc,
 		apiSvc:            apiSvc,
 		eventAPISvc:       eventAPISvc,
@@ -203,7 +196,7 @@ func (r *Resolver) CreateApplication(ctx context.Context, in graphql.Application
 	}
 	defer r.transact.RollbackUnlessCommited(tx)
 
-	ctx = r.ctxValueSetter.WithValue(ctx, persistence.PersistenceCtxKey, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	id, err := r.appSvc.Create(ctx, convertedIn)
 	if err != nil {
@@ -233,7 +226,7 @@ func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.
 	}
 	defer r.transact.RollbackUnlessCommited(tx)
 
-	ctx = r.ctxValueSetter.WithValue(ctx, persistence.PersistenceCtxKey, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	err = r.appSvc.Update(ctx, id, convertedIn)
 	if err != nil {
@@ -261,7 +254,7 @@ func (r *Resolver) DeleteApplication(ctx context.Context, id string) (*graphql.A
 	}
 	defer r.transact.RollbackUnlessCommited(tx)
 
-	ctx = r.ctxValueSetter.WithValue(ctx, persistence.PersistenceCtxKey, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	app, err := r.appSvc.Get(ctx, id)
 	if err != nil {
@@ -289,7 +282,7 @@ func (r *Resolver) SetApplicationLabel(ctx context.Context, applicationID string
 	}
 	defer r.transact.RollbackUnlessCommited(tx)
 
-	ctx = r.ctxValueSetter.WithValue(ctx, persistence.PersistenceCtxKey, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	err = r.appSvc.SetLabel(ctx, &model.LabelInput{
 		Key:        key,
@@ -319,7 +312,7 @@ func (r *Resolver) DeleteApplicationLabel(ctx context.Context, applicationID str
 	}
 	defer r.transact.RollbackUnlessCommited(tx)
 
-	ctx = r.ctxValueSetter.WithValue(ctx, persistence.PersistenceCtxKey, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	label, err := r.appSvc.GetLabel(ctx, applicationID, key)
 	if err != nil {
@@ -441,7 +434,7 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *st
 	}
 	defer r.transact.RollbackUnlessCommited(tx)
 
-	ctx = r.ctxValueSetter.WithValue(ctx, persistence.PersistenceCtxKey, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	itemMap, err := r.appSvc.ListLabels(ctx, obj.ID)
 	if err != nil {

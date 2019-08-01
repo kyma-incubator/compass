@@ -15,11 +15,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-//go:generate mockery -name=ContextValueSetter -output=automock -outpkg=automock -case=underscore
-type ContextValueSetter interface {
-	WithValue(parent context.Context, key interface{}, val interface{}) context.Context
-}
-
 //go:generate mockery -name=RuntimeService -output=automock -outpkg=automock -case=underscore
 type RuntimeService interface {
 	Create(ctx context.Context, in model.RuntimeInput) (string, error)
@@ -42,15 +37,13 @@ type RuntimeConverter interface {
 
 type Resolver struct {
 	transact  persistence.Transactioner
-	ctxvs     ContextValueSetter
 	svc       RuntimeService
 	converter RuntimeConverter
 }
 
-func NewResolver(transact persistence.Transactioner, ctxvs ContextValueSetter, svc RuntimeService, conv RuntimeConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc RuntimeService, conv RuntimeConverter) *Resolver {
 	return &Resolver{
 		transact:  transact,
-		ctxvs:     ctxvs,
 		svc:       svc,
 		converter: conv,
 	}
@@ -73,7 +66,7 @@ func (r *Resolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, 
 	}
 	defer r.transact.RollbackUnlessCommited(tx)
 
-	ctx = r.ctxvs.WithValue(ctx, persistence.PersistenceCtxKey, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	runtimesPage, err := r.svc.List(ctx, labelFilter, first, &cursor)
 	if err != nil {
@@ -106,7 +99,7 @@ func (r *Resolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, er
 	}
 	defer r.transact.RollbackUnlessCommited(tx)
 
-	ctx = r.ctxvs.WithValue(ctx, persistence.PersistenceCtxKey, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	runtime, err := r.svc.Get(ctx, id)
 	if err != nil {
@@ -130,7 +123,7 @@ func (r *Resolver) CreateRuntime(ctx context.Context, in graphql.RuntimeInput) (
 	}
 	defer r.transact.RollbackUnlessCommited(tx)
 
-	ctx = r.ctxvs.WithValue(ctx, persistence.PersistenceCtxKey, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	id, err := r.svc.Create(ctx, convertedIn)
 	if err != nil {
@@ -160,7 +153,7 @@ func (r *Resolver) UpdateRuntime(ctx context.Context, id string, in graphql.Runt
 	}
 	defer r.transact.RollbackUnlessCommited(tx)
 
-	ctx = r.ctxvs.WithValue(ctx, persistence.PersistenceCtxKey, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	err = r.svc.Update(ctx, id, convertedIn)
 	if err != nil {
@@ -189,7 +182,7 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 	}
 	defer r.transact.RollbackUnlessCommited(tx)
 
-	ctx = r.ctxvs.WithValue(ctx, persistence.PersistenceCtxKey, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	runtime, err := r.svc.Get(ctx, id)
 	if err != nil {
@@ -218,7 +211,7 @@ func (r *Resolver) SetRuntimeLabel(ctx context.Context, runtimeID string, key st
 	}
 	defer r.transact.RollbackUnlessCommited(tx)
 
-	ctx = r.ctxvs.WithValue(ctx, persistence.PersistenceCtxKey, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	err = r.svc.SetLabel(ctx, &model.LabelInput{
 		Key:        key,
@@ -248,7 +241,7 @@ func (r *Resolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key
 	}
 	defer r.transact.RollbackUnlessCommited(tx)
 
-	ctx = r.ctxvs.WithValue(ctx, persistence.PersistenceCtxKey, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	label, err := r.svc.GetLabel(ctx, runtimeID, key)
 	if err != nil {
@@ -282,7 +275,7 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string
 	}
 	defer r.transact.RollbackUnlessCommited(tx)
 
-	ctx = r.ctxvs.WithValue(ctx, persistence.PersistenceCtxKey, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	itemMap, err := r.svc.ListLabels(ctx, obj.ID)
 	if err != nil {

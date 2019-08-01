@@ -47,7 +47,7 @@ func (s *labelUpsertService) UpsertMultipleLabels(ctx context.Context, tenant st
 			ObjectType: objectType,
 		})
 		if err != nil {
-			return errors.Wrap(err, "while upserting multiple labels")
+			return errors.Wrap(err, "while upserting multiple Labels")
 		}
 	}
 
@@ -69,13 +69,13 @@ func (s *labelUpsertService) UpsertLabel(ctx context.Context, tenant string, lab
 			Schema: nil,
 		})
 		if err != nil {
-			return errors.Wrapf(err, "while creating empty LabelDefinition for '%s'", labelInput.Key)
+			return errors.Wrapf(err, "while creating  a new LabelDefinition for Label '%s'", labelInput.Key)
 		}
 	}
 
 	err = s.validateLabelInputValue(ctx, tenant, labelInput)
 	if err != nil {
-		return errors.Wrap(err, "while validating label value")
+		return errors.Wrapf(err, "while validating Label value for '%s'", labelInput.Key)
 	}
 
 	var id string

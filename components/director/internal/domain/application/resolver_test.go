@@ -42,9 +42,6 @@ func TestResolver_CreateApplication(t *testing.T) {
 	ctx := context.TODO()
 	ctxWithPersistenceTx := context.WithValue(ctx, persistence.PersistenceCtxKey, persistTx)
 
-	appCtx := &automock.ContextValueSetter{}
-	appCtx.On("WithValue", ctx, persistence.PersistenceCtxKey, persistTx).Return(ctxWithPersistenceTx)
-
 	testCases := []struct {
 		Name                string
 		TransactionerFn     func() *persistenceautomock.Transactioner
@@ -130,7 +127,7 @@ func TestResolver_CreateApplication(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 			transactioner := testCase.TransactionerFn()
-			resolver := application.NewResolver(transactioner, appCtx, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(transactioner, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -263,7 +260,7 @@ func TestResolver_UpdateApplication(t *testing.T) {
 			converter := testCase.ConverterFn()
 			transactioner := testCase.TransactionerFn()
 
-			resolver := application.NewResolver(transactioner, appCtx, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(transactioner, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -647,7 +644,7 @@ func TestResolver_SetApplicationLabel(t *testing.T) {
 			converter := testCase.ConverterFn()
 			transactioner := testCase.TransactionerFn()
 
-			resolver := application.NewResolver(transactioner, appCtx, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(transactioner, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -780,7 +777,7 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 			converter := testCase.ConverterFn()
 			transactioner := testCase.TransactionerFn()
 
-			resolver := application.NewResolver(transactioner, appCtx, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(transactioner, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -864,7 +861,7 @@ func TestResolver_Documents(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(nil, nil, nil, nil, nil, svc, nil, nil, converter, nil, nil, nil)
+			resolver := application.NewResolver(nil, nil, nil, nil, svc, nil, nil, converter, nil, nil, nil)
 
 			// when
 			result, err := resolver.Documents(context.TODO(), app, testCase.InputFirst, testCase.InputAfter)
@@ -936,7 +933,7 @@ func TestResolver_Webhooks(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, svc, nil, nil, converter, nil, nil)
+			resolver := application.NewResolver(nil, nil, nil, nil, nil, svc, nil, nil, converter, nil, nil)
 
 			// when
 			result, err := resolver.Webhooks(context.TODO(), app)
@@ -1107,7 +1104,7 @@ func TestResolver_EventAPIs(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(nil, nil, nil, nil, svc, nil, nil, nil, nil, nil, nil, converter)
+			resolver := application.NewResolver(nil, nil, nil, svc, nil, nil, nil, nil, nil, nil, converter)
 			// when
 			result, err := resolver.EventAPIs(context.TODO(), app, &group, testCase.InputFirst, testCase.InputAfter)
 
@@ -1193,7 +1190,7 @@ func TestResolver_ApplicationsForRuntime(t *testing.T) {
 			applicationSvc := testCase.AppServiceFn()
 			applicationConverter := testCase.AppConverterFn()
 
-			resolver := application.NewResolver(nil, nil, applicationSvc, nil, nil, nil, nil, applicationConverter, nil, nil, nil, nil)
+			resolver := application.NewResolver(nil, applicationSvc, nil, nil, nil, nil, applicationConverter, nil, nil, nil, nil)
 
 			//WHEN
 			result, err := resolver.ApplicationsForRuntime(ctx, testCase.InputRuntimeID, testCase.InputFirst, testCase.InputAfter)

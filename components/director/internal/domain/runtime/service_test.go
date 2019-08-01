@@ -853,7 +853,6 @@ func TestService_DeleteLabel(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	runtimeID := "foo"
-	//modifiedRuntimeModel := fixModelRuntimeWithLabels(runtimeID, tnt, "Foo", map[string]interface{}{})
 
 	labelKey := "key"
 

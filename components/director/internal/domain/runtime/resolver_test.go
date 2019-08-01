@@ -728,9 +728,6 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 	ctx := context.TODO()
 	ctxWithPersistenceTx := context.WithValue(ctx, persistence.PersistenceCtxKey, persistTx)
 
-	appCtx := &automock.ContextValueSetter{}
-	appCtx.On("WithValue", ctx, persistence.PersistenceCtxKey, persistTx).Return(ctxWithPersistenceTx)
-
 	testCases := []struct {
 		Name            string
 		TransactionerFn func() *persistenceautomock.Transactioner
@@ -820,7 +817,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, appCtx, svc, converter)
+			resolver := runtime.NewResolver(transact, svc, converter)
 
 			// when
 			result, err := resolver.DeleteRuntimeLabel(ctx, testCase.InputRuntimeID, testCase.InputKey)

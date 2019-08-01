@@ -57,18 +57,6 @@ func fixGQLRuntime(id, name, description string) *graphql.Runtime {
 	}
 }
 
-//func fixModelRuntimeWithLabels(id, tenant, name string, labels map[string]interface{}) *model.Runtime {
-//	return &model.Runtime{
-//		ID:     id,
-//		Tenant: tenant,
-//		Status: &model.RuntimeStatus{
-//			Condition: model.RuntimeStatusConditionInitial,
-//		},
-//		Name:        name,
-//		Description: nil,
-//	}
-//}
-
 func fixDetailedModelRuntime(t *testing.T, id, name, description string) *model.Runtime {
 	time, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)

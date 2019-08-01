@@ -71,14 +71,12 @@ func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 	labelDefService := labeldef.NewService(labelDefRepo, uidService)
 
-	appCtx := appcontext.NewAppContext()
-
 	return &RootResolver{
-		app:         application.NewResolver(transact, appCtx, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter),
+		app:         application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter),
 		api:         api.NewResolver(apiSvc, appSvc, apiConverter, authConverter),
 		eventAPI:    eventapi.NewResolver(eventAPISvc, appSvc, eventAPIConverter),
 		doc:         document.NewResolver(docSvc, appSvc, frConverter),
-		runtime:     runtime.NewResolver(transact, appCtx, runtimeSvc, runtimeConverter),
+		runtime:     runtime.NewResolver(transact, runtimeSvc, runtimeConverter),
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
 		webhook:     webhook.NewResolver(webhookSvc, appSvc, webhookConverter),
 		labelDef:    labeldef.NewResolver(labelDefService, labelDefConverter, transact),
