@@ -2,6 +2,8 @@ package label_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -9,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestLabelUpsertService_UpsertMultipleLabels(t *testing.T) {
@@ -323,12 +324,12 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
 				repo.On("GetByKey", ctx, tnt, appType, appID, "test").Return(&model.Label{
-					ID: id,
-					Tenant: tnt,
+					ID:         id,
+					Tenant:     tnt,
 					ObjectType: model.ApplicationLabelableObject,
-					ObjectID: appID,
-					Key: "test",
-					Value: "foo bar",
+					ObjectID:   appID,
+					Key:        "test",
+					Value:      "foo bar",
 				}, notFoundErr).Once()
 
 				repo.On("Upsert", ctx, &model.Label{
