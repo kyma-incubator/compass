@@ -45,7 +45,6 @@ func (r *repository) Upsert(ctx context.Context, label *model.Label) error {
 
 	stmt := fmt.Sprintf(`INSERT INTO %s (id, tenant_id, key, value, app_id, runtime_id) VALUES (:id, :tenant_id, :key, :value, :app_id, :runtime_id)
 		ON CONFLICT (id) DO UPDATE SET
-    		key = EXCLUDED.key,
     		value = EXCLUDED.value
 		`, tableName)
 

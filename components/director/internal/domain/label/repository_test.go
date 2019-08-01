@@ -59,7 +59,6 @@ func TestRepository_Upsert(t *testing.T) {
 
 		escapedQuery := regexp.QuoteMeta(`INSERT INTO "public"."labels" (id, tenant_id, key, value, app_id, runtime_id) VALUES (?, ?, ?, ?, ?, ?)
 		ON CONFLICT (id) DO UPDATE SET
-    		key = EXCLUDED.key,
     		value = EXCLUDED.value
 		`)
 		dbMock.ExpectExec(escapedQuery).WithArgs(labelEntity.ID, labelEntity.TenantID, labelEntity.Key, labelEntity.Value, labelEntity.AppID, labelEntity.RuntimeID).WillReturnResult(sqlmock.NewResult(1, 1))
@@ -113,7 +112,6 @@ func TestRepository_Upsert(t *testing.T) {
 
 		escapedQuery := regexp.QuoteMeta(`INSERT INTO "public"."labels" (id, tenant_id, key, value, app_id, runtime_id) VALUES (?, ?, ?, ?, ?, ?)
 		ON CONFLICT (id) DO UPDATE SET
-    		key = EXCLUDED.key,
     		value = EXCLUDED.value
 		`)
 		dbMock.ExpectExec(escapedQuery).WithArgs(labelEntity.ID, labelEntity.TenantID, labelEntity.Key, labelEntity.Value, labelEntity.AppID, labelEntity.RuntimeID).WillReturnResult(sqlmock.NewResult(1, 1))
@@ -168,7 +166,6 @@ func TestRepository_Upsert(t *testing.T) {
 
 		escapedQuery := regexp.QuoteMeta(`INSERT INTO "public"."labels" (id, tenant_id, key, value, app_id, runtime_id) VALUES (?, ?, ?, ?, ?, ?)
 		ON CONFLICT (id) DO UPDATE SET
-    		key = EXCLUDED.key,
     		value = EXCLUDED.value
 		`)
 		dbMock.ExpectExec(escapedQuery).WithArgs(labelEntity.ID, labelEntity.TenantID, labelEntity.Key, labelEntity.Value, labelEntity.AppID, labelEntity.RuntimeID).WillReturnError(testErr)
@@ -446,6 +443,7 @@ func TestRepository_List(t *testing.T) {
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
+
 		// WHEN
 		actual, err := repo.List(ctx, tnt, objType, objID)
 		// THEN

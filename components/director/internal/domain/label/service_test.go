@@ -330,8 +330,7 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 					ObjectID:   appID,
 					Key:        "test",
 					Value:      "foo bar",
-				}, notFoundErr).Once()
-
+				}, nil).Once()
 				repo.On("Upsert", ctx, &model.Label{
 					Key:        "test",
 					Value:      "string",
@@ -349,7 +348,6 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
-				svc.On("Generate").Return(id)
 				return svc
 			},
 			ExpectedErrMessage: "",
