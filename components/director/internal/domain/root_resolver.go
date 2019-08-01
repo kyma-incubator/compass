@@ -48,11 +48,12 @@ func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 	eventAPIConverter := eventapi.NewConverter(frConverter, versionConverter)
 	appConverter := application.NewConverter(webhookConverter, apiConverter, eventAPIConverter, docConverter)
 	labelDefConverter := labeldef.NewConverter()
+	labelConverter := label.NewConverter()
 
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewPostgresRepository()
 	applicationRepo := application.NewRepository()
-	labelRepo := label.NewRepository()
+	labelRepo := label.NewRepository(labelConverter)
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 
 	webhookRepo := webhook.NewRepository()

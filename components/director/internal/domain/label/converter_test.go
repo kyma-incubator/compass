@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestEntityFromModel(t *testing.T) {
+func TestConverter_ToEntity(t *testing.T) {
 	stringValue := "foo"
 	marshalledStringValue, err := json.Marshal(stringValue)
 	require.NoError(t, err)
@@ -20,36 +20,33 @@ func TestEntityFromModel(t *testing.T) {
 	marshalledArrayValue, err := json.Marshal(arrayValue)
 	require.NoError(t, err)
 
-	arrayLabelModel := fixLabelModel("1", arrayValue)
-	stringLabelModel := fixLabelModel("1", stringValue)
-
 	// given
 	testCases := []struct {
 		Name               string
-		Input              *model.Label
-		Expected           *label.Entity
+		Input              model.Label
+		Expected           label.Entity
 		ExpectedErrMessage string
 	}{
 		{
 			Name:               "All properties given",
-			Input:              &arrayLabelModel,
+			Input:              fixLabelModel("1", arrayValue),
 			Expected:           fixLabelEntity("1", marshalledArrayValue),
 			ExpectedErrMessage: "",
 		},
 		{
 			Name:               "String value",
-			Input:              &stringLabelModel,
+			Input:              fixLabelModel("1", stringValue),
 			Expected:           fixLabelEntity("1", marshalledStringValue),
 			ExpectedErrMessage: "",
 		},
 		{
 			Name: "Empty value",
-			Input: &model.Label{
+			Input: model.Label{
 				ID:     "2",
 				Key:    "foo",
 				Tenant: "tenant",
 			},
-			Expected: &label.Entity{
+			Expected: label.Entity{
 				ID:       "2",
 				Key:      "foo",
 				TenantID: "tenant",
@@ -58,24 +55,20 @@ func TestEntityFromModel(t *testing.T) {
 		},
 		{
 			Name: "Error",
-			Input: &model.Label{
+			Input: model.Label{
 				Value: make(chan int),
 			},
-			Expected:           nil,
+			Expected:           label.Entity{},
 			ExpectedErrMessage: "while marshalling Value: json: unsupported type: chan int",
-		},
-		{
-			Name:               "Nil",
-			Input:              nil,
-			Expected:           nil,
-			ExpectedErrMessage: "",
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
+			conv := label.NewConverter()
+
 			// when
-			res, err := label.EntityFromModel(testCase.Input)
+			res, err := conv.ToEntity(testCase.Input)
 
 			if testCase.ExpectedErrMessage != "" {
 				require.Error(t, err)
@@ -88,7 +81,7 @@ func TestEntityFromModel(t *testing.T) {
 	}
 }
 
-func TestEntity_ToModel(t *testing.T) {
+func TestConverter_FromEntity(t *testing.T) {
 	stringValue := "foo"
 	marshalledStringValue, err := json.Marshal(stringValue)
 	require.NoError(t, err)
@@ -100,7 +93,7 @@ func TestEntity_ToModel(t *testing.T) {
 	// given
 	testCases := []struct {
 		Name               string
-		Input              *label.Entity
+		Input              label.Entity
 		Expected           model.Label
 		ExpectedErrMessage string
 	}{
@@ -118,7 +111,7 @@ func TestEntity_ToModel(t *testing.T) {
 		},
 		{
 			Name: "Empty value",
-			Input: &label.Entity{
+			Input: label.Entity{
 				ID:       "2",
 				Key:      "foo",
 				TenantID: "tenant",
@@ -136,18 +129,14 @@ func TestEntity_ToModel(t *testing.T) {
 			Expected:           model.Label{},
 			ExpectedErrMessage: "while unmarshalling Value: invalid character 'j' looking for beginning of object key string",
 		},
-		{
-			Name:               "Nil",
-			Input:              nil,
-			Expected:           model.Label{},
-			ExpectedErrMessage: "",
-		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
+			conv := label.NewConverter()
+
 			// when
-			res, err := testCase.Input.ToModel()
+			res, err := conv.FromEntity(testCase.Input)
 
 			if testCase.ExpectedErrMessage != "" {
 				require.Error(t, err)
@@ -160,8 +149,8 @@ func TestEntity_ToModel(t *testing.T) {
 	}
 }
 
-func fixLabelEntity(id string, value []byte) *label.Entity {
-	return &label.Entity{
+func fixLabelEntity(id string, value []byte) label.Entity {
+	return label.Entity{
 		ID:       id,
 		TenantID: "tenant",
 		AppID:    sql.NullString{},
