@@ -16,11 +16,11 @@ global:
       version: "PR-99"
     schema_migrator:
       dir: pr/
-      version: "PR-161"
+      version: "PR-176"
     tests:
       e2e:
         dir: pr/
-        version: "PR-182"
+        version: "PR-176"
 
   isLocalEnv: false
   
