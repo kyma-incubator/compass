@@ -130,7 +130,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, appCtx, svc, converter)
+			resolver := runtime.NewResolver(transact, svc, converter)
 
 			// when
 			result, err := resolver.CreateRuntime(ctx, testCase.Input)
@@ -264,7 +264,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, appCtx, svc, converter)
+			resolver := runtime.NewResolver(transact, svc, converter)
 
 			// when
 			result, err := resolver.UpdateRuntime(context.TODO(), testCase.RuntimeID, testCase.Input)
@@ -381,7 +381,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, appCtx, svc, converter)
+			resolver := runtime.NewResolver(transact, svc, converter)
 
 			// when
 			result, err := resolver.DeleteRuntime(context.TODO(), testCase.InputID)
@@ -475,7 +475,7 @@ func TestResolver_Runtime(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, appCtx, svc, converter)
+			resolver := runtime.NewResolver(transact, svc, converter)
 
 			// when
 			result, err := resolver.Runtime(ctx, testCase.InputID)
@@ -586,7 +586,7 @@ func TestResolver_Runtimes(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, appCtx, svc, converter)
+			resolver := runtime.NewResolver(transact, svc, converter)
 
 			// when
 			result, err := resolver.Runtimes(ctx, testCase.InputLabelFilters, testCase.InputFirst, testCase.InputAfter)
@@ -692,7 +692,7 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, appCtx, svc, converter)
+			resolver := runtime.NewResolver(transact, svc, converter)
 
 			// when
 			result, err := resolver.SetRuntimeLabel(ctx, testCase.InputRuntimeID, testCase.InputKey, testCase.InputValue)
@@ -828,6 +828,113 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)
+		})
+	}
+}
+
+func TestResolver_Labels(t *testing.T) {
+	// given
+
+	id := "foo"
+	tenant := "tenant"
+	labelKey := "key"
+	labelValue := "val"
+
+	gqlRuntime := fixGQLRuntime(id, "name", "desc")
+
+	modelLabels := map[string]*model.Label{
+		"abc": {
+			ID:         "abc",
+			Tenant:     tenant,
+			Key:        labelKey,
+			Value:      labelValue,
+			ObjectID:   id,
+			ObjectType: model.ApplicationLabelableObject,
+		},
+		"def": {
+			ID:         "def",
+			Tenant:     tenant,
+			Key:        labelKey,
+			Value:      labelValue,
+			ObjectID:   id,
+			ObjectType: model.ApplicationLabelableObject,
+		},
+	}
+
+	gqlLabels := graphql.Labels{
+		labelKey: labelValue,
+		labelKey: labelValue,
+	}
+
+	testErr := errors.New("Test error")
+
+	persistTx := &persistenceautomock.PersistenceTx{}
+	persistTx.On("Commit").Return(nil)
+
+	ctx := context.TODO()
+	ctxWithPersistenceTx := context.WithValue(ctx, persistence.PersistenceCtxKey, persistTx)
+
+	testCases := []struct {
+		Name            string
+		TransactionerFn func() *persistenceautomock.Transactioner
+		ServiceFn       func() *automock.RuntimeService
+		InputRuntime    *graphql.Runtime
+		InputKey        string
+		ExpectedResult  graphql.Labels
+		ExpectedErr     error
+	}{
+		{
+			Name: "Success",
+			TransactionerFn: func() *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+				return transact
+			},
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("ListLabels", ctxWithPersistenceTx, id).Return(modelLabels, nil).Once()
+				return svc
+			},
+			InputKey:       labelKey,
+			ExpectedResult: gqlLabels,
+			ExpectedErr:    nil,
+		},
+		{
+			Name: "Returns error when label listing failed",
+			TransactionerFn: func() *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+				return transact
+			},
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("ListLabels", ctxWithPersistenceTx, id).Return(nil, testErr).Once()
+				return svc
+			},
+			InputKey:       labelKey,
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			svc := testCase.ServiceFn()
+			transact := testCase.TransactionerFn()
+
+			resolver := runtime.NewResolver(transact, svc, nil)
+
+			// when
+			result, err := resolver.Labels(context.TODO(), gqlRuntime, &testCase.InputKey)
+
+			// then
+			assert.Equal(t, testCase.ExpectedResult, result)
+			assert.Equal(t, testCase.ExpectedErr, err)
+
+			svc.AssertExpectations(t)
+			transact.AssertExpectations(t)
 		})
 	}
 }

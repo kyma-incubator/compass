@@ -94,7 +94,7 @@ type WebhookConverter interface {
 }
 
 type Resolver struct {
-	transact       persistence.Transactioner
+	transact persistence.Transactioner
 
 	appSvc       ApplicationService
 	appConverter ApplicationConverter

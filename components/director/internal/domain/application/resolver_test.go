@@ -376,7 +376,7 @@ func TestResolver_DeleteApplication(t *testing.T) {
 			converter := testCase.ConverterFn()
 			transactioner := testCase.TransactionerFn()
 
-			resolver := application.NewResolver(transactioner, appCtx, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(transactioner, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -446,7 +446,7 @@ func TestResolver_Application(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(nil, nil, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(nil, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -538,7 +538,7 @@ func TestResolver_Applications(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(nil, nil, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(nil, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -1019,7 +1019,7 @@ func TestResolver_Apis(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(nil, nil, nil, svc, nil, nil, nil, nil, nil, nil, converter, nil)
+			resolver := application.NewResolver(nil, nil, svc, nil, nil, nil, nil, nil, nil, converter, nil)
 			// when
 			result, err := resolver.Apis(context.TODO(), app, &group, testCase.InputFirst, testCase.InputAfter)
 
@@ -1206,6 +1206,113 @@ func TestResolver_ApplicationsForRuntime(t *testing.T) {
 			applicationSvc.AssertExpectations(t)
 			applicationConverter.AssertExpectations(t)
 
+		})
+	}
+}
+
+func TestResolver_Labels(t *testing.T) {
+	// given
+
+	id := "foo"
+	tenant := "tenant"
+	labelKey := "key"
+	labelValue := "val"
+
+	gqlApp := fixGQLApplication(id, "name", "desc")
+
+	modelLabels := map[string]*model.Label{
+		"abc": {
+			ID:         "abc",
+			Tenant:     tenant,
+			Key:        labelKey,
+			Value:      labelValue,
+			ObjectID:   id,
+			ObjectType: model.ApplicationLabelableObject,
+		},
+		"def": {
+			ID:         "def",
+			Tenant:     tenant,
+			Key:        labelKey,
+			Value:      labelValue,
+			ObjectID:   id,
+			ObjectType: model.ApplicationLabelableObject,
+		},
+	}
+
+	gqlLabels := graphql.Labels{
+		labelKey: labelValue,
+		labelKey: labelValue,
+	}
+
+	testErr := errors.New("Test error")
+
+	persistTx := &persistenceautomock.PersistenceTx{}
+	persistTx.On("Commit").Return(nil)
+
+	ctx := context.TODO()
+	ctxWithPersistenceTx := context.WithValue(ctx, persistence.PersistenceCtxKey, persistTx)
+
+	testCases := []struct {
+		Name            string
+		TransactionerFn func() *persistenceautomock.Transactioner
+		ServiceFn       func() *automock.ApplicationService
+		InputApp        *graphql.Application
+		InputKey        string
+		ExpectedResult  graphql.Labels
+		ExpectedErr     error
+	}{
+		{
+			Name: "Success",
+			TransactionerFn: func() *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+				return transact
+			},
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("ListLabels", ctxWithPersistenceTx, id).Return(modelLabels, nil).Once()
+				return svc
+			},
+			InputKey:       labelKey,
+			ExpectedResult: gqlLabels,
+			ExpectedErr:    nil,
+		},
+		{
+			Name: "Returns error when label listing failed",
+			TransactionerFn: func() *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+				return transact
+			},
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("ListLabels", ctxWithPersistenceTx, id).Return(nil, testErr).Once()
+				return svc
+			},
+			InputKey:       labelKey,
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			svc := testCase.ServiceFn()
+			transact := testCase.TransactionerFn()
+
+			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+
+			// when
+			result, err := resolver.Labels(context.TODO(), gqlApp, &testCase.InputKey)
+
+			// then
+			assert.Equal(t, testCase.ExpectedResult, result)
+			assert.Equal(t, testCase.ExpectedErr, err)
+
+			svc.AssertExpectations(t)
+			transact.AssertExpectations(t)
 		})
 	}
 }
