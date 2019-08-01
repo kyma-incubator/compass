@@ -3,6 +3,8 @@ package domain
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
+
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/internal/appcontext"
@@ -31,6 +33,7 @@ type RootResolver struct {
 	runtime     *runtime.Resolver
 	healthCheck *healthcheck.Resolver
 	webhook     *webhook.Resolver
+	labelDef    *labeldef.Resolver
 }
 
 func NewRootResolver(transact persistence.Transactioner) *RootResolver {
@@ -62,6 +65,10 @@ func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 	runtimeSvc := runtime.NewService(runtimeRepo, uidService)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 
+	labelDefConverter := labeldef.NewConverter()
+	labelDefRepo := labeldef.NewRepository(labelDefConverter)
+	labelDefService := labeldef.NewService(labelDefRepo, uidService)
+
 	appCtx := appcontext.NewAppContext()
 
 	return &RootResolver{
@@ -72,6 +79,7 @@ func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 		runtime:     runtime.NewResolver(transact, appCtx, runtimeSvc, runtimeConverter),
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
 		webhook:     webhook.NewResolver(webhookSvc, appSvc, webhookConverter),
+		labelDef:    labeldef.NewResolver(labelDefService, labelDefConverter, transact),
 	}
 }
 
@@ -219,7 +227,7 @@ func (r *mutationResolver) DeleteDocument(ctx context.Context, id string) (*grap
 	return r.doc.DeleteDocument(ctx, id)
 }
 func (r *mutationResolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDefinitionInput) (*graphql.LabelDefinition, error) {
-	panic("not implemented")
+	return r.labelDef.CreateLabelDefinition(ctx, in)
 }
 func (r *mutationResolver) UpdateLabelDefinition(ctx context.Context, in graphql.LabelDefinitionInput) (*graphql.LabelDefinition, error) {
 	panic("not implemented")

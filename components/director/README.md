@@ -13,7 +13,7 @@ go run cmd/main.go
 
 ### Prerequisites
 
-Before you can run Director you have to configure access to PostgreSQL database. For development purpouse you can run PostgreSQL instance in the docker container executing following command:
+Before you can run Director you have to configure access to PostgreSQL database. For development purpose you can run PostgreSQL instance in the docker container executing following command:
 
 ```bash
 $ docker run --rm -p 5432:5432 -e POSTGRES_PASSWORD=pgsql@12345 postgres
@@ -24,6 +24,8 @@ When you have PostgreSQL instance running you must import the database schema ru
 ```bash
 $ PGPASSWORD=pgsql@12345 psql -U postgres -W -h 127.0.0.1 -f <(cat components/schema-migrator/migrations/*.up.sql)
 ```
+
+There is a helper script `runWithDB.sh` that performs those steps automatically.
 
 The GraphQL API playground is available at `localhost:3000`.
 
