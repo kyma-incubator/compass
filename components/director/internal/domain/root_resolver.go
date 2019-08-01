@@ -197,7 +197,7 @@ func (r *mutationResolver) CreateLabelDefinition(ctx context.Context, in graphql
 	return r.labelDef.CreateLabelDefinition(ctx, in)
 }
 func (r *mutationResolver) UpdateLabelDefinition(ctx context.Context, in graphql.LabelDefinitionInput) (*graphql.LabelDefinition, error) {
-	panic("not implemented")
+	return r.labelDef.UpdateLabelDefinition(ctx, in)
 }
 func (r *mutationResolver) DeleteLabelDefinition(ctx context.Context, key string, deleteRelatedLabels *bool) (*graphql.LabelDefinition, error) {
 	panic("not implemented")

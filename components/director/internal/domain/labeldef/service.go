@@ -24,6 +24,8 @@ type Repository interface {
 	Create(ctx context.Context, def model.LabelDefinition) error
 	GetByKey(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error)
 	List(ctx context.Context, tenant string) ([]model.LabelDefinition, error)
+	Update(ctx context.Context, def model.LabelDefinition) error
+	Exists(ctx context.Context, tenant string, key string) (bool, error)
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -44,7 +46,6 @@ func (s *service) Create(ctx context.Context, def model.LabelDefinition) (model.
 	// TODO get from DB?
 	return def, nil
 }
-
 func (s *service) Get(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error) {
 	def, err := s.repo.GetByKey(ctx, tenant, key)
 	if err != nil {
@@ -59,4 +60,30 @@ func (s *service) List(ctx context.Context, tenant string) ([]model.LabelDefinit
 		return nil, errors.Wrap(err, "while fetching Label Definitions")
 	}
 	return defs, nil
+}
+
+func (s *service) Update(ctx context.Context, def model.LabelDefinition) (model.LabelDefinition, error) {
+	if err := def.ValidateForUpdate(); err != nil {
+		return model.LabelDefinition{}, errors.Wrap(err, "while validating Label Definition")
+	}
+
+	ld, err := s.repo.GetByKey(ctx, def.Tenant, def.Key)
+	if err != nil {
+		return model.LabelDefinition{}, errors.Wrap(err, "while receiving Label Definition")
+	}
+
+	id := ld.ID
+	ld = &def
+	ld.ID = id
+
+	if err := s.repo.Update(ctx, *ld); err != nil {
+		return model.LabelDefinition{}, errors.Wrap(err, "while updating Label Definition")
+	}
+
+	updatedLabelDef, err := s.repo.GetByKey(ctx, ld.Tenant, ld.Key)
+	if err != nil {
+		return model.LabelDefinition{}, errors.Wrap(err, "while receiving updated Label Definition")
+	}
+
+	return *updatedLabelDef, nil
 }

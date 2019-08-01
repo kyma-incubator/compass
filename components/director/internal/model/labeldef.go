@@ -32,3 +32,20 @@ func (def *LabelDefinition) Validate() error {
 
 	return nil
 }
+
+func (def *LabelDefinition) ValidateForUpdate() error {
+	if def.Tenant == "" {
+		return errors.New("missing Tenant field")
+	}
+
+	if def.Key == "" {
+		return errors.New("missing Key field")
+	}
+	if def.Schema != nil {
+		if _, err := jsonschema.NewValidatorFromRawSchema(def.Schema); err != nil {
+			return errors.Wrapf(err, "while validating schema: [%v]", def.Schema)
+		}
+	}
+
+	return nil
+}
