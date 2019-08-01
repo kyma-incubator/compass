@@ -208,6 +208,138 @@ func TestRepositoryGeyByKey(t *testing.T) {
 	})
 }
 
+func TestRepositoryList(t *testing.T) {
+	t.Run("returns list of Label Definitions", func(t *testing.T) {
+		// GIVEN
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+
+		mockConverter.On("FromEntity",
+			labeldef.Entity{ID: "id1", TenantID: "tenant", Key: "key1"}).
+			Return(
+				model.LabelDefinition{
+					ID:     "id1",
+					Tenant: "tenant",
+					Key:    "key1",
+				}, nil)
+		mockConverter.On("FromEntity",
+			labeldef.Entity{ID: "id2", TenantID: "tenant", Key: "key2", SchemaJSON: sql.NullString{Valid: true, String: `{"title":"title"}`}}).
+			Return(
+				model.LabelDefinition{
+					ID:     "id2",
+					Tenant: "tenant",
+					Key:    "key2",
+				}, nil)
+		sut := labeldef.NewRepository(mockConverter)
+
+		db, dbMock := mockDatabase(t)
+		defer func() {
+			require.NoError(t, dbMock.ExpectationsWereMet())
+		}()
+
+		escapedQuery := regexp.QuoteMeta("select * from public.label_definitions where tenant_id=$1")
+		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "schema"}).
+			AddRow("id1", "tenant", "key1", nil).
+			AddRow("id2", "tenant", "key2", `{"title":"title"}`)
+
+		dbMock.ExpectQuery(escapedQuery).WithArgs("tenant").WillReturnRows(mockedRows)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		// WHEN
+		actual, err := sut.List(ctx, "tenant")
+		// THEN
+		require.NoError(t, err)
+		require.Len(t, actual, 2)
+		assert.Equal(t, "id1", actual[0].ID)
+		assert.Equal(t, "key1", actual[0].Key)
+		assert.Equal(t, "id2", actual[1].ID)
+		assert.Equal(t, "key2", actual[1].Key)
+	})
+	t.Run("returns empty list of Label Definitions if given tenant has nothing defined", func(t *testing.T) {
+		// GIVEN
+		sut := labeldef.NewRepository(nil)
+
+		db, dbMock := mockDatabase(t)
+		defer func() {
+			require.NoError(t, dbMock.ExpectationsWereMet())
+		}()
+
+		escapedQuery := regexp.QuoteMeta("select * from public.label_definitions where tenant_id=$1")
+		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "schema"})
+
+		dbMock.ExpectQuery(escapedQuery).WithArgs("tenant").WillReturnRows(mockedRows)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		// WHEN
+		actual, err := sut.List(ctx, "tenant")
+		// THEN
+		require.NoError(t, err)
+		require.Empty(t, actual)
+	})
+
+	t.Run("returns error when conversion fails", func(t *testing.T) {
+		// GIVEN
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+
+		mockConverter.On("FromEntity",
+			labeldef.Entity{ID: "id1", TenantID: "tenant", Key: "key1"}).
+			Return(
+				model.LabelDefinition{}, errors.New("conversion error"))
+
+		sut := labeldef.NewRepository(mockConverter)
+
+		db, dbMock := mockDatabase(t)
+		defer func() {
+			require.NoError(t, dbMock.ExpectationsWereMet())
+		}()
+
+		escapedQuery := regexp.QuoteMeta("select * from public.label_definitions where tenant_id=$1")
+		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "schema"}).
+			AddRow("id1", "tenant", "key1", nil).
+			AddRow("id2", "tenant", "key2", `{"title":"title"}`)
+
+		dbMock.ExpectQuery(escapedQuery).WithArgs("tenant").WillReturnRows(mockedRows)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		// WHEN
+		_, err := sut.List(ctx, "tenant")
+		// THEN
+		require.EqualError(t, err, "while converting Label Definition [key=key1]: conversion error")
+
+	})
+	t.Run("returns error if missing persistence context", func(t *testing.T) {
+		// GIVEN
+		sut := labeldef.NewRepository(nil)
+		// WHEN
+		_, err := sut.List(context.TODO(), "tenant")
+		// THEN
+		require.EqualError(t, err, "unable to fetch database from context")
+	})
+	t.Run("returns error if if select fails", func(t *testing.T) {
+		// GIVEN
+		sut := labeldef.NewRepository(nil)
+
+		db, dbMock := mockDatabase(t)
+		defer func() {
+			require.NoError(t, dbMock.ExpectationsWereMet())
+		}()
+
+		escapedQuery := regexp.QuoteMeta("select * from public.label_definitions where tenant_id=$1")
+
+		dbMock.ExpectQuery(escapedQuery).WithArgs("tenant").WillReturnError(errors.New("db error"))
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		// WHEN
+		_, err := sut.List(ctx, "tenant")
+		// THEN
+		require.EqualError(t, err, "while listing Label Definitions: db error")
+	})
+}
 func TestRepositoryLabelDefExists(t *testing.T) {
 	t.Run("returns true", func(t *testing.T) {
 		// GIVEN

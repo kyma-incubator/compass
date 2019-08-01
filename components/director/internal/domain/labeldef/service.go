@@ -22,6 +22,8 @@ func NewService(r Repository, uidService UIDService) *service {
 //go:generate mockery -name=Repository -output=automock -outpkg=automock -case=underscore
 type Repository interface {
 	Create(ctx context.Context, def model.LabelDefinition) error
+	GetByKey(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error)
+	List(ctx context.Context, tenant string) ([]model.LabelDefinition, error)
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -44,6 +46,7 @@ func (s *service) Create(ctx context.Context, def model.LabelDefinition) (model.
 }
 
 func (s *service) Get(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error) {
+
 	return &model.LabelDefinition{}, nil
 }
 
