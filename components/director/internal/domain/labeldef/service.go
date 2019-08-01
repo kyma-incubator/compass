@@ -35,7 +35,7 @@ func (s *service) Create(ctx context.Context, def model.LabelDefinition) (model.
 	id := s.uidService.Generate()
 	def.ID = id
 	if err := def.Validate(); err != nil {
-		return model.LabelDefinition{}, errors.Wrap(err, "while validation label definition")
+		return model.LabelDefinition{}, errors.Wrap(err, "while validation Label Definition")
 	}
 
 	if err := s.repo.Create(ctx, def); err != nil {
@@ -46,10 +46,17 @@ func (s *service) Create(ctx context.Context, def model.LabelDefinition) (model.
 }
 
 func (s *service) Get(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error) {
-
-	return &model.LabelDefinition{}, nil
+	def, err := s.repo.GetByKey(ctx, tenant, key)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching Label Definition")
+	}
+	return def, nil
 }
 
 func (s *service) List(ctx context.Context, tenant string) ([]model.LabelDefinition, error) {
-	return nil, nil
+	defs, err := s.repo.List(ctx, tenant)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching Label Definitions")
+	}
+	return defs, nil
 }
