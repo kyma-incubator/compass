@@ -994,7 +994,6 @@ func TestApplicationsForRuntime(t *testing.T) {
 		ApplicationName string
 		Tenant          string
 		WithinTenant    bool
-		ApplicationId   string
 	}{
 		{
 			Tenant:          tenantName,
@@ -1025,8 +1024,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
-		testApp.ApplicationId = application.ID
-		defer deleteApplicationInTenant(t, testApp.ApplicationId, testApp.Tenant)
+		defer deleteApplicationInTenant(t, application.ID, testApp.Tenant)
 		if testApp.WithinTenant {
 			tenantApplications = append(tenantApplications, &application)
 		}
@@ -1044,7 +1042,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 	//THEN
 	require.NoError(t, err)
 	require.Len(t, applicationPage.Data, 2)
-	assert.EqualValues(t, applicationPage.Data, tenantApplications)
+	assert.ElementsMatch(t, tenantApplications, applicationPage.Data)
 }
 
 func getApp(ctx context.Context, t *testing.T, id string) ApplicationExt {

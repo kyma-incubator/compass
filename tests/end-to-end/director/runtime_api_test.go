@@ -348,7 +348,7 @@ func TestQueryRuntimes(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	idsToRemove := make([]string, 3)
+	idsToRemove := make([]string, 0)
 	defer func() {
 		for _, id := range idsToRemove {
 			if id != "" {
@@ -357,9 +357,16 @@ func TestQueryRuntimes(t *testing.T) {
 		}
 	}()
 
-	for i := 0; i < 3; i++ {
+	inputRuntimes := []*graphql.Runtime{
+		{Name: "runtime-query-1", Description: ptrString("test description")},
+		{Name: "runtime-query-2", Description: ptrString("another description")},
+		{Name: "runtime-query-3"},
+	}
+
+	for _, rtm := range inputRuntimes {
 		givenInput := graphql.RuntimeInput{
-			Name: fmt.Sprintf("runtime-query-%d", i),
+			Name:        rtm.Name,
+			Description: rtm.Description,
 		}
 		runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
 		require.NoError(t, err)
@@ -373,7 +380,8 @@ func TestQueryRuntimes(t *testing.T) {
 		err = tc.RunQuery(ctx, createReq, &actualRuntime)
 		require.NoError(t, err)
 		require.NotEmpty(t, actualRuntime.ID)
-		idsToRemove[i] = actualRuntime.ID
+		rtm.ID = actualRuntime.ID
+		idsToRemove = append(idsToRemove, actualRuntime.ID)
 	}
 	actualPage := graphql.RuntimePage{}
 
@@ -389,9 +397,21 @@ func TestQueryRuntimes(t *testing.T) {
 
 	//THEN
 	require.NoError(t, err)
-	assert.Len(t, actualPage.Data, 3)
-	assert.Equal(t, 3, actualPage.TotalCount)
+	assert.Len(t, actualPage.Data, len(inputRuntimes))
+	assert.Equal(t, len(inputRuntimes), actualPage.TotalCount)
 
+	for _, inputRtm := range inputRuntimes {
+		found := false
+		for _, actualRtm := range actualPage.Data {
+			if inputRtm.ID == actualRtm.ID {
+				found = true
+				assert.Equal(t, inputRtm.Name, actualRtm.Name)
+				assert.Equal(t, inputRtm.Description, actualRtm.Description)
+				break
+			}
+		}
+		assert.True(t, found)
+	}
 }
 
 func TestQuerySpecificRuntime(t *testing.T) {
@@ -430,6 +450,7 @@ func TestQuerySpecificRuntime(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, createdRuntime.ID, queriedRuntime.ID)
 	assert.Equal(t, createdRuntime.Name, queriedRuntime.Name)
+	assert.Equal(t, createdRuntime.Description, queriedRuntime.Description)
 }
 
 func deleteRuntime(t *testing.T, id string) {
