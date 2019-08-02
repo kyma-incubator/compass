@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -15,6 +16,7 @@ import (
 )
 
 const labelTableName string = `"public"."labels"`
+const scenarioKey string = "SCENARIOS"
 
 type inMemoryRepository struct {
 	store map[string]*model.Application
@@ -73,31 +75,34 @@ func (r *inMemoryRepository) ListByScenariosFromRuntime(ctx context.Context, ten
 		return nil, errors.Wrap(err, "while fetching DB from context")
 	}
 
-	//TODO: extract cosnts
 	stmt := fmt.Sprintf(`SELECT VALUE FROM %s WHERE TENANT_ID=$1 AND RUNTIME_ID=$2 AND KEY='SCENARIOS'`, labelTableName)
 
 	var scenariosBinary interface{}
 	err = persist.Get(&scenariosBinary, stmt, tenantID, runtimeID)
 
 	if scenariosBinary == nil {
-		return nil, nil
+		return nil, errors.Errorf("Runtime ID:%s not contain label scenario, probably runtime not exits", runtimeID)
+	}
+	scenarios := getScenariosValues(scenariosBinary)
+
+	var scenarioFilers []*labelfilter.LabelFilter
+
+	for _, scenarioValue := range scenarios {
+		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, scenarioValue)
+		scenarioFilers = append(scenarioFilers, &labelfilter.LabelFilter{Key: scenarioKey, Query: &query})
+	}
+	//TODO: change tenantID to String
+	tenantUUID, err := uuid.Parse(tenantID)
+	if err != nil {
+		return nil, errors.New("tenant_ID is not parseable")
 	}
 
-	scenarios := getScenariosValues(scenariosBinary)
-	fmt.Println(scenarios)
-	stmt = fmt.Sprintf(`SELECT * FROM %s 
-			WHERE "key"='scenario' 
-				AND tenant_id = $1
-				AND runtime_id IS NULL
-				AND jsonb_array_length(value) != 0
-				AND (SELECT VALUE AS "RUNTIME_SCENARIO" FROM %s 
-						WHERE "key"='SCENARIOS' 
-						AND tenant_id=$2
-						AND runtime_id=$3) @> value`, labelTableName, labelTableName, )
+	stmt = label.FilterQuery(model.ApplicationLabelableObject, label.UnionSet, tenantUUID, scenarioFilers)
 
-	var appIDs []string
+	var apps []interface{}
 
-	err = persist.Select(&appIDs, stmt, tenantID, tenantID, runtimeID)
+	err = persist.Select(&apps, stmt)
+
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -107,8 +112,14 @@ func (r *inMemoryRepository) ListByScenariosFromRuntime(ctx context.Context, ten
 
 	var items []*model.Application
 
-	for _, id := range appIDs {
-		app, found := r.store[id]
+	for _, id := range apps {
+		appID, ok := id.(string)
+		if !ok {
+			continue
+			//return nil, errors.New("Error")
+		}
+
+		app, found := r.store[appID]
 		if found {
 			items = append(items, app)
 		}
@@ -195,8 +206,4 @@ func getScenariosValues(scenariosJSON interface{}) []string {
 	}
 
 	return scenarios
-}
-
-func filterQuery(queryFor string, tenant uuid.UUID, filter []*labelfilter.LabelFilter) string {
-	return ""
 }
