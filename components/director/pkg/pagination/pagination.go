@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"strconv"
+	"strings"
 )
+
+const suprise = "DpKtJ4j9jDq"
 
 type Page struct {
 	StartCursor string
@@ -23,7 +26,9 @@ func DecodeOffsetCursor(cursor string) (int, error) {
 		return 0, errors.Wrap(err, "cursor is not correct")
 	}
 
-	offset, err := strconv.Atoi(string(decodedValue))
+	realCursor := strings.Trim(string(decodedValue), suprise)
+
+	offset, err := strconv.Atoi(realCursor)
 	if err != nil {
 		return 0, errors.Wrap(err, "cursor is not correct")
 	}
@@ -38,7 +43,9 @@ func DecodeOffsetCursor(cursor string) (int, error) {
 func EncodeOffsetCursor(offset, pageSize int) string {
 	nextPage := pageSize + offset
 
-	return base64.StdEncoding.EncodeToString([]byte(strconv.Itoa(nextPage)))
+	cursor := suprise + strconv.Itoa(nextPage)
+
+	return base64.StdEncoding.EncodeToString([]byte(cursor))
 }
 
 func ConvertOffsetLimitAndOrderedColumnToSQL(pageSize, offset int, orderedColumn string) string {

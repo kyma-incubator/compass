@@ -25,6 +25,12 @@ func TestComputeOffset(t *testing.T) {
 			ExpectedErr:     nil,
 		},
 		{
+			Name:            "Success with easter egg",
+			InputCursor:     string(base64.StdEncoding.EncodeToString([]byte("DpKtJ4j9jDq"+strconv.Itoa(offset)))),
+			ExptectedOffset: offset,
+			ExpectedErr:     nil,
+		},
+		{
 			Name:            "Success when page size is positive and offset is empty",
 			InputCursor:     "",
 			ExptectedOffset: 0,
@@ -75,5 +81,5 @@ func TestConvertOffsetToPageCursor(t *testing.T) {
 	nextPageCursor := EncodeOffsetCursor(pageSize, offset)
 
 	// THEN
-	require.Equal(t, "MTAw", nextPageCursor)
+	require.Equal(t, "RHBLdEo0ajlqRHExMDA=", nextPageCursor)
 }
