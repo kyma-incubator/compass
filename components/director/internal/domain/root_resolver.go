@@ -117,46 +117,10 @@ func (r *queryResolver) Runtime(ctx context.Context, id string) (*graphql.Runtim
 	return r.runtime.Runtime(ctx, id)
 }
 func (r *queryResolver) LabelDefinitions(ctx context.Context) ([]*graphql.LabelDefinition, error) {
-	//TODO: Implement it
-	schemaObj := map[string]interface{}{
-		"type": "array",
-		"items": map[string]interface{}{
-			"type": "string",
-			"enum": []string{"one", "two", "three"},
-		},
-	}
-
-	var schema interface{}
-	schema = schemaObj
-
-	return []*graphql.LabelDefinition{
-		{
-			Key:    "scenarios",
-			Schema: &schema,
-		},
-	}, nil
+	return r.labelDef.LabelDefinitions(ctx)
 }
 func (r *queryResolver) LabelDefinition(ctx context.Context, key string) (*graphql.LabelDefinition, error) {
-	//TODO: Implement it
-	if key != "scenarios" {
-		return nil, nil
-	}
-
-	schemaObj := map[string]interface{}{
-		"type": "array",
-		"items": map[string]interface{}{
-			"type": "string",
-			"enum": []string{"one", "two", "three"},
-		},
-	}
-
-	var schema interface{}
-	schema = schemaObj
-
-	return &graphql.LabelDefinition{
-		Key:    "scenarios",
-		Schema: &schema,
-	}, nil
+	return r.labelDef.LabelDefinition(ctx, key)
 }
 func (r *queryResolver) HealthChecks(ctx context.Context, types []graphql.HealthCheckType, origin *string, first *int, after *graphql.PageCursor) (*graphql.HealthCheckPage, error) {
 	return r.healthCheck.HealthChecks(ctx, types, origin, first, after)

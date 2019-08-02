@@ -52,7 +52,7 @@ func TestServiceCreate(t *testing.T) {
 		// WHEN
 		_, err := sut.Create(context.TODO(), model.LabelDefinition{})
 		// THEN
-		require.EqualError(t, err, "while validation label definition: missing Tenant field")
+		require.EqualError(t, err, "while validation Label Definition: missing Tenant field")
 	})
 
 	t.Run("returns error if cannot persist Label Definition", func(t *testing.T) {
@@ -72,6 +72,80 @@ func TestServiceCreate(t *testing.T) {
 		require.EqualError(t, err, "while storing Label Definition: some error")
 	})
 
+}
+
+func TestServiceGet(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		// GIVEN
+		mockRepository := &automock.Repository{}
+		defer mockRepository.AssertExpectations(t)
+		ctx := context.TODO()
+		given := model.LabelDefinition{
+			Key:    "key",
+			Tenant: "tenant",
+		}
+		mockRepository.On("GetByKey", ctx, "tenant", "key").Return(&given, nil)
+		sut := labeldef.NewService(mockRepository, nil)
+		// WHEN
+		actual, err := sut.Get(ctx, "tenant", "key")
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, &given, actual)
+	})
+
+	t.Run("on error from repository", func(t *testing.T) {
+		// GIVEN
+		mockRepository := &automock.Repository{}
+		defer mockRepository.AssertExpectations(t)
+		mockRepository.On("GetByKey", mock.Anything, mock.Anything, mock.Anything).
+			Return(nil, errors.New("some error"))
+
+		sut := labeldef.NewService(mockRepository, nil)
+		// WHEN
+		_, err := sut.Get(context.TODO(), "tenant", "key")
+		// THEN
+		require.EqualError(t, err, "while fetching Label Definition: some error")
+	})
+}
+
+func TestServiceList(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		// GIVEN
+		mockRepository := &automock.Repository{}
+		defer mockRepository.AssertExpectations(t)
+		ctx := context.TODO()
+		givenDefs := []model.LabelDefinition{
+			{
+				Tenant: "tenant",
+				Key:    "key1",
+			},
+			{
+				Tenant: "tenant",
+				Key:    "key2",
+			},
+		}
+		mockRepository.On("List", ctx, "tenant").Return(givenDefs, nil)
+
+		sut := labeldef.NewService(mockRepository, nil)
+		// WHEN
+		actual, err := sut.List(ctx, "tenant")
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, givenDefs, actual)
+	})
+
+	t.Run("on error from repository", func(t *testing.T) {
+		// GIVEN
+		mockRepository := &automock.Repository{}
+		defer mockRepository.AssertExpectations(t)
+		ctx := context.TODO()
+		mockRepository.On("List", ctx, "tenant").Return(nil, errors.New("some error"))
+		sut := labeldef.NewService(mockRepository, nil)
+		// WHEN
+		_, err := sut.List(ctx, "tenant")
+		// THEN
+		require.EqualError(t, err, "while fetching Label Definitions: some error")
+	})
 }
 
 func fixUID() string {

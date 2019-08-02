@@ -97,3 +97,27 @@ func (r *repo) Exists(ctx context.Context, tenant string, key string) (bool, err
 	}
 	return true, nil
 }
+
+func (r *repo) List(ctx context.Context, tenant string) ([]model.LabelDefinition, error) {
+	db, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var dest []Entity
+
+	q := fmt.Sprintf("select * from %s where tenant_id=$1", tableName)
+
+	if err = db.Select(&dest, q, tenant); err != nil {
+		return nil, errors.Wrap(err, "while listing Label Definitions")
+	}
+
+	var out []model.LabelDefinition
+	for _, entity := range dest {
+		ld, err := r.conv.FromEntity(entity)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while converting Label Definition [key=%s]", entity.Key)
+		}
+		out = append(out, ld)
+	}
+	return out, nil
+}
