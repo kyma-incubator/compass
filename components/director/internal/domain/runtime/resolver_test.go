@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/persistence"
+
 	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -18,7 +20,8 @@ import (
 )
 
 var contextParam = mock.MatchedBy(func(ctx context.Context) bool {
-	return true
+	persistenceOp, err := persistence.FromCtx(ctx)
+	return err == nil && persistenceOp != nil
 })
 
 func TestResolver_CreateRuntime(t *testing.T) {
