@@ -1,7 +1,7 @@
 global:
   defaultTenant : 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
   tenants: foo bar
-  
+
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
@@ -10,7 +10,7 @@ global:
       version: "PR-99"
     director:
       dir: pr/
-      version: "PR-144"
+      version: "PR-185"
     gateway:
       dir: pr/
       version: "PR-100"
@@ -19,15 +19,11 @@ global:
       version: "PR-99"
     schema_migrator:
       dir: pr/
-      version: "PR-161"
-    ui:
-      path: eu.gcr.io/kyma-project
-      dir: 
-      version: "20739be5"
+      version: "PR-176"
     tests:
       e2e:
         dir: pr/
-        version: "PR-170"
+        version: "PR-176"
 
   isLocalEnv: false
   

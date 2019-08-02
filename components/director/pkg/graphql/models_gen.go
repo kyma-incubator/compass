@@ -300,16 +300,6 @@ type PageInfo struct {
 	HasNextPage bool       `json:"hasNextPage"`
 }
 
-type Runtime struct {
-	ID          string         `json:"id"`
-	Name        string         `json:"name"`
-	Description *string        `json:"description"`
-	Labels      Labels         `json:"labels"`
-	Status      *RuntimeStatus `json:"status"`
-	// TODO: directive for checking auth
-	AgentAuth *Auth `json:"agentAuth"`
-}
-
 type RuntimeAuth struct {
 	RuntimeID string `json:"runtimeID"`
 	Auth      *Auth  `json:"auth"`

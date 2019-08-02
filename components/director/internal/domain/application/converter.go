@@ -26,7 +26,6 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 		Status:         c.statusToGraphQL(in.Status),
 		Name:           in.Name,
 		Description:    in.Description,
-		Labels:         in.Labels,
 		HealthCheckURL: in.HealthCheckURL,
 	}
 }

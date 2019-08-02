@@ -38,6 +38,7 @@ type ResolverRoot interface {
 	Application() ApplicationResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
+	Runtime() RuntimeResolver
 }
 
 type DirectiveRoot struct {
@@ -292,6 +293,8 @@ type ComplexityRoot struct {
 }
 
 type ApplicationResolver interface {
+	Labels(ctx context.Context, obj *Application, key *string) (Labels, error)
+
 	Webhooks(ctx context.Context, obj *Application) ([]*Webhook, error)
 
 	Apis(ctx context.Context, obj *Application, group *string, first *int, after *PageCursor) (*APIDefinitionPage, error)
@@ -337,6 +340,9 @@ type QueryResolver interface {
 	LabelDefinitions(ctx context.Context) ([]*LabelDefinition, error)
 	LabelDefinition(ctx context.Context, key string) (*LabelDefinition, error)
 	HealthChecks(ctx context.Context, types []HealthCheckType, origin *string, first *int, after *PageCursor) (*HealthCheckPage, error)
+}
+type RuntimeResolver interface {
+	Labels(ctx context.Context, obj *Runtime, key *string) (Labels, error)
 }
 
 type executableSchema struct {
@@ -3689,7 +3695,7 @@ func (ec *executionContext) _Application_labels(ctx context.Context, field graph
 		Object:   "Application",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -3702,7 +3708,7 @@ func (ec *executionContext) _Application_labels(ctx context.Context, field graph
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Labels, nil
+		return ec.resolvers.Application().Labels(rctx, obj, args["key"].(*string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -6972,7 +6978,7 @@ func (ec *executionContext) _Runtime_labels(ctx context.Context, field graphql.C
 		Object:   "Runtime",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -6985,7 +6991,7 @@ func (ec *executionContext) _Runtime_labels(ctx context.Context, field graphql.C
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Labels, nil
+		return ec.resolvers.Runtime().Labels(rctx, obj, args["key"].(*string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -9149,10 +9155,19 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 		case "description":
 			out.Values[i] = ec._Application_description(ctx, field, obj)
 		case "labels":
-			out.Values[i] = ec._Application_labels(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Application_labels(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "status":
 			out.Values[i] = ec._Application_status(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -10212,29 +10227,38 @@ func (ec *executionContext) _Runtime(ctx context.Context, sel ast.SelectionSet, 
 		case "id":
 			out.Values[i] = ec._Runtime_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._Runtime_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "description":
 			out.Values[i] = ec._Runtime_description(ctx, field, obj)
 		case "labels":
-			out.Values[i] = ec._Runtime_labels(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Runtime_labels(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "status":
 			out.Values[i] = ec._Runtime_status(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "agentAuth":
 			out.Values[i] = ec._Runtime_agentAuth(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))

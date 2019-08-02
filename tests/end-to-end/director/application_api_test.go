@@ -279,7 +279,7 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 		err = tc.RunQuery(ctx, addReq, nil)
 
 		//THEN
-		require.EqualError(t, err, "graphql: while checking existence of Application: while getting Application with ID foo: application not found")
+		require.EqualError(t, err, "graphql: Cannot add Webhook to not existing Application")
 	})
 
 	t.Run("add API", func(t *testing.T) {
@@ -302,7 +302,7 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 		err = tc.RunQuery(ctx, addReq, nil)
 
 		//THEN
-		require.EqualError(t, err, "graphql: while checking existence of Application: while getting Application with ID foo: application not found")
+		require.EqualError(t, err, "graphql: Cannot add API to not existing Application")
 	})
 
 	t.Run("add Event API", func(t *testing.T) {
@@ -327,7 +327,7 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 		err = tc.RunQuery(ctx, addReq, nil)
 
 		// THEN
-		require.EqualError(t, err, "graphql: while checking existence of Application: while getting Application with ID foo: application not found")
+		require.EqualError(t, err, "graphql: Cannot add EventAPI to not existing Application")
 	})
 	t.Run("add Document", func(t *testing.T) {
 		//GIVEN
@@ -350,7 +350,7 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 		err = tc.RunQuery(ctx, addReq, nil)
 
 		//THEN
-		require.EqualError(t, err, "graphql: while checking existence of Application: while getting Application with ID foo: application not found")
+		require.EqualError(t, err, "graphql: Cannot add Document to not existing Application")
 	})
 }
 
@@ -994,7 +994,6 @@ func TestApplicationsForRuntime(t *testing.T) {
 		ApplicationName string
 		Tenant          string
 		WithinTenant    bool
-		ApplicationId   string
 	}{
 		{
 			Tenant:          tenantName,
@@ -1025,8 +1024,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
-		testApp.ApplicationId = application.ID
-		defer deleteApplicationInTenant(t, testApp.ApplicationId, testApp.Tenant)
+		defer deleteApplicationInTenant(t, application.ID, testApp.Tenant)
 		if testApp.WithinTenant {
 			tenantApplications = append(tenantApplications, &application)
 		}
@@ -1044,7 +1042,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 	//THEN
 	require.NoError(t, err)
 	require.Len(t, applicationPage.Data, 2)
-	assert.EqualValues(t, applicationPage.Data, tenantApplications)
+	assert.ElementsMatch(t, tenantApplications, applicationPage.Data)
 }
 
 func getApp(ctx context.Context, t *testing.T, id string) ApplicationExt {

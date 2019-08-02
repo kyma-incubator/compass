@@ -8,119 +8,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
-
-func TestRuntime_SetLabel(t *testing.T) {
-	// given
-	testCases := []struct {
-		Name           string
-		InitialRuntime model.Runtime
-		InputKey       string
-		InputValue     interface{}
-		ExpectedLabels map[string][]string
-	}{
-		{
-			Name: "New Label",
-			InitialRuntime: model.Runtime{
-				Labels: map[string]interface{}{
-					"test": []string{"testVal"},
-				},
-			},
-			InputKey:   "foo",
-			InputValue: []string{"bar", "baz"},
-			ExpectedLabels: map[string][]string{
-				"test": {"testVal"},
-				"foo":  {"bar", "baz"},
-			},
-		},
-		{
-			Name: "Nil map",
-			InitialRuntime: model.Runtime{
-				Labels: nil,
-			},
-			InputKey:   "foo",
-			InputValue: []string{"bar", "baz"},
-			ExpectedLabels: map[string][]string{
-				"foo": {"bar", "baz"},
-			},
-		},
-	}
-
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			rtm := testCase.InitialRuntime
-
-			// when
-
-			rtm.SetLabel(testCase.InputKey, testCase.InputValue)
-
-			// then
-
-			for key, val := range testCase.ExpectedLabels {
-				assert.Equal(t, val, rtm.Labels[key])
-			}
-		})
-	}
-
-}
-
-func TestRuntime_DeleteLabel(t *testing.T) {
-	// given
-	testCases := []struct {
-		Name           string
-		InputRuntime   model.Runtime
-		InputKey       string
-		ExpectedLabels map[string]interface{}
-		ExpectedErr    error
-	}{
-		{
-			Name:     "Whole Label",
-			InputKey: "foo",
-			InputRuntime: model.Runtime{
-				Labels: map[string]interface{}{
-					"no":  "delete",
-					"foo": []string{"bar", "baz"},
-				},
-			},
-			ExpectedErr: nil,
-			ExpectedLabels: map[string]interface{}{
-				"no": "delete",
-			},
-		},
-		{
-			Name:     "Error",
-			InputKey: "foobar",
-			InputRuntime: model.Runtime{
-				Labels: map[string]interface{}{
-					"no": "delete",
-				},
-			},
-			ExpectedErr: fmt.Errorf("label %s doesn't exist", "foobar"),
-			ExpectedLabels: map[string]interface{}{
-				"no": "delete",
-			},
-		},
-	}
-
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			rtm := testCase.InputRuntime
-
-			// when
-
-			err := rtm.DeleteLabel(testCase.InputKey)
-
-			// then
-
-			require.Equal(t, testCase.ExpectedErr, err)
-
-			for key, val := range testCase.ExpectedLabels {
-				assert.Equal(t, val, rtm.Labels[key])
-			}
-		})
-	}
-}
 
 func TestRuntimeInput_ToRuntime(t *testing.T) {
 	// given
@@ -146,11 +34,8 @@ func TestRuntimeInput_ToRuntime(t *testing.T) {
 				ID:          id,
 				Tenant:      tenant,
 				Description: &desc,
-				Labels: map[string]interface{}{
-					"test": []string{"val", "val2"},
-				},
-				Status:    &model.RuntimeStatus{},
-				AgentAuth: &model.Auth{},
+				Status:      &model.RuntimeStatus{},
+				AgentAuth:   &model.Auth{},
 			},
 		},
 		{

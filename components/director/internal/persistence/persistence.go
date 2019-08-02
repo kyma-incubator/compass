@@ -17,35 +17,8 @@ import (
 // RetryCount is a number of retries when trying to open the database
 const RetryCount int = 50
 
-// Configure returns the instance of the database
-func Configure(logger *logrus.Logger, connString string) (Transactioner, func() error, error) {
-	db, closeFunc, err := waitForPersistance(logger, connString, RetryCount)
-
-	return db, closeFunc, err
-}
-
 func SaveToContext(ctx context.Context, persistOp PersistenceOp) context.Context {
 	return context.WithValue(ctx, PersistenceCtxKey, persistOp)
-}
-
-func waitForPersistance(logger *logrus.Logger, connString string, retryCount int) (Transactioner, func() error, error) {
-	var sqlxDB *sqlx.DB
-	var err error
-	for ; retryCount > 0; retryCount-- {
-		sqlxDB, err = sqlx.Open("postgres", connString)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		err = sqlxDB.Ping()
-		if err == nil {
-			break
-		}
-
-		time.Sleep(5 * time.Second)
-	}
-
-	return &db{sqlDB: sqlxDB, logger: logger}, sqlxDB.Close, err
 }
 
 // FromCtx extracts DatabaseOp interface from context
@@ -88,6 +61,7 @@ func (db *db) RollbackUnlessCommited(tx PersistenceTx) {
 type PersistenceTx interface {
 	Commit() error
 	Rollback() error
+	PersistenceOp
 }
 
 //go:generate mockery -name=PersistenceOp -output=automock -outpkg=automock -case=underscore
@@ -97,4 +71,31 @@ type PersistenceOp interface {
 
 	NamedExec(query string, arg interface{}) (sql.Result, error)
 	Exec(query string, args ...interface{}) (sql.Result, error)
+}
+
+// Configure returns the instance of the database
+func Configure(logger *logrus.Logger, connString string) (Transactioner, func() error, error) {
+	db, closeFunc, err := waitForPersistance(logger, connString, RetryCount)
+
+	return db, closeFunc, err
+}
+
+func waitForPersistance(logger *logrus.Logger, connString string, retryCount int) (Transactioner, func() error, error) {
+	var sqlxDB *sqlx.DB
+	var err error
+	for ; retryCount > 0; retryCount-- {
+		sqlxDB, err = sqlx.Open("postgres", connString)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		err = sqlxDB.Ping()
+		if err == nil {
+			break
+		}
+
+		time.Sleep(5 * time.Second)
+	}
+
+	return &db{sqlDB: sqlxDB, logger: logger}, sqlxDB.Close, err
 }
