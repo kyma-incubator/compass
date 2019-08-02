@@ -123,7 +123,6 @@ func (r *repo) List(ctx context.Context, tenant string) ([]model.LabelDefinition
 }
 
 func (r *repo) Update(ctx context.Context, def model.LabelDefinition) error {
-
 	db, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return errors.Wrap(err, "while fetching persistence from context")

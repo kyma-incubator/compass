@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
@@ -25,7 +26,7 @@ func TestServiceCreate(t *testing.T) {
 		in := model.LabelDefinition{
 			Key:    "some-key",
 			Tenant: "tenant",
-			Schema: fixSchema(t),
+			Schema: fixSchema(t, "firstName"),
 		}
 
 		defWithID := in
@@ -148,18 +149,128 @@ func TestServiceList(t *testing.T) {
 	})
 }
 
+func TestServiceUpdate(t *testing.T) {
+	tenant := "tenant"
+	key := "key"
+
+	t.Run("success", func(t *testing.T) {
+		// GIVEN
+		mockRepository := &automock.Repository{}
+		defer mockRepository.AssertExpectations(t)
+
+		newSchema := fixSchema(t, "newFirstName")
+
+		ld := model.LabelDefinition{
+			ID:     fixUID(),
+			Tenant: tenant,
+			Key:    key,
+			Schema: fixSchema(t, "FirstName"),
+		}
+
+		in := model.LabelDefinition{
+			ID:     fixUID(),
+			Key:    key,
+			Tenant: tenant,
+			Schema: newSchema,
+		}
+
+		expectedLD := model.LabelDefinition{
+			ID:     fixUID(),
+			Tenant: tenant,
+			Key:    key,
+			Schema: newSchema,
+		}
+
+		defWithID := in
+		defWithID.ID = fixUID()
+		mockRepository.On("GetByKey", mock.Anything, tenant, key).Return(&ld, nil).Once()
+		mockRepository.On("Update", mock.Anything, defWithID).Return(nil)
+		mockRepository.On("GetByKey", mock.Anything, tenant, key).Return(&in, nil).Once()
+
+		ctx := context.TODO()
+		sut := labeldef.NewService(mockRepository, nil)
+		// WHEN
+		actual, err := sut.Update(ctx, in)
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, expectedLD, actual)
+	})
+
+	t.Run("returns error when validation of Label Definition failed", func(t *testing.T) {
+		// GIVEN
+
+		sut := labeldef.NewService(nil, nil)
+		// WHEN
+		_, err := sut.Update(context.TODO(), model.LabelDefinition{})
+		// THEN
+		require.EqualError(t, err, "while validating Label Definition: missing Tenant field")
+	})
+
+	t.Run("returns error if Label Definition was not found", func(t *testing.T) {
+		// GIVEN
+		mockRepository := &automock.Repository{}
+		defer mockRepository.AssertExpectations(t)
+
+		mockRepository.On("GetByKey", context.TODO(), tenant, key).Return(nil, errors.New("some error"))
+		sut := labeldef.NewService(mockRepository, nil)
+		// WHEN
+		_, err := sut.Update(context.TODO(), model.LabelDefinition{Key: key, Tenant: tenant})
+		// THEN
+		require.EqualError(t, err, "while receiving Label Definition: some error")
+	})
+
+	t.Run("returns error if Label Definition update failed", func(t *testing.T) {
+		// GIVEN
+		mockRepository := &automock.Repository{}
+		defer mockRepository.AssertExpectations(t)
+
+		ld := &model.LabelDefinition{
+			Tenant: tenant,
+			Key:    key,
+		}
+
+		mockRepository.On("GetByKey", context.TODO(), tenant, key).Return(ld, nil)
+		mockRepository.On("Update", context.TODO(), *ld).Return(errors.New("some error"))
+		sut := labeldef.NewService(mockRepository, nil)
+		// WHEN
+		_, err := sut.Update(context.TODO(), *ld)
+		// THEN
+		require.EqualError(t, err, "while updating Label Definition: some error")
+	})
+
+	t.Run("returns error if received of updated Label Definition failed", func(t *testing.T) {
+		// GIVEN
+		mockRepository := &automock.Repository{}
+		defer mockRepository.AssertExpectations(t)
+
+		ld := &model.LabelDefinition{
+			Tenant: tenant,
+			Key:    key,
+		}
+
+		mockRepository.On("GetByKey", context.TODO(), tenant, key).Return(ld, nil).Once()
+		mockRepository.On("Update", context.TODO(), *ld).Return(nil)
+		mockRepository.On("GetByKey", context.TODO(), tenant, key).Return(ld, errors.New("some error")).Once()
+		sut := labeldef.NewService(mockRepository, nil)
+		// WHEN
+		_, err := sut.Update(context.TODO(), *ld)
+		// THEN
+		require.EqualError(t, err, "while receiving updated Label Definition: some error")
+	})
+}
+
 func fixUID() string {
 	return "003a0855-4eb0-486d-8fc6-3ab2f2312ca0"
 }
 
-func fixSchema(t *testing.T) *interface{} {
-	sch := `{
+func fixSchema(t *testing.T, firstPropertyName string) *interface{} {
+	sch := fmt.Sprintf(`{
 		"$id": "https://example.com/person.schema.json",
   		"$schema": "http://json-schema.org/draft-07/schema#",
   		"title": "Person",
   		"type": "object",
   		"properties": {
-  		  "firstName": {
+  		  "%s": {
   		    "type": "string",
   		    "description": "The person's first name."
   		  },
@@ -173,7 +284,7 @@ func fixSchema(t *testing.T) *interface{} {
   		    "minimum": 0
   		  }
   		}
-	  }`
+	  }`, firstPropertyName)
 	var obj map[string]interface{}
 
 	err := json.Unmarshal([]byte(sch), &obj)
