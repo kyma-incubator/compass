@@ -19,7 +19,6 @@ const (
 	// QueryForRuntime defines the filter query for runtimes
 	QueryForRuntime QueryFor = "runtime_id"
 
-	labelsTable       string = `"public"."labels"`
 	scenariosLabelKey string = "SCENARIOS"
 	stmtPrefixFormat  string = `SELECT "%s" FROM %s WHERE "tenant_id" = '%s'`
 )
@@ -33,7 +32,7 @@ func FilterQuery(queryFor QueryFor, tenant uuid.UUID, filter []*labelfilter.Labe
 		return ""
 	}
 
-	stmtPrefix := fmt.Sprintf(stmtPrefixFormat, queryFor, labelsTable, tenant)
+	stmtPrefix := fmt.Sprintf(stmtPrefixFormat, queryFor, tableName, tenant)
 
 	var queryBuilder strings.Builder
 	for idx, lblFilter := range filter {
