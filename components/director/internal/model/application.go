@@ -1,7 +1,6 @@
 package model
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -16,7 +15,6 @@ type Application struct {
 	Tenant         string
 	Name           string
 	Description    *string
-	Labels         map[string]interface{}
 	Status         *ApplicationStatus
 	HealthCheckURL *string
 }
@@ -41,25 +39,6 @@ type ApplicationPage struct {
 	TotalCount int
 }
 
-func (a *Application) SetLabel(key string, value interface{}) {
-	if a.Labels == nil {
-		a.Labels = make(map[string]interface{})
-	}
-
-	a.Labels[key] = value
-}
-
-func (a *Application) DeleteLabel(key string) error {
-	_, exists := a.Labels[key]
-
-	if !exists {
-		return fmt.Errorf("label %s doesn't exist", key)
-	}
-
-	delete(a.Labels, key)
-	return nil
-}
-
 type ApplicationInput struct {
 	Name           string
 	Description    *string
@@ -81,7 +60,6 @@ func (i *ApplicationInput) ToApplication(id, tenant string) *Application {
 		Name:           i.Name,
 		Description:    i.Description,
 		Tenant:         tenant,
-		Labels:         i.Labels,
 		HealthCheckURL: i.HealthCheckURL,
 	}
 }

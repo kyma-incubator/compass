@@ -57,19 +57,6 @@ func fixGQLRuntime(id, name, description string) *graphql.Runtime {
 	}
 }
 
-func fixModelRuntimeWithLabels(id, tenant, name string, labels map[string]interface{}) *model.Runtime {
-	return &model.Runtime{
-		ID:     id,
-		Tenant: tenant,
-		Status: &model.RuntimeStatus{
-			Condition: model.RuntimeStatusConditionInitial,
-		},
-		Name:        name,
-		Description: nil,
-		Labels:      labels,
-	}
-}
-
 func fixDetailedModelRuntime(t *testing.T, id, name, description string) *model.Runtime {
 	time, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
@@ -83,9 +70,6 @@ func fixDetailedModelRuntime(t *testing.T, id, name, description string) *model.
 		Name:        name,
 		Description: &description,
 		Tenant:      "tenant",
-		Labels: map[string]interface{}{
-			"test": []string{"val", "val2"},
-		},
 		AgentAuth: &model.Auth{
 			AdditionalHeaders: map[string][]string{
 				"test": {"bar"},
@@ -116,9 +100,6 @@ func fixDetailedGQLRuntime(t *testing.T, id, name, description string) *graphql.
 		},
 		Name:        name,
 		Description: &description,
-		Labels: map[string]interface{}{
-			"test": []string{"val", "val2"},
-		},
 		AgentAuth: &graphql.Auth{
 			AdditionalHeaders: &headers,
 			Credential: graphql.BasicCredentialData{

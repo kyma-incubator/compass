@@ -28,7 +28,6 @@ func (c *converter) ToGraphQL(in *model.Runtime) *graphql.Runtime {
 		Status:      c.statusToGraphQL(in.Status),
 		Name:        in.Name,
 		Description: in.Description,
-		Labels:      in.Labels,
 		AgentAuth:   c.auth.ToGraphQL(in.AgentAuth),
 	}
 }

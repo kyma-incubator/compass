@@ -279,7 +279,7 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 		err = tc.RunQuery(ctx, addReq, nil)
 
 		//THEN
-		require.EqualError(t, err, "graphql: while checking existence of Application: while getting Application with ID foo: application not found")
+		require.EqualError(t, err, "graphql: Cannot add Webhook to not existing Application")
 	})
 
 	t.Run("add API", func(t *testing.T) {
@@ -302,7 +302,7 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 		err = tc.RunQuery(ctx, addReq, nil)
 
 		//THEN
-		require.EqualError(t, err, "graphql: while checking existence of Application: while getting Application with ID foo: application not found")
+		require.EqualError(t, err, "graphql: Cannot add API to not existing Application")
 	})
 
 	t.Run("add Event API", func(t *testing.T) {
@@ -327,7 +327,7 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 		err = tc.RunQuery(ctx, addReq, nil)
 
 		// THEN
-		require.EqualError(t, err, "graphql: while checking existence of Application: while getting Application with ID foo: application not found")
+		require.EqualError(t, err, "graphql: Cannot add EventAPI to not existing Application")
 	})
 	t.Run("add Document", func(t *testing.T) {
 		//GIVEN
@@ -350,7 +350,7 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 		err = tc.RunQuery(ctx, addReq, nil)
 
 		//THEN
-		require.EqualError(t, err, "graphql: while checking existence of Application: while getting Application with ID foo: application not found")
+		require.EqualError(t, err, "graphql: Cannot add Document to not existing Application")
 	})
 }
 

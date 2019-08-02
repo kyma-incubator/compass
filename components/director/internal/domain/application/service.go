@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -11,13 +12,21 @@ import (
 
 //go:generate mockery -name=ApplicationRepository -output=automock -outpkg=automock -case=underscore
 type ApplicationRepository interface {
-	GetByID(tenant, id string) (*model.Application, error)
-	Exist(tenant, id string) (bool, error)
-	List(tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error)
-	Create(item *model.Application) error
-	Update(item *model.Application) error
-	Delete(item *model.Application) error
-	ListByRuntimeID(tenant, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error)
+	Exists(ctx context.Context, tenant, id string) (bool, error)
+	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
+	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error)
+	ListByRuntimeID(ctx context.Context, tenant, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error)
+	Create(ctx context.Context, item *model.Application) error
+	Update(ctx context.Context, item *model.Application) error
+	Delete(ctx context.Context, item *model.Application) error
+}
+
+//go:generate mockery -name=LabelRepository -output=automock -outpkg=automock -case=underscore
+type LabelRepository interface {
+	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
+	List(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
+	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
+	DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error
 }
 
 //go:generate mockery -name=DocumentRepository -output=automock -outpkg=automock -case=underscore
@@ -48,22 +57,31 @@ type EventAPIRepository interface {
 	DeleteAllByApplicationID(id string) error
 }
 
+//go:generate mockery -name=LabelUpsertService -output=automock -outpkg=automock -case=underscore
+type LabelUpsertService interface {
+	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
+	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
+}
+
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
 type UIDService interface {
 	Generate() string
 }
 
 type service struct {
-	app        ApplicationRepository
-	api        APIRepository
-	eventAPI   EventAPIRepository
-	document   DocumentRepository
-	webhook    WebhookRepository
-	uidService UIDService
+	appRepo      ApplicationRepository
+	apiRepo      APIRepository
+	eventAPIRepo EventAPIRepository
+	documentRepo DocumentRepository
+	webhookRepo  WebhookRepository
+	labelRepo    LabelRepository
+
+	labelUpsertService LabelUpsertService
+	uidService         UIDService
 }
 
-func NewService(app ApplicationRepository, webhook WebhookRepository, api APIRepository, eventAPI EventAPIRepository, document DocumentRepository, uidService UIDService) *service {
-	return &service{app: app, webhook: webhook, api: api, eventAPI: eventAPI, document: document, uidService: uidService}
+func NewService(app ApplicationRepository, webhook WebhookRepository, api APIRepository, eventAPI EventAPIRepository, document DocumentRepository, labelRepo LabelRepository, labelUpsertService LabelUpsertService, uidService UIDService) *service {
+	return &service{appRepo: app, webhookRepo: webhook, apiRepo: api, eventAPIRepo: eventAPI, documentRepo: document, labelRepo: labelRepo, labelUpsertService: labelUpsertService, uidService: uidService}
 }
 
 func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
@@ -72,7 +90,7 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	return s.app.List(appTenant, filter, pageSize, cursor)
+	return s.appRepo.List(ctx, appTenant, filter, pageSize, cursor)
 }
 
 func (s *service) ListByRuntimeID(ctx context.Context, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
@@ -81,7 +99,7 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID string, pageSiz
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	return s.app.ListByRuntimeID(tenantID, runtimeID, pageSize, cursor)
+	return s.appRepo.ListByRuntimeID(ctx, tenantID, runtimeID, pageSize, cursor)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.Application, error) {
@@ -90,7 +108,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.Application, error
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	app, err := s.app.GetByID(appTenant, id)
+	app, err := s.appRepo.GetByID(ctx, appTenant, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Application with ID %s", id)
 	}
@@ -104,7 +122,7 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 		return false, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	exist, err := s.app.Exist(appTenant, id)
+	exist, err := s.appRepo.Exists(ctx, appTenant, id)
 	if err != nil {
 		return false, errors.Wrapf(err, "while getting Application with ID %s", id)
 	}
@@ -126,7 +144,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string
 	id := s.uidService.Generate()
 	app := in.ToApplication(id, appTenant)
 
-	err = s.app.Create(app)
+	err = s.appRepo.Create(ctx, app)
 	if err != nil {
 		return "", err
 	}
@@ -134,6 +152,11 @@ func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string
 	err = s.createRelatedResources(in, app.ID)
 	if err != nil {
 		return "", errors.Wrap(err, "while creating related Application resources")
+	}
+
+	err = s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
+	if err != nil {
+		return id, errors.Wrapf(err, "while creating multiple labels for Application")
 	}
 
 	return id, nil
@@ -145,13 +168,18 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationInp
 		return errors.Wrap(err, "while validating Application input")
 	}
 
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
 	app, err := s.Get(ctx, id)
 	if err != nil {
 		return errors.Wrap(err, "while getting Application")
 	}
 	app = in.ToApplication(app.ID, app.Tenant)
 
-	err = s.app.Update(app)
+	err = s.appRepo.Update(ctx, app)
 	if err != nil {
 		return errors.Wrap(err, "while updating Application")
 	}
@@ -161,15 +189,30 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationInp
 		return errors.Wrap(err, "while deleting related Application resources")
 	}
 
+	err = s.labelRepo.DeleteAll(ctx, appTenant, model.ApplicationLabelableObject, id)
+	if err != nil {
+		return errors.Wrapf(err, "while deleting all labels for Application")
+	}
+
 	err = s.createRelatedResources(in, app.ID)
 	if err != nil {
 		return errors.Wrap(err, "while creating related Application resources")
+	}
+
+	err = s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
+	if err != nil {
+		return errors.Wrapf(err, "while creating multiple labels for Application")
 	}
 
 	return nil
 }
 
 func (s *service) Delete(ctx context.Context, id string) error {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
 	app, err := s.Get(ctx, id)
 	if err != nil {
 		return errors.Wrapf(err, "while getting Application with ID %s", id)
@@ -180,39 +223,105 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "while deleting related Application resources")
 	}
 
-	return s.app.Delete(app)
-}
-
-func (s *service) SetLabel(ctx context.Context, applicationID string, key string, value interface{}) error {
-	app, err := s.Get(ctx, applicationID)
+	err = s.appRepo.Delete(ctx, app)
 	if err != nil {
-		return errors.Wrap(err, "while getting Application")
+		return errors.Wrapf(err, "while deleting Application")
 	}
 
-	app.SetLabel(key, value)
-
-	err = s.app.Update(app)
+	// TODO: Set cascade delete when implementing DB repository for Application domain
+	err = s.labelRepo.DeleteAll(ctx, appTenant, model.ApplicationLabelableObject, id)
 	if err != nil {
-		return errors.Wrapf(err, "while updating Application")
+		return errors.Wrapf(err, "while deleting all labels for Runtime")
 	}
 
 	return nil
 }
 
+func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) error {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	appExists, err := s.appRepo.Exists(ctx, appTenant, labelInput.ObjectID)
+	if err != nil {
+		return errors.Wrap(err, "while checking Application existence")
+	}
+	if !appExists {
+		return fmt.Errorf("Application with ID %s doesn't exist", labelInput.ObjectID)
+	}
+
+	err = s.labelUpsertService.UpsertLabel(ctx, appTenant, labelInput)
+	if err != nil {
+		return errors.Wrapf(err, "while creating label for Application")
+	}
+
+	return nil
+}
+
+func (s *service) GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	appExists, err := s.appRepo.Exists(ctx, appTenant, applicationID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while checking Application existence")
+	}
+	if !appExists {
+		return nil, fmt.Errorf("Application with ID %s doesn't exist", applicationID)
+	}
+
+	label, err := s.labelRepo.GetByKey(ctx, appTenant, model.ApplicationLabelableObject, applicationID, key)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting label for Application")
+	}
+
+	return label, nil
+}
+
+//TODO: In future consider using `map[string]*model.Label`
+func (s *service) ListLabels(ctx context.Context, applicationID string) (map[string]*model.Label, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	appExists, err := s.appRepo.Exists(ctx, appTenant, applicationID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while checking Application existence")
+	}
+
+	if !appExists {
+		return nil, fmt.Errorf("Application with ID %s doesn't exist", applicationID)
+	}
+
+	labels, err := s.labelRepo.List(ctx, appTenant, model.ApplicationLabelableObject, applicationID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting label for Application")
+	}
+
+	return labels, nil
+}
+
 func (s *service) DeleteLabel(ctx context.Context, applicationID string, key string) error {
-	app, err := s.Get(ctx, applicationID)
+	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return errors.Wrap(err, "while getting Application")
+		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	err = app.DeleteLabel(key)
+	appExists, err := s.appRepo.Exists(ctx, appTenant, applicationID)
 	if err != nil {
-		return errors.Wrapf(err, "while deleting label with key %s", key)
+		return errors.Wrap(err, "while checking Application existence")
+	}
+	if !appExists {
+		return fmt.Errorf("Application with ID %s doesn't exist", applicationID)
 	}
 
-	err = s.app.Update(app)
+	err = s.labelRepo.Delete(ctx, appTenant, model.ApplicationLabelableObject, applicationID, key)
 	if err != nil {
-		return errors.Wrapf(err, "while updating Application")
+		return errors.Wrapf(err, "while deleting Application label")
 	}
 
 	return nil
@@ -225,7 +334,7 @@ func (s *service) createRelatedResources(in model.ApplicationInput, applicationI
 	for _, item := range in.Webhooks {
 		webhooks = append(webhooks, item.ToWebhook(s.uidService.Generate(), applicationID))
 	}
-	err = s.webhook.CreateMany(webhooks)
+	err = s.webhookRepo.CreateMany(webhooks)
 	if err != nil {
 		return errors.Wrapf(err, "while creating Webhooks for application")
 	}
@@ -235,7 +344,7 @@ func (s *service) createRelatedResources(in model.ApplicationInput, applicationI
 		apis = append(apis, item.ToAPIDefinition(s.uidService.Generate(), applicationID))
 	}
 
-	err = s.api.CreateMany(apis)
+	err = s.apiRepo.CreateMany(apis)
 	if err != nil {
 		return errors.Wrapf(err, "while creating APIs for application")
 	}
@@ -244,7 +353,7 @@ func (s *service) createRelatedResources(in model.ApplicationInput, applicationI
 	for _, item := range in.EventAPIs {
 		eventAPIs = append(eventAPIs, item.ToEventAPIDefinition(s.uidService.Generate(), applicationID))
 	}
-	err = s.eventAPI.CreateMany(eventAPIs)
+	err = s.eventAPIRepo.CreateMany(eventAPIs)
 	if err != nil {
 		return errors.Wrapf(err, "while creating EventAPIs for application")
 	}
@@ -253,7 +362,7 @@ func (s *service) createRelatedResources(in model.ApplicationInput, applicationI
 	for _, item := range in.Documents {
 		documents = append(documents, item.ToDocument(s.uidService.Generate(), applicationID))
 	}
-	err = s.document.CreateMany(documents)
+	err = s.documentRepo.CreateMany(documents)
 	if err != nil {
 		return errors.Wrapf(err, "while creating Documents for application")
 	}
@@ -264,22 +373,22 @@ func (s *service) createRelatedResources(in model.ApplicationInput, applicationI
 func (s *service) deleteRelatedResources(applicationID string) error {
 	var err error
 
-	err = s.webhook.DeleteAllByApplicationID(applicationID)
+	err = s.webhookRepo.DeleteAllByApplicationID(applicationID)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting Webhooks for application %s", applicationID)
 	}
 
-	err = s.api.DeleteAllByApplicationID(applicationID)
+	err = s.apiRepo.DeleteAllByApplicationID(applicationID)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting APIs for application %s", applicationID)
 	}
 
-	err = s.eventAPI.DeleteAllByApplicationID(applicationID)
+	err = s.eventAPIRepo.DeleteAllByApplicationID(applicationID)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting EventAPIs for application %s", applicationID)
 	}
 
-	err = s.document.DeleteAllByApplicationID(applicationID)
+	err = s.documentRepo.DeleteAllByApplicationID(applicationID)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting Documents for application %s", applicationID)
 	}

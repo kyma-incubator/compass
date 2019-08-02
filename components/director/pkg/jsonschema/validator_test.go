@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestValidator_Validate(t *testing.T) {
+func TestValidator_ValidateString(t *testing.T) {
 	// given
 
 	validInputJsonSchema := `{
@@ -76,6 +76,79 @@ func TestValidator_Validate(t *testing.T) {
 
 			// when
 			ok, err := svc.ValidateString(testCase.InputJson)
+			require.NoError(t, err)
+
+			// then
+			assert.Equal(t, testCase.ExpectedResult, ok)
+		})
+	}
+}
+
+func TestValidator_ValidateRaw(t *testing.T) {
+	// given
+	validInputJSONSchema := map[string]interface{}{
+		"$id":   "https://foo.com/bar.schema.json",
+		"title": "foobarbaz",
+		"type":  "object",
+		"properties": map[string]interface{}{
+			"foo": map[string]interface{}{
+				"type":        "string",
+				"description": "foo",
+			},
+			"bar": map[string]interface{}{
+				"type":        "string",
+				"description": "bar",
+			},
+			"baz": map[string]interface{}{
+				"description": "baz",
+				"type":        "integer",
+				"minimum":     0,
+			},
+		},
+		"required": []interface{}{"foo", "bar", "baz"},
+	}
+
+	inputJSON := map[string]interface{}{
+		"foo": "test",
+		"bar": "test",
+		"baz": 123,
+	}
+	invalidInputJSON := map[string]interface{}{"abc": 123}
+
+	testCases := []struct {
+		Name            string
+		InputJSONSchema interface{}
+		InputJSON       interface{}
+		ExpectedResult  bool
+	}{
+		{
+			Name:            "Success",
+			InputJSONSchema: validInputJSONSchema,
+			InputJSON:       inputJSON,
+			ExpectedResult:  true,
+		},
+		{
+			Name:            "Json schema and json doesn't match",
+			InputJSONSchema: validInputJSONSchema,
+			InputJSON:       invalidInputJSON,
+			ExpectedResult:  false,
+		},
+		{
+			Name:            "Empty",
+			InputJSONSchema: nil,
+			InputJSON:       "anything",
+			ExpectedResult:  true,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+
+			svc, err := jsonschema.NewValidatorFromRawSchema(testCase.InputJSONSchema)
+			require.NoError(t, err)
+
+			// when
+			ok, err := svc.ValidateRaw(testCase.InputJSON)
 			require.NoError(t, err)
 
 			// then

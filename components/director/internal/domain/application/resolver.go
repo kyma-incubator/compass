@@ -2,12 +2,14 @@ package application
 
 import (
 	"context"
+	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/pkg/errors"
 )
 
 //go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
@@ -17,9 +19,11 @@ type ApplicationService interface {
 	Get(ctx context.Context, id string) (*model.Application, error)
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error)
-	SetLabel(ctx context.Context, applicationID string, key string, value interface{}) error
-	DeleteLabel(ctx context.Context, applicationID string, key string) error
 	ListByRuntimeID(ctx context.Context, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error)
+	SetLabel(ctx context.Context, label *model.LabelInput) error
+	GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error)
+	ListLabels(ctx context.Context, applicationID string) (map[string]*model.Label, error)
+	DeleteLabel(ctx context.Context, applicationID string, key string) error
 }
 
 //go:generate mockery -name=ApplicationConverter -output=automock -outpkg=automock -case=underscore
@@ -90,6 +94,8 @@ type WebhookConverter interface {
 }
 
 type Resolver struct {
+	transact persistence.Transactioner
+
 	appSvc       ApplicationService
 	appConverter ApplicationConverter
 
@@ -104,8 +110,9 @@ type Resolver struct {
 	eventApiConverter EventAPIConverter
 }
 
-func NewResolver(svc ApplicationService, apiSvc APIService, eventAPISvc EventAPIService, documentSvc DocumentService, webhookSvc WebhookService, appConverter ApplicationConverter, documentConverter DocumentConverter, webhookConverter WebhookConverter, apiConverter APIConverter, eventAPIConverter EventAPIConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc ApplicationService, apiSvc APIService, eventAPISvc EventAPIService, documentSvc DocumentService, webhookSvc WebhookService, appConverter ApplicationConverter, documentConverter DocumentConverter, webhookConverter WebhookConverter, apiConverter APIConverter, eventAPIConverter EventAPIConverter) *Resolver {
 	return &Resolver{
+		transact:          transact,
 		appSvc:            svc,
 		apiSvc:            apiSvc,
 		eventAPISvc:       eventAPISvc,
@@ -183,12 +190,25 @@ func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string,
 func (r *Resolver) CreateApplication(ctx context.Context, in graphql.ApplicationInput) (*graphql.Application, error) {
 	convertedIn := r.appConverter.InputFromGraphQL(in)
 
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	id, err := r.appSvc.Create(ctx, convertedIn)
 	if err != nil {
 		return nil, err
 	}
 
 	app, err := r.appSvc.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +220,15 @@ func (r *Resolver) CreateApplication(ctx context.Context, in graphql.Application
 func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.ApplicationInput) (*graphql.Application, error) {
 	convertedIn := r.appConverter.InputFromGraphQL(in)
 
-	err := r.appSvc.Update(ctx, id, convertedIn)
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	err = r.appSvc.Update(ctx, id, convertedIn)
 	if err != nil {
 		return nil, err
 	}
@@ -210,11 +238,24 @@ func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.
 		return nil, err
 	}
 
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
 	gqlApp := r.appConverter.ToGraphQL(app)
 
 	return gqlApp, nil
 }
 func (r *Resolver) DeleteApplication(ctx context.Context, id string) (*graphql.Application, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	app, err := r.appSvc.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -227,10 +268,33 @@ func (r *Resolver) DeleteApplication(ctx context.Context, id string) (*graphql.A
 		return nil, err
 	}
 
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
 	return deletedApp, nil
 }
 func (r *Resolver) SetApplicationLabel(ctx context.Context, applicationID string, key string, value interface{}) (*graphql.Label, error) {
-	err := r.appSvc.SetLabel(ctx, applicationID, key, value)
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	err = r.appSvc.SetLabel(ctx, &model.LabelInput{
+		Key:        key,
+		Value:      value,
+		ObjectType: model.ApplicationLabelableObject,
+		ObjectID:   applicationID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}
@@ -242,21 +306,32 @@ func (r *Resolver) SetApplicationLabel(ctx context.Context, applicationID string
 }
 
 func (r *Resolver) DeleteApplicationLabel(ctx context.Context, applicationID string, key string) (*graphql.Label, error) {
-	app, err := r.appSvc.Get(ctx, applicationID)
+	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
 	}
+	defer r.transact.RollbackUnlessCommited(tx)
 
-	value := app.Labels[key]
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	label, err := r.appSvc.GetLabel(ctx, applicationID, key)
+	if err != nil {
+		return nil, err
+	}
 
 	err = r.appSvc.DeleteLabel(ctx, applicationID, key)
 	if err != nil {
 		return nil, err
 	}
 
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
 	return &graphql.Label{
 		Key:   key,
-		Value: value,
+		Value: label.Value,
 	}, nil
 }
 
@@ -346,4 +421,40 @@ func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*g
 	gqlWebhooks := r.webhookConverter.MultipleToGraphQL(webhooks)
 
 	return gqlWebhooks, nil
+}
+
+func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *string) (graphql.Labels, error) {
+	if obj == nil {
+		return nil, errors.New("Application cannot be empty")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	itemMap, err := r.appSvc.ListLabels(ctx, obj.ID)
+	if err != nil {
+		if strings.Contains(err.Error(), "doesn't exist") {
+			return graphql.Labels{}, nil
+		}
+
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	resultLabels := make(map[string]interface{})
+
+	for _, label := range itemMap {
+		resultLabels[label.Key] = label.Value
+	}
+
+	return resultLabels, nil
 }
