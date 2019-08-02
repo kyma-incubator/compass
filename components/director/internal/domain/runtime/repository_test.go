@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -74,6 +76,49 @@ func TestPgRepository_List_ShouldReturnRuntimeModelsForRuntimeEntities(t *testin
 
 	// when
 	modelRuntimePage, err := pgRepository.List(ctx, tenantID, nil, nil, nil)
+
+	//then
+	assert.NoError(t, err)
+	assert.Equal(t, 2, modelRuntimePage.TotalCount)
+	require.NoError(t, sqlMock.ExpectationsWereMet())
+
+	assert.Equal(t, runtime1ID, modelRuntimePage.Data[0].ID)
+	assert.Equal(t, tenantID, modelRuntimePage.Data[0].Tenant)
+
+	assert.Equal(t, runtime2ID, modelRuntimePage.Data[1].ID)
+	assert.Equal(t, tenantID, modelRuntimePage.Data[1].Tenant)
+}
+
+func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntities(t *testing.T) {
+	// given
+	runtime1ID := uuid.New().String()
+	runtime2ID := uuid.New().String()
+	tenantID := uuid.New().String()
+
+	timestamp, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
+	require.NoError(t, err)
+
+	sqlxDB, sqlMock := mockDatabase(t)
+
+	rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth"}).
+		AddRow(runtime1ID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp, agentAuthStr).
+		AddRow(runtime2ID, tenantID, "Runtime XYZ", "Description for runtime XYZ", "INITIAL", timestamp, agentAuthStr)
+
+	sqlMock.ExpectQuery(`^SELECT (.+) FROM "public"."runtimes" WHERE "tenant_id" = \$1  AND "id" IN \(SELECT "runtime_id" FROM "public"."labels" WHERE "runtime_id" IS NOT NULL AND "tenant_id" = '` + tenantID + `' AND "key" = 'foo'\)$`).
+		WithArgs(tenantID).
+		WillReturnRows(rows)
+
+	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+
+	labelFilterFoo := labelfilter.LabelFilter{
+		Key: "foo",
+	}
+	filter := []*labelfilter.LabelFilter{&labelFilterFoo}
+
+	pgRepository := runtime.NewPostgresRepository()
+
+	// when
+	modelRuntimePage, err := pgRepository.List(ctx, tenantID, filter, nil, nil)
 
 	//then
 	assert.NoError(t, err)

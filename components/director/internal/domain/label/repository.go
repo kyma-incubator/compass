@@ -68,7 +68,7 @@ func (r *repository) GetByKey(ctx context.Context, tenant string, objectType mod
 	}
 
 	stmt := fmt.Sprintf(`SELECT %s FROM %s WHERE "key" = $1 AND "%s" = $2 AND "tenant_id" = $3`,
-		fields, tableName, r.objectField(objectType))
+		fields, tableName, labelableObjectField(objectType))
 
 	var entity Entity
 	err = persist.Get(&entity, stmt, key, objectID, tenant)
@@ -95,7 +95,7 @@ func (r *repository) List(ctx context.Context, tenant string, objectType model.L
 	}
 
 	stmt := fmt.Sprintf(`SELECT %s FROM %s WHERE  "%s" = $1 AND "tenant_id" = $2`,
-		fields, tableName, r.objectField(objectType))
+		fields, tableName, labelableObjectField(objectType))
 
 	var entities []Entity
 	err = persist.Select(&entities, stmt, objectID, tenant)
@@ -123,7 +123,7 @@ func (r *repository) Delete(ctx context.Context, tenant string, objectType model
 		return errors.Wrap(err, "while fetching persistence from context")
 	}
 
-	stmt := fmt.Sprintf(`DELETE FROM %s WHERE "key" = $1 AND "%s" = $2 AND "tenant_id" = $3`, tableName, r.objectField(objectType))
+	stmt := fmt.Sprintf(`DELETE FROM %s WHERE "key" = $1 AND "%s" = $2 AND "tenant_id" = $3`, tableName, labelableObjectField(objectType))
 	_, err = persist.Exec(stmt, key, objectID, tenant)
 
 	return errors.Wrap(err, "while deleting the Label entity from database")
@@ -135,13 +135,13 @@ func (r *repository) DeleteAll(ctx context.Context, tenant string, objectType mo
 		return errors.Wrap(err, "while fetching persistence from context")
 	}
 
-	stmt := fmt.Sprintf(`DELETE FROM %s WHERE "%s" = $1 AND "tenant_id" = $2`, tableName, r.objectField(objectType))
+	stmt := fmt.Sprintf(`DELETE FROM %s WHERE "%s" = $1 AND "tenant_id" = $2`, tableName, labelableObjectField(objectType))
 	_, err = persist.Exec(stmt, objectID, tenant)
 
 	return errors.Wrapf(err, "while deleting all Label entities from database for %s %s", objectType, objectID)
 }
 
-func (r *repository) objectField(objectType model.LabelableObject) string {
+func labelableObjectField(objectType model.LabelableObject) string {
 	switch objectType {
 	case model.ApplicationLabelableObject:
 		return "app_id"
