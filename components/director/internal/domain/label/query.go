@@ -8,36 +8,36 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-// QueryFor type defines possible types for quering
-type QueryFor string
+// SetCombination type defines possible result set combination for quering
+type SetCombination string
 
 const (
-	// QueryForApplication defines the filter query for applications
-	QueryForApplication QueryFor = "app_id"
-	// QueryForRuntime defines the filter query for runtimes
-	QueryForRuntime QueryFor = "runtime_id"
-
-	scenariosLabelKey string = "SCENARIOS"
-	stmtPrefixFormat  string = `SELECT "%s" FROM %s WHERE "tenant_id" = '%s'`
+	IntersectSet      SetCombination = "INTERSECT"
+	UnionSet          SetCombination = "UNION"
+	scenariosLabelKey string         = "SCENARIOS"
+	stmtPrefixFormat  string         = `SELECT "%s" FROM %s WHERE "%s" IS NOT NULL AND "tenant_id" = '%s'`
 )
 
 // FilterQuery builds select query for given filters
 //
-// It supports quering defined by `QueryFor` parameter. All queries are created
-// in the context of given tenant.
-func FilterQuery(queryFor QueryFor, tenant uuid.UUID, filter []*labelfilter.LabelFilter) string {
+// It supports quering defined by `queryFor` parameter. All queries are created
+// in the context of given tenant
+func FilterQuery(queryFor model.LabelableObject, setCombination SetCombination, tenant uuid.UUID, filter []*labelfilter.LabelFilter) string {
 	if filter == nil {
 		return ""
 	}
 
-	stmtPrefix := fmt.Sprintf(stmtPrefixFormat, queryFor, tableName, tenant)
+	objectField := labelableObjectField(queryFor)
+
+	stmtPrefix := fmt.Sprintf(stmtPrefixFormat, objectField, tableName, objectField, tenant)
 
 	var queryBuilder strings.Builder
 	for idx, lblFilter := range filter {
 		if idx > 0 {
-			queryBuilder.WriteString(` INTERSECT `)
+			queryBuilder.WriteString(fmt.Sprintf(` %s `, setCombination))
 		}
 
 		queryBuilder.WriteString(fmt.Sprintf(stmtPrefix))

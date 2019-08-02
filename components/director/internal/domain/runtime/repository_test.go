@@ -104,7 +104,7 @@ func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntitie
 		AddRow(runtime1ID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp, agentAuthStr).
 		AddRow(runtime2ID, tenantID, "Runtime XYZ", "Description for runtime XYZ", "INITIAL", timestamp, agentAuthStr)
 
-	sqlMock.ExpectQuery(`^SELECT (.+) FROM "public"."runtimes" WHERE "tenant_id" = \$1  AND "id" IN \(SELECT "runtime_id" FROM "public"."labels" WHERE "tenant_id" = '` + tenantID + `' AND "key" = 'foo'\)$`).
+	sqlMock.ExpectQuery(`^SELECT (.+) FROM "public"."runtimes" WHERE "tenant_id" = \$1  AND "id" IN \(SELECT "runtime_id" FROM "public"."labels" WHERE "runtime_id" IS NOT NULL AND "tenant_id" = '` + tenantID + `' AND "key" = 'foo'\)$`).
 		WithArgs(tenantID).
 		WillReturnRows(rows)
 

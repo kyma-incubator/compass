@@ -8,9 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-func Test_FilterQuery(t *testing.T) {
+func Test_FilterQuery_Intersection(t *testing.T) {
 	tenantID := uuid.New()
 
 	fooQuery := `["foo-value"]`
@@ -47,7 +48,7 @@ func Test_FilterQuery(t *testing.T) {
 		Query: &scenariosBarPongQuery,
 	}
 
-	stmtPrefix := `SELECT "runtime_id" FROM "public"."labels" WHERE "tenant_id" = '` + tenantID.String() + `'`
+	stmtPrefix := `SELECT "runtime_id" FROM "public"."labels" WHERE "runtime_id" IS NOT NULL AND "tenant_id" = '` + tenantID.String() + `'`
 
 	testCases := []struct {
 		Name                string
@@ -94,7 +95,7 @@ func Test_FilterQuery(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			queryFilter := FilterQuery(QueryForRuntime, tenantID, testCase.FilterInput)
+			queryFilter := FilterQuery(model.RuntimeLabelableObject, IntersectSet, tenantID, testCase.FilterInput)
 
 			assert.Equal(t, testCase.ExpectedQueryFilter, queryFilter)
 		})
