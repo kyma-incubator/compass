@@ -4,7 +4,6 @@ apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
   name: {{ template "fullname" . }}
-  namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
@@ -12,7 +11,7 @@ metadata:
     release: {{ .Release.Name }}
 spec:
   hosts:
-    - {{ .Values.global.ui.host }}.{{ .Values.global.ingress.domainName }}
+    - {{ .Values.ui.host }}.{{ .Values.global.ingress.domainName }}
   gateways:
     - {{ .Values.global.istio.gateway.name }}.{{ .Values.global.istio.gateway.namespace }}.svc.cluster.local
   http:
