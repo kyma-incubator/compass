@@ -22,5 +22,5 @@ MINIKUBE_IP=$(eval minikube ip)
 helm install --set=global.minikubeIP=${MINIKUBE_IP} --set=global.isLocalEnv=true --name "${COMPASS_HELM_RELEASE_NAME}" --namespace "${COMPASS_HELM_RELEASE_NAMESPACE}" "${ROOT_PATH}"/chart/compass --tls --wait
 
 # TODO: Remove it after next CLI release
-echo "Adding Compass entries to /etc/hosts...\n"
+echo "Adding Compass entries to /etc/hosts..."
 sudo sh -c 'echo "\n$(minikube ip) compass-gateway.kyma.local compass.kyma.local compass-mf.kyma.local" >> /etc/hosts'
