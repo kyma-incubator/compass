@@ -866,14 +866,6 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 func TestQueryApplications(t *testing.T) {
 	// GIVEN
-	idsToRemove := make([]string, 3)
-	defer func() {
-		for _, id := range idsToRemove {
-			if id != "" {
-				deleteApplication(t, id)
-			}
-		}
-	}()
 	ctx := context.Background()
 	for i := 0; i < 3; i++ {
 		in := graphql.ApplicationInput{
@@ -891,7 +883,7 @@ func TestQueryApplications(t *testing.T) {
 			}`, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
 		err = tc.RunQuery(ctx, request, &actualApp)
 		require.NoError(t, err)
-		idsToRemove[i] = actualApp.ID
+		defer deleteApplication(t, actualApp.ID)
 	}
 	actualAppPage := graphql.ApplicationPage{}
 

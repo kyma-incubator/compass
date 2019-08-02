@@ -100,7 +100,7 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 	}
 
 	stmt := fmt.Sprintf(`SELECT "id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth" FROM %s WHERE "tenant_id"  = $1 %s %s`,
-		runtimeTable, queryForRuntime,pagination.ConvertOffsetLimitAndOrderedColumnToSQL(pageSize, offset, "id"))
+		runtimeTable, queryForRuntime, pagination.ConvertOffsetLimitAndOrderedColumnToSQL(pageSize, offset, "id"))
 
 	var runtimesEnt []Runtime
 	err = persist.Select(&runtimesEnt, stmt, tenant)
