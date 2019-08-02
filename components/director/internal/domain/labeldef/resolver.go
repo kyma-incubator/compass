@@ -119,7 +119,7 @@ func (r *Resolver) LabelDefinition(ctx context.Context, key string) (*graphql.La
 	}
 
 	if def == nil {
-		return nil, fmt.Errorf("label defintion with key='%s' does not exist", key)
+		return nil, fmt.Errorf("label definition with key '%s' does not exist", key)
 	}
 	c := r.conv.ToGraphQL(*def)
 	return &c, nil

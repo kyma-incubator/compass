@@ -349,7 +349,7 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 		// WHEN
 		_, err := sut.LabelDefinition(ctx, "key")
 		// THEN
-		require.EqualError(t, err, "label defintion with key='key' does not exist")
+		require.EqualError(t, err, "label definition with key 'key' does not exist")
 	})
 
 	t.Run("got error on getting label definition from service", func(t *testing.T) {
