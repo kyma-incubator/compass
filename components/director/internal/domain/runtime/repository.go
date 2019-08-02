@@ -85,7 +85,11 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 		return nil, errors.Wrap(err, "while parsing tenant as UUID")
 	}
 
-	queryForRuntime := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filter)
+	queryForRuntime, err := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while building filter query")
+	}
+
 	if queryForRuntime != "" {
 		queryForRuntime = fmt.Sprintf(` AND "id" IN (%s)`, queryForRuntime)
 	}

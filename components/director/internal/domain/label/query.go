@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/lib/pq"
+	"github.com/pkg/errors"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -25,9 +26,9 @@ const (
 //
 // It supports quering defined by `queryFor` parameter. All queries are created
 // in the context of given tenant
-func FilterQuery(queryFor model.LabelableObject, setCombination SetCombination, tenant uuid.UUID, filter []*labelfilter.LabelFilter) string {
+func FilterQuery(queryFor model.LabelableObject, setCombination SetCombination, tenant uuid.UUID, filter []*labelfilter.LabelFilter) (string, error) {
 	if filter == nil {
-		return ""
+		return "", nil
 	}
 
 	objectField := labelableObjectField(queryFor)
@@ -53,12 +54,17 @@ func FilterQuery(queryFor model.LabelableObject, setCombination SetCombination, 
 			// is not production ready, we need to transform the Query from
 			// SQL/JSON path to old JSON queries.
 			if strings.ToUpper(lblFilter.Key) == scenariosLabelKey {
-				queryValue = `["` + *ExtractValueFromJSONPath(queryValue) + `"]`
+				extractedValue, err := ExtractValueFromJSONPath(queryValue)
+				if err != nil {
+					return "", errors.Wrap(err, "while extracting value from JSON path")
+				}
+
+				queryValue = `["` + *extractedValue + `"]`
 			}
 
 			queryBuilder.WriteString(fmt.Sprintf(` AND "value" @> %s`, pq.QuoteLiteral(queryValue)))
 		}
 	}
 
-	return queryBuilder.String()
+	return queryBuilder.String(), nil
 }
