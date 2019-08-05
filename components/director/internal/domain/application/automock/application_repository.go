@@ -107,8 +107,8 @@ func (_m *ApplicationRepository) List(ctx context.Context, tenant string, filter
 	return r0, r1
 }
 
-// ListByScenariosFromRuntime provides a mock function with given fields: ctx, tenantID, runtimeID, pageSize, cursor
-func (_m *ApplicationRepository) ListByScenariosFromRuntime(ctx context.Context, tenantID string, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
+// ListByScenariosForRuntime provides a mock function with given fields: ctx, tenantID, runtimeID, pageSize, cursor
+func (_m *ApplicationRepository) ListByScenariosForRuntime(ctx context.Context, tenantID string, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
 	ret := _m.Called(ctx, tenantID, runtimeID, pageSize, cursor)
 
 	var r0 *model.ApplicationPage

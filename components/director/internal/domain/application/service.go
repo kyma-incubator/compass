@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
@@ -14,8 +15,7 @@ type ApplicationRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error)
-	//TODO: this is going to be changed
-	ListByScenariosFromRuntime(ctx context.Context, tenantID string, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error)
+	ListByScenariosForRuntime(ctx context.Context, tenantID string, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error)
 	Create(ctx context.Context, item *model.Application) error
 	Update(ctx context.Context, item *model.Application) error
 	Delete(ctx context.Context, item *model.Application) error
@@ -99,7 +99,7 @@ func (s *service) ListByScenariosForRuntime(ctx context.Context, runtimeID strin
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	return s.appRepo.ListByScenariosFromRuntime(ctx, tenantID, runtimeID, pageSize, cursor)
+	return s.appRepo.ListByScenariosForRuntime(ctx, tenantID, runtimeID, pageSize, cursor)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.Application, error) {

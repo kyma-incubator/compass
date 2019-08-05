@@ -121,7 +121,6 @@ func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string,
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-
 	appPage, err := r.appSvc.ListByScenariosForRuntime(ctx, runtimeID, first, &cursor)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting all Application for Runtime")

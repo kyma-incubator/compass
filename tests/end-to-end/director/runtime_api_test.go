@@ -492,9 +492,10 @@ func TestApplicationsForRuntime(t *testing.T) {
 			ScenarioMaxIndex: 4,
 		},
 		{
-			Tenant:          "3b6f72ac-93e4-4659-bf9c-8903239e1e93",
-			ApplicationName: "test",
-			WithinTenant:    false,
+			Tenant:           "3b6f72ac-93e4-4659-bf9c-8903239e1e93",
+			ApplicationName:  "test",
+			WithinTenant:     false,
+			ScenarioMaxIndex: 2,
 		},
 	}
 
@@ -530,7 +531,6 @@ func TestApplicationsForRuntime(t *testing.T) {
 	require.NotEmpty(t, runtime.ID)
 	defer deleteRuntimeInTenant(t, runtime.ID, tenantID)
 
-	// get all testApp within tenant
 	//WHEN
 	request := fixApplicationForRuntimeRequest(runtime.ID)
 	request.Header["Tenant"] = []string{tenantID}

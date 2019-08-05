@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -66,35 +67,34 @@ func (r *inMemoryRepository) List(ctx context.Context, tenant string, filter []*
 	}, nil
 }
 
-//TODO: @dbadura call database for apps id in label table
 // TODO: @dbadura add pagination when PR-181 is merged
-func (r *inMemoryRepository) ListByScenariosFromRuntime(ctx context.Context, tenantID string, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
+func (r *inMemoryRepository) ListByScenariosForRuntime(ctx context.Context, tenantID string, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching DB from context")
 	}
 
+	//TODO: change tenantID from UUID to String when
+	tenantUUID, err := uuid.Parse(tenantID)
+	if err != nil {
+		return nil, errors.New("tenant_ID is not parseable")
+	}
+
 	stmt := fmt.Sprintf(`SELECT VALUE FROM %s WHERE TENANT_ID=$1 AND RUNTIME_ID=$2 AND KEY='SCENARIOS'`, labelTableName)
 
-	var scenariosBinary interface{}
-	err = persist.Get(&scenariosBinary, stmt, tenantID, runtimeID)
+	var scenariosJSON string
+	err = persist.Get(&scenariosJSON, stmt, tenantID, runtimeID)
 
-	if scenariosBinary == nil {
+	if scenariosJSON == "" {
 		return nil, errors.New("Runtime scenarios not found")
 	}
-	scenarios := getScenariosValues(scenariosBinary)
+	scenarios := getScenariosValues(scenariosJSON)
 
 	var scenarioFilers []*labelfilter.LabelFilter
 
 	for _, scenarioValue := range scenarios {
 		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, scenarioValue)
 		scenarioFilers = append(scenarioFilers, &labelfilter.LabelFilter{Key: scenarioKey, Query: &query})
-	}
-
-	//TODO: change tenantID from UUID to String
-	tenantUUID, err := uuid.Parse(tenantID)
-	if err != nil {
-		return nil, errors.New("tenant_ID is not parseable")
 	}
 
 	stmt, err = label.FilterQuery(model.ApplicationLabelableObject, label.UnionSet, tenantUUID, scenarioFilers)
@@ -128,7 +128,7 @@ func (r *inMemoryRepository) ListByScenariosFromRuntime(ctx context.Context, ten
 		if !ok {
 			return nil, errors.New("while parsing application IDs")
 		}
-
+		//TODO remove it after implementing real PostgreSQL repository
 		app, found := r.store[appID]
 		if found {
 			items = append(items, app)
@@ -205,7 +205,7 @@ func (r *inMemoryRepository) findApplicationNameWithinTenant(tenant, name string
 func getScenariosValues(scenariosJSON interface{}) []string {
 	var scenarios []string
 
-	scen, ok := scenariosJSON.([]byte)
+	scen, ok := scenariosJSON.(string)
 	if !ok {
 		return scenarios
 	}

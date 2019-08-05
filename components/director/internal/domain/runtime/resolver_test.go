@@ -2,8 +2,9 @@ package runtime_test
 
 import (
 	"context"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 
