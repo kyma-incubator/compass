@@ -276,7 +276,7 @@ func TestServiceUpdate(t *testing.T) {
 		_, err := sut.Update(ctx, in)
 		// THEN
 		require.Error(t, err)
-		require.EqualError(t, err, "label with key firstName is not valid against new schema")
+		require.EqualError(t, err, "label with key firstName is not valid against new schema for Runtime with ID foo")
 	})
 
 	t.Run("returns error when validation of Label Definition failed", func(t *testing.T) {

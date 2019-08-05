@@ -106,7 +106,7 @@ func (s *service) Update(ctx context.Context, def model.LabelDefinition) (model.
 		}
 
 		if ok == false {
-			return model.LabelDefinition{}, fmt.Errorf("label with key %s is not valid against new schema", label.Key)
+			return model.LabelDefinition{}, fmt.Errorf("label with key %s is not valid against new schema for %s with ID %s", label.Key, label.ObjectType, label.ObjectID)
 		}
 
 	}
