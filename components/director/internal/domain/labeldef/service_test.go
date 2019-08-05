@@ -208,7 +208,6 @@ func TestServiceUpdate(t *testing.T) {
 
 		mockRepository.On("GetByKey", mock.Anything, tenant, key).Return(&ld, nil).Once()
 		mockRepository.On("Update", mock.Anything, defWithID).Return(nil)
-		mockRepository.On("GetByKey", mock.Anything, tenant, key).Return(&in, nil).Once()
 
 		mockLabelRepository.On("ListByKey", context.TODO(), tenant, key).Return(existingLabels, nil).Once()
 
@@ -290,7 +289,7 @@ func TestServiceUpdate(t *testing.T) {
 		require.EqualError(t, err, "while validating Label Definition: missing Tenant field")
 	})
 
-	t.Run("returns error if Label Definition was not found", func(t *testing.T) {
+	t.Run("returns error when error occured during receiving Label Definition", func(t *testing.T) {
 		// GIVEN
 		mockRepository := &automock.Repository{}
 		defer mockRepository.AssertExpectations(t)
@@ -301,6 +300,19 @@ func TestServiceUpdate(t *testing.T) {
 		_, err := sut.Update(context.TODO(), model.LabelDefinition{Key: key, Tenant: tenant})
 		// THEN
 		require.EqualError(t, err, "while receiving Label Definition: some error")
+	})
+
+	t.Run("returns error if Label Definition was not found", func(t *testing.T) {
+		// GIVEN
+		mockRepository := &automock.Repository{}
+		defer mockRepository.AssertExpectations(t)
+
+		mockRepository.On("GetByKey", context.TODO(), tenant, key).Return(nil, nil)
+		sut := labeldef.NewService(mockRepository, nil, nil)
+		// WHEN
+		_, err := sut.Update(context.TODO(), model.LabelDefinition{Key: key, Tenant: tenant})
+		// THEN
+		require.EqualError(t, err, "definition with firstName key doesn't exist")
 	})
 
 	t.Run("returns error if Label Definition update failed", func(t *testing.T) {
@@ -347,74 +359,6 @@ func TestServiceUpdate(t *testing.T) {
 		_, err := sut.Update(context.TODO(), *ld)
 		// THEN
 		require.EqualError(t, err, "while updating Label Definition: some error")
-	})
-
-	t.Run("returns error if receive of updated Label Definition failed", func(t *testing.T) {
-		// GIVEN
-		mockRepository := &automock.Repository{}
-		defer mockRepository.AssertExpectations(t)
-
-		mockLabelRepository := &automock.LabelRepository{}
-		defer mockLabelRepository.AssertExpectations(t)
-
-		ld := &model.LabelDefinition{
-			ID:     "8b131225-f09d-4035-8091-1f12933863b3",
-			Tenant: tenant,
-			Key:    key,
-			Schema: fixBasicSchema(t),
-		}
-
-		existingLabels := []*model.Label{
-			{
-				ID:         "b9566e9d-83a2-4091-8c65-7a512b88f89e",
-				Tenant:     tenant,
-				Key:        key,
-				Value:      "val",
-				ObjectID:   "foo",
-				ObjectType: model.RuntimeLabelableObject,
-			},
-			{
-				ID:         "2037fc3d-be6c-4489-94cf-05518bac709f",
-				Tenant:     tenant,
-				Key:        key,
-				Value:      "val2",
-				ObjectID:   "bar",
-				ObjectType: model.ApplicationLabelableObject,
-			},
-		}
-
-		mockRepository.On("GetByKey", context.TODO(), tenant, key).Return(ld, nil).Once()
-		mockRepository.On("Update", context.TODO(), *ld).Return(nil)
-		mockRepository.On("GetByKey", context.TODO(), tenant, key).Return(ld, errors.New("some error")).Once()
-
-		mockLabelRepository.On("ListByKey", context.TODO(), "tenant", "firstName").Return(existingLabels, nil).Once()
-
-		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil)
-		// WHEN
-		_, err := sut.Update(context.TODO(), *ld)
-		// THEN
-		require.EqualError(t, err, "while receiving updated Label Definition: some error")
-	})
-
-	t.Run("returns error if received Label Definition has empty ID", func(t *testing.T) {
-		// GIVEN
-		mockRepository := &automock.Repository{}
-		defer mockRepository.AssertExpectations(t)
-
-		ld := &model.LabelDefinition{
-			ID:     "",
-			Tenant: tenant,
-			Key:    key,
-			Schema: fixBasicSchema(t),
-		}
-
-		mockRepository.On("GetByKey", context.TODO(), tenant, key).Return(ld, nil).Once()
-
-		sut := labeldef.NewService(mockRepository, nil, nil)
-		// WHEN
-		_, err := sut.Update(context.TODO(), *ld)
-		// THEN
-		require.EqualError(t, err, "id of received label definition is empty")
 	})
 }
 

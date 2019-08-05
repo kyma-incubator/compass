@@ -86,13 +86,11 @@ func (s *service) Update(ctx context.Context, def model.LabelDefinition) (model.
 		return model.LabelDefinition{}, errors.Wrap(err, "while receiving Label Definition")
 	}
 
-	if ld.ID == "" {
-		return model.LabelDefinition{}, fmt.Errorf("id of received label definition is empty")
+	if ld == nil {
+		return model.LabelDefinition{}, fmt.Errorf("definition with %s key doesn't exist", def.Key)
 	}
 
-	id := ld.ID
-	ld = &def
-	ld.ID = id
+	ld.Schema = def.Schema
 
 	existingLabels, err := s.labelRepo.ListByKey(ctx, def.Tenant, def.Key)
 
@@ -117,10 +115,5 @@ func (s *service) Update(ctx context.Context, def model.LabelDefinition) (model.
 		return model.LabelDefinition{}, errors.Wrap(err, "while updating Label Definition")
 	}
 
-	updatedLabelDef, err := s.repo.GetByKey(ctx, ld.Tenant, ld.Key)
-	if err != nil {
-		return model.LabelDefinition{}, errors.Wrap(err, "while receiving updated Label Definition")
-	}
-
-	return *updatedLabelDef, nil
+	return *ld, nil
 }

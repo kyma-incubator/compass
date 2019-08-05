@@ -71,6 +71,7 @@ func (v *validator) ValidateRaw(value interface{}) (bool, error) {
 		return false, err
 	}
 	jsonLoader := gojsonschema.NewStringLoader(string(valueString))
+
 	result, err := v.schema.Validate(jsonLoader)
 	if err != nil {
 		return false, errors.Wrapf(err, "while validating value %+v against schema %+v", value, v.schema)
