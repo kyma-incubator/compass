@@ -547,7 +547,8 @@ func TestRepository_ListByKey(t *testing.T) {
 			require.NoError(t, dbMock.ExpectationsWereMet())
 		}()
 
-		escapedQuery := regexp.QuoteMeta(`SELECT "id", "tenant_id", "key", "value", "app_id", "runtime_id" FROM "public"."labels" WHERE "key" = $1 AND "tenant_id" = $2`)
+		escapedQuery := regexp.QuoteMeta(`SELECT "id", "tenant_id", "key", "value", "app_id", "runtime_id" 
+											FROM "public"."labels" WHERE "key" = $1 AND "tenant_id" = $2`)
 		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id"}).
 			AddRow("1", tnt, labelKey, "test1", nil, rtmObjID).
 			AddRow("2", tnt, labelKey, "test2", appObjID, nil)
@@ -562,7 +563,7 @@ func TestRepository_ListByKey(t *testing.T) {
 		assert.ElementsMatch(t, expected, actual)
 	})
 
-	t.Run("Error - Doesn't exist", func(t *testing.T) {
+	t.Run("", func(t *testing.T) {
 		// GIVEN
 		tnt := "tenant"
 

@@ -4,10 +4,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/persistence"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	pautomock "github.com/kyma-incubator/compass/components/director/internal/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -425,22 +426,6 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 	})
 }
 
-func getInvalidMockTransactioner() *pautomock.Transactioner {
-	mockTransactioner := &pautomock.Transactioner{}
-	mockTransactioner.On("Begin").Return(nil, errors.New("some error"))
-	return mockTransactioner
-}
-
-func contextThatHasTenant(expectedTenant string) interface{} {
-	return mock.MatchedBy(func(actual context.Context) bool {
-		actualTenant, err := tenant.LoadFromContext(actual)
-		if err != nil {
-			return false
-		}
-		return actualTenant == expectedTenant
-	})
-}
-
 func TestUpdateLabelDefinition(t *testing.T) {
 
 	tnt := "tenant"
@@ -475,7 +460,8 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		mockService := &automock.Service{}
 		defer mockService.AssertExpectations(t)
-		mockService.On("Update", contextThatHasTenant(tnt), modelLabelDefinition).Return(modelLabelDefinition, nil)
+		mockService.On("Update", contextThatHasTenant(tnt), modelLabelDefinition).Return(nil)
+		mockService.On("Get", contextThatHasTenant(tnt), tnt, modelLabelDefinition.Key).Return(&modelLabelDefinition, nil).Once()
 
 		ctx := persistence.SaveToContext(context.TODO(), nil)
 		ctx = tenant.SaveToContext(ctx, tnt)
@@ -525,7 +511,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		mockService := &automock.Service{}
 		defer mockService.AssertExpectations(t)
-		mockService.On("Update", contextThatHasTenant(tnt), modelLabelDefinition).Return(model.LabelDefinition{}, errors.New("some error"))
+		mockService.On("Update", contextThatHasTenant(tnt), modelLabelDefinition).Return(errors.New("some error"))
 
 		ctx := persistence.SaveToContext(context.TODO(), nil)
 		ctx = tenant.SaveToContext(ctx, tnt)
@@ -551,7 +537,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 		mockService := &automock.Service{}
 		defer mockService.AssertExpectations(t)
 		mockService.On("Update", contextThatHasTenant(tnt), modelLabelDefinition).
-			Return(modelLabelDefinition, nil)
+			Return(nil)
 
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
@@ -564,5 +550,21 @@ func TestUpdateLabelDefinition(t *testing.T) {
 		_, err := sut.UpdateLabelDefinition(ctx, gqlLabelDefinitionInput)
 		// THEN
 		require.EqualError(t, err, "while committing transaction: error on commit")
+	})
+}
+
+func getInvalidMockTransactioner() *pautomock.Transactioner {
+	mockTransactioner := &pautomock.Transactioner{}
+	mockTransactioner.On("Begin").Return(nil, errors.New("some error"))
+	return mockTransactioner
+}
+
+func contextThatHasTenant(expectedTenant string) interface{} {
+	return mock.MatchedBy(func(actual context.Context) bool {
+		actualTenant, err := tenant.LoadFromContext(actual)
+		if err != nil {
+			return false
+		}
+		return actualTenant == expectedTenant
 	})
 }

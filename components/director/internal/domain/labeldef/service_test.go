@@ -30,8 +30,8 @@ func TestServiceCreate(t *testing.T) {
 		}
 
 		defWithID := in
-		defWithID.ID = fixUID()
-		mockUID.On("Generate").Return(fixUID())
+		defWithID.ID = fixUUID()
+		mockUID.On("Generate").Return(fixUUID())
 		mockRepository.On("Create", mock.Anything, defWithID).Return(nil)
 
 		ctx := context.TODO()
@@ -48,7 +48,7 @@ func TestServiceCreate(t *testing.T) {
 		mockUID := &automock.UIDService{}
 		defer mockUID.AssertExpectations(t)
 
-		mockUID.On("Generate").Return(fixUID())
+		mockUID.On("Generate").Return(fixUUID())
 		sut := labeldef.NewService(nil, nil, mockUID)
 		// WHEN
 		_, err := sut.Create(context.TODO(), model.LabelDefinition{})
@@ -64,7 +64,7 @@ func TestServiceCreate(t *testing.T) {
 		mockRepository := &automock.Repository{}
 		defer mockRepository.AssertExpectations(t)
 
-		mockUID.On("Generate").Return(fixUID())
+		mockUID.On("Generate").Return(fixUUID())
 		mockRepository.On("Create", mock.Anything, mock.Anything).Return(errors.New("some error"))
 		sut := labeldef.NewService(mockRepository, nil, mockUID)
 		// WHEN
@@ -164,47 +164,47 @@ func TestServiceUpdate(t *testing.T) {
 		newSchema := fixBasicSchema(t)
 
 		ld := model.LabelDefinition{
-			ID:     fixUID(),
+			ID:     fixUUID(),
 			Tenant: tenant,
 			Key:    key,
 			Schema: fixBasicSchema(t),
 		}
 
 		in := model.LabelDefinition{
-			ID:     fixUID(),
+			ID:     fixUUID(),
 			Key:    key,
 			Tenant: tenant,
-			Schema: newSchema,
-		}
-
-		expectedLD := model.LabelDefinition{
-			ID:     fixUID(),
-			Tenant: tenant,
-			Key:    key,
 			Schema: newSchema,
 		}
 
 		existingLabels := []*model.Label{
 			{
-				ID:         "b9566e9d-83a2-4091-8c65-7a512b88f89e",
-				Tenant:     tenant,
-				Key:        key,
-				Value:      "val",
+				ID:     "b9566e9d-83a2-4091-8c65-7a512b88f89e",
+				Tenant: tenant,
+				Key:    key,
+				Value: map[string]interface{}{
+					"firstName": "val",
+					"lastName":  "val2",
+					"age":       1235,
+				},
 				ObjectID:   "foo",
 				ObjectType: model.RuntimeLabelableObject,
 			},
 			{
-				ID:         "2037fc3d-be6c-4489-94cf-05518bac709f",
-				Tenant:     tenant,
-				Key:        key,
-				Value:      "val2",
+				ID:     "2037fc3d-be6c-4489-94cf-05518bac709f",
+				Tenant: tenant,
+				Key:    key,
+				Value: map[string]interface{}{
+					"firstName": "val3",
+					"lastName":  "val4",
+				},
 				ObjectID:   "bar",
 				ObjectType: model.ApplicationLabelableObject,
 			},
 		}
 
 		defWithID := in
-		defWithID.ID = fixUID()
+		defWithID.ID = fixUUID()
 
 		mockRepository.On("GetByKey", mock.Anything, tenant, key).Return(&ld, nil).Once()
 		mockRepository.On("Update", mock.Anything, defWithID).Return(nil)
@@ -214,10 +214,9 @@ func TestServiceUpdate(t *testing.T) {
 		ctx := context.TODO()
 		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil)
 		// WHEN
-		actual, err := sut.Update(ctx, in)
+		err := sut.Update(ctx, in)
 		// THEN
 		require.NoError(t, err)
-		assert.Equal(t, expectedLD, actual)
 	})
 
 	t.Run("returns error when existing label doesn't match new schema", func(t *testing.T) {
@@ -228,43 +227,48 @@ func TestServiceUpdate(t *testing.T) {
 		mockLabelRepository := &automock.LabelRepository{}
 		defer mockLabelRepository.AssertExpectations(t)
 
-		newSchema := fixSchema(t, "nonExistingProp", "integer", "desc")
+		oldProperty := "oldProperty"
+		nonExistingProperty := "nonExistingProp"
 
 		ld := model.LabelDefinition{
-			ID:     fixUID(),
+			ID:     fixUUID(),
 			Tenant: tenant,
 			Key:    key,
-			Schema: fixBasicSchema(t),
+			Schema: fixSchema(t, oldProperty, "string", "desc", "oldProperty"),
 		}
 
 		in := model.LabelDefinition{
-			ID:     fixUID(),
+			ID:     fixUUID(),
 			Key:    key,
 			Tenant: tenant,
-			Schema: newSchema,
+			Schema: fixSchema(t, nonExistingProperty, "integer", "desc", "nonExistingProp"),
 		}
 
 		existingLabels := []*model.Label{
 			{
-				ID:         "b9566e9d-83a2-4091-8c65-7a512b88f89e",
-				Tenant:     tenant,
-				Key:        key,
-				Value:      "val",
+				ID:     "b9566e9d-83a2-4091-8c65-7a512b88f89e",
+				Tenant: tenant,
+				Key:    oldProperty,
+				Value: map[string]interface{}{
+					"key": "val",
+				},
 				ObjectID:   "foo",
 				ObjectType: model.RuntimeLabelableObject,
 			},
 			{
-				ID:         "2037fc3d-be6c-4489-94cf-05518bac709f",
-				Tenant:     tenant,
-				Key:        key,
-				Value:      "val2",
+				ID:     "2037fc3d-be6c-4489-94cf-05518bac709f",
+				Tenant: tenant,
+				Key:    oldProperty,
+				Value: map[string]interface{}{
+					"key": "val2",
+				},
 				ObjectID:   "bar",
 				ObjectType: model.ApplicationLabelableObject,
 			},
 		}
 
 		defWithID := in
-		defWithID.ID = fixUID()
+		defWithID.ID = fixUUID()
 
 		mockRepository.On("GetByKey", mock.Anything, tenant, key).Return(&ld, nil).Once()
 
@@ -273,10 +277,10 @@ func TestServiceUpdate(t *testing.T) {
 		ctx := context.TODO()
 		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil)
 		// WHEN
-		_, err := sut.Update(ctx, in)
+		err := sut.Update(ctx, in)
 		// THEN
 		require.Error(t, err)
-		require.EqualError(t, err, "label with key firstName is not valid against new schema for Runtime with ID foo")
+		require.EqualError(t, err, "label with key oldProperty is not valid against new schema for Runtime with ID foo")
 	})
 
 	t.Run("returns error when validation of Label Definition failed", func(t *testing.T) {
@@ -284,7 +288,7 @@ func TestServiceUpdate(t *testing.T) {
 
 		sut := labeldef.NewService(nil, nil, nil)
 		// WHEN
-		_, err := sut.Update(context.TODO(), model.LabelDefinition{})
+		err := sut.Update(context.TODO(), model.LabelDefinition{})
 		// THEN
 		require.EqualError(t, err, "while validating Label Definition: missing Tenant field")
 	})
@@ -297,7 +301,7 @@ func TestServiceUpdate(t *testing.T) {
 		mockRepository.On("GetByKey", context.TODO(), tenant, key).Return(nil, errors.New("some error"))
 		sut := labeldef.NewService(mockRepository, nil, nil)
 		// WHEN
-		_, err := sut.Update(context.TODO(), model.LabelDefinition{Key: key, Tenant: tenant})
+		err := sut.Update(context.TODO(), model.LabelDefinition{Key: key, Tenant: tenant, Schema: fixBasicSchema(t)})
 		// THEN
 		require.EqualError(t, err, "while receiving Label Definition: some error")
 	})
@@ -310,7 +314,7 @@ func TestServiceUpdate(t *testing.T) {
 		mockRepository.On("GetByKey", context.TODO(), tenant, key).Return(nil, nil)
 		sut := labeldef.NewService(mockRepository, nil, nil)
 		// WHEN
-		_, err := sut.Update(context.TODO(), model.LabelDefinition{Key: key, Tenant: tenant})
+		err := sut.Update(context.TODO(), model.LabelDefinition{Key: key, Tenant: tenant, Schema: fixBasicSchema(t)})
 		// THEN
 		require.EqualError(t, err, "definition with firstName key doesn't exist")
 	})
@@ -332,18 +336,25 @@ func TestServiceUpdate(t *testing.T) {
 
 		existingLabels := []*model.Label{
 			{
-				ID:         "b9566e9d-83a2-4091-8c65-7a512b88f89e",
-				Tenant:     tenant,
-				Key:        key,
-				Value:      "val",
+				ID:     "b9566e9d-83a2-4091-8c65-7a512b88f89e",
+				Tenant: tenant,
+				Key:    key,
+				Value: map[string]interface{}{
+					"firstName": "val",
+					"lastName":  "val2",
+				},
 				ObjectID:   "foo",
 				ObjectType: model.RuntimeLabelableObject,
 			},
 			{
-				ID:         "2037fc3d-be6c-4489-94cf-05518bac709f",
-				Tenant:     tenant,
-				Key:        key,
-				Value:      "val2",
+				ID:     "2037fc3d-be6c-4489-94cf-05518bac709f",
+				Tenant: tenant,
+				Key:    key,
+				Value: map[string]interface{}{
+					"firstName": "val3",
+					"lastName":  "val4",
+					"age":       22,
+				},
 				ObjectID:   "bar",
 				ObjectType: model.ApplicationLabelableObject,
 			},
@@ -356,13 +367,34 @@ func TestServiceUpdate(t *testing.T) {
 
 		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil)
 		// WHEN
-		_, err := sut.Update(context.TODO(), *ld)
+		err := sut.Update(context.TODO(), *ld)
 		// THEN
 		require.EqualError(t, err, "while updating Label Definition: some error")
 	})
+
+	t.Run("returns error if Label Definition schema for update is nil", func(t *testing.T) {
+		// GIVEN
+		mockRepository := &automock.Repository{}
+		defer mockRepository.AssertExpectations(t)
+
+		mockLabelRepository := &automock.LabelRepository{}
+		defer mockLabelRepository.AssertExpectations(t)
+
+		ld := &model.LabelDefinition{
+			ID:     "8b131225-f09d-4035-8091-1f12933863b3",
+			Tenant: tenant,
+			Key:    key,
+		}
+
+		sut := labeldef.NewService(nil, nil, nil)
+		// WHEN
+		err := sut.Update(context.TODO(), *ld)
+		// THEN
+		require.NoError(t, err)
+	})
 }
 
-func fixUID() string {
+func fixUUID() string {
 	return "003a0855-4eb0-486d-8fc6-3ab2f2312ca0"
 }
 
@@ -397,7 +429,7 @@ func fixBasicSchema(t *testing.T) *interface{} {
 	return &objTemp
 }
 
-func fixSchema(t *testing.T, propertyName, propertyType, propertyDescription string) *interface{} {
+func fixSchema(t *testing.T, propertyName, propertyType, propertyDescription, requiredProperty string) *interface{} {
 	sch := fmt.Sprintf(`{
 		"$id": "https://example.com/person.schema.json",
 		"$schema": "http://json-schema.org/draft-07/schema#",
@@ -409,8 +441,8 @@ func fixSchema(t *testing.T, propertyName, propertyType, propertyDescription str
 		    "description": "%s"
 		  }
 		},
-		"required": ["nonExistingProp"]
-	  }`, propertyName, propertyType, propertyDescription)
+		"required": ["%s"]
+	  }`, propertyName, propertyType, propertyDescription, requiredProperty)
 	var obj map[string]interface{}
 
 	err := json.Unmarshal([]byte(sch), &obj)

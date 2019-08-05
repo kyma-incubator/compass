@@ -33,6 +33,7 @@ func (def *LabelDefinition) Validate() error {
 	return nil
 }
 
+// TODO: Move this method to LabelDefinitionInput
 func (def *LabelDefinition) ValidateForUpdate() error {
 	if def.Tenant == "" {
 		return errors.New("missing Tenant field")

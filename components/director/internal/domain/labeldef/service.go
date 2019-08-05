@@ -16,10 +16,10 @@ type service struct {
 	uidService UIDService
 }
 
-func NewService(r Repository, lr LabelRepository, uidService UIDService) *service {
+func NewService(repo Repository, labelRepo LabelRepository, uidService UIDService) *service {
 	return &service{
-		repo:       r,
-		labelRepo:  lr,
+		repo:       repo,
+		labelRepo:  labelRepo,
 		uidService: uidService,
 	}
 }
@@ -76,44 +76,50 @@ func (s *service) List(ctx context.Context, tenant string) ([]model.LabelDefinit
 	return defs, nil
 }
 
-func (s *service) Update(ctx context.Context, def model.LabelDefinition) (model.LabelDefinition, error) {
+func (s *service) Update(ctx context.Context, def model.LabelDefinition) error {
 	if err := def.ValidateForUpdate(); err != nil {
-		return model.LabelDefinition{}, errors.Wrap(err, "while validating Label Definition")
+		return errors.Wrap(err, "while validating Label Definition")
+	}
+
+	if def.Schema == nil {
+		return nil
 	}
 
 	ld, err := s.repo.GetByKey(ctx, def.Tenant, def.Key)
 	if err != nil {
-		return model.LabelDefinition{}, errors.Wrap(err, "while receiving Label Definition")
+		return errors.Wrap(err, "while receiving Label Definition")
 	}
 
 	if ld == nil {
-		return model.LabelDefinition{}, fmt.Errorf("definition with %s key doesn't exist", def.Key)
+		return errors.Errorf("definition with %s key doesn't exist", def.Key)
 	}
 
 	ld.Schema = def.Schema
 
 	existingLabels, err := s.labelRepo.ListByKey(ctx, def.Tenant, def.Key)
-
+	if err != nil {
+		return errors.Wrap(err, "while listing labels by key")
+	}
 	validator, err := jsonschema.NewValidatorFromRawSchema(*def.Schema)
 	if err != nil {
-		return model.LabelDefinition{}, errors.Wrap(err, "while creating validator for new schema")
+		return errors.Wrap(err, "while creating validator for new schema")
 	}
 
 	for _, label := range existingLabels {
-		ok, err := validator.ValidateRaw(label)
+		ok, err := validator.ValidateRaw(label.Value)
 		if err != nil {
-			return model.LabelDefinition{}, errors.Wrap(err, "while validating existing labels against new schema")
+			return errors.Wrap(err, "while validating existing labels against new schema")
 		}
 
-		if ok == false {
-			return model.LabelDefinition{}, fmt.Errorf("label with key %s is not valid against new schema for %s with ID %s", label.Key, label.ObjectType, label.ObjectID)
+		if !ok {
+			return fmt.Errorf("label with key %s is not valid against new schema for %s with ID %s", label.Key, label.ObjectType, label.ObjectID)
 		}
 
 	}
 
 	if err := s.repo.Update(ctx, *ld); err != nil {
-		return model.LabelDefinition{}, errors.Wrap(err, "while updating Label Definition")
+		return errors.Wrap(err, "while updating Label Definition")
 	}
 
-	return *ld, nil
+	return nil
 }
