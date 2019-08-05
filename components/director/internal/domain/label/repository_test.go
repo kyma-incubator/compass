@@ -563,7 +563,7 @@ func TestRepository_ListByKey(t *testing.T) {
 		assert.ElementsMatch(t, expected, actual)
 	})
 
-	t.Run("", func(t *testing.T) {
+	t.Run("Empty label", func(t *testing.T) {
 		// GIVEN
 		tnt := "tenant"
 
