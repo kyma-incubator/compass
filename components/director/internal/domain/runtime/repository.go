@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -38,6 +39,9 @@ func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, err
 	var count int
 	err = persist.Get(&count, stmt, id, tenant)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
 		return false, errors.Wrap(err, "while getting runtime from DB")
 	}
 
@@ -60,7 +64,10 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.R
 
 	runtimeModel, err := runtimeEnt.ToModel()
 	if err != nil {
-		return nil, errors.Wrap(err, "while creating runtime model from entity")
+		if err != sql.ErrNoRows {
+			return nil, errors.Wrap(err, "while creating runtime model from entity")
+		}
+		return nil, errors.Errorf("runtime '%s' not found", id) //TODO: Return own type for Not found error
 	}
 
 	return runtimeModel, nil

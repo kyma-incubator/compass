@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 
 	"github.com/stretchr/testify/mock"
@@ -579,6 +581,124 @@ func TestResolver_Applications(t *testing.T) {
 
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)
+		})
+	}
+}
+
+func TestResolver_ApplicationsForRuntime(t *testing.T) {
+	testError := errors.New("test error")
+
+	modelApplications := []*model.Application{
+		fixModelApplication("id1", "name", "desc"),
+		fixModelApplication("id2", "name", "desc"),
+	}
+
+	applicationGraphQL := []*graphql.Application{
+		fixGQLApplication("id1", "name", "desc"),
+		fixGQLApplication("id2", "name", "desc"),
+	}
+
+	first := 10
+	after := "test"
+	gqlAfter := graphql.PageCursor(after)
+
+	runtimeID := "foo"
+	testCases := []struct {
+		Name            string
+		AppConverterFn  func() *automock.ApplicationConverter
+		AppServiceFn    func() *automock.ApplicationService
+		PersistenceFn   func() *persistenceautomock.PersistenceTx
+		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		InputRuntimeID  string
+		InputFirst      *int
+		InputAfter      *graphql.PageCursor
+		ExpectedResult  *graphql.ApplicationPage
+		ExpectedError   error
+	}{
+		{
+			Name: "Success",
+			AppServiceFn: func() *automock.ApplicationService {
+				appService := &automock.ApplicationService{}
+				appService.On("ListByScenariosForRuntime", contextParam, runtimeID, &first, &after).Return(fixApplicationPage(modelApplications), nil).Once()
+				return appService
+			},
+			AppConverterFn: func() *automock.ApplicationConverter {
+				appConverter := &automock.ApplicationConverter{}
+				appConverter.On("MultipleToGraphQL", modelApplications).Return(applicationGraphQL).Once()
+				return appConverter
+			},
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+				return persistTx
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+
+				return transact
+			},
+			InputRuntimeID: runtimeID,
+			InputFirst:     &first,
+			InputAfter:     &gqlAfter,
+			ExpectedResult: fixGQLApplicationPage(applicationGraphQL),
+			ExpectedError:  nil,
+		},
+		{
+			Name: "Returns error when application listing failed",
+			AppServiceFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("ListByScenariosForRuntime", contextParam, runtimeID, &first, &after).Return(nil, testError).Once()
+				return appSvc
+			},
+			AppConverterFn: func() *automock.ApplicationConverter {
+				appConverter := &automock.ApplicationConverter{}
+				return appConverter
+			},
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				return persistTx
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+
+				return transact
+			},
+			InputRuntimeID: runtimeID,
+			InputFirst:     &first,
+			InputAfter:     &gqlAfter,
+			ExpectedResult: nil,
+			ExpectedError:  testError,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			applicationSvc := testCase.AppServiceFn()
+			applicationConverter := testCase.AppConverterFn()
+			persistTx := testCase.PersistenceFn()
+			transact := testCase.TransactionerFn(persistTx)
+
+			resolver := application.NewResolver(transact, applicationSvc, nil, nil, nil, nil, applicationConverter, nil, nil, nil, nil)
+
+			//WHEN
+			result, err := resolver.ApplicationsForRuntime(context.TODO(), testCase.InputRuntimeID, testCase.InputFirst, testCase.InputAfter)
+
+			//THEN
+			if testCase.ExpectedError != nil {
+				require.NotNil(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				require.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedResult, result)
+			applicationSvc.AssertExpectations(t)
+			applicationConverter.AssertExpectations(t)
+			persistTx.AssertExpectations(t)
 		})
 	}
 }

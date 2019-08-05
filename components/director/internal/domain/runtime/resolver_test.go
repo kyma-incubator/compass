@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 
 	"github.com/stretchr/testify/mock"
@@ -146,7 +144,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, converter, nil)
+			resolver := runtime.NewResolver(transact, svc, converter)
 
 			// when
 			result, err := resolver.CreateRuntime(context.TODO(), testCase.Input)
@@ -287,7 +285,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, converter, nil)
+			resolver := runtime.NewResolver(transact, svc, converter)
 
 			// when
 			result, err := resolver.UpdateRuntime(context.TODO(), testCase.RuntimeID, testCase.Input)
@@ -411,7 +409,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, converter, nil)
+			resolver := runtime.NewResolver(transact, svc, converter)
 
 			// when
 			result, err := resolver.DeleteRuntime(context.TODO(), testCase.InputID)
@@ -508,7 +506,7 @@ func TestResolver_Runtime(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, converter, nil)
+			resolver := runtime.NewResolver(transact, svc, converter)
 
 			// when
 			result, err := resolver.Runtime(context.TODO(), testCase.InputID)
@@ -622,7 +620,7 @@ func TestResolver_Runtimes(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, converter, nil)
+			resolver := runtime.NewResolver(transact, svc, converter)
 
 			// when
 			result, err := resolver.Runtimes(context.TODO(), testCase.InputLabelFilters, testCase.InputFirst, testCase.InputAfter)
@@ -633,124 +631,6 @@ func TestResolver_Runtimes(t *testing.T) {
 
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)
-			persistTx.AssertExpectations(t)
-		})
-	}
-}
-
-func TestResolver_ApplicationsForRuntime(t *testing.T) {
-	testError := errors.New("test error")
-
-	modelApplications := []*model.Application{
-		fixModelApplication("id1", "name", "desc"),
-		fixModelApplication("id2", "name", "desc"),
-	}
-
-	applicationGraphQL := []*graphql.Application{
-		fixGQLApplication("id1", "name", "desc"),
-		fixGQLApplication("id2", "name", "desc"),
-	}
-
-	first := 10
-	after := "test"
-	gqlAfter := graphql.PageCursor(after)
-
-	runtimeID := "foo"
-	testCases := []struct {
-		Name            string
-		AppConverterFn  func() *automock.ApplicationConverter
-		AppServiceFn    func() *automock.ApplicationService
-		PersistenceFn   func() *persistenceautomock.PersistenceTx
-		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
-		InputRuntimeID  string
-		InputFirst      *int
-		InputAfter      *graphql.PageCursor
-		ExpectedResult  *graphql.ApplicationPage
-		ExpectedError   error
-	}{
-		{
-			Name: "Success",
-			AppServiceFn: func() *automock.ApplicationService {
-				appService := &automock.ApplicationService{}
-				appService.On("ListByScenariosForRuntime", contextParam, runtimeID, &first, &after).Return(fixApplicationPage(modelApplications), nil).Once()
-				return appService
-			},
-			AppConverterFn: func() *automock.ApplicationConverter {
-				appConverter := &automock.ApplicationConverter{}
-				appConverter.On("MultipleToGraphQL", modelApplications).Return(applicationGraphQL).Once()
-				return appConverter
-			},
-			PersistenceFn: func() *persistenceautomock.PersistenceTx {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
-				return persistTx
-			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
-
-				return transact
-			},
-			InputRuntimeID: runtimeID,
-			InputFirst:     &first,
-			InputAfter:     &gqlAfter,
-			ExpectedResult: fixGQLApplicationPage(applicationGraphQL),
-			ExpectedError:  nil,
-		},
-		{
-			Name: "Returns error when application listing failed",
-			AppServiceFn: func() *automock.ApplicationService {
-				appSvc := &automock.ApplicationService{}
-				appSvc.On("ListByScenariosForRuntime", contextParam, runtimeID, &first, &after).Return(nil, testError).Once()
-				return appSvc
-			},
-			AppConverterFn: func() *automock.ApplicationConverter {
-				appConverter := &automock.ApplicationConverter{}
-				return appConverter
-			},
-			PersistenceFn: func() *persistenceautomock.PersistenceTx {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				return persistTx
-			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
-
-				return transact
-			},
-			InputRuntimeID: runtimeID,
-			InputFirst:     &first,
-			InputAfter:     &gqlAfter,
-			ExpectedResult: nil,
-			ExpectedError:  testError,
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			//GIVEN
-			applicationSvc := testCase.AppServiceFn()
-			applicationConverter := testCase.AppConverterFn()
-			persistTx := testCase.PersistenceFn()
-			transact := testCase.TransactionerFn(persistTx)
-
-			resolver := runtime.NewResolver(transact, nil, applicationSvc, nil, applicationConverter)
-
-			//WHEN
-			result, err := resolver.ApplicationsForRuntime(context.TODO(), testCase.InputRuntimeID, testCase.InputFirst, testCase.InputAfter)
-
-			//THEN
-			if testCase.ExpectedError != nil {
-				require.NotNil(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
-			} else {
-				require.NoError(t, err)
-			}
-			assert.Equal(t, testCase.ExpectedResult, result)
-			applicationSvc.AssertExpectations(t)
-			applicationConverter.AssertExpectations(t)
 			persistTx.AssertExpectations(t)
 		})
 	}
@@ -850,7 +730,7 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, converter, nil)
+			resolver := runtime.NewResolver(transact, svc, converter)
 
 			// when
 			result, err := resolver.SetRuntimeLabel(context.TODO(), testCase.InputRuntimeID, testCase.InputKey, testCase.InputValue)
@@ -985,7 +865,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, converter, nil)
+			resolver := runtime.NewResolver(transact, svc, converter)
 
 			// when
 			result, err := resolver.DeleteRuntimeLabel(context.TODO(), testCase.InputRuntimeID, testCase.InputKey)
@@ -1098,7 +978,7 @@ func TestResolver_Labels(t *testing.T) {
 			svc := testCase.ServiceFn()
 			transact := testCase.TransactionerFn(persistTx)
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil)
 
 			// when
 			result, err := resolver.Labels(context.TODO(), gqlRuntime, &testCase.InputKey)

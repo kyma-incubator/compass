@@ -162,6 +162,44 @@ func (r *Resolver) Application(ctx context.Context, id string) (*graphql.Applica
 	return r.appConverter.ToGraphQL(app), nil
 }
 
+func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
+	var cursor string
+	if after != nil {
+		cursor = string(*after)
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	appPage, err := r.appSvc.ListByScenariosForRuntime(ctx, runtimeID, first, &cursor)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting all Application for Runtime")
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	gqlApps := r.appConverter.MultipleToGraphQL(appPage.Data)
+	totalCount := len(gqlApps)
+
+	return &graphql.ApplicationPage{
+		Data:       gqlApps,
+		TotalCount: totalCount,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(appPage.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(appPage.PageInfo.EndCursor),
+			HasNextPage: appPage.PageInfo.HasNextPage,
+		},
+	}, nil
+}
+
 func (r *Resolver) CreateApplication(ctx context.Context, in graphql.ApplicationInput) (*graphql.Application, error) {
 	convertedIn := r.appConverter.InputFromGraphQL(in)
 

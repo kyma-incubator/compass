@@ -11,6 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const scenarioLabel = "SCENARIOS"
+
 func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -453,55 +455,55 @@ func TestApplicationsForRuntime(t *testing.T) {
 	ctx := context.Background()
 	tenantID := "90b9ccc8-7829-4511-ac17-5b0c872a41b5"
 	tenantApplications := []*graphql.Application{}
-	scenarios := []string{"Java", "Elixir", "Ada", "Cobol"}
+	scenarios := []string{"default", "black-friday-campaign", "christmas-campaign", "summer-campaign"}
 
 	applications := []struct {
-		ApplicationName  string
-		Tenant           string
-		WithinTenant     bool
-		ScenarioMaxIndex int
+		ApplicationName string
+		Tenant          string
+		WithinTenant    bool
+		Scenarios       []string
 	}{
 		{
-			Tenant:           tenantID,
-			ApplicationName:  "noneofscenarios",
-			WithinTenant:     false,
-			ScenarioMaxIndex: 0,
+			Tenant:          tenantID,
+			ApplicationName: "noneofscenarios",
+			WithinTenant:    false,
+			Scenarios:       []string{},
 		},
 		{
-			Tenant:           tenantID,
-			ApplicationName:  "first",
-			WithinTenant:     true,
-			ScenarioMaxIndex: 1,
+			Tenant:          tenantID,
+			ApplicationName: "first",
+			WithinTenant:    true,
+			Scenarios:       scenarios[:1],
 		},
 		{
-			Tenant:           tenantID,
-			ApplicationName:  "second",
-			WithinTenant:     true,
-			ScenarioMaxIndex: 2,
+			Tenant:          tenantID,
+			ApplicationName: "second",
+			WithinTenant:    true,
+			Scenarios:       scenarios[:2],
 		},
 		{
-			Tenant:           tenantID,
-			ApplicationName:  "third",
-			WithinTenant:     true,
-			ScenarioMaxIndex: 3,
+			Tenant:          tenantID,
+			ApplicationName: "third",
+			WithinTenant:    true,
+			Scenarios:       scenarios[:3],
 		},
 		{
-			Tenant:           tenantID,
-			ApplicationName:  "allscenarios",
-			WithinTenant:     true,
-			ScenarioMaxIndex: 4,
+			Tenant:          tenantID,
+			ApplicationName: "allscenarios",
+			WithinTenant:    true,
+			Scenarios:       scenarios[:4],
 		},
 		{
-			Tenant:           "3b6f72ac-93e4-4659-bf9c-8903239e1e93",
-			ApplicationName:  "test",
-			WithinTenant:     false,
-			ScenarioMaxIndex: 2,
+			Tenant:          "3b6f72ac-93e4-4659-bf9c-8903239e1e93",
+			ApplicationName: "test",
+			WithinTenant:    false,
+			Scenarios:       scenarios[:2],
 		},
 	}
 
 	for _, testApp := range applications {
 		applicationInput := generateSampleApplicationInput(testApp.ApplicationName)
-		(*applicationInput.Labels)["SCENARIOS"] = scenarios[:testApp.ScenarioMaxIndex]
+		(*applicationInput.Labels)[scenarioLabel] = testApp.Scenarios
 		appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(applicationInput)
 		require.NoError(t, err)
 		createApplicationReq := fixCreateApplicationRequest(appInputGQL)
@@ -520,7 +522,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 
 	//create runtime
 	runtimeInput := fixRuntimeInput("runtime")
-	(*runtimeInput.Labels)["SCENARIOS"] = scenarios
+	(*runtimeInput.Labels)[scenarioLabel] = scenarios
 	runtimeInputGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInput)
 	require.NoError(t, err)
 	createRuntimeRequest := fixCreateRuntimeRequest(runtimeInputGQL)

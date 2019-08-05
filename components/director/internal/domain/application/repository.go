@@ -36,7 +36,7 @@ func (r *inMemoryRepository) GetByID(ctx context.Context, tenant, id string) (*m
 	return application, nil
 }
 
-//TODO: remvoe this function after migrating to Database
+//TODO: remove this function after migrating to Database
 func (r *inMemoryRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
 	application := r.store[id]
 
@@ -74,7 +74,7 @@ func (r *inMemoryRepository) ListByScenariosForRuntime(ctx context.Context, tena
 		return nil, errors.Wrap(err, "while fetching DB from context")
 	}
 
-	//TODO: change tenantID from UUID to String when
+	//TODO: change tenantID from UUID to String
 	tenantUUID, err := uuid.Parse(tenantID)
 	if err != nil {
 		return nil, errors.New("tenant_ID is not parseable")
@@ -90,14 +90,14 @@ func (r *inMemoryRepository) ListByScenariosForRuntime(ctx context.Context, tena
 	}
 	scenarios := getScenariosValues(scenariosJSON)
 
-	var scenarioFilers []*labelfilter.LabelFilter
+	var scenariosFilers []*labelfilter.LabelFilter
 
 	for _, scenarioValue := range scenarios {
 		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, scenarioValue)
-		scenarioFilers = append(scenarioFilers, &labelfilter.LabelFilter{Key: scenarioKey, Query: &query})
+		scenariosFilers = append(scenariosFilers, &labelfilter.LabelFilter{Key: scenarioKey, Query: &query})
 	}
 
-	stmt, err = label.FilterQuery(model.ApplicationLabelableObject, label.UnionSet, tenantUUID, scenarioFilers)
+	stmt, err = label.FilterQuery(model.ApplicationLabelableObject, label.UnionSet, tenantUUID, scenariosFilers)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating filter query")
 	}
