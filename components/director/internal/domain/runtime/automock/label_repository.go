@@ -62,8 +62,8 @@ func (_m *LabelRepository) GetByKey(ctx context.Context, tenant string, objectTy
 	return r0, r1
 }
 
-// List provides a mock function with given fields: ctx, tenant, objectType, objectID
-func (_m *LabelRepository) List(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error) {
+// ListForObject provides a mock function with given fields: ctx, tenant, objectType, objectID
+func (_m *LabelRepository) ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error) {
 	ret := _m.Called(ctx, tenant, objectType, objectID)
 
 	var r0 map[string]*model.Label

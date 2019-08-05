@@ -25,7 +25,7 @@ type RuntimeRepository interface {
 //go:generate mockery -name=LabelRepository -output=automock -outpkg=automock -case=underscore
 type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
-	List(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
+	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 	DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error
 }
@@ -241,7 +241,7 @@ func (s *service) ListLabels(ctx context.Context, runtimeID string) (map[string]
 		return nil, fmt.Errorf("Runtime with ID %s doesn't exist", runtimeID)
 	}
 
-	labels, err := s.labelRepo.List(ctx, rtmTenant, model.RuntimeLabelableObject, runtimeID)
+	labels, err := s.labelRepo.ListForObject(ctx, rtmTenant, model.RuntimeLabelableObject, runtimeID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting label for Runtime")
 	}

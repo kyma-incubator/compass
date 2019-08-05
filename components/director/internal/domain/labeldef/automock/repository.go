@@ -70,6 +70,29 @@ func (_m *Repository) GetByKey(ctx context.Context, tenant string, key string) (
 	return r0, r1
 }
 
+// List provides a mock function with given fields: ctx, tenant
+func (_m *Repository) List(ctx context.Context, tenant string) ([]model.LabelDefinition, error) {
+	ret := _m.Called(ctx, tenant)
+
+	var r0 []model.LabelDefinition
+	if rf, ok := ret.Get(0).(func(context.Context, string) []model.LabelDefinition); ok {
+		r0 = rf(ctx, tenant)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]model.LabelDefinition)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, tenant)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Update provides a mock function with given fields: ctx, def
 func (_m *Repository) Update(ctx context.Context, def model.LabelDefinition) error {
 	ret := _m.Called(ctx, def)

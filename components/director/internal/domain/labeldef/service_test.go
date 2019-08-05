@@ -35,7 +35,7 @@ func TestServiceCreate(t *testing.T) {
 		mockRepository.On("Create", mock.Anything, defWithID).Return(nil)
 
 		ctx := context.TODO()
-		sut := labeldef.NewService(mockRepository, mockUID)
+		sut := labeldef.NewService(mockRepository, nil, mockUID)
 		// WHEN
 		actual, err := sut.Create(ctx, in)
 		// THEN
@@ -49,7 +49,7 @@ func TestServiceCreate(t *testing.T) {
 		defer mockUID.AssertExpectations(t)
 
 		mockUID.On("Generate").Return(fixUID())
-		sut := labeldef.NewService(nil, mockUID)
+		sut := labeldef.NewService(nil, nil, mockUID)
 		// WHEN
 		_, err := sut.Create(context.TODO(), model.LabelDefinition{})
 		// THEN
@@ -66,7 +66,7 @@ func TestServiceCreate(t *testing.T) {
 
 		mockUID.On("Generate").Return(fixUID())
 		mockRepository.On("Create", mock.Anything, mock.Anything).Return(errors.New("some error"))
-		sut := labeldef.NewService(mockRepository, mockUID)
+		sut := labeldef.NewService(mockRepository, nil, mockUID)
 		// WHEN
 		_, err := sut.Create(context.TODO(), model.LabelDefinition{Key: "key", Tenant: "tenant"})
 		// THEN
@@ -86,7 +86,7 @@ func TestServiceGet(t *testing.T) {
 			Tenant: "tenant",
 		}
 		mockRepository.On("GetByKey", ctx, "tenant", "key").Return(&given, nil)
-		sut := labeldef.NewService(mockRepository, nil)
+		sut := labeldef.NewService(mockRepository, nil, nil)
 		// WHEN
 		actual, err := sut.Get(ctx, "tenant", "key")
 		// THEN
@@ -101,7 +101,7 @@ func TestServiceGet(t *testing.T) {
 		mockRepository.On("GetByKey", mock.Anything, mock.Anything, mock.Anything).
 			Return(nil, errors.New("some error"))
 
-		sut := labeldef.NewService(mockRepository, nil)
+		sut := labeldef.NewService(mockRepository, nil, nil)
 		// WHEN
 		_, err := sut.Get(context.TODO(), "tenant", "key")
 		// THEN
@@ -127,7 +127,7 @@ func TestServiceList(t *testing.T) {
 		}
 		mockRepository.On("List", ctx, "tenant").Return(givenDefs, nil)
 
-		sut := labeldef.NewService(mockRepository, nil)
+		sut := labeldef.NewService(mockRepository, nil, nil)
 		// WHEN
 		actual, err := sut.List(ctx, "tenant")
 		// THEN
@@ -141,7 +141,7 @@ func TestServiceList(t *testing.T) {
 		defer mockRepository.AssertExpectations(t)
 		ctx := context.TODO()
 		mockRepository.On("List", ctx, "tenant").Return(nil, errors.New("some error"))
-		sut := labeldef.NewService(mockRepository, nil)
+		sut := labeldef.NewService(mockRepository, nil, nil)
 		// WHEN
 		_, err := sut.List(ctx, "tenant")
 		// THEN
@@ -157,6 +157,9 @@ func TestServiceUpdate(t *testing.T) {
 		// GIVEN
 		mockRepository := &automock.Repository{}
 		defer mockRepository.AssertExpectations(t)
+
+		mockLabelRepository := &automock.LabelRepository{}
+		defer mockLabelRepository.AssertExpectations(t)
 
 		newSchema := fixSchema(t, "newFirstName")
 
@@ -181,14 +184,36 @@ func TestServiceUpdate(t *testing.T) {
 			Schema: newSchema,
 		}
 
+		existingLabels := []*model.Label{
+			{
+				ID:         "b9566e9d-83a2-4091-8c65-7a512b88f89e",
+				Tenant:     tenant,
+				Key:        key,
+				Value:      "val",
+				ObjectID:   "foo",
+				ObjectType: model.RuntimeLabelableObject,
+			},
+			{
+				ID:         "2037fc3d-be6c-4489-94cf-05518bac709f",
+				Tenant:     tenant,
+				Key:        key,
+				Value:      "val2",
+				ObjectID:   "bar",
+				ObjectType: model.ApplicationLabelableObject,
+			},
+		}
+
 		defWithID := in
 		defWithID.ID = fixUID()
+
 		mockRepository.On("GetByKey", mock.Anything, tenant, key).Return(&ld, nil).Once()
 		mockRepository.On("Update", mock.Anything, defWithID).Return(nil)
 		mockRepository.On("GetByKey", mock.Anything, tenant, key).Return(&in, nil).Once()
 
+		mockLabelRepository.On("ListByKey", context.TODO(), tenant, key).Return(existingLabels, nil).Once()
+
 		ctx := context.TODO()
-		sut := labeldef.NewService(mockRepository, nil)
+		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil)
 		// WHEN
 		actual, err := sut.Update(ctx, in)
 		// THEN
@@ -199,7 +224,7 @@ func TestServiceUpdate(t *testing.T) {
 	t.Run("returns error when validation of Label Definition failed", func(t *testing.T) {
 		// GIVEN
 
-		sut := labeldef.NewService(nil, nil)
+		sut := labeldef.NewService(nil, nil, nil)
 		// WHEN
 		_, err := sut.Update(context.TODO(), model.LabelDefinition{})
 		// THEN
@@ -212,7 +237,7 @@ func TestServiceUpdate(t *testing.T) {
 		defer mockRepository.AssertExpectations(t)
 
 		mockRepository.On("GetByKey", context.TODO(), tenant, key).Return(nil, errors.New("some error"))
-		sut := labeldef.NewService(mockRepository, nil)
+		sut := labeldef.NewService(mockRepository, nil, nil)
 		// WHEN
 		_, err := sut.Update(context.TODO(), model.LabelDefinition{Key: key, Tenant: tenant})
 		// THEN
@@ -224,14 +249,40 @@ func TestServiceUpdate(t *testing.T) {
 		mockRepository := &automock.Repository{}
 		defer mockRepository.AssertExpectations(t)
 
+		mockLabelRepository := &automock.LabelRepository{}
+		defer mockLabelRepository.AssertExpectations(t)
+
 		ld := &model.LabelDefinition{
 			Tenant: tenant,
 			Key:    key,
+			Schema: fixSchema(t, "firstName"),
+		}
+
+		existingLabels := []*model.Label{
+			{
+				ID:         "b9566e9d-83a2-4091-8c65-7a512b88f89e",
+				Tenant:     tenant,
+				Key:        key,
+				Value:      "val",
+				ObjectID:   "foo",
+				ObjectType: model.RuntimeLabelableObject,
+			},
+			{
+				ID:         "2037fc3d-be6c-4489-94cf-05518bac709f",
+				Tenant:     tenant,
+				Key:        key,
+				Value:      "val2",
+				ObjectID:   "bar",
+				ObjectType: model.ApplicationLabelableObject,
+			},
 		}
 
 		mockRepository.On("GetByKey", context.TODO(), tenant, key).Return(ld, nil)
 		mockRepository.On("Update", context.TODO(), *ld).Return(errors.New("some error"))
-		sut := labeldef.NewService(mockRepository, nil)
+
+		mockLabelRepository.On("ListByKey", context.TODO(), "tenant", "key").Return(existingLabels, nil).Once()
+
+		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil)
 		// WHEN
 		_, err := sut.Update(context.TODO(), *ld)
 		// THEN
@@ -243,15 +294,41 @@ func TestServiceUpdate(t *testing.T) {
 		mockRepository := &automock.Repository{}
 		defer mockRepository.AssertExpectations(t)
 
+		mockLabelRepository := &automock.LabelRepository{}
+		defer mockLabelRepository.AssertExpectations(t)
+
 		ld := &model.LabelDefinition{
 			Tenant: tenant,
 			Key:    key,
+			Schema: fixSchema(t, "firstName"),
+		}
+
+		existingLabels := []*model.Label{
+			{
+				ID:         "b9566e9d-83a2-4091-8c65-7a512b88f89e",
+				Tenant:     tenant,
+				Key:        key,
+				Value:      "val",
+				ObjectID:   "foo",
+				ObjectType: model.RuntimeLabelableObject,
+			},
+			{
+				ID:         "2037fc3d-be6c-4489-94cf-05518bac709f",
+				Tenant:     tenant,
+				Key:        key,
+				Value:      "val2",
+				ObjectID:   "bar",
+				ObjectType: model.ApplicationLabelableObject,
+			},
 		}
 
 		mockRepository.On("GetByKey", context.TODO(), tenant, key).Return(ld, nil).Once()
 		mockRepository.On("Update", context.TODO(), *ld).Return(nil)
 		mockRepository.On("GetByKey", context.TODO(), tenant, key).Return(ld, errors.New("some error")).Once()
-		sut := labeldef.NewService(mockRepository, nil)
+
+		mockLabelRepository.On("ListByKey", context.TODO(), "tenant", "key").Return(existingLabels, nil).Once()
+
+		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil)
 		// WHEN
 		_, err := sut.Update(context.TODO(), *ld)
 		// THEN

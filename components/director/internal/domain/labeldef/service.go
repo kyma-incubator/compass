@@ -2,6 +2,9 @@ package labeldef
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
@@ -9,12 +12,14 @@ import (
 
 type service struct {
 	repo       Repository
+	labelRepo  LabelRepository
 	uidService UIDService
 }
 
-func NewService(r Repository, uidService UIDService) *service {
+func NewService(r Repository, lr LabelRepository, uidService UIDService) *service {
 	return &service{
 		repo:       r,
+		labelRepo:  lr,
 		uidService: uidService,
 	}
 }
@@ -26,6 +31,15 @@ type Repository interface {
 	List(ctx context.Context, tenant string) ([]model.LabelDefinition, error)
 	Update(ctx context.Context, def model.LabelDefinition) error
 	Exists(ctx context.Context, tenant string, key string) (bool, error)
+}
+
+//go:generate mockery -name=LabelRepository -output=automock -outpkg=automock -case=underscore
+type LabelRepository interface {
+	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
+	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
+	ListByKey(ctx context.Context, tenant, key string) ([]*model.Label, error)
+	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
+	DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -75,6 +89,25 @@ func (s *service) Update(ctx context.Context, def model.LabelDefinition) (model.
 	id := ld.ID
 	ld = &def
 	ld.ID = id
+
+	existingLabels, err := s.labelRepo.ListByKey(ctx, def.Tenant, def.Key)
+
+	validator, err := jsonschema.NewValidatorFromRawSchema(def.Schema)
+	if err != nil {
+		return model.LabelDefinition{}, errors.Wrap(err, "while creating validator for new schema")
+	}
+
+	for _, label := range existingLabels {
+		ok, err := validator.ValidateRaw(label)
+		if err != nil {
+			return model.LabelDefinition{}, errors.Wrap(err, "while validating existing labels against new schema")
+		}
+
+		if ok == false {
+			return model.LabelDefinition{}, fmt.Errorf("label with key %s is not valid against new schema", label.Key)
+		}
+
+	}
 
 	if err := s.repo.Update(ctx, *ld); err != nil {
 		return model.LabelDefinition{}, errors.Wrap(err, "while updating Label Definition")

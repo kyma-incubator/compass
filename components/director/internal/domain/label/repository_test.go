@@ -363,7 +363,7 @@ func TestRepository_GetByKey(t *testing.T) {
 	})
 }
 
-func TestRepository_List(t *testing.T) {
+func TestRepository_ListForObject(t *testing.T) {
 	t.Run("Success - Label for Runtime", func(t *testing.T) {
 		// GIVEN
 		objType := model.RuntimeLabelableObject
@@ -401,7 +401,7 @@ func TestRepository_List(t *testing.T) {
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
 		// WHEN
-		actual, err := repo.List(ctx, tnt, objType, objID)
+		actual, err := repo.ListForObject(ctx, tnt, objType, objID)
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, expected, actual)
@@ -445,7 +445,7 @@ func TestRepository_List(t *testing.T) {
 		ctx = persistence.SaveToContext(ctx, db)
 
 		// WHEN
-		actual, err := repo.List(ctx, tnt, objType, objID)
+		actual, err := repo.ListForObject(ctx, tnt, objType, objID)
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, expected, actual)
@@ -474,7 +474,7 @@ func TestRepository_List(t *testing.T) {
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
 		// WHEN
-		actual, err := repo.List(ctx, tnt, objType, objID)
+		actual, err := repo.ListForObject(ctx, tnt, objType, objID)
 		// THEN
 		require.NoError(t, err)
 		assert.Empty(t, actual)
@@ -498,7 +498,7 @@ func TestRepository_List(t *testing.T) {
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
 		// WHEN
-		_, err := repo.List(ctx, tnt, objType, objID)
+		_, err := repo.ListForObject(ctx, tnt, objType, objID)
 		// THEN
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "persistence error")
@@ -511,7 +511,202 @@ func TestRepository_List(t *testing.T) {
 		objID := "foo"
 
 		// WHEN
-		_, err := repo.List(context.TODO(), "tenant", objType, objID)
+		_, err := repo.ListForObject(context.TODO(), "tenant", objType, objID)
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "unable to fetch database from context")
+	})
+}
+
+func TestRepository_ListByKey(t *testing.T) {
+	t.Run("Success - Label for Application and Runtime", func(t *testing.T) {
+		// GIVEN
+		tnt := "tenant"
+		labelKey := "foo"
+		objType := model.RuntimeLabelableObject
+		rtmObjID := "foo"
+		appObjID := "bar"
+		inputItems := []label.Entity{
+			{ID: "1", TenantID: tnt, Key: labelKey, Value: "test1", RuntimeID: sql.NullString{Valid: true, String: rtmObjID}},
+			{ID: "2", TenantID: tnt, Key: labelKey, Value: "test2", AppID: sql.NullString{Valid: true, String: appObjID}},
+		}
+		expected := []*model.Label{
+			{ID: "1", Tenant: tnt, Key: labelKey, Value: "test1", ObjectType: objType, ObjectID: rtmObjID},
+			{ID: "2", Tenant: tnt, Key: labelKey, Value: "test2", ObjectType: model.ApplicationLabelableObject, ObjectID: appObjID},
+		}
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromEntity", inputItems[0]).Return(*expected[0], nil).Once()
+		mockConverter.On("FromEntity", inputItems[1]).Return(*expected[1], nil).Once()
+
+		repo := label.NewRepository(mockConverter)
+
+		db, dbMock := mockDatabase(t)
+		defer func() {
+			require.NoError(t, dbMock.ExpectationsWereMet())
+		}()
+
+		escapedQuery := regexp.QuoteMeta(`SELECT "id", "tenant_id", "key", "value", "app_id", "runtime_id" FROM "public"."labels" WHERE "key" = $1 AND "tenant_id" = $2`)
+		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id"}).
+			AddRow("1", tnt, labelKey, "test1", nil, rtmObjID).
+			AddRow("2", tnt, labelKey, "test2", appObjID, nil)
+		dbMock.ExpectQuery(escapedQuery).WithArgs(labelKey, tnt).WillReturnRows(mockedRows)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		// WHEN
+		actual, err := repo.ListByKey(ctx, tnt, labelKey)
+		// THEN
+		require.NoError(t, err)
+		assert.ElementsMatch(t, expected, actual)
+	})
+
+	t.Run("Success - Labels only for Applications", func(t *testing.T) {
+		// GIVEN
+		tnt := "tenant"
+		labelKey := "foo"
+		appObjType := model.ApplicationLabelableObject
+
+		appObjID := "foo"
+		secondAppObjID := "bar"
+
+		inputItems := []label.Entity{
+			{ID: "1", TenantID: tnt, Key: labelKey, Value: "test1", AppID: sql.NullString{Valid: true, String: appObjID}},
+			{ID: "2", TenantID: tnt, Key: labelKey, Value: "test2", AppID: sql.NullString{Valid: true, String: secondAppObjID}},
+		}
+		expected := []*model.Label{
+			{ID: "1", Tenant: tnt, Key: labelKey, Value: "test1", ObjectType: appObjType, ObjectID: appObjID},
+			{ID: "2", Tenant: tnt, Key: labelKey, Value: "test2", ObjectType: appObjType, ObjectID: secondAppObjID},
+		}
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromEntity", inputItems[0]).Return(*expected[0], nil).Once()
+		mockConverter.On("FromEntity", inputItems[1]).Return(*expected[1], nil).Once()
+
+		repo := label.NewRepository(mockConverter)
+
+		db, dbMock := mockDatabase(t)
+		defer func() {
+			require.NoError(t, dbMock.ExpectationsWereMet())
+		}()
+
+		escapedQuery := regexp.QuoteMeta(`SELECT "id", "tenant_id", "key", "value", "app_id", "runtime_id" FROM "public"."labels" WHERE "key" = $1 AND "tenant_id" = $2`)
+		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id"}).
+			AddRow("1", tnt, labelKey, "test1", appObjID, nil).
+			AddRow("2", tnt, labelKey, "test2", secondAppObjID, nil)
+		dbMock.ExpectQuery(escapedQuery).WithArgs(labelKey, tnt).WillReturnRows(mockedRows)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		// WHEN
+		actual, err := repo.ListByKey(ctx, tnt, labelKey)
+		// THEN
+		require.NoError(t, err)
+		assert.ElementsMatch(t, expected, actual)
+	})
+
+	t.Run("Success - Labels only for Runtimes", func(t *testing.T) {
+		// GIVEN
+		tnt := "tenant"
+		labelKey := "foo"
+		rtmObjType := model.RuntimeLabelableObject
+
+		rtmObjID := "foo"
+		secondRtmObjID := "bar"
+
+		inputItems := []label.Entity{
+			{ID: "1", TenantID: tnt, Key: labelKey, Value: "test1", AppID: sql.NullString{}, RuntimeID: sql.NullString{Valid: true, String: rtmObjID}},
+			{ID: "2", TenantID: tnt, Key: labelKey, Value: "test2", AppID: sql.NullString{}, RuntimeID: sql.NullString{Valid: true, String: secondRtmObjID}},
+		}
+		expected := []*model.Label{
+			{ID: "1", Tenant: tnt, Key: labelKey, Value: "test1", ObjectType: rtmObjType, ObjectID: rtmObjID},
+			{ID: "2", Tenant: tnt, Key: labelKey, Value: "test2", ObjectType: rtmObjType, ObjectID: secondRtmObjID},
+		}
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromEntity", inputItems[0]).Return(*expected[0], nil).Once()
+		mockConverter.On("FromEntity", inputItems[1]).Return(*expected[1], nil).Once()
+
+		repo := label.NewRepository(mockConverter)
+
+		db, dbMock := mockDatabase(t)
+		defer func() {
+			require.NoError(t, dbMock.ExpectationsWereMet())
+		}()
+
+		escapedQuery := regexp.QuoteMeta(`SELECT "id", "tenant_id", "key", "value", "app_id", "runtime_id" FROM "public"."labels" WHERE "key" = $1 AND "tenant_id" = $2`)
+		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id"}).
+			AddRow("1", tnt, labelKey, "test1", nil, rtmObjID).
+			AddRow("2", tnt, labelKey, "test2", nil, secondRtmObjID)
+		dbMock.ExpectQuery(escapedQuery).WithArgs(labelKey, tnt).WillReturnRows(mockedRows)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		// WHEN
+		actual, err := repo.ListByKey(ctx, tnt, labelKey)
+		// THEN
+		require.NoError(t, err)
+		assert.ElementsMatch(t, expected, actual)
+	})
+
+	t.Run("Error - Doesn't exist", func(t *testing.T) {
+		// GIVEN
+		tnt := "tenant"
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+
+		repo := label.NewRepository(mockConverter)
+
+		db, dbMock := mockDatabase(t)
+		defer func() {
+			require.NoError(t, dbMock.ExpectationsWereMet())
+		}()
+
+		escapedQuery := regexp.QuoteMeta(`SELECT "id", "tenant_id", "key", "value", "app_id", "runtime_id" FROM "public"."labels" WHERE  "key" = $1 AND "tenant_id" = $2`)
+		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id"})
+		dbMock.ExpectQuery(escapedQuery).WithArgs("key", tnt).WillReturnRows(mockedRows)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		// WHEN
+		actual, err := repo.ListByKey(ctx, tnt, "key")
+		// THEN
+		require.NoError(t, err)
+		assert.Empty(t, actual)
+	})
+
+	t.Run("Error - Select error", func(t *testing.T) {
+		// GIVEN
+		tnt := "tenant"
+
+		repo := label.NewRepository(nil)
+		db, dbMock := mockDatabase(t)
+		defer func() {
+			require.NoError(t, dbMock.ExpectationsWereMet())
+		}()
+
+		escapedQuery := regexp.QuoteMeta(`SELECT "id", "tenant_id", "key", "value", "app_id", "runtime_id" FROM "public"."labels" WHERE  "key" = $1 AND "tenant_id" = $2`)
+		dbMock.ExpectQuery(escapedQuery).WithArgs("key", tnt).WillReturnError(errors.New("persistence error"))
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		// WHEN
+		_, err := repo.ListByKey(ctx, tnt, "key")
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "persistence error")
+	})
+
+	t.Run("Error - Missing persistence", func(t *testing.T) {
+		// GIVEN
+		repo := label.NewRepository(nil)
+
+		// WHEN
+		_, err := repo.ListByKey(context.TODO(), "tenant", "key")
 		// THEN
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "unable to fetch database from context")

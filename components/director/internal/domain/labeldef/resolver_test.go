@@ -119,7 +119,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 
 		mockService := &automock.Service{}
 		defer mockService.AssertExpectations(t)
-		mockService.On("Create", mock.Anything /*ctx TODO*/, model.LabelDefinition{Key: "scenarios", Tenant: tnt}).
+		mockService.On("Create", contextThatHasTenant(tnt), model.LabelDefinition{Key: "scenarios", Tenant: tnt}).
 			Return(model.LabelDefinition{Key: "scenarios", Tenant: tnt, ID: "id"}, nil)
 
 		mockConverter := &automock.Converter{}
@@ -475,7 +475,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		mockService := &automock.Service{}
 		defer mockService.AssertExpectations(t)
-		mockService.On("Update", mock.Anything /*ctx TODO*/, modelLabelDefinition).Return(modelLabelDefinition, nil)
+		mockService.On("Update", contextThatHasTenant(tnt), modelLabelDefinition).Return(modelLabelDefinition, nil)
 
 		ctx := persistence.SaveToContext(context.TODO(), nil)
 		ctx = tenant.SaveToContext(ctx, tnt)
@@ -525,7 +525,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		mockService := &automock.Service{}
 		defer mockService.AssertExpectations(t)
-		mockService.On("Update", mock.Anything /*ctx TODO*/, modelLabelDefinition).Return(model.LabelDefinition{}, errors.New("some error"))
+		mockService.On("Update", contextThatHasTenant(tnt), modelLabelDefinition).Return(model.LabelDefinition{}, errors.New("some error"))
 
 		ctx := persistence.SaveToContext(context.TODO(), nil)
 		ctx = tenant.SaveToContext(ctx, tnt)
@@ -550,7 +550,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		mockService := &automock.Service{}
 		defer mockService.AssertExpectations(t)
-		mockService.On("Update", mock.Anything /*ctx TODO*/, modelLabelDefinition).
+		mockService.On("Update", contextThatHasTenant(tnt), modelLabelDefinition).
 			Return(modelLabelDefinition, nil)
 
 		mockConverter := &automock.Converter{}
