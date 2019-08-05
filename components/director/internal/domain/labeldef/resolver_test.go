@@ -446,15 +446,15 @@ func TestUpdateLabelDefinition(t *testing.T) {
 	tnt := "tenant"
 	gqlLabelDefinitionInput := graphql.LabelDefinitionInput{
 		Key:    "key",
-		Schema: fixSchema(t, "firstName"),
+		Schema: fixBasicSchema(t),
 	}
 	modelLabelDefinition := model.LabelDefinition{
 		Key:    "key",
-		Schema: fixSchema(t, "firstName"),
+		Schema: fixBasicSchema(t),
 	}
 	updatedGQLLabelDefinition := graphql.LabelDefinition{
 		Key:    "key",
-		Schema: fixSchema(t, "firstName"),
+		Schema: fixBasicSchema(t),
 	}
 
 	t.Run("successfully updated Label Definition", func(t *testing.T) {

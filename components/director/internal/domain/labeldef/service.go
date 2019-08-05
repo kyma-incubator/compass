@@ -96,7 +96,7 @@ func (s *service) Update(ctx context.Context, def model.LabelDefinition) (model.
 
 	existingLabels, err := s.labelRepo.ListByKey(ctx, def.Tenant, def.Key)
 
-	validator, err := jsonschema.NewValidatorFromRawSchema(def.Schema)
+	validator, err := jsonschema.NewValidatorFromRawSchema(*def.Schema)
 	if err != nil {
 		return model.LabelDefinition{}, errors.Wrap(err, "while creating validator for new schema")
 	}

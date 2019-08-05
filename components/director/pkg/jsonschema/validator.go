@@ -1,6 +1,8 @@
 package jsonschema
 
 import (
+	"encoding/json"
+
 	"github.com/pkg/errors"
 	"github.com/xeipuuv/gojsonschema"
 )
@@ -64,7 +66,11 @@ func (v *validator) ValidateRaw(value interface{}) (bool, error) {
 		return true, nil
 	}
 
-	jsonLoader := gojsonschema.NewRawLoader(value)
+	valueString, err := json.Marshal(value)
+	if err != nil {
+		return false, err
+	}
+	jsonLoader := gojsonschema.NewStringLoader(string(valueString))
 	result, err := v.schema.Validate(jsonLoader)
 	if err != nil {
 		return false, errors.Wrapf(err, "while validating value %+v against schema %+v", value, v.schema)
