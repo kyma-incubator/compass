@@ -577,7 +577,8 @@ func TestRepository_ListByKey(t *testing.T) {
 			require.NoError(t, dbMock.ExpectationsWereMet())
 		}()
 
-		escapedQuery := regexp.QuoteMeta(`SELECT "id", "tenant_id", "key", "value", "app_id", "runtime_id" FROM "public"."labels" WHERE  "key" = $1 AND "tenant_id" = $2`)
+		escapedQuery := regexp.QuoteMeta(`SELECT "id", "tenant_id", "key", "value", "app_id", "runtime_id" 
+											FROM "public"."labels" WHERE  "key" = $1 AND "tenant_id" = $2`)
 		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id"})
 		dbMock.ExpectQuery(escapedQuery).WithArgs("key", tnt).WillReturnRows(mockedRows)
 
@@ -600,7 +601,8 @@ func TestRepository_ListByKey(t *testing.T) {
 			require.NoError(t, dbMock.ExpectationsWereMet())
 		}()
 
-		escapedQuery := regexp.QuoteMeta(`SELECT "id", "tenant_id", "key", "value", "app_id", "runtime_id" FROM "public"."labels" WHERE  "key" = $1 AND "tenant_id" = $2`)
+		escapedQuery := regexp.QuoteMeta(`SELECT "id", "tenant_id", "key", "value", "app_id", "runtime_id" 
+											FROM "public"."labels" WHERE  "key" = $1 AND "tenant_id" = $2`)
 		dbMock.ExpectQuery(escapedQuery).WithArgs("key", tnt).WillReturnError(errors.New("persistence error"))
 
 		ctx := context.TODO()
