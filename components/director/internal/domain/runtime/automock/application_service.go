@@ -11,8 +11,8 @@ type ApplicationService struct {
 	mock.Mock
 }
 
-// ListByRuntimeID provides a mock function with given fields: ctx, runtimeID, pageSize, cursor
-func (_m *ApplicationService) ListByRuntimeID(ctx context.Context, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
+// ListByScenariosForRuntime provides a mock function with given fields: ctx, runtimeID, pageSize, cursor
+func (_m *ApplicationService) ListByScenariosForRuntime(ctx context.Context, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
 	ret := _m.Called(ctx, runtimeID, pageSize, cursor)
 
 	var r0 *model.ApplicationPage

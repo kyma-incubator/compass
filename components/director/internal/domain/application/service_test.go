@@ -1340,7 +1340,8 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			Name: "Success",
 			AppRepositoryFn: func() *automock.ApplicationRepository {
 				appRepository := &automock.ApplicationRepository{}
-				appRepository.On("ListByScenariosFromRuntime", ctx, tenantName, runtimeID, &first, &cursor).Return(applicationPage, nil).Once()
+				appRepository.On("ListByScenariosFromRuntime", ctx, tenantName, runtimeID, &first, &cursor).
+					Return(applicationPage, nil).Once()
 				return appRepository
 			},
 			ExpectedError:  nil,
@@ -1367,7 +1368,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			svc := application.NewService(appRepository, nil, nil, nil, nil, nil, nil, nil)
 
 			//WHEN
-			results, err := svc.ListByRuntimeID(ctx, testCase.Input, &first, &cursor)
+			results, err := svc.ListByScenariosForRuntime(ctx, testCase.Input, &first, &cursor)
 
 			//THEN
 			if testCase.ExpectedError != nil {

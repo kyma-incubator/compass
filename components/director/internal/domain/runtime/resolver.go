@@ -37,7 +37,7 @@ type RuntimeConverter interface {
 
 //go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
 type ApplicationService interface {
-	ListByRuntimeID(ctx context.Context, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error)
+	ListByScenariosForRuntime(ctx context.Context, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error)
 }
 
 //go:generate mockery -name=ApplicationConverter -output=automock -outpkg=automock -case=underscore
@@ -122,7 +122,7 @@ func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string,
 	ctx = persistence.SaveToContext(ctx, tx)
 
 
-	appPage, err := r.appSvc.ListByRuntimeID(ctx, runtimeID, first, &cursor)
+	appPage, err := r.appSvc.ListByScenariosForRuntime(ctx, runtimeID, first, &cursor)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting all Application for Runtime")
 	}

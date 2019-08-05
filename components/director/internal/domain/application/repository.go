@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
-
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
@@ -81,7 +80,7 @@ func (r *inMemoryRepository) ListByScenariosFromRuntime(ctx context.Context, ten
 	err = persist.Get(&scenariosBinary, stmt, tenantID, runtimeID)
 
 	if scenariosBinary == nil {
-		return nil, errors.Errorf("Runtime ID:%s not contain label scenario, probably runtime not exits", runtimeID)
+		return nil, errors.New("Runtime scenarios not found")
 	}
 	scenarios := getScenariosValues(scenariosBinary)
 
@@ -97,7 +96,10 @@ func (r *inMemoryRepository) ListByScenariosFromRuntime(ctx context.Context, ten
 		return nil, errors.New("tenant_ID is not parseable")
 	}
 
-	stmt = label.FilterQuery(model.ApplicationLabelableObject, label.UnionSet, tenantUUID, scenarioFilers)
+	stmt, err = label.FilterQuery(model.ApplicationLabelableObject, label.UnionSet, tenantUUID, scenarioFilers)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating filter query")
+	}
 
 	var apps []interface{}
 
@@ -105,7 +107,15 @@ func (r *inMemoryRepository) ListByScenariosFromRuntime(ctx context.Context, ten
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil
+			return &model.ApplicationPage{
+				Data:       nil,
+				TotalCount: 0,
+				PageInfo: &pagination.Page{
+					StartCursor: "",
+					EndCursor:   "",
+					HasNextPage: false,
+				},
+			}, nil
 		}
 		return nil, errors.Wrap(err, "while getting application for runtime from DB")
 	}
@@ -115,8 +125,7 @@ func (r *inMemoryRepository) ListByScenariosFromRuntime(ctx context.Context, ten
 	for _, id := range apps {
 		appID, ok := id.(string)
 		if !ok {
-			continue
-			//return nil, errors.New("Error")
+			return nil, errors.New("while parsing application IDs")
 		}
 
 		app, found := r.store[appID]
@@ -195,7 +204,7 @@ func (r *inMemoryRepository) findApplicationNameWithinTenant(tenant, name string
 func getScenariosValues(scenariosJSON interface{}) []string {
 	var scenarios []string
 
-	scen, ok := scenariosJSON.([]byte)
+	scen, ok := scenariosJSON.(string)
 	if !ok {
 		return scenarios
 	}
