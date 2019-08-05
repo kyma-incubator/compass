@@ -26,7 +26,7 @@ func DecodeOffsetCursor(cursor string) (int, error) {
 		return 0, errors.Wrap(err, "cursor is not correct")
 	}
 
-	realCursor := strings.Trim(string(decodedValue), suprise)
+	realCursor := strings.TrimPrefix(string(decodedValue), suprise)
 
 	offset, err := strconv.Atoi(realCursor)
 	if err != nil {
