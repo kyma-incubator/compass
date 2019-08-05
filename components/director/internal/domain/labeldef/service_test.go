@@ -253,6 +253,7 @@ func TestServiceUpdate(t *testing.T) {
 		defer mockLabelRepository.AssertExpectations(t)
 
 		ld := &model.LabelDefinition{
+			ID:     "8b131225-f09d-4035-8091-1f12933863b3",
 			Tenant: tenant,
 			Key:    key,
 			Schema: fixSchema(t, "firstName"),
@@ -289,7 +290,7 @@ func TestServiceUpdate(t *testing.T) {
 		require.EqualError(t, err, "while updating Label Definition: some error")
 	})
 
-	t.Run("returns error if received of updated Label Definition failed", func(t *testing.T) {
+	t.Run("returns error if receive of updated Label Definition failed", func(t *testing.T) {
 		// GIVEN
 		mockRepository := &automock.Repository{}
 		defer mockRepository.AssertExpectations(t)
@@ -298,6 +299,7 @@ func TestServiceUpdate(t *testing.T) {
 		defer mockLabelRepository.AssertExpectations(t)
 
 		ld := &model.LabelDefinition{
+			ID:     "8b131225-f09d-4035-8091-1f12933863b3",
 			Tenant: tenant,
 			Key:    key,
 			Schema: fixSchema(t, "firstName"),

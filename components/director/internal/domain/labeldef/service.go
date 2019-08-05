@@ -86,6 +86,10 @@ func (s *service) Update(ctx context.Context, def model.LabelDefinition) (model.
 		return model.LabelDefinition{}, errors.Wrap(err, "while receiving Label Definition")
 	}
 
+	if ld.ID == "" {
+		return model.LabelDefinition{}, fmt.Errorf("id of received label definition is empty")
+	}
+
 	id := ld.ID
 	ld = &def
 	ld.ID = id
