@@ -976,67 +976,6 @@ func TestTenantSeparation(t *testing.T) {
 
 }
 
-func TestApplicationsForRuntime(t *testing.T) {
-	//GIVEN
-	ctx := context.Background()
-	tenantName := "90b9ccc8-7829-4511-ac17-5b0c872a41b5"
-	tenantApplications := []*graphql.Application{}
-
-	applications := []struct {
-		ApplicationName string
-		Tenant          string
-		WithinTenant    bool
-	}{
-		{
-			Tenant:          tenantName,
-			ApplicationName: "first",
-			WithinTenant:    true,
-		},
-		{
-			Tenant:          tenantName,
-			ApplicationName: "second",
-			WithinTenant:    true,
-		},
-		{
-			Tenant:          "3b6f72ac-93e4-4659-bf9c-8903239e1e93",
-			ApplicationName: "test",
-			WithinTenant:    false,
-		},
-	}
-
-	for _, testApp := range applications {
-		applicationInput := generateSampleApplicationInput(testApp.ApplicationName)
-		appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(applicationInput)
-		require.NoError(t, err)
-		createReq := fixCreateApplicationRequest(appInputGQL)
-		application := graphql.Application{}
-		createReq.Header["Tenant"] = []string{testApp.Tenant}
-
-		err = tc.RunQuery(ctx, createReq, &application)
-
-		require.NoError(t, err)
-		require.NotEmpty(t, application.ID)
-		defer deleteApplicationInTenant(t, application.ID, testApp.Tenant)
-		if testApp.WithinTenant {
-			tenantApplications = append(tenantApplications, &application)
-		}
-	}
-
-	// get all testApp within tenant
-	//WHEN
-	request := fixApplicationForRuntimeRequest("0e3504b1-068b-464d-86f3-813f3a3a1759")
-	request.Header["Tenant"] = []string{tenantName}
-	applicationPage := graphql.ApplicationPage{}
-
-	err := tc.RunQuery(ctx, request, &applicationPage)
-	saveQueryInExamples(t, request.Query(), "query applications for runtime")
-
-	//THEN
-	require.NoError(t, err)
-	require.Len(t, applicationPage.Data, 2)
-	assert.ElementsMatch(t, tenantApplications, applicationPage.Data)
-}
-
 func getApp(ctx context.Context, t *testing.T, id string) ApplicationExt {
 	q := gcli.NewRequest(
 		fmt.Sprintf(`query {

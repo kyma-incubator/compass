@@ -90,7 +90,8 @@ func (r *inMemoryRepository) ListByScenariosFromRuntime(ctx context.Context, ten
 		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, scenarioValue)
 		scenarioFilers = append(scenarioFilers, &labelfilter.LabelFilter{Key: scenarioKey, Query: &query})
 	}
-	//TODO: change tenantID to String
+
+	//TODO: change tenantID from UUID to String
 	tenantUUID, err := uuid.Parse(tenantID)
 	if err != nil {
 		return nil, errors.New("tenant_ID is not parseable")
@@ -204,7 +205,7 @@ func (r *inMemoryRepository) findApplicationNameWithinTenant(tenant, name string
 func getScenariosValues(scenariosJSON interface{}) []string {
 	var scenarios []string
 
-	scen, ok := scenariosJSON.(string)
+	scen, ok := scenariosJSON.([]byte)
 	if !ok {
 		return scenarios
 	}

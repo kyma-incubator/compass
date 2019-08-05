@@ -2,40 +2,39 @@ package director
 
 import (
 	"fmt"
-
 	gcli "github.com/machinebox/graphql"
 )
 
-func fixCreateApplicationRequest(inStr string) *gcli.Request {
+func fixCreateApplicationRequest(applicationInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			result: createApplication(in: %s) {
 					%s
 				}
 			}`,
-			inStr, tc.gqlFieldsProvider.ForApplication()))
+			applicationInGQL, tc.gqlFieldsProvider.ForApplication()))
 }
 
 func fixApplicationForRuntimeRequest(runtimeID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(
 			`query {
-  			result: applicationsForRuntime(runtimeID: "%s", first:%d, after:"%s") { 
+  			result: applicationsForRuntime(runtimeID: "%s", first:%d, after:"") { 
 					%s 
 				}
 			}`,
-			runtimeID, 2, "next", tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication()),
+			runtimeID, 4, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication()),
 		))
 }
 
-func fixCreateRuntimeRequst(inStr string) *gcli.Request {
+func fixCreateRuntimeRequest(runtimeInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			result: createRuntime(in: %s) {
 					%s
 				}
 			}`,
-			inStr, tc.gqlFieldsProvider.ForRuntime()))
+			runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
 }
 
 func fixRuntimeRequestWithPagination(after int, cursor string) *gcli.Request {

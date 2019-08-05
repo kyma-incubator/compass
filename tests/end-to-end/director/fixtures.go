@@ -1,6 +1,9 @@
 package director
 
-import "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+import (
+	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+)
 
 func fixBasicAuth() *graphql.AuthInput {
 	return &graphql.AuthInput{
@@ -39,5 +42,13 @@ func fixDepracatedVersion1() *graphql.VersionInput {
 		Deprecated:      ptrBool(true),
 		ForRemoval:      ptrBool(true),
 		DeprecatedSince: ptrString("v5"),
+	}
+}
+
+func fixRuntimeInput(placeholder string) graphql.RuntimeInput {
+	return graphql.RuntimeInput{
+		Name:        placeholder,
+		Description: ptrString(fmt.Sprintf("%s-description", placeholder)),
+		Labels:      &graphql.Labels{"placeholder": []interface{}{"placeholder"}},
 	}
 }

@@ -113,7 +113,3 @@ func mockDatabase(t *testing.T) (*sqlx.DB, sqlmock.Sqlmock) {
 
 	return sqlxDB, sqlMock
 }
-
-func filterQueryFnMock(queryFor model.LabelableObject, setCombination label.SetCombination, tenant uuid.UUID, filter []*labelfilter.LabelFilter) (string, error) {
-	return `SELECT "app_id" FROM "public"."labels" WHERE FILTERS`, nil
-}
