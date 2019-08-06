@@ -21,6 +21,7 @@ Below you can find a list of mock GraphQL queries and mutations:
 - [query applications for runtime](./query-applications-for-runtime.graphql)
 - [query applications](./query-applications.graphql)
 - [query runtime](./query-runtime.graphql)
+- [query runtimes with pagination](./query-runtimes-with-pagination.graphql)
 - [query runtimes](./query-runtimes.graphql)
 - [set application label](./set-application-label.graphql)
 - [update api](./update-api.graphql)
