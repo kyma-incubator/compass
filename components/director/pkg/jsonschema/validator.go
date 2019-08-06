@@ -69,7 +69,7 @@ func (v *validator) ValidateRaw(value interface{}) (bool, error) {
 
 	valueMarshalled, err := json.Marshal(value)
 	if err != nil {
-		return false, err
+		return false, errors.Wrapf(err, "while marshalling raw value to json")
 	}
 
 	return v.ValidateString(string(valueMarshalled))
