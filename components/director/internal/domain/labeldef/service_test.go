@@ -153,7 +153,7 @@ func TestServiceUpdate(t *testing.T) {
 	tenant := "tenant"
 	key := "firstName"
 
-	t.Run("success", func(t *testing.T) {
+	t.Run("success when schema is not nil", func(t *testing.T) {
 		// GIVEN
 		mockRepository := &automock.Repository{}
 		defer mockRepository.AssertExpectations(t)
