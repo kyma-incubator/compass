@@ -92,33 +92,27 @@ func (s *service) Update(ctx context.Context, def model.LabelDefinition) error {
 
 	ld.Schema = def.Schema
 
-	if def.Schema == nil {
-		if err := s.repo.Update(ctx, *ld); err != nil {
-			return errors.Wrap(err, "while updating Label Definition with nil schema")
-		}
-
-		return nil
-	}
-
-	existingLabels, err := s.labelRepo.ListByKey(ctx, def.Tenant, def.Key)
-	if err != nil {
-		return errors.Wrap(err, "while listing labels by key")
-	}
-	validator, err := jsonschema.NewValidatorFromRawSchema(*def.Schema)
-	if err != nil {
-		return errors.Wrap(err, "while creating validator for new schema")
-	}
-
-	for _, label := range existingLabels {
-		ok, err := validator.ValidateRaw(label.Value)
+	if def.Schema != nil {
+		existingLabels, err := s.labelRepo.ListByKey(ctx, def.Tenant, def.Key)
 		if err != nil {
-			return errors.Wrap(err, "while validating existing labels against new schema")
+			return errors.Wrap(err, "while listing labels by key")
 		}
 
-		if !ok {
-			return fmt.Errorf("label with key %s is not valid against new schema for %s with ID %s", label.Key, label.ObjectType, label.ObjectID)
+		validator, err := jsonschema.NewValidatorFromRawSchema(*def.Schema)
+		if err != nil {
+			return errors.Wrap(err, "while creating validator for new schema")
 		}
 
+		for _, label := range existingLabels {
+			ok, err := validator.ValidateRaw(label.Value)
+			if err != nil {
+				return errors.Wrap(err, "while validating existing labels against new schema")
+			}
+
+			if !ok {
+				return fmt.Errorf("label with key %s is not valid against new schema for %s with ID %s", label.Key, label.ObjectType, label.ObjectID)
+			}
+		}
 	}
 
 	if err := s.repo.Update(ctx, *ld); err != nil {
