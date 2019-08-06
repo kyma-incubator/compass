@@ -43,14 +43,14 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 		ExpectedError               error
 	}{
 		{
-			Name:                        "Success",
-			ExpectedApplicationRows:     sqlmock.NewRows([]string{"app_id"}).AddRow(uuid.New()).AddRow(uuid.New()),
-			ExpectedError:               nil,
+			Name:                    "Success",
+			ExpectedApplicationRows: sqlmock.NewRows([]string{"app_id"}).AddRow(uuid.New()).AddRow(uuid.New()),
+			ExpectedError:           nil,
 		},
 		{
-			Name:                        "Return empty page when no application match",
-			ExpectedApplicationRows:     sqlmock.NewRows([]string{"App_id"}),
-			ExpectedError:               nil,
+			Name:                    "Return empty page when no application match",
+			ExpectedApplicationRows: sqlmock.NewRows([]string{"App_id"}),
+			ExpectedError:           nil,
 		},
 	}
 

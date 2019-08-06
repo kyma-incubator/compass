@@ -15,8 +15,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const labelTableName string = `"public"."labels"`
-
 type inMemoryRepository struct {
 	store map[string]*model.Application
 }
@@ -66,7 +64,7 @@ func (r *inMemoryRepository) List(ctx context.Context, tenant string, filter []*
 	}, nil
 }
 
-// TODO: @dbadura add pagination when PR-181 is merged
+// TODO: add pagination when PR-181 is merged
 func (r *inMemoryRepository) ListByScenarios(ctx context.Context, tenantUUID uuid.UUID, scenarios []string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {

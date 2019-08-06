@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
+
 	"github.com/google/uuid"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -94,7 +95,7 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 	return s.appRepo.List(ctx, appTenant, filter, pageSize, cursor)
 }
 
-func (s *service) ListByRuntimeID(ctx context.Context, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
+func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 
 	if err != nil {
@@ -103,13 +104,14 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID string, pageSiz
 
 	tenantUUID, err := uuid.Parse(tenantID)
 	if err != nil {
-		return nil, errors.New("tenant_ID is not parseable")
+		return nil, errors.New("tenantID is not UUID")
 	}
 
-	label, err := s.labelRepo.GetByKey(ctx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey)
+	label, err := s.labelRepo.GetByKey(ctx, tenantID, model.RuntimeLabelableObject, runtimeID.String(), model.ScenariosKey)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting scenarios for runtime")
 	}
+
 	scenarios, err := getScenariosValues(label.Value)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting scenarios labels")

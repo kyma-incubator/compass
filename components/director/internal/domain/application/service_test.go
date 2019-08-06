@@ -1311,7 +1311,7 @@ func TestService_DeleteLabel(t *testing.T) {
 }
 
 func TestService_ListByRuntimeID(t *testing.T) {
-	runtimeID := " idddd"
+	runtimeID := uuid.New()
 	testError := errors.New("test error")
 
 	tenantUUID := uuid.New()
@@ -1335,7 +1335,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 
 	testCases := []struct {
 		Name              string
-		Input             string
+		Input             uuid.UUID
 		LabelRepositoryFn func() *automock.LabelRepository
 		AppRepositoryFn   func() *automock.ApplicationRepository
 		ExpectedResult    *model.ApplicationPage
@@ -1345,7 +1345,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			Name: "Success",
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				labelRepository := &automock.LabelRepository{}
-				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).
+				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeID.String(), model.ScenariosKey).
 					Return(&scenarioLabel, nil).Once()
 				return labelRepository
 			},
@@ -1363,7 +1363,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			Name: "Return error when getting runtime scenarios by RuntimeID failed",
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				labelRepository := &automock.LabelRepository{}
-				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).
+				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeID.String(), model.ScenariosKey).
 					Return(nil, testError).Once()
 				return labelRepository
 			},
@@ -1379,7 +1379,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			Name: "Return error when listing application by scenarios failed",
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				labelRepository := &automock.LabelRepository{}
-				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).
+				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeID.String(), model.ScenariosKey).
 					Return(&scenarioLabel, nil).Once()
 				return labelRepository
 			},

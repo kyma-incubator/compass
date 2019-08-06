@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/google/uuid"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
@@ -602,14 +604,14 @@ func TestResolver_ApplicationsForRuntime(t *testing.T) {
 	after := "test"
 	gqlAfter := graphql.PageCursor(after)
 
-	runtimeID := "foo"
+	runtimeID := uuid.New()
 	testCases := []struct {
 		Name            string
 		AppConverterFn  func() *automock.ApplicationConverter
 		AppServiceFn    func() *automock.ApplicationService
 		PersistenceFn   func() *persistenceautomock.PersistenceTx
 		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
-		InputRuntimeID  string
+		InputRuntimeID  uuid.UUID
 		InputFirst      *int
 		InputAfter      *graphql.PageCursor
 		ExpectedResult  *graphql.ApplicationPage
@@ -686,7 +688,7 @@ func TestResolver_ApplicationsForRuntime(t *testing.T) {
 			resolver := application.NewResolver(transact, applicationSvc, nil, nil, nil, nil, applicationConverter, nil, nil, nil, nil)
 
 			//WHEN
-			result, err := resolver.ApplicationsForRuntime(context.TODO(), testCase.InputRuntimeID, testCase.InputFirst, testCase.InputAfter)
+			result, err := resolver.ApplicationsForRuntime(context.TODO(), testCase.InputRuntimeID.String(), testCase.InputFirst, testCase.InputAfter)
 
 			//THEN
 			if testCase.ExpectedError != nil {
