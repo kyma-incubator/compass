@@ -436,7 +436,7 @@ func TestServiceUpdate(t *testing.T) {
 		require.EqualError(t, err, "while updating Label Definition: some error")
 	})
 
-	t.Run("returns error if Label Definition schema for update is nil", func(t *testing.T) {
+	t.Run("label definition schema for update is nil", func(t *testing.T) {
 		// GIVEN
 		mockRepository := &automock.Repository{}
 		defer mockRepository.AssertExpectations(t)
