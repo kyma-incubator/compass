@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const scenarioLabel = "SCENARIOS"
+const scenarioLabel = "scenarios"
 
 func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	// GIVEN

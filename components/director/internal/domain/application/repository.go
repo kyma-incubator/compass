@@ -16,7 +16,6 @@ import (
 )
 
 const labelTableName string = `"public"."labels"`
-const scenarioKey string = "SCENARIOS"
 
 type inMemoryRepository struct {
 	store map[string]*model.Application
@@ -68,36 +67,20 @@ func (r *inMemoryRepository) List(ctx context.Context, tenant string, filter []*
 }
 
 // TODO: @dbadura add pagination when PR-181 is merged
-func (r *inMemoryRepository) ListByScenariosForRuntime(ctx context.Context, tenantID string, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
+func (r *inMemoryRepository) ListByScenarios(ctx context.Context, tenantUUID uuid.UUID, scenarios []string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching DB from context")
 	}
 
-	//TODO: change tenantID from UUID to String
-	tenantUUID, err := uuid.Parse(tenantID)
-	if err != nil {
-		return nil, errors.New("tenant_ID is not parseable")
-	}
-
-	stmt := fmt.Sprintf(`SELECT VALUE FROM %s WHERE TENANT_ID=$1 AND RUNTIME_ID=$2 AND KEY='SCENARIOS'`, labelTableName)
-
-	var scenariosJSON string
-	err = persist.Get(&scenariosJSON, stmt, tenantID, runtimeID)
-
-	if scenariosJSON == "" {
-		return nil, errors.New("Runtime scenarios not found")
-	}
-	scenarios := getScenariosValues(scenariosJSON)
-
 	var scenariosFilers []*labelfilter.LabelFilter
 
 	for _, scenarioValue := range scenarios {
 		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, scenarioValue)
-		scenariosFilers = append(scenariosFilers, &labelfilter.LabelFilter{Key: scenarioKey, Query: &query})
+		scenariosFilers = append(scenariosFilers, &labelfilter.LabelFilter{Key: model.ScenariosKey, Query: &query})
 	}
 
-	stmt, err = label.FilterQuery(model.ApplicationLabelableObject, label.UnionSet, tenantUUID, scenariosFilers)
+	stmt, err := label.FilterQuery(model.ApplicationLabelableObject, label.UnionSet, tenantUUID, scenariosFilers)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating filter query")
 	}
@@ -202,7 +185,7 @@ func (r *inMemoryRepository) findApplicationNameWithinTenant(tenant, name string
 	return false
 }
 
-func getScenariosValues(scenariosJSON interface{}) []string {
+func getScenariosValuesFromJSON(scenariosJSON interface{}) []string {
 	var scenarios []string
 
 	scen, ok := scenariosJSON.(string)

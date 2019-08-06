@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -15,7 +16,7 @@ type ApplicationRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error)
-	ListByScenariosForRuntime(ctx context.Context, tenantID string, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error)
+	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize *int, cursor *string) (*model.ApplicationPage, error)
 	Create(ctx context.Context, item *model.Application) error
 	Update(ctx context.Context, item *model.Application) error
 	Delete(ctx context.Context, item *model.Application) error
@@ -93,13 +94,28 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 	return s.appRepo.List(ctx, appTenant, filter, pageSize, cursor)
 }
 
-func (s *service) ListByScenariosForRuntime(ctx context.Context, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
+func (s *service) ListByRuntimeID(ctx context.Context, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
+
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	return s.appRepo.ListByScenariosForRuntime(ctx, tenantID, runtimeID, pageSize, cursor)
+	tenantUUID, err := uuid.Parse(tenantID)
+	if err != nil {
+		return nil, errors.New("tenant_ID is not parseable")
+	}
+
+	label, err := s.labelRepo.GetByKey(ctx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting scenarios for runtime")
+	}
+	scenarios, err := getScenariosValues(label.Value)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting scenarios labels")
+	}
+
+	return s.appRepo.ListByScenarios(ctx, tenantUUID, scenarios, pageSize, cursor)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.Application, error) {
@@ -394,4 +410,21 @@ func (s *service) deleteRelatedResources(applicationID string) error {
 	}
 
 	return nil
+}
+func getScenariosValues(labels interface{}) ([]string, error) {
+	tmpScenarios, ok := labels.([]interface{})
+	if !ok {
+		return nil, errors.New("Cannot convert scenario labels to array of string")
+	}
+
+	var scenarios []string
+	for _, label := range tmpScenarios {
+		scenario, ok := label.(string)
+		if !ok {
+			return nil, errors.New("Cannot convert scenario label to string")
+		}
+		scenarios = append(scenarios, scenario)
+	}
+
+	return scenarios, nil
 }

@@ -2,8 +2,6 @@ package application
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"regexp"
 	"testing"
@@ -23,22 +21,16 @@ import (
 // Cannot test paging, because we have mixed resository
 func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 	tenantID := uuid.New()
-	runtimeID := uuid.New()
 	pageSize := 5
 	cursor := ""
 
-	runtimeScenarioQuery := regexp.QuoteMeta(`SELECT VALUE FROM "public"."labels" 
-													WHERE TENANT_ID=$1 AND RUNTIME_ID=$2 AND KEY='SCENARIOS'`)
 	runtimeScenarios := []string{"Java", "Go", "Elixir"}
 	//Create Filters for scenarios, because we cannot mock  filter query generator
 	var scenarioFilter []*labelfilter.LabelFilter
 	for _, scenario := range runtimeScenarios {
 		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, scenario)
-		scenarioFilter = append(scenarioFilter, &labelfilter.LabelFilter{Key: "SCENARIOS", Query: &query})
+		scenarioFilter = append(scenarioFilter, &labelfilter.LabelFilter{Key: model.ScenariosKey, Query: &query})
 	}
-
-	jsonRuntimeScenarios, err := json.Marshal(runtimeScenarios)
-	require.NoError(t, err)
 
 	scenarioQuery, err := label.FilterQuery(model.ApplicationLabelableObject, label.UnionSet, tenantID, scenarioFilter)
 	require.NoError(t, err)
@@ -52,21 +44,13 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 	}{
 		{
 			Name:                        "Success",
-			ExpectedRuntimeScenarioRows: sqlmock.NewRows([]string{"value"}).AddRow(fmt.Sprintf("%s", jsonRuntimeScenarios)),
 			ExpectedApplicationRows:     sqlmock.NewRows([]string{"app_id"}).AddRow(uuid.New()).AddRow(uuid.New()),
 			ExpectedError:               nil,
 		},
 		{
 			Name:                        "Return empty page when no application match",
-			ExpectedRuntimeScenarioRows: sqlmock.NewRows([]string{"value"}).AddRow(fmt.Sprintf("%s", jsonRuntimeScenarios)),
 			ExpectedApplicationRows:     sqlmock.NewRows([]string{"App_id"}),
 			ExpectedError:               nil,
-		},
-		{
-			Name:                        "Return error when runtime not contain scenario",
-			ExpectedRuntimeScenarioRows: sqlmock.NewRows([]string{"value"}),
-			ExpectedApplicationRows:     nil,
-			ExpectedError:               errors.New("Runtime scenarios not found"),
 		},
 	}
 
@@ -74,10 +58,6 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
 			sqlxDB, sqlMock := mockDatabase(t)
-			sqlMock.ExpectQuery(runtimeScenarioQuery).
-				WithArgs(tenantID.String(), runtimeID.String()).
-				WillReturnRows(testCase.ExpectedRuntimeScenarioRows)
-
 			if testCase.ExpectedApplicationRows != nil {
 				sqlMock.ExpectQuery(applicationScenarioQuery).
 					WithArgs().
@@ -88,7 +68,7 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
 			//WHEN
-			page, err := repository.ListByScenariosForRuntime(ctx, tenantID.String(), runtimeID.String(), &pageSize, &cursor)
+			page, err := repository.ListByScenarios(ctx, tenantID, runtimeScenarios, &pageSize, &cursor)
 
 			//THEN
 			if testCase.ExpectedError != nil {

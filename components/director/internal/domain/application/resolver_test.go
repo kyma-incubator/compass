@@ -619,7 +619,7 @@ func TestResolver_ApplicationsForRuntime(t *testing.T) {
 			Name: "Success",
 			AppServiceFn: func() *automock.ApplicationService {
 				appService := &automock.ApplicationService{}
-				appService.On("ListByScenariosForRuntime", contextParam, runtimeID, &first, &after).Return(fixApplicationPage(modelApplications), nil).Once()
+				appService.On("ListByRuntimeID", contextParam, runtimeID, &first, &after).Return(fixApplicationPage(modelApplications), nil).Once()
 				return appService
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
@@ -649,7 +649,7 @@ func TestResolver_ApplicationsForRuntime(t *testing.T) {
 			Name: "Returns error when application listing failed",
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("ListByScenariosForRuntime", contextParam, runtimeID, &first, &after).Return(nil, testError).Once()
+				appSvc.On("ListByRuntimeID", contextParam, runtimeID, &first, &after).Return(nil, testError).Once()
 				return appSvc
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {

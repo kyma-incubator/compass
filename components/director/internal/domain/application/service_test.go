@@ -1314,12 +1314,18 @@ func TestService_ListByRuntimeID(t *testing.T) {
 	runtimeID := " idddd"
 	testError := errors.New("test error")
 
-	tenantName := "tenant"
+	tenantUUID := uuid.New()
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantName)
+	ctx = tenant.SaveToContext(ctx, tenantUUID.String())
 
 	first := 10
 	cursor := "test"
+	scenarios := []interface{}{"Easter", "Christmas", "Winter-Sale"}
+	scenarioLabel := model.Label{
+		ID:    uuid.New().String(),
+		Key:   model.ScenariosKey,
+		Value: scenarios,
+	}
 
 	applications := []*model.Application{
 		fixModelApplication("test1", "test1", "test1"),
@@ -1328,19 +1334,24 @@ func TestService_ListByRuntimeID(t *testing.T) {
 	applicationPage := fixApplicationPage(applications)
 
 	testCases := []struct {
-		Name            string
-		Input           string
-		InputPageSize   *int
-		InputCursor     *string
-		AppRepositoryFn func() *automock.ApplicationRepository
-		ExpectedResult  *model.ApplicationPage
-		ExpectedError   error
+		Name              string
+		Input             string
+		LabelRepositoryFn func() *automock.LabelRepository
+		AppRepositoryFn   func() *automock.ApplicationRepository
+		ExpectedResult    *model.ApplicationPage
+		ExpectedError     error
 	}{
 		{
 			Name: "Success",
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				labelRepository := &automock.LabelRepository{}
+				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).
+					Return(&scenarioLabel, nil).Once()
+				return labelRepository
+			},
 			AppRepositoryFn: func() *automock.ApplicationRepository {
 				appRepository := &automock.ApplicationRepository{}
-				appRepository.On("ListByScenariosForRuntime", ctx, tenantName, runtimeID, &first, &cursor).
+				appRepository.On("ListByScenarios", ctx, tenantUUID, convertToStringArray(t, scenarios), &first, &cursor).
 					Return(applicationPage, nil).Once()
 				return appRepository
 			},
@@ -1349,10 +1360,33 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			Input:          runtimeID,
 		},
 		{
-			Name: "Return error when listing application by RuntimeID failed",
+			Name: "Return error when getting runtime scenarios by RuntimeID failed",
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				labelRepository := &automock.LabelRepository{}
+				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).
+					Return(nil, testError).Once()
+				return labelRepository
+			},
 			AppRepositoryFn: func() *automock.ApplicationRepository {
 				appRepository := &automock.ApplicationRepository{}
-				appRepository.On("ListByScenariosForRuntime", ctx, tenantName, runtimeID, &first, &cursor).Return(nil, testError).Once()
+				return appRepository
+			},
+			ExpectedError:  testError,
+			ExpectedResult: nil,
+			Input:          runtimeID,
+		},
+		{
+			Name: "Return error when listing application by scenarios failed",
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				labelRepository := &automock.LabelRepository{}
+				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).
+					Return(&scenarioLabel, nil).Once()
+				return labelRepository
+			},
+			AppRepositoryFn: func() *automock.ApplicationRepository {
+				appRepository := &automock.ApplicationRepository{}
+				appRepository.On("ListByScenarios", ctx, tenantUUID, convertToStringArray(t, scenarios), &first, &cursor).
+					Return(nil, testError).Once()
 				return appRepository
 			},
 			ExpectedError:  testError,
@@ -1365,10 +1399,11 @@ func TestService_ListByRuntimeID(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
 			appRepository := testCase.AppRepositoryFn()
-			svc := application.NewService(appRepository, nil, nil, nil, nil, nil, nil, nil)
+			labelRepository := testCase.LabelRepositoryFn()
+			svc := application.NewService(appRepository, nil, nil, nil, nil, labelRepository, nil, nil)
 
 			//WHEN
-			results, err := svc.ListByScenariosForRuntime(ctx, testCase.Input, &first, &cursor)
+			results, err := svc.ListByRuntimeID(ctx, testCase.Input, &first, &cursor)
 
 			//THEN
 			if testCase.ExpectedError != nil {
@@ -1423,4 +1458,14 @@ func modelFromInput(in model.ApplicationInput, applicationID string) testModel {
 		EventAPIs:            eventAPIsModel,
 		Webhooks:             webhooksModel,
 	}
+}
+
+func convertToStringArray(t *testing.T, array []interface{}) []string {
+	var stringArray []string
+	for _, value := range array {
+		convertedValue, ok := value.(string)
+		require.True(t, ok, "Cannot convert array of interface{} to array of string in test method")
+		stringArray = append(stringArray, convertedValue)
+	}
+	return stringArray
 }
