@@ -1332,6 +1332,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 		fixModelApplication("test2", "test2", "test2"),
 	}
 	applicationPage := fixApplicationPage(applications)
+	emptyPage := model.ApplicationPage{TotalCount: 0, PageInfo: &pagination.Page{StartCursor: "", EndCursor: "", HasNextPage: false}}
 
 	testCases := []struct {
 		Name              string
@@ -1342,7 +1343,8 @@ func TestService_ListByRuntimeID(t *testing.T) {
 		ExpectedError     error
 	}{
 		{
-			Name: "Success",
+			Name:  "Success",
+			Input: runtimeID,
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				labelRepository := &automock.LabelRepository{}
 				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeID.String(), model.ScenariosKey).
@@ -1357,10 +1359,10 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			},
 			ExpectedError:  nil,
 			ExpectedResult: applicationPage,
-			Input:          runtimeID,
 		},
 		{
-			Name: "Return error when getting runtime scenarios by RuntimeID failed",
+			Name:  "Return error when getting runtime scenarios by RuntimeID failed",
+			Input: runtimeID,
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				labelRepository := &automock.LabelRepository{}
 				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeID.String(), model.ScenariosKey).
@@ -1373,10 +1375,10 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			},
 			ExpectedError:  testError,
 			ExpectedResult: nil,
-			Input:          runtimeID,
 		},
 		{
-			Name: "Return error when listing application by scenarios failed",
+			Name:  "Return error when listing application by scenarios failed",
+			Input: runtimeID,
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				labelRepository := &automock.LabelRepository{}
 				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeID.String(), model.ScenariosKey).
@@ -1391,7 +1393,22 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			},
 			ExpectedError:  testError,
 			ExpectedResult: nil,
-			Input:          runtimeID,
+		},
+		{
+			Name:  " Return empty page when scenarios for runtime is empty array",
+			Input: runtimeID,
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				labelRepository := &automock.LabelRepository{}
+				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeID.String(), model.ScenariosKey).
+					Return(&model.Label{ID: uuid.New().String(), Key: model.ScenariosKey, Value: []interface{}{}}, nil).Once()
+				return labelRepository
+			},
+			AppRepositoryFn: func() *automock.ApplicationRepository {
+				appRepository := &automock.ApplicationRepository{}
+				return appRepository
+			},
+			ExpectedError:  nil,
+			ExpectedResult: &emptyPage,
 		},
 	}
 

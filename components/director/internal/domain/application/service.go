@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+
 	"github.com/google/uuid"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -115,6 +117,16 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, page
 	scenarios, err := getScenariosValues(label.Value)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting scenarios labels")
+	}
+	if len(scenarios) == 0 {
+		return &model.ApplicationPage{
+			TotalCount: 0,
+			PageInfo: &pagination.Page{
+				StartCursor: "",
+				EndCursor:   "",
+				HasNextPage: false,
+			},
+		}, nil
 	}
 
 	return s.appRepo.ListByScenarios(ctx, tenantUUID, scenarios, pageSize, cursor)
