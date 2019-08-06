@@ -20,13 +20,13 @@ func TestComputeOffset(t *testing.T) {
 	}{
 		{
 			Name:            "Success",
-			InputCursor:     string(base64.StdEncoding.EncodeToString([]byte(strconv.Itoa(offset)))),
+			InputCursor:     convertIntToBase64String(offset),
 			ExptectedOffset: offset,
 			ExpectedErr:     nil,
 		},
 		{
 			Name:            "Success with easter egg",
-			InputCursor:     string(base64.StdEncoding.EncodeToString([]byte("DpKtJ4j9jDq"+strconv.Itoa(offset)))),
+			InputCursor:     string(base64.StdEncoding.EncodeToString([]byte("DpKtJ4j9jDq" + strconv.Itoa(offset)))),
 			ExptectedOffset: offset,
 			ExpectedErr:     nil,
 		},
@@ -38,21 +38,21 @@ func TestComputeOffset(t *testing.T) {
 		},
 		{
 			Name:            "Return error when cursor is negative",
-			InputCursor:     string(base64.StdEncoding.EncodeToString([]byte(strconv.Itoa(-offset)))),
+			InputCursor:     convertIntToBase64String(-offset),
 			ExptectedOffset: 0,
-			ExpectedErr:     errors.New("Cursor is not correct"),
+			ExpectedErr:     errors.New("cursor is not correct"),
 		},
 		{
 			Name:            "Return error when input is not integer",
 			InputCursor:     string(base64.StdEncoding.EncodeToString([]byte("foo-bar"))),
 			ExptectedOffset: 0,
-			ExpectedErr:     errors.New("Cursor is not correct"),
+			ExpectedErr:     errors.New("cursor is not correct"),
 		},
 		{
 			Name:            "Return error when input is not valid BASE64 string",
 			InputCursor:     "Zm9vLWJh-1cg==",
 			ExptectedOffset: 0,
-			ExpectedErr:     errors.New("Cursor is not correct"),
+			ExpectedErr:     errors.New("cursor is not correct"),
 		},
 	}
 
@@ -82,4 +82,83 @@ func TestConvertOffsetToPageCursor(t *testing.T) {
 
 	// THEN
 	require.Equal(t, "RHBLdEo0ajlqRHExMDA=", nextPageCursor)
+}
+
+func TestConvertOffsetLimitAndOrderedColumnToSQL(t *testing.T) {
+	t.Run("Success converting Offset and Limit to SQL ", func(t *testing.T) {
+		// WHEN
+		sql, err := ConvertOffsetLimitAndOrderedColumnToSQL(5, 5, "id")
+
+		//THEN
+		require.NoError(t, err)
+		assert.Equal(t, sql, ` ORDER BY "id" LIMIT 5 OFFSET 5`)
+	})
+
+	t.Run("Return error when column to order by is empty", func(t *testing.T) {
+		// WHEN
+		_, err := ConvertOffsetLimitAndOrderedColumnToSQL(5, 5, "")
+
+		//THEN
+		require.Error(t, err)
+		assert.Error(t, err, `to use pagination you must provide column to order by`)
+	})
+}
+
+func TestDecodeAndEncodeCursorTogether(t *testing.T) {
+	t.Run("Success encoding and then decoding cursor", func(t *testing.T) {
+		//GIVEN
+		offset := 4
+
+		//WHEN
+		cursor := EncodeOffsetCursor(offset, 0)
+		decodedOffset, err := DecodeOffsetCursor(cursor)
+
+		//THEN
+		require.NoError(t, err)
+		assert.Equal(t, offset, decodedOffset)
+	})
+
+	t.Run("Success encoding and then decoding next page cursor", func(t *testing.T) {
+		//GIVEN
+		offset := 4
+		pageSize := 5
+
+		//WHEN
+		cursor := EncodeOffsetCursor(offset, pageSize)
+		decodedOffset, err := DecodeOffsetCursor(cursor)
+		//THEN
+		require.NoError(t, err)
+		assert.Equal(t, offset+pageSize, decodedOffset)
+	})
+
+	t.Run("Success decoding and then encoding cursor", func(t *testing.T) {
+		//GIVEN
+		cursor := "RHBLdEo0ajlqRHExMDA="
+
+		//WHEN
+		offset, err := DecodeOffsetCursor(cursor)
+		encodedCusor := EncodeOffsetCursor(offset, 0)
+
+		//THEN
+		require.NoError(t, err)
+		assert.Equal(t, cursor, encodedCusor)
+	})
+
+	t.Run("Success decoding and then encoding incremented cursor", func(t *testing.T) {
+		//GIVEN
+		cursor := "RHBLdEo0ajlqRHExMDA="
+		nextCursor := "RHBLdEo0ajlqRHExMDU="
+
+		//WHEN
+		offset, err := DecodeOffsetCursor(cursor)
+		encodedCusor := EncodeOffsetCursor(offset, 5)
+
+		//THEN
+		require.NoError(t, err)
+		assert.Equal(t, nextCursor, encodedCusor)
+	})
+}
+
+func convertIntToBase64String(number int) string {
+	return string(base64.StdEncoding.EncodeToString([]byte(strconv.Itoa(number))))
 }

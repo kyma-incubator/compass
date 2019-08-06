@@ -81,10 +81,10 @@ func TestPgRepository_List(t *testing.T) {
 		ExpectedError  error
 	}{
 		{
-			Name:           "Success creating first page",
-			InputPageSize:  limit,
-			InputCursor:    convertIntToString(offset),
-			ExpectedOffset: offset,
+			Name:           "Success getting first page",
+			InputPageSize:  2,
+			InputCursor:    "",
+			ExpectedOffset: 0,
 			ExpectedLimit:  limit,
 			ExpectedError:  nil,
 			Rows: sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth"}).
@@ -94,8 +94,8 @@ func TestPgRepository_List(t *testing.T) {
 		},
 		{
 			Name:           "Success getting next page",
-			InputPageSize:  limit,
-			InputCursor:    convertIntToString(offset),
+			InputPageSize:  2,
+			InputCursor:    convertIntToBase64String(offset),
 			ExpectedOffset: offset,
 			ExpectedLimit:  limit,
 			ExpectedError:  nil,
@@ -106,8 +106,8 @@ func TestPgRepository_List(t *testing.T) {
 		},
 		{
 			Name:          "Returns error when decoded cursor is non-positive number",
-			InputPageSize: limit,
-			InputCursor:   string(base64.StdEncoding.EncodeToString([]byte(strconv.Itoa(-3)))),
+			InputPageSize: 2,
+			InputCursor:   convertIntToBase64String(-3),
 			ExpectedError: errors.New("cursor is not correct"),
 		},
 	}
@@ -327,6 +327,6 @@ func mockDatabase(t *testing.T) (*sqlx.DB, sqlmock.Sqlmock) {
 	return sqlxDB, sqlMock
 }
 
-func convertIntToString(number int) string {
+func convertIntToBase64String(number int) string {
 	return string(base64.StdEncoding.EncodeToString([]byte(strconv.Itoa(number))))
 }

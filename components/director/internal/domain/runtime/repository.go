@@ -19,6 +19,8 @@ import (
 
 const runtimeTable string = `"public"."runtimes"`
 
+const runtimeFields string = `"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth"`
+
 type pgRepository struct{}
 
 func NewPostgresRepository() *pgRepository {
@@ -52,8 +54,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.R
 		return nil, errors.Wrap(err, "while fetching DB from context")
 	}
 
-	stmt := fmt.Sprintf(`SELECT "id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth" FROM %s WHERE "id" = $1 AND "tenant_id" = $2`,
-		runtimeTable)
+	stmt := fmt.Sprintf(`SELECT %s FROM %s WHERE "id" = $1 AND "tenant_id" = $2`, runtimeFields, runtimeTable)
 
 	var runtimeEnt Runtime
 	err = persist.Get(&runtimeEnt, stmt, id, tenant)
@@ -99,8 +100,13 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 		queryForRuntime = fmt.Sprintf(` AND "id" IN (%s)`, queryForRuntime)
 	}
 
-	stmt := fmt.Sprintf(`SELECT "id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth" FROM %s WHERE "tenant_id"  = $1 %s %s`,
-		runtimeTable, queryForRuntime, pagination.ConvertOffsetLimitAndOrderedColumnToSQL(pageSize, offset, "id"))
+	paginationSQL, err := pagination.ConvertOffsetLimitAndOrderedColumnToSQL(pageSize, offset, "id")
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting offset and limit to cursor")
+	}
+
+	stmt := fmt.Sprintf(fmt.Sprintf(`SELECT %s FROM %s WHERE "tenant_id"  = $1 %s %s`,
+		runtimeFields, runtimeTable, queryForRuntime, paginationSQL))
 
 	var runtimesEnt []Runtime
 	err = persist.Select(&runtimesEnt, stmt, tenant)
@@ -119,12 +125,9 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 		items = append(items, model)
 	}
 
-	stmt = fmt.Sprintf(`SELECT COUNT (*) FROM %s WHERE "tenant_id" = $1`, runtimeTable)
-
-	var totalCount int
-	err = persist.Get(&totalCount, stmt, tenant)
+	totalCount, err := countRuntimesInDatabase(tenantID, persist)
 	if err != nil {
-		return nil, errors.Wrap(err, "while counting runtimes")
+		return nil, errors.Wrap(err, "while getting total count of runtimes")
 	}
 
 	hasNextPage := false
@@ -160,8 +163,9 @@ func (r *pgRepository) Create(ctx context.Context, item *model.Runtime) error {
 		return errors.Wrap(err, "while creating runtime entity from model")
 	}
 
-	stmt := fmt.Sprintf(`INSERT INTO %s ("id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth") VALUES (:id, :tenant_id, :name, :description, :status_condition, :status_timestamp, :auth)`,
-		runtimeTable)
+	stmt := fmt.Sprintf(`INSERT INTO %s ( %s )
+								VALUES (:id, :tenant_id, :name, :description, :status_condition, :status_timestamp, :auth)`,
+		runtimeTable, runtimeFields)
 
 	_, err = persist.NamedExec(stmt, runtimeEnt)
 	if pqerr, ok := err.(*pq.Error); ok {
@@ -211,4 +215,16 @@ func (r *pgRepository) Delete(ctx context.Context, id string) error {
 	_, err = persist.Exec(stmt, id)
 
 	return errors.Wrap(err, "while deleting the runtime entity from database")
+}
+
+func countRuntimesInDatabase(tenantUUID uuid.UUID, persist persistence.PersistenceOp) (int, error) {
+	stmt := fmt.Sprintf(`SELECT COUNT (*) FROM %s WHERE "tenant_id" = $1`, runtimeTable)
+
+	var totalCount int
+	err := persist.Get(&totalCount, stmt, tenantUUID.String())
+	if err != nil {
+		return -1, errors.Wrap(err, "while counting runtimes")
+	}
+
+	return totalCount, nil
 }

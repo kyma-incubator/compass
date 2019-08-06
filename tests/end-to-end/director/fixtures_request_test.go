@@ -38,7 +38,7 @@ func fixCreateRuntimeRequst(inStr string) *gcli.Request {
 			inStr, tc.gqlFieldsProvider.ForRuntime()))
 }
 
-func fixRuntimesRequest(after int, cursor string) *gcli.Request {
+func fixRuntimeRequestWithPagination(after int, cursor string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: runtimes(first:%d, after:"%s") {

@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-const suprise = "DpKtJ4j9jDq"
+const surprise = "DpKtJ4j9jDq"
 
 type Page struct {
 	StartCursor string
@@ -26,7 +26,7 @@ func DecodeOffsetCursor(cursor string) (int, error) {
 		return 0, errors.Wrap(err, "cursor is not correct")
 	}
 
-	realCursor := strings.TrimPrefix(string(decodedValue), suprise)
+	realCursor := strings.TrimPrefix(string(decodedValue), surprise)
 
 	offset, err := strconv.Atoi(realCursor)
 	if err != nil {
@@ -43,14 +43,14 @@ func DecodeOffsetCursor(cursor string) (int, error) {
 func EncodeOffsetCursor(offset, pageSize int) string {
 	nextPage := pageSize + offset
 
-	cursor := suprise + strconv.Itoa(nextPage)
+	cursor := surprise + strconv.Itoa(nextPage)
 
 	return base64.StdEncoding.EncodeToString([]byte(cursor))
 }
 
-func ConvertOffsetLimitAndOrderedColumnToSQL(pageSize, offset int, orderedColumn string) string {
+func ConvertOffsetLimitAndOrderedColumnToSQL(pageSize, offset int, orderedColumn string) (string, error) {
 	if orderedColumn == "" {
-		return ""
+		return "", errors.New("to use pagination you must provide column to order by")
 	}
-	return fmt.Sprintf(` ORDER BY "%s" LIMIT %d OFFSET %d`, orderedColumn, pageSize, offset)
+	return fmt.Sprintf(` ORDER BY "%s" LIMIT %d OFFSET %d`, orderedColumn, pageSize, offset), nil
 }
