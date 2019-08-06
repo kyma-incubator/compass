@@ -81,10 +81,6 @@ func (s *service) Update(ctx context.Context, def model.LabelDefinition) error {
 		return errors.Wrap(err, "while validating Label Definition")
 	}
 
-	if def.Schema == nil {
-		return nil
-	}
-
 	ld, err := s.repo.GetByKey(ctx, def.Tenant, def.Key)
 	if err != nil {
 		return errors.Wrap(err, "while receiving Label Definition")
@@ -95,6 +91,14 @@ func (s *service) Update(ctx context.Context, def model.LabelDefinition) error {
 	}
 
 	ld.Schema = def.Schema
+
+	if def.Schema == nil {
+		if err := s.repo.Update(ctx, *ld); err != nil {
+			return errors.Wrap(err, "while updating Label Definition with nil schema")
+		}
+
+		return nil
+	}
 
 	existingLabels, err := s.labelRepo.ListByKey(ctx, def.Tenant, def.Key)
 	if err != nil {
