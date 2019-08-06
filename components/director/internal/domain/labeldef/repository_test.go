@@ -117,17 +117,22 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 
 	t.Run("successfully updated definition with schema", func(t *testing.T) {
 		db, dbMock := mockDatabase(t)
+
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
+
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}}, nil)
+
 		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET "schema" = ? WHERE "id" = ?`)
 		dbMock.ExpectExec(escapedQuery).WithArgs("any", labelDefID).WillReturnResult(sqlmock.NewResult(1, 1))
 		defer func() {
 			require.NoError(t, dbMock.ExpectationsWereMet())
 		}()
+
 		sut := labeldef.NewRepository(mockConverter)
+
 		// WHEN
 		err := sut.Update(ctx, in)
 		// THEN
@@ -136,17 +141,22 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 
 	t.Run("successfully updated definition without schema", func(t *testing.T) {
 		db, dbMock := mockDatabase(t)
+
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
+
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID}, nil)
+
 		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET "schema" = ? WHERE "id" = ?`)
 		dbMock.ExpectExec(escapedQuery).WithArgs(nil, labelDefID).WillReturnResult(sqlmock.NewResult(1, 1))
 		defer func() {
 			require.NoError(t, dbMock.ExpectationsWereMet())
 		}()
+
 		sut := labeldef.NewRepository(mockConverter)
+
 		// WHEN
 		err := sut.Update(ctx, in)
 		// THEN
@@ -159,7 +169,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		err := sut.Update(ctx, model.LabelDefinition{})
 		require.EqualError(t, err, "while fetching persistence from context: unable to fetch database from context")
 	})
-	//
+
 	t.Run("returns error if update fails", func(t *testing.T) {
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
@@ -167,13 +177,16 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 
 		sut := labeldef.NewRepository(mockConverter)
 		db, dbMock := mockDatabase(t)
+
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
+
 		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET "schema" = ? WHERE "id" = ?`)
 		dbMock.ExpectExec(escapedQuery).WillReturnError(errors.New("some error"))
 		defer func() {
 			require.NoError(t, dbMock.ExpectationsWereMet())
 		}()
+
 		// WHEN
 		err := sut.Update(ctx, in)
 		// THEN

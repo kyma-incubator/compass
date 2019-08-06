@@ -487,7 +487,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 		mockTransactioner.On("Begin").Return(nil, errors.New("some error"))
 		defer mockTransactioner.AssertExpectations(t)
 		ctx := persistence.SaveToContext(context.TODO(), nil)
-		ctx = tenant.SaveToContext(ctx, "tenant")
+		ctx = tenant.SaveToContext(ctx, tnt)
 		sut := labeldef.NewResolver(nil, nil, mockTransactioner)
 		// WHEN
 		_, err := sut.UpdateLabelDefinition(ctx, graphql.LabelDefinitionInput{})
@@ -536,8 +536,8 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		mockService := &automock.Service{}
 		defer mockService.AssertExpectations(t)
-		mockService.On("Update", contextThatHasTenant(tnt), modelLabelDefinition).
-			Return(nil)
+		mockService.On("Update", contextThatHasTenant(tnt), modelLabelDefinition).Return(nil)
+		mockService.On("Get", contextThatHasTenant(tnt), tnt, modelLabelDefinition.Key).Return(&modelLabelDefinition, nil)
 
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)

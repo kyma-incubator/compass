@@ -148,13 +148,14 @@ func (r *Resolver) UpdateLabelDefinition(ctx context.Context, in graphql.LabelDe
 	if err != nil {
 		return nil, errors.Wrap(err, "while updating label definition")
 	}
-	if err := tx.Commit(); err != nil {
-		return nil, errors.Wrap(err, "while committing transaction")
-	}
 
 	updatedLd, err := r.srv.Get(ctx, tnt, in.Key)
 	if err != nil {
 		return nil, errors.Wrap(err, "while receiving updated label definition")
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, errors.Wrap(err, "while committing transaction")
 	}
 
 	out := r.conv.ToGraphQL(*updatedLd)
