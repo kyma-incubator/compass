@@ -478,9 +478,9 @@ func TestQueryRuntimesWithPagination(t *testing.T) {
 
 	after := 3
 	cursor := ""
-	fullQuiresAmount := int(runtimesAmount / after)
+	queriesForFullPage := int(runtimesAmount / after)
 
-	for i := 0; i < fullQuiresAmount; i++ {
+	for i := 0; i < queriesForFullPage; i++ {
 		runtimesRequest := fixRuntimeRequestWithPagination(after, cursor)
 
 		//WHEN
@@ -510,7 +510,7 @@ func TestQueryRuntimesWithPagination(t *testing.T) {
 	assert.False(t, lastRuntimePage.PageInfo.HasNextPage)
 	assert.Empty(t, lastRuntimePage.PageInfo.EndCursor)
 	require.Len(t, lastRuntimePage.Data, 1)
-	assert.Contains(t, lastRuntimePage.Data[0].Name, "runtime")
+	assert.Equal(t, lastRuntimePage.Data[0], runtimes[lastRuntimePage.Data[0].ID])
 	delete(runtimes, lastRuntimePage.Data[0].ID)
 	assert.Len(t, runtimes, 0)
 }

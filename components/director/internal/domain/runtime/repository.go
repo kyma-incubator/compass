@@ -88,7 +88,7 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 
 	offset, err := pagination.DecodeOffsetCursor(cursor)
 	if err != nil {
-		return nil, errors.Wrap(err, "while getting cursor")
+		return nil, errors.Wrap(err, "while decoding page cursor")
 	}
 
 	queryForRuntime, err := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filter)
@@ -125,7 +125,7 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 		items = append(items, model)
 	}
 
-	totalCount, err := countRuntimesInDatabase(tenantID, persist)
+	totalCount, err := countRuntimesInDatabase(tenantID, persist, queryForRuntime)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting total count of runtimes")
 	}
@@ -134,7 +134,7 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 	endCursor := ""
 	if totalCount > offset+len(items) {
 		hasNextPage = true
-		endCursor = pagination.EncodeOffsetCursor(offset, pageSize)
+		endCursor = pagination.EncodeNextOffsetCursor(offset, pageSize)
 	}
 
 	return &model.RuntimePage{
@@ -217,8 +217,8 @@ func (r *pgRepository) Delete(ctx context.Context, id string) error {
 	return errors.Wrap(err, "while deleting the runtime entity from database")
 }
 
-func countRuntimesInDatabase(tenantUUID uuid.UUID, persist persistence.PersistenceOp) (int, error) {
-	stmt := fmt.Sprintf(`SELECT COUNT (*) FROM %s WHERE "tenant_id" = $1`, runtimeTable)
+func countRuntimesInDatabase(tenantUUID uuid.UUID, persist persistence.PersistenceOp, additionalFilters string) (int, error) {
+	stmt := fmt.Sprintf(`SELECT COUNT (*) FROM %s WHERE "tenant_id" = $1 %s`, runtimeTable, additionalFilters)
 
 	var totalCount int
 	err := persist.Get(&totalCount, stmt, tenantUUID.String())

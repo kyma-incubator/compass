@@ -78,7 +78,7 @@ func TestConvertOffsetToPageCursor(t *testing.T) {
 	offset := 50
 
 	// WHEN
-	nextPageCursor := EncodeOffsetCursor(pageSize, offset)
+	nextPageCursor := EncodeNextOffsetCursor(pageSize, offset)
 
 	// THEN
 	require.Equal(t, "RHBLdEo0ajlqRHExMDA=", nextPageCursor)
@@ -100,7 +100,25 @@ func TestConvertOffsetLimitAndOrderedColumnToSQL(t *testing.T) {
 
 		//THEN
 		require.Error(t, err)
-		assert.Error(t, err, `to use pagination you must provide column to order by`)
+		assert.Contains(t, err.Error(), `to use pagination you must provide column to order by`)
+	})
+
+	t.Run("Return error when page size is smaller than 1", func(t *testing.T) {
+		// WHEN
+		_, err := ConvertOffsetLimitAndOrderedColumnToSQL(-1, 5, "id")
+
+		//THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), `page size cannot be smaller than 1`)
+	})
+
+	t.Run("Return error when offset is smaller than 0", func(t *testing.T) {
+		// WHEN
+		_, err := ConvertOffsetLimitAndOrderedColumnToSQL(5, -1, "id")
+
+		//THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), `offset cannot be smaller than 0`)
 	})
 }
 
@@ -110,7 +128,7 @@ func TestDecodeAndEncodeCursorTogether(t *testing.T) {
 		offset := 4
 
 		//WHEN
-		cursor := EncodeOffsetCursor(offset, 0)
+		cursor := EncodeNextOffsetCursor(offset, 0)
 		decodedOffset, err := DecodeOffsetCursor(cursor)
 
 		//THEN
@@ -124,7 +142,7 @@ func TestDecodeAndEncodeCursorTogether(t *testing.T) {
 		pageSize := 5
 
 		//WHEN
-		cursor := EncodeOffsetCursor(offset, pageSize)
+		cursor := EncodeNextOffsetCursor(offset, pageSize)
 		decodedOffset, err := DecodeOffsetCursor(cursor)
 		//THEN
 		require.NoError(t, err)
@@ -137,7 +155,7 @@ func TestDecodeAndEncodeCursorTogether(t *testing.T) {
 
 		//WHEN
 		offset, err := DecodeOffsetCursor(cursor)
-		encodedCusor := EncodeOffsetCursor(offset, 0)
+		encodedCusor := EncodeNextOffsetCursor(offset, 0)
 
 		//THEN
 		require.NoError(t, err)
@@ -151,7 +169,7 @@ func TestDecodeAndEncodeCursorTogether(t *testing.T) {
 
 		//WHEN
 		offset, err := DecodeOffsetCursor(cursor)
-		encodedCusor := EncodeOffsetCursor(offset, 5)
+		encodedCusor := EncodeNextOffsetCursor(offset, 5)
 
 		//THEN
 		require.NoError(t, err)

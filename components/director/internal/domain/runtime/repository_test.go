@@ -168,10 +168,10 @@ func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntitie
 		AddRow(runtime1ID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp, agentAuthStr).
 		AddRow(runtime2ID, tenantID, "Runtime XYZ", "Description for runtime XYZ", "INITIAL", timestamp, agentAuthStr)
 
+	filterQuery := fmt.Sprintf(`AND "id" IN \(SELECT "runtime_id" FROM "public"."labels" 
+									WHERE "runtime_id" IS NOT NULL AND "tenant_id" = '` + tenantID + `' AND "key" = 'foo'\)`)
 	sqlQuery := fmt.Sprintf(`^SELECT (.+) FROM "public"."runtimes" 
-								WHERE "tenant_id" = \$1  AND "id" IN
-									\(SELECT "runtime_id" FROM "public"."labels" WHERE "runtime_id" IS NOT NULL AND "tenant_id" = '`+tenantID+`' AND "key" = 'foo'\)
-									ORDER BY "id" LIMIT %d OFFSET 0$`, rowSize)
+								WHERE "tenant_id" = \$1 %s ORDER BY "id" LIMIT %d OFFSET 0$`, filterQuery, rowSize)
 
 	sqlMock.ExpectQuery(sqlQuery).
 		WithArgs(tenantID).
@@ -179,7 +179,8 @@ func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntitie
 
 	countRows := sqlMock.NewRows([]string{"count"}).AddRow(rowSize)
 
-	sqlMock.ExpectQuery(`^SELECT COUNT \(\*\) FROM "public"."runtimes" WHERE "tenant_id" = \$1$`).
+	countQuery := fmt.Sprintf(`^SELECT COUNT \(\*\) FROM "public"."runtimes" WHERE "tenant_id" = \$1 %s`, filterQuery)
+	sqlMock.ExpectQuery(countQuery).
 		WithArgs(tenantID).
 		WillReturnRows(countRows)
 

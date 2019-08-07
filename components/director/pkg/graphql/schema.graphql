@@ -472,6 +472,9 @@ input LabelFilter {
 type Query {
     applications(filter: [LabelFilter!], first: Int = 100, after: PageCursor):  ApplicationPage!
     application(id: ID!): Application
+    """
+    Maximum `first` parameter value is 100
+    """
     applicationsForRuntime(runtimeID: ID!, first: Int = 100, after: PageCursor): ApplicationPage!
 
     runtimes(filter: [LabelFilter!], first: Int = 100, after: PageCursor): RuntimePage!

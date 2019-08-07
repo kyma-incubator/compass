@@ -40,7 +40,7 @@ func DecodeOffsetCursor(cursor string) (int, error) {
 	return offset, nil
 }
 
-func EncodeOffsetCursor(offset, pageSize int) string {
+func EncodeNextOffsetCursor(offset, pageSize int) string {
 	nextPage := pageSize + offset
 
 	cursor := surprise + strconv.Itoa(nextPage)
@@ -52,5 +52,14 @@ func ConvertOffsetLimitAndOrderedColumnToSQL(pageSize, offset int, orderedColumn
 	if orderedColumn == "" {
 		return "", errors.New("to use pagination you must provide column to order by")
 	}
+
+	if pageSize < 1 {
+		return "", errors.New("page size cannot be smaller than 1")
+	}
+
+	if offset < 0 {
+		return "", errors.New("offset cannot be smaller than 0")
+	}
+
 	return fmt.Sprintf(` ORDER BY "%s" LIMIT %d OFFSET %d`, orderedColumn, pageSize, offset), nil
 }
