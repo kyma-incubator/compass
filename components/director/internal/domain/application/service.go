@@ -61,6 +61,11 @@ type EventAPIRepository interface {
 	DeleteAllByApplicationID(id string) error
 }
 
+//go:generate mockery -name=RuntimeRepository -output=automock -outpkg=automock -case=underscore
+type RuntimeRepository interface {
+	Exists(ctx context.Context, tenant, id string) (bool, error)
+}
+
 //go:generate mockery -name=LabelUpsertService -output=automock -outpkg=automock -case=underscore
 type LabelUpsertService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
@@ -73,19 +78,28 @@ type UIDService interface {
 }
 
 type service struct {
-	appRepo      ApplicationRepository
-	apiRepo      APIRepository
-	eventAPIRepo EventAPIRepository
-	documentRepo DocumentRepository
-	webhookRepo  WebhookRepository
-	labelRepo    LabelRepository
-
+	appRepo            ApplicationRepository
+	apiRepo            APIRepository
+	eventAPIRepo       EventAPIRepository
+	documentRepo       DocumentRepository
+	webhookRepo        WebhookRepository
+	labelRepo          LabelRepository
+	runtimeRepo        RuntimeRepository
 	labelUpsertService LabelUpsertService
 	uidService         UIDService
 }
 
-func NewService(app ApplicationRepository, webhook WebhookRepository, api APIRepository, eventAPI EventAPIRepository, document DocumentRepository, labelRepo LabelRepository, labelUpsertService LabelUpsertService, uidService UIDService) *service {
-	return &service{appRepo: app, webhookRepo: webhook, apiRepo: api, eventAPIRepo: eventAPI, documentRepo: document, labelRepo: labelRepo, labelUpsertService: labelUpsertService, uidService: uidService}
+func NewService(app ApplicationRepository, webhook WebhookRepository, api APIRepository, eventAPI EventAPIRepository, documentRepo DocumentRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, labelUpsertService LabelUpsertService, uidService UIDService) *service {
+	return &service{
+		appRepo:            app,
+		webhookRepo:        webhook,
+		apiRepo:            api,
+		eventAPIRepo:       eventAPI,
+		documentRepo:       documentRepo,
+		runtimeRepo:        runtimeRepo,
+		labelRepo:          labelRepo,
+		labelUpsertService: labelUpsertService,
+		uidService:         uidService}
 }
 
 func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
@@ -109,6 +123,15 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, page
 		return nil, errors.New("tenantID is not UUID")
 	}
 
+	bool, err := s.runtimeRepo.Exists(ctx, tenantID, runtimeID.String())
+	if err != nil {
+		return nil, errors.Wrap(err, "while checking if runtime exits")
+	}
+
+	if !bool {
+		return nil, errors.New("runtime does not exist")
+	}
+
 	label, err := s.labelRepo.GetByKey(ctx, tenantID, model.RuntimeLabelableObject, runtimeID.String(), model.ScenariosKey)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting scenarios for runtime")
@@ -120,6 +143,7 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, page
 	}
 	if len(scenarios) == 0 {
 		return &model.ApplicationPage{
+			Data:       []*model.Application{},
 			TotalCount: 0,
 			PageInfo: &pagination.Page{
 				StartCursor: "",

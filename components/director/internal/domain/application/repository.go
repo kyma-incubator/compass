@@ -2,8 +2,6 @@ package application
 
 import (
 	"context"
-	"database/sql"
-	"encoding/json"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -88,18 +86,14 @@ func (r *inMemoryRepository) ListByScenarios(ctx context.Context, tenantUUID uui
 	err = persist.Select(&apps, stmt)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return &model.ApplicationPage{
-				Data:       nil,
-				TotalCount: 0,
-				PageInfo: &pagination.Page{
-					StartCursor: "",
-					EndCursor:   "",
-					HasNextPage: false,
-				},
-			}, nil
-		}
-		return nil, errors.Wrap(err, "while getting application for runtime from DB")
+		return &model.ApplicationPage{
+			Data:       []*model.Application{},
+			TotalCount: 0,
+			PageInfo: &pagination.Page{
+				StartCursor: "",
+				EndCursor:   "",
+				HasNextPage: false,
+			}}, nil
 	}
 
 	var items []*model.Application
@@ -181,20 +175,4 @@ func (r *inMemoryRepository) findApplicationNameWithinTenant(tenant, name string
 		}
 	}
 	return false
-}
-
-func getScenariosValuesFromJSON(scenariosJSON interface{}) []string {
-	var scenarios []string
-
-	scen, ok := scenariosJSON.(string)
-	if !ok {
-		return scenarios
-	}
-
-	err := json.Unmarshal([]byte(scen), &scenarios)
-	if err != nil {
-		return scenarios
-	}
-
-	return scenarios
 }

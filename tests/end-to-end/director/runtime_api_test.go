@@ -473,31 +473,31 @@ func TestApplicationsForRuntime(t *testing.T) {
 			Tenant:          tenantID,
 			ApplicationName: "first",
 			WithinTenant:    true,
-			Scenarios:       scenarios[:1],
+			Scenarios:       []string{"default"},
 		},
 		{
 			Tenant:          tenantID,
 			ApplicationName: "second",
 			WithinTenant:    true,
-			Scenarios:       scenarios[:2],
+			Scenarios:       []string{"default", "black-friday-campaign"},
 		},
 		{
 			Tenant:          tenantID,
 			ApplicationName: "third",
 			WithinTenant:    true,
-			Scenarios:       scenarios[:3],
+			Scenarios:       []string{"black-friday-campaign", "christmas-campaign", "summer-campaign"},
 		},
 		{
 			Tenant:          tenantID,
 			ApplicationName: "allscenarios",
 			WithinTenant:    true,
-			Scenarios:       scenarios[:4],
+			Scenarios:       []string{"default", "black-friday-campaign", "christmas-campaign", "summer-campaign"},
 		},
 		{
 			Tenant:          "3b6f72ac-93e4-4659-bf9c-8903239e1e93",
 			ApplicationName: "test",
 			WithinTenant:    false,
-			Scenarios:       scenarios[:2],
+			Scenarios:       []string{"default", "black-friday-campaign"},
 		},
 	}
 
