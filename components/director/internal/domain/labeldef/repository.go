@@ -134,9 +134,18 @@ func (r *repo) Update(ctx context.Context, def model.LabelDefinition) error {
 	}
 
 	stmt := fmt.Sprintf(`UPDATE %s SET "schema" = :schema WHERE "id" = :id`, tableName)
-	_, err = db.NamedExec(stmt, entity)
+	result, err := db.NamedExec(stmt, entity)
 	if err != nil {
 		return errors.Wrap(err, "while updating Label Definition")
+	}
+
+	rowAffected, err := result.RowsAffected()
+	if err != nil {
+		return errors.Wrapf(err, "while receiving affected rows in db")
+	}
+
+	if rowAffected == 0 {
+		return errors.New("no row was affected by query")
 	}
 
 	return nil
