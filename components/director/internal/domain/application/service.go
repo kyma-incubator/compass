@@ -123,12 +123,12 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, page
 		return nil, errors.New("tenantID is not UUID")
 	}
 
-	bool, err := s.runtimeRepo.Exists(ctx, tenantID, runtimeID.String())
+	exist, err := s.runtimeRepo.Exists(ctx, tenantID, runtimeID.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "while checking if runtime exits")
 	}
 
-	if !bool {
+	if !exist {
 		return nil, errors.New("runtime does not exist")
 	}
 

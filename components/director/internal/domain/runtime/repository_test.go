@@ -171,8 +171,8 @@ func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntitie
 	filterQuery := fmt.Sprintf(`  AND "id" IN 
 						\(SELECT "runtime_id" FROM "public"."labels" 
 							WHERE "runtime_id" IS NOT NULL 
-							AND "tenant_id" = '` + tenantID + `' 
-							AND "key" = 'foo'\)`)
+							AND "tenant_id" = '%s' 
+							AND "key" = 'foo'\)`, tenantID)
 	sqlQuery := fmt.Sprintf(`^SELECT (.+) FROM "public"."runtimes" 
 								WHERE "tenant_id" = \$1 %s ORDER BY "id" LIMIT %d OFFSET 0$`, filterQuery, rowSize)
 
