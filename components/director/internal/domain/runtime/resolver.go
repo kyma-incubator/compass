@@ -21,7 +21,7 @@ type RuntimeService interface {
 	Update(ctx context.Context, id string, in model.RuntimeInput) error
 	Get(ctx context.Context, id string) (*model.Runtime, error)
 	Delete(ctx context.Context, id string) error
-	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.RuntimePage, error)
+	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
 	SetLabel(ctx context.Context, label *model.LabelInput) error
 	GetLabel(ctx context.Context, runtimeID string, key string) (*model.Label, error)
 	ListLabels(ctx context.Context, runtimeID string) (map[string]*model.Label, error)
@@ -50,8 +50,6 @@ func NewResolver(transact persistence.Transactioner, svc RuntimeService, conv Ru
 }
 
 // TODO: Proper error handling
-// TODO: Pagination
-
 func (r *Resolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.RuntimePage, error) {
 	labelFilter := labelfilter.MultipleFromGraphQL(filter)
 
@@ -68,7 +66,11 @@ func (r *Resolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, 
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	runtimesPage, err := r.svc.List(ctx, labelFilter, first, &cursor)
+	if first == nil {
+		return nil, errors.New("missing required parameter 'first'")
+	}
+
+	runtimesPage, err := r.svc.List(ctx, labelFilter, *first, cursor)
 	if err != nil {
 		return nil, err
 	}
@@ -79,11 +81,10 @@ func (r *Resolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, 
 	}
 
 	gqlRuntimes := r.converter.MultipleToGraphQL(runtimesPage.Data)
-	totalCount := len(gqlRuntimes)
 
 	return &graphql.RuntimePage{
 		Data:       gqlRuntimes,
-		TotalCount: totalCount,
+		TotalCount: runtimesPage.TotalCount,
 		PageInfo: &graphql.PageInfo{
 			StartCursor: graphql.PageCursor(runtimesPage.PageInfo.StartCursor),
 			EndCursor:   graphql.PageCursor(runtimesPage.PageInfo.EndCursor),

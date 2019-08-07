@@ -2,7 +2,11 @@ package runtime_test
 
 import (
 	"context"
+	"encoding/base64"
+	"errors"
 	"fmt"
+	"regexp"
+	"strconv"
 	"testing"
 	"time"
 
@@ -51,42 +55,101 @@ func TestPgRepository_GetByID_ShouldReturnRuntimeModelForRuntimeEntity(t *testin
 	assert.Equal(t, tenantID, modelRuntime.Tenant)
 }
 
-func TestPgRepository_List_ShouldReturnRuntimeModelsForRuntimeEntities(t *testing.T) {
-	// given
-	runtime1ID := uuid.New().String()
-	runtime2ID := uuid.New().String()
-	tenantID := uuid.New().String()
-
+func TestPgRepository_List(t *testing.T) {
+	//GIVEN
 	timestamp, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
 
-	sqlxDB, sqlMock := mockDatabase(t)
+	tenantID := uuid.New().String()
+	runtime1ID := uuid.New().String()
+	runtime2ID := uuid.New().String()
 
-	rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth"}).
-		AddRow(runtime1ID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp, agentAuthStr).
-		AddRow(runtime2ID, tenantID, "Runtime XYZ", "Description for runtime XYZ", "INITIAL", timestamp, agentAuthStr)
+	limit := 2
+	offset := 3
 
-	sqlMock.ExpectQuery(`^SELECT (.+) FROM "public"."runtimes" WHERE "tenant_id" = \$1$`).
-		WithArgs(tenantID).
-		WillReturnRows(rows)
+	pageableQuery := `^SELECT (.+) FROM "public"."runtimes" WHERE "tenant_id" = \$1 ORDER BY "id" LIMIT %d OFFSET %d$`
+	countQuery := regexp.QuoteMeta(`SELECT COUNT (*) FROM "public"."runtimes" WHERE "tenant_id" = $1`)
 
-	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+	testCases := []struct {
+		Name           string
+		InputCursor    string
+		InputPageSize  int
+		ExpectedOffset int
+		ExpectedLimit  int
+		Rows           *sqlmock.Rows
+		TotalCount     int
+		ExpectedError  error
+	}{
+		{
+			Name:           "Success getting first page",
+			InputPageSize:  2,
+			InputCursor:    "",
+			ExpectedOffset: 0,
+			ExpectedLimit:  limit,
+			ExpectedError:  nil,
+			Rows: sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth"}).
+				AddRow(runtime1ID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp, agentAuthStr).
+				AddRow(runtime2ID, tenantID, "Runtime XYZ", "Description for runtime XYZ", "INITIAL", timestamp, agentAuthStr),
+			TotalCount: 2,
+		},
+		{
+			Name:           "Success getting next page",
+			InputPageSize:  2,
+			InputCursor:    convertIntToBase64String(offset),
+			ExpectedOffset: offset,
+			ExpectedLimit:  limit,
+			ExpectedError:  nil,
+			Rows: sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth"}).
+				AddRow(runtime1ID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp, agentAuthStr).
+				AddRow(runtime2ID, tenantID, "Runtime XYZ", "Description for runtime XYZ", "INITIAL", timestamp, agentAuthStr),
+			TotalCount: 2,
+		},
+		{
+			Name:          "Returns error when decoded cursor is non-positive number",
+			InputPageSize: 2,
+			InputCursor:   convertIntToBase64String(-3),
+			ExpectedError: errors.New("cursor is not correct"),
+		},
+	}
 
-	pgRepository := runtime.NewPostgresRepository()
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			sqlxDB, sqlMock := mockDatabase(t)
+			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+			pgRepository := runtime.NewPostgresRepository()
+			expectedQuery := fmt.Sprintf(pageableQuery, testCase.ExpectedLimit, testCase.ExpectedOffset)
 
-	// when
-	modelRuntimePage, err := pgRepository.List(ctx, tenantID, nil, nil, nil)
+			sqlMock.ExpectQuery(expectedQuery).
+				WithArgs(tenantID).
+				WillReturnRows(testCase.Rows)
 
-	//then
-	assert.NoError(t, err)
-	assert.Equal(t, 2, modelRuntimePage.TotalCount)
-	require.NoError(t, sqlMock.ExpectationsWereMet())
+			countRow := sqlMock.NewRows([]string{"count"}).AddRow(testCase.TotalCount)
 
-	assert.Equal(t, runtime1ID, modelRuntimePage.Data[0].ID)
-	assert.Equal(t, tenantID, modelRuntimePage.Data[0].Tenant)
+			sqlMock.ExpectQuery(countQuery).
+				WithArgs(tenantID).
+				WillReturnRows(countRow)
 
-	assert.Equal(t, runtime2ID, modelRuntimePage.Data[1].ID)
-	assert.Equal(t, tenantID, modelRuntimePage.Data[1].Tenant)
+			//THEN
+			modelRuntimePage, err := pgRepository.List(ctx, tenantID, nil, testCase.InputPageSize, testCase.InputCursor)
+
+			//THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedLimit, modelRuntimePage.TotalCount)
+				require.NoError(t, sqlMock.ExpectationsWereMet())
+
+				assert.Equal(t, runtime1ID, modelRuntimePage.Data[0].ID)
+				assert.Equal(t, tenantID, modelRuntimePage.Data[0].Tenant)
+
+				assert.Equal(t, runtime2ID, modelRuntimePage.Data[1].ID)
+				assert.Equal(t, tenantID, modelRuntimePage.Data[1].Tenant)
+			}
+		})
+	}
 }
 
 func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntities(t *testing.T) {
@@ -94,6 +157,7 @@ func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntitie
 	runtime1ID := uuid.New().String()
 	runtime2ID := uuid.New().String()
 	tenantID := uuid.New().String()
+	rowSize := 2
 
 	timestamp, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
@@ -104,9 +168,21 @@ func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntitie
 		AddRow(runtime1ID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp, agentAuthStr).
 		AddRow(runtime2ID, tenantID, "Runtime XYZ", "Description for runtime XYZ", "INITIAL", timestamp, agentAuthStr)
 
-	sqlMock.ExpectQuery(`^SELECT (.+) FROM "public"."runtimes" WHERE "tenant_id" = \$1  AND "id" IN \(SELECT "runtime_id" FROM "public"."labels" WHERE "runtime_id" IS NOT NULL AND "tenant_id" = '` + tenantID + `' AND "key" = 'foo'\)$`).
+	filterQuery := fmt.Sprintf(`AND "id" IN \(SELECT "runtime_id" FROM "public"."labels" 
+									WHERE "runtime_id" IS NOT NULL AND "tenant_id" = '` + tenantID + `' AND "key" = 'foo'\)`)
+	sqlQuery := fmt.Sprintf(`^SELECT (.+) FROM "public"."runtimes" 
+								WHERE "tenant_id" = \$1 %s ORDER BY "id" LIMIT %d OFFSET 0$`, filterQuery, rowSize)
+
+	sqlMock.ExpectQuery(sqlQuery).
 		WithArgs(tenantID).
 		WillReturnRows(rows)
+
+	countRows := sqlMock.NewRows([]string{"count"}).AddRow(rowSize)
+
+	countQuery := fmt.Sprintf(`^SELECT COUNT \(\*\) FROM "public"."runtimes" WHERE "tenant_id" = \$1 %s`, filterQuery)
+	sqlMock.ExpectQuery(countQuery).
+		WithArgs(tenantID).
+		WillReturnRows(countRows)
 
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
@@ -118,11 +194,11 @@ func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntitie
 	pgRepository := runtime.NewPostgresRepository()
 
 	// when
-	modelRuntimePage, err := pgRepository.List(ctx, tenantID, filter, nil, nil)
+	modelRuntimePage, err := pgRepository.List(ctx, tenantID, filter, rowSize, "")
 
 	//then
 	assert.NoError(t, err)
-	assert.Equal(t, 2, modelRuntimePage.TotalCount)
+	assert.Equal(t, rowSize, modelRuntimePage.TotalCount)
 	require.NoError(t, sqlMock.ExpectationsWereMet())
 
 	assert.Equal(t, runtime1ID, modelRuntimePage.Data[0].ID)
@@ -250,4 +326,8 @@ func mockDatabase(t *testing.T) (*sqlx.DB, sqlmock.Sqlmock) {
 	sqlxDB := sqlx.NewDb(sqlDB, "sqlmock")
 
 	return sqlxDB, sqlMock
+}
+
+func convertIntToBase64String(number int) string {
+	return string(base64.StdEncoding.EncodeToString([]byte(strconv.Itoa(number))))
 }

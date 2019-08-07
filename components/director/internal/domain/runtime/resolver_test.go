@@ -569,7 +569,7 @@ func TestResolver_Runtimes(t *testing.T) {
 			},
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("List", contextParam, filter, &first, &after).Return(fixRuntimePage(modelRuntimes), nil).Once()
+				svc.On("List", contextParam, filter, first, after).Return(fixRuntimePage(modelRuntimes), nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -598,7 +598,7 @@ func TestResolver_Runtimes(t *testing.T) {
 			},
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("List", contextParam, filter, &first, &after).Return(nil, testErr).Once()
+				svc.On("List", contextParam, filter, first, after).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {

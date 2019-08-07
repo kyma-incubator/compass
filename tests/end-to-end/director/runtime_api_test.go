@@ -453,6 +453,68 @@ func TestQuerySpecificRuntime(t *testing.T) {
 	assert.Equal(t, createdRuntime.Description, queriedRuntime.Description)
 }
 
+func TestQueryRuntimesWithPagination(t *testing.T) {
+	//GIVEN
+	ctx := context.Background()
+	runtimes := make(map[string]*graphql.Runtime)
+	runtimesAmount := 10
+	for i := 0; i < runtimesAmount; i++ {
+		runtimeInput := graphql.RuntimeInput{
+			Name: fmt.Sprintf("runtime-%d", i),
+		}
+		runtimeInputGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInput)
+		require.NoError(t, err)
+
+		createReq := fixCreateRuntimeRequst(runtimeInputGQL)
+
+		runtime := graphql.Runtime{}
+		err = tc.RunQuery(ctx, createReq, &runtime)
+
+		require.NoError(t, err)
+		require.NotEmpty(t, runtime.ID)
+		defer deleteRuntime(t, runtime.ID)
+		runtimes[runtime.ID] = &runtime
+	}
+
+	after := 3
+	cursor := ""
+	queriesForFullPage := int(runtimesAmount / after)
+
+	for i := 0; i < queriesForFullPage; i++ {
+		runtimesRequest := fixRuntimeRequestWithPagination(after, cursor)
+
+		//WHEN
+		runtimePage := graphql.RuntimePage{}
+		err := tc.RunQuery(ctx, runtimesRequest, &runtimePage)
+		require.NoError(t, err)
+
+		//THEN
+		assert.Equal(t, cursor, string(runtimePage.PageInfo.StartCursor))
+		assert.True(t, runtimePage.PageInfo.HasNextPage)
+		assert.Len(t, runtimePage.Data, after)
+		for _, runtime := range runtimePage.Data {
+			assert.Equal(t, runtime, runtimes[runtime.ID])
+			delete(runtimes, runtime.ID)
+		}
+		cursor = string(runtimePage.PageInfo.EndCursor)
+	}
+
+	//WHEN get last page with last runtime
+	runtimesRequest := fixRuntimeRequestWithPagination(after, cursor)
+	lastRuntimePage := graphql.RuntimePage{}
+	err := tc.RunQuery(ctx, runtimesRequest, &lastRuntimePage)
+	require.NoError(t, err)
+	saveQueryInExamples(t, runtimesRequest.Query(), "query runtimes with pagination")
+
+	//THEN
+	assert.False(t, lastRuntimePage.PageInfo.HasNextPage)
+	assert.Empty(t, lastRuntimePage.PageInfo.EndCursor)
+	require.Len(t, lastRuntimePage.Data, 1)
+	assert.Equal(t, lastRuntimePage.Data[0], runtimes[lastRuntimePage.Data[0].ID])
+	delete(runtimes, lastRuntimePage.Data[0].ID)
+	assert.Len(t, runtimes, 0)
+}
+
 func deleteRuntime(t *testing.T, id string) {
 	delReq := gcli.NewRequest(
 		fmt.Sprintf(`mutation{deleteRuntime(id: "%s") {
