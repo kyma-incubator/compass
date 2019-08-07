@@ -67,7 +67,7 @@ func (r *Resolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, 
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	if first == nil {
-		return nil, errors.New("first is nil, internal server error")
+		return nil, errors.New("missing required parameter 'first'")
 	}
 
 	runtimesPage, err := r.svc.List(ctx, labelFilter, *first, cursor)
