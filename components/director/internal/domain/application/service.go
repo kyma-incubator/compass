@@ -24,7 +24,7 @@ type ApplicationRepository interface {
 //go:generate mockery -name=LabelRepository -output=automock -outpkg=automock -case=underscore
 type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
-	List(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
+	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 	DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error
 }
@@ -297,7 +297,7 @@ func (s *service) ListLabels(ctx context.Context, applicationID string) (map[str
 		return nil, fmt.Errorf("Application with ID %s doesn't exist", applicationID)
 	}
 
-	labels, err := s.labelRepo.List(ctx, appTenant, model.ApplicationLabelableObject, applicationID)
+	labels, err := s.labelRepo.ListForObject(ctx, appTenant, model.ApplicationLabelableObject, applicationID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting label for Application")
 	}

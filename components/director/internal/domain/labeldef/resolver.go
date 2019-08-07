@@ -39,6 +39,7 @@ type Service interface {
 	Create(ctx context.Context, ld model.LabelDefinition) (model.LabelDefinition, error)
 	Get(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error)
 	List(ctx context.Context, tenant string) ([]model.LabelDefinition, error)
+	Update(ctx context.Context, ld model.LabelDefinition) error
 }
 
 func (r *Resolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDefinitionInput) (*graphql.LabelDefinition, error) {
@@ -55,6 +56,7 @@ func (r *Resolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDe
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	// TODO: Use LabelDefinitionInput
 	ld := r.conv.FromGraphQL(in, tnt)
 	createdLd, err := r.srv.Create(ctx, ld)
 	if err != nil {
@@ -123,4 +125,40 @@ func (r *Resolver) LabelDefinition(ctx context.Context, key string) (*graphql.La
 	}
 	c := r.conv.ToGraphQL(*def)
 	return &c, nil
+}
+
+func (r *Resolver) UpdateLabelDefinition(ctx context.Context, in graphql.LabelDefinitionInput) (*graphql.LabelDefinition, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := r.transactioner.Begin()
+	if err != nil {
+		return nil, errors.Wrap(err, "while starting transaction")
+	}
+	defer r.transactioner.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	// TODO: Use LabelDefinitionInput
+	ld := r.conv.FromGraphQL(in, tnt)
+
+	err = r.srv.Update(ctx, ld)
+	if err != nil {
+		return nil, errors.Wrap(err, "while updating label definition")
+	}
+
+	updatedLd, err := r.srv.Get(ctx, tnt, in.Key)
+	if err != nil {
+		return nil, errors.Wrap(err, "while receiving updated label definition")
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, errors.Wrap(err, "while committing transaction")
+	}
+
+	out := r.conv.ToGraphQL(*updatedLd)
+
+	return &out, nil
 }

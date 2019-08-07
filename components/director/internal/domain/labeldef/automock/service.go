@@ -78,3 +78,17 @@ func (_m *Service) List(ctx context.Context, tenant string) ([]model.LabelDefini
 
 	return r0, r1
 }
+
+// Update provides a mock function with given fields: ctx, ld
+func (_m *Service) Update(ctx context.Context, ld model.LabelDefinition) error {
+	ret := _m.Called(ctx, ld)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.LabelDefinition) error); ok {
+		r0 = rf(ctx, ld)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}

@@ -3,6 +3,7 @@
 package automock
 
 import context "context"
+
 import mock "github.com/stretchr/testify/mock"
 import model "github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -55,6 +56,29 @@ func (_m *LabelRepository) GetByKey(ctx context.Context, tenant string, objectTy
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.LabelableObject, string, string) error); ok {
 		r1 = rf(ctx, tenant, objectType, objectID, key)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListByKey provides a mock function with given fields: ctx, tenant, key
+func (_m *LabelRepository) ListByKey(ctx context.Context, tenant string, key string) ([]*model.Label, error) {
+	ret := _m.Called(ctx, tenant, key)
+
+	var r0 []*model.Label
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*model.Label); ok {
+		r0 = rf(ctx, tenant, key)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Label)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenant, key)
 	} else {
 		r1 = ret.Error(1)
 	}

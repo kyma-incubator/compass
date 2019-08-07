@@ -70,7 +70,7 @@ func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 	docSvc := document.NewService(docRepo, uidService)
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelUpsertService, uidService)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
-	labelDefService := labeldef.NewService(labelDefRepo, uidService)
+	labelDefService := labeldef.NewService(labelDefRepo, labelRepo, uidService)
 
 	return &RootResolver{
 		app:         application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter),
@@ -197,7 +197,7 @@ func (r *mutationResolver) CreateLabelDefinition(ctx context.Context, in graphql
 	return r.labelDef.CreateLabelDefinition(ctx, in)
 }
 func (r *mutationResolver) UpdateLabelDefinition(ctx context.Context, in graphql.LabelDefinitionInput) (*graphql.LabelDefinition, error) {
-	panic("not implemented")
+	return r.labelDef.UpdateLabelDefinition(ctx, in)
 }
 func (r *mutationResolver) DeleteLabelDefinition(ctx context.Context, key string, deleteRelatedLabels *bool) (*graphql.LabelDefinition, error) {
 	panic("not implemented")

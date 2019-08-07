@@ -1,7 +1,10 @@
 package jsonschema
 
 import (
+	"encoding/json"
+
 	"github.com/pkg/errors"
+
 	"github.com/xeipuuv/gojsonschema"
 )
 
@@ -53,7 +56,7 @@ func (v *validator) ValidateString(json string) (bool, error) {
 	jsonLoader := gojsonschema.NewStringLoader(json)
 	result, err := v.schema.Validate(jsonLoader)
 	if err != nil {
-		return false, err
+		return false, errors.Wrapf(err, "while validating json schema as string")
 	}
 
 	return result.Valid(), nil
@@ -64,11 +67,10 @@ func (v *validator) ValidateRaw(value interface{}) (bool, error) {
 		return true, nil
 	}
 
-	jsonLoader := gojsonschema.NewRawLoader(value)
-	result, err := v.schema.Validate(jsonLoader)
+	valueMarshalled, err := json.Marshal(value)
 	if err != nil {
-		return false, errors.Wrapf(err, "while validating value %+v against schema %+v", value, v.schema)
+		return false, errors.Wrapf(err, "while marshalling raw value to json")
 	}
 
-	return result.Valid(), nil
+	return v.ValidateString(string(valueMarshalled))
 }

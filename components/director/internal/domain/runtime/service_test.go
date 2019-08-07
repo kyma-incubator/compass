@@ -681,7 +681,7 @@ func TestService_ListLabel(t *testing.T) {
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("List", ctx, tnt, model.RuntimeLabelableObject, runtimeID).Return(labels, nil).Once()
+				repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeID).Return(labels, nil).Once()
 				return repo
 			},
 			InputApplicationID: runtimeID,
@@ -699,7 +699,7 @@ func TestService_ListLabel(t *testing.T) {
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("List", ctx, tnt, model.RuntimeLabelableObject, runtimeID).Return(nil, testErr).Once()
+				repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeID).Return(nil, testErr).Once()
 				return repo
 			},
 			InputApplicationID: runtimeID,

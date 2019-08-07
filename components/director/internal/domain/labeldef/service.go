@@ -2,6 +2,9 @@ package labeldef
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
@@ -9,12 +12,14 @@ import (
 
 type service struct {
 	repo       Repository
+	labelRepo  LabelRepository
 	uidService UIDService
 }
 
-func NewService(r Repository, uidService UIDService) *service {
+func NewService(repo Repository, labelRepo LabelRepository, uidService UIDService) *service {
 	return &service{
-		repo:       r,
+		repo:       repo,
+		labelRepo:  labelRepo,
 		uidService: uidService,
 	}
 }
@@ -24,6 +29,17 @@ type Repository interface {
 	Create(ctx context.Context, def model.LabelDefinition) error
 	GetByKey(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error)
 	List(ctx context.Context, tenant string) ([]model.LabelDefinition, error)
+	Update(ctx context.Context, def model.LabelDefinition) error
+	Exists(ctx context.Context, tenant string, key string) (bool, error)
+}
+
+//go:generate mockery -name=LabelRepository -output=automock -outpkg=automock -case=underscore
+type LabelRepository interface {
+	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
+	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
+	ListByKey(ctx context.Context, tenant, key string) ([]*model.Label, error)
+	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
+	DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -44,7 +60,6 @@ func (s *service) Create(ctx context.Context, def model.LabelDefinition) (model.
 	// TODO get from DB?
 	return def, nil
 }
-
 func (s *service) Get(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error) {
 	def, err := s.repo.GetByKey(ctx, tenant, key)
 	if err != nil {
@@ -59,4 +74,57 @@ func (s *service) List(ctx context.Context, tenant string) ([]model.LabelDefinit
 		return nil, errors.Wrap(err, "while fetching Label Definitions")
 	}
 	return defs, nil
+}
+
+func (s *service) Update(ctx context.Context, def model.LabelDefinition) error {
+	if err := def.ValidateForUpdate(); err != nil {
+		return errors.Wrap(err, "while validating Label Definition")
+	}
+
+	ld, err := s.repo.GetByKey(ctx, def.Tenant, def.Key)
+	if err != nil {
+		return errors.Wrap(err, "while receiving Label Definition")
+	}
+
+	if ld == nil {
+		return errors.Errorf("definition with %s key doesn't exist", def.Key)
+	}
+
+	ld.Schema = def.Schema
+
+	if def.Schema != nil {
+		if err := s.validateExistingLabelsAgainstSchema(ctx, def.Schema, def.Tenant, def.Key); err != nil {
+			return err
+		}
+	}
+
+	if err := s.repo.Update(ctx, *ld); err != nil {
+		return errors.Wrap(err, "while updating Label Definition")
+	}
+
+	return nil
+}
+
+func (s *service) validateExistingLabelsAgainstSchema(ctx context.Context, schema *interface{}, tenant, key string) error {
+	existingLabels, err := s.labelRepo.ListByKey(ctx, tenant, key)
+	if err != nil {
+		return errors.Wrap(err, "while listing labels by key")
+	}
+
+	validator, err := jsonschema.NewValidatorFromRawSchema(schema)
+	if err != nil {
+		return errors.Wrap(err, "while creating validator for new schema")
+	}
+
+	for _, label := range existingLabels {
+		ok, err := validator.ValidateRaw(label.Value)
+		if err != nil {
+			return errors.Wrap(err, "while validating existing labels against new schema")
+		}
+
+		if !ok {
+			return fmt.Errorf(`label with key "%s" is not valid against new schema for %s with ID "%s"`, label.Key, label.ObjectType, label.ObjectID)
+		}
+	}
+	return nil
 }

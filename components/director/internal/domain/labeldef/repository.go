@@ -121,3 +121,32 @@ func (r *repo) List(ctx context.Context, tenant string) ([]model.LabelDefinition
 	}
 	return out, nil
 }
+
+func (r *repo) Update(ctx context.Context, def model.LabelDefinition) error {
+	db, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return errors.Wrap(err, "while fetching persistence from context")
+	}
+
+	entity, err := r.conv.ToEntity(def)
+	if err != nil {
+		return errors.Wrap(err, "while creating Label Definition entity from model")
+	}
+
+	stmt := fmt.Sprintf(`UPDATE %s SET "schema" = :schema WHERE "id" = :id`, tableName)
+	result, err := db.NamedExec(stmt, entity)
+	if err != nil {
+		return errors.Wrap(err, "while updating Label Definition")
+	}
+
+	rowAffected, err := result.RowsAffected()
+	if err != nil {
+		return errors.Wrapf(err, "while receiving affected rows in db")
+	}
+
+	if rowAffected == 0 {
+		return errors.New("no row was affected by query")
+	}
+
+	return nil
+}

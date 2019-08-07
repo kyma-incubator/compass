@@ -88,7 +88,7 @@ func (r *repository) GetByKey(ctx context.Context, tenant string, objectType mod
 	return &labelModel, nil
 }
 
-func (r *repository) List(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error) {
+func (r *repository) ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching DB from context")
@@ -115,6 +115,35 @@ func (r *repository) List(ctx context.Context, tenant string, objectType model.L
 	}
 
 	return labelsMap, nil
+}
+
+func (r *repository) ListByKey(ctx context.Context, tenant, key string) ([]*model.Label, error) {
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching DB from context")
+	}
+
+	stmt := fmt.Sprintf(`SELECT %s FROM %s WHERE "key" = $1 AND "tenant_id" = $2`,
+		fields, tableName)
+
+	var entities []Entity
+	err = persist.Select(&entities, stmt, key, tenant)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching Labels from DB")
+	}
+
+	var labels []*model.Label
+
+	for _, entity := range entities {
+		m, err := r.conv.FromEntity(entity)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting Label entity to model")
+		}
+
+		labels = append(labels, &m)
+	}
+
+	return labels, nil
 }
 
 func (r *repository) Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error {

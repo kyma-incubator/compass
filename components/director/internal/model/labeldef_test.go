@@ -63,3 +63,51 @@ func TestValidateLabelDef(t *testing.T) {
 	})
 
 }
+
+func TestValidateForUpdateLabelDef(t *testing.T) {
+	t.Run("valid input when schema not provided", func(t *testing.T) {
+		// GIVEN
+		in := model.LabelDefinition{Key: "key", Tenant: "tenant"}
+		// WHEN
+		err := in.ValidateForUpdate()
+		// THEN
+		require.NoError(t, err)
+
+	})
+	t.Run("valid input when correct schema provided", func(t *testing.T) {
+		// TODO
+		t.SkipNow()
+
+	})
+
+	t.Run("key is required", func(t *testing.T) {
+		// GIVEN
+		in := model.LabelDefinition{Tenant: "tenant"}
+		// WHEN
+		err := in.ValidateForUpdate()
+		// THEN
+		require.EqualError(t, err, "missing Key field")
+	})
+
+	t.Run("tenant is required", func(t *testing.T) {
+		// GIVEN
+		in := model.LabelDefinition{Key: "key"}
+		// WHEN
+		err := in.ValidateForUpdate()
+		// THEN
+		require.EqualError(t, err, "missing Tenant field")
+	})
+
+	t.Run("invalid schema", func(t *testing.T) {
+		// TODO
+		t.SkipNow()
+		// GIVEN
+		var sch interface{} = "anything"
+		in := model.LabelDefinition{Key: "key", Tenant: "tenant", Schema: &sch}
+		// WHEN
+		err := in.ValidateForUpdate()
+		// THEN
+		require.EqualError(t, err, "xxx")
+	})
+
+}

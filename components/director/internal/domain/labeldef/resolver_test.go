@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/persistence"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -118,7 +120,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 
 		mockService := &automock.Service{}
 		defer mockService.AssertExpectations(t)
-		mockService.On("Create", mock.Anything /*ctx TODO*/, model.LabelDefinition{Key: "scenarios", Tenant: tnt}).
+		mockService.On("Create", contextThatHasTenant(tnt), model.LabelDefinition{Key: "scenarios", Tenant: tnt}).
 			Return(model.LabelDefinition{Key: "scenarios", Tenant: tnt, ID: "id"}, nil)
 
 		mockConverter := &automock.Converter{}
@@ -421,6 +423,133 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 		// THEN
 		require.EqualError(t, err, "while committing transaction: commit errror")
 
+	})
+}
+
+func TestUpdateLabelDefinition(t *testing.T) {
+
+	tnt := "tenant"
+	gqlLabelDefinitionInput := graphql.LabelDefinitionInput{
+		Key:    "key",
+		Schema: fixBasicSchema(t),
+	}
+	modelLabelDefinition := model.LabelDefinition{
+		Key:    "key",
+		Schema: fixBasicSchema(t),
+	}
+	updatedGQLLabelDefinition := graphql.LabelDefinition{
+		Key:    "key",
+		Schema: fixBasicSchema(t),
+	}
+
+	t.Run("successfully updated Label Definition", func(t *testing.T) {
+		// GIVEN
+		mockPersistanceCtx := &pautomock.PersistenceTxOp{}
+		defer mockPersistanceCtx.AssertExpectations(t)
+		mockPersistanceCtx.On("Commit").Return(nil)
+
+		mockTransactioner := &pautomock.Transactioner{}
+		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
+		mockTransactioner.On("RollbackUnlessCommited", mock.Anything).Return(nil)
+		defer mockTransactioner.AssertExpectations(t)
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromGraphQL", gqlLabelDefinitionInput, tnt).Return(modelLabelDefinition)
+		mockConverter.On("ToGraphQL", modelLabelDefinition).Return(updatedGQLLabelDefinition)
+
+		mockService := &automock.Service{}
+		defer mockService.AssertExpectations(t)
+		mockService.On("Update", contextThatHasTenant(tnt), modelLabelDefinition).Return(nil)
+		mockService.On("Get", contextThatHasTenant(tnt), tnt, modelLabelDefinition.Key).Return(&modelLabelDefinition, nil).Once()
+
+		ctx := persistence.SaveToContext(context.TODO(), nil)
+		ctx = tenant.SaveToContext(ctx, tnt)
+		sut := labeldef.NewResolver(mockService, mockConverter, mockTransactioner)
+		// WHEN
+		actual, err := sut.UpdateLabelDefinition(ctx, gqlLabelDefinitionInput)
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, "key", actual.Key)
+	})
+	t.Run("missing tenant in context", func(t *testing.T) {
+		// GIVEN
+		sut := labeldef.NewResolver(nil, nil, nil)
+		// WHEN
+		_, err := sut.UpdateLabelDefinition(context.TODO(), graphql.LabelDefinitionInput{})
+		// THEN
+		require.EqualError(t, err, "Cannot read tenant from context")
+	})
+
+	t.Run("got error on starting transaction", func(t *testing.T) {
+		// GIVEN
+		mockTransactioner := &pautomock.Transactioner{}
+		mockTransactioner.On("Begin").Return(nil, errors.New("some error"))
+		defer mockTransactioner.AssertExpectations(t)
+		ctx := persistence.SaveToContext(context.TODO(), nil)
+		ctx = tenant.SaveToContext(ctx, tnt)
+		sut := labeldef.NewResolver(nil, nil, mockTransactioner)
+		// WHEN
+		_, err := sut.UpdateLabelDefinition(ctx, graphql.LabelDefinitionInput{})
+		// THEN
+		require.EqualError(t, err, "while starting transaction: some error")
+	})
+
+	t.Run("got error on updating Label Definition", func(t *testing.T) {
+		// GIVEN
+		mockPersistanceCtx := &pautomock.PersistenceTxOp{}
+		defer mockPersistanceCtx.AssertExpectations(t)
+
+		mockTransactioner := &pautomock.Transactioner{}
+		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
+		mockTransactioner.On("RollbackUnlessCommited", mock.Anything).Return(nil)
+		defer mockTransactioner.AssertExpectations(t)
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromGraphQL", gqlLabelDefinitionInput, tnt).Return(modelLabelDefinition)
+
+		mockService := &automock.Service{}
+		defer mockService.AssertExpectations(t)
+		mockService.On("Update", contextThatHasTenant(tnt), modelLabelDefinition).Return(errors.New("some error"))
+
+		ctx := persistence.SaveToContext(context.TODO(), nil)
+		ctx = tenant.SaveToContext(ctx, tnt)
+		sut := labeldef.NewResolver(mockService, mockConverter, mockTransactioner)
+		// WHEN
+		_, err := sut.UpdateLabelDefinition(ctx, gqlLabelDefinitionInput)
+		// THEN
+		require.EqualError(t, err, "while updating label definition: some error")
+
+	})
+
+	t.Run("got error on committing transaction", func(t *testing.T) {
+		// GIVEN
+		mockPersistanceCtx := &pautomock.PersistenceTxOp{}
+		defer mockPersistanceCtx.AssertExpectations(t)
+		mockPersistanceCtx.On("Commit").Return(errors.New("error on commit"))
+
+		mockTransactioner := &pautomock.Transactioner{}
+		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
+		mockTransactioner.On("RollbackUnlessCommited", mock.Anything).Return(nil)
+		defer mockTransactioner.AssertExpectations(t)
+
+		mockService := &automock.Service{}
+		defer mockService.AssertExpectations(t)
+		mockService.On("Update", contextThatHasTenant(tnt), modelLabelDefinition).Return(nil)
+		mockService.On("Get", contextThatHasTenant(tnt), tnt, modelLabelDefinition.Key).Return(&modelLabelDefinition, nil)
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromGraphQL", gqlLabelDefinitionInput, tnt).Return(modelLabelDefinition)
+
+		ctx := persistence.SaveToContext(context.TODO(), nil)
+		ctx = tenant.SaveToContext(ctx, tnt)
+		sut := labeldef.NewResolver(mockService, mockConverter, mockTransactioner)
+		// WHEN
+		_, err := sut.UpdateLabelDefinition(ctx, gqlLabelDefinitionInput)
+		// THEN
+		require.EqualError(t, err, "while committing transaction: error on commit")
 	})
 }
 
