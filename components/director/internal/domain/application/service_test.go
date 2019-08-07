@@ -148,7 +148,7 @@ func TestService_Create(t *testing.T) {
 			documentRepo := testCase.DocumentRepoFn()
 			labelSvc := testCase.LabelServiceFn()
 			uidSvc := testCase.UIDServiceFn()
-			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo, nil, labelSvc, uidSvc)
+			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo, nil, nil, labelSvc, uidSvc)
 
 			// when
 			result, err := svc.Create(ctx, testCase.Input)
@@ -194,7 +194,7 @@ func TestService_CreateWithInvalidNames(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			//WHEN
 			_, err := svc.Create(ctx, testCase.Input)
@@ -410,7 +410,7 @@ func TestService_Update(t *testing.T) {
 			documentRepo := testCase.DocumentRepoFn()
 			labelRepo := testCase.LabelRepoFn()
 			labelSvc := testCase.LabelServiceFn()
-			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo, labelRepo, labelSvc, nil)
+			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo, nil, labelRepo, labelSvc, nil)
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -460,7 +460,7 @@ func TestService_UpdateWithInvalidNames(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			//WHEN
 			err := svc.Update(ctx, appID, testCase.Input)
@@ -644,7 +644,7 @@ func TestService_Delete(t *testing.T) {
 			eventAPIRepo := testCase.EventAPIRepoFn()
 			documentRepo := testCase.DocumentRepoFn()
 			labelRepo := testCase.LabelRepoFn()
-			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo, labelRepo, nil, nil)
+			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo, nil, labelRepo, nil, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -719,7 +719,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// when
 			app, err := svc.Get(ctx, testCase.InputID)
@@ -804,7 +804,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// when
 			app, err := svc.List(ctx, testCase.InputLabelFilters, testCase.InputPageSize, testCase.InputCursor)
@@ -818,6 +818,202 @@ func TestService_List(t *testing.T) {
 			}
 
 			repo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_ListByRuntimeID(t *testing.T) {
+	runtimeUUID := uuid.New()
+	testError := errors.New("test error")
+
+	tenantUUID := uuid.New()
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantUUID.String())
+
+	first := 10
+	cursor := "test"
+	scenarios := []interface{}{"Easter", "Christmas", "Winter-Sale"}
+	scenarioLabel := model.Label{
+		ID:    uuid.New().String(),
+		Key:   model.ScenariosKey,
+		Value: scenarios,
+	}
+
+	applications := []*model.Application{
+		fixModelApplication("test1", "test1", "test1"),
+		fixModelApplication("test2", "test2", "test2"),
+	}
+	applicationPage := fixApplicationPage(applications)
+	emptyPage := model.ApplicationPage{
+		TotalCount: 0,
+		Data:       []*model.Application{},
+		PageInfo:   &pagination.Page{StartCursor: "", EndCursor: "", HasNextPage: false}}
+
+	testCases := []struct {
+		Name                string
+		Input               uuid.UUID
+		RuntimeRepositoryFn func() *automock.RuntimeRepository
+		LabelRepositoryFn   func() *automock.LabelRepository
+		AppRepositoryFn     func() *automock.ApplicationRepository
+		ExpectedResult      *model.ApplicationPage
+		ExpectedError       error
+	}{
+		{
+			Name:  "Success",
+			Input: runtimeUUID,
+			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
+				runtimeRepository := &automock.RuntimeRepository{}
+				runtimeRepository.On("Exists", ctx, tenantUUID.String(), runtimeUUID.String()).
+					Return(true, nil).Once()
+				return runtimeRepository
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				labelRepository := &automock.LabelRepository{}
+				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeUUID.String(), model.ScenariosKey).
+					Return(&scenarioLabel, nil).Once()
+				return labelRepository
+			},
+			AppRepositoryFn: func() *automock.ApplicationRepository {
+				appRepository := &automock.ApplicationRepository{}
+				appRepository.On("ListByScenarios", ctx, tenantUUID, convertToStringArray(t, scenarios), &first, &cursor).
+					Return(applicationPage, nil).Once()
+				return appRepository
+			},
+			ExpectedError:  nil,
+			ExpectedResult: applicationPage,
+		},
+		{
+			Name:  "Return error when checking of runtime existance failed",
+			Input: runtimeUUID,
+			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
+				runtimeRepository := &automock.RuntimeRepository{}
+				runtimeRepository.On("Exists", ctx, tenantUUID.String(), runtimeUUID.String()).
+					Return(false, testError).Once()
+				return runtimeRepository
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				labelRepository := &automock.LabelRepository{}
+				return labelRepository
+			},
+			AppRepositoryFn: func() *automock.ApplicationRepository {
+				appRepository := &automock.ApplicationRepository{}
+				return appRepository
+			},
+			ExpectedError:  testError,
+			ExpectedResult: nil,
+		},
+		{
+			Name:  "Return error when runtime not exits",
+			Input: runtimeUUID,
+			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
+				runtimeRepository := &automock.RuntimeRepository{}
+				runtimeRepository.On("Exists", ctx, tenantUUID.String(), runtimeUUID.String()).
+					Return(false, nil).Once()
+				return runtimeRepository
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				labelRepository := &automock.LabelRepository{}
+				return labelRepository
+			},
+			AppRepositoryFn: func() *automock.ApplicationRepository {
+				appRepository := &automock.ApplicationRepository{}
+				return appRepository
+			},
+			ExpectedError:  errors.New("runtime does not exist"),
+			ExpectedResult: nil,
+		},
+		{
+			Name:  "Return error when getting runtime scenarios by RuntimeID failed",
+			Input: runtimeUUID,
+			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
+				runtimeRepository := &automock.RuntimeRepository{}
+				runtimeRepository.On("Exists", ctx, tenantUUID.String(), runtimeUUID.String()).
+					Return(true, nil).Once()
+				return runtimeRepository
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				labelRepository := &automock.LabelRepository{}
+				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeUUID.String(), model.ScenariosKey).
+					Return(nil, testError).Once()
+				return labelRepository
+			},
+			AppRepositoryFn: func() *automock.ApplicationRepository {
+				appRepository := &automock.ApplicationRepository{}
+				return appRepository
+			},
+			ExpectedError:  testError,
+			ExpectedResult: nil,
+		},
+		{
+			Name:  "Return error when listing application by scenarios failed",
+			Input: runtimeUUID,
+			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
+				runtimeRepository := &automock.RuntimeRepository{}
+				runtimeRepository.On("Exists", ctx, tenantUUID.String(), runtimeUUID.String()).
+					Return(true, nil).Once()
+				return runtimeRepository
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				labelRepository := &automock.LabelRepository{}
+				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeUUID.String(), model.ScenariosKey).
+					Return(&scenarioLabel, nil).Once()
+				return labelRepository
+			},
+			AppRepositoryFn: func() *automock.ApplicationRepository {
+				appRepository := &automock.ApplicationRepository{}
+				appRepository.On("ListByScenarios", ctx, tenantUUID, convertToStringArray(t, scenarios), &first, &cursor).
+					Return(nil, testError).Once()
+				return appRepository
+			},
+			ExpectedError:  testError,
+			ExpectedResult: nil,
+		},
+		{
+			Name:  " Return empty page when runtime is not assigned to any scenario",
+			Input: runtimeUUID,
+			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
+				runtimeRepository := &automock.RuntimeRepository{}
+				runtimeRepository.On("Exists", ctx, tenantUUID.String(), runtimeUUID.String()).
+					Return(true, nil).Once()
+				return runtimeRepository
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				labelRepository := &automock.LabelRepository{}
+				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeUUID.String(), model.ScenariosKey).
+					Return(&model.Label{ID: uuid.New().String(), Key: model.ScenariosKey, Value: []interface{}{}}, nil).Once()
+				return labelRepository
+			},
+			AppRepositoryFn: func() *automock.ApplicationRepository {
+				appRepository := &automock.ApplicationRepository{}
+				return appRepository
+			},
+			ExpectedError:  nil,
+			ExpectedResult: &emptyPage,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			runtimeRepository := testCase.RuntimeRepositoryFn()
+			labelRepository := testCase.LabelRepositoryFn()
+			appRepository := testCase.AppRepositoryFn()
+			svc := application.NewService(appRepository, nil, nil, nil, nil, runtimeRepository, labelRepository, nil, nil)
+
+			//WHEN
+			results, err := svc.ListByRuntimeID(ctx, testCase.Input, &first, &cursor)
+
+			//THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				require.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedResult, results)
+			runtimeRepository.AssertExpectations(t)
+			labelRepository.AssertExpectations(t)
+			appRepository.AssertExpectations(t)
 		})
 	}
 }
@@ -876,7 +1072,7 @@ func TestService_Exist(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
 			appRepo := testCase.RepositoryFn()
-			svc := application.NewService(appRepo, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(appRepo, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			value, err := svc.Exist(ctx, testCase.InputApplicationID)
@@ -975,7 +1171,7 @@ func TestService_SetLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelSvc := testCase.LabelServiceFn()
-			svc := application.NewService(repo, nil, nil, nil, nil, nil, labelSvc, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, labelSvc, nil)
 
 			// when
 			err := svc.SetLabel(ctx, testCase.InputLabel)
@@ -1086,7 +1282,7 @@ func TestService_GetLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(repo, nil, nil, nil, nil, labelRepo, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil, labelRepo, nil, nil)
 
 			// when
 			l, err := svc.GetLabel(ctx, testCase.InputApplicationID, testCase.InputLabel.Key)
@@ -1200,7 +1396,7 @@ func TestService_ListLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(repo, nil, nil, nil, nil, labelRepo, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil, labelRepo, nil, nil)
 
 			// when
 			l, err := svc.ListLabels(ctx, testCase.InputApplicationID)
@@ -1292,7 +1488,7 @@ func TestService_DeleteLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(repo, nil, nil, nil, nil, labelRepo, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil, labelRepo, nil, nil)
 
 			// when
 			err := svc.DeleteLabel(ctx, testCase.InputApplicationID, testCase.InputKey)
@@ -1306,78 +1502,6 @@ func TestService_DeleteLabel(t *testing.T) {
 			}
 
 			repo.AssertExpectations(t)
-		})
-	}
-}
-
-func TestService_ListByRuntimeID(t *testing.T) {
-	runtimeID := " idddd"
-	testError := errors.New("test error")
-
-	tenantName := "tenant"
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantName)
-
-	first := 10
-	cursor := "test"
-
-	applications := []*model.Application{
-		fixModelApplication("test1", "test1", "test1"),
-		fixModelApplication("test2", "test2", "test2"),
-	}
-	applicationPage := fixApplicationPage(applications)
-
-	testCases := []struct {
-		Name            string
-		Input           string
-		InputPageSize   *int
-		InputCursor     *string
-		AppRepositoryFn func() *automock.ApplicationRepository
-		ExpectedResult  *model.ApplicationPage
-		ExpectedError   error
-	}{
-		{
-			Name: "Success",
-			AppRepositoryFn: func() *automock.ApplicationRepository {
-				appRepository := &automock.ApplicationRepository{}
-				appRepository.On("ListByRuntimeID", ctx, tenantName, runtimeID, &first, &cursor).Return(applicationPage, nil).Once()
-				return appRepository
-			},
-			ExpectedError:  nil,
-			ExpectedResult: applicationPage,
-			Input:          runtimeID,
-		},
-		{
-			Name: "Return error when listing application by RuntimeID failed",
-			AppRepositoryFn: func() *automock.ApplicationRepository {
-				appRepository := &automock.ApplicationRepository{}
-				appRepository.On("ListByRuntimeID", ctx, tenantName, runtimeID, &first, &cursor).Return(nil, testError).Once()
-				return appRepository
-			},
-			ExpectedError:  testError,
-			ExpectedResult: nil,
-			Input:          runtimeID,
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			//GIVEN
-			appRepository := testCase.AppRepositoryFn()
-			svc := application.NewService(appRepository, nil, nil, nil, nil, nil, nil, nil)
-
-			//WHEN
-			results, err := svc.ListByRuntimeID(ctx, testCase.Input, &first, &cursor)
-
-			//THEN
-			if testCase.ExpectedError != nil {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
-			} else {
-				require.NoError(t, err)
-			}
-			assert.Equal(t, testCase.ExpectedResult, results)
-			appRepository.AssertExpectations(t)
 		})
 	}
 }
@@ -1422,4 +1546,14 @@ func modelFromInput(in model.ApplicationInput, applicationID string) testModel {
 		EventAPIs:            eventAPIsModel,
 		Webhooks:             webhooksModel,
 	}
+}
+
+func convertToStringArray(t *testing.T, array []interface{}) []string {
+	var stringArray []string
+	for _, value := range array {
+		convertedValue, ok := value.(string)
+		require.True(t, ok, "Cannot convert array of interface{} to array of string in test method")
+		stringArray = append(stringArray, convertedValue)
+	}
+	return stringArray
 }

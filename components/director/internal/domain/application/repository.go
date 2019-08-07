@@ -2,9 +2,13 @@ package application
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/google/uuid"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/pkg/errors"
 )
@@ -27,6 +31,7 @@ func (r *inMemoryRepository) GetByID(ctx context.Context, tenant, id string) (*m
 	return application, nil
 }
 
+//TODO: remove this function after migrating to Database
 func (r *inMemoryRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
 	application := r.store[id]
 
@@ -57,12 +62,51 @@ func (r *inMemoryRepository) List(ctx context.Context, tenant string, filter []*
 	}, nil
 }
 
-// TODO: Make filtering and paging
-func (r *inMemoryRepository) ListByRuntimeID(ctx context.Context, tenant, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
+// TODO: add pagination when PR-181 is merged
+func (r *inMemoryRepository) ListByScenarios(ctx context.Context, tenantUUID uuid.UUID, scenarios []string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching DB from context")
+	}
+
+	var scenariosFilers []*labelfilter.LabelFilter
+
+	for _, scenarioValue := range scenarios {
+		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, scenarioValue)
+		scenariosFilers = append(scenariosFilers, &labelfilter.LabelFilter{Key: model.ScenariosKey, Query: &query})
+	}
+
+	stmt, err := label.FilterQuery(model.ApplicationLabelableObject, label.UnionSet, tenantUUID, scenariosFilers)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating filter query")
+	}
+
+	var apps []interface{}
+
+	err = persist.Select(&apps, stmt)
+
+	if err != nil {
+		return &model.ApplicationPage{
+			Data:       []*model.Application{},
+			TotalCount: 0,
+			PageInfo: &pagination.Page{
+				StartCursor: "",
+				EndCursor:   "",
+				HasNextPage: false,
+			}}, nil
+	}
+
 	var items []*model.Application
-	for _, item := range r.store {
-		if item.Tenant == tenant {
-			items = append(items, item)
+
+	for _, id := range apps {
+		appID, ok := id.(string)
+		if !ok {
+			return nil, errors.New("while parsing application IDs")
+		}
+		//TODO remove it after implementing real PostgreSQL repository
+		app, found := r.store[appID]
+		if found {
+			items = append(items, app)
 		}
 	}
 

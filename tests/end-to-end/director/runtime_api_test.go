@@ -11,6 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const scenarioLabel = "scenarios"
+
 func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -370,12 +372,7 @@ func TestQueryRuntimes(t *testing.T) {
 		}
 		runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
 		require.NoError(t, err)
-		createReq := gcli.NewRequest(
-			fmt.Sprintf(`mutation {
-				result: createRuntime(in: %s) {
-						%s
-					} 
-				}`, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
+		createReq := fixCreateRuntimeRequest(runtimeInGQL)
 		actualRuntime := graphql.Runtime{}
 		err = tc.RunQuery(ctx, createReq, &actualRuntime)
 		require.NoError(t, err)
@@ -453,6 +450,103 @@ func TestQuerySpecificRuntime(t *testing.T) {
 	assert.Equal(t, createdRuntime.Description, queriedRuntime.Description)
 }
 
+func TestApplicationsForRuntime(t *testing.T) {
+	//GIVEN
+	ctx := context.Background()
+	tenantID := "90b9ccc8-7829-4511-ac17-5b0c872a41b5"
+	tenantApplications := []*graphql.Application{}
+	scenarios := []string{"default", "black-friday-campaign", "christmas-campaign", "summer-campaign"}
+
+	applications := []struct {
+		ApplicationName string
+		Tenant          string
+		WithinTenant    bool
+		Scenarios       []string
+	}{
+		{
+			Tenant:          tenantID,
+			ApplicationName: "noneofscenarios",
+			WithinTenant:    false,
+			Scenarios:       []string{},
+		},
+		{
+			Tenant:          tenantID,
+			ApplicationName: "first",
+			WithinTenant:    true,
+			Scenarios:       []string{"default"},
+		},
+		{
+			Tenant:          tenantID,
+			ApplicationName: "second",
+			WithinTenant:    true,
+			Scenarios:       []string{"default", "black-friday-campaign"},
+		},
+		{
+			Tenant:          tenantID,
+			ApplicationName: "third",
+			WithinTenant:    true,
+			Scenarios:       []string{"black-friday-campaign", "christmas-campaign", "summer-campaign"},
+		},
+		{
+			Tenant:          tenantID,
+			ApplicationName: "allscenarios",
+			WithinTenant:    true,
+			Scenarios:       []string{"default", "black-friday-campaign", "christmas-campaign", "summer-campaign"},
+		},
+		{
+			Tenant:          "3b6f72ac-93e4-4659-bf9c-8903239e1e93",
+			ApplicationName: "test",
+			WithinTenant:    false,
+			Scenarios:       []string{"default", "black-friday-campaign"},
+		},
+	}
+
+	for _, testApp := range applications {
+		applicationInput := generateSampleApplicationInput(testApp.ApplicationName)
+		(*applicationInput.Labels)[scenarioLabel] = testApp.Scenarios
+		appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(applicationInput)
+		require.NoError(t, err)
+		createApplicationReq := fixCreateApplicationRequest(appInputGQL)
+		application := graphql.Application{}
+		createApplicationReq.Header["Tenant"] = []string{testApp.Tenant}
+
+		err = tc.RunQuery(ctx, createApplicationReq, &application)
+
+		require.NoError(t, err)
+		require.NotEmpty(t, application.ID)
+		defer deleteApplicationInTenant(t, application.ID, testApp.Tenant)
+		if testApp.WithinTenant {
+			tenantApplications = append(tenantApplications, &application)
+		}
+	}
+
+	//create runtime
+	runtimeInput := fixRuntimeInput("runtime")
+	(*runtimeInput.Labels)[scenarioLabel] = scenarios
+	runtimeInputGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInput)
+	require.NoError(t, err)
+	createRuntimeRequest := fixCreateRuntimeRequest(runtimeInputGQL)
+	createRuntimeRequest.Header["Tenant"] = []string{tenantID}
+	runtime := graphql.Runtime{}
+	err = tc.RunQuery(ctx, createRuntimeRequest, &runtime)
+	require.NoError(t, err)
+	require.NotEmpty(t, runtime.ID)
+	defer deleteRuntimeInTenant(t, runtime.ID, tenantID)
+
+	//WHEN
+	request := fixApplicationForRuntimeRequest(runtime.ID)
+	request.Header["Tenant"] = []string{tenantID}
+	applicationPage := graphql.ApplicationPage{}
+
+	err = tc.RunQuery(ctx, request, &applicationPage)
+	saveQueryInExamples(t, request.Query(), "query applications for runtime")
+
+	//THEN
+	require.NoError(t, err)
+	require.Len(t, applicationPage.Data, len(tenantApplications))
+	assert.ElementsMatch(t, tenantApplications, applicationPage.Data)
+}
+
 func TestQueryRuntimesWithPagination(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
@@ -465,7 +559,7 @@ func TestQueryRuntimesWithPagination(t *testing.T) {
 		runtimeInputGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInput)
 		require.NoError(t, err)
 
-		createReq := fixCreateRuntimeRequst(runtimeInputGQL)
+		createReq := fixCreateRuntimeRequest(runtimeInputGQL)
 
 		runtime := graphql.Runtime{}
 		err = tc.RunQuery(ctx, createReq, &runtime)
@@ -521,6 +615,17 @@ func deleteRuntime(t *testing.T, id string) {
 				id
 			}
 		}`, id))
+	err := tc.RunQuery(context.Background(), delReq, nil)
+	require.NoError(t, err)
+}
+
+func deleteRuntimeInTenant(t *testing.T, id string, tenantID string) {
+	delReq := gcli.NewRequest(
+		fmt.Sprintf(`mutation{deleteRuntime(id: "%s") {
+				id
+			}
+		}`, id))
+	delReq.Header["Tenant"] = []string{tenantID}
 	err := tc.RunQuery(context.Background(), delReq, nil)
 	require.NoError(t, err)
 }

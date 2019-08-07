@@ -59,16 +59,15 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.R
 	var runtimeEnt Runtime
 	err = persist.Get(&runtimeEnt, stmt, id, tenant)
 	if err != nil {
-		if err != sql.ErrNoRows {
-			return nil, errors.Wrap(err, "while getting runtime from DB")
-		}
-
-		return nil, fmt.Errorf("runtime '%s' not found", id) //TODO: Return own type for Not found error
+		return nil, errors.Wrap(err, "while getting runtime from DB")
 	}
 
 	runtimeModel, err := runtimeEnt.ToModel()
 	if err != nil {
-		return nil, errors.Wrap(err, "while creating runtime model from entity")
+		if err != sql.ErrNoRows {
+			return nil, errors.Wrap(err, "while creating runtime model from entity")
+		}
+		return nil, errors.Errorf("runtime '%s' not found", id) //TODO: Return own type for Not found error
 	}
 
 	return runtimeModel, nil

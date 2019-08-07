@@ -2,8 +2,8 @@
 query {
   result: applicationsForRuntime(
     runtimeID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-    first: 2
-    after: "next"
+    first: 4
+    after: ""
   ) {
     data {
       id

@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/google/uuid"
+
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -19,7 +21,7 @@ type ApplicationService interface {
 	Get(ctx context.Context, id string) (*model.Application, error)
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error)
-	ListByRuntimeID(ctx context.Context, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error)
+	ListByRuntimeID(ctx context.Context, runtimeUUID uuid.UUID, pageSize *int, cursor *string) (*model.ApplicationPage, error)
 	SetLabel(ctx context.Context, label *model.LabelInput) error
 	GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error)
 	ListLabels(ctx context.Context, applicationID string) (map[string]*model.Label, error)
@@ -168,9 +170,27 @@ func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string,
 		cursor = string(*after)
 	}
 
-	appPage, err := r.appSvc.ListByRuntimeID(ctx, runtimeID, first, &cursor)
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	runtimeUUID, err := uuid.Parse(runtimeID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting runtimeID to UUID")
+	}
+
+	appPage, err := r.appSvc.ListByRuntimeID(ctx, runtimeUUID, first, &cursor)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting all Application for Runtime")
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
 	}
 
 	gqlApps := r.appConverter.MultipleToGraphQL(appPage.Data)

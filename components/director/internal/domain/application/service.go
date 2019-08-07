@@ -4,6 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+
+	"github.com/google/uuid"
+
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
@@ -15,7 +19,7 @@ type ApplicationRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error)
-	ListByRuntimeID(ctx context.Context, tenant, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error)
+	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize *int, cursor *string) (*model.ApplicationPage, error)
 	Create(ctx context.Context, item *model.Application) error
 	Update(ctx context.Context, item *model.Application) error
 	Delete(ctx context.Context, item *model.Application) error
@@ -57,6 +61,11 @@ type EventAPIRepository interface {
 	DeleteAllByApplicationID(id string) error
 }
 
+//go:generate mockery -name=RuntimeRepository -output=automock -outpkg=automock -case=underscore
+type RuntimeRepository interface {
+	Exists(ctx context.Context, tenant, id string) (bool, error)
+}
+
 //go:generate mockery -name=LabelUpsertService -output=automock -outpkg=automock -case=underscore
 type LabelUpsertService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
@@ -69,19 +78,28 @@ type UIDService interface {
 }
 
 type service struct {
-	appRepo      ApplicationRepository
-	apiRepo      APIRepository
-	eventAPIRepo EventAPIRepository
-	documentRepo DocumentRepository
-	webhookRepo  WebhookRepository
-	labelRepo    LabelRepository
-
+	appRepo            ApplicationRepository
+	apiRepo            APIRepository
+	eventAPIRepo       EventAPIRepository
+	documentRepo       DocumentRepository
+	webhookRepo        WebhookRepository
+	labelRepo          LabelRepository
+	runtimeRepo        RuntimeRepository
 	labelUpsertService LabelUpsertService
 	uidService         UIDService
 }
 
-func NewService(app ApplicationRepository, webhook WebhookRepository, api APIRepository, eventAPI EventAPIRepository, document DocumentRepository, labelRepo LabelRepository, labelUpsertService LabelUpsertService, uidService UIDService) *service {
-	return &service{appRepo: app, webhookRepo: webhook, apiRepo: api, eventAPIRepo: eventAPI, documentRepo: document, labelRepo: labelRepo, labelUpsertService: labelUpsertService, uidService: uidService}
+func NewService(app ApplicationRepository, webhook WebhookRepository, api APIRepository, eventAPI EventAPIRepository, documentRepo DocumentRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, labelUpsertService LabelUpsertService, uidService UIDService) *service {
+	return &service{
+		appRepo:            app,
+		webhookRepo:        webhook,
+		apiRepo:            api,
+		eventAPIRepo:       eventAPI,
+		documentRepo:       documentRepo,
+		runtimeRepo:        runtimeRepo,
+		labelRepo:          labelRepo,
+		labelUpsertService: labelUpsertService,
+		uidService:         uidService}
 }
 
 func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
@@ -93,13 +111,49 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 	return s.appRepo.List(ctx, appTenant, filter, pageSize, cursor)
 }
 
-func (s *service) ListByRuntimeID(ctx context.Context, runtimeID string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
+func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
+
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	return s.appRepo.ListByRuntimeID(ctx, tenantID, runtimeID, pageSize, cursor)
+	tenantUUID, err := uuid.Parse(tenantID)
+	if err != nil {
+		return nil, errors.New("tenantID is not UUID")
+	}
+
+	exist, err := s.runtimeRepo.Exists(ctx, tenantID, runtimeID.String())
+	if err != nil {
+		return nil, errors.Wrap(err, "while checking if runtime exits")
+	}
+
+	if !exist {
+		return nil, errors.New("runtime does not exist")
+	}
+
+	label, err := s.labelRepo.GetByKey(ctx, tenantID, model.RuntimeLabelableObject, runtimeID.String(), model.ScenariosKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting scenarios for runtime")
+	}
+
+	scenarios, err := getScenariosValues(label.Value)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting scenarios labels")
+	}
+	if len(scenarios) == 0 {
+		return &model.ApplicationPage{
+			Data:       []*model.Application{},
+			TotalCount: 0,
+			PageInfo: &pagination.Page{
+				StartCursor: "",
+				EndCursor:   "",
+				HasNextPage: false,
+			},
+		}, nil
+	}
+
+	return s.appRepo.ListByScenarios(ctx, tenantUUID, scenarios, pageSize, cursor)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.Application, error) {
@@ -394,4 +448,21 @@ func (s *service) deleteRelatedResources(applicationID string) error {
 	}
 
 	return nil
+}
+func getScenariosValues(labels interface{}) ([]string, error) {
+	tmpScenarios, ok := labels.([]interface{})
+	if !ok {
+		return nil, errors.New("Cannot convert scenario labels to array of string")
+	}
+
+	var scenarios []string
+	for _, label := range tmpScenarios {
+		scenario, ok := label.(string)
+		if !ok {
+			return nil, errors.New("Cannot convert scenario label to string")
+		}
+		scenarios = append(scenarios, scenario)
+	}
+
+	return scenarios, nil
 }

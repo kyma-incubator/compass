@@ -131,3 +131,49 @@ func fixGQLRuntimeInput(name, description string) graphql.RuntimeInput {
 		Labels:      &labels,
 	}
 }
+
+func fixApplicationPage(applications []*model.Application) *model.ApplicationPage {
+	return &model.ApplicationPage{
+		Data: applications,
+		PageInfo: &pagination.Page{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(applications),
+	}
+}
+
+func fixGQLApplicationPage(applications []*graphql.Application) *graphql.ApplicationPage {
+	return &graphql.ApplicationPage{
+		Data: applications,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(applications),
+	}
+}
+
+func fixModelApplication(id, name, description string) *model.Application {
+	return &model.Application{
+		ID: id,
+		Status: &model.ApplicationStatus{
+			Condition: model.ApplicationStatusConditionInitial,
+		},
+		Name:        name,
+		Description: &description,
+	}
+}
+
+func fixGQLApplication(id, name, description string) *graphql.Application {
+	return &graphql.Application{
+		ID: id,
+		Status: &graphql.ApplicationStatus{
+			Condition: graphql.ApplicationStatusConditionInitial,
+		},
+		Name:        name,
+		Description: &description,
+	}
+}

@@ -116,7 +116,7 @@ fi
 # echo -e "${GREEN}? Checking GraphQL examples${NC}"
 # ./gen-examples.sh
 # genExamplesResult=$?
-
+#
 # if [[ ${genExamplesResult} != 0 ]]
 # 	then
 #     	echo -e "${RED}✗ Checking GraphQL examples${NC}\n$genExamplesResult${NC}"
