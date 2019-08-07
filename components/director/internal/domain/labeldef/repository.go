@@ -150,3 +150,15 @@ func (r *repo) Update(ctx context.Context, def model.LabelDefinition) error {
 
 	return nil
 }
+
+func (r *repo) DeleteByKey(ctx context.Context, tenant, key string) error {
+	db, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return err
+	}
+
+	stmt := fmt.Sprintf(`DELETE FROM %s WHERE tenant_id=$1 AND key=$2`, tableName)
+	_, err = db.Exec(stmt, tenant, key)
+
+	return errors.Wrap(err, "while deleting the runtime entity from database")
+}

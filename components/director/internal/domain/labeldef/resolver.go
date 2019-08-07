@@ -39,6 +39,7 @@ type Service interface {
 	Create(ctx context.Context, ld model.LabelDefinition) (model.LabelDefinition, error)
 	Get(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error)
 	List(ctx context.Context, tenant string) ([]model.LabelDefinition, error)
+	Delete(ctx context.Context, tenant string, key string, deleteRelatedLabels bool) error
 	Update(ctx context.Context, ld model.LabelDefinition) error
 }
 
@@ -161,4 +162,44 @@ func (r *Resolver) UpdateLabelDefinition(ctx context.Context, in graphql.LabelDe
 	out := r.conv.ToGraphQL(*updatedLd)
 
 	return &out, nil
+}
+
+func (r *Resolver) DeleteLabelDefinition(ctx context.Context, key string, deleteRelatedLabels *bool) (*graphql.LabelDefinition, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := r.transactioner.Begin()
+	if err != nil {
+		return nil, errors.Wrap(err, "while starting transaction")
+	}
+	defer r.transactioner.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	if deleteRelatedLabels == nil {
+		return nil, errors.New("deleteRelatedLabels can not be nil, internal server error")
+	}
+
+	ld, err := r.srv.Get(ctx, tnt, key)
+	if err != nil {
+		return nil, err
+	}
+	if ld == nil {
+		return nil, fmt.Errorf("Label Definition with key %s not found", key)
+	}
+
+	deletedLD := r.conv.ToGraphQL(*ld)
+
+	err = r.srv.Delete(ctx, tnt, key, *deleteRelatedLabels)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, errors.Wrap(err, "while committing transaction")
+	}
+
+	return &deletedLD, nil
 }

@@ -407,7 +407,7 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 				svc := &automock.UIDService{}
 				return svc
 			},
-			ExpectedErrMessage: "The 'test' label value is not valid",
+			ExpectedErrMessage: "Invalid type",
 		},
 		{
 			Name: "Error - Creating new LabelDefinition",

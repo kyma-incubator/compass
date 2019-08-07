@@ -33,6 +33,20 @@ func (_m *Service) Create(ctx context.Context, ld model.LabelDefinition) (model.
 	return r0, r1
 }
 
+// Delete provides a mock function with given fields: ctx, tenant, key, deleteRelatedLabels
+func (_m *Service) Delete(ctx context.Context, tenant string, key string, deleteRelatedLabels bool) error {
+	ret := _m.Called(ctx, tenant, key, deleteRelatedLabels)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, bool) error); ok {
+		r0 = rf(ctx, tenant, key, deleteRelatedLabels)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Get provides a mock function with given fields: ctx, tenant, key
 func (_m *Service) Get(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error) {
 	ret := _m.Called(ctx, tenant, key)

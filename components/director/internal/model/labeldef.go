@@ -25,8 +25,13 @@ func (def *LabelDefinition) Validate() error {
 		return errors.New("missing Key field")
 	}
 	if def.Schema != nil {
-		if _, err := jsonschema.NewValidatorFromRawSchema(def.Schema); err != nil {
-			return errors.Wrapf(err, "while validating schema: [%v]", def.Schema)
+		if _, err := jsonschema.NewValidatorFromRawSchema(*def.Schema); err != nil {
+			return errors.Wrapf(err, "while validating schema: [%+v]", *def.Schema)
+		}
+	}
+	if def.Key == ScenariosKey {
+		if err := def.validateScenariosSchema(); err != nil {
+			return errors.Wrapf(err, "while validating schema for key %s", ScenariosKey)
 		}
 	}
 
@@ -44,9 +49,36 @@ func (def *LabelDefinition) ValidateForUpdate() error {
 	}
 
 	if def.Schema != nil {
-		if _, err := jsonschema.NewValidatorFromRawSchema(def.Schema); err != nil {
-			return errors.Wrapf(err, "while validating schema: [%v]", def.Schema)
+		if _, err := jsonschema.NewValidatorFromRawSchema(*def.Schema); err != nil {
+			return errors.Wrapf(err, "while validating schema: [%+v]", *def.Schema)
 		}
+	}
+
+	if def.Key == ScenariosKey {
+		if err := def.validateScenariosSchema(); err != nil {
+			return errors.Wrapf(err, "while validating schema for key %s", ScenariosKey)
+		}
+	}
+
+	return nil
+}
+
+func (def *LabelDefinition) validateScenariosSchema() error {
+	if def == nil || def.Schema == nil {
+		return errors.New("schema can not be nil")
+	}
+
+	validator, err := jsonschema.NewValidatorFromRawSchema(SchemaForScenariosSchema)
+	if err != nil {
+		return errors.Wrap(err, "while compiling validator schema")
+	}
+
+	result, err := validator.ValidateRaw(*def.Schema)
+	if err != nil {
+		return errors.Wrap(err, "while validating new schema")
+	}
+	if !result.Valid {
+		return result.Error
 	}
 
 	return nil
