@@ -31,7 +31,7 @@ func TestComputeOffset(t *testing.T) {
 			ExpectedErr:     nil,
 		},
 		{
-			Name:            "Success when page size is positive and offset is empty",
+			Name:            "Success when cursor is empty",
 			InputCursor:     "",
 			ExptectedOffset: 0,
 			ExpectedErr:     nil,
@@ -96,7 +96,7 @@ func TestConvertOffsetLimitAndOrderedColumnToSQL(t *testing.T) {
 
 	t.Run("Return error when column to order by is empty", func(t *testing.T) {
 		// WHEN
-		_, err := ConvertOffsetLimitAndOrderedColumnToSQL(5, 5, "")
+		_, err := ConvertOffsetLimitAndOrderedColumnToSQL(5, 10, "")
 
 		//THEN
 		require.Error(t, err)

@@ -74,7 +74,6 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.R
 	return runtimeModel, nil
 }
 
-// TODO: Make filtering
 func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
@@ -91,13 +90,13 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 		return nil, errors.Wrap(err, "while decoding page cursor")
 	}
 
-	queryForRuntime, err := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filter)
+	filterSubquery, err := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filter)
 	if err != nil {
 		return nil, errors.Wrap(err, "while building filter query")
 	}
 
-	if queryForRuntime != "" {
-		queryForRuntime = fmt.Sprintf(` AND "id" IN (%s)`, queryForRuntime)
+	if filterSubquery != "" {
+		filterSubquery = fmt.Sprintf(` AND "id" IN (%s)`, filterSubquery)
 	}
 
 	paginationSQL, err := pagination.ConvertOffsetLimitAndOrderedColumnToSQL(pageSize, offset, "id")
@@ -106,7 +105,7 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 	}
 
 	stmt := fmt.Sprintf(fmt.Sprintf(`SELECT %s FROM %s WHERE "tenant_id"  = $1 %s %s`,
-		runtimeFields, runtimeTable, queryForRuntime, paginationSQL))
+		runtimeFields, runtimeTable, filterSubquery, paginationSQL))
 
 	var runtimesEnt []Runtime
 	err = persist.Select(&runtimesEnt, stmt, tenant)
@@ -125,7 +124,7 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 		items = append(items, model)
 	}
 
-	totalCount, err := countRuntimesInDatabase(tenantID, persist, queryForRuntime)
+	totalCount, err := countRuntimesInDatabase(tenantID, persist, filterSubquery)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting total count of runtimes")
 	}
