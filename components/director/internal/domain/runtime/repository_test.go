@@ -201,6 +201,7 @@ func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntitie
 
 	//then
 	assert.NoError(t, err)
+	require.NotNil(t, modelRuntimePage)
 	assert.Equal(t, rowSize, modelRuntimePage.TotalCount)
 	require.NoError(t, sqlMock.ExpectationsWereMet())
 
