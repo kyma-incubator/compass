@@ -451,6 +451,8 @@ func TestQuerySpecificRuntime(t *testing.T) {
 }
 
 func TestApplicationsForRuntime(t *testing.T) {
+	t.SkipNow() // TODO: Create LD for scenarios with correct enum, will be fixed in https://github.com/kyma-incubator/compass/pull/175/
+
 	//GIVEN
 	ctx := context.Background()
 	tenantID := "90b9ccc8-7829-4511-ac17-5b0c872a41b5"
