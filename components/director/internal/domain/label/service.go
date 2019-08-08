@@ -2,7 +2,6 @@ package label
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -115,13 +114,12 @@ func (s *labelUpsertService) validateLabelInputValue(ctx context.Context, tenant
 		return errors.Wrapf(err, "while creating JSON Schema validator for schema %+v", *labelDef.Schema)
 	}
 
-	valid, err := validator.ValidateRaw(labelInput.Value)
+	result, err := validator.ValidateRaw(labelInput.Value)
 	if err != nil {
 		return errors.Wrapf(err, "while validating value %+v against JSON Schema: %+v", labelInput.Value, *labelDef.Schema)
 	}
-
-	if !valid {
-		return fmt.Errorf("The '%s' label value is not valid", labelInput.Key)
+	if !result.Valid {
+		return errors.Wrapf(result.Error, "while validating value %+v against JSON Schema: %+v", labelInput.Value, *labelDef.Schema)
 	}
 
 	return nil

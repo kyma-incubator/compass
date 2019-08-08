@@ -6,14 +6,13 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
-
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -42,6 +41,9 @@ func TestService_Create(t *testing.T) {
 			"label": "value",
 		},
 	}
+	scenariosDefaultLabel := map[string]interface{}{
+		model.ScenariosKey: model.ScenariosDefaultValue,
+	}
 	id := "foo"
 
 	appModel := modelFromInput(modelInput, id)
@@ -50,17 +52,25 @@ func TestService_Create(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt)
 
+	labelScenarios := &model.LabelInput{
+		Key:        model.ScenariosKey,
+		Value:      model.ScenariosDefaultValue,
+		ObjectID:   id,
+		ObjectType: model.ApplicationLabelableObject,
+	}
+
 	testCases := []struct {
-		Name           string
-		AppRepoFn      func() *automock.ApplicationRepository
-		WebhookRepoFn  func() *automock.WebhookRepository
-		APIRepoFn      func() *automock.APIRepository
-		EventAPIRepoFn func() *automock.EventAPIRepository
-		DocumentRepoFn func() *automock.DocumentRepository
-		LabelServiceFn func() *automock.LabelUpsertService
-		UIDServiceFn   func() *automock.UIDService
-		Input          model.ApplicationInput
-		ExpectedErr    error
+		Name               string
+		AppRepoFn          func() *automock.ApplicationRepository
+		WebhookRepoFn      func() *automock.WebhookRepository
+		APIRepoFn          func() *automock.APIRepository
+		EventAPIRepoFn     func() *automock.EventAPIRepository
+		DocumentRepoFn     func() *automock.DocumentRepository
+		ScenariosServiceFn func() *automock.ScenariosService
+		LabelServiceFn     func() *automock.LabelUpsertService
+		UIDServiceFn       func() *automock.UIDService
+		Input              model.ApplicationInput
+		ExpectedErr        error
 	}{
 		{
 			Name: "Success",
@@ -89,6 +99,11 @@ func TestService_Create(t *testing.T) {
 				repo.On("CreateMany", mock.Anything).Return(nil).Once()
 				return repo
 			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				repo := &automock.ScenariosService{}
+				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, modelInput.Labels).Return(nil).Once()
@@ -101,6 +116,141 @@ func TestService_Create(t *testing.T) {
 			},
 			Input:       modelInput,
 			ExpectedErr: nil,
+		},
+		{
+			Name: "Success when no labels provided",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Create", ctx, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				return repo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("CreateMany", mock.Anything).Return(nil).Once()
+				return repo
+			},
+			APIRepoFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("CreateMany", mock.Anything).Return(nil).Once()
+				return repo
+			},
+			EventAPIRepoFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				repo.On("CreateMany", mock.Anything).Return(nil).Once()
+				return repo
+			},
+			DocumentRepoFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				repo.On("CreateMany", mock.Anything).Return(nil).Once()
+				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				repo := &automock.ScenariosService{}
+				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
+				return repo
+			},
+			LabelServiceFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, scenariosDefaultLabel).Return(nil).Once()
+				svc.On("UpsertLabel", ctx, tnt, labelScenarios).Return(nil).Once()
+				return svc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			Input:       model.ApplicationInput{Name: "test"},
+			ExpectedErr: nil,
+		},
+		{
+			Name: "Success when scenarios label provided",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Create", ctx, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				return repo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("CreateMany", mock.Anything).Return(nil).Once()
+				return repo
+			},
+			APIRepoFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("CreateMany", mock.Anything).Return(nil).Once()
+				return repo
+			},
+			EventAPIRepoFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				repo.On("CreateMany", mock.Anything).Return(nil).Once()
+				return repo
+			},
+			DocumentRepoFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				repo.On("CreateMany", mock.Anything).Return(nil).Once()
+				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				repo := &automock.ScenariosService{}
+				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
+				return repo
+			},
+			LabelServiceFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, scenariosDefaultLabel).Return(nil).Once()
+				svc.On("UpsertLabel", ctx, tnt, labelScenarios).Return(nil).Once()
+				return svc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			Input: model.ApplicationInput{
+				Name:   "test",
+				Labels: scenariosDefaultLabel,
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name: "Returns errors when ensuring scenarios label definition failed",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				return repo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				return repo
+			},
+			APIRepoFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				return repo
+			},
+			EventAPIRepoFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				return repo
+			},
+			DocumentRepoFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				repo := &automock.ScenariosService{}
+				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(testErr).Once()
+				return repo
+			},
+			LabelServiceFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, modelInput.Labels).Return(nil).Once()
+				return svc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			Input:       modelInput,
+			ExpectedErr: testErr,
 		},
 		{
 			Name: "Returns error when application creation failed",
@@ -125,13 +275,19 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.DocumentRepository{}
 				return repo
 			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				repo := &automock.ScenariosService{}
+				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, modelInput.Labels).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
-				svc.On("Generate").Return("").Once()
+				svc.On("Generate").Return(id).Once()
 				return svc
 			},
 			Input:       modelInput,
@@ -146,9 +302,10 @@ func TestService_Create(t *testing.T) {
 			apiRepo := testCase.APIRepoFn()
 			eventAPIRepo := testCase.EventAPIRepoFn()
 			documentRepo := testCase.DocumentRepoFn()
+			scenariosSvc := testCase.ScenariosServiceFn()
 			labelSvc := testCase.LabelServiceFn()
 			uidSvc := testCase.UIDServiceFn()
-			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo, nil, nil, labelSvc, uidSvc)
+			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo, nil, nil, labelSvc, scenariosSvc, uidSvc)
 
 			// when
 			result, err := svc.Create(ctx, testCase.Input)
@@ -167,6 +324,7 @@ func TestService_Create(t *testing.T) {
 			apiRepo.AssertExpectations(t)
 			eventAPIRepo.AssertExpectations(t)
 			documentRepo.AssertExpectations(t)
+			scenariosSvc.AssertExpectations(t)
 			uidSvc.AssertExpectations(t)
 		})
 	}
@@ -194,7 +352,7 @@ func TestService_CreateWithInvalidNames(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			//WHEN
 			_, err := svc.Create(ctx, testCase.Input)
@@ -410,7 +568,7 @@ func TestService_Update(t *testing.T) {
 			documentRepo := testCase.DocumentRepoFn()
 			labelRepo := testCase.LabelRepoFn()
 			labelSvc := testCase.LabelServiceFn()
-			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo, nil, labelRepo, labelSvc, nil)
+			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo, nil, labelRepo, labelSvc, nil, nil)
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -460,7 +618,7 @@ func TestService_UpdateWithInvalidNames(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			//WHEN
 			err := svc.Update(ctx, appID, testCase.Input)
@@ -644,7 +802,7 @@ func TestService_Delete(t *testing.T) {
 			eventAPIRepo := testCase.EventAPIRepoFn()
 			documentRepo := testCase.DocumentRepoFn()
 			labelRepo := testCase.LabelRepoFn()
-			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo, nil, labelRepo, nil, nil)
+			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo, nil, labelRepo, nil, nil, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -719,7 +877,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// when
 			app, err := svc.Get(ctx, testCase.InputID)
@@ -804,7 +962,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// when
 			app, err := svc.List(ctx, testCase.InputLabelFilters, testCase.InputPageSize, testCase.InputCursor)
@@ -998,7 +1156,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			runtimeRepository := testCase.RuntimeRepositoryFn()
 			labelRepository := testCase.LabelRepositoryFn()
 			appRepository := testCase.AppRepositoryFn()
-			svc := application.NewService(appRepository, nil, nil, nil, nil, runtimeRepository, labelRepository, nil, nil)
+			svc := application.NewService(appRepository, nil, nil, nil, nil, runtimeRepository, labelRepository, nil, nil, nil)
 
 			//WHEN
 			results, err := svc.ListByRuntimeID(ctx, testCase.Input, &first, &cursor)
@@ -1072,7 +1230,7 @@ func TestService_Exist(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
 			appRepo := testCase.RepositoryFn()
-			svc := application.NewService(appRepo, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(appRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			value, err := svc.Exist(ctx, testCase.InputApplicationID)
@@ -1171,7 +1329,7 @@ func TestService_SetLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelSvc := testCase.LabelServiceFn()
-			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, labelSvc, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, labelSvc, nil, nil)
 
 			// when
 			err := svc.SetLabel(ctx, testCase.InputLabel)
@@ -1282,7 +1440,7 @@ func TestService_GetLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(repo, nil, nil, nil, nil, nil, labelRepo, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil, labelRepo, nil, nil, nil)
 
 			// when
 			l, err := svc.GetLabel(ctx, testCase.InputApplicationID, testCase.InputLabel.Key)
@@ -1396,7 +1554,7 @@ func TestService_ListLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(repo, nil, nil, nil, nil, nil, labelRepo, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil, labelRepo, nil, nil, nil)
 
 			// when
 			l, err := svc.ListLabels(ctx, testCase.InputApplicationID)
@@ -1482,13 +1640,27 @@ func TestService_DeleteLabel(t *testing.T) {
 			InputKey:           labelKey,
 			ExpectedErrMessage: testErr.Error(),
 		},
+		{
+			Name: "Returns error when trying to delete scenarios label",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				return repo
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				return repo
+			},
+			InputApplicationID: applicationID,
+			InputKey:           model.ScenariosKey,
+			ExpectedErrMessage: "can not be deleted from application",
+		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(repo, nil, nil, nil, nil, nil, labelRepo, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil, labelRepo, nil, nil, nil)
 
 			// when
 			err := svc.DeleteLabel(ctx, testCase.InputApplicationID, testCase.InputKey)
@@ -1515,9 +1687,7 @@ type testModel struct {
 }
 
 func modelFromInput(in model.ApplicationInput, applicationID string) testModel {
-	applicationModelMatcherFn := func(app *model.Application) bool {
-		return app.Name == in.Name && app.Description == in.Description
-	}
+	applicationModelMatcherFn := applicationMatcher(in.Name, in.Description)
 
 	var webhooksModel []*model.Webhook
 	for _, item := range in.Webhooks {
@@ -1556,4 +1726,20 @@ func convertToStringArray(t *testing.T, array []interface{}) []string {
 		stringArray = append(stringArray, convertedValue)
 	}
 	return stringArray
+}
+
+func applicationMatcher(name string, description *string) func(app *model.Application) bool {
+	return func(app *model.Application) bool {
+		return app.Name == name && app.Description == description
+	}
+}
+
+func contextThatHasTenant(expectedTenant string) interface{} {
+	return mock.MatchedBy(func(actual context.Context) bool {
+		actualTenant, err := tenant.LoadFromContext(actual)
+		if err != nil {
+			return false
+		}
+		return actualTenant == expectedTenant
+	})
 }

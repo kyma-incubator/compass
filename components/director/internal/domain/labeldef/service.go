@@ -28,9 +28,10 @@ func NewService(repo Repository, labelRepo LabelRepository, uidService UIDServic
 type Repository interface {
 	Create(ctx context.Context, def model.LabelDefinition) error
 	GetByKey(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error)
-	List(ctx context.Context, tenant string) ([]model.LabelDefinition, error)
 	Update(ctx context.Context, def model.LabelDefinition) error
 	Exists(ctx context.Context, tenant string, key string) (bool, error)
+	List(ctx context.Context, tenant string) ([]model.LabelDefinition, error)
+	DeleteByKey(ctx context.Context, tenant, key string) error
 }
 
 //go:generate mockery -name=LabelRepository -output=automock -outpkg=automock -case=underscore
@@ -60,6 +61,7 @@ func (s *service) Create(ctx context.Context, def model.LabelDefinition) (model.
 	// TODO get from DB?
 	return def, nil
 }
+
 func (s *service) Get(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error) {
 	def, err := s.repo.GetByKey(ctx, tenant, key)
 	if err != nil {
@@ -93,7 +95,7 @@ func (s *service) Update(ctx context.Context, def model.LabelDefinition) error {
 	ld.Schema = def.Schema
 
 	if def.Schema != nil {
-		if err := s.validateExistingLabelsAgainstSchema(ctx, def.Schema, def.Tenant, def.Key); err != nil {
+		if err := s.validateExistingLabelsAgainstSchema(ctx, *def.Schema, def.Tenant, def.Key); err != nil {
 			return err
 		}
 	}
@@ -105,7 +107,36 @@ func (s *service) Update(ctx context.Context, def model.LabelDefinition) error {
 	return nil
 }
 
-func (s *service) validateExistingLabelsAgainstSchema(ctx context.Context, schema *interface{}, tenant, key string) error {
+// TODO: Add deleting related labels logic
+func (s *service) Delete(ctx context.Context, tenant, key string, deleteRelatedLabels bool) error {
+	if deleteRelatedLabels == true {
+		return errors.New("deleting related labels is not yet supported")
+	}
+
+	if key == model.ScenariosKey {
+		return fmt.Errorf("Label Definition with key %s can not be deleted", model.ScenariosKey)
+	}
+
+	ld, err := s.Get(ctx, tenant, key)
+	if err != nil {
+		return errors.Wrap(err, "while getting Label Definition")
+	}
+	if ld == nil {
+		return fmt.Errorf("Label Definition with key %s not found", key)
+	}
+
+	existingLabels, err := s.labelRepo.ListByKey(ctx, tenant, key)
+	if err != nil {
+		return errors.Wrap(err, "while listing labels by key")
+	}
+	if len(existingLabels) > 0 {
+		return errors.New("could not delete label definition, it is already used by at least one label")
+	}
+
+	return s.repo.DeleteByKey(ctx, tenant, ld.Key)
+}
+
+func (s *service) validateExistingLabelsAgainstSchema(ctx context.Context, schema interface{}, tenant, key string) error {
 	existingLabels, err := s.labelRepo.ListByKey(ctx, tenant, key)
 	if err != nil {
 		return errors.Wrap(err, "while listing labels by key")
@@ -117,13 +148,13 @@ func (s *service) validateExistingLabelsAgainstSchema(ctx context.Context, schem
 	}
 
 	for _, label := range existingLabels {
-		ok, err := validator.ValidateRaw(label.Value)
+		result, err := validator.ValidateRaw(label.Value)
 		if err != nil {
 			return errors.Wrap(err, "while validating existing labels against new schema")
 		}
 
-		if !ok {
-			return fmt.Errorf(`label with key "%s" is not valid against new schema for %s with ID "%s"`, label.Key, label.ObjectType, label.ObjectID)
+		if !result.Valid {
+			return errors.Wrapf(result.Error, `label with key "%s" is not valid against new schema for %s with ID "%s"`, label.Key, label.ObjectType, label.ObjectID)
 		}
 	}
 	return nil

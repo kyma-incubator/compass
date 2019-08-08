@@ -15,12 +15,10 @@ func TestValidateLabelDef(t *testing.T) {
 		err := in.Validate()
 		// THEN
 		require.NoError(t, err)
-
 	})
 	t.Run("valid input when correct schema provided", func(t *testing.T) {
 		// TODO
 		t.SkipNow()
-
 	})
 
 	t.Run("id is required", func(t *testing.T) {
@@ -60,6 +58,35 @@ func TestValidateLabelDef(t *testing.T) {
 		err := in.Validate()
 		// THEN
 		require.EqualError(t, err, "xxx")
+	})
+
+	t.Run("valid scenarios definition update", func(t *testing.T) {
+		// GIVEN
+		var schema interface{} = model.ScenariosSchema
+		in := model.LabelDefinition{ID: "id", Key: model.ScenariosKey, Tenant: "tenant", Schema: &schema}
+		// WHEN
+		err := in.Validate()
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("invalid scenarios definition update", func(t *testing.T) {
+		// GIVEN
+		var sch interface{} = map[string]interface{}{"test": "test"}
+		in := model.LabelDefinition{ID: "id", Key: model.ScenariosKey, Tenant: "tenant", Schema: &sch}
+		// WHEN
+		err := in.Validate()
+		// THEN
+		require.Error(t, err)
+	})
+
+	t.Run("scenarios definition update when schema is nil", func(t *testing.T) {
+		// GIVEN
+		in := model.LabelDefinition{ID: "id", Key: model.ScenariosKey, Tenant: "tenant", Schema: nil}
+		// WHEN
+		err := in.Validate()
+		// THEN
+		require.Error(t, err)
 	})
 
 }
@@ -108,6 +135,35 @@ func TestValidateForUpdateLabelDef(t *testing.T) {
 		err := in.ValidateForUpdate()
 		// THEN
 		require.EqualError(t, err, "xxx")
+	})
+
+	t.Run("valid scenarios definition update", func(t *testing.T) {
+		// GIVEN
+		var schema interface{} = model.ScenariosSchema
+		in := model.LabelDefinition{ID: "id", Key: model.ScenariosKey, Tenant: "tenant", Schema: &schema}
+		// WHEN
+		err := in.ValidateForUpdate()
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("invalid scenarios definition update", func(t *testing.T) {
+		// GIVEN
+		var sch interface{} = map[string]interface{}{"test": "test"}
+		in := model.LabelDefinition{ID: "id", Key: model.ScenariosKey, Tenant: "tenant", Schema: &sch}
+		// WHEN
+		err := in.ValidateForUpdate()
+		// THEN
+		require.Error(t, err)
+	})
+
+	t.Run("scenarios definition update when schema is nil", func(t *testing.T) {
+		// GIVEN
+		in := model.LabelDefinition{ID: "id", Key: model.ScenariosKey, Tenant: "tenant", Schema: nil}
+		// WHEN
+		err := in.ValidateForUpdate()
+		// THEN
+		require.Error(t, err)
 	})
 
 }

@@ -1,6 +1,7 @@
 package jsonschema_test
 
 import (
+	"github.com/pkg/errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -47,39 +48,57 @@ func TestValidator_ValidateString(t *testing.T) {
 		InputJsonSchema string
 		InputJson       string
 		ExpectedResult  bool
+		ExpectedError   error
 	}{
 		{
 			Name:            "Success",
 			InputJsonSchema: validInputJsonSchema,
 			InputJson:       inputJson,
 			ExpectedResult:  true,
+			ExpectedError: nil,
 		},
 		{
 			Name:            "Json schema and json doesn't match",
 			InputJsonSchema: validInputJsonSchema,
 			InputJson:       invalidInputJson,
 			ExpectedResult:  false,
+			ExpectedError: nil,
 		},
 		{
 			Name:            "Empty",
 			InputJsonSchema: "",
 			InputJson:       "",
 			ExpectedResult:  true,
+			ExpectedError: nil,
+		},
+		{
+			Name:            "Invalid json",
+			InputJsonSchema: validInputJsonSchema,
+			InputJson:       "{test",
+			ExpectedResult:  false,
+			ExpectedError: errors.New("invalid character"),
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-
 			svc, err := jsonschema.NewValidatorFromStringSchema(testCase.InputJsonSchema)
 			require.NoError(t, err)
 
 			// when
-			ok, err := svc.ValidateString(testCase.InputJson)
-			require.NoError(t, err)
-
+			result, err := svc.ValidateString(testCase.InputJson)
 			// then
-			assert.Equal(t, testCase.ExpectedResult, ok)
+			assert.Equal(t, testCase.ExpectedResult, result.Valid)
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				if !testCase.ExpectedResult {
+					assert.NotNil(t, result.Error)
+				} else {
+					assert.Nil(t, result.Error)
+				}
+			}
 		})
 	}
 }
@@ -120,39 +139,50 @@ func TestValidator_ValidateRaw(t *testing.T) {
 		InputJSONSchema interface{}
 		InputJSON       interface{}
 		ExpectedResult  bool
+		ExpectedError   error
 	}{
 		{
 			Name:            "Success",
 			InputJSONSchema: validInputJSONSchema,
 			InputJSON:       inputJSON,
 			ExpectedResult:  true,
+			ExpectedError: nil,
 		},
 		{
 			Name:            "Json schema and json doesn't match",
 			InputJSONSchema: validInputJSONSchema,
 			InputJSON:       invalidInputJSON,
 			ExpectedResult:  false,
+			ExpectedError: nil,
 		},
 		{
 			Name:            "Empty",
 			InputJSONSchema: nil,
 			InputJSON:       "anything",
 			ExpectedResult:  true,
+			ExpectedError: nil,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-
 			svc, err := jsonschema.NewValidatorFromRawSchema(testCase.InputJSONSchema)
 			require.NoError(t, err)
 
 			// when
-			ok, err := svc.ValidateRaw(testCase.InputJSON)
-			require.NoError(t, err)
-
+			result, err := svc.ValidateRaw(testCase.InputJSON)
 			// then
-			assert.Equal(t, testCase.ExpectedResult, ok)
+			assert.Equal(t, testCase.ExpectedResult, result.Valid)
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				if !testCase.ExpectedResult {
+					assert.NotNil(t, result.Error)
+				} else {
+					assert.Nil(t, result.Error)
+				}
+			}
 		})
 	}
 }

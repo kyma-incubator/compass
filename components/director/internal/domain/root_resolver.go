@@ -63,12 +63,13 @@ func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 
 	uidService := uid.NewService()
 	labelUpsertService := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidService)
-	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo, runtimeRepo, labelRepo, labelUpsertService, uidService)
+	scenariosService := labeldef.NewScenariosService(labelDefRepo, uidService)
+	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo, runtimeRepo, labelRepo, labelUpsertService, scenariosService, uidService)
 	apiSvc := api.NewService(apiRepo, uidService)
 	eventAPISvc := eventapi.NewService(eventAPIRepo, uidService)
 	webhookSvc := webhook.NewService(webhookRepo, uidService)
 	docSvc := document.NewService(docRepo, uidService)
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelUpsertService, uidService)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosService, labelUpsertService, uidService)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 	labelDefService := labeldef.NewService(labelDefRepo, labelRepo, uidService)
 
@@ -200,7 +201,7 @@ func (r *mutationResolver) UpdateLabelDefinition(ctx context.Context, in graphql
 	return r.labelDef.UpdateLabelDefinition(ctx, in)
 }
 func (r *mutationResolver) DeleteLabelDefinition(ctx context.Context, key string, deleteRelatedLabels *bool) (*graphql.LabelDefinition, error) {
-	panic("not implemented")
+	return r.labelDef.DeleteLabelDefinition(ctx, key, deleteRelatedLabels)
 }
 func (r *mutationResolver) SetApplicationLabel(ctx context.Context, applicationID string, key string, value interface{}) (*graphql.Label, error) {
 	return r.app.SetApplicationLabel(ctx, applicationID, key, value)

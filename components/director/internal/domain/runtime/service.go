@@ -36,6 +36,11 @@ type LabelUpsertService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
+//go:generate mockery -name=ScenariosService -output=automock -outpkg=automock -case=underscore
+type ScenariosService interface {
+	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
+}
+
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
 type UIDService interface {
 	Generate() string
@@ -47,10 +52,11 @@ type service struct {
 
 	labelUpsertService LabelUpsertService
 	uidService         UIDService
+	scenariosService   ScenariosService
 }
 
-func NewService(repo RuntimeRepository, labelRepo LabelRepository, labelUpsertService LabelUpsertService, uidService UIDService) *service {
-	return &service{repo: repo, labelRepo: labelRepo, labelUpsertService: labelUpsertService, uidService: uidService}
+func NewService(repo RuntimeRepository, labelRepo LabelRepository, scenariosService ScenariosService, labelUpsertService LabelUpsertService, uidService UIDService) *service {
+	return &service{repo: repo, labelRepo: labelRepo, scenariosService: scenariosService, labelUpsertService: labelUpsertService, uidService: uidService}
 }
 
 func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error) {
@@ -110,6 +116,11 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 	err = s.repo.Create(ctx, rtm)
 	if err != nil {
 		return "", errors.Wrapf(err, "while creating Runtime")
+	}
+
+	err = s.scenariosService.EnsureScenariosLabelDefinitionExists(ctx, rtmTenant)
+	if err != nil {
+		return "", errors.Wrapf(err, "while ensuring Label Definition with key %s exists", model.ScenariosKey)
 	}
 
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels)

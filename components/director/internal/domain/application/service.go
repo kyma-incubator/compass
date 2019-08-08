@@ -4,13 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
-
 	"github.com/google/uuid"
-
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/pkg/errors"
 )
 
@@ -72,24 +70,31 @@ type LabelUpsertService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
+//go:generate mockery -name=ScenariosService -output=automock -outpkg=automock -case=underscore
+type ScenariosService interface {
+	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
+}
+
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
 type UIDService interface {
 	Generate() string
 }
 
 type service struct {
-	appRepo            ApplicationRepository
-	apiRepo            APIRepository
-	eventAPIRepo       EventAPIRepository
-	documentRepo       DocumentRepository
-	webhookRepo        WebhookRepository
-	labelRepo          LabelRepository
-	runtimeRepo        RuntimeRepository
+	appRepo      ApplicationRepository
+	apiRepo      APIRepository
+	eventAPIRepo EventAPIRepository
+	documentRepo DocumentRepository
+	webhookRepo  WebhookRepository
+	labelRepo    LabelRepository
+	runtimeRepo  RuntimeRepository
+
 	labelUpsertService LabelUpsertService
+	scenariosService   ScenariosService
 	uidService         UIDService
 }
 
-func NewService(app ApplicationRepository, webhook WebhookRepository, api APIRepository, eventAPI EventAPIRepository, documentRepo DocumentRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, labelUpsertService LabelUpsertService, uidService UIDService) *service {
+func NewService(app ApplicationRepository, webhook WebhookRepository, api APIRepository, eventAPI EventAPIRepository, documentRepo DocumentRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, uidService UIDService) *service {
 	return &service{
 		appRepo:            app,
 		webhookRepo:        webhook,
@@ -99,6 +104,7 @@ func NewService(app ApplicationRepository, webhook WebhookRepository, api APIRep
 		runtimeRepo:        runtimeRepo,
 		labelRepo:          labelRepo,
 		labelUpsertService: labelUpsertService,
+		scenariosService:   scenariosService,
 		uidService:         uidService}
 }
 
@@ -198,6 +204,24 @@ func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string
 	id := s.uidService.Generate()
 	app := in.ToApplication(id, appTenant)
 
+	// TODO: Checking if Label Definition exists could be moved after application creation, once application repository is ported to sql
+	err = s.scenariosService.EnsureScenariosLabelDefinitionExists(ctx, appTenant)
+	if err != nil {
+		return "", err
+	}
+
+	if _, ok := in.Labels[model.ScenariosKey]; !ok {
+		if in.Labels == nil {
+			in.Labels = map[string]interface{}{}
+		}
+		in.Labels[model.ScenariosKey] = model.ScenariosDefaultValue
+	}
+
+	err = s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
+	if err != nil {
+		return id, errors.Wrapf(err, "while creating multiple labels for Application")
+	}
+
 	err = s.appRepo.Create(ctx, app)
 	if err != nil {
 		return "", err
@@ -206,11 +230,6 @@ func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string
 	err = s.createRelatedResources(in, app.ID)
 	if err != nil {
 		return "", errors.Wrap(err, "while creating related Application resources")
-	}
-
-	err = s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
-	if err != nil {
-		return id, errors.Wrapf(err, "while creating multiple labels for Application")
 	}
 
 	return id, nil
@@ -365,6 +384,10 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
+	if key == model.ScenariosKey {
+		return fmt.Errorf("%s label can not be deleted from application", model.ScenariosKey)
+	}
+
 	appExists, err := s.appRepo.Exists(ctx, appTenant, applicationID)
 	if err != nil {
 		return errors.Wrap(err, "while checking Application existence")
@@ -449,6 +472,7 @@ func (s *service) deleteRelatedResources(applicationID string) error {
 
 	return nil
 }
+
 func getScenariosValues(labels interface{}) ([]string, error) {
 	tmpScenarios, ok := labels.([]interface{})
 	if !ok {

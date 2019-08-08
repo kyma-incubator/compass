@@ -280,7 +280,7 @@ func TestServiceUpdate(t *testing.T) {
 		err := sut.Update(ctx, in)
 		// THEN
 		require.Error(t, err)
-		require.EqualError(t, err, `label with key "oldProperty" is not valid against new schema for Runtime with ID "foo"`)
+		require.EqualError(t, err, `label with key "oldProperty" is not valid against new schema for Runtime with ID "foo": (root): nonExistingProp is required`)
 	})
 
 	t.Run("returns error when validation of Label Definition failed", func(t *testing.T) {
@@ -397,6 +397,170 @@ func TestServiceUpdate(t *testing.T) {
 	})
 }
 
+func TestServiceDelete(t *testing.T) {
+	t.Run("success when no labels use labeldef", func(t *testing.T) {
+		// GIVEN
+		mockRepository := &automock.Repository{}
+		defer mockRepository.AssertExpectations(t)
+		mockLabelRepository := &automock.LabelRepository{}
+		defer mockLabelRepository.AssertExpectations(t)
+
+		tnt := "tenant"
+		ctx := context.TODO()
+		given := model.LabelDefinition{
+			Key:    "key",
+			Tenant: tnt,
+		}
+		deleteRelatedResources := false
+		mockRepository.On("GetByKey", ctx, tnt, given.Key).Return(&given, nil).Once()
+		mockRepository.On("DeleteByKey", ctx, tnt, given.Key).Return(nil).Once()
+		mockLabelRepository.On("ListByKey", ctx, tnt, given.Key).Return([]*model.Label{}, nil)
+
+		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil)
+		// WHEN
+		err := sut.Delete(ctx, tnt, given.Key, deleteRelatedResources)
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("error when deleting scenarios key", func(t *testing.T) {
+		// GIVEN
+		mockRepository := &automock.Repository{}
+		defer mockRepository.AssertExpectations(t)
+
+		tnt := "tenant"
+		ctx := context.TODO()
+		given := model.LabelDefinition{
+			Key:    model.ScenariosKey,
+			Tenant: tnt,
+		}
+		deleteRelatedResources := false
+
+		sut := labeldef.NewService(mockRepository, nil, nil)
+		// WHEN
+		err := sut.Delete(ctx, tnt, given.Key, deleteRelatedResources)
+		// THEN
+		require.Error(t, err)
+	})
+
+	t.Run("error when some labels use labeldef", func(t *testing.T) {
+		// GIVEN
+		mockRepository := &automock.Repository{}
+		defer mockRepository.AssertExpectations(t)
+		mockLabelRepository := &automock.LabelRepository{}
+		defer mockLabelRepository.AssertExpectations(t)
+
+		tnt := "tenant"
+		ctx := context.TODO()
+		given := model.LabelDefinition{
+			Key:    "key",
+			Tenant: "tenant",
+		}
+		existingLabels := []*model.Label{
+			fixLabel("test", tnt, given.Key, nil, "object1", model.ApplicationLabelableObject),
+			fixLabel("test2", tnt, given.Key, nil, "object2", model.RuntimeLabelableObject),
+			fixLabel("test3", tnt, given.Key, nil, "object3", model.ApplicationLabelableObject),
+		}
+		deleteRelatedResources := false
+		mockRepository.On("GetByKey", ctx, tnt, given.Key).Return(&given, nil).Once()
+		mockLabelRepository.On("ListByKey", ctx, tnt, given.Key).Return(existingLabels, nil)
+
+		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil)
+		// WHEN
+		err := sut.Delete(ctx, "tenant", given.Key, deleteRelatedResources)
+		// THEN
+		require.Error(t, err)
+	})
+
+	t.Run("error when listing existing labels failed", func(t *testing.T) {
+		// GIVEN
+		mockRepository := &automock.Repository{}
+		defer mockRepository.AssertExpectations(t)
+		mockLabelRepository := &automock.LabelRepository{}
+		defer mockLabelRepository.AssertExpectations(t)
+
+		tnt := "tenant"
+		ctx := context.TODO()
+		given := model.LabelDefinition{
+			Key:    "key",
+			Tenant: "tenant",
+		}
+		deleteRelatedResources := false
+		mockRepository.On("GetByKey", ctx, tnt, given.Key).Return(&given, nil).Once()
+		mockLabelRepository.On("ListByKey", ctx, tnt, given.Key).Return([]*model.Label{}, errors.New("test"))
+
+		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil)
+		// WHEN
+		err := sut.Delete(ctx, "tenant", given.Key, deleteRelatedResources)
+		// THEN
+		require.Error(t, err)
+	})
+
+	t.Run("error when label definition not found", func(t *testing.T) {
+		// GIVEN
+		mockRepository := &automock.Repository{}
+		defer mockRepository.AssertExpectations(t)
+
+		tnt := "tenant"
+		ctx := context.TODO()
+		given := model.LabelDefinition{
+			Key:    "key",
+			Tenant: tnt,
+		}
+		deleteRelatedResources := false
+		mockRepository.On("GetByKey", ctx, tnt, given.Key).Return(nil, nil).Once()
+
+		sut := labeldef.NewService(mockRepository, nil, nil)
+		// WHEN
+		err := sut.Delete(ctx, tnt, given.Key, deleteRelatedResources)
+		// THEN
+		require.Error(t, err)
+	})
+
+	t.Run("error when getting label definition failed", func(t *testing.T) {
+		// GIVEN
+		mockRepository := &automock.Repository{}
+		defer mockRepository.AssertExpectations(t)
+
+		tnt := "tenant"
+		ctx := context.TODO()
+		given := model.LabelDefinition{
+			Key:    "key",
+			Tenant: tnt,
+		}
+		deleteRelatedResources := false
+		mockRepository.On("GetByKey", ctx, tnt, given.Key).Return(nil, errors.New("")).Once()
+
+		sut := labeldef.NewService(mockRepository, nil, nil)
+		// WHEN
+		err := sut.Delete(ctx, tnt, given.Key, deleteRelatedResources)
+		// THEN
+		require.Error(t, err)
+	})
+
+	t.Run("error when trying to delete related resources", func(t *testing.T) {
+		// GIVEN
+		mockRepository := &automock.Repository{}
+		defer mockRepository.AssertExpectations(t)
+		mockLabelRepository := &automock.LabelRepository{}
+		defer mockLabelRepository.AssertExpectations(t)
+
+		tnt := "tenant"
+		ctx := context.TODO()
+		given := model.LabelDefinition{
+			Key:    "key",
+			Tenant: tnt,
+		}
+		deleteRelatedResources := true
+
+		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil)
+		// WHEN
+		err := sut.Delete(ctx, tnt, given.Key, deleteRelatedResources)
+		// THEN
+		require.Error(t, err)
+	})
+}
+
 func fixUUID() string {
 	return "003a0855-4eb0-486d-8fc6-3ab2f2312ca0"
 }
@@ -453,4 +617,15 @@ func fixSchema(t *testing.T, propertyName, propertyType, propertyDescription, re
 	var objTemp interface{}
 	objTemp = obj
 	return &objTemp
+}
+
+func fixLabel(id, tenant, key string, value interface{}, objectID string, objectType model.LabelableObject) *model.Label {
+	return &model.Label{
+		ID:         id,
+		Tenant:     tenant,
+		Key:        key,
+		Value:      value,
+		ObjectID:   objectID,
+		ObjectType: objectType,
+	}
 }

@@ -2,26 +2,30 @@ package jsonschema
 
 import (
 	"encoding/json"
-
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-
 	"github.com/xeipuuv/gojsonschema"
+	"strings"
 )
 
 type validator struct {
 	schema *gojsonschema.Schema
 }
 
-func NewValidatorFromStringSchema(jsonSchema string) (*validator, error) {
-	var schema *gojsonschema.Schema
-	var err error
+type ValidationResult struct {
+	Valid bool
+	Error error
+}
 
-	if jsonSchema != "" {
-		sl := gojsonschema.NewStringLoader(jsonSchema)
-		schema, err = gojsonschema.NewSchema(sl)
-		if err != nil {
-			return nil, err
-		}
+func NewValidatorFromStringSchema(jsonSchema string) (*validator, error) {
+	if jsonSchema == "" {
+		return &validator{schema: nil}, nil
+	}
+
+	sl := gojsonschema.NewStringLoader(jsonSchema)
+	schema, err := gojsonschema.NewSchema(sl)
+	if err != nil {
+		return nil, err
 	}
 
 	return &validator{
@@ -34,11 +38,8 @@ func NewValidatorFromRawSchema(jsonSchema interface{}) (*validator, error) {
 		return &validator{}, nil
 	}
 
-	var schema *gojsonschema.Schema
-	var err error
-
 	sl := gojsonschema.NewGoLoader(jsonSchema)
-	schema, err = gojsonschema.NewSchema(sl)
+	schema, err := gojsonschema.NewSchema(sl)
 	if err != nil {
 		return nil, err
 	}
@@ -48,28 +49,52 @@ func NewValidatorFromRawSchema(jsonSchema interface{}) (*validator, error) {
 	}, nil
 }
 
-func (v *validator) ValidateString(json string) (bool, error) {
+func (v *validator) ValidateString(json string) (ValidationResult, error) {
 	if v.schema == nil {
-		return true, nil
+		return ValidationResult{
+			Valid: true,
+			Error: nil,
+		}, nil
 	}
 
 	jsonLoader := gojsonschema.NewStringLoader(json)
 	result, err := v.schema.Validate(jsonLoader)
 	if err != nil {
-		return false, errors.Wrapf(err, "while validating json schema as string")
+		return ValidationResult{}, err
 	}
 
-	return result.Valid(), nil
+	var validationError *multierror.Error
+	for _, e := range result.Errors() {
+		validationError = multierror.Append(validationError, errors.New(e.String()))
+	}
+
+	if validationError != nil {
+		validationError.ErrorFormat = func(i []error) string {
+			var s []string
+			for _, v := range i {
+				s = append(s, v.Error())
+			}
+			return strings.Join(s, ", ")
+		}
+	}
+
+	return ValidationResult{
+		Valid: result.Valid(),
+		Error: validationError,
+	}, nil
 }
 
-func (v *validator) ValidateRaw(value interface{}) (bool, error) {
+func (v *validator) ValidateRaw(value interface{}) (ValidationResult, error) {
 	if v.schema == nil {
-		return true, nil
+		return ValidationResult{
+			Valid: true,
+			Error: nil,
+		}, nil
 	}
 
 	valueMarshalled, err := json.Marshal(value)
 	if err != nil {
-		return false, errors.Wrapf(err, "while marshalling raw value to json")
+		return ValidationResult{}, err
 	}
 
 	return v.ValidateString(string(valueMarshalled))

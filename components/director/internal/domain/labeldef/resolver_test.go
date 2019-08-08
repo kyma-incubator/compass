@@ -4,11 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/persistence"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	pautomock "github.com/kyma-incubator/compass/components/director/internal/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -423,6 +422,220 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 		// THEN
 		require.EqualError(t, err, "while committing transaction: commit errror")
 
+	})
+}
+
+func TestResolver_DeleteLabelDefinition(t *testing.T) {
+	tnt := "tenant"
+
+	t.Run("success", func(t *testing.T) {
+		// GIVEN
+		mockPersistanceCtx := &pautomock.PersistenceTxOp{}
+		defer mockPersistanceCtx.AssertExpectations(t)
+		mockPersistanceCtx.On("Commit").Return(nil)
+
+		mockTransactioner := &pautomock.Transactioner{}
+		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
+		mockTransactioner.On("RollbackUnlessCommited", mock.Anything).Return(nil)
+		defer mockTransactioner.AssertExpectations(t)
+
+		ctx := tenant.SaveToContext(context.TODO(), tnt)
+		givenModel := &model.LabelDefinition{
+			ID:     "id",
+			Key:    "key",
+			Tenant: tnt,
+		}
+		deleteRelatedLabels := true
+
+		mockService := &automock.Service{}
+		defer mockService.AssertExpectations(t)
+		mockService.On("Get",
+			contextThatHasTenant(tnt),
+			tnt, givenModel.Key).Return(givenModel, nil)
+		mockService.On("Delete", contextThatHasTenant(tnt), tnt, givenModel.Key, deleteRelatedLabels).Return(nil).Once()
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("ToGraphQL", *givenModel).Return(graphql.LabelDefinition{
+			Key: givenModel.Key,
+		})
+
+		sut := labeldef.NewResolver(mockService, mockConverter, mockTransactioner)
+		// WHEN
+		actual, err := sut.DeleteLabelDefinition(ctx, givenModel.Key, &deleteRelatedLabels)
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, "key", actual.Key)
+		assert.Nil(t, actual.Schema)
+	})
+
+	t.Run("error when get failed", func(t *testing.T) {
+		// GIVEN
+		mockPersistanceCtx := &pautomock.PersistenceTxOp{}
+		defer mockPersistanceCtx.AssertExpectations(t)
+
+		mockTransactioner := &pautomock.Transactioner{}
+		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
+		mockTransactioner.On("RollbackUnlessCommited", mock.Anything).Return(nil)
+		defer mockTransactioner.AssertExpectations(t)
+
+		ctx := tenant.SaveToContext(context.TODO(), tnt)
+		givenModel := &model.LabelDefinition{
+			ID:     "id",
+			Key:    "key",
+			Tenant: tnt,
+		}
+		deleteRelatedLabels := true
+
+		mockService := &automock.Service{}
+		defer mockService.AssertExpectations(t)
+		mockService.On("Get",
+			contextThatHasTenant(tnt),
+			tnt, givenModel.Key).Return(nil, errors.New("test"))
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+
+		sut := labeldef.NewResolver(mockService, mockConverter, mockTransactioner)
+		// WHEN
+		_, err := sut.DeleteLabelDefinition(ctx, givenModel.Key, &deleteRelatedLabels)
+		// THEN
+		require.Error(t, err)
+	})
+
+	t.Run("error when label definition not found", func(t *testing.T) {
+		// GIVEN
+		mockPersistanceCtx := &pautomock.PersistenceTxOp{}
+		defer mockPersistanceCtx.AssertExpectations(t)
+
+		mockTransactioner := &pautomock.Transactioner{}
+		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
+		mockTransactioner.On("RollbackUnlessCommited", mock.Anything).Return(nil)
+		defer mockTransactioner.AssertExpectations(t)
+
+		ctx := tenant.SaveToContext(context.TODO(), tnt)
+		givenModel := &model.LabelDefinition{
+			ID:     "id",
+			Key:    "key",
+			Tenant: tnt,
+		}
+		deleteRelatedLabels := true
+
+		mockService := &automock.Service{}
+		defer mockService.AssertExpectations(t)
+		mockService.On("Get",
+			contextThatHasTenant(tnt),
+			tnt, givenModel.Key).Return(nil, nil)
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+
+		sut := labeldef.NewResolver(mockService, mockConverter, mockTransactioner)
+		// WHEN
+		_, err := sut.DeleteLabelDefinition(ctx, givenModel.Key, &deleteRelatedLabels)
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "not found")
+	})
+
+	t.Run("error when label definition delete failed", func(t *testing.T) {
+		// GIVEN
+		mockPersistanceCtx := &pautomock.PersistenceTxOp{}
+		defer mockPersistanceCtx.AssertExpectations(t)
+
+		mockTransactioner := &pautomock.Transactioner{}
+		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
+		mockTransactioner.On("RollbackUnlessCommited", mock.Anything).Return(nil)
+		defer mockTransactioner.AssertExpectations(t)
+
+		ctx := tenant.SaveToContext(context.TODO(), tnt)
+		givenModel := &model.LabelDefinition{
+			ID:     "id",
+			Key:    "key",
+			Tenant: tnt,
+		}
+		deleteRelatedLabels := true
+
+		mockService := &automock.Service{}
+		defer mockService.AssertExpectations(t)
+		mockService.On("Get",
+			contextThatHasTenant(tnt),
+			tnt, givenModel.Key).Return(givenModel, nil)
+		mockService.On("Delete", contextThatHasTenant(tnt), tnt, givenModel.Key, deleteRelatedLabels).Return(errors.New("test")).Once()
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("ToGraphQL", *givenModel).Return(graphql.LabelDefinition{
+			Key: givenModel.Key,
+		})
+
+		sut := labeldef.NewResolver(mockService, mockConverter, mockTransactioner)
+		// WHEN
+		_, err := sut.DeleteLabelDefinition(ctx, givenModel.Key, &deleteRelatedLabels)
+		// THEN
+		require.Error(t, err)
+	})
+
+	t.Run("got error when missing tenant in context", func(t *testing.T) {
+		// GIVEN
+		deleteRelatedLabels := true
+		sut := labeldef.NewResolver(nil, nil, nil)
+		// WHEN
+		_, err := sut.DeleteLabelDefinition(context.TODO(), "test", &deleteRelatedLabels)
+		// THEN
+		require.EqualError(t, err, "Cannot read tenant from context")
+	})
+
+	t.Run("got error on starting transaction", func(t *testing.T) {
+		// GIVEN
+		mockTransactioner := getInvalidMockTransactioner()
+		defer mockTransactioner.AssertExpectations(t)
+		ctx := tenant.SaveToContext(context.TODO(), "tenant")
+		deleteRelatedLabels := true
+		sut := labeldef.NewResolver(nil, nil, mockTransactioner)
+		// WHEN
+		_, err := sut.DeleteLabelDefinition(ctx, "test", &deleteRelatedLabels)
+		// THEN
+		require.EqualError(t, err, "while starting transaction: some error")
+	})
+
+	t.Run("got error on committing transaction", func(t *testing.T) {
+		// GIVEN
+		mockPersistanceCtx := &pautomock.PersistenceTxOp{}
+		defer mockPersistanceCtx.AssertExpectations(t)
+		mockPersistanceCtx.On("Commit").Return(errors.New("commit errror"))
+
+		mockTransactioner := &pautomock.Transactioner{}
+		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
+		mockTransactioner.On("RollbackUnlessCommited", mock.Anything).Return(nil)
+		defer mockTransactioner.AssertExpectations(t)
+
+		ctx := tenant.SaveToContext(context.TODO(), tnt)
+		givenModel := &model.LabelDefinition{
+			ID:     "id",
+			Key:    "key",
+			Tenant: tnt,
+		}
+		deleteRelatedLabels := true
+
+		mockService := &automock.Service{}
+		defer mockService.AssertExpectations(t)
+		mockService.On("Get",
+			contextThatHasTenant(tnt),
+			tnt, givenModel.Key).Return(givenModel, nil)
+		mockService.On("Delete", contextThatHasTenant(tnt), tnt, givenModel.Key, deleteRelatedLabels).Return(nil).Once()
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("ToGraphQL", *givenModel).Return(graphql.LabelDefinition{
+			Key: givenModel.Key,
+		})
+
+		sut := labeldef.NewResolver(mockService, mockConverter, mockTransactioner)
+		// WHEN
+		_, err := sut.DeleteLabelDefinition(ctx, givenModel.Key, &deleteRelatedLabels)
+		// THEN
+		require.EqualError(t, err, "while committing transaction: commit errror")
 	})
 }
 

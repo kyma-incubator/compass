@@ -139,13 +139,36 @@ func (r *repo) Update(ctx context.Context, def model.LabelDefinition) error {
 		return errors.Wrap(err, "while updating Label Definition")
 	}
 
-	rowAffected, err := result.RowsAffected()
+	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return errors.Wrapf(err, "while receiving affected rows in db")
 	}
 
-	if rowAffected == 0 {
+	if rowsAffected == 0 {
 		return errors.New("no row was affected by query")
+	}
+
+	return nil
+}
+
+func (r *repo) DeleteByKey(ctx context.Context, tenant, key string) error {
+	db, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return err
+	}
+
+	stmt := fmt.Sprintf(`DELETE FROM %s WHERE tenant_id=$1 AND key=$2`, tableName)
+	result, err := db.Exec(stmt, tenant, key)
+	if err != nil {
+		return errors.Wrap(err, "while deleting the Label Definition entity from database")
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return errors.Wrapf(err, "while receiving affected rows in db")
+	}
+	if rowsAffected < 1 {
+		return errors.New("no rows were affected by query")
 	}
 
 	return nil

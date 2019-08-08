@@ -4,13 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -34,12 +33,15 @@ func TestService_Create(t *testing.T) {
 			rtm.Status.Condition == model.RuntimeStatusConditionInitial
 	})
 
+	tnt := "tenant"
+
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, "tenant")
+	ctx = tenant.SaveToContext(ctx, tnt)
 
 	testCases := []struct {
 		Name                 string
 		RuntimeRepositoryFn  func() *automock.RuntimeRepository
+		ScenariosServiceFn   func() *automock.ScenariosService
 		LabelUpsertServiceFn func() *automock.LabelUpsertService
 		UIDServiceFn         func() *automock.UIDService
 		Input                model.RuntimeInput
@@ -52,6 +54,11 @@ func TestService_Create(t *testing.T) {
 				repo.On("Create", ctx, runtimeModel).Return(nil).Once()
 				return repo
 			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				repo := &automock.ScenariosService{}
+				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
+				return repo
+			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
 				repo.On("UpsertMultipleLabels", ctx, "tenant", model.RuntimeLabelableObject, id, modelInput.Labels).Return(nil).Once()
@@ -59,16 +66,44 @@ func TestService_Create(t *testing.T) {
 			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
-				svc.On("Generate").Return(id).Once()
+				svc.On("Generate").Return(id)
 				return svc
 			},
 			Input:       modelInput,
 			ExpectedErr: nil,
 		},
 		{
+			Name: "Returns error when ensuring default label definition failed",
+			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("Create", ctx, runtimeModel).Return(nil).Once()
+				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				repo := &automock.ScenariosService{}
+				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(testErr).Once()
+				return repo
+			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				repo := &automock.LabelUpsertService{}
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			Input:       modelInput,
+			ExpectedErr: testErr,
+		},
+		{
 			Name: "Returns error when name is empty",
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
+				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				repo := &automock.ScenariosService{}
 				return repo
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
@@ -91,6 +126,10 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.LabelUpsertService{}
 				return repo
 			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				repo := &automock.ScenariosService{}
+				return repo
+			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				return svc
@@ -109,6 +148,10 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.LabelUpsertService{}
 				return repo
 			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				repo := &automock.ScenariosService{}
+				return repo
+			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return("").Once()
@@ -124,7 +167,8 @@ func TestService_Create(t *testing.T) {
 			repo := testCase.RuntimeRepositoryFn()
 			idSvc := testCase.UIDServiceFn()
 			labelSvc := testCase.LabelUpsertServiceFn()
-			svc := runtime.NewService(repo, nil, labelSvc, idSvc)
+			scenariosSvc := testCase.ScenariosServiceFn()
+			svc := runtime.NewService(repo, nil, scenariosSvc, labelSvc, idSvc)
 
 			// when
 			result, err := svc.Create(ctx, testCase.Input)
@@ -140,6 +184,7 @@ func TestService_Create(t *testing.T) {
 			repo.AssertExpectations(t)
 			idSvc.AssertExpectations(t)
 			labelSvc.AssertExpectations(t)
+			scenariosSvc.AssertExpectations(t)
 		})
 	}
 }
@@ -265,7 +310,7 @@ func TestService_Update(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
 			labelSvc := testCase.LabelUpsertServiceFn()
-			svc := runtime.NewService(repo, labelRepo, labelSvc, nil)
+			svc := runtime.NewService(repo, labelRepo, nil, labelSvc, nil)
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -347,7 +392,7 @@ func TestService_Delete(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := runtime.NewService(repo, nil, nil, nil)
+			svc := runtime.NewService(repo, nil, nil, nil, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -417,7 +462,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo, nil, nil, nil)
+			svc := runtime.NewService(repo, nil, nil, nil, nil)
 
 			// when
 			rtm, err := svc.Get(ctx, testCase.InputID)
@@ -527,7 +572,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo, nil, nil, nil)
+			svc := runtime.NewService(repo, nil, nil, nil, nil)
 
 			// when
 			rtm, err := svc.List(ctx, testCase.InputLabelFilters, testCase.InputPageSize, testCase.InputCursor)
@@ -639,7 +684,7 @@ func TestService_GetLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := runtime.NewService(repo, labelRepo, nil, nil)
+			svc := runtime.NewService(repo, labelRepo, nil, nil, nil)
 
 			// when
 			l, err := svc.GetLabel(ctx, testCase.InputApplicationID, testCase.InputLabel.Key)
@@ -753,7 +798,7 @@ func TestService_ListLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := runtime.NewService(repo, labelRepo, nil, nil)
+			svc := runtime.NewService(repo, labelRepo, nil, nil, nil)
 
 			// when
 			l, err := svc.ListLabels(ctx, testCase.InputApplicationID)
@@ -850,7 +895,7 @@ func TestService_SetLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelSvc := testCase.LabelUpsertServiceFn()
-			svc := runtime.NewService(repo, nil, labelSvc, nil)
+			svc := runtime.NewService(repo, nil, nil, labelSvc, nil)
 
 			// when
 			err := svc.SetLabel(ctx, testCase.InputLabel)
@@ -941,7 +986,7 @@ func TestService_DeleteLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := runtime.NewService(repo, labelRepo, nil, nil)
+			svc := runtime.NewService(repo, labelRepo, nil, nil, nil)
 
 			// when
 			err := svc.DeleteLabel(ctx, testCase.InputRuntimeID, testCase.InputKey)
@@ -957,4 +1002,14 @@ func TestService_DeleteLabel(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
+}
+
+func contextThatHasTenant(expectedTenant string) interface{} {
+	return mock.MatchedBy(func(actual context.Context) bool {
+		actualTenant, err := tenant.LoadFromContext(actual)
+		if err != nil {
+			return false
+		}
+		return actualTenant == expectedTenant
+	})
 }
