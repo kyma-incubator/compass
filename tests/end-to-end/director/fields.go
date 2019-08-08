@@ -169,3 +169,13 @@ func (fp *gqlFieldsProvider) ForRuntime() string {
 		status {condition timestamp}
 		agentAuth {%s}`, fp.ForAuth())
 }
+
+func (fp *gqlFieldsProvider) ForApplicationLabel() string {
+	return `key
+			value`
+}
+
+func (fp *gqlFieldsProvider) ForLabelDefinition() string {
+	return `key
+			schema`
+}

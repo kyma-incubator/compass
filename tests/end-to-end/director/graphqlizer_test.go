@@ -2,6 +2,7 @@ package director
 
 import (
 	"bytes"
+	"encoding/json"
 	"text/template"
 
 	"github.com/Masterminds/sprig"
@@ -252,6 +253,36 @@ func (g *graphqlizer) RuntimeInputToGQL(in graphql.RuntimeInput) (string, error)
 	}`)
 }
 
+func (g *graphqlizer) LabelDefinitionInputToGQL(in graphql.LabelDefinitionInput) (string, error) {
+	return g.genericToGQL(in, `{
+		key: "{{.Key}}",
+		{{- if .Schema }}
+		schema: {{ SchemaToGQL .Schema }},
+		{{- end }}
+	}`)
+}
+
+func (g *graphqlizer) LabelFilterToGQL(in graphql.LabelFilter) (string, error) {
+	return g.genericToGQL(in, `{
+		key: "{{.Key}}",
+		{{- if .Query }}
+		query: "{{.Query}}",
+		{{- end }}
+	}`)
+}
+
+func (g *graphqlizer) SchemaToGQL(in *interface{}) (string, error) {
+
+	out, err := json.Marshal(in)
+	if err != nil {
+		return "", errors.Wrap(err, "while marshalling json schema")
+	}
+
+	output := removeDoubleQuotasFromJsonKeys(string(out))
+
+	return output, nil
+}
+
 func (g *graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error) {
 	fm := sprig.TxtFuncMap()
 	fm["DocumentInputToGQL"] = g.DocumentInputToGQL
@@ -266,6 +297,9 @@ func (g *graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	fm["HTTPHeadersToGQL"] = g.HTTPHeadersToGQL
 	fm["QueryParamsToGQL"] = g.QueryParamsToGQL
 	fm["EventAPISpecInputToGQL"] = g.EventAPISpecInputToGQL
+	fm["LabelDefinitionInputToGQL"] = g.LabelDefinitionInputToGQL
+	fm["LabelFilterToGQL"] = g.LabelFilterToGQL
+	fm["SchemaToGQL"] = g.SchemaToGQL
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)
 	if err != nil {

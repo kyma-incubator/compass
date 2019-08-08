@@ -456,8 +456,28 @@ func TestApplicationsForRuntime(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
 	tenantID := "90b9ccc8-7829-4511-ac17-5b0c872a41b5"
+	otherTenant := "3b6f72ac-93e4-4659-bf9c-8903239e1e93"
 	tenantApplications := []*graphql.Application{}
-	scenarios := []string{"default", "black-friday-campaign", "christmas-campaign", "summer-campaign"}
+	defaultValue := "DEFAULT"
+	scenarios := []string{defaultValue, "black-friday-campaign", "christmas-campaign", "summer-campaign"}
+
+	jsonSchema := map[string]interface{}{
+		"type":        "array",
+		"minItems":    1,
+		"uniqueItems": true,
+		"items": map[string]interface{}{
+			"type": "string",
+			"enum": scenarios,
+		},
+	}
+	var schema interface{} = jsonSchema
+
+	labelDefinitionInput := graphql.LabelDefinitionInput{
+		Key:    scenarioLabel,
+		Schema: &schema,
+	}
+	createLabelDefinitionWithinTenant(t, ctx, labelDefinitionInput, tenantID)
+	createLabelDefinitionWithinTenant(t, ctx, labelDefinitionInput, otherTenant)
 
 	applications := []struct {
 		ApplicationName string
@@ -467,21 +487,15 @@ func TestApplicationsForRuntime(t *testing.T) {
 	}{
 		{
 			Tenant:          tenantID,
-			ApplicationName: "noneofscenarios",
-			WithinTenant:    false,
-			Scenarios:       []string{},
-		},
-		{
-			Tenant:          tenantID,
 			ApplicationName: "first",
 			WithinTenant:    true,
-			Scenarios:       []string{"default"},
+			Scenarios:       []string{defaultValue},
 		},
 		{
 			Tenant:          tenantID,
 			ApplicationName: "second",
 			WithinTenant:    true,
-			Scenarios:       []string{"default", "black-friday-campaign"},
+			Scenarios:       []string{defaultValue, "black-friday-campaign"},
 		},
 		{
 			Tenant:          tenantID,
@@ -493,19 +507,20 @@ func TestApplicationsForRuntime(t *testing.T) {
 			Tenant:          tenantID,
 			ApplicationName: "allscenarios",
 			WithinTenant:    true,
-			Scenarios:       []string{"default", "black-friday-campaign", "christmas-campaign", "summer-campaign"},
+			Scenarios:       []string{defaultValue, "black-friday-campaign", "christmas-campaign", "summer-campaign"},
 		},
 		{
-			Tenant:          "3b6f72ac-93e4-4659-bf9c-8903239e1e93",
+			Tenant:          otherTenant,
 			ApplicationName: "test",
 			WithinTenant:    false,
-			Scenarios:       []string{"default", "black-friday-campaign"},
+			Scenarios:       []string{defaultValue, "black-friday-campaign"},
 		},
 	}
 
 	for _, testApp := range applications {
 		applicationInput := generateSampleApplicationInput(testApp.ApplicationName)
-		(*applicationInput.Labels)[scenarioLabel] = testApp.Scenarios
+		applicationInput.Labels = &graphql.Labels{scenarioLabel: testApp.Scenarios}
+		//(*applicationInput.Labels)[scenarioLabel] = testApp.Scenarios
 		appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(applicationInput)
 		require.NoError(t, err)
 		createApplicationReq := fixCreateApplicationRequest(appInputGQL)
@@ -516,6 +531,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
+
 		defer deleteApplicationInTenant(t, application.ID, testApp.Tenant)
 		if testApp.WithinTenant {
 			tenantApplications = append(tenantApplications, &application)
@@ -630,4 +646,34 @@ func deleteRuntimeInTenant(t *testing.T, id string, tenantID string) {
 	delReq.Header["Tenant"] = []string{tenantID}
 	err := tc.RunQuery(context.Background(), delReq, nil)
 	require.NoError(t, err)
+}
+
+func createLabelDefinition(t *testing.T, ctx context.Context, input graphql.LabelDefinitionInput) *graphql.LabelDefinition {
+	in, err := tc.graphqlizer.LabelDefinitionInputToGQL(input)
+	if err != nil {
+		return nil
+	}
+
+	createRequest := fixCreateLabelDefinitionRequest(in)
+	output := graphql.LabelDefinition{}
+	err = tc.RunQuery(ctx, createRequest, &output)
+	require.NoError(t, err)
+
+	return &output
+}
+
+func createLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, input graphql.LabelDefinitionInput, tenantID string) *graphql.LabelDefinition {
+	in, err := tc.graphqlizer.LabelDefinitionInputToGQL(input)
+	if err != nil {
+		return nil
+	}
+
+	createRequest := fixCreateLabelDefinitionRequest(in)
+	createRequest.Header["Tenant"] = []string{tenantID}
+
+	output := graphql.LabelDefinition{}
+	err = tc.RunQuery(ctx, createRequest, &output)
+	require.NoError(t, err)
+
+	return &output
 }

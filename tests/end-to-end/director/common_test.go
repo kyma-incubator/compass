@@ -18,6 +18,8 @@ import (
 	gcli "github.com/machinebox/graphql"
 )
 
+const defaultTenant = "2a1502ba-aded-11e9-a2a3-2a2ae2dbcce4"
+
 var tc = testContext{graphqlizer: graphqlizer{}, gqlFieldsProvider: gqlFieldsProvider{}, cli: newGraphQLClient()}
 
 func newGraphQLClient() *gcli.Client {
@@ -37,7 +39,7 @@ func newAuthorizedHTTPClient() *http.Client {
 
 func (tc *testContext) RunQuery(ctx context.Context, req *gcli.Request, resp interface{}) error {
 	if req.Header["Tenant"] == nil {
-		req.Header["Tenant"] = []string{"2a1502ba-aded-11e9-a2a3-2a2ae2dbcce4"}
+		req.Header["Tenant"] = []string{defaultTenant}
 	}
 	m := resultMapperFor(&resp)
 	return tc.cli.Run(ctx, req, &m)
@@ -89,4 +91,9 @@ func saveQueryInExamples(t *testing.T, query string, exampleName string) {
 
 	err = ioutil.WriteFile(fmt.Sprintf("%s/%s.graphql", dir, sanitizedName), []byte(content), 0660)
 	require.NoError(t, err)
+}
+
+func removeDoubleQuotasFromJsonKeys(in string) string {
+	var validRegex = regexp.MustCompile(`"(\w+|\$\w+)"\s*:`)
+	return validRegex.ReplaceAllString(in, `$1:`)
 }
