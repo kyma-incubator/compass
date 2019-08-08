@@ -397,7 +397,7 @@ func TestServiceUpdate(t *testing.T) {
 	})
 }
 
-func TestService_Delete(t *testing.T) {
+func TestServiceDelete(t *testing.T) {
 	t.Run("success when no labels use labeldef", func(t *testing.T) {
 		// GIVEN
 		mockRepository := &automock.Repository{}
@@ -496,7 +496,7 @@ func TestService_Delete(t *testing.T) {
 		require.Error(t, err)
 	})
 
-	t.Run("error when labe ldefinition not found", func(t *testing.T) {
+	t.Run("error when label definition not found", func(t *testing.T) {
 		// GIVEN
 		mockRepository := &automock.Repository{}
 		defer mockRepository.AssertExpectations(t)
@@ -532,6 +532,28 @@ func TestService_Delete(t *testing.T) {
 		mockRepository.On("GetByKey", ctx, tnt, given.Key).Return(nil, errors.New("")).Once()
 
 		sut := labeldef.NewService(mockRepository, nil, nil)
+		// WHEN
+		err := sut.Delete(ctx, tnt, given.Key, deleteRelatedResources)
+		// THEN
+		require.Error(t, err)
+	})
+
+	t.Run("error when trying to delete related resources", func(t *testing.T) {
+		// GIVEN
+		mockRepository := &automock.Repository{}
+		defer mockRepository.AssertExpectations(t)
+		mockLabelRepository := &automock.LabelRepository{}
+		defer mockLabelRepository.AssertExpectations(t)
+
+		tnt := "tenant"
+		ctx := context.TODO()
+		given := model.LabelDefinition{
+			Key:    "key",
+			Tenant: tnt,
+		}
+		deleteRelatedResources := true
+
+		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil)
 		// WHEN
 		err := sut.Delete(ctx, tnt, given.Key, deleteRelatedResources)
 		// THEN

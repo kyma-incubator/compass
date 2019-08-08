@@ -619,6 +619,32 @@ func TestRepository_DeleteByKey(t *testing.T) {
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "unable to fetch database from context")
 	})
+
+	t.Run("Error - No rows affected", func(t *testing.T) {
+		// GIVEN
+		key := "test"
+		tnt := "tenant"
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+
+		repo := labeldef.NewRepository(mockConverter)
+
+		db, dbMock := mockDatabase(t)
+		defer func() {
+			require.NoError(t, dbMock.ExpectationsWereMet())
+		}()
+
+		escapedQuery := regexp.QuoteMeta(`DELETE FROM public.label_definitions WHERE tenant_id=$1 AND key=$2`)
+		dbMock.ExpectExec(escapedQuery).WithArgs(tnt, key).WillReturnResult(sqlmock.NewResult(1, 0))
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		// WHEN
+		err := repo.DeleteByKey(ctx, tnt, key)
+		// THEN
+		require.EqualError(t, err, "no rows were affected by query")
+	})
 }
 
 func mockDatabase(t *testing.T) (*sqlx.DB, sqlmock.Sqlmock) {

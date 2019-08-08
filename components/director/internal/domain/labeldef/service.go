@@ -109,6 +109,10 @@ func (s *service) Update(ctx context.Context, def model.LabelDefinition) error {
 
 // TODO: Add deleting related labels logic
 func (s *service) Delete(ctx context.Context, tenant, key string, deleteRelatedLabels bool) error {
+	if deleteRelatedLabels == true {
+		return errors.New("deleting related labels is not yet supported")
+	}
+
 	if key == model.ScenariosKey {
 		return fmt.Errorf("Label Definition with key %s can not be deleted", model.ScenariosKey)
 	}
