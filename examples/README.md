@@ -18,7 +18,6 @@ Below you can find a list of mock GraphQL queries and mutations:
 - [delete document](./delete-document.graphql)
 - [delete runtime](./delete-runtime.graphql)
 - [query application](./query-application.graphql)
-- [query applications for runtime](./query-applications-for-runtime.graphql)
 - [query applications](./query-applications.graphql)
 - [query runtime](./query-runtime.graphql)
 - [query runtimes with pagination](./query-runtimes-with-pagination.graphql)
