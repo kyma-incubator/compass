@@ -3,6 +3,7 @@ mutation {
   result: createApplication(
     in: {
       name: "wordpress"
+      labels: { scenarios: ["DEFAULT"] }
       apis: [
         {
           name: "comments/v1"

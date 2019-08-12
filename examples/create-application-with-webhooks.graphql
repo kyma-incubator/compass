@@ -3,6 +3,7 @@ mutation {
   result: createApplication(
     in: {
       name: "wordpress"
+      labels: { scenarios: ["DEFAULT"] }
       webhooks: [
         {
           type: CONFIGURATION_CHANGED
