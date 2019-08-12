@@ -88,6 +88,14 @@ func fixRuntimeRequestWithPagination(after int, cursor string) *gcli.Request {
 			}`, after, cursor, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForRuntime())))
 }
 
+func fixRuntimeQuery(runtimeID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: runtime(id: "%s") {
+					%s
+				}}`, runtimeID, tc.gqlFieldsProvider.ForRuntime()))
+}
+
 func fixLabelDefinitionRequest(labelKey string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
@@ -105,6 +113,26 @@ func fixApplicationRequest(applicationID string) *gcli.Request {
 					%s
 				}
 			}`, applicationID, tc.gqlFieldsProvider.ForApplication()))
+}
+
+func fixLabelDefinitionsRequest() *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+  		result:	labelDefinitions() {
+			key
+    		schema
+  				}
+			}`))
+}
+
+func fixApplications(labelFilterInGQL string, first int, after string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: applications(filter: %s, first: %d, after: "%s") {
+						%s
+					}
+				}`,
+			labelFilterInGQL, first, after, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication())))
 }
 
 // DELETE

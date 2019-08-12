@@ -647,33 +647,3 @@ func deleteRuntimeInTenant(t *testing.T, id string, tenantID string) {
 	err := tc.RunQuery(context.Background(), delReq, nil)
 	require.NoError(t, err)
 }
-
-func createLabelDefinition(t *testing.T, ctx context.Context, input graphql.LabelDefinitionInput) *graphql.LabelDefinition {
-	in, err := tc.graphqlizer.LabelDefinitionInputToGQL(input)
-	if err != nil {
-		return nil
-	}
-
-	createRequest := fixCreateLabelDefinitionRequest(in)
-	output := graphql.LabelDefinition{}
-	err = tc.RunQuery(ctx, createRequest, &output)
-	require.NoError(t, err)
-
-	return &output
-}
-
-func createLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, input graphql.LabelDefinitionInput, tenantID string) *graphql.LabelDefinition {
-	in, err := tc.graphqlizer.LabelDefinitionInputToGQL(input)
-	if err != nil {
-		return nil
-	}
-
-	createRequest := fixCreateLabelDefinitionRequest(in)
-	createRequest.Header["Tenant"] = []string{tenantID}
-
-	output := graphql.LabelDefinition{}
-	err = tc.RunQuery(ctx, createRequest, &output)
-	require.NoError(t, err)
-
-	return &output
-}

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/google/uuid"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
@@ -25,7 +27,7 @@ func TestCreateLabelWithoutLabelDefinition(t *testing.T) {
 
 	setLabelRequest := fixSetApplicationLabelRequest(application.ID, labelKey, labelValue)
 	label := graphql.Label{}
-	defer deleteLabelDefinition(t, ctx, labelKey, false)
+	defer deleteLabelDefinitionWithinDefaultTenant(t, ctx, labelKey, false)
 	defer deleteApplicationLabel(t, ctx, application.ID, labelKey)
 
 	// WHEN
@@ -50,7 +52,7 @@ func TestCreateLabelWithoutLabelDefinition(t *testing.T) {
 	saveQueryInExamples(t, getLabelDefinitionRequest.Query(), "query label definition")
 }
 
-func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
+func TestCreateLabelWithExistingLabelDefinition_ShouldFail(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
@@ -92,7 +94,7 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 		err = tc.RunQuery(ctx, createLabelDefinitionRequest, &labelDefinition)
 
 		require.NoError(t, err)
-		defer deleteLabelDefinition(t, ctx, labelKey, false)
+		defer deleteLabelDefinitionWithinDefaultTenant(t, ctx, labelKey, false)
 		assert.Equal(t, labelKey, labelDefinition.Key)
 
 		invalidLabelValue := 123
@@ -132,7 +134,7 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 		label := graphql.Label{}
 
 		err = tc.RunQuery(ctx, setLabelRequest, &label)
-		defer deleteLabelDefinition(t, ctx, labelKey, false)
+		defer deleteLabelDefinitionWithinDefaultTenant(t, ctx, labelKey, false)
 		defer deleteApplicationLabel(t, ctx, application.ID, labelKey)
 
 		require.NoError(t, err)
@@ -230,7 +232,7 @@ func TestEditLabelDefinition(t *testing.T) {
 		label := graphql.Label{}
 
 		err = tc.RunQuery(ctx, setLabelRequest, &label)
-		defer deleteLabelDefinition(t, ctx, labelKey, false)
+		defer deleteLabelDefinitionWithinDefaultTenant(t, ctx, labelKey, false)
 		defer deleteApplicationLabel(t, ctx, app.ID, labelKey)
 
 		var invalidSchema interface{} = invalidJsonSchema
@@ -271,7 +273,7 @@ func TestEditLabelDefinition(t *testing.T) {
 		label := graphql.Label{}
 
 		err = tc.RunQuery(ctx, setLabelRequest, &label)
-		defer deleteLabelDefinition(t, ctx, labelKey, false)
+		defer deleteLabelDefinitionWithinDefaultTenant(t, ctx, labelKey, false)
 		defer deleteApplicationLabel(t, ctx, app.ID, labelKey)
 
 		var newSchema interface{} = newValidJsonSchema
@@ -453,7 +455,7 @@ func TestDeleteLabelDefinition(t *testing.T) {
 
 		err = tc.RunQuery(ctx, setLabelRequest, &label)
 		require.NoError(t, err)
-		defer deleteLabelDefinition(t, ctx, labelKey, false)
+		defer deleteLabelDefinitionWithinDefaultTenant(t, ctx, labelKey, false)
 		defer deleteApplicationLabel(t, ctx, app.ID, labelKey)
 
 		t.Log("Try to delete Label Definition while it's being used by some labels")
@@ -562,4 +564,188 @@ func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
 	// THEN
 	require.Error(t, err)
 	assert.EqualError(t, err, errMsg)
+}
+
+func TestSearchByLabels(t *testing.T) {
+	//TODO: filtering on applications is not implemeted
+	t.SkipNow()
+	//Create first application
+	// GIVEN
+	ctx := context.Background()
+
+	firstApp := createApplication(t, ctx, "first")
+	require.NotEmpty(t, firstApp.ID)
+	defer deleteApplication(t, firstApp.ID)
+
+	//Create second application
+	secondApp := createApplication(t, ctx, "second")
+	require.NotEmpty(t, firstApp.ID)
+	defer deleteApplication(t, firstApp.ID)
+
+	//Set label "foo" on both applications
+	labelKeyFoo := "foo"
+	labelValueFoo := "val"
+
+	setLabelRequest := fixSetApplicationLabelRequest(firstApp.ID, labelKeyFoo, labelValueFoo)
+	firstAppLabel := graphql.Label{}
+	err := tc.RunQuery(ctx, setLabelRequest, &firstAppLabel)
+	require.NoError(t, err)
+	require.NotEmpty(t, firstAppLabel.Key)
+	require.NotEmpty(t, firstAppLabel.Value)
+
+	setLabelRequest = fixSetApplicationLabelRequest(secondApp.ID, labelKeyFoo, labelValueFoo)
+	secondAppLabel := graphql.Label{}
+	err = tc.RunQuery(ctx, setLabelRequest, &secondAppLabel)
+	require.NoError(t, err)
+	require.NotEmpty(t, secondAppLabel.Key)
+	require.NotEmpty(t, secondAppLabel.Value)
+
+	//Set label "bar" on first application
+	labelKeyBar := "bar"
+	labelValueBar := "barval"
+
+	setLabelRequest = fixSetApplicationLabelRequest(firstApp.ID, labelKeyBar, labelValueBar)
+	firstAppBarLabel := graphql.Label{}
+	err = tc.RunQuery(ctx, setLabelRequest, &firstAppBarLabel)
+	require.NoError(t, err)
+	require.NotEmpty(t, firstAppLabel.Key)
+	require.NotEmpty(t, firstAppLabel.Value)
+
+	// Query for application with LabelFilter "foo"
+	//WHEM
+	labelFilter := graphql.LabelFilter{
+		Key:   labelKeyFoo,
+		Query: nil,
+	}
+
+	//THEN
+	appPage := applications(t, ctx, labelFilter, 5, "")
+	require.NotEmpty(t, appPage)
+	assert.Equal(t, appPage.TotalCount, 2)
+	assert.Contains(t, appPage.Data[0].Labels, labelKeyFoo)
+	assert.Equal(t, appPage.Data[0].Labels[labelKeyFoo], labelValueFoo)
+	assert.Contains(t, appPage.Data[1].Labels, labelKeyFoo)
+	assert.Equal(t, appPage.Data[1].Labels[labelKeyFoo], labelValueFoo)
+
+	// Query for application with LabelFilter "bar"
+	labelFilter = graphql.LabelFilter{
+		Key:   labelKeyBar,
+		Query: nil,
+	}
+
+	// WHEN
+	appPage = applications(t, ctx, labelFilter, 5, "")
+
+	//THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, appPage)
+	assert.Equal(t, appPage.TotalCount, 1)
+	assert.Contains(t, appPage.Data[0].Labels, labelKeyBar)
+	assert.Equal(t, appPage.Data[0].Labels[labelKeyBar], labelValueBar)
+}
+
+func TestListLabelDefinitions(t *testing.T) {
+	//GIVEN
+	tenantID := uuid.New().String()
+	ctx := context.TODO()
+	firstSchema := map[string]interface{}{
+		"test": "test",
+	}
+
+	var schema interface{} = firstSchema
+
+	firstLabelDefinitionKey := "first"
+	firstLabelDefinitionInput := graphql.LabelDefinitionInput{
+		Key:    firstLabelDefinitionKey,
+		Schema: &schema,
+	}
+	firstLabelDefinition := createLabelDefinitionWithinTenant(t, ctx, firstLabelDefinitionInput, tenantID)
+	defer deleteLabelDefinitionWithinTenant(t, ctx, firstLabelDefinitionKey, false, tenantID)
+
+	secondSchema := map[string]interface{}{
+		"test": "test",
+	}
+	schema = secondSchema
+
+	secondLabelDefinitionKey := "second"
+	secondLabelDefinitionInput := graphql.LabelDefinitionInput{
+		Key:    secondLabelDefinitionKey,
+		Schema: &schema,
+	}
+	secondLabelDefinition := createLabelDefinitionWithinTenant(t, ctx, secondLabelDefinitionInput, tenantID)
+	defer deleteLabelDefinitionWithinTenant(t, ctx, secondLabelDefinitionKey, false, tenantID)
+
+	//WHEN
+	labelDefinitions, err := listLabelDefinitionsWithinTenant(t, ctx, tenantID)
+
+	//THEN
+	require.NoError(t, err)
+	require.Len(t, labelDefinitions, 2)
+	assert.Contains(t, labelDefinitions, firstLabelDefinition)
+	assert.Contains(t, labelDefinitions, secondLabelDefinition)
+}
+
+func TestDeletingLastScenarioForApplication_ShouldFail(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	tenant := uuid.New().String()
+	name := "test-deleting-last-scenario-for-application-should-fail"
+	scenarios := []string{"DEFAULT", "Christmas", "New Year"}
+
+	scenarioSchema := map[string]interface{}{
+		"type":        "array",
+		"minItems":    1,
+		"uniqueItems": true,
+		"items": map[string]interface{}{
+			"type": "string",
+			"enum": scenarios,
+		},
+	}
+	var schema interface{} = scenarioSchema
+
+	labelDefinitionInput := graphql.LabelDefinitionInput{
+		Key:    scenarioLabel,
+		Schema: &schema,
+	}
+	createLabelDefinitionWithinTenant(t, ctx, labelDefinitionInput, tenant)
+
+	appInput := graphql.ApplicationInput{Name: name,
+		Labels: &graphql.Labels{
+			//labelKey:      scenarioLabel,
+			scenarioLabel: []string{"Christmas", "New Year"},
+		}}
+
+	application := createApplicationFromInputWithinTenant(t, ctx, appInput, tenant)
+	require.NotEmpty(t, application.ID)
+	defer deleteApplicationInTenant(t, application.ID, tenant)
+
+	//WHEN
+	appLabelRequest := fixSetApplicationLabelRequest(application.ID, scenarioLabel, []string{"Christmas"})
+	appLabelRequest.Header["Tenant"] = []string{tenant}
+	require.NoError(t, tc.RunQuery(ctx, appLabelRequest, nil))
+
+	//remove last label
+	appLabelRequest = fixSetApplicationLabelRequest(application.ID, scenarioLabel, []string{""})
+	appLabelRequest.Header["Tenant"] = []string{tenant}
+	err := tc.RunQuery(ctx, appLabelRequest, nil)
+	//THEN
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `0 must be one of the following: "DEFAULT", "Christmas", "New Year"`)
+}
+
+func TestCreateRuntimeWithoutLabels(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	name := "test-create-runtime-without-labels"
+	runtimeInput := &graphql.RuntimeInput{Name: name}
+
+	runtime := createRuntimeFromInput(t, ctx, runtimeInput)
+	defer deleteRuntime(t, runtime.ID)
+
+	//WHEN
+	fetchedRuntime := getRuntime(t, ctx, runtime.ID)
+
+	//THEN
+	require.Equal(t, runtime.ID, fetchedRuntime.ID)
+	require.Empty(t, fetchedRuntime.Labels)
 }
