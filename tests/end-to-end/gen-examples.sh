@@ -22,6 +22,7 @@ DB_PWD="pwd"
 DB_NAME="compass"
 DB_PORT="5432"
 DB_SSL_PARAM="disable"
+APP_PORT="3001"
 
 readonly SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
@@ -43,7 +44,6 @@ docker run -d --name ${POSTGRES_CONTAINER} \
             -e POSTGRES_USER=${DB_USER} \
             -e POSTGRES_PASSWORD=${DB_PWD} \
             -e POSTGRES_DB=${DB_NAME} \
-            -p 5432:5432 \
             postgres:${POSTGRES_VERSION}
 
 echo -e "${GREEN}Building migration image...${NC}"
@@ -67,14 +67,15 @@ cd "${SCRIPT_DIR}/../../components/director/" && make resolve build-image
 echo -e "${GREEN}Running Director...${NC}"
 
 docker run -d --name ${DIRECTOR_CONTAINER} --rm --network=${NETWORK} \
-		-p 3000:3000 \
-		-e APP_ADDRESS=0.0.0.0:3000 \
+		-p ${APP_PORT}:${APP_PORT} \
+		-e APP_ADDRESS=0.0.0.0:${APP_PORT} \
         -e APP_DB_USER=${DB_USER} \
         -e APP_DB_PASSWORD=${DB_PWD} \
         -e APP_DB_HOST=${POSTGRES_CONTAINER} \
         -e APP_DB_PORT=${DB_PORT} \
         -e APP_DB_NAME=${DB_NAME} \
     ${DIRECTOR_IMG_NAME}
+
 
 cd "${SCRIPT_DIR}"
 
@@ -84,7 +85,7 @@ echo -e "${GREEN}Checking if Director is up...${NC}"
 directorIsUp=false
 set +e
 for i in {1..10}; do
-    curl --fail  'http://localhost:3000/graphql'  -H 'Content-Type: application/json'  -H 'tenant: any' --data-binary '{"query":"{\n  __schema {\n    queryType {\n      name\n    }\n  }\n}"}'
+    curl --fail  "http://localhost:${APP_PORT}/graphql"  -H "Content-Type: application/json"  -H 'tenant: any' --data-binary '{"query":"{\n  __schema {\n    queryType {\n      name\n    }\n  }\n}"}'
     res=$?
 
     if [[ ${res} = 0 ]]
@@ -108,7 +109,7 @@ rm -f "${COMPASS_PROJECT_PATH}/examples/"*
 
 echo -e "${GREEN}Running Director tests with generating examples...${NC}"
 go test -c "${SCRIPT_DIR}/director/"
-./director.test
+DIRECTOR_GRAPHQL_API="http://localhost:${APP_PORT}/graphql" ./director.test
 
 echo -e "${GREEN}Prettifying GraphQL examples...${NC}"
 img="prettier:latest"
