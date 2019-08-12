@@ -62,7 +62,7 @@ docker run --rm --network=${NETWORK} \
 
 echo -e "${GREEN}Building Director image...${NC}"
 
-cd "${SCRIPT_DIR}/../../components/director/" && make build-image
+cd "${SCRIPT_DIR}/../../components/director/" && make resolve build-image
 
 echo -e "${GREEN}Running Director...${NC}"
 
