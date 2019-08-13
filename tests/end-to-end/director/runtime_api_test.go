@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/google/uuid"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/assert"
@@ -451,12 +453,10 @@ func TestQuerySpecificRuntime(t *testing.T) {
 }
 
 func TestApplicationsForRuntime(t *testing.T) {
-	t.SkipNow() // TODO: Create LD for scenarios with correct enum, will be fixed in https://github.com/kyma-incubator/compass/pull/175/
-
 	//GIVEN
 	ctx := context.Background()
-	tenantID := "90b9ccc8-7829-4511-ac17-5b0c872a41b5"
-	otherTenant := "3b6f72ac-93e4-4659-bf9c-8903239e1e93"
+	tenantID := uuid.New().String()
+	otherTenant := uuid.New().String()
 	tenantApplications := []*graphql.Application{}
 	defaultValue := "DEFAULT"
 	scenarios := []string{defaultValue, "black-friday-campaign", "christmas-campaign", "summer-campaign"}
@@ -520,9 +520,9 @@ func TestApplicationsForRuntime(t *testing.T) {
 	for _, testApp := range applications {
 		applicationInput := generateSampleApplicationInput(testApp.ApplicationName)
 		applicationInput.Labels = &graphql.Labels{scenarioLabel: testApp.Scenarios}
-		//(*applicationInput.Labels)[scenarioLabel] = testApp.Scenarios
 		appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(applicationInput)
 		require.NoError(t, err)
+
 		createApplicationReq := fixCreateApplicationRequest(appInputGQL)
 		application := graphql.Application{}
 		createApplicationReq.Header["Tenant"] = []string{testApp.Tenant}

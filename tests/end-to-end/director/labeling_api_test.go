@@ -107,6 +107,7 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 		require.Error(t, err)
 		errMsg := fmt.Sprintf("graphql: while creating label for Application: while validating Label value for '%s': while validating value %d against JSON Schema: map[properties:map[foo:map[description:foo type:string]] required:[foo] title:foobarbaz type:object]: (root): Invalid type. Expected: object, given: integer", labelKey, invalidLabelValue)
 		assert.EqualError(t, err, errMsg)
+		saveQueryInExamples(t, createLabelDefinitionRequest.Query(), "create label definition")
 
 	})
 
@@ -149,6 +150,7 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, application.Labels)
 		assert.Equal(t, label.Value, application.Labels[labelKey])
+		saveQueryInExamples(t, setLabelRequest.Query(), "set application label")
 	})
 }
 
@@ -301,6 +303,7 @@ func TestEditLabelDefinition(t *testing.T) {
 		require.True(t, ok)
 
 		assert.Equal(t, expectedProperties, actualProperties)
+		saveQueryInExamples(t, updateLabelDefinitionReq.Query(), "update label definition")
 	})
 }
 
