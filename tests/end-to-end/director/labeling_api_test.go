@@ -340,7 +340,7 @@ func TestCheckIfLabelScenarioWasCreated(t *testing.T) {
 		scenariosEnum = append(scenariosEnum, v.(string))
 	}
 
-	assert.Equal(t, "DEFAULT", scenariosEnum[0])
+	assert.Contains(t, scenariosEnum, "DEFAULT")
 }
 
 func TestDeleteLabelDefinition(t *testing.T) {
