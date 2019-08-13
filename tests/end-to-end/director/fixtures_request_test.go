@@ -108,10 +108,8 @@ func fixApplicationRequest(applicationID string) *gcli.Request {
 }
 
 // DELETE
-
 func fixDeleteLabelDefinition(labelDefinitionKey string, deleteRelatedLabels bool) *gcli.Request {
 	return gcli.NewRequest(
-		//    deleteLabelDefinition(key: String!, deleteRelatedLabels: Boolean=false): LabelDefinition!
 		fmt.Sprintf(`mutation {
 			result: deleteLabelDefinition(key: "%s", deleteRelatedLabels: %t) {
 					%s

@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const scenarioLabel = "scenarios"
+const scenariosLabel = "scenarios"
 
 func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	// GIVEN
@@ -473,7 +473,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 	var schema interface{} = jsonSchema
 
 	labelDefinitionInput := graphql.LabelDefinitionInput{
-		Key:    scenarioLabel,
+		Key:    scenariosLabel,
 		Schema: &schema,
 	}
 	createLabelDefinitionWithinTenant(t, ctx, labelDefinitionInput, tenantID)
@@ -519,7 +519,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 
 	for _, testApp := range applications {
 		applicationInput := generateSampleApplicationInput(testApp.ApplicationName)
-		applicationInput.Labels = &graphql.Labels{scenarioLabel: testApp.Scenarios}
+		applicationInput.Labels = &graphql.Labels{scenariosLabel: testApp.Scenarios}
 		appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(applicationInput)
 		require.NoError(t, err)
 
@@ -540,7 +540,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 
 	//create runtime
 	runtimeInput := fixRuntimeInput("runtime")
-	(*runtimeInput.Labels)[scenarioLabel] = scenarios
+	(*runtimeInput.Labels)[scenariosLabel] = scenarios
 	runtimeInputGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInput)
 	require.NoError(t, err)
 	createRuntimeRequest := fixCreateRuntimeRequest(runtimeInputGQL)

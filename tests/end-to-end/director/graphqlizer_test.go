@@ -272,7 +272,6 @@ func (g *graphqlizer) LabelFilterToGQL(in graphql.LabelFilter) (string, error) {
 }
 
 func (g *graphqlizer) SchemaToGQL(in *interface{}) (string, error) {
-
 	out, err := json.Marshal(in)
 	if err != nil {
 		return "", errors.Wrap(err, "while marshalling json schema")

@@ -48,7 +48,6 @@ func TestCreateLabelWithoutLabelDefinition(t *testing.T) {
 	require.NotEmpty(t, labelDefinition)
 	assert.Equal(t, label.Key, labelDefinition.Key)
 	saveQueryInExamples(t, getLabelDefinitionRequest.Query(), "query label definition")
-
 }
 
 func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
@@ -307,14 +306,14 @@ func TestEditLabelDefinition(t *testing.T) {
 	})
 }
 
-func TestCheckIfLabelScenarioWasCreated(t *testing.T) {
+func TestCreateScenariosLabel(t *testing.T) {
 	// GIVEN
 	t.Log("Create application")
 	ctx := context.Background()
 	app := createRandomApplication(t, ctx, "app")
 	defer deleteApplication(t, app.ID)
 
-	t.Log("Check if scenario LabelDefinition exists")
+	t.Log("Check if scenarios LabelDefinition exists")
 	labelKey := "scenarios"
 
 	getLabelDefinition := fixLabelDefinitionRequest(labelKey)
@@ -323,7 +322,7 @@ func TestCheckIfLabelScenarioWasCreated(t *testing.T) {
 	err := tc.RunQuery(ctx, getLabelDefinition, &ld)
 	require.NoError(t, err)
 
-	t.Log("Check if app was labeled with scenario=default")
+	t.Log("Check if app was labeled with scenarios=default")
 
 	getApp := fixApplicationRequest(app.ID)
 	actualApp := graphql.Application{}
@@ -344,6 +343,67 @@ func TestCheckIfLabelScenarioWasCreated(t *testing.T) {
 	}
 
 	assert.Contains(t, scenariosEnum, "DEFAULT")
+}
+
+func TestUpdateScenariosLabelValue(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	t.Log("Create application")
+	app := createRandomApplication(t, ctx, "app")
+	defer deleteApplication(t, app.ID)
+	labelKey := "scenarios"
+	defaultValue := "DEFAULT"
+	additionalValue := "ADDITIONAL"
+
+	t.Logf("Update Label Definition scenarios enum with additional value %s", additionalValue)
+
+	jsonSchema := map[string]interface{}{
+		"items": map[string]interface{}{
+			"enum": []string{defaultValue, additionalValue},
+			"type": "string",
+		},
+		"type":        "array",
+		"minItems":    1,
+		"uniqueItems": true,
+	}
+
+	var schema interface{} = jsonSchema
+	ldInput := graphql.LabelDefinitionInput{
+		Key:    labelKey,
+		Schema: &schema,
+	}
+
+	ldInputGQL, err := tc.graphqlizer.LabelDefinitionInputToGQL(ldInput)
+	require.NoError(t, err)
+
+	updateLabelDefinitionRequest := fixUpdateLabelDefinitionRequest(ldInputGQL)
+	labelDefinition := graphql.LabelDefinition{}
+
+	err = tc.RunQuery(ctx, updateLabelDefinitionRequest, &labelDefinition)
+
+	require.NoError(t, err)
+
+	scenarios := []string{defaultValue, additionalValue}
+	var labelValue interface{} = scenarios
+
+	t.Logf("Set scenario label value %s on application", additionalValue)
+	setApplicationLabel(t, ctx, app.ID, labelKey, labelValue)
+
+	t.Log("Check if new scenario label value was set correctly")
+	appRequest := fixApplicationRequest(app.ID)
+	app = graphql.Application{}
+
+	err = tc.RunQuery(ctx, appRequest, &app)
+	require.NoError(t, err)
+
+	scenariosLabel, ok := app.Labels[labelKey].([]interface{})
+	require.True(t, ok)
+
+	var actualScenariosEnum []string
+	for _, v := range scenariosLabel {
+		actualScenariosEnum = append(actualScenariosEnum, v.(string))
+	}
+	assert.Equal(t, scenarios, actualScenariosEnum)
 }
 
 func TestDeleteLabelDefinition(t *testing.T) {
@@ -405,7 +465,7 @@ func TestDeleteLabelDefinition(t *testing.T) {
 		assert.EqualError(t, err, "graphql: could not delete label definition, it is already used by at least one label")
 	})
 
-	t.Run("Delete Label from application, than delete the Label Definition - should succeed", func(t *testing.T) {
+	t.Run("Delete Label from application, then delete the Label Definition - should succeed", func(t *testing.T) {
 
 		t.Log("Create application")
 		app := createRandomApplication(t, ctx, "app")
@@ -440,20 +500,17 @@ func TestDeleteLabelDefinition(t *testing.T) {
 		err = tc.RunQuery(context.Background(), deleteLabelDefinitionRequest, &labelDefinition)
 		require.NoError(t, err)
 		assert.ObjectsAreEqualValues(labelDefinitionInput.Schema, labelDefinition.Schema)
-
 	})
-
-	//TODO write case for deletion of Label Definition with deleting related labels after https://github.com/kyma-incubator/compass/issues/126 is merged
 }
 
-func TestDeleteScenarioLabel(t *testing.T) {
+func TestDeleteScenariosLabel(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	t.Log("Create application")
 	app := createRandomApplication(t, ctx, "app")
 	defer deleteApplication(t, app.ID)
 
-	t.Log("Try to delete scenario label on application")
+	t.Log("Try to delete scenarios label on application")
 	labelKey := "scenarios"
 	deleteApplicationLabelRequest := fixDeleteApplicationLabel(app.ID, labelKey)
 
@@ -465,7 +522,7 @@ func TestDeleteScenarioLabel(t *testing.T) {
 	assert.EqualError(t, err, "graphql: scenarios label can not be deleted from application")
 }
 
-func TestDeleteDefaultValueInScenarioLabelDefinition(t *testing.T) {
+func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	t.Log("Create application")
@@ -474,7 +531,7 @@ func TestDeleteDefaultValueInScenarioLabelDefinition(t *testing.T) {
 	labelKey := "scenarios"
 	defaultValue := "DEFAULT"
 
-	t.Log("Try to update Label Definition with scenario enum without DEFAULT value")
+	t.Log("Try to update Label Definition with scenarios enum without DEFAULT value")
 
 	jsonSchema := map[string]interface{}{
 		"items": map[string]interface{}{
