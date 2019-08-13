@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/pkg/errors"
 
@@ -19,26 +20,26 @@ const runtimeTable string = `"public"."runtimes"`
 const runtimeFields string = `"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth"`
 
 type pgRepository struct {
-	persistence.ExistQuerier
-	persistence.SingleGetter
-	persistence.Deleter
-	persistence.PageableQuerier
+	repo.ExistQuerier
+	repo.SingleGetter
+	repo.Deleter
+	repo.PageableQuerier
 }
 
 func NewPostgresRepository() *pgRepository {
 	return &pgRepository{
-		ExistQuerier: persistence.ExistQuerier{
+		ExistQuerier: repo.ExistQuerier{
 			Query: fmt.Sprintf(`SELECT 1 FROM %s WHERE "id" = $1 AND "tenant_id" = $2`, runtimeTable),
 		},
-		SingleGetter: persistence.SingleGetter{
+		SingleGetter: repo.SingleGetter{
 			Query: fmt.Sprintf(`SELECT %s FROM %s WHERE "id" = $1 AND "tenant_id" = $2`, runtimeFields, runtimeTable),
 		},
-		Deleter: persistence.Deleter{
+		Deleter: repo.Deleter{
 			Query: fmt.Sprintf(`DELETE FROM %s WHERE "id" = $1`, runtimeTable),
 		},
-		PageableQuerier: persistence.PageableQuerier{
-			Query:        fmt.Sprintf(`SELECT %s FROM %s WHERE "tenant_id"  = $1`, runtimeFields, runtimeTable),
-			Columns:      runtimeFields,
+		PageableQuerier: repo.PageableQuerier{
+			query:        fmt.Sprintf(`SELECT %s FROM %s WHERE "tenant_id"  = $1`, runtimeFields, runtimeTable),
+			columns:      runtimeFields,
 			RelationName: "runtimes",
 		},
 	}
@@ -78,7 +79,7 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 	var totalCount int
 
 	if filterSubquery != "" {
-		page, totalCount, err = r.PageableQuerier.List(ctx, tenant, pageSize, cursor, &runtimesEnt, fmt.Sprintf(`"id" IN (%s)`,filterSubquery))
+		page, totalCount, err = r.PageableQuerier.List(ctx, tenant, pageSize, cursor, &runtimesEnt, fmt.Sprintf(`"id" IN (%s)`, filterSubquery))
 	} else {
 		page, totalCount, err = r.PageableQuerier.List(ctx, tenant, pageSize, cursor, &runtimesEnt)
 	}
