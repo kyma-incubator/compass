@@ -37,8 +37,8 @@ func TestPgRepository_GetByID_ShouldReturnRuntimeModelForRuntimeEntity(t *testin
 	rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth"}).
 		AddRow(runtimeID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp, agentAuthStr)
 
-	sqlMock.ExpectQuery(`^SELECT (.+) FROM "public"."runtimes" WHERE "id" = \$1 AND "tenant_id" = \$2$`).
-		WithArgs(runtimeID, tenantID).
+	sqlMock.ExpectQuery(`^SELECT (.+) FROM "public"."runtimes" WHERE tenant_id = \$1 AND id = \$2$`).
+		WithArgs(tenantID, runtimeID).
 		WillReturnRows(rows)
 
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
@@ -67,8 +67,8 @@ func TestPgRepository_List(t *testing.T) {
 	limit := 2
 	offset := 3
 
-	pageableQuery := `^SELECT (.+) FROM "public"."runtimes" WHERE "tenant_id" = \$1 ORDER BY "id" LIMIT %d OFFSET %d$`
-	countQuery := regexp.QuoteMeta(`SELECT COUNT (*) FROM "public"."runtimes" WHERE "tenant_id" = $1`)
+	pageableQuery := `^SELECT (.+) FROM "public"."runtimes" WHERE tenant_id=\$1 ORDER BY id LIMIT %d OFFSET %d$`
+	countQuery := regexp.QuoteMeta(`SELECT COUNT(*) FROM "public"."runtimes" WHERE tenant_id=$1`)
 
 	testCases := []struct {
 		Name           string
@@ -174,7 +174,7 @@ func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntitie
 							AND "tenant_id" = '%s' 
 							AND "key" = 'foo'\)`, tenantID)
 	sqlQuery := fmt.Sprintf(`^SELECT (.+) FROM "public"."runtimes" 
-								WHERE "tenant_id" = \$1 %s ORDER BY "id" LIMIT %d OFFSET 0$`, filterQuery, rowSize)
+								WHERE tenant_id=\$1 %s ORDER BY id LIMIT %d OFFSET 0$`, filterQuery, rowSize)
 
 	sqlMock.ExpectQuery(sqlQuery).
 		WithArgs(tenantID).
@@ -182,7 +182,7 @@ func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntitie
 
 	countRows := sqlMock.NewRows([]string{"count"}).AddRow(rowSize)
 
-	countQuery := fmt.Sprintf(`^SELECT COUNT \(\*\) FROM "public"."runtimes" WHERE "tenant_id" = \$1 %s`, filterQuery)
+	countQuery := fmt.Sprintf(`^SELECT COUNT\(\*\) FROM "public"."runtimes" WHERE tenant_id=\$1 %s`, filterQuery)
 	sqlMock.ExpectQuery(countQuery).
 		WithArgs(tenantID).
 		WillReturnRows(countRows)
@@ -308,8 +308,8 @@ func TestPgRepository_Delete_ShouldDeleteRuntimeEntityUsingValidModel(t *testing
 
 	sqlxDB, sqlMock := mockDatabase(t)
 
-	sqlMock.ExpectExec(fmt.Sprintf(`^DELETE FROM "public"."runtimes" WHERE "id" = \$1$`)).
-		WithArgs(modelRuntime.ID).
+	sqlMock.ExpectExec(fmt.Sprintf(`^DELETE FROM "public"."runtimes" WHERE tenant_id=\$1 AND id=\$2$`)).
+		WithArgs(tenantID, runtimeID).
 		WillReturnResult(sqlmock.NewResult(-1, 1))
 
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
@@ -317,7 +317,7 @@ func TestPgRepository_Delete_ShouldDeleteRuntimeEntityUsingValidModel(t *testing
 	pgRepository := runtime.NewPostgresRepository()
 
 	// when
-	err := pgRepository.Delete(ctx, modelRuntime.ID)
+	err := pgRepository.Delete(ctx, tenantID, modelRuntime.ID)
 
 	// then
 	assert.NoError(t, err)

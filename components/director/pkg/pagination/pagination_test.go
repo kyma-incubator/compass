@@ -91,7 +91,7 @@ func TestConvertOffsetLimitAndOrderedColumnToSQL(t *testing.T) {
 
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, sql, ` ORDER BY "id" LIMIT 5 OFFSET 5`)
+		assert.Equal(t, sql, ` ORDER BY id LIMIT 5 OFFSET 5`)
 	})
 
 	t.Run("Return error when column to order by is empty", func(t *testing.T) {

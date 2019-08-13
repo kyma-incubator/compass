@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/pkg/errors"
 )
@@ -13,18 +14,18 @@ type Deleter struct {
 	tenantColumn string
 }
 
-func NewDeleter(tableName, idColumn, tenantColumn string) *Deleter {
+func NewDeleter(tableName, tenantColumn, idColumn string) *Deleter {
 	return &Deleter{tableName: tableName, idColumn: idColumn, tenantColumn: tenantColumn}
 }
 
-func (g *Deleter) Delete(ctx context.Context, id string, tenant string) error {
+func (g *Deleter) Delete(ctx context.Context, tenant string, id string) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
 	}
 
-	q := fmt.Sprintf("delete from %s where %s=$1 and %s=$2", g.tableName, g.idColumn, g.tenantColumn)
-	res, err := persist.Exec(q, id, tenant)
+	q := fmt.Sprintf("DELETE FROM %s WHERE %s=$1 AND %s=$2", g.tableName, g.tenantColumn, g.idColumn)
+	res, err := persist.Exec(q, tenant, id)
 	if err != nil {
 		return errors.Wrap(err, "while deleting from database")
 	}

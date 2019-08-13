@@ -1,10 +1,11 @@
 package testdb
 
 import (
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func MockDatabase(t *testing.T) (*sqlx.DB, DBMock) {

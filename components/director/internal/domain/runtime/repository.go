@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 	"fmt"
+
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -20,28 +21,18 @@ const runtimeTable string = `"public"."runtimes"`
 const runtimeFields string = `"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth"`
 
 type pgRepository struct {
-	repo.ExistQuerier
-	repo.SingleGetter
-	repo.Deleter
-	repo.PageableQuerier
+	*repo.ExistQuerier
+	*repo.SingleGetter
+	*repo.Deleter
+	*repo.PageableQuerier
 }
 
 func NewPostgresRepository() *pgRepository {
 	return &pgRepository{
-		ExistQuerier: repo.ExistQuerier{
-			Query: fmt.Sprintf(`SELECT 1 FROM %s WHERE "id" = $1 AND "tenant_id" = $2`, runtimeTable),
-		},
-		SingleGetter: repo.SingleGetter{
-			Query: fmt.Sprintf(`SELECT %s FROM %s WHERE "id" = $1 AND "tenant_id" = $2`, runtimeFields, runtimeTable),
-		},
-		Deleter: repo.Deleter{
-			Query: fmt.Sprintf(`DELETE FROM %s WHERE "id" = $1`, runtimeTable),
-		},
-		PageableQuerier: repo.PageableQuerier{
-			query:        fmt.Sprintf(`SELECT %s FROM %s WHERE "tenant_id"  = $1`, runtimeFields, runtimeTable),
-			columns:      runtimeFields,
-			RelationName: "runtimes",
-		},
+		ExistQuerier:    repo.NewExistQuerier(runtimeTable, "tenant_id", "id"),
+		SingleGetter:    repo.NewSingleGetter(runtimeTable, "tenant_id", "id", runtimeFields),
+		Deleter:         repo.NewDeleter(runtimeTable, "tenant_id", "id"),
+		PageableQuerier: repo.NewPageableQuerier(runtimeTable, "tenant_id", runtimeFields),
 	}
 }
 
@@ -65,7 +56,7 @@ func (r RuntimeCollection) Len() int {
 	return len(r)
 }
 func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error) {
-	var runtimesEnt RuntimeCollection
+	var runtimesCollection RuntimeCollection
 	tenantID, err := uuid.Parse(tenant)
 	if err != nil {
 		return nil, errors.Wrap(err, "while parsing tenant as UUID") //TODO
@@ -79,9 +70,9 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 	var totalCount int
 
 	if filterSubquery != "" {
-		page, totalCount, err = r.PageableQuerier.List(ctx, tenant, pageSize, cursor, &runtimesEnt, fmt.Sprintf(`"id" IN (%s)`, filterSubquery))
+		page, totalCount, err = r.PageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &runtimesCollection, fmt.Sprintf(`"id" IN (%s)`, filterSubquery))
 	} else {
-		page, totalCount, err = r.PageableQuerier.List(ctx, tenant, pageSize, cursor, &runtimesEnt)
+		page, totalCount, err = r.PageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &runtimesCollection)
 	}
 
 	if err != nil {
@@ -90,7 +81,7 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 
 	var items []*model.Runtime
 
-	for _, runtimeEnt := range runtimesEnt {
+	for _, runtimeEnt := range runtimesCollection {
 		m, err := runtimeEnt.ToModel()
 		if err != nil {
 			return nil, errors.Wrap(err, "while creating runtime model from entity")

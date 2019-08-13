@@ -2,14 +2,15 @@ package repo_test
 
 import (
 	"context"
+	"regexp"
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	"regexp"
-	"testing"
 )
 
 // create table users(id uuid primary key, tenant uuid, first_name varchar(100),last_name varchar(100), age int);
@@ -19,17 +20,17 @@ import (
 func TestDelete(t *testing.T) {
 	givenID := uuidA()
 	givenTenant := uuidB()
-	expectedQuery := regexp.QuoteMeta("delete from users where id_col=$1 and tenant_col=$2")
-	sut := repo.NewDeleter("users", "id_col","tenant_col")
+	expectedQuery := regexp.QuoteMeta("DELETE FROM users WHERE tenant_col=$1 AND id_col=$2")
+	sut := repo.NewDeleter("users", "tenant_col", "id_col")
 
 	t.Run("success", func(t *testing.T) {
 		// GIVEN
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
-		mock.ExpectExec(expectedQuery).WithArgs(givenID, givenTenant).WillReturnResult(sqlmock.NewResult(-1, 1))
+		mock.ExpectExec(expectedQuery).WithArgs(givenTenant, givenID).WillReturnResult(sqlmock.NewResult(-1, 1))
 		// WHEN
-		err := sut.Delete(ctx, givenID, givenTenant)
+		err := sut.Delete(ctx, givenTenant, givenID)
 		// THEN
 		require.NoError(t, err)
 	})
@@ -40,9 +41,9 @@ func TestDelete(t *testing.T) {
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
-		mock.ExpectExec(expectedQuery).WithArgs(givenID, givenTenant).WillReturnError(givenErr)
+		mock.ExpectExec(expectedQuery).WithArgs(givenTenant, givenID).WillReturnError(givenErr)
 		// WHEN
-		err := sut.Delete(ctx, givenID, givenTenant)
+		err := sut.Delete(ctx, givenTenant, givenID)
 		// THEN
 		require.EqualError(t, err, "while deleting from database: some err")
 	})
@@ -52,9 +53,9 @@ func TestDelete(t *testing.T) {
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
-		mock.ExpectExec(expectedQuery).WithArgs(givenID, givenTenant).WillReturnResult(sqlmock.NewResult(0, 12))
+		mock.ExpectExec(expectedQuery).WithArgs(givenTenant, givenID).WillReturnResult(sqlmock.NewResult(0, 12))
 		// WHEN
-		err := sut.Delete(ctx, givenID, givenTenant)
+		err := sut.Delete(ctx, givenTenant, givenID)
 		// THEN
 		require.EqualError(t, err, "delete should remove single row, but removed 12 rows")
 	})
@@ -64,16 +65,16 @@ func TestDelete(t *testing.T) {
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
-		mock.ExpectExec(expectedQuery).WithArgs(givenID, givenTenant).WillReturnResult(sqlmock.NewResult(0, 0))
+		mock.ExpectExec(expectedQuery).WithArgs(givenTenant, givenID).WillReturnResult(sqlmock.NewResult(0, 0))
 		// WHEN
-		err := sut.Delete(ctx, givenID, givenTenant)
+		err := sut.Delete(ctx, givenTenant, givenID)
 		// THEN
 		require.EqualError(t, err, "delete should remove single row, but removed 0 rows")
 	})
 
 	t.Run("returns error if missing persistence context", func(t *testing.T) {
 		ctx := context.TODO()
-		err := sut.Delete(ctx, givenID, givenTenant)
+		err := sut.Delete(ctx, givenTenant, givenID)
 		require.EqualError(t, err, "unable to fetch database from context")
 	})
 

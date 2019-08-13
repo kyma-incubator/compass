@@ -359,8 +359,7 @@ func TestService_Delete(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("Exists", ctx, tnt, id).Return(true, nil).Once()
-				repo.On("Delete", ctx, runtimeModel.ID).Return(nil).Once()
+				repo.On("Delete", ctx, tnt, runtimeModel.ID).Return(nil).Once()
 				return repo
 			},
 			InputID:            id,
@@ -370,18 +369,7 @@ func TestService_Delete(t *testing.T) {
 			Name: "Returns error when runtime deletion failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("Exists", ctx, tnt, id).Return(true, nil).Once()
-				repo.On("Delete", ctx, runtimeModel.ID).Return(testErr).Once()
-				return repo
-			},
-			InputID:            id,
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "Returns error when runtime doesn't exist",
-			RepositoryFn: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("Exists", ctx, tnt, id).Return(false, testErr).Once()
+				repo.On("Delete", ctx, tnt, runtimeModel.ID).Return(testErr).Once()
 				return repo
 			},
 			InputID:            id,

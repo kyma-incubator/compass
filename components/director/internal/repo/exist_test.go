@@ -2,22 +2,23 @@ package repo_test
 
 import (
 	"context"
+	"regexp"
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	"regexp"
-	"testing"
 )
 
 func TestExist(t *testing.T) {
 	givenID := uuidA()
 	givenTenant := uuidB()
-	givenQuery := "select 1 from users where id_col=$1 and tenant_col=$2"
+	givenQuery := "SELECT 1 FROM users WHERE tenant_col=$1 AND id_col=$2"
 	escapedQuery := regexp.QuoteMeta(givenQuery)
-	sut := repo.NewExistQuerier("users","id_col","tenant_col")
+	sut := repo.NewExistQuerier("users", "tenant_col", "id_col")
 
 	t.Run("when exist", func(t *testing.T) {
 		// GIVEN
@@ -25,9 +26,9 @@ func TestExist(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
 		rows := sqlmock.NewRows([]string{""}).AddRow("1")
-		mock.ExpectQuery(escapedQuery).WithArgs(givenID, givenTenant).WillReturnRows(rows)
+		mock.ExpectQuery(escapedQuery).WithArgs(givenTenant, givenID).WillReturnRows(rows)
 		// WHEN
-		ex, err := sut.Exists(ctx, givenID, givenTenant)
+		ex, err := sut.Exists(ctx, givenTenant, givenID)
 		// THEN
 		require.NoError(t, err)
 		require.True(t, ex)
@@ -39,9 +40,9 @@ func TestExist(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
 		rows := sqlmock.NewRows([]string{""})
-		mock.ExpectQuery(escapedQuery).WithArgs(givenID, givenTenant).WillReturnRows(rows)
+		mock.ExpectQuery(escapedQuery).WithArgs(givenTenant, givenID).WillReturnRows(rows)
 		// WHEN
-		ex, err := sut.Exists(ctx, givenID, givenTenant)
+		ex, err := sut.Exists(ctx, givenTenant, givenID)
 		// THEN
 		require.NoError(t, err)
 		require.False(t, ex)
@@ -53,9 +54,9 @@ func TestExist(t *testing.T) {
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
-		mock.ExpectQuery(escapedQuery).WithArgs(givenID, givenTenant).WillReturnError(givenErr)
+		mock.ExpectQuery(escapedQuery).WithArgs(givenTenant, givenID).WillReturnError(givenErr)
 		// WHEN
-		_, err := sut.Exists(ctx, givenID, givenTenant)
+		_, err := sut.Exists(ctx, givenTenant, givenID)
 		// THEN
 		require.EqualError(t, err, "while getting object from DB: some error")
 
@@ -63,7 +64,7 @@ func TestExist(t *testing.T) {
 
 	t.Run("returns error if missing persistence context", func(t *testing.T) {
 		ctx := context.TODO()
-		_, err := sut.Exists(ctx, givenID, givenTenant)
+		_, err := sut.Exists(ctx, givenTenant, givenID)
 		require.EqualError(t, err, "unable to fetch database from context")
 	})
 }

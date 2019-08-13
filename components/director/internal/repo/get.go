@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/pkg/errors"
 )
@@ -15,7 +16,7 @@ type SingleGetter struct {
 	selectedColumns string
 }
 
-func NewSingleGetter(tableName, idColumn, tenantColumn, selectedColumns string) *SingleGetter {
+func NewSingleGetter(tableName, tenantColumn, idColumn, selectedColumns string) *SingleGetter {
 	return &SingleGetter{
 		tableName:       tableName,
 		idColumn:        idColumn,
@@ -24,7 +25,7 @@ func NewSingleGetter(tableName, idColumn, tenantColumn, selectedColumns string) 
 	}
 }
 
-func (g *SingleGetter) Get(ctx context.Context, dest interface{}, id, tenant string) error {
+func (g *SingleGetter) Get(ctx context.Context, tenant, id string, dest interface{}) error {
 	if dest == nil {
 		return errors.New("missing destination")
 	}
@@ -33,8 +34,8 @@ func (g *SingleGetter) Get(ctx context.Context, dest interface{}, id, tenant str
 		return err
 	}
 
-	q := fmt.Sprintf("SELECT %s FROM %s WHERE %s = $1 AND  %s = $2", g.selectedColumns, g.tableName, g.idColumn, g.tenantColumn)
-	err = persist.Get(dest, q, id, tenant)
+	q := fmt.Sprintf("SELECT %s FROM %s WHERE %s = $1 AND  %s = $2", g.selectedColumns, g.tableName, g.tenantColumn, g.idColumn)
+	err = persist.Get(dest, q, tenant, id)
 	if err != nil {
 		if err != sql.ErrNoRows {
 			return errors.Wrap(err, "while getting object from DB")

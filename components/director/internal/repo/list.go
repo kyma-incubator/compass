@@ -3,10 +3,11 @@ package repo
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/pkg/errors"
-	"strings"
 )
 
 type PageableQuerier struct {
@@ -15,7 +16,7 @@ type PageableQuerier struct {
 	tenantColumn    string
 }
 
-func NewPageableQuerier(tableName, selectedColumns, tenantColumn string) *PageableQuerier {
+func NewPageableQuerier(tableName, tenantColumn, selectedColumns string) *PageableQuerier {
 	return &PageableQuerier{
 		tableName:       tableName,
 		selectedColumns: selectedColumns,
