@@ -28,6 +28,7 @@ type Collection interface {
 	Len() int
 }
 
+// List returns Page, TotalCount or error
 func (g *PageableQuerier) List(ctx context.Context, tenant string, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...string) (*pagination.Page, int, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {

@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -59,21 +58,18 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 	var runtimesCollection RuntimeCollection
 	tenantID, err := uuid.Parse(tenant)
 	if err != nil {
-		return nil, errors.Wrap(err, "while parsing tenant as UUID") //TODO
+		return nil, errors.Wrap(err, "while parsing tenant as UUID")
 	}
 	filterSubquery, err := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filter)
 	if err != nil {
 		return nil, errors.Wrap(err, "while building filter query")
 	}
-
-	var page *pagination.Page
-	var totalCount int
-
+	var additionalConditions string
 	if filterSubquery != "" {
-		page, totalCount, err = r.PageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &runtimesCollection, fmt.Sprintf(`"id" IN (%s)`, filterSubquery))
-	} else {
-		page, totalCount, err = r.PageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &runtimesCollection)
+		additionalConditions = fmt.Sprintf(`"id" IN (%s)`, filterSubquery)
 	}
+
+	page, totalCount, err := r.PageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &runtimesCollection, additionalConditions)
 
 	if err != nil {
 		return nil, err

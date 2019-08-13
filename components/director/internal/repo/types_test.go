@@ -1,5 +1,6 @@
 package repo_test
 
+// User is a exemplary type to test generic Repositories
 type User struct {
 	ID        string `db:"id_col"`
 	Tenant    string `db:"tenant_col"`

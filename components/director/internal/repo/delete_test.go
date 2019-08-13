@@ -13,10 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// create table users(id uuid primary key, tenant uuid, first_name varchar(100),last_name varchar(100), age int);
-// insert into users(id,tenant,first_name,last_name,age) values('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa','bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb','Adam','Sze',33);
-// delete from users where id='aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' and tenant='bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
-
 func TestDelete(t *testing.T) {
 	givenID := uuidA()
 	givenTenant := uuidB()
