@@ -391,7 +391,7 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 
 	t.Log("Check if new scenario label value was set correctly")
 	appRequest := fixApplicationRequest(app.ID)
-	app = graphql.Application{}
+	app = ApplicationExt{}
 
 	err = tc.RunQuery(ctx, appRequest, &app)
 	require.NoError(t, err)

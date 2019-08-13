@@ -8,25 +8,25 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func createRandomApplication(t *testing.T, ctx context.Context, name string) graphql.Application {
+func createRandomApplication(t *testing.T, ctx context.Context, name string) ApplicationExt {
 	in := generateSampleApplicationInputWithName("first", name)
 	return createApplication(t, ctx, in, defaultTenant)
 }
 
-func createApplicationFromInput(t *testing.T, ctx context.Context, in graphql.ApplicationInput) graphql.Application {
+func createApplicationFromInput(t *testing.T, ctx context.Context, in graphql.ApplicationInput) ApplicationExt {
 	return createApplication(t, ctx, in, defaultTenant)
 }
 
-func createApplicationWithinTenantFromInput(t *testing.T, ctx context.Context, in graphql.ApplicationInput, tenant string) graphql.Application {
+func createApplicationWithinTenantFromInput(t *testing.T, ctx context.Context, in graphql.ApplicationInput, tenant string) ApplicationExt {
 	return createApplication(t, ctx, in, tenant)
 }
 
-func createApplication(t *testing.T, ctx context.Context, in graphql.ApplicationInput, tenant string) graphql.Application {
+func createApplication(t *testing.T, ctx context.Context, in graphql.ApplicationInput, tenant string) ApplicationExt {
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
 
 	createReq := fixCreateApplicationRequest(appInputGQL)
-	app := graphql.Application{}
+	app := ApplicationExt{}
 
 	require.NoError(t, tc.RunQuery(ctx, createReq, &app))
 	require.NotEmpty(t, app.ID)
