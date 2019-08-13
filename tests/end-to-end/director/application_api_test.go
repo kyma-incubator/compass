@@ -120,6 +120,21 @@ func TestCreateApplicationWithAPIs(t *testing.T) {
 						Auth:   fixBasicAuth(),
 					},
 				},
+				DefaultAuth: &graphql.AuthInput{
+					Credential: fixBasicCredential(),
+					RequestAuth: &graphql.CredentialRequestAuthInput{
+						Csrf: &graphql.CSRFTokenCredentialRequestAuthInput{
+							Credential: &graphql.CredentialDataInput{
+								Oauth: &graphql.OAuthCredentialDataInput{
+									ClientID:     "ID",
+									ClientSecret: "secret",
+									URL:          "url",
+								},
+							},
+							TokenEndpointURL: "token-URL",
+						},
+					},
+				},
 			},
 		},
 		Labels: &graphql.Labels{
@@ -157,7 +172,7 @@ func TestCreateApplicationWithEventAPIs(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	in := graphql.ApplicationInput{
-		Name: "wordpress",
+		Name: "test-create-application-with-event-apis",
 		EventAPIs: []*graphql.EventAPIDefinitionInput{
 			{
 				Name:        "comments/v1",
@@ -220,7 +235,7 @@ func TestCreateApplicationWithDocuments(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	in := graphql.ApplicationInput{
-		Name: "wordpress",
+		Name: "test-create-application-with-documents",
 		Documents: []*graphql.DocumentInput{
 			{
 				Title:       "Readme",

@@ -8,12 +8,7 @@ import (
 
 func fixBasicAuth() *graphql.AuthInput {
 	return &graphql.AuthInput{
-		Credential: &graphql.CredentialDataInput{
-			Basic: &graphql.BasicCredentialDataInput{
-				Username: "admin",
-				Password: "secret",
-			},
-		},
+		Credential: fixBasicCredential(),
 		AdditionalHeaders: &graphql.HttpHeaders{
 			"headerA": []string{"ha1", "ha2"},
 			"headerB": []string{"hb1", "hb2"},
@@ -33,6 +28,15 @@ func fixOauthAuth() *graphql.AuthInput {
 				ClientID:     "clientID",
 				ClientSecret: "clientSecret",
 			},
+		},
+	}
+}
+
+func fixBasicCredential() *graphql.CredentialDataInput {
+	return &graphql.CredentialDataInput{
+		Basic: &graphql.BasicCredentialDataInput{
+			Username: "admin",
+			Password: "secret",
 		},
 	}
 }
