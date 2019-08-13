@@ -451,7 +451,7 @@ func TestDeleteScenarioLabel(t *testing.T) {
 	defer deleteApplication(t, app.ID)
 
 	t.Log("Try to delete scenario label on application")
-	labelKey := "scenario"
+	labelKey := "scenarios"
 	deleteApplicationLabelRequest := fixDeleteApplicationLabel(app.ID, labelKey)
 
 	// WHEN
@@ -459,6 +459,7 @@ func TestDeleteScenarioLabel(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
+	assert.EqualError(t, err, "graphql: scenarios label can not be deleted from application")
 }
 
 func TestDeleteDefaultValueInScenarioLabelDefinition(t *testing.T) {
