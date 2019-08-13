@@ -7,11 +7,12 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/jmoiron/sqlx"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -35,7 +36,7 @@ func TestRepositoryCreateLabelDefinition(t *testing.T) {
 	}
 
 	t.Run("successfully created definition with schema", func(t *testing.T) {
-		db, dbMock := mockDatabase(t)
+		db, dbMock := testdb.MockDatabase(t)
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
 		mockConverter := &automock.Converter{}
@@ -43,9 +44,8 @@ func TestRepositoryCreateLabelDefinition(t *testing.T) {
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}}, nil)
 		escapedQuery := regexp.QuoteMeta("insert into public.label_definitions (id,tenant_id,key,schema) values(?,?,?,?)")
 		dbMock.ExpectExec(escapedQuery).WithArgs(labelDefID, tenantID, "some-key", "any").WillReturnResult(sqlmock.NewResult(1, 1))
-		defer func() {
-			require.NoError(t, dbMock.ExpectationsWereMet())
-		}()
+
+		defer dbMock.AssertExpectations(t)
 		sut := labeldef.NewRepository(mockConverter)
 		// WHEN
 		err := sut.Create(ctx, in)
@@ -54,7 +54,7 @@ func TestRepositoryCreateLabelDefinition(t *testing.T) {
 	})
 
 	t.Run("successfully created definition without schema", func(t *testing.T) {
-		db, dbMock := mockDatabase(t)
+		db, dbMock := testdb.MockDatabase(t)
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
 		mockConverter := &automock.Converter{}
@@ -62,9 +62,7 @@ func TestRepositoryCreateLabelDefinition(t *testing.T) {
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID}, nil)
 		escapedQuery := regexp.QuoteMeta("insert into public.label_definitions (id,tenant_id,key) values(?,?,?)")
 		dbMock.ExpectExec(escapedQuery).WithArgs(labelDefID, tenantID, "some-key").WillReturnResult(sqlmock.NewResult(1, 1))
-		defer func() {
-			require.NoError(t, dbMock.ExpectationsWereMet())
-		}()
+		defer dbMock.AssertExpectations(t)
 		sut := labeldef.NewRepository(mockConverter)
 		// WHEN
 		err := sut.Create(ctx, in)
@@ -85,14 +83,12 @@ func TestRepositoryCreateLabelDefinition(t *testing.T) {
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}}, nil)
 
 		sut := labeldef.NewRepository(mockConverter)
-		db, dbMock := mockDatabase(t)
+		db, dbMock := testdb.MockDatabase(t)
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
 		escapedQuery := regexp.QuoteMeta("insert into public.label_definitions (id,tenant_id,key,schema) values(?,?,?,?)")
 		dbMock.ExpectExec(escapedQuery).WillReturnError(errors.New("some error"))
-		defer func() {
-			require.NoError(t, dbMock.ExpectationsWereMet())
-		}()
+		defer dbMock.AssertExpectations(t)
 		// WHEN
 		err := sut.Create(ctx, in)
 		// THEN
@@ -116,7 +112,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 	}
 
 	t.Run("successfully updated definition with schema", func(t *testing.T) {
-		db, dbMock := mockDatabase(t)
+		db, dbMock := testdb.MockDatabase(t)
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
@@ -127,9 +123,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 
 		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET "schema" = ? WHERE "id" = ?`)
 		dbMock.ExpectExec(escapedQuery).WithArgs("any", labelDefID).WillReturnResult(sqlmock.NewResult(1, 1))
-		defer func() {
-			require.NoError(t, dbMock.ExpectationsWereMet())
-		}()
+		defer dbMock.AssertExpectations(t)
 
 		sut := labeldef.NewRepository(mockConverter)
 
@@ -140,7 +134,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 	})
 
 	t.Run("successfully updated definition without schema", func(t *testing.T) {
-		db, dbMock := mockDatabase(t)
+		db, dbMock := testdb.MockDatabase(t)
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
@@ -151,9 +145,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 
 		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET "schema" = ? WHERE "id" = ?`)
 		dbMock.ExpectExec(escapedQuery).WithArgs(nil, labelDefID).WillReturnResult(sqlmock.NewResult(1, 1))
-		defer func() {
-			require.NoError(t, dbMock.ExpectationsWereMet())
-		}()
+		defer dbMock.AssertExpectations(t)
 
 		sut := labeldef.NewRepository(mockConverter)
 
@@ -176,16 +168,14 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}}, nil)
 
 		sut := labeldef.NewRepository(mockConverter)
-		db, dbMock := mockDatabase(t)
+		db, dbMock := testdb.MockDatabase(t)
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
 
 		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET "schema" = ? WHERE "id" = ?`)
 		dbMock.ExpectExec(escapedQuery).WillReturnError(errors.New("some error"))
-		defer func() {
-			require.NoError(t, dbMock.ExpectationsWereMet())
-		}()
+		defer dbMock.AssertExpectations(t)
 
 		// WHEN
 		err := sut.Update(ctx, in)
@@ -199,16 +189,14 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}}, nil)
 
 		sut := labeldef.NewRepository(mockConverter)
-		db, dbMock := mockDatabase(t)
+		db, dbMock := testdb.MockDatabase(t)
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
 
 		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET "schema" = ? WHERE "id" = ?`)
 		dbMock.ExpectExec(escapedQuery).WillReturnError(errors.New("some error"))
-		defer func() {
-			require.NoError(t, dbMock.ExpectationsWereMet())
-		}()
+		defer dbMock.AssertExpectations(t)
 
 		// WHEN
 		err := sut.Update(ctx, in)
@@ -217,7 +205,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 	})
 
 	t.Run("returns error if no row was affected by query", func(t *testing.T) {
-		db, dbMock := mockDatabase(t)
+		db, dbMock := testdb.MockDatabase(t)
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
@@ -228,9 +216,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 
 		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET "schema" = ? WHERE "id" = ?`)
 		dbMock.ExpectExec(escapedQuery).WithArgs("any", labelDefID).WillReturnResult(sqlmock.NewResult(1, 0))
-		defer func() {
-			require.NoError(t, dbMock.ExpectationsWereMet())
-		}()
+		defer dbMock.AssertExpectations(t)
 
 		sut := labeldef.NewRepository(mockConverter)
 
@@ -258,10 +244,8 @@ func TestRepositoryGetByKey(t *testing.T) {
 					Schema: &someSchema}, nil)
 		sut := labeldef.NewRepository(mockConverter)
 
-		db, dbMock := mockDatabase(t)
-		defer func() {
-			require.NoError(t, dbMock.ExpectationsWereMet())
-		}()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
 
 		escapedQuery := regexp.QuoteMeta("select * from public.label_definitions where tenant_id=$1 and key=$2")
 		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "schema"}).AddRow("id", "tenant", "key", `{"title":"title"}`)
@@ -280,10 +264,8 @@ func TestRepositoryGetByKey(t *testing.T) {
 	})
 	t.Run("returns nil if LabelDefinition does not exist", func(t *testing.T) {
 		// GIVEN
-		db, dbMock := mockDatabase(t)
-		defer func() {
-			require.NoError(t, dbMock.ExpectationsWereMet())
-		}()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
 
 		escapedQuery := regexp.QuoteMeta("select * from public.label_definitions where tenant_id=$1 and key=$2")
 		dbMock.ExpectQuery(escapedQuery).WithArgs("anything", "anything").WillReturnRows(sqlmock.NewRows([]string{"id", "tenant_id", "key", "schema"}))
@@ -305,10 +287,8 @@ func TestRepositoryGetByKey(t *testing.T) {
 		mockConverter.On("FromEntity", mock.Anything).Return(model.LabelDefinition{}, errors.New("conversion error"))
 		sut := labeldef.NewRepository(mockConverter)
 
-		db, dbMock := mockDatabase(t)
-		defer func() {
-			require.NoError(t, dbMock.ExpectationsWereMet())
-		}()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
 
 		escapedQuery := regexp.QuoteMeta("select * from public.label_definitions where tenant_id=$1 and key=$2")
 		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "schema"}).AddRow("id", "tenant", "key", `{"title":"title"}`)
@@ -332,10 +312,8 @@ func TestRepositoryGetByKey(t *testing.T) {
 	t.Run("returns error if select fails", func(t *testing.T) {
 		// GIVEN
 		sut := labeldef.NewRepository(nil)
-		db, dbMock := mockDatabase(t)
-		defer func() {
-			require.NoError(t, dbMock.ExpectationsWereMet())
-		}()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
 
 		escapedQuery := regexp.QuoteMeta("select * from public.label_definitions where tenant_id=$1 and key=$2")
 		dbMock.ExpectQuery(escapedQuery).WithArgs("tenant", "key").WillReturnError(errors.New("persistence error"))
@@ -373,10 +351,8 @@ func TestRepositoryList(t *testing.T) {
 				}, nil)
 		sut := labeldef.NewRepository(mockConverter)
 
-		db, dbMock := mockDatabase(t)
-		defer func() {
-			require.NoError(t, dbMock.ExpectationsWereMet())
-		}()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
 
 		escapedQuery := regexp.QuoteMeta("select * from public.label_definitions where tenant_id=$1")
 		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "schema"}).
@@ -401,10 +377,8 @@ func TestRepositoryList(t *testing.T) {
 		// GIVEN
 		sut := labeldef.NewRepository(nil)
 
-		db, dbMock := mockDatabase(t)
-		defer func() {
-			require.NoError(t, dbMock.ExpectationsWereMet())
-		}()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
 
 		escapedQuery := regexp.QuoteMeta("select * from public.label_definitions where tenant_id=$1")
 		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "schema"})
@@ -432,10 +406,8 @@ func TestRepositoryList(t *testing.T) {
 
 		sut := labeldef.NewRepository(mockConverter)
 
-		db, dbMock := mockDatabase(t)
-		defer func() {
-			require.NoError(t, dbMock.ExpectationsWereMet())
-		}()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
 
 		escapedQuery := regexp.QuoteMeta("select * from public.label_definitions where tenant_id=$1")
 		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "schema"}).
@@ -464,10 +436,8 @@ func TestRepositoryList(t *testing.T) {
 		// GIVEN
 		sut := labeldef.NewRepository(nil)
 
-		db, dbMock := mockDatabase(t)
-		defer func() {
-			require.NoError(t, dbMock.ExpectationsWereMet())
-		}()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
 
 		escapedQuery := regexp.QuoteMeta("select * from public.label_definitions where tenant_id=$1")
 
@@ -486,10 +456,8 @@ func TestRepositoryLabelDefExists(t *testing.T) {
 	t.Run("returns true", func(t *testing.T) {
 		// GIVEN
 		sut := labeldef.NewRepository(nil)
-		db, dbMock := mockDatabase(t)
-		defer func() {
-			require.NoError(t, dbMock.ExpectationsWereMet())
-		}()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
 
 		escapedQuery := regexp.QuoteMeta("select 1 as exists from public.label_definitions where tenant_id=$1 and key=$2")
 		dbMock.ExpectQuery(escapedQuery).WithArgs("tenant", "key").WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow("1"))
@@ -505,10 +473,8 @@ func TestRepositoryLabelDefExists(t *testing.T) {
 
 	t.Run("returns false", func(t *testing.T) {
 		// GIVEN
-		db, dbMock := mockDatabase(t)
-		defer func() {
-			require.NoError(t, dbMock.ExpectationsWereMet())
-		}()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
 
 		escapedQuery := regexp.QuoteMeta("select 1 as exists from public.label_definitions where tenant_id=$1 and key=$2")
 		dbMock.ExpectQuery(escapedQuery).WithArgs("anything", "anything").WillReturnRows(sqlmock.NewRows([]string{"exists"}))
@@ -534,10 +500,8 @@ func TestRepositoryLabelDefExists(t *testing.T) {
 	t.Run("returns error if select fails", func(t *testing.T) {
 		// GIVEN
 		sut := labeldef.NewRepository(nil)
-		db, dbMock := mockDatabase(t)
-		defer func() {
-			require.NoError(t, dbMock.ExpectationsWereMet())
-		}()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
 
 		escapedQuery := regexp.QuoteMeta("select 1 as exists from public.label_definitions where tenant_id=$1 and key=$2")
 		dbMock.ExpectQuery(escapedQuery).WithArgs("tenant", "key").WillReturnError(errors.New("persistence error"))
@@ -562,10 +526,8 @@ func TestRepository_DeleteByKey(t *testing.T) {
 
 		repo := labeldef.NewRepository(mockConverter)
 
-		db, dbMock := mockDatabase(t)
-		defer func() {
-			require.NoError(t, dbMock.ExpectationsWereMet())
-		}()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
 
 		escapedQuery := regexp.QuoteMeta(`DELETE FROM public.label_definitions WHERE tenant_id=$1 AND key=$2`)
 		dbMock.ExpectExec(escapedQuery).WithArgs(tnt, key).WillReturnResult(sqlmock.NewResult(1, 1))
@@ -589,10 +551,8 @@ func TestRepository_DeleteByKey(t *testing.T) {
 
 		repo := labeldef.NewRepository(mockConverter)
 
-		db, dbMock := mockDatabase(t)
-		defer func() {
-			require.NoError(t, dbMock.ExpectationsWereMet())
-		}()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
 
 		escapedQuery := regexp.QuoteMeta(`DELETE FROM public.label_definitions WHERE tenant_id=$1 AND key=$2`)
 		dbMock.ExpectExec(escapedQuery).WithArgs(tnt, key).WillReturnError(testErr)
@@ -630,10 +590,8 @@ func TestRepository_DeleteByKey(t *testing.T) {
 
 		repo := labeldef.NewRepository(mockConverter)
 
-		db, dbMock := mockDatabase(t)
-		defer func() {
-			require.NoError(t, dbMock.ExpectationsWereMet())
-		}()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
 
 		escapedQuery := regexp.QuoteMeta(`DELETE FROM public.label_definitions WHERE tenant_id=$1 AND key=$2`)
 		dbMock.ExpectExec(escapedQuery).WithArgs(tnt, key).WillReturnResult(sqlmock.NewResult(1, 0))
@@ -645,11 +603,4 @@ func TestRepository_DeleteByKey(t *testing.T) {
 		// THEN
 		require.EqualError(t, err, "no rows were affected by query")
 	})
-}
-
-func mockDatabase(t *testing.T) (*sqlx.DB, sqlmock.Sqlmock) {
-	sqlDB, sqlMock, err := sqlmock.New()
-	require.NoError(t, err)
-	sqlxDB := sqlx.NewDb(sqlDB, "sqlmock")
-	return sqlxDB, sqlMock
 }

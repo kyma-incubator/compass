@@ -3,12 +3,13 @@ package runtime_test
 import (
 	"context"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
@@ -18,7 +19,6 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
-	"github.com/jmoiron/sqlx"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -32,7 +32,8 @@ func TestPgRepository_GetByID_ShouldReturnRuntimeModelForRuntimeEntity(t *testin
 	timestamp, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
 
-	sqlxDB, sqlMock := mockDatabase(t)
+	sqlxDB, sqlMock := testdb.MockDatabase(t)
+	defer sqlMock.AssertExpectations(t)
 
 	rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth"}).
 		AddRow(runtimeID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp, agentAuthStr)
@@ -78,7 +79,6 @@ func TestPgRepository_List(t *testing.T) {
 		ExpectedLimit  int
 		Rows           *sqlmock.Rows
 		TotalCount     int
-		ExpectedError  error
 	}{
 		{
 			Name:           "Success getting first page",
@@ -86,7 +86,6 @@ func TestPgRepository_List(t *testing.T) {
 			InputCursor:    "",
 			ExpectedOffset: 0,
 			ExpectedLimit:  limit,
-			ExpectedError:  nil,
 			Rows: sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth"}).
 				AddRow(runtime1ID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp, agentAuthStr).
 				AddRow(runtime2ID, tenantID, "Runtime XYZ", "Description for runtime XYZ", "INITIAL", timestamp, agentAuthStr),
@@ -98,32 +97,24 @@ func TestPgRepository_List(t *testing.T) {
 			InputCursor:    convertIntToBase64String(offset),
 			ExpectedOffset: offset,
 			ExpectedLimit:  limit,
-			ExpectedError:  nil,
 			Rows: sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth"}).
 				AddRow(runtime1ID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp, agentAuthStr).
 				AddRow(runtime2ID, tenantID, "Runtime XYZ", "Description for runtime XYZ", "INITIAL", timestamp, agentAuthStr),
 			TotalCount: 2,
-		},
-		{
-			Name:          "Returns error when decoded cursor is non-positive number",
-			InputPageSize: 2,
-			InputCursor:   convertIntToBase64String(-3),
-			ExpectedError: errors.New("cursor is not correct"),
-		},
-	}
-
+		}}
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			sqlxDB, sqlMock := mockDatabase(t)
+			sqlxDB, sqlMock := testdb.MockDatabase(t)
+			defer sqlMock.AssertExpectations(t)
 			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 			pgRepository := runtime.NewPostgresRepository()
 			expectedQuery := fmt.Sprintf(pageableQuery, testCase.ExpectedLimit, testCase.ExpectedOffset)
+			fmt.Println(expectedQuery)
 
 			sqlMock.ExpectQuery(expectedQuery).
 				WithArgs(tenantID).
 				WillReturnRows(testCase.Rows)
-
 			countRow := sqlMock.NewRows([]string{"count"}).AddRow(testCase.TotalCount)
 
 			sqlMock.ExpectQuery(countQuery).
@@ -134,22 +125,31 @@ func TestPgRepository_List(t *testing.T) {
 			modelRuntimePage, err := pgRepository.List(ctx, tenantID, nil, testCase.InputPageSize, testCase.InputCursor)
 
 			//THEN
-			if testCase.ExpectedError != nil {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, testCase.ExpectedLimit, modelRuntimePage.TotalCount)
-				require.NoError(t, sqlMock.ExpectationsWereMet())
+			require.NoError(t, err)
+			assert.Equal(t, testCase.ExpectedLimit, modelRuntimePage.TotalCount)
+			require.NoError(t, sqlMock.ExpectationsWereMet())
 
-				assert.Equal(t, runtime1ID, modelRuntimePage.Data[0].ID)
-				assert.Equal(t, tenantID, modelRuntimePage.Data[0].Tenant)
+			assert.Equal(t, runtime1ID, modelRuntimePage.Data[0].ID)
+			assert.Equal(t, tenantID, modelRuntimePage.Data[0].Tenant)
 
-				assert.Equal(t, runtime2ID, modelRuntimePage.Data[1].ID)
-				assert.Equal(t, tenantID, modelRuntimePage.Data[1].Tenant)
-			}
+			assert.Equal(t, runtime2ID, modelRuntimePage.Data[1].ID)
+			assert.Equal(t, tenantID, modelRuntimePage.Data[1].Tenant)
+
 		})
 	}
+
+	t.Run("Returns error when decoded cursor is non-positive number", func(t *testing.T) {
+		//GIVEN
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		defer sqlMock.AssertExpectations(t)
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		pgRepository := runtime.NewPostgresRepository()
+		//THEN
+		_, err := pgRepository.List(ctx, tenantID, nil, 2, convertIntToBase64String(-3))
+
+		//THEN
+		require.EqualError(t, err, "while decoding page cursor: cursor is not correct")
+	})
 }
 
 func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntities(t *testing.T) {
@@ -162,7 +162,8 @@ func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntitie
 	timestamp, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
 
-	sqlxDB, sqlMock := mockDatabase(t)
+	sqlxDB, sqlMock := testdb.MockDatabase(t)
+	defer sqlMock.AssertExpectations(t)
 
 	rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth"}).
 		AddRow(runtime1ID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp, agentAuthStr).
@@ -239,7 +240,8 @@ func TestPgRepository_Create_ShouldCreateRuntimeEntityFromValidModel(t *testing.
 		},
 	}
 
-	sqlxDB, sqlMock := mockDatabase(t)
+	sqlxDB, sqlMock := testdb.MockDatabase(t)
+	defer sqlMock.AssertExpectations(t)
 
 	sqlMock.ExpectExec(`^INSERT INTO "public"."runtimes" \(.+\) VALUES \(.+\)$`).
 		WithArgs(modelRuntime.ID, modelRuntime.Tenant, modelRuntime.Name, modelRuntime.Description, modelRuntime.Status.Condition, modelRuntime.Status.Timestamp, agentAuthStr).
@@ -283,7 +285,8 @@ func TestPgRepository_Update_ShouldUpdateRuntimeEntityFromValidModel(t *testing.
 		},
 	}
 
-	sqlxDB, sqlMock := mockDatabase(t)
+	sqlxDB, sqlMock := testdb.MockDatabase(t)
+	defer sqlMock.AssertExpectations(t)
 
 	sqlMock.ExpectExec(fmt.Sprintf(`^UPDATE "public"."runtimes" SET (.+) WHERE "id" = \?$`)).
 		WithArgs(modelRuntime.Name, modelRuntime.Description, modelRuntime.Status.Condition, modelRuntime.Status.Timestamp, modelRuntime.ID).
@@ -306,7 +309,8 @@ func TestPgRepository_Delete_ShouldDeleteRuntimeEntityUsingValidModel(t *testing
 	tenantID := uuid.New().String()
 	modelRuntime := fixModelRuntime(runtimeID, tenantID, "Runtime BCD", "Description for runtime BCD")
 
-	sqlxDB, sqlMock := mockDatabase(t)
+	sqlxDB, sqlMock := testdb.MockDatabase(t)
+	defer sqlMock.AssertExpectations(t)
 
 	sqlMock.ExpectExec(fmt.Sprintf(`^DELETE FROM "public"."runtimes" WHERE tenant_id=\$1 AND id=\$2$`)).
 		WithArgs(tenantID, runtimeID).
@@ -321,15 +325,6 @@ func TestPgRepository_Delete_ShouldDeleteRuntimeEntityUsingValidModel(t *testing
 
 	// then
 	assert.NoError(t, err)
-}
-
-func mockDatabase(t *testing.T) (*sqlx.DB, sqlmock.Sqlmock) {
-	sqlDB, sqlMock, err := sqlmock.New()
-	require.NoError(t, err)
-
-	sqlxDB := sqlx.NewDb(sqlDB, "sqlmock")
-
-	return sqlxDB, sqlMock
 }
 
 func convertIntToBase64String(number int) string {
