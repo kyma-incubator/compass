@@ -345,7 +345,7 @@ func TestCreateScenariosLabel(t *testing.T) {
 	assert.Contains(t, scenariosEnum, "DEFAULT")
 }
 
-func TestUpdateScenariosLabelValue(t *testing.T) {
+func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	t.Log("Create application")

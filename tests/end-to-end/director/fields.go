@@ -171,11 +171,13 @@ func (fp *gqlFieldsProvider) ForRuntime() string {
 }
 
 func (fp *gqlFieldsProvider) ForApplicationLabel() string {
-	return `key
-			value`
+	return `
+		key
+		value`
 }
 
 func (fp *gqlFieldsProvider) ForLabelDefinition() string {
-	return `key
-			schema`
+	return `
+		key
+		schema`
 }
