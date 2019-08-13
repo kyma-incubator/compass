@@ -27,3 +27,28 @@ func (a *Auth) UnmarshalJSON(data []byte) error {
 
 	return nil
 }
+
+func (csrf *CSRFTokenCredentialRequestAuth) UnmarshalJSON(data []byte) error {
+	type Alias CSRFTokenCredentialRequestAuth
+
+	aux := &struct {
+		*Alias
+		Credential struct {
+			*BasicCredentialData
+			*OAuthCredentialData
+		} `json:"credential"`
+	}{
+		Alias: (*Alias)(csrf),
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	if aux.Credential.BasicCredentialData != nil {
+		csrf.Credential = aux.Credential.BasicCredentialData
+	} else {
+		csrf.Credential = aux.Credential.OAuthCredentialData
+	}
+
+	return nil
+}
