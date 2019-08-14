@@ -93,7 +93,7 @@ func (g *graphqlizer) CredentialRequestAuthInputToGQL(in *graphql.CredentialRequ
 	}`)
 }
 
-func (g *graphqlizer) CredentialToGQL(in *graphql.CredentialDataInput) (string, error) {
+func (g *graphqlizer) CredentialDataInputToGQL(in *graphql.CredentialDataInput) (string, error) {
 	return g.genericToGQL(in, ` {
 			{{- if .Basic }}
 			basic: {
@@ -114,7 +114,7 @@ func (g *graphqlizer) CredentialToGQL(in *graphql.CredentialDataInput) (string, 
 func (g *graphqlizer) CSRFTokenCredentialRequestAuthInputToGQL(in *graphql.CSRFTokenCredentialRequestAuthInput) (string, error) {
 	return g.genericToGQL(in, `{
 			tokenEndpointURL: "{{ .TokenEndpointURL }}",
-			credential: {{ CredentialToGQL .Credential }},
+			credential: {{ CredentialDataInputToGQL .Credential }},
 			{{- if .AdditionalHeaders }}
 			additionalHeaders : {{ HTTPHeadersToGQL .AdditionalHeaders }},
 			{{- end }}
@@ -126,7 +126,7 @@ func (g *graphqlizer) CSRFTokenCredentialRequestAuthInputToGQL(in *graphql.CSRFT
 
 func (g *graphqlizer) AuthInputToGQL(in *graphql.AuthInput) (string, error) {
 	return g.genericToGQL(in, `{
-		credential: {{ CredentialToGQL .Credential }},
+		credential: {{ CredentialDataInputToGQL .Credential }},
 		{{- if .AdditionalHeaders }}
 		additionalHeaders: {{ HTTPHeadersToGQL .AdditionalHeaders }},
 		{{- end }}
@@ -317,7 +317,7 @@ func (g *graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	fm["HTTPHeadersToGQL"] = g.HTTPHeadersToGQL
 	fm["QueryParamsToGQL"] = g.QueryParamsToGQL
 	fm["EventAPISpecInputToGQL"] = g.EventAPISpecInputToGQL
-	fm["CredentialToGQL"] = g.CredentialToGQL
+	fm["CredentialDataInputToGQL"] = g.CredentialDataInputToGQL
 	fm["CSRFTokenCredentialRequestAuthInputToGQL"] = g.CSRFTokenCredentialRequestAuthInputToGQL
 	fm["CredentialRequestAuthInputToGQL"] = g.CredentialRequestAuthInputToGQL
 	fm["LabelDefinitionInputToGQL"] = g.LabelDefinitionInputToGQL
