@@ -123,6 +123,8 @@ CREATE TABLE runtime_auths (
     value jsonb
 );
 
+CREATE UNIQUE INDEX ON runtime_auths (tenant_id, runtime_id, app_def_id);
+
 -- Document
 
 CREATE TYPE document_format AS ENUM (
@@ -182,9 +184,9 @@ CREATE TYPE fetch_request_mode AS ENUM (
 CREATE TABLE fetch_requests (
     id uuid PRIMARY KEY,
     tenant_id uuid NOT NULL,
-    document_id uuid REFERENCES documents (id) ON DELETE CASCADE,
     api_def_id uuid REFERENCES api_definitions (id) ON DELETE CASCADE,
     event_api_def_id uuid REFERENCES event_api_definitions (id) ON DELETE CASCADE,
+    document_id uuid REFERENCES documents (id) ON DELETE CASCADE,
     url varchar(256) NOT NULL,
     auth jsonb,
     mode fetch_request_mode NOT NULL,
@@ -192,6 +194,8 @@ CREATE TABLE fetch_requests (
     status_condition fetch_request_status_condition NOT NULL,
     status_timestamp timestamp NOT NULL
 );
+
+CREATE UNIQUE INDEX ON fetch_requests (tenant_id, api_def_id, event_api_def_id, document_id);
 
 ALTER TABLE api_definitions
     ADD fetch_request_id uuid REFERENCES fetch_requests(id) ON DELETE CASCADE;
