@@ -154,7 +154,7 @@ func (s *service) validateExistingLabelsAgainstSchema(ctx context.Context, schem
 		}
 
 		if !result.Valid {
-			return errors.Wrapf(result.Error, `label with key "%s" is not valid against new schema for %s with ID "%s"`, label.Key, label.ObjectType, label.ObjectID)
+			return errors.Wrapf(result.Error, `label with key "%s" is not valid against new schema for %s with Field "%s"`, label.Key, label.ObjectType, label.ObjectID)
 		}
 	}
 	return nil

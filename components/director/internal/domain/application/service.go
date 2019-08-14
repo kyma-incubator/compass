@@ -178,7 +178,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.Application, error
 
 	app, err := s.appRepo.GetByID(ctx, appTenant, id)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting Application with ID %s", id)
+		return nil, errors.Wrapf(err, "while getting Application with Field %s", id)
 	}
 
 	return app, nil
@@ -192,7 +192,7 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 
 	exist, err := s.appRepo.Exists(ctx, appTenant, id)
 	if err != nil {
-		return false, errors.Wrapf(err, "while getting Application with ID %s", id)
+		return false, errors.Wrapf(err, "while getting Application with Field %s", id)
 	}
 
 	return exist, nil
@@ -296,7 +296,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 
 	app, err := s.Get(ctx, id)
 	if err != nil {
-		return errors.Wrapf(err, "while getting Application with ID %s", id)
+		return errors.Wrapf(err, "while getting Application with Field %s", id)
 	}
 
 	err = s.deleteRelatedResources(id)
@@ -329,7 +329,7 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 		return errors.Wrap(err, "while checking Application existence")
 	}
 	if !appExists {
-		return fmt.Errorf("Application with ID %s doesn't exist", labelInput.ObjectID)
+		return fmt.Errorf("Application with Field %s doesn't exist", labelInput.ObjectID)
 	}
 
 	err = s.labelUpsertService.UpsertLabel(ctx, appTenant, labelInput)
@@ -351,7 +351,7 @@ func (s *service) GetLabel(ctx context.Context, applicationID string, key string
 		return nil, errors.Wrap(err, "while checking Application existence")
 	}
 	if !appExists {
-		return nil, fmt.Errorf("Application with ID %s doesn't exist", applicationID)
+		return nil, fmt.Errorf("Application with Field %s doesn't exist", applicationID)
 	}
 
 	label, err := s.labelRepo.GetByKey(ctx, appTenant, model.ApplicationLabelableObject, applicationID, key)
@@ -375,7 +375,7 @@ func (s *service) ListLabels(ctx context.Context, applicationID string) (map[str
 	}
 
 	if !appExists {
-		return nil, fmt.Errorf("Application with ID %s doesn't exist", applicationID)
+		return nil, fmt.Errorf("Application with Field %s doesn't exist", applicationID)
 	}
 
 	labels, err := s.labelRepo.ListForObject(ctx, appTenant, model.ApplicationLabelableObject, applicationID)
@@ -401,7 +401,7 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 		return errors.Wrap(err, "while checking Application existence")
 	}
 	if !appExists {
-		return fmt.Errorf("Application with ID %s doesn't exist", applicationID)
+		return fmt.Errorf("Application with Field %s doesn't exist", applicationID)
 	}
 
 	err = s.labelRepo.Delete(ctx, appTenant, model.ApplicationLabelableObject, applicationID, key)

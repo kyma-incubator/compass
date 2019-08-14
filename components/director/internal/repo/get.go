@@ -11,21 +11,19 @@ import (
 
 type SingleGetter struct {
 	tableName       string
-	idColumn        string
 	tenantColumn    string
 	selectedColumns string
 }
 
-func NewSingleGetter(tableName, tenantColumn, idColumn, selectedColumns string) *SingleGetter {
+func NewSingleGetter(tableName, tenantColumn, selectedColumns string) *SingleGetter {
 	return &SingleGetter{
 		tableName:       tableName,
-		idColumn:        idColumn,
 		tenantColumn:    tenantColumn,
 		selectedColumns: selectedColumns,
 	}
 }
 
-func (g *SingleGetter) Get(ctx context.Context, tenant, id string, dest interface{}) error {
+func (g *SingleGetter) Get(ctx context.Context, tenant string, conditions Conditions, dest interface{}) error {
 	if dest == nil {
 		return errors.New("missing destination")
 	}
@@ -34,8 +32,10 @@ func (g *SingleGetter) Get(ctx context.Context, tenant, id string, dest interfac
 		return err
 	}
 
-	q := fmt.Sprintf("SELECT %s FROM %s WHERE %s = $1 AND  %s = $2", g.selectedColumns, g.tableName, g.tenantColumn, g.idColumn)
-	err = persist.Get(dest, q, tenant, id)
+	q := fmt.Sprintf("SELECT %s FROM %s WHERE %s = $1", g.selectedColumns, g.tableName, g.tenantColumn)
+	q = appendConditions(q, conditions)
+	allArgs := getAllArgs(tenant, conditions)
+	err = persist.Get(dest, q, allArgs...)
 	if err != nil {
 		if err != sql.ErrNoRows {
 			return errors.Wrap(err, "while getting object from DB")

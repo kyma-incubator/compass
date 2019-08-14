@@ -14,7 +14,7 @@ type LabelDefinition struct {
 
 func (def *LabelDefinition) Validate() error {
 	if def.ID == "" {
-		return errors.New("missing ID field")
+		return errors.New("missing Field field")
 	}
 
 	if def.Tenant == "" {

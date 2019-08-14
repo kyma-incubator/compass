@@ -20,7 +20,7 @@ const runtimeTable string = `"public"."runtimes"`
 const runtimeFields string = `"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth"`
 
 type pgRepository struct {
-	existQuerier *repo.ExistQuerier
+	*repo.ExistQuerier
 	*repo.SingleGetter
 	*repo.Deleter
 	*repo.PageableQuerier
@@ -28,20 +28,24 @@ type pgRepository struct {
 
 func NewPostgresRepository() *pgRepository {
 	return &pgRepository{
-		existQuerier:    repo.NewExistQuerier(runtimeTable, "tenant_id"),
-		SingleGetter:    repo.NewSingleGetter(runtimeTable, "tenant_id", "id", runtimeFields),
-		Deleter:         repo.NewDeleter(runtimeTable, "tenant_id", "id"),
+		ExistQuerier:    repo.NewExistQuerier(runtimeTable, "tenant_id"),
+		SingleGetter:    repo.NewSingleGetter(runtimeTable, "tenant_id", runtimeFields),
+		Deleter:         repo.NewDeleter(runtimeTable, "tenant_id"),
 		PageableQuerier: repo.NewPageableQuerier(runtimeTable, "tenant_id", runtimeFields),
 	}
 }
 
 func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
-	return r.existQuerier.Exists(ctx, tenant, repo.Conditions{{ID: "id", Val: id}})
+	return r.ExistQuerier.Exists(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
+}
+
+func (r *pgRepository) Delete(ctx context.Context, tenant string, id string) error {
+	return r.Deleter.Delete(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
 }
 
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error) {
 	var runtimeEnt Runtime
-	if err := r.SingleGetter.Get(ctx, tenant, id, &runtimeEnt); err != nil {
+	if err := r.SingleGetter.Get(ctx, tenant, repo.Conditions{{Field: "id", Val: id}}, &runtimeEnt); err != nil {
 		return nil, err
 	}
 

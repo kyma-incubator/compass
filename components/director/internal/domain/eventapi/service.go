@@ -72,7 +72,7 @@ func (s *service) Update(ctx context.Context, id string, in model.EventAPIDefini
 
 	err = s.repo.Update(eventAPI)
 	if err != nil {
-		return errors.Wrapf(err, "while updating EventAPIDefinition with ID %s", id)
+		return errors.Wrapf(err, "while updating EventAPIDefinition with Field %s", id)
 	}
 
 	return nil
@@ -81,12 +81,12 @@ func (s *service) Update(ctx context.Context, id string, in model.EventAPIDefini
 func (s *service) Delete(ctx context.Context, id string) error {
 	eventAPI, err := s.Get(ctx, id)
 	if err != nil {
-		return errors.Wrapf(err, "while receiving EventAPIDefinition with ID %s", id)
+		return errors.Wrapf(err, "while receiving EventAPIDefinition with Field %s", id)
 	}
 
 	err = s.repo.Delete(eventAPI)
 	if err != nil {
-		return errors.Wrapf(err, "while deleting EventAPIDefinition with ID %s", id)
+		return errors.Wrapf(err, "while deleting EventAPIDefinition with Field %s", id)
 	}
 
 	return nil

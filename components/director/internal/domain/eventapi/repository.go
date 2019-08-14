@@ -19,7 +19,7 @@ func (r *inMemoryRepository) GetByID(id string) (*model.EventAPIDefinition, erro
 	eventAPIDefinition := r.store[id]
 
 	if eventAPIDefinition == nil {
-		return nil, errors.Errorf("EventAPIDefinition with %s ID does not exist", id)
+		return nil, errors.Errorf("EventAPIDefinition with %s Field does not exist", id)
 	}
 
 	return eventAPIDefinition, nil

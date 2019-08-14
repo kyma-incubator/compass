@@ -35,7 +35,7 @@ func NewService(repo DocumentRepository, uidService UIDService) *service {
 func (s *service) Get(ctx context.Context, id string) (*model.Document, error) {
 	document, err := s.repo.GetByID(id)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting Document with ID %s", id)
+		return nil, errors.Wrapf(err, "while getting Document with Field %s", id)
 	}
 
 	return document, nil

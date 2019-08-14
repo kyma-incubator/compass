@@ -10,22 +10,23 @@ import (
 
 type Deleter struct {
 	tableName    string
-	idColumn     string
 	tenantColumn string
 }
 
-func NewDeleter(tableName, tenantColumn, idColumn string) *Deleter {
-	return &Deleter{tableName: tableName, idColumn: idColumn, tenantColumn: tenantColumn}
+func NewDeleter(tableName, tenantColumn string) *Deleter {
+	return &Deleter{tableName: tableName, tenantColumn: tenantColumn}
 }
 
-func (g *Deleter) Delete(ctx context.Context, tenant string, id string) error {
+func (g *Deleter) Delete(ctx context.Context, tenant string, conditions Conditions) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
 	}
 
-	q := fmt.Sprintf("DELETE FROM %s WHERE %s=$1 AND %s=$2", g.tableName, g.tenantColumn, g.idColumn)
-	res, err := persist.Exec(q, tenant, id)
+	q := fmt.Sprintf("DELETE FROM %s WHERE %s = $1", g.tableName, g.tenantColumn)
+	q = appendConditions(q, conditions)
+	allArgs := getAllArgs(tenant, conditions)
+	res, err := persist.Exec(q, allArgs...)
 	if err != nil {
 		return errors.Wrap(err, "while deleting from database")
 	}

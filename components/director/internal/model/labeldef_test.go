@@ -27,7 +27,7 @@ func TestValidateLabelDef(t *testing.T) {
 		// WHEN
 		err := in.Validate()
 		// THEN
-		require.EqualError(t, err, "missing ID field")
+		require.EqualError(t, err, "missing Field field")
 	})
 
 	t.Run("key is required", func(t *testing.T) {

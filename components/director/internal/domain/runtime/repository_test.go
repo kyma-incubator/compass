@@ -312,7 +312,7 @@ func TestPgRepository_Delete_ShouldDeleteRuntimeEntityUsingValidModel(t *testing
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	defer sqlMock.AssertExpectations(t)
 
-	sqlMock.ExpectExec(fmt.Sprintf(`^DELETE FROM "public"."runtimes" WHERE tenant_id=\$1 AND id=\$2$`)).
+	sqlMock.ExpectExec(fmt.Sprintf(`^DELETE FROM "public"."runtimes" WHERE tenant_id = \$1 AND id = \$2$`)).
 		WithArgs(tenantID, runtimeID).
 		WillReturnResult(sqlmock.NewResult(-1, 1))
 
@@ -335,7 +335,7 @@ func TestPgRepository_Exist(t *testing.T) {
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	defer sqlMock.AssertExpectations(t)
 
-	sqlMock.ExpectQuery(fmt.Sprintf(`^SELECT 1 FROM "public"."runtimes" WHERE tenant_id=\$1 AND id=\$2$`)).
+	sqlMock.ExpectQuery(fmt.Sprintf(`^SELECT 1 FROM "public"."runtimes" WHERE tenant_id = \$1 AND id = \$2$`)).
 		WithArgs(tenantID, runtimeID).
 		WillReturnRows(testdb.RowWhenObjectExist())
 

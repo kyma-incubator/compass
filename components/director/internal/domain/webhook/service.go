@@ -36,7 +36,7 @@ func NewService(repo WebhookRepository, uidSvc UIDService) *service {
 func (s *service) Get(ctx context.Context, id string) (*model.Webhook, error) {
 	webhook, err := s.repo.GetByID(id)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting Webhook with ID %s", id)
+		return nil, errors.Wrapf(err, "while getting Webhook with Field %s", id)
 	}
 
 	return webhook, nil

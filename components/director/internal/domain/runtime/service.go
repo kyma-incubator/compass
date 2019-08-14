@@ -80,7 +80,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.Runtime, error) {
 
 	runtime, err := s.repo.GetByID(ctx, rtmTenant, id)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting Runtime with ID %s", id)
+		return nil, errors.Wrapf(err, "while getting Runtime with Field %s", id)
 	}
 
 	return runtime, nil
@@ -200,7 +200,7 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 		return errors.Wrap(err, "while checking Runtime existence")
 	}
 	if !rtmExists {
-		return fmt.Errorf("Runtime with ID %s doesn't exist", labelInput.ObjectID)
+		return fmt.Errorf("Runtime with Field %s doesn't exist", labelInput.ObjectID)
 	}
 
 	err = s.labelUpsertService.UpsertLabel(ctx, rtmTenant, labelInput)
@@ -222,7 +222,7 @@ func (s *service) GetLabel(ctx context.Context, runtimeID string, key string) (*
 		return nil, errors.Wrap(err, "while checking Runtime existence")
 	}
 	if !rtmExists {
-		return nil, fmt.Errorf("Runtime with ID %s doesn't exist", runtimeID)
+		return nil, fmt.Errorf("Runtime with Field %s doesn't exist", runtimeID)
 	}
 
 	label, err := s.labelRepo.GetByKey(ctx, rtmTenant, model.RuntimeLabelableObject, runtimeID, key)
@@ -245,7 +245,7 @@ func (s *service) ListLabels(ctx context.Context, runtimeID string) (map[string]
 	}
 
 	if !rtmExists {
-		return nil, fmt.Errorf("Runtime with ID %s doesn't exist", runtimeID)
+		return nil, fmt.Errorf("Runtime with Field %s doesn't exist", runtimeID)
 	}
 
 	labels, err := s.labelRepo.ListForObject(ctx, rtmTenant, model.RuntimeLabelableObject, runtimeID)
@@ -267,7 +267,7 @@ func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string)
 		return errors.Wrap(err, "while checking Runtime existence")
 	}
 	if !rtmExists {
-		return fmt.Errorf("Runtime with ID %s doesn't exist", runtimeID)
+		return fmt.Errorf("Runtime with Field %s doesn't exist", runtimeID)
 	}
 
 	err = s.labelRepo.Delete(ctx, rtmTenant, model.RuntimeLabelableObject, runtimeID, key)
