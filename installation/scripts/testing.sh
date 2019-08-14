@@ -19,7 +19,7 @@ fi
 
 matchNames=$(cat <<-END
     matchNames:
-      - name: test-compass-end-to-end
+      - name: compass
         namespace: compass-system
 END
 )

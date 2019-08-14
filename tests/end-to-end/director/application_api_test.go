@@ -1026,6 +1026,29 @@ func generateSampleApplicationInput(placeholder string) graphql.ApplicationInput
 	}
 }
 
+func generateSampleApplicationInputWithName(placeholder, name string) graphql.ApplicationInput {
+	return graphql.ApplicationInput{
+		Name: name,
+		Documents: []*graphql.DocumentInput{{
+			Title:  placeholder,
+			Format: graphql.DocumentFormatMarkdown}},
+		Apis: []*graphql.APIDefinitionInput{{
+			Name:      placeholder,
+			TargetURL: placeholder}},
+		EventAPIs: []*graphql.EventAPIDefinitionInput{{
+			Name: placeholder,
+			Spec: &graphql.EventAPISpecInput{
+				EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
+				Format:        graphql.SpecFormatYaml,
+			}}},
+		Webhooks: []*graphql.WebhookInput{{
+			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
+			URL:  placeholder},
+		},
+		Labels: &graphql.Labels{placeholder: []interface{}{placeholder}},
+	}
+}
+
 func deleteApplicationInTenant(t *testing.T, id string, tenant string) {
 	req := gcli.NewRequest(
 		fmt.Sprintf(`mutation {
