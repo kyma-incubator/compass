@@ -2,8 +2,8 @@
 mutation {
   result: setApplicationLabel(
     applicationID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-    key: "foo"
-    value: { foo: "bar" }
+    key: "test"
+    value: "val"
   ) {
     key
     value

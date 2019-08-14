@@ -17,6 +17,7 @@ Below you can find a list of mock GraphQL queries and mutations:
 - [delete application webhook](./delete-application-webhook.graphql)
 - [delete application](./delete-application.graphql)
 - [delete document](./delete-document.graphql)
+- [delete label definition](./delete-label-definition.graphql)
 - [delete runtime](./delete-runtime.graphql)
 - [query application](./query-application.graphql)
 - [query applications for runtime](./query-applications-for-runtime.graphql)

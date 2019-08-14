@@ -16,7 +16,7 @@ func TestCreateLabelWithoutLabelDefinition(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	name := "create-label-without-label-definition"
-	application := createRandomApplication(t, ctx, name)
+	application := createApplication(t, ctx, name)
 	defer deleteApplication(t, application.ID)
 
 	t.Log("Set label on application")
@@ -85,7 +85,7 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 		labelDefinition := graphql.LabelDefinition{}
 
 		t.Log("Create application")
-		application := createRandomApplication(t, ctx, applicationName)
+		application := createApplication(t, ctx, applicationName)
 		defer deleteApplication(t, application.ID)
 
 		t.Log("Create label definition")
@@ -115,7 +115,7 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 		labelDefinition := graphql.LabelDefinition{}
 
 		t.Log("Create application")
-		application := createRandomApplication(t, ctx, applicationName)
+		application := createApplication(t, ctx, applicationName)
 		defer deleteApplication(t, application.ID)
 
 		t.Log("Create label definition")
@@ -149,7 +149,6 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, application.Labels)
 		assert.Equal(t, label.Value, application.Labels[labelKey])
-		saveQueryInExamples(t, setLabelRequest.Query(), "set application label")
 	})
 }
 
@@ -219,7 +218,7 @@ func TestEditLabelDefinition(t *testing.T) {
 		labelDefinition := graphql.LabelDefinition{}
 
 		t.Log("Create application")
-		app := createRandomApplication(t, ctx, "app")
+		app := createApplication(t, ctx, "app")
 		defer deleteApplication(t, app.ID)
 
 		t.Log("Create label definition")
@@ -260,7 +259,7 @@ func TestEditLabelDefinition(t *testing.T) {
 		labelDefinition := graphql.LabelDefinition{}
 
 		t.Log("Create application")
-		app := createRandomApplication(t, ctx, "app")
+		app := createApplication(t, ctx, "app")
 		defer deleteApplication(t, app.ID)
 
 		t.Log("Create label definition")
@@ -310,7 +309,7 @@ func TestCreateScenariosLabel(t *testing.T) {
 	// GIVEN
 	t.Log("Create application")
 	ctx := context.Background()
-	app := createRandomApplication(t, ctx, "app")
+	app := createApplication(t, ctx, "app")
 	defer deleteApplication(t, app.ID)
 
 	t.Log("Check if scenarios LabelDefinition exists")
@@ -349,7 +348,7 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	t.Log("Create application")
-	app := createRandomApplication(t, ctx, "app")
+	app := createApplication(t, ctx, "app")
 	defer deleteApplication(t, app.ID)
 	labelKey := "scenarios"
 	defaultValue := "DEFAULT"
@@ -436,7 +435,7 @@ func TestDeleteLabelDefinition(t *testing.T) {
 	t.Run("Try to delete Label Definition while it's being used by some labels - should fail", func(t *testing.T) {
 
 		t.Log("Create application")
-		app := createRandomApplication(t, ctx, "app")
+		app := createApplication(t, ctx, "app")
 		defer deleteApplication(t, app.ID)
 
 		t.Log("Create LabelDefinition")
@@ -463,12 +462,13 @@ func TestDeleteLabelDefinition(t *testing.T) {
 		err = tc.RunQuery(context.Background(), deleteLabelDefinitionRequest, nil)
 		require.Error(t, err)
 		assert.EqualError(t, err, "graphql: could not delete label definition, it is already used by at least one label")
+		saveQueryInExamples(t, deleteLabelDefinitionRequest.Query(), "delete label definition")
 	})
 
 	t.Run("Delete Label from application, then delete the Label Definition - should succeed", func(t *testing.T) {
 
 		t.Log("Create application")
-		app := createRandomApplication(t, ctx, "app")
+		app := createApplication(t, ctx, "app")
 		defer deleteApplication(t, app.ID)
 
 		t.Log("Create LabelDefinition")
@@ -507,7 +507,7 @@ func TestDeleteScenariosLabel(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	t.Log("Create application")
-	app := createRandomApplication(t, ctx, "app")
+	app := createApplication(t, ctx, "app")
 	defer deleteApplication(t, app.ID)
 
 	t.Log("Try to delete scenarios label on application")
@@ -526,7 +526,7 @@ func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	t.Log("Create application")
-	app := createRandomApplication(t, ctx, "app")
+	app := createApplication(t, ctx, "app")
 	defer deleteApplication(t, app.ID)
 	labelKey := "scenarios"
 	defaultValue := "DEFAULT"
