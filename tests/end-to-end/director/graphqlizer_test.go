@@ -277,7 +277,7 @@ func (g *graphqlizer) SchemaToGQL(in *interface{}) (string, error) {
 		return "", errors.Wrap(err, "while marshalling json schema")
 	}
 
-	output := removeDoubleQuotasFromJsonKeys(string(out))
+	output := removeDoubleQuotesFromJSONKeys(string(out))
 
 	return output, nil
 }

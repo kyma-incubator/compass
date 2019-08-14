@@ -55,7 +55,7 @@ func fixSetApplicationLabelRequest(appID, labelKey string, labelValue interface{
 	if err != nil {
 		panic(errors.New("label value can not be marshalled"))
 	}
-	value := removeDoubleQuotasFromJsonKeys(string(jsonValue))
+	value := removeDoubleQuotesFromJSONKeys(string(jsonValue))
 
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {

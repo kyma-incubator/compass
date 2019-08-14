@@ -94,7 +94,7 @@ func saveQueryInExamples(t *testing.T, query string, exampleName string) {
 }
 
 //TODO remove when json schema will be passed as string to GQL
-func removeDoubleQuotasFromJsonKeys(in string) string {
+func removeDoubleQuotesFromJSONKeys(in string) string {
 	var validRegex = regexp.MustCompile(`"(\w+|\$\w+)"\s*:`)
 	return validRegex.ReplaceAllString(in, `$1:`)
 }
