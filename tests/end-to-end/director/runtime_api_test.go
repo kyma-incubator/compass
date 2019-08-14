@@ -472,12 +472,8 @@ func TestApplicationsForRuntime(t *testing.T) {
 	}
 	var schema interface{} = jsonSchema
 
-	labelDefinitionInput := graphql.LabelDefinitionInput{
-		Key:    scenariosLabel,
-		Schema: &schema,
-	}
-	createLabelDefinitionWithinTenant(t, ctx, labelDefinitionInput, tenantID)
-	createLabelDefinitionWithinTenant(t, ctx, labelDefinitionInput, otherTenant)
+	createLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, tenantID)
+	createLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, otherTenant)
 
 	applications := []struct {
 		ApplicationName string

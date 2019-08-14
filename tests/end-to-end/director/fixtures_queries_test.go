@@ -55,7 +55,12 @@ func getRuntime(t *testing.T, ctx context.Context, runtimeID string) *graphql.Ru
 }
 
 // Label Definitions
-func createLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, input graphql.LabelDefinitionInput, tenantID string) *graphql.LabelDefinition {
+func createLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, key string, schema interface{}, tenantID string) *graphql.LabelDefinition {
+	input := graphql.LabelDefinitionInput{
+		Key:    key,
+		Schema: &schema,
+	}
+
 	in, err := tc.graphqlizer.LabelDefinitionInputToGQL(input)
 	if err != nil {
 		return nil

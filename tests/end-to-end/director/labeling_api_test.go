@@ -52,7 +52,7 @@ func TestCreateLabelWithoutLabelDefinition(t *testing.T) {
 	saveQueryInExamples(t, getLabelDefinitionRequest.Query(), "query label definition")
 }
 
-func TestCreateLabelWithExistingLabelDefinition_ShouldFail(t *testing.T) {
+func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
@@ -566,39 +566,31 @@ func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
 	assert.EqualError(t, err, errMsg)
 }
 
-func TestSearchByLabels(t *testing.T) {
-	//TODO: return this test after implementing filtering on applications
+func TestSearchApplicationsByLabels(t *testing.T) {
+	// GIVEN
+	//TODO: enable this test after implementing filtering on applications
 	t.SkipNow()
 	//Create first application
-	// GIVEN
 	ctx := context.Background()
 
-	first := 5
-	after := ""
 	firstApp := createApplication(t, ctx, "first")
 	require.NotEmpty(t, firstApp.ID)
 	defer deleteApplication(t, firstApp.ID)
 
 	//Create second application
 	secondApp := createApplication(t, ctx, "second")
-	require.NotEmpty(t, firstApp.ID)
-	defer deleteApplication(t, firstApp.ID)
+	require.NotEmpty(t, secondApp.ID)
+	defer deleteApplication(t, secondApp.ID)
 
 	//Set label "foo" on both applications
 	labelKeyFoo := "foo"
 	labelValueFoo := "val"
 
-	setLabelRequest := fixSetApplicationLabelRequest(firstApp.ID, labelKeyFoo, labelValueFoo)
-	firstAppLabel := graphql.Label{}
-	err := tc.RunQuery(ctx, setLabelRequest, &firstAppLabel)
-	require.NoError(t, err)
+	firstAppLabel := setApplicationLabel(t, ctx, firstApp.ID, labelKeyFoo, labelValueFoo)
 	require.NotEmpty(t, firstAppLabel.Key)
 	require.NotEmpty(t, firstAppLabel.Value)
 
-	setLabelRequest = fixSetApplicationLabelRequest(secondApp.ID, labelKeyFoo, labelValueFoo)
-	secondAppLabel := graphql.Label{}
-	err = tc.RunQuery(ctx, setLabelRequest, &secondAppLabel)
-	require.NoError(t, err)
+	secondAppLabel := setApplicationLabel(t, ctx, secondApp.ID, labelKeyFoo, labelValueFoo)
 	require.NotEmpty(t, secondAppLabel.Key)
 	require.NotEmpty(t, secondAppLabel.Value)
 
@@ -606,12 +598,9 @@ func TestSearchByLabels(t *testing.T) {
 	labelKeyBar := "bar"
 	labelValueBar := "barval"
 
-	setLabelRequest = fixSetApplicationLabelRequest(firstApp.ID, labelKeyBar, labelValueBar)
-	firstAppBarLabel := graphql.Label{}
-	err = tc.RunQuery(ctx, setLabelRequest, &firstAppBarLabel)
-	require.NoError(t, err)
-	require.NotEmpty(t, firstAppLabel.Key)
-	require.NotEmpty(t, firstAppLabel.Value)
+	firstAppBarLabel := setApplicationLabel(t, ctx, firstApp.ID, labelKeyBar, labelValueBar)
+	require.NotEmpty(t, firstAppBarLabel.Key)
+	require.NotEmpty(t, firstAppBarLabel.Value)
 
 	// Query for application with LabelFilter "foo"
 	labelFilter := graphql.LabelFilter{
@@ -623,7 +612,7 @@ func TestSearchByLabels(t *testing.T) {
 	labelFilterGQL, err := tc.graphqlizer.LabelFilterToGQL(labelFilter)
 	require.NoError(t, err)
 
-	applicationRequest := fixApplications(labelFilterGQL, first, after)
+	applicationRequest := fixApplications(labelFilterGQL, 5, "")
 	applicationPage := ApplicationPageExt{}
 	err = tc.RunQuery(ctx, applicationRequest, &applicationPage)
 	require.NoError(t, err)
@@ -646,7 +635,7 @@ func TestSearchByLabels(t *testing.T) {
 	labelFilterGQL, err = tc.graphqlizer.LabelFilterToGQL(labelFilter)
 	require.NoError(t, err)
 
-	applicationRequest = fixApplications(labelFilterGQL, first, after)
+	applicationRequest = fixApplications(labelFilterGQL, 5, "")
 	applicationPage = ApplicationPageExt{}
 	err = tc.RunQuery(ctx, applicationRequest, &applicationPage)
 	require.NoError(t, err)
@@ -657,8 +646,7 @@ func TestSearchByLabels(t *testing.T) {
 	assert.Equal(t, applicationPage.TotalCount, 1)
 	assert.Contains(t, applicationPage.Data[0].Labels, labelKeyBar)
 	assert.Equal(t, applicationPage.Data[0].Labels[labelKeyBar], labelValueBar)
-	saveQueryInExamples(t, applicationRequest.Query(), "query application with filter")
-
+	saveQueryInExamples(t, applicationRequest.Query(), "query applications with label filter")
 }
 
 func TestListLabelDefinitions(t *testing.T) {
@@ -668,29 +656,14 @@ func TestListLabelDefinitions(t *testing.T) {
 	firstSchema := map[string]interface{}{
 		"test": "test",
 	}
-
-	var schema interface{} = firstSchema
-
-	firstLabelDefinitionKey := "first"
-	firstLabelDefinitionInput := graphql.LabelDefinitionInput{
-		Key:    firstLabelDefinitionKey,
-		Schema: &schema,
-	}
-	firstLabelDefinition := createLabelDefinitionWithinTenant(t, ctx, firstLabelDefinitionInput, tenantID)
-	defer deleteLabelDefinitionWithinTenant(t, ctx, firstLabelDefinitionKey, false, tenantID)
+	firstLabelDefinition := createLabelDefinitionWithinTenant(t, ctx, "first", firstSchema, tenantID)
+	defer deleteLabelDefinitionWithinTenant(t, ctx, firstLabelDefinition.Key, false, tenantID)
 
 	secondSchema := map[string]interface{}{
 		"test": "test",
 	}
-	schema = secondSchema
-
-	secondLabelDefinitionKey := "second"
-	secondLabelDefinitionInput := graphql.LabelDefinitionInput{
-		Key:    secondLabelDefinitionKey,
-		Schema: &schema,
-	}
-	secondLabelDefinition := createLabelDefinitionWithinTenant(t, ctx, secondLabelDefinitionInput, tenantID)
-	defer deleteLabelDefinitionWithinTenant(t, ctx, secondLabelDefinitionKey, false, tenantID)
+	secondLabelDefinition := createLabelDefinitionWithinTenant(t, ctx, "second", secondSchema, tenantID)
+	defer deleteLabelDefinitionWithinTenant(t, ctx, secondLabelDefinition.Key, false, tenantID)
 
 	//WHEN
 	labelDefinitions, err := listLabelDefinitionsWithinTenant(t, ctx, tenantID)
@@ -720,11 +693,7 @@ func TestDeletingLastScenarioForApplication_ShouldFail(t *testing.T) {
 	}
 	var schema interface{} = scenarioSchema
 
-	labelDefinitionInput := graphql.LabelDefinitionInput{
-		Key:    scenariosLabel,
-		Schema: &schema,
-	}
-	createLabelDefinitionWithinTenant(t, ctx, labelDefinitionInput, tenant)
+	createLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, tenant)
 
 	appInput := graphql.ApplicationInput{Name: name,
 		Labels: &graphql.Labels{
@@ -747,16 +716,16 @@ func TestDeletingLastScenarioForApplication_ShouldFail(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), `0 must be one of the following: "DEFAULT", "Christmas", "New Year"`)
+	assert.Contains(t, err.Error(), `must be one of the following: "DEFAULT", "Christmas", "New Year"`)
 }
 
 func TestCreateRuntimeWithoutLabels(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
 	name := "test-create-runtime-without-labels"
-	runtimeInput := &graphql.RuntimeInput{Name: name}
+	runtimeInput := graphql.RuntimeInput{Name: name}
 
-	runtime := createRuntimeFromInput(t, ctx, runtimeInput)
+	runtime := createRuntimeFromInput(t, ctx, &runtimeInput)
 	defer deleteRuntime(t, runtime.ID)
 
 	//WHEN
@@ -764,4 +733,5 @@ func TestCreateRuntimeWithoutLabels(t *testing.T) {
 
 	//THEN
 	require.Equal(t, runtime.ID, fetchedRuntime.ID)
+	assertRuntime(t, runtimeInput, *fetchedRuntime)
 }
