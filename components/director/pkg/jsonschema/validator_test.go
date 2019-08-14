@@ -1,8 +1,9 @@
 package jsonschema_test
 
 import (
-	"github.com/pkg/errors"
 	"testing"
+
+	"github.com/pkg/errors"
 
 	"github.com/stretchr/testify/require"
 
@@ -55,28 +56,28 @@ func TestValidator_ValidateString(t *testing.T) {
 			InputJsonSchema: validInputJsonSchema,
 			InputJson:       inputJson,
 			ExpectedResult:  true,
-			ExpectedError: nil,
+			ExpectedError:   nil,
 		},
 		{
 			Name:            "Json schema and json doesn't match",
 			InputJsonSchema: validInputJsonSchema,
 			InputJson:       invalidInputJson,
 			ExpectedResult:  false,
-			ExpectedError: nil,
+			ExpectedError:   nil,
 		},
 		{
 			Name:            "Empty",
 			InputJsonSchema: "",
 			InputJson:       "",
 			ExpectedResult:  true,
-			ExpectedError: nil,
+			ExpectedError:   nil,
 		},
 		{
 			Name:            "Invalid json",
 			InputJsonSchema: validInputJsonSchema,
 			InputJson:       "{test",
 			ExpectedResult:  false,
-			ExpectedError: errors.New("invalid character"),
+			ExpectedError:   errors.New("invalid character"),
 		},
 	}
 
@@ -146,21 +147,21 @@ func TestValidator_ValidateRaw(t *testing.T) {
 			InputJSONSchema: validInputJSONSchema,
 			InputJSON:       inputJSON,
 			ExpectedResult:  true,
-			ExpectedError: nil,
+			ExpectedError:   nil,
 		},
 		{
 			Name:            "Json schema and json doesn't match",
 			InputJSONSchema: validInputJSONSchema,
 			InputJSON:       invalidInputJSON,
 			ExpectedResult:  false,
-			ExpectedError: nil,
+			ExpectedError:   nil,
 		},
 		{
 			Name:            "Empty",
 			InputJSONSchema: nil,
 			InputJSON:       "anything",
 			ExpectedResult:  true,
-			ExpectedError: nil,
+			ExpectedError:   nil,
 		},
 	}
 

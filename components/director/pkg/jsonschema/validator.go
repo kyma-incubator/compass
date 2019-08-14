@@ -2,10 +2,11 @@ package jsonschema
 
 import (
 	"encoding/json"
+	"strings"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/xeipuuv/gojsonschema"
-	"strings"
 )
 
 type validator struct {
