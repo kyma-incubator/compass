@@ -67,7 +67,6 @@ func (g *graphqlizer) DocumentInputToGQL(in *graphql.DocumentInput) (string, err
 		{{- if .FetchRequest }}
 		fetchRequest: {{- FetchRequesstInputToGQL .FetchRequest }} 
 		{{- end}}
-		
 }`)
 }
 
@@ -86,23 +85,48 @@ func (g *graphqlizer) FetchRequestInputToGQL(in *graphql.FetchRequestInput) (str
 	}`)
 }
 
+func (g *graphqlizer) CredentialRequestAuthInputToGQL(in *graphql.CredentialRequestAuthInput) (string, error) {
+	return g.genericToGQL(in, `{
+		{{- if .Csrf }}
+		csrf: {{ CSRFTokenCredentialRequestAuthInputToGQL .Csrf }}
+		{{- end }}
+	}`)
+}
+
+func (g *graphqlizer) CredentialDataInputToGQL(in *graphql.CredentialDataInput) (string, error) {
+	return g.genericToGQL(in, ` {
+			{{- if .Basic }}
+			basic: {
+				username: "{{ .Basic.Username }}",
+				password: "{{ .Basic.Password }}",
+			}
+			{{- end }}
+			{{- if .Oauth }}
+			oauth: {
+				clientId: "{{ .Oauth.ClientID }}",
+				clientSecret: "{{ .Oauth.ClientSecret }}",
+				url: "{{ .Oauth.URL }}",
+			}
+			{{- end }}
+	}`)
+}
+
+func (g *graphqlizer) CSRFTokenCredentialRequestAuthInputToGQL(in *graphql.CSRFTokenCredentialRequestAuthInput) (string, error) {
+	return g.genericToGQL(in, `{
+			tokenEndpointURL: "{{ .TokenEndpointURL }}",
+			credential: {{ CredentialDataInputToGQL .Credential }},
+			{{- if .AdditionalHeaders }}
+			additionalHeaders : {{ HTTPHeadersToGQL .AdditionalHeaders }},
+			{{- end }}
+			{{- if .AdditionalQueryParams }}
+			additionalQueryParams : {{ QueryParamsToGQL .AdditionalQueryParams }}
+			{{- end }}
+	}`)
+}
+
 func (g *graphqlizer) AuthInputToGQL(in *graphql.AuthInput) (string, error) {
 	return g.genericToGQL(in, `{
-		credential:{
-			{{- if .Credential.Basic }}
-			basic: {
-				username: "{{ .Credential.Basic.Username}}",
-				password: "{{ .Credential.Basic.Password}}",
-			}
-			{{- end }}
-			{{- if .Credential.Oauth }}
-			oauth: {
-				clientId: "{{ .Credential.Oauth.ClientID}}",
-				clientSecret: "{{ .Credential.Oauth.ClientSecret }}",
-				url: "{{ .Credential.Oauth.URL }}",
-			}
-			{{- end }}
-		},
+		credential: {{ CredentialDataInputToGQL .Credential }},
 		{{- if .AdditionalHeaders }}
 		additionalHeaders: {{ HTTPHeadersToGQL .AdditionalHeaders }},
 		{{- end }}
@@ -110,7 +134,7 @@ func (g *graphqlizer) AuthInputToGQL(in *graphql.AuthInput) (string, error) {
 		additionalQueryParams: {{ QueryParamsToGQL .AdditionalQueryParams}},
 		{{- end }}
 		{{- if .RequestAuth }}
-
+		requestAuth: {{ CredentialRequestAuthInputToGQL .RequestAuth }},
 		{{- end }}
 	}`)
 }
@@ -123,8 +147,7 @@ func (g *graphqlizer) LabelsToGQL(in graphql.Labels) (string, error) {
 					{{- if $i}},{{- end}}"{{$j}}"
 				{{- end }} ]
 		{{- end}}
-	}
-		`)
+	}`)
 }
 
 func (g *graphqlizer) HTTPHeadersToGQL(in graphql.HttpHeaders) (string, error) {
@@ -135,8 +158,7 @@ func (g *graphqlizer) HTTPHeadersToGQL(in graphql.HttpHeaders) (string, error) {
 					{{- if $i}},{{- end}}"{{$j}}"
 				{{- end }} ],
 		{{- end}}
-	}
-		`)
+	}`)
 }
 
 func (g *graphqlizer) QueryParamsToGQL(in graphql.QueryParams) (string, error) {
@@ -147,8 +169,7 @@ func (g *graphqlizer) QueryParamsToGQL(in graphql.QueryParams) (string, error) {
 					{{- if $i}},{{- end}}"{{$j}}"
 				{{- end }} ],
 		{{- end}}
-	}
-		`)
+	}`)
 }
 
 func (g *graphqlizer) WebhookInputToGQL(in *graphql.WebhookInput) (string, error) {
@@ -296,6 +317,9 @@ func (g *graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	fm["HTTPHeadersToGQL"] = g.HTTPHeadersToGQL
 	fm["QueryParamsToGQL"] = g.QueryParamsToGQL
 	fm["EventAPISpecInputToGQL"] = g.EventAPISpecInputToGQL
+	fm["CredentialDataInputToGQL"] = g.CredentialDataInputToGQL
+	fm["CSRFTokenCredentialRequestAuthInputToGQL"] = g.CSRFTokenCredentialRequestAuthInputToGQL
+	fm["CredentialRequestAuthInputToGQL"] = g.CredentialRequestAuthInputToGQL
 	fm["LabelDefinitionInputToGQL"] = g.LabelDefinitionInputToGQL
 	fm["LabelFilterToGQL"] = g.LabelFilterToGQL
 	fm["SchemaToGQL"] = g.SchemaToGQL

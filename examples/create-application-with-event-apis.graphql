@@ -2,7 +2,7 @@
 mutation {
   result: createApplication(
     in: {
-      name: "wordpress"
+      name: "test-create-application-with-event-apis"
       labels: { scenarios: ["DEFAULT"] }
       eventAPIs: [
         {
@@ -27,9 +27,9 @@ mutation {
               auth: {
                 credential: {
                   oauth: {
-                    clientId: "clientID"
-                    clientSecret: "clientSecret"
-                    url: "http://oauth/token"
+                    clientId: "clientid"
+                    clientSecret: "grazynasecret"
+                    url: "url.net"
                   }
                 }
               }

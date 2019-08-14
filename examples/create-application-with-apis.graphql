@@ -49,6 +49,21 @@ mutation {
               filter: "odata.json"
             }
           }
+          defaultAuth: {
+            credential: { basic: { username: "admin", password: "secret" } }
+            requestAuth: {
+              csrf: {
+                tokenEndpointURL: "token-URL"
+                credential: {
+                  oauth: {
+                    clientId: "clientid"
+                    clientSecret: "grazynasecret"
+                    url: "url.net"
+                  }
+                }
+              }
+            }
+          }
         }
       ]
     }
