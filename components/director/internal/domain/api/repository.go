@@ -23,7 +23,7 @@ func (r *inMemoryRepository) GetByID(id string) (*model.APIDefinition, error) {
 	api := r.store[id]
 
 	if api == nil {
-		return nil, errors.Errorf("APIDefinition with %s Field does not exist", id)
+		return nil, errors.Errorf("APIDefinition with %s ID does not exist", id)
 	}
 
 	return api, nil

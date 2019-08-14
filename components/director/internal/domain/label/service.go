@@ -88,7 +88,7 @@ func (s *labelUpsertService) UpsertLabel(ctx context.Context, tenant string, lab
 			return errors.Wrapf(err, "while getting label '%s'", labelInput.Key)
 		}
 
-		// not found, generate new label Field
+		// not found, generate new label ID
 		id = s.uidService.Generate()
 	} else {
 		id = label.ID
