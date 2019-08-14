@@ -1,5 +1,5 @@
-# Entity Relations
+# Database Scheme
 
-Diagram below describes missing entity relations for Director.
+Diagram below represents database scheme. 
 
 ![](./assets/entity_diagram.svg)
