@@ -983,6 +983,7 @@ func TestService_List(t *testing.T) {
 func TestService_ListByRuntimeID(t *testing.T) {
 	runtimeUUID := uuid.New()
 	testError := errors.New("test error")
+	labelNotFoundError := errors.New("label scenarios not found")
 
 	tenantUUID := uuid.New()
 	ctx := context.TODO()
@@ -1039,6 +1040,28 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			},
 			ExpectedError:  nil,
 			ExpectedResult: applicationPage,
+		},
+		{
+			Name:  "Success when scenarios label not set",
+			Input: runtimeUUID,
+			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
+				runtimeRepository := &automock.RuntimeRepository{}
+				runtimeRepository.On("Exists", ctx, tenantUUID.String(), runtimeUUID.String()).
+					Return(true, nil).Once()
+				return runtimeRepository
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				labelRepository := &automock.LabelRepository{}
+				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeUUID.String(), model.ScenariosKey).
+					Return(nil, labelNotFoundError).Once()
+				return labelRepository
+			},
+			AppRepositoryFn: func() *automock.ApplicationRepository {
+				appRepository := &automock.ApplicationRepository{}
+				return appRepository
+			},
+			ExpectedError:  nil,
+			ExpectedResult: &emptyPage,
 		},
 		{
 			Name:  "Return error when checking of runtime existance failed",
