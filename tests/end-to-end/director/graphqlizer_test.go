@@ -67,7 +67,6 @@ func (g *graphqlizer) DocumentInputToGQL(in *graphql.DocumentInput) (string, err
 		{{- if .FetchRequest }}
 		fetchRequest: {{- FetchRequesstInputToGQL .FetchRequest }} 
 		{{- end}}
-		
 }`)
 }
 
@@ -89,7 +88,7 @@ func (g *graphqlizer) FetchRequestInputToGQL(in *graphql.FetchRequestInput) (str
 func (g *graphqlizer) CredentialRequestAuthInputToGQL(in *graphql.CredentialRequestAuthInput) (string, error) {
 	return g.genericToGQL(in, `{
 		{{- if .Csrf }}
-		csrf: {{ CSRFTokenCredentialRequestAuthInputInputToGQL .Csrf }}
+		csrf: {{ CSRFTokenCredentialRequestAuthInputToGQL .Csrf }}
 		{{- end }}
 	}`)
 }
@@ -112,7 +111,7 @@ func (g *graphqlizer) CredentialToGQL(in *graphql.CredentialDataInput) (string, 
 	}`)
 }
 
-func (g *graphqlizer) CSRFTokenCredentialRequestAuthInputInputToGQL(in *graphql.CSRFTokenCredentialRequestAuthInput) (string, error) {
+func (g *graphqlizer) CSRFTokenCredentialRequestAuthInputToGQL(in *graphql.CSRFTokenCredentialRequestAuthInput) (string, error) {
 	return g.genericToGQL(in, `{
 			tokenEndpointURL: "{{ .TokenEndpointURL }}",
 			credential: {{ CredentialToGQL .Credential }},
@@ -148,8 +147,7 @@ func (g *graphqlizer) LabelsToGQL(in graphql.Labels) (string, error) {
 					{{- if $i}},{{- end}}"{{$j}}"
 				{{- end }} ]
 		{{- end}}
-	}
-		`)
+	}`)
 }
 
 func (g *graphqlizer) HTTPHeadersToGQL(in graphql.HttpHeaders) (string, error) {
@@ -160,8 +158,7 @@ func (g *graphqlizer) HTTPHeadersToGQL(in graphql.HttpHeaders) (string, error) {
 					{{- if $i}},{{- end}}"{{$j}}"
 				{{- end }} ],
 		{{- end}}
-	}
-		`)
+	}`)
 }
 
 func (g *graphqlizer) QueryParamsToGQL(in graphql.QueryParams) (string, error) {
@@ -172,8 +169,7 @@ func (g *graphqlizer) QueryParamsToGQL(in graphql.QueryParams) (string, error) {
 					{{- if $i}},{{- end}}"{{$j}}"
 				{{- end }} ],
 		{{- end}}
-	}
-		`)
+	}`)
 }
 
 func (g *graphqlizer) WebhookInputToGQL(in *graphql.WebhookInput) (string, error) {
@@ -322,7 +318,7 @@ func (g *graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	fm["QueryParamsToGQL"] = g.QueryParamsToGQL
 	fm["EventAPISpecInputToGQL"] = g.EventAPISpecInputToGQL
 	fm["CredentialToGQL"] = g.CredentialToGQL
-	fm["CSRFTokenCredentialRequestAuthInputInputToGQL"] = g.CSRFTokenCredentialRequestAuthInputInputToGQL
+	fm["CSRFTokenCredentialRequestAuthInputToGQL"] = g.CSRFTokenCredentialRequestAuthInputToGQL
 	fm["CredentialRequestAuthInputToGQL"] = g.CredentialRequestAuthInputToGQL
 	fm["LabelDefinitionInputToGQL"] = g.LabelDefinitionInputToGQL
 	fm["LabelFilterToGQL"] = g.LabelFilterToGQL

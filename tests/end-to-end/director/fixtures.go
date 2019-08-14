@@ -37,8 +37,16 @@ func fixBasicCredential() *graphql.CredentialDataInput {
 		Basic: &graphql.BasicCredentialDataInput{
 			Username: "admin",
 			Password: "secret",
-		},
-	}
+		}}
+}
+
+func fixOauthCredential() *graphql.CredentialDataInput {
+	return &graphql.CredentialDataInput{
+		Oauth: &graphql.OAuthCredentialDataInput{
+			URL:          "url.net",
+			ClientSecret: "grazynasectet",
+			ClientID:     "clientid",
+		}}
 }
 
 func fixDepracatedVersion1() *graphql.VersionInput {

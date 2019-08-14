@@ -124,13 +124,7 @@ func TestCreateApplicationWithAPIs(t *testing.T) {
 					Credential: fixBasicCredential(),
 					RequestAuth: &graphql.CredentialRequestAuthInput{
 						Csrf: &graphql.CSRFTokenCredentialRequestAuthInput{
-							Credential: &graphql.CredentialDataInput{
-								Oauth: &graphql.OAuthCredentialDataInput{
-									ClientID:     "ID",
-									ClientSecret: "secret",
-									URL:          "url",
-								},
-							},
+							Credential:       fixOauthCredential(),
 							TokenEndpointURL: "token-URL",
 						},
 					},
