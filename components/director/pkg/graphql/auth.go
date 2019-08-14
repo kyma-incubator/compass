@@ -12,6 +12,7 @@ type credential struct {
 // UnmarshalJSON is used only by integration tests, we have to help graphql client to deal with Credential field
 func (a *Auth) UnmarshalJSON(data []byte) error {
 	type Alias Auth
+
 	aux := &struct {
 		*Alias
 		Credential credential `json:"credential"`
@@ -49,7 +50,6 @@ func (csrf *CSRFTokenCredentialRequestAuth) UnmarshalJSON(data []byte) error {
 func retrieveCredential(umarshaledCredential credential) CredentialData {
 	if umarshaledCredential.BasicCredentialData != nil {
 		return umarshaledCredential.BasicCredentialData
-	} else {
-		return umarshaledCredential.OAuthCredentialData
 	}
+	return umarshaledCredential.OAuthCredentialData
 }
