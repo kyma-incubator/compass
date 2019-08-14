@@ -71,15 +71,11 @@ func createLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, input 
 	return &output
 }
 
+func deleteLabelDefinition(t *testing.T, ctx context.Context, labelDefinitionKey string, deleteRelatedResources bool) {
+	deleteLabelDefinitionWithinTenant(t, ctx, labelDefinitionKey, deleteRelatedResources, defaultTenant)
+}
+
 func deleteLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, labelDefinitionKey string, deleteRelatedResources bool, tenantID string) {
-	deleteLabelDefinition(t, ctx, labelDefinitionKey, deleteRelatedResources, tenantID)
-}
-
-func deleteLabelDefinitionWithinDefaultTenant(t *testing.T, ctx context.Context, labelDefinitionKey string, deleteRelatedResources bool) {
-	deleteLabelDefinition(t, ctx, labelDefinitionKey, deleteRelatedResources, defaultTenant)
-}
-
-func deleteLabelDefinition(t *testing.T, ctx context.Context, labelDefinitionKey string, deleteRelatedResources bool, tenantID string) {
 	deleteRequest := fixDeleteLabelDefinition(labelDefinitionKey, deleteRelatedResources)
 	deleteRequest.Header["Tenant"] = []string{tenantID}
 

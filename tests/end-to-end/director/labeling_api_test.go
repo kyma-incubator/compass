@@ -27,7 +27,7 @@ func TestCreateLabelWithoutLabelDefinition(t *testing.T) {
 
 	setLabelRequest := fixSetApplicationLabelRequest(application.ID, labelKey, labelValue)
 	label := graphql.Label{}
-	defer deleteLabelDefinitionWithinDefaultTenant(t, ctx, labelKey, false)
+	defer deleteLabelDefinition(t, ctx, labelKey, false)
 	defer deleteApplicationLabel(t, ctx, application.ID, labelKey)
 
 	// WHEN
@@ -94,7 +94,7 @@ func TestCreateLabelWithExistingLabelDefinition_ShouldFail(t *testing.T) {
 		err = tc.RunQuery(ctx, createLabelDefinitionRequest, &labelDefinition)
 
 		require.NoError(t, err)
-		defer deleteLabelDefinitionWithinDefaultTenant(t, ctx, labelKey, false)
+		defer deleteLabelDefinition(t, ctx, labelKey, false)
 		assert.Equal(t, labelKey, labelDefinition.Key)
 
 		invalidLabelValue := 123
@@ -134,7 +134,7 @@ func TestCreateLabelWithExistingLabelDefinition_ShouldFail(t *testing.T) {
 		label := graphql.Label{}
 
 		err = tc.RunQuery(ctx, setLabelRequest, &label)
-		defer deleteLabelDefinitionWithinDefaultTenant(t, ctx, labelKey, false)
+		defer deleteLabelDefinition(t, ctx, labelKey, false)
 		defer deleteApplicationLabel(t, ctx, application.ID, labelKey)
 
 		require.NoError(t, err)
@@ -232,7 +232,7 @@ func TestEditLabelDefinition(t *testing.T) {
 		label := graphql.Label{}
 
 		err = tc.RunQuery(ctx, setLabelRequest, &label)
-		defer deleteLabelDefinitionWithinDefaultTenant(t, ctx, labelKey, false)
+		defer deleteLabelDefinition(t, ctx, labelKey, false)
 		defer deleteApplicationLabel(t, ctx, app.ID, labelKey)
 
 		var invalidSchema interface{} = invalidJsonSchema
@@ -273,7 +273,7 @@ func TestEditLabelDefinition(t *testing.T) {
 		label := graphql.Label{}
 
 		err = tc.RunQuery(ctx, setLabelRequest, &label)
-		defer deleteLabelDefinitionWithinDefaultTenant(t, ctx, labelKey, false)
+		defer deleteLabelDefinition(t, ctx, labelKey, false)
 		defer deleteApplicationLabel(t, ctx, app.ID, labelKey)
 
 		var newSchema interface{} = newValidJsonSchema
@@ -455,7 +455,7 @@ func TestDeleteLabelDefinition(t *testing.T) {
 
 		err = tc.RunQuery(ctx, setLabelRequest, &label)
 		require.NoError(t, err)
-		defer deleteLabelDefinitionWithinDefaultTenant(t, ctx, labelKey, false)
+		defer deleteLabelDefinition(t, ctx, labelKey, false)
 		defer deleteApplicationLabel(t, ctx, app.ID, labelKey)
 
 		t.Log("Try to delete Label Definition while it's being used by some labels")
