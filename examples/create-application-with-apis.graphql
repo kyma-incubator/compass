@@ -57,7 +57,7 @@ mutation {
                 credential: {
                   oauth: {
                     clientId: "clientid"
-                    clientSecret: "grazynasectet"
+                    clientSecret: "grazynasecret"
                     url: "url.net"
                   }
                 }

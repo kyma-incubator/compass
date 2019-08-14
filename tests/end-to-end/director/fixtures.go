@@ -22,13 +22,7 @@ func fixBasicAuth() *graphql.AuthInput {
 
 func fixOauthAuth() *graphql.AuthInput {
 	return &graphql.AuthInput{
-		Credential: &graphql.CredentialDataInput{
-			Oauth: &graphql.OAuthCredentialDataInput{
-				URL:          "http://oauth/token",
-				ClientID:     "clientID",
-				ClientSecret: "clientSecret",
-			},
-		},
+		Credential: fixOAuthCredential(),
 	}
 }
 
@@ -40,11 +34,11 @@ func fixBasicCredential() *graphql.CredentialDataInput {
 		}}
 }
 
-func fixOauthCredential() *graphql.CredentialDataInput {
+func fixOAuthCredential() *graphql.CredentialDataInput {
 	return &graphql.CredentialDataInput{
 		Oauth: &graphql.OAuthCredentialDataInput{
 			URL:          "url.net",
-			ClientSecret: "grazynasectet",
+			ClientSecret: "grazynasecret",
 			ClientID:     "clientid",
 		}}
 }
