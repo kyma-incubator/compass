@@ -14,10 +14,6 @@ func createApplication(t *testing.T, ctx context.Context, name string) Applicati
 	return createApplicationFromInputWithinTenant(t, ctx, in, defaultTenant)
 }
 
-func createApplicationFromInput(t *testing.T, ctx context.Context, in graphql.ApplicationInput) ApplicationExt {
-	return createApplicationFromInputWithinTenant(t, ctx, in, defaultTenant)
-}
-
 func createApplicationFromInputWithinTenant(t *testing.T, ctx context.Context, in graphql.ApplicationInput, tenantID string) ApplicationExt {
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
@@ -46,18 +42,6 @@ func setApplicationLabel(t *testing.T, ctx context.Context, applicationID string
 	require.NoError(t, err)
 
 	return label
-}
-
-func applications(t *testing.T, ctx context.Context, filter graphql.LabelFilter, first int, after string) graphql.ApplicationPage {
-	labelFilterGQL, err := tc.graphqlizer.LabelFilterToGQL(filter)
-	require.NoError(t, err)
-
-	applicationRequest := fixApplications(labelFilterGQL, first, after)
-	applicationPage := graphql.ApplicationPage{}
-	err = tc.RunQuery(ctx, applicationRequest, &applicationPage)
-	require.NoError(t, err)
-
-	return applicationPage
 }
 
 //Runtime

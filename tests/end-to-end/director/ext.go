@@ -11,3 +11,9 @@ type ApplicationExt struct {
 	EventAPIs graphql.EventAPIDefinitionPage
 	Documents graphql.DocumentPage
 }
+
+type ApplicationPageExt struct {
+	Data       []*ApplicationExt `json:"data"`
+	PageInfo   *graphql.PageInfo `json:"pageInfo"`
+	TotalCount int               `json:"totalCount"`
+}

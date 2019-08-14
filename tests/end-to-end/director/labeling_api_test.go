@@ -567,12 +567,14 @@ func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
 }
 
 func TestSearchByLabels(t *testing.T) {
-	//TODO: filtering on applications is not implemeted
+	//TODO: return this test after implementing filtering on applications
 	t.SkipNow()
 	//Create first application
 	// GIVEN
 	ctx := context.Background()
 
+	first := 5
+	after := ""
 	firstApp := createApplication(t, ctx, "first")
 	require.NotEmpty(t, firstApp.ID)
 	defer deleteApplication(t, firstApp.ID)
@@ -612,20 +614,27 @@ func TestSearchByLabels(t *testing.T) {
 	require.NotEmpty(t, firstAppLabel.Value)
 
 	// Query for application with LabelFilter "foo"
-	//WHEM
 	labelFilter := graphql.LabelFilter{
 		Key:   labelKeyFoo,
 		Query: nil,
 	}
 
+	//WHEN
+	labelFilterGQL, err := tc.graphqlizer.LabelFilterToGQL(labelFilter)
+	require.NoError(t, err)
+
+	applicationRequest := fixApplications(labelFilterGQL, first, after)
+	applicationPage := ApplicationPageExt{}
+	err = tc.RunQuery(ctx, applicationRequest, &applicationPage)
+	require.NoError(t, err)
+
 	//THEN
-	appPage := applications(t, ctx, labelFilter, 5, "")
-	require.NotEmpty(t, appPage)
-	assert.Equal(t, appPage.TotalCount, 2)
-	assert.Contains(t, appPage.Data[0].Labels, labelKeyFoo)
-	assert.Equal(t, appPage.Data[0].Labels[labelKeyFoo], labelValueFoo)
-	assert.Contains(t, appPage.Data[1].Labels, labelKeyFoo)
-	assert.Equal(t, appPage.Data[1].Labels[labelKeyFoo], labelValueFoo)
+	require.NotEmpty(t, applicationPage)
+	assert.Equal(t, applicationPage.TotalCount, 2)
+	assert.Contains(t, applicationPage.Data[0].Labels, labelKeyFoo)
+	assert.Equal(t, applicationPage.Data[0].Labels[labelKeyFoo], labelValueFoo)
+	assert.Contains(t, applicationPage.Data[1].Labels, labelKeyFoo)
+	assert.Equal(t, applicationPage.Data[1].Labels[labelKeyFoo], labelValueFoo)
 
 	// Query for application with LabelFilter "bar"
 	labelFilter = graphql.LabelFilter{
@@ -634,14 +643,22 @@ func TestSearchByLabels(t *testing.T) {
 	}
 
 	// WHEN
-	appPage = applications(t, ctx, labelFilter, 5, "")
+	labelFilterGQL, err = tc.graphqlizer.LabelFilterToGQL(labelFilter)
+	require.NoError(t, err)
+
+	applicationRequest = fixApplications(labelFilterGQL, first, after)
+	applicationPage = ApplicationPageExt{}
+	err = tc.RunQuery(ctx, applicationRequest, &applicationPage)
+	require.NoError(t, err)
 
 	//THEN
 	require.NoError(t, err)
-	require.NotEmpty(t, appPage)
-	assert.Equal(t, appPage.TotalCount, 1)
-	assert.Contains(t, appPage.Data[0].Labels, labelKeyBar)
-	assert.Equal(t, appPage.Data[0].Labels[labelKeyBar], labelValueBar)
+	require.NotEmpty(t, applicationPage)
+	assert.Equal(t, applicationPage.TotalCount, 1)
+	assert.Contains(t, applicationPage.Data[0].Labels, labelKeyBar)
+	assert.Equal(t, applicationPage.Data[0].Labels[labelKeyBar], labelValueBar)
+	saveQueryInExamples(t, applicationRequest.Query(), "query application with filter")
+
 }
 
 func TestListLabelDefinitions(t *testing.T) {
@@ -704,15 +721,14 @@ func TestDeletingLastScenarioForApplication_ShouldFail(t *testing.T) {
 	var schema interface{} = scenarioSchema
 
 	labelDefinitionInput := graphql.LabelDefinitionInput{
-		Key:    scenarioLabel,
+		Key:    scenariosLabel,
 		Schema: &schema,
 	}
 	createLabelDefinitionWithinTenant(t, ctx, labelDefinitionInput, tenant)
 
 	appInput := graphql.ApplicationInput{Name: name,
 		Labels: &graphql.Labels{
-			//labelKey:      scenarioLabel,
-			scenarioLabel: []string{"Christmas", "New Year"},
+			scenariosLabel: []string{"Christmas", "New Year"},
 		}}
 
 	application := createApplicationFromInputWithinTenant(t, ctx, appInput, tenant)
@@ -720,14 +736,15 @@ func TestDeletingLastScenarioForApplication_ShouldFail(t *testing.T) {
 	defer deleteApplicationInTenant(t, application.ID, tenant)
 
 	//WHEN
-	appLabelRequest := fixSetApplicationLabelRequest(application.ID, scenarioLabel, []string{"Christmas"})
+	appLabelRequest := fixSetApplicationLabelRequest(application.ID, scenariosLabel, []string{"Christmas"})
 	appLabelRequest.Header["Tenant"] = []string{tenant}
 	require.NoError(t, tc.RunQuery(ctx, appLabelRequest, nil))
 
 	//remove last label
-	appLabelRequest = fixSetApplicationLabelRequest(application.ID, scenarioLabel, []string{""})
+	appLabelRequest = fixSetApplicationLabelRequest(application.ID, scenariosLabel, []string{""})
 	appLabelRequest.Header["Tenant"] = []string{tenant}
 	err := tc.RunQuery(ctx, appLabelRequest, nil)
+
 	//THEN
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), `0 must be one of the following: "DEFAULT", "Christmas", "New Year"`)
@@ -747,5 +764,4 @@ func TestCreateRuntimeWithoutLabels(t *testing.T) {
 
 	//THEN
 	require.Equal(t, runtime.ID, fetchedRuntime.ID)
-	require.Empty(t, fetchedRuntime.Labels)
 }
