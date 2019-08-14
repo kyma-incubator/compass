@@ -11,23 +11,36 @@ import (
 
 type ExistQuerier struct {
 	tableName    string
-	idColumn     string
 	tenantColumn string
 }
 
-func NewExistQuerier(tableName, tenantColumn, idColumn string) *ExistQuerier {
-	return &ExistQuerier{tableName: tableName, idColumn: idColumn, tenantColumn: tenantColumn}
+func NewExistQuerier(tableName, tenantColumn string) *ExistQuerier {
+	return &ExistQuerier{tableName: tableName, tenantColumn: tenantColumn}
 }
 
-func (g *ExistQuerier) Exists(ctx context.Context, tenant, id string) (bool, error) {
+type Conditions []IDAndValue
+type IDAndValue struct {
+	ID  string
+	Val string
+}
+
+func (g *ExistQuerier) Exists(ctx context.Context, tenant string, conditions Conditions) (bool, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return false, err
 	}
 
-	q := fmt.Sprintf("SELECT 1 FROM %s WHERE %s=$1 AND %s=$2", g.tableName, g.tenantColumn, g.idColumn)
+	q := fmt.Sprintf("SELECT 1 FROM %s WHERE %s=$1", g.tableName, g.tenantColumn)
+	for idx, idAndVal := range conditions {
+		q = fmt.Sprintf("%s AND %s=$%d", q, idAndVal.ID, idx+2)
+	}
+
+	allArgs := []interface{}{tenant}
+	for _, idAndVal := range conditions {
+		allArgs = append(allArgs, idAndVal.Val)
+	}
 	var count int
-	err = persist.Get(&count, q, tenant, id)
+	err = persist.Get(&count, q, allArgs...)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return false, nil

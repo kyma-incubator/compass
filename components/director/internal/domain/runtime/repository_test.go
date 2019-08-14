@@ -327,6 +327,30 @@ func TestPgRepository_Delete_ShouldDeleteRuntimeEntityUsingValidModel(t *testing
 	assert.NoError(t, err)
 }
 
+func TestPgRepository_Exist(t *testing.T) {
+	// given
+	runtimeID := uuid.New().String()
+	tenantID := uuid.New().String()
+
+	sqlxDB, sqlMock := testdb.MockDatabase(t)
+	defer sqlMock.AssertExpectations(t)
+
+	sqlMock.ExpectQuery(fmt.Sprintf(`^SELECT 1 FROM "public"."runtimes" WHERE tenant_id=\$1 AND id=\$2$`)).
+		WithArgs(tenantID, runtimeID).
+		WillReturnRows(testdb.RowWhenObjectExist())
+
+	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+
+	pgRepository := runtime.NewPostgresRepository()
+
+	// when
+	ex, err := pgRepository.Exists(ctx, tenantID, runtimeID)
+
+	// then
+	require.NoError(t, err)
+	assert.True(t, ex)
+}
+
 func convertIntToBase64String(number int) string {
 	return string(base64.StdEncoding.EncodeToString([]byte(strconv.Itoa(number))))
 }
