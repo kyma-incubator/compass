@@ -572,6 +572,10 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	t.SkipNow()
 	//Create first application
 	ctx := context.Background()
+	labelKeyFoo := "foo"
+	labelKeyBar := "bar"
+	defer deleteLabelDefinition(t, ctx, labelKeyFoo, false)
+	defer deleteLabelDefinition(t, ctx, labelKeyBar, false)
 
 	firstApp := createApplication(t, ctx, "first")
 	require.NotEmpty(t, firstApp.ID)
@@ -583,7 +587,6 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	defer deleteApplication(t, secondApp.ID)
 
 	//Set label "foo" on both applications
-	labelKeyFoo := "foo"
 	labelValueFoo := "val"
 
 	firstAppLabel := setApplicationLabel(t, ctx, firstApp.ID, labelKeyFoo, labelValueFoo)
@@ -595,7 +598,6 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	require.NotEmpty(t, secondAppLabel.Value)
 
 	//Set label "bar" on first application
-	labelKeyBar := "bar"
 	labelValueBar := "barval"
 
 	firstAppBarLabel := setApplicationLabel(t, ctx, firstApp.ID, labelKeyBar, labelValueBar)
@@ -651,6 +653,11 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	// GIVEN
 	//Create first runtime
 	ctx := context.Background()
+	labelKeyFoo := "foo"
+	labelKeyBar := "bar"
+	defer deleteLabelDefinition(t, ctx, labelKeyFoo, false)
+	defer deleteLabelDefinition(t, ctx, labelKeyBar, false)
+
 	firstRuntime := createRuntime(t, ctx, "first")
 	defer deleteRuntime(t, firstRuntime.ID)
 
@@ -659,7 +666,6 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	defer deleteRuntime(t, secondRuntime.ID)
 
 	//Set label "foo" on both runtimes
-	labelKeyFoo := "foo"
 	labelValueFoo := "val"
 
 	firstRuntimeLabel := setRuntimeLabel(t, ctx, firstRuntime.ID, labelKeyFoo, labelValueFoo)
@@ -671,7 +677,6 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	require.NotEmpty(t, secondRuntimeLabel.Value)
 
 	//Set label "bar" on first runtime
-	labelKeyBar := "bar"
 	labelValueBar := "barval"
 
 	firstRuntimeBarLabel := setRuntimeLabel(t, ctx, firstRuntime.ID, labelKeyBar, labelValueBar)
@@ -752,7 +757,7 @@ func TestListLabelDefinitions(t *testing.T) {
 func TestDeleteLastScenarioForApplication(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
-	tenant := uuid.New().String()
+	tenantID := uuid.New().String()
 	name := "test-deleting-last-scenario-for-application-should-fail"
 	scenarios := []string{"DEFAULT", "Christmas", "New Year"}
 
@@ -767,25 +772,25 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 	}
 	var schema interface{} = scenarioSchema
 
-	createLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, tenant)
+	createLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, tenantID)
 
 	appInput := graphql.ApplicationInput{Name: name,
 		Labels: &graphql.Labels{
 			scenariosLabel: []string{"Christmas", "New Year"},
 		}}
 
-	application := createApplicationFromInputWithinTenant(t, ctx, appInput, tenant)
+	application := createApplicationFromInputWithinTenant(t, ctx, appInput, tenantID)
 	require.NotEmpty(t, application.ID)
-	defer deleteApplicationInTenant(t, application.ID, tenant)
+	defer deleteApplicationInTenant(t, application.ID, tenantID)
 
 	//WHEN
 	appLabelRequest := fixSetApplicationLabelRequest(application.ID, scenariosLabel, []string{"Christmas"})
-	appLabelRequest.Header["Tenant"] = []string{tenant}
+	appLabelRequest.Header["Tenant"] = []string{tenantID}
 	require.NoError(t, tc.RunQuery(ctx, appLabelRequest, nil))
 
 	//remove last label
 	appLabelRequest = fixSetApplicationLabelRequest(application.ID, scenariosLabel, []string{""})
-	appLabelRequest.Header["Tenant"] = []string{tenant}
+	appLabelRequest.Header["Tenant"] = []string{tenantID}
 	err := tc.RunQuery(ctx, appLabelRequest, nil)
 
 	//THEN
