@@ -263,7 +263,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "runtime name is not unique within tenant")
+	assert.Contains(t, err.Error(), "unique constraint violation")
 }
 
 func TestSetAndDeleteAPIAuth(t *testing.T) {
