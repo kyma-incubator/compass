@@ -159,7 +159,9 @@ CREATE UNIQUE INDEX ON label_definitions (tenant_id, key);
 CREATE TABLE labels (
     id uuid PRIMARY KEY,
     tenant_id uuid NOT NULL,
-    app_id uuid REFERENCES applications (id) ON DELETE CASCADE,
+    app_id uuid, -- TODO: Remove when Applications switch to DB repository
+    -- TODO: Uncomment when Applications switch to DB repository:
+    -- app_id uuid REFERENCES applications (id) ON DELETE CASCADE,
     runtime_id uuid REFERENCES runtimes (id) ON DELETE CASCADE,
     key varchar(256) NOT NULL,
     value jsonb
