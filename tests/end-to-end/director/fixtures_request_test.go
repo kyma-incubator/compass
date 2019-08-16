@@ -66,6 +66,22 @@ func fixSetApplicationLabelRequest(appID, labelKey string, labelValue interface{
 			appID, labelKey, value, tc.gqlFieldsProvider.ForLabel()))
 }
 
+func fixSetRuntimeLabelRequest(runtimeID, labelKey string, labelValue interface{}) *gcli.Request {
+	jsonValue, err := json.Marshal(labelValue)
+	if err != nil {
+		panic(errors.New("label value can not be marshalled"))
+	}
+	value := removeDoubleQuotesFromJSONKeys(string(jsonValue))
+
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+				result: setRuntimeLabel(runtimeID: "%s", key: "%s", value: %s) {
+						%s
+					}
+				}`,
+			runtimeID, labelKey, value, tc.gqlFieldsProvider.ForLabel()))
+}
+
 // QUERY
 func fixApplicationForRuntimeRequest(runtimeID string) *gcli.Request {
 	return gcli.NewRequest(
@@ -88,6 +104,22 @@ func fixRuntimeRequestWithPagination(after int, cursor string) *gcli.Request {
 			}`, after, cursor, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForRuntime())))
 }
 
+func fixRuntimeQuery(runtimeID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: runtime(id: "%s") {
+					%s
+				}}`, runtimeID, tc.gqlFieldsProvider.ForRuntime()))
+}
+
+func fixDeleteRuntime(id string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation{deleteRuntime(id: "%s") {
+				id
+			}
+		}`, id))
+}
+
 func fixLabelDefinitionRequest(labelKey string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
@@ -105,6 +137,36 @@ func fixApplicationRequest(applicationID string) *gcli.Request {
 					%s
 				}
 			}`, applicationID, tc.gqlFieldsProvider.ForApplication()))
+}
+
+func fixLabelDefinitionsRequest() *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+  		result:	labelDefinitions() {
+			key
+    		schema
+  				}
+			}`))
+}
+
+func fixApplications(labelFilterInGQL string, first int, after string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: applications(filter: %s, first: %d, after: "%s") {
+						%s
+					}
+				}`,
+			labelFilterInGQL, first, after, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication())))
+}
+
+func fixRuntimes(labelFilterInGQL string, first int, after string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: runtimes(filter: %s, first: %d, after: "%s") {
+						%s
+					}
+				}`,
+			labelFilterInGQL, first, after, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForRuntime())))
 }
 
 // DELETE

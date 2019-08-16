@@ -25,7 +25,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	}
 	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
-	actualRuntime := graphql.Runtime{}
+	actualRuntime := RuntimeExt{}
 
 	// WHEN
 	createReq := gcli.NewRequest(
@@ -134,7 +134,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	}
 	runtimeInGQL, err = tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
-	actualRuntime = graphql.Runtime{ID: actualRuntime.ID}
+	//actualRuntime = RuntimeExt{ID: actualRuntime.ID}
 	updateRuntimeReq := gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 				result: updateRuntime(id: "%s", in: %s) {
@@ -174,7 +174,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	}
 	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
-	firstRuntime := graphql.Runtime{}
+	firstRuntime := RuntimeExt{}
 	createReq := gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			result: createRuntime(in: %s) {
@@ -224,7 +224,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	}
 	runtimeInGQL, err = tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
-	secondRuntime := graphql.Runtime{}
+	secondRuntime := RuntimeExt{}
 	createReq = gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			result: createRuntime(in: %s) {
@@ -472,12 +472,8 @@ func TestApplicationsForRuntime(t *testing.T) {
 	}
 	var schema interface{} = jsonSchema
 
-	labelDefinitionInput := graphql.LabelDefinitionInput{
-		Key:    scenariosLabel,
-		Schema: &schema,
-	}
-	createLabelDefinitionWithinTenant(t, ctx, labelDefinitionInput, tenantID)
-	createLabelDefinitionWithinTenant(t, ctx, labelDefinitionInput, otherTenant)
+	createLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, tenantID)
+	createLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, otherTenant)
 
 	applications := []struct {
 		ApplicationName string
@@ -627,53 +623,19 @@ func TestQueryRuntimesWithPagination(t *testing.T) {
 	assert.Len(t, runtimes, 0)
 }
 
-func deleteRuntime(t *testing.T, id string) {
-	delReq := gcli.NewRequest(
-		fmt.Sprintf(`mutation{deleteRuntime(id: "%s") {
-				id
-			}
-		}`, id))
-	err := tc.RunQuery(context.Background(), delReq, nil)
-	require.NoError(t, err)
-}
+func TestCreateRuntimeWithoutLabels(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	name := "test-create-runtime-without-labels"
+	runtimeInput := graphql.RuntimeInput{Name: name}
 
-func deleteRuntimeInTenant(t *testing.T, id string, tenantID string) {
-	delReq := gcli.NewRequest(
-		fmt.Sprintf(`mutation{deleteRuntime(id: "%s") {
-				id
-			}
-		}`, id))
-	delReq.Header["Tenant"] = []string{tenantID}
-	err := tc.RunQuery(context.Background(), delReq, nil)
-	require.NoError(t, err)
-}
+	runtime := createRuntimeFromInput(t, ctx, &runtimeInput)
+	defer deleteRuntime(t, runtime.ID)
 
-func createLabelDefinition(t *testing.T, ctx context.Context, input graphql.LabelDefinitionInput) *graphql.LabelDefinition {
-	in, err := tc.graphqlizer.LabelDefinitionInputToGQL(input)
-	if err != nil {
-		return nil
-	}
+	//WHEN
+	fetchedRuntime := getRuntime(t, ctx, runtime.ID)
 
-	createRequest := fixCreateLabelDefinitionRequest(in)
-	output := graphql.LabelDefinition{}
-	err = tc.RunQuery(ctx, createRequest, &output)
-	require.NoError(t, err)
-
-	return &output
-}
-
-func createLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, input graphql.LabelDefinitionInput, tenantID string) *graphql.LabelDefinition {
-	in, err := tc.graphqlizer.LabelDefinitionInputToGQL(input)
-	if err != nil {
-		return nil
-	}
-
-	createRequest := fixCreateLabelDefinitionRequest(in)
-	createRequest.Header["Tenant"] = []string{tenantID}
-
-	output := graphql.LabelDefinition{}
-	err = tc.RunQuery(ctx, createRequest, &output)
-	require.NoError(t, err)
-
-	return &output
+	//THEN
+	require.Equal(t, runtime.ID, fetchedRuntime.ID)
+	assertRuntime(t, runtimeInput, *fetchedRuntime)
 }
