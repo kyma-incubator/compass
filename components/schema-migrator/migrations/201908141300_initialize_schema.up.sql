@@ -19,6 +19,8 @@ CREATE TABLE runtimes (
 ALTER TABLE runtimes
     ADD CONSTRAINT runtime_id_name_unique UNIQUE (tenant_id, name);
 
+CREATE INDEX ON runtimes (tenant_id);
+
 -- Application
 
 CREATE TYPE application_status_condition AS ENUM (
@@ -41,6 +43,8 @@ CREATE TABLE applications (
 ALTER TABLE applications
     ADD CONSTRAINT application_id_name_unique UNIQUE (tenant_id, name);
 
+CREATE INDEX ON applications (tenant_id);
+
 -- Webhook
 
 CREATE TYPE webhook_type AS ENUM (
@@ -55,6 +59,8 @@ CREATE TABLE webhooks (
     type webhook_type NOT NULL,
     auth jsonb
 );
+
+CREATE INDEX ON webhooks (tenant_id);
 
 -- API Definition
 
@@ -86,6 +92,8 @@ CREATE TABLE api_definitions (
     version_for_removal bool
 );
 
+CREATE INDEX ON api_definitions (tenant_id);
+
 -- Event API Definition
 
 CREATE TYPE event_api_spec_format AS ENUM (
@@ -113,6 +121,8 @@ CREATE TABLE event_api_definitions (
     version_for_removal bool
 );
 
+CREATE INDEX ON event_api_definitions (tenant_id);
+
 -- Runtime Auth
 
 CREATE TABLE runtime_auths (
@@ -123,6 +133,7 @@ CREATE TABLE runtime_auths (
     value jsonb
 );
 
+CREATE INDEX ON runtime_auths (tenant_id);
 CREATE UNIQUE INDEX ON runtime_auths (tenant_id, runtime_id, app_def_id);
 
 -- Document
@@ -143,6 +154,8 @@ CREATE TABLE documents (
     data text
 );
 
+CREATE INDEX ON documents (tenant_id);
+
 -- Label Definition
 
 CREATE TABLE label_definitions (
@@ -152,6 +165,7 @@ CREATE TABLE label_definitions (
     schema jsonb
 );
 
+CREATE INDEX ON label_definitions (tenant_id);
 CREATE UNIQUE INDEX ON label_definitions (tenant_id, key);
 
 -- Label
@@ -167,6 +181,7 @@ CREATE TABLE labels (
     value jsonb
 );
 
+CREATE INDEX ON labels (tenant_id);
 CREATE UNIQUE INDEX ON labels (tenant_id, key, runtime_id, app_id);
 
 -- Fetch Request
@@ -197,6 +212,7 @@ CREATE TABLE fetch_requests (
     status_timestamp timestamp NOT NULL
 );
 
+CREATE INDEX ON fetch_requests (tenant_id);
 CREATE UNIQUE INDEX ON fetch_requests (tenant_id, api_def_id, event_api_def_id, document_id);
 
 ALTER TABLE api_definitions
