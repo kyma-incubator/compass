@@ -43,7 +43,7 @@ ALTER TABLE applications
 
 -- Webhook
 
-CREATE TYPE webhooks_type AS ENUM (
+CREATE TYPE webhook_type AS ENUM (
     'CONFIGURATION_CHANGED'
 );
 
@@ -52,7 +52,7 @@ CREATE TABLE webhooks (
     tenant_id uuid NOT NULL,
     app_id uuid REFERENCES applications (id) ON DELETE CASCADE NOT NULL,
     url varchar(256) NOT NULL,
-    type webhooks_type NOT NULL,
+    type webhook_type NOT NULL,
     auth jsonb
 );
 
@@ -74,7 +74,7 @@ CREATE TABLE api_definitions (
     app_id uuid REFERENCES applications (id) ON DELETE CASCADE NOT NULL,
     name varchar(256) NOT NULL,
     description text,
-    group varchar(256),
+    group_name varchar(256),
     target_url varchar(256) NOT NULL,
     spec_data text,
     spec_format api_spec_format,
@@ -103,7 +103,7 @@ CREATE TABLE event_api_definitions (
     app_id uuid REFERENCES applications (id) ON DELETE CASCADE NOT NULL,
     name varchar(256) NOT NULL,
     description text,
-    group varchar(256),
+    group_name varchar(256),
     spec_data text,
     spec_format event_api_spec_format,
     spec_type event_api_spec_type,
