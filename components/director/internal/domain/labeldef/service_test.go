@@ -423,6 +423,54 @@ func TestServiceDelete(t *testing.T) {
 		require.NoError(t, err)
 	})
 
+	t.Run("success when some labels use labeldef", func(t *testing.T) {
+		// GIVEN
+		mockRepository := &automock.Repository{}
+		defer mockRepository.AssertExpectations(t)
+		mockLabelRepository := &automock.LabelRepository{}
+		defer mockLabelRepository.AssertExpectations(t)
+
+		tnt := "tenant"
+		key := "key"
+		ctx := context.TODO()
+		given := model.LabelDefinition{
+			Key:    key,
+			Tenant: tnt,
+		}
+
+		appLabel := &model.Label{
+			ID:         "",
+			Tenant:     tnt,
+			Key:        key,
+			Value:      "dummy value",
+			ObjectID:   "",
+			ObjectType: model.ApplicationLabelableObject,
+		}
+		rtmLabel := &model.Label{
+			ID:         "",
+			Tenant:     tnt,
+			Key:        key,
+			Value:      "dummy value",
+			ObjectID:   "",
+			ObjectType: model.RuntimeLabelableObject,
+		}
+		labelsToDelete := []*model.Label{appLabel, rtmLabel}
+		deleteRelatedResources := true
+		mockRepository.On("GetByKey", ctx, tnt, given.Key).Return(&given, nil).Once()
+		mockRepository.On("DeleteByKey", ctx, tnt, given.Key).Return(nil).Once()
+		mockLabelRepository.On("ListByKey", ctx, tnt, given.Key).Return(labelsToDelete, nil).Once()
+		for _, label := range labelsToDelete {
+			mockLabelRepository.On("Delete", ctx, tnt, label.ObjectType, label.ObjectID, given.Key).Return(nil).Once()
+		}
+		mockLabelRepository.On("ListByKey", ctx, tnt, given.Key).Return([]*model.Label{}, nil).Once()
+
+		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil)
+		// WHEN
+		err := sut.Delete(ctx, tnt, given.Key, deleteRelatedResources)
+		// THEN
+		require.NoError(t, err)
+	})
+
 	t.Run("error when deleting scenarios key", func(t *testing.T) {
 		// GIVEN
 		mockRepository := &automock.Repository{}
@@ -538,26 +586,78 @@ func TestServiceDelete(t *testing.T) {
 		require.Error(t, err)
 	})
 
-	t.Run("error when trying to delete related resources", func(t *testing.T) {
+	t.Run("error during listing labels when trying to delete related resources", func(t *testing.T) {
 		// GIVEN
+		testErr := errors.New("testErr")
+
 		mockRepository := &automock.Repository{}
 		defer mockRepository.AssertExpectations(t)
 		mockLabelRepository := &automock.LabelRepository{}
 		defer mockLabelRepository.AssertExpectations(t)
 
 		tnt := "tenant"
+		key := "key"
 		ctx := context.TODO()
 		given := model.LabelDefinition{
-			Key:    "key",
+			Key:    key,
 			Tenant: tnt,
 		}
 		deleteRelatedResources := true
+		mockLabelRepository.On("ListByKey", ctx, tnt, given.Key).Return(nil, testErr).Once()
 
 		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil)
 		// WHEN
 		err := sut.Delete(ctx, tnt, given.Key, deleteRelatedResources)
 		// THEN
 		require.Error(t, err)
+		errMsg := fmt.Sprintf("while receiving existing labels with key \"%s\": %s", key, testErr)
+		assert.EqualError(t, err, errMsg)
+	})
+
+	t.Run("error during delete labels when trying to delete related resources", func(t *testing.T) {
+		// GIVEN
+		testErr := errors.New("testErr")
+
+		mockRepository := &automock.Repository{}
+		defer mockRepository.AssertExpectations(t)
+		mockLabelRepository := &automock.LabelRepository{}
+		defer mockLabelRepository.AssertExpectations(t)
+
+		tnt := "tenant"
+		key := "key"
+		ctx := context.TODO()
+		given := model.LabelDefinition{
+			Key:    key,
+			Tenant: tnt,
+		}
+		appLabel := &model.Label{
+			ID:         "",
+			Tenant:     tnt,
+			Key:        key,
+			Value:      "dummy value",
+			ObjectID:   "",
+			ObjectType: model.ApplicationLabelableObject,
+		}
+		rtmLabel := &model.Label{
+			ID:         "",
+			Tenant:     tnt,
+			Key:        key,
+			Value:      "dummy value",
+			ObjectID:   "",
+			ObjectType: model.RuntimeLabelableObject,
+		}
+		labelsToDelete := []*model.Label{appLabel, rtmLabel}
+		deleteRelatedResources := true
+		mockLabelRepository.On("ListByKey", ctx, tnt, given.Key).Return(labelsToDelete, nil).Once()
+		mockLabelRepository.On("Delete", ctx, tnt, labelsToDelete[0].ObjectType, labelsToDelete[0].ObjectID, given.Key).Return(testErr).Once()
+
+		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil)
+		// WHEN
+		err := sut.Delete(ctx, tnt, given.Key, deleteRelatedResources)
+		// THEN
+		require.Error(t, err)
+		errMsg := fmt.Sprintf("while deleting label with key \"%s\": %s", key, testErr)
+		assert.EqualError(t, err, errMsg)
 	})
 }
 

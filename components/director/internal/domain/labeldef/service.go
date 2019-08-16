@@ -109,12 +109,22 @@ func (s *service) Update(ctx context.Context, def model.LabelDefinition) error {
 
 // TODO: Add deleting related labels logic
 func (s *service) Delete(ctx context.Context, tenant, key string, deleteRelatedLabels bool) error {
-	if deleteRelatedLabels == true {
-		return errors.New("deleting related labels is not yet supported")
-	}
-
 	if key == model.ScenariosKey {
 		return fmt.Errorf("Label Definition with key %s can not be deleted", model.ScenariosKey)
+	}
+
+	if deleteRelatedLabels == true {
+		labels, err := s.labelRepo.ListByKey(ctx, tenant, key)
+		if err != nil {
+			return errors.Wrapf(err, "while receiving existing labels with key \"%s\"", key)
+		}
+
+		for _, label := range labels {
+			err = s.labelRepo.Delete(ctx, tenant, label.ObjectType, label.ObjectID, label.Key)
+			if err != nil {
+				return errors.Wrapf(err, "while deleting label with key \"%s\"", key)
+			}
+		}
 	}
 
 	ld, err := s.Get(ctx, tenant, key)
