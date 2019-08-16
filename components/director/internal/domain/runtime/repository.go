@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -17,21 +18,23 @@ import (
 
 const runtimeTable string = `"public"."runtimes"`
 
-const runtimeFields string = `"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth"`
+var runtimeFields = []string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth"}
 
 type pgRepository struct {
 	*repo.ExistQuerier
 	*repo.SingleGetter
 	*repo.Deleter
 	*repo.PageableQuerier
+	*repo.Creator
 }
 
 func NewPostgresRepository() *pgRepository {
 	return &pgRepository{
 		ExistQuerier:    repo.NewExistQuerier(runtimeTable, "tenant_id"),
-		SingleGetter:    repo.NewSingleGetter(runtimeTable, "tenant_id", runtimeFields),
+		SingleGetter:    repo.NewSingleGetter(runtimeTable, "tenant_id", strings.Join(runtimeFields, ", ")),
 		Deleter:         repo.NewDeleter(runtimeTable, "tenant_id"),
-		PageableQuerier: repo.NewPageableQuerier(runtimeTable, "tenant_id", runtimeFields),
+		PageableQuerier: repo.NewPageableQuerier(runtimeTable, "tenant_id", strings.Join(runtimeFields, ", ")),
+		Creator:         repo.NewCreator(runtimeTable, runtimeFields),
 	}
 }
 
@@ -105,28 +108,12 @@ func (r *pgRepository) Create(ctx context.Context, item *model.Runtime) error {
 		return errors.New("item can not be empty")
 	}
 
-	persist, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return errors.Wrap(err, "while fetching persistence from context")
-	}
-
 	runtimeEnt, err := EntityFromRuntimeModel(item)
 	if err != nil {
 		return errors.Wrap(err, "while creating runtime entity from model")
 	}
 
-	stmt := fmt.Sprintf(`INSERT INTO %s ( %s )
-								VALUES (:id, :tenant_id, :name, :description, :status_condition, :status_timestamp, :auth)`,
-		runtimeTable, runtimeFields)
-
-	_, err = persist.NamedExec(stmt, runtimeEnt)
-	if pqerr, ok := err.(*pq.Error); ok {
-		if pqerr.Code == persistence.UniqueViolation {
-			return errors.New("runtime name is not unique within tenant")
-		}
-	}
-
-	return errors.Wrap(err, "while inserting the runtime entity to database")
+	return r.Creator.Create(ctx, runtimeEnt)
 }
 
 func (r *pgRepository) Update(ctx context.Context, item *model.Runtime) error {

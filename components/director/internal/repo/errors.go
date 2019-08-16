@@ -20,3 +20,22 @@ func IsNotFoundError(err error) bool {
 	}
 	return false
 }
+
+type NotUnique interface {
+	IsNotUnique()
+}
+
+type notUniqueError struct{}
+
+func (e *notUniqueError) Error() string {
+	return "unique constraint violation"
+}
+
+func (notUniqueError) IsNotUnique() {}
+
+func IsNotUnique(err error) bool {
+	if _, ok := err.(NotUnique); ok {
+		return true
+	}
+	return false
+}

@@ -76,6 +76,6 @@ func TestGetSingle(t *testing.T) {
 
 	t.Run("returns error if destination is nil", func(t *testing.T) {
 		err := sut.Get(context.TODO(), givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}}, nil)
-		require.EqualError(t, err, "missing destination")
+		require.EqualError(t, err, "item cannot be nil")
 	})
 }

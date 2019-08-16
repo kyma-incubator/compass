@@ -25,7 +25,7 @@ func NewSingleGetter(tableName, tenantColumn, selectedColumns string) *SingleGet
 
 func (g *SingleGetter) Get(ctx context.Context, tenant string, conditions Conditions, dest interface{}) error {
 	if dest == nil {
-		return errors.New("missing destination")
+		return errors.New("item cannot be nil")
 	}
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
