@@ -34,14 +34,14 @@ func (g *SingleGetter) Get(ctx context.Context, tenant string, conditions Condit
 	}
 
 	q := fmt.Sprintf("SELECT %s FROM %s WHERE %s = $1", g.selectedColumns, g.tableName, g.tenantColumn)
-	q = appendConditions(q, conditions)
+	q = appendEnumeratedConditions(q, 2, conditions)
 	allArgs := getAllArgs(tenant, conditions)
 	err = persist.Get(dest, q, allArgs...)
-	if err != nil {
-		if err != sql.ErrNoRows {
-			return errors.Wrap(err, "while getting object from DB")
-		}
+	switch {
+	case err == sql.ErrNoRows:
 		return &notFoundError{}
+	case err != nil:
+		return errors.Wrap(err, "while getting object from DB")
 	}
 	return nil
 }

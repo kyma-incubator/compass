@@ -24,7 +24,7 @@ func (g *Deleter) Delete(ctx context.Context, tenant string, conditions Conditio
 	}
 
 	q := fmt.Sprintf("DELETE FROM %s WHERE %s = $1", g.tableName, g.tenantColumn)
-	q = appendConditions(q, conditions)
+	q = appendEnumeratedConditions(q, 2, conditions)
 	allArgs := getAllArgs(tenant, conditions)
 	res, err := persist.Exec(q, allArgs...)
 	if err != nil {
@@ -38,5 +38,5 @@ func (g *Deleter) Delete(ctx context.Context, tenant string, conditions Conditio
 		return fmt.Errorf("delete should remove single row, but removed %d rows", affected)
 	}
 
-	return errors.Wrap(err, "while deleting the runtime entity from database")
+	return nil
 }

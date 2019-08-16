@@ -12,14 +12,13 @@ import (
 
 type Creator struct {
 	tableName string
-	columns   []string // TODO unify with other
+	columns   []string
 }
 
 func NewCreator(tableName string, columns []string) *Creator {
 	return &Creator{
 		tableName: tableName,
 		columns:   columns,
-		// TODO tenant column???
 	}
 }
 
@@ -33,12 +32,12 @@ func (c *Creator) Create(ctx context.Context, dbEntity interface{}) error {
 		return err
 	}
 
-	var fields []string
+	var values []string
 	for _, c := range c.columns {
-		fields = append(fields, fmt.Sprintf(":%s", c))
+		values = append(values, fmt.Sprintf(":%s", c))
 	}
 
-	stmt := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", c.tableName, strings.Join(c.columns, ", "), strings.Join(fields, ", "))
+	stmt := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", c.tableName, strings.Join(c.columns, ", "), strings.Join(values, ", "))
 
 	_, err = persist.NamedExec(stmt, dbEntity)
 	if pqerr, ok := err.(*pq.Error); ok {

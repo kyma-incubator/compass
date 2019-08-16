@@ -25,7 +25,7 @@ func (g *ExistQuerier) Exists(ctx context.Context, tenant string, conditions Con
 	}
 
 	q := fmt.Sprintf("SELECT 1 FROM %s WHERE %s = $1", g.tableName, g.tenantColumn)
-	q = appendConditions(q, conditions)
+	q = appendEnumeratedConditions(q, 2, conditions)
 
 	allArgs := getAllArgs(tenant, conditions)
 	var count int
