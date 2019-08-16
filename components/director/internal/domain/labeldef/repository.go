@@ -15,6 +15,8 @@ const (
 	tableName = "public.label_definitions"
 )
 
+var columns = []string{"id", "tenant_id", "key", "schema"}
+
 type repo struct {
 	conv Converter
 }
@@ -34,7 +36,6 @@ func (r *repo) Create(ctx context.Context, def model.LabelDefinition) error {
 		return errors.Wrap(err, "while converting Label Definition to insert")
 	}
 
-	columns := []string{"id", "tenant_id", "key", "schema"}
 	values := r.prefixEveryWithColon(columns)
 
 	_, err = db.NamedExec(fmt.Sprintf("insert into %s (%s) values(%s)", tableName, strings.Join(columns, ","), strings.Join(values, ",")), entity)

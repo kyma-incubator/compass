@@ -5,12 +5,13 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 	"github.com/lib/pq"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,7 +38,7 @@ func TestCreate(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("returns error on db operation failed", func(t *testing.T) {
+	t.Run("returns error when operation on db failed", func(t *testing.T) {
 		// GIVEN
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -45,7 +46,7 @@ func TestCreate(t *testing.T) {
 		givenUser := User{}
 
 		mock.ExpectExec(regexp.QuoteMeta("INSERT INTO users ( id_col, tenant_col, first_name, last_name, age ) VALUES ( ?, ?, ?, ?, ? )")).
-			WillReturnError(errors.New("some error"))
+			WillReturnError(someError())
 		// WHEN
 		err := sut.Create(ctx, givenUser)
 		// THEN
@@ -79,4 +80,17 @@ func TestCreate(t *testing.T) {
 		// THEN
 		require.EqualError(t, err, "item cannot be nil")
 	})
+}
+
+func TestCreateWhenWrongConfiguration(t *testing.T) {
+	sut := repo.NewCreator("users", []string{"id_col", "tenant_col", "column_does_not_exist"})
+	// GIVEN
+	db, mock := testdb.MockDatabase(t)
+	ctx := persistence.SaveToContext(context.TODO(), db)
+	defer mock.AssertExpectations(t)
+	// WHEN
+	err := sut.Create(ctx, User{})
+	// THEN
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "could not find name column_does_not_exist")
 }

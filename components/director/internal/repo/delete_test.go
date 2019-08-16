@@ -9,7 +9,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -33,18 +32,17 @@ func TestDelete(t *testing.T) {
 
 	t.Run("returns error on db operation", func(t *testing.T) {
 		// GIVEN
-		givenErr := errors.New("some err")
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
-		mock.ExpectExec(expectedQuery).WithArgs(givenTenant, givenID).WillReturnError(givenErr)
+		mock.ExpectExec(expectedQuery).WithArgs(givenTenant, givenID).WillReturnError(someError())
 		// WHEN
 		err := sut.Delete(ctx, givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}})
 		// THEN
-		require.EqualError(t, err, "while deleting from database: some err")
+		require.EqualError(t, err, "while deleting from database: some error")
 	})
 
-	t.Run("returns error when object not found", func(t *testing.T) {
+	t.Run("returns error when removed more than one object", func(t *testing.T) {
 		// GIVEN
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -56,7 +54,7 @@ func TestDelete(t *testing.T) {
 		require.EqualError(t, err, "delete should remove single row, but removed 12 rows")
 	})
 
-	t.Run("returns error when removed more than one object", func(t *testing.T) {
+	t.Run("returns error when object not found", func(t *testing.T) {
 		// GIVEN
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -74,6 +72,21 @@ func TestDelete(t *testing.T) {
 		require.EqualError(t, err, "unable to fetch database from context")
 	})
 
+}
+
+func TestDeleteWithManyConditions(t *testing.T) {
+	// GIVEN
+	givenTenant := uuidB()
+	expectedQuery := regexp.QuoteMeta("DELETE FROM users WHERE tenant_col = $1 AND first_name = $2 AND last_name = $3")
+	sut := repo.NewDeleter("users", "tenant_col")
+	db, mock := testdb.MockDatabase(t)
+	ctx := persistence.SaveToContext(context.TODO(), db)
+	defer mock.AssertExpectations(t)
+	mock.ExpectExec(expectedQuery).WithArgs(givenTenant, "john", "doe").WillReturnResult(sqlmock.NewResult(-1, 1))
+	// WHEN
+	err := sut.Delete(ctx, givenTenant, repo.Conditions{{Field: "first_name", Val: "john"}, {Field: "last_name", Val: "doe"}})
+	// THEN
+	require.NoError(t, err)
 }
 
 func uuidA() string {

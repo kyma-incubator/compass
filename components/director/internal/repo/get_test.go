@@ -9,7 +9,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -39,13 +38,12 @@ func TestGetSingle(t *testing.T) {
 		assert.Equal(t, 18, dest.Age)
 	})
 
-	t.Run("returns error on db operation failed", func(t *testing.T) {
+	t.Run("returns error when operation on db failed", func(t *testing.T) {
 		// GIVEN
-		givenErr := errors.New("some error")
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
-		mock.ExpectQuery(expectedQuery).WillReturnError(givenErr)
+		mock.ExpectQuery(expectedQuery).WillReturnError(someError())
 		dest := User{}
 		// WHEN
 		err := sut.Get(ctx, givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}}, &dest)
@@ -78,4 +76,21 @@ func TestGetSingle(t *testing.T) {
 		err := sut.Get(context.TODO(), givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}}, nil)
 		require.EqualError(t, err, "item cannot be nil")
 	})
+}
+
+func TestGetSingleWithManyConditions(t *testing.T) {
+	// GIVEN
+	givenTenant := uuidB()
+	expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE tenant_col = $1 AND first_name = $2 AND last_name = $3")
+	sut := repo.NewSingleGetter("users", "tenant_col", []string{"id_col"})
+	db, mock := testdb.MockDatabase(t)
+	ctx := persistence.SaveToContext(context.TODO(), db)
+	defer mock.AssertExpectations(t)
+	rows := sqlmock.NewRows([]string{"id_col"}).AddRow(uuidA())
+	mock.ExpectQuery(expectedQuery).WithArgs(givenTenant, "john", "doe").WillReturnRows(rows)
+	// WHEN
+	dest := User{}
+	err := sut.Get(ctx, givenTenant, repo.Conditions{{Field: "first_name", Val: "john"}, {Field: "last_name", Val: "doe"}}, &dest)
+	// THEN
+	require.NoError(t, err)
 }

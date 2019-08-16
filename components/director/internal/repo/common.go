@@ -17,9 +17,9 @@ func getAllArgs(tenant string, conditions Conditions) []interface{} {
 }
 
 func appendEnumeratedConditions(query string, startIdx int, conditions Conditions) string {
-	var out string
+	out := query
 	for idx, idAndVal := range conditions {
-		out = fmt.Sprintf("%s AND %s = $%d", query, idAndVal.Field, idx+startIdx)
+		out = fmt.Sprintf("%s AND %s = $%d", out, idAndVal.Field, idx+startIdx)
 	}
 	return out
 }

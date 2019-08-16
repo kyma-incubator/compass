@@ -10,7 +10,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 	"github.com/lib/pq"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,13 +36,13 @@ func TestUpdateSingle(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("returns error on db operation failed", func(t *testing.T) {
+	t.Run("returns error when operation on db failed", func(t *testing.T) {
 		// GIVEN
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
 		mock.ExpectExec("UPDATE users .*").
-			WillReturnError(errors.New("some error"))
+			WillReturnError(someError())
 		// WHEN
 		err := sut.UpdateSingle(ctx, givenUser)
 		// THEN
