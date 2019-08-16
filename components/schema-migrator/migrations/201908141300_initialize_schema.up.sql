@@ -75,10 +75,10 @@ CREATE TABLE api_definitions (
     name varchar(256) NOT NULL,
     description text,
     group varchar(256),
+    target_url varchar(256) NOT NULL,
     spec_data text,
     spec_format api_spec_format,
     spec_type api_spec_type,
-    target_url varchar(256) NOT NULL,
     default_auth jsonb,
     version_value varchar(256),
     version_deprecated bool,
@@ -135,10 +135,10 @@ CREATE TABLE documents (
     id uuid PRIMARY KEY,
     tenant_id uuid NOT NULL,
     app_id uuid REFERENCES applications (id) ON DELETE CASCADE NOT NULL,
-    title varchar(256),
-    display_name varchar(256),
-    description text,
-    format document_format,
+    title varchar(256) NOT NULL,
+    display_name varchar(256) NOT NULL,
+    description text NOT NULL,
+    format document_format NOT NULL,
     kind varchar(256),
     data text
 );
@@ -159,9 +159,9 @@ CREATE UNIQUE INDEX ON label_definitions (tenant_id, key);
 CREATE TABLE labels (
     id uuid PRIMARY KEY,
     tenant_id uuid NOT NULL,
-    key varchar(256) NOT NULL,
     app_id uuid REFERENCES applications (id) ON DELETE CASCADE,
     runtime_id uuid REFERENCES runtimes (id) ON DELETE CASCADE,
+    key varchar(256) NOT NULL,
     value jsonb
 );
 
