@@ -45,6 +45,25 @@ func setApplicationLabel(t *testing.T, ctx context.Context, applicationID string
 }
 
 //Runtime
+
+func createRuntime(t *testing.T, ctx context.Context, placeholder string) *graphql.Runtime {
+	input := fixRuntimeInput(placeholder)
+	return createRuntimeFromInput(t, ctx, &input)
+}
+
+func createRuntimeFromInput(t *testing.T, ctx context.Context, input *graphql.RuntimeInput) *graphql.Runtime {
+	inputGQL, err := tc.graphqlizer.RuntimeInputToGQL(*input)
+	require.NoError(t, err)
+
+	createRequest := fixCreateRuntimeRequest(inputGQL)
+	var runtime graphql.Runtime
+
+	err = tc.RunQuery(ctx, createRequest, &runtime)
+	require.NoError(t, err)
+	require.NotEmpty(t, runtime.ID)
+	return &runtime
+}
+
 func getRuntime(t *testing.T, ctx context.Context, runtimeID string) *graphql.Runtime {
 	var runtime graphql.Runtime
 	runtimeQuery := fixRuntimeQuery(runtimeID)
@@ -52,6 +71,28 @@ func getRuntime(t *testing.T, ctx context.Context, runtimeID string) *graphql.Ru
 	err := tc.RunQuery(ctx, runtimeQuery, &runtime)
 	require.NoError(t, err)
 	return &runtime
+}
+
+func setRuntimeLabel(t *testing.T, ctx context.Context, runtimeID string, labelKey string, labelValue interface{}) *graphql.Label {
+	setLabelRequest := fixSetRuntimeLabelRequest(runtimeID, labelKey, labelValue)
+	label := graphql.Label{}
+
+	err := tc.RunQuery(ctx, setLabelRequest, &label)
+	require.NoError(t, err)
+
+	return &label
+}
+
+func deleteRuntime(t *testing.T, id string) {
+	deleteRuntimeInTenant(t, id, defaultTenant)
+}
+
+func deleteRuntimeInTenant(t *testing.T, id string, tenantID string) {
+	delReq := fixDeleteRuntime(id)
+
+	delReq.Header["Tenant"] = []string{tenantID}
+	err := tc.RunQuery(context.Background(), delReq, nil)
+	require.NoError(t, err)
 }
 
 // Label Definitions
@@ -95,17 +136,4 @@ func listLabelDefinitionsWithinTenant(t *testing.T, ctx context.Context, tenantI
 
 	err := tc.RunQuery(ctx, labelDefinitionsRequest, &labelDefinitions)
 	return labelDefinitions, err
-}
-
-func createRuntimeFromInput(t *testing.T, ctx context.Context, input *graphql.RuntimeInput) *graphql.Runtime {
-	inputGQL, err := tc.graphqlizer.RuntimeInputToGQL(*input)
-	require.NoError(t, err)
-
-	createRequest := fixCreateRuntimeRequest(inputGQL)
-	var runtime graphql.Runtime
-
-	err = tc.RunQuery(ctx, createRequest, &runtime)
-	require.NoError(t, err)
-	require.NotEmpty(t, runtime.ID)
-	return &runtime
 }

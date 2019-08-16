@@ -623,23 +623,19 @@ func TestQueryRuntimesWithPagination(t *testing.T) {
 	assert.Len(t, runtimes, 0)
 }
 
-func deleteRuntime(t *testing.T, id string) {
-	delReq := gcli.NewRequest(
-		fmt.Sprintf(`mutation{deleteRuntime(id: "%s") {
-				id
-			}
-		}`, id))
-	err := tc.RunQuery(context.Background(), delReq, nil)
-	require.NoError(t, err)
-}
+func TestCreateRuntimeWithoutLabels(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	name := "test-create-runtime-without-labels"
+	runtimeInput := graphql.RuntimeInput{Name: name}
 
-func deleteRuntimeInTenant(t *testing.T, id string, tenantID string) {
-	delReq := gcli.NewRequest(
-		fmt.Sprintf(`mutation{deleteRuntime(id: "%s") {
-				id
-			}
-		}`, id))
-	delReq.Header["Tenant"] = []string{tenantID}
-	err := tc.RunQuery(context.Background(), delReq, nil)
-	require.NoError(t, err)
+	runtime := createRuntimeFromInput(t, ctx, &runtimeInput)
+	defer deleteRuntime(t, runtime.ID)
+
+	//WHEN
+	fetchedRuntime := getRuntime(t, ctx, runtime.ID)
+
+	//THEN
+	require.Equal(t, runtime.ID, fetchedRuntime.ID)
+	assertRuntime(t, runtimeInput, *fetchedRuntime)
 }

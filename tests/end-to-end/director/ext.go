@@ -12,8 +12,19 @@ type ApplicationExt struct {
 	Documents graphql.DocumentPage
 }
 
+type RuntimeExt struct {
+	graphql.Runtime
+	Labels graphql.Labels
+}
+
 type ApplicationPageExt struct {
 	Data       []*ApplicationExt `json:"data"`
+	PageInfo   *graphql.PageInfo `json:"pageInfo"`
+	TotalCount int               `json:"totalCount"`
+}
+
+type RuntimePageExt struct {
+	Data       []*RuntimeExt     `json:"data"`
 	PageInfo   *graphql.PageInfo `json:"pageInfo"`
 	TotalCount int               `json:"totalCount"`
 }

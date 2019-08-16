@@ -604,8 +604,7 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 
 	// Query for application with LabelFilter "foo"
 	labelFilter := graphql.LabelFilter{
-		Key:   labelKeyFoo,
-		Query: nil,
+		Key: labelKeyFoo,
 	}
 
 	//WHEN
@@ -627,8 +626,7 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 
 	// Query for application with LabelFilter "bar"
 	labelFilter = graphql.LabelFilter{
-		Key:   labelKeyBar,
-		Query: nil,
+		Key: labelKeyBar,
 	}
 
 	// WHEN
@@ -647,6 +645,82 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	assert.Contains(t, applicationPage.Data[0].Labels, labelKeyBar)
 	assert.Equal(t, applicationPage.Data[0].Labels[labelKeyBar], labelValueBar)
 	saveQueryInExamples(t, applicationRequest.Query(), "query applications with label filter")
+}
+
+func TestSearchRuntimesByLabels(t *testing.T) {
+	// GIVEN
+	//Create first runtime
+	ctx := context.Background()
+	firstRuntime := createRuntime(t, ctx, "first")
+	defer deleteRuntime(t, firstRuntime.ID)
+
+	//Create second runtime
+	secondRuntime := createRuntime(t, ctx, "second")
+	defer deleteRuntime(t, secondRuntime.ID)
+
+	//Set label "foo" on both runtimes
+	labelKeyFoo := "foo"
+	labelValueFoo := "val"
+
+	firstRuntimeLabel := setRuntimeLabel(t, ctx, firstRuntime.ID, labelKeyFoo, labelValueFoo)
+	require.NotEmpty(t, firstRuntimeLabel.Key)
+	require.NotEmpty(t, firstRuntimeLabel.Value)
+
+	secondRuntimeLabel := setRuntimeLabel(t, ctx, secondRuntime.ID, labelKeyFoo, labelValueFoo)
+	require.NotEmpty(t, secondRuntimeLabel.Key)
+	require.NotEmpty(t, secondRuntimeLabel.Value)
+
+	//Set label "bar" on first runtime
+	labelKeyBar := "bar"
+	labelValueBar := "barval"
+
+	firstRuntimeBarLabel := setRuntimeLabel(t, ctx, firstRuntime.ID, labelKeyBar, labelValueBar)
+	require.NotEmpty(t, firstRuntimeBarLabel.Key)
+	require.NotEmpty(t, firstRuntimeBarLabel.Value)
+
+	// Query for runtime with LabelFilter "foo"
+	labelFilter := graphql.LabelFilter{
+		Key: labelKeyFoo,
+	}
+
+	//WHEN
+	labelFilterGQL, err := tc.graphqlizer.LabelFilterToGQL(labelFilter)
+	require.NoError(t, err)
+
+	runtimesRequest := fixRuntimes(labelFilterGQL, 5, "")
+	runtimePage := RuntimePageExt{}
+	err = tc.RunQuery(ctx, runtimesRequest, &runtimePage)
+	require.NoError(t, err)
+
+	//THEN
+	require.NotEmpty(t, runtimePage)
+	assert.Equal(t, runtimePage.TotalCount, 2)
+	assert.Contains(t, runtimePage.Data[0].Labels, labelKeyFoo)
+	assert.Equal(t, runtimePage.Data[0].Labels[labelKeyFoo], labelValueFoo)
+	assert.Contains(t, runtimePage.Data[1].Labels, labelKeyFoo)
+	assert.Equal(t, runtimePage.Data[1].Labels[labelKeyFoo], labelValueFoo)
+
+	// Query for runtime with LabelFilter "bar"
+	labelFilter = graphql.LabelFilter{
+		Key: labelKeyBar,
+	}
+
+	// WHEN
+	labelFilterGQL, err = tc.graphqlizer.LabelFilterToGQL(labelFilter)
+	require.NoError(t, err)
+
+	runtimesRequest = fixRuntimes(labelFilterGQL, 5, "")
+	runtimePage = RuntimePageExt{}
+	err = tc.RunQuery(ctx, runtimesRequest, &runtimePage)
+	require.NoError(t, err)
+
+	//THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, runtimePage)
+	assert.Equal(t, runtimePage.TotalCount, 1)
+	assert.Contains(t, runtimePage.Data[0].Labels, labelKeyBar)
+	assert.Equal(t, runtimePage.Data[0].Labels[labelKeyBar], labelValueBar)
+	saveQueryInExamples(t, runtimesRequest.Query(), "query runtimes with label filter")
 }
 
 func TestListLabelDefinitions(t *testing.T) {
@@ -675,7 +749,7 @@ func TestListLabelDefinitions(t *testing.T) {
 	assert.Contains(t, labelDefinitions, secondLabelDefinition)
 }
 
-func TestDeletingLastScenarioForApplication_ShouldFail(t *testing.T) {
+func TestDeletingLastScenarioForApplication(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
 	tenant := uuid.New().String()
@@ -717,21 +791,4 @@ func TestDeletingLastScenarioForApplication_ShouldFail(t *testing.T) {
 	//THEN
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), `must be one of the following: "DEFAULT", "Christmas", "New Year"`)
-}
-
-func TestCreateRuntimeWithoutLabels(t *testing.T) {
-	//GIVEN
-	ctx := context.TODO()
-	name := "test-create-runtime-without-labels"
-	runtimeInput := graphql.RuntimeInput{Name: name}
-
-	runtime := createRuntimeFromInput(t, ctx, &runtimeInput)
-	defer deleteRuntime(t, runtime.ID)
-
-	//WHEN
-	fetchedRuntime := getRuntime(t, ctx, runtime.ID)
-
-	//THEN
-	require.Equal(t, runtime.ID, fetchedRuntime.ID)
-	assertRuntime(t, runtimeInput, *fetchedRuntime)
 }
