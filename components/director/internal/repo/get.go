@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/pkg/errors"
@@ -15,11 +16,11 @@ type SingleGetter struct {
 	selectedColumns string
 }
 
-func NewSingleGetter(tableName, tenantColumn, selectedColumns string) *SingleGetter {
+func NewSingleGetter(tableName, tenantColumn string, selectedColumns []string) *SingleGetter {
 	return &SingleGetter{
 		tableName:       tableName,
 		tenantColumn:    tenantColumn,
-		selectedColumns: selectedColumns,
+		selectedColumns: strings.Join(selectedColumns, ", "),
 	}
 }
 

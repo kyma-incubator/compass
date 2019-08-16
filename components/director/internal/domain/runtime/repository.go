@@ -3,7 +3,6 @@ package runtime
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -12,8 +11,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/persistence"
-	"github.com/lib/pq"
 )
 
 const runtimeTable string = `"public"."runtimes"`
@@ -26,15 +23,17 @@ type pgRepository struct {
 	*repo.Deleter
 	*repo.PageableQuerier
 	*repo.Creator
+	*repo.Updater
 }
 
 func NewPostgresRepository() *pgRepository {
 	return &pgRepository{
 		ExistQuerier:    repo.NewExistQuerier(runtimeTable, "tenant_id"),
-		SingleGetter:    repo.NewSingleGetter(runtimeTable, "tenant_id", strings.Join(runtimeFields, ", ")),
+		SingleGetter:    repo.NewSingleGetter(runtimeTable, "tenant_id", runtimeFields),
 		Deleter:         repo.NewDeleter(runtimeTable, "tenant_id"),
-		PageableQuerier: repo.NewPageableQuerier(runtimeTable, "tenant_id", strings.Join(runtimeFields, ", ")),
+		PageableQuerier: repo.NewPageableQuerier(runtimeTable, "tenant_id", runtimeFields),
 		Creator:         repo.NewCreator(runtimeTable, runtimeFields),
+		Updater:         repo.NewUpdater(runtimeTable, []string{"name", "description", "status_condition", "status_timestamp"}, "tenant_id", []string{"id"}),
 	}
 }
 
@@ -117,29 +116,9 @@ func (r *pgRepository) Create(ctx context.Context, item *model.Runtime) error {
 }
 
 func (r *pgRepository) Update(ctx context.Context, item *model.Runtime) error {
-	if item == nil {
-		return errors.New("item can not be empty")
-	}
-
-	persist, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return errors.Wrap(err, "while fetching persistence from context")
-	}
-
 	runtimeEnt, err := EntityFromRuntimeModel(item)
 	if err != nil {
 		return errors.Wrap(err, "while creating runtime entity from model")
 	}
-
-	stmt := fmt.Sprintf(`UPDATE %s SET "name" = :name, "description" = :description, "status_condition" = :status_condition, "status_timestamp" = :status_timestamp WHERE "id" = :id`,
-		runtimeTable)
-	_, err = persist.NamedExec(stmt, runtimeEnt)
-
-	if pqerr, ok := err.(*pq.Error); ok {
-		if pqerr.Code == persistence.UniqueViolation {
-			return errors.New("runtime name is not unique within tenant")
-		}
-	}
-
-	return errors.Wrap(err, "while updating the runtime entity in database")
+	return r.Updater.UpdateSingle(ctx, runtimeEnt)
 }

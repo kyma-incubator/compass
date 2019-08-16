@@ -16,10 +16,10 @@ type PageableQuerier struct {
 	tenantColumn    string
 }
 
-func NewPageableQuerier(tableName, tenantColumn, selectedColumns string) *PageableQuerier {
+func NewPageableQuerier(tableName, tenantColumn string, selectedColumns []string) *PageableQuerier {
 	return &PageableQuerier{
 		tableName:       tableName,
-		selectedColumns: selectedColumns,
+		selectedColumns: strings.Join(selectedColumns, ", "),
 		tenantColumn:    tenantColumn,
 	}
 }

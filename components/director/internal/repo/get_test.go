@@ -17,8 +17,8 @@ import (
 func TestGetSingle(t *testing.T) {
 	givenID := uuidA()
 	givenTenant := uuidB()
-	expectedQuery := regexp.QuoteMeta("SELECT id_col,tenant_col,first_name,last_name,age FROM users WHERE tenant_col = $1 AND id_col = $2")
-	sut := repo.NewSingleGetter("users", "tenant_col", "id_col,tenant_col,first_name,last_name,age")
+	expectedQuery := regexp.QuoteMeta("SELECT id_col, tenant_col, first_name, last_name, age FROM users WHERE tenant_col = $1 AND id_col = $2")
+	sut := repo.NewSingleGetter("users", "tenant_col", []string{"id_col", "tenant_col", "first_name", "last_name", "age"})
 
 	t.Run("success", func(t *testing.T) {
 		// GIVEN

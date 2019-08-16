@@ -60,8 +60,8 @@ func TestRepositoryCreateLabelDefinition(t *testing.T) {
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID}, nil)
-		escapedQuery := regexp.QuoteMeta("insert into public.label_definitions (id,tenant_id,key) values(?,?,?)")
-		dbMock.ExpectExec(escapedQuery).WithArgs(labelDefID, tenantID, "some-key").WillReturnResult(sqlmock.NewResult(1, 1))
+		escapedQuery := regexp.QuoteMeta("insert into public.label_definitions (id,tenant_id,key,schema) values(?,?,?,?)")
+		dbMock.ExpectExec(escapedQuery).WithArgs(labelDefID, tenantID, "some-key", nil).WillReturnResult(sqlmock.NewResult(1, 1))
 		defer dbMock.AssertExpectations(t)
 		sut := labeldef.NewRepository(mockConverter)
 		// WHEN

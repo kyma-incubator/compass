@@ -288,8 +288,8 @@ func TestPgRepository_Update_ShouldUpdateRuntimeEntityFromValidModel(t *testing.
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	defer sqlMock.AssertExpectations(t)
 
-	sqlMock.ExpectExec(fmt.Sprintf(`^UPDATE "public"."runtimes" SET (.+) WHERE "id" = \?$`)).
-		WithArgs(modelRuntime.Name, modelRuntime.Description, modelRuntime.Status.Condition, modelRuntime.Status.Timestamp, modelRuntime.ID).
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "public"."runtimes" SET name = ?, description = ?, status_condition = ?, status_timestamp = ? WHERE tenant_id = ? AND id = ?`)).
+		WithArgs(modelRuntime.Name, modelRuntime.Description, modelRuntime.Status.Condition, modelRuntime.Status.Timestamp, modelRuntime.Tenant, modelRuntime.ID).
 		WillReturnResult(sqlmock.NewResult(-1, 1))
 
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)

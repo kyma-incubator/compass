@@ -12,14 +12,14 @@ import (
 
 type Creator struct {
 	tableName string
-	columns   []string
-	statement string
+	columns   []string // TODO unify with other
 }
 
-func NewCreator(tableName string, fields []string) *Creator {
+func NewCreator(tableName string, columns []string) *Creator {
 	return &Creator{
 		tableName: tableName,
-		columns:   fields,
+		columns:   columns,
+		// TODO tenant column???
 	}
 }
 
