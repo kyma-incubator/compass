@@ -782,3 +782,97 @@ func TestRepository_DeleteAll(t *testing.T) {
 		require.Contains(t, err.Error(), "unable to fetch database from context")
 	})
 }
+func TestRepository_DeleteByKey(t *testing.T) {
+
+	tenant := "tenant"
+	key := "key"
+
+	t.Run("Success - Deleted labels", func(t *testing.T) {
+		// GIVEN
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+
+		repo := label.NewRepository(mockConverter)
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		escapedQuery := regexp.QuoteMeta(`DELETE FROM "public"."labels" WHERE "key" = $1 AND "tenant_id" = $2`)
+		dbMock.ExpectExec(escapedQuery).WithArgs(key, tenant).WillReturnResult(sqlmock.NewResult(1, 1))
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		// WHEN
+		err := repo.DeleteByKey(ctx, tenant, key)
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("Error - can't fetch persistence from context", func(t *testing.T) {
+		repo := label.NewRepository(nil)
+		// WHEN
+		err := repo.DeleteByKey(context.TODO(), tenant, key)
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "unable to fetch database from context")
+	})
+
+	t.Run("Error - Operation", func(t *testing.T) {
+		// GIVEN
+		testErr := errors.New("Test err")
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+
+		repo := label.NewRepository(mockConverter)
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		escapedQuery := regexp.QuoteMeta(`DELETE FROM "public"."labels" WHERE "key" = $1 AND "tenant_id" = $2`)
+		dbMock.ExpectExec(escapedQuery).WithArgs(key, tenant).WillReturnError(testErr)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		// WHEN
+		err := repo.DeleteByKey(ctx, tenant, key)
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), testErr.Error())
+	})
+
+	t.Run("Error - Missing persistence", func(t *testing.T) {
+		// GIVEN
+		repo := label.NewRepository(nil)
+		objType := model.RuntimeLabelableObject
+		objID := "foo"
+
+		// WHEN
+		err := repo.DeleteAll(context.TODO(), "tenant", objType, objID)
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "unable to fetch database from context")
+	})
+
+	t.Run("Error - No rows were affected", func(t *testing.T) {
+		// GIVEN
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+
+		repo := label.NewRepository(mockConverter)
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		escapedQuery := regexp.QuoteMeta(`DELETE FROM "public"."labels" WHERE "key" = $1 AND "tenant_id" = $2`)
+		dbMock.ExpectExec(escapedQuery).WithArgs(key, tenant).WillReturnResult(sqlmock.NewResult(1, 0))
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		// WHEN
+		err := repo.DeleteByKey(ctx, tenant, key)
+		// THEN
+		require.Error(t, err)
+		assert.EqualError(t, err, "no rows were affected by query")
+	})
+}

@@ -41,6 +41,7 @@ type LabelRepository interface {
 	ListByKey(ctx context.Context, tenant, key string) ([]*model.Label, error)
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 	DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error
+	DeleteByKey(ctx context.Context, tenant string, key string) error
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -112,17 +113,10 @@ func (s *service) Delete(ctx context.Context, tenant, key string, deleteRelatedL
 		return fmt.Errorf("Label Definition with key %s can not be deleted", model.ScenariosKey)
 	}
 
-	if deleteRelatedLabels == true {
-		labels, err := s.labelRepo.ListByKey(ctx, tenant, key)
+	if deleteRelatedLabels {
+		err := s.labelRepo.DeleteByKey(ctx, tenant, key)
 		if err != nil {
-			return errors.Wrapf(err, "while receiving existing labels with key \"%s\"", key)
-		}
-
-		for _, label := range labels {
-			err = s.labelRepo.Delete(ctx, tenant, label.ObjectType, label.ObjectID, label.Key)
-			if err != nil {
-				return errors.Wrapf(err, "while deleting label with key \"%s\"", key)
-			}
+			return errors.Wrapf(err, `while deleting labels with key "%s"`, key)
 		}
 	}
 
