@@ -749,7 +749,7 @@ func TestListLabelDefinitions(t *testing.T) {
 	assert.Contains(t, labelDefinitions, secondLabelDefinition)
 }
 
-func TestDeletingLastScenarioForApplication(t *testing.T) {
+func TestDeleteLastScenarioForApplication(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
 	tenant := uuid.New().String()

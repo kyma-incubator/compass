@@ -25,7 +25,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	}
 	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
-	actualRuntime := graphql.Runtime{}
+	actualRuntime := RuntimeExt{}
 
 	// WHEN
 	createReq := gcli.NewRequest(
@@ -134,7 +134,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	}
 	runtimeInGQL, err = tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
-	actualRuntime = graphql.Runtime{ID: actualRuntime.ID}
+	//actualRuntime = RuntimeExt{ID: actualRuntime.ID}
 	updateRuntimeReq := gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 				result: updateRuntime(id: "%s", in: %s) {
@@ -174,7 +174,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	}
 	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
-	firstRuntime := graphql.Runtime{}
+	firstRuntime := RuntimeExt{}
 	createReq := gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			result: createRuntime(in: %s) {
@@ -224,7 +224,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	}
 	runtimeInGQL, err = tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
-	secondRuntime := graphql.Runtime{}
+	secondRuntime := RuntimeExt{}
 	createReq = gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			result: createRuntime(in: %s) {

@@ -64,8 +64,8 @@ func createRuntimeFromInput(t *testing.T, ctx context.Context, input *graphql.Ru
 	return &runtime
 }
 
-func getRuntime(t *testing.T, ctx context.Context, runtimeID string) *graphql.Runtime {
-	var runtime graphql.Runtime
+func getRuntime(t *testing.T, ctx context.Context, runtimeID string) *RuntimeExt {
+	var runtime RuntimeExt
 	runtimeQuery := fixRuntimeQuery(runtimeID)
 
 	err := tc.RunQuery(ctx, runtimeQuery, &runtime)
