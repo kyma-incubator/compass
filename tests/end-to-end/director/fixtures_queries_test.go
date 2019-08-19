@@ -52,7 +52,6 @@ func setApplicationLabel(t *testing.T, ctx context.Context, applicationID string
 }
 
 //Runtime
-
 func createRuntime(t *testing.T, ctx context.Context, placeholder string) *graphql.Runtime {
 	input := fixRuntimeInput(placeholder)
 	return createRuntimeFromInput(t, ctx, &input)

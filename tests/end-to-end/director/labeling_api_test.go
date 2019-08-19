@@ -510,10 +510,10 @@ func TestDeleteLabelDefinition(t *testing.T) {
 
 		t.Log("Assert labels were deleted from Application and Runtime")
 		app = getApplication(t, ctx, app.ID)
-		rtm = getRuntime(t, ctx, rtm.ID)
+		runtime := getRuntime(t, ctx, rtm.ID)
 
 		assert.Empty(t, app.Labels[labelKey])
-		assert.Empty(t, rtm.Labels[labelKey])
+		assert.Empty(t, runtime.Labels[labelKey])
 
 		t.Log("Assert Label definition was deleted")
 		ldRequest := fixLabelDefinitionRequest(labelKey)
