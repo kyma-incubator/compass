@@ -113,13 +113,6 @@ func (s *service) Delete(ctx context.Context, tenant, key string, deleteRelatedL
 		return fmt.Errorf("Label Definition with key %s can not be deleted", model.ScenariosKey)
 	}
 
-	if deleteRelatedLabels {
-		err := s.labelRepo.DeleteByKey(ctx, tenant, key)
-		if err != nil {
-			return errors.Wrapf(err, `while deleting labels with key "%s"`, key)
-		}
-	}
-
 	ld, err := s.Get(ctx, tenant, key)
 	if err != nil {
 		return errors.Wrap(err, "while getting Label Definition")
