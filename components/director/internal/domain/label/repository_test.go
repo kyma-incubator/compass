@@ -783,7 +783,6 @@ func TestRepository_DeleteAll(t *testing.T) {
 	})
 }
 func TestRepository_DeleteByKey(t *testing.T) {
-
 	tenant := "tenant"
 	key := "key"
 
