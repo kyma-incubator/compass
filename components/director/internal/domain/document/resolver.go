@@ -82,3 +82,7 @@ func (r *Resolver) DeleteDocument(ctx context.Context, id string) (*graphql.Docu
 
 	return deletedDocument, nil
 }
+
+func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.Document) (*graphql.FetchRequest, error) {
+
+}

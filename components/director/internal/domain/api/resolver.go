@@ -147,3 +147,7 @@ func (r *Resolver) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID st
 
 	return convertedOut, nil
 }
+
+func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*graphql.FetchRequest, error) {
+
+}

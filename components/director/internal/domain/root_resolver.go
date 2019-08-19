@@ -97,6 +97,15 @@ func (r *RootResolver) Application() graphql.ApplicationResolver {
 func (r *RootResolver) Runtime() graphql.RuntimeResolver {
 	return &runtimeResolver{r}
 }
+func (r *RootResolver) APISpec() graphql.APISpecResolver {
+	return &apiSpecResolver{r}
+}
+func (r *RootResolver) Document() graphql.DocumentResolver {
+	return &documentResolver{r}
+}
+func (r *RootResolver) EventAPISpec() graphql.EventAPISpecResolver {
+	return &eventAPISpecResolver{r}
+}
 
 type queryResolver struct {
 	*RootResolver
@@ -242,4 +251,22 @@ type runtimeResolver struct {
 
 func (r *runtimeResolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string) (graphql.Labels, error) {
 	return r.runtime.Labels(ctx, obj, key)
+}
+
+type apiSpecResolver struct{ *RootResolver }
+
+func (r *apiSpecResolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*graphql.FetchRequest, error) {
+	return r.api.FetchRequest(ctx, obj)
+}
+
+type documentResolver struct{ *RootResolver }
+
+func (r *documentResolver) FetchRequest(ctx context.Context, obj *graphql.Document) (*graphql.FetchRequest, error) {
+	return r.doc.FetchRequest(ctx, obj)
+}
+
+type eventAPISpecResolver struct{ *RootResolver }
+
+func (r *eventAPISpecResolver) FetchRequest(ctx context.Context, obj *graphql.EventAPISpec) (*graphql.FetchRequest, error) {
+	return r.eventAPI.FetchRequest(ctx, obj)
 }

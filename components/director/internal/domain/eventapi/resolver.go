@@ -117,3 +117,7 @@ func (r *Resolver) RefetchEventAPISpec(ctx context.Context, eventID string) (*gr
 
 	return convertedOut.Spec, nil
 }
+
+func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventAPISpec) (*graphql.FetchRequest, error) {
+
+}
