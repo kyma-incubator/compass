@@ -61,9 +61,8 @@ type ComplexityRoot struct {
 	Mutation struct {
 		GenerateApplicationToken      func(childComplexity int, appID string) int
 		GenerateRuntimeToken          func(childComplexity int, runtimeID string) int
-		RenewCertificate              func(childComplexity int, csr string) int
 		RevokeCertificate             func(childComplexity int) int
-		SignCertificateSigningRequest func(childComplexity int, csr string, token *string) int
+		SignCertificateSigningRequest func(childComplexity int, csr string) int
 	}
 
 	Query struct {
@@ -78,8 +77,7 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	GenerateApplicationToken(ctx context.Context, appID string) (*Token, error)
 	GenerateRuntimeToken(ctx context.Context, runtimeID string) (*Token, error)
-	SignCertificateSigningRequest(ctx context.Context, csr string, token *string) (*CertificationResult, error)
-	RenewCertificate(ctx context.Context, csr string) (*CertificationResult, error)
+	SignCertificateSigningRequest(ctx context.Context, csr string) (*CertificationResult, error)
 	RevokeCertificate(ctx context.Context) (bool, error)
 }
 type QueryResolver interface {
@@ -174,18 +172,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.GenerateRuntimeToken(childComplexity, args["runtimeID"].(string)), true
 
-	case "Mutation.renewCertificate":
-		if e.complexity.Mutation.RenewCertificate == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_renewCertificate_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.RenewCertificate(childComplexity, args["csr"].(string)), true
-
 	case "Mutation.revokeCertificate":
 		if e.complexity.Mutation.RevokeCertificate == nil {
 			break
@@ -203,7 +189,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SignCertificateSigningRequest(childComplexity, args["csr"].(string), args["token"].(*string)), true
+		return e.complexity.Mutation.SignCertificateSigningRequest(childComplexity, args["csr"].(string)), true
 
 	case "Query.getCertificateSignignRequestInfo":
 		if e.complexity.Query.GetCertificateSignignRequestInfo == nil {
@@ -338,15 +324,7 @@ type Mutation {
     generateRuntimeToken(runtimeID: ID!): Token! # internal?
 
     # Client-Certificates
-    
-    # Currently we have two very similar endpoints. One for signing new CSR
-    # protected by one-time token and second for certificates renewals protected by 
-    # client-certificate. We may consider chaning the implementation to have only one
-    # mutation that will be aware of those two protection mechanisms
-    signCertificateSigningRequest(csr: String!, token: String): CertificationResult!
-
-    # If we decide to reuse signCSR mutation then we can skip this one
-    renewCertificate(csr: String!): CertificationResult!
+    signCertificateSigningRequest(csr: String!): CertificationResult!
 
     """revokes certificate with which the request was issued"""
     revokeCertificate: Boolean!
@@ -385,20 +363,6 @@ func (ec *executionContext) field_Mutation_generateRuntimeToken_args(ctx context
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_renewCertificate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["csr"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["csr"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_signCertificateSigningRequest_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -410,14 +374,6 @@ func (ec *executionContext) field_Mutation_signCertificateSigningRequest_args(ct
 		}
 	}
 	args["csr"] = arg0
-	var arg1 *string
-	if tmp, ok := rawArgs["token"]; ok {
-		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["token"] = arg1
 	return args, nil
 }
 
@@ -758,41 +714,7 @@ func (ec *executionContext) _Mutation_signCertificateSigningRequest(ctx context.
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SignCertificateSigningRequest(rctx, args["csr"].(string), args["token"].(*string))
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*CertificationResult)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNCertificationResult2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋconnectorᚋinternalᚋgqlschemaᚐCertificationResult(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_renewCertificate(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_renewCertificate_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().RenewCertificate(rctx, args["csr"].(string))
+		return ec.resolvers.Mutation().SignCertificateSigningRequest(rctx, args["csr"].(string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -1916,11 +1838,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "signCertificateSigningRequest":
 			out.Values[i] = ec._Mutation_signCertificateSigningRequest(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "renewCertificate":
-			out.Values[i] = ec._Mutation_renewCertificate(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
