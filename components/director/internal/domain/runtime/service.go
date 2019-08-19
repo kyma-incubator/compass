@@ -19,7 +19,7 @@ type RuntimeRepository interface {
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
 	Create(ctx context.Context, item *model.Runtime) error
 	Update(ctx context.Context, item *model.Runtime) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, tenant, id string) error
 }
 
 //go:generate mockery -name=LabelRepository -output=automock -outpkg=automock -case=underscore
@@ -179,15 +179,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	exists, err := s.repo.Exists(ctx, rtmTenant, id)
-	if err != nil {
-		return errors.Wrap(err, "while getting Runtime")
-	}
-	if !exists {
-		return fmt.Errorf("Runtime %s doesn't exist", id)
-	}
-
-	err = s.repo.Delete(ctx, id)
+	err = s.repo.Delete(ctx, rtmTenant, id)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting Runtime")
 	}
