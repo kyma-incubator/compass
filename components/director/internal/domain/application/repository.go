@@ -81,7 +81,7 @@ func (r *inMemoryRepository) ListByScenarios(ctx context.Context, tenantUUID uui
 		return nil, errors.Wrap(err, "while creating filter query")
 	}
 
-	var apps []interface{}
+	var apps []string
 
 	err = persist.Select(&apps, stmt)
 
@@ -99,12 +99,7 @@ func (r *inMemoryRepository) ListByScenarios(ctx context.Context, tenantUUID uui
 	var items []*model.Application
 
 	for _, id := range apps {
-		appID, ok := id.(string)
-		if !ok {
-			return nil, errors.New("while parsing application IDs")
-		}
-		//TODO remove it after implementing real PostgreSQL repository
-		app, found := r.store[appID]
+		app, found := r.store[id]
 		if found {
 			items = append(items, app)
 		}
