@@ -583,6 +583,7 @@ func TestServiceDelete(t *testing.T) {
 			Tenant: tnt,
 		}
 		deleteRelatedResources := true
+		mockRepository.On("GetByKey", ctx, tnt, given.Key).Return(&given, nil).Once()
 		mockLabelRepository.On("DeleteByKey", ctx, tnt, given.Key).Return(testErr).Once()
 
 		sut := labeldef.NewService(mockRepository, mockLabelRepository, nil)
