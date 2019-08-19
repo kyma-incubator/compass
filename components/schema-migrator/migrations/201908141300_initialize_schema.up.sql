@@ -42,7 +42,7 @@ CREATE TABLE applications (
 );
 
 ALTER TABLE applications
-    ADD CONSTRAINT application_id_name_unique UNIQUE (tenant_id, name);
+    ADD CONSTRAINT application_tenant_id_name_unique UNIQUE (tenant_id, name);
 
 CREATE INDEX ON applications (tenant_id);
 CREATE UNIQUE INDEX ON applications (tenant_id, id);
@@ -180,7 +180,6 @@ CREATE TABLE label_definitions (
 
 CREATE INDEX ON label_definitions (tenant_id);
 CREATE UNIQUE INDEX ON label_definitions (tenant_id, key);
-CREATE UNIQUE INDEX ON label_definitions (tenant_id, id);
 
 -- Label
 
@@ -238,11 +237,11 @@ CREATE UNIQUE INDEX ON fetch_requests (tenant_id, api_def_id, event_api_def_id, 
 CREATE UNIQUE INDEX ON fetch_requests (tenant_id, id);
 
 ALTER TABLE api_definitions
-    ADD fetch_request_id uuid,
-    ADD foreign key (tenant_id, fetch_request_id) references fetch_requests (tenant_id, id) ON DELETE CASCADE;
-ALTER TABLE documents
-    ADD fetch_request_id uuid,
-    ADD foreign key (tenant_id, fetch_request_id) references fetch_requests (tenant_id, id) ON DELETE CASCADE;
+    ADD spec_fetch_request_id uuid,
+    ADD foreign key (tenant_id, spec_fetch_request_id) references fetch_requests (tenant_id, id) ON DELETE CASCADE;
 ALTER TABLE event_api_definitions
+    ADD spec_fetch_request_id uuid,
+    ADD foreign key (tenant_id, spec_fetch_request_id) references fetch_requests (tenant_id, id) ON DELETE CASCADE;
+ALTER TABLE documents
     ADD fetch_request_id uuid,
     ADD foreign key (tenant_id, fetch_request_id) references fetch_requests (tenant_id, id) ON DELETE CASCADE;

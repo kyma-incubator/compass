@@ -18,10 +18,10 @@ DROP TYPE runtime_status_condition;
 -- Fetch Request
 
 ALTER TABLE api_definitions
-    DROP COLUMN fetch_request_id;
-ALTER TABLE documents
-    DROP COLUMN fetch_request_id;
+    DROP COLUMN spec_fetch_request_id;
 ALTER TABLE event_api_definitions
+    DROP COLUMN spec_fetch_request_id;
+ALTER TABLE documents
     DROP COLUMN fetch_request_id;
 
 DROP TABLE fetch_requests;
