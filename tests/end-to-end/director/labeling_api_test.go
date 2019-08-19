@@ -434,7 +434,7 @@ func TestDeleteLabelDefinition(t *testing.T) {
 	ldInputGql, err := tc.graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
 	require.NoError(t, err)
 
-	t.Run("Try to delete Label Definition while it's being used by some labels - should fail", func(t *testing.T) {
+	t.Run("Try to delete Label Definition while it's being used by some labels with deleteRelatedLabels parameter set to false - should fail", func(t *testing.T) {
 
 		t.Log("Create application")
 		app := createApplication(t, ctx, "app")
@@ -465,6 +465,60 @@ func TestDeleteLabelDefinition(t *testing.T) {
 		require.Error(t, err)
 		assert.EqualError(t, err, "graphql: could not delete label definition, it is already used by at least one label")
 		saveQueryInExamples(t, deleteLabelDefinitionRequest.Query(), "delete label definition")
+	})
+
+	t.Run("Delete Label Definition while it's being used by some labels with deleteRelatedLabels parameter set to true - should succeed", func(t *testing.T) {
+
+		t.Log("Create LabelDefinition")
+		createLabelDefinitionRequest := fixCreateLabelDefinitionRequest(ldInputGql)
+		ld := graphql.LabelDefinition{}
+
+		err = tc.RunQuery(ctx, createLabelDefinitionRequest, ld)
+		require.NoError(t, err)
+
+		t.Log("Create application")
+		app := createApplication(t, ctx, "app")
+		defer deleteApplication(t, app.ID)
+
+		t.Log("Create runtime")
+		rtm := createRuntime(t, ctx, "rtm")
+		defer deleteRuntimeInTenant(t, rtm.ID, defaultTenant)
+
+		t.Log("Set label on application")
+
+		validAppLabelValue := map[string]interface{}{labelKey: "app"}
+		setLabelRequest := fixSetApplicationLabelRequest(app.ID, labelKey, validAppLabelValue)
+		appLabel := graphql.Label{}
+
+		err = tc.RunQuery(ctx, setLabelRequest, &appLabel)
+		require.NoError(t, err)
+
+		t.Log("Set label on runtime")
+
+		validRuntimeLabelValue := map[string]interface{}{labelKey: "rtm"}
+		setLabelRequest = fixSetRuntimeLabelRequest(rtm.ID, labelKey, validRuntimeLabelValue)
+		runtimeLabel := graphql.Label{}
+
+		err = tc.RunQuery(ctx, setLabelRequest, &runtimeLabel)
+		require.NoError(t, err)
+
+		t.Log("Delete Label Definition while it's being used by some labels")
+
+		deleteLabelDefinitionRequest := fixDeleteLabelDefinition(labelKey, true)
+		err = tc.RunQuery(context.Background(), deleteLabelDefinitionRequest, nil)
+		require.NoError(t, err)
+
+		t.Log("Assert labels were deleted from Application and Runtime")
+		app = getApplication(t, ctx, app.ID)
+		rtm = getRuntime(t, ctx, rtm.ID)
+
+		assert.Empty(t, app.Labels[labelKey])
+		assert.Empty(t, rtm.Labels[labelKey])
+
+		t.Log("Assert Label definition was deleted")
+		ldRequest := fixLabelDefinitionRequest(labelKey)
+		errMsg := fmt.Sprintf("graphql: label definition with key '%s' does not exist", labelKey)
+		require.Error(t, tc.RunQuery(ctx, ldRequest, nil), errMsg)
 	})
 
 	t.Run("Delete Label from application, then delete the Label Definition - should succeed", func(t *testing.T) {

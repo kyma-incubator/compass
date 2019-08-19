@@ -1058,6 +1058,14 @@ func generateSampleApplicationInputWithName(placeholder, name string) graphql.Ap
 	}
 }
 
+func generateSampleRuntimeInputWithName(placeholder, name string) graphql.RuntimeInput {
+	return graphql.RuntimeInput{
+		Name:        name,
+		Description: &placeholder,
+		Labels:      &graphql.Labels{placeholder: []interface{}{placeholder}},
+	}
+}
+
 func deleteApplicationInTenant(t *testing.T, id string, tenant string) {
 	req := gcli.NewRequest(
 		fmt.Sprintf(`mutation {

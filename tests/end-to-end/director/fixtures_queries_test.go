@@ -9,6 +9,13 @@ import (
 )
 
 //Application
+func getApplication(t *testing.T, ctx context.Context, id string) ApplicationExt {
+	appRequest := fixApplicationRequest(id)
+	app := ApplicationExt{}
+	require.NoError(t, tc.RunQuery(ctx, appRequest, &app))
+	return app
+}
+
 func createApplication(t *testing.T, ctx context.Context, name string) ApplicationExt {
 	in := generateSampleApplicationInputWithName("first", name)
 	return createApplicationFromInputWithinTenant(t, ctx, in, defaultTenant)
