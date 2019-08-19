@@ -177,18 +177,9 @@ func (r *repository) DeleteByKey(ctx context.Context, tenant string, key string)
 	}
 
 	stmt := fmt.Sprintf(`DELETE FROM %s WHERE "key" = $1 AND "tenant_id" = $2`, tableName)
-	result, err := persist.Exec(stmt, key, tenant)
+	_, err = persist.Exec(stmt, key, tenant)
 	if err != nil {
 		return errors.Wrapf(err, `while deleting all Label entities from database with key "%s"`, key)
-	}
-
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return errors.Wrap(err, "while receiving rows affected by query")
-	}
-
-	if rows == 0 {
-		return errors.New("no rows were affected by query")
 	}
 
 	return nil
