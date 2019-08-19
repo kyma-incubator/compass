@@ -35,7 +35,10 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	APISpec() APISpecResolver
 	Application() ApplicationResolver
+	Document() DocumentResolver
+	EventAPISpec() EventAPISpecResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
 	Runtime() RuntimeResolver
@@ -292,6 +295,9 @@ type ComplexityRoot struct {
 	}
 }
 
+type APISpecResolver interface {
+	FetchRequest(ctx context.Context, obj *APISpec) (*FetchRequest, error)
+}
 type ApplicationResolver interface {
 	Labels(ctx context.Context, obj *Application, key *string) (Labels, error)
 
@@ -300,6 +306,12 @@ type ApplicationResolver interface {
 	Apis(ctx context.Context, obj *Application, group *string, first *int, after *PageCursor) (*APIDefinitionPage, error)
 	EventAPIs(ctx context.Context, obj *Application, group *string, first *int, after *PageCursor) (*EventAPIDefinitionPage, error)
 	Documents(ctx context.Context, obj *Application, first *int, after *PageCursor) (*DocumentPage, error)
+}
+type DocumentResolver interface {
+	FetchRequest(ctx context.Context, obj *Document) (*FetchRequest, error)
+}
+type EventAPISpecResolver interface {
+	FetchRequest(ctx context.Context, obj *EventAPISpec) (*FetchRequest, error)
 }
 type MutationResolver interface {
 	CreateApplication(ctx context.Context, in ApplicationInput) (*Application, error)
@@ -3596,13 +3608,13 @@ func (ec *executionContext) _APISpec_fetchRequest(ctx context.Context, field gra
 		Object:   "APISpec",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.FetchRequest, nil
+		return ec.resolvers.APISpec().FetchRequest(rctx, obj)
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -4536,13 +4548,13 @@ func (ec *executionContext) _Document_fetchRequest(ctx context.Context, field gr
 		Object:   "Document",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.FetchRequest, nil
+		return ec.resolvers.Document().FetchRequest(rctx, obj)
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -4980,13 +4992,13 @@ func (ec *executionContext) _EventAPISpec_fetchRequest(ctx context.Context, fiel
 		Object:   "EventAPISpec",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.FetchRequest, nil
+		return ec.resolvers.EventAPISpec().FetchRequest(rctx, obj)
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -9114,15 +9126,24 @@ func (ec *executionContext) _APISpec(ctx context.Context, sel ast.SelectionSet, 
 		case "format":
 			out.Values[i] = ec._APISpec_format(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "type":
 			out.Values[i] = ec._APISpec_type(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "fetchRequest":
-			out.Values[i] = ec._APISpec_fetchRequest(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._APISpec_fetchRequest(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9453,39 +9474,48 @@ func (ec *executionContext) _Document(ctx context.Context, sel ast.SelectionSet,
 		case "id":
 			out.Values[i] = ec._Document_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "applicationID":
 			out.Values[i] = ec._Document_applicationID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "title":
 			out.Values[i] = ec._Document_title(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "displayName":
 			out.Values[i] = ec._Document_displayName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "description":
 			out.Values[i] = ec._Document_description(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "format":
 			out.Values[i] = ec._Document_format(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "kind":
 			out.Values[i] = ec._Document_kind(ctx, field, obj)
 		case "data":
 			out.Values[i] = ec._Document_data(ctx, field, obj)
 		case "fetchRequest":
-			out.Values[i] = ec._Document_fetchRequest(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Document_fetchRequest(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9635,15 +9665,24 @@ func (ec *executionContext) _EventAPISpec(ctx context.Context, sel ast.Selection
 		case "type":
 			out.Values[i] = ec._EventAPISpec_type(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "format":
 			out.Values[i] = ec._EventAPISpec_format(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "fetchRequest":
-			out.Values[i] = ec._EventAPISpec_fetchRequest(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._EventAPISpec_fetchRequest(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
