@@ -15,7 +15,7 @@ import (
 
 const runtimeTable string = `"public"."runtimes"`
 
-var runtimeFields = []string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth"}
+var runtimeColumns = []string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth"}
 
 type pgRepository struct {
 	*repo.ExistQuerier
@@ -29,10 +29,10 @@ type pgRepository struct {
 func NewPostgresRepository() *pgRepository {
 	return &pgRepository{
 		ExistQuerier:    repo.NewExistQuerier(runtimeTable, "tenant_id"),
-		SingleGetter:    repo.NewSingleGetter(runtimeTable, "tenant_id", runtimeFields),
+		SingleGetter:    repo.NewSingleGetter(runtimeTable, "tenant_id", runtimeColumns),
 		Deleter:         repo.NewDeleter(runtimeTable, "tenant_id"),
-		PageableQuerier: repo.NewPageableQuerier(runtimeTable, "tenant_id", runtimeFields),
-		Creator:         repo.NewCreator(runtimeTable, runtimeFields),
+		PageableQuerier: repo.NewPageableQuerier(runtimeTable, "tenant_id", runtimeColumns),
+		Creator:         repo.NewCreator(runtimeTable, runtimeColumns),
 		Updater:         repo.NewUpdater(runtimeTable, []string{"name", "description", "status_condition", "status_timestamp"}, "tenant_id", []string{"id"}),
 	}
 }

@@ -67,6 +67,7 @@ func TestCreate(t *testing.T) {
 		// THEN
 		require.True(t, repo.IsNotUnique(err))
 	})
+
 	t.Run("returns error if missing persistence context", func(t *testing.T) {
 		// WHEN
 		err := sut.Create(context.TODO(), User{})
