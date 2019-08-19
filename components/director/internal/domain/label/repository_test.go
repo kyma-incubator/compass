@@ -853,7 +853,7 @@ func TestRepository_DeleteByKey(t *testing.T) {
 		require.Contains(t, err.Error(), "unable to fetch database from context")
 	})
 
-	t.Run("Error - No rows were affected", func(t *testing.T) {
+	t.Run("No rows were affected - should succeed", func(t *testing.T) {
 		// GIVEN
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
@@ -871,7 +871,6 @@ func TestRepository_DeleteByKey(t *testing.T) {
 		// WHEN
 		err := repo.DeleteByKey(ctx, tenant, key)
 		// THEN
-		require.Error(t, err)
-		assert.EqualError(t, err, "no rows were affected by query")
+		require.NoError(t, err)
 	})
 }
