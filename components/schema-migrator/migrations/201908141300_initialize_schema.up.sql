@@ -178,7 +178,8 @@ CREATE TABLE labels (
     -- app_id uuid REFERENCES applications (id) ON DELETE CASCADE,
     runtime_id uuid REFERENCES runtimes (id) ON DELETE CASCADE,
     key varchar(256) NOT NULL,
-    value jsonb
+    value jsonb,
+    CONSTRAINT valid_refs CHECK (app_id IS NOT NULL OR runtime_id IS NOT NULL)
 );
 
 CREATE INDEX ON labels (tenant_id);
@@ -208,8 +209,9 @@ CREATE TABLE fetch_requests (
     auth jsonb,
     mode fetch_request_mode NOT NULL,
     filter varchar(256),
-    status_condition fetch_request_status_condition NOT NULL,
-    status_timestamp timestamp NOT NULL
+    status_condition fetch_request_status_condition DEFAULT 'INITIAL' ::fetch_request_status_condition NOT NULL,
+    status_timestamp timestamp NOT NULL,
+    CONSTRAINT valid_refs CHECK (api_def_id IS NOT NULL OR event_api_def_id IS NOT NULL OR document_id IS NOT NULL)
 );
 
 CREATE INDEX ON fetch_requests (tenant_id);
