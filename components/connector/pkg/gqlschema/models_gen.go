@@ -3,6 +3,7 @@
 package gqlschema
 
 type CertificateSigningRequestInfo struct {
+	Token               *Token               `json:"token"`
 	ManagementPlaneInfo *ManagementPlaneInfo `json:"managementPlaneInfo"`
 	Subject             string               `json:"subject"`
 	KeyAlgorithm        string               `json:"keyAlgorithm"`
