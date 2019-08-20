@@ -10,8 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/vrischmann/envconfig"
 
-	"github.com/kyma-incubator/compass/components/connector/internal/api"
-	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
+	"github.com/kyma-incubator/compass/components/connector/internal/api/gqlschema"
 )
 
 type config struct {
@@ -26,7 +25,7 @@ func main() {
 	exitOnError(err, "Error while loading app config")
 
 	gqlCfg := gqlschema.Config{
-		Resolvers: &api.Resolver{},
+		Resolvers: &gqlschema.Resolver{},
 	}
 	executableSchema := gqlschema.NewExecutableSchema(gqlCfg)
 
