@@ -6,15 +6,25 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
 )
 
-type CertificateResolver struct {
+type CertificateResolver interface {
+	SignCertificateSigningRequest(ctx context.Context, csr string) (*gqlschema.CertificationResult, error)
+	RevokeCertificate(ctx context.Context) (bool, error)
+	GetCertificateSigningRequestInfo(ctx context.Context) (*gqlschema.CertificateSigningRequestInfo, error)
 }
 
-func (r *CertificateResolver) SignCertificateSigningRequest(ctx context.Context, csr string) (*gqlschema.CertificationResult, error) {
+type certificateResolver struct {
+}
+
+func NewCertificateResolver() CertificateResolver {
+	return &certificateResolver{}
+}
+
+func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context, csr string) (*gqlschema.CertificationResult, error) {
 	panic("not implemented")
 }
-func (r *CertificateResolver) RevokeCertificate(ctx context.Context) (bool, error) {
+func (r *certificateResolver) RevokeCertificate(ctx context.Context) (bool, error) {
 	panic("not implemented")
 }
-func (r *CertificateResolver) GetCertificateSignignRequestInfo(ctx context.Context) (*gqlschema.CertificateSigningRequestInfo, error) {
+func (r *certificateResolver) GetCertificateSigningRequestInfo(ctx context.Context) (*gqlschema.CertificateSigningRequestInfo, error) {
 	panic("not implemented")
 }

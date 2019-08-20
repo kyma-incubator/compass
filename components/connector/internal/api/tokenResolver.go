@@ -6,12 +6,21 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
 )
 
-type TokenResolver struct {
+type TokenResolver interface {
+	GenerateApplicationToken(ctx context.Context, appID string) (*gqlschema.Token, error)
+	GenerateRuntimeToken(ctx context.Context, runtimeID string) (*gqlschema.Token, error)
 }
 
-func (r *TokenResolver) GenerateApplicationToken(ctx context.Context, appID string) (*gqlschema.Token, error) {
+type tokenResolver struct {
+}
+
+func NewTokenResolver() TokenResolver {
+	return &tokenResolver{}
+}
+
+func (r *tokenResolver) GenerateApplicationToken(ctx context.Context, appID string) (*gqlschema.Token, error) {
 	panic("not implemented")
 }
-func (r *TokenResolver) GenerateRuntimeToken(ctx context.Context, runtimeID string) (*gqlschema.Token, error) {
+func (r *tokenResolver) GenerateRuntimeToken(ctx context.Context, runtimeID string) (*gqlschema.Token, error) {
 	panic("not implemented")
 }

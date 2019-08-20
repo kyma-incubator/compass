@@ -67,7 +67,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		GetCertificateSignignRequestInfo func(childComplexity int) int
+		GetCertificateSigningRequestInfo func(childComplexity int) int
 	}
 
 	Token struct {
@@ -82,7 +82,7 @@ type MutationResolver interface {
 	RevokeCertificate(ctx context.Context) (bool, error)
 }
 type QueryResolver interface {
-	GetCertificateSignignRequestInfo(ctx context.Context) (*CertificateSigningRequestInfo, error)
+	GetCertificateSigningRequestInfo(ctx context.Context) (*CertificateSigningRequestInfo, error)
 }
 
 type executableSchema struct {
@@ -199,12 +199,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.SignCertificateSigningRequest(childComplexity, args["csr"].(string)), true
 
-	case "Query.getCertificateSignignRequestInfo":
-		if e.complexity.Query.GetCertificateSignignRequestInfo == nil {
+	case "Query.getCertificateSigningRequestInfo":
+		if e.complexity.Query.GetCertificateSigningRequestInfo == nil {
 			break
 		}
 
-		return e.complexity.Query.GetCertificateSignignRequestInfo(childComplexity), true
+		return e.complexity.Query.GetCertificateSigningRequestInfo(childComplexity), true
 
 	case "Token.token":
 		if e.complexity.Token.Token == nil {
@@ -319,7 +319,7 @@ type Query {
     # Client-Certificates
     
     """returns subject that should be placed in the signing request"""
-    getCertificateSignignRequestInfo: CertificateSigningRequestInfo!
+    getCertificateSigningRequestInfo: CertificateSigningRequestInfo!
 }
 
 type Mutation {
@@ -772,7 +772,7 @@ func (ec *executionContext) _Mutation_revokeCertificate(ctx context.Context, fie
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_getCertificateSignignRequestInfo(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Query_getCertificateSigningRequestInfo(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -785,7 +785,7 @@ func (ec *executionContext) _Query_getCertificateSignignRequestInfo(ctx context.
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetCertificateSignignRequestInfo(rctx)
+		return ec.resolvers.Query().GetCertificateSigningRequestInfo(rctx)
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -1887,7 +1887,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "getCertificateSignignRequestInfo":
+		case "getCertificateSigningRequestInfo":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -1895,7 +1895,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_getCertificateSignignRequestInfo(ctx, field)
+				res = ec._Query_getCertificateSigningRequestInfo(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

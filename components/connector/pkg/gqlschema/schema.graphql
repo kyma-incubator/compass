@@ -27,7 +27,7 @@ type Query {
     # Client-Certificates
     
     """returns subject that should be placed in the signing request"""
-    getCertificateSignignRequestInfo: CertificateSigningRequestInfo!
+    getCertificateSigningRequestInfo: CertificateSigningRequestInfo!
 }
 
 type Mutation {
