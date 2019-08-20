@@ -16,6 +16,9 @@ func TestFetchRequestInput_ToFetchRequest(t *testing.T) {
 	timestamp := time.Now()
 	testCases := []struct {
 		Name         string
+		InputID string
+		InputReferenceObjectType model.FetchRequestReferenceObjectType
+		InputReferenceObjectID string
 		InputFRInput *model.FetchRequestInput
 		Expected     *model.FetchRequest
 	}{
@@ -70,7 +73,7 @@ func TestFetchRequestInput_ToFetchRequest(t *testing.T) {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.InputFRInput.ToFetchRequest(timestamp)
+			result := testCase.InputFRInput.ToFetchRequest(timestamp, testCase.InputID,  testCase.InputReferenceObjectType, testCase.InputReferenceObjectID)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

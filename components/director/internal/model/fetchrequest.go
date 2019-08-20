@@ -4,12 +4,23 @@ import "time"
 
 //  Compass performs fetch to validate if request is correct and stores a copy
 type FetchRequest struct {
+	ID string
 	URL    string
 	Auth   *Auth
 	Mode   FetchMode
 	Filter *string
 	Status *FetchRequestStatus
+	ObjectType FetchRequestReferenceObjectType
+	ObjectID string
 }
+
+type FetchRequestReferenceObjectType string
+
+const (
+	APIFetchRequestReference FetchRequestReferenceObjectType = "API"
+	EventAPIFetchRequestReference FetchRequestReferenceObjectType = "EventAPI"
+	DocumentFetchRequestReference FetchRequestReferenceObjectType = "Document"
+)
 
 type FetchRequestStatus struct {
 	Condition FetchRequestStatusCondition
@@ -39,7 +50,7 @@ type FetchRequestInput struct {
 	Filter *string
 }
 
-func (f *FetchRequestInput) ToFetchRequest(timestamp time.Time) *FetchRequest {
+func (f *FetchRequestInput) ToFetchRequest(timestamp time.Time, id string, objectType FetchRequestReferenceObjectType, objectID string) *FetchRequest {
 	if f == nil {
 		return nil
 	}
@@ -58,5 +69,7 @@ func (f *FetchRequestInput) ToFetchRequest(timestamp time.Time) *FetchRequest {
 			Condition: FetchRequestStatusConditionInitial,
 			Timestamp: timestamp,
 		},
+		ObjectType: objectType,
+		ObjectID: objectID,
 	}
 }
