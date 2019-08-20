@@ -6,6 +6,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
 )
 
+//go:generate mockery -name=CertificateResolver
 type CertificateResolver interface {
 	SignCertificateSigningRequest(ctx context.Context, csr string) (*gqlschema.CertificationResult, error)
 	RevokeCertificate(ctx context.Context) (bool, error)
