@@ -9,6 +9,13 @@ import (
 )
 
 //Application
+func getApplication(t *testing.T, ctx context.Context, id string) ApplicationExt {
+	appRequest := fixApplicationRequest(id)
+	app := ApplicationExt{}
+	require.NoError(t, tc.RunQuery(ctx, appRequest, &app))
+	return app
+}
+
 func createApplication(t *testing.T, ctx context.Context, name string) ApplicationExt {
 	in := generateSampleApplicationInputWithName("first", name)
 	return createApplicationFromInputWithinTenant(t, ctx, in, defaultTenant)
@@ -45,7 +52,6 @@ func setApplicationLabel(t *testing.T, ctx context.Context, applicationID string
 }
 
 //Runtime
-
 func createRuntime(t *testing.T, ctx context.Context, placeholder string) *graphql.Runtime {
 	input := fixRuntimeInput(placeholder)
 	return createRuntimeFromInput(t, ctx, &input)
