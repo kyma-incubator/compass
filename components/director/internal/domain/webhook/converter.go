@@ -1,8 +1,12 @@
 package webhook
 
 import (
+	"database/sql"
+	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/pkg/errors"
 )
 
 //go:generate mockery -name=AuthConverter -output=automock -outpkg=automock -case=underscore
@@ -69,4 +73,54 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.WebhookInput) []*mode
 	}
 
 	return inputs
+}
+
+func (c *converter) ToEntity(in model.Webhook) (Entity, error) {
+	var optionalAuth sql.NullString
+	if in.Auth != nil {
+		b, err := json.Marshal(in.Auth)
+		if err != nil {
+			return Entity{}, errors.Wrap(err, "while marshalling Auth")
+		}
+
+		if err := optionalAuth.Scan(b); err != nil {
+			return Entity{}, errors.Wrap(err, "while scanning optional Auth")
+		}
+	}
+	return Entity{
+		ID:       in.ID,
+		Type:     string(in.Type),
+		TenantID: in.Tenant,
+		URL:      in.URL,
+		AppID:    in.ApplicationID,
+		Auth:     optionalAuth,
+	}, nil
+}
+
+func (c *converter) FromEntity(in Entity) (model.Webhook, error) {
+	var auth *model.Auth
+	if in.Auth.Valid {
+		auth = &model.Auth{}
+		val, err := in.Auth.Value()
+		if err != nil {
+			return model.Webhook{}, errors.Wrap(err, "while reading Auth from Entity")
+		}
+
+		b, ok := val.(string)
+		if !ok {
+			return model.Webhook{}, errors.New("Auth should be slice of bytes")
+		}
+		if err := json.Unmarshal([]byte(b), auth); err != nil {
+			return model.Webhook{}, errors.Wrap(err, "while unmarshaling Auth")
+		}
+
+	}
+	return model.Webhook{
+		ID:            in.ID,
+		Type:          model.WebhookType(in.Type),
+		Tenant:        in.TenantID,
+		URL:           in.URL,
+		ApplicationID: in.AppID,
+		Auth:          auth,
+	}, nil
 }

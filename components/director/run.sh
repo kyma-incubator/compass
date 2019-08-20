@@ -11,6 +11,21 @@ set -e
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+
+    key="$1"
+
+    case ${key} in
+        --skip-app-start)
+            SKIP_APP_START=true
+            shift # past argument
+        ;;
+    esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
 
 POSTGRES_CONTAINER="test-postgres"
 POSTGRES_VERSION="11"
@@ -59,4 +74,13 @@ echo -e "${GREEN}Populate DB${NC}"
 
 PGPASSWORD=pwd psql -U ${DB_USER} -h 127.0.0.1 -f <(cat ${ROOT_PATH}/../schema-migrator/migrations/*.up.sql) ${DB_NAME}
 
+if [[  ${SKIP_APP_START} ]]; then
+        echo -e "${GREEN}Skipping starting application${NC}"
+        while true
+        do
+            sleep 1
+        done
+fi
+
+echo -e "${GREEN}Starting aapplication${NC}"
 APP_DB_USER=${DB_USER} APP_DB_PASSWORD=${DB_PWD} APP_DB_NAME=${DB_NAME} go run ${ROOT_PATH}/cmd/main.go

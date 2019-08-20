@@ -12,6 +12,7 @@ func TestApplicationWebhookInput_ToWebhook(t *testing.T) {
 	// given
 	applicationID := "foo"
 	id := "bar"
+	tenant := "baz"
 	testCases := []struct {
 		Name     string
 		Input    *model.WebhookInput
@@ -32,6 +33,7 @@ func TestApplicationWebhookInput_ToWebhook(t *testing.T) {
 			Expected: &model.Webhook{
 				ApplicationID: applicationID,
 				ID:            id,
+				Tenant:        tenant,
 				Type:          model.WebhookTypeConfigurationChanged,
 				URL:           "foourl",
 				Auth: &model.Auth{
@@ -48,6 +50,7 @@ func TestApplicationWebhookInput_ToWebhook(t *testing.T) {
 			Expected: &model.Webhook{
 				ApplicationID: applicationID,
 				ID:            id,
+				Tenant:        tenant,
 			},
 		},
 		{
@@ -61,7 +64,7 @@ func TestApplicationWebhookInput_ToWebhook(t *testing.T) {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToWebhook(id, applicationID)
+			result := testCase.Input.ToWebhook(id, tenant, applicationID)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

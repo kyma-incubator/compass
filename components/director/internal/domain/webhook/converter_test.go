@@ -1,7 +1,12 @@
 package webhook_test
 
 import (
+	"database/sql"
+	"encoding/json"
 	"testing"
+
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook/automock"
@@ -19,7 +24,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	}{
 		{
 			Name:     "All properties given",
-			Input:    fixModelWebhook("1", "foo", "bar"),
+			Input:    fixModelWebhook("1", "foo", "", "bar"),
 			Expected: fixGQLWebhook("1", "foo", "bar"),
 		},
 		{
@@ -55,8 +60,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// given
 	input := []*model.Webhook{
-		fixModelWebhook("1", "foo", "baz"),
-		fixModelWebhook("2", "bar", "bez"),
+		fixModelWebhook("1", "foo", "", "baz"),
+		fixModelWebhook("2", "bar", "", "bez"),
 		{},
 		nil,
 	}
@@ -144,4 +149,130 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 	// then
 	assert.Equal(t, expected, res)
 	authConv.AssertExpectations(t)
+}
+
+func TestConverter_ToEntity(t *testing.T) {
+	sut := webhook.NewConverter(nil)
+
+	b, err := json.Marshal(givenBasicAuth())
+	require.NoError(t, err)
+	expectedBasicAuthAsString := string(b)
+
+	testCases := map[string]struct {
+		in       model.Webhook
+		expected webhook.Entity
+	}{
+		"success when Auth not provided": {
+			in: model.Webhook{
+				ID:            "givenID",
+				ApplicationID: "givenApplicationID",
+				URL:           "givenURL",
+				Tenant:        "givenTenant",
+				Type:          model.WebhookTypeConfigurationChanged,
+			},
+			expected: webhook.Entity{
+				ID:       "givenID",
+				AppID:    "givenApplicationID",
+				URL:      "givenURL",
+				TenantID: "givenTenant",
+				Type:     "CONFIGURATION_CHANGED",
+				Auth:     sql.NullString{Valid: false},
+			},
+		},
+		"success when Auth provided": {
+			in: model.Webhook{
+				Auth: givenBasicAuth(),
+			},
+			expected: webhook.Entity{
+				Auth: sql.NullString{Valid: true, String: expectedBasicAuthAsString},
+			},
+		},
+	}
+
+	for tn, tc := range testCases {
+		t.Run(tn, func(t *testing.T) {
+			// WHEN
+			actual, err := sut.ToEntity(tc.in)
+			// THEN
+			require.NoError(t, err)
+			assert.Equal(t, tc.expected, actual)
+		})
+	}
+
+}
+
+func TestConverter_FromEntity(t *testing.T) {
+	// GIVEN
+	sut := webhook.NewConverter(nil)
+	b, err := json.Marshal(givenBasicAuth())
+	require.NoError(t, err)
+
+	testCases := map[string]struct {
+		inEntity      webhook.Entity
+		expectedModel model.Webhook
+		expectedErr   error
+	}{
+		"success when Auth not provided": {
+			inEntity: webhook.Entity{
+				ID:       "givenID",
+				TenantID: "givenTenant",
+				Type:     "CONFIGURATION_CHANGED",
+				URL:      "givenURL",
+				AppID:    "givenAppID",
+			},
+			expectedModel: model.Webhook{
+				ID:            "givenID",
+				Tenant:        "givenTenant",
+				Type:          "CONFIGURATION_CHANGED",
+				URL:           "givenURL",
+				ApplicationID: "givenAppID",
+				Auth:          nil,
+			},
+		},
+		"success when Auth provided": {
+			inEntity: webhook.Entity{
+				ID: "givenID",
+				Auth: sql.NullString{
+					Valid:  true,
+					String: string(b),
+				},
+			},
+			expectedModel: model.Webhook{
+				ID:   "givenID",
+				Auth: givenBasicAuth(),
+			},
+		},
+		"got error on unmarshaling JSON": {
+			inEntity: webhook.Entity{
+				Auth: sql.NullString{
+					Valid:  true,
+					String: "it is not even a proper JSON!",
+				},
+			},
+			expectedErr: errors.New("while unmarshaling Auth: invalid character 'i' looking for beginning of value"),
+		},
+	}
+
+	for tn, tc := range testCases {
+		t.Run(tn, func(t *testing.T) {
+			actual, err := sut.FromEntity(tc.inEntity)
+			if tc.expectedErr != nil {
+				require.EqualError(t, err, tc.expectedErr.Error())
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tc.expectedModel, actual)
+		})
+	}
+}
+
+func givenBasicAuth() *model.Auth {
+	return &model.Auth{
+		Credential: model.CredentialData{
+			Basic: &model.BasicCredentialData{
+				Username: "aaa",
+				Password: "bbb",
+			},
+		},
+	}
 }
