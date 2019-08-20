@@ -1,7 +1,10 @@
 package document_test
 
 import (
+	"database/sql"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document/automock"
@@ -144,4 +147,51 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 	// then
 	assert.Equal(t, expected, res)
 	frConv.AssertExpectations(t)
+}
+
+func TestToEntity(t *testing.T) {
+	// GIVEN
+	frConv := &automock.FetchRequestConverter{}
+	sut := document.NewConverter(frConv)
+	// WHEN
+	modelDocument := fixModelDocument("id", "appID")
+	actual, err := sut.ToEntity(*modelDocument)
+	// THEN
+	require.NoError(t, err)
+	assert.Equal(t, "tenant", actual.TenantID)
+	assert.Equal(t, "id", actual.ID)
+	assert.Equal(t, "appID", actual.AppID)
+}
+
+func TestFromEntity(t *testing.T) {
+	// GIVEN
+	frConv := &automock.FetchRequestConverter{}
+	sut := document.NewConverter(frConv)
+	// WHEN
+	id := "id"
+	tenantID := "tenantID"
+
+	actual, err := sut.FromEntity(document.Entity{
+		ID:          id,
+		TenantID:    tenantID,
+		AppID:       "appID",
+		Title:       "title",
+		DisplayName: "dispName",
+		Description: "desc",
+		Format:      "MARKDOWN",
+		Kind: sql.NullString{
+			String: "kind",
+			Valid:  true,
+		},
+		Data: sql.NullString{
+			String: "data",
+			Valid:  true,
+		},
+		FetchRequest: sql.NullString{},
+	})
+	// THEN
+	require.NoError(t, err)
+	assert.Equal(t, id, actual.ID)
+	assert.Equal(t, tenantID, actual.Tenant)
+	assert.Equal(t, "kind", *actual.Kind)
 }

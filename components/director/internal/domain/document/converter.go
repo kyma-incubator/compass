@@ -1,6 +1,8 @@
 package document
 
 import (
+	"database/sql"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
@@ -89,4 +91,53 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.DocumentInput) []*mod
 	}
 
 	return inputs
+}
+
+func (c *converter) ToEntity(in model.Document) (Entity, error) {
+	var nullKind sql.NullString
+	if in.Kind != nil && len(*in.Kind) > 0 {
+		nullKind = sql.NullString{
+			String: *in.Kind,
+			Valid:  true,
+		}
+	}
+
+	var nullData sql.NullString
+	if in.Data != nil && len(*in.Data) > 0 {
+		nullData = sql.NullString{
+			String: *in.Kind,
+			Valid:  true,
+		}
+	}
+
+	out := Entity{
+		ID:           in.ID,
+		AppID:        in.ApplicationID,
+		TenantID:     in.Tenant,
+		Title:        in.Title,
+		DisplayName:  in.DisplayName,
+		Description:  in.Description,
+		Format:       string(in.Format),
+		Kind:         nullKind,
+		Data:         nullData,
+		FetchRequest: sql.NullString{},
+	}
+
+	return out, nil
+}
+
+func (c *converter) FromEntity(in Entity) (model.Document, error) {
+	out := model.Document{
+		ID:            in.ID,
+		ApplicationID: in.AppID,
+		Tenant:        in.TenantID,
+		Title:         in.Title,
+		DisplayName:   in.DisplayName,
+		Description:   in.Description,
+		Format:        model.DocumentFormat(in.Format),
+		Kind:          &in.Kind.String,
+		Data:          &in.Data.String,
+		FetchRequest:  nil,
+	}
+	return out, nil
 }
