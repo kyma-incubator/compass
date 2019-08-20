@@ -41,6 +41,7 @@ type LabelRepository interface {
 	ListByKey(ctx context.Context, tenant, key string) ([]*model.Label, error)
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 	DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error
+	DeleteByKey(ctx context.Context, tenant string, key string) error
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -107,12 +108,7 @@ func (s *service) Update(ctx context.Context, def model.LabelDefinition) error {
 	return nil
 }
 
-// TODO: Add deleting related labels logic
 func (s *service) Delete(ctx context.Context, tenant, key string, deleteRelatedLabels bool) error {
-	if deleteRelatedLabels == true {
-		return errors.New("deleting related labels is not yet supported")
-	}
-
 	if key == model.ScenariosKey {
 		return fmt.Errorf("Label Definition with key %s can not be deleted", model.ScenariosKey)
 	}
@@ -123,6 +119,13 @@ func (s *service) Delete(ctx context.Context, tenant, key string, deleteRelatedL
 	}
 	if ld == nil {
 		return fmt.Errorf("Label Definition with key %s not found", key)
+	}
+
+	if deleteRelatedLabels {
+		err := s.labelRepo.DeleteByKey(ctx, tenant, key)
+		if err != nil {
+			return errors.Wrapf(err, `while deleting labels with key "%s"`, key)
+		}
 	}
 
 	existingLabels, err := s.labelRepo.ListByKey(ctx, tenant, key)
