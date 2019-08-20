@@ -25,8 +25,12 @@ func main() {
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Error while loading app config")
 
+	tokenResolver := api.TokenResolver{}
+	certifcateResolver := api.CertificateResolver{}
+	resolver := api.Resolver{tokenResolver, certifcateResolver}
+
 	gqlCfg := gqlschema.Config{
-		Resolvers: &api.Resolver{},
+		Resolvers: &resolver,
 	}
 	executableSchema := gqlschema.NewExecutableSchema(gqlCfg)
 

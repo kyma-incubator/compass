@@ -5,22 +5,21 @@ import (
 )
 
 type Resolver struct {
-}
-
-type mutationResolver struct {
-	*Resolver
 	TokenResolver
 	CertificateResolver
 }
 
+type mutationResolver struct {
+	*Resolver
+}
+
 type queryResolver struct {
 	*Resolver
-	CertificateResolver
 }
 
 func (r *Resolver) Mutation() gqlschema.MutationResolver {
-	return &mutationResolver{r, TokenResolver{}, CertificateResolver{}}
+	return &mutationResolver{r}
 }
 func (r *Resolver) Query() gqlschema.QueryResolver {
-	return &queryResolver{r, CertificateResolver{}}
+	return &queryResolver{r}
 }
