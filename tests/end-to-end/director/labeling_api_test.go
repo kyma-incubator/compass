@@ -484,26 +484,11 @@ func TestDeleteLabelDefinition(t *testing.T) {
 		rtm := createRuntime(t, ctx, "rtm")
 		defer deleteRuntimeInTenant(t, rtm.ID, defaultTenant)
 
-		t.Log("Set label on application")
-
-		validAppLabelValue := map[string]interface{}{labelKey: "app"}
-		setLabelRequest := fixSetApplicationLabelRequest(app.ID, labelKey, validAppLabelValue)
-		appLabel := graphql.Label{}
-
-		err = tc.RunQuery(ctx, setLabelRequest, &appLabel)
-		require.NoError(t, err)
-
-		t.Log("Set label on runtime")
-
-		validRuntimeLabelValue := map[string]interface{}{labelKey: "rtm"}
-		setLabelRequest = fixSetRuntimeLabelRequest(rtm.ID, labelKey, validRuntimeLabelValue)
-		runtimeLabel := graphql.Label{}
-
-		err = tc.RunQuery(ctx, setLabelRequest, &runtimeLabel)
-		require.NoError(t, err)
+		t.Log("Set labels on application and runtime")
+		setApplicationLabel(t, ctx, app.ID, labelKey, map[string]interface{}{labelKey: "app"})
+		setRuntimeLabel(t, ctx, rtm.ID, labelKey, map[string]interface{}{labelKey: "rtm"})
 
 		t.Log("Delete Label Definition while it's being used by some labels")
-
 		deleteLabelDefinitionRequest := fixDeleteLabelDefinition(labelKey, true)
 		err = tc.RunQuery(context.Background(), deleteLabelDefinitionRequest, nil)
 		require.NoError(t, err)
