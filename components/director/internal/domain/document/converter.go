@@ -120,7 +120,7 @@ func (c *converter) ToEntity(in model.Document) (Entity, error) {
 		Format:       string(in.Format),
 		Kind:         nullKind,
 		Data:         nullData,
-		FetchRequest: sql.NullString{},
+		FetchRequest: sql.NullString{}, //TODO adjust with https://github.com/kyma-incubator/compass/issues/226
 	}
 
 	return out, nil
@@ -137,7 +137,7 @@ func (c *converter) FromEntity(in Entity) (model.Document, error) {
 		Format:        model.DocumentFormat(in.Format),
 		Kind:          &in.Kind.String,
 		Data:          &in.Data.String,
-		FetchRequest:  nil,
+		FetchRequest:  nil, //TODO adjust with https://github.com/kyma-incubator/compass/issues/226
 	}
 	return out, nil
 }
