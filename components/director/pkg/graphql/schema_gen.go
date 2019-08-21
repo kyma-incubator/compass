@@ -35,6 +35,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	APIDefinition() APIDefinitionResolver
 	APISpec() APISpecResolver
 	Application() ApplicationResolver
 	Document() DocumentResolver
@@ -295,6 +296,10 @@ type ComplexityRoot struct {
 	}
 }
 
+type APIDefinitionResolver interface {
+	Auth(ctx context.Context, obj *APIDefinition, runtimeID string) (*RuntimeAuth, error)
+	Auths(ctx context.Context, obj *APIDefinition) ([]*RuntimeAuth, error)
+}
 type APISpecResolver interface {
 	FetchRequest(ctx context.Context, obj *APISpec) (*FetchRequest, error)
 }
@@ -3343,7 +3348,7 @@ func (ec *executionContext) _APIDefinition_auth(ctx context.Context, field graph
 		Object:   "APIDefinition",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -3356,7 +3361,7 @@ func (ec *executionContext) _APIDefinition_auth(ctx context.Context, field graph
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Auth, nil
+		return ec.resolvers.APIDefinition().Auth(rctx, obj, args["runtimeID"].(string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -3377,13 +3382,13 @@ func (ec *executionContext) _APIDefinition_auths(ctx context.Context, field grap
 		Object:   "APIDefinition",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Auths, nil
+		return ec.resolvers.APIDefinition().Auths(rctx, obj)
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -9031,17 +9036,17 @@ func (ec *executionContext) _APIDefinition(ctx context.Context, sel ast.Selectio
 		case "id":
 			out.Values[i] = ec._APIDefinition_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "applicationID":
 			out.Values[i] = ec._APIDefinition_applicationID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._APIDefinition_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "description":
 			out.Values[i] = ec._APIDefinition_description(ctx, field, obj)
@@ -9050,20 +9055,38 @@ func (ec *executionContext) _APIDefinition(ctx context.Context, sel ast.Selectio
 		case "targetURL":
 			out.Values[i] = ec._APIDefinition_targetURL(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "group":
 			out.Values[i] = ec._APIDefinition_group(ctx, field, obj)
 		case "auth":
-			out.Values[i] = ec._APIDefinition_auth(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._APIDefinition_auth(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "auths":
-			out.Values[i] = ec._APIDefinition_auths(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._APIDefinition_auths(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "defaultAuth":
 			out.Values[i] = ec._APIDefinition_defaultAuth(ctx, field, obj)
 		case "version":

@@ -46,29 +46,6 @@ func (_m *APIService) Delete(ctx context.Context, id string) error {
 	return r0
 }
 
-// DeleteAPIAuth provides a mock function with given fields: ctx, apiID, runtimeID
-func (_m *APIService) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*model.RuntimeAuth, error) {
-	ret := _m.Called(ctx, apiID, runtimeID)
-
-	var r0 *model.RuntimeAuth
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.RuntimeAuth); ok {
-		r0 = rf(ctx, apiID, runtimeID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.RuntimeAuth)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, apiID, runtimeID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // Get provides a mock function with given fields: ctx, id
 func (_m *APIService) Get(ctx context.Context, id string) (*model.APIDefinition, error) {
 	ret := _m.Called(ctx, id)
@@ -131,29 +108,6 @@ func (_m *APIService) RefetchAPISpec(ctx context.Context, id string) (*model.API
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// SetAPIAuth provides a mock function with given fields: ctx, apiID, runtimeID, in
-func (_m *APIService) SetAPIAuth(ctx context.Context, apiID string, runtimeID string, in model.AuthInput) (*model.RuntimeAuth, error) {
-	ret := _m.Called(ctx, apiID, runtimeID, in)
-
-	var r0 *model.RuntimeAuth
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.AuthInput) *model.RuntimeAuth); ok {
-		r0 = rf(ctx, apiID, runtimeID, in)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.RuntimeAuth)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, model.AuthInput) error); ok {
-		r1 = rf(ctx, apiID, runtimeID, in)
 	} else {
 		r1 = ret.Error(1)
 	}

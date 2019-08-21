@@ -1077,7 +1077,7 @@ func TestResolver_Webhooks(t *testing.T) {
 		{
 			Name:            "Success",
 			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
-			TransactionerFn: txtest.TransactionerThatSucceed,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
 				svc.On("List", contextParam, applicationID).Return(modelWebhooks, nil).Once()
@@ -1093,8 +1093,8 @@ func TestResolver_Webhooks(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when webhook listing failed",
-			PersistenceFn:   txtest.PersistenceContextThatDontExpectCommit,
-			TransactionerFn: txtest.TransactionerThatSucceed,
+			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
 				svc.On("List", contextParam, applicationID).Return(nil, testErr).Once()
@@ -1113,7 +1113,7 @@ func TestResolver_Webhooks(t *testing.T) {
 				transact.On("Begin").Return(nil, testErr).Once()
 				return transact
 			},
-			PersistenceFn: txtest.PersistenceContextThatDontExpectCommit,
+			PersistenceFn: txtest.PersistenceContextThatDoesntExpectCommit,
 			ServiceFn: func() *automock.WebhookService {
 				return &automock.WebhookService{}
 			},
@@ -1129,7 +1129,7 @@ func TestResolver_Webhooks(t *testing.T) {
 				persistTx.On("Commit").Return(testErr).Once()
 				return persistTx
 			},
-			TransactionerFn: txtest.TransactionerThatSucceed,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
 				svc.On("List", contextParam, applicationID).Return(modelWebhooks, nil).Once()

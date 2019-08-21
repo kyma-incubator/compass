@@ -13,7 +13,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-const runtimeTable string = `"public"."runtimes"`
+const runtimeTable string = `public.runtimes`
 
 var runtimeColumns = []string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth"}
 

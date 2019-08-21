@@ -2,7 +2,6 @@ package label
 
 import (
 	"context"
-	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
@@ -81,20 +80,7 @@ func (s *labelUpsertService) UpsertLabel(ctx context.Context, tenant string, lab
 		return errors.Wrapf(err, "while validating Label value for '%s'", labelInput.Key)
 	}
 
-	var id string
-	label, err := s.labelRepo.GetByKey(ctx, tenant, labelInput.ObjectType, labelInput.ObjectID, labelInput.Key)
-	if err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			return errors.Wrapf(err, "while getting label '%s'", labelInput.Key)
-		}
-
-		// not found, generate new label ID
-		id = s.uidService.Generate()
-	} else {
-		id = label.ID
-	}
-
-	label = labelInput.ToLabel(id, tenant)
+	label := labelInput.ToLabel(s.uidService.Generate(), tenant)
 	err = s.labelRepo.Upsert(ctx, label)
 	if err != nil {
 		return errors.Wrapf(err, "while creating label '%s' for %s '%s'", labelInput.Key, labelInput.ObjectType, labelInput.ObjectID)
