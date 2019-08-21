@@ -69,7 +69,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := eventapi.NewService(repo, nil)
+			svc := eventapi.NewService(repo, nil,  nil)
 
 			// when
 			document, err := svc.Get(ctx, testCase.InputID)
@@ -155,7 +155,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := eventapi.NewService(repo, nil)
+			svc := eventapi.NewService(repo, nil, nil)
 
 			// when
 			docs, err := svc.List(ctx, applicationID, testCase.InputPageSize, testCase.InputCursor)
@@ -242,7 +242,7 @@ func TestService_Create(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 			uidSvc := testCase.UIDServiceFn()
-			svc := eventapi.NewService(repo, uidSvc)
+			svc := eventapi.NewService(repo,nil,  uidSvc)
 
 			// when
 			result, err := svc.Create(ctx, applicationID, testCase.Input)
@@ -275,11 +275,12 @@ func TestService_Update(t *testing.T) {
 		return api.Name == modelInput.Name
 	})
 
+	frID := "fr_id"
 	eventAPIDefinitionModel := &model.EventAPIDefinition{
 		Name:          "Bar",
 		ApplicationID: "id",
 		Spec: &model.EventAPISpec{
-			FetchRequest: &model.FetchRequest{},
+			FetchRequestID: &frID,
 		},
 		Version: &model.Version{},
 	}
@@ -336,7 +337,7 @@ func TestService_Update(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := eventapi.NewService(repo, nil)
+			svc := eventapi.NewService(repo, nil, nil)
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -358,14 +359,12 @@ func TestService_Delete(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "foo"
-
+	frID := "fr_id"
 	eventAPIDefinitionModel := &model.EventAPIDefinition{
 		Name:          "Bar",
 		ApplicationID: "id",
 		Spec: &model.EventAPISpec{
-			FetchRequest: &model.FetchRequest{
-				Mode: model.FetchModePackage,
-			},
+			FetchRequestID: &frID,
 		},
 		Version: &model.Version{},
 	}
@@ -419,7 +418,7 @@ func TestService_Delete(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := eventapi.NewService(repo, nil)
+			svc := eventapi.NewService(repo, nil, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -487,7 +486,7 @@ func TestService_RefetchAPISpec(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := eventapi.NewService(repo, nil)
+			svc := eventapi.NewService(repo, nil, nil)
 
 			// when
 			result, err := svc.RefetchAPISpec(ctx, apiID)

@@ -19,8 +19,8 @@ import (
 
 func TestConverter_ToGraphQL(t *testing.T) {
 	// given
-	modelEventAPIDefinition := fixDetailedModelEventAPIDefinition(t, "foo", "Foo", "Lorem ipsum", "group")
-	gqlEventAPIDefinition := fixDetailedGQLEventAPIDefinition(t, "foo", "Foo", "Lorem ipsum", "group")
+	modelEventAPIDefinition := fixDetailedModelEventAPIDefinition( "foo", "Foo", "Lorem ipsum", "group")
+	gqlEventAPIDefinition := fixDetailedGQLEventAPIDefinition("foo", "Foo", "Lorem ipsum", "group")
 	emptyModelEventAPIDefinition := &model.EventAPIDefinition{}
 	emptyGraphQLEventAPIDefinition := &graphql.EventAPIDefinition{}
 
@@ -37,7 +37,6 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			Expected: gqlEventAPIDefinition,
 			FetchRequestConverter: func() *automock.FetchRequestConverter {
 				conv := &automock.FetchRequestConverter{}
-				conv.On("ToGraphQL", modelEventAPIDefinition.Spec.FetchRequest).Return(gqlEventAPIDefinition.Spec.FetchRequest).Once()
 				return conv
 			},
 			VersionConverter: func() *automock.VersionConverter {
@@ -282,7 +281,6 @@ func TestEventApiSpecDataConversionNilStaysNil(t *testing.T) {
 	mockFrConv := &automock.FetchRequestConverter{}
 	defer mockFrConv.AssertExpectations(t)
 	mockFrConv.On("InputFromGraphQL", mock.Anything).Return(nil)
-	mockFrConv.On("ToGraphQL", mock.Anything).Return(nil)
 
 	mockVersionConv := &automock.VersionConverter{}
 	defer mockVersionConv.AssertExpectations(t)
@@ -291,11 +289,12 @@ func TestEventApiSpecDataConversionNilStaysNil(t *testing.T) {
 
 	converter := eventapi.NewConverter(mockFrConv, mockVersionConv)
 	// WHEN & THEN
+	frId := "fr_id"
 	convertedInputModel := converter.InputFromGraphQL(&graphql.EventAPIDefinitionInput{Spec: &graphql.EventAPISpecInput{}})
 	require.NotNil(t, convertedInputModel)
 	require.NotNil(t, convertedInputModel.Spec)
 	require.Nil(t, convertedInputModel.Spec.Data)
-	convertedEvAPIDef := convertedInputModel.ToEventAPIDefinition("id", "app_id")
+	convertedEvAPIDef := convertedInputModel.ToEventAPIDefinition("id", "app_id", &frId)
 	require.NotNil(t, convertedEvAPIDef)
 	convertedGraphqlEvAPIDef := converter.ToGraphQL(convertedEvAPIDef)
 	require.NotNil(t, convertedGraphqlEvAPIDef)

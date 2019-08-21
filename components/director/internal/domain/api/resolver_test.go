@@ -144,7 +144,7 @@ func TestResolver_AddAPI(t *testing.T) {
 			converter := testCase.ConverterFn()
 			appSvc := testCase.AppServiceFn()
 
-			resolver := api.NewResolver(svc, appSvc, converter, nil)
+			resolver := api.NewResolver(nil, svc, appSvc, converter, nil)
 
 			// when
 			result, err := resolver.AddAPI(context.TODO(), appId, *gqlAPIInput)
@@ -233,7 +233,7 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := api.NewResolver(svc, nil, converter, nil)
+			resolver := api.NewResolver(nil, svc, nil, converter, nil)
 
 			// when
 			result, err := resolver.DeleteAPI(context.TODO(), id)
@@ -329,7 +329,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := api.NewResolver(svc, nil, converter, nil)
+			resolver := api.NewResolver(nil, svc, nil, converter, nil)
 
 			// when
 			result, err := resolver.UpdateAPI(context.TODO(), id, *gqlAPIDefinitionInput)
@@ -408,7 +408,7 @@ func TestResolver_SetAPIAuth(t *testing.T) {
 			// given
 			svc := testCase.ServiceFn()
 			conv := testCase.AuthConvFn()
-			resolver := api.NewResolver(svc, nil, nil, conv)
+			resolver := api.NewResolver(nil, svc, nil, nil, conv)
 
 			// when
 			result, err := resolver.SetAPIAuth(context.TODO(), apiID, runtimeID, *gqlAuthInput)
@@ -483,7 +483,7 @@ func TestResolver_DeleteAPIAuth(t *testing.T) {
 			// given
 			svc := testCase.ServiceFn()
 			conv := testCase.AuthConvFn()
-			resolver := api.NewResolver(svc, nil, nil, conv)
+			resolver := api.NewResolver(nil, svc, nil, nil, conv)
 
 			// when
 			result, err := resolver.DeleteAPIAuth(context.TODO(), apiID, runtimeID)
@@ -565,7 +565,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			// given
 			svc := testCase.ServiceFn()
 			conv := testCase.ConvFn()
-			resolver := api.NewResolver(svc, nil, conv, nil)
+			resolver := api.NewResolver(nil, svc, nil, conv, nil)
 
 			// when
 			result, err := resolver.RefetchAPISpec(context.TODO(), apiID)

@@ -145,7 +145,7 @@ func TestResolver_AddEventAPI(t *testing.T) {
 			converter := testCase.ConverterFn()
 			appSvc := testCase.AppServiceFn()
 
-			resolver := eventapi.NewResolver(svc, appSvc, converter)
+			resolver := eventapi.NewResolver(nil, svc, appSvc, converter)
 
 			// when
 			result, err := resolver.AddEventAPI(context.TODO(), appId, *gqlAPIInput)
@@ -234,7 +234,7 @@ func TestResolver_DeleteEventAPI(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := eventapi.NewResolver(svc, nil, converter)
+			resolver := eventapi.NewResolver(nil, svc, nil, converter)
 
 			// when
 			result, err := resolver.DeleteEventAPI(context.TODO(), id)
@@ -330,7 +330,7 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := eventapi.NewResolver(svc, nil, converter)
+			resolver := eventapi.NewResolver(nil, svc, nil, converter)
 
 			// when
 			result, err := resolver.UpdateEventAPI(context.TODO(), id, *gqlAPIDefinitionInput)
@@ -413,7 +413,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			// given
 			svc := testCase.ServiceFn()
 			conv := testCase.ConvFn()
-			resolver := eventapi.NewResolver(svc, nil, conv)
+			resolver := eventapi.NewResolver(nil, svc, nil, conv)
 
 			// when
 			result, err := resolver.RefetchEventAPISpec(context.TODO(), apiID)

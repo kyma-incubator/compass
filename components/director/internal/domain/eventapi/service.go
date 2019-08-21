@@ -2,6 +2,8 @@ package eventapi
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/tenant"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
@@ -23,7 +25,9 @@ type EventAPIRepository interface {
 
 //go:generate mockery -name=FetchRequestRepository -output=automock -outpkg=automock -case=underscore
 type FetchRequestRepository interface {
-	Create(ctx context.Context, item *model.FetchRequest) error
+	Create(ctx context.Context, tenant string, item *model.FetchRequest) error
+	GetByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error)
+	Delete(ctx context.Context, tenant, id string) error
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -55,31 +59,51 @@ func (s *service) Get(ctx context.Context, id string) (*model.EventAPIDefinition
 }
 
 func (s *service) Create(ctx context.Context, applicationID string, in model.EventAPIDefinitionInput) (string, error) {
-	id := s.uidService.Generate()
-	eventAPI := in.ToEventAPIDefinition(id, applicationID)
-
-	err := s.eventAPIRepo.Create(eventAPI)
+	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	if eventAPI.Spec != nil && eventAPI.Spec.FetchRequest != nil {
-		err := s.fetchRequestRepo.Create(ctx, eventAPI.Spec.FetchRequest)
-		if err != nil {
-			return "", errors.Wrapf(err, "while creating FetchRequest for EventAPI '%s'", eventAPI.Name)
-		}
+	id := s.uidService.Generate()
+
+	fetchRequestID, err := s.createFetchRequest(ctx, tnt, in.Spec.FetchRequest, id)
+	if err != nil {
+		return "", errors.Wrapf(err, "while creating FetchRequest for EventAPIDefinition %s", id)
+	}
+	eventAPI := in.ToEventAPIDefinition(id, applicationID, fetchRequestID)
+
+	err = s.eventAPIRepo.Create(eventAPI)
+	if err != nil {
+		return "", err
 	}
 
 	return id, nil
 }
 
 func (s *service) Update(ctx context.Context, id string, in model.EventAPIDefinitionInput) error {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
 	eventAPI, err := s.Get(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	eventAPI = in.ToEventAPIDefinition(id, eventAPI.ApplicationID)
+	if eventAPI.Spec.FetchRequestID != nil {
+		err := s.fetchRequestRepo.Delete(ctx, tnt, *eventAPI.Spec.FetchRequestID)
+		if err != nil {
+			return errors.Wrapf(err, "while deleting FetchRequest for EventAPIDefinition %s", id)
+		}
+	}
+
+	fetchRequestID, err := s.createFetchRequest(ctx, tnt, in.Spec.FetchRequest, id)
+	if err != nil {
+		return errors.Wrapf(err, "while creating FetchRequest for EventAPIDefinition %s", id)
+	}
+
+	eventAPI = in.ToEventAPIDefinition(id, eventAPI.ApplicationID, fetchRequestID)
 
 	err = s.eventAPIRepo.Update(eventAPI)
 	if err != nil {
@@ -112,4 +136,33 @@ func (s *service) RefetchAPISpec(ctx context.Context, id string) (*model.EventAP
 	}
 
 	return eventAPI.Spec, nil
+}
+
+func (s *service) GetFetchRequest(ctx context.Context, eventAPIDefID string) (*model.FetchRequest, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	fetchRequest, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.APIFetchRequestReference, eventAPIDefID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting FetchRequest by Event API Definition ID %s", eventAPIDefID)
+	}
+
+	return fetchRequest, nil
+}
+
+func (s *service) createFetchRequest(ctx context.Context, tenant string, in *model.FetchRequestInput, parentObjectID string) (*string, error) {
+	if in == nil {
+		return nil, nil
+	}
+
+	id := s.uidService.Generate()
+	fr := in.ToFetchRequest(time.Now(), id, model.EventAPIFetchRequestReference, parentObjectID)
+	err := s.fetchRequestRepo.Create(ctx, tenant, fr)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while creating FetchRequest for %s with ID %s", model.EventAPIFetchRequestReference, parentObjectID)
+	}
+
+	return &id, nil
 }

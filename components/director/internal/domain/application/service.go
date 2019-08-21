@@ -531,7 +531,7 @@ func (s *service) createFetchRequest(ctx context.Context, tenant string, in *mod
 		return nil, nil
 	}
 
-	var id string
+	id := s.uidService.Generate()
 	fr := in.ToFetchRequest(time.Now(), id, objectType, objectID)
 	err := s.fetchRequestRepo.Create(ctx, tenant, fr)
 	if err != nil {

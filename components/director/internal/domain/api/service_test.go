@@ -68,7 +68,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := api.NewService(repo, nil)
+			svc := api.NewService(repo, nil,nil)
 
 			// when
 			document, err := svc.Get(ctx, testCase.InputID)
@@ -154,7 +154,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := api.NewService(repo, nil)
+			svc := api.NewService(repo, nil,nil)
 
 			// when
 			docs, err := svc.List(ctx, applicationID, testCase.InputPageSize, testCase.InputCursor)
@@ -244,7 +244,7 @@ func TestService_Create(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 			idSvc := testCase.UIDServiceFn()
-			svc := api.NewService(repo, idSvc)
+			svc := api.NewService(repo, nil, idSvc)
 
 			// when
 			result, err := svc.Create(ctx, applicationID, testCase.Input)
@@ -279,12 +279,13 @@ func TestService_Update(t *testing.T) {
 		return api.Name == modelInput.Name
 	})
 
+	frID := "fr_id"
 	apiDefinitionModel := &model.APIDefinition{
 		Name:          "Bar",
 		ApplicationID: "id",
 		TargetURL:     "https://test-url-updated.com",
 		Spec: &model.APISpec{
-			FetchRequest: &model.FetchRequest{},
+			FetchRequestID: &frID,
 		},
 		DefaultAuth: &model.Auth{},
 		Version:     &model.Version{},
@@ -342,7 +343,7 @@ func TestService_Update(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := api.NewService(repo, nil)
+			svc := api.NewService(repo,nil, nil)
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -364,15 +365,13 @@ func TestService_Delete(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "foo"
-
+	frID := "fr_id"
 	apiDefinitionModel := &model.APIDefinition{
 		Name:          "Bar",
 		ApplicationID: "id",
 		TargetURL:     "https://test-url-updated.com",
 		Spec: &model.APISpec{
-			FetchRequest: &model.FetchRequest{
-				Mode: model.FetchModePackage,
-			},
+			FetchRequestID: &frID,
 		},
 		Version: &model.Version{},
 	}
@@ -426,7 +425,7 @@ func TestService_Delete(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := api.NewService(repo, nil)
+			svc := api.NewService(repo, nil,nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -529,7 +528,7 @@ func TestService_SetAPIAuth(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := api.NewService(repo, nil)
+			svc := api.NewService(repo, nil,nil)
 
 			// when
 			result, err := svc.SetAPIAuth(ctx, apiID, runtimeID, testCase.Input)
@@ -627,7 +626,7 @@ func TestService_DeleteAPIAuth(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := api.NewService(repo, nil)
+			svc := api.NewService(repo, nil,nil)
 
 			// when
 			result, err := svc.DeleteAPIAuth(ctx, apiID, runtimeID)
@@ -692,7 +691,7 @@ func TestService_RefetchAPISpec(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := api.NewService(repo, nil)
+			svc := api.NewService(repo, nil,nil)
 
 			// when
 			result, err := svc.RefetchAPISpec(ctx, apiID)

@@ -5,24 +5,20 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-type pgRepository struct {}
+type repository struct {}
 
-func NewRepository() *pgRepository {
-	return &pgRepository{}
+func NewRepository() *repository {
+	return &repository{}
 }
 
-func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.FetchRequest) error {
+func (r *repository) Create(ctx context.Context, tenant string, item *model.FetchRequest) error {
 	panic("not implemeneted")
 }
 
-func (r *pgRepository) Update(ctx context.Context, tenant string, id string, in *model.FetchRequest) error {
+func (r *repository) GetByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error) {
 	panic("not implemeneted")
 }
 
-func (r *pgRepository) GetByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error) {
-	panic("not implemeneted")
-}
-
-func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
+func (r *repository) Delete(ctx context.Context, tenant, id string) error {
 	panic("not implemeneted")
 }
