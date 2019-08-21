@@ -5,12 +5,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-//go:generate mockery -name=FetchRequestConverter -output=automock -outpkg=automock -case=underscore
-type FetchRequestConverter interface {
-	ToGraphQL(in *model.FetchRequest) *graphql.FetchRequest
-	InputFromGraphQL(in *graphql.FetchRequestInput) *model.FetchRequestInput
-}
-
 type converter struct {
 	frConverter FetchRequestConverter
 }
@@ -39,7 +33,6 @@ func (c *converter) ToGraphQL(in *model.Document) *graphql.Document {
 		Format:        graphql.DocumentFormat(in.Format),
 		Kind:          in.Kind,
 		Data:          clob,
-		FetchRequest:  c.frConverter.ToGraphQL(in.FetchRequest),
 	}
 }
 

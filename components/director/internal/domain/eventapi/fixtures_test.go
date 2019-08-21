@@ -1,7 +1,6 @@
 package eventapi_test
 
 import (
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -25,15 +24,16 @@ func fixGQLEventAPIDefinition(id, appID, name, description string) *graphql.Even
 	}
 }
 
-func fixDetailedModelEventAPIDefinition(t *testing.T, id, name, description string, group string) *model.EventAPIDefinition {
+func fixDetailedModelEventAPIDefinition(id, name, description string, group string) *model.EventAPIDefinition {
 	data := "data"
 	format := model.SpecFormatJSON
 
+	frID := "test"
 	spec := &model.EventAPISpec{
 		Data:         &data,
 		Format:       format,
 		Type:         model.EventAPISpecTypeAsyncAPI,
-		FetchRequest: &model.FetchRequest{},
+		FetchRequestID: &frID,
 	}
 
 	deprecated := false
@@ -58,7 +58,7 @@ func fixDetailedModelEventAPIDefinition(t *testing.T, id, name, description stri
 	}
 }
 
-func fixDetailedGQLEventAPIDefinition(t *testing.T, id, name, description string, group string) *graphql.EventAPIDefinition {
+func fixDetailedGQLEventAPIDefinition(id, name, description string, group string) *graphql.EventAPIDefinition {
 	data := graphql.CLOB("data")
 	format := graphql.SpecFormatJSON
 
@@ -66,7 +66,6 @@ func fixDetailedGQLEventAPIDefinition(t *testing.T, id, name, description string
 		Data:         &data,
 		Format:       format,
 		Type:         graphql.EventAPISpecTypeAsyncAPI,
-		FetchRequest: &graphql.FetchRequest{},
 	}
 
 	deprecated := false

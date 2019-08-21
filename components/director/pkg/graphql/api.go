@@ -5,6 +5,7 @@ type APISpec struct {
 	Data         *CLOB         `json:"data"`
 	Format       SpecFormat    `json:"format"`
 	Type         APISpecType   `json:"type"`
+	DefinitionID string // Needed to resolve FetchRequest for given APISpec
 }
 
 // Extended types used by external API
