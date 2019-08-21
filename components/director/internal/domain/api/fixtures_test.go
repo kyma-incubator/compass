@@ -3,6 +3,12 @@ package api_test
 import (
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
+
+	"github.com/google/uuid"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
@@ -37,7 +43,7 @@ func fixDetailedModelAPIDefinition(t *testing.T, id, name, description string, g
 	}
 
 	deprecated := false
-	deprecatedSince := ""
+	deprecatedSince := "1.0"
 	forRemoval := false
 
 	version := &model.Version{
@@ -226,5 +232,47 @@ func fixGQLRuntimeAuth(id string, auth *graphql.Auth) *graphql.RuntimeAuth {
 	return &graphql.RuntimeAuth{
 		RuntimeID: id,
 		Auth:      auth,
+	}
+}
+
+func fixDetailedApiDefinitionEntity(placeholder string) *api.APIDefinition {
+	defaultAuthJson := `{"Credential":{"Basic":null,"Oauth":null},"AdditionalHeaders":{"testHeader":["hval1","hval2"]},
+							"AdditionalQueryParams":null,"RequestAuth":null}`
+	fetchRequestID := uuid.New().String()
+	boolPlaceholder := true
+
+	entity := api.APIDefinition{
+		ID:                 uuid.New().String(),
+		TenantID:           uuid.New().String(),
+		AppID:              uuid.New().String(),
+		Name:               placeholder,
+		Description:        repo.NewSqlNullString(&placeholder),
+		Group:              repo.NewSqlNullString(&placeholder),
+		TargetURL:          placeholder,
+		SpecData:           repo.NewSqlNullString(&placeholder),
+		SpecFormat:         model.SpecFormatYaml,
+		SpecType:           model.APISpecTypeOpenAPI,
+		DefaultAuth:        defaultAuthJson,
+		SpecFetchRequestID: repo.NewSqlNullString(&fetchRequestID),
+		Version: version.Version{
+			VersionValue:           placeholder,
+			VersionDepracated:      repo.NewSqlNullBool(&boolPlaceholder),
+			VersionDepracatedSince: repo.NewSqlNullString(&placeholder),
+			VersionForRemoval:      repo.NewSqlNullBool(&boolPlaceholder),
+		},
+	}
+
+	return &entity
+}
+
+func fixMinimalApiDefinitionEntity(id, app_id, name, targetUrl string) *api.APIDefinition {
+	return &api.APIDefinition{
+		ID:        id,
+		AppID:     app_id,
+		Name:      name,
+		TargetURL: targetUrl,
+		Version: version.Version{
+			VersionValue: "value",
+		},
 	}
 }

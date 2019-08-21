@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
 )
@@ -13,7 +12,6 @@ type APIRepository interface {
 	GetByID(id string) (*model.APIDefinition, error)
 	ListByApplicationID(applicationID string, pageSize *int, cursor *string) (*model.APIDefinitionPage, error)
 	CreateMany(item []*model.APIDefinition) error
-	List(filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.APIDefinitionPage, error)
 	Create(item *model.APIDefinition) error
 	Update(item *model.APIDefinition) error
 	Delete(item *model.APIDefinition) error

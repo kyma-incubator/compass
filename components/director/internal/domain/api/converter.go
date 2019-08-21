@@ -1,8 +1,14 @@
 package api
 
 import (
+	"encoding/json"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/pkg/errors"
 )
 
 //go:generate mockery -name=AuthConverter -output=automock -outpkg=automock -case=underscore
@@ -21,6 +27,8 @@ type FetchRequestConverter interface {
 type VersionConverter interface {
 	ToGraphQL(in *model.Version) *graphql.Version
 	InputFromGraphQL(in *graphql.VersionInput) *model.VersionInput
+	FromEntity(version *version.Version) (*model.Version, error)
+	ToEntity(version *model.Version) (*version.Version, error)
 }
 
 type converter struct {
@@ -143,4 +151,83 @@ func (c *converter) runtimeAuthArrToGraphQL(in []*model.RuntimeAuth) []*graphql.
 	}
 
 	return auths
+}
+
+func (c *converter) FromEntity(entity *APIDefinition) (*model.APIDefinition, error) {
+	var defaultAuth *model.Auth
+	if entity.DefaultAuth != "" {
+		defaultAuth = &model.Auth{}
+		err := json.Unmarshal([]byte(entity.DefaultAuth), defaultAuth)
+		if err != nil {
+			return nil, errors.Wrap(err, "while unmarshalling default auth")
+		}
+	}
+
+	versionModel, err := c.version.FromEntity(&entity.Version)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting version")
+	}
+
+	return &model.APIDefinition{
+		ID:            entity.ID,
+		ApplicationID: entity.AppID,
+		Name:          entity.Name,
+		TargetURL:     entity.TargetURL,
+		TenantID:      entity.TenantID,
+		DefaultAuth:   defaultAuth,
+		Description:   repo.StringFromSqlNullString(&entity.Description),
+		Group:         repo.StringFromSqlNullString(&entity.Group),
+		//TODO: add spec_fetch_request_ID when resolver will be implemented
+		Spec: &model.APISpec{
+			Data:   repo.StringFromSqlNullString(&entity.SpecData),
+			Format: entity.SpecFormat,
+			Type:   entity.SpecType,
+		},
+		Version: versionModel,
+	}, nil
+}
+
+func (c *converter) ToEntity(apiModel *model.APIDefinition) (*APIDefinition, error) {
+	var defaultAuth string
+	if apiModel.DefaultAuth != nil {
+		output, err := json.Marshal(apiModel.DefaultAuth)
+		if err != nil {
+			return nil, errors.Wrap(err, "while marshaling default auth")
+		}
+		defaultAuth = string(output)
+	}
+
+	var specData *string
+	var specFormat model.SpecFormat
+	var specType model.APISpecType
+	if apiModel.Spec != nil {
+		specData = apiModel.Spec.Data
+		specFormat = apiModel.Spec.Format
+		specType = apiModel.Spec.Type
+	}
+
+	var versionEntity version.Version
+	if apiModel.Version != nil {
+		versionTmp, err := c.version.ToEntity(apiModel.Version)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting version")
+		}
+		versionEntity = *versionTmp
+	}
+
+	return &APIDefinition{
+		ID:          apiModel.ID,
+		TenantID:    apiModel.TenantID,
+		AppID:       apiModel.ApplicationID,
+		Name:        apiModel.Name,
+		Description: repo.NewSqlNullString(apiModel.Description),
+		Group:       repo.NewSqlNullString(apiModel.Group),
+		TargetURL:   apiModel.TargetURL,
+		SpecData:    repo.NewSqlNullString(specData),
+		SpecFormat:  specFormat,
+		SpecType:    specType,
+		DefaultAuth: defaultAuth,
+		Version:     versionEntity,
+		//TODO: add spec_fetch_request_ID when resolver will be implemented
+	}, nil
 }

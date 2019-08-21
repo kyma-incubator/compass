@@ -91,7 +91,7 @@ CREATE TABLE api_definitions (
     spec_format api_spec_format,
     spec_type api_spec_type,
     default_auth jsonb,
-    version_value varchar(256),
+    version_value varchar(256) NOT NULL,
     version_deprecated bool,
     version_deprecated_since varchar(256),
     version_for_removal bool
@@ -122,7 +122,7 @@ CREATE TABLE event_api_definitions (
     spec_data text,
     spec_format event_api_spec_format,
     spec_type event_api_spec_type,
-    version_value varchar(256),
+    version_value varchar(256) NOT NULL,
     version_deprecated bool,
     version_deprecated_since varchar(256),
     version_for_removal bool
