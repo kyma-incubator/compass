@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
+
 	"github.com/pkg/errors"
 
 	"github.com/99designs/gqlgen/handler"
@@ -25,9 +27,13 @@ func main() {
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Error while loading app config")
 
+	// TODO: Get values from config
+	certHeaderParser := authentication.NewHeaderParser("", "", "", "", "")
+	authContextMiddleware := authentication.NewAuthenticationContextMiddleware(certHeaderParser)
+
 	tokenResolver := api.NewTokenResolver()
-	certifcateResolver := api.NewCertificateResolver()
-	resolver := api.Resolver{tokenResolver, certifcateResolver}
+	certificateResolver := api.NewCertificateResolver()
+	resolver := api.Resolver{TokenResolver: tokenResolver, CertificateResolver: certificateResolver}
 
 	gqlCfg := gqlschema.Config{
 		Resolvers: &resolver,
@@ -38,6 +44,8 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 	router.HandleFunc(cfg.APIEndpoint, handler.GraphQL(executableSchema))
+
+	router.Use(authContextMiddleware.PropagateAuthentication)
 
 	http.Handle("/", router)
 
