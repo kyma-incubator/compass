@@ -10,7 +10,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 
-	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -26,8 +25,9 @@ import (
 
 func TestConverter_ToGraphQL(t *testing.T) {
 	// given
-	modelAPIDefinition := fixDetailedModelAPIDefinition("foo", "Foo", "Lorem ipsum", "group")
-	gqlAPIDefinition := fixDetailedGQLAPIDefinition("foo", "Foo", "Lorem ipsum", "group")
+	placeholder := "test"
+	modelAPIDefinition := fixFullModelAPIDefinition(placeholder)
+	gqlAPIDefinition := fixFullGQLAPIDefinition(placeholder)
 	emptyModelAPIDefinition := &model.APIDefinition{}
 	emptyGraphQLAPIDefinition := &graphql.APIDefinition{}
 
@@ -371,32 +371,34 @@ func TestApiSpecDataConversionNilStaysNil(t *testing.T) {
 func TestEntityConverter_ToEntity(t *testing.T) {
 	t.Run("success all nullable properties filled", func(t *testing.T) {
 		//GIVEN
-		apiModel := *fixDetailedModelAPIDefinition(uuid.New().String(), "name", "description", "group")
+		apiModel := fixFullModelAPIDefinition("foo")
+		require.NotNil(t, apiModel)
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, nil, versionConv)
 		//WHEN
-		entity, err := conv.ToEntity(apiModel)
+		entity, err := conv.ToEntity(*apiModel)
 		//THEN
 		require.NoError(t, err)
-		assertApiDefinition(t, apiModel, entity)
+		assertApiDefinition(t, *apiModel, entity)
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
-		apiModel := *fixModelAPIDefinition("id", "appid", "name", "desc")
+		apiModel := fixModelAPIDefinition("id", "appid", "name", "desc")
+		require.NotNil(t, apiModel)
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, nil, versionConv)
 		//WHEN
-		entity, err := conv.ToEntity(apiModel)
+		entity, err := conv.ToEntity(*apiModel)
 		//THEN
 		require.NoError(t, err)
-		assertApiDefinition(t, apiModel, entity)
+		assertApiDefinition(t, *apiModel, entity)
 	})
 }
 
 func TestEntityConverter_FromEntity(t *testing.T) {
 	t.Run("success all nullable properties filled", func(t *testing.T) {
 		//GIVEN
-		entity := *fixDetailedApiDefinitionEntity("placeholder")
+		entity := fixFullEntityAPIDefinition(apiDefID, "placeholder")
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, nil, versionConv)
 		//WHEN
@@ -407,7 +409,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
-		entity := *fixMinimalApiDefinitionEntity("id", "app_id", "name", "target_url")
+		entity := fixEntityAPIDefinition("id", "app_id", "name", "target_url")
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, nil, versionConv)
 		//WHEN
@@ -418,20 +420,20 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 	})
 }
 
-func assertApiDefinition(t *testing.T, apiModel model.APIDefinition, entity api.APIDefinition) {
+func assertApiDefinition(t *testing.T, apiModel model.APIDefinition, entity api.Entity) {
 	assert.Equal(t, apiModel.ID, entity.ID)
-	assert.Equal(t, apiModel.TenantID, entity.TenantID)
+	assert.Equal(t, apiModel.Tenant, entity.TenantID)
 	assert.Equal(t, apiModel.ApplicationID, entity.AppID)
 	assert.Equal(t, apiModel.Name, entity.Name)
 	testdb.AssertSqlNullString(t, entity.Description, apiModel.Description)
 	testdb.AssertSqlNullString(t, entity.Group, apiModel.Group)
 	assert.Equal(t, apiModel.TargetURL, entity.TargetURL)
-	assertAPISpec(t, entity.APISpec, apiModel.Spec)
+	assertAPISpec(t, entity.EntitySpec, apiModel.Spec)
 	assertAuth(t, apiModel.DefaultAuth, entity.DefaultAuth)
 	assertVersion(t, entity.Version, apiModel.Version)
 }
 
-func assertAPISpec(t *testing.T, specEntity *api.APISpec, apiSpec *model.APISpec) {
+func assertAPISpec(t *testing.T, specEntity *api.EntitySpec, apiSpec *model.APISpec) {
 	if apiSpec != nil && specEntity != nil {
 		testdb.AssertSqlNullString(t, specEntity.SpecData, apiSpec.Data)
 		testdb.AssertSqlNullString(t, specEntity.SpecFormat, strings.Ptr(string(apiSpec.Format)))

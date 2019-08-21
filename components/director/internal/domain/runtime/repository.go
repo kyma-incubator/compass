@@ -64,6 +64,7 @@ type RuntimeCollection []Runtime
 func (r RuntimeCollection) Len() int {
 	return len(r)
 }
+
 func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error) {
 	var runtimesCollection RuntimeCollection
 	tenantID, err := uuid.Parse(tenant)
