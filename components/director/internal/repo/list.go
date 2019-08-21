@@ -29,7 +29,7 @@ type Collection interface {
 }
 
 // List returns Page, TotalCount or error
-func (g *PageableQuerier) List(ctx context.Context, tenant string, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...string) (*pagination.Page, int, error) {
+func (g *PageableQuerier) List(ctx context.Context, tenant string, pageSize int, cursor string, orderByColumn string, dest Collection, conditions Conditions, specialConditions ...string) (*pagination.Page, int, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return nil, -1, err
@@ -40,8 +40,8 @@ func (g *PageableQuerier) List(ctx context.Context, tenant string, pageSize int,
 		return nil, -1, errors.Wrap(err, "while decoding page cursor")
 	}
 
-	filterSubquery := ""
-	for _, cond := range additionalConditions {
+	filterSubquery := appendEnumeratedConditions("", 2, conditions)
+	for _, cond := range specialConditions {
 		if strings.TrimSpace(cond) != "" {
 			filterSubquery += fmt.Sprintf(` AND %s`, cond)
 		}
@@ -55,12 +55,13 @@ func (g *PageableQuerier) List(ctx context.Context, tenant string, pageSize int,
 	stmtWithoutPagination := fmt.Sprintf("SELECT %s FROM %s WHERE %s=$1 %s", g.selectedColumns, g.tableName, g.tenantColumn, filterSubquery)
 	stmtWithPagination := fmt.Sprintf("%s %s", stmtWithoutPagination, paginationSQL)
 
-	err = persist.Select(dest, stmtWithPagination, tenant)
+	allArgs := getAllArgs(tenant, conditions)
+	err = persist.Select(dest, stmtWithPagination, allArgs...)
 	if err != nil {
 		return nil, -1, errors.Wrap(err, "while fetching list of objects from DB")
 	}
 
-	totalCount, err := g.getTotalCount(persist, stmtWithoutPagination, tenant)
+	totalCount, err := g.getTotalCount(persist, stmtWithoutPagination, allArgs...)
 	if err != nil {
 		return nil, -1, err
 	}
@@ -78,10 +79,10 @@ func (g *PageableQuerier) List(ctx context.Context, tenant string, pageSize int,
 	}, totalCount, nil
 }
 
-func (g *PageableQuerier) getTotalCount(persist persistence.PersistenceOp, query string, tenant string) (int, error) {
+func (g *PageableQuerier) getTotalCount(persist persistence.PersistenceOp, query string, args ...interface{}) (int, error) {
 	stmt := strings.Replace(query, g.selectedColumns, "COUNT(*)", 1)
 	var totalCount int
-	err := persist.Get(&totalCount, stmt, tenant)
+	err := persist.Get(&totalCount, stmt, args...)
 	if err != nil {
 		return -1, errors.Wrap(err, "while counting objects")
 	}

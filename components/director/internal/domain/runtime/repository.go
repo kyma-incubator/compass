@@ -79,7 +79,7 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 		additionalConditions = fmt.Sprintf(`"id" IN (%s)`, filterSubquery)
 	}
 
-	page, totalCount, err := r.PageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &runtimesCollection, additionalConditions)
+	page, totalCount, err := r.PageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &runtimesCollection, repo.Conditions{}, additionalConditions)
 
 	if err != nil {
 		return nil, err

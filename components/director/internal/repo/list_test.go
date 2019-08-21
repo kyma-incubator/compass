@@ -40,7 +40,7 @@ func TestListPageable(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection
 
-		actualPage, actualTotal, err := sut.List(ctx, givenTenant, 10, "", "id_col", &dest)
+		actualPage, actualTotal, err := sut.List(ctx, givenTenant, 10, "", "id_col", &dest, repo.Conditions{}, )
 		require.NoError(t, err)
 		assert.Equal(t, 2, actualTotal)
 		assert.Len(t, dest, 2)
@@ -61,7 +61,7 @@ func TestListPageable(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection
 
-		actualPage, actualTotal, err := sut.List(ctx, givenTenant, 2, "", "id_col", &dest)
+		actualPage, actualTotal, err := sut.List(ctx, givenTenant, 2, "", "id_col", &dest, repo.Conditions{}, )
 		require.NoError(t, err)
 		assert.Equal(t, 100, actualTotal)
 		assert.Len(t, dest, 2)
@@ -86,7 +86,7 @@ func TestListPageable(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var first UserCollection
 
-		actualFirstPage, actualTotal, err := sut.List(ctx, givenTenant, 1, "", "id_col", &first)
+		actualFirstPage, actualTotal, err := sut.List(ctx, givenTenant, 1, "", "id_col", &first, repo.Conditions{}, )
 		require.NoError(t, err)
 		assert.Equal(t, 100, actualTotal)
 		assert.Len(t, first, 1)
@@ -94,7 +94,7 @@ func TestListPageable(t *testing.T) {
 		assert.NotEmpty(t, actualFirstPage.EndCursor)
 
 		var second UserCollection
-		actualSecondPage, actualTotal, err := sut.List(ctx, givenTenant, 1, actualFirstPage.EndCursor, "id_col", &second)
+		actualSecondPage, actualTotal, err := sut.List(ctx, givenTenant, 1, actualFirstPage.EndCursor, "id_col", &second, repo.Conditions{}, )
 		require.NoError(t, err)
 		assert.Equal(t, 100, actualTotal)
 		assert.Len(t, second, 1)
@@ -103,7 +103,30 @@ func TestListPageable(t *testing.T) {
 
 	})
 
-	t.Run("returns page with additional conditions", func(t *testing.T) {
+	t.Run("returns page with normal and special conditions", func(t *testing.T) {
+		db, mock := testdb.MockDatabase(t)
+		defer mock.AssertExpectations(t)
+
+		rows := sqlmock.NewRows([]string{"id_col", "tenant_col", "first_name", "last_name", "age"}).
+			AddRow(peterRow...).
+			AddRow(homerRow...)
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT id_col, tenant_col, first_name, last_name, age FROM users WHERE tenant_col=$1 AND first_name = $2 AND age > 18 ORDER BY id_col LIMIT 2 OFFSET 0`)).
+			WithArgs(givenTenant, "Peter").WillReturnRows(rows)
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT COUNT(*) FROM users WHERE tenant_col=$1 AND first_name = $2 AND age > 18`)).WithArgs(givenTenant, "Peter").
+			WillReturnRows(sqlmock.NewRows([]string{""}).AddRow(100))
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		var dest UserCollection
+
+		actualPage, actualTotal, err := sut.List(ctx, givenTenant, 2, "", "id_col", &dest,
+			repo.Conditions{repo.Condition{Field: "first_name", Val: "Peter"}}, "age > 18")
+		require.NoError(t, err)
+		assert.Equal(t, 100, actualTotal)
+		assert.Len(t, dest, 2)
+		assert.True(t, actualPage.HasNextPage)
+		assert.NotEmpty(t, actualPage.EndCursor)
+	})
+
+	t.Run("returns page with special conditions", func(t *testing.T) {
 		db, mock := testdb.MockDatabase(t)
 		defer mock.AssertExpectations(t)
 
@@ -115,7 +138,7 @@ func TestListPageable(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection
 
-		actualPage, actualTotal, err := sut.List(ctx, givenTenant, 2, "", "id_col", &dest, "first_name='Peter'", "age > 18")
+		actualPage, actualTotal, err := sut.List(ctx, givenTenant, 2, "", "id_col", &dest, repo.Conditions{}, "first_name='Peter'", "age > 18")
 		require.NoError(t, err)
 		assert.Equal(t, 100, actualTotal)
 		assert.Len(t, dest, 2)
@@ -133,7 +156,7 @@ func TestListPageable(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection
 
-		actualPage, actualTotal, err := sut.List(ctx, givenTenant, 2, "", "id_col", &dest)
+		actualPage, actualTotal, err := sut.List(ctx, givenTenant, 2, "", "id_col", &dest, repo.Conditions{}, )
 		require.NoError(t, err)
 		assert.Equal(t, 0, actualTotal)
 		assert.Empty(t, dest)
@@ -142,19 +165,19 @@ func TestListPageable(t *testing.T) {
 
 	t.Run("returns error if missing persistence context", func(t *testing.T) {
 		ctx := context.TODO()
-		_, _, err := sut.List(ctx, givenTenant, 2, "", "id_col", nil)
+		_, _, err := sut.List(ctx, givenTenant, 2, "", "id_col", nil, repo.Conditions{}, )
 		require.EqualError(t, err, "unable to fetch database from context")
 	})
 
 	t.Run("returns error if wrong cursor", func(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), &sqlx.Tx{})
-		_, _, err := sut.List(ctx, givenTenant, 2, "zzz", "", nil)
+		_, _, err := sut.List(ctx, givenTenant, 2, "zzz", "", nil, repo.Conditions{}, )
 		require.EqualError(t, err, "while decoding page cursor: cursor is not correct: illegal base64 data at input byte 0")
 	})
 
 	t.Run("returns error if wrong pagination attributes", func(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), &sqlx.Tx{})
-		_, _, err := sut.List(ctx, givenTenant, -3, "", "id_col", nil)
+		_, _, err := sut.List(ctx, givenTenant, -3, "", "id_col", nil, repo.Conditions{}, )
 		require.EqualError(t, err, "while converting offset and limit to cursor: page size cannot be smaller than 1")
 	})
 
@@ -166,7 +189,7 @@ func TestListPageable(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection
 
-		_, _, err := sut.List(ctx, givenTenant, 2, "", "id_col", &dest)
+		_, _, err := sut.List(ctx, givenTenant, 2, "", "id_col", &dest, repo.Conditions{}, )
 		require.EqualError(t, err, "while fetching list of objects from DB: some error")
 	})
 
@@ -180,7 +203,7 @@ func TestListPageable(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection
 
-		_, _, err := sut.List(ctx, givenTenant, 2, "", "id_col", &dest)
+		_, _, err := sut.List(ctx, givenTenant, 2, "", "id_col", &dest, repo.Conditions{}, )
 		require.EqualError(t, err, "while counting objects: some error")
 	})
 
