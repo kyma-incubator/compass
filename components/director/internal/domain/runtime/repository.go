@@ -26,7 +26,7 @@ type pgRepository struct {
 	*repo.Updater
 }
 
-func NewPostgresRepository() *pgRepository {
+func NewRepository() *pgRepository {
 	return &pgRepository{
 		ExistQuerier:    repo.NewExistQuerier(runtimeTable, "tenant_id"),
 		SingleGetter:    repo.NewSingleGetter(runtimeTable, "tenant_id", runtimeColumns),

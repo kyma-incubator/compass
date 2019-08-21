@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -65,6 +66,11 @@ type RuntimeRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 }
 
+//go:generate mockery -name=FetchRequestRepository -output=automock -outpkg=automock -case=underscore
+type FetchRequestRepository interface {
+	Create(ctx context.Context, tenant string, item *model.FetchRequest) error
+}
+
 //go:generate mockery -name=LabelUpsertService -output=automock -outpkg=automock -case=underscore
 type LabelUpsertService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
@@ -89,6 +95,7 @@ type service struct {
 	webhookRepo  WebhookRepository
 	labelRepo    LabelRepository
 	runtimeRepo  RuntimeRepository
+	fetchRequestRepo FetchRequestRepository
 
 	labelUpsertService LabelUpsertService
 	scenariosService   ScenariosService
@@ -235,7 +242,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string
 		return "", err
 	}
 
-	err = s.createRelatedResources(in, app.ID)
+	err = s.createRelatedResources(ctx, in, app.ID)
 	if err != nil {
 		return "", errors.Wrap(err, "while creating related Application resources")
 	}
@@ -275,7 +282,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationInp
 		return errors.Wrapf(err, "while deleting all labels for Application")
 	}
 
-	err = s.createRelatedResources(in, app.ID)
+	err = s.createRelatedResources(ctx, in, app.ID)
 	if err != nil {
 		return errors.Wrap(err, "while creating related Application resources")
 	}
@@ -412,8 +419,13 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 	return nil
 }
 
-func (s *service) createRelatedResources(in model.ApplicationInput, applicationID string) error {
+func (s *service) createRelatedResources(ctx context.Context, in model.ApplicationInput, applicationID string) error {
 	var err error
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
 
 	var webhooks []*model.Webhook
 	for _, item := range in.Webhooks {
@@ -426,7 +438,18 @@ func (s *service) createRelatedResources(in model.ApplicationInput, applicationI
 
 	var apis []*model.APIDefinition
 	for _, item := range in.Apis {
-		apis = append(apis, item.ToAPIDefinition(s.uidService.Generate(), applicationID))
+
+		apiDefID := s.uidService.Generate()
+
+		var fetchRequestID *string
+		if item.Spec.FetchRequest != nil {
+			fetchRequestID, err = s.createFetchRequest(ctx, tnt, item.Spec.FetchRequest, model.APIFetchRequestReference, apiDefID)
+			if err != nil {
+				return err
+			}
+		}
+
+		apis = append(apis, item.ToAPIDefinition(apiDefID, applicationID, fetchRequestID))
 	}
 
 	err = s.apiRepo.CreateMany(apis)
@@ -436,7 +459,17 @@ func (s *service) createRelatedResources(in model.ApplicationInput, applicationI
 
 	var eventAPIs []*model.EventAPIDefinition
 	for _, item := range in.EventAPIs {
-		eventAPIs = append(eventAPIs, item.ToEventAPIDefinition(s.uidService.Generate(), applicationID))
+		eventAPIDefID := s.uidService.Generate()
+
+		var fetchRequestID *string
+		if item.Spec.FetchRequest != nil {
+			fetchRequestID, err = s.createFetchRequest(ctx, tnt, item.Spec.FetchRequest, model.EventAPIFetchRequestReference, eventAPIDefID)
+			if err != nil {
+				return err
+			}
+		}
+
+		eventAPIs = append(eventAPIs, item.ToEventAPIDefinition(eventAPIDefID, applicationID, fetchRequestID))
 	}
 	err = s.eventAPIRepo.CreateMany(eventAPIs)
 	if err != nil {
@@ -445,7 +478,17 @@ func (s *service) createRelatedResources(in model.ApplicationInput, applicationI
 
 	var documents []*model.Document
 	for _, item := range in.Documents {
-		documents = append(documents, item.ToDocument(s.uidService.Generate(), applicationID))
+		documentID := s.uidService.Generate()
+
+		var fetchRequestID *string
+		if item.FetchRequest != nil {
+			fetchRequestID, err = s.createFetchRequest(ctx, tnt, item.FetchRequest, model.DocumentFetchRequestReference, documentID)
+			if err != nil {
+				return err
+			}
+		}
+
+		documents = append(documents, item.ToDocument(documentID, applicationID, fetchRequestID))
 	}
 	err = s.documentRepo.CreateMany(documents)
 	if err != nil {
@@ -478,7 +521,24 @@ func (s *service) deleteRelatedResources(applicationID string) error {
 		return errors.Wrapf(err, "while deleting Documents for application %s", applicationID)
 	}
 
+	// FetchRequests are automatically deleted
+
 	return nil
+}
+
+func (s *service) createFetchRequest(ctx context.Context, tenant string, in *model.FetchRequestInput, objectType model.FetchRequestReferenceObjectType, objectID string) (*string, error) {
+	if in == nil {
+		return nil, nil
+	}
+
+	var id string
+	fr := in.ToFetchRequest(time.Now(), id, objectType, objectID)
+	err := s.fetchRequestRepo.Create(ctx, tenant, fr)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while creating FetchRequest for %s with ID %s", objectType, objectID)
+	}
+
+	return &id, nil
 }
 
 func getScenariosValues(labels interface{}) ([]string, error) {
