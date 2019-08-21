@@ -49,15 +49,14 @@ func TestList(t *testing.T) {
 		defer mock.AssertExpectations(t)
 
 		rows := sqlmock.NewRows([]string{"id_col", "tenant_col", "first_name", "last_name", "age"}).
-			AddRow(peterRow...).
-			AddRow(homerRow...)
+			AddRow(peterRow...)
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT id_col, tenant_col, first_name, last_name, age FROM users WHERE tenant_col=$1 AND first_name='Peter' AND age > 18`)).WithArgs(givenTenant).WillReturnRows(rows)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection
 
 		err := sut.List(ctx, givenTenant, &dest, "first_name='Peter'", "age > 18")
 		require.NoError(t, err)
-		assert.Len(t, dest, 2)
+		assert.Len(t, dest, 1)
 	})
 
 	t.Run("returns error if missing persistence context", func(t *testing.T) {

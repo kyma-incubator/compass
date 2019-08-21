@@ -18,8 +18,8 @@ import (
 )
 
 func TestUpsert(t *testing.T) {
-	expectedQuery := regexp.QuoteMeta("INSERT INTO users ( id_col, tenant_col, first_name, last_name, age ) VALUES ( ?, ?, ?, ?, ? ) ON CONFLICT ( id_col, tenant_col ) DO UPDATE SET first_name=EXCLUDED.first_name, last_name=EXCLUDED.last_name, age=EXCLUDED.age")
-	sut := repo.NewUpserter("users", []string{"id_col", "tenant_col", "first_name", "last_name", "age"}, []string{"id_col", "tenant_col"}, []string{"first_name", "last_name", "age"})
+	expectedQuery := regexp.QuoteMeta("INSERT INTO users ( id_col, tenant_col, first_name, last_name, age ) VALUES ( ?, ?, ?, ?, ? ) ON CONFLICT ( tenant_col, first_name, last_name ) DO UPDATE SET age=EXCLUDED.age")
+	sut := repo.NewUpserter("users", []string{"id_col", "tenant_col", "first_name", "last_name", "age"}, []string{"tenant_col", "first_name", "last_name"}, []string{"age"})
 	t.Run("success", func(t *testing.T) {
 		// GIVEN
 		db, mock := testdb.MockDatabase(t)

@@ -12,18 +12,18 @@ import (
 )
 
 type Upserter struct {
-	tableName     string
-	createColumns []string
-	idColumns     []string
-	updateColumns []string
+	tableName          string
+	createColumns      []string
+	conflictingColumns []string
+	updateColumns      []string
 }
 
-func NewUpserter(tableName string, createColumns []string, idColumns []string, updateColumns []string) *Upserter {
+func NewUpserter(tableName string, createColumns []string, conflictingColumns []string, updateColumns []string) *Upserter {
 	return &Upserter{
-		tableName:     tableName,
-		createColumns: createColumns,
-		idColumns:     idColumns,
-		updateColumns: updateColumns,
+		tableName:          tableName,
+		createColumns:      createColumns,
+		conflictingColumns: conflictingColumns,
+		updateColumns:      updateColumns,
 	}
 }
 
@@ -48,7 +48,7 @@ func (u *Upserter) Upsert(ctx context.Context, dbEntity interface{}) error {
 	}
 
 	stmtWithoutUpsert := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", u.tableName, strings.Join(u.createColumns, ", "), strings.Join(values, ", "))
-	stmtWithUpsert := fmt.Sprintf("%s ON CONFLICT ( %s ) DO UPDATE SET %s", stmtWithoutUpsert, strings.Join(u.idColumns, ", "), strings.Join(update, ", "))
+	stmtWithUpsert := fmt.Sprintf("%s ON CONFLICT ( %s ) DO UPDATE SET %s", stmtWithoutUpsert, strings.Join(u.conflictingColumns, ", "), strings.Join(update, ", "))
 
 	_, err = persist.NamedExec(stmtWithUpsert, dbEntity)
 	if pqerr, ok := err.(*pq.Error); ok {
