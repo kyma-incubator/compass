@@ -9,6 +9,7 @@ const (
 	CodeWrongInput               = 4
 	CodeUpstreamServerCallFailed = 5
 	CodeForbidden                = 5
+	CodeBadRequest               = 6
 )
 
 type AppError interface {
@@ -48,6 +49,10 @@ func UpstreamServerCallFailed(format string, a ...interface{}) AppError {
 
 func Forbidden(format string, a ...interface{}) AppError {
 	return errorf(CodeForbidden, format, a...)
+}
+
+func BadRequest(format string, a ...interface{}) AppError {
+	return errorf(CodeBadRequest, format, a...)
 }
 
 func (ae appError) Append(additionalFormat string, a ...interface{}) AppError {

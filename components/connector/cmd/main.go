@@ -7,21 +7,21 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/internalschema"
-
-	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
-
-	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
-
-	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
-
-	"github.com/pkg/errors"
-
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
-	"github.com/vrischmann/envconfig"
-
 	"github.com/kyma-incubator/compass/components/connector/internal/api"
+	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
+	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
+	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
+	"github.com/kyma-incubator/compass/components/connector/internal/secrets"
+	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
+	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
+	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/internalschema"
+	"github.com/pkg/errors"
+	"github.com/vrischmann/envconfig"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
+	restclient "k8s.io/client-go/rest"
 )
 
 type config struct {
@@ -29,6 +29,17 @@ type config struct {
 	InternalAddress       string `envconfig:"default=127.0.0.1:3001"`
 	APIEndpoint           string `envconfig:"default=/graphql"`
 	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
+
+	CSRSubject struct {
+		Country            string `envconfig:"default=C"`
+		Organization       string `envconfig:"default=O"`
+		OrganizationalUnit string `envconfig:"default=OU"`
+		Locality           string `envconfig:"default=L"`
+		Province           string `envconfig:"default=ST"`
+	}
+	CertificateValidityTime     time.Duration        `envconfig:"default=90d"`
+	CASecretName                types.NamespacedName `envconfig:"default=namespace/casecretname"`
+	RootCACertificateSecretName types.NamespacedName `envconfig:"default="`
 
 	Token struct {
 		Length                int           `envconfig:"default=64"`
@@ -58,7 +69,15 @@ func main() {
 	authenticator := authentication.NewAuthenticator(tokenService)
 
 	tokenResolver := api.NewTokenResolver(tokenService)
-	certificateResolver := api.NewCertificateResolver(authenticator, tokenService)
+
+	coreClientSet, appErr := newCoreClientSet()
+	exitOnError(appErr, "Failed to initialize Kubernetes client.")
+	secretsRepository := newSecretsRepository(coreClientSet)
+	certificateUtility := certificates.NewCertificateUtility(cfg.CertificateValidityTime)
+
+	certificateService := certificates.NewCertificateService(secretsRepository, certificateUtility, cfg.CASecretName, cfg.RootCACertificateSecretName)
+
+	certificateResolver := api.NewCertificateResolver(authenticator, tokenService, certificateService)
 
 	internalServer := prepareInternalServer(cfg, tokenResolver)
 	externalServer := prepareExternalServer(cfg, certificateResolver)
@@ -115,8 +134,13 @@ func prepareExternalServer(cfg config, certResolver api.CertificateResolver) *ht
 	externalRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 	externalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(externalExecutableSchema))
 
-	// TODO: Get values from config
-	certHeaderParser := authentication.NewHeaderParser("", "", "", "", "")
+	certHeaderParser := authentication.NewHeaderParser(
+		cfg.CSRSubject.Country,
+		cfg.CSRSubject.Locality,
+		cfg.CSRSubject.Province,
+		cfg.CSRSubject.Organization,
+		cfg.CSRSubject.OrganizationalUnit,
+	)
 	authContextMiddleware := authentication.NewAuthenticationContextMiddleware(certHeaderParser)
 
 	externalRouter.Use(authContextMiddleware.PropagateAuthentication)
@@ -132,4 +156,26 @@ func exitOnError(err error, context string) {
 		wrappedError := errors.Wrap(err, context)
 		log.Fatal(wrappedError)
 	}
+}
+
+func newCoreClientSet() (*kubernetes.Clientset, apperrors.AppError) {
+	k8sConfig, err := restclient.InClusterConfig()
+	if err != nil {
+		return nil, apperrors.Internal("failed to read k8s in-cluster configuration, %s", err)
+	}
+
+	coreClientset, err := kubernetes.NewForConfig(k8sConfig)
+	if err != nil {
+		return nil, apperrors.Internal("failed to create k8s core client, %s", err)
+	}
+
+	return coreClientset, nil
+}
+
+func newSecretsRepository(coreClientSet *kubernetes.Clientset) secrets.Repository {
+	core := coreClientSet.CoreV1()
+
+	return secrets.NewRepository(func(namespace string) secrets.Manager {
+		return core.Secrets(namespace)
+	})
 }
