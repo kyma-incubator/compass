@@ -2,6 +2,7 @@ package repo_test
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -12,80 +13,110 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type methodToTest = func(ctx context.Context, tenant string, conditions repo.Conditions) error
+
 func TestDelete(t *testing.T) {
 	givenID := uuidA()
 	givenTenant := uuidB()
 	sut := repo.NewDeleter("users", "tenant_col")
 
-	t.Run("success", func(t *testing.T) {
-		// GIVEN
-		db, mock := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		defer mock.AssertExpectations(t)
-		mock.ExpectExec(defaultExpectedDeleteQuery()).WithArgs(givenTenant, givenID).WillReturnResult(sqlmock.NewResult(-1, 1))
-		// WHEN
-		err := sut.Delete(ctx, givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}})
-		// THEN
-		require.NoError(t, err)
-	})
+	tc := map[string]methodToTest{
+		"DeleteMany": sut.DeleteMany,
+		"DeleteOne":  sut.DeleteOne,
+	}
+	for tn, testedMethod := range tc {
+		t.Run(fmt.Sprintf("[%s] success", tn), func(t *testing.T) {
+			// GIVEN
+			db, mock := testdb.MockDatabase(t)
+			ctx := persistence.SaveToContext(context.TODO(), db)
+			defer mock.AssertExpectations(t)
+			mock.ExpectExec(defaultExpectedDeleteQuery()).WithArgs(givenTenant, givenID).WillReturnResult(sqlmock.NewResult(-1, 1))
+			// WHEN
+			err := testedMethod(ctx, givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}})
+			// THEN
+			require.NoError(t, err)
+		})
 
-	t.Run("success when more conditions", func(t *testing.T) {
-		// GIVEN
-		givenTenant := uuidB()
-		expectedQuery := regexp.QuoteMeta("DELETE FROM users WHERE tenant_col = $1 AND first_name = $2 AND last_name = $3")
-		sut := repo.NewDeleter("users", "tenant_col")
-		db, mock := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		defer mock.AssertExpectations(t)
-		mock.ExpectExec(expectedQuery).WithArgs(givenTenant, "john", "doe").WillReturnResult(sqlmock.NewResult(-1, 1))
-		// WHEN
-		err := sut.Delete(ctx, givenTenant, repo.Conditions{{Field: "first_name", Val: "john"}, {Field: "last_name", Val: "doe"}})
-		// THEN
-		require.NoError(t, err)
-	})
+		t.Run(fmt.Sprintf("[%s] success when more conditions", tn), func(t *testing.T) {
+			// GIVEN
+			givenTenant := uuidB()
+			expectedQuery := regexp.QuoteMeta("DELETE FROM users WHERE tenant_col = $1 AND first_name = $2 AND last_name = $3")
+			db, mock := testdb.MockDatabase(t)
+			ctx := persistence.SaveToContext(context.TODO(), db)
+			defer mock.AssertExpectations(t)
+			mock.ExpectExec(expectedQuery).WithArgs(givenTenant, "john", "doe").WillReturnResult(sqlmock.NewResult(-1, 1))
+			// WHEN
+			err := testedMethod(ctx, givenTenant, repo.Conditions{{Field: "first_name", Val: "john"}, {Field: "last_name", Val: "doe"}})
+			// THEN
+			require.NoError(t, err)
+		})
 
-	t.Run("returns error on db operation", func(t *testing.T) {
-		// GIVEN
-		db, mock := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		defer mock.AssertExpectations(t)
-		mock.ExpectExec(defaultExpectedDeleteQuery()).WithArgs(givenTenant, givenID).WillReturnError(someError())
-		// WHEN
-		err := sut.Delete(ctx, givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}})
-		// THEN
-		require.EqualError(t, err, "while deleting from database: some error")
-	})
+		t.Run(fmt.Sprintf("[%s] returns error on db operation", tn), func(t *testing.T) {
+			// GIVEN
+			db, mock := testdb.MockDatabase(t)
+			ctx := persistence.SaveToContext(context.TODO(), db)
+			defer mock.AssertExpectations(t)
+			mock.ExpectExec(defaultExpectedDeleteQuery()).WithArgs(givenTenant, givenID).WillReturnError(someError())
+			// WHEN
+			err := testedMethod(ctx, givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}})
+			// THEN
+			require.EqualError(t, err, "while deleting from database: some error")
+		})
 
-	t.Run("returns error when removed more than one object", func(t *testing.T) {
-		// GIVEN
-		db, mock := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		defer mock.AssertExpectations(t)
-		mock.ExpectExec(defaultExpectedDeleteQuery()).WithArgs(givenTenant, givenID).WillReturnResult(sqlmock.NewResult(0, 12))
-		// WHEN
-		err := sut.Delete(ctx, givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}})
-		// THEN
-		require.EqualError(t, err, "delete should remove single row, but removed 12 rows")
-	})
+		t.Run(fmt.Sprintf("[%s] returns error if missing persistence context", tn), func(t *testing.T) {
+			ctx := context.TODO()
+			err := testedMethod(ctx, givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}})
+			require.EqualError(t, err, "unable to fetch database from context")
+		})
+	}
+}
+func TestDeleteReactsOnNumberOfRemovedObjects(t *testing.T) {
+	givenID := uuidA()
+	givenTenant := uuidB()
+	sut := repo.NewDeleter("users", "tenant_col")
 
-	t.Run("returns error when object not found", func(t *testing.T) {
-		// GIVEN
-		db, mock := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		defer mock.AssertExpectations(t)
-		mock.ExpectExec(defaultExpectedDeleteQuery()).WithArgs(givenTenant, givenID).WillReturnResult(sqlmock.NewResult(0, 0))
-		// WHEN
-		err := sut.Delete(ctx, givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}})
-		// THEN
-		require.EqualError(t, err, "delete should remove single row, but removed 0 rows")
-	})
+	cases := map[string]struct {
+		methodToTest      methodToTest
+		givenRowsAffected int64
+		expectedErrString string
+	}{
+		"[DeleteOne] returns error when removed more than one object": {
+			methodToTest:      sut.DeleteOne,
+			givenRowsAffected: 154,
+			expectedErrString: "delete should remove single row, but removed 154 rows",
+		},
+		"[DeleteOne] returns error when object not found": {
+			methodToTest:      sut.DeleteOne,
+			givenRowsAffected: 0,
+			expectedErrString: "delete should remove single row, but removed 0 rows",
+		},
+		"[Delete Many] success when removed more than one object": {
+			methodToTest:      sut.DeleteMany,
+			givenRowsAffected: 154,
+			expectedErrString: "",
+		},
+		"[Delete Many] success when not found objects to remove": {
+			methodToTest:      sut.DeleteMany,
+			givenRowsAffected: 0,
+			expectedErrString: "",
+		},
+	}
 
-	t.Run("returns error if missing persistence context", func(t *testing.T) {
-		ctx := context.TODO()
-		err := sut.Delete(ctx, givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}})
-		require.EqualError(t, err, "unable to fetch database from context")
-	})
-
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			// GIVEN
+			db, mock := testdb.MockDatabase(t)
+			ctx := persistence.SaveToContext(context.TODO(), db)
+			defer mock.AssertExpectations(t)
+			mock.ExpectExec(defaultExpectedDeleteQuery()).WithArgs(givenTenant, givenID).WillReturnResult(sqlmock.NewResult(0, tc.givenRowsAffected))
+			// WHEN
+			err := tc.methodToTest(ctx, givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}})
+			// THEN
+			if tc.expectedErrString != "" {
+				require.EqualError(t, err, tc.expectedErrString)
+			}
+		})
+	}
 }
 
 func defaultExpectedDeleteQuery() string {

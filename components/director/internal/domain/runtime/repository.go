@@ -42,7 +42,7 @@ func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, err
 }
 
 func (r *pgRepository) Delete(ctx context.Context, tenant string, id string) error {
-	return r.Deleter.Delete(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
+	return r.Deleter.DeleteOne(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
 }
 
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error) {

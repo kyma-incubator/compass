@@ -17,7 +17,15 @@ func NewDeleter(tableName, tenantColumn string) *Deleter {
 	return &Deleter{tableName: tableName, tenantColumn: tenantColumn}
 }
 
-func (g *Deleter) Delete(ctx context.Context, tenant string, conditions Conditions) error {
+func (g *Deleter) DeleteOne(ctx context.Context, tenant string, conditions Conditions) error {
+	return g.delete(ctx, tenant, conditions, true)
+}
+
+func (g *Deleter) DeleteMany(ctx context.Context, tenant string, conditions Conditions) error {
+	return g.delete(ctx, tenant, conditions, false)
+}
+
+func (g *Deleter) delete(ctx context.Context, tenant string, conditions Conditions, requireSingleRemoval bool) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
@@ -30,12 +38,14 @@ func (g *Deleter) Delete(ctx context.Context, tenant string, conditions Conditio
 	if err != nil {
 		return errors.Wrap(err, "while deleting from database")
 	}
-	affected, err := res.RowsAffected()
-	if err != nil {
-		return errors.Wrap(err, "while checking affected rows")
-	}
-	if affected != 1 {
-		return fmt.Errorf("delete should remove single row, but removed %d rows", affected)
+	if requireSingleRemoval {
+		affected, err := res.RowsAffected()
+		if err != nil {
+			return errors.Wrap(err, "while checking affected rows")
+		}
+		if affected != 1 {
+			return fmt.Errorf("delete should remove single row, but removed %d rows", affected)
+		}
 	}
 
 	return nil
