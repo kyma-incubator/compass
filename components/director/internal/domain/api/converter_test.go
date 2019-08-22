@@ -373,7 +373,7 @@ func TestApiSpecDataConversionNilStaysNil(t *testing.T) {
 func TestEntityConverter_ToEntity(t *testing.T) {
 	t.Run("success all nullable properites filled", func(t *testing.T) {
 		//GIVEN
-		apiModel := fixDetailedModelAPIDefinition(t, uuid.New().String(), "name", "description", "group")
+		apiModel := *fixDetailedModelAPIDefinition(t, uuid.New().String(), "name", "description", "group")
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, nil, versionConv)
 		//WHEN
@@ -384,7 +384,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 	})
 	t.Run("success all nullable properites empty", func(t *testing.T) {
 		//GIVEN
-		apiModel := fixModelAPIDefinition("id", "appid", "name", "desc")
+		apiModel := *fixModelAPIDefinition("id", "appid", "name", "desc")
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, nil, versionConv)
 		//WHEN
@@ -393,21 +393,12 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		require.NoError(t, err)
 		assertApiDefinition(t, apiModel, entity)
 	})
-	t.Run("return error when model is nil", func(t *testing.T) {
-		//GIVEN
-		versionConv := version.NewConverter()
-		conv := api.NewConverter(nil, nil, versionConv)
-		//WHEN
-		_, err := conv.ToEntity(nil)
-		//THEN
-		require.EqualError(t, err, "api definition model cannot be nil")
-	})
 }
 
 func TestEntityConverter_FromEntity(t *testing.T) {
 	t.Run("success all nullable properties filled", func(t *testing.T) {
 		//GIVEN
-		entity := fixDetailedApiDefinitionEntity("placeholder")
+		entity := *fixDetailedApiDefinitionEntity("placeholder")
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, nil, versionConv)
 		//WHEN
@@ -418,7 +409,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
-		entity := fixMinimalApiDefinitionEntity("id", "app_id", "name", "target_url")
+		entity := *fixMinimalApiDefinitionEntity("id", "app_id", "name", "target_url")
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, nil, versionConv)
 		//WHEN
@@ -427,19 +418,9 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		require.NoError(t, err)
 		assertApiDefinition(t, apiModel, entity)
 	})
-
-	t.Run("return error when entity is nil", func(t *testing.T) {
-		//GIVEN
-		versionConv := version.NewConverter()
-		conv := api.NewConverter(nil, nil, versionConv)
-		//WHEN
-		_, err := conv.FromEntity(nil)
-		//THEN
-		require.EqualError(t, err, "api definition entity cannot be nil")
-	})
 }
 
-func assertApiDefinition(t *testing.T, apiModel *model.APIDefinition, entity *api.APIDefinition) {
+func assertApiDefinition(t *testing.T, apiModel model.APIDefinition, entity api.APIDefinition) {
 	assert.Equal(t, apiModel.ID, entity.ID)
 	assert.Equal(t, apiModel.TenantID, entity.TenantID)
 	assert.Equal(t, apiModel.ApplicationID, entity.AppID)
@@ -452,7 +433,7 @@ func assertApiDefinition(t *testing.T, apiModel *model.APIDefinition, entity *ap
 	assertVersion(t, &entity.Version, apiModel.Version)
 }
 
-func assertAPISpec(t *testing.T, entity *api.APIDefinition, apiSpec *model.APISpec) {
+func assertAPISpec(t *testing.T, entity api.APIDefinition, apiSpec *model.APISpec) {
 	if apiSpec != nil {
 		testdb.AssertSqlNullString(t, entity.SpecData, apiSpec.Data)
 		testdb.AssertSqlNullString(t, entity.SpecFormat, strings.Ptr(string(apiSpec.Format)))

@@ -156,20 +156,15 @@ func (c *converter) runtimeAuthArrToGraphQL(in []*model.RuntimeAuth) []*graphql.
 	return auths
 }
 
-func (c *converter) FromEntity(entity *APIDefinition) (*model.APIDefinition, error) {
-	if entity == nil {
-		//TODO: add test for this
-		return nil, errors.New("api definition entity cannot be nil")
-	}
-
+func (c *converter) FromEntity(entity APIDefinition) (model.APIDefinition, error) {
 	defaultAuth, err := unmarshallDefaultAuth(entity.DefaultAuth)
 	if err != nil {
-		return nil, errors.Wrap(err, "while converting ApiDefinition")
+		return model.APIDefinition{}, errors.Wrap(err, "while converting ApiDefinition")
 	}
 
 	versionModel, err := c.version.FromEntity(entity.Version)
 	if err != nil {
-		return nil, errors.Wrap(err, "while converting version")
+		return model.APIDefinition{}, errors.Wrap(err, "while converting version")
 	}
 
 	format := ""
@@ -182,7 +177,7 @@ func (c *converter) FromEntity(entity *APIDefinition) (*model.APIDefinition, err
 		specType = entity.SpecType.String
 	}
 
-	return &model.APIDefinition{
+	return model.APIDefinition{
 		ID:            entity.ID,
 		ApplicationID: entity.AppID,
 		Name:          entity.Name,
@@ -201,14 +196,10 @@ func (c *converter) FromEntity(entity *APIDefinition) (*model.APIDefinition, err
 	}, nil
 }
 
-func (c *converter) ToEntity(apiModel *model.APIDefinition) (*APIDefinition, error) {
-	if apiModel == nil {
-		return nil, errors.New("api definition model cannot be nil")
-	}
-
-	defaultAuth, err := marshaledAuth(apiModel.DefaultAuth)
+func (c *converter) ToEntity(apiModel model.APIDefinition) (APIDefinition, error) {
+	defaultAuth, err := marshallDefaultAuth(apiModel.DefaultAuth)
 	if err != nil {
-		return nil, errors.Wrap(err, "while converting ApiDefinition")
+		return APIDefinition{}, errors.Wrap(err, "while converting ApiDefinition")
 	}
 	var specData *string
 	var specFormat model.SpecFormat
@@ -223,11 +214,11 @@ func (c *converter) ToEntity(apiModel *model.APIDefinition) (*APIDefinition, err
 	if apiModel.Version != nil {
 		versionEntity, err = c.version.ToEntity(*apiModel.Version)
 		if err != nil {
-			return nil, errors.Wrap(err, "while converting version")
+			return APIDefinition{}, errors.Wrap(err, "while converting version")
 		}
 	}
 
-	return &APIDefinition{
+	return APIDefinition{
 		ID:          apiModel.ID,
 		TenantID:    apiModel.TenantID,
 		AppID:       apiModel.ApplicationID,
@@ -257,14 +248,14 @@ func unmarshallDefaultAuth(defaultAuthSql sql.NullString) (*model.Auth, error) {
 	return defaultAuth, nil
 }
 
-func marshaledAuth(defaultAuth *model.Auth) (string, error) {
-	marshalledAuth := ""
+func marshallDefaultAuth(defaultAuth *model.Auth) (string, error) {
+	marshaledAuth := ""
 	if defaultAuth != nil {
 		output, err := json.Marshal(defaultAuth)
 		if err != nil {
 			return "", errors.Wrap(err, "while marshaling default auth")
 		}
-		marshalledAuth = string(output)
+		marshaledAuth = string(output)
 	}
-	return marshalledAuth, nil
+	return marshaledAuth, nil
 }
