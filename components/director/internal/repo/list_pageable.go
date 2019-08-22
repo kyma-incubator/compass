@@ -40,19 +40,12 @@ func (g *PageableQuerier) List(ctx context.Context, tenant string, pageSize int,
 		return nil, -1, errors.Wrap(err, "while decoding page cursor")
 	}
 
-	filterSubquery := ""
-	for _, cond := range additionalConditions {
-		if strings.TrimSpace(cond) != "" {
-			filterSubquery += fmt.Sprintf(` AND %s`, cond)
-		}
-	}
-
 	paginationSQL, err := pagination.ConvertOffsetLimitAndOrderedColumnToSQL(pageSize, offset, orderByColumn)
 	if err != nil {
 		return nil, -1, errors.Wrap(err, "while converting offset and limit to cursor")
 	}
 
-	stmtWithoutPagination := fmt.Sprintf("SELECT %s FROM %s WHERE %s=$1 %s", g.selectedColumns, g.tableName, g.tenantColumn, filterSubquery)
+	stmtWithoutPagination := fixSelectStatement(g.selectedColumns, g.tableName, g.tenantColumn, additionalConditions)
 	stmtWithPagination := fmt.Sprintf("%s %s", stmtWithoutPagination, paginationSQL)
 
 	err = persist.Select(dest, stmtWithPagination, tenant)

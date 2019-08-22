@@ -2,7 +2,6 @@ package repo
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -30,14 +29,7 @@ func (l *Lister) List(ctx context.Context, tenant string, dest Collection, addit
 		return err
 	}
 
-	filterSubquery := ""
-	for _, cond := range additionalConditions {
-		if strings.TrimSpace(cond) != "" {
-			filterSubquery += fmt.Sprintf(` AND %s`, cond)
-		}
-	}
-
-	stmt := fmt.Sprintf("SELECT %s FROM %s WHERE %s=$1 %s", l.selectedColumns, l.tableName, l.tenantColumn, filterSubquery)
+	stmt := fixSelectStatement(l.selectedColumns, l.tableName, l.tenantColumn, additionalConditions)
 
 	err = persist.Select(dest, stmt, tenant)
 	if err != nil {

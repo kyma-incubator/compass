@@ -33,15 +33,16 @@ func TestList(t *testing.T) {
 		rows := sqlmock.NewRows([]string{"id_col", "tenant_col", "first_name", "last_name", "age"}).
 			AddRow(peterRow...).
 			AddRow(homerRow...)
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT id_col, tenant_col, first_name, last_name, age FROM users WHERE tenant_col=$1`)).WithArgs(givenTenant).WillReturnRows(rows)
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT id_col, tenant_col, first_name, last_name, age FROM users WHERE tenant_col=$1`)).
+			WithArgs(givenTenant).WillReturnRows(rows)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection
 
 		err := sut.List(ctx, givenTenant, &dest)
 		require.NoError(t, err)
 		assert.Len(t, dest, 2)
-		assert.Equal(t, peter, dest[0])
-		assert.Equal(t, homer, dest[1])
+		assert.Contains(t, dest, peter)
+		assert.Contains(t, dest, homer)
 	})
 
 	t.Run("lists all items successfully with additional parameters", func(t *testing.T) {
@@ -50,7 +51,8 @@ func TestList(t *testing.T) {
 
 		rows := sqlmock.NewRows([]string{"id_col", "tenant_col", "first_name", "last_name", "age"}).
 			AddRow(peterRow...)
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT id_col, tenant_col, first_name, last_name, age FROM users WHERE tenant_col=$1 AND first_name='Peter' AND age > 18`)).WithArgs(givenTenant).WillReturnRows(rows)
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT id_col, tenant_col, first_name, last_name, age FROM users WHERE tenant_col=$1 AND first_name='Peter' AND age > 18`)).
+			WithArgs(givenTenant).WillReturnRows(rows)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection
 
