@@ -22,6 +22,7 @@ import (
 
 type config struct {
 	Address               string `envconfig:"default=127.0.0.1:3000"`
+	InternalAddress       string `envconfig:"default=127.0.0.1:3001"` // TODO: figure out how to split schema to two different APIs
 	APIEndpoint           string `envconfig:"default=/graphql"`
 	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
 
@@ -33,8 +34,10 @@ type config struct {
 }
 
 func (c *config) String() string {
-	return fmt.Sprintf("Address: %s, APIEndpoint: %s, TokenLength: %d, TokenRuntimeExpiration: %s, TokenApplicationExpiration: %s",
-		c.Address, c.APIEndpoint, c.Token.Length, c.Token.RuntimeExpiration.String(), c.Token.ApplicationExpiration.String())
+	return fmt.Sprintf("Address: %s, InternalAddress: %s, APIEndpoint: %s, "+
+		"TokenLength: %d, TokenRuntimeExpiration: %s, TokenApplicationExpiration: %s",
+		c.Address, c.InternalAddress, c.APIEndpoint,
+		c.Token.Length, c.Token.RuntimeExpiration.String(), c.Token.ApplicationExpiration.String())
 }
 
 func main() {
@@ -52,8 +55,10 @@ func main() {
 	tokenCache := tokens.NewTokenCache(cfg.Token.ApplicationExpiration, cfg.Token.RuntimeExpiration)
 	tokenService := tokens.NewTokenService(tokenCache, tokens.NewTokenGenerator(cfg.Token.Length))
 
+	authenticator := authentication.NewAuthenticator(tokenService)
+
 	tokenResolver := api.NewTokenResolver(tokenService)
-	certificateResolver := api.NewCertificateResolver()
+	certificateResolver := api.NewCertificateResolver(authenticator, tokenService)
 	resolver := api.Resolver{TokenResolver: tokenResolver, CertificateResolver: certificateResolver}
 
 	gqlCfg := gqlschema.Config{

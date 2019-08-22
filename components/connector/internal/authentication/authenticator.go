@@ -7,25 +7,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+//go:generate mockery -name=Authenticator
 type Authenticator interface {
-	TokenAuthenticator
-	CertificateAuthenticator
-	SingleAuthenticator
-}
-
-//go:generate mockery -name=TokenAuthenticator
-type TokenAuthenticator interface {
 	AuthenticateToken(context context.Context) (tokens.TokenData, error)
-}
-
-//go:generate mockery -name=CertificateAuthenticator
-type CertificateAuthenticator interface {
 	AuthenticateCertificate(context context.Context) (CertificateData, error)
-}
-
-// TODO: better name?
-//go:generate mockery -name=SingleAuthenticator
-type SingleAuthenticator interface {
 	AuthenticateTokenOrCertificate(context context.Context) (string, error)
 }
 
