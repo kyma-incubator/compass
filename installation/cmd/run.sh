@@ -4,7 +4,7 @@ set -o errexit
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
 
-defaultRelease="master"
+defaultRelease="1.4.1"
 KYMA_RELEASE=${1:-$defaultRelease}
 COMPASS_HELM_RELEASE_NAME="compass"
 COMPASS_HELM_RELEASE_NAMESPACE="compass-system"
