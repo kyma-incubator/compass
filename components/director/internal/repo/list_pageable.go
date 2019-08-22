@@ -45,7 +45,7 @@ func (g *PageableQuerier) List(ctx context.Context, tenant string, pageSize int,
 		return nil, -1, errors.Wrap(err, "while converting offset and limit to cursor")
 	}
 
-	stmtWithoutPagination := fixSelectStatement(g.selectedColumns, g.tableName, g.tenantColumn, additionalConditions)
+	stmtWithoutPagination := buildSelectStatement(g.selectedColumns, g.tableName, g.tenantColumn, additionalConditions)
 	stmtWithPagination := fmt.Sprintf("%s %s", stmtWithoutPagination, paginationSQL)
 
 	err = persist.Select(dest, stmtWithPagination, tenant)

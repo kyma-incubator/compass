@@ -29,7 +29,7 @@ func (l *Lister) List(ctx context.Context, tenant string, dest Collection, addit
 		return err
 	}
 
-	stmt := fixSelectStatement(l.selectedColumns, l.tableName, l.tenantColumn, additionalConditions)
+	stmt := buildSelectStatement(l.selectedColumns, l.tableName, l.tenantColumn, additionalConditions)
 
 	err = persist.Select(dest, stmt, tenant)
 	if err != nil {

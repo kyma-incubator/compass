@@ -27,18 +27,16 @@ func appendEnumeratedConditions(query string, startIdx int, conditions Condition
 	return out
 }
 
-func fixSelectStatement(selectedColumns, tableName, tenantColumn string, additionalConditions []string) string {
-	filterSubquery := ""
+func buildSelectStatement(selectedColumns, tableName, tenantColumn string, additionalConditions []string) string {
+	var stmtBuilder strings.Builder
+
+	stmtBuilder.WriteString(fmt.Sprintf("SELECT %s FROM %s WHERE %s=$1", selectedColumns, tableName, tenantColumn))
+
 	for _, cond := range additionalConditions {
 		if strings.TrimSpace(cond) != "" {
-			filterSubquery += fmt.Sprintf(` AND %s`, cond)
+			stmtBuilder.WriteString(fmt.Sprintf(` AND %s`, cond))
 		}
 	}
 
-	stmt := fmt.Sprintf("SELECT %s FROM %s WHERE %s=$1", selectedColumns, tableName, tenantColumn)
-	if filterSubquery != "" {
-		stmt = fmt.Sprintf("%s %s", stmt, filterSubquery)
-	}
-
-	return stmt
+	return stmtBuilder.String()
 }

@@ -13,15 +13,15 @@ import (
 
 type Upserter struct {
 	tableName          string
-	createColumns      []string
+	insertColumns      []string
 	conflictingColumns []string
 	updateColumns      []string
 }
 
-func NewUpserter(tableName string, createColumns []string, conflictingColumns []string, updateColumns []string) *Upserter {
+func NewUpserter(tableName string, insertColumns []string, conflictingColumns []string, updateColumns []string) *Upserter {
 	return &Upserter{
 		tableName:          tableName,
-		createColumns:      createColumns,
+		insertColumns:      insertColumns,
 		conflictingColumns: conflictingColumns,
 		updateColumns:      updateColumns,
 	}
@@ -38,7 +38,7 @@ func (u *Upserter) Upsert(ctx context.Context, dbEntity interface{}) error {
 	}
 
 	var values []string
-	for _, c := range u.createColumns {
+	for _, c := range u.insertColumns {
 		values = append(values, fmt.Sprintf(":%s", c))
 	}
 
@@ -47,7 +47,7 @@ func (u *Upserter) Upsert(ctx context.Context, dbEntity interface{}) error {
 		update = append(update, fmt.Sprintf("%[1]s=EXCLUDED.%[1]s", c))
 	}
 
-	stmtWithoutUpsert := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", u.tableName, strings.Join(u.createColumns, ", "), strings.Join(values, ", "))
+	stmtWithoutUpsert := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", u.tableName, strings.Join(u.insertColumns, ", "), strings.Join(values, ", "))
 	stmtWithUpsert := fmt.Sprintf("%s ON CONFLICT ( %s ) DO UPDATE SET %s", stmtWithoutUpsert, strings.Join(u.conflictingColumns, ", "), strings.Join(update, ", "))
 
 	_, err = persist.NamedExec(stmtWithUpsert, dbEntity)
