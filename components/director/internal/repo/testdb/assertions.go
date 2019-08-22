@@ -19,10 +19,10 @@ func AssertSqlNullString(t *testing.T, in sql.NullString, text *string) {
 	}
 }
 
-func AssertSqlNullBool(t *testing.T, in sql.NullBool, exptected *bool) {
-	if exptected != nil {
+func AssertSqlNullBool(t *testing.T, in sql.NullBool, expected *bool) {
+	if expected != nil {
 		require.True(t, in.Valid)
-		assert.Equal(t, *exptected, in.Bool)
+		assert.Equal(t, *expected, in.Bool)
 	} else {
 		assert.False(t, in.Valid)
 	}

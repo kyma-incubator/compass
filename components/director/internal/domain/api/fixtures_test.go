@@ -3,6 +3,8 @@ package api_test
 import (
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/strings"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 
 	"github.com/google/uuid"
@@ -250,8 +252,8 @@ func fixDetailedApiDefinitionEntity(placeholder string) *api.APIDefinition {
 		Group:              repo.NewNullableString(&placeholder),
 		TargetURL:          placeholder,
 		SpecData:           repo.NewNullableString(&placeholder),
-		SpecFormat:         model.SpecFormatYaml,
-		SpecType:           model.APISpecTypeOpenAPI,
+		SpecFormat:         repo.NewNullableString(strings.Ptr(string(model.SpecFormatYaml))),
+		SpecType:           repo.NewNullableString(strings.Ptr(string(model.APISpecTypeOpenAPI))),
 		DefaultAuth:        repo.NewNullableString(&defaultAuthJson),
 		SpecFetchRequestID: repo.NewNullableString(&fetchRequestID),
 		Version: version.Version{

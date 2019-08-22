@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/strings"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -28,8 +30,8 @@ type FetchRequestConverter interface {
 type VersionConverter interface {
 	ToGraphQL(in *model.Version) *graphql.Version
 	InputFromGraphQL(in *graphql.VersionInput) *model.VersionInput
-	FromEntity(version *version.Version) (*model.Version, error)
-	ToEntity(version *model.Version) (*version.Version, error)
+	FromEntity(version version.Version) (model.Version, error)
+	ToEntity(version model.Version) (version.Version, error)
 }
 
 type converter struct {
@@ -165,9 +167,19 @@ func (c *converter) FromEntity(entity *APIDefinition) (*model.APIDefinition, err
 		return nil, errors.Wrap(err, "while converting ApiDefinition")
 	}
 
-	versionModel, err := c.version.FromEntity(&entity.Version)
+	versionModel, err := c.version.FromEntity(entity.Version)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting version")
+	}
+
+	format := ""
+	if entity.SpecFormat.Valid {
+		format = entity.SpecFormat.String
+	}
+
+	specType := ""
+	if entity.SpecType.Valid {
+		specType = entity.SpecType.String
 	}
 
 	return &model.APIDefinition{
@@ -182,10 +194,10 @@ func (c *converter) FromEntity(entity *APIDefinition) (*model.APIDefinition, err
 		//TODO: add spec_fetch_request_ID when resolver will be implemented
 		Spec: &model.APISpec{
 			Data:   repo.StringFromSqlNullString(entity.SpecData),
-			Format: entity.SpecFormat,
-			Type:   entity.SpecType,
+			Format: model.SpecFormat(format),
+			Type:   model.APISpecType(specType),
 		},
-		Version: versionModel,
+		Version: &versionModel,
 	}, nil
 }
 
@@ -209,11 +221,10 @@ func (c *converter) ToEntity(apiModel *model.APIDefinition) (*APIDefinition, err
 
 	var versionEntity version.Version
 	if apiModel.Version != nil {
-		versionTmp, err := c.version.ToEntity(apiModel.Version)
+		versionEntity, err = c.version.ToEntity(*apiModel.Version)
 		if err != nil {
 			return nil, errors.Wrap(err, "while converting version")
 		}
-		versionEntity = *versionTmp
 	}
 
 	return &APIDefinition{
@@ -225,8 +236,8 @@ func (c *converter) ToEntity(apiModel *model.APIDefinition) (*APIDefinition, err
 		Group:       repo.NewNullableString(apiModel.Group),
 		TargetURL:   apiModel.TargetURL,
 		SpecData:    repo.NewNullableString(specData),
-		SpecFormat:  specFormat,
-		SpecType:    specType,
+		SpecFormat:  repo.NewNullableString(strings.Ptr(string(specFormat))),
+		SpecType:    repo.NewNullableString(strings.Ptr(string(specType))),
 		DefaultAuth: repo.NewNullableString(&defaultAuth),
 		Version:     versionEntity,
 		//TODO: add spec_fetch_request_ID when resolver will be implemented

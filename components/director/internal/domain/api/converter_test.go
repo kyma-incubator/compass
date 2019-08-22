@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/strings"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 
 	"github.com/google/uuid"
@@ -453,8 +455,8 @@ func assertApiDefinition(t *testing.T, apiModel *model.APIDefinition, entity *ap
 func assertAPISpec(t *testing.T, entity *api.APIDefinition, apiSpec *model.APISpec) {
 	if apiSpec != nil {
 		testdb.AssertSqlNullString(t, entity.SpecData, apiSpec.Data)
-		assert.Equal(t, apiSpec.Format, entity.SpecFormat)
-		assert.Equal(t, apiSpec.Type, entity.SpecType)
+		testdb.AssertSqlNullString(t, entity.SpecFormat, strings.Ptr(string(apiSpec.Format)))
+		testdb.AssertSqlNullString(t, entity.SpecType, strings.Ptr(string(apiSpec.Type)))
 	} else {
 		assert.False(t, entity.SpecData.Valid)
 		assert.Empty(t, entity.SpecFormat)

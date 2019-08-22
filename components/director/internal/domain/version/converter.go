@@ -38,22 +38,23 @@ func (c *converter) InputFromGraphQL(in *graphql.VersionInput) *model.VersionInp
 	}
 }
 
-func (c *converter) FromEntity(version *Version) (*model.Version, error) {
+func (c *converter) FromEntity(version Version) (model.Version, error) {
 	value := repo.StringFromSqlNullString(version.VersionValue)
 	versionValue := ""
 	if value != nil {
 		versionValue = *value
 	}
 
-	return &model.Version{
+	return model.Version{
 		Value:           versionValue,
 		Deprecated:      repo.BoolFromSqlNullBool(version.VersionDepracated),
 		DeprecatedSince: repo.StringFromSqlNullString(version.VersionDepracatedSince),
 		ForRemoval:      repo.BoolFromSqlNullBool(version.VersionForRemoval),
 	}, nil
 }
-func (c *converter) ToEntity(version *model.Version) (*Version, error) {
-	return &Version{
+
+func (c *converter) ToEntity(version model.Version) (Version, error) {
+	return Version{
 		VersionValue:           repo.NewNullableString(&version.Value),
 		VersionDepracated:      repo.NewNullableBool(version.Deprecated),
 		VersionDepracatedSince: repo.NewNullableString(version.DeprecatedSince),
