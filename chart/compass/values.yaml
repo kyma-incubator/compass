@@ -24,6 +24,9 @@ global:
       e2e:
         dir: pr/
         version: "PR-221"
+      connector:
+        dir: pr/
+        version: "PR-"
 
   isLocalEnv: false
   
