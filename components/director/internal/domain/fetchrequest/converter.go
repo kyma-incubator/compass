@@ -56,6 +56,10 @@ func (c *converter) InputFromGraphQL(in *graphql.FetchRequestInput) *model.Fetch
 }
 
 func (c *converter) ToEntity(in model.FetchRequest) (Entity, error) {
+	if in.Status == nil {
+		return Entity{}, errors.New("Invalid input model")
+	}
+
 	var authMarshalled []byte
 	var err error
 
@@ -110,12 +114,15 @@ func (c *converter) ToEntity(in model.FetchRequest) (Entity, error) {
 }
 
 func (c *converter) FromEntity(in Entity) (model.FetchRequest, error) {
-	var auth model.Auth
+	var authPtr *model.Auth
 	if in.Auth.Valid {
+		var auth model.Auth
 		err := json.Unmarshal([]byte(in.Auth.String), &auth)
 		if err != nil {
 			return model.FetchRequest{}, errors.Wrap(err, "while unmarshalling Auth")
 		}
+
+		authPtr = &auth
 	}
 
 	var objectType model.FetchRequestReferenceObjectType
@@ -149,7 +156,7 @@ func (c *converter) FromEntity(in Entity) (model.FetchRequest, error) {
 		URL: in.URL,
 		Mode: model.FetchMode(in.Mode),
 		Filter: filter,
-		Auth: &auth,
+		Auth: authPtr,
 	}, nil
 }
 
@@ -161,7 +168,6 @@ func (c *converter) statusToGraphQL(in *model.FetchRequestStatus) *graphql.Fetch
 	}
 
 	var condition graphql.FetchRequestStatusCondition
-
 	switch in.Condition {
 	case model.FetchRequestStatusConditionInitial:
 		condition = graphql.FetchRequestStatusConditionInitial
