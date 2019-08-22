@@ -1,8 +1,10 @@
-package authentication
+package authentication_test
 
 import (
 	"context"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 
@@ -26,12 +28,12 @@ func TestAuthenticator_AuthenticateToken(t *testing.T) {
 
 	t.Run("should authenticate with token", func(t *testing.T) {
 		// given
-		ctx := PutInContext(context.Background(), ConnectorTokenKey, token)
+		ctx := authentication.PutInContext(context.Background(), authentication.ConnectorTokenKey, token)
 
 		tokenSvc := &mocks.Service{}
 		tokenSvc.On("Resolve", token).Return(tokenData, nil)
 
-		authenticator := NewAuthenticator(tokenSvc)
+		authenticator := authentication.NewAuthenticator(tokenSvc)
 
 		// when
 		data, err := authenticator.AuthenticateToken(ctx)
@@ -43,12 +45,12 @@ func TestAuthenticator_AuthenticateToken(t *testing.T) {
 
 	t.Run("should return error if token not found in cache", func(t *testing.T) {
 		// given
-		ctx := PutInContext(context.Background(), ConnectorTokenKey, token)
+		ctx := authentication.PutInContext(context.Background(), authentication.ConnectorTokenKey, token)
 
 		tokenSvc := &mocks.Service{}
 		tokenSvc.On("Resolve", token).Return(tokens.TokenData{}, apperrors.NotFound("error"))
 
-		authenticator := NewAuthenticator(tokenSvc)
+		authenticator := authentication.NewAuthenticator(tokenSvc)
 
 		// when
 		data, err := authenticator.AuthenticateToken(ctx)
@@ -60,7 +62,7 @@ func TestAuthenticator_AuthenticateToken(t *testing.T) {
 
 	t.Run("should return error if token not found in context", func(t *testing.T) {
 		// given
-		authenticator := NewAuthenticator(nil)
+		authenticator := authentication.NewAuthenticator(nil)
 
 		// when
 		data, err := authenticator.AuthenticateToken(context.Background())
@@ -74,14 +76,14 @@ func TestAuthenticator_AuthenticateToken(t *testing.T) {
 
 func TestAuthenticator_AuthenticateCertificate(t *testing.T) {
 
-	certificateData := CertificateData{CommonName: clientId, Hash: certHash}
+	certificateData := authentication.CertificateData{CommonName: clientId, Hash: certHash}
 
 	t.Run("should authenticate with certificate", func(t *testing.T) {
 		// given
-		ctx := PutInContext(context.Background(), CertificateCommonNameKey, clientId)
-		ctx = PutInContext(ctx, CertificateHashKey, certHash)
+		ctx := authentication.PutInContext(context.Background(), authentication.CertificateCommonNameKey, clientId)
+		ctx = authentication.PutInContext(ctx, authentication.CertificateHashKey, certHash)
 
-		authenticator := NewAuthenticator(nil)
+		authenticator := authentication.NewAuthenticator(nil)
 
 		// when
 		data, err := authenticator.AuthenticateCertificate(ctx)
@@ -93,9 +95,9 @@ func TestAuthenticator_AuthenticateCertificate(t *testing.T) {
 
 	t.Run("should return error if hash not in context", func(t *testing.T) {
 		// given
-		ctx := PutInContext(context.Background(), CertificateCommonNameKey, clientId)
+		ctx := authentication.PutInContext(context.Background(), authentication.CertificateCommonNameKey, clientId)
 
-		authenticator := NewAuthenticator(nil)
+		authenticator := authentication.NewAuthenticator(nil)
 
 		// when
 		data, err := authenticator.AuthenticateCertificate(ctx)
@@ -107,7 +109,7 @@ func TestAuthenticator_AuthenticateCertificate(t *testing.T) {
 
 	t.Run("should return error if common name not in context", func(t *testing.T) {
 		// given
-		authenticator := NewAuthenticator(nil)
+		authenticator := authentication.NewAuthenticator(nil)
 
 		// when
 		data, err := authenticator.AuthenticateCertificate(context.Background())
@@ -125,12 +127,12 @@ func TestAuthenticator_AuthenticateTokenOrCertificate(t *testing.T) {
 
 	t.Run("should authenticate with token", func(t *testing.T) {
 		// given
-		ctx := PutInContext(context.Background(), ConnectorTokenKey, token)
+		ctx := authentication.PutInContext(context.Background(), authentication.ConnectorTokenKey, token)
 
 		tokenSvc := &mocks.Service{}
 		tokenSvc.On("Resolve", token).Return(tokenData, nil)
 
-		authenticator := NewAuthenticator(tokenSvc)
+		authenticator := authentication.NewAuthenticator(tokenSvc)
 
 		// when
 		id, err := authenticator.AuthenticateTokenOrCertificate(ctx)
@@ -142,10 +144,10 @@ func TestAuthenticator_AuthenticateTokenOrCertificate(t *testing.T) {
 
 	t.Run("should authenticate with certificate if no token in context", func(t *testing.T) {
 		// given
-		ctx := PutInContext(context.Background(), CertificateCommonNameKey, clientId)
-		ctx = PutInContext(ctx, CertificateHashKey, certHash)
+		ctx := authentication.PutInContext(context.Background(), authentication.CertificateCommonNameKey, clientId)
+		ctx = authentication.PutInContext(ctx, authentication.CertificateHashKey, certHash)
 
-		authenticator := NewAuthenticator(nil)
+		authenticator := authentication.NewAuthenticator(nil)
 
 		// when
 		id, err := authenticator.AuthenticateTokenOrCertificate(ctx)
@@ -157,14 +159,14 @@ func TestAuthenticator_AuthenticateTokenOrCertificate(t *testing.T) {
 
 	t.Run("should authenticate with certificate if token is invalid", func(t *testing.T) {
 		// given
-		ctx := PutInContext(context.Background(), ConnectorTokenKey, token)
-		ctx = PutInContext(ctx, CertificateCommonNameKey, clientId)
-		ctx = PutInContext(ctx, CertificateHashKey, certHash)
+		ctx := authentication.PutInContext(context.Background(), authentication.ConnectorTokenKey, token)
+		ctx = authentication.PutInContext(ctx, authentication.CertificateCommonNameKey, clientId)
+		ctx = authentication.PutInContext(ctx, authentication.CertificateHashKey, certHash)
 
 		tokenSvc := &mocks.Service{}
 		tokenSvc.On("Resolve", token).Return(tokens.TokenData{}, apperrors.NotFound("error"))
 
-		authenticator := NewAuthenticator(tokenSvc)
+		authenticator := authentication.NewAuthenticator(tokenSvc)
 
 		// when
 		id, err := authenticator.AuthenticateTokenOrCertificate(ctx)
@@ -176,7 +178,7 @@ func TestAuthenticator_AuthenticateTokenOrCertificate(t *testing.T) {
 
 	t.Run("should return error if token and cert not provided", func(t *testing.T) {
 		// given
-		authenticator := NewAuthenticator(nil)
+		authenticator := authentication.NewAuthenticator(nil)
 
 		// when
 		data, err := authenticator.AuthenticateTokenOrCertificate(context.Background())

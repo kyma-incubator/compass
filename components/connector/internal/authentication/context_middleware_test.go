@@ -1,9 +1,11 @@
-package authentication
+package authentication_test
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 
 	"github.com/stretchr/testify/assert"
 
@@ -23,11 +25,11 @@ func TestAuthContextMiddleware_PropagateAuthentication(t *testing.T) {
 	t.Run("should put authentication to context", func(t *testing.T) {
 		// given
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			token, err := GetStringFromContext(r.Context(), ConnectorTokenKey)
+			token, err := authentication.GetStringFromContext(r.Context(), authentication.ConnectorTokenKey)
 			require.NoError(t, err)
-			commonName, err := GetStringFromContext(r.Context(), CertificateCommonNameKey)
+			commonName, err := authentication.GetStringFromContext(r.Context(), authentication.CertificateCommonNameKey)
 			require.NoError(t, err)
-			certHash, err := GetStringFromContext(r.Context(), CertificateHashKey)
+			certHash, err := authentication.GetStringFromContext(r.Context(), authentication.CertificateHashKey)
 			require.NoError(t, err)
 
 			assert.Equal(t, connectorToken, token)
@@ -39,14 +41,14 @@ func TestAuthContextMiddleware_PropagateAuthentication(t *testing.T) {
 
 		request, err := http.NewRequest(http.MethodGet, "", nil)
 		require.NoError(t, err)
-		request.Header.Add(ClientCertHeader, "CommonName=certificateCommonName,Hash=qwertyuiop")
-		request.Header.Add(ConnectorTokenHeader, connectorToken)
+		request.Header.Add(authentication.ClientCertHeader, "CommonName=certificateCommonName,Hash=qwertyuiop")
+		request.Header.Add(authentication.ConnectorTokenHeader, connectorToken)
 		rr := httptest.NewRecorder()
 
 		headerParser := &mocks.CertificateHeaderParser{}
 		headerParser.On("GetCertificateData", mock.AnythingOfType("*http.Request")).Return(certificateCommonName, certificateHash, true)
 
-		authContextMiddleware := NewAuthenticationContextMiddleware(headerParser)
+		authContextMiddleware := authentication.NewAuthenticationContextMiddleware(headerParser)
 
 		// when
 		handlerWithMiddleware := authContextMiddleware.PropagateAuthentication(handler)
@@ -56,11 +58,11 @@ func TestAuthContextMiddleware_PropagateAuthentication(t *testing.T) {
 	t.Run("should not put cert context if client certificate header is empty", func(t *testing.T) {
 		// given
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			token, err := GetStringFromContext(r.Context(), ConnectorTokenKey)
+			token, err := authentication.GetStringFromContext(r.Context(), authentication.ConnectorTokenKey)
 			require.NoError(t, err)
-			commonName, err := GetStringFromContext(r.Context(), CertificateCommonNameKey)
+			commonName, err := authentication.GetStringFromContext(r.Context(), authentication.CertificateCommonNameKey)
 			require.Error(t, err)
-			certHash, err := GetStringFromContext(r.Context(), CertificateHashKey)
+			certHash, err := authentication.GetStringFromContext(r.Context(), authentication.CertificateHashKey)
 			require.Error(t, err)
 
 			assert.Equal(t, connectorToken, token)
@@ -72,13 +74,13 @@ func TestAuthContextMiddleware_PropagateAuthentication(t *testing.T) {
 
 		request, err := http.NewRequest(http.MethodGet, "", nil)
 		require.NoError(t, err)
-		request.Header.Add(ConnectorTokenHeader, connectorToken)
+		request.Header.Add(authentication.ConnectorTokenHeader, connectorToken)
 		rr := httptest.NewRecorder()
 
 		headerParser := &mocks.CertificateHeaderParser{}
 		headerParser.On("GetCertificateData", mock.AnythingOfType("*http.Request")).Return("", "", false)
 
-		authContextMiddleware := NewAuthenticationContextMiddleware(headerParser)
+		authContextMiddleware := authentication.NewAuthenticationContextMiddleware(headerParser)
 
 		// when
 		handlerWithMiddleware := authContextMiddleware.PropagateAuthentication(handler)
