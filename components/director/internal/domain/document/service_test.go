@@ -166,13 +166,14 @@ func TestService_Create(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
+	tnt := "tenant"
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt)
+
 	modelInput := fixModelDocumentInput("foo")
 	id := "foo"
 	applicationID := "foo"
-	modelDoc := modelInput.ToDocument(id, applicationID)
-
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, "tenant")
+	modelDoc := modelInput.ToDocument(id, tnt, applicationID)
 
 	testCases := []struct {
 		Name         string

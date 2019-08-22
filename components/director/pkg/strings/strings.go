@@ -22,3 +22,7 @@ func MapToSlice(set map[string]struct{}) []string {
 
 	return items
 }
+
+func Ptr(s string) *string {
+	return &s
+}
