@@ -39,18 +39,24 @@ func (c *converter) InputFromGraphQL(in *graphql.VersionInput) *model.VersionInp
 }
 
 func (c *converter) FromEntity(version *Version) (*model.Version, error) {
+	value := repo.StringFromSqlNullString(version.VersionValue)
+	versionValue := ""
+	if value != nil {
+		versionValue = *value
+	}
+
 	return &model.Version{
-		Value:           version.VersionValue,
-		Deprecated:      repo.BoolFromSqlNullBool(&version.VersionDepracated),
-		DeprecatedSince: repo.StringFromSqlNullString(&version.VersionDepracatedSince),
-		ForRemoval:      repo.BoolFromSqlNullBool(&version.VersionForRemoval),
+		Value:           versionValue,
+		Deprecated:      repo.BoolFromSqlNullBool(version.VersionDepracated),
+		DeprecatedSince: repo.StringFromSqlNullString(version.VersionDepracatedSince),
+		ForRemoval:      repo.BoolFromSqlNullBool(version.VersionForRemoval),
 	}, nil
 }
 func (c *converter) ToEntity(version *model.Version) (*Version, error) {
 	return &Version{
-		VersionValue:           version.Value,
-		VersionDepracated:      repo.NewSqlNullBool(version.Deprecated),
-		VersionDepracatedSince: repo.NewSqlNullString(version.DeprecatedSince),
-		VersionForRemoval:      repo.NewSqlNullBool(version.ForRemoval),
+		VersionValue:           repo.NewNullableString(&version.Value),
+		VersionDepracated:      repo.NewNullableBool(version.Deprecated),
+		VersionDepracatedSince: repo.NewNullableString(version.DeprecatedSince),
+		VersionForRemoval:      repo.NewNullableBool(version.ForRemoval),
 	}, nil
 }

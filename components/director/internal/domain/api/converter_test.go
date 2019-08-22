@@ -1,14 +1,15 @@
 package api_test
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
+
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
-
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
@@ -390,6 +391,15 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		require.NoError(t, err)
 		assertApiDefinition(t, apiModel, entity)
 	})
+	t.Run("return error when model is nil", func(t *testing.T) {
+		//GIVEN
+		versionConv := version.NewConverter()
+		conv := api.NewConverter(nil, nil, versionConv)
+		//WHEN
+		_, err := conv.ToEntity(nil)
+		//THEN
+		require.EqualError(t, err, "api definition model cannot be nil")
+	})
 }
 
 func TestEntityConverter_FromEntity(t *testing.T) {
@@ -415,6 +425,16 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		require.NoError(t, err)
 		assertApiDefinition(t, apiModel, entity)
 	})
+
+	t.Run("return error when entity is nil", func(t *testing.T) {
+		//GIVEN
+		versionConv := version.NewConverter()
+		conv := api.NewConverter(nil, nil, versionConv)
+		//WHEN
+		_, err := conv.FromEntity(nil)
+		//THEN
+		require.EqualError(t, err, "api definition entity cannot be nil")
+	})
 }
 
 func assertApiDefinition(t *testing.T, apiModel *model.APIDefinition, entity *api.APIDefinition) {
@@ -422,8 +442,8 @@ func assertApiDefinition(t *testing.T, apiModel *model.APIDefinition, entity *ap
 	assert.Equal(t, apiModel.TenantID, entity.TenantID)
 	assert.Equal(t, apiModel.ApplicationID, entity.AppID)
 	assert.Equal(t, apiModel.Name, entity.Name)
-	repo.AssertSqlNullString(t, &entity.Description, apiModel.Description)
-	repo.AssertSqlNullString(t, &entity.Group, apiModel.Group)
+	testdb.AssertSqlNullString(t, entity.Description, apiModel.Description)
+	testdb.AssertSqlNullString(t, entity.Group, apiModel.Group)
 	assert.Equal(t, apiModel.TargetURL, entity.TargetURL)
 	assertAPISpec(t, entity, apiModel.Spec)
 	assertAuth(t, apiModel.DefaultAuth, entity.DefaultAuth)
@@ -432,7 +452,7 @@ func assertApiDefinition(t *testing.T, apiModel *model.APIDefinition, entity *ap
 
 func assertAPISpec(t *testing.T, entity *api.APIDefinition, apiSpec *model.APISpec) {
 	if apiSpec != nil {
-		repo.AssertSqlNullString(t, &entity.SpecData, apiSpec.Data)
+		testdb.AssertSqlNullString(t, entity.SpecData, apiSpec.Data)
 		assert.Equal(t, apiSpec.Format, entity.SpecFormat)
 		assert.Equal(t, apiSpec.Type, entity.SpecType)
 	} else {
@@ -442,12 +462,12 @@ func assertAPISpec(t *testing.T, entity *api.APIDefinition, apiSpec *model.APISp
 	}
 }
 
-func assertAuth(t *testing.T, expected *model.Auth, defaultAuth string) {
+func assertAuth(t *testing.T, expected *model.Auth, defaultAuth sql.NullString) {
 	var entityAuth *model.Auth
 
-	if defaultAuth != "" {
+	if defaultAuth.Valid && defaultAuth.String != "" {
 		entityAuth = &model.Auth{}
-		err := json.Unmarshal([]byte(defaultAuth), entityAuth)
+		err := json.Unmarshal([]byte(defaultAuth.String), entityAuth)
 		require.NoError(t, err)
 	}
 	if expected != nil && entityAuth != nil {
@@ -461,14 +481,14 @@ func assertAuth(t *testing.T, expected *model.Auth, defaultAuth string) {
 	}
 }
 
-func assertVersion(t *testing.T, entity *version.Version, model *model.Version) {
-	if model != nil {
-		assert.Equal(t, model.Value, entity.VersionValue)
-		repo.AssertSqlNullBool(t, &entity.VersionDepracated, model.Deprecated)
-		repo.AssertSqlNullString(t, &entity.VersionDepracatedSince, model.DeprecatedSince)
-		repo.AssertSqlNullBool(t, &entity.VersionForRemoval, model.ForRemoval)
+func assertVersion(t *testing.T, entity *version.Version, versionModel *model.Version) {
+	if versionModel != nil {
+		testdb.AssertSqlNullString(t, entity.VersionValue, &versionModel.Value)
+		testdb.AssertSqlNullBool(t, entity.VersionDepracated, versionModel.Deprecated)
+		testdb.AssertSqlNullString(t, entity.VersionDepracatedSince, versionModel.DeprecatedSince)
+		testdb.AssertSqlNullBool(t, entity.VersionForRemoval, versionModel.ForRemoval)
 	} else {
-		assert.Equal(t, "", entity.VersionValue)
+		assert.False(t, entity.VersionValue.Valid)
 		assert.False(t, entity.VersionDepracated.Valid)
 		assert.False(t, entity.VersionDepracatedSince.Valid)
 		assert.False(t, entity.VersionForRemoval.Valid)

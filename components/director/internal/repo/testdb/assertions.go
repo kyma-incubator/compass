@@ -1,4 +1,4 @@
-package repo
+package testdb
 
 import (
 	"database/sql"
@@ -8,19 +8,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func AssertSqlNullString(t *testing.T, in *sql.NullString, text *string) {
-
-	if text != nil {
+func AssertSqlNullString(t *testing.T, in sql.NullString, text *string) {
+	if text != nil && len(*text) > 1 {
 		sqlStr := sql.NullString{}
 		err := sqlStr.Scan(*text)
 		require.NoError(t, err)
-		assert.Equal(t, in, &sqlStr)
+		assert.Equal(t, in, sqlStr)
 	} else {
 		require.False(t, in.Valid)
 	}
 }
 
-func AssertSqlNullBool(t *testing.T, in *sql.NullBool, exptected *bool) {
+func AssertSqlNullBool(t *testing.T, in sql.NullBool, exptected *bool) {
 	if exptected != nil {
 		require.True(t, in.Valid)
 		assert.Equal(t, *exptected, in.Bool)

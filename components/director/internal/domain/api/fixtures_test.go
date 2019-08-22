@@ -246,19 +246,19 @@ func fixDetailedApiDefinitionEntity(placeholder string) *api.APIDefinition {
 		TenantID:           uuid.New().String(),
 		AppID:              uuid.New().String(),
 		Name:               placeholder,
-		Description:        repo.NewSqlNullString(&placeholder),
-		Group:              repo.NewSqlNullString(&placeholder),
+		Description:        repo.NewNullableString(&placeholder),
+		Group:              repo.NewNullableString(&placeholder),
 		TargetURL:          placeholder,
-		SpecData:           repo.NewSqlNullString(&placeholder),
+		SpecData:           repo.NewNullableString(&placeholder),
 		SpecFormat:         model.SpecFormatYaml,
 		SpecType:           model.APISpecTypeOpenAPI,
-		DefaultAuth:        defaultAuthJson,
-		SpecFetchRequestID: repo.NewSqlNullString(&fetchRequestID),
+		DefaultAuth:        repo.NewNullableString(&defaultAuthJson),
+		SpecFetchRequestID: repo.NewNullableString(&fetchRequestID),
 		Version: version.Version{
-			VersionValue:           placeholder,
-			VersionDepracated:      repo.NewSqlNullBool(&boolPlaceholder),
-			VersionDepracatedSince: repo.NewSqlNullString(&placeholder),
-			VersionForRemoval:      repo.NewSqlNullBool(&boolPlaceholder),
+			VersionValue:           repo.NewNullableString(&placeholder),
+			VersionDepracated:      repo.NewNullableBool(&boolPlaceholder),
+			VersionDepracatedSince: repo.NewNullableString(&placeholder),
+			VersionForRemoval:      repo.NewNullableBool(&boolPlaceholder),
 		},
 	}
 
@@ -271,8 +271,5 @@ func fixMinimalApiDefinitionEntity(id, app_id, name, targetUrl string) *api.APID
 		AppID:     app_id,
 		Name:      name,
 		TargetURL: targetUrl,
-		Version: version.Version{
-			VersionValue: "value",
-		},
 	}
 }

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"encoding/json"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
@@ -154,13 +155,14 @@ func (c *converter) runtimeAuthArrToGraphQL(in []*model.RuntimeAuth) []*graphql.
 }
 
 func (c *converter) FromEntity(entity *APIDefinition) (*model.APIDefinition, error) {
-	var defaultAuth *model.Auth
-	if entity.DefaultAuth != "" {
-		defaultAuth = &model.Auth{}
-		err := json.Unmarshal([]byte(entity.DefaultAuth), defaultAuth)
-		if err != nil {
-			return nil, errors.Wrap(err, "while unmarshalling default auth")
-		}
+	if entity == nil {
+		//TODO: add test for this
+		return nil, errors.New("api definition entity cannot be nil")
+	}
+
+	defaultAuth, err := unmarshallDefaultAuth(entity.DefaultAuth)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting ApiDefinition")
 	}
 
 	versionModel, err := c.version.FromEntity(&entity.Version)
@@ -175,11 +177,11 @@ func (c *converter) FromEntity(entity *APIDefinition) (*model.APIDefinition, err
 		TargetURL:     entity.TargetURL,
 		TenantID:      entity.TenantID,
 		DefaultAuth:   defaultAuth,
-		Description:   repo.StringFromSqlNullString(&entity.Description),
-		Group:         repo.StringFromSqlNullString(&entity.Group),
+		Description:   repo.StringFromSqlNullString(entity.Description),
+		Group:         repo.StringFromSqlNullString(entity.Group),
 		//TODO: add spec_fetch_request_ID when resolver will be implemented
 		Spec: &model.APISpec{
-			Data:   repo.StringFromSqlNullString(&entity.SpecData),
+			Data:   repo.StringFromSqlNullString(entity.SpecData),
 			Format: entity.SpecFormat,
 			Type:   entity.SpecType,
 		},
@@ -188,15 +190,14 @@ func (c *converter) FromEntity(entity *APIDefinition) (*model.APIDefinition, err
 }
 
 func (c *converter) ToEntity(apiModel *model.APIDefinition) (*APIDefinition, error) {
-	var defaultAuth string
-	if apiModel.DefaultAuth != nil {
-		output, err := json.Marshal(apiModel.DefaultAuth)
-		if err != nil {
-			return nil, errors.Wrap(err, "while marshaling default auth")
-		}
-		defaultAuth = string(output)
+	if apiModel == nil {
+		return nil, errors.New("api definition model cannot be nil")
 	}
 
+	defaultAuth, err := marshaledAuth(apiModel.DefaultAuth)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting ApiDefinition")
+	}
 	var specData *string
 	var specFormat model.SpecFormat
 	var specType model.APISpecType
@@ -220,14 +221,39 @@ func (c *converter) ToEntity(apiModel *model.APIDefinition) (*APIDefinition, err
 		TenantID:    apiModel.TenantID,
 		AppID:       apiModel.ApplicationID,
 		Name:        apiModel.Name,
-		Description: repo.NewSqlNullString(apiModel.Description),
-		Group:       repo.NewSqlNullString(apiModel.Group),
+		Description: repo.NewNullableString(apiModel.Description),
+		Group:       repo.NewNullableString(apiModel.Group),
 		TargetURL:   apiModel.TargetURL,
-		SpecData:    repo.NewSqlNullString(specData),
+		SpecData:    repo.NewNullableString(specData),
 		SpecFormat:  specFormat,
 		SpecType:    specType,
-		DefaultAuth: defaultAuth,
+		DefaultAuth: repo.NewNullableString(&defaultAuth),
 		Version:     versionEntity,
 		//TODO: add spec_fetch_request_ID when resolver will be implemented
 	}, nil
+}
+
+func unmarshallDefaultAuth(defaultAuthSql sql.NullString) (*model.Auth, error) {
+	var defaultAuth *model.Auth
+	if defaultAuthSql.Valid && defaultAuthSql.String != "" {
+		defaultAuth = &model.Auth{}
+		err := json.Unmarshal([]byte(defaultAuthSql.String), defaultAuth)
+		if err != nil {
+			return nil, errors.Wrap(err, "while unmarshalling default auth")
+		}
+	}
+
+	return defaultAuth, nil
+}
+
+func marshaledAuth(defaultAuth *model.Auth) (string, error) {
+	marshalledAuth := ""
+	if defaultAuth != nil {
+		output, err := json.Marshal(defaultAuth)
+		if err != nil {
+			return "", errors.Wrap(err, "while marshaling default auth")
+		}
+		marshalledAuth = string(output)
+	}
+	return marshalledAuth, nil
 }

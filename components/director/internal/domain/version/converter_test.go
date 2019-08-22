@@ -3,7 +3,8 @@ package version_test
 import (
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
@@ -89,7 +90,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 func TestConverter_FromEntity(t *testing.T) {
 	t.Run("success all nullable properties filled", func(t *testing.T) {
 		//GIVEN
-		versionEntity := fixVersionEntity("v1.2", true, "v1.2", false)
+		versionEntity := fixVersionEntity("v1.2", true, "v1.1", false)
 		versionConv := version.NewConverter()
 		//WHEN
 		versionModel, err := versionConv.FromEntity(versionEntity)
@@ -99,7 +100,7 @@ func TestConverter_FromEntity(t *testing.T) {
 	})
 
 	t.Run("success all nullable properties empty", func(t *testing.T) {
-		versionEntity := version.Version{VersionValue: "v1"}
+		versionEntity := version.Version{}
 		versionConv := version.NewConverter()
 		// WHEN
 		versionModel, err := versionConv.FromEntity(&versionEntity)
@@ -111,7 +112,7 @@ func TestConverter_FromEntity(t *testing.T) {
 }
 func TestConverter_ToEntity(t *testing.T) {
 	t.Run("success all nullable properties filled", func(t *testing.T) {
-		versionModel := fixModelVersion("v1.2", true, "v1.2", false)
+		versionModel := fixModelVersion("v1.2", true, "v1.1", false)
 		versionConv := version.NewConverter()
 		//WHEN
 		versionEntity, err := versionConv.ToEntity(versionModel)
@@ -121,7 +122,7 @@ func TestConverter_ToEntity(t *testing.T) {
 	})
 
 	t.Run("success all nullable properties empty", func(t *testing.T) {
-		versionModel := &model.Version{Value: "v1"}
+		versionModel := &model.Version{}
 		versionConv := version.NewConverter()
 		//WHEN
 		versionEntity, err := versionConv.ToEntity(versionModel)
@@ -132,8 +133,8 @@ func TestConverter_ToEntity(t *testing.T) {
 }
 
 func assertVersion(t *testing.T, entity *version.Version, model *model.Version) {
-	assert.Equal(t, model.Value, entity.VersionValue)
-	repo.AssertSqlNullString(t, &entity.VersionDepracatedSince, model.DeprecatedSince)
-	repo.AssertSqlNullBool(t, &entity.VersionDepracated, model.Deprecated)
-	repo.AssertSqlNullBool(t, &entity.VersionForRemoval, model.ForRemoval)
+	testdb.AssertSqlNullString(t, entity.VersionValue, &model.Value)
+	testdb.AssertSqlNullString(t, entity.VersionDepracatedSince, model.DeprecatedSince)
+	testdb.AssertSqlNullBool(t, entity.VersionDepracated, model.Deprecated)
+	testdb.AssertSqlNullBool(t, entity.VersionForRemoval, model.ForRemoval)
 }
