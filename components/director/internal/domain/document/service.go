@@ -50,7 +50,7 @@ func (s *service) List(ctx context.Context, applicationID string, pageSize *int,
 func (s *service) Create(ctx context.Context, applicationID string, in model.DocumentInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return "", errors.Wrapf(err, "while loading tenant from context")
+		return "", err
 	}
 
 	id := s.uidService.Generate()

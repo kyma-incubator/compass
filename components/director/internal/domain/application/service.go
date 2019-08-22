@@ -235,7 +235,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string
 		return "", err
 	}
 
-	err = s.createRelatedResources(ctx, in, app.ID)
+	err = s.createRelatedResources(ctx, in, app.Tenant, app.ID)
 	if err != nil {
 		return "", errors.Wrap(err, "while creating related Application resources")
 	}
@@ -275,7 +275,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationInp
 		return errors.Wrapf(err, "while deleting all labels for Application")
 	}
 
-	err = s.createRelatedResources(ctx, in, app.ID)
+	err = s.createRelatedResources(ctx, in, app.Tenant, app.ID)
 	if err != nil {
 		return errors.Wrap(err, "while creating related Application resources")
 	}
@@ -412,17 +412,12 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 	return nil
 }
 
-func (s *service) createRelatedResources(ctx context.Context, in model.ApplicationInput, applicationID string) error {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return errors.Wrapf(err, "while loading tenant from context")
-	}
-
+func (s *service) createRelatedResources(ctx context.Context, in model.ApplicationInput, tenant string, applicationID string) error {
 	var webhooks []*model.Webhook
 	for _, item := range in.Webhooks {
 		webhooks = append(webhooks, item.ToWebhook(s.uidService.Generate(), applicationID))
 	}
-	err = s.webhookRepo.CreateMany(webhooks)
+	err := s.webhookRepo.CreateMany(webhooks)
 	if err != nil {
 		return errors.Wrapf(err, "while creating Webhooks for application")
 	}
@@ -448,7 +443,7 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 
 	var documents []*model.Document
 	for _, item := range in.Documents {
-		documents = append(documents, item.ToDocument(s.uidService.Generate(), tnt, applicationID))
+		documents = append(documents, item.ToDocument(s.uidService.Generate(), tenant, applicationID))
 	}
 	err = s.documentRepo.CreateMany(documents)
 	if err != nil {

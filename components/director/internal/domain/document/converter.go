@@ -105,28 +105,37 @@ func (c *converter) ToEntity(in model.Document) (Entity, error) {
 	var nullData sql.NullString
 	if in.Data != nil && len(*in.Data) > 0 {
 		nullData = sql.NullString{
-			String: *in.Kind,
+			String: *in.Data,
 			Valid:  true,
 		}
 	}
 
 	out := Entity{
-		ID:           in.ID,
-		AppID:        in.ApplicationID,
-		TenantID:     in.Tenant,
-		Title:        in.Title,
-		DisplayName:  in.DisplayName,
-		Description:  in.Description,
-		Format:       string(in.Format),
-		Kind:         nullKind,
-		Data:         nullData,
-		FetchRequest: sql.NullString{}, //TODO adjust with https://github.com/kyma-incubator/compass/issues/226
+		ID:             in.ID,
+		AppID:          in.ApplicationID,
+		TenantID:       in.Tenant,
+		Title:          in.Title,
+		DisplayName:    in.DisplayName,
+		Description:    in.Description,
+		Format:         string(in.Format),
+		Kind:           nullKind,
+		Data:           nullData,
+		FetchRequestID: sql.NullString{}, //TODO adjust with https://github.com/kyma-incubator/compass/issues/226
 	}
 
 	return out, nil
 }
 
 func (c *converter) FromEntity(in Entity) (model.Document, error) {
+	var kindPtr *string
+	var dataPtr *string
+	if in.Kind.Valid {
+		kindPtr = &in.Kind.String
+	}
+	if in.Data.Valid {
+		dataPtr = &in.Data.String
+	}
+
 	out := model.Document{
 		ID:            in.ID,
 		ApplicationID: in.AppID,
@@ -135,8 +144,8 @@ func (c *converter) FromEntity(in Entity) (model.Document, error) {
 		DisplayName:   in.DisplayName,
 		Description:   in.Description,
 		Format:        model.DocumentFormat(in.Format),
-		Kind:          &in.Kind.String,
-		Data:          &in.Data.String,
+		Kind:          kindPtr,
+		Data:          dataPtr,
 		FetchRequest:  nil, //TODO adjust with https://github.com/kyma-incubator/compass/issues/226
 	}
 	return out, nil
