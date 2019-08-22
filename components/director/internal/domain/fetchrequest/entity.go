@@ -14,7 +14,7 @@ type Entity struct {
 	DocumentID      sql.NullString `db:"document_id"`
 	Mode            string         `db:"mode"`
 	Auth            sql.NullString `db:"auth"`
-	Filter          sql.NullString `db:"filters"`
+	Filter          sql.NullString `db:"filter"`
 	StatusCondition string         `db:"status_condition"`
 	StatusTimestamp time.Time      `db:"status_timestamp"`
 }

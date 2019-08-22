@@ -3,9 +3,10 @@ package fetchrequest_test
 import (
 	"database/sql"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -70,7 +71,7 @@ func fixFetchRequestModel(id string, timestamp time.Time) model.FetchRequest {
 	filter := "filter"
 	return model.FetchRequest{
 		ID:     id,
-		Tenant: "tenant",
+		Tenant: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
 		URL:    "foo.bar",
 		Mode:   model.FetchModeIndex,
 		Filter: &filter,
@@ -107,7 +108,7 @@ func fixFetchRequestEntity(t *testing.T, id string, timestamp time.Time) fetchre
 	filter := "filter"
 	return fetchrequest.Entity{
 		ID:       id,
-		TenantID: "tenant",
+		TenantID: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
 		URL:      "foo.bar",
 		Mode:     string(model.FetchModeIndex),
 		Filter: sql.NullString{
@@ -126,5 +127,42 @@ func fixFetchRequestEntity(t *testing.T, id string, timestamp time.Time) fetchre
 			Valid:  true,
 			String: "documentID",
 		},
+	}
+}
+
+func fixFetchRequestModelWithReference(id string, timestamp time.Time, objectType model.FetchRequestReferenceObjectType, objectID string) model.FetchRequest {
+	filter := "filter"
+	return model.FetchRequest{
+		ID:     id,
+		Tenant: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+		URL:    "foo.bar",
+		Mode:   model.FetchModeIndex,
+		Filter: &filter,
+		Status: &model.FetchRequestStatus{
+			Condition: model.FetchRequestStatusConditionSucceeded,
+			Timestamp: timestamp,
+		},
+		Auth:       nil,
+		ObjectType: objectType,
+		ObjectID:   objectID,
+	}
+}
+
+func fixFetchRequestEntityWithReferences(id string, timestamp time.Time, apiDefID, eventAPIDefID, documentID sql.NullString) fetchrequest.Entity {
+	return fetchrequest.Entity{
+		ID:       id,
+		TenantID: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+		URL:      "foo.bar",
+		Mode:     string(model.FetchModeIndex),
+		Filter: sql.NullString{
+			String: "filter",
+			Valid:  true,
+		},
+		StatusCondition: string(model.FetchRequestStatusConditionSucceeded),
+		StatusTimestamp: timestamp,
+		Auth:            sql.NullString{},
+		APIDefID:        apiDefID,
+		EventAPIDefID:   eventAPIDefID,
+		DocumentID:      documentID,
 	}
 }

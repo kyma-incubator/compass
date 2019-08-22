@@ -4,21 +4,21 @@ import "time"
 
 //  Compass performs fetch to validate if request is correct and stores a copy
 type FetchRequest struct {
-	ID string
-	Tenant string
-	URL    string
-	Auth   *Auth
-	Mode   FetchMode
-	Filter *string
-	Status *FetchRequestStatus
+	ID         string
+	Tenant     string
+	URL        string
+	Auth       *Auth
+	Mode       FetchMode
+	Filter     *string
+	Status     *FetchRequestStatus
 	ObjectType FetchRequestReferenceObjectType
-	ObjectID string
+	ObjectID   string
 }
 
 type FetchRequestReferenceObjectType string
 
 const (
-	APIFetchRequestReference FetchRequestReferenceObjectType = "API"
+	APIFetchRequestReference      FetchRequestReferenceObjectType = "API"
 	EventAPIFetchRequestReference FetchRequestReferenceObjectType = "EventAPI"
 	DocumentFetchRequestReference FetchRequestReferenceObjectType = "Document"
 )

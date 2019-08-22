@@ -2,12 +2,14 @@ package fetchrequest
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/pkg/errors"
 )
 
-const fetchRequestTable string = `"public"."fetch_requests"`
+const fetchRequestTable string = `public.fetch_requests`
+
 var tableColumns = []string{"id", "tenant_id", "api_def_id", "event_api_def_id", "document_id", "url", "auth", "mode", "filter", "status_condition", "status_timestamp"}
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
@@ -23,15 +25,16 @@ type repository struct {
 	conv Converter
 }
 
-func NewRepository() *repository {
+func NewRepository(conv Converter) *repository {
 	return &repository{
-		Creator:         repo.NewCreator(fetchRequestTable, tableColumns),
-		SingleGetter:    repo.NewSingleGetter(fetchRequestTable, "tenant_id", tableColumns),
-		Deleter:         repo.NewDeleter(fetchRequestTable, "tenant_id"),
+		Creator:      repo.NewCreator(fetchRequestTable, tableColumns),
+		SingleGetter: repo.NewSingleGetter(fetchRequestTable, "tenant_id", tableColumns),
+		Deleter:      repo.NewDeleter(fetchRequestTable, "tenant_id"),
+		conv:         conv,
 	}
 }
 
-func (r *repository) Create(ctx context.Context, tenant string, item *model.FetchRequest) error {
+func (r *repository) Create(ctx context.Context, item *model.FetchRequest) error {
 	if item == nil {
 		return errors.New("item can not be empty")
 	}

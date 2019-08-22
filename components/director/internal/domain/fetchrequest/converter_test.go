@@ -2,9 +2,10 @@ package fetchrequest_test
 
 import (
 	"database/sql"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest/automock"
@@ -107,29 +108,29 @@ func TestConverter_FromEntity(t *testing.T) {
 	// given
 	testCases := []struct {
 		Name               string
-		Input           fetchrequest.Entity
-		Expected              model.FetchRequest
+		Input              fetchrequest.Entity
+		Expected           model.FetchRequest
 		ExpectedErrMessage string
 	}{
 		{
 			Name:               "All properties given",
 			Input:              fixFetchRequestEntity(t, "1", timestamp),
-			Expected:           fixFetchRequestModel( "1", timestamp),
+			Expected:           fixFetchRequestModel("1", timestamp),
 			ExpectedErrMessage: "",
 		},
 		{
 			Name: "Empty value",
 			Input: fetchrequest.Entity{
-				ID:       "2",
-				TenantID: "tenant",
-				Auth: sql.NullString{},
+				ID:              "2",
+				TenantID:        "tenant",
+				Auth:            sql.NullString{},
 				StatusTimestamp: timestamp,
 				StatusCondition: string(model.FetchRequestStatusConditionFailed),
 			},
 			Expected: model.FetchRequest{
 				ID:     "2",
 				Tenant: "tenant",
-				Auth: nil,
+				Auth:   nil,
 				Status: &model.FetchRequestStatus{
 					Timestamp: timestamp,
 					Condition: model.FetchRequestStatusConditionFailed,
@@ -138,11 +139,11 @@ func TestConverter_FromEntity(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name:               "Error",
-			Input:              fetchrequest.Entity{
+			Name: "Error",
+			Input: fetchrequest.Entity{
 				Auth: sql.NullString{
 					String: `{Dd`,
-					Valid: true,
+					Valid:  true,
 				},
 			},
 			Expected:           model.FetchRequest{},
@@ -182,14 +183,14 @@ func TestConverter_ToEntity(t *testing.T) {
 		ExpectedErrMessage string
 	}{
 		{
-			Name:               "All properties given",
-			Input:              fixFetchRequestModel( "1", timestamp),
-			Expected:           fixFetchRequestEntity(t, "1", timestamp),
+			Name:     "All properties given",
+			Input:    fixFetchRequestModel("1", timestamp),
+			Expected: fixFetchRequestEntity(t, "1", timestamp),
 		},
 		{
-			Name:               "String value",
-			Input:              fixFetchRequestModel( "1", timestamp),
-			Expected:           fixFetchRequestEntity(t, "1", timestamp),
+			Name:     "String value",
+			Input:    fixFetchRequestModel("1", timestamp),
+			Expected: fixFetchRequestEntity(t, "1", timestamp),
 		},
 		{
 			Name: "Empty Auth",
@@ -202,8 +203,8 @@ func TestConverter_ToEntity(t *testing.T) {
 				},
 			},
 			Expected: fetchrequest.Entity{
-				ID:       "2",
-				TenantID: "tenant",
+				ID:              "2",
+				TenantID:        "tenant",
 				StatusTimestamp: timestamp,
 				StatusCondition: string(model.FetchRequestStatusConditionFailed),
 			},

@@ -3,6 +3,7 @@ package fetchrequest
 import (
 	"database/sql"
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pkg/errors"
@@ -153,10 +154,10 @@ func (c *converter) FromEntity(in Entity) (model.FetchRequest, error) {
 			Timestamp: in.StatusTimestamp,
 			Condition: model.FetchRequestStatusCondition(in.StatusCondition),
 		},
-		URL: in.URL,
-		Mode: model.FetchMode(in.Mode),
+		URL:    in.URL,
+		Mode:   model.FetchMode(in.Mode),
 		Filter: filter,
-		Auth: authPtr,
+		Auth:   authPtr,
 	}, nil
 }
 
