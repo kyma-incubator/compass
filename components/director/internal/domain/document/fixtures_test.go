@@ -6,6 +6,7 @@ import (
 )
 
 var (
+	docTenant      = "tenant"
 	docKind        = "fookind"
 	docTitle       = "footitle"
 	docData        = "foodata"
@@ -18,6 +19,7 @@ func fixModelDocument(id, applicationID string) *model.Document {
 	return &model.Document{
 		ID:            id,
 		ApplicationID: applicationID,
+		Tenant:        docTenant,
 		Title:         docTitle,
 		DisplayName:   docDisplayName,
 		Description:   docDescription,

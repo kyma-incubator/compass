@@ -1,7 +1,12 @@
 package document_test
 
 import (
+	"database/sql"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/strings"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document/automock"
@@ -144,4 +149,104 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 	// then
 	assert.Equal(t, expected, res)
 	frConv.AssertExpectations(t)
+}
+
+func TestToEntity(t *testing.T) {
+	// GIVEN
+	sut := document.NewConverter(nil)
+
+	modelWithRequiredFields := model.Document{
+		ID:            "givenID",
+		Tenant:        "givenTenant",
+		ApplicationID: "givenApplicationID",
+		Title:         "givenTitle",
+		Description:   "givenDescription",
+		DisplayName:   "givenDisplayName",
+		Format:        "givenFormat",
+	}
+
+	t.Run("only required fields", func(t *testing.T) {
+		givenModel := modelWithRequiredFields
+		// WHEN
+		actual, err := sut.ToEntity(givenModel)
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, document.Entity{
+			ID:          "givenID",
+			TenantID:    "givenTenant",
+			AppID:       "givenApplicationID",
+			Title:       "givenTitle",
+			Description: "givenDescription",
+			DisplayName: "givenDisplayName",
+			Format:      "givenFormat",
+		}, actual)
+	})
+
+	t.Run("all fields", func(t *testing.T) {
+		givenModel := modelWithRequiredFields
+		givenModel.Data = strings.Ptr("givenData")
+		givenModel.FetchRequest = &model.FetchRequest{ID: "fetchRequestID"}
+		givenModel.Kind = strings.Ptr("givenKind")
+		// WHEN
+		actual, err := sut.ToEntity(givenModel)
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, sql.NullString{Valid: true, String: "givenData"}, actual.Data)
+		assert.Equal(t, sql.NullString{Valid: true, String: "givenKind"}, actual.Kind)
+		// TODO adjust with https://github.com/kyma-incubator/compass/issues/226
+		// 	assert.Equal(t, sql.NullString{Valid: true, String: "fetchRequestID"}, actual.FetchRequestID)
+	})
+}
+
+func TestFromEntity(t *testing.T) {
+	// GIVEN
+	sut := document.NewConverter(nil)
+	entityWithRequiredFields := document.Entity{
+		ID:          "givenID",
+		TenantID:    "givenTenant",
+		AppID:       "givenAppID",
+		Title:       "givenTitle",
+		DisplayName: "givenDisplayName",
+		Description: "givenDescription",
+		Format:      "MARKDOWN",
+	}
+
+	t.Run("only required fields", func(t *testing.T) {
+		givenEntity := entityWithRequiredFields
+		// WHEN
+		actualModel, err := sut.FromEntity(givenEntity)
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, model.Document{
+			ID:            "givenID",
+			Tenant:        "givenTenant",
+			ApplicationID: "givenAppID",
+			Title:         "givenTitle",
+			DisplayName:   "givenDisplayName",
+			Description:   "givenDescription",
+			Format:        model.DocumentFormatMarkdown,
+		}, actualModel)
+
+	})
+
+	t.Run("all fields", func(t *testing.T) {
+		givenEntity := entityWithRequiredFields
+		givenEntity.Data = sql.NullString{
+			Valid:  true,
+			String: "givenData",
+		}
+		givenEntity.Kind = sql.NullString{
+			Valid:  true,
+			String: "givenKind",
+		}
+		// WHEN
+		actualModel, err := sut.FromEntity(givenEntity)
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, strings.Ptr("givenData"), actualModel.Data)
+		assert.Equal(t, strings.Ptr("givenKind"), actualModel.Kind)
+
+		// TODO givenEntity.FetchRequestID adjust with https://github.com/kyma-incubator/compass/issues/226
+
+	})
 }

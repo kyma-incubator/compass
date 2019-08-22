@@ -9,6 +9,7 @@ import (
 type Document struct {
 	ApplicationID string
 	ID            string
+	Tenant        string
 	Title         string
 	DisplayName   string
 	Description   string
@@ -41,7 +42,7 @@ type DocumentPage struct {
 	TotalCount int
 }
 
-func (d *DocumentInput) ToDocument(id, applicationID string) *Document {
+func (d *DocumentInput) ToDocument(id, tenant, applicationID string) *Document {
 	if d == nil {
 		return nil
 	}
@@ -49,6 +50,7 @@ func (d *DocumentInput) ToDocument(id, applicationID string) *Document {
 	return &Document{
 		ApplicationID: applicationID,
 		ID:            id,
+		Tenant:        tenant,
 		Title:         d.Title,
 		DisplayName:   d.DisplayName,
 		Description:   d.Description,
