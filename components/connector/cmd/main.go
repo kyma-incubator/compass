@@ -1,8 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"time"
+
+	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 
@@ -20,6 +24,17 @@ type config struct {
 	Address               string `envconfig:"default=127.0.0.1:3000"`
 	APIEndpoint           string `envconfig:"default=/graphql"`
 	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
+
+	Token struct {
+		Length                int
+		RuntimeExpiration     time.Duration
+		ApplicationExpiration time.Duration
+	}
+}
+
+func (c *config) String() string {
+	return fmt.Sprintf("Address: %s, APIEndpoint: %s, TokenLength: %d, TokenRuntimeExpiration: %s, TokenApplicationExpiration: %s",
+		c.Address, c.APIEndpoint, c.Token.Length, c.Token.RuntimeExpiration.String(), c.Token.ApplicationExpiration.String())
 }
 
 func main() {
@@ -27,11 +42,17 @@ func main() {
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Error while loading app config")
 
+	log.Println("Starting Connector Service")
+	log.Printf("Config: %s", cfg.String())
+
 	// TODO: Get values from config
 	certHeaderParser := authentication.NewHeaderParser("", "", "", "", "")
 	authContextMiddleware := authentication.NewAuthenticationContextMiddleware(certHeaderParser)
 
-	tokenResolver := api.NewTokenResolver()
+	tokenCache := tokens.NewTokenCache(cfg.Token.ApplicationExpiration, cfg.Token.RuntimeExpiration)
+	tokenService := tokens.NewTokenService(tokenCache, tokens.NewTokenGenerator(cfg.Token.Length))
+
+	tokenResolver := api.NewTokenResolver(tokenService)
 	certificateResolver := api.NewCertificateResolver()
 	resolver := api.Resolver{TokenResolver: tokenResolver, CertificateResolver: certificateResolver}
 
