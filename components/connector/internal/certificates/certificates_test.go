@@ -383,12 +383,14 @@ func TestCertificateUtility_CheckCSRValues(t *testing.T) {
 	t.Run("should successfully check CSR values", func(t *testing.T) {
 		// given
 		csrSubject := CSRSubject{
-			CommonName:         "cname",
-			Country:            "country",
-			Organization:       "organization",
-			OrganizationalUnit: "organizationalUnit",
-			Locality:           "locality",
-			Province:           "province",
+			CommonName: "cname",
+			CSRSubjectConsts: CSRSubjectConsts{
+				Country:            "country",
+				Organization:       "organization",
+				OrganizationalUnit: "organizationalUnit",
+				Locality:           "locality",
+				Province:           "province",
+			},
 		}
 
 		certificateUtility := NewCertificateUtility(validityTime)
@@ -426,12 +428,14 @@ func TestCertificateUtility_CheckCSRValues(t *testing.T) {
 	t.Run("should fail when CommonName differs", func(t *testing.T) {
 		// given
 		csrSubject := CSRSubject{
-			CommonName:         "differentCname",
-			Country:            "country",
-			Organization:       "organization",
-			OrganizationalUnit: "organizationalUnit",
-			Locality:           "locality",
-			Province:           "province",
+			CommonName: "differentCname",
+			CSRSubjectConsts: CSRSubjectConsts{
+				Country:            "country",
+				Organization:       "organization",
+				OrganizationalUnit: "organizationalUnit",
+				Locality:           "locality",
+				Province:           "province",
+			},
 		}
 
 		certificateUtility := NewCertificateUtility(validityTime)
@@ -448,12 +452,14 @@ func TestCertificateUtility_CheckCSRValues(t *testing.T) {
 	t.Run("should fail when Country differs", func(t *testing.T) {
 		// given
 		csrSubject := CSRSubject{
-			CommonName:         "cname",
-			Country:            "invalidCountry",
-			Organization:       "organization",
-			OrganizationalUnit: "organizationalUnit",
-			Locality:           "locality",
-			Province:           "province",
+			CommonName: "cname",
+			CSRSubjectConsts: CSRSubjectConsts{
+				Country:            "invalidCountry",
+				Organization:       "organization",
+				OrganizationalUnit: "organizationalUnit",
+				Locality:           "locality",
+				Province:           "province",
+			},
 		}
 
 		certificateUtility := NewCertificateUtility(validityTime)
@@ -471,12 +477,14 @@ func TestCertificateUtility_CheckCSRValues(t *testing.T) {
 	t.Run("should fail when organization differs", func(t *testing.T) {
 		// given
 		csrSubject := CSRSubject{
-			CommonName:         "cname",
-			Country:            "country",
-			Organization:       "invalidOrganization",
-			OrganizationalUnit: "organizationalUnit",
-			Locality:           "locality",
-			Province:           "province",
+			CommonName: "cname",
+			CSRSubjectConsts: CSRSubjectConsts{
+				Country:            "country",
+				Organization:       "invalidOrganization",
+				OrganizationalUnit: "organizationalUnit",
+				Locality:           "locality",
+				Province:           "province",
+			},
 		}
 
 		certificateUtility := NewCertificateUtility(validityTime)
@@ -493,12 +501,14 @@ func TestCertificateUtility_CheckCSRValues(t *testing.T) {
 	t.Run("should fail when OrganizationalUnit differs", func(t *testing.T) {
 		// given
 		csrSubject := CSRSubject{
-			CommonName:         "cname",
-			Country:            "country",
-			Organization:       "organization",
-			OrganizationalUnit: "invalidOrganizationalUnit",
-			Locality:           "locality",
-			Province:           "province",
+			CommonName: "cname",
+			CSRSubjectConsts: CSRSubjectConsts{
+				Country:            "country",
+				Organization:       "organization",
+				OrganizationalUnit: "invalidOrganizationalUnit",
+				Locality:           "locality",
+				Province:           "province",
+			},
 		}
 
 		certificateUtility := NewCertificateUtility(validityTime)
@@ -515,12 +525,14 @@ func TestCertificateUtility_CheckCSRValues(t *testing.T) {
 	t.Run("should fail when Locality differs", func(t *testing.T) {
 		// given
 		csrSubject := CSRSubject{
-			CommonName:         "cname",
-			Country:            "country",
-			Organization:       "organization",
-			OrganizationalUnit: "organizationalUnit",
-			Locality:           "invalidLocality",
-			Province:           "province",
+			CommonName: "cname",
+			CSRSubjectConsts: CSRSubjectConsts{
+				Country:            "country",
+				Organization:       "organization",
+				OrganizationalUnit: "organizationalUnit",
+				Locality:           "invalidLocality",
+				Province:           "province",
+			},
 		}
 
 		certificateUtility := NewCertificateUtility(validityTime)
@@ -537,12 +549,14 @@ func TestCertificateUtility_CheckCSRValues(t *testing.T) {
 	t.Run("should fail when Province differs", func(t *testing.T) {
 		// given
 		csrSubject := CSRSubject{
-			CommonName:         "cname",
-			Country:            "country",
-			Organization:       "organization",
-			OrganizationalUnit: "organizationalUnit",
-			Locality:           "locality",
-			Province:           "invalidProvince",
+			CommonName: "cname",
+			CSRSubjectConsts: CSRSubjectConsts{
+				Country:            "country",
+				Organization:       "organization",
+				OrganizationalUnit: "organizationalUnit",
+				Locality:           "locality",
+				Province:           "invalidProvince",
+			},
 		}
 
 		certificateUtility := NewCertificateUtility(validityTime)

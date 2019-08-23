@@ -81,15 +81,21 @@ func main() {
 	exitOnError(appErr, "Failed to initialize Kubernetes client.")
 	secretsRepository := newSecretsRepository(coreClientSet)
 	certificateUtility := certificates.NewCertificateUtility(cfg.CertificateValidityTime)
-
 	certificateService := certificates.NewCertificateService(
 		secretsRepository,
 		certificateUtility,
 		namespacedname.Parse(cfg.CASecretName),
 		namespacedname.Parse(cfg.RootCACertificateSecretName),
 	)
+	csrSubjectConsts := certificates.CSRSubjectConsts{
+		Country:            cfg.CSRSubject.Country,
+		Organization:       cfg.CSRSubject.Organization,
+		OrganizationalUnit: cfg.CSRSubject.OrganizationalUnit,
+		Locality:           cfg.CSRSubject.Locality,
+		Province:           cfg.CSRSubject.Province,
+	}
 
-	certificateResolver := api.NewCertificateResolver(authenticator, tokenService, certificateService)
+	certificateResolver := api.NewCertificateResolver(authenticator, tokenService, certificateService, csrSubjectConsts)
 
 	internalServer := prepareInternalServer(cfg, tokenResolver)
 	externalServer := prepareExternalServer(cfg, certificateResolver)

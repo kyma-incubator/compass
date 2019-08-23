@@ -23,31 +23,32 @@ type certificateResolver struct {
 	authenticator       authentication.Authenticator
 	tokenService        tokens.Service
 	certificatesService certificates.Service
+	csrSubjectConsts    certificates.CSRSubjectConsts
 }
 
-func NewCertificateResolver(authenticator authentication.Authenticator, tokenService tokens.Service, certificatesService certificates.Service) CertificateResolver {
+func NewCertificateResolver(authenticator authentication.Authenticator, tokenService tokens.Service, certificatesService certificates.Service, csrSubjectConsts certificates.CSRSubjectConsts) CertificateResolver {
 	return &certificateResolver{
 		authenticator:       authenticator,
 		tokenService:        tokenService,
 		certificatesService: certificatesService,
+		csrSubjectConsts:    csrSubjectConsts,
 	}
 }
 
 func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context, csr string) (*externalschema.CertificationResult, error) {
-
-	// TODO: Check if there is valid token, valid cert or both. Subject should be extracted.
-	subject := certificates.CSRSubject{
-		CommonName:         "commonname",
-		Country:            "country",
-		Organization:       "organization",
-		OrganizationalUnit: "organizationalunit",
-		Locality:           "locality",
-		Province:           "province",
+	commonName, err := r.authenticator.AuthenticateTokenOrCertificate(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to authenticate with token or certificate: %v", err)
 	}
 
 	rawCSR, err := decodeStringFromBase64(csr)
 	if err != nil {
 		return nil, fmt.Errorf("Error while decoding Certificate Signing Request: %v", err)
+	}
+
+	subject := certificates.CSRSubject{
+		CommonName:       commonName,
+		CSRSubjectConsts: r.csrSubjectConsts,
 	}
 
 	encodedCertificates, err := r.certificatesService.SignCSR(rawCSR, subject)

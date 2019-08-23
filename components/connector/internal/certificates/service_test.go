@@ -59,12 +59,14 @@ var (
 	certChain      = append(clientCRTBytes, caCRTBytes...)
 
 	subjectValues = certificates.CSRSubject{
-		CommonName:         appName,
-		Country:            country,
-		Organization:       organization,
-		OrganizationalUnit: organizationalUnit,
-		Locality:           locality,
-		Province:           province,
+		CommonName: appName,
+		CSRSubjectConsts: certificates.CSRSubjectConsts{
+			Country:            country,
+			Organization:       organization,
+			OrganizationalUnit: organizationalUnit,
+			Locality:           locality,
+			Province:           province,
+		},
 	}
 
 	authNamespacedName = types.NamespacedName{

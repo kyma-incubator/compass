@@ -7,7 +7,11 @@ import (
 )
 
 type CSRSubject struct {
-	CommonName         string
+	CommonName string
+	CSRSubjectConsts
+}
+
+type CSRSubjectConsts struct {
 	Country            string
 	Organization       string
 	OrganizationalUnit string
