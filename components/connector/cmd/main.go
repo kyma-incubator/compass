@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/connector/internal/namespacedname"
+
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connector/internal/api"
@@ -19,7 +21,6 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/internalschema"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 )
@@ -37,9 +38,9 @@ type config struct {
 		Locality           string `envconfig:"default=L"`
 		Province           string `envconfig:"default=ST"`
 	}
-	CertificateValidityTime     time.Duration        `envconfig:"default=90d"`
-	CASecretName                types.NamespacedName `envconfig:"default=namespace/casecretname"`
-	RootCACertificateSecretName types.NamespacedName `envconfig:"default="`
+	CertificateValidityTime     time.Duration `envconfig:"default=2160h"`
+	CASecretName                string        `envconfig:"default=namespace/name"`
+	RootCACertificateSecretName string        `envconfig:"default=/"`
 
 	Token struct {
 		Length                int           `envconfig:"default=64"`
@@ -50,9 +51,9 @@ type config struct {
 
 func (c *config) String() string {
 	return fmt.Sprintf("ExternalAddress: %s, InternalAddress: %s, APIEndpoint: %s, "+
-		"CSRSubjectCountry: %s, CSRSubjectOrganization: %s, CSRSubjectOrganizationalUnit: %s"+
-		"CSRSubjectLocality: %s, CSRSubjectProvince: %s"+
-		"CertificateValidityTime: %s, CASecretName: %s, RootCACertificateSecretName: %s"+
+		"CSRSubjectCountry: %s, CSRSubjectOrganization: %s, CSRSubjectOrganizationalUnit: %s, "+
+		"CSRSubjectLocality: %s, CSRSubjectProvince: %s, "+
+		"CertificateValidityTime: %s, CASecretName: %s, RootCACertificateSecretName: %s, "+
 		"TokenLength: %d, TokenRuntimeExpiration: %s, TokenApplicationExpiration: %s",
 		c.ExternalAddress, c.InternalAddress, c.APIEndpoint,
 		c.CSRSubject.Country, c.CSRSubject.Organization, c.CSRSubject.OrganizationalUnit,
@@ -81,7 +82,12 @@ func main() {
 	secretsRepository := newSecretsRepository(coreClientSet)
 	certificateUtility := certificates.NewCertificateUtility(cfg.CertificateValidityTime)
 
-	certificateService := certificates.NewCertificateService(secretsRepository, certificateUtility, cfg.CASecretName, cfg.RootCACertificateSecretName)
+	certificateService := certificates.NewCertificateService(
+		secretsRepository,
+		certificateUtility,
+		namespacedname.Parse(cfg.CASecretName),
+		namespacedname.Parse(cfg.RootCACertificateSecretName),
+	)
 
 	certificateResolver := api.NewCertificateResolver(authenticator, tokenService, certificateService)
 
