@@ -98,7 +98,7 @@ func main() {
 	certificateResolver := api.NewCertificateResolver(authenticator, tokenService, certificateService, csrSubjectConsts)
 
 	internalServer := prepareInternalServer(cfg, tokenResolver)
-	externalServer := prepareExternalServer(cfg, certificateResolver)
+	externalServer := prepareExternalServer(cfg, certificateResolver, csrSubjectConsts)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
@@ -139,7 +139,7 @@ func prepareInternalServer(cfg config, tokenResolver api.TokenResolver) *http.Se
 	}
 }
 
-func prepareExternalServer(cfg config, certResolver api.CertificateResolver) *http.Server {
+func prepareExternalServer(cfg config, certResolver api.CertificateResolver, csrSubjectConsts certificates.CSRSubjectConsts) *http.Server {
 	externalResolver := api.ExternalResolver{CertificateResolver: certResolver}
 
 	gqlInternalCfg := externalschema.Config{
@@ -152,13 +152,8 @@ func prepareExternalServer(cfg config, certResolver api.CertificateResolver) *ht
 	externalRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 	externalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(externalExecutableSchema))
 
-	certHeaderParser := authentication.NewHeaderParser(
-		cfg.CSRSubject.Country,
-		cfg.CSRSubject.Locality,
-		cfg.CSRSubject.Province,
-		cfg.CSRSubject.Organization,
-		cfg.CSRSubject.OrganizationalUnit,
-	)
+	certHeaderParser := authentication.NewHeaderParser(csrSubjectConsts)
+
 	authContextMiddleware := authentication.NewAuthenticationContextMiddleware(certHeaderParser)
 
 	externalRouter.Use(authContextMiddleware.PropagateAuthentication)
