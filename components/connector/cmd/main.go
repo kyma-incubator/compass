@@ -31,9 +31,9 @@ type config struct {
 	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
 
 	Token struct {
-		Length                int
-		RuntimeExpiration     time.Duration
-		ApplicationExpiration time.Duration
+		Length                int           `envconfig:"default=64"`
+		RuntimeExpiration     time.Duration `envconfig:"default=60m"`
+		ApplicationExpiration time.Duration `envconfig:"default=5m"`
 	}
 }
 
