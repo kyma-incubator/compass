@@ -5,6 +5,8 @@ import (
 	"encoding/base64"
 	"fmt"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
@@ -24,6 +26,7 @@ type certificateResolver struct {
 	tokenService        tokens.Service
 	certificatesService certificates.Service
 	csrSubjectConsts    certificates.CSRSubjectConsts
+	log                 *logrus.Entry
 }
 
 func NewCertificateResolver(authenticator authentication.Authenticator, tokenService tokens.Service, certificatesService certificates.Service, csrSubjectConsts certificates.CSRSubjectConsts) CertificateResolver {
@@ -32,6 +35,7 @@ func NewCertificateResolver(authenticator authentication.Authenticator, tokenSer
 		tokenService:        tokenService,
 		certificatesService: certificatesService,
 		csrSubjectConsts:    csrSubjectConsts,
+		log:                 logrus.WithField("Resolver", "Certificate"),
 	}
 }
 
@@ -64,7 +68,17 @@ func (r *certificateResolver) RevokeCertificate(ctx context.Context) (bool, erro
 	panic("not implemented")
 }
 func (r *certificateResolver) Configuration(ctx context.Context) (*externalschema.Configuration, error) {
-	panic("not implemented")
+	clientId, err := r.authenticator.AuthenticateTokenOrCertificate(ctx)
+	if err != nil {
+		r.log.Error(err.Error())
+		return nil, err
+	}
+
+	r.log.Info("Fetching configuration for %s client.", clientId)
+
+	// TODO
+
+	return nil, nil
 }
 
 func decodeStringFromBase64(string string) ([]byte, apperrors.AppError) {
