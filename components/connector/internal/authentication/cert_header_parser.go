@@ -3,6 +3,8 @@ package authentication
 import (
 	"net/http"
 	"regexp"
+
+	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
 )
 
 const ClientCertHeader = "X-Forwarded-Client-Cert"
@@ -23,20 +25,12 @@ type certificateInfo struct {
 }
 
 type headerParser struct {
-	country            string
-	locality           string
-	province           string
-	organization       string
-	organizationalUnit string
+	certificates.CSRSubjectConsts
 }
 
-func NewHeaderParser(country, locality, province, organization, organizationalUnit string) *headerParser {
+func NewHeaderParser(csrSubjectConsts certificates.CSRSubjectConsts) *headerParser {
 	return &headerParser{
-		country:            country,
-		locality:           locality,
-		organization:       organization,
-		organizationalUnit: organizationalUnit,
-		province:           province,
+		CSRSubjectConsts: csrSubjectConsts,
 	}
 }
 
@@ -89,8 +83,8 @@ func newCertificateInfo(subject, hash string) certificateInfo {
 }
 
 func (hp *headerParser) isSubjectMatching(i certificateInfo) bool {
-	return GetOrganization(i.Subject) == hp.organization && GetOrganizationalUnit(i.Subject) == hp.organizationalUnit &&
-		GetCountry(i.Subject) == hp.country && GetLocality(i.Subject) == hp.locality && GetProvince(i.Subject) == hp.province
+	return GetOrganization(i.Subject) == hp.Organization && GetOrganizationalUnit(i.Subject) == hp.OrganizationalUnit &&
+		GetCountry(i.Subject) == hp.Country && GetLocality(i.Subject) == hp.Locality && GetProvince(i.Subject) == hp.Province
 }
 
 func extractFromHeader(certHeader string, regex *regexp.Regexp) []string {
