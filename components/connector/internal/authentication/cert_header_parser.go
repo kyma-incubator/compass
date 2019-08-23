@@ -12,7 +12,12 @@ type CertificateHeaderParser interface {
 	GetCertificateData(r *http.Request) (string, string, bool)
 }
 
-type CertificateInfo struct {
+type CertificateData struct {
+	Hash       string
+	CommonName string
+}
+
+type certificateInfo struct {
 	Hash    string
 	Subject string
 }
@@ -57,8 +62,8 @@ func (hp *headerParser) GetCertificateData(r *http.Request) (string, string, boo
 	return GetCommonName(certificateInfo.Subject), certificateInfo.Hash, true
 }
 
-func createCertInfos(subjects, hashes []string) []CertificateInfo {
-	certInfos := make([]CertificateInfo, len(subjects))
+func createCertInfos(subjects, hashes []string) []certificateInfo {
+	certInfos := make([]certificateInfo, len(subjects))
 	for i := 0; i < len(subjects); i++ {
 		certInfo := newCertificateInfo(subjects[i], hashes[i])
 		certInfos[i] = certInfo
@@ -66,24 +71,24 @@ func createCertInfos(subjects, hashes []string) []CertificateInfo {
 	return certInfos
 }
 
-func (hp *headerParser) getCertificateInfoWithMatchingSubject(infos []CertificateInfo) (CertificateInfo, bool) {
+func (hp *headerParser) getCertificateInfoWithMatchingSubject(infos []certificateInfo) (certificateInfo, bool) {
 	for _, info := range infos {
 		if hp.isSubjectMatching(info) {
 			return info, true
 		}
 	}
-	return CertificateInfo{}, false
+	return certificateInfo{}, false
 }
 
-func newCertificateInfo(subject, hash string) CertificateInfo {
-	certInfo := CertificateInfo{
+func newCertificateInfo(subject, hash string) certificateInfo {
+	certInfo := certificateInfo{
 		Hash:    hash,
 		Subject: subject,
 	}
 	return certInfo
 }
 
-func (hp *headerParser) isSubjectMatching(i CertificateInfo) bool {
+func (hp *headerParser) isSubjectMatching(i certificateInfo) bool {
 	return GetOrganization(i.Subject) == hp.organization && GetOrganizationalUnit(i.Subject) == hp.organizationalUnit &&
 		GetCountry(i.Subject) == hp.country && GetLocality(i.Subject) == hp.locality && GetProvince(i.Subject) == hp.province
 }

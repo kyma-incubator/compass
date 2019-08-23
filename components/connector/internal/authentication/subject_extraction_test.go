@@ -1,7 +1,9 @@
-package authentication
+package authentication_test
 
 import (
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -37,12 +39,12 @@ func TestSubjectExtraction(t *testing.T) {
 		},
 	} {
 		t.Run("should extract subject values", func(t *testing.T) {
-			assert.Equal(t, testCase.country, GetCountry(testCase.subject))
-			assert.Equal(t, testCase.locality, GetLocality(testCase.subject))
-			assert.Equal(t, testCase.province, GetProvince(testCase.subject))
-			assert.Equal(t, testCase.org, GetOrganization(testCase.subject))
-			assert.Equal(t, testCase.orgUnit, GetOrganizationalUnit(testCase.subject))
-			assert.Equal(t, testCase.commonName, GetCommonName(testCase.subject))
+			assert.Equal(t, testCase.country, authentication.GetCountry(testCase.subject))
+			assert.Equal(t, testCase.locality, authentication.GetLocality(testCase.subject))
+			assert.Equal(t, testCase.province, authentication.GetProvince(testCase.subject))
+			assert.Equal(t, testCase.org, authentication.GetOrganization(testCase.subject))
+			assert.Equal(t, testCase.orgUnit, authentication.GetOrganizationalUnit(testCase.subject))
+			assert.Equal(t, testCase.commonName, authentication.GetCommonName(testCase.subject))
 		})
 	}
 

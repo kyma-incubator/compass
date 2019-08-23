@@ -7,7 +7,6 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 )
 
-//go:generate mockery -name=TokenGenerator
 type TokenGenerator interface {
 	NewToken() (string, apperrors.AppError)
 }

@@ -15,26 +15,26 @@ type ManagementPlaneInfo {
     directorURL: String! # eg.: "https://director.cluster.kyma.cx/graphql"
 }
 
+type Configuration {
+    token: Token
+    certificateSigningRequestInfo: CertificateSigningRequestInfo
+    managementPlaneInfo: ManagementPlaneInfo
+}
+
 # CSRInfo
 type CertificateSigningRequestInfo {
-    token: Token!
-    managementPlaneInfo: ManagementPlaneInfo!
     subject: String! # eg.: "OU=Test,O=Test,L=Blacksburg,ST=Virginia,C=US,CN={ID}"
     keyAlgorithm: String! # eg.: rsa2048
 }
 
 type Query {
     # Client-Certificates
-    
-    """returns subject that should be placed in the signing request"""
-    getCertificateSigningRequestInfo: CertificateSigningRequestInfo!
+
+    """returns configuration information like subject that should be placed in the signing request or Director URL"""
+    configuration: Configuration!
 }
 
 type Mutation {
-    # Tokens
-    generateApplicationToken(appID: ID!): Token! # internal?
-    generateRuntimeToken(runtimeID: ID!): Token! # internal?
-
     # Client-Certificates
     signCertificateSigningRequest(csr: String!): CertificationResult!
 

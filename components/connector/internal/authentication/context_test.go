@@ -1,8 +1,10 @@
-package authentication
+package authentication_test
 
 import (
 	"context"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -15,10 +17,10 @@ func TestContextExtension(t *testing.T) {
 		ctx := context.Background()
 
 		// when
-		ctx = PutInContext(ctx, ConnectorTokenKey, "abcd")
+		ctx = authentication.PutInContext(ctx, authentication.ConnectorTokenKey, "abcd")
 
 		// then
-		token, err := GetStringFromContext(ctx, ConnectorTokenKey)
+		token, err := authentication.GetStringFromContext(ctx, authentication.ConnectorTokenKey)
 		require.NoError(t, err)
 		assert.Equal(t, "abcd", token)
 	})
@@ -28,10 +30,10 @@ func TestContextExtension(t *testing.T) {
 		ctx := context.Background()
 
 		// when
-		ctx = context.WithValue(ctx, ConnectorTokenKey, struct{}{})
+		ctx = context.WithValue(ctx, authentication.ConnectorTokenKey, struct{}{})
 
 		// then
-		token, err := GetStringFromContext(ctx, ConnectorTokenKey)
+		token, err := authentication.GetStringFromContext(ctx, authentication.ConnectorTokenKey)
 		require.Error(t, err)
 		assert.Empty(t, token)
 	})
