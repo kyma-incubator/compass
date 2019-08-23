@@ -10,7 +10,7 @@ global:
       version: "PR-99"
     director:
       dir: pr/
-      version: "PR-230"
+      version: "PR-231"
     gateway:
       dir: pr/
       version: "PR-100"
@@ -19,7 +19,7 @@ global:
       version: "PR-99"
     schema_migrator:
       dir: pr/
-      version: "PR-219"
+      version: "PR-231"
     tests:
       e2e:
         dir: pr/

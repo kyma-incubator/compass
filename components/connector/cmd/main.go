@@ -1,8 +1,17 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"sync"
+	"time"
+
+	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/internalschema"
+
+	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
+
+	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 
@@ -13,13 +22,26 @@ import (
 	"github.com/vrischmann/envconfig"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/api"
-	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
 )
 
 type config struct {
-	Address               string `envconfig:"default=127.0.0.1:3000"`
+	ExternalAddress       string `envconfig:"default=127.0.0.1:3000"`
+	InternalAddress       string `envconfig:"default=127.0.0.1:3001"`
 	APIEndpoint           string `envconfig:"default=/graphql"`
 	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
+
+	Token struct {
+		Length                int           `envconfig:"default=64"`
+		RuntimeExpiration     time.Duration `envconfig:"default=60m"`
+		ApplicationExpiration time.Duration `envconfig:"default=5m"`
+	}
+}
+
+func (c *config) String() string {
+	return fmt.Sprintf("ExternalAddress: %s, InternalAddress: %s, APIEndpoint: %s, "+
+		"TokenLength: %d, TokenRuntimeExpiration: %s, TokenApplicationExpiration: %s",
+		c.ExternalAddress, c.InternalAddress, c.APIEndpoint,
+		c.Token.Length, c.Token.RuntimeExpiration.String(), c.Token.ApplicationExpiration.String())
 }
 
 func main() {
@@ -27,31 +49,81 @@ func main() {
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Error while loading app config")
 
+	log.Println("Starting Connector Service")
+	log.Printf("Config: %s", cfg.String())
+
+	tokenCache := tokens.NewTokenCache(cfg.Token.ApplicationExpiration, cfg.Token.RuntimeExpiration)
+	tokenService := tokens.NewTokenService(tokenCache, tokens.NewTokenGenerator(cfg.Token.Length))
+
+	authenticator := authentication.NewAuthenticator(tokenService)
+
+	tokenResolver := api.NewTokenResolver(tokenService)
+	certificateResolver := api.NewCertificateResolver(authenticator, tokenService)
+
+	internalServer := prepareInternalServer(cfg, tokenResolver)
+	externalServer := prepareExternalServer(cfg, certificateResolver)
+
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+
+	go func() {
+		log.Printf("Internal API listening on %s...", cfg.InternalAddress)
+		if err := internalServer.ListenAndServe(); err != nil {
+			panic(err)
+		}
+	}()
+
+	go func() {
+		log.Printf("Extranal API listening on %s...", cfg.ExternalAddress)
+		if err := externalServer.ListenAndServe(); err != nil {
+			panic(err)
+		}
+	}()
+
+	wg.Wait()
+}
+
+func prepareInternalServer(cfg config, tokenResolver api.TokenResolver) *http.Server {
+	internalResolver := api.InternalResolver{TokenResolver: tokenResolver}
+
+	gqlInternalCfg := internalschema.Config{
+		Resolvers: &internalResolver,
+	}
+
+	internalExecutableSchema := internalschema.NewExecutableSchema(gqlInternalCfg)
+
+	internalRouter := mux.NewRouter()
+	internalRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
+	internalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(internalExecutableSchema))
+
+	return &http.Server{
+		Addr:    cfg.InternalAddress,
+		Handler: internalRouter,
+	}
+}
+
+func prepareExternalServer(cfg config, certResolver api.CertificateResolver) *http.Server {
+	externalResolver := api.ExternalResolver{CertificateResolver: certResolver}
+
+	gqlInternalCfg := externalschema.Config{
+		Resolvers: &externalResolver,
+	}
+
+	externalExecutableSchema := externalschema.NewExecutableSchema(gqlInternalCfg)
+
+	externalRouter := mux.NewRouter()
+	externalRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
+	externalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(externalExecutableSchema))
+
 	// TODO: Get values from config
 	certHeaderParser := authentication.NewHeaderParser("", "", "", "", "")
 	authContextMiddleware := authentication.NewAuthenticationContextMiddleware(certHeaderParser)
 
-	tokenResolver := api.NewTokenResolver()
-	certificateResolver := api.NewCertificateResolver()
-	resolver := api.Resolver{TokenResolver: tokenResolver, CertificateResolver: certificateResolver}
+	externalRouter.Use(authContextMiddleware.PropagateAuthentication)
 
-	gqlCfg := gqlschema.Config{
-		Resolvers: &resolver,
-	}
-	executableSchema := gqlschema.NewExecutableSchema(gqlCfg)
-
-	log.Printf("Registering endpoint on %s...", cfg.APIEndpoint)
-	router := mux.NewRouter()
-	router.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
-	router.HandleFunc(cfg.APIEndpoint, handler.GraphQL(executableSchema))
-
-	router.Use(authContextMiddleware.PropagateAuthentication)
-
-	http.Handle("/", router)
-
-	log.Printf("Listening on %s...", cfg.Address)
-	if err := http.ListenAndServe(cfg.Address, nil); err != nil {
-		panic(err)
+	return &http.Server{
+		Addr:    cfg.ExternalAddress,
+		Handler: externalRouter,
 	}
 }
 

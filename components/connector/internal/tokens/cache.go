@@ -13,7 +13,6 @@ const (
 	defaultCleanupInterval = 1 * time.Minute
 )
 
-//go:generate mockery -name=Cache
 type Cache interface {
 	Put(token string, data TokenData)
 	Get(token string) (TokenData, apperrors.AppError)
