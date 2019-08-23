@@ -50,8 +50,14 @@ type config struct {
 
 func (c *config) String() string {
 	return fmt.Sprintf("ExternalAddress: %s, InternalAddress: %s, APIEndpoint: %s, "+
+		"CSRSubjectCountry: %s, CSRSubjectOrganization: %s, CSRSubjectOrganizationalUnit: %s"+
+		"CSRSubjectLocality: %s, CSRSubjectProvince: %s"+
+		"CertificateValidityTime: %s, CASecretName: %s, RootCACertificateSecretName: %s"+
 		"TokenLength: %d, TokenRuntimeExpiration: %s, TokenApplicationExpiration: %s",
 		c.ExternalAddress, c.InternalAddress, c.APIEndpoint,
+		c.CSRSubject.Country, c.CSRSubject.Organization, c.CSRSubject.OrganizationalUnit,
+		c.CSRSubject.Locality, c.CSRSubject.Province,
+		c.CertificateValidityTime, c.CASecretName, c.RootCACertificateSecretName,
 		c.Token.Length, c.Token.RuntimeExpiration.String(), c.Token.ApplicationExpiration.String())
 }
 
