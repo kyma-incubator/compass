@@ -7,6 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
+	"github.com/kyma-incubator/compass/components/connector/internal/revocation"
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
 	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
 	"github.com/pkg/errors"
@@ -26,6 +27,7 @@ type certificateResolver struct {
 	csrSubjectConsts               certificates.CSRSubjectConsts
 	directorURL                    string
 	certificateSecuredConnectorURL string
+	revocationList                 revocation.RevocationListRepository
 	log                            *logrus.Entry
 }
 
@@ -35,7 +37,8 @@ func NewCertificateResolver(
 	certificatesService certificates.Service,
 	csrSubjectConsts certificates.CSRSubjectConsts,
 	directorURL string,
-	certificateSecuredConnectorURL string) CertificateResolver {
+	certificateSecuredConnectorURL string,
+	revocationList revocation.RevocationListRepository) CertificateResolver {
 	return &certificateResolver{
 		authenticator:                  authenticator,
 		tokenService:                   tokenService,
@@ -43,6 +46,7 @@ func NewCertificateResolver(
 		csrSubjectConsts:               csrSubjectConsts,
 		directorURL:                    directorURL,
 		certificateSecuredConnectorURL: certificateSecuredConnectorURL,
+		revocationList:                 revocationList,
 		log:                            logrus.WithField("Resolver", "Certificate"),
 	}
 }
@@ -80,7 +84,22 @@ func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context,
 }
 
 func (r *certificateResolver) RevokeCertificate(ctx context.Context) (bool, error) {
-	panic("not implemented")
+	clientId, certificateHash, err := r.authenticator.AuthenticateCertificate(ctx)
+	if err != nil {
+		r.log.Errorf(err.Error())
+		return false, errors.Wrap(err, "Failed to authenticate with certificate")
+	}
+
+	r.log.Infof("Revoking certificate for %s client.", clientId)
+
+	err = r.revocationList.Insert(certificateHash)
+	if err != nil {
+		r.log.Errorf(err.Error())
+		return false, errors.Wrap(err, "Failed to add hash to revocation list")
+	}
+
+	r.log.Infof("Certificate revoked.")
+	return true, nil
 }
 
 func (r *certificateResolver) Configuration(ctx context.Context) (*gqlschema.Configuration, error) {
@@ -90,7 +109,7 @@ func (r *certificateResolver) Configuration(ctx context.Context) (*gqlschema.Con
 		return nil, err
 	}
 
-	r.log.Infof("Fetching configuration for %s client.", clientId)
+	r.log.Infof("Fetching configuration for %s client...", clientId)
 
 	token, err := r.tokenService.CreateToken(clientId, tokens.CSRToken)
 	if err != nil {

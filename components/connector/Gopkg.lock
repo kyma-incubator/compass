@@ -447,7 +447,7 @@
   version = "kubernetes-1.15.2"
 
 [[projects]]
-  digest = "1:c194c910937ec12f7b98dbdc7b6524ccfcfe49d43b43aa8da6b6aa8e45557a67"
+  digest = "1:be3dbb909de297f57e87868a950bf44d160f523b7dcd5f7bf08e52c440092cc1"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/errors",
@@ -480,6 +480,7 @@
     "pkg/util/sets",
     "pkg/util/validation",
     "pkg/util/validation/field",
+    "pkg/util/wait",
     "pkg/util/yaml",
     "pkg/version",
     "pkg/watch",
@@ -555,6 +556,7 @@
     "util/homedir",
     "util/jsonpath",
     "util/keyutil",
+    "util/retry",
   ]
   pruneopts = "UT"
   revision = "2fe0317bcee0e1ff48861f77cc1e2791cceba458"
@@ -613,6 +615,7 @@
     "k8s.io/client-go/rest",
     "k8s.io/client-go/tools/clientcmd",
     "k8s.io/client-go/util/homedir",
+    "k8s.io/client-go/util/retry",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

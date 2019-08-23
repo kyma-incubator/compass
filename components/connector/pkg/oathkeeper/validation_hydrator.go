@@ -89,6 +89,8 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 		return
 	}
 
+	// TODO: Check if certificate is revoked
+
 	if authSession.Header == nil {
 		authSession.Header = map[string][]string{}
 	}
