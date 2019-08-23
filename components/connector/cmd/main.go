@@ -40,7 +40,7 @@ type config struct {
 	}
 	CertificateValidityTime     time.Duration `envconfig:"default=2160h"`
 	CASecretName                string        `envconfig:"default=namespace/name"`
-	RootCACertificateSecretName string        `envconfig:"default=/"`
+	RootCACertificateSecretName string        `envconfig:"optional"`
 
 	Token struct {
 		Length                int           `envconfig:"default=64"`
