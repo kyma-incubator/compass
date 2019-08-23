@@ -3,6 +3,8 @@ package document
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
 )
@@ -46,10 +48,15 @@ func (s *service) List(ctx context.Context, applicationID string, pageSize *int,
 }
 
 func (s *service) Create(ctx context.Context, applicationID string, in model.DocumentInput) (string, error) {
-	id := s.uidService.Generate()
-	document := in.ToDocument(id, applicationID)
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
 
-	err := s.repo.Create(document)
+	id := s.uidService.Generate()
+	document := in.ToDocument(id, tnt, applicationID)
+
+	err = s.repo.Create(document)
 	if err != nil {
 		return "", errors.Wrap(err, "while creating Document")
 	}

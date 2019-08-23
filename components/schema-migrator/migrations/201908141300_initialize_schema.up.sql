@@ -138,13 +138,13 @@ CREATE TABLE runtime_auths (
     tenant_id uuid NOT NULL,
     runtime_id uuid NOT NULL,
     foreign key (tenant_id, runtime_id) references runtimes (tenant_id, id) ON DELETE CASCADE,
-    app_def_id uuid NOT NULL,
-    foreign key (tenant_id, app_def_id) references api_definitions (tenant_id, id) ON DELETE CASCADE,
+    api_def_id uuid NOT NULL,
+    foreign key (tenant_id, api_def_id) references api_definitions (tenant_id, id) ON DELETE CASCADE,
     value jsonb
 );
 
 CREATE INDEX ON runtime_auths (tenant_id);
-CREATE UNIQUE INDEX ON runtime_auths (tenant_id, runtime_id, app_def_id);
+CREATE UNIQUE INDEX ON runtime_auths (tenant_id, runtime_id, api_def_id);
 CREATE UNIQUE INDEX ON runtime_auths (tenant_id, id);
 
 -- Document

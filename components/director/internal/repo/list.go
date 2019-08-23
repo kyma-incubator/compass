@@ -2,89 +2,39 @@ package repo
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/internal/persistence"
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/pkg/errors"
+
+	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 )
 
-type PageableQuerier struct {
+type Lister struct {
 	tableName       string
 	selectedColumns string
 	tenantColumn    string
 }
 
-func NewPageableQuerier(tableName, tenantColumn string, selectedColumns []string) *PageableQuerier {
-	return &PageableQuerier{
+func NewLister(tableName, tenantColumn string, selectedColumns []string) *Lister {
+	return &Lister{
 		tableName:       tableName,
 		selectedColumns: strings.Join(selectedColumns, ", "),
 		tenantColumn:    tenantColumn,
 	}
 }
 
-type Collection interface {
-	Len() int
-}
-
-// List returns Page, TotalCount or error
-func (g *PageableQuerier) List(ctx context.Context, tenant string, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...string) (*pagination.Page, int, error) {
+func (l *Lister) List(ctx context.Context, tenant string, dest Collection, additionalConditions ...string) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
-		return nil, -1, err
+		return err
 	}
 
-	offset, err := pagination.DecodeOffsetCursor(cursor)
+	stmt := buildSelectStatement(l.selectedColumns, l.tableName, l.tenantColumn, additionalConditions)
+
+	err = persist.Select(dest, stmt, tenant)
 	if err != nil {
-		return nil, -1, errors.Wrap(err, "while decoding page cursor")
+		return errors.Wrap(err, "while fetching list of objects from DB")
 	}
 
-	filterSubquery := ""
-	for _, cond := range additionalConditions {
-		if strings.TrimSpace(cond) != "" {
-			filterSubquery += fmt.Sprintf(` AND %s`, cond)
-		}
-	}
-
-	paginationSQL, err := pagination.ConvertOffsetLimitAndOrderedColumnToSQL(pageSize, offset, orderByColumn)
-	if err != nil {
-		return nil, -1, errors.Wrap(err, "while converting offset and limit to cursor")
-	}
-
-	stmtWithoutPagination := fmt.Sprintf("SELECT %s FROM %s WHERE %s=$1 %s", g.selectedColumns, g.tableName, g.tenantColumn, filterSubquery)
-	stmtWithPagination := fmt.Sprintf("%s %s", stmtWithoutPagination, paginationSQL)
-
-	err = persist.Select(dest, stmtWithPagination, tenant)
-	if err != nil {
-		return nil, -1, errors.Wrap(err, "while fetching list of objects from DB")
-	}
-
-	totalCount, err := g.getTotalCount(persist, stmtWithoutPagination, tenant)
-	if err != nil {
-		return nil, -1, err
-	}
-
-	hasNextPage := false
-	endCursor := ""
-	if totalCount > offset+dest.Len() {
-		hasNextPage = true
-		endCursor = pagination.EncodeNextOffsetCursor(offset, pageSize)
-	}
-	return &pagination.Page{
-		StartCursor: cursor,
-		EndCursor:   endCursor,
-		HasNextPage: hasNextPage,
-	}, totalCount, nil
-}
-
-func (g *PageableQuerier) getTotalCount(persist persistence.PersistenceOp, query string, tenant string) (int, error) {
-	stmt := strings.Replace(query, g.selectedColumns, "COUNT(*)", 1)
-	var totalCount int
-	err := persist.Get(&totalCount, stmt, tenant)
-	if err != nil {
-		return -1, errors.Wrap(err, "while counting objects")
-	}
-
-	return totalCount, nil
+	return nil
 }

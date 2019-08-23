@@ -1,0 +1,14 @@
+# Token
+type Token {
+    token: String! # eg.: "1edfc34g"
+}
+
+type Query {
+    isHealthy: Boolean!
+}
+
+type Mutation {
+    # Tokens
+    generateApplicationToken(appID: ID!): Token! # internal?
+    generateRuntimeToken(runtimeID: ID!): Token! # internal?
+}

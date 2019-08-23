@@ -46,11 +46,11 @@ func TestService_Create(t *testing.T) {
 	}
 	id := "foo"
 
-	appModel := modelFromInput(modelInput, id)
-
 	tnt := "tenant"
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt)
+
+	appModel := modelFromInput(modelInput, id, tnt)
 
 	labelScenarios := &model.LabelInput{
 		Key:        model.ScenariosKey,
@@ -374,7 +374,11 @@ func TestService_Update(t *testing.T) {
 	}
 	id := "foo"
 
-	appModel := modelFromInput(modelInput, id)
+	tnt := "tenant"
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt)
+
+	appModel := modelFromInput(modelInput, id, tnt)
 
 	inputApplicationModel := mock.MatchedBy(func(app *model.Application) bool {
 		return app.Name == modelInput.Name
@@ -385,10 +389,6 @@ func TestService_Update(t *testing.T) {
 		Name:        "foo",
 		Description: &desc,
 	}
-
-	tnt := "tenant"
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
 
 	testCases := []struct {
 		Name               string
@@ -1709,7 +1709,7 @@ type testModel struct {
 	Documents            []*model.Document
 }
 
-func modelFromInput(in model.ApplicationInput, applicationID string) testModel {
+func modelFromInput(in model.ApplicationInput, applicationID, tenant string) testModel {
 	applicationModelMatcherFn := applicationMatcher(in.Name, in.Description)
 
 	var webhooksModel []*model.Webhook
@@ -1729,7 +1729,7 @@ func modelFromInput(in model.ApplicationInput, applicationID string) testModel {
 
 	var documentsModel []*model.Document
 	for _, item := range in.Documents {
-		documentsModel = append(documentsModel, item.ToDocument(uuid.New().String(), applicationID))
+		documentsModel = append(documentsModel, item.ToDocument(uuid.New().String(), tenant, applicationID))
 	}
 
 	return testModel{
