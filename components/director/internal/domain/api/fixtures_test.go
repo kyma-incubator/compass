@@ -1,11 +1,8 @@
 package api_test
 
 import (
-	"testing"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/strings"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
+	"github.com/kyma-incubator/compass/components/director/pkg/strings"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
@@ -33,7 +30,7 @@ func fixGQLAPIDefinition(id, appId, name, description string) *graphql.APIDefini
 	}
 }
 
-func fixDetailedModelAPIDefinition(t *testing.T, id, name, description string, group string) *model.APIDefinition {
+func fixDetailedModelAPIDefinition(id, name, description string, group string) *model.APIDefinition {
 	data := "data"
 	format := model.SpecFormatJSON
 
@@ -78,7 +75,7 @@ func fixDetailedModelAPIDefinition(t *testing.T, id, name, description string, g
 	}
 }
 
-func fixDetailedGQLAPIDefinition(t *testing.T, id, name, description string, group string) *graphql.APIDefinition {
+func fixDetailedGQLAPIDefinition(id, name, description string, group string) *graphql.APIDefinition {
 	data := graphql.CLOB("data")
 	format := graphql.SpecFormatJSON
 
@@ -244,19 +241,21 @@ func fixDetailedApiDefinitionEntity(placeholder string) *api.APIDefinition {
 	boolPlaceholder := true
 
 	entity := api.APIDefinition{
-		ID:                 uuid.New().String(),
-		TenantID:           uuid.New().String(),
-		AppID:              uuid.New().String(),
-		Name:               placeholder,
-		Description:        repo.NewNullableString(&placeholder),
-		Group:              repo.NewNullableString(&placeholder),
-		TargetURL:          placeholder,
-		SpecData:           repo.NewNullableString(&placeholder),
-		SpecFormat:         repo.NewNullableString(strings.Ptr(string(model.SpecFormatYaml))),
-		SpecType:           repo.NewNullableString(strings.Ptr(string(model.APISpecTypeOpenAPI))),
+		ID:          uuid.New().String(),
+		TenantID:    uuid.New().String(),
+		AppID:       uuid.New().String(),
+		Name:        placeholder,
+		Description: repo.NewNullableString(&placeholder),
+		Group:       repo.NewNullableString(&placeholder),
+		TargetURL:   placeholder,
+		APISpec: &api.APISpec{
+			SpecData:   repo.NewNullableString(&placeholder),
+			SpecFormat: repo.NewNullableString(strings.Ptr(string(model.SpecFormatYaml))),
+			SpecType:   repo.NewNullableString(strings.Ptr(string(model.APISpecTypeOpenAPI))),
+		},
 		DefaultAuth:        repo.NewNullableString(&defaultAuthJson),
 		SpecFetchRequestID: repo.NewNullableString(&fetchRequestID),
-		Version: version.Version{
+		Version: &version.Version{
 			VersionValue:           repo.NewNullableString(&placeholder),
 			VersionDepracated:      repo.NewNullableBool(&boolPlaceholder),
 			VersionDepracatedSince: repo.NewNullableString(&placeholder),

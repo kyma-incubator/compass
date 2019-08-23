@@ -26,8 +26,8 @@ import (
 
 func TestConverter_ToGraphQL(t *testing.T) {
 	// given
-	modelAPIDefinition := fixDetailedModelAPIDefinition(t, "foo", "Foo", "Lorem ipsum", "group")
-	gqlAPIDefinition := fixDetailedGQLAPIDefinition(t, "foo", "Foo", "Lorem ipsum", "group")
+	modelAPIDefinition := fixDetailedModelAPIDefinition("foo", "Foo", "Lorem ipsum", "group")
+	gqlAPIDefinition := fixDetailedGQLAPIDefinition("foo", "Foo", "Lorem ipsum", "group")
 	emptyModelAPIDefinition := &model.APIDefinition{}
 	emptyGraphQLAPIDefinition := &graphql.APIDefinition{}
 
@@ -373,7 +373,7 @@ func TestApiSpecDataConversionNilStaysNil(t *testing.T) {
 func TestEntityConverter_ToEntity(t *testing.T) {
 	t.Run("success all nullable properites filled", func(t *testing.T) {
 		//GIVEN
-		apiModel := *fixDetailedModelAPIDefinition(t, uuid.New().String(), "name", "description", "group")
+		apiModel := *fixDetailedModelAPIDefinition(uuid.New().String(), "name", "description", "group")
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, nil, versionConv)
 		//WHEN
@@ -428,20 +428,16 @@ func assertApiDefinition(t *testing.T, apiModel model.APIDefinition, entity api.
 	testdb.AssertSqlNullString(t, entity.Description, apiModel.Description)
 	testdb.AssertSqlNullString(t, entity.Group, apiModel.Group)
 	assert.Equal(t, apiModel.TargetURL, entity.TargetURL)
-	assertAPISpec(t, entity, apiModel.Spec)
+	assertAPISpec(t, entity.APISpec, apiModel.Spec)
 	assertAuth(t, apiModel.DefaultAuth, entity.DefaultAuth)
-	assertVersion(t, &entity.Version, apiModel.Version)
+	assertVersion(t, entity.Version, apiModel.Version)
 }
 
-func assertAPISpec(t *testing.T, entity api.APIDefinition, apiSpec *model.APISpec) {
-	if apiSpec != nil {
-		testdb.AssertSqlNullString(t, entity.SpecData, apiSpec.Data)
-		testdb.AssertSqlNullString(t, entity.SpecFormat, strings.Ptr(string(apiSpec.Format)))
-		testdb.AssertSqlNullString(t, entity.SpecType, strings.Ptr(string(apiSpec.Type)))
-	} else {
-		assert.False(t, entity.SpecData.Valid)
-		assert.Empty(t, entity.SpecFormat)
-		assert.Empty(t, entity.SpecType)
+func assertAPISpec(t *testing.T, specEntity *api.APISpec, apiSpec *model.APISpec) {
+	if apiSpec != nil && specEntity != nil {
+		testdb.AssertSqlNullString(t, specEntity.SpecData, apiSpec.Data)
+		testdb.AssertSqlNullString(t, specEntity.SpecFormat, strings.Ptr(string(apiSpec.Format)))
+		testdb.AssertSqlNullString(t, specEntity.SpecType, strings.Ptr(string(apiSpec.Type)))
 	}
 }
 
@@ -471,9 +467,6 @@ func assertVersion(t *testing.T, entity *version.Version, versionModel *model.Ve
 		testdb.AssertSqlNullString(t, entity.VersionDepracatedSince, versionModel.DeprecatedSince)
 		testdb.AssertSqlNullBool(t, entity.VersionForRemoval, versionModel.ForRemoval)
 	} else {
-		assert.False(t, entity.VersionValue.Valid)
-		assert.False(t, entity.VersionDepracated.Valid)
-		assert.False(t, entity.VersionDepracatedSince.Valid)
-		assert.False(t, entity.VersionForRemoval.Valid)
+		assert.Nil(t, entity)
 	}
 }

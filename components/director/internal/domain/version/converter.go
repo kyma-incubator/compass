@@ -1,6 +1,8 @@
 package version
 
 import (
+	"database/sql"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -39,7 +41,7 @@ func (c *converter) InputFromGraphQL(in *graphql.VersionInput) *model.VersionInp
 }
 
 func (c *converter) FromEntity(version Version) (model.Version, error) {
-	value := repo.StringFromSqlNullString(version.VersionValue)
+	value := repo.StringPtrFromNullableString(version.VersionValue)
 	versionValue := ""
 	if value != nil {
 		versionValue = *value
@@ -47,15 +49,23 @@ func (c *converter) FromEntity(version Version) (model.Version, error) {
 
 	return model.Version{
 		Value:           versionValue,
-		Deprecated:      repo.BoolFromSqlNullBool(version.VersionDepracated),
-		DeprecatedSince: repo.StringFromSqlNullString(version.VersionDepracatedSince),
-		ForRemoval:      repo.BoolFromSqlNullBool(version.VersionForRemoval),
+		Deprecated:      repo.BoolPtrFromNullableBool(version.VersionDepracated),
+		DeprecatedSince: repo.StringPtrFromNullableString(version.VersionDepracatedSince),
+		ForRemoval:      repo.BoolPtrFromNullableBool(version.VersionForRemoval),
 	}, nil
 }
 
 func (c *converter) ToEntity(version model.Version) (Version, error) {
+	var value sql.NullString
+	if version.Value != "" {
+		value = repo.NewNullableString(&version.Value)
+	} else {
+		value.Valid = true
+		value.String = ""
+	}
+
 	return Version{
-		VersionValue:           repo.NewNullableString(&version.Value),
+		VersionValue:           value,
 		VersionDepracated:      repo.NewNullableBool(version.Deprecated),
 		VersionDepracatedSince: repo.NewNullableString(version.DeprecatedSince),
 		VersionForRemoval:      repo.NewNullableBool(version.ForRemoval),

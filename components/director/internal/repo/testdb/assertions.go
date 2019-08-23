@@ -9,7 +9,7 @@ import (
 )
 
 func AssertSqlNullString(t *testing.T, in sql.NullString, text *string) {
-	if text != nil && len(*text) > 1 {
+	if text != nil {
 		sqlStr := sql.NullString{}
 		err := sqlStr.Scan(*text)
 		require.NoError(t, err)
@@ -19,10 +19,10 @@ func AssertSqlNullString(t *testing.T, in sql.NullString, text *string) {
 	}
 }
 
-func AssertSqlNullBool(t *testing.T, in sql.NullBool, expected *bool) {
-	if expected != nil {
+func AssertSqlNullBool(t *testing.T, in sql.NullBool, boolean *bool) {
+	if boolean != nil {
 		require.True(t, in.Valid)
-		assert.Equal(t, *expected, in.Bool)
+		assert.Equal(t, *boolean, in.Bool)
 	} else {
 		assert.False(t, in.Valid)
 	}

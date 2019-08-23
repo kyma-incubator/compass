@@ -1,6 +1,7 @@
 package version_test
 
 import (
+	"database/sql"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
@@ -23,7 +24,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		{
 			Name:     "All properties given",
 			Input:    fixModelVersion("foo", true, "bar", false),
-			Expected: fixGQLVersion(t, "foo", true, "bar", false),
+			Expected: fixGQLVersion("foo", true, "bar", false),
 		},
 		{
 			Name:     "Empty",
@@ -100,7 +101,9 @@ func TestConverter_FromEntity(t *testing.T) {
 	})
 
 	t.Run("success all nullable properties empty", func(t *testing.T) {
-		versionEntity := version.Version{}
+		// GIVEN
+		// value will be always valid, because model.Value is string.
+		versionEntity := version.Version{VersionValue: sql.NullString{Valid: true}}
 		versionConv := version.NewConverter()
 		// WHEN
 		versionModel, err := versionConv.FromEntity(versionEntity)

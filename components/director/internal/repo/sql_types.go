@@ -4,10 +4,9 @@ import "database/sql"
 
 func NewNullableString(text *string) sql.NullString {
 	nullString := sql.NullString{
-		String: "",
-		Valid:  false,
+		Valid: false,
 	}
-	if text != nil && len(*text) > 0 {
+	if text != nil {
 		nullString.String = *text
 		nullString.Valid = true
 	}
@@ -24,7 +23,7 @@ func NewNullableBool(boolean *bool) sql.NullBool {
 	return sqlBool
 }
 
-func StringFromSqlNullString(sqlString sql.NullString) *string {
+func StringPtrFromNullableString(sqlString sql.NullString) *string {
 	if sqlString.Valid {
 		return &sqlString.String
 	}
@@ -32,7 +31,7 @@ func StringFromSqlNullString(sqlString sql.NullString) *string {
 	return nil
 }
 
-func BoolFromSqlNullBool(sqlBool sql.NullBool) *bool {
+func BoolPtrFromNullableBool(sqlBool sql.NullBool) *bool {
 	if sqlBool.Valid {
 		return &sqlBool.Bool
 	}

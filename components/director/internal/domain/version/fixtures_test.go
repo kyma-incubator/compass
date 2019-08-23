@@ -1,8 +1,6 @@
 package version_test
 
 import (
-	"testing"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -20,7 +18,7 @@ func fixModelVersion(value string, deprecated bool, deprecatedSince string, forR
 	}
 }
 
-func fixGQLVersion(t *testing.T, value string, deprecated bool, deprecatedSince string, forRemoval bool) *graphql.Version {
+func fixGQLVersion(value string, deprecated bool, deprecatedSince string, forRemoval bool) *graphql.Version {
 	return &graphql.Version{
 		Value:           value,
 		Deprecated:      &deprecated,
