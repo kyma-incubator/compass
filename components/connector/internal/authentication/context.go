@@ -10,8 +10,6 @@ type ContextKey string
 
 const (
 	ConnectorTokenKey        ContextKey = "ConnectorToken"
-	CertificateCommonNameKey ContextKey = "CertificateCommonName"
-	CertificateHashKey       ContextKey = "CertificateHash"
 )
 
 func GetStringFromContext(ctx context.Context, key ContextKey) (string, error) {

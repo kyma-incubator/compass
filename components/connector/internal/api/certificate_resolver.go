@@ -48,7 +48,7 @@ func NewCertificateResolver(
 }
 
 func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context, csr string) (*gqlschema.CertificationResult, error) {
-	commonName, err := r.authenticator.AuthenticateTokenOrCertificate(ctx)
+	tokenData, err := r.authenticator.AuthenticateToken(ctx)
 	if err != nil {
 		return nil, errors.Errorf("Failed to authenticate with token or certificate: %v", err)
 	}
@@ -59,7 +59,7 @@ func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context,
 	}
 
 	subject := certificates.CSRSubject{
-		CommonName:       commonName,
+		CommonName:       tokenData.ClientId,
 		CSRSubjectConsts: r.csrSubjectConsts,
 	}
 
@@ -72,26 +72,28 @@ func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context,
 
 	return &certificationResult, nil
 }
+
 func (r *certificateResolver) RevokeCertificate(ctx context.Context) (bool, error) {
 	panic("not implemented")
 }
+
 func (r *certificateResolver) Configuration(ctx context.Context) (*gqlschema.Configuration, error) {
-	clientId, err := r.authenticator.AuthenticateTokenOrCertificate(ctx)
+	tokenData, err := r.authenticator.AuthenticateToken(ctx)
 	if err != nil {
 		r.log.Errorf(err.Error())
 		return nil, err
 	}
 
-	r.log.Infof("Fetching configuration for %s client.", clientId)
+	r.log.Infof("Fetching configuration for %s client.", tokenData.ClientId)
 
-	token, err := r.tokenService.CreateToken(clientId, tokens.CSRToken)
+	token, err := r.tokenService.CreateToken(tokenData.ClientId, tokens.CSRToken)
 	if err != nil {
 		r.log.Errorf(err.Error())
 		return nil, err
 	}
 
 	csrInfo := &gqlschema.CertificateSigningRequestInfo{
-		Subject:      r.csrSubjectConsts.ToString(clientId),
+		Subject:      r.csrSubjectConsts.ToString(tokenData.ClientId),
 		KeyAlgorithm: "rsa2048",
 	}
 

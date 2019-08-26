@@ -47,7 +47,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 
 		tokenService := &tokensMocks.Service{}
 		authenticator := &authenticationMocks.Authenticator{}
-		authenticator.On("AuthenticateTokenOrCertificate", context.TODO()).Return(subject.CommonName, nil)
+		authenticator.On("AuthenticateToken", context.TODO()).Return(subject.CommonName, nil)
 
 		certService := &certificatesMocks.Service{}
 		certService.On("SignCSR", decodedCSR, subject).Return(encodedChain, nil)
@@ -78,7 +78,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 
 		tokenService := &tokensMocks.Service{}
 		authenticator := &authenticationMocks.Authenticator{}
-		authenticator.On("AuthenticateTokenOrCertificate", context.TODO()).Return("", fmt.Errorf("error"))
+		authenticator.On("AuthenticateToken", context.TODO()).Return("", fmt.Errorf("error"))
 
 		certService := &certificatesMocks.Service{}
 		certService.On("SignCSR", decodedCSR, subject).Return(encodedChain, nil)
@@ -106,7 +106,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 
 		tokenService := &tokensMocks.Service{}
 		authenticator := &authenticationMocks.Authenticator{}
-		authenticator.On("AuthenticateTokenOrCertificate", context.TODO()).Return(subject.CommonName, nil)
+		authenticator.On("AuthenticateToken", context.TODO()).Return(subject.CommonName, nil)
 
 		certService := &certificatesMocks.Service{}
 		certService.On("SignCSR", decodedCSR, subject).Return(encodedChain, nil)
@@ -124,7 +124,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 		// given
 		tokenService := &tokensMocks.Service{}
 		authenticator := &authenticationMocks.Authenticator{}
-		authenticator.On("AuthenticateTokenOrCertificate", context.TODO()).Return(subject.CommonName, nil)
+		authenticator.On("AuthenticateToken", context.TODO()).Return(subject.CommonName, nil)
 
 		certService := &certificatesMocks.Service{}
 		certService.On("SignCSR", decodedCSR, subject).Return(certificates.EncodedCertificateChain{}, apperrors.Internal("error"))
@@ -144,7 +144,7 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 	t.Run("should return configuration", func(t *testing.T) {
 		// given
 		authenticator := &authenticationMocks.Authenticator{}
-		authenticator.On("AuthenticateTokenOrCertificate", context.Background()).Return(subject.CommonName, nil)
+		authenticator.On("AuthenticateToken", context.Background()).Return(subject.CommonName, nil)
 		tokenService := &tokensMocks.Service{}
 		tokenService.On("CreateToken", subject.CommonName, tokens.CSRToken).Return(token, nil)
 
@@ -164,7 +164,7 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 	t.Run("should return error when failed to generate token", func(t *testing.T) {
 		// given
 		authenticator := &authenticationMocks.Authenticator{}
-		authenticator.On("AuthenticateTokenOrCertificate", context.Background()).Return(subject.CommonName, nil)
+		authenticator.On("AuthenticateToken", context.Background()).Return(subject.CommonName, nil)
 		tokenService := &tokensMocks.Service{}
 		tokenService.On("CreateToken", subject.CommonName, tokens.CSRToken).Return("", apperrors.Internal("error"))
 
@@ -181,7 +181,7 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 	t.Run("should return error when failed to authenticate", func(t *testing.T) {
 		// given
 		authenticator := &authenticationMocks.Authenticator{}
-		authenticator.On("AuthenticateTokenOrCertificate", context.Background()).Return("", apperrors.Forbidden("Error"))
+		authenticator.On("AuthenticateToken", context.Background()).Return("", apperrors.Forbidden("Error"))
 		tokenService := &tokensMocks.Service{}
 
 		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL)
