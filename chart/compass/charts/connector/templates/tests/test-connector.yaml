@@ -15,7 +15,7 @@ spec:
       shareProcessNamespace: true
       containers:
       - name: tests
-        image: image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.connector.dir }}compass-connector-tests:{{ .Values.global.images.tests.connector.version }}
+        image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.connector.dir }}compass-connector-tests:{{ .Values.global.images.tests.connector.version }}
         imagePullPolicy: IfNotPresent
         env:
         - name: INTERNAL_API_URL
