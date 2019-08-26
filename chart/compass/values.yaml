@@ -7,7 +7,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir: pr/
-      version: "PR-99"
+      version: "PR-250"
     director:
       dir: pr/
       version: "PR-236"
@@ -29,7 +29,7 @@ global:
   
   director:
     port: 3000
-  
+
   connector:
     port: 3000
 
