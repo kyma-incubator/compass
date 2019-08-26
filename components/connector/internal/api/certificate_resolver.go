@@ -47,12 +47,16 @@ func NewCertificateResolver(
 func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context, csr string) (*gqlschema.CertificationResult, error) {
 	tokenData, err := r.authenticator.AuthenticateToken(ctx)
 	if err != nil {
-		return nil, errors.Errorf("Failed to authenticate with token: %v", err)
+		r.log.Errorf(err.Error())
+		return nil, errors.Wrap(err, "Failed to authenticate with token")
 	}
+
+	r.log.Infof("Signing Certificate Signing Request for %s client.", tokenData.ClientId)
 
 	rawCSR, err := decodeStringFromBase64(csr)
 	if err != nil {
-		return nil, errors.Errorf("Error while decoding Certificate Signing Request: %v", err)
+		r.log.Errorf(err.Error())
+		return nil, errors.Wrap(err, "Error while decoding Certificate Signing Request")
 	}
 
 	subject := certificates.CSRSubject{
@@ -62,11 +66,13 @@ func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context,
 
 	encodedCertificates, err := r.certificatesService.SignCSR(rawCSR, subject)
 	if err != nil {
-		return nil, errors.Errorf("Error while signing Certificate Signing Request: %v", err)
+		r.log.Errorf(err.Error())
+		return nil, errors.Wrap(err, "Error while signing Certificate Signing Request")
 	}
 
 	certificationResult := certificates.ToCertificationResult(encodedCertificates)
 
+	r.log.Infof("Certificate Signing Request signed.")
 	return &certificationResult, nil
 }
 
