@@ -33,5 +33,7 @@ func (a *authenticator) AuthenticateToken(context context.Context) (tokens.Token
 		return tokens.TokenData{}, errors.Wrap(err, "Failed to authenticate request, token is invalid")
 	}
 
+	a.tokenService.Delete(token)
+
 	return tokenData, nil
 }

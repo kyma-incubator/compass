@@ -47,7 +47,7 @@ func NewCertificateResolver(
 func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context, csr string) (*gqlschema.CertificationResult, error) {
 	tokenData, err := r.authenticator.AuthenticateToken(ctx)
 	if err != nil {
-		return nil, errors.Errorf("Failed to authenticate with token or certificate: %v", err)
+		return nil, errors.Errorf("Failed to authenticate with token: %v", err)
 	}
 
 	rawCSR, err := decodeStringFromBase64(csr)

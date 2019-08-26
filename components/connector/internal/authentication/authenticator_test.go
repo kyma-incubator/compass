@@ -32,6 +32,7 @@ func TestAuthenticator_AuthenticateToken(t *testing.T) {
 
 		tokenSvc := &mocks.Service{}
 		tokenSvc.On("Resolve", token).Return(tokenData, nil)
+		tokenSvc.On("Delete", token).Return()
 
 		authenticator := authentication.NewAuthenticator(tokenSvc)
 
@@ -49,6 +50,7 @@ func TestAuthenticator_AuthenticateToken(t *testing.T) {
 
 		tokenSvc := &mocks.Service{}
 		tokenSvc.On("Resolve", token).Return(tokens.TokenData{}, apperrors.NotFound("error"))
+		tokenSvc.On("Delete", token).Return()
 
 		authenticator := authentication.NewAuthenticator(tokenSvc)
 
