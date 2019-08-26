@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/base64"
 
+	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
+
 	"github.com/pkg/errors"
 
 	"github.com/sirupsen/logrus"
@@ -12,14 +14,12 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
-	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 )
 
-//go:generate mockery -name=CertificateResolver
 type CertificateResolver interface {
-	SignCertificateSigningRequest(ctx context.Context, csr string) (*externalschema.CertificationResult, error)
+	SignCertificateSigningRequest(ctx context.Context, csr string) (*gqlschema.CertificationResult, error)
 	RevokeCertificate(ctx context.Context) (bool, error)
-	Configuration(ctx context.Context) (*externalschema.Configuration, error)
+	Configuration(ctx context.Context) (*gqlschema.Configuration, error)
 }
 
 type certificateResolver struct {
@@ -47,7 +47,7 @@ func NewCertificateResolver(
 	}
 }
 
-func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context, csr string) (*externalschema.CertificationResult, error) {
+func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context, csr string) (*gqlschema.CertificationResult, error) {
 	commonName, err := r.authenticator.AuthenticateTokenOrCertificate(ctx)
 	if err != nil {
 		return nil, errors.Errorf("Failed to authenticate with token or certificate: %v", err)
@@ -75,7 +75,7 @@ func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context,
 func (r *certificateResolver) RevokeCertificate(ctx context.Context) (bool, error) {
 	panic("not implemented")
 }
-func (r *certificateResolver) Configuration(ctx context.Context) (*externalschema.Configuration, error) {
+func (r *certificateResolver) Configuration(ctx context.Context) (*gqlschema.Configuration, error) {
 	clientId, err := r.authenticator.AuthenticateTokenOrCertificate(ctx)
 	if err != nil {
 		r.log.Errorf(err.Error())
@@ -90,15 +90,15 @@ func (r *certificateResolver) Configuration(ctx context.Context) (*externalschem
 		return nil, err
 	}
 
-	csrInfo := &externalschema.CertificateSigningRequestInfo{
+	csrInfo := &gqlschema.CertificateSigningRequestInfo{
 		Subject:      r.csrSubjectConsts.ToString(clientId),
 		KeyAlgorithm: "rsa2048",
 	}
 
-	return &externalschema.Configuration{
-		Token:                         &externalschema.Token{Token: token},
+	return &gqlschema.Configuration{
+		Token:                         &gqlschema.Token{Token: token},
 		CertificateSigningRequestInfo: csrInfo,
-		ManagementPlaneInfo:           &externalschema.ManagementPlaneInfo{DirectorURL: r.directorURL},
+		ManagementPlaneInfo:           &gqlschema.ManagementPlaneInfo{DirectorURL: r.directorURL},
 	}, nil
 }
 

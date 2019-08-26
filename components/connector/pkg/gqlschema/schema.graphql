@@ -5,7 +5,7 @@ type Token {
 
 # CertificationResult
 type CertificationResult {
-    certificate: String!
+    certificateChain: String!
     caCertificate: String!
     clientCertificate: String!
 }
@@ -35,6 +35,10 @@ type Query {
 }
 
 type Mutation {
+    # Tokens
+    generateApplicationToken(appID: ID!): Token!
+    generateRuntimeToken(runtimeID: ID!): Token!
+
     # Client-Certificates
     signCertificateSigningRequest(csr: String!): CertificationResult!
 

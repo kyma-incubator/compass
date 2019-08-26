@@ -1,44 +1,25 @@
 package api
 
 import (
-	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
-	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/internalschema"
+	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
 )
 
-type ExternalResolver struct {
+type Resolver struct {
 	CertificateResolver
-}
-
-type externalMutationResolver struct {
-	*ExternalResolver
-}
-
-type externalQueryResolver struct {
-	*ExternalResolver
-}
-
-func (r *ExternalResolver) Mutation() externalschema.MutationResolver {
-	return &externalMutationResolver{r}
-}
-func (r *ExternalResolver) Query() externalschema.QueryResolver {
-	return &externalQueryResolver{r}
-}
-
-type InternalResolver struct {
 	TokenResolver
 }
 
-type internalMutationResolver struct {
-	*InternalResolver
+type externalMutationResolver struct {
+	*Resolver
 }
 
-type internalQueryResolver struct {
-	*InternalResolver
+type externalQueryResolver struct {
+	*Resolver
 }
 
-func (r *InternalResolver) Mutation() internalschema.MutationResolver {
-	return &internalMutationResolver{r}
+func (r *Resolver) Mutation() gqlschema.MutationResolver {
+	return &externalMutationResolver{r}
 }
-func (r *InternalResolver) Query() internalschema.QueryResolver {
-	return &internalQueryResolver{r}
+func (r *Resolver) Query() gqlschema.QueryResolver {
+	return &externalQueryResolver{r}
 }
