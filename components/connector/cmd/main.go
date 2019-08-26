@@ -4,15 +4,21 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"path/filepath"
 	"sync"
 	"time"
+
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/namespacedname"
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connector/internal/api"
-	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
 	"github.com/kyma-incubator/compass/components/connector/internal/secrets"
@@ -32,11 +38,11 @@ type config struct {
 	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
 
 	CSRSubject struct {
-		Country            string `envconfig:"default=C"`
-		Organization       string `envconfig:"default=O"`
-		OrganizationalUnit string `envconfig:"default=OU"`
-		Locality           string `envconfig:"default=L"`
-		Province           string `envconfig:"default=ST"`
+		Country            string `envconfig:"default=PL"`
+		Organization       string `envconfig:"default=Org"`
+		OrganizationalUnit string `envconfig:"default=OrgUnit"`
+		Locality           string `envconfig:"default=Locality"`
+		Province           string `envconfig:"default=State"`
 	}
 	CertificateValidityTime     time.Duration `envconfig:"default=2160h"`
 	CASecretName                string        `envconfig:"default=namespace/name"`
@@ -181,15 +187,22 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func newCoreClientSet() (*kubernetes.Clientset, apperrors.AppError) {
+func newCoreClientSet() (*kubernetes.Clientset, error) {
 	k8sConfig, err := restclient.InClusterConfig()
 	if err != nil {
-		return nil, apperrors.Internal("failed to read k8s in-cluster configuration, %s", err)
+		logrus.Warnf("Failed to read in cluster config: %s", err.Error())
+		logrus.Info("Trying to initialize with local config")
+		home := homedir.HomeDir()
+		k8sConfPath := filepath.Join(home, ".kube", "config")
+		k8sConfig, err = clientcmd.BuildConfigFromFlags("", k8sConfPath)
+		if err != nil {
+			return nil, errors.Errorf("failed to read k8s in-cluster configuration, %s", err.Error())
+		}
 	}
 
 	coreClientset, err := kubernetes.NewForConfig(k8sConfig)
 	if err != nil {
-		return nil, apperrors.Internal("failed to create k8s core client, %s", err)
+		return nil, errors.Errorf("failed to create k8s core client, %s", err.Error())
 	}
 
 	return coreClientset, nil
