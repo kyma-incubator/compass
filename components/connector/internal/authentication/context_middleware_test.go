@@ -21,7 +21,6 @@ func TestAuthContextMiddleware_PropagateAuthentication(t *testing.T) {
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			token, err := authentication.GetStringFromContext(r.Context(), authentication.ConnectorTokenKey)
 			require.NoError(t, err)
-
 			assert.Equal(t, connectorToken, token)
 
 			w.WriteHeader(http.StatusOK)
@@ -29,7 +28,7 @@ func TestAuthContextMiddleware_PropagateAuthentication(t *testing.T) {
 
 		request, err := http.NewRequest(http.MethodGet, "", nil)
 		require.NoError(t, err)
-		request.Header.Add(authentication.ClientCertHeader, "CommonName=certificateCommonName,Hash=qwertyuiop")
+
 		request.Header.Add(authentication.ConnectorTokenHeader, connectorToken)
 		rr := httptest.NewRecorder()
 
@@ -39,5 +38,4 @@ func TestAuthContextMiddleware_PropagateAuthentication(t *testing.T) {
 		handlerWithMiddleware := authContextMiddleware.PropagateAuthentication(handler)
 		handlerWithMiddleware.ServeHTTP(rr, request)
 	})
-
 }

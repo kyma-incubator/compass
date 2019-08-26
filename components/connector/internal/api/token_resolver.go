@@ -3,11 +3,9 @@ package api
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
-
-	"github.com/pkg/errors"
-
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
+	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
