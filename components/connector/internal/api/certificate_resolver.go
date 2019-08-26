@@ -4,16 +4,13 @@ import (
 	"context"
 	"encoding/base64"
 
-	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
-
-	"github.com/pkg/errors"
-
-	"github.com/sirupsen/logrus"
-
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
+	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 type CertificateResolver interface {

@@ -5,14 +5,10 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
-
-	"github.com/stretchr/testify/assert"
-
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
-
-	"github.com/stretchr/testify/require"
-
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens/mocks"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (

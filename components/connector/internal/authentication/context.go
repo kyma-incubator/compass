@@ -9,7 +9,7 @@ import (
 type ContextKey string
 
 const (
-	ConnectorTokenKey        ContextKey = "ConnectorToken"
+	ConnectorTokenKey ContextKey = "ConnectorToken"
 )
 
 func GetStringFromContext(ctx context.Context, key ContextKey) (string, error) {
