@@ -46,7 +46,10 @@ type config struct {
 		Length                int           `envconfig:"default=64"`
 		RuntimeExpiration     time.Duration `envconfig:"default=60m"`
 		ApplicationExpiration time.Duration `envconfig:"default=5m"`
+		CSRTokenExpiration    time.Duration `envconfig:"default=5m"`
 	}
+
+	DirectorURL string `envconfig:"default=127.0.0.1:3003"`
 }
 
 func (c *config) String() string {
@@ -54,12 +57,14 @@ func (c *config) String() string {
 		"CSRSubjectCountry: %s, CSRSubjectOrganization: %s, CSRSubjectOrganizationalUnit: %s, "+
 		"CSRSubjectLocality: %s, CSRSubjectProvince: %s, "+
 		"CertificateValidityTime: %s, CASecretName: %s, RootCACertificateSecretName: %s, "+
-		"TokenLength: %d, TokenRuntimeExpiration: %s, TokenApplicationExpiration: %s",
+		"TokenLength: %d, TokenRuntimeExpiration: %s, TokenApplicationExpiration: %s, "+
+		"DirectorURL: %s",
 		c.ExternalAddress, c.InternalAddress, c.APIEndpoint,
 		c.CSRSubject.Country, c.CSRSubject.Organization, c.CSRSubject.OrganizationalUnit,
 		c.CSRSubject.Locality, c.CSRSubject.Province,
 		c.CertificateValidityTime, c.CASecretName, c.RootCACertificateSecretName,
-		c.Token.Length, c.Token.RuntimeExpiration.String(), c.Token.ApplicationExpiration.String())
+		c.Token.Length, c.Token.RuntimeExpiration.String(), c.Token.ApplicationExpiration.String(),
+		c.DirectorURL)
 }
 
 func main() {
@@ -70,7 +75,7 @@ func main() {
 	log.Println("Starting Connector Service")
 	log.Printf("Config: %s", cfg.String())
 
-	tokenCache := tokens.NewTokenCache(cfg.Token.ApplicationExpiration, cfg.Token.RuntimeExpiration)
+	tokenCache := tokens.NewTokenCache(cfg.Token.ApplicationExpiration, cfg.Token.RuntimeExpiration, cfg.Token.CSRTokenExpiration)
 	tokenService := tokens.NewTokenService(tokenCache, tokens.NewTokenGenerator(cfg.Token.Length))
 
 	authenticator := authentication.NewAuthenticator(tokenService)
@@ -95,7 +100,12 @@ func main() {
 		Province:           cfg.CSRSubject.Province,
 	}
 
-	certificateResolver := api.NewCertificateResolver(authenticator, tokenService, certificateService, csrSubjectConsts)
+	certificateResolver := api.NewCertificateResolver(
+		authenticator,
+		tokenService,
+		certificateService,
+		csrSubjectConsts,
+		cfg.DirectorURL)
 
 	internalServer := prepareInternalServer(cfg, tokenResolver)
 	externalServer := prepareExternalServer(cfg, certificateResolver, csrSubjectConsts)

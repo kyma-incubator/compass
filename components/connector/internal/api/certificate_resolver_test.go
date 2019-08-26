@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
+
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 	authenticationMocks "github.com/kyma-incubator/compass/components/connector/internal/authentication/mocks"
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
@@ -27,6 +29,7 @@ var (
 			Province:           "province",
 		},
 	}
+	directorURL = "https://compass-gateway.kyma.local/director/graphql"
 )
 
 func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
@@ -49,7 +52,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 		certService := &certificatesMocks.Service{}
 		certService.On("SignCSR", decodedCSR, subject).Return(encodedChain, nil)
 
-		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts)
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL)
 
 		// when
 		certificationResult, err := certificateResolver.SignCertificateSigningRequest(context.TODO(), CSR)
@@ -80,7 +83,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 		certService := &certificatesMocks.Service{}
 		certService.On("SignCSR", decodedCSR, subject).Return(encodedChain, nil)
 
-		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts)
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL)
 
 		// when
 		_, err := certificateResolver.SignCertificateSigningRequest(context.TODO(), CSR)
@@ -108,7 +111,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 		certService := &certificatesMocks.Service{}
 		certService.On("SignCSR", decodedCSR, subject).Return(encodedChain, nil)
 
-		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts)
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL)
 
 		// when
 		_, err := certificateResolver.SignCertificateSigningRequest(context.TODO(), "not base 64 csr")
@@ -126,7 +129,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 		certService := &certificatesMocks.Service{}
 		certService.On("SignCSR", decodedCSR, subject).Return(certificates.EncodedCertificateChain{}, apperrors.Internal("error"))
 
-		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts)
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL)
 
 		// when
 		_, err := certificateResolver.SignCertificateSigningRequest(context.TODO(), CSR)
@@ -134,4 +137,65 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 		// then
 		require.Error(t, err)
 	})
+}
+
+func TestCertificateResolver_Configuration(t *testing.T) {
+
+	t.Run("should return configuration", func(t *testing.T) {
+		// given
+		authenticator := &authenticationMocks.Authenticator{}
+		authenticator.On("AuthenticateTokenOrCertificate", context.Background()).Return(subject.CommonName, nil)
+		tokenService := &tokensMocks.Service{}
+		tokenService.On("CreateToken", subject.CommonName, tokens.CSRToken).Return(token, nil)
+
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL)
+
+		// when
+		configurationResult, err := certificateResolver.Configuration(context.Background())
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, token, configurationResult.Token.Token)
+		assert.Equal(t, directorURL, configurationResult.ManagementPlaneInfo.DirectorURL)
+		assert.Equal(t, expectedSubject(subject.CSRSubjectConsts, subject.CommonName), configurationResult.CertificateSigningRequestInfo.Subject)
+		assert.Equal(t, "rsa2048", configurationResult.CertificateSigningRequestInfo.KeyAlgorithm)
+	})
+
+	t.Run("should return error when failed to generate token", func(t *testing.T) {
+		// given
+		authenticator := &authenticationMocks.Authenticator{}
+		authenticator.On("AuthenticateTokenOrCertificate", context.Background()).Return(subject.CommonName, nil)
+		tokenService := &tokensMocks.Service{}
+		tokenService.On("CreateToken", subject.CommonName, tokens.CSRToken).Return("", apperrors.Internal("error"))
+
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL)
+
+		// when
+		configurationResult, err := certificateResolver.Configuration(context.Background())
+
+		// then
+		require.Error(t, err)
+		require.Nil(t, configurationResult)
+	})
+
+	t.Run("should return error when failed to authenticate", func(t *testing.T) {
+		// given
+		authenticator := &authenticationMocks.Authenticator{}
+		authenticator.On("AuthenticateTokenOrCertificate", context.Background()).Return("", apperrors.Forbidden("Error"))
+		tokenService := &tokensMocks.Service{}
+
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL)
+
+		// when
+		configurationResult, err := certificateResolver.Configuration(context.Background())
+
+		// then
+		require.Error(t, err)
+		require.Nil(t, configurationResult)
+	})
+
+}
+
+func expectedSubject(c certificates.CSRSubjectConsts, commonName string) string {
+	return fmt.Sprintf("O=%s,OU=%s,L=%s,ST=%s,C=%s,CN=%s", c.Organization, c.OrganizationalUnit, c.Locality, c.Province, c.Country, commonName)
 }
