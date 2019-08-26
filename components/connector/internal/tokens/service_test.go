@@ -36,6 +36,14 @@ func TestTokenService(t *testing.T) {
 				ClientId: clientId,
 			},
 		},
+		{
+			description: "should save, resolve and delete CSRToken",
+			tokenType:   CSRToken,
+			expectedTokenData: TokenData{
+				Type:     CSRToken,
+				ClientId: clientId,
+			},
+		},
 	} {
 		t.Run("test case: "+testCase.description, func(t *testing.T) {
 			// given
@@ -84,7 +92,7 @@ func TestTokenService_Resolve(t *testing.T) {
 }
 
 func newTokenService() Service {
-	tokenStore := NewTokenCache(1*time.Minute, 1*time.Minute)
+	tokenStore := NewTokenCache(1*time.Minute, 1*time.Minute, 1*time.Minute)
 	generator := NewTokenGenerator(10)
 	return NewTokenService(tokenStore, generator)
 }

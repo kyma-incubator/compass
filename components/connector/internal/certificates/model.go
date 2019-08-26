@@ -19,8 +19,8 @@ type CSRSubjectConsts struct {
 	Province           string
 }
 
-func (s CSRSubject) ToString() string {
-	return fmt.Sprintf("O=%s,OU=%s,L=%s,ST=%s,C=%s,CN=%s", s.Organization, s.OrganizationalUnit, s.Locality, s.Province, s.Country, s.CommonName)
+func (s CSRSubjectConsts) ToString(commonName string) string {
+	return fmt.Sprintf("O=%s,OU=%s,L=%s,ST=%s,C=%s,CN=%s", s.Organization, s.OrganizationalUnit, s.Locality, s.Province, s.Country, commonName)
 }
 
 type EncodedCertificateChain struct {

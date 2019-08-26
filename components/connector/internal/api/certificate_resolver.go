@@ -3,7 +3,10 @@ package api
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
+
+	"github.com/pkg/errors"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
@@ -24,26 +27,35 @@ type certificateResolver struct {
 	tokenService        tokens.Service
 	certificatesService certificates.Service
 	csrSubjectConsts    certificates.CSRSubjectConsts
+	directorURL         string
+	log                 *logrus.Entry
 }
 
-func NewCertificateResolver(authenticator authentication.Authenticator, tokenService tokens.Service, certificatesService certificates.Service, csrSubjectConsts certificates.CSRSubjectConsts) CertificateResolver {
+func NewCertificateResolver(
+	authenticator authentication.Authenticator,
+	tokenService tokens.Service,
+	certificatesService certificates.Service,
+	csrSubjectConsts certificates.CSRSubjectConsts,
+	directorURL string) CertificateResolver {
 	return &certificateResolver{
 		authenticator:       authenticator,
 		tokenService:        tokenService,
 		certificatesService: certificatesService,
 		csrSubjectConsts:    csrSubjectConsts,
+		directorURL:         directorURL,
+		log:                 logrus.WithField("Resolver", "Certificate"),
 	}
 }
 
 func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context, csr string) (*externalschema.CertificationResult, error) {
 	commonName, err := r.authenticator.AuthenticateTokenOrCertificate(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to authenticate with token or certificate: %v", err)
+		return nil, errors.Errorf("Failed to authenticate with token or certificate: %v", err)
 	}
 
 	rawCSR, err := decodeStringFromBase64(csr)
 	if err != nil {
-		return nil, fmt.Errorf("Error while decoding Certificate Signing Request: %v", err)
+		return nil, errors.Errorf("Error while decoding Certificate Signing Request: %v", err)
 	}
 
 	subject := certificates.CSRSubject{
@@ -53,7 +65,7 @@ func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context,
 
 	encodedCertificates, err := r.certificatesService.SignCSR(rawCSR, subject)
 	if err != nil {
-		return nil, fmt.Errorf("Error while signing Certificate Signing Request: %v", err)
+		return nil, errors.Errorf("Error while signing Certificate Signing Request: %v", err)
 	}
 
 	certificationResult := certificates.ToCertificationResult(encodedCertificates)
@@ -64,7 +76,30 @@ func (r *certificateResolver) RevokeCertificate(ctx context.Context) (bool, erro
 	panic("not implemented")
 }
 func (r *certificateResolver) Configuration(ctx context.Context) (*externalschema.Configuration, error) {
-	panic("not implemented")
+	clientId, err := r.authenticator.AuthenticateTokenOrCertificate(ctx)
+	if err != nil {
+		r.log.Errorf(err.Error())
+		return nil, err
+	}
+
+	r.log.Infof("Fetching configuration for %s client.", clientId)
+
+	token, err := r.tokenService.CreateToken(clientId, tokens.CSRToken)
+	if err != nil {
+		r.log.Errorf(err.Error())
+		return nil, err
+	}
+
+	csrInfo := &externalschema.CertificateSigningRequestInfo{
+		Subject:      r.csrSubjectConsts.ToString(clientId),
+		KeyAlgorithm: "rsa2048",
+	}
+
+	return &externalschema.Configuration{
+		Token:                         &externalschema.Token{Token: token},
+		CertificateSigningRequestInfo: csrInfo,
+		ManagementPlaneInfo:           &externalschema.ManagementPlaneInfo{DirectorURL: r.directorURL},
+	}, nil
 }
 
 func decodeStringFromBase64(string string) ([]byte, apperrors.AppError) {
