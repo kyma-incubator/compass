@@ -51,7 +51,7 @@ func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 	labelConverter := label.NewConverter()
 
 	healthcheckRepo := healthcheck.NewRepository()
-	runtimeRepo := runtime.NewPostgresRepository()
+	runtimeRepo := runtime.NewRepository()
 	applicationRepo := application.NewRepository()
 	labelRepo := label.NewRepository(labelConverter)
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
@@ -60,24 +60,25 @@ func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 	apiRepo := api.NewAPIRepository()
 	eventAPIRepo := eventapi.NewRepository()
 	docRepo := document.NewRepository()
+	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
 
 	uidService := uid.NewService()
 	labelUpsertService := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidService)
 	scenariosService := labeldef.NewScenariosService(labelDefRepo, uidService)
-	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo, runtimeRepo, labelRepo, labelUpsertService, scenariosService, uidService)
-	apiSvc := api.NewService(apiRepo, uidService)
-	eventAPISvc := eventapi.NewService(eventAPIRepo, uidService)
+	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo, runtimeRepo, labelRepo, fetchRequestRepo, labelUpsertService, scenariosService, uidService)
+	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidService)
+	eventAPISvc := eventapi.NewService(eventAPIRepo, fetchRequestRepo, uidService)
 	webhookSvc := webhook.NewService(webhookRepo, uidService)
-	docSvc := document.NewService(docRepo, uidService)
+	docSvc := document.NewService(docRepo, fetchRequestRepo, uidService)
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosService, labelUpsertService, uidService)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 	labelDefService := labeldef.NewService(labelDefRepo, labelRepo, uidService)
 
 	return &RootResolver{
 		app:         application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter),
-		api:         api.NewResolver(apiSvc, appSvc, apiConverter, authConverter),
-		eventAPI:    eventapi.NewResolver(eventAPISvc, appSvc, eventAPIConverter),
-		doc:         document.NewResolver(docSvc, appSvc, frConverter),
+		api:         api.NewResolver(transact, apiSvc, appSvc, apiConverter, authConverter, frConverter),
+		eventAPI:    eventapi.NewResolver(transact, eventAPISvc, appSvc, eventAPIConverter, frConverter),
+		doc:         document.NewResolver(transact, docSvc, appSvc, frConverter),
 		runtime:     runtime.NewResolver(transact, runtimeSvc, runtimeConverter),
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
 		webhook:     webhook.NewResolver(transact, webhookSvc, appSvc, webhookConverter),
@@ -96,6 +97,15 @@ func (r *RootResolver) Application() graphql.ApplicationResolver {
 }
 func (r *RootResolver) Runtime() graphql.RuntimeResolver {
 	return &runtimeResolver{r}
+}
+func (r *RootResolver) APISpec() graphql.APISpecResolver {
+	return &apiSpecResolver{r}
+}
+func (r *RootResolver) Document() graphql.DocumentResolver {
+	return &documentResolver{r}
+}
+func (r *RootResolver) EventAPISpec() graphql.EventAPISpecResolver {
+	return &eventAPISpecResolver{r}
 }
 
 type queryResolver struct {
@@ -242,4 +252,22 @@ type runtimeResolver struct {
 
 func (r *runtimeResolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string) (graphql.Labels, error) {
 	return r.runtime.Labels(ctx, obj, key)
+}
+
+type apiSpecResolver struct{ *RootResolver }
+
+func (r *apiSpecResolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*graphql.FetchRequest, error) {
+	return r.api.FetchRequest(ctx, obj)
+}
+
+type documentResolver struct{ *RootResolver }
+
+func (r *documentResolver) FetchRequest(ctx context.Context, obj *graphql.Document) (*graphql.FetchRequest, error) {
+	return r.doc.FetchRequest(ctx, obj)
+}
+
+type eventAPISpecResolver struct{ *RootResolver }
+
+func (r *eventAPISpecResolver) FetchRequest(ctx context.Context, obj *graphql.EventAPISpec) (*graphql.FetchRequest, error) {
+	return r.eventAPI.FetchRequest(ctx, obj)
 }

@@ -51,7 +51,7 @@ type FetchRequestInput struct {
 	Filter *string
 }
 
-func (f *FetchRequestInput) ToFetchRequest(timestamp time.Time) *FetchRequest {
+func (f *FetchRequestInput) ToFetchRequest(timestamp time.Time, id, tenant string, objectType FetchRequestReferenceObjectType, objectID string) *FetchRequest {
 	if f == nil {
 		return nil
 	}
@@ -62,6 +62,8 @@ func (f *FetchRequestInput) ToFetchRequest(timestamp time.Time) *FetchRequest {
 	}
 
 	return &FetchRequest{
+		ID:     id,
+		Tenant: tenant,
 		URL:    f.URL,
 		Auth:   f.Auth.ToAuth(),
 		Mode:   fetchMode,
@@ -70,5 +72,7 @@ func (f *FetchRequestInput) ToFetchRequest(timestamp time.Time) *FetchRequest {
 			Condition: FetchRequestStatusConditionInitial,
 			Timestamp: timestamp,
 		},
+		ObjectType: objectType,
+		ObjectID:   objectID,
 	}
 }

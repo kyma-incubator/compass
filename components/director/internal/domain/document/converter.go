@@ -7,12 +7,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-//go:generate mockery -name=FetchRequestConverter -output=automock -outpkg=automock -case=underscore
-type FetchRequestConverter interface {
-	ToGraphQL(in *model.FetchRequest) *graphql.FetchRequest
-	InputFromGraphQL(in *graphql.FetchRequestInput) *model.FetchRequestInput
-}
-
 type converter struct {
 	frConverter FetchRequestConverter
 }
@@ -41,7 +35,6 @@ func (c *converter) ToGraphQL(in *model.Document) *graphql.Document {
 		Format:        graphql.DocumentFormat(in.Format),
 		Kind:          in.Kind,
 		Data:          clob,
-		FetchRequest:  c.frConverter.ToGraphQL(in.FetchRequest),
 	}
 }
 
@@ -110,6 +103,14 @@ func (c *converter) ToEntity(in model.Document) (Entity, error) {
 		}
 	}
 
+	var fetchRequestID sql.NullString
+	if in.FetchRequestID != nil {
+		fetchRequestID = sql.NullString{
+			String: *in.FetchRequestID,
+			Valid:  true,
+		}
+	}
+
 	out := Entity{
 		ID:             in.ID,
 		AppID:          in.ApplicationID,
@@ -120,7 +121,7 @@ func (c *converter) ToEntity(in model.Document) (Entity, error) {
 		Format:         string(in.Format),
 		Kind:           nullKind,
 		Data:           nullData,
-		FetchRequestID: sql.NullString{}, //TODO adjust with https://github.com/kyma-incubator/compass/issues/226
+		FetchRequestID: fetchRequestID,
 	}
 
 	return out, nil
@@ -136,17 +137,22 @@ func (c *converter) FromEntity(in Entity) (model.Document, error) {
 		dataPtr = &in.Data.String
 	}
 
+	var fetchRequestID *string
+	if in.FetchRequestID.Valid {
+		fetchRequestID = &in.FetchRequestID.String
+	}
+
 	out := model.Document{
-		ID:            in.ID,
-		ApplicationID: in.AppID,
-		Tenant:        in.TenantID,
-		Title:         in.Title,
-		DisplayName:   in.DisplayName,
-		Description:   in.Description,
-		Format:        model.DocumentFormat(in.Format),
-		Kind:          kindPtr,
-		Data:          dataPtr,
-		FetchRequest:  nil, //TODO adjust with https://github.com/kyma-incubator/compass/issues/226
+		ID:             in.ID,
+		ApplicationID:  in.AppID,
+		Tenant:         in.TenantID,
+		Title:          in.Title,
+		DisplayName:    in.DisplayName,
+		Description:    in.Description,
+		Format:         model.DocumentFormat(in.Format),
+		Kind:           kindPtr,
+		Data:           dataPtr,
+		FetchRequestID: fetchRequestID,
 	}
 	return out, nil
 }

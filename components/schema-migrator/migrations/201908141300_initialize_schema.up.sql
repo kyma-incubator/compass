@@ -218,11 +218,11 @@ CREATE TABLE fetch_requests (
     tenant_id uuid NOT NULL,
 
     api_def_id uuid,
-    foreign key (tenant_id, api_def_id) references api_definitions (tenant_id, id) ON DELETE CASCADE,
+--     foreign key (tenant_id, api_def_id) references api_definitions (tenant_id, id) ON DELETE CASCADE,  --TODO: Uncomment after API repo
     event_api_def_id uuid,
-    foreign key (tenant_id, event_api_def_id) references event_api_definitions (tenant_id, id) ON DELETE CASCADE,
+--     foreign key (tenant_id, event_api_def_id) references event_api_definitions (tenant_id, id) ON DELETE CASCADE, --TODO: Uncomment after EventAPI repo
     document_id uuid,
-    foreign key (tenant_id, document_id) references documents (tenant_id, id) ON DELETE CASCADE,
+--     foreign key (tenant_id, document_id) references documents (tenant_id, id) ON DELETE CASCADE, --TODO: Uncomment after Document repo
 
     url varchar(256) NOT NULL,
     auth jsonb,
@@ -238,11 +238,11 @@ CREATE UNIQUE INDEX ON fetch_requests (tenant_id, api_def_id, event_api_def_id, 
 CREATE UNIQUE INDEX ON fetch_requests (tenant_id, id);
 
 ALTER TABLE api_definitions
-    ADD spec_fetch_request_id uuid,
-    ADD foreign key (tenant_id, spec_fetch_request_id) references fetch_requests (tenant_id, id) ON DELETE CASCADE;
+    ADD spec_fetch_request_id uuid;
+--     ADD foreign key (tenant_id, spec_fetch_request_id) references fetch_requests (tenant_id, id) ON DELETE CASCADE; --TODO: Uncomment after API repo
 ALTER TABLE event_api_definitions
-    ADD spec_fetch_request_id uuid,
-    ADD foreign key (tenant_id, spec_fetch_request_id) references fetch_requests (tenant_id, id) ON DELETE CASCADE;
+    ADD spec_fetch_request_id uuid;
+--     ADD foreign key (tenant_id, spec_fetch_request_id) references fetch_requests (tenant_id, id) ON DELETE CASCADE; --TODO: Uncomment after EventAPI repo
 ALTER TABLE documents
-    ADD fetch_request_id uuid,
-    ADD foreign key (tenant_id, fetch_request_id) references fetch_requests (tenant_id, id) ON DELETE CASCADE;
+    ADD fetch_request_id uuid;
+--     ADD foreign key (tenant_id, fetch_request_id) references fetch_requests (tenant_id, id) ON DELETE CASCADE; --TODO: Uncomment after Documents repo

@@ -1,7 +1,7 @@
 package eventapi_test
 
 import (
-	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -25,15 +25,16 @@ func fixGQLEventAPIDefinition(id, appID, name, description string) *graphql.Even
 	}
 }
 
-func fixDetailedModelEventAPIDefinition(t *testing.T, id, name, description string, group string) *model.EventAPIDefinition {
+func fixDetailedModelEventAPIDefinition(id, name, description string, group string) *model.EventAPIDefinition {
 	data := "data"
 	format := model.SpecFormatJSON
 
+	frID := "test"
 	spec := &model.EventAPISpec{
-		Data:         &data,
-		Format:       format,
-		Type:         model.EventAPISpecTypeAsyncAPI,
-		FetchRequest: &model.FetchRequest{},
+		Data:           &data,
+		Format:         format,
+		Type:           model.EventAPISpecTypeAsyncAPI,
+		FetchRequestID: &frID,
 	}
 
 	deprecated := false
@@ -58,7 +59,7 @@ func fixDetailedModelEventAPIDefinition(t *testing.T, id, name, description stri
 	}
 }
 
-func fixDetailedGQLEventAPIDefinition(t *testing.T, id, name, description string, group string) *graphql.EventAPIDefinition {
+func fixDetailedGQLEventAPIDefinition(id, name, description string, group string) *graphql.EventAPIDefinition {
 	data := graphql.CLOB("data")
 	format := graphql.SpecFormatJSON
 
@@ -66,7 +67,7 @@ func fixDetailedGQLEventAPIDefinition(t *testing.T, id, name, description string
 		Data:         &data,
 		Format:       format,
 		Type:         graphql.EventAPISpecTypeAsyncAPI,
-		FetchRequest: &graphql.FetchRequest{},
+		DefinitionID: id,
 	}
 
 	deprecated := false
@@ -149,5 +150,35 @@ func fixGQLEventAPIDefinitionInput(name, description string, group string) *grap
 		Group:       &group,
 		Spec:        spec,
 		Version:     version,
+	}
+}
+
+func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchRequest {
+	return &model.FetchRequest{
+		ID:     id,
+		Tenant: "tenant",
+		URL:    url,
+		Auth:   nil,
+		Mode:   "SINGLE",
+		Filter: nil,
+		Status: &model.FetchRequestStatus{
+			Condition: model.FetchRequestStatusConditionInitial,
+			Timestamp: timestamp,
+		},
+		ObjectType: model.EventAPIFetchRequestReference,
+		ObjectID:   "foo",
+	}
+}
+
+func fixGQLFetchRequest(url string, timestamp time.Time) *graphql.FetchRequest {
+	return &graphql.FetchRequest{
+		Filter: nil,
+		Mode:   graphql.FetchModeSingle,
+		Auth:   nil,
+		URL:    url,
+		Status: &graphql.FetchRequestStatus{
+			Timestamp: graphql.Timestamp(timestamp),
+			Condition: graphql.FetchRequestStatusConditionInitial,
+		},
 	}
 }

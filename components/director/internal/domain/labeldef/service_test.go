@@ -16,6 +16,7 @@ import (
 )
 
 func TestServiceCreate(t *testing.T) {
+
 	t.Run("success", func(t *testing.T) {
 		// GIVEN
 		mockRepository := &automock.Repository{}

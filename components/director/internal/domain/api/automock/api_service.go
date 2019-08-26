@@ -92,6 +92,29 @@ func (_m *APIService) Get(ctx context.Context, id string) (*model.APIDefinition,
 	return r0, r1
 }
 
+// GetFetchRequest provides a mock function with given fields: ctx, apiDefID
+func (_m *APIService) GetFetchRequest(ctx context.Context, apiDefID string) (*model.FetchRequest, error) {
+	ret := _m.Called(ctx, apiDefID)
+
+	var r0 *model.FetchRequest
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.FetchRequest); ok {
+		r0 = rf(ctx, apiDefID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.FetchRequest)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, apiDefID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // RefetchAPISpec provides a mock function with given fields: ctx, id
 func (_m *APIService) RefetchAPISpec(ctx context.Context, id string) (*model.APISpec, error) {
 	ret := _m.Called(ctx, id)

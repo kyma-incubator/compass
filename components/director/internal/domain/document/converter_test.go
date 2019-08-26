@@ -42,9 +42,6 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			frConv := &automock.FetchRequestConverter{}
-			if testCase.Input != nil {
-				frConv.On("ToGraphQL", testCase.Input.FetchRequest).Return(testCase.Expected.FetchRequest)
-			}
 			converter := document.NewConverter(frConv)
 
 			// when
@@ -71,8 +68,6 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 		{},
 	}
 	frConv := &automock.FetchRequestConverter{}
-	frConv.On("ToGraphQL", input[0].FetchRequest).Return(expected[0].FetchRequest)
-	frConv.On("ToGraphQL", (*model.FetchRequest)(nil)).Return(nil)
 	converter := document.NewConverter(frConv)
 
 	// when
@@ -185,7 +180,7 @@ func TestToEntity(t *testing.T) {
 	t.Run("all fields", func(t *testing.T) {
 		givenModel := modelWithRequiredFields
 		givenModel.Data = strings.Ptr("givenData")
-		givenModel.FetchRequest = &model.FetchRequest{ID: "fetchRequestID"}
+		givenModel.FetchRequestID = strings.Ptr("fetchRequestID")
 		givenModel.Kind = strings.Ptr("givenKind")
 		// WHEN
 		actual, err := sut.ToEntity(givenModel)
@@ -193,8 +188,7 @@ func TestToEntity(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, sql.NullString{Valid: true, String: "givenData"}, actual.Data)
 		assert.Equal(t, sql.NullString{Valid: true, String: "givenKind"}, actual.Kind)
-		// TODO adjust with https://github.com/kyma-incubator/compass/issues/226
-		// 	assert.Equal(t, sql.NullString{Valid: true, String: "fetchRequestID"}, actual.FetchRequestID)
+		assert.Equal(t, sql.NullString{Valid: true, String: "fetchRequestID"}, actual.FetchRequestID)
 	})
 }
 
@@ -239,14 +233,17 @@ func TestFromEntity(t *testing.T) {
 			Valid:  true,
 			String: "givenKind",
 		}
+		givenEntity.FetchRequestID = sql.NullString{
+			Valid:  true,
+			String: "fetchRequestID",
+		}
+
 		// WHEN
 		actualModel, err := sut.FromEntity(givenEntity)
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, strings.Ptr("givenData"), actualModel.Data)
 		assert.Equal(t, strings.Ptr("givenKind"), actualModel.Kind)
-
-		// TODO givenEntity.FetchRequestID adjust with https://github.com/kyma-incubator/compass/issues/226
-
+		assert.Equal(t, strings.Ptr("fetchRequestID"), actualModel.FetchRequestID)
 	})
 }

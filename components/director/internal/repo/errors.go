@@ -3,7 +3,11 @@ package repo
 type NotFound interface {
 	IsNotFound() bool
 }
-type notFoundError struct {
+
+type notFoundError struct{}
+
+func NewNotFoundError() *notFoundError {
+	return &notFoundError{}
 }
 
 func (e *notFoundError) Error() string {

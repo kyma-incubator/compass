@@ -3,6 +3,8 @@ package eventapi
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/persistence"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -17,6 +19,7 @@ type EventAPIService interface {
 	Get(ctx context.Context, id string) (*model.EventAPIDefinition, error)
 	Delete(ctx context.Context, id string) error
 	RefetchAPISpec(ctx context.Context, id string) (*model.EventAPISpec, error)
+	GetFetchRequest(ctx context.Context, eventAPIDefID string) (*model.FetchRequest, error)
 }
 
 //go:generate mockery -name=EventAPIConverter -output=automock -outpkg=automock -case=underscore
@@ -27,22 +30,32 @@ type EventAPIConverter interface {
 	InputFromGraphQL(in *graphql.EventAPIDefinitionInput) *model.EventAPIDefinitionInput
 }
 
+//go:generate mockery -name=FetchRequestConverter -output=automock -outpkg=automock -case=underscore
+type FetchRequestConverter interface {
+	ToGraphQL(in *model.FetchRequest) *graphql.FetchRequest
+	InputFromGraphQL(in *graphql.FetchRequestInput) *model.FetchRequestInput
+}
+
 //go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
 type ApplicationService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
 type Resolver struct {
-	svc       EventAPIService
-	appSvc    ApplicationService
-	converter EventAPIConverter
+	transact    persistence.Transactioner
+	svc         EventAPIService
+	appSvc      ApplicationService
+	converter   EventAPIConverter
+	frConverter FetchRequestConverter
 }
 
-func NewResolver(svc EventAPIService, appSvc ApplicationService, converter EventAPIConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc EventAPIService, appSvc ApplicationService, converter EventAPIConverter, frConverter FetchRequestConverter) *Resolver {
 	return &Resolver{
-		svc:       svc,
-		appSvc:    appSvc,
-		converter: converter,
+		transact:    transact,
+		svc:         svc,
+		appSvc:      appSvc,
+		converter:   converter,
+		frConverter: frConverter,
 	}
 }
 
@@ -116,4 +129,39 @@ func (r *Resolver) RefetchEventAPISpec(ctx context.Context, eventID string) (*gr
 	convertedOut := r.converter.ToGraphQL(&model.EventAPIDefinition{Spec: spec})
 
 	return convertedOut.Spec, nil
+}
+
+func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventAPISpec) (*graphql.FetchRequest, error) {
+	if obj == nil {
+		return nil, errors.New("Event API Spec cannot be empty")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	if obj.DefinitionID == "" {
+		return nil, errors.New("Internal Server Error: Cannot fetch FetchRequest. EventAPIDefinition ID is empty")
+	}
+
+	fr, err := r.svc.GetFetchRequest(ctx, obj.DefinitionID)
+	if err != nil {
+		return nil, err
+	}
+
+	if fr == nil {
+		return nil, nil
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	frGQL := r.frConverter.ToGraphQL(fr)
+	return frGQL, nil
 }

@@ -168,7 +168,6 @@ func fixModelDocument(applicationID, id string) *model.Document {
 		Format:        model.DocumentFormatMarkdown,
 		Kind:          &docKind,
 		Data:          &docData,
-		FetchRequest:  &model.FetchRequest{},
 	}
 }
 
@@ -186,12 +185,11 @@ func fixModelDocumentPage(documents []*model.Document) *model.DocumentPage {
 
 func fixGQLDocument(id string) *graphql.Document {
 	return &graphql.Document{
-		ID:           id,
-		Title:        docTitle,
-		Format:       graphql.DocumentFormatMarkdown,
-		Kind:         &docKind,
-		Data:         &docCLOB,
-		FetchRequest: &graphql.FetchRequest{},
+		ID:     id,
+		Title:  docTitle,
+		Format: graphql.DocumentFormatMarkdown,
+		Kind:   &docKind,
+		Data:   &docCLOB,
 	}
 }
 

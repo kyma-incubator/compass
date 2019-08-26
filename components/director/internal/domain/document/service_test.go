@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	repopkg "github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/stretchr/testify/assert"
@@ -61,7 +63,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := document.NewService(repo, nil)
+			svc := document.NewService(repo, nil, nil)
 
 			// when
 			document, err := svc.Get(ctx, testCase.InputID)
@@ -144,7 +146,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := document.NewService(repo, nil)
+			svc := document.NewService(repo, nil, nil)
 
 			// when
 			docs, err := svc.List(ctx, applicationID, testCase.InputPageSize, testCase.InputCursor)
@@ -170,17 +172,21 @@ func TestService_Create(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt)
 
-	modelInput := fixModelDocumentInput("foo")
 	id := "foo"
 	applicationID := "foo"
-	modelDoc := modelInput.ToDocument(id, tnt, applicationID)
+	frURL := "foo.bar"
+	frID := "fr-id"
+	timestamp := time.Now()
+	modelInput := fixModelDocumentInputWithFetchRequest(frURL)
+	modelDoc := modelInput.ToDocument(id, tnt, applicationID, &frID)
 
 	testCases := []struct {
-		Name         string
-		RepositoryFn func() *automock.DocumentRepository
-		UIDServiceFn func() *automock.UIDService
-		Input        model.DocumentInput
-		ExpectedErr  error
+		Name               string
+		RepositoryFn       func() *automock.DocumentRepository
+		FetchRequestRepoFn func() *automock.FetchRequestRepository
+		UIDServiceFn       func() *automock.UIDService
+		Input              model.DocumentInput
+		ExpectedErr        error
 	}{
 		{
 			Name: "Success",
@@ -189,9 +195,15 @@ func TestService_Create(t *testing.T) {
 				repo.On("Create", modelDoc).Return(nil).Once()
 				return repo
 			},
+			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
+				return repo
+			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id).Once()
+				svc.On("Generate").Return(frID).Once()
 				return svc
 			},
 			Input:       *modelInput,
@@ -204,9 +216,35 @@ func TestService_Create(t *testing.T) {
 				repo.On("Create", modelDoc).Return(testErr).Once()
 				return repo
 			},
+			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
+				return repo
+			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id).Once()
+				svc.On("Generate").Return(frID).Once()
+				return svc
+			},
+			Input:       *modelInput,
+			ExpectedErr: testErr,
+		},
+		{
+			Name: "Error - Fetch Request Creation",
+			RepositoryFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				return repo
+			},
+			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(testErr).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id).Once()
+				svc.On("Generate").Return(frID).Once()
 				return svc
 			},
 			Input:       *modelInput,
@@ -218,7 +256,9 @@ func TestService_Create(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			idSvc := testCase.UIDServiceFn()
-			svc := document.NewService(repo, idSvc)
+			fetchRequestRepo := testCase.FetchRequestRepoFn()
+			svc := document.NewService(repo, fetchRequestRepo, idSvc)
+			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
 			result, err := svc.Create(ctx, applicationID, testCase.Input)
@@ -228,13 +268,22 @@ func TestService_Create(t *testing.T) {
 			if testCase.ExpectedErr == nil {
 				require.NoError(t, err)
 			} else {
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
 			}
 
 			repo.AssertExpectations(t)
 			idSvc.AssertExpectations(t)
+			fetchRequestRepo.AssertExpectations(t)
 		})
 	}
+
+	t.Run("Returns error on loading tenant", func(t *testing.T) {
+		svc := document.NewService(nil, nil, nil)
+		// when
+		_, err := svc.Create(context.TODO(), "Dd", model.DocumentInput{})
+		assert.Equal(t, tenant.NoTenantError, err)
+	})
 }
 
 func TestService_Delete(t *testing.T) {
@@ -293,7 +342,7 @@ func TestService_Delete(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := document.NewService(repo, nil)
+			svc := document.NewService(repo, nil, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -306,6 +355,118 @@ func TestService_Delete(t *testing.T) {
 			}
 
 			repo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_GetFetchRequest(t *testing.T) {
+	// given
+	tnt := "tenant"
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt)
+
+	testErr := errors.New("Test error")
+
+	refID := "doc-id"
+	frURL := "foo.bar"
+	timestamp := time.Now()
+
+	fetchRequestModel := fixModelFetchRequest("foo", frURL, timestamp)
+
+	testCases := []struct {
+		Name                 string
+		RepositoryFn         func() *automock.DocumentRepository
+		FetchRequestRepoFn   func() *automock.FetchRequestRepository
+		InputDocumentID      string
+		ExpectedFetchRequest *model.FetchRequest
+		ExpectedErrMessage   string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				repo.On("Exists", ctx, tnt, refID).Return(true, nil).Once()
+				return repo
+			},
+			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				repo.On("GetByReferenceObjectID", ctx, tnt, model.DocumentFetchRequestReference, refID).Return(fetchRequestModel, nil).Once()
+				return repo
+			},
+			InputDocumentID:      refID,
+			ExpectedFetchRequest: fetchRequestModel,
+			ExpectedErrMessage:   "",
+		},
+		{
+			Name: "Success - Not Found",
+			RepositoryFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				repo.On("Exists", ctx, tnt, refID).Return(true, nil).Once()
+				return repo
+			},
+			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				repo.On("GetByReferenceObjectID", ctx, tnt, model.DocumentFetchRequestReference, refID).Return(nil, repopkg.NewNotFoundError()).Once()
+				return repo
+			},
+			InputDocumentID:      refID,
+			ExpectedFetchRequest: nil,
+			ExpectedErrMessage:   "",
+		},
+		{
+			Name: "Error - Get FetchRequest",
+			RepositoryFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				repo.On("Exists", ctx, tnt, refID).Return(true, nil).Once()
+
+				return repo
+			},
+			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				repo.On("GetByReferenceObjectID", ctx, tnt, model.DocumentFetchRequestReference, refID).Return(nil, testErr).Once()
+				return repo
+			},
+			InputDocumentID:      refID,
+			ExpectedFetchRequest: nil,
+			ExpectedErrMessage:   testErr.Error(),
+		},
+		{
+			Name: "Error - Document doesn't exist",
+			RepositoryFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				repo.On("Exists", ctx, tnt, refID).Return(false, testErr).Once()
+
+				return repo
+			},
+			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				return repo
+			},
+			InputDocumentID:    refID,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+			fetchRequestRepo := testCase.FetchRequestRepoFn()
+			svc := document.NewService(repo, fetchRequestRepo, nil)
+
+			// when
+			l, err := svc.GetFetchRequest(ctx, testCase.InputDocumentID)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, l, testCase.ExpectedFetchRequest)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+			fetchRequestRepo.AssertExpectations(t)
 		})
 	}
 }

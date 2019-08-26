@@ -1,13 +1,12 @@
 package model
 
 import (
-	"time"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
 type EventAPIDefinition struct {
 	ID            string
+	Tenant        string
 	ApplicationID string
 	Name          string
 	Description   *string
@@ -23,10 +22,10 @@ const (
 )
 
 type EventAPISpec struct {
-	Data         *string
-	Type         EventAPISpecType
-	Format       SpecFormat
-	FetchRequest *FetchRequest
+	Data           *string
+	Type           EventAPISpecType
+	Format         SpecFormat
+	FetchRequestID *string
 }
 
 type EventAPIDefinitionPage struct {
@@ -52,31 +51,31 @@ type EventAPISpecInput struct {
 	FetchRequest  *FetchRequestInput
 }
 
-func (e *EventAPIDefinitionInput) ToEventAPIDefinition(id, applicationID string) *EventAPIDefinition {
+func (e *EventAPIDefinitionInput) ToEventAPIDefinition(id, appID string, fetchRequestID *string) *EventAPIDefinition {
 	if e == nil {
 		return nil
 	}
 
 	return &EventAPIDefinition{
 		ID:            id,
-		ApplicationID: applicationID,
+		ApplicationID: appID,
 		Name:          e.Name,
 		Description:   e.Description,
 		Group:         e.Group,
-		Spec:          e.Spec.ToEventAPISpec(),
+		Spec:          e.Spec.ToEventAPISpec(fetchRequestID),
 		Version:       e.Version.ToVersion(),
 	}
 }
 
-func (e *EventAPISpecInput) ToEventAPISpec() *EventAPISpec {
+func (e *EventAPISpecInput) ToEventAPISpec(fetchRequestID *string) *EventAPISpec {
 	if e == nil {
 		return nil
 	}
 
 	return &EventAPISpec{
-		Data:         e.Data,
-		Type:         e.EventSpecType,
-		Format:       e.Format,
-		FetchRequest: e.FetchRequest.ToFetchRequest(time.Now()),
+		Data:           e.Data,
+		Type:           e.EventSpecType,
+		Format:         e.Format,
+		FetchRequestID: fetchRequestID,
 	}
 }
