@@ -1,7 +1,12 @@
 package version_test
 
 import (
+	"database/sql"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -18,8 +23,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	}{
 		{
 			Name:     "All properties given",
-			Input:    fixModelVersion(t, "foo", true, "bar", false),
-			Expected: fixGQLVersion(t, "foo", true, "bar", false),
+			Input:    fixModelVersion("foo", true, "bar", false),
+			Expected: fixGQLVersion("foo", true, "bar", false),
 		},
 		{
 			Name:     "Empty",
@@ -81,4 +86,58 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			assert.Equal(t, testCase.Expected, res)
 		})
 	}
+}
+
+func TestConverter_FromEntity(t *testing.T) {
+	t.Run("success all nullable properties filled", func(t *testing.T) {
+		//GIVEN
+		versionEntity := *fixVersionEntity("v1.2", true, "v1.1", false)
+		versionConv := version.NewConverter()
+		//WHEN
+		versionModel, err := versionConv.FromEntity(versionEntity)
+		//THEN
+		require.NoError(t, err)
+		assertVersion(t, versionEntity, versionModel)
+	})
+
+	t.Run("success all nullable properties empty", func(t *testing.T) {
+		// GIVEN
+		// value will be always valid, because model.Value is string.
+		versionEntity := version.Version{VersionValue: sql.NullString{Valid: true}}
+		versionConv := version.NewConverter()
+		// WHEN
+		versionModel, err := versionConv.FromEntity(versionEntity)
+		//THEN
+		require.NoError(t, err)
+		assertVersion(t, versionEntity, versionModel)
+
+	})
+}
+func TestConverter_ToEntity(t *testing.T) {
+	t.Run("success all nullable properties filled", func(t *testing.T) {
+		versionModel := *fixModelVersion("v1.2", true, "v1.1", false)
+		versionConv := version.NewConverter()
+		//WHEN
+		versionEntity, err := versionConv.ToEntity(versionModel)
+		//THEN
+		require.NoError(t, err)
+		assertVersion(t, versionEntity, versionModel)
+	})
+
+	t.Run("success all nullable properties empty", func(t *testing.T) {
+		versionModel := model.Version{}
+		versionConv := version.NewConverter()
+		//WHEN
+		versionEntity, err := versionConv.ToEntity(versionModel)
+		//THEN
+		require.NoError(t, err)
+		assertVersion(t, versionEntity, versionModel)
+	})
+}
+
+func assertVersion(t *testing.T, entity version.Version, model model.Version) {
+	testdb.AssertSqlNullString(t, entity.VersionValue, &model.Value)
+	testdb.AssertSqlNullString(t, entity.VersionDepracatedSince, model.DeprecatedSince)
+	testdb.AssertSqlNullBool(t, entity.VersionDepracated, model.Deprecated)
+	testdb.AssertSqlNullBool(t, entity.VersionForRemoval, model.ForRemoval)
 }

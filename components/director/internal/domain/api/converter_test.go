@@ -1,9 +1,17 @@
 package api_test
 
 import (
+	"database/sql"
+	"encoding/json"
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
+
+	"github.com/google/uuid"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
@@ -18,8 +26,8 @@ import (
 
 func TestConverter_ToGraphQL(t *testing.T) {
 	// given
-	modelAPIDefinition := fixDetailedModelAPIDefinition(t, "foo", "Foo", "Lorem ipsum", "group")
-	gqlAPIDefinition := fixDetailedGQLAPIDefinition(t, "foo", "Foo", "Lorem ipsum", "group")
+	modelAPIDefinition := fixDetailedModelAPIDefinition("foo", "Foo", "Lorem ipsum", "group")
+	gqlAPIDefinition := fixDetailedGQLAPIDefinition("foo", "Foo", "Lorem ipsum", "group")
 	emptyModelAPIDefinition := &model.APIDefinition{}
 	emptyGraphQLAPIDefinition := &graphql.APIDefinition{}
 
@@ -360,4 +368,105 @@ func TestApiSpecDataConversionNilStaysNil(t *testing.T) {
 	convertedGraphqlAPIDef := converter.ToGraphQL(convertedAPIDef)
 	require.NotNil(t, convertedGraphqlAPIDef)
 	assert.Nil(t, convertedGraphqlAPIDef.Spec.Data)
+}
+
+func TestEntityConverter_ToEntity(t *testing.T) {
+	t.Run("success all nullable properites filled", func(t *testing.T) {
+		//GIVEN
+		apiModel := *fixDetailedModelAPIDefinition(uuid.New().String(), "name", "description", "group")
+		versionConv := version.NewConverter()
+		conv := api.NewConverter(nil, nil, versionConv)
+		//WHEN
+		entity, err := conv.ToEntity(apiModel)
+		//THEN
+		require.NoError(t, err)
+		assertApiDefinition(t, apiModel, entity)
+	})
+	t.Run("success all nullable properites empty", func(t *testing.T) {
+		//GIVEN
+		apiModel := *fixModelAPIDefinition("id", "appid", "name", "desc")
+		versionConv := version.NewConverter()
+		conv := api.NewConverter(nil, nil, versionConv)
+		//WHEN
+		entity, err := conv.ToEntity(apiModel)
+		//THEN
+		require.NoError(t, err)
+		assertApiDefinition(t, apiModel, entity)
+	})
+}
+
+func TestEntityConverter_FromEntity(t *testing.T) {
+	t.Run("success all nullable properties filled", func(t *testing.T) {
+		//GIVEN
+		entity := *fixDetailedApiDefinitionEntity("placeholder")
+		versionConv := version.NewConverter()
+		conv := api.NewConverter(nil, nil, versionConv)
+		//WHEN
+		apiModel, err := conv.FromEntity(entity)
+		//THEN
+		require.NoError(t, err)
+		assertApiDefinition(t, apiModel, entity)
+	})
+	t.Run("success all nullable properties empty", func(t *testing.T) {
+		//GIVEN
+		entity := *fixMinimalApiDefinitionEntity("id", "app_id", "name", "target_url")
+		versionConv := version.NewConverter()
+		conv := api.NewConverter(nil, nil, versionConv)
+		//WHEN
+		apiModel, err := conv.FromEntity(entity)
+		//THEN
+		require.NoError(t, err)
+		assertApiDefinition(t, apiModel, entity)
+	})
+}
+
+func assertApiDefinition(t *testing.T, apiModel model.APIDefinition, entity api.APIDefinition) {
+	assert.Equal(t, apiModel.ID, entity.ID)
+	assert.Equal(t, apiModel.TenantID, entity.TenantID)
+	assert.Equal(t, apiModel.ApplicationID, entity.AppID)
+	assert.Equal(t, apiModel.Name, entity.Name)
+	testdb.AssertSqlNullString(t, entity.Description, apiModel.Description)
+	testdb.AssertSqlNullString(t, entity.Group, apiModel.Group)
+	assert.Equal(t, apiModel.TargetURL, entity.TargetURL)
+	assertAPISpec(t, entity.APISpec, apiModel.Spec)
+	assertAuth(t, apiModel.DefaultAuth, entity.DefaultAuth)
+	assertVersion(t, entity.Version, apiModel.Version)
+}
+
+func assertAPISpec(t *testing.T, specEntity *api.APISpec, apiSpec *model.APISpec) {
+	if apiSpec != nil && specEntity != nil {
+		testdb.AssertSqlNullString(t, specEntity.SpecData, apiSpec.Data)
+		testdb.AssertSqlNullString(t, specEntity.SpecFormat, strings.Ptr(string(apiSpec.Format)))
+		testdb.AssertSqlNullString(t, specEntity.SpecType, strings.Ptr(string(apiSpec.Type)))
+	}
+}
+
+func assertAuth(t *testing.T, expected *model.Auth, defaultAuth sql.NullString) {
+	var entityAuth *model.Auth
+
+	if defaultAuth.Valid && defaultAuth.String != "" {
+		entityAuth = &model.Auth{}
+		err := json.Unmarshal([]byte(defaultAuth.String), entityAuth)
+		require.NoError(t, err)
+	}
+	if expected != nil && entityAuth != nil {
+		assert.Equal(t, expected.Credential, entityAuth.Credential)
+		assert.Equal(t, expected.RequestAuth, entityAuth.RequestAuth)
+		assert.Equal(t, expected.AdditionalQueryParams, entityAuth.AdditionalQueryParams)
+		assert.Equal(t, expected.AdditionalHeaders, entityAuth.AdditionalHeaders)
+	} else {
+		assert.Nil(t, expected)
+		assert.Nil(t, entityAuth)
+	}
+}
+
+func assertVersion(t *testing.T, entity *version.Version, versionModel *model.Version) {
+	if versionModel != nil {
+		testdb.AssertSqlNullString(t, entity.VersionValue, &versionModel.Value)
+		testdb.AssertSqlNullBool(t, entity.VersionDepracated, versionModel.Deprecated)
+		testdb.AssertSqlNullString(t, entity.VersionDepracatedSince, versionModel.DeprecatedSince)
+		testdb.AssertSqlNullBool(t, entity.VersionForRemoval, versionModel.ForRemoval)
+	} else {
+		assert.Nil(t, entity)
+	}
 }
