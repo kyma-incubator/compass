@@ -64,8 +64,6 @@ func (a *authenticator) AuthenticateCertificate(context context.Context) (Certif
 		return CertificateData{}, errors.Wrap(err, "Failed to authenticate request, no certificate hash found")
 	}
 
-	// TODO: here we should check if certificate is revoked
-
 	return CertificateData{
 		Hash:       hash,
 		CommonName: commonName,
