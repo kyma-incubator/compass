@@ -3,15 +3,20 @@ package repo
 import "database/sql"
 
 func NewNullableString(text *string) sql.NullString {
-	nullString := sql.NullString{
-		Valid: false,
-	}
+	nullString := sql.NullString{}
 	if text != nil {
 		nullString.String = *text
 		nullString.Valid = true
 	}
 
 	return nullString
+}
+
+func NewValidNullableString(text string) sql.NullString {
+	return sql.NullString{
+		String: text,
+		Valid:  true,
+	}
 }
 
 func NewNullableBool(boolean *bool) sql.NullBool {
