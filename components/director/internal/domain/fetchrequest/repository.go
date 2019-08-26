@@ -10,7 +10,7 @@ import (
 
 const fetchRequestTable string = `public.fetch_requests`
 
-var tableColumns = []string{"id", "tenant_id", "api_def_id", "event_api_def_id", "document_id", "url", "auth", "mode", "filter", "status_condition", "status_timestamp"}
+var fetchRequestColumns = []string{"id", "tenant_id", "api_def_id", "event_api_def_id", "document_id", "url", "auth", "mode", "filter", "status_condition", "status_timestamp"}
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
@@ -27,8 +27,8 @@ type repository struct {
 
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		Creator:      repo.NewCreator(fetchRequestTable, tableColumns),
-		SingleGetter: repo.NewSingleGetter(fetchRequestTable, "tenant_id", tableColumns),
+		Creator:      repo.NewCreator(fetchRequestTable, fetchRequestColumns),
+		SingleGetter: repo.NewSingleGetter(fetchRequestTable, "tenant_id", fetchRequestColumns),
 		Deleter:      repo.NewDeleter(fetchRequestTable, "tenant_id"),
 		conv:         conv,
 	}

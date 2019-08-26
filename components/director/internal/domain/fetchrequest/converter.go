@@ -3,8 +3,10 @@ package fetchrequest
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pkg/errors"
 )
@@ -61,32 +63,14 @@ func (c *converter) ToEntity(in model.FetchRequest) (Entity, error) {
 		return Entity{}, errors.New("Invalid input model")
 	}
 
-	var authMarshalled []byte
-	var err error
-
-	var auth sql.NullString
-	if in.Auth != nil {
-		authMarshalled, err = json.Marshal(in.Auth)
-		if err != nil {
-			return Entity{}, errors.Wrap(err, "while marshalling Auth")
-		}
-		auth = sql.NullString{
-			String: string(authMarshalled),
-			Valid:  true,
-		}
+	auth, err := c.authToEntity(in.Auth)
+	if err != nil {
+		return Entity{}, errors.Wrap(err, "while converting Auth")
 	}
 
-	refID := sql.NullString{
-		Valid:  true,
-		String: in.ObjectID,
-	}
+	filter := repo.NewNullableString(in.Filter)
 
-	var filter sql.NullString
-	if in.Filter != nil {
-		filter.String = *in.Filter
-		filter.Valid = true
-	}
-
+	refID := repo.NewValidNullableString(in.ObjectID)
 	var apiDefID sql.NullString
 	var eventAPIDefID sql.NullString
 	var documentID sql.NullString
@@ -115,34 +99,14 @@ func (c *converter) ToEntity(in model.FetchRequest) (Entity, error) {
 }
 
 func (c *converter) FromEntity(in Entity) (model.FetchRequest, error) {
-	var authPtr *model.Auth
-	if in.Auth.Valid {
-		var auth model.Auth
-		err := json.Unmarshal([]byte(in.Auth.String), &auth)
-		if err != nil {
-			return model.FetchRequest{}, errors.Wrap(err, "while unmarshalling Auth")
-		}
-
-		authPtr = &auth
+	objectID, objectType, err := c.objectReferenceFromEntity(in)
+	if err != nil {
+		return model.FetchRequest{}, err
 	}
 
-	var objectType model.FetchRequestReferenceObjectType
-	var objectID string
-
-	if in.APIDefID.Valid {
-		objectType = model.APIFetchRequestReference
-		objectID = in.APIDefID.String
-	} else if in.EventAPIDefID.Valid {
-		objectType = model.EventAPIFetchRequestReference
-		objectID = in.EventAPIDefID.String
-	} else if in.DocumentID.Valid {
-		objectType = model.DocumentFetchRequestReference
-		objectID = in.DocumentID.String
-	}
-
-	var filter *string
-	if in.Filter.Valid {
-		filter = &in.Filter.String
+	auth, err := c.authToModel(in.Auth)
+	if err != nil {
+		return model.FetchRequest{}, errors.Wrap(err, "while converting Auth")
 	}
 
 	return model.FetchRequest{
@@ -156,8 +120,8 @@ func (c *converter) FromEntity(in Entity) (model.FetchRequest, error) {
 		},
 		URL:    in.URL,
 		Mode:   model.FetchMode(in.Mode),
-		Filter: filter,
-		Auth:   authPtr,
+		Filter: repo.StringPtrFromNullableString(in.Filter),
+		Auth:   auth,
 	}, nil
 }
 
@@ -184,4 +148,49 @@ func (c *converter) statusToGraphQL(in *model.FetchRequestStatus) *graphql.Fetch
 		Condition: condition,
 		Timestamp: graphql.Timestamp(in.Timestamp),
 	}
+}
+
+func (c *converter) authToEntity(in *model.Auth) (sql.NullString, error) {
+	var auth sql.NullString
+	if in == nil {
+		return sql.NullString{}, nil
+	}
+
+	authMarshalled, err := json.Marshal(in)
+	if err != nil {
+		return sql.NullString{}, errors.Wrap(err, "while marshalling Auth")
+	}
+
+	auth = repo.NewValidNullableString(string(authMarshalled))
+	return auth, nil
+}
+
+func (c *converter) authToModel(in sql.NullString) (*model.Auth, error) {
+	if !in.Valid {
+		return nil, nil
+	}
+
+	var auth model.Auth
+	err := json.Unmarshal([]byte(in.String), &auth)
+	if err != nil {
+		return nil, errors.Wrap(err, "while unmarshalling Auth")
+	}
+
+	return &auth, nil
+}
+
+func (c *converter) objectReferenceFromEntity(in Entity) (string, model.FetchRequestReferenceObjectType, error) {
+	if in.APIDefID.Valid {
+		return in.APIDefID.String, model.APIFetchRequestReference, nil
+	}
+
+	if in.EventAPIDefID.Valid {
+		return in.EventAPIDefID.String, model.EventAPIFetchRequestReference, nil
+	}
+
+	if in.DocumentID.Valid {
+		return in.DocumentID.String, model.DocumentFetchRequestReference, nil
+	}
+
+	return "", "", fmt.Errorf("Incorrect Object Reference ID and its type for Entity with ID '%s'", in.ID)
 }

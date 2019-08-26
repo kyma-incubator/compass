@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
@@ -114,8 +116,8 @@ func TestConverter_FromEntity(t *testing.T) {
 	}{
 		{
 			Name:               "All properties given",
-			Input:              fixFetchRequestEntity(t, "1", timestamp),
-			Expected:           fixFetchRequestModel("1", timestamp),
+			Input:              fixFullFetchRequestEntity(t, "1", timestamp),
+			Expected:           fixFullFetchRequestModel("1", timestamp),
 			ExpectedErrMessage: "",
 		},
 		{
@@ -127,27 +129,16 @@ func TestConverter_FromEntity(t *testing.T) {
 				StatusTimestamp: timestamp,
 				StatusCondition: string(model.FetchRequestStatusConditionFailed),
 			},
-			Expected: model.FetchRequest{
-				ID:     "2",
-				Tenant: "tenant",
-				Auth:   nil,
-				Status: &model.FetchRequestStatus{
-					Timestamp: timestamp,
-					Condition: model.FetchRequestStatusConditionFailed,
-				},
-			},
-			ExpectedErrMessage: "",
+			ExpectedErrMessage: "Incorrect Object Reference ID and its type for Entity with ID '2'",
 		},
 		{
 			Name: "Error",
 			Input: fetchrequest.Entity{
-				Auth: sql.NullString{
-					String: `{Dd`,
-					Valid:  true,
-				},
+				Auth:     repo.NewValidNullableString(`{Dd`),
+				APIDefID: repo.NewValidNullableString("dd"),
 			},
 			Expected:           model.FetchRequest{},
-			ExpectedErrMessage: "while unmarshalling Auth: invalid character 'D' looking for beginning of object key string",
+			ExpectedErrMessage: "while converting Auth: while unmarshalling Auth: invalid character 'D' looking for beginning of object key string",
 		},
 	}
 
@@ -184,13 +175,13 @@ func TestConverter_ToEntity(t *testing.T) {
 	}{
 		{
 			Name:     "All properties given",
-			Input:    fixFetchRequestModel("1", timestamp),
-			Expected: fixFetchRequestEntity(t, "1", timestamp),
+			Input:    fixFullFetchRequestModel("1", timestamp),
+			Expected: fixFullFetchRequestEntity(t, "1", timestamp),
 		},
 		{
 			Name:     "String value",
-			Input:    fixFetchRequestModel("1", timestamp),
-			Expected: fixFetchRequestEntity(t, "1", timestamp),
+			Input:    fixFullFetchRequestModel("1", timestamp),
+			Expected: fixFullFetchRequestEntity(t, "1", timestamp),
 		},
 		{
 			Name: "Empty Auth",

@@ -23,18 +23,19 @@ func TestRepository_Create(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 		timestamp := time.Now()
-		frModel := fixFetchRequestModel(givenID(), timestamp)
-		frEntity := fixFetchRequestEntity(t, givenID(), timestamp)
+		frModel := fixFullFetchRequestModel(givenID(), timestamp)
+		frEntity := fixFullFetchRequestEntity(t, givenID(), timestamp)
 
 		mockConverter := &automock.Converter{}
 		mockConverter.On("ToEntity", frModel).Return(frEntity, nil).Once()
 		defer mockConverter.AssertExpectations(t)
 
 		db, dbMock := testdb.MockDatabase(t)
-		//defer dbMock.AssertExpectations(t)
+		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectExec(regexp.QuoteMeta("INSERT INTO public.fetch_requests ( id, tenant_id, api_def_id, event_api_def_id, document_id, url, auth, mode, filter, status_condition, status_timestamp ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )")).WithArgs(
-			givenID(), givenTenant(), sql.NullString{}, sql.NullString{}, "documentID", "foo.bar", frEntity.Auth, frEntity.Mode, frEntity.Filter, frEntity.StatusCondition, frEntity.StatusTimestamp).WillReturnResult(sqlmock.NewResult(-1, 1))
+		dbMock.ExpectExec(regexp.QuoteMeta("INSERT INTO public.fetch_requests ( id, tenant_id, api_def_id, event_api_def_id, document_id, url, auth, mode, filter, status_condition, status_timestamp ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )")).
+			WithArgs(givenID(), givenTenant(), sql.NullString{}, sql.NullString{}, "documentID", "foo.bar", frEntity.Auth, frEntity.Mode, frEntity.Filter, frEntity.StatusCondition, frEntity.StatusTimestamp).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := fetchrequest.NewRepository(mockConverter)
@@ -47,8 +48,8 @@ func TestRepository_Create(t *testing.T) {
 	t.Run("DB Error", func(t *testing.T) {
 		// GIVEN
 		timestamp := time.Now()
-		frModel := fixFetchRequestModel(givenID(), timestamp)
-		frEntity := fixFetchRequestEntity(t, givenID(), timestamp)
+		frModel := fixFullFetchRequestModel(givenID(), timestamp)
+		frEntity := fixFullFetchRequestEntity(t, givenID(), timestamp)
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", frModel).Return(frEntity, nil)
@@ -69,7 +70,7 @@ func TestRepository_Create(t *testing.T) {
 	t.Run("Converter Error", func(t *testing.T) {
 		// GIVEN
 		timestamp := time.Now()
-		frModel := fixFetchRequestModel(givenID(), timestamp)
+		frModel := fixFullFetchRequestModel(givenID(), timestamp)
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", frModel).Return(fetchrequest.Entity{}, givenError())
@@ -133,7 +134,7 @@ func TestRepository_GetByReferenceObjectID(t *testing.T) {
 	t.Run("Converter Error", func(t *testing.T) {
 		// GIVEN
 		timestamp := time.Now()
-		frEntity := fixFetchRequestEntity(t, givenID(), timestamp)
+		frEntity := fixFullFetchRequestEntity(t, givenID(), timestamp)
 
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
