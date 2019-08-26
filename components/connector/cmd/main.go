@@ -5,8 +5,9 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
-	"sync"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/tools/clientcmd"
@@ -23,8 +24,6 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
 	"github.com/kyma-incubator/compass/components/connector/internal/secrets"
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
-	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
-	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/internalschema"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
 	"k8s.io/client-go/kubernetes"
@@ -32,8 +31,7 @@ import (
 )
 
 type config struct {
-	ExternalAddress       string `envconfig:"default=127.0.0.1:3000"`
-	InternalAddress       string `envconfig:"default=127.0.0.1:3001"`
+	Address               string `envconfig:"default=127.0.0.1:3000"`
 	APIEndpoint           string `envconfig:"default=/graphql"`
 	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
 
@@ -59,13 +57,13 @@ type config struct {
 }
 
 func (c *config) String() string {
-	return fmt.Sprintf("ExternalAddress: %s, InternalAddress: %s, APIEndpoint: %s, "+
+	return fmt.Sprintf("Address: %s, APIEndpoint: %s, "+
 		"CSRSubjectCountry: %s, CSRSubjectOrganization: %s, CSRSubjectOrganizationalUnit: %s, "+
 		"CSRSubjectLocality: %s, CSRSubjectProvince: %s, "+
 		"CertificateValidityTime: %s, CASecretName: %s, RootCACertificateSecretName: %s, "+
 		"TokenLength: %d, TokenRuntimeExpiration: %s, TokenApplicationExpiration: %s, TokenCSRExpiration: %s, "+
 		"DirectorURL: %s",
-		c.ExternalAddress, c.InternalAddress, c.APIEndpoint,
+		c.Address, c.APIEndpoint,
 		c.CSRSubject.Country, c.CSRSubject.Organization, c.CSRSubject.OrganizationalUnit,
 		c.CSRSubject.Locality, c.CSRSubject.Province,
 		c.CertificateValidityTime, c.CASecretName, c.RootCACertificateSecretName,
@@ -113,69 +111,33 @@ func main() {
 		csrSubjectConsts,
 		cfg.DirectorURL)
 
-	internalServer := prepareInternalServer(cfg, tokenResolver)
-	externalServer := prepareExternalServer(cfg, certificateResolver, csrSubjectConsts)
+	server := prepareServer(cfg, tokenResolver, certificateResolver)
 
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-
-	go func() {
-		log.Printf("Internal API listening on %s...", cfg.InternalAddress)
-		if err := internalServer.ListenAndServe(); err != nil {
-			panic(err)
-		}
-	}()
-
-	go func() {
-		log.Printf("Extranal API listening on %s...", cfg.ExternalAddress)
-		if err := externalServer.ListenAndServe(); err != nil {
-			panic(err)
-		}
-	}()
-
-	wg.Wait()
-}
-
-func prepareInternalServer(cfg config, tokenResolver api.TokenResolver) *http.Server {
-	internalResolver := api.InternalResolver{TokenResolver: tokenResolver}
-
-	gqlInternalCfg := internalschema.Config{
-		Resolvers: &internalResolver,
-	}
-
-	internalExecutableSchema := internalschema.NewExecutableSchema(gqlInternalCfg)
-
-	internalRouter := mux.NewRouter()
-	internalRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
-	internalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(internalExecutableSchema))
-
-	return &http.Server{
-		Addr:    cfg.InternalAddress,
-		Handler: internalRouter,
+	log.Printf("API listening on %s...", cfg.Address)
+	if err := server.ListenAndServe(); err != nil {
+		panic(err)
 	}
 }
 
-func prepareExternalServer(cfg config, certResolver api.CertificateResolver, csrSubjectConsts certificates.CSRSubjectConsts) *http.Server {
-	externalResolver := api.ExternalResolver{CertificateResolver: certResolver}
+func prepareServer(cfg config, tokenResolver api.TokenResolver, certResolver api.CertificateResolver) *http.Server {
+	externalResolver := api.Resolver{CertificateResolver: certResolver, TokenResolver: tokenResolver}
 
-	gqlInternalCfg := externalschema.Config{
+	gqlInternalCfg := gqlschema.Config{
 		Resolvers: &externalResolver,
 	}
 
-	externalExecutableSchema := externalschema.NewExecutableSchema(gqlInternalCfg)
+	externalExecutableSchema := gqlschema.NewExecutableSchema(gqlInternalCfg)
 
 	externalRouter := mux.NewRouter()
 	externalRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 	externalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(externalExecutableSchema))
 
-	certHeaderParser := authentication.NewHeaderParser(csrSubjectConsts)
-
-	authContextMiddleware := authentication.NewAuthenticationContextMiddleware(certHeaderParser)
+	authContextMiddleware := authentication.NewAuthenticationContextMiddleware()
 
 	externalRouter.Use(authContextMiddleware.PropagateAuthentication)
 
 	return &http.Server{
-		Addr:    cfg.ExternalAddress,
+		Addr:    cfg.Address,
 		Handler: externalRouter,
 	}
 }

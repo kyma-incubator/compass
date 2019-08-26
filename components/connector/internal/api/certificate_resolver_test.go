@@ -59,7 +59,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 
 		// then
 		require.NoError(t, err)
-		assert.Equal(t, certChainBase64, certificationResult.Certificate)
+		assert.Equal(t, certChainBase64, certificationResult.CertificateChain)
 		assert.Equal(t, caCertificate, certificationResult.CaCertificate)
 		assert.Equal(t, clientCertificate, certificationResult.ClientCertificate)
 	})
