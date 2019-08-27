@@ -13,7 +13,7 @@ global:
       version: "PR-236"
     gateway:
       dir: pr/
-      version: "PR-100"
+      version: "PR-251"
     healthchecker:
       dir: pr/
       version: "PR-99"
