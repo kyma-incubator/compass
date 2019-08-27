@@ -13,15 +13,12 @@ deployment:
       organizationalUnit: "OrgUnit"
       locality: "locality"
       province: "province"
-    secrets:
-      ca:
-        name: connector-app-ca
-        namespace: compass-system
-      rootCA:
-        name: ""
-        namespace: ""
     certificateValidityTime: "2160h"
+    attachRootCAToChain: false
 
   securityContext: # Set on container level
     runAsUser: 2000
     allowPrivilegeEscalation: false
+
+certsSetupJob:
+  generatedCertificateValidity: 92d

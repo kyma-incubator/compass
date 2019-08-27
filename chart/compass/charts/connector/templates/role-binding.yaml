@@ -1,25 +1,25 @@
-{{ if .Values.deployment.args.secrets.ca.name }}
+{{ if .Values.global.connector.secrets.ca.name }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ template "fullname" . }}-{{ .Values.deployment.args.secrets.ca.name }}
-  namespace: {{ .Values.deployment.args.secrets.ca.namespace }}
+  name: {{ template "fullname" . }}-{{ .Values.global.connector.secrets.ca.name }}
+  namespace: {{ .Values.global.connector.secrets.ca.namespace }}
   labels:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
 rules:
 - apiGroups: ["*"]
   resources: ["secrets"]
-  resourceNames: ["{{ .Values.deployment.args.secrets.ca.name }}"]
+  resourceNames: ["{{ .Values.global.connector.secrets.ca.name }}"]
   verbs: ["get"]
 
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ template "fullname" . }}-{{ .Values.deployment.args.secrets.ca.name }}
-  namespace: {{ .Values.deployment.args.secrets.ca.namespace }}
+  name: {{ template "fullname" . }}-{{ .Values.global.connector.secrets.ca.name }}
+  namespace: {{ .Values.global.connector.secrets.ca.namespace }}
   labels:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
@@ -29,18 +29,18 @@ subjects:
   namespace: {{ .Release.Namespace }}
 roleRef:
   kind: Role
-  name: {{ template "fullname" . }}-{{ .Values.deployment.args.secrets.ca.name }}
+  name: {{ template "fullname" . }}-{{ .Values.global.connector.secrets.ca.name }}
   apiGroup: rbac.authorization.k8s.io
 {{ end }}
 
 
-{{ if .Values.deployment.args.secrets.rootCA.name }}
+{{ if .Values.global.connector.secrets.rootCA.name }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ template "fullname" . }}-{{ .Values.deployment.args.secrets.rootCA.name }}
-  namespace: {{ template "fullname" . }}-{{ .Values.deployment.args.secrets.rootCA.name | default "default" }}
+  name: {{ template "fullname" . }}-{{ .Values.global.connector.secrets.rootCA.name }}
+  namespace: {{ .Values.global.connector.secrets.rootCA.namespace | default "default" }}
   labels:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
@@ -48,15 +48,15 @@ metadata:
 rules:
 - apiGroups: ["*"]
   resources: ["secrets"]
-  resourceNames: ["{{ .Values.deployment.args.secrets.rootCA.name }}"]
+  resourceNames: ["{{ .Values.global.connector.secrets.rootCA.name }}"]
   verbs: ["get"]
 
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ template "fullname" . }}-{{ .Values.deployment.args.secrets.rootCA.name }}
-  namespace: {{ template "fullname" . }}-{{ .Values.deployment.args.secrets.rootCA.name | default "default" }}
+  name: {{ template "fullname" . }}-{{ .Values.global.connector.secrets.rootCA.name }}
+  namespace: {{ .Values.global.connector.secrets.rootCA.namespace | default "default" }}
   labels:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
@@ -67,6 +67,6 @@ subjects:
   namespace: {{ .Release.Namespace }}
 roleRef:
   kind: Role
-  name: {{ template "fullname" . }}-{{ .Values.deployment.args.secrets.rootCA.name }}
+  name: {{ template "fullname" . }}-{{ .Values.global.connector.secrets.rootCA.name }}
   apiGroup: rbac.authorization.k8s.io
 {{ end }}
