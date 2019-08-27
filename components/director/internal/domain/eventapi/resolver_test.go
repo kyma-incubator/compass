@@ -32,10 +32,10 @@ func TestResolver_AddEventAPI(t *testing.T) {
 	id := "bar"
 	appId := "1"
 
-	modelAPI := fixModelEventAPIDefinition(id, appId, "name", "bar")
-	gqlAPI := fixGQLEventAPIDefinition(id, appId, "name", "bar")
-	gqlAPIInput := fixGQLEventAPIDefinitionInput("name", "foo", "bar")
-	modelAPIInput := fixModelEventAPIDefinitionInput("name", "foo", "bar")
+	modelAPI := fixMinModelEventAPIDefinition(id, "placeholder")
+	gqlAPI := fixGQLEventAPIDefinition(id, "placeholder")
+	gqlAPIInput := fixGQLEventAPIDefinitionInput()
+	modelAPIInput := fixModelEventAPIDefinitionInput()
 
 	testCases := []struct {
 		Name         string
@@ -180,8 +180,8 @@ func TestResolver_DeleteEventAPI(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "bar"
-	modelAPIDefinition := fixModelEventAPIDefinition(id, "1", "foo", "bar")
-	gqlAPIDefinition := fixGQLEventAPIDefinition(id, "1", "foo", "bar")
+	modelAPIDefinition := fixMinModelEventAPIDefinition(id, "placeholder")
+	gqlAPIDefinition := fixGQLEventAPIDefinition(id, "placeholder")
 
 	testCases := []struct {
 		Name        string
@@ -264,10 +264,10 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "bar"
-	gqlAPIDefinitionInput := fixGQLEventAPIDefinitionInput(id, "foo", "bar")
-	modelAPIDefinitionInput := fixModelEventAPIDefinitionInput(id, "foo", "bar")
-	gqlAPIDefinition := fixGQLEventAPIDefinition(id, "1", "foo", "bar")
-	modelAPIDefinition := fixModelEventAPIDefinition(id, "1", "foo", "bar")
+	gqlAPIDefinitionInput := fixGQLEventAPIDefinitionInput()
+	modelAPIDefinitionInput := fixModelEventAPIDefinitionInput()
+	gqlAPIDefinition := fixGQLEventAPIDefinition(id, "placeholder")
+	modelAPIDefinition := fixMinModelEventAPIDefinition(id, "placeholder")
 
 	testCases := []struct {
 		Name                  string
