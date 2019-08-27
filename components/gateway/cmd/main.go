@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/gateway/internal/tenant"
-
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 	"github.com/pkg/errors"
 
@@ -30,7 +29,7 @@ func main() {
 	err = proxyRequestsForComponent(router, "/connector", cfg.ConnectorOrigin)
 	exitOnError(err, "Error while initializing proxy for Connector")
 
-	err = proxyRequestsForComponent(router, "/director", cfg.DirectorOrigin)
+	err = proxyRequestsForComponent(router, "/director", cfg.DirectorOrigin, tenant.RequireTenantHeader("GET"))
 	exitOnError(err, "Error while initializing proxy for Director")
 
 	router.HandleFunc("/healthz", func(writer http.ResponseWriter, request *http.Request) {
@@ -49,7 +48,7 @@ func main() {
 	}
 }
 
-func proxyRequestsForComponent(router *mux.Router, path string, targetOrigin string) error {
+func proxyRequestsForComponent(router *mux.Router, path string, targetOrigin string, middleware ...mux.MiddlewareFunc) error {
 	log.Printf("Proxying requests on path `%s` to `%s`\n", path, targetOrigin)
 
 	componentProxy, err := proxy.New(targetOrigin, path)
@@ -59,7 +58,7 @@ func proxyRequestsForComponent(router *mux.Router, path string, targetOrigin str
 
 	connector := router.PathPrefix(path).Subrouter()
 	connector.PathPrefix("").HandlerFunc(componentProxy.ServeHTTP)
-	connector.Use(tenant.RequireTenantHeader("GET"))
+	connector.Use(middleware...)
 
 	return nil
 }
