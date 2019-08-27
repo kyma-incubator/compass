@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	TokenHeader = "Token"
+	TokenHeader = "Connector-Token"
 )
 
 type ConnectorClient interface {

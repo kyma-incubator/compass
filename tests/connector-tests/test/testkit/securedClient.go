@@ -10,6 +10,7 @@ import (
 	"net/http"
 )
 
+//Currently unused. SecuredConnectorClient will be used in future test cases
 type SecuredConnectorClient interface {
 	Configuration() (schema.Configuration, error)
 	RenewCertificate(csr string) (schema.CertificationResult, error)

@@ -8,29 +8,21 @@ import (
 )
 
 const (
-	internalAPIUrlEnvName = "INTERNAL_API_URL"
-	externalAPIUrlEnvName = "EXTERNAL_API_URL"
+	apiUrlEnvName = "API_URL"
 )
 
 type TestConfig struct {
-	InternalAPIUrl string
-	ExternalAPIUrl string
+	APIUrl string
 }
 
 func ReadConfig() (TestConfig, error) {
-	internalAPIUrl, found := os.LookupEnv(internalAPIUrlEnvName)
+	externalAPIUrl, found := os.LookupEnv(apiUrlEnvName)
 	if !found {
-		return TestConfig{}, errors.New(fmt.Sprintf("failed to read %s environment variable", internalAPIUrlEnvName))
-	}
-
-	externalAPIUrl, found := os.LookupEnv(externalAPIUrlEnvName)
-	if !found {
-		return TestConfig{}, errors.New(fmt.Sprintf("failed to read %s environment variable", externalAPIUrlEnvName))
+		return TestConfig{}, errors.New(fmt.Sprintf("failed to read %s environment variable", apiUrlEnvName))
 	}
 
 	config := TestConfig{
-		InternalAPIUrl: internalAPIUrl,
-		ExternalAPIUrl: externalAPIUrl,
+		APIUrl: externalAPIUrl,
 	}
 
 	log.Printf("Read configuration: %+v", config)
