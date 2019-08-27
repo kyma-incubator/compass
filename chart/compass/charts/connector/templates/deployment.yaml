@@ -17,7 +17,7 @@ spec:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
     spec:
-      serviceAccount: {{ template "fullname" . }}
+      serviceAccountName: {{ template "fullname" . }}
       containers:
         - name: {{ .Chart.Name }}
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.connector.dir }}compass-connector:{{ .Values.global.images.connector.version }}
