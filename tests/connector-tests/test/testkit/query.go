@@ -41,7 +41,7 @@ func configurationResult() string {
 }
 
 func certificationResult() string {
-	return `certificate
+	return `certificateChain
 			caCertificate
 			clientCertificate`
 }
