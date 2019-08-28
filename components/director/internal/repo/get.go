@@ -13,7 +13,7 @@ import (
 type SingleGetter struct {
 	tableName       string
 	tenantColumn    string
-	selectedColumns string // TODO allow to specify '*' that means get all columns
+	selectedColumns string
 }
 
 func NewSingleGetter(tableName, tenantColumn string, selectedColumns []string) *SingleGetter {

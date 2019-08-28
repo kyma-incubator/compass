@@ -445,7 +445,7 @@ func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*g
 	if err != nil {
 		return nil, err
 	}
-	// TODO write tests for that!
+
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}

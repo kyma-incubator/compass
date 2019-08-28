@@ -72,7 +72,6 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Web
 }
 
 func (s *service) Update(ctx context.Context, id string, in model.WebhookInput) error {
-	// TODO can I update webhook from another tenant???
 	webhook, err := s.Get(ctx, id)
 	if err != nil {
 		return errors.Wrap(err, "while getting Webhook")
@@ -89,7 +88,6 @@ func (s *service) Update(ctx context.Context, id string, in model.WebhookInput) 
 }
 
 func (s *service) Delete(ctx context.Context, id string) error {
-	// TODO can I remove someone else webhook, knowing it's id???
 	webhook, err := s.Get(ctx, id)
 	if err != nil {
 		return errors.Wrap(err, "while getting Webhook")
