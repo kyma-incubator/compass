@@ -4,9 +4,9 @@ import (
 	"context"
 	"crypto/rsa"
 	"crypto/tls"
+	schema "github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
-	schema "github.wdf.sap/compass/components/connector/pkg/gqlschema"
 	"net/http"
 )
 

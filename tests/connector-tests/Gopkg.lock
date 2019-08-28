@@ -2,6 +2,32 @@
 
 
 [[projects]]
+  name = "github.com/99designs/gqlgen"
+  packages = [
+    "graphql",
+    "graphql/introspection"
+  ]
+  revision = "a7bc468ca1b184a5ce1b07ea331e0121fc56ae82"
+  version = "v0.9.3"
+
+[[projects]]
+  name = "github.com/agnivade/levenshtein"
+  packages = ["."]
+  revision = "51b298ff305e72cfd29166dccc3f9878e82f9fdc"
+  version = "v1.0.2"
+
+[[projects]]
+  name = "github.com/davecgh/go-spew"
+  packages = ["spew"]
+  revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
+  version = "v1.1.1"
+
+[[projects]]
+  name = "github.com/kyma-incubator/compass"
+  packages = ["components/connector/pkg/gqlschema"]
+  revision = "4e4d1463a9d8930820e3f2d94f526dc7d87eec7c"
+
+[[projects]]
   name = "github.com/machinebox/graphql"
   packages = ["."]
   revision = "05b17f3157491bbfa5d6fc2006443a272d960d15"
@@ -13,9 +39,44 @@
   revision = "ba968bfe8b2f7e042a574c888954fccecfa385b4"
   version = "v0.8.1"
 
+[[projects]]
+  name = "github.com/pmezard/go-difflib"
+  packages = ["difflib"]
+  revision = "792786c7400a136282c1664665ae0a8db921c6c2"
+  version = "v1.0.0"
+
+[[projects]]
+  name = "github.com/stretchr/testify"
+  packages = [
+    "assert",
+    "require"
+  ]
+  revision = "221dbe5ed46703ee255b1da0dec05086f5035f62"
+  version = "v1.4.0"
+
+[[projects]]
+  name = "github.com/vektah/gqlparser"
+  packages = [
+    ".",
+    "ast",
+    "gqlerror",
+    "lexer",
+    "parser",
+    "validator",
+    "validator/rules"
+  ]
+  revision = "05741cdb0871330d8bc980d4afd21ab34eceee83"
+  version = "v1.1.2"
+
+[[projects]]
+  name = "gopkg.in/yaml.v2"
+  packages = ["."]
+  revision = "51d6538a90f86fe93ac480b35f37b2be17fef232"
+  version = "v2.2.2"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "ee76267b500289a3e30209a3fdfdbca04eaf13523c34fd03c32fdd0425872d56"
+  inputs-digest = "28327a6f1acc97de6456d3318ee5d21018a4ce63c25f95f0f489daac9bbf2583"
   solver-name = "gps-cdcl"
   solver-version = 1

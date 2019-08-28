@@ -1,8 +1,8 @@
 package apitests
 
 import (
+	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit"
 	"github.com/stretchr/testify/require"
-	"github.wdf.sap/compass/tests/connector-tests/test/testkit"
 	"testing"
 )
 
@@ -70,7 +70,7 @@ func TestCertificateGeneration(t *testing.T) {
 	clientKey := testkit.CreateKey(t)
 	client := testkit.NewConnectorClient(config.APIUrl)
 
-	t.Run("should create client certificate", func(t *testing.T) {
+	t.Run("should return client certificate with valid subject and signed with CA certificate", func(t *testing.T) {
 		//when
 		token, e := client.GenerateToken(appID)
 
@@ -102,82 +102,14 @@ func TestCertificateGeneration(t *testing.T) {
 
 		clientCert := result.ClientCertificate
 		require.NotEmpty(t, clientCert)
-
 		testkit.CheckIfSubjectEquals(t, clientCert, certInfo.Subject)
-	})
 
-	t.Run("should return chain with two certificates", func(t *testing.T) {
-		//when
-		token, e := client.GenerateToken(appID)
-
-		//then
-		require.NoError(t, e)
-
-		//when
-		configuration, e := client.Configuration(token.Token)
-
-		//then
-		require.NoError(t, e)
-
-		//given
-		certInfo := configuration.CertificateSigningRequestInfo
-		certToken := configuration.Token.Token
-
-		//when
-		csr, e := testkit.CreateCsr(certInfo.Subject, clientKey)
-
-		//then
-		require.NoError(t, e)
-		require.Equal(t, testkit.RSAKeySize, certInfo.Subject)
-
-		//when
-		result, e := client.GenerateCert(csr, certToken)
-
-		//then
-		require.NoError(t, e)
-
-		certChain := result.Certificate
+		certChain := result.CertificateChain
 		require.NotEmpty(t, certChain)
-
 		testkit.CheckIfChainContainsTwoCertificates(t, certChain)
-	})
-
-	t.Run("client certificate should be signed by CA certificate", func(t *testing.T) {
-		//when
-		token, e := client.GenerateToken(appID)
-
-		//then
-		require.NoError(t, e)
-
-		//when
-		configuration, e := client.Configuration(token.Token)
-
-		//then
-		require.NoError(t, e)
-
-		//given
-		certInfo := configuration.CertificateSigningRequestInfo
-		certToken := configuration.Token.Token
-
-		//when
-		csr, e := testkit.CreateCsr(certInfo.Subject, clientKey)
-
-		//then
-		require.NoError(t, e)
-		require.Equal(t, testkit.RSAKeySize, certInfo.Subject)
-
-		//when
-		result, e := client.GenerateCert(csr, certToken)
-
-		//then
-		require.NoError(t, e)
-
-		clientCert := result.Certificate
-		require.NotEmpty(t, clientCert)
 
 		caCert := result.CaCertificate
 		require.NotEmpty(t, caCert)
-
 		testkit.CheckIfCertIsSigned(t, clientCert, caCert)
 	})
 
