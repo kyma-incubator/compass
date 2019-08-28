@@ -12,11 +12,11 @@ type DocumentService struct {
 }
 
 // List provides a mock function with given fields: ctx, applicationID, pageSize, cursor
-func (_m *DocumentService) List(ctx context.Context, applicationID string, pageSize *int, cursor *string) (*model.DocumentPage, error) {
+func (_m *DocumentService) List(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.DocumentPage, error) {
 	ret := _m.Called(ctx, applicationID, pageSize, cursor)
 
 	var r0 *model.DocumentPage
-	if rf, ok := ret.Get(0).(func(context.Context, string, *int, *string) *model.DocumentPage); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) *model.DocumentPage); ok {
 		r0 = rf(ctx, applicationID, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
@@ -25,7 +25,7 @@ func (_m *DocumentService) List(ctx context.Context, applicationID string, pageS
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *int, *string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, int, string) error); ok {
 		r1 = rf(ctx, applicationID, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)

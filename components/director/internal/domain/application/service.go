@@ -35,9 +35,8 @@ type LabelRepository interface {
 
 //go:generate mockery -name=DocumentRepository -output=automock -outpkg=automock -case=underscore
 type DocumentRepository interface {
-	ListAllByApplicationID(applicationID string) ([]*model.Document, error)
-	CreateMany(items []*model.Document) error
-	DeleteAllByApplicationID(id string) error
+	Create(ctx context.Context, item *model.Document) error
+	DeleteAllByApplicationID(ctx context.Context, tenant string, applicationID string) error
 }
 
 //go:generate mockery -name=WebhookRepository -output=automock -outpkg=automock -case=underscore
@@ -425,7 +424,6 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 
 func (s *service) createRelatedResources(ctx context.Context, in model.ApplicationInput, tenant string, applicationID string) error {
 	var err error
-
 	var webhooks []*model.Webhook
 	for _, item := range in.Webhooks {
 		webhooks = append(webhooks, item.ToWebhook(s.uidService.Generate(), tenant, applicationID))
@@ -475,23 +473,20 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 		return errors.Wrapf(err, "while creating EventAPIs for application")
 	}
 
-	var documents []*model.Document
 	for _, item := range in.Documents {
 		documentID := s.uidService.Generate()
 
-		var fetchRequestID *string
+		err = s.documentRepo.Create(ctx, item.ToDocument(documentID, tenant, applicationID))
+		if err != nil {
+			return errors.Wrapf(err, "while creating Document for application")
+		}
+
 		if item.FetchRequest != nil {
-			fetchRequestID, err = s.createFetchRequest(ctx, tenant, item.FetchRequest, model.DocumentFetchRequestReference, documentID)
+			_, err = s.createFetchRequest(ctx, tenant, item.FetchRequest, model.DocumentFetchRequestReference, documentID)
 			if err != nil {
 				return err
 			}
 		}
-
-		documents = append(documents, item.ToDocument(documentID, tenant, applicationID, fetchRequestID))
-	}
-	err = s.documentRepo.CreateMany(documents)
-	if err != nil {
-		return errors.Wrapf(err, "while creating Documents for application")
 	}
 
 	return nil
@@ -515,7 +510,7 @@ func (s *service) deleteRelatedResources(ctx context.Context, tenant, applicatio
 		return errors.Wrapf(err, "while deleting EventAPIs for application %s", applicationID)
 	}
 
-	err = s.documentRepo.DeleteAllByApplicationID(applicationID)
+	err = s.documentRepo.DeleteAllByApplicationID(ctx, tenant, applicationID)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting Documents for application %s", applicationID)
 	}

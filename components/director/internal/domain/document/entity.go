@@ -13,6 +13,11 @@ type Entity struct {
 	Description    string         `db:"description"`
 	Format         string         `db:"format"`
 	Kind           sql.NullString `db:"kind"`
-	Data           sql.NullString `db:"kind"`
-	FetchRequestID sql.NullString `db:"fetch_request_id"`
+	Data           sql.NullString `db:"data"`
+}
+
+type Collection []Entity
+
+func (r Collection) Len() int {
+	return len(r)
 }

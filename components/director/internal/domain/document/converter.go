@@ -89,7 +89,6 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.DocumentInput) []*mod
 func (c *converter) ToEntity(in model.Document) (Entity, error) {
 	kind := repo.NewNullableString(in.Kind)
 	data := repo.NewNullableString(in.Data)
-	fetchRequestID := repo.NewNullableString(in.FetchRequestID)
 
 	out := Entity{
 		ID:             in.ID,
@@ -101,7 +100,6 @@ func (c *converter) ToEntity(in model.Document) (Entity, error) {
 		Format:         string(in.Format),
 		Kind:           kind,
 		Data:           data,
-		FetchRequestID: fetchRequestID,
 	}
 
 	return out, nil
@@ -110,7 +108,6 @@ func (c *converter) ToEntity(in model.Document) (Entity, error) {
 func (c *converter) FromEntity(in Entity) (model.Document, error) {
 	kind := repo.StringPtrFromNullableString(in.Kind)
 	data := repo.StringPtrFromNullableString(in.Data)
-	fetchRequestID := repo.StringPtrFromNullableString(in.FetchRequestID)
 
 	out := model.Document{
 		ID:             in.ID,
@@ -122,7 +119,6 @@ func (c *converter) FromEntity(in Entity) (model.Document, error) {
 		Format:         model.DocumentFormat(in.Format),
 		Kind:           kind,
 		Data:           data,
-		FetchRequestID: fetchRequestID,
 	}
 	return out, nil
 }

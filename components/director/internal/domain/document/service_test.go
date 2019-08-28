@@ -23,9 +23,10 @@ func TestService_Get(t *testing.T) {
 	id := "foo"
 
 	documentModel := fixModelDocument("1", id)
+	tnt := documentModel.Tenant
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, "tenant")
+	ctx = tenant.SaveToContext(ctx, documentModel.Tenant)
 
 	testCases := []struct {
 		Name               string
@@ -39,7 +40,7 @@ func TestService_Get(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("GetByID", id).Return(documentModel, nil).Once()
+				repo.On("GetByID", ctx, tnt, id).Return(documentModel, nil).Once()
 				return repo
 			},
 			InputID:            id,
@@ -50,7 +51,7 @@ func TestService_Get(t *testing.T) {
 			Name: "Returns error when document retrieval failed",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("GetByID", id).Return(nil, testErr).Once()
+				repo.On("GetByID", ctx, tnt, id).Return(nil, testErr).Once()
 				return repo
 			},
 			InputID:            id,
@@ -102,17 +103,17 @@ func TestService_List(t *testing.T) {
 		},
 	}
 
+	tnt := modelDocuments[0].Tenant
+
 	first := 2
 	after := "test"
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, "tenant")
+	ctx = tenant.SaveToContext(ctx, modelDocuments[0].Tenant)
 
 	testCases := []struct {
 		Name               string
 		RepositoryFn       func() *automock.DocumentRepository
-		InputPageSize      *int
-		InputCursor        *string
 		ExpectedResult     *model.DocumentPage
 		ExpectedErrMessage string
 	}{
@@ -120,11 +121,9 @@ func TestService_List(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("ListByApplicationID", applicationID, &first, &after).Return(documentPage, nil).Once()
+				repo.On("ListByApplicationID", ctx, tnt, applicationID, first, after).Return(documentPage, nil).Once()
 				return repo
 			},
-			InputPageSize:      &first,
-			InputCursor:        &after,
 			ExpectedResult:     documentPage,
 			ExpectedErrMessage: "",
 		},
@@ -132,11 +131,9 @@ func TestService_List(t *testing.T) {
 			Name: "Returns error when document listing failed",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("ListByApplicationID", applicationID, &first, &after).Return(nil, testErr).Once()
+				repo.On("ListByApplicationID", ctx, tnt, applicationID, first, after).Return(nil, testErr).Once()
 				return repo
 			},
-			InputPageSize:      &first,
-			InputCursor:        &after,
 			ExpectedResult:     nil,
 			ExpectedErrMessage: testErr.Error(),
 		},
@@ -149,7 +146,7 @@ func TestService_List(t *testing.T) {
 			svc := document.NewService(repo, nil, nil)
 
 			// when
-			docs, err := svc.List(ctx, applicationID, testCase.InputPageSize, testCase.InputCursor)
+			docs, err := svc.List(ctx, applicationID, first, after)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -178,7 +175,7 @@ func TestService_Create(t *testing.T) {
 	frID := "fr-id"
 	timestamp := time.Now()
 	modelInput := fixModelDocumentInputWithFetchRequest(frURL)
-	modelDoc := modelInput.ToDocument(id, tnt, applicationID, &frID)
+	modelDoc := modelInput.ToDocument(id, tnt, applicationID)
 
 	testCases := []struct {
 		Name               string
@@ -192,7 +189,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("Create", modelDoc).Return(nil).Once()
+				repo.On("Create", ctx, modelDoc).Return(nil).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
@@ -213,18 +210,16 @@ func TestService_Create(t *testing.T) {
 			Name: "Returns error when document creation failed",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("Create", modelDoc).Return(testErr).Once()
+				repo.On("Create", ctx, modelDoc).Return(testErr).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
 				repo := &automock.FetchRequestRepository{}
-				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id).Once()
-				svc.On("Generate").Return(frID).Once()
 				return svc
 			},
 			Input:       *modelInput,
@@ -234,6 +229,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error - Fetch Request Creation",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
+				repo.On("Create", ctx, modelDoc).Return(nil).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
@@ -294,8 +290,10 @@ func TestService_Delete(t *testing.T) {
 	id := "bar"
 	documentModel := fixModelDocument(applicationID, id)
 
+	tnt := documentModel.Tenant
+
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, "tenant")
+	ctx = tenant.SaveToContext(ctx, documentModel.Tenant)
 
 	testCases := []struct {
 		Name               string
@@ -308,8 +306,7 @@ func TestService_Delete(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("GetByID", id).Return(documentModel, nil).Once()
-				repo.On("Delete", documentModel).Return(nil).Once()
+				repo.On("Delete", ctx, tnt, id).Return(nil).Once()
 				return repo
 			},
 			InputID:            id,
@@ -319,18 +316,7 @@ func TestService_Delete(t *testing.T) {
 			Name: "Returns error when document deletion failed",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("GetByID", id).Return(documentModel, nil).Once()
-				repo.On("Delete", documentModel).Return(testErr).Once()
-				return repo
-			},
-			InputID:            id,
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "Returns error when document retrieval failed",
-			RepositoryFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				repo.On("GetByID", id).Return(nil, testErr).Once()
+				repo.On("Delete", ctx, tnt, id).Return(testErr).Once()
 				return repo
 			},
 			InputID:            id,
