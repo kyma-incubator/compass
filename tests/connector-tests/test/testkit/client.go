@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
-	schema "github.wdf.sap/compass/components/connector/pkg/graphql/externalschema"
+	schema "github.wdf.sap/compass/components/connector/pkg/gqlschema"
 	"net/http"
 )
 
