@@ -9,6 +9,7 @@ import (
 type APIDefinition struct {
 	ID            string
 	ApplicationID string
+	TenantID      string
 	Name          string
 	Description   *string
 	Spec          *APISpec
@@ -24,9 +25,10 @@ type APIDefinition struct {
 
 type APISpec struct {
 	// when fetch request specified, data will be automatically populated
-	Data         *string
-	Format       SpecFormat
-	Type         APISpecType
+	Data   *string
+	Format SpecFormat
+	Type   APISpecType
+	//TODO: change it to FetchRequestID, when appropriate resolver will be added
 	FetchRequest *FetchRequest
 }
 

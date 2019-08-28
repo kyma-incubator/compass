@@ -4,44 +4,71 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"sync"
+	"path/filepath"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/internalschema"
+	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
 
-	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 
-	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
+	"github.com/sirupsen/logrus"
 
-	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
-
-	"github.com/pkg/errors"
+	"github.com/kyma-incubator/compass/components/connector/internal/namespacedname"
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
-	"github.com/vrischmann/envconfig"
-
 	"github.com/kyma-incubator/compass/components/connector/internal/api"
+	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
+	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
+	"github.com/kyma-incubator/compass/components/connector/internal/secrets"
+	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
+	"github.com/pkg/errors"
+	"github.com/vrischmann/envconfig"
+	"k8s.io/client-go/kubernetes"
+	restclient "k8s.io/client-go/rest"
 )
 
 type config struct {
-	ExternalAddress       string `envconfig:"default=127.0.0.1:3000"`
-	InternalAddress       string `envconfig:"default=127.0.0.1:3001"`
+	Address               string `envconfig:"default=127.0.0.1:3000"`
 	APIEndpoint           string `envconfig:"default=/graphql"`
 	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
+
+	CSRSubject struct {
+		Country            string `envconfig:"default=PL"`
+		Organization       string `envconfig:"default=Org"`
+		OrganizationalUnit string `envconfig:"default=OrgUnit"`
+		Locality           string `envconfig:"default=Locality"`
+		Province           string `envconfig:"default=State"`
+	}
+	CertificateValidityTime     time.Duration `envconfig:"default=2160h"`
+	CASecretName                string        `envconfig:"default=namespace/name"`
+	RootCACertificateSecretName string        `envconfig:"optional"`
 
 	Token struct {
 		Length                int           `envconfig:"default=64"`
 		RuntimeExpiration     time.Duration `envconfig:"default=60m"`
 		ApplicationExpiration time.Duration `envconfig:"default=5m"`
+		CSRExpiration         time.Duration `envconfig:"default=5m"`
 	}
+
+	DirectorURL string `envconfig:"default=127.0.0.1:3003"`
 }
 
 func (c *config) String() string {
-	return fmt.Sprintf("ExternalAddress: %s, InternalAddress: %s, APIEndpoint: %s, "+
-		"TokenLength: %d, TokenRuntimeExpiration: %s, TokenApplicationExpiration: %s",
-		c.ExternalAddress, c.InternalAddress, c.APIEndpoint,
-		c.Token.Length, c.Token.RuntimeExpiration.String(), c.Token.ApplicationExpiration.String())
+	return fmt.Sprintf("Address: %s, APIEndpoint: %s, "+
+		"CSRSubjectCountry: %s, CSRSubjectOrganization: %s, CSRSubjectOrganizationalUnit: %s, "+
+		"CSRSubjectLocality: %s, CSRSubjectProvince: %s, "+
+		"CertificateValidityTime: %s, CASecretName: %s, RootCACertificateSecretName: %s, "+
+		"TokenLength: %d, TokenRuntimeExpiration: %s, TokenApplicationExpiration: %s, TokenCSRExpiration: %s, "+
+		"DirectorURL: %s",
+		c.Address, c.APIEndpoint,
+		c.CSRSubject.Country, c.CSRSubject.Organization, c.CSRSubject.OrganizationalUnit,
+		c.CSRSubject.Locality, c.CSRSubject.Province,
+		c.CertificateValidityTime, c.CASecretName, c.RootCACertificateSecretName,
+		c.Token.Length, c.Token.RuntimeExpiration.String(), c.Token.ApplicationExpiration.String(), c.Token.CSRExpiration.String(),
+		c.DirectorURL)
 }
 
 func main() {
@@ -52,77 +79,65 @@ func main() {
 	log.Println("Starting Connector Service")
 	log.Printf("Config: %s", cfg.String())
 
-	tokenCache := tokens.NewTokenCache(cfg.Token.ApplicationExpiration, cfg.Token.RuntimeExpiration)
+	tokenCache := tokens.NewTokenCache(cfg.Token.ApplicationExpiration, cfg.Token.RuntimeExpiration, cfg.Token.CSRExpiration)
 	tokenService := tokens.NewTokenService(tokenCache, tokens.NewTokenGenerator(cfg.Token.Length))
 
 	authenticator := authentication.NewAuthenticator(tokenService)
 
 	tokenResolver := api.NewTokenResolver(tokenService)
-	certificateResolver := api.NewCertificateResolver(authenticator, tokenService)
 
-	internalServer := prepareInternalServer(cfg, tokenResolver)
-	externalServer := prepareExternalServer(cfg, certificateResolver)
-
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-
-	go func() {
-		log.Printf("Internal API listening on %s...", cfg.InternalAddress)
-		if err := internalServer.ListenAndServe(); err != nil {
-			panic(err)
-		}
-	}()
-
-	go func() {
-		log.Printf("Extranal API listening on %s...", cfg.ExternalAddress)
-		if err := externalServer.ListenAndServe(); err != nil {
-			panic(err)
-		}
-	}()
-
-	wg.Wait()
-}
-
-func prepareInternalServer(cfg config, tokenResolver api.TokenResolver) *http.Server {
-	internalResolver := api.InternalResolver{TokenResolver: tokenResolver}
-
-	gqlInternalCfg := internalschema.Config{
-		Resolvers: &internalResolver,
+	coreClientSet, appErr := newCoreClientSet()
+	exitOnError(appErr, "Failed to initialize Kubernetes client.")
+	secretsRepository := newSecretsRepository(coreClientSet)
+	certificateUtility := certificates.NewCertificateUtility(cfg.CertificateValidityTime)
+	certificateService := certificates.NewCertificateService(
+		secretsRepository,
+		certificateUtility,
+		namespacedname.Parse(cfg.CASecretName),
+		namespacedname.Parse(cfg.RootCACertificateSecretName),
+	)
+	csrSubjectConsts := certificates.CSRSubjectConsts{
+		Country:            cfg.CSRSubject.Country,
+		Organization:       cfg.CSRSubject.Organization,
+		OrganizationalUnit: cfg.CSRSubject.OrganizationalUnit,
+		Locality:           cfg.CSRSubject.Locality,
+		Province:           cfg.CSRSubject.Province,
 	}
 
-	internalExecutableSchema := internalschema.NewExecutableSchema(gqlInternalCfg)
+	certificateResolver := api.NewCertificateResolver(
+		authenticator,
+		tokenService,
+		certificateService,
+		csrSubjectConsts,
+		cfg.DirectorURL)
 
-	internalRouter := mux.NewRouter()
-	internalRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
-	internalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(internalExecutableSchema))
+	server := prepareServer(cfg, tokenResolver, certificateResolver)
 
-	return &http.Server{
-		Addr:    cfg.InternalAddress,
-		Handler: internalRouter,
+	log.Printf("API listening on %s...", cfg.Address)
+	if err := server.ListenAndServe(); err != nil {
+		panic(err)
 	}
 }
 
-func prepareExternalServer(cfg config, certResolver api.CertificateResolver) *http.Server {
-	externalResolver := api.ExternalResolver{CertificateResolver: certResolver}
+func prepareServer(cfg config, tokenResolver api.TokenResolver, certResolver api.CertificateResolver) *http.Server {
+	externalResolver := api.Resolver{CertificateResolver: certResolver, TokenResolver: tokenResolver}
 
-	gqlInternalCfg := externalschema.Config{
+	gqlInternalCfg := gqlschema.Config{
 		Resolvers: &externalResolver,
 	}
 
-	externalExecutableSchema := externalschema.NewExecutableSchema(gqlInternalCfg)
+	externalExecutableSchema := gqlschema.NewExecutableSchema(gqlInternalCfg)
 
 	externalRouter := mux.NewRouter()
 	externalRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 	externalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(externalExecutableSchema))
 
-	// TODO: Get values from config
-	certHeaderParser := authentication.NewHeaderParser("", "", "", "", "")
-	authContextMiddleware := authentication.NewAuthenticationContextMiddleware(certHeaderParser)
+	authContextMiddleware := authentication.NewAuthenticationContextMiddleware()
 
 	externalRouter.Use(authContextMiddleware.PropagateAuthentication)
 
 	return &http.Server{
-		Addr:    cfg.ExternalAddress,
+		Addr:    cfg.Address,
 		Handler: externalRouter,
 	}
 }
@@ -132,4 +147,33 @@ func exitOnError(err error, context string) {
 		wrappedError := errors.Wrap(err, context)
 		log.Fatal(wrappedError)
 	}
+}
+
+func newCoreClientSet() (*kubernetes.Clientset, error) {
+	k8sConfig, err := restclient.InClusterConfig()
+	if err != nil {
+		logrus.Warnf("Failed to read in cluster config: %s", err.Error())
+		logrus.Info("Trying to initialize with local config")
+		home := homedir.HomeDir()
+		k8sConfPath := filepath.Join(home, ".kube", "config")
+		k8sConfig, err = clientcmd.BuildConfigFromFlags("", k8sConfPath)
+		if err != nil {
+			return nil, errors.Errorf("failed to read k8s in-cluster configuration, %s", err.Error())
+		}
+	}
+
+	coreClientset, err := kubernetes.NewForConfig(k8sConfig)
+	if err != nil {
+		return nil, errors.Errorf("failed to create k8s core client, %s", err.Error())
+	}
+
+	return coreClientset, nil
+}
+
+func newSecretsRepository(coreClientSet *kubernetes.Clientset) secrets.Repository {
+	core := coreClientSet.CoreV1()
+
+	return secrets.NewRepository(func(namespace string) secrets.Manager {
+		return core.Secrets(namespace)
+	})
 }

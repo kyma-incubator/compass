@@ -23,13 +23,15 @@ type tokenCache struct {
 	tokenCache          *cache.Cache
 	applicationTokenTTL time.Duration
 	runtimeTokenTTL     time.Duration
+	csrTokenTTL         time.Duration
 }
 
-func NewTokenCache(applicationTokenTTL, runtimeTokenTTL time.Duration) Cache {
+func NewTokenCache(applicationTokenTTL, runtimeTokenTTL, csrTokenTTL time.Duration) Cache {
 	return &tokenCache{
 		tokenCache:          cache.New(defaultTTLMinutes, defaultCleanupInterval),
 		applicationTokenTTL: applicationTokenTTL,
 		runtimeTokenTTL:     runtimeTokenTTL,
+		csrTokenTTL:         csrTokenTTL,
 	}
 }
 
@@ -41,6 +43,8 @@ func (c *tokenCache) Put(token string, data TokenData) {
 		tokenTTL = c.runtimeTokenTTL
 	case ApplicationToken:
 		tokenTTL = c.applicationTokenTTL
+	case CSRToken:
+		tokenTTL = c.csrTokenTTL
 	}
 
 	c.tokenCache.Set(token, data, tokenTTL)
