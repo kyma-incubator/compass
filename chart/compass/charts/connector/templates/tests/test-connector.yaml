@@ -18,10 +18,8 @@ spec:
         image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.connector.dir }}compass-connector-tests:{{ .Values.global.images.tests.connector.version }}
         imagePullPolicy: IfNotPresent
         env:
-        - name: INTERNAL_API_URL
-          value:
-        - name: EXTERNAL_API_URL
-          value:
+        - name: API_URL
+          value: '{{ .Values.global.gateway.host }}.{{ .Values.global.ingress.domainName }}/connector/graphql'
         command:
         - "/bin/sh"
         args:
