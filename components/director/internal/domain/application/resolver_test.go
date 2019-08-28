@@ -10,18 +10,13 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/internal/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
-var contextParam = mock.MatchedBy(func(ctx context.Context) bool {
-	persistenceOp, err := persistence.FromCtx(ctx)
-	return err == nil && persistenceOp != nil
-})
+var contextParam = persistenceautomock.CtxWithDBMatcher()
 
 func TestResolver_CreateApplication(t *testing.T) {
 	// given
@@ -1056,8 +1051,8 @@ func TestResolver_Webhooks(t *testing.T) {
 	}{
 		{
 			Name:            "Success",
-			PersistenceFn:   mockPersistenceContextThatExpectsCommit,
-			TransactionerFn: mockTransactionerThatSucceed,
+			PersistenceFn:   persistenceautomock.PersistenceContextThatExpectsCommit,
+			TransactionerFn: persistenceautomock.TransactionerThatSucceed,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
 				svc.On("List", contextParam, applicationID).Return(modelWebhooks, nil).Once()
@@ -1073,8 +1068,8 @@ func TestResolver_Webhooks(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when webhook listing failed",
-			PersistenceFn:   mockPersistenceContextThatDontExpectCommit,
-			TransactionerFn: mockTransactionerThatSucceed,
+			PersistenceFn:   persistenceautomock.PersistenceContextThatDontExpectCommit,
+			TransactionerFn: persistenceautomock.TransactionerThatSucceed,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
 				svc.On("List", contextParam, applicationID).Return(nil, testErr).Once()
@@ -1093,7 +1088,7 @@ func TestResolver_Webhooks(t *testing.T) {
 				transact.On("Begin").Return(nil, testErr).Once()
 				return transact
 			},
-			PersistenceFn: mockPersistenceContextThatDontExpectCommit,
+			PersistenceFn: persistenceautomock.PersistenceContextThatDontExpectCommit,
 			ServiceFn: func() *automock.WebhookService {
 				return &automock.WebhookService{}
 			},
@@ -1109,7 +1104,7 @@ func TestResolver_Webhooks(t *testing.T) {
 				persistTx.On("Commit").Return(testErr).Once()
 				return persistTx
 			},
-			TransactionerFn: mockTransactionerThatSucceed,
+			TransactionerFn: persistenceautomock.TransactionerThatSucceed,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
 				svc.On("List", contextParam, applicationID).Return(modelWebhooks, nil).Once()
@@ -1428,21 +1423,4 @@ func TestResolver_Labels(t *testing.T) {
 			persistTx.AssertExpectations(t)
 		})
 	}
-}
-
-func mockPersistenceContextThatExpectsCommit() *persistenceautomock.PersistenceTx {
-	persistTx := &persistenceautomock.PersistenceTx{}
-	persistTx.On("Commit").Return(nil).Once()
-	return persistTx
-}
-func mockPersistenceContextThatDontExpectCommit() *persistenceautomock.PersistenceTx {
-	persistTx := &persistenceautomock.PersistenceTx{}
-	return persistTx
-}
-
-func mockTransactionerThatSucceed(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-	transact := &persistenceautomock.Transactioner{}
-	transact.On("Begin").Return(persistTx, nil).Once()
-	transact.On("RollbackUnlessCommited", persistTx).Return().Once()
-	return transact
 }

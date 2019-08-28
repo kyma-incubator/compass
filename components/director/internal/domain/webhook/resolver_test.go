@@ -4,9 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"github.com/kyma-incubator/compass/components/director/internal/persistence"
-	"github.com/stretchr/testify/mock"
-
 	"github.com/stretchr/testify/require"
 
 	"testing"
@@ -48,17 +45,17 @@ func TestResolver_AddWebhook(t *testing.T) {
 	}{
 		{
 			Name:            "Success",
-			PersistenceFn:   mockPersistenceContextThatExpectsCommit,
-			TransactionerFn: mockTransactionerThatSucceed,
+			PersistenceFn:   persistenceautomock.PersistenceContextThatExpectsCommit,
+			TransactionerFn: persistenceautomock.TransactionerThatSucceed,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Create", ctxWithDBMatcher(), givenAppID, *modelWebhookInput).Return(id, nil).Once()
-				svc.On("Get", ctxWithDBMatcher(), id).Return(modelWebhook, nil).Once()
+				svc.On("Create", persistenceautomock.CtxWithDBMatcher(), givenAppID, *modelWebhookInput).Return(id, nil).Once()
+				svc.On("Get", persistenceautomock.CtxWithDBMatcher(), id).Return(modelWebhook, nil).Once()
 				return svc
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", ctxWithDBMatcher(), givenAppID).Return(true, nil).Once()
+				appSvc.On("Exist", persistenceautomock.CtxWithDBMatcher(), givenAppID).Return(true, nil).Once()
 				return appSvc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
@@ -72,7 +69,7 @@ func TestResolver_AddWebhook(t *testing.T) {
 		},
 		{
 			Name:          testCaseErrorOnStartingTransaction,
-			PersistenceFn: mockPersistenceContextThatDontExpectCommit,
+			PersistenceFn: persistenceautomock.PersistenceContextThatDontExpectCommit,
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, givenError()).Once()
@@ -96,16 +93,16 @@ func TestResolver_AddWebhook(t *testing.T) {
 				persistTx.On("Commit").Return(givenError()).Once()
 				return persistTx
 			},
-			TransactionerFn: mockTransactionerThatSucceed,
+			TransactionerFn: persistenceautomock.TransactionerThatSucceed,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Create", ctxWithDBMatcher(), givenAppID, *modelWebhookInput).Return(id, nil).Once()
-				svc.On("Get", ctxWithDBMatcher(), id).Return(modelWebhook, nil).Once()
+				svc.On("Create", persistenceautomock.CtxWithDBMatcher(), givenAppID, *modelWebhookInput).Return(id, nil).Once()
+				svc.On("Get", persistenceautomock.CtxWithDBMatcher(), id).Return(modelWebhook, nil).Once()
 				return svc
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", ctxWithDBMatcher(), givenAppID).Return(true, nil).Once()
+				appSvc.On("Exist", persistenceautomock.CtxWithDBMatcher(), givenAppID).Return(true, nil).Once()
 				return appSvc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
@@ -117,15 +114,15 @@ func TestResolver_AddWebhook(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when application not exist",
-			PersistenceFn:   mockPersistenceContextThatDontExpectCommit,
-			TransactionerFn: mockTransactionerThatSucceed,
+			PersistenceFn:   persistenceautomock.PersistenceContextThatDontExpectCommit,
+			TransactionerFn: persistenceautomock.TransactionerThatSucceed,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
 				return svc
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", ctxWithDBMatcher(), givenAppID).Return(false, nil)
+				appSvc.On("Exist", persistenceautomock.CtxWithDBMatcher(), givenAppID).Return(false, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
@@ -137,15 +134,15 @@ func TestResolver_AddWebhook(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when application existence check failed",
-			PersistenceFn:   mockPersistenceContextThatDontExpectCommit,
-			TransactionerFn: mockTransactionerThatSucceed,
+			PersistenceFn:   persistenceautomock.PersistenceContextThatDontExpectCommit,
+			TransactionerFn: persistenceautomock.TransactionerThatSucceed,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
 				return svc
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", ctxWithDBMatcher(), givenAppID).Return(false, testErr).Once()
+				appSvc.On("Exist", persistenceautomock.CtxWithDBMatcher(), givenAppID).Return(false, testErr).Once()
 				return appSvc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
@@ -158,16 +155,16 @@ func TestResolver_AddWebhook(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when webhook creation failed",
-			PersistenceFn:   mockPersistenceContextThatDontExpectCommit,
-			TransactionerFn: mockTransactionerThatSucceed,
+			PersistenceFn:   persistenceautomock.PersistenceContextThatDontExpectCommit,
+			TransactionerFn: persistenceautomock.TransactionerThatSucceed,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Create", ctxWithDBMatcher(), givenAppID, *modelWebhookInput).Return("", testErr).Once()
+				svc.On("Create", persistenceautomock.CtxWithDBMatcher(), givenAppID, *modelWebhookInput).Return("", testErr).Once()
 				return svc
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", ctxWithDBMatcher(), givenAppID).Return(true, nil).Once()
+				appSvc.On("Exist", persistenceautomock.CtxWithDBMatcher(), givenAppID).Return(true, nil).Once()
 				return appSvc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
@@ -180,17 +177,17 @@ func TestResolver_AddWebhook(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when webhook retrieval failed",
-			PersistenceFn:   mockPersistenceContextThatDontExpectCommit,
-			TransactionerFn: mockTransactionerThatSucceed,
+			PersistenceFn:   persistenceautomock.PersistenceContextThatDontExpectCommit,
+			TransactionerFn: persistenceautomock.TransactionerThatSucceed,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Create", ctxWithDBMatcher(), givenAppID, *modelWebhookInput).Return(id, nil).Once()
-				svc.On("Get", ctxWithDBMatcher(), id).Return(nil, testErr).Once()
+				svc.On("Create", persistenceautomock.CtxWithDBMatcher(), givenAppID, *modelWebhookInput).Return(id, nil).Once()
+				svc.On("Get", persistenceautomock.CtxWithDBMatcher(), id).Return(nil, testErr).Once()
 				return svc
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", ctxWithDBMatcher(), givenAppID).Return(true, nil).Once()
+				appSvc.On("Exist", persistenceautomock.CtxWithDBMatcher(), givenAppID).Return(true, nil).Once()
 				return appSvc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
@@ -256,12 +253,12 @@ func TestResolver_UpdateWebhook(t *testing.T) {
 	}{
 		{
 			Name:            "Success",
-			PersistenceFn:   mockPersistenceContextThatExpectsCommit,
-			TransactionerFn: mockTransactionerThatSucceed,
+			PersistenceFn:   persistenceautomock.PersistenceContextThatExpectsCommit,
+			TransactionerFn: persistenceautomock.TransactionerThatSucceed,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Update", ctxWithDBMatcher(), givenWebhookID, *modelWebhookInput).Return(nil).Once()
-				svc.On("Get", ctxWithDBMatcher(), givenWebhookID).Return(modelWebhook, nil).Once()
+				svc.On("Update", persistenceautomock.CtxWithDBMatcher(), givenWebhookID, *modelWebhookInput).Return(nil).Once()
+				svc.On("Get", persistenceautomock.CtxWithDBMatcher(), givenWebhookID).Return(modelWebhook, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
@@ -275,7 +272,7 @@ func TestResolver_UpdateWebhook(t *testing.T) {
 		},
 		{
 			Name:          testCaseErrorOnStartingTransaction,
-			PersistenceFn: mockPersistenceContextThatDontExpectCommit,
+			PersistenceFn: persistenceautomock.PersistenceContextThatDontExpectCommit,
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, givenError()).Once()
@@ -296,11 +293,11 @@ func TestResolver_UpdateWebhook(t *testing.T) {
 				persistTx.On("Commit").Return(givenError()).Once()
 				return persistTx
 			},
-			TransactionerFn: mockTransactionerThatSucceed,
+			TransactionerFn: persistenceautomock.TransactionerThatSucceed,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Update", ctxWithDBMatcher(), givenWebhookID, *modelWebhookInput).Return(nil).Once()
-				svc.On("Get", ctxWithDBMatcher(), givenWebhookID).Return(modelWebhook, nil).Once()
+				svc.On("Update", persistenceautomock.CtxWithDBMatcher(), givenWebhookID, *modelWebhookInput).Return(nil).Once()
+				svc.On("Get", persistenceautomock.CtxWithDBMatcher(), givenWebhookID).Return(modelWebhook, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
@@ -312,11 +309,11 @@ func TestResolver_UpdateWebhook(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when webhook update failed",
-			TransactionerFn: mockTransactionerThatSucceed,
-			PersistenceFn:   mockPersistenceContextThatDontExpectCommit,
+			TransactionerFn: persistenceautomock.TransactionerThatSucceed,
+			PersistenceFn:   persistenceautomock.PersistenceContextThatDontExpectCommit,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Update", ctxWithDBMatcher(), givenWebhookID, *modelWebhookInput).Return(testErr).Once()
+				svc.On("Update", persistenceautomock.CtxWithDBMatcher(), givenWebhookID, *modelWebhookInput).Return(testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
@@ -329,12 +326,12 @@ func TestResolver_UpdateWebhook(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when webhook retrieval failed",
-			TransactionerFn: mockTransactionerThatSucceed,
-			PersistenceFn:   mockPersistenceContextThatDontExpectCommit,
+			TransactionerFn: persistenceautomock.TransactionerThatSucceed,
+			PersistenceFn:   persistenceautomock.PersistenceContextThatDontExpectCommit,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Update", ctxWithDBMatcher(), givenWebhookID, *modelWebhookInput).Return(nil).Once()
-				svc.On("Get", ctxWithDBMatcher(), givenWebhookID).Return(nil, testErr).Once()
+				svc.On("Update", persistenceautomock.CtxWithDBMatcher(), givenWebhookID, *modelWebhookInput).Return(nil).Once()
+				svc.On("Get", persistenceautomock.CtxWithDBMatcher(), givenWebhookID).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
@@ -392,12 +389,12 @@ func TestResolver_DeleteWebhook(t *testing.T) {
 	}{
 		{
 			Name:            "Success",
-			TransactionerFn: mockTransactionerThatSucceed,
-			PersistenceFn:   mockPersistenceContextThatExpectsCommit,
+			TransactionerFn: persistenceautomock.TransactionerThatSucceed,
+			PersistenceFn:   persistenceautomock.PersistenceContextThatExpectsCommit,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Get", ctxWithDBMatcher(), givenWebhookID).Return(modelWebhook, nil).Once()
-				svc.On("Delete", ctxWithDBMatcher(), givenWebhookID).Return(nil).Once()
+				svc.On("Get", persistenceautomock.CtxWithDBMatcher(), givenWebhookID).Return(modelWebhook, nil).Once()
+				svc.On("Delete", persistenceautomock.CtxWithDBMatcher(), givenWebhookID).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
@@ -410,7 +407,7 @@ func TestResolver_DeleteWebhook(t *testing.T) {
 		},
 		{
 			Name:          testCaseErrorOnStartingTransaction,
-			PersistenceFn: mockPersistenceContextThatDontExpectCommit,
+			PersistenceFn: persistenceautomock.PersistenceContextThatDontExpectCommit,
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, givenError()).Once()
@@ -432,11 +429,11 @@ func TestResolver_DeleteWebhook(t *testing.T) {
 				persistTx.On("Commit").Return(givenError()).Once()
 				return persistTx
 			},
-			TransactionerFn: mockTransactionerThatSucceed,
+			TransactionerFn: persistenceautomock.TransactionerThatSucceed,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Get", ctxWithDBMatcher(), givenWebhookID).Return(modelWebhook, nil).Once()
-				svc.On("Delete", ctxWithDBMatcher(), givenWebhookID).Return(nil).Once()
+				svc.On("Get", persistenceautomock.CtxWithDBMatcher(), givenWebhookID).Return(modelWebhook, nil).Once()
+				svc.On("Delete", persistenceautomock.CtxWithDBMatcher(), givenWebhookID).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
@@ -448,11 +445,11 @@ func TestResolver_DeleteWebhook(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when webhook retrieval failed",
-			TransactionerFn: mockTransactionerThatSucceed,
-			PersistenceFn:   mockPersistenceContextThatDontExpectCommit,
+			TransactionerFn: persistenceautomock.TransactionerThatSucceed,
+			PersistenceFn:   persistenceautomock.PersistenceContextThatDontExpectCommit,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Get", ctxWithDBMatcher(), givenWebhookID).Return(nil, testErr).Once()
+				svc.On("Get", persistenceautomock.CtxWithDBMatcher(), givenWebhookID).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
@@ -464,12 +461,12 @@ func TestResolver_DeleteWebhook(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when webhook deletion failed",
-			TransactionerFn: mockTransactionerThatSucceed,
-			PersistenceFn:   mockPersistenceContextThatDontExpectCommit,
+			TransactionerFn: persistenceautomock.TransactionerThatSucceed,
+			PersistenceFn:   persistenceautomock.PersistenceContextThatDontExpectCommit,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Get", ctxWithDBMatcher(), givenWebhookID).Return(modelWebhook, nil).Once()
-				svc.On("Delete", ctxWithDBMatcher(), givenWebhookID).Return(testErr).Once()
+				svc.On("Get", persistenceautomock.CtxWithDBMatcher(), givenWebhookID).Return(modelWebhook, nil).Once()
+				svc.On("Delete", persistenceautomock.CtxWithDBMatcher(), givenWebhookID).Return(testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
@@ -505,32 +502,3 @@ func TestResolver_DeleteWebhook(t *testing.T) {
 		})
 	}
 }
-
-// TODO one place
-
-func mockPersistenceContextThatExpectsCommit() *persistenceautomock.PersistenceTx {
-	persistTx := &persistenceautomock.PersistenceTx{}
-	persistTx.On("Commit").Return(nil).Once()
-	return persistTx
-}
-
-func mockPersistenceContextThatDontExpectCommit() *persistenceautomock.PersistenceTx {
-	persistTx := &persistenceautomock.PersistenceTx{}
-	return persistTx
-}
-
-func mockTransactionerThatSucceed(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-	transact := &persistenceautomock.Transactioner{}
-	transact.On("Begin").Return(persistTx, nil).Once()
-	transact.On("RollbackUnlessCommited", persistTx).Return().Once()
-	return transact
-}
-
-func ctxWithDBMatcher() interface{} {
-	return mock.MatchedBy(func(ctx context.Context) bool {
-		_, err := persistence.FromCtx(ctx)
-		return err == nil
-	})
-}
-
-// TODO test another cases!!!

@@ -17,13 +17,15 @@ const TenantHeaderName = "tenant"
 
 const TenantContextKey key = iota
 
+var NoTenantError = errors.New("Cannot read tenant from context")
+
 func LoadFromContext(ctx context.Context) (string, error) {
 	value := ctx.Value(TenantContextKey)
 
 	str, ok := value.(string)
 
 	if !ok {
-		return "", errors.New("Cannot read tenant from context")
+		return "", NoTenantError
 	}
 
 	return str, nil

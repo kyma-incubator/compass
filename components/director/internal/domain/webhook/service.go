@@ -57,7 +57,6 @@ func (s *service) List(ctx context.Context, applicationID string) ([]*model.Webh
 }
 
 func (s *service) Create(ctx context.Context, applicationID string, in model.WebhookInput) (string, error) {
-	// TODO provide tests for that
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
