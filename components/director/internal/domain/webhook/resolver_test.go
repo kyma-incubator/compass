@@ -19,29 +19,32 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	testCaseErrorOnStartingTransaction = "Returns error on starting transaction"
+	testCaseErrorOnCommit              = "Returns error on committing transaction"
+)
+
 func TestResolver_AddWebhook(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
-	applicationID := "foo"
+	givenAppID := "foo"
 	id := "bar"
 	gqlWebhookInput := fixGQLWebhookInput("foo")
 	modelWebhookInput := fixModelWebhookInput("foo")
 
 	gqlWebhook := fixGQLWebhook(id, "", "")
-	modelWebhook := fixModelWebhook(id, applicationID, givenTenant(), "foo")
+	modelWebhook := fixModelWebhook(id, givenAppID, givenTenant(), "foo")
 
 	testCases := []struct {
-		Name               string
-		PersistenceFn      func() *persistenceautomock.PersistenceTx
-		TransactionerFn    func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
-		ServiceFn          func() *automock.WebhookService
-		AppServiceFn       func() *automock.ApplicationService
-		ConverterFn        func() *automock.WebhookConverter
-		InputApplicationID string
-		InputWebhook       graphql.WebhookInput
-		ExpectedWebhook    *graphql.Webhook
-		ExpectedErr        error
+		Name            string
+		PersistenceFn   func() *persistenceautomock.PersistenceTx
+		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ServiceFn       func() *automock.WebhookService
+		AppServiceFn    func() *automock.ApplicationService
+		ConverterFn     func() *automock.WebhookConverter
+		ExpectedWebhook *graphql.Webhook
+		ExpectedErr     error
 	}{
 		{
 			Name:            "Success",
@@ -49,13 +52,13 @@ func TestResolver_AddWebhook(t *testing.T) {
 			TransactionerFn: mockTransactionerThatSucceed,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Create", ctxWithDBMatcher(), applicationID, *modelWebhookInput).Return(id, nil).Once()
+				svc.On("Create", ctxWithDBMatcher(), givenAppID, *modelWebhookInput).Return(id, nil).Once()
 				svc.On("Get", ctxWithDBMatcher(), id).Return(modelWebhook, nil).Once()
 				return svc
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", ctxWithDBMatcher(), applicationID).Return(true, nil).Once()
+				appSvc.On("Exist", ctxWithDBMatcher(), givenAppID).Return(true, nil).Once()
 				return appSvc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
@@ -64,10 +67,53 @@ func TestResolver_AddWebhook(t *testing.T) {
 				conv.On("ToGraphQL", modelWebhook).Return(gqlWebhook).Once()
 				return conv
 			},
-			InputApplicationID: applicationID,
-			InputWebhook:       *gqlWebhookInput,
-			ExpectedWebhook:    gqlWebhook,
-			ExpectedErr:        nil,
+			ExpectedWebhook: gqlWebhook,
+			ExpectedErr:     nil,
+		},
+		{
+			Name:          testCaseErrorOnStartingTransaction,
+			PersistenceFn: mockPersistenceContextThatDontExpectCommit,
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, givenError()).Once()
+				return transact
+			},
+			ServiceFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
+			AppServiceFn: func() *automock.ApplicationService {
+				return &automock.ApplicationService{}
+			},
+			ConverterFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			ExpectedErr: givenError(),
+		},
+		{
+			Name: testCaseErrorOnCommit,
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(givenError()).Once()
+				return persistTx
+			},
+			TransactionerFn: mockTransactionerThatSucceed,
+			ServiceFn: func() *automock.WebhookService {
+				svc := &automock.WebhookService{}
+				svc.On("Create", ctxWithDBMatcher(), givenAppID, *modelWebhookInput).Return(id, nil).Once()
+				svc.On("Get", ctxWithDBMatcher(), id).Return(modelWebhook, nil).Once()
+				return svc
+			},
+			AppServiceFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Exist", ctxWithDBMatcher(), givenAppID).Return(true, nil).Once()
+				return appSvc
+			},
+			ConverterFn: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput).Once()
+				return conv
+			},
+			ExpectedErr: givenError(),
 		},
 		{
 			Name:            "Returns error when application not exist",
@@ -79,7 +125,7 @@ func TestResolver_AddWebhook(t *testing.T) {
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", ctxWithDBMatcher(), applicationID).Return(false, nil)
+				appSvc.On("Exist", ctxWithDBMatcher(), givenAppID).Return(false, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
@@ -87,9 +133,7 @@ func TestResolver_AddWebhook(t *testing.T) {
 				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput).Once()
 				return conv
 			},
-			InputApplicationID: applicationID,
-			InputWebhook:       *gqlWebhookInput,
-			ExpectedWebhook:    nil, ExpectedErr: errors.New("Cannot add Webhook to not existing Application"),
+			ExpectedWebhook: nil, ExpectedErr: errors.New("Cannot add Webhook to not existing Application"),
 		},
 		{
 			Name:            "Returns error when application existence check failed",
@@ -101,7 +145,7 @@ func TestResolver_AddWebhook(t *testing.T) {
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", ctxWithDBMatcher(), applicationID).Return(false, testErr).Once()
+				appSvc.On("Exist", ctxWithDBMatcher(), givenAppID).Return(false, testErr).Once()
 				return appSvc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
@@ -109,10 +153,8 @@ func TestResolver_AddWebhook(t *testing.T) {
 				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput).Once()
 				return conv
 			},
-			InputApplicationID: applicationID,
-			InputWebhook:       *gqlWebhookInput,
-			ExpectedWebhook:    nil,
-			ExpectedErr:        testErr,
+			ExpectedWebhook: nil,
+			ExpectedErr:     testErr,
 		},
 		{
 			Name:            "Returns error when webhook creation failed",
@@ -120,12 +162,12 @@ func TestResolver_AddWebhook(t *testing.T) {
 			TransactionerFn: mockTransactionerThatSucceed,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Create", ctxWithDBMatcher(), applicationID, *modelWebhookInput).Return("", testErr).Once()
+				svc.On("Create", ctxWithDBMatcher(), givenAppID, *modelWebhookInput).Return("", testErr).Once()
 				return svc
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", ctxWithDBMatcher(), applicationID).Return(true, nil).Once()
+				appSvc.On("Exist", ctxWithDBMatcher(), givenAppID).Return(true, nil).Once()
 				return appSvc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
@@ -133,10 +175,8 @@ func TestResolver_AddWebhook(t *testing.T) {
 				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput).Once()
 				return conv
 			},
-			InputApplicationID: applicationID,
-			InputWebhook:       *gqlWebhookInput,
-			ExpectedWebhook:    nil,
-			ExpectedErr:        testErr,
+			ExpectedWebhook: nil,
+			ExpectedErr:     testErr,
 		},
 		{
 			Name:            "Returns error when webhook retrieval failed",
@@ -144,13 +184,13 @@ func TestResolver_AddWebhook(t *testing.T) {
 			TransactionerFn: mockTransactionerThatSucceed,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Create", ctxWithDBMatcher(), applicationID, *modelWebhookInput).Return(id, nil).Once()
+				svc.On("Create", ctxWithDBMatcher(), givenAppID, *modelWebhookInput).Return(id, nil).Once()
 				svc.On("Get", ctxWithDBMatcher(), id).Return(nil, testErr).Once()
 				return svc
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", ctxWithDBMatcher(), applicationID).Return(true, nil).Once()
+				appSvc.On("Exist", ctxWithDBMatcher(), givenAppID).Return(true, nil).Once()
 				return appSvc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
@@ -158,10 +198,8 @@ func TestResolver_AddWebhook(t *testing.T) {
 				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput).Once()
 				return conv
 			},
-			InputApplicationID: applicationID,
-			InputWebhook:       *gqlWebhookInput,
-			ExpectedWebhook:    nil,
-			ExpectedErr:        testErr,
+			ExpectedWebhook: nil,
+			ExpectedErr:     testErr,
 		},
 	}
 
@@ -177,7 +215,7 @@ func TestResolver_AddWebhook(t *testing.T) {
 			resolver := webhook.NewResolver(transactionerMock, svc, appSvc, converter)
 
 			// when
-			result, err := resolver.AddApplicationWebhook(context.TODO(), testCase.InputApplicationID, testCase.InputWebhook)
+			result, err := resolver.AddApplicationWebhook(context.TODO(), givenAppID, *gqlWebhookInput)
 
 			// then
 			assert.Equal(t, testCase.ExpectedWebhook, result)
@@ -201,11 +239,11 @@ func TestResolver_UpdateWebhook(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	applicationID := "foo"
-	id := "bar"
+	givenWebhookID := "bar"
 	gqlWebhookInput := fixGQLWebhookInput("foo")
 	modelWebhookInput := fixModelWebhookInput("foo")
-	gqlWebhook := fixGQLWebhook(id, "", "")
-	modelWebhook := fixModelWebhook(id, applicationID, givenTenant(), "foo")
+	gqlWebhook := fixGQLWebhook(givenWebhookID, "", "")
+	modelWebhook := fixModelWebhook(givenWebhookID, applicationID, givenTenant(), "foo")
 
 	testCases := []struct {
 		Name            string
@@ -213,8 +251,6 @@ func TestResolver_UpdateWebhook(t *testing.T) {
 		ConverterFn     func() *automock.WebhookConverter
 		PersistenceFn   func() *persistenceautomock.PersistenceTx
 		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
-		InputWebhookID  string
-		InputWebhook    graphql.WebhookInput
 		ExpectedWebhook *graphql.Webhook
 		ExpectedErr     error
 	}{
@@ -224,8 +260,8 @@ func TestResolver_UpdateWebhook(t *testing.T) {
 			TransactionerFn: mockTransactionerThatSucceed,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Update", ctxWithDBMatcher(), id, *modelWebhookInput).Return(nil).Once()
-				svc.On("Get", ctxWithDBMatcher(), id).Return(modelWebhook, nil).Once()
+				svc.On("Update", ctxWithDBMatcher(), givenWebhookID, *modelWebhookInput).Return(nil).Once()
+				svc.On("Get", ctxWithDBMatcher(), givenWebhookID).Return(modelWebhook, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
@@ -234,18 +270,37 @@ func TestResolver_UpdateWebhook(t *testing.T) {
 				conv.On("ToGraphQL", modelWebhook).Return(gqlWebhook).Once()
 				return conv
 			},
-			InputWebhookID:  id,
-			InputWebhook:    *gqlWebhookInput,
 			ExpectedWebhook: gqlWebhook,
 			ExpectedErr:     nil,
 		},
 		{
-			Name:            "Returns error when webhook update failed",
+			Name:          testCaseErrorOnStartingTransaction,
+			PersistenceFn: mockPersistenceContextThatDontExpectCommit,
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, givenError()).Once()
+				return transact
+			},
+			ServiceFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
+			ConverterFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			ExpectedErr: givenError(),
+		},
+		{
+			Name: testCaseErrorOnCommit,
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(givenError()).Once()
+				return persistTx
+			},
 			TransactionerFn: mockTransactionerThatSucceed,
-			PersistenceFn:   mockPersistenceContextThatDontExpectCommit,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Update", ctxWithDBMatcher(), id, *modelWebhookInput).Return(testErr).Once()
+				svc.On("Update", ctxWithDBMatcher(), givenWebhookID, *modelWebhookInput).Return(nil).Once()
+				svc.On("Get", ctxWithDBMatcher(), givenWebhookID).Return(modelWebhook, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
@@ -253,8 +308,22 @@ func TestResolver_UpdateWebhook(t *testing.T) {
 				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput).Once()
 				return conv
 			},
-			InputWebhookID:  id,
-			InputWebhook:    *gqlWebhookInput,
+			ExpectedErr: givenError(),
+		},
+		{
+			Name:            "Returns error when webhook update failed",
+			TransactionerFn: mockTransactionerThatSucceed,
+			PersistenceFn:   mockPersistenceContextThatDontExpectCommit,
+			ServiceFn: func() *automock.WebhookService {
+				svc := &automock.WebhookService{}
+				svc.On("Update", ctxWithDBMatcher(), givenWebhookID, *modelWebhookInput).Return(testErr).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput).Once()
+				return conv
+			},
 			ExpectedWebhook: nil,
 			ExpectedErr:     testErr,
 		},
@@ -264,8 +333,8 @@ func TestResolver_UpdateWebhook(t *testing.T) {
 			PersistenceFn:   mockPersistenceContextThatDontExpectCommit,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Update", ctxWithDBMatcher(), id, *modelWebhookInput).Return(nil).Once()
-				svc.On("Get", ctxWithDBMatcher(), id).Return(nil, testErr).Once()
+				svc.On("Update", ctxWithDBMatcher(), givenWebhookID, *modelWebhookInput).Return(nil).Once()
+				svc.On("Get", ctxWithDBMatcher(), givenWebhookID).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
@@ -273,8 +342,6 @@ func TestResolver_UpdateWebhook(t *testing.T) {
 				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput).Once()
 				return conv
 			},
-			InputWebhookID:  id,
-			InputWebhook:    *gqlWebhookInput,
 			ExpectedWebhook: nil,
 			ExpectedErr:     testErr,
 		},
@@ -291,7 +358,7 @@ func TestResolver_UpdateWebhook(t *testing.T) {
 			resolver := webhook.NewResolver(transactionerMock, svc, nil, converter)
 
 			// when
-			result, err := resolver.UpdateApplicationWebhook(context.TODO(), testCase.InputWebhookID, testCase.InputWebhook)
+			result, err := resolver.UpdateApplicationWebhook(context.TODO(), givenWebhookID, *gqlWebhookInput)
 
 			// then
 			assert.Equal(t, testCase.ExpectedWebhook, result)
@@ -309,12 +376,10 @@ func TestResolver_DeleteWebhook(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	applicationID := "foo"
-	id := "bar"
+	givenWebhookID := "bar"
 
-	gqlWebhookInput := fixGQLWebhookInput("foo")
-
-	gqlWebhook := fixGQLWebhook(id, "", "")
-	modelWebhook := fixModelWebhook(id, applicationID, givenTenant(), "foo")
+	gqlWebhook := fixGQLWebhook(givenWebhookID, "", "")
+	modelWebhook := fixModelWebhook(givenWebhookID, applicationID, givenTenant(), "foo")
 
 	testCases := []struct {
 		Name            string
@@ -322,8 +387,6 @@ func TestResolver_DeleteWebhook(t *testing.T) {
 		ConverterFn     func() *automock.WebhookConverter
 		PersistenceFn   func() *persistenceautomock.PersistenceTx
 		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
-		InputWebhookID  string
-		InputWebhook    graphql.WebhookInput
 		ExpectedWebhook *graphql.Webhook
 		ExpectedErr     error
 	}{
@@ -333,8 +396,8 @@ func TestResolver_DeleteWebhook(t *testing.T) {
 			PersistenceFn:   mockPersistenceContextThatExpectsCommit,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Get", ctxWithDBMatcher(), id).Return(modelWebhook, nil).Once()
-				svc.On("Delete", ctxWithDBMatcher(), id).Return(nil).Once()
+				svc.On("Get", ctxWithDBMatcher(), givenWebhookID).Return(modelWebhook, nil).Once()
+				svc.On("Delete", ctxWithDBMatcher(), givenWebhookID).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
@@ -342,10 +405,46 @@ func TestResolver_DeleteWebhook(t *testing.T) {
 				conv.On("ToGraphQL", modelWebhook).Return(gqlWebhook).Once()
 				return conv
 			},
-			InputWebhookID:  id,
-			InputWebhook:    *gqlWebhookInput,
 			ExpectedWebhook: gqlWebhook,
 			ExpectedErr:     nil,
+		},
+		{
+			Name:          testCaseErrorOnStartingTransaction,
+			PersistenceFn: mockPersistenceContextThatDontExpectCommit,
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, givenError()).Once()
+				return transact
+			},
+			ServiceFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
+
+			ConverterFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			ExpectedErr: givenError(),
+		},
+		{
+			Name: testCaseErrorOnCommit,
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(givenError()).Once()
+				return persistTx
+			},
+			TransactionerFn: mockTransactionerThatSucceed,
+			ServiceFn: func() *automock.WebhookService {
+				svc := &automock.WebhookService{}
+				svc.On("Get", ctxWithDBMatcher(), givenWebhookID).Return(modelWebhook, nil).Once()
+				svc.On("Delete", ctxWithDBMatcher(), givenWebhookID).Return(nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("ToGraphQL", modelWebhook).Return(gqlWebhook).Once()
+				return conv
+			},
+			ExpectedErr: givenError(),
 		},
 		{
 			Name:            "Returns error when webhook retrieval failed",
@@ -353,15 +452,13 @@ func TestResolver_DeleteWebhook(t *testing.T) {
 			PersistenceFn:   mockPersistenceContextThatDontExpectCommit,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Get", ctxWithDBMatcher(), id).Return(nil, testErr).Once()
+				svc.On("Get", ctxWithDBMatcher(), givenWebhookID).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
 				return conv
 			},
-			InputWebhookID:  id,
-			InputWebhook:    *gqlWebhookInput,
 			ExpectedWebhook: nil,
 			ExpectedErr:     testErr,
 		},
@@ -371,8 +468,8 @@ func TestResolver_DeleteWebhook(t *testing.T) {
 			PersistenceFn:   mockPersistenceContextThatDontExpectCommit,
 			ServiceFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
-				svc.On("Get", ctxWithDBMatcher(), id).Return(modelWebhook, nil).Once()
-				svc.On("Delete", ctxWithDBMatcher(), id).Return(testErr).Once()
+				svc.On("Get", ctxWithDBMatcher(), givenWebhookID).Return(modelWebhook, nil).Once()
+				svc.On("Delete", ctxWithDBMatcher(), givenWebhookID).Return(testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.WebhookConverter {
@@ -380,8 +477,6 @@ func TestResolver_DeleteWebhook(t *testing.T) {
 				conv.On("ToGraphQL", modelWebhook).Return(gqlWebhook).Once()
 				return conv
 			},
-			InputWebhookID:  id,
-			InputWebhook:    *gqlWebhookInput,
 			ExpectedWebhook: nil,
 			ExpectedErr:     testErr,
 		},
@@ -398,7 +493,7 @@ func TestResolver_DeleteWebhook(t *testing.T) {
 			resolver := webhook.NewResolver(transactionerMock, svc, nil, converter)
 
 			// when
-			result, err := resolver.DeleteApplicationWebhook(context.TODO(), testCase.InputWebhookID)
+			result, err := resolver.DeleteApplicationWebhook(context.TODO(), givenWebhookID)
 
 			// then
 			assert.Equal(t, testCase.ExpectedWebhook, result)

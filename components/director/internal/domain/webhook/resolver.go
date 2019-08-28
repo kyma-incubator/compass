@@ -50,14 +50,14 @@ func NewResolver(transact persistence.Transactioner, webhookSvc WebhookService, 
 }
 
 func (r *Resolver) AddApplicationWebhook(ctx context.Context, applicationID string, in graphql.WebhookInput) (*graphql.Webhook, error) {
-	convertedIn := r.webhookConverter.InputFromGraphQL(&in)
-
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
 	}
 	defer r.transact.RollbackUnlessCommited(tx)
 	ctx = persistence.SaveToContext(ctx, tx)
+
+	convertedIn := r.webhookConverter.InputFromGraphQL(&in)
 
 	found, err := r.appSvc.Exist(ctx, applicationID)
 	if err != nil {
@@ -88,14 +88,14 @@ func (r *Resolver) AddApplicationWebhook(ctx context.Context, applicationID stri
 }
 
 func (r *Resolver) UpdateApplicationWebhook(ctx context.Context, webhookID string, in graphql.WebhookInput) (*graphql.Webhook, error) {
-	convertedIn := r.webhookConverter.InputFromGraphQL(&in)
-
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
 	}
 	defer r.transact.RollbackUnlessCommited(tx)
 	ctx = persistence.SaveToContext(ctx, tx)
+
+	convertedIn := r.webhookConverter.InputFromGraphQL(&in)
 
 	err = r.webhookSvc.Update(ctx, webhookID, *convertedIn)
 	if err != nil {
