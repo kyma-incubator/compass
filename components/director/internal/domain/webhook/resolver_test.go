@@ -411,6 +411,8 @@ func TestResolver_DeleteWebhook(t *testing.T) {
 	}
 }
 
+// TODO one place
+
 func mockPersistenceContextThatExpectsCommit() *persistenceautomock.PersistenceTx {
 	persistTx := &persistenceautomock.PersistenceTx{}
 	persistTx.On("Commit").Return(nil).Once()
