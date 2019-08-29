@@ -3,6 +3,8 @@ package webhook
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/persistence"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -35,17 +37,26 @@ type Resolver struct {
 	webhookSvc       WebhookService
 	appSvc           ApplicationService
 	webhookConverter WebhookConverter
+	transact         persistence.Transactioner
 }
 
-func NewResolver(webhookSvc WebhookService, applicationService ApplicationService, webhookConverter WebhookConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, webhookSvc WebhookService, applicationService ApplicationService, webhookConverter WebhookConverter) *Resolver {
 	return &Resolver{
 		webhookSvc:       webhookSvc,
 		appSvc:           applicationService,
 		webhookConverter: webhookConverter,
+		transact:         transact,
 	}
 }
 
 func (r *Resolver) AddApplicationWebhook(ctx context.Context, applicationID string, in graphql.WebhookInput) (*graphql.Webhook, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	convertedIn := r.webhookConverter.InputFromGraphQL(&in)
 
 	found, err := r.appSvc.Exist(ctx, applicationID)
@@ -67,21 +78,36 @@ func (r *Resolver) AddApplicationWebhook(ctx context.Context, applicationID stri
 		return nil, err
 	}
 
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
 	gqlWebhook := r.webhookConverter.ToGraphQL(webhook)
 
 	return gqlWebhook, nil
 }
 
 func (r *Resolver) UpdateApplicationWebhook(ctx context.Context, webhookID string, in graphql.WebhookInput) (*graphql.Webhook, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	convertedIn := r.webhookConverter.InputFromGraphQL(&in)
 
-	err := r.webhookSvc.Update(ctx, webhookID, *convertedIn)
+	err = r.webhookSvc.Update(ctx, webhookID, *convertedIn)
 	if err != nil {
 		return nil, err
 	}
 
 	webhook, err := r.webhookSvc.Get(ctx, webhookID)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -91,6 +117,13 @@ func (r *Resolver) UpdateApplicationWebhook(ctx context.Context, webhookID strin
 }
 
 func (r *Resolver) DeleteApplicationWebhook(ctx context.Context, webhookID string) (*graphql.Webhook, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	webhook, err := r.webhookSvc.Get(ctx, webhookID)
 	if err != nil {
 		return nil, err
@@ -100,6 +133,10 @@ func (r *Resolver) DeleteApplicationWebhook(ctx context.Context, webhookID strin
 
 	err = r.webhookSvc.Delete(ctx, webhookID)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 

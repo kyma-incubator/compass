@@ -2,6 +2,7 @@
 
 package automock
 
+import context "context"
 import mock "github.com/stretchr/testify/mock"
 import model "github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -10,13 +11,13 @@ type WebhookRepository struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: item
-func (_m *WebhookRepository) Create(item *model.Webhook) error {
-	ret := _m.Called(item)
+// Create provides a mock function with given fields: ctx, item
+func (_m *WebhookRepository) Create(ctx context.Context, item *model.Webhook) error {
+	ret := _m.Called(ctx, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*model.Webhook) error); ok {
-		r0 = rf(item)
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Webhook) error); ok {
+		r0 = rf(ctx, item)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -24,13 +25,13 @@ func (_m *WebhookRepository) Create(item *model.Webhook) error {
 	return r0
 }
 
-// Delete provides a mock function with given fields: item
-func (_m *WebhookRepository) Delete(item *model.Webhook) error {
-	ret := _m.Called(item)
+// Delete provides a mock function with given fields: ctx, tenant, id
+func (_m *WebhookRepository) Delete(ctx context.Context, tenant string, id string) error {
+	ret := _m.Called(ctx, tenant, id)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*model.Webhook) error); ok {
-		r0 = rf(item)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, tenant, id)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -38,13 +39,13 @@ func (_m *WebhookRepository) Delete(item *model.Webhook) error {
 	return r0
 }
 
-// GetByID provides a mock function with given fields: id
-func (_m *WebhookRepository) GetByID(id string) (*model.Webhook, error) {
-	ret := _m.Called(id)
+// GetByID provides a mock function with given fields: ctx, tenant, id
+func (_m *WebhookRepository) GetByID(ctx context.Context, tenant string, id string) (*model.Webhook, error) {
+	ret := _m.Called(ctx, tenant, id)
 
 	var r0 *model.Webhook
-	if rf, ok := ret.Get(0).(func(string) *model.Webhook); ok {
-		r0 = rf(id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Webhook); ok {
+		r0 = rf(ctx, tenant, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.Webhook)
@@ -52,8 +53,8 @@ func (_m *WebhookRepository) GetByID(id string) (*model.Webhook, error) {
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenant, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -61,13 +62,13 @@ func (_m *WebhookRepository) GetByID(id string) (*model.Webhook, error) {
 	return r0, r1
 }
 
-// ListByApplicationID provides a mock function with given fields: applicationID
-func (_m *WebhookRepository) ListByApplicationID(applicationID string) ([]*model.Webhook, error) {
-	ret := _m.Called(applicationID)
+// ListByApplicationID provides a mock function with given fields: ctx, tenant, applicationID
+func (_m *WebhookRepository) ListByApplicationID(ctx context.Context, tenant string, applicationID string) ([]*model.Webhook, error) {
+	ret := _m.Called(ctx, tenant, applicationID)
 
 	var r0 []*model.Webhook
-	if rf, ok := ret.Get(0).(func(string) []*model.Webhook); ok {
-		r0 = rf(applicationID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*model.Webhook); ok {
+		r0 = rf(ctx, tenant, applicationID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*model.Webhook)
@@ -75,8 +76,8 @@ func (_m *WebhookRepository) ListByApplicationID(applicationID string) ([]*model
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(applicationID)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenant, applicationID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -84,13 +85,13 @@ func (_m *WebhookRepository) ListByApplicationID(applicationID string) ([]*model
 	return r0, r1
 }
 
-// Update provides a mock function with given fields: item
-func (_m *WebhookRepository) Update(item *model.Webhook) error {
-	ret := _m.Called(item)
+// Update provides a mock function with given fields: ctx, item
+func (_m *WebhookRepository) Update(ctx context.Context, item *model.Webhook) error {
+	ret := _m.Called(ctx, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*model.Webhook) error); ok {
-		r0 = rf(item)
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Webhook) error); ok {
+		r0 = rf(ctx, item)
 	} else {
 		r0 = ret.Error(0)
 	}

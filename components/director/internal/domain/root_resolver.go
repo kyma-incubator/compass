@@ -56,7 +56,7 @@ func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 	labelRepo := label.NewRepository(labelConverter)
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 
-	webhookRepo := webhook.NewRepository()
+	webhookRepo := webhook.NewRepository(webhookConverter)
 	apiRepo := api.NewAPIRepository()
 	eventAPIRepo := eventapi.NewRepository()
 	docRepo := document.NewRepository()
@@ -80,7 +80,7 @@ func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 		doc:         document.NewResolver(docSvc, appSvc, frConverter),
 		runtime:     runtime.NewResolver(transact, runtimeSvc, runtimeConverter),
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
-		webhook:     webhook.NewResolver(webhookSvc, appSvc, webhookConverter),
+		webhook:     webhook.NewResolver(transact, webhookSvc, appSvc, webhookConverter),
 		labelDef:    labeldef.NewResolver(labelDefService, labelDefConverter, transact),
 	}
 }

@@ -47,10 +47,10 @@ func TestService_Create(t *testing.T) {
 	id := "foo"
 
 	tnt := "tenant"
+	appModel := modelFromInput(modelInput, tnt, id)
+
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt)
-
-	appModel := modelFromInput(modelInput, id, tnt)
 
 	labelScenarios := &model.LabelInput{
 		Key:        model.ScenariosKey,
@@ -81,7 +81,7 @@ func TestService_Create(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			APIRepoFn: func() *automock.APIRepository {
@@ -126,7 +126,7 @@ func TestService_Create(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			APIRepoFn: func() *automock.APIRepository {
@@ -172,7 +172,7 @@ func TestService_Create(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			APIRepoFn: func() *automock.APIRepository {
@@ -375,10 +375,7 @@ func TestService_Update(t *testing.T) {
 	id := "foo"
 
 	tnt := "tenant"
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
-
-	appModel := modelFromInput(modelInput, id, tnt)
+	appModel := modelFromInput(modelInput, tnt, id)
 
 	inputApplicationModel := mock.MatchedBy(func(app *model.Application) bool {
 		return app.Name == modelInput.Name
@@ -387,8 +384,12 @@ func TestService_Update(t *testing.T) {
 	applicationModel := &model.Application{
 		ID:          id,
 		Name:        "foo",
+		Tenant:      tnt,
 		Description: &desc,
 	}
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt)
 
 	testCases := []struct {
 		Name               string
@@ -413,8 +414,8 @@ func TestService_Update(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("DeleteAllByApplicationID", id).Return(nil).Once()
-				repo.On("CreateMany", appModel.Webhooks).Return(nil).Once()
+				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
+				repo.On("CreateMany", ctx, appModel.Webhooks).Return(nil).Once()
 				return repo
 			},
 			APIRepoFn: func() *automock.APIRepository {
@@ -530,7 +531,7 @@ func TestService_Update(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("DeleteAllByApplicationID", id).Return(testErr).Once()
+				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(testErr).Once()
 				return repo
 			},
 			APIRepoFn: func() *automock.APIRepository {
@@ -638,13 +639,14 @@ func TestService_Delete(t *testing.T) {
 
 	desc := "Lorem ipsum"
 
+	tnt := "tenant"
 	applicationModel := &model.Application{
 		ID:          id,
 		Name:        "foo",
 		Description: &desc,
+		Tenant:      tnt,
 	}
 
-	tnt := "tenant"
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt)
 
@@ -670,7 +672,7 @@ func TestService_Delete(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("DeleteAllByApplicationID", id).Return(nil).Once()
+				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
 				return repo
 			},
 			APIRepoFn: func() *automock.APIRepository {
@@ -706,7 +708,7 @@ func TestService_Delete(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("DeleteAllByApplicationID", id).Return(nil).Once()
+				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
 				return repo
 			},
 			APIRepoFn: func() *automock.APIRepository {
@@ -740,7 +742,7 @@ func TestService_Delete(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("DeleteAllByApplicationID", id).Return(testErr).Once()
+				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(testErr).Once()
 				return repo
 			},
 			APIRepoFn: func() *automock.APIRepository {
@@ -1709,12 +1711,12 @@ type testModel struct {
 	Documents            []*model.Document
 }
 
-func modelFromInput(in model.ApplicationInput, applicationID, tenant string) testModel {
+func modelFromInput(in model.ApplicationInput, tenant, applicationID string) testModel {
 	applicationModelMatcherFn := applicationMatcher(in.Name, in.Description)
 
 	var webhooksModel []*model.Webhook
 	for _, item := range in.Webhooks {
-		webhooksModel = append(webhooksModel, item.ToWebhook(uuid.New().String(), applicationID))
+		webhooksModel = append(webhooksModel, item.ToWebhook(uuid.New().String(), tenant, applicationID))
 	}
 
 	var apisModel []*model.APIDefinition

@@ -41,9 +41,9 @@ type DocumentRepository interface {
 
 //go:generate mockery -name=WebhookRepository -output=automock -outpkg=automock -case=underscore
 type WebhookRepository interface {
-	ListByApplicationID(applicationID string) ([]*model.Webhook, error)
-	CreateMany(items []*model.Webhook) error
-	DeleteAllByApplicationID(id string) error
+	ListByApplicationID(ctx context.Context, tenant, applicationID string) ([]*model.Webhook, error)
+	CreateMany(ctx context.Context, items []*model.Webhook) error
+	DeleteAllByApplicationID(ctx context.Context, tenant, id string) error
 }
 
 //go:generate mockery -name=APIRepository -output=automock -outpkg=automock -case=underscore
@@ -265,7 +265,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationInp
 		return errors.Wrap(err, "while updating Application")
 	}
 
-	err = s.deleteRelatedResources(id)
+	err = s.deleteRelatedResources(ctx, app.Tenant, id)
 	if err != nil {
 		return errors.Wrap(err, "while deleting related Application resources")
 	}
@@ -299,7 +299,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "while getting Application with ID %s", id)
 	}
 
-	err = s.deleteRelatedResources(id)
+	err = s.deleteRelatedResources(ctx, app.Tenant, id)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting related Application resources")
 	}
@@ -413,11 +413,13 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 }
 
 func (s *service) createRelatedResources(ctx context.Context, in model.ApplicationInput, tenant string, applicationID string) error {
+	var err error
+
 	var webhooks []*model.Webhook
 	for _, item := range in.Webhooks {
-		webhooks = append(webhooks, item.ToWebhook(s.uidService.Generate(), applicationID))
+		webhooks = append(webhooks, item.ToWebhook(s.uidService.Generate(), tenant, applicationID))
 	}
-	err := s.webhookRepo.CreateMany(webhooks)
+	err = s.webhookRepo.CreateMany(ctx, webhooks)
 	if err != nil {
 		return errors.Wrapf(err, "while creating Webhooks for application")
 	}
@@ -453,10 +455,10 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 	return nil
 }
 
-func (s *service) deleteRelatedResources(applicationID string) error {
+func (s *service) deleteRelatedResources(ctx context.Context, tenant, applicationID string) error {
 	var err error
 
-	err = s.webhookRepo.DeleteAllByApplicationID(applicationID)
+	err = s.webhookRepo.DeleteAllByApplicationID(ctx, tenant, applicationID)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting Webhooks for application %s", applicationID)
 	}

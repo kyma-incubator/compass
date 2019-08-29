@@ -5,10 +5,11 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-func fixModelWebhook(id, appID, url string) *model.Webhook {
+func fixModelWebhook(id, appID, tenant, url string) *model.Webhook {
 	return &model.Webhook{
 		ID:            id,
 		ApplicationID: appID,
+		Tenant:        tenant,
 		Type:          model.WebhookTypeConfigurationChanged,
 		URL:           url,
 		Auth:          &model.Auth{},

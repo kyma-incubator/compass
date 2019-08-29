@@ -57,7 +57,8 @@ CREATE TABLE webhooks (
     id uuid PRIMARY KEY,
     tenant_id uuid NOT NULL,
     app_id uuid NOT NULL,
-    foreign key (tenant_id, app_id) REFERENCES applications (tenant_id, id) ON DELETE CASCADE,
+--     TODO uncomment when applications moved to DB
+--     foreign key (tenant_id, app_id) REFERENCES applications (tenant_id, id) ON DELETE CASCADE,
     url varchar(256) NOT NULL,
     type webhook_type NOT NULL,
     auth jsonb

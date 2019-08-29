@@ -1886,7 +1886,7 @@ type APIDefinition {
     """ group allows you to find the same API but in different version """
     group: String
     """"If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified."""
-    auth(runtimeID: ID!): RuntimeAuth
+    auth(runtimeID: ID!): RuntimeAuth!
     """Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified."""
     auths: [RuntimeAuth!]!
     """If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly."""
@@ -3347,12 +3347,15 @@ func (ec *executionContext) _APIDefinition_auth(ctx context.Context, field graph
 		return obj.Auth, nil
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*RuntimeAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalORuntimeAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeAuth(ctx, field.Selections, res)
+	return ec.marshalNRuntimeAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APIDefinition_auths(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) graphql.Marshaler {
@@ -9041,6 +9044,9 @@ func (ec *executionContext) _APIDefinition(ctx context.Context, sel ast.Selectio
 			out.Values[i] = ec._APIDefinition_group(ctx, field, obj)
 		case "auth":
 			out.Values[i] = ec._APIDefinition_auth(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "auths":
 			out.Values[i] = ec._APIDefinition_auths(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -12466,17 +12472,6 @@ func (ec *executionContext) marshalORuntime2ᚖgithubᚗcomᚋkymaᚑincubator�
 		return graphql.Null
 	}
 	return ec._Runtime(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalORuntimeAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeAuth(ctx context.Context, sel ast.SelectionSet, v RuntimeAuth) graphql.Marshaler {
-	return ec._RuntimeAuth(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalORuntimeAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeAuth(ctx context.Context, sel ast.SelectionSet, v *RuntimeAuth) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._RuntimeAuth(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
