@@ -43,6 +43,7 @@ The basic assumptions for API design are as follows:
 - Cluster provisioning and Kyma installation is considered atomic operation.
 - Provisioning, deprovisioning, upgrade and Compass Runtime Agent reconnecting is uniquely identified by OperationID.
 - Runtime is uniquely identified by RuntimeID.
+- Before runtime is provisioned it must be registered in Director API. RuntimeID returned from Director should be used in Provisioner API.
 - Only one asynchronous operation can be in progress on a given Runtime.  
 - It must be possible to install minimal Kyma  (Kyma Lite) and specify additional modules.
 - Two types of status information are available:
