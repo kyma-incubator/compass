@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	apiUrlEnvName = "API_URL"
+	apiUrlEnvName = "INTERNAL_CONNECTOR_URL"
 )
 
 type TestConfig struct {
@@ -26,6 +26,5 @@ func ReadConfig() (TestConfig, error) {
 	}
 
 	log.Printf("Read configuration: %+v", config)
-
 	return config, nil
 }

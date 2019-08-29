@@ -14,6 +14,7 @@ import (
 
 const (
 	RSAKeySize = 2048
+	RSAKey     = "rsa2048"
 )
 
 func CreateKey(t *testing.T) *rsa.PrivateKey {
@@ -59,9 +60,7 @@ func ParseSubject(subject string) pkix.Name {
 }
 
 func CheckIfSubjectEquals(t *testing.T, certificateStr, expectedSubject string) {
-	cert := decodeBase64Cert(t, certificateStr)
-	certificate, e := x509.ParseCertificate(cert)
-	require.NoError(t, e)
+	certificate := decodeCert(t, certificateStr)
 
 	actualSubject := certificate.Subject
 	subjectInfo := extractSubject(expectedSubject)
@@ -75,23 +74,43 @@ func CheckIfSubjectEquals(t *testing.T, certificateStr, expectedSubject string) 
 }
 
 func CheckIfChainContainsTwoCertificates(t *testing.T, certChain string) {
-	certs := decodeBase64Cert(t, certChain)
-	certificates, e := x509.ParseCertificates(certs)
-	require.NoError(t, e)
+	certificates := decodeCertChain(t, certChain)
 	require.Equal(t, 2, len(certificates))
 }
 
 func CheckIfCertIsSigned(t *testing.T, clientCertStr, caCertStr string) {
-	clientCert := decodeBase64Cert(t, clientCertStr)
-	clientCertificate, e := x509.ParseCertificate(clientCert)
-	require.NoError(t, e)
+	clientCert := decodeCert(t, clientCertStr)
 
-	caCert := decodeBase64Cert(t, caCertStr)
-	caCertificate, e := x509.ParseCertificate(caCert)
-	require.NoError(t, e)
+	caCert := decodeCert(t, caCertStr)
 
-	err := clientCertificate.CheckSignatureFrom(caCertificate)
+	err := clientCert.CheckSignatureFrom(caCert)
 	require.NoError(t, err)
+}
+
+func decodeCert(t *testing.T, certificateStr string) *x509.Certificate {
+	crtBytes := decodeBase64Cert(t, certificateStr)
+
+	clientCrtPem, _ := pem.Decode(crtBytes)
+	require.NotNil(t, clientCrtPem)
+
+	certificate, e := x509.ParseCertificate(clientCrtPem.Bytes)
+	require.NoError(t, e)
+	return certificate
+}
+
+func decodeCertChain(t *testing.T, certificateChain string) []*x509.Certificate {
+	crtBytes := decodeBase64Cert(t, certificateChain)
+
+	clientCrtPem, rest := pem.Decode(crtBytes)
+	require.NotNil(t, clientCrtPem)
+
+	caCertPem, _ := pem.Decode(rest)
+	require.NotNil(t, caCertPem)
+
+	certificates, e := x509.ParseCertificates(append(clientCrtPem.Bytes, caCertPem.Bytes...))
+	require.NoError(t, e)
+
+	return certificates
 }
 
 func extractSubject(subject string) map[string]string {

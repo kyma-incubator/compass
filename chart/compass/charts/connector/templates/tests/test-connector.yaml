@@ -1,7 +1,7 @@
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
-  name: {{ .Chart.Name }}
+  name: {{ .Chart.Name }}-tests
   labels:
     app: {{ .Chart.Name }}-tests
     app.kubernetes.io/name: {{ .Chart.Name }}-tests
@@ -14,12 +14,12 @@ spec:
     spec:
       shareProcessNamespace: true
       containers:
-      - name: tests
-        image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.connector.dir }}compass-connector-tests:{{ .Values.global.images.tests.connector.version }}
+      - name: connector-tests
+        image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.connector.dir }}connector-tests:{{ .Values.global.images.tests.connector.version }}
         imagePullPolicy: IfNotPresent
         env:
-        - name: API_URL
-          value: '{{ .Values.global.gateway.host }}.{{ .Values.global.ingress.domainName }}/connector/graphql'
+        - name: INTERNAL_CONNECTOR_URL
+          value: 'http://{{ .Chart.Name }}:{{ .Values.deployment.args.containerPort }}/graphql'
         command:
         - "/bin/sh"
         args:

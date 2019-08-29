@@ -25,7 +25,7 @@ func TestTokens(t *testing.T) {
 
 		//then
 		require.NoError(t, e)
-		require.NotNil(t, config)
+		require.NotEmpty(t, config)
 	})
 
 	t.Run("should not accept invalid token on Configuration query", func(t *testing.T) {
@@ -36,7 +36,7 @@ func TestTokens(t *testing.T) {
 		configuration, e := client.Configuration(wrongToken)
 
 		//then
-		require.Nil(t, configuration)
+		require.Empty(t, configuration)
 		require.NotNil(t, e)
 	})
 
@@ -57,7 +57,7 @@ func TestTokens(t *testing.T) {
 		configuration, e := client.Configuration(token.Token)
 
 		//then
-		require.Nil(t, configuration)
+		require.Empty(t, configuration)
 		require.NotNil(t, e)
 	})
 }
@@ -86,13 +86,14 @@ func TestCertificateGeneration(t *testing.T) {
 		//given
 		certInfo := configuration.CertificateSigningRequestInfo
 		certToken := configuration.Token.Token
+		subject := certInfo.Subject
 
 		//when
-		csr, e := testkit.CreateCsr(certInfo.Subject, clientKey)
+		csr, e := testkit.CreateCsr(subject, clientKey)
 
 		//then
 		require.NoError(t, e)
-		require.Equal(t, testkit.RSAKeySize, certInfo.Subject)
+		require.Equal(t, testkit.RSAKey, certInfo.KeyAlgorithm)
 
 		//when
 		result, e := client.GenerateCert(csr, certToken)
@@ -141,7 +142,7 @@ func TestCertificateGeneration(t *testing.T) {
 
 		//then
 		require.Error(t, e)
-		require.Nil(t, cert)
+		require.Empty(t, cert)
 	})
 
 	t.Run("should return error on invalid token on Certificate Generation mutation", func(t *testing.T) {
@@ -165,7 +166,7 @@ func TestCertificateGeneration(t *testing.T) {
 
 		//then
 		require.NoError(t, e)
-		require.Equal(t, testkit.RSAKeySize, certInfo.Subject)
+		require.Equal(t, testkit.RSAKey, certInfo.KeyAlgorithm)
 
 		//given
 		wrongToken := "wrongToken"
@@ -175,7 +176,7 @@ func TestCertificateGeneration(t *testing.T) {
 
 		//then
 		require.Error(t, e)
-		require.Nil(t, cert)
+		require.Empty(t, cert)
 	})
 
 	t.Run("should return error on invalid CSR on Certificate Generation mutation", func(t *testing.T) {
@@ -200,6 +201,6 @@ func TestCertificateGeneration(t *testing.T) {
 
 		//then
 		require.Error(t, e)
-		require.Nil(t, cert)
+		require.Empty(t, cert)
 	})
 }
