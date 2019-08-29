@@ -18,7 +18,7 @@ spec:
         image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.connector.dir }}connector-tests:{{ .Values.global.images.tests.connector.version }}
         imagePullPolicy: IfNotPresent
         env:
-        - name: INTERNAL_CONNECTOR_URL
+        - name: APP_INTERNAL_CONNECTOR_URL
           value: 'http://{{ .Chart.Name }}:{{ .Values.deployment.args.containerPort }}/graphql'
         command:
         - "/bin/sh"

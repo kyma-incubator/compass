@@ -87,6 +87,35 @@
   version = "v1.1.2"
 
 [[projects]]
+  digest = "1:3582b2a952f93c863486d0bf56827e2db4e78d970a101d597bc6359587f3936a"
+  name = "github.com/vrischmann/envconfig"
+  packages = ["."]
+  pruneopts = ""
+  revision = "cf601e2565a0a7c7418ed014d28a507be6cb1e45"
+  version = "v1.2.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:85f84c61adcc298430dc886a3353c6aba95ba73f7de3d474294bbcd23fa228e4"
+  name = "golang.org/x/tools"
+  packages = [
+    "cmd/goimports",
+    "go/ast/astutil",
+    "go/gcexportdata",
+    "go/internal/gcimporter",
+    "go/internal/packagesdriver",
+    "go/packages",
+    "go/types/typeutil",
+    "internal/fastwalk",
+    "internal/gopathwalk",
+    "internal/imports",
+    "internal/module",
+    "internal/semver",
+  ]
+  pruneopts = ""
+  revision = "42f498d34c4d67145e3950193a8f23db9328e7f3"
+
+[[projects]]
   digest = "1:cedccf16b71e86db87a24f8d4c70b0a855872eb967cb906a66b95de56aefbd0d"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
@@ -102,6 +131,8 @@
     "github.com/machinebox/graphql",
     "github.com/pkg/errors",
     "github.com/stretchr/testify/require",
+    "github.com/vrischmann/envconfig",
+    "golang.org/x/tools/cmd/goimports",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

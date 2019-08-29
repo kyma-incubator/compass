@@ -11,7 +11,7 @@ func TestTokens(t *testing.T) {
 	require.NoError(t, err)
 
 	appID := "54f83a73-b340-418d-b653-d25b5ed47d75"
-	client := testkit.NewConnectorClient(config.APIUrl)
+	client := testkit.NewConnectorClient(config.InternalConnectorUrl)
 
 	t.Run("should return valid response on Configuration query", func(t *testing.T) {
 		//when
@@ -68,7 +68,7 @@ func TestCertificateGeneration(t *testing.T) {
 
 	appID := "54f83a73-b340-418d-b653-d95b5e347d74"
 	clientKey := testkit.CreateKey(t)
-	client := testkit.NewConnectorClient(config.APIUrl)
+	client := testkit.NewConnectorClient(config.InternalConnectorUrl)
 
 	t.Run("should return client certificate with valid subject and signed with CA certificate", func(t *testing.T) {
 		//when

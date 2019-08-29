@@ -1,30 +1,28 @@
 package testkit
 
 import (
-	"errors"
-	"fmt"
+	"github.com/pkg/errors"
+	"github.com/vrischmann/envconfig"
 	"log"
-	"os"
-)
-
-const (
-	apiUrlEnvName = "INTERNAL_CONNECTOR_URL"
 )
 
 type TestConfig struct {
-	APIUrl string
+	InternalConnectorUrl string `envconfig:"default=http://compass-connector:3000/graphql"`
 }
 
 func ReadConfig() (TestConfig, error) {
-	externalAPIUrl, found := os.LookupEnv(apiUrlEnvName)
-	if !found {
-		return TestConfig{}, errors.New(fmt.Sprintf("failed to read %s environment variable", apiUrlEnvName))
-	}
+	cfg := TestConfig{}
 
-	config := TestConfig{
-		APIUrl: externalAPIUrl,
-	}
+	err := envconfig.InitWithPrefix(&cfg, "APP")
+	exitOnError(err, "Error while loading app config")
 
-	log.Printf("Read configuration: %+v", config)
-	return config, nil
+	log.Printf("Read configuration: %+v", cfg)
+	return cfg, nil
+}
+
+func exitOnError(err error, context string) {
+	if err != nil {
+		wrappedError := errors.Wrap(err, context)
+		log.Fatal(wrappedError)
+	}
 }
