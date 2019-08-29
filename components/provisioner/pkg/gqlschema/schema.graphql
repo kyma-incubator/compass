@@ -1,0 +1,120 @@
+ 
+input RuntimeConfiguration {
+    clusterConfig: ClusterConfig!
+    kymaConfig: KymaConfig!
+}
+
+# Defines the desired cluster to provision, specifying its size, memory, kubernetes version, etc...
+input ClusterConfig {
+  name: String!,
+  size: String,
+  memory: String,
+  computeZone: String!,
+  version: String
+  credentials: String!
+  infrastructureProvider: InfrastructureProvider!
+}
+
+# To discuss: what is the list of supported providers?
+enum InfrastructureProvider {
+  GKE,
+  AKS,
+  Gardener
+}
+
+input KymaConfig {
+  version: String!
+  installationType: InstallationType!
+}
+
+# As a starting point: more granular modularity approach would be better
+# To discuss: how we can approach this 
+enum InstallationType {
+  Full
+  Lite
+}
+
+type RuntimeID {
+  id: ID!
+}
+
+type AsyncOperationID {
+  id: ID!
+}
+
+type RuntimeProvisioningResult {
+  RuntimeID: RuntimeID!
+  OperationID: AsyncOperationID!
+}
+
+type RuntimeConnectionResult {
+  RuntimeID: ID!
+  OperationID: RuntimeConnectionOperationID!
+}
+
+enum OperationType {
+  Provisioning
+  Upgrade
+  Deprovisioning
+}
+
+type Error {
+  message: String
+}
+
+enum OperationState {
+  Pending
+  InProgress
+  Succeeded
+  Failed
+}
+
+type OperationStatus {
+  operation: OperationType!
+  state: OperationState!
+  message: string!
+  errors: [Error]
+}
+
+type RuntimeConnectionStatus {
+  status: RuntimeAgentConnectionStatus!
+  errors: [Errors]
+}
+
+enum RuntimeAgentConnectionStatus {
+  Pending
+  Connected
+  Disconnected  
+}
+
+type RuntimeStatus {
+  lastOperationStatus: OperationStatus
+  runtimeConnectionStatus: RuntimeConnectionStatus
+  runtimeConnectionConfig: RuntimeConnectionConfig
+}
+
+type RuntimeConnectionConfig {
+  kubeconfig: String!
+}
+
+type Mutation {
+  # Runtime Management ; only one asynchronous operation per RuntimeID can run at any point of time    
+  provisionRuntime(config: RuntimeConfiguration): RuntimeProvisioningResult
+  upgradeRuntime(id: RuntimeID, config: RuntimeConfiguration): AsyncOperationID
+  deprovisionRuntime(id: RuntimeID): AsyncOperationID
+
+  # Compass Runtime Agent Connection Management
+  reconnectRuntimeAgent(id: RuntimeID): RuntimeConnectionResult
+}
+
+type Query {
+  # Provides status of asynchronous operations such as provisioning, deprovisioning, or upgrade
+  operationStatus(id: AsyncOperationID) : OperationStatus
+  
+  # Provides current status of specified Runtime including status of last operation and state of Compass Runtime Agent connection 
+  runtimeStatus(id: RuntimeID) : RuntimeStatus  
+
+  # included in runtimeStatus ; to discuss: does it make sense to have separate mutation or handle it within one operation 
+  # returns error if runtime not provisioned yer or is being deprovisioned
+  # runtimeConfig(id: RuntimeID) : RuntimeConnectionConfig
+}

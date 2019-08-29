@@ -39,9 +39,23 @@ The following requiremens must be met:
 
 ## General assumptions
 
-## Design
+## Runtime managament
 
-### Mutations
+### Runtime provisioning
+
+Provisioning will be implemented by provisionRuntime mutation with parameters as follows:
+
+
+
+### Runtime upgrading
+
+### Runtime deprovisioning
+
+## Obtaining operation status
+
+## Runtime connection management
+
+
 
 ### Queries
 
