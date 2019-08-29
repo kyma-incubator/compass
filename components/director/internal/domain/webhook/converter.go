@@ -93,15 +93,17 @@ func (c *converter) ToEntity(in model.Webhook) (Entity, error) {
 
 func (c *converter) toAuthEntity(in model.Webhook) (sql.NullString, error) {
 	var optionalAuth sql.NullString
-	if in.Auth != nil {
-		b, err := json.Marshal(in.Auth)
-		if err != nil {
-			return sql.NullString{}, errors.Wrap(err, "while marshalling Auth")
-		}
+	if in.Auth == nil {
+		return optionalAuth, nil
+	}
 
-		if err := optionalAuth.Scan(b); err != nil {
-			return sql.NullString{}, errors.Wrap(err, "while scanning optional Auth")
-		}
+	b, err := json.Marshal(in.Auth)
+	if err != nil {
+		return sql.NullString{}, errors.Wrap(err, "while marshalling Auth")
+	}
+
+	if err := optionalAuth.Scan(b); err != nil {
+		return sql.NullString{}, errors.Wrap(err, "while scanning optional Auth")
 	}
 	return optionalAuth, nil
 }
@@ -122,22 +124,23 @@ func (c *converter) FromEntity(in Entity) (model.Webhook, error) {
 }
 
 func (c *converter) fromEntityAuth(in Entity) (*model.Auth, error) {
-	var auth *model.Auth
-	if in.Auth.Valid {
-		auth = &model.Auth{}
-		val, err := in.Auth.Value()
-		if err != nil {
-			return nil, errors.Wrap(err, "while reading Auth from Entity")
-		}
-
-		b, ok := val.(string)
-		if !ok {
-			return nil, errors.New("Auth should be slice of bytes")
-		}
-		if err := json.Unmarshal([]byte(b), auth); err != nil {
-			return nil, errors.Wrap(err, "while unmarshaling Auth")
-		}
-
+	if !in.Auth.Valid {
+		return nil, nil
 	}
+
+	auth := &model.Auth{}
+	val, err := in.Auth.Value()
+	if err != nil {
+		return nil, errors.Wrap(err, "while reading Auth from Entity")
+	}
+
+	b, ok := val.(string)
+	if !ok {
+		return nil, errors.New("Auth should be slice of bytes")
+	}
+	if err := json.Unmarshal([]byte(b), auth); err != nil {
+		return nil, errors.Wrap(err, "while unmarshaling Auth")
+	}
+
 	return auth, nil
 }
