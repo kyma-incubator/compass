@@ -2,8 +2,9 @@ package eventapi_test
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/strings"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"

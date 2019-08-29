@@ -1,9 +1,10 @@
 package eventapi_test
 
 import (
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventapi"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
