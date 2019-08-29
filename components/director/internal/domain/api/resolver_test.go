@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/persistence/txtest"
+
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/stretchr/testify/mock"
 
@@ -609,18 +611,9 @@ func TestResolver_FetchRequest(t *testing.T) {
 		ExpectedErr     error
 	}{
 		{
-			Name: "Success",
-			PersistenceFn: func() *persistenceautomock.PersistenceTx {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
-				return persistTx
-			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
-				return transact
-			},
+			Name:            "Success",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
+			TransactionerFn: txtest.TransactionerThatSucceed,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
 				svc.On("GetFetchRequest", contextParam, id).Return(frModel, nil).Once()
@@ -635,17 +628,9 @@ func TestResolver_FetchRequest(t *testing.T) {
 			ExpectedErr:    nil,
 		},
 		{
-			Name: "Doesn't exist",
-			PersistenceFn: func() *persistenceautomock.PersistenceTx {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				return persistTx
-			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
-				return transact
-			},
+			Name:            "Doesn't exist",
+			PersistenceFn:   txtest.PersistenceContextThatDontExpectCommit,
+			TransactionerFn: txtest.TransactionerThatSucceed,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
 				svc.On("GetFetchRequest", contextParam, id).Return(nil, nil).Once()
@@ -659,17 +644,9 @@ func TestResolver_FetchRequest(t *testing.T) {
 			ExpectedErr:    nil,
 		},
 		{
-			Name: "Parent Object is nil",
-			PersistenceFn: func() *persistenceautomock.PersistenceTx {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				return persistTx
-			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
-				return transact
-			},
+			Name:            "Parent Object is nil",
+			PersistenceFn:   txtest.PersistenceContextThatDontExpectCommit,
+			TransactionerFn: txtest.TransactionerThatSucceed,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
 				svc.On("GetFetchRequest", contextParam, id).Return(nil, nil).Once()
@@ -683,17 +660,9 @@ func TestResolver_FetchRequest(t *testing.T) {
 			ExpectedErr:    nil,
 		},
 		{
-			Name: "Error",
-			PersistenceFn: func() *persistenceautomock.PersistenceTx {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				return persistTx
-			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
-				return transact
-			},
+			Name:            "Error",
+			PersistenceFn:   txtest.PersistenceContextThatDontExpectCommit,
+			TransactionerFn: txtest.TransactionerThatSucceed,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
 				svc.On("GetFetchRequest", contextParam, id).Return(nil, testErr).Once()

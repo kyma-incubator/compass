@@ -19,12 +19,12 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 	description := "foodescription"
 	title := "footitle"
 	testCases := []struct {
-		Name           string
-		Input          *model.DocumentInput
-		Expected       *model.Document
+		Name     string
+		Input    *model.DocumentInput
+		Expected *model.Document
 	}{
 		{
-			Name:           "All properties given",
+			Name: "All properties given",
 			Input: &model.DocumentInput{
 				Title:       title,
 				DisplayName: displayName,
@@ -37,19 +37,19 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 				},
 			},
 			Expected: &model.Document{
-				ApplicationID:  applicationID,
-				ID:             id,
-				Tenant:         tenant,
-				Title:          title,
-				DisplayName:    displayName,
-				Description:    description,
-				Format:         model.DocumentFormatMarkdown,
-				Kind:           &kind,
-				Data:           &data,
+				ApplicationID: applicationID,
+				ID:            id,
+				Tenant:        tenant,
+				Title:         title,
+				DisplayName:   displayName,
+				Description:   description,
+				Format:        model.DocumentFormatMarkdown,
+				Kind:          &kind,
+				Data:          &data,
 			},
 		},
 		{
-			Name:           "No FetchRequest",
+			Name: "No FetchRequest",
 			Input: &model.DocumentInput{
 				Title:        title,
 				DisplayName:  displayName,
@@ -60,15 +60,15 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 				FetchRequest: nil,
 			},
 			Expected: &model.Document{
-				ApplicationID:  applicationID,
-				ID:             id,
-				Tenant:         tenant,
-				Title:          title,
-				DisplayName:    displayName,
-				Description:    description,
-				Format:         model.DocumentFormatMarkdown,
-				Kind:           &kind,
-				Data:           &data,
+				ApplicationID: applicationID,
+				ID:            id,
+				Tenant:        tenant,
+				Title:         title,
+				DisplayName:   displayName,
+				Description:   description,
+				Format:        model.DocumentFormatMarkdown,
+				Kind:          &kind,
+				Data:          &data,
 			},
 		},
 		{

@@ -965,13 +965,13 @@ func TestResolver_Documents(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	testCases := []struct {
-		Name           string
-		ServiceFn      func() *automock.DocumentService
-		ConverterFn    func() *automock.DocumentConverter
-		PersistenceFn    func() *persistenceautomock.PersistenceTx
-		TransactionerFn  func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
-		ExpectedResult *graphql.DocumentPage
-		ExpectedErr    error
+		Name            string
+		ServiceFn       func() *automock.DocumentService
+		ConverterFn     func() *automock.DocumentConverter
+		PersistenceFn   func() *persistenceautomock.PersistenceTx
+		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ExpectedResult  *graphql.DocumentPage
+		ExpectedErr     error
 	}{
 		{
 			Name: "Success",

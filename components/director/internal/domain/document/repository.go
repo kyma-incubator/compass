@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/lib/pq"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/pkg/errors"
@@ -97,7 +99,7 @@ func (r *repository) DeleteAllByApplicationID(ctx context.Context, tenant string
 }
 
 func (r *repository) ListByApplicationID(ctx context.Context, tenant string, applicationID string, pageSize int, cursor string) (*model.DocumentPage, error) {
-	appCondition := fmt.Sprintf("%s = '%s'", "app_id", applicationID)
+	appCondition := fmt.Sprintf("%s = %s", "app_id", pq.QuoteLiteral(applicationID))
 
 	var entityCollection Collection
 	page, totalCount, err := r.PageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &entityCollection, appCondition)

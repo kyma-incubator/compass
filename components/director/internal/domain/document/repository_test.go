@@ -190,6 +190,7 @@ func TestRepository_ListByApplicationID(t *testing.T) {
 	tenantID := "tnt"
 	ExpectedLimit := 3
 	ExpectedOffset := 0
+	testErr := errors.New("Test error")
 
 	inputPageSize := 3
 	inputCursor := ""
@@ -235,6 +236,25 @@ func TestRepository_ListByApplicationID(t *testing.T) {
 		assert.Equal(t, docEntity2.ID, modelAPIDef.Data[1].ID)
 		assert.Equal(t, "", modelAPIDef.PageInfo.StartCursor)
 		assert.Equal(t, totalCount, modelAPIDef.TotalCount)
+	})
+
+	t.Run("DB Error", func(t *testing.T) {
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		defer sqlMock.AssertExpectations(t)
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID).
+			WillReturnError(testErr)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		conv := &automock.Converter{}
+		defer conv.AssertExpectations(t)
+
+		pgRepository := document.NewRepository(conv)
+		// WHEN
+		_, err := pgRepository.ListByApplicationID(ctx, tenantID, appID(), 3, "")
+		//THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), testErr.Error())
 	})
 
 	t.Run("Converter Error", func(t *testing.T) {
