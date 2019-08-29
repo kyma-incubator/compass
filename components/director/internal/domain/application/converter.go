@@ -2,7 +2,9 @@ package application
 
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/pkg/errors"
 )
 
 type converter struct {
@@ -14,6 +16,44 @@ type converter struct {
 
 func NewConverter(webhook WebhookConverter, api APIConverter, eventAPI EventAPIConverter, document DocumentConverter) *converter {
 	return &converter{webhook: webhook, api: api, eventAPI: eventAPI, document: document}
+}
+
+func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
+	if in == nil {
+		return nil, nil
+	}
+
+	if in.Status == nil {
+		return nil, errors.New("invalid input model")
+	}
+
+	return &Entity{
+		ID:              in.ID,
+		TenantID:        in.Tenant,
+		Name:            in.Name,
+		Description:     repo.NewNullableString(in.Description),
+		StatusCondition: string(in.Status.Condition),
+		StatusTimestamp: in.Status.Timestamp,
+		HealthCheckURL:  repo.NewNullableString(in.HealthCheckURL),
+	}, nil
+}
+
+func (c *converter) FromEntity(entity *Entity) *model.Application {
+	if entity == nil {
+		return nil
+	}
+
+	return &model.Application{
+		ID:          entity.ID,
+		Tenant:      entity.TenantID,
+		Name:        entity.Name,
+		Description: repo.StringPtrFromNullableString(entity.Description),
+		Status: &model.ApplicationStatus{
+			Condition: model.ApplicationStatusCondition(entity.StatusCondition),
+			Timestamp: entity.StatusTimestamp,
+		},
+		HealthCheckURL: repo.StringPtrFromNullableString(entity.HealthCheckURL),
+	}
 }
 
 func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {

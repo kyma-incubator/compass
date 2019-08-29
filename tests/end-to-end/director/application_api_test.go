@@ -166,7 +166,7 @@ func TestCreateApplicationWithEventAPIs(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	in := graphql.ApplicationInput{
-		Name: "test-create-application-with-event-apis",
+		Name: "create-application-with-event-apis",
 		EventAPIs: []*graphql.EventAPIDefinitionInput{
 			{
 				Name:        "comments/v1",
@@ -229,7 +229,7 @@ func TestCreateApplicationWithDocuments(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	in := graphql.ApplicationInput{
-		Name: "test-create-application-with-documents",
+		Name: "create-application-with-documents",
 		Documents: []*graphql.DocumentInput{
 			{
 				Title:       "Readme",
@@ -281,7 +281,7 @@ func TestCreateApplicationWithDocuments(t *testing.T) {
 }
 
 func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
-	applicationId := "foo"
+	applicationId := "cf889c38-490d-4896-96a7-c0721eca9932"
 
 	t.Run("add Webhook", func(t *testing.T) {
 		//GIVEN
@@ -990,7 +990,7 @@ func TestTenantSeparation(t *testing.T) {
 			}
 		}`,
 		tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication())))
-	getAppReq.Header["Tenant"] = []string{"completely-another-tenant"}
+	getAppReq.Header["Tenant"] = []string{"4204255f-1262-47d7-9108-fbdd7a8d1096"}
 	anotherTenantsApps := graphql.ApplicationPage{}
 	// THEN
 	err = tc.RunQuery(ctx, getAppReq, &anotherTenantsApps)

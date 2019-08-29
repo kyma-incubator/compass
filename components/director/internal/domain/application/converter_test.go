@@ -3,6 +3,8 @@ package application_test
 import (
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -19,8 +21,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	}{
 		{
 			Name:     "All properties given",
-			Input:    fixDetailedModelApplication(t, "foo", "Foo", "Lorem ipsum"),
-			Expected: fixDetailedGQLApplication(t, "foo", "Foo", "Lorem ipsum"),
+			Input:    fixDetailedModelApplication(t, givenID(), givenTenant(), "Foo", "Lorem ipsum"),
+			Expected: fixDetailedGQLApplication(t, givenID(), "Foo", "Lorem ipsum"),
 		},
 		{
 			Name:  "Empty",
@@ -53,8 +55,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// given
 	input := []*model.Application{
-		fixModelApplication("foo", "Foo", "Lorem ipsum"),
-		fixModelApplication("bar", "Bar", "Dolor sit amet"),
+		fixModelApplication("foo", givenTenant(), "Foo", "Lorem ipsum"),
+		fixModelApplication("bar", givenTenant(), "Bar", "Dolor sit amet"),
 		{},
 		nil,
 	}
@@ -157,4 +159,102 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			assert.Equal(t, testCase.Expected, res)
 		})
 	}
+}
+
+func TestConverter_ToEntity(t *testing.T) {
+	conv := application.NewConverter(nil, nil, nil, nil)
+
+	t.Run("All properties given", func(t *testing.T) {
+		// GIVEN
+		appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "app-name", "app-description")
+
+		// WHEN
+		appEntity, err := conv.ToEntity(appModel)
+
+		// THEN
+		assert.NoError(t, err)
+		assertApplicationDefinition(t, appModel, appEntity)
+	})
+
+	t.Run("Nil", func(t *testing.T) {
+		// WHEN
+		appEntity, err := conv.ToEntity(nil)
+
+		// THEN
+		assert.NoError(t, err)
+		assert.Nil(t, appEntity)
+	})
+
+	t.Run("Empty", func(t *testing.T) {
+		// GIVEN
+		appModel := &model.Application{}
+
+		// WHEN
+		appEntity, err := conv.ToEntity(appModel)
+
+		// THEN
+		if err != nil {
+			assert.Contains(t, err.Error(), "invalid input model")
+		} else {
+			assertApplicationDefinition(t, appModel, appEntity)
+		}
+	})
+}
+
+func TestConverter_FromEntity(t *testing.T) {
+	conv := application.NewConverter(nil, nil, nil, nil)
+
+	t.Run("All properties given", func(t *testing.T) {
+		// GIVEN
+		appEntity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "app-name", "app-description")
+
+		// WHEN
+		appModel := conv.FromEntity(appEntity)
+
+		// THEN
+		assertApplicationDefinition(t, appModel, appEntity)
+	})
+
+	t.Run("Nil", func(t *testing.T) {
+		// WHEN
+		appModel := conv.FromEntity(nil)
+
+		// THEN
+		assert.Nil(t, appModel)
+	})
+
+	t.Run("Empty", func(t *testing.T) {
+		// GIVEN
+		appEntity := &application.Entity{}
+
+		// WHEN
+		appModel := conv.FromEntity(appEntity)
+
+		// THEN
+		assertApplicationDefinition(t, appModel, appEntity)
+	})
+}
+
+func assertApplicationDefinition(t *testing.T, appModel *model.Application, entity *application.Entity) {
+	assert.Equal(t, appModel.ID, entity.ID)
+	assert.Equal(t, appModel.Tenant, entity.TenantID)
+	assert.Equal(t, appModel.Name, entity.Name)
+
+	if appModel.Status != nil {
+		assert.Equal(t, appModel.Status.Condition, model.ApplicationStatusCondition(entity.StatusCondition))
+		assert.Equal(t, appModel.Status.Timestamp, entity.StatusTimestamp)
+	} else {
+		assert.Equal(t, string(model.ApplicationStatusConditionUnknown), string(entity.StatusCondition))
+	}
+
+	testdb.AssertSqlNullString(t, entity.Description, appModel.Description)
+	testdb.AssertSqlNullString(t, entity.HealthCheckURL, appModel.HealthCheckURL)
+}
+
+func givenID() string {
+	return "bd0646fa-3c30-4255-84f8-182f57742aa1"
+}
+
+func givenTenant() string {
+	return "8f237125-50be-4bb4-96ce-389e2b931f46"
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -18,11 +19,11 @@ import (
 type ApplicationRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
-	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error)
-	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize *int, cursor *string) (*model.ApplicationPage, error)
+	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
+	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string) (*model.ApplicationPage, error)
 	Create(ctx context.Context, item *model.Application) error
 	Update(ctx context.Context, item *model.Application) error
-	Delete(ctx context.Context, item *model.Application) error
+	Delete(ctx context.Context, tenant, id string) error
 }
 
 //go:generate mockery -name=LabelRepository -output=automock -outpkg=automock -case=underscore
@@ -224,7 +225,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string
 	}
 
 	id := s.uidService.Generate()
-	app := in.ToApplication(id, appTenant)
+	app := in.ToApplication(s.timestampGen(), model.ApplicationStatusConditionInitial, id, appTenant)
 
 	// TODO: Checking if Label Definition exists could be moved after application creation, once application repository is ported to sql
 	err = s.scenariosService.EnsureScenariosLabelDefinitionExists(ctx, appTenant)
@@ -246,6 +247,9 @@ func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string
 
 	err = s.appRepo.Create(ctx, app)
 	if err != nil {
+		if repo.IsNotUnique(err) {
+			return "", errors.New("Application name is not unique within tenant")
+		}
 		return "", err
 	}
 
@@ -272,10 +276,16 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationInp
 	if err != nil {
 		return errors.Wrap(err, "while getting Application")
 	}
-	app = in.ToApplication(app.ID, app.Tenant)
+
+	currentStatuts := app.Status
+
+	app = in.ToApplication(currentStatuts.Timestamp, currentStatuts.Condition, app.ID, app.Tenant)
 
 	err = s.appRepo.Update(ctx, app)
 	if err != nil {
+		if repo.IsNotUnique(err) {
+			return errors.New("Application name is not unique within tenant")
+		}
 		return errors.Wrap(err, "while updating Application")
 	}
 
@@ -318,7 +328,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "while deleting related Application resources")
 	}
 
-	err = s.appRepo.Delete(ctx, app)
+	err = s.appRepo.Delete(ctx, app.Tenant, id)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting Application")
 	}

@@ -2,7 +2,7 @@
 mutation {
   result: createApplication(
     in: {
-      name: "test-create-application-with-documents"
+      name: "create-application-with-documents"
       labels: { scenarios: ["DEFAULT"] }
       documents: [
         {

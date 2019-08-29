@@ -101,7 +101,7 @@ func (c *converter) ToEntity(in model.FetchRequest) (Entity, error) {
 func (c *converter) FromEntity(in Entity) (model.FetchRequest, error) {
 	objectID, objectType, err := c.objectReferenceFromEntity(in)
 	if err != nil {
-		return model.FetchRequest{}, err
+		return model.FetchRequest{}, errors.Wrap(err, "while determining object reference")
 	}
 
 	auth, err := c.authToModel(in.Auth)

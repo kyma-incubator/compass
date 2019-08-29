@@ -407,6 +407,8 @@ func TestService_Update(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
+	timestamp := time.Now()
+
 	desc := "Lorem ipsum"
 	modelInput := model.ApplicationInput{
 		Name: "bar",
@@ -425,6 +427,10 @@ func TestService_Update(t *testing.T) {
 		Name:        "foo",
 		Tenant:      tnt,
 		Description: &desc,
+		Status: &model.ApplicationStatus{
+			Condition: model.ApplicationStatusConditionInitial,
+			Timestamp: timestamp,
+		},
 	}
 
 	ctx := context.TODO()
@@ -737,7 +743,7 @@ func TestService_Delete(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, id).Return(applicationModel, nil).Once()
-				repo.On("Delete", ctx, applicationModel).Return(nil).Once()
+				repo.On("Delete", ctx, applicationModel.Tenant, applicationModel.ID).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
@@ -777,7 +783,7 @@ func TestService_Delete(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, id).Return(applicationModel, nil).Once()
-				repo.On("Delete", ctx, applicationModel).Return(testErr).Once()
+				repo.On("Delete", ctx, applicationModel.Tenant, applicationModel.ID).Return(testErr).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
@@ -991,8 +997,8 @@ func TestService_List(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	modelApplications := []*model.Application{
-		fixModelApplication("foo", "foo", "Lorem Ipsum"),
-		fixModelApplication("bar", "bar", "Lorem Ipsum"),
+		fixModelApplication("foo", "tenant-foo", "foo", "Lorem Ipsum"),
+		fixModelApplication("bar", "tenant-bar", "bar", "Lorem Ipsum"),
 	}
 	applicationPage := &model.ApplicationPage{
 		Data:       modelApplications,
@@ -1024,7 +1030,7 @@ func TestService_List(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("List", ctx, tnt, filter, &first, &after).Return(applicationPage, nil).Once()
+				repo.On("List", ctx, tnt, filter, first, after).Return(applicationPage, nil).Once()
 				return repo
 			},
 			InputPageSize:      first,
@@ -1036,7 +1042,7 @@ func TestService_List(t *testing.T) {
 			Name: "Returns error when application listing failed",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("List", ctx, tnt, filter, &first, &after).Return(nil, testErr).Once()
+				repo.On("List", ctx, tnt, filter, first, after).Return(nil, testErr).Once()
 				return repo
 			},
 			InputPageSize:      first,
@@ -1110,8 +1116,8 @@ func TestService_ListByRuntimeID(t *testing.T) {
 	}
 
 	applications := []*model.Application{
-		fixModelApplication("test1", "test1", "test1"),
-		fixModelApplication("test2", "test2", "test2"),
+		fixModelApplication("test1", "tenant-foo", "test1", "test1"),
+		fixModelApplication("test2", "tenant-foo", "test2", "test2"),
 	}
 	applicationPage := fixApplicationPage(applications)
 	emptyPage := model.ApplicationPage{
@@ -1145,7 +1151,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			},
 			AppRepositoryFn: func() *automock.ApplicationRepository {
 				appRepository := &automock.ApplicationRepository{}
-				appRepository.On("ListByScenarios", ctx, tenantUUID, convertToStringArray(t, scenarios), &first, &cursor).
+				appRepository.On("ListByScenarios", ctx, tenantUUID, convertToStringArray(t, scenarios), first, cursor).
 					Return(applicationPage, nil).Once()
 				return appRepository
 			},
@@ -1253,7 +1259,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			},
 			AppRepositoryFn: func() *automock.ApplicationRepository {
 				appRepository := &automock.ApplicationRepository{}
-				appRepository.On("ListByScenarios", ctx, tenantUUID, convertToStringArray(t, scenarios), &first, &cursor).
+				appRepository.On("ListByScenarios", ctx, tenantUUID, convertToStringArray(t, scenarios), first, cursor).
 					Return(nil, testError).Once()
 				return appRepository
 			},
