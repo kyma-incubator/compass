@@ -7,6 +7,10 @@ func RowWhenObjectExist() *sqlmock.Rows {
 
 }
 
+func RowCount(totalCount int) *sqlmock.Rows {
+	return sqlmock.NewRows([]string{"count"}).AddRow(totalCount)
+}
+
 func RowWhenObjectDoesNotExist() *sqlmock.Rows {
 	return sqlmock.NewRows([]string{""})
 }
