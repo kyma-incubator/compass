@@ -6,7 +6,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 )
 
-type APIDefinition struct {
+type Entity struct {
 	ID          string         `db:"id"`
 	TenantID    string         `db:"tenant_id"`
 	AppID       string         `db:"app_id"`
@@ -14,14 +14,14 @@ type APIDefinition struct {
 	Description sql.NullString `db:"description"`
 	Group       sql.NullString `db:"group_name"`
 	TargetURL   string         `db:"target_url"`
-	*APISpec
-	DefaultAuth        sql.NullString `db:"default_auth"`
-	SpecFetchRequestID sql.NullString `db:"spec_fetch_request_id"`
+	DefaultAuth sql.NullString `db:"default_auth"`
+	*EntitySpec
 	*version.Version
 }
 
-type APISpec struct {
-	SpecData   sql.NullString `db:"spec_data"`
-	SpecFormat sql.NullString `db:"spec_format"`
-	SpecType   sql.NullString `db:"spec_type"`
+type EntitySpec struct {
+	SpecData           sql.NullString `db:"spec_data"`
+	SpecFormat         sql.NullString `db:"spec_format"`
+	SpecType           sql.NullString `db:"spec_type"`
+	SpecFetchRequestID sql.NullString `db:"spec_fetch_request_id"`
 }
