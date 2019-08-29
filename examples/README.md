@@ -24,6 +24,7 @@ Below you can find a list of mock GraphQL queries and mutations:
 - [query applications with label filter](./query-applications-with-label-filter.graphql)
 - [query applications](./query-applications.graphql)
 - [query label definition](./query-label-definition.graphql)
+- [query runtime auths](./query-runtime-auths.graphql)
 - [query runtime](./query-runtime.graphql)
 - [query runtimes with label filter](./query-runtimes-with-label-filter.graphql)
 - [query runtimes with pagination](./query-runtimes-with-pagination.graphql)
