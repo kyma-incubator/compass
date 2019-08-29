@@ -37,7 +37,6 @@ func fixFullModelEventAPIDefinition(id, placeholder string) model.EventAPIDefini
 		Data:           strings.Ptr("data"),
 		Format:         model.SpecFormatJSON,
 		Type:           model.EventAPISpecTypeAsyncAPI,
-		FetchRequestID: strings.Ptr(fetchRequestID),
 	}
 	v := fixVersionModel()
 
@@ -157,7 +156,6 @@ func fixFullEventAPIDef(id, placeholder string) eventapi.Entity {
 			SpecData:           repo.NewValidNullableString("data"),
 			SpecType:           repo.NewValidNullableString(string(model.EventAPISpecTypeAsyncAPI)),
 			SpecFormat:         repo.NewValidNullableString(string(model.SpecFormatJSON)),
-			SpecFetchRequestID: repo.NewValidNullableString(fetchRequestID),
 		},
 		Version: &v,
 	}

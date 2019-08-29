@@ -74,3 +74,17 @@ func (r *repository) GetByReferenceObjectID(ctx context.Context, tenant string, 
 func (r *repository) Delete(ctx context.Context, tenant, id string) error {
 	return r.Deleter.DeleteOne(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
 }
+
+func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) error {
+	var fieldName string
+	switch objectType {
+	case model.EventAPIFetchRequestReference:
+		fieldName = "event_api_def_id"
+	case model.APIFetchRequestReference:
+		fieldName = "api_def_id"
+	case model.DocumentFetchRequestReference:
+		fieldName = "document_id"
+	}
+
+	return r.Deleter.DeleteMany(ctx, tenant, repo.Conditions{{Field: fieldName, Val: objectID}})
+}

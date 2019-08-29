@@ -28,7 +28,6 @@ type APISpec struct {
 	Data           *string
 	Format         SpecFormat
 	Type           APISpecType
-	FetchRequestID *string
 }
 
 type APISpecType string
@@ -65,7 +64,7 @@ type APIDefinitionPage struct {
 
 func (APIDefinitionPage) IsPageable() {}
 
-func (a *APIDefinitionInput) ToAPIDefinition(id string, appID string, fetchRequestID *string) *APIDefinition {
+func (a *APIDefinitionInput) ToAPIDefinition(id string, appID string) *APIDefinition {
 	if a == nil {
 		return nil
 	}
@@ -75,7 +74,7 @@ func (a *APIDefinitionInput) ToAPIDefinition(id string, appID string, fetchReque
 		ApplicationID: appID,
 		Name:          a.Name,
 		Description:   a.Description,
-		Spec:          a.Spec.ToAPISpec(fetchRequestID),
+		Spec:          a.Spec.ToAPISpec(),
 		TargetURL:     a.TargetURL,
 		Group:         a.Group,
 		Auths:         nil,
@@ -84,7 +83,7 @@ func (a *APIDefinitionInput) ToAPIDefinition(id string, appID string, fetchReque
 	}
 }
 
-func (a *APISpecInput) ToAPISpec(fetchRequestID *string) *APISpec {
+func (a *APISpecInput) ToAPISpec() *APISpec {
 	if a == nil {
 		return nil
 	}
@@ -93,6 +92,5 @@ func (a *APISpecInput) ToAPISpec(fetchRequestID *string) *APISpec {
 		Data:           a.Data,
 		Format:         a.Format,
 		Type:           a.Type,
-		FetchRequestID: fetchRequestID,
 	}
 }

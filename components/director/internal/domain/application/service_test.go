@@ -1807,12 +1807,12 @@ func modelFromInput(in model.ApplicationInput, tenant, applicationID string) tes
 
 	var apisModel []*model.APIDefinition
 	for _, item := range in.Apis {
-		apisModel = append(apisModel, item.ToAPIDefinition(uuid.New().String(), applicationID, nil))
+		apisModel = append(apisModel, item.ToAPIDefinition(uuid.New().String(), applicationID))
 	}
 
 	var eventAPIsModel []*model.EventAPIDefinition
 	for _, item := range in.EventAPIs {
-		eventAPIsModel = append(eventAPIsModel, item.ToEventAPIDefinition(uuid.New().String(), applicationID, nil))
+		eventAPIsModel = append(eventAPIsModel, item.ToEventAPIDefinition(uuid.New().String(), applicationID))
 	}
 
 	var documentsModel []*model.Document

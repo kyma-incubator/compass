@@ -203,9 +203,7 @@ func TestService_Create(t *testing.T) {
 		ApplicationID: applicationID,
 		Name:          name,
 		TargetURL:     targetUrl,
-		Spec: &model.APISpec{
-			FetchRequestID: &frID,
-		},
+		Spec: &model.APISpec{},
 		Version: &model.Version{},
 	}
 
@@ -316,6 +314,7 @@ func TestService_Update(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
+	id := "foo"
 	tnt := "tenant"
 	timestamp := time.Now()
 	frID := "fr-id"
@@ -341,9 +340,7 @@ func TestService_Update(t *testing.T) {
 		Name:          "Bar",
 		ApplicationID: "id",
 		TargetURL:     "https://test-url-updated.com",
-		Spec: &model.APISpec{
-			FetchRequestID: &frID,
-		},
+		Spec: &model.APISpec{},
 		DefaultAuth: &model.Auth{},
 		Version:     &model.Version{},
 	}
@@ -364,13 +361,13 @@ func TestService_Update(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("GetByID", "foo").Return(apiDefinitionModel, nil).Once()
+				repo.On("GetByID", id).Return(apiDefinitionModel, nil).Once()
 				repo.On("Update", inputAPIDefinitionModel).Return(nil).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
 				repo := &automock.FetchRequestRepository{}
-				repo.On("Delete", ctx, tnt, frID).Return(nil).Once()
+				repo.On("DeleteByReferenceObjectID", ctx, tnt, model.APIFetchRequestReference, id).Return(nil).Once()
 				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
 				return repo
 			},
@@ -393,7 +390,7 @@ func TestService_Update(t *testing.T) {
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
 				repo := &automock.FetchRequestRepository{}
-				repo.On("Delete", ctx, tnt, frID).Return(nil).Once()
+				repo.On("DeleteByReferenceObjectID", ctx, tnt, model.APIFetchRequestReference, id).Return(nil).Once()
 				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
 				return repo
 			},
@@ -460,14 +457,11 @@ func TestService_Delete(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	frID := "fr_id"
 	apiDefinitionModel := &model.APIDefinition{
 		Name:          "Bar",
 		ApplicationID: "id",
 		TargetURL:     "https://test-url-updated.com",
-		Spec: &model.APISpec{
-			FetchRequestID: &frID,
-		},
+		Spec: &model.APISpec{},
 		Version: &model.Version{},
 	}
 

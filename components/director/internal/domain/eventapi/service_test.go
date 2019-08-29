@@ -194,9 +194,7 @@ func TestService_Create(t *testing.T) {
 		ID:            id,
 		ApplicationID: applicationID,
 		Name:          name,
-		Spec: &model.EventAPISpec{
-			FetchRequestID: &frID,
-		},
+		Spec: &model.EventAPISpec{},
 		Version: &model.Version{},
 	}
 
@@ -308,6 +306,7 @@ func TestService_Update(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	tnt := "tenant"
+	id := "foo"
 	timestamp := time.Now()
 	frID := "fr-id"
 	frURL := "foo.bar"
@@ -329,9 +328,7 @@ func TestService_Update(t *testing.T) {
 	eventAPIDefinitionModel := &model.EventAPIDefinition{
 		Name:          "Bar",
 		ApplicationID: "id",
-		Spec: &model.EventAPISpec{
-			FetchRequestID: &frID,
-		},
+		Spec: &model.EventAPISpec{},
 		Version: &model.Version{},
 	}
 
@@ -351,13 +348,13 @@ func TestService_Update(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("GetByID", "foo").Return(eventAPIDefinitionModel, nil).Once()
+				repo.On("GetByID", id).Return(eventAPIDefinitionModel, nil).Once()
 				repo.On("Update", inputEventAPIDefinitionModel).Return(nil).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
 				repo := &automock.FetchRequestRepository{}
-				repo.On("Delete", ctx, tnt, frID).Return(nil).Once()
+				repo.On("DeleteByReferenceObjectID", ctx, tnt, model.EventAPIFetchRequestReference, id).Return(nil).Once()
 				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
 				return repo
 			},
@@ -380,7 +377,7 @@ func TestService_Update(t *testing.T) {
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
 				repo := &automock.FetchRequestRepository{}
-				repo.On("Delete", ctx, tnt, frID).Return(nil).Once()
+				repo.On("DeleteByReferenceObjectID", ctx, tnt, model.EventAPIFetchRequestReference, id).Return(nil).Once()
 				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
 				return repo
 			},
@@ -447,13 +444,10 @@ func TestService_Delete(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	frID := "fr_id"
 	eventAPIDefinitionModel := &model.EventAPIDefinition{
 		Name:          "Bar",
 		ApplicationID: "id",
-		Spec: &model.EventAPISpec{
-			FetchRequestID: &frID,
-		},
+		Spec: &model.EventAPISpec{},
 		Version: &model.Version{},
 	}
 

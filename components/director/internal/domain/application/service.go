@@ -438,15 +438,14 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 
 		apiDefID := s.uidService.Generate()
 
-		var fetchRequestID *string
 		if item.Spec != nil && item.Spec.FetchRequest != nil {
-			fetchRequestID, err = s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.APIFetchRequestReference, apiDefID)
+			_, err = s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.APIFetchRequestReference, apiDefID)
 			if err != nil {
 				return err
 			}
 		}
 
-		apis = append(apis, item.ToAPIDefinition(apiDefID, applicationID, fetchRequestID))
+		apis = append(apis, item.ToAPIDefinition(apiDefID, applicationID))
 	}
 
 	err = s.apiRepo.CreateMany(apis)
@@ -458,15 +457,14 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 	for _, item := range in.EventAPIs {
 		eventAPIDefID := s.uidService.Generate()
 
-		var fetchRequestID *string
 		if item.Spec != nil && item.Spec.FetchRequest != nil {
-			fetchRequestID, err = s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.EventAPIFetchRequestReference, eventAPIDefID)
+			_, err = s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.EventAPIFetchRequestReference, eventAPIDefID)
 			if err != nil {
 				return err
 			}
 		}
 
-		eventAPIs = append(eventAPIs, item.ToEventAPIDefinition(eventAPIDefID, applicationID, fetchRequestID))
+		eventAPIs = append(eventAPIs, item.ToEventAPIDefinition(eventAPIDefID, applicationID))
 	}
 	err = s.eventAPIRepo.CreateMany(eventAPIs)
 	if err != nil {

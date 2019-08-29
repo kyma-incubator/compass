@@ -25,7 +25,6 @@ type EventAPISpec struct {
 	Data           *string
 	Type           EventAPISpecType
 	Format         SpecFormat
-	FetchRequestID *string
 }
 
 type EventAPIDefinitionPage struct {
@@ -51,7 +50,7 @@ type EventAPISpecInput struct {
 	FetchRequest  *FetchRequestInput
 }
 
-func (e *EventAPIDefinitionInput) ToEventAPIDefinition(id, appID string, fetchRequestID *string) *EventAPIDefinition {
+func (e *EventAPIDefinitionInput) ToEventAPIDefinition(id, appID string) *EventAPIDefinition {
 	if e == nil {
 		return nil
 	}
@@ -62,12 +61,12 @@ func (e *EventAPIDefinitionInput) ToEventAPIDefinition(id, appID string, fetchRe
 		Name:          e.Name,
 		Description:   e.Description,
 		Group:         e.Group,
-		Spec:          e.Spec.ToEventAPISpec(fetchRequestID),
+		Spec:          e.Spec.ToEventAPISpec(),
 		Version:       e.Version.ToVersion(),
 	}
 }
 
-func (e *EventAPISpecInput) ToEventAPISpec(fetchRequestID *string) *EventAPISpec {
+func (e *EventAPISpecInput) ToEventAPISpec() *EventAPISpec {
 	if e == nil {
 		return nil
 	}
@@ -76,6 +75,5 @@ func (e *EventAPISpecInput) ToEventAPISpec(fetchRequestID *string) *EventAPISpec
 		Data:           e.Data,
 		Type:           e.EventSpecType,
 		Format:         e.Format,
-		FetchRequestID: fetchRequestID,
 	}
 }

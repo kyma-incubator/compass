@@ -31,7 +31,7 @@ type EventAPIRepository interface {
 type FetchRequestRepository interface {
 	Create(ctx context.Context, item *model.FetchRequest) error
 	GetByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error)
-	Delete(ctx context.Context, tenant, id string) error
+	DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) error
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -75,14 +75,13 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Eve
 
 	id := s.uidService.Generate()
 
-	var fetchRequestID *string
 	if in.Spec != nil && in.Spec.FetchRequest != nil {
-		fetchRequestID, err = s.createFetchRequest(ctx, tnt, in.Spec.FetchRequest, id)
+		_, err = s.createFetchRequest(ctx, tnt, in.Spec.FetchRequest, id)
 		if err != nil {
 			return "", errors.Wrapf(err, "while creating FetchRequest for EventAPIDefinition %s", id)
 		}
 	}
-	eventAPI := in.ToEventAPIDefinition(id, applicationID, fetchRequestID)
+	eventAPI := in.ToEventAPIDefinition(id, applicationID)
 
 	err = s.eventAPIRepo.Create(eventAPI)
 	if err != nil {
@@ -103,22 +102,19 @@ func (s *service) Update(ctx context.Context, id string, in model.EventAPIDefini
 		return err
 	}
 
-	if eventAPI.Spec != nil && eventAPI.Spec.FetchRequestID != nil {
-		err := s.fetchRequestRepo.Delete(ctx, tnt, *eventAPI.Spec.FetchRequestID)
-		if err != nil {
-			return errors.Wrapf(err, "while deleting FetchRequest for EventAPIDefinition %s", id)
-		}
+	err = s.fetchRequestRepo.DeleteByReferenceObjectID(ctx, tnt, model.EventAPIFetchRequestReference, id)
+	if err != nil {
+		return errors.Wrapf(err, "while deleting FetchRequest for EventAPIDefinition %s", id)
 	}
 
-	var fetchRequestID *string
 	if in.Spec != nil && in.Spec.FetchRequest != nil {
-		fetchRequestID, err = s.createFetchRequest(ctx, tnt, in.Spec.FetchRequest, id)
+		_, err = s.createFetchRequest(ctx, tnt, in.Spec.FetchRequest, id)
 		if err != nil {
 			return errors.Wrapf(err, "while creating FetchRequest for EventAPIDefinition %s", id)
 		}
 	}
 
-	eventAPI = in.ToEventAPIDefinition(id, eventAPI.ApplicationID, fetchRequestID)
+	eventAPI = in.ToEventAPIDefinition(id, eventAPI.ApplicationID)
 
 	err = s.eventAPIRepo.Update(eventAPI)
 	if err != nil {

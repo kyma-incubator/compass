@@ -208,6 +208,56 @@ func TestRepository_Delete(t *testing.T) {
 	})
 }
 
+func TestRepository_DeleteByReferenceObjectID(t *testing.T) {
+	refID := "foo"
+	testCases := []struct {
+		Name          string
+		FieldName     string
+		ObjectType    model.FetchRequestReferenceObjectType
+		DocumentID    sql.NullString
+		APIDefID      sql.NullString
+		EventAPIDefID sql.NullString
+	}{
+		{Name: "Document", FieldName: "document_id", ObjectType: model.DocumentFetchRequestReference, DocumentID: sql.NullString{String: refID, Valid: true}},
+		{Name: "API", FieldName: "api_def_id", ObjectType: model.APIFetchRequestReference, APIDefID: sql.NullString{String: refID, Valid: true}},
+		{Name: "EventAPI", FieldName: "event_api_def_id", ObjectType: model.EventAPIFetchRequestReference, EventAPIDefID: sql.NullString{String: refID, Valid: true}},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(fmt.Sprintf("Success - %s", testCase.Name), func(t *testing.T) {
+			// GIVEN
+			db, dbMock := testdb.MockDatabase(t)
+			defer dbMock.AssertExpectations(t)
+
+			dbMock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("DELETE FROM public.fetch_requests WHERE tenant_id = $1 AND %s = $2", testCase.FieldName))).WithArgs(
+				givenTenant(), givenID()).WillReturnResult(sqlmock.NewResult(-1, 1))
+
+			ctx := persistence.SaveToContext(context.TODO(), db)
+			repo := fetchrequest.NewRepository(nil)
+			// WHEN
+			err := repo.DeleteByReferenceObjectID(ctx, givenTenant(), testCase.ObjectType, givenID())
+			// THEN
+			require.NoError(t, err)
+		})
+	}
+
+	t.Run("Error", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		dbMock.ExpectExec("DELETE FROM .*").WithArgs(
+			givenTenant(), givenID()).WillReturnError(givenError())
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		repo := fetchrequest.NewRepository(nil)
+		// WHEN
+		err := repo.DeleteByReferenceObjectID(ctx, givenTenant(), model.APIFetchRequestReference, givenID())
+		// THEN
+		require.EqualError(t, err, "while deleting from database: some error")
+	})
+}
+
 func givenID() string {
 	return "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 }

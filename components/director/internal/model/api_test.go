@@ -50,7 +50,7 @@ func TestAPIDefinitionInput_ToAPIDefinition(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToAPIDefinition(id, appID, nil)
+			result := testCase.Input.ToAPIDefinition(id, appID)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)
@@ -93,7 +93,7 @@ func TestAPIDefinitionInput_ToAPISpec(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToAPISpec(nil)
+			result := testCase.Input.ToAPISpec()
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

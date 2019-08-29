@@ -174,7 +174,6 @@ func (c *converter) FromEntity(entity Entity) (model.APIDefinition, error) {
 		DefaultAuth:   defaultAuth,
 		Description:   repo.StringPtrFromNullableString(entity.Description),
 		Group:         repo.StringPtrFromNullableString(entity.Group),
-		//TODO: add spec_fetch_request_ID when resolver will be implemented
 		Spec:    c.apiSpecFromEntity(entity.EntitySpec),
 		Version: vModel,
 	}, nil
@@ -206,7 +205,6 @@ func (c *converter) ToEntity(apiModel model.APIDefinition) (Entity, error) {
 		EntitySpec:  c.apiSpecToEntity(apiModel.Spec),
 		DefaultAuth: repo.NewNullableString(&defaultAuth),
 		Version:     versionEntity,
-		//TODO: add spec_fetch_request_ID when resolver will be implemented
 	}, nil
 }
 
