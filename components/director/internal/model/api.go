@@ -25,9 +25,9 @@ type APIDefinition struct {
 
 type APISpec struct {
 	// when fetch request specified, data will be automatically populated
-	Data           *string
-	Format         SpecFormat
-	Type           APISpecType
+	Data   *string
+	Format SpecFormat
+	Type   APISpecType
 }
 
 type APISpecType string
@@ -89,8 +89,8 @@ func (a *APISpecInput) ToAPISpec() *APISpec {
 	}
 
 	return &APISpec{
-		Data:           a.Data,
-		Format:         a.Format,
-		Type:           a.Type,
+		Data:   a.Data,
+		Format: a.Format,
+		Type:   a.Type,
 	}
 }

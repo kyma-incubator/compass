@@ -203,8 +203,8 @@ func TestService_Create(t *testing.T) {
 		ApplicationID: applicationID,
 		Name:          name,
 		TargetURL:     targetUrl,
-		Spec: &model.APISpec{},
-		Version: &model.Version{},
+		Spec:          &model.APISpec{},
+		Version:       &model.Version{},
 	}
 
 	ctx := context.TODO()
@@ -340,9 +340,9 @@ func TestService_Update(t *testing.T) {
 		Name:          "Bar",
 		ApplicationID: "id",
 		TargetURL:     "https://test-url-updated.com",
-		Spec: &model.APISpec{},
-		DefaultAuth: &model.Auth{},
-		Version:     &model.Version{},
+		Spec:          &model.APISpec{},
+		DefaultAuth:   &model.Auth{},
+		Version:       &model.Version{},
 	}
 
 	ctx := context.TODO()
@@ -461,8 +461,8 @@ func TestService_Delete(t *testing.T) {
 		Name:          "Bar",
 		ApplicationID: "id",
 		TargetURL:     "https://test-url-updated.com",
-		Spec: &model.APISpec{},
-		Version: &model.Version{},
+		Spec:          &model.APISpec{},
+		Version:       &model.Version{},
 	}
 
 	ctx := context.TODO()

@@ -17,9 +17,9 @@ import (
 )
 
 const (
-	apiDefID       = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
-	appID          = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-	tenantID       = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
+	apiDefID = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
+	appID    = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	tenantID = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
 )
 
 func fixModelAPIDefinition(id, appId, name, description string) *model.APIDefinition {
@@ -33,9 +33,9 @@ func fixModelAPIDefinition(id, appId, name, description string) *model.APIDefini
 
 func fixFullModelAPIDefinition(placeholder string) *model.APIDefinition {
 	spec := &model.APISpec{
-		Data:           strings.Ptr("spec_data_" + placeholder),
-		Format:         model.SpecFormatYaml,
-		Type:           model.APISpecTypeOpenAPI,
+		Data:   strings.Ptr("spec_data_" + placeholder),
+		Format: model.SpecFormatYaml,
+		Type:   model.APISpecTypeOpenAPI,
 	}
 
 	deprecated := false
@@ -259,9 +259,9 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 		Group:       repo.NewValidNullableString("group_" + placeholder),
 		TargetURL:   fmt.Sprintf("https://%s.com", placeholder),
 		EntitySpec: &api.EntitySpec{
-			SpecData:           repo.NewValidNullableString("spec_data_" + placeholder),
-			SpecFormat:         repo.NewValidNullableString(string(model.SpecFormatYaml)),
-			SpecType:           repo.NewValidNullableString(string(model.APISpecTypeOpenAPI)),
+			SpecData:   repo.NewValidNullableString("spec_data_" + placeholder),
+			SpecFormat: repo.NewValidNullableString(string(model.SpecFormatYaml)),
+			SpecType:   repo.NewValidNullableString(string(model.APISpecTypeOpenAPI)),
 		},
 		DefaultAuth: repo.NewValidNullableString(fixDefaultAuth()),
 		Version: &version.Version{

@@ -194,8 +194,8 @@ func TestService_Create(t *testing.T) {
 		ID:            id,
 		ApplicationID: applicationID,
 		Name:          name,
-		Spec: &model.EventAPISpec{},
-		Version: &model.Version{},
+		Spec:          &model.EventAPISpec{},
+		Version:       &model.Version{},
 	}
 
 	ctx := context.TODO()
@@ -328,8 +328,8 @@ func TestService_Update(t *testing.T) {
 	eventAPIDefinitionModel := &model.EventAPIDefinition{
 		Name:          "Bar",
 		ApplicationID: "id",
-		Spec: &model.EventAPISpec{},
-		Version: &model.Version{},
+		Spec:          &model.EventAPISpec{},
+		Version:       &model.Version{},
 	}
 
 	ctx := context.TODO()
@@ -447,8 +447,8 @@ func TestService_Delete(t *testing.T) {
 	eventAPIDefinitionModel := &model.EventAPIDefinition{
 		Name:          "Bar",
 		ApplicationID: "id",
-		Spec: &model.EventAPISpec{},
-		Version: &model.Version{},
+		Spec:          &model.EventAPISpec{},
+		Version:       &model.Version{},
 	}
 
 	ctx := context.TODO()

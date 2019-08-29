@@ -3,9 +3,10 @@ package eventapi_test
 import (
 	"context"
 	"errors"
-	"github.com/kyma-incubator/compass/components/director/internal/persistence/txtest"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/persistence/txtest"
 
 	"github.com/stretchr/testify/require"
 
@@ -33,18 +34,18 @@ func TestResolver_AddEventAPI(t *testing.T) {
 	modelAPIInput := fixModelEventAPIDefinitionInput()
 
 	testCases := []struct {
-		Name         string
-		PersistenceFn    func() *persistenceautomock.PersistenceTx
-		TransactionerFn  func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
-		ServiceFn    func() *automock.EventAPIService
-		AppServiceFn func() *automock.ApplicationService
-		ConverterFn  func() *automock.EventAPIConverter
-		ExpectedAPI  *graphql.EventAPIDefinition
-		ExpectedErr  error
+		Name            string
+		PersistenceFn   func() *persistenceautomock.PersistenceTx
+		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ServiceFn       func() *automock.EventAPIService
+		AppServiceFn    func() *automock.ApplicationService
+		ConverterFn     func() *automock.EventAPIConverter
+		ExpectedAPI     *graphql.EventAPIDefinition
+		ExpectedErr     error
 	}{
 		{
-			Name: "Success",
-			PersistenceFn: txtest.PersistenceContextThatExpectsCommit,
+			Name:            "Success",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
 			TransactionerFn: txtest.TransactionerThatSucceed,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
@@ -67,8 +68,8 @@ func TestResolver_AddEventAPI(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "Returns error when application not exist",
-			PersistenceFn: txtest.PersistenceContextThatDontExpectCommit,
+			Name:            "Returns error when application not exist",
+			PersistenceFn:   txtest.PersistenceContextThatDontExpectCommit,
 			TransactionerFn: txtest.TransactionerThatSucceed,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
@@ -88,8 +89,8 @@ func TestResolver_AddEventAPI(t *testing.T) {
 			ExpectedErr: errors.New("Cannot add EventAPI to not existing Application"),
 		},
 		{
-			Name: "Returns error when application existence check failed",
-			PersistenceFn: txtest.PersistenceContextThatDontExpectCommit,
+			Name:            "Returns error when application existence check failed",
+			PersistenceFn:   txtest.PersistenceContextThatDontExpectCommit,
 			TransactionerFn: txtest.TransactionerThatSucceed,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
@@ -109,8 +110,8 @@ func TestResolver_AddEventAPI(t *testing.T) {
 			ExpectedErr: testErr,
 		},
 		{
-			Name: "Returns error when EventAPI creation failed",
-			PersistenceFn: txtest.PersistenceContextThatDontExpectCommit,
+			Name:            "Returns error when EventAPI creation failed",
+			PersistenceFn:   txtest.PersistenceContextThatDontExpectCommit,
 			TransactionerFn: txtest.TransactionerThatSucceed,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
@@ -131,8 +132,8 @@ func TestResolver_AddEventAPI(t *testing.T) {
 			ExpectedErr: testErr,
 		},
 		{
-			Name: "Returns error when EventAPI retrieval failed",
-			PersistenceFn: txtest.PersistenceContextThatDontExpectCommit,
+			Name:            "Returns error when EventAPI retrieval failed",
+			PersistenceFn:   txtest.PersistenceContextThatDontExpectCommit,
 			TransactionerFn: txtest.TransactionerThatSucceed,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
@@ -282,8 +283,8 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 
 	testCases := []struct {
 		Name                  string
-		PersistenceFn    func() *persistenceautomock.PersistenceTx
-		TransactionerFn  func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		PersistenceFn         func() *persistenceautomock.PersistenceTx
+		TransactionerFn       func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
 		ServiceFn             func() *automock.EventAPIService
 		ConverterFn           func() *automock.EventAPIConverter
 		InputWebhookID        string
@@ -292,8 +293,8 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 		ExpectedErr           error
 	}{
 		{
-			Name: "Success",
-			PersistenceFn: txtest.PersistenceContextThatExpectsCommit,
+			Name:            "Success",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
 			TransactionerFn: txtest.TransactionerThatSucceed,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
@@ -313,8 +314,8 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 			ExpectedErr:           nil,
 		},
 		{
-			Name: "Returns error when EventAPI update failed",
-			PersistenceFn: txtest.PersistenceContextThatDontExpectCommit,
+			Name:            "Returns error when EventAPI update failed",
+			PersistenceFn:   txtest.PersistenceContextThatDontExpectCommit,
 			TransactionerFn: txtest.TransactionerThatSucceed,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
@@ -332,8 +333,8 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 			ExpectedErr:           testErr,
 		},
 		{
-			Name: "Returns error when EventAPI retrieval failed",
-			PersistenceFn: txtest.PersistenceContextThatDontExpectCommit,
+			Name:            "Returns error when EventAPI retrieval failed",
+			PersistenceFn:   txtest.PersistenceContextThatDontExpectCommit,
 			TransactionerFn: txtest.TransactionerThatSucceed,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}

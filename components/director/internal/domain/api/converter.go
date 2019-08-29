@@ -174,8 +174,8 @@ func (c *converter) FromEntity(entity Entity) (model.APIDefinition, error) {
 		DefaultAuth:   defaultAuth,
 		Description:   repo.StringPtrFromNullableString(entity.Description),
 		Group:         repo.StringPtrFromNullableString(entity.Group),
-		Spec:    c.apiSpecFromEntity(entity.EntitySpec),
-		Version: vModel,
+		Spec:          c.apiSpecFromEntity(entity.EntitySpec),
+		Version:       vModel,
 	}, nil
 }
 

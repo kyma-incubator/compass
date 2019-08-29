@@ -22,9 +22,9 @@ const (
 )
 
 type EventAPISpec struct {
-	Data           *string
-	Type           EventAPISpecType
-	Format         SpecFormat
+	Data   *string
+	Type   EventAPISpecType
+	Format SpecFormat
 }
 
 type EventAPIDefinitionPage struct {
@@ -72,8 +72,8 @@ func (e *EventAPISpecInput) ToEventAPISpec() *EventAPISpec {
 	}
 
 	return &EventAPISpec{
-		Data:           e.Data,
-		Type:           e.EventSpecType,
-		Format:         e.Format,
+		Data:   e.Data,
+		Type:   e.EventSpecType,
+		Format: e.Format,
 	}
 }

@@ -34,9 +34,9 @@ func fixGQLEventAPIDefinition(id, placeholder string) *graphql.EventAPIDefinitio
 
 func fixFullModelEventAPIDefinition(id, placeholder string) model.EventAPIDefinition {
 	spec := &model.EventAPISpec{
-		Data:           strings.Ptr("data"),
-		Format:         model.SpecFormatJSON,
-		Type:           model.EventAPISpecTypeAsyncAPI,
+		Data:   strings.Ptr("data"),
+		Format: model.SpecFormatJSON,
+		Type:   model.EventAPISpecTypeAsyncAPI,
 	}
 	v := fixVersionModel()
 
@@ -153,9 +153,9 @@ func fixFullEventAPIDef(id, placeholder string) eventapi.Entity {
 		GroupName:   repo.NewValidNullableString("group_" + placeholder),
 		Description: repo.NewValidNullableString("desc_" + placeholder),
 		EntitySpec: &eventapi.EntitySpec{
-			SpecData:           repo.NewValidNullableString("data"),
-			SpecType:           repo.NewValidNullableString(string(model.EventAPISpecTypeAsyncAPI)),
-			SpecFormat:         repo.NewValidNullableString(string(model.SpecFormatJSON)),
+			SpecData:   repo.NewValidNullableString("data"),
+			SpecType:   repo.NewValidNullableString(string(model.EventAPISpecTypeAsyncAPI)),
+			SpecFormat: repo.NewValidNullableString(string(model.SpecFormatJSON)),
 		},
 		Version: &v,
 	}
