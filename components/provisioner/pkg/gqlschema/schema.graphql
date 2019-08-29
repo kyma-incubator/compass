@@ -65,6 +65,7 @@ enum OperationType {
   Provisioning
   Upgrade
   Deprovisioning
+  RuntimeReconnecting
 }
 
 type Error {
