@@ -28,6 +28,13 @@ func NewNullableBool(boolean *bool) sql.NullBool {
 	return sqlBool
 }
 
+func NewValidNullableBool(boolean bool) sql.NullBool {
+	return sql.NullBool{
+		Valid: true,
+		Bool:  boolean,
+	}
+}
+
 func StringPtrFromNullableString(sqlString sql.NullString) *string {
 	if sqlString.Valid {
 		return &sqlString.String
