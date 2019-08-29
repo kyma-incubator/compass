@@ -357,12 +357,11 @@ func TestApiSpecDataConversionNilStaysNil(t *testing.T) {
 
 	converter := api.NewConverter(mockAuthConv, mockFrConv, mockVersionConv)
 	// WHEN & THEN
-	fetchReqID := "fr_id"
 	convertedInputModel := converter.InputFromGraphQL(&graphql.APIDefinitionInput{Spec: &graphql.APISpecInput{}})
 	require.NotNil(t, convertedInputModel)
 	require.NotNil(t, convertedInputModel.Spec)
 	require.Nil(t, convertedInputModel.Spec.Data)
-	convertedAPIDef := convertedInputModel.ToAPIDefinition("id", "app_id", &fetchReqID)
+	convertedAPIDef := convertedInputModel.ToAPIDefinition("id", "app_id", strings.Ptr("fr_id"))
 	require.NotNil(t, convertedAPIDef)
 	convertedGraphqlAPIDef := converter.ToGraphQL(convertedAPIDef)
 	require.NotNil(t, convertedGraphqlAPIDef)
@@ -370,7 +369,7 @@ func TestApiSpecDataConversionNilStaysNil(t *testing.T) {
 }
 
 func TestEntityConverter_ToEntity(t *testing.T) {
-	t.Run("success all nullable properites filled", func(t *testing.T) {
+	t.Run("success all nullable properties filled", func(t *testing.T) {
 		//GIVEN
 		apiModel := *fixDetailedModelAPIDefinition(uuid.New().String(), "name", "description", "group")
 		versionConv := version.NewConverter()
@@ -381,7 +380,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		require.NoError(t, err)
 		assertApiDefinition(t, apiModel, entity)
 	})
-	t.Run("success all nullable properites empty", func(t *testing.T) {
+	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
 		apiModel := *fixModelAPIDefinition("id", "appid", "name", "desc")
 		versionConv := version.NewConverter()

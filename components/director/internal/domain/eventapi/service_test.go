@@ -613,7 +613,6 @@ func TestService_GetFetchRequest(t *testing.T) {
 		Name                 string
 		RepositoryFn         func() *automock.EventAPIRepository
 		FetchRequestRepoFn   func() *automock.FetchRequestRepository
-		InputEventAPIDefID   string
 		ExpectedFetchRequest *model.FetchRequest
 		ExpectedErrMessage   string
 	}{
@@ -629,7 +628,6 @@ func TestService_GetFetchRequest(t *testing.T) {
 				repo.On("GetByReferenceObjectID", ctx, tnt, model.EventAPIFetchRequestReference, refID).Return(fetchRequestModel, nil).Once()
 				return repo
 			},
-			InputEventAPIDefID:   refID,
 			ExpectedFetchRequest: fetchRequestModel,
 			ExpectedErrMessage:   "",
 		},
@@ -645,7 +643,6 @@ func TestService_GetFetchRequest(t *testing.T) {
 				repo.On("GetByReferenceObjectID", ctx, tnt, model.EventAPIFetchRequestReference, refID).Return(nil, repopkg.NewNotFoundError()).Once()
 				return repo
 			},
-			InputEventAPIDefID:   refID,
 			ExpectedFetchRequest: nil,
 			ExpectedErrMessage:   "",
 		},
@@ -662,7 +659,6 @@ func TestService_GetFetchRequest(t *testing.T) {
 				repo.On("GetByReferenceObjectID", ctx, tnt, model.EventAPIFetchRequestReference, refID).Return(nil, testErr).Once()
 				return repo
 			},
-			InputEventAPIDefID:   refID,
 			ExpectedFetchRequest: nil,
 			ExpectedErrMessage:   testErr.Error(),
 		},
@@ -670,7 +666,7 @@ func TestService_GetFetchRequest(t *testing.T) {
 			Name: "Error - EventAPI doesn't exist",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("Exists", ctx, tnt, refID).Return(false, testErr).Once()
+				repo.On("Exists", ctx, tnt, refID).Return(false, nil).Once()
 
 				return repo
 			},
@@ -678,8 +674,8 @@ func TestService_GetFetchRequest(t *testing.T) {
 				repo := &automock.FetchRequestRepository{}
 				return repo
 			},
-			InputEventAPIDefID: refID,
-			ExpectedErrMessage: testErr.Error(),
+			ExpectedErrMessage:   "EventAPI Definition with ID doc-id doesn't exist",
+			ExpectedFetchRequest: nil,
 		},
 	}
 
@@ -690,7 +686,7 @@ func TestService_GetFetchRequest(t *testing.T) {
 			svc := eventapi.NewService(repo, fetchRequestRepo, nil)
 
 			// when
-			l, err := svc.GetFetchRequest(ctx, testCase.InputEventAPIDefID)
+			l, err := svc.GetFetchRequest(ctx, refID)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {

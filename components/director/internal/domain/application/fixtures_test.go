@@ -326,3 +326,20 @@ func fixGQLEventAPIDefinition(id, appId, name, description string, group string)
 		Group:         &group,
 	}
 }
+
+func fixFetchRequest(url string, objectType model.FetchRequestReferenceObjectType, timestamp time.Time) *model.FetchRequest {
+	return &model.FetchRequest{
+		ID:     "foo",
+		Tenant: "tenant",
+		URL:    url,
+		Auth:   nil,
+		Mode:   "SINGLE",
+		Filter: nil,
+		Status: &model.FetchRequestStatus{
+			Condition: model.FetchRequestStatusConditionInitial,
+			Timestamp: timestamp,
+		},
+		ObjectType: objectType,
+		ObjectID:   "foo",
+	}
+}

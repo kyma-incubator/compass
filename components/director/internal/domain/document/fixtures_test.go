@@ -75,7 +75,7 @@ func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchReque
 		Tenant: "tenant",
 		URL:    url,
 		Auth:   nil,
-		Mode:   "SINGLE",
+		Mode:   model.FetchModeSingle,
 		Filter: nil,
 		Status: &model.FetchRequestStatus{
 			Condition: model.FetchRequestStatusConditionInitial,

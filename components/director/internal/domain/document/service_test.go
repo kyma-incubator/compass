@@ -377,7 +377,6 @@ func TestService_GetFetchRequest(t *testing.T) {
 		Name                 string
 		RepositoryFn         func() *automock.DocumentRepository
 		FetchRequestRepoFn   func() *automock.FetchRequestRepository
-		InputDocumentID      string
 		ExpectedFetchRequest *model.FetchRequest
 		ExpectedErrMessage   string
 	}{
@@ -393,7 +392,6 @@ func TestService_GetFetchRequest(t *testing.T) {
 				repo.On("GetByReferenceObjectID", ctx, tnt, model.DocumentFetchRequestReference, refID).Return(fetchRequestModel, nil).Once()
 				return repo
 			},
-			InputDocumentID:      refID,
 			ExpectedFetchRequest: fetchRequestModel,
 			ExpectedErrMessage:   "",
 		},
@@ -409,7 +407,6 @@ func TestService_GetFetchRequest(t *testing.T) {
 				repo.On("GetByReferenceObjectID", ctx, tnt, model.DocumentFetchRequestReference, refID).Return(nil, repopkg.NewNotFoundError()).Once()
 				return repo
 			},
-			InputDocumentID:      refID,
 			ExpectedFetchRequest: nil,
 			ExpectedErrMessage:   "",
 		},
@@ -426,7 +423,6 @@ func TestService_GetFetchRequest(t *testing.T) {
 				repo.On("GetByReferenceObjectID", ctx, tnt, model.DocumentFetchRequestReference, refID).Return(nil, testErr).Once()
 				return repo
 			},
-			InputDocumentID:      refID,
 			ExpectedFetchRequest: nil,
 			ExpectedErrMessage:   testErr.Error(),
 		},
@@ -434,7 +430,7 @@ func TestService_GetFetchRequest(t *testing.T) {
 			Name: "Error - Document doesn't exist",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("Exists", ctx, tnt, refID).Return(false, testErr).Once()
+				repo.On("Exists", ctx, tnt, refID).Return(false, nil).Once()
 
 				return repo
 			},
@@ -442,8 +438,8 @@ func TestService_GetFetchRequest(t *testing.T) {
 				repo := &automock.FetchRequestRepository{}
 				return repo
 			},
-			InputDocumentID:    refID,
-			ExpectedErrMessage: testErr.Error(),
+			ExpectedErrMessage:   "Document with ID doc-id doesn't exist",
+			ExpectedFetchRequest: nil,
 		},
 	}
 
@@ -454,7 +450,7 @@ func TestService_GetFetchRequest(t *testing.T) {
 			svc := document.NewService(repo, fetchRequestRepo, nil)
 
 			// when
-			l, err := svc.GetFetchRequest(ctx, testCase.InputDocumentID)
+			l, err := svc.GetFetchRequest(ctx, refID)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {

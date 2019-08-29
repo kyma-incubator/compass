@@ -1,7 +1,7 @@
 package document
 
 import (
-	"database/sql"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -87,29 +87,9 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.DocumentInput) []*mod
 }
 
 func (c *converter) ToEntity(in model.Document) (Entity, error) {
-	var nullKind sql.NullString
-	if in.Kind != nil && len(*in.Kind) > 0 {
-		nullKind = sql.NullString{
-			String: *in.Kind,
-			Valid:  true,
-		}
-	}
-
-	var nullData sql.NullString
-	if in.Data != nil && len(*in.Data) > 0 {
-		nullData = sql.NullString{
-			String: *in.Data,
-			Valid:  true,
-		}
-	}
-
-	var fetchRequestID sql.NullString
-	if in.FetchRequestID != nil {
-		fetchRequestID = sql.NullString{
-			String: *in.FetchRequestID,
-			Valid:  true,
-		}
-	}
+	kind := repo.NewNullableString(in.Kind)
+	data := repo.NewNullableString(in.Data)
+	fetchRequestID := repo.NewNullableString(in.FetchRequestID)
 
 	out := Entity{
 		ID:             in.ID,
@@ -119,8 +99,8 @@ func (c *converter) ToEntity(in model.Document) (Entity, error) {
 		DisplayName:    in.DisplayName,
 		Description:    in.Description,
 		Format:         string(in.Format),
-		Kind:           nullKind,
-		Data:           nullData,
+		Kind:           kind,
+		Data:           data,
 		FetchRequestID: fetchRequestID,
 	}
 
@@ -128,19 +108,9 @@ func (c *converter) ToEntity(in model.Document) (Entity, error) {
 }
 
 func (c *converter) FromEntity(in Entity) (model.Document, error) {
-	var kindPtr *string
-	var dataPtr *string
-	if in.Kind.Valid {
-		kindPtr = &in.Kind.String
-	}
-	if in.Data.Valid {
-		dataPtr = &in.Data.String
-	}
-
-	var fetchRequestID *string
-	if in.FetchRequestID.Valid {
-		fetchRequestID = &in.FetchRequestID.String
-	}
+	kind := repo.StringPtrFromNullableString(in.Kind)
+	data := repo.StringPtrFromNullableString(in.Data)
+	fetchRequestID := repo.StringPtrFromNullableString(in.FetchRequestID)
 
 	out := model.Document{
 		ID:             in.ID,
@@ -150,8 +120,8 @@ func (c *converter) FromEntity(in Entity) (model.Document, error) {
 		DisplayName:    in.DisplayName,
 		Description:    in.Description,
 		Format:         model.DocumentFormat(in.Format),
-		Kind:           kindPtr,
-		Data:           dataPtr,
+		Kind:           kind,
+		Data:           data,
 		FetchRequestID: fetchRequestID,
 	}
 	return out, nil

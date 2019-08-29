@@ -228,9 +228,13 @@ func TestResolver_AddDocument(t *testing.T) {
 			if testCase.ExpectedErr == nil {
 				require.NoError(t, err)
 			} else {
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
 			}
 
+			// TODO: Uncomment when introducing Document repo
+			//persistTx.AssertExpectations(t)
+			//transact.AssertExpectations(t)
 			svc.AssertExpectations(t)
 			appSvc.AssertExpectations(t)
 			converter.AssertExpectations(t)
@@ -288,7 +292,6 @@ func TestResolver_DeleteDocument(t *testing.T) {
 			Name: "Returns error when document retrieval failed",
 			PersistenceFn: func() *persistenceautomock.PersistenceTx {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
 				return persistTx
 			},
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
@@ -314,7 +317,6 @@ func TestResolver_DeleteDocument(t *testing.T) {
 			Name: "Returns error when document deletion failed",
 			PersistenceFn: func() *persistenceautomock.PersistenceTx {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
 				return persistTx
 			},
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
@@ -357,6 +359,9 @@ func TestResolver_DeleteDocument(t *testing.T) {
 			assert.Equal(t, testCase.ExpectedDocument, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
+			// TODO: Uncomment when introducing Document repo
+			//persistTx.AssertExpectations(t)
+			//transact.AssertExpectations(t)
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)
 		})
@@ -412,7 +417,6 @@ func TestResolver_FetchRequest(t *testing.T) {
 			Name: "Doesn't exist",
 			PersistenceFn: func() *persistenceautomock.PersistenceTx {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
 				return persistTx
 			},
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
@@ -437,7 +441,6 @@ func TestResolver_FetchRequest(t *testing.T) {
 			Name: "Error",
 			PersistenceFn: func() *persistenceautomock.PersistenceTx {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
 				return persistTx
 			},
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
@@ -476,6 +479,8 @@ func TestResolver_FetchRequest(t *testing.T) {
 			assert.Equal(t, testCase.ExpectedResult, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
+			persistTx.AssertExpectations(t)
+			transact.AssertExpectations(t)
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)
 		})
