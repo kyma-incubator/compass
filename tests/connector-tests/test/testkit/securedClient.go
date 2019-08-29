@@ -4,10 +4,11 @@ import (
 	"context"
 	"crypto/rsa"
 	"crypto/tls"
+	"net/http"
+
 	schema "github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
-	"net/http"
 )
 
 //Currently unused. SecuredConnectorClient will be used in future test cases

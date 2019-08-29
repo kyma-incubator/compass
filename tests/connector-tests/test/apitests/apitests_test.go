@@ -1,9 +1,10 @@
 package apitests
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestTokens(t *testing.T) {

@@ -1,9 +1,10 @@
 package testkit
 
 import (
+	"log"
+
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
-	"log"
 )
 
 type TestConfig struct {
