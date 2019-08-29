@@ -1,15 +1,11 @@
 package document
 
 import (
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
-
-//go:generate mockery -name=FetchRequestConverter -output=automock -outpkg=automock -case=underscore
-type FetchRequestConverter interface {
-	ToGraphQL(in *model.FetchRequest) *graphql.FetchRequest
-	InputFromGraphQL(in *graphql.FetchRequestInput) *model.FetchRequestInput
-}
 
 type converter struct {
 	frConverter FetchRequestConverter
@@ -39,7 +35,6 @@ func (c *converter) ToGraphQL(in *model.Document) *graphql.Document {
 		Format:        graphql.DocumentFormat(in.Format),
 		Kind:          in.Kind,
 		Data:          clob,
-		FetchRequest:  c.frConverter.ToGraphQL(in.FetchRequest),
 	}
 }
 
@@ -89,4 +84,45 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.DocumentInput) []*mod
 	}
 
 	return inputs
+}
+
+func (c *converter) ToEntity(in model.Document) (Entity, error) {
+	kind := repo.NewNullableString(in.Kind)
+	data := repo.NewNullableString(in.Data)
+	fetchRequestID := repo.NewNullableString(in.FetchRequestID)
+
+	out := Entity{
+		ID:             in.ID,
+		AppID:          in.ApplicationID,
+		TenantID:       in.Tenant,
+		Title:          in.Title,
+		DisplayName:    in.DisplayName,
+		Description:    in.Description,
+		Format:         string(in.Format),
+		Kind:           kind,
+		Data:           data,
+		FetchRequestID: fetchRequestID,
+	}
+
+	return out, nil
+}
+
+func (c *converter) FromEntity(in Entity) (model.Document, error) {
+	kind := repo.StringPtrFromNullableString(in.Kind)
+	data := repo.StringPtrFromNullableString(in.Data)
+	fetchRequestID := repo.StringPtrFromNullableString(in.FetchRequestID)
+
+	out := model.Document{
+		ID:             in.ID,
+		ApplicationID:  in.AppID,
+		Tenant:         in.TenantID,
+		Title:          in.Title,
+		DisplayName:    in.DisplayName,
+		Description:    in.Description,
+		Format:         model.DocumentFormat(in.Format),
+		Kind:           kind,
+		Data:           data,
+		FetchRequestID: fetchRequestID,
+	}
+	return out, nil
 }

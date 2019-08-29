@@ -61,5 +61,5 @@ func ConvertOffsetLimitAndOrderedColumnToSQL(pageSize, offset int, orderedColumn
 		return "", errors.New("offset cannot be smaller than 0")
 	}
 
-	return fmt.Sprintf(` ORDER BY "%s" LIMIT %d OFFSET %d`, orderedColumn, pageSize, offset), nil
+	return fmt.Sprintf(` ORDER BY %s LIMIT %d OFFSET %d`, orderedColumn, pageSize, offset), nil
 }

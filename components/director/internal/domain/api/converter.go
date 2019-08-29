@@ -1,8 +1,17 @@
 package api
 
 import (
+	"database/sql"
+	"encoding/json"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/pkg/errors"
 )
 
 //go:generate mockery -name=AuthConverter -output=automock -outpkg=automock -case=underscore
@@ -11,16 +20,12 @@ type AuthConverter interface {
 	InputFromGraphQL(in *graphql.AuthInput) *model.AuthInput
 }
 
-//go:generate mockery -name=FetchRequestConverter -output=automock -outpkg=automock -case=underscore
-type FetchRequestConverter interface {
-	ToGraphQL(in *model.FetchRequest) *graphql.FetchRequest
-	InputFromGraphQL(in *graphql.FetchRequestInput) *model.FetchRequestInput
-}
-
 //go:generate mockery -name=VersionConverter -output=automock -outpkg=automock -case=underscore
 type VersionConverter interface {
 	ToGraphQL(in *model.Version) *graphql.Version
 	InputFromGraphQL(in *graphql.VersionInput) *model.VersionInput
+	FromEntity(version version.Version) (model.Version, error)
+	ToEntity(version model.Version) (version.Version, error)
 }
 
 type converter struct {
@@ -43,7 +48,7 @@ func (c *converter) ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition {
 		ApplicationID: in.ApplicationID,
 		Name:          in.Name,
 		Description:   in.Description,
-		Spec:          c.apiSpecToGraphQL(in.Spec),
+		Spec:          c.apiSpecToGraphQL(in.ID, in.Spec),
 		TargetURL:     in.TargetURL,
 		Group:         in.Group,
 		Auths:         c.runtimeAuthArrToGraphQL(in.Auths),
@@ -90,7 +95,7 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) *model.APID
 	}
 }
 
-func (c *converter) apiSpecToGraphQL(in *model.APISpec) *graphql.APISpec {
+func (c *converter) apiSpecToGraphQL(definitionID string, in *model.APISpec) *graphql.APISpec {
 	if in == nil {
 		return nil
 	}
@@ -105,7 +110,7 @@ func (c *converter) apiSpecToGraphQL(in *model.APISpec) *graphql.APISpec {
 		Data:         data,
 		Type:         graphql.APISpecType(in.Type),
 		Format:       graphql.SpecFormat(in.Format),
-		FetchRequest: c.fr.ToGraphQL(in.FetchRequest),
+		DefinitionID: definitionID,
 	}
 }
 
@@ -143,4 +148,124 @@ func (c *converter) runtimeAuthArrToGraphQL(in []*model.RuntimeAuth) []*graphql.
 	}
 
 	return auths
+}
+
+func (c *converter) FromEntity(entity Entity) (model.APIDefinition, error) {
+	defaultAuth, err := unmarshallDefaultAuth(entity.DefaultAuth)
+	if err != nil {
+		return model.APIDefinition{}, errors.Wrap(err, "while converting ApiDefinition")
+	}
+
+	var vModel *model.Version
+	if entity.Version != nil {
+		v, err := c.version.FromEntity(*entity.Version)
+		if err != nil {
+			return model.APIDefinition{}, err
+		}
+		vModel = &v
+	}
+
+	return model.APIDefinition{
+		ID:            entity.ID,
+		ApplicationID: entity.AppID,
+		Name:          entity.Name,
+		TargetURL:     entity.TargetURL,
+		Tenant:        entity.TenantID,
+		DefaultAuth:   defaultAuth,
+		Description:   repo.StringPtrFromNullableString(entity.Description),
+		Group:         repo.StringPtrFromNullableString(entity.Group),
+		//TODO: add spec_fetch_request_ID when resolver will be implemented
+		Spec:    c.apiSpecFromEntity(entity.EntitySpec),
+		Version: vModel,
+	}, nil
+}
+
+func (c *converter) ToEntity(apiModel model.APIDefinition) (Entity, error) {
+	defaultAuth, err := marshallDefaultAuth(apiModel.DefaultAuth)
+	if err != nil {
+		return Entity{}, errors.Wrap(err, "while converting ApiDefinition")
+	}
+
+	var versionEntity *version.Version
+	if apiModel.Version != nil {
+		tmp, err := c.version.ToEntity(*apiModel.Version)
+		if err != nil {
+			return Entity{}, errors.Wrap(err, "while converting version")
+		}
+		versionEntity = &tmp
+	}
+
+	return Entity{
+		ID:          apiModel.ID,
+		TenantID:    apiModel.Tenant,
+		AppID:       apiModel.ApplicationID,
+		Name:        apiModel.Name,
+		Description: repo.NewNullableString(apiModel.Description),
+		Group:       repo.NewNullableString(apiModel.Group),
+		TargetURL:   apiModel.TargetURL,
+		EntitySpec:  c.apiSpecToEntity(apiModel.Spec),
+		DefaultAuth: repo.NewNullableString(&defaultAuth),
+		Version:     versionEntity,
+		//TODO: add spec_fetch_request_ID when resolver will be implemented
+	}, nil
+}
+
+func (c *converter) apiSpecToEntity(spec *model.APISpec) *EntitySpec {
+	var apiSpecEnt *EntitySpec
+	if spec != nil {
+		tmp := EntitySpec{
+			SpecFormat: repo.NewNullableString(strings.Ptr(string(spec.Format))),
+			SpecType:   repo.NewNullableString(strings.Ptr(string(spec.Type))),
+			SpecData:   repo.NewNullableString(spec.Data),
+		}
+		apiSpecEnt = &tmp
+	}
+
+	return apiSpecEnt
+}
+
+func (c *converter) apiSpecFromEntity(specEnt *EntitySpec) *model.APISpec {
+	var apiSpec *model.APISpec
+
+	if specEnt != nil {
+		tmp := model.APISpec{}
+		specFormat := repo.StringPtrFromNullableString(specEnt.SpecFormat)
+		if specFormat != nil {
+			tmp.Format = model.SpecFormat(*specFormat)
+		}
+
+		specType := repo.StringPtrFromNullableString(specEnt.SpecType)
+		if specFormat != nil {
+			tmp.Type = model.APISpecType(*specType)
+		}
+		tmp.Data = repo.StringPtrFromNullableString(specEnt.SpecData)
+		apiSpec = &tmp
+	}
+
+	return apiSpec
+}
+
+func unmarshallDefaultAuth(defaultAuthSql sql.NullString) (*model.Auth, error) {
+	var defaultAuth *model.Auth
+	if defaultAuthSql.Valid && defaultAuthSql.String != "" {
+		defaultAuth = &model.Auth{}
+		err := json.Unmarshal([]byte(defaultAuthSql.String), defaultAuth)
+		if err != nil {
+			return nil, errors.Wrap(err, "while unmarshalling default auth")
+		}
+	}
+
+	return defaultAuth, nil
+}
+
+func marshallDefaultAuth(defaultAuth *model.Auth) (string, error) {
+	marshaledAuth := ""
+	if defaultAuth != nil {
+		output, err := json.Marshal(defaultAuth)
+		if err != nil {
+			return "", errors.Wrap(err, "while marshaling default auth")
+		}
+		marshaledAuth = string(output)
+	}
+	return marshaledAuth, nil
 }

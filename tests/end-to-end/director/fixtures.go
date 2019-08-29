@@ -8,12 +8,7 @@ import (
 
 func fixBasicAuth() *graphql.AuthInput {
 	return &graphql.AuthInput{
-		Credential: &graphql.CredentialDataInput{
-			Basic: &graphql.BasicCredentialDataInput{
-				Username: "admin",
-				Password: "secret",
-			},
-		},
+		Credential: fixBasicCredential(),
 		AdditionalHeaders: &graphql.HttpHeaders{
 			"headerA": []string{"ha1", "ha2"},
 			"headerB": []string{"hb1", "hb2"},
@@ -27,14 +22,25 @@ func fixBasicAuth() *graphql.AuthInput {
 
 func fixOauthAuth() *graphql.AuthInput {
 	return &graphql.AuthInput{
-		Credential: &graphql.CredentialDataInput{
-			Oauth: &graphql.OAuthCredentialDataInput{
-				URL:          "http://oauth/token",
-				ClientID:     "clientID",
-				ClientSecret: "clientSecret",
-			},
-		},
+		Credential: fixOAuthCredential(),
 	}
+}
+
+func fixBasicCredential() *graphql.CredentialDataInput {
+	return &graphql.CredentialDataInput{
+		Basic: &graphql.BasicCredentialDataInput{
+			Username: "admin",
+			Password: "secret",
+		}}
+}
+
+func fixOAuthCredential() *graphql.CredentialDataInput {
+	return &graphql.CredentialDataInput{
+		Oauth: &graphql.OAuthCredentialDataInput{
+			URL:          "url.net",
+			ClientSecret: "grazynasecret",
+			ClientID:     "clientid",
+		}}
 }
 
 func fixDepracatedVersion1() *graphql.VersionInput {

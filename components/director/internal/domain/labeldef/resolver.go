@@ -76,6 +76,7 @@ func (r *Resolver) LabelDefinitions(ctx context.Context) ([]*graphql.LabelDefini
 	if err != nil {
 		return nil, err
 	}
+
 	tx, err := r.transactioner.Begin()
 	if err != nil {
 		return nil, errors.Wrap(err, "while starting transaction")

@@ -1,7 +1,9 @@
 package document
 
 import (
-	"errors"
+	"context"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -16,13 +18,24 @@ func NewRepository() *inMemoryRepository {
 }
 
 func (r *inMemoryRepository) GetByID(id string) (*model.Document, error) {
-	document := r.store[id]
+	item := r.store[id]
 
-	if document == nil {
+	if item == nil { // TODO: Temporary because tenant is not populated
+		//if item == nil || item.Tenant != tenant {
 		return nil, errors.New("document not found")
 	}
 
-	return document, nil
+	return item, nil
+}
+
+func (r *inMemoryRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
+	item := r.store[id]
+
+	if item == nil || item.Tenant != tenant {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func (r *inMemoryRepository) ListAllByApplicationID(applicationID string) ([]*model.Document, error) {

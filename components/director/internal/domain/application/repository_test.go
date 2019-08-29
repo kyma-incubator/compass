@@ -6,9 +6,10 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
-	"github.com/jmoiron/sqlx"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -54,7 +55,7 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			sqlxDB, sqlMock := mockDatabase(t)
+			sqlxDB, sqlMock := testdb.MockDatabase(t)
 			if testCase.ExpectedApplicationRows != nil {
 				sqlMock.ExpectQuery(applicationScenarioQuery).
 					WithArgs().
@@ -78,13 +79,4 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 			assert.NoError(t, sqlMock.ExpectationsWereMet())
 		})
 	}
-}
-
-func mockDatabase(t *testing.T) (*sqlx.DB, sqlmock.Sqlmock) {
-	sqlDB, sqlMock, err := sqlmock.New()
-	require.NoError(t, err)
-
-	sqlxDB := sqlx.NewDb(sqlDB, "sqlmock")
-
-	return sqlxDB, sqlMock
 }

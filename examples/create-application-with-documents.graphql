@@ -2,7 +2,8 @@
 mutation {
   result: createApplication(
     in: {
-      name: "wordpress"
+      name: "test-create-application-with-documents"
+      labels: { scenarios: ["DEFAULT"] }
       documents: [
         {
           title: "Readme"

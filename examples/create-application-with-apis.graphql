@@ -3,6 +3,7 @@ mutation {
   result: createApplication(
     in: {
       name: "wordpress"
+      labels: { scenarios: ["DEFAULT"] }
       apis: [
         {
           name: "comments/v1"
@@ -46,6 +47,21 @@ mutation {
               }
               mode: PACKAGE
               filter: "odata.json"
+            }
+          }
+          defaultAuth: {
+            credential: { basic: { username: "admin", password: "secret" } }
+            requestAuth: {
+              csrf: {
+                tokenEndpointURL: "token-URL"
+                credential: {
+                  oauth: {
+                    clientId: "clientid"
+                    clientSecret: "grazynasecret"
+                    url: "url.net"
+                  }
+                }
+              }
             }
           }
         }

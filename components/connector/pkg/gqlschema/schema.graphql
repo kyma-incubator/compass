@@ -1,0 +1,47 @@
+# Token
+type Token {
+    token: String! # eg.: "1edfc34g"
+}
+
+# CertificationResult
+type CertificationResult {
+    certificateChain: String!
+    caCertificate: String!
+    clientCertificate: String!
+}
+
+# ManagementPlaneInfo
+type ManagementPlaneInfo {
+    directorURL: String! # eg.: "https://director.cluster.kyma.cx/graphql"
+}
+
+type Configuration {
+    token: Token
+    certificateSigningRequestInfo: CertificateSigningRequestInfo
+    managementPlaneInfo: ManagementPlaneInfo
+}
+
+# CSRInfo
+type CertificateSigningRequestInfo {
+    subject: String! # eg.: "OU=Test,O=Test,L=Blacksburg,ST=Virginia,C=US,CN={ID}"
+    keyAlgorithm: String! # eg.: rsa2048
+}
+
+type Query {
+    # Client-Certificates
+
+    """returns configuration information like subject that should be placed in the signing request or Director URL"""
+    configuration: Configuration!
+}
+
+type Mutation {
+    # Tokens
+    generateApplicationToken(appID: ID!): Token!
+    generateRuntimeToken(runtimeID: ID!): Token!
+
+    # Client-Certificates
+    signCertificateSigningRequest(csr: String!): CertificationResult!
+
+    """revokes certificate with which the request was issued"""
+    revokeCertificate: Boolean!
+}

@@ -433,11 +433,22 @@ func (r *Resolver) Documents(ctx context.Context, obj *graphql.Application, firs
 
 // TODO: Proper error handling
 func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*graphql.Webhook, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	webhooks, err := r.webhookSvc.List(ctx, obj.ID)
 	if err != nil {
 		return nil, err
 	}
 
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
 	gqlWebhooks := r.webhookConverter.MultipleToGraphQL(webhooks)
 
 	return gqlWebhooks, nil

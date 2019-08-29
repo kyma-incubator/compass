@@ -1,22 +1,21 @@
 package model
 
 import (
-	"time"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
 type Document struct {
 	ApplicationID string
 	ID            string
+	Tenant        string
 	Title         string
 	DisplayName   string
 	Description   string
 	Format        DocumentFormat
 	// for example Service Class, API etc
-	Kind         *string
-	Data         *string
-	FetchRequest *FetchRequest
+	Kind           *string
+	Data           *string
+	FetchRequestID *string
 }
 
 type DocumentInput struct {
@@ -41,20 +40,21 @@ type DocumentPage struct {
 	TotalCount int
 }
 
-func (d *DocumentInput) ToDocument(id, applicationID string) *Document {
+func (d *DocumentInput) ToDocument(id, tenant, applicationID string, fetchRequestID *string) *Document {
 	if d == nil {
 		return nil
 	}
 
 	return &Document{
-		ApplicationID: applicationID,
-		ID:            id,
-		Title:         d.Title,
-		DisplayName:   d.DisplayName,
-		Description:   d.Description,
-		Format:        d.Format,
-		Kind:          d.Kind,
-		Data:          d.Data,
-		FetchRequest:  d.FetchRequest.ToFetchRequest(time.Now()),
+		ApplicationID:  applicationID,
+		ID:             id,
+		Tenant:         tenant,
+		Title:          d.Title,
+		DisplayName:    d.DisplayName,
+		Description:    d.Description,
+		Format:         d.Format,
+		Kind:           d.Kind,
+		Data:           d.Data,
+		FetchRequestID: fetchRequestID,
 	}
 }

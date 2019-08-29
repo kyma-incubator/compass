@@ -2,7 +2,7 @@
 
 package automock
 
-import labelfilter "github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+import context "context"
 import mock "github.com/stretchr/testify/mock"
 import model "github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -67,6 +67,27 @@ func (_m *APIRepository) DeleteAllByApplicationID(id string) error {
 	return r0
 }
 
+// Exists provides a mock function with given fields: ctx, tenant, id
+func (_m *APIRepository) Exists(ctx context.Context, tenant string, id string) (bool, error) {
+	ret := _m.Called(ctx, tenant, id)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
+		r0 = rf(ctx, tenant, id)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenant, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetByID provides a mock function with given fields: id
 func (_m *APIRepository) GetByID(id string) (*model.APIDefinition, error) {
 	ret := _m.Called(id)
@@ -83,29 +104,6 @@ func (_m *APIRepository) GetByID(id string) (*model.APIDefinition, error) {
 	var r1 error
 	if rf, ok := ret.Get(1).(func(string) error); ok {
 		r1 = rf(id)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// List provides a mock function with given fields: filter, pageSize, cursor
-func (_m *APIRepository) List(filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.APIDefinitionPage, error) {
-	ret := _m.Called(filter, pageSize, cursor)
-
-	var r0 *model.APIDefinitionPage
-	if rf, ok := ret.Get(0).(func([]*labelfilter.LabelFilter, *int, *string) *model.APIDefinitionPage); ok {
-		r0 = rf(filter, pageSize, cursor)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.APIDefinitionPage)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func([]*labelfilter.LabelFilter, *int, *string) error); ok {
-		r1 = rf(filter, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

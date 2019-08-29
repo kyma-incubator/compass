@@ -113,16 +113,16 @@ fi
 #
 # Keep examples up-to-date
 #
-# echo -e "${GREEN}? Checking GraphQL examples${NC}"
-# ./gen-examples.sh
-# genExamplesResult=$?
-#
-# if [[ ${genExamplesResult} != 0 ]]
-# 	then
-#     	echo -e "${RED}✗ Checking GraphQL examples${NC}\n$genExamplesResult${NC}"
-#     	exit 1;
-# 	else echo -e "${GREEN}√ Checking GraphQL examples${NC}"
-# fi
+ echo -e "${GREEN}? Checking GraphQL examples${NC}"
+ ./gen-examples.sh
+ genExamplesResult=$?
+
+ if [[ ${genExamplesResult} != 0 ]]
+ 	then
+     	echo -e "${RED}✗ Checking GraphQL examples${NC}\n$genExamplesResult${NC}"
+     	exit 1;
+ 	else echo -e "${GREEN}√ Checking GraphQL examples${NC}"
+ fi
 
 ##
 # Ensuring that examples are up-to-date

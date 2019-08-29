@@ -1,96 +1,115 @@
 package webhook
 
 import (
-	"errors"
+	"context"
+	"fmt"
+
+	"github.com/lib/pq"
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 )
 
-type inMemoryRepository struct {
-	store map[string]*model.Webhook
+const (
+	tableName = "public.webhooks"
+)
+
+var webhookColumns = []string{"id", "tenant_id", "app_id", "type", "url", "auth"}
+var missingInputModelError = errors.New("model has to be provided")
+
+//go:generate mockery -name=EntityConverter -output=automock -outpkg=automock -case=underscore
+type EntityConverter interface {
+	FromEntity(in Entity) (model.Webhook, error)
+	ToEntity(in model.Webhook) (Entity, error)
 }
 
-func NewRepository() *inMemoryRepository {
-	return &inMemoryRepository{store: make(map[string]*model.Webhook)}
+type repository struct {
+	singleGetter *repo.SingleGetter
+	updater      *repo.Updater
+	creator      *repo.Creator
+	deleter      *repo.Deleter
+	lister       *repo.Lister
+	conv         EntityConverter
 }
 
-func (r *inMemoryRepository) GetByID(id string) (*model.Webhook, error) {
-	webhook := r.store[id]
+func NewRepository(conv EntityConverter) *repository {
+	return &repository{
+		singleGetter: repo.NewSingleGetter(tableName, "tenant_id", webhookColumns),
+		creator:      repo.NewCreator(tableName, webhookColumns),
+		updater:      repo.NewUpdater(tableName, []string{"type", "url", "auth"}, "tenant_id", []string{"id", "app_id"}),
+		deleter:      repo.NewDeleter(tableName, "tenant_id"),
+		lister:       repo.NewLister(tableName, "tenant_id", webhookColumns),
+		conv:         conv,
+	}
+}
 
-	if webhook == nil {
-		return nil, errors.New("webhook not found")
+func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.Webhook, error) {
+	var entity Entity
+	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{{Field: "id", Val: id}}, &entity); err != nil {
+		return nil, err
+	}
+	m, err := r.conv.FromEntity(entity)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting from entity to model")
+	}
+	return &m, nil
+}
+
+func (r *repository) ListByApplicationID(ctx context.Context, tenant, applicationID string) ([]*model.Webhook, error) {
+	var entities Collection
+	if err := r.lister.List(ctx, tenant, &entities, fmt.Sprintf("app_id = %s ", pq.QuoteLiteral(applicationID))); err != nil {
+		return nil, err
 	}
 
-	return webhook, nil
-}
-
-func (r *inMemoryRepository) ListByApplicationID(applicationID string) ([]*model.Webhook, error) {
-	var items []*model.Webhook
-	for _, r := range r.store {
-		if r.ApplicationID == applicationID {
-			items = append(items, r)
+	var out []*model.Webhook
+	for _, ent := range entities {
+		w, err := r.conv.FromEntity(ent)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting Webhook to model")
 		}
+		out = append(out, &w)
 	}
 
-	return items, nil
+	return out, nil
 }
 
-func (r *inMemoryRepository) Create(item *model.Webhook) error {
+func (r *repository) Create(ctx context.Context, item *model.Webhook) error {
 	if item == nil {
-		return errors.New("item can not be empty")
+		return missingInputModelError
+	}
+	entity, err := r.conv.ToEntity(*item)
+	if err != nil {
+		return errors.Wrap(err, "while converting model to entity")
 	}
 
-	r.store[item.ID] = item
-
-	return nil
+	return r.creator.Create(ctx, entity)
 }
 
-func (r *inMemoryRepository) CreateMany(items []*model.Webhook) error {
-	var err error
+func (r *repository) CreateMany(ctx context.Context, items []*model.Webhook) error {
 	for _, item := range items {
-		if e := r.Create(item); e != nil {
-			err = e
+		if err := r.Create(ctx, item); err != nil {
+			return errors.Wrap(err, "while creating many webhooks")
 		}
 	}
-
-	return err
-}
-
-func (r *inMemoryRepository) Update(item *model.Webhook) error {
-	if item == nil {
-		return errors.New("item can not be empty")
-	}
-
-	if r.store[item.ID] == nil {
-		return errors.New("webhook not found")
-	}
-
-	r.store[item.ID] = item
-
 	return nil
 }
 
-func (r *inMemoryRepository) Delete(item *model.Webhook) error {
+func (r *repository) Update(ctx context.Context, item *model.Webhook) error {
 	if item == nil {
-		return nil
+		return missingInputModelError
 	}
-
-	delete(r.store, item.ID)
-
-	return nil
+	entity, err := r.conv.ToEntity(*item)
+	if err != nil {
+		return errors.Wrap(err, "while converting model to entity")
+	}
+	return r.updater.UpdateSingle(ctx, entity)
 }
 
-func (r *inMemoryRepository) DeleteAllByApplicationID(applicationID string) error {
-	var err error
-	for _, item := range r.store {
-		if item.ApplicationID != applicationID {
-			continue
-		}
+func (r *repository) Delete(ctx context.Context, tenant, id string) error {
+	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
+}
 
-		if e := r.Delete(item); e != nil {
-			err = e
-		}
-	}
-
-	return err
+func (r *repository) DeleteAllByApplicationID(ctx context.Context, tenant, applicationID string) error {
+	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{{Field: "app_id", Val: applicationID}})
 }

@@ -70,13 +70,13 @@ func assertAuth(t *testing.T, in *graphql.AuthInput, actual *graphql.Auth) {
 		require.NotNil(t, actual.RequestAuth.Csrf)
 		if in.RequestAuth.Csrf.Credential != nil {
 			if in.RequestAuth.Csrf.Credential.Basic != nil {
-				basic, ok := actual.Credential.(*graphql.BasicCredentialData)
+				basic, ok := actual.RequestAuth.Csrf.Credential.(*graphql.BasicCredentialData)
 				require.True(t, ok)
 				assert.Equal(t, in.RequestAuth.Csrf.Credential.Basic.Username, basic.Username)
 				assert.Equal(t, in.RequestAuth.Csrf.Credential.Basic.Password, basic.Password)
 
 			} else if in.RequestAuth.Csrf.Credential.Oauth != nil {
-				o, ok := actual.Credential.(*graphql.OAuthCredentialData)
+				o, ok := actual.RequestAuth.Csrf.Credential.(*graphql.OAuthCredentialData)
 				require.True(t, ok)
 				assert.Equal(t, in.RequestAuth.Csrf.Credential.Oauth.URL, o.URL)
 				assert.Equal(t, in.RequestAuth.Csrf.Credential.Oauth.ClientSecret, o.ClientSecret)
@@ -191,8 +191,12 @@ func assertEventsAPI(t *testing.T, in []*graphql.EventAPIDefinitionInput, actual
 	}
 }
 
-func assertRuntime(t *testing.T, in graphql.RuntimeInput, actual graphql.Runtime) {
-	assert.Equal(t, in.Name, actual.Name)
-	assert.Equal(t, *in.Description, *actual.Description)
-	//assert.Equal(t, *in.Labels, actual.Labels) // TODO: Make it work when labels are in place
+func assertRuntime(t *testing.T, in graphql.RuntimeInput, actualRuntime RuntimeExt) {
+	assert.Equal(t, in.Name, actualRuntime.Name)
+	assert.Equal(t, in.Description, actualRuntime.Description)
+	if in.Labels != nil {
+		assert.Equal(t, *in.Labels, actualRuntime.Labels)
+	} else {
+		assert.Empty(t, actualRuntime.Labels)
+	}
 }

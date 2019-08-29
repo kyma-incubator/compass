@@ -120,6 +120,15 @@ func TestCreateApplicationWithAPIs(t *testing.T) {
 						Auth:   fixBasicAuth(),
 					},
 				},
+				DefaultAuth: &graphql.AuthInput{
+					Credential: fixBasicCredential(),
+					RequestAuth: &graphql.CredentialRequestAuthInput{
+						Csrf: &graphql.CSRFTokenCredentialRequestAuthInput{
+							Credential:       fixOAuthCredential(),
+							TokenEndpointURL: "token-URL",
+						},
+					},
+				},
 			},
 		},
 		Labels: &graphql.Labels{
@@ -157,7 +166,7 @@ func TestCreateApplicationWithEventAPIs(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	in := graphql.ApplicationInput{
-		Name: "wordpress",
+		Name: "test-create-application-with-event-apis",
 		EventAPIs: []*graphql.EventAPIDefinitionInput{
 			{
 				Name:        "comments/v1",
@@ -220,7 +229,7 @@ func TestCreateApplicationWithDocuments(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	in := graphql.ApplicationInput{
-		Name: "wordpress",
+		Name: "test-create-application-with-documents",
 		Documents: []*graphql.DocumentInput{
 			{
 				Title:       "Readme",
@@ -1006,6 +1015,29 @@ func getApp(ctx context.Context, t *testing.T, id string) ApplicationExt {
 func generateSampleApplicationInput(placeholder string) graphql.ApplicationInput {
 	return graphql.ApplicationInput{
 		Name: placeholder,
+		Documents: []*graphql.DocumentInput{{
+			Title:  placeholder,
+			Format: graphql.DocumentFormatMarkdown}},
+		Apis: []*graphql.APIDefinitionInput{{
+			Name:      placeholder,
+			TargetURL: placeholder}},
+		EventAPIs: []*graphql.EventAPIDefinitionInput{{
+			Name: placeholder,
+			Spec: &graphql.EventAPISpecInput{
+				EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
+				Format:        graphql.SpecFormatYaml,
+			}}},
+		Webhooks: []*graphql.WebhookInput{{
+			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
+			URL:  placeholder},
+		},
+		Labels: &graphql.Labels{placeholder: []interface{}{placeholder}},
+	}
+}
+
+func generateSampleApplicationInputWithName(placeholder, name string) graphql.ApplicationInput {
+	return graphql.ApplicationInput{
+		Name: name,
 		Documents: []*graphql.DocumentInput{{
 			Title:  placeholder,
 			Format: graphql.DocumentFormatMarkdown}},

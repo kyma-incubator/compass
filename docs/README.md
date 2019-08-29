@@ -20,6 +20,7 @@ This folder contains documents that relate to the project.
 - [Event flows proposal](./architecture/event-flows-proposal.md)
 - [Director component](./architecture/director-component.md)
 - [Runtime Agent contract](./architecture/runtime-agent-contract.md)
+- [Database scheme](./architecture/db-scheme.md)
 
 ## Investigations
 

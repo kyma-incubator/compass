@@ -2,6 +2,8 @@
 
 package automock
 
+import context "context"
+
 import labelfilter "github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 import mock "github.com/stretchr/testify/mock"
 import model "github.com/kyma-incubator/compass/components/director/internal/model"
@@ -65,6 +67,27 @@ func (_m *EventAPIRepository) DeleteAllByApplicationID(id string) error {
 	}
 
 	return r0
+}
+
+// Exists provides a mock function with given fields: ctx, tenant, id
+func (_m *EventAPIRepository) Exists(ctx context.Context, tenant string, id string) (bool, error) {
+	ret := _m.Called(ctx, tenant, id)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
+		r0 = rf(ctx, tenant, id)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenant, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // GetByID provides a mock function with given fields: id

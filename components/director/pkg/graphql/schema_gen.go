@@ -35,7 +35,10 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	APISpec() APISpecResolver
 	Application() ApplicationResolver
+	Document() DocumentResolver
+	EventAPISpec() EventAPISpecResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
 	Runtime() RuntimeResolver
@@ -292,6 +295,9 @@ type ComplexityRoot struct {
 	}
 }
 
+type APISpecResolver interface {
+	FetchRequest(ctx context.Context, obj *APISpec) (*FetchRequest, error)
+}
 type ApplicationResolver interface {
 	Labels(ctx context.Context, obj *Application, key *string) (Labels, error)
 
@@ -300,6 +306,12 @@ type ApplicationResolver interface {
 	Apis(ctx context.Context, obj *Application, group *string, first *int, after *PageCursor) (*APIDefinitionPage, error)
 	EventAPIs(ctx context.Context, obj *Application, group *string, first *int, after *PageCursor) (*EventAPIDefinitionPage, error)
 	Documents(ctx context.Context, obj *Application, first *int, after *PageCursor) (*DocumentPage, error)
+}
+type DocumentResolver interface {
+	FetchRequest(ctx context.Context, obj *Document) (*FetchRequest, error)
+}
+type EventAPISpecResolver interface {
+	FetchRequest(ctx context.Context, obj *EventAPISpec) (*FetchRequest, error)
 }
 type MutationResolver interface {
 	CreateApplication(ctx context.Context, in ApplicationInput) (*Application, error)
@@ -1886,7 +1898,7 @@ type APIDefinition {
     """ group allows you to find the same API but in different version """
     group: String
     """"If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified."""
-    auth(runtimeID: ID!): RuntimeAuth
+    auth(runtimeID: ID!): RuntimeAuth!
     """Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified."""
     auths: [RuntimeAuth!]!
     """If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly."""
@@ -3347,12 +3359,15 @@ func (ec *executionContext) _APIDefinition_auth(ctx context.Context, field graph
 		return obj.Auth, nil
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*RuntimeAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalORuntimeAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeAuth(ctx, field.Selections, res)
+	return ec.marshalNRuntimeAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APIDefinition_auths(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) graphql.Marshaler {
@@ -3596,13 +3611,13 @@ func (ec *executionContext) _APISpec_fetchRequest(ctx context.Context, field gra
 		Object:   "APISpec",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.FetchRequest, nil
+		return ec.resolvers.APISpec().FetchRequest(rctx, obj)
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -4536,13 +4551,13 @@ func (ec *executionContext) _Document_fetchRequest(ctx context.Context, field gr
 		Object:   "Document",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.FetchRequest, nil
+		return ec.resolvers.Document().FetchRequest(rctx, obj)
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -4980,13 +4995,13 @@ func (ec *executionContext) _EventAPISpec_fetchRequest(ctx context.Context, fiel
 		Object:   "EventAPISpec",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.FetchRequest, nil
+		return ec.resolvers.EventAPISpec().FetchRequest(rctx, obj)
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -9041,6 +9056,9 @@ func (ec *executionContext) _APIDefinition(ctx context.Context, sel ast.Selectio
 			out.Values[i] = ec._APIDefinition_group(ctx, field, obj)
 		case "auth":
 			out.Values[i] = ec._APIDefinition_auth(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "auths":
 			out.Values[i] = ec._APIDefinition_auths(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -9114,15 +9132,24 @@ func (ec *executionContext) _APISpec(ctx context.Context, sel ast.SelectionSet, 
 		case "format":
 			out.Values[i] = ec._APISpec_format(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "type":
 			out.Values[i] = ec._APISpec_type(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "fetchRequest":
-			out.Values[i] = ec._APISpec_fetchRequest(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._APISpec_fetchRequest(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9453,39 +9480,48 @@ func (ec *executionContext) _Document(ctx context.Context, sel ast.SelectionSet,
 		case "id":
 			out.Values[i] = ec._Document_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "applicationID":
 			out.Values[i] = ec._Document_applicationID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "title":
 			out.Values[i] = ec._Document_title(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "displayName":
 			out.Values[i] = ec._Document_displayName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "description":
 			out.Values[i] = ec._Document_description(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "format":
 			out.Values[i] = ec._Document_format(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "kind":
 			out.Values[i] = ec._Document_kind(ctx, field, obj)
 		case "data":
 			out.Values[i] = ec._Document_data(ctx, field, obj)
 		case "fetchRequest":
-			out.Values[i] = ec._Document_fetchRequest(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Document_fetchRequest(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9635,15 +9671,24 @@ func (ec *executionContext) _EventAPISpec(ctx context.Context, sel ast.Selection
 		case "type":
 			out.Values[i] = ec._EventAPISpec_type(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "format":
 			out.Values[i] = ec._EventAPISpec_format(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "fetchRequest":
-			out.Values[i] = ec._EventAPISpec_fetchRequest(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._EventAPISpec_fetchRequest(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -12466,17 +12511,6 @@ func (ec *executionContext) marshalORuntime2ᚖgithubᚗcomᚋkymaᚑincubator�
 		return graphql.Null
 	}
 	return ec._Runtime(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalORuntimeAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeAuth(ctx context.Context, sel ast.SelectionSet, v RuntimeAuth) graphql.Marshaler {
-	return ec._RuntimeAuth(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalORuntimeAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeAuth(ctx context.Context, sel ast.SelectionSet, v *RuntimeAuth) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._RuntimeAuth(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {

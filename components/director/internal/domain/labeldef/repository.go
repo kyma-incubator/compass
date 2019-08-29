@@ -15,6 +15,8 @@ const (
 	tableName = "public.label_definitions"
 )
 
+var labeldefColumns = []string{"id", "tenant_id", "key", "schema"}
+
 type repo struct {
 	conv Converter
 }
@@ -34,13 +36,9 @@ func (r *repo) Create(ctx context.Context, def model.LabelDefinition) error {
 		return errors.Wrap(err, "while converting Label Definition to insert")
 	}
 
-	columns := []string{"id", "tenant_id", "key"}
-	if entity.SchemaJSON.Valid {
-		columns = append(columns, "schema")
-	}
-	values := r.prefixEveryWithColon(columns)
+	values := r.prefixEveryWithColon(labeldefColumns)
 
-	_, err = db.NamedExec(fmt.Sprintf("insert into %s (%s) values(%s)", tableName, strings.Join(columns, ","), strings.Join(values, ",")), entity)
+	_, err = db.NamedExec(fmt.Sprintf("insert into %s (%s) values(%s)", tableName, strings.Join(labeldefColumns, ","), strings.Join(values, ",")), entity)
 	if err != nil {
 		return errors.Wrap(err, "while inserting Label Definition")
 	}
