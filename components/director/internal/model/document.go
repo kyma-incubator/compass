@@ -13,9 +13,8 @@ type Document struct {
 	Description   string
 	Format        DocumentFormat
 	// for example Service Class, API etc
-	Kind           *string
-	Data           *string
-	FetchRequestID *string
+	Kind *string
+	Data *string
 }
 
 type DocumentInput struct {
@@ -40,21 +39,20 @@ type DocumentPage struct {
 	TotalCount int
 }
 
-func (d *DocumentInput) ToDocument(id, tenant, applicationID string, fetchRequestID *string) *Document {
+func (d *DocumentInput) ToDocument(id, tenant, applicationID string) *Document {
 	if d == nil {
 		return nil
 	}
 
 	return &Document{
-		ApplicationID:  applicationID,
-		ID:             id,
-		Tenant:         tenant,
-		Title:          d.Title,
-		DisplayName:    d.DisplayName,
-		Description:    d.Description,
-		Format:         d.Format,
-		Kind:           d.Kind,
-		Data:           d.Data,
-		FetchRequestID: fetchRequestID,
+		ApplicationID: applicationID,
+		ID:            id,
+		Tenant:        tenant,
+		Title:         d.Title,
+		DisplayName:   d.DisplayName,
+		Description:   d.Description,
+		Format:        d.Format,
+		Kind:          d.Kind,
+		Data:          d.Data,
 	}
 }
