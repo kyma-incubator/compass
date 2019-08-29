@@ -56,14 +56,6 @@ type APIDefinitionPage struct {
 
 func (APIDefinitionPage) IsPageable() {}
 
-type APISpec struct {
-	// when fetch request specified, data will be automatically populated
-	Data         *CLOB         `json:"data"`
-	Format       SpecFormat    `json:"format"`
-	Type         APISpecType   `json:"type"`
-	FetchRequest *FetchRequest `json:"fetchRequest"`
-}
-
 type APISpecInput struct {
 	Data         *CLOB              `json:"data"`
 	Type         APISpecType        `json:"type"`
@@ -148,19 +140,6 @@ type CredentialRequestAuthInput struct {
 	Csrf *CSRFTokenCredentialRequestAuthInput `json:"csrf"`
 }
 
-type Document struct {
-	ID            string         `json:"id"`
-	ApplicationID string         `json:"applicationID"`
-	Title         string         `json:"title"`
-	DisplayName   string         `json:"displayName"`
-	Description   string         `json:"description"`
-	Format        DocumentFormat `json:"format"`
-	// for example Service Class, API etc
-	Kind         *string       `json:"kind"`
-	Data         *CLOB         `json:"data"`
-	FetchRequest *FetchRequest `json:"fetchRequest"`
-}
-
 type DocumentInput struct {
 	Title        string             `json:"title"`
 	DisplayName  string             `json:"displayName"`
@@ -205,13 +184,6 @@ type EventAPIDefinitionPage struct {
 }
 
 func (EventAPIDefinitionPage) IsPageable() {}
-
-type EventAPISpec struct {
-	Data         *CLOB            `json:"data"`
-	Type         EventAPISpecType `json:"type"`
-	Format       SpecFormat       `json:"format"`
-	FetchRequest *FetchRequest    `json:"fetchRequest"`
-}
 
 type EventAPISpecInput struct {
 	Data          *CLOB              `json:"data"`

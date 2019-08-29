@@ -4,15 +4,25 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/persistence"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	persistenceautomock "github.com/kyma-incubator/compass/components/director/internal/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/assert"
 )
+
+var contextParam = mock.MatchedBy(func(ctx context.Context) bool {
+	persistenceOp, err := persistence.FromCtx(ctx)
+	return err == nil && persistenceOp != nil
+})
 
 func TestResolver_AddAPI(t *testing.T) {
 	// given
@@ -144,7 +154,7 @@ func TestResolver_AddAPI(t *testing.T) {
 			converter := testCase.ConverterFn()
 			appSvc := testCase.AppServiceFn()
 
-			resolver := api.NewResolver(svc, appSvc, converter, nil)
+			resolver := api.NewResolver(nil, svc, appSvc, converter, nil, nil)
 
 			// when
 			result, err := resolver.AddAPI(context.TODO(), appId, *gqlAPIInput)
@@ -233,7 +243,7 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := api.NewResolver(svc, nil, converter, nil)
+			resolver := api.NewResolver(nil, svc, nil, converter, nil, nil)
 
 			// when
 			result, err := resolver.DeleteAPI(context.TODO(), id)
@@ -329,7 +339,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := api.NewResolver(svc, nil, converter, nil)
+			resolver := api.NewResolver(nil, svc, nil, converter, nil, nil)
 
 			// when
 			result, err := resolver.UpdateAPI(context.TODO(), id, *gqlAPIDefinitionInput)
@@ -408,7 +418,7 @@ func TestResolver_SetAPIAuth(t *testing.T) {
 			// given
 			svc := testCase.ServiceFn()
 			conv := testCase.AuthConvFn()
-			resolver := api.NewResolver(svc, nil, nil, conv)
+			resolver := api.NewResolver(nil, svc, nil, nil, conv, nil)
 
 			// when
 			result, err := resolver.SetAPIAuth(context.TODO(), apiID, runtimeID, *gqlAuthInput)
@@ -483,7 +493,7 @@ func TestResolver_DeleteAPIAuth(t *testing.T) {
 			// given
 			svc := testCase.ServiceFn()
 			conv := testCase.AuthConvFn()
-			resolver := api.NewResolver(svc, nil, nil, conv)
+			resolver := api.NewResolver(nil, svc, nil, nil, conv, nil)
 
 			// when
 			result, err := resolver.DeleteAPIAuth(context.TODO(), apiID, runtimeID)
@@ -565,7 +575,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			// given
 			svc := testCase.ServiceFn()
 			conv := testCase.ConvFn()
-			resolver := api.NewResolver(svc, nil, conv, nil)
+			resolver := api.NewResolver(nil, svc, nil, conv, nil, nil)
 
 			// when
 			result, err := resolver.RefetchAPISpec(context.TODO(), apiID)
@@ -575,6 +585,149 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			assert.Equal(t, testCase.ExpectedErr, err)
 
 			svc.AssertExpectations(t)
+		})
+	}
+}
+
+func TestResolver_FetchRequest(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+
+	id := "bar"
+	url := "foo.bar"
+
+	timestamp := time.Now()
+	frModel := fixModelFetchRequest("foo", url, timestamp)
+	frGQL := fixGQLFetchRequest(url, timestamp)
+	testCases := []struct {
+		Name            string
+		PersistenceFn   func() *persistenceautomock.PersistenceTx
+		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ServiceFn       func() *automock.APIService
+		ConverterFn     func() *automock.FetchRequestConverter
+		ExpectedResult  *graphql.FetchRequest
+		ExpectedErr     error
+	}{
+		{
+			Name: "Success",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+				return persistTx
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+				return transact
+			},
+			ServiceFn: func() *automock.APIService {
+				svc := &automock.APIService{}
+				svc.On("GetFetchRequest", contextParam, id).Return(frModel, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.FetchRequestConverter {
+				conv := &automock.FetchRequestConverter{}
+				conv.On("ToGraphQL", frModel).Return(frGQL).Once()
+				return conv
+			},
+			ExpectedResult: frGQL,
+			ExpectedErr:    nil,
+		},
+		{
+			Name: "Doesn't exist",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				return persistTx
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+				return transact
+			},
+			ServiceFn: func() *automock.APIService {
+				svc := &automock.APIService{}
+				svc.On("GetFetchRequest", contextParam, id).Return(nil, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.FetchRequestConverter {
+				conv := &automock.FetchRequestConverter{}
+				return conv
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    nil,
+		},
+		{
+			Name: "Parent Object is nil",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				return persistTx
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+				return transact
+			},
+			ServiceFn: func() *automock.APIService {
+				svc := &automock.APIService{}
+				svc.On("GetFetchRequest", contextParam, id).Return(nil, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.FetchRequestConverter {
+				conv := &automock.FetchRequestConverter{}
+				return conv
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    nil,
+		},
+		{
+			Name: "Error",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				return persistTx
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+				return transact
+			},
+			ServiceFn: func() *automock.APIService {
+				svc := &automock.APIService{}
+				svc.On("GetFetchRequest", contextParam, id).Return(nil, testErr).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.FetchRequestConverter {
+				conv := &automock.FetchRequestConverter{}
+				return conv
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persistTx := testCase.PersistenceFn()
+			transact := testCase.TransactionerFn(persistTx)
+			svc := testCase.ServiceFn()
+			converter := testCase.ConverterFn()
+
+			resolver := api.NewResolver(transact, svc, nil, nil, nil, converter)
+
+			// when
+			result, err := resolver.FetchRequest(context.TODO(), &graphql.APISpec{DefinitionID: id})
+
+			// then
+			assert.Equal(t, testCase.ExpectedResult, result)
+			assert.Equal(t, testCase.ExpectedErr, err)
+
+			svc.AssertExpectations(t)
+			converter.AssertExpectations(t)
+			persistTx.AssertExpectations(t)
+			transact.AssertExpectations(t)
 		})
 	}
 }

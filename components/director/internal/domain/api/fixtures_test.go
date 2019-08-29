@@ -1,6 +1,8 @@
 package api_test
 
 import (
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/pkg/strings"
 
@@ -35,10 +37,10 @@ func fixDetailedModelAPIDefinition(id, name, description string, group string) *
 	format := model.SpecFormatJSON
 
 	spec := &model.APISpec{
-		Data:         &data,
-		Format:       format,
-		Type:         model.APISpecTypeOpenAPI,
-		FetchRequest: &model.FetchRequest{},
+		Data:           &data,
+		Format:         format,
+		Type:           model.APISpecTypeOpenAPI,
+		FetchRequestID: nil,
 	}
 
 	deprecated := false
@@ -83,7 +85,7 @@ func fixDetailedGQLAPIDefinition(id, name, description string, group string) *gr
 		Data:         &data,
 		Format:       format,
 		Type:         graphql.APISpecTypeOpenAPI,
-		FetchRequest: &graphql.FetchRequest{},
+		DefinitionID: id,
 	}
 
 	deprecated := false
@@ -272,5 +274,35 @@ func fixMinimalApiDefinitionEntity(id, app_id, name, targetUrl string) *api.APID
 		AppID:     app_id,
 		Name:      name,
 		TargetURL: targetUrl,
+	}
+}
+
+func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchRequest {
+	return &model.FetchRequest{
+		ID:     id,
+		Tenant: "tenant",
+		URL:    url,
+		Auth:   nil,
+		Mode:   "SINGLE",
+		Filter: nil,
+		Status: &model.FetchRequestStatus{
+			Condition: model.FetchRequestStatusConditionInitial,
+			Timestamp: timestamp,
+		},
+		ObjectType: model.APIFetchRequestReference,
+		ObjectID:   "foo",
+	}
+}
+
+func fixGQLFetchRequest(url string, timestamp time.Time) *graphql.FetchRequest {
+	return &graphql.FetchRequest{
+		Filter: nil,
+		Mode:   graphql.FetchModeSingle,
+		Auth:   nil,
+		URL:    url,
+		Status: &graphql.FetchRequestStatus{
+			Timestamp: graphql.Timestamp(timestamp),
+			Condition: graphql.FetchRequestStatusConditionInitial,
+		},
 	}
 }

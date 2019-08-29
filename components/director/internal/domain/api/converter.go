@@ -20,12 +20,6 @@ type AuthConverter interface {
 	InputFromGraphQL(in *graphql.AuthInput) *model.AuthInput
 }
 
-//go:generate mockery -name=FetchRequestConverter -output=automock -outpkg=automock -case=underscore
-type FetchRequestConverter interface {
-	ToGraphQL(in *model.FetchRequest) *graphql.FetchRequest
-	InputFromGraphQL(in *graphql.FetchRequestInput) *model.FetchRequestInput
-}
-
 //go:generate mockery -name=VersionConverter -output=automock -outpkg=automock -case=underscore
 type VersionConverter interface {
 	ToGraphQL(in *model.Version) *graphql.Version
@@ -54,7 +48,7 @@ func (c *converter) ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition {
 		ApplicationID: in.ApplicationID,
 		Name:          in.Name,
 		Description:   in.Description,
-		Spec:          c.apiSpecToGraphQL(in.Spec),
+		Spec:          c.apiSpecToGraphQL(in.ID, in.Spec),
 		TargetURL:     in.TargetURL,
 		Group:         in.Group,
 		Auths:         c.runtimeAuthArrToGraphQL(in.Auths),
@@ -101,7 +95,7 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) *model.APID
 	}
 }
 
-func (c *converter) apiSpecToGraphQL(in *model.APISpec) *graphql.APISpec {
+func (c *converter) apiSpecToGraphQL(definitionID string, in *model.APISpec) *graphql.APISpec {
 	if in == nil {
 		return nil
 	}
@@ -116,7 +110,7 @@ func (c *converter) apiSpecToGraphQL(in *model.APISpec) *graphql.APISpec {
 		Data:         data,
 		Type:         graphql.APISpecType(in.Type),
 		Format:       graphql.SpecFormat(in.Format),
-		FetchRequest: c.fr.ToGraphQL(in.FetchRequest),
+		DefinitionID: definitionID,
 	}
 }
 

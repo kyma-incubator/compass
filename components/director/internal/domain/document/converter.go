@@ -1,17 +1,11 @@
 package document
 
 import (
-	"database/sql"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
-
-//go:generate mockery -name=FetchRequestConverter -output=automock -outpkg=automock -case=underscore
-type FetchRequestConverter interface {
-	ToGraphQL(in *model.FetchRequest) *graphql.FetchRequest
-	InputFromGraphQL(in *graphql.FetchRequestInput) *model.FetchRequestInput
-}
 
 type converter struct {
 	frConverter FetchRequestConverter
@@ -41,7 +35,6 @@ func (c *converter) ToGraphQL(in *model.Document) *graphql.Document {
 		Format:        graphql.DocumentFormat(in.Format),
 		Kind:          in.Kind,
 		Data:          clob,
-		FetchRequest:  c.frConverter.ToGraphQL(in.FetchRequest),
 	}
 }
 
@@ -94,21 +87,9 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.DocumentInput) []*mod
 }
 
 func (c *converter) ToEntity(in model.Document) (Entity, error) {
-	var nullKind sql.NullString
-	if in.Kind != nil && len(*in.Kind) > 0 {
-		nullKind = sql.NullString{
-			String: *in.Kind,
-			Valid:  true,
-		}
-	}
-
-	var nullData sql.NullString
-	if in.Data != nil && len(*in.Data) > 0 {
-		nullData = sql.NullString{
-			String: *in.Data,
-			Valid:  true,
-		}
-	}
+	kind := repo.NewNullableString(in.Kind)
+	data := repo.NewNullableString(in.Data)
+	fetchRequestID := repo.NewNullableString(in.FetchRequestID)
 
 	out := Entity{
 		ID:             in.ID,
@@ -118,35 +99,30 @@ func (c *converter) ToEntity(in model.Document) (Entity, error) {
 		DisplayName:    in.DisplayName,
 		Description:    in.Description,
 		Format:         string(in.Format),
-		Kind:           nullKind,
-		Data:           nullData,
-		FetchRequestID: sql.NullString{}, //TODO adjust with https://github.com/kyma-incubator/compass/issues/226
+		Kind:           kind,
+		Data:           data,
+		FetchRequestID: fetchRequestID,
 	}
 
 	return out, nil
 }
 
 func (c *converter) FromEntity(in Entity) (model.Document, error) {
-	var kindPtr *string
-	var dataPtr *string
-	if in.Kind.Valid {
-		kindPtr = &in.Kind.String
-	}
-	if in.Data.Valid {
-		dataPtr = &in.Data.String
-	}
+	kind := repo.StringPtrFromNullableString(in.Kind)
+	data := repo.StringPtrFromNullableString(in.Data)
+	fetchRequestID := repo.StringPtrFromNullableString(in.FetchRequestID)
 
 	out := model.Document{
-		ID:            in.ID,
-		ApplicationID: in.AppID,
-		Tenant:        in.TenantID,
-		Title:         in.Title,
-		DisplayName:   in.DisplayName,
-		Description:   in.Description,
-		Format:        model.DocumentFormat(in.Format),
-		Kind:          kindPtr,
-		Data:          dataPtr,
-		FetchRequest:  nil, //TODO adjust with https://github.com/kyma-incubator/compass/issues/226
+		ID:             in.ID,
+		ApplicationID:  in.AppID,
+		Tenant:         in.TenantID,
+		Title:          in.Title,
+		DisplayName:    in.DisplayName,
+		Description:    in.Description,
+		Format:         model.DocumentFormat(in.Format),
+		Kind:           kind,
+		Data:           data,
+		FetchRequestID: fetchRequestID,
 	}
 	return out, nil
 }

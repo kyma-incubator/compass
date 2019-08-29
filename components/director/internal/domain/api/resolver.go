@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/persistence"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -19,6 +21,7 @@ type APIService interface {
 	SetAPIAuth(ctx context.Context, apiID string, runtimeID string, in model.AuthInput) (*model.RuntimeAuth, error)
 	DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*model.RuntimeAuth, error)
 	RefetchAPISpec(ctx context.Context, id string) (*model.APISpec, error)
+	GetFetchRequest(ctx context.Context, apiDefID string) (*model.FetchRequest, error)
 }
 
 //go:generate mockery -name=APIConverter -output=automock -outpkg=automock -case=underscore
@@ -29,24 +32,34 @@ type APIConverter interface {
 	InputFromGraphQL(in *graphql.APIDefinitionInput) *model.APIDefinitionInput
 }
 
+//go:generate mockery -name=FetchRequestConverter -output=automock -outpkg=automock -case=underscore
+type FetchRequestConverter interface {
+	ToGraphQL(in *model.FetchRequest) *graphql.FetchRequest
+	InputFromGraphQL(in *graphql.FetchRequestInput) *model.FetchRequestInput
+}
+
 //go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
 type ApplicationService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
 type Resolver struct {
+	transact      persistence.Transactioner
 	svc           APIService
 	appSvc        ApplicationService
 	converter     APIConverter
 	authConverter AuthConverter
+	frConverter   FetchRequestConverter
 }
 
-func NewResolver(svc APIService, appSvc ApplicationService, converter APIConverter, authConverter AuthConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc APIService, appSvc ApplicationService, converter APIConverter, authConverter AuthConverter, frConverter FetchRequestConverter) *Resolver {
 	return &Resolver{
+		transact:      transact,
 		svc:           svc,
 		appSvc:        appSvc,
 		converter:     converter,
 		authConverter: authConverter,
+		frConverter:   frConverter,
 	}
 }
 
@@ -146,4 +159,39 @@ func (r *Resolver) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID st
 	}
 
 	return convertedOut, nil
+}
+
+func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*graphql.FetchRequest, error) {
+	if obj == nil {
+		return nil, errors.New("API Spec cannot be empty")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	if obj.DefinitionID == "" {
+		return nil, errors.New("Internal Server Error: Cannot fetch FetchRequest. APIDefinition ID is empty")
+	}
+
+	fr, err := r.svc.GetFetchRequest(ctx, obj.DefinitionID)
+	if err != nil {
+		return nil, err
+	}
+
+	if fr == nil {
+		return nil, nil
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	frGQL := r.frConverter.ToGraphQL(fr)
+	return frGQL, nil
 }

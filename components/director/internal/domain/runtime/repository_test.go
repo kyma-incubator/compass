@@ -44,7 +44,7 @@ func TestPgRepository_GetByID_ShouldReturnRuntimeModelForRuntimeEntity(t *testin
 
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-	pgRepository := runtime.NewPostgresRepository()
+	pgRepository := runtime.NewRepository()
 
 	// when
 	modelRuntime, err := pgRepository.GetByID(ctx, tenantID, runtimeID)
@@ -108,7 +108,7 @@ func TestPgRepository_List(t *testing.T) {
 			sqlxDB, sqlMock := testdb.MockDatabase(t)
 			defer sqlMock.AssertExpectations(t)
 			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-			pgRepository := runtime.NewPostgresRepository()
+			pgRepository := runtime.NewRepository()
 			expectedQuery := fmt.Sprintf(pageableQuery, testCase.ExpectedLimit, testCase.ExpectedOffset)
 
 			sqlMock.ExpectQuery(expectedQuery).
@@ -142,7 +142,7 @@ func TestPgRepository_List(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		defer sqlMock.AssertExpectations(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		pgRepository := runtime.NewPostgresRepository()
+		pgRepository := runtime.NewRepository()
 		//THEN
 		_, err := pgRepository.List(ctx, tenantID, nil, 2, convertIntToBase64String(-3))
 
@@ -194,7 +194,7 @@ func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntitie
 	}
 	filter := []*labelfilter.LabelFilter{&labelFilterFoo}
 
-	pgRepository := runtime.NewPostgresRepository()
+	pgRepository := runtime.NewRepository()
 
 	// when
 	modelRuntimePage, err := pgRepository.List(ctx, tenantID, filter, rowSize, "")
@@ -248,7 +248,7 @@ func TestPgRepository_Create_ShouldCreateRuntimeEntityFromValidModel(t *testing.
 
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-	pgRepository := runtime.NewPostgresRepository()
+	pgRepository := runtime.NewRepository()
 
 	// when
 	err = pgRepository.Create(ctx, modelRuntime)
@@ -293,7 +293,7 @@ func TestPgRepository_Update_ShouldUpdateRuntimeEntityFromValidModel(t *testing.
 
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-	pgRepository := runtime.NewPostgresRepository()
+	pgRepository := runtime.NewRepository()
 
 	// when
 	err = pgRepository.Update(ctx, modelRuntime)
@@ -317,7 +317,7 @@ func TestPgRepository_Delete_ShouldDeleteRuntimeEntityUsingValidModel(t *testing
 
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-	pgRepository := runtime.NewPostgresRepository()
+	pgRepository := runtime.NewRepository()
 
 	// when
 	err := pgRepository.Delete(ctx, tenantID, modelRuntime.ID)
@@ -340,7 +340,7 @@ func TestPgRepository_Exist(t *testing.T) {
 
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-	pgRepository := runtime.NewPostgresRepository()
+	pgRepository := runtime.NewRepository()
 
 	// when
 	ex, err := pgRepository.Exists(ctx, tenantID, runtimeID)

@@ -5,12 +5,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-//go:generate mockery -name=FetchRequestConverter -output=automock -outpkg=automock -case=underscore
-type FetchRequestConverter interface {
-	ToGraphQL(in *model.FetchRequest) *graphql.FetchRequest
-	InputFromGraphQL(in *graphql.FetchRequestInput) *model.FetchRequestInput
-}
-
 //go:generate mockery -name=VersionConverter -output=automock -outpkg=automock -case=underscore
 type VersionConverter interface {
 	ToGraphQL(in *model.Version) *graphql.Version
@@ -37,7 +31,7 @@ func (c *converter) ToGraphQL(in *model.EventAPIDefinition) *graphql.EventAPIDef
 		Name:          in.Name,
 		Description:   in.Description,
 		Group:         in.Group,
-		Spec:          c.eventAPISpecToGraphQL(in.Spec),
+		Spec:          c.eventAPISpecToGraphQL(in.ID, in.Spec),
 		Version:       c.vc.ToGraphQL(in.Version),
 	}
 }
@@ -78,7 +72,7 @@ func (c *converter) InputFromGraphQL(in *graphql.EventAPIDefinitionInput) *model
 	}
 }
 
-func (c *converter) eventAPISpecToGraphQL(in *model.EventAPISpec) *graphql.EventAPISpec {
+func (c *converter) eventAPISpecToGraphQL(definitionID string, in *model.EventAPISpec) *graphql.EventAPISpec {
 	if in == nil {
 		return nil
 	}
@@ -93,7 +87,7 @@ func (c *converter) eventAPISpecToGraphQL(in *model.EventAPISpec) *graphql.Event
 		Data:         data,
 		Type:         graphql.EventAPISpecType(in.Type),
 		Format:       graphql.SpecFormat(in.Format),
-		FetchRequest: c.fr.ToGraphQL(in.FetchRequest),
+		DefinitionID: definitionID,
 	}
 }
 

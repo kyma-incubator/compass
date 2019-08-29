@@ -13,6 +13,11 @@ model:
 # Optional turns on binding to field names by tag provided
 struct_tag: json
 
+# Uncomment to turn on resolver stub generation
+#resolver:
+#  filename: resolver.go # where to write them
+#  type: Resolver  # what's the resolver root implementation type called?
+
 # Tell gqlgen about any existing models you want to reuse for
 # graphql. These normally come from the db or a remote api.
 models:
@@ -43,7 +48,21 @@ models:
         resolver: true
       labels:
         resolver: true
-
+  APISpec:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.APISpec"
+    fields:
+      fetchRequest:
+        resolver: true
+  EventAPISpec:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.EventAPISpec"
+    fields:
+      fetchRequest:
+        resolver: true
+  Document:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Document"
+    fields:
+      fetchRequest:
+        resolver: true
   Runtime:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Runtime"
     fields:

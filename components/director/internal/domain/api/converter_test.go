@@ -55,7 +55,6 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			},
 			FetchRequestConverter: func() *automock.FetchRequestConverter {
 				conv := &automock.FetchRequestConverter{}
-				conv.On("ToGraphQL", modelAPIDefinition.Spec.FetchRequest).Return(gqlAPIDefinition.Spec.FetchRequest).Once()
 				return conv
 			},
 			VersionConverter: func() *automock.VersionConverter {
@@ -350,7 +349,6 @@ func TestApiSpecDataConversionNilStaysNil(t *testing.T) {
 	mockFrConv := &automock.FetchRequestConverter{}
 	defer mockFrConv.AssertExpectations(t)
 	mockFrConv.On("InputFromGraphQL", mock.Anything).Return(nil)
-	mockFrConv.On("ToGraphQL", mock.Anything).Return(nil)
 
 	mockVersionConv := &automock.VersionConverter{}
 	defer mockVersionConv.AssertExpectations(t)
@@ -363,7 +361,7 @@ func TestApiSpecDataConversionNilStaysNil(t *testing.T) {
 	require.NotNil(t, convertedInputModel)
 	require.NotNil(t, convertedInputModel.Spec)
 	require.Nil(t, convertedInputModel.Spec.Data)
-	convertedAPIDef := convertedInputModel.ToAPIDefinition("id", "app_id")
+	convertedAPIDef := convertedInputModel.ToAPIDefinition("id", "app_id", strings.Ptr("fr_id"))
 	require.NotNil(t, convertedAPIDef)
 	convertedGraphqlAPIDef := converter.ToGraphQL(convertedAPIDef)
 	require.NotNil(t, convertedGraphqlAPIDef)
@@ -371,7 +369,7 @@ func TestApiSpecDataConversionNilStaysNil(t *testing.T) {
 }
 
 func TestEntityConverter_ToEntity(t *testing.T) {
-	t.Run("success all nullable properites filled", func(t *testing.T) {
+	t.Run("success all nullable properties filled", func(t *testing.T) {
 		//GIVEN
 		apiModel := *fixDetailedModelAPIDefinition(uuid.New().String(), "name", "description", "group")
 		versionConv := version.NewConverter()
@@ -382,7 +380,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		require.NoError(t, err)
 		assertApiDefinition(t, apiModel, entity)
 	})
-	t.Run("success all nullable properites empty", func(t *testing.T) {
+	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
 		apiModel := *fixModelAPIDefinition("id", "appid", "name", "desc")
 		versionConv := version.NewConverter()
