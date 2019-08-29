@@ -194,6 +194,7 @@ func TestRepositoryCreate(t *testing.T) {
 }
 
 func TestRepositoryCreateMany(t *testing.T) {
+	const expectedInsert = "INSERT INTO public.webhooks ( id, tenant_id, app_id, type, url, auth ) VALUES ( ?, ?, ?, ?, ?, ? )"
 	t.Run(testCaseSuccess, func(t *testing.T) {
 		// GIVEN
 		mockConverter := &automock.EntityConverter{}
@@ -207,11 +208,11 @@ func TestRepositoryCreateMany(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectExec(regexp.QuoteMeta("INSERT INTO public.webhooks ( id, tenant_id, app_id, type, url, auth ) VALUES ( ?, ?, ?, ?, ?, ? )")).WithArgs(
+		dbMock.ExpectExec(regexp.QuoteMeta(expectedInsert)).WithArgs(
 			"one", "", "", "", "", nil).WillReturnResult(sqlmock.NewResult(-1, 1))
-		dbMock.ExpectExec(regexp.QuoteMeta("INSERT INTO public.webhooks ( id, tenant_id, app_id, type, url, auth ) VALUES ( ?, ?, ?, ?, ?, ? )")).WithArgs(
+		dbMock.ExpectExec(regexp.QuoteMeta(expectedInsert)).WithArgs(
 			"two", "", "", "", "", nil).WillReturnResult(sqlmock.NewResult(-1, 1))
-		dbMock.ExpectExec(regexp.QuoteMeta("INSERT INTO public.webhooks ( id, tenant_id, app_id, type, url, auth ) VALUES ( ?, ?, ?, ?, ?, ? )")).WithArgs(
+		dbMock.ExpectExec(regexp.QuoteMeta(expectedInsert)).WithArgs(
 			"three", "", "", "", "", nil).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -235,7 +236,28 @@ func TestRepositoryCreateMany(t *testing.T) {
 		// WHEN
 		err := sut.CreateMany(ctx, given)
 		// THEN
-		require.EqualError(t, err, "while creating Webhook [URL: unlucky, Type: CONFIGURATION_CHANGED]: while converting model to entity: some error")
+		require.EqualError(t, err, "while creating many webhooks: while converting model to entity: some error")
+	})
+
+	t.Run(testCaseErrorOnDBCommunication, func(t *testing.T) {
+		// GIVEN
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+
+		given := []*model.Webhook{{ID: "one", URL: "unlucky", Type: model.WebhookTypeConfigurationChanged}, {ID: "two"}, {ID: "three"}}
+		mockConverter.On("ToEntity", *given[0]).Return(webhook.Entity{ID: "one"}, nil)
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		dbMock.ExpectExec(regexp.QuoteMeta(expectedInsert)).WillReturnError(givenError())
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		sut := webhook.NewRepository(mockConverter)
+		// WHEN
+		err := sut.CreateMany(ctx, given)
+		// THEN
+		require.EqualError(t, err, "while creating many webhooks: while inserting row to 'public.webhooks' table: some error")
 	})
 }
 

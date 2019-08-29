@@ -82,5 +82,5 @@ if [[  ${SKIP_APP_START} ]]; then
         done
 fi
 
-echo -e "${GREEN}Starting aapplication${NC}"
+echo -e "${GREEN}Starting application${NC}"
 APP_DB_USER=${DB_USER} APP_DB_PASSWORD=${DB_PWD} APP_DB_NAME=${DB_NAME} go run ${ROOT_PATH}/cmd/main.go

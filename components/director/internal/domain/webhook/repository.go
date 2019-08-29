@@ -89,7 +89,7 @@ func (r *repository) Create(ctx context.Context, item *model.Webhook) error {
 func (r *repository) CreateMany(ctx context.Context, items []*model.Webhook) error {
 	for _, item := range items {
 		if err := r.Create(ctx, item); err != nil {
-			return errors.Wrapf(err, "while creating %s", item.PrettyString())
+			return errors.Wrap(err, "while creating many webhooks")
 		}
 	}
 	return nil

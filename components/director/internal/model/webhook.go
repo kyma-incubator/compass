@@ -1,7 +1,5 @@
 package model
 
-import "fmt"
-
 type Webhook struct {
 	ApplicationID string
 	Tenant        string
@@ -9,10 +7,6 @@ type Webhook struct {
 	Type          WebhookType
 	URL           string
 	Auth          *Auth
-}
-
-func (w Webhook) PrettyString() string {
-	return fmt.Sprintf("Webhook [URL: %s, Type: %s]", w.URL, w.Type)
 }
 
 type WebhookInput struct {

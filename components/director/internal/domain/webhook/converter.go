@@ -76,17 +76,11 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.WebhookInput) []*mode
 }
 
 func (c *converter) ToEntity(in model.Webhook) (Entity, error) {
-	var optionalAuth sql.NullString
-	if in.Auth != nil {
-		b, err := json.Marshal(in.Auth)
-		if err != nil {
-			return Entity{}, errors.Wrap(err, "while marshalling Auth")
-		}
-
-		if err := optionalAuth.Scan(b); err != nil {
-			return Entity{}, errors.Wrap(err, "while scanning optional Auth")
-		}
+	optionalAuth, err := c.toAuthEntity(in)
+	if err != nil {
+		return Entity{}, err
 	}
+
 	return Entity{
 		ID:       in.ID,
 		Type:     string(in.Type),
@@ -97,23 +91,25 @@ func (c *converter) ToEntity(in model.Webhook) (Entity, error) {
 	}, nil
 }
 
-func (c *converter) FromEntity(in Entity) (model.Webhook, error) {
-	var auth *model.Auth
-	if in.Auth.Valid {
-		auth = &model.Auth{}
-		val, err := in.Auth.Value()
+func (c *converter) toAuthEntity(in model.Webhook) (sql.NullString, error) {
+	var optionalAuth sql.NullString
+	if in.Auth != nil {
+		b, err := json.Marshal(in.Auth)
 		if err != nil {
-			return model.Webhook{}, errors.Wrap(err, "while reading Auth from Entity")
+			return sql.NullString{}, errors.Wrap(err, "while marshalling Auth")
 		}
 
-		b, ok := val.(string)
-		if !ok {
-			return model.Webhook{}, errors.New("Auth should be slice of bytes")
+		if err := optionalAuth.Scan(b); err != nil {
+			return sql.NullString{}, errors.Wrap(err, "while scanning optional Auth")
 		}
-		if err := json.Unmarshal([]byte(b), auth); err != nil {
-			return model.Webhook{}, errors.Wrap(err, "while unmarshaling Auth")
-		}
+	}
+	return optionalAuth, nil
+}
 
+func (c *converter) FromEntity(in Entity) (model.Webhook, error) {
+	auth, err := c.fromEntityAuth(in)
+	if err != nil {
+		return model.Webhook{}, err
 	}
 	return model.Webhook{
 		ID:            in.ID,
@@ -123,4 +119,25 @@ func (c *converter) FromEntity(in Entity) (model.Webhook, error) {
 		ApplicationID: in.AppID,
 		Auth:          auth,
 	}, nil
+}
+
+func (c *converter) fromEntityAuth(in Entity) (*model.Auth, error) {
+	var auth *model.Auth
+	if in.Auth.Valid {
+		auth = &model.Auth{}
+		val, err := in.Auth.Value()
+		if err != nil {
+			return nil, errors.Wrap(err, "while reading Auth from Entity")
+		}
+
+		b, ok := val.(string)
+		if !ok {
+			return nil, errors.New("Auth should be slice of bytes")
+		}
+		if err := json.Unmarshal([]byte(b), auth); err != nil {
+			return nil, errors.Wrap(err, "while unmarshaling Auth")
+		}
+
+	}
+	return auth, nil
 }
