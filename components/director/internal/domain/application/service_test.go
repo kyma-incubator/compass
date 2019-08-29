@@ -81,7 +81,7 @@ func TestService_Create(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", mock.Anything, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			APIRepoFn: func() *automock.APIRepository {
