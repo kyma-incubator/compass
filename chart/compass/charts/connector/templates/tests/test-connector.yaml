@@ -14,7 +14,7 @@ spec:
     spec:
       shareProcessNamespace: true
       containers:
-      - name: connector-tests
+      - name: tests
         image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.connector.dir }}connector-tests:{{ .Values.global.images.tests.connector.version }}
         imagePullPolicy: IfNotPresent
         env:

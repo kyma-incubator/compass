@@ -80,4 +80,4 @@ echo ""
 
 sleep 15
 
-kubectl -n $NAMESPACE logs -l testing.kyma-project.io/def-name=$APP_NAME -c $APP_NAME -f
+kubectl -n $NAMESPACE logs -l testing.kyma-project.io/def-name=$APP_NAME -c tests -f

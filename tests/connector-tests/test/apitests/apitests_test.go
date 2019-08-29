@@ -38,7 +38,7 @@ func TestTokens(t *testing.T) {
 
 		//then
 		require.Empty(t, configuration)
-		require.NotNil(t, e)
+		require.Error(t, e)
 	})
 
 	t.Run("should return error for previously used token on Configuration query", func(t *testing.T) {
@@ -59,7 +59,7 @@ func TestTokens(t *testing.T) {
 
 		//then
 		require.Empty(t, configuration)
-		require.NotNil(t, e)
+		require.Error(t, e)
 	})
 }
 
