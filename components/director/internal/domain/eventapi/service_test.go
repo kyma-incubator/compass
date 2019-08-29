@@ -23,13 +23,8 @@ import (
 func TestService_Get(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
-
 	id := "foo"
-	appID := "bar"
-	name := "foo"
-	desc := "bar"
-
-	eventAPIDefinition := fixModelEventAPIDefinition(id, appID, name, desc)
+	eventAPIDefinition := fixMinModelEventAPIDefinition(id, "placeholder")
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, "tenant")
@@ -94,13 +89,11 @@ func TestService_List(t *testing.T) {
 
 	id := "foo"
 	applicationID := "bar"
-	name := "foo"
-	desc := "bar"
 
 	eventAPIDefinitions := []*model.EventAPIDefinition{
-		fixModelEventAPIDefinition(id, applicationID, name, desc),
-		fixModelEventAPIDefinition(id, applicationID, name, desc),
-		fixModelEventAPIDefinition(id, applicationID, name, desc),
+		fixMinModelEventAPIDefinition(id, "placeholder"),
+		fixMinModelEventAPIDefinition(id, "placeholder"),
+		fixMinModelEventAPIDefinition(id, "placeholder"),
 	}
 	eventAPIDefinitionPage := &model.EventAPIDefinitionPage{
 		Data:       eventAPIDefinitions,

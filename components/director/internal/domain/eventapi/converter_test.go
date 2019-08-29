@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/strings"
+
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
@@ -18,9 +20,9 @@ import (
 )
 
 func TestConverter_ToGraphQL(t *testing.T) {
-	// given
-	modelEventAPIDefinition := fixDetailedModelEventAPIDefinition("foo", "Foo", "Lorem ipsum", "group")
-	gqlEventAPIDefinition := fixDetailedGQLEventAPIDefinition("foo", "Foo", "Lorem ipsum", "group")
+	// GIVEN
+	modelEventAPIDefinition := fixFullModelEventAPIDefinition("foo", "placeholder")
+	gqlEventAPIDefinition := fixDetailedGQLEventAPIDefinition("foo", "placeholder")
 	emptyModelEventAPIDefinition := &model.EventAPIDefinition{}
 	emptyGraphQLEventAPIDefinition := &graphql.EventAPIDefinition{}
 
@@ -33,7 +35,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	}{
 		{
 			Name:     "All properties given",
-			Input:    modelEventAPIDefinition,
+			Input:    &modelEventAPIDefinition,
 			Expected: gqlEventAPIDefinition,
 			FetchRequestConverter: func() *automock.FetchRequestConverter {
 				conv := &automock.FetchRequestConverter{}
@@ -92,15 +94,15 @@ func TestConverter_ToGraphQL(t *testing.T) {
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// given
 	input := []*model.EventAPIDefinition{
-		fixModelEventAPIDefinition("foo", "Foo", "Lorem ipsum", "desc"),
-		fixModelEventAPIDefinition("bar", "Bar", "Dolor sit amet", "desc"),
+		fixMinModelEventAPIDefinition("foo", "placeholder"),
+		fixMinModelEventAPIDefinition("bar", "placeholder"),
 		{},
 		nil,
 	}
 
 	expected := []*graphql.EventAPIDefinition{
-		fixGQLEventAPIDefinition("foo", "Foo", "Lorem ipsum", "desc"),
-		fixGQLEventAPIDefinition("bar", "Bar", "Dolor sit amet", "desc"),
+		fixGQLEventAPIDefinition("foo", "placeholder"),
+		fixGQLEventAPIDefinition("bar", "placeholder"),
 		{},
 	}
 
@@ -126,8 +128,8 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 
 func TestConverter_InputFromGraphQL(t *testing.T) {
 	// given
-	gqlEventAPIDefinitionInput := fixGQLEventAPIDefinitionInput("foo", "Lorem ipsum", "group")
-	modelEventAPIDefinitionInput := fixModelEventAPIDefinitionInput("foo", "Lorem ipsum", "group")
+	gqlEventAPIDefinitionInput := fixGQLEventAPIDefinitionInput()
+	modelEventAPIDefinitionInput := fixModelEventAPIDefinitionInput()
 	emptyGQLEventAPIDefinition := &graphql.EventAPIDefinitionInput{}
 	emptyModelEventAPIDefinition := &model.EventAPIDefinitionInput{}
 	testCases := []struct {
@@ -198,11 +200,13 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 
 func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 	// given
-	gqlApi1 := fixGQLEventAPIDefinitionInput("foo", "lorem", "group")
-	gqlApi2 := fixGQLEventAPIDefinitionInput("bar", "ipsum", "group2")
+	gqlApi1 := fixGQLEventAPIDefinitionInput()
+	gqlApi2 := fixGQLEventAPIDefinitionInput()
+	gqlApi2.Group = strings.Ptr("group2")
 
-	modelApi1 := fixModelEventAPIDefinitionInput("foo", "lorem", "group")
-	modelApi2 := fixModelEventAPIDefinitionInput("bar", "ipsum", "group2")
+	modelApi1 := fixModelEventAPIDefinitionInput()
+	modelApi2 := fixModelEventAPIDefinitionInput()
+	modelApi2.Group = strings.Ptr("group2")
 
 	gqlEventAPIDefinitionInputs := []*graphql.EventAPIDefinitionInput{gqlApi1, gqlApi2}
 	modelEventAPIDefinitionInputs := []*model.EventAPIDefinitionInput{modelApi1, modelApi2}
@@ -289,14 +293,78 @@ func TestEventApiSpecDataConversionNilStaysNil(t *testing.T) {
 
 	converter := eventapi.NewConverter(mockFrConv, mockVersionConv)
 	// WHEN & THEN
-	fetchReqID := "fr_id"
 	convertedInputModel := converter.InputFromGraphQL(&graphql.EventAPIDefinitionInput{Spec: &graphql.EventAPISpecInput{}})
 	require.NotNil(t, convertedInputModel)
 	require.NotNil(t, convertedInputModel.Spec)
 	require.Nil(t, convertedInputModel.Spec.Data)
-	convertedEvAPIDef := convertedInputModel.ToEventAPIDefinition("id", "app_id", &fetchReqID)
+	convertedEvAPIDef := convertedInputModel.ToEventAPIDefinition("id", "app_id", strings.Ptr(fetchRequestID))
 	require.NotNil(t, convertedEvAPIDef)
 	convertedGraphqlEvAPIDef := converter.ToGraphQL(convertedEvAPIDef)
 	require.NotNil(t, convertedGraphqlEvAPIDef)
 	assert.Nil(t, convertedGraphqlEvAPIDef.Spec.Data)
+}
+
+func TestConverter_ToEntity(t *testing.T) {
+	t.Run("success when all nullable properties filled and converted", func(t *testing.T) {
+		//GIVEN
+		id := "id"
+		eventModel := fixFullModelEventAPIDefinition(id, "placeholder")
+		versionConv := &automock.VersionConverter{}
+		versionConv.On("ToEntity", fixVersionModel()).Return(fixVersionEntity(), nil).Once()
+		conv := eventapi.NewConverter(nil, versionConv)
+		//WHEN
+		eventAPIEnt, err := conv.ToEntity(eventModel)
+		//THEN
+		require.NoError(t, err)
+		assert.Equal(t, fixFullEventAPIDef(id, "placeholder"), eventAPIEnt)
+		versionConv.AssertExpectations(t)
+	})
+
+	t.Run("success when all nullable properties empty and converter", func(t *testing.T) {
+		// GIVEN
+		id := "id"
+		eventModel := fixMinModelEventAPIDefinition(id, "placeholder")
+		require.NotNil(t, eventModel)
+		versionConv := &automock.VersionConverter{}
+		conv := eventapi.NewConverter(nil, versionConv)
+		//WHEN
+		eventEntity, err := conv.ToEntity(*eventModel)
+		//THEN
+		require.NoError(t, err)
+		assert.Equal(t, fixMinEntityEventAPIDef(id, "placeholder"), eventEntity)
+		versionConv.AssertExpectations(t)
+	})
+}
+
+func TestConverter_FromEntity(t *testing.T) {
+	t.Run("success when all nullable properties filled and converted", func(t *testing.T) {
+		//GIVEN
+		id := "id"
+		eventEntity := fixFullEventAPIDef(id, "placeholder")
+		versionConv := &automock.VersionConverter{}
+		versionConv.On("FromEntity", fixVersionEntity()).Return(fixVersionModel(), nil).Once()
+		conv := eventapi.NewConverter(nil, versionConv)
+		//WHEN
+		eventModel, err := conv.FromEntity(eventEntity)
+		//THEN
+		require.NoError(t, err)
+		assert.Equal(t, eventModel, fixFullModelEventAPIDefinition(id, "placeholder"))
+		versionConv.AssertExpectations(t)
+	})
+
+	t.Run("success when all nullable properties empty and converted", func(t *testing.T) {
+		// GIVEN
+		id := "id"
+		eventEntity := fixMinEntityEventAPIDef(id, "placeholder")
+		versionConv := &automock.VersionConverter{}
+		conv := eventapi.NewConverter(nil, versionConv)
+		//WHEN
+		eventModel, err := conv.FromEntity(eventEntity)
+		//THEN
+		require.NoError(t, err)
+		expectedModel := fixMinModelEventAPIDefinition(id, "placeholder")
+		require.NotNil(t, expectedModel)
+		assert.Equal(t, *expectedModel, eventModel)
+		versionConv.AssertExpectations(t)
+	})
 }
