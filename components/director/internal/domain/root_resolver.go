@@ -3,6 +3,8 @@ package domain
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_auth"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 
@@ -39,6 +41,7 @@ type RootResolver struct {
 func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 	authConverter := auth.NewConverter()
 
+	runtimeAuthConverter := runtime_auth.NewConverter(authConverter)
 	runtimeConverter := runtime.NewConverter(authConverter)
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
@@ -61,8 +64,10 @@ func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 	eventAPIRepo := eventapi.NewRepository()
 	docRepo := document.NewRepository(docConverter)
 	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
+	runtimeAuthRepo := runtime_auth.NewRepository(runtimeAuthConverter)
 
 	uidService := uid.NewService()
+	runtimeAuthSvc := runtime_auth.NewService(runtimeAuthRepo, uidService)
 	labelUpsertService := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidService)
 	scenariosService := labeldef.NewScenariosService(labelDefRepo, uidService)
 	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo, runtimeRepo, labelRepo, fetchRequestRepo, labelUpsertService, scenariosService, uidService)
@@ -76,7 +81,7 @@ func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 
 	return &RootResolver{
 		app:         application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter),
-		api:         api.NewResolver(transact, apiSvc, appSvc, apiConverter, authConverter, frConverter),
+		api:         api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, runtimeAuthSvc, apiConverter, authConverter, frConverter, runtimeAuthConverter),
 		eventAPI:    eventapi.NewResolver(transact, eventAPISvc, appSvc, eventAPIConverter, frConverter),
 		doc:         document.NewResolver(transact, docSvc, appSvc, frConverter),
 		runtime:     runtime.NewResolver(transact, runtimeSvc, runtimeConverter),
@@ -97,6 +102,9 @@ func (r *RootResolver) Application() graphql.ApplicationResolver {
 }
 func (r *RootResolver) Runtime() graphql.RuntimeResolver {
 	return &runtimeResolver{r}
+}
+func (r *RootResolver) APIDefinition() graphql.APIDefinitionResolver {
+	return &apiDefinitionResolver{r}
 }
 func (r *RootResolver) APISpec() graphql.APISpecResolver {
 	return &apiSpecResolver{r}
@@ -252,6 +260,17 @@ type runtimeResolver struct {
 
 func (r *runtimeResolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string) (graphql.Labels, error) {
 	return r.runtime.Labels(ctx, obj, key)
+}
+
+type apiDefinitionResolver struct {
+	*RootResolver
+}
+
+func (r *apiDefinitionResolver) Auth(ctx context.Context, obj *graphql.APIDefinition, runtimeID string) (*graphql.RuntimeAuth, error) {
+	return r.api.Auth(ctx, obj, runtimeID)
+}
+func (r *apiDefinitionResolver) Auths(ctx context.Context, obj *graphql.APIDefinition) ([]*graphql.RuntimeAuth, error) {
+	return r.api.Auths(ctx, obj)
 }
 
 type apiSpecResolver struct{ *RootResolver }

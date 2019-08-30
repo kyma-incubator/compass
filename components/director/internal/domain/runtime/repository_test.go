@@ -38,7 +38,7 @@ func TestPgRepository_GetByID_ShouldReturnRuntimeModelForRuntimeEntity(t *testin
 	rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth"}).
 		AddRow(runtimeID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp, agentAuthStr)
 
-	sqlMock.ExpectQuery(`^SELECT (.+) FROM "public"."runtimes" WHERE tenant_id = \$1 AND id = \$2$`).
+	sqlMock.ExpectQuery(`^SELECT (.+) FROM public.runtimes WHERE tenant_id = \$1 AND id = \$2$`).
 		WithArgs(tenantID, runtimeID).
 		WillReturnRows(rows)
 
@@ -68,8 +68,8 @@ func TestPgRepository_List(t *testing.T) {
 	limit := 2
 	offset := 3
 
-	pageableQuery := `^SELECT (.+) FROM "public"."runtimes" WHERE tenant_id=\$1 ORDER BY id LIMIT %d OFFSET %d$`
-	countQuery := regexp.QuoteMeta(`SELECT COUNT(*) FROM "public"."runtimes" WHERE tenant_id=$1`)
+	pageableQuery := `^SELECT (.+) FROM public.runtimes WHERE tenant_id=\$1 ORDER BY id LIMIT %d OFFSET %d$`
+	countQuery := regexp.QuoteMeta(`SELECT COUNT(*) FROM public.runtimes WHERE tenant_id=$1`)
 
 	testCases := []struct {
 		Name           string
@@ -169,12 +169,12 @@ func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntitie
 		AddRow(runtime2ID, tenantID, "Runtime XYZ", "Description for runtime XYZ", "INITIAL", timestamp, agentAuthStr)
 
 	filterQuery := fmt.Sprintf(`  AND "id" IN 
-						\(SELECT "runtime_id" FROM "public"."labels" 
+						\(SELECT "runtime_id" FROM public.labels 
 							WHERE "runtime_id" IS NOT NULL 
 							AND "tenant_id" = '%s' 
 							AND "key" = 'foo'\)`, tenantID)
-	sqlQuery := fmt.Sprintf(`^SELECT (.+) FROM "public"."runtimes" 
-								WHERE tenant_id=\$1 %s ORDER BY id LIMIT %d OFFSET 0$`, filterQuery, rowSize)
+	sqlQuery := fmt.Sprintf(`^SELECT (.+) FROM public.runtimes 
+								WHERE tenant_id=\$1 %s ORDER BY id LIMIT %d OFFSET 0`, filterQuery, rowSize)
 
 	sqlMock.ExpectQuery(sqlQuery).
 		WithArgs(tenantID).
@@ -182,7 +182,7 @@ func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntitie
 
 	countRows := sqlMock.NewRows([]string{"count"}).AddRow(rowSize)
 
-	countQuery := fmt.Sprintf(`^SELECT COUNT\(\*\) FROM "public"."runtimes" WHERE tenant_id=\$1 %s`, filterQuery)
+	countQuery := fmt.Sprintf(`^SELECT COUNT\(\*\) FROM public.runtimes WHERE tenant_id=\$1 %s`, filterQuery)
 	sqlMock.ExpectQuery(countQuery).
 		WithArgs(tenantID).
 		WillReturnRows(countRows)
@@ -242,7 +242,7 @@ func TestPgRepository_Create_ShouldCreateRuntimeEntityFromValidModel(t *testing.
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	defer sqlMock.AssertExpectations(t)
 
-	sqlMock.ExpectExec(`^INSERT INTO "public"."runtimes" \(.+\) VALUES \(.+\)$`).
+	sqlMock.ExpectExec(`^INSERT INTO public.runtimes \(.+\) VALUES \(.+\)$`).
 		WithArgs(modelRuntime.ID, modelRuntime.Tenant, modelRuntime.Name, modelRuntime.Description, modelRuntime.Status.Condition, modelRuntime.Status.Timestamp, agentAuthStr).
 		WillReturnResult(sqlmock.NewResult(-1, 1))
 
@@ -287,7 +287,7 @@ func TestPgRepository_Update_ShouldUpdateRuntimeEntityFromValidModel(t *testing.
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	defer sqlMock.AssertExpectations(t)
 
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "public"."runtimes" SET name = ?, description = ?, status_condition = ?, status_timestamp = ? WHERE tenant_id = ? AND id = ?`)).
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.runtimes SET name = ?, description = ?, status_condition = ?, status_timestamp = ? WHERE tenant_id = ? AND id = ?`)).
 		WithArgs(modelRuntime.Name, modelRuntime.Description, modelRuntime.Status.Condition, modelRuntime.Status.Timestamp, modelRuntime.Tenant, modelRuntime.ID).
 		WillReturnResult(sqlmock.NewResult(-1, 1))
 
@@ -311,7 +311,7 @@ func TestPgRepository_Delete_ShouldDeleteRuntimeEntityUsingValidModel(t *testing
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	defer sqlMock.AssertExpectations(t)
 
-	sqlMock.ExpectExec(fmt.Sprintf(`^DELETE FROM "public"."runtimes" WHERE tenant_id = \$1 AND id = \$2$`)).
+	sqlMock.ExpectExec(fmt.Sprintf(`^DELETE FROM public.runtimes WHERE tenant_id = \$1 AND id = \$2$`)).
 		WithArgs(tenantID, runtimeID).
 		WillReturnResult(sqlmock.NewResult(-1, 1))
 
@@ -334,7 +334,7 @@ func TestPgRepository_Exist(t *testing.T) {
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	defer sqlMock.AssertExpectations(t)
 
-	sqlMock.ExpectQuery(fmt.Sprintf(`^SELECT 1 FROM "public"."runtimes" WHERE tenant_id = \$1 AND id = \$2$`)).
+	sqlMock.ExpectQuery(fmt.Sprintf(`^SELECT 1 FROM public.runtimes WHERE tenant_id = \$1 AND id = \$2$`)).
 		WithArgs(tenantID, runtimeID).
 		WillReturnRows(testdb.RowWhenObjectExist())
 

@@ -46,7 +46,7 @@ func TestResolver_AddEventAPI(t *testing.T) {
 		{
 			Name:            "Success",
 			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
-			TransactionerFn: txtest.TransactionerThatSucceed,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
 				svc.On("Create", contextParam, appId, *modelAPIInput).Return(id, nil).Once()
@@ -69,8 +69,8 @@ func TestResolver_AddEventAPI(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when application not exist",
-			PersistenceFn:   txtest.PersistenceContextThatDontExpectCommit,
-			TransactionerFn: txtest.TransactionerThatSucceed,
+			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
 				return svc
@@ -90,8 +90,8 @@ func TestResolver_AddEventAPI(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when application existence check failed",
-			PersistenceFn:   txtest.PersistenceContextThatDontExpectCommit,
-			TransactionerFn: txtest.TransactionerThatSucceed,
+			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
 				return svc
@@ -111,8 +111,8 @@ func TestResolver_AddEventAPI(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when EventAPI creation failed",
-			PersistenceFn:   txtest.PersistenceContextThatDontExpectCommit,
-			TransactionerFn: txtest.TransactionerThatSucceed,
+			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
 				svc.On("Create", contextParam, appId, *modelAPIInput).Return("", testErr).Once()
@@ -133,8 +133,8 @@ func TestResolver_AddEventAPI(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when EventAPI retrieval failed",
-			PersistenceFn:   txtest.PersistenceContextThatDontExpectCommit,
-			TransactionerFn: txtest.TransactionerThatSucceed,
+			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
 				svc.On("Create", contextParam, appId, *modelAPIInput).Return(id, nil).Once()
@@ -295,7 +295,7 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 		{
 			Name:            "Success",
 			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
-			TransactionerFn: txtest.TransactionerThatSucceed,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
 				svc.On("Update", contextParam, id, *modelAPIDefinitionInput).Return(nil).Once()
@@ -315,8 +315,8 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when EventAPI update failed",
-			PersistenceFn:   txtest.PersistenceContextThatDontExpectCommit,
-			TransactionerFn: txtest.TransactionerThatSucceed,
+			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
 				svc.On("Update", contextParam, id, *modelAPIDefinitionInput).Return(testErr).Once()
@@ -334,8 +334,8 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when EventAPI retrieval failed",
-			PersistenceFn:   txtest.PersistenceContextThatDontExpectCommit,
-			TransactionerFn: txtest.TransactionerThatSucceed,
+			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
 				svc.On("Update", contextParam, id, *modelAPIDefinitionInput).Return(nil).Once()

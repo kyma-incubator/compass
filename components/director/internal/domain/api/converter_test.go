@@ -46,10 +46,6 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
 				conv.On("ToGraphQL", modelAPIDefinition.DefaultAuth).Return(gqlAPIDefinition.DefaultAuth).Once()
-				for i, auth := range modelAPIDefinition.Auths {
-					conv.On("ToGraphQL", auth.Auth).Return(gqlAPIDefinition.Auths[i].Auth).Once()
-
-				}
 
 				return conv
 			},

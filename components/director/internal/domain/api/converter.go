@@ -51,7 +51,6 @@ func (c *converter) ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition {
 		Spec:          c.apiSpecToGraphQL(in.ID, in.Spec),
 		TargetURL:     in.TargetURL,
 		Group:         in.Group,
-		Auths:         c.runtimeAuthArrToGraphQL(in.Auths),
 		DefaultAuth:   c.auth.ToGraphQL(in.DefaultAuth),
 		Version:       c.version.ToGraphQL(in.Version),
 	}
@@ -125,29 +124,6 @@ func (c *converter) apiSpecInputFromGraphQL(in *graphql.APISpecInput) *model.API
 		Format:       model.SpecFormat(in.Format),
 		FetchRequest: c.fr.InputFromGraphQL(in.FetchRequest),
 	}
-}
-
-func (c *converter) runtimeAuthToGraphQL(in *model.RuntimeAuth) *graphql.RuntimeAuth {
-	if in == nil {
-		return nil
-	}
-
-	return &graphql.RuntimeAuth{
-		RuntimeID: in.RuntimeID,
-		Auth:      c.auth.ToGraphQL(in.Auth),
-	}
-}
-
-func (c *converter) runtimeAuthArrToGraphQL(in []*model.RuntimeAuth) []*graphql.RuntimeAuth {
-	var auths []*graphql.RuntimeAuth
-	for _, item := range in {
-		auths = append(auths, &graphql.RuntimeAuth{
-			RuntimeID: item.RuntimeID,
-			Auth:      c.auth.ToGraphQL(item.Auth),
-		})
-	}
-
-	return auths
 }
 
 func (c *converter) FromEntity(entity Entity) (model.APIDefinition, error) {

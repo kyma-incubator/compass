@@ -1,5 +1,7 @@
 package repo
 
+import "github.com/pkg/errors"
+
 type NotFound interface {
 	IsNotFound() bool
 }
@@ -19,6 +21,9 @@ func (e *notFoundError) IsNotFound() bool {
 }
 
 func IsNotFoundError(err error) bool {
+	if cause := errors.Cause(err); cause != nil {
+		err = cause
+	}
 	if _, ok := err.(NotFound); ok {
 		return true
 	}
@@ -38,6 +43,9 @@ func (e *notUniqueError) Error() string {
 func (notUniqueError) IsNotUnique() {}
 
 func IsNotUnique(err error) bool {
+	if cause := errors.Cause(err); cause != nil {
+		err = cause
+	}
 	if _, ok := err.(NotUnique); ok {
 		return true
 	}

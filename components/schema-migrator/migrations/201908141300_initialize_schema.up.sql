@@ -7,7 +7,7 @@ CREATE TYPE runtime_status_condition AS ENUM (
 );
 
 CREATE TABLE runtimes (
-    id uuid PRIMARY KEY,
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     tenant_id uuid NOT NULL,
     name varchar(256) NOT NULL,
     description text,
@@ -32,7 +32,7 @@ CREATE TYPE application_status_condition AS ENUM (
 );
 
 CREATE TABLE applications (
-    id uuid PRIMARY KEY,
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     tenant_id uuid NOT NULL,
     name varchar(36) NOT NULL,
     description text,
@@ -54,7 +54,7 @@ CREATE TYPE webhook_type AS ENUM (
 );
 
 CREATE TABLE webhooks (
-    id uuid PRIMARY KEY,
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     tenant_id uuid NOT NULL,
     app_id uuid NOT NULL,
 --     TODO uncomment when applications moved to DB
@@ -80,10 +80,10 @@ CREATE TYPE api_spec_type AS ENUM (
 );
 
 CREATE TABLE api_definitions (
-    id uuid PRIMARY KEY,
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     tenant_id uuid NOT NULL,
     app_id uuid NOT NULL,
-    foreign key (tenant_id, app_id) REFERENCES applications (tenant_id, id) ON DELETE CASCADE,
+    --- foreign key (tenant_id, app_id) REFERENCES applications (tenant_id, id) ON DELETE CASCADE, --- TODO: Uncomment after implementing Application pg repository
     name varchar(256) NOT NULL,
     description text,
     group_name varchar(256),
@@ -113,7 +113,7 @@ CREATE TYPE event_api_spec_type AS ENUM (
 );
 
 CREATE TABLE event_api_definitions (
-    id uuid PRIMARY KEY,
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     tenant_id uuid NOT NULL,
     app_id uuid NOT NULL,
     foreign key (tenant_id, app_id) references applications (tenant_id, id) ON DELETE CASCADE,
@@ -135,12 +135,12 @@ CREATE UNIQUE INDEX ON event_api_definitions (tenant_id, id);
 -- Runtime Auth
 
 CREATE TABLE runtime_auths (
-    id uuid PRIMARY KEY,
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     tenant_id uuid NOT NULL,
     runtime_id uuid NOT NULL,
     foreign key (tenant_id, runtime_id) references runtimes (tenant_id, id) ON DELETE CASCADE,
     api_def_id uuid NOT NULL,
-    foreign key (tenant_id, api_def_id) references api_definitions (tenant_id, id) ON DELETE CASCADE,
+    --- foreign key (tenant_id, api_def_id) references api_definitions (tenant_id, id) ON DELETE CASCADE, --- TODO: Uncomment after implementing APIDefinition pg repository
     value jsonb
 );
 
@@ -155,7 +155,7 @@ CREATE TYPE document_format AS ENUM (
 );
 
 CREATE TABLE documents (
-    id uuid PRIMARY KEY,
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     tenant_id uuid NOT NULL,
     app_id uuid NOT NULL,
 --     foreign key (tenant_id, app_id) references applications (tenant_id, id) ON DELETE CASCADE, //TODO: Uncomment when Apps are ready
@@ -173,7 +173,7 @@ CREATE UNIQUE INDEX ON documents (tenant_id, id);
 -- Label Definition
 
 CREATE TABLE label_definitions (
-    id uuid PRIMARY KEY,
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     tenant_id uuid NOT NULL,
     key varchar(256) NOT NULL,
     schema jsonb
@@ -185,7 +185,7 @@ CREATE UNIQUE INDEX ON label_definitions (tenant_id, key);
 -- Label
 
 CREATE TABLE labels (
-    id uuid PRIMARY KEY,
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     tenant_id uuid NOT NULL,
     app_id uuid, -- TODO: Update when Applications switch to DB repository
     runtime_id uuid,
@@ -196,7 +196,8 @@ CREATE TABLE labels (
 );
 
 CREATE INDEX ON labels (tenant_id);
-CREATE UNIQUE INDEX ON labels (tenant_id, key, runtime_id, app_id);
+-- We use coalesce to handle nullable columns https://stackoverflow.com/a/8289327
+CREATE UNIQUE INDEX ON labels (tenant_id, key, coalesce(app_id, '00000000-0000-0000-0000-000000000000'), coalesce(runtime_id, '00000000-0000-0000-0000-000000000000'));
 CREATE UNIQUE INDEX ON labels (tenant_id, id);
 
 -- Fetch Request
@@ -214,7 +215,7 @@ CREATE TYPE fetch_request_mode AS ENUM (
 );
 
 CREATE TABLE fetch_requests (
-    id uuid PRIMARY KEY,
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     tenant_id uuid NOT NULL,
 
     api_def_id uuid,
@@ -234,5 +235,6 @@ CREATE TABLE fetch_requests (
 );
 
 CREATE INDEX ON fetch_requests (tenant_id);
-CREATE UNIQUE INDEX ON fetch_requests (tenant_id, api_def_id, event_api_def_id, document_id);
+-- We use coalesce to handle nullable columns https://stackoverflow.com/a/8289327
+CREATE UNIQUE INDEX ON fetch_requests (tenant_id, coalesce(api_def_id, '00000000-0000-0000-0000-000000000000'), coalesce(event_api_def_id, '00000000-0000-0000-0000-000000000000'), coalesce(document_id, '00000000-0000-0000-0000-000000000000'));
 CREATE UNIQUE INDEX ON fetch_requests (tenant_id, id);
