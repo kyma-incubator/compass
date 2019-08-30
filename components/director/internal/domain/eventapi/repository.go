@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/lib/pq"
+
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -178,7 +180,7 @@ func (r EventAPIDefCollection) Len() int {
 }
 
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventAPIDefinitionPage, error) {
-	appCond := fmt.Sprintf("%s = '%s'", "app_id", applicationID)
+	appCond := fmt.Sprintf("app_id = %s ", pq.QuoteLiteral(applicationID))
 	var eventAPIDefCollection EventAPIDefCollection
 	page, totalCount, err := r.PageableQuerier.List(ctx, tenantID, pageSize, cursor, "id", &eventAPIDefCollection, appCond)
 	if err != nil {
