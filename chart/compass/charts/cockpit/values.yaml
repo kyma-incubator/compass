@@ -3,18 +3,18 @@ images:
     path: eu.gcr.io/kyma-project
   ui:
     dir:
-    version: "b79cff28"
+    version: d0309a2a
 
 ui:
   host: compass
-mf: 
-  host: compass-mf  
+mf:
+  host: compass-mf
 
 service:
-  externalPort : 80
-  internalPort : 80
-  mfExternalPort : 8888
-  mfInternalPort : 8888
+  externalPort: 80
+  internalPort: 80
+  mfExternalPort: 8888
+  mfInternalPort: 8888
 
 deployment:
   image:
