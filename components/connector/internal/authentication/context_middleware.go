@@ -1,6 +1,7 @@
 package authentication
 
 import (
+	"fmt"
 	"net/http"
 )
 
@@ -19,6 +20,10 @@ func (acm *authContextMiddleware) PropagateAuthentication(handler http.Handler) 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get(ConnectorTokenHeader)
 		r = r.WithContext(PutInContext(r.Context(), ConnectorTokenKey, token))
+
+		// TODO: we should process the headers from Connector Hydrator here and put them into the Context
+
+		fmt.Println(r.Header)
 
 		handler.ServeHTTP(w, r)
 	})

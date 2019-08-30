@@ -5,7 +5,10 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+	"sync"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/connector/internal/oathkeeper"
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
 
@@ -35,6 +38,8 @@ type config struct {
 	APIEndpoint           string `envconfig:"default=/graphql"`
 	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
 
+	HydratorAddress string `envconfig:"default=127.0.0.1:8080"`
+
 	CSRSubject struct {
 		Country            string `envconfig:"default=PL"`
 		Organization       string `envconfig:"default=Org"`
@@ -57,13 +62,13 @@ type config struct {
 }
 
 func (c *config) String() string {
-	return fmt.Sprintf("Address: %s, APIEndpoint: %s, "+
+	return fmt.Sprintf("Address: %s, APIEndpoint: %s, HydratorAddress: %s, "+
 		"CSRSubjectCountry: %s, CSRSubjectOrganization: %s, CSRSubjectOrganizationalUnit: %s, "+
 		"CSRSubjectLocality: %s, CSRSubjectProvince: %s, "+
 		"CertificateValidityTime: %s, CASecretName: %s, RootCACertificateSecretName: %s, "+
 		"TokenLength: %d, TokenRuntimeExpiration: %s, TokenApplicationExpiration: %s, TokenCSRExpiration: %s, "+
 		"DirectorURL: %s",
-		c.Address, c.APIEndpoint,
+		c.Address, c.APIEndpoint, c.HydratorAddress,
 		c.CSRSubject.Country, c.CSRSubject.Organization, c.CSRSubject.OrganizationalUnit,
 		c.CSRSubject.Locality, c.CSRSubject.Province,
 		c.CertificateValidityTime, c.CASecretName, c.RootCACertificateSecretName,
@@ -111,15 +116,30 @@ func main() {
 		csrSubjectConsts,
 		cfg.DirectorURL)
 
-	server := prepareServer(cfg, tokenResolver, certificateResolver)
+	server := prepareGraphQLServer(cfg, tokenResolver, certificateResolver)
+	hydratorServer := prepareHydratorServer(cfg, tokenService)
 
-	log.Printf("API listening on %s...", cfg.Address)
-	if err := server.ListenAndServe(); err != nil {
-		panic(err)
-	}
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+
+	go func() {
+		log.Printf("API listening on %s...", cfg.Address)
+		if err := server.ListenAndServe(); err != nil {
+			panic(err)
+		}
+	}()
+
+	go func() {
+		log.Printf("Hydrator API listening on %s...", cfg.HydratorAddress)
+		if err := hydratorServer.ListenAndServe(); err != nil {
+			panic(err)
+		}
+	}()
+
+	wg.Wait()
 }
 
-func prepareServer(cfg config, tokenResolver api.TokenResolver, certResolver api.CertificateResolver) *http.Server {
+func prepareGraphQLServer(cfg config, tokenResolver api.TokenResolver, certResolver api.CertificateResolver) *http.Server {
 	externalResolver := api.Resolver{CertificateResolver: certResolver, TokenResolver: tokenResolver}
 
 	gqlInternalCfg := gqlschema.Config{
@@ -139,6 +159,19 @@ func prepareServer(cfg config, tokenResolver api.TokenResolver, certResolver api
 	return &http.Server{
 		Addr:    cfg.Address,
 		Handler: externalRouter,
+	}
+}
+
+func prepareHydratorServer(cfg config, tokenService tokens.Service) *http.Server {
+	validationHydrator := oathkeeper.NewValidationHydrator(tokenService)
+
+	router := mux.NewRouter()
+	v1Router := router.PathPrefix("/v1").Subrouter()
+	v1Router.HandleFunc("/tokens/resolve", validationHydrator.ResolveConnectorTokenHeader)
+
+	return &http.Server{
+		Addr:    cfg.HydratorAddress,
+		Handler: router,
 	}
 }
 
