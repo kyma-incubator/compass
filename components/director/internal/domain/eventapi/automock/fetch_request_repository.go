@@ -26,13 +26,13 @@ func (_m *FetchRequestRepository) Create(ctx context.Context, item *model.FetchR
 	return r0
 }
 
-// Delete provides a mock function with given fields: ctx, tenant, id
-func (_m *FetchRequestRepository) Delete(ctx context.Context, tenant string, id string) error {
-	ret := _m.Called(ctx, tenant, id)
+// DeleteByReferenceObjectID provides a mock function with given fields: ctx, tenant, objectType, objectID
+func (_m *FetchRequestRepository) DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) error {
+	ret := _m.Called(ctx, tenant, objectType, objectID)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
-		r0 = rf(ctx, tenant, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.FetchRequestReferenceObjectType, string) error); ok {
+		r0 = rf(ctx, tenant, objectType, objectID)
 	} else {
 		r0 = ret.Error(0)
 	}

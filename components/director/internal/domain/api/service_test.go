@@ -203,10 +203,8 @@ func TestService_Create(t *testing.T) {
 		ApplicationID: applicationID,
 		Name:          name,
 		TargetURL:     targetUrl,
-		Spec: &model.APISpec{
-			FetchRequestID: &frID,
-		},
-		Version: &model.Version{},
+		Spec:          &model.APISpec{},
+		Version:       &model.Version{},
 	}
 
 	ctx := context.TODO()
@@ -316,6 +314,7 @@ func TestService_Update(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
+	id := "foo"
 	tnt := "tenant"
 	timestamp := time.Now()
 	frID := "fr-id"
@@ -341,11 +340,9 @@ func TestService_Update(t *testing.T) {
 		Name:          "Bar",
 		ApplicationID: "id",
 		TargetURL:     "https://test-url-updated.com",
-		Spec: &model.APISpec{
-			FetchRequestID: &frID,
-		},
-		DefaultAuth: &model.Auth{},
-		Version:     &model.Version{},
+		Spec:          &model.APISpec{},
+		DefaultAuth:   &model.Auth{},
+		Version:       &model.Version{},
 	}
 
 	ctx := context.TODO()
@@ -364,13 +361,13 @@ func TestService_Update(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("GetByID", "foo").Return(apiDefinitionModel, nil).Once()
+				repo.On("GetByID", id).Return(apiDefinitionModel, nil).Once()
 				repo.On("Update", inputAPIDefinitionModel).Return(nil).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
 				repo := &automock.FetchRequestRepository{}
-				repo.On("Delete", ctx, tnt, frID).Return(nil).Once()
+				repo.On("DeleteByReferenceObjectID", ctx, tnt, model.APIFetchRequestReference, id).Return(nil).Once()
 				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
 				return repo
 			},
@@ -393,7 +390,7 @@ func TestService_Update(t *testing.T) {
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
 				repo := &automock.FetchRequestRepository{}
-				repo.On("Delete", ctx, tnt, frID).Return(nil).Once()
+				repo.On("DeleteByReferenceObjectID", ctx, tnt, model.APIFetchRequestReference, id).Return(nil).Once()
 				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
 				return repo
 			},
@@ -460,15 +457,12 @@ func TestService_Delete(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	frID := "fr_id"
 	apiDefinitionModel := &model.APIDefinition{
 		Name:          "Bar",
 		ApplicationID: "id",
 		TargetURL:     "https://test-url-updated.com",
-		Spec: &model.APISpec{
-			FetchRequestID: &frID,
-		},
-		Version: &model.Version{},
+		Spec:          &model.APISpec{},
+		Version:       &model.Version{},
 	}
 
 	ctx := context.TODO()
@@ -531,204 +525,6 @@ func TestService_Delete(t *testing.T) {
 			} else {
 				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
 			}
-
-			repo.AssertExpectations(t)
-		})
-	}
-}
-
-func TestService_SetAPIAuth(t *testing.T) {
-	// given
-	testErr := errors.New("Test error")
-
-	apiID := "foo"
-	runtimeID := "bar"
-
-	headers := map[string][]string{"header": {"hval1", "hval2"}}
-	modelAuthInput := fixModelAuthInput(headers)
-
-	modelRuntimeAuth := fixModelRuntimeAuth(runtimeID, modelAuthInput.ToAuth())
-
-	modelAPIDefinition := &model.APIDefinition{
-		ID:    apiID,
-		Auths: []*model.RuntimeAuth{modelRuntimeAuth},
-	}
-
-	modelAPIDefinitionWithEmptyAuths := &model.APIDefinition{
-		ID:    apiID,
-		Auths: []*model.RuntimeAuth{},
-	}
-
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, "tenant")
-
-	testCases := []struct {
-		Name                string
-		RepositoryFn        func() *automock.APIRepository
-		Input               model.AuthInput
-		ExpectedRuntimeAuth *model.RuntimeAuth
-		ExpectedErr         error
-	}{
-		{
-			Name: "Success on replacing existing auth",
-			RepositoryFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				repo.On("GetByID", apiID).Return(modelAPIDefinition, nil).Once()
-				repo.On("Update", modelAPIDefinition).Return(nil).Once()
-				return repo
-			},
-			Input:               *modelAuthInput,
-			ExpectedRuntimeAuth: modelRuntimeAuth,
-			ExpectedErr:         nil,
-		},
-		{
-			Name: "Success on appending new auth",
-			RepositoryFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				repo.On("GetByID", apiID).Return(modelAPIDefinitionWithEmptyAuths, nil).Once()
-				repo.On("Update", modelAPIDefinitionWithEmptyAuths).Return(nil).Once()
-				return repo
-			},
-			Input:               *modelAuthInput,
-			ExpectedRuntimeAuth: modelRuntimeAuth,
-			ExpectedErr:         nil,
-		},
-		{
-			Name: "Set api auth failed on get",
-			RepositoryFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				repo.On("GetByID", apiID).Return(nil, testErr).Once()
-				return repo
-			},
-			Input:               *modelAuthInput,
-			ExpectedRuntimeAuth: nil,
-			ExpectedErr:         testErr,
-		},
-		{
-			Name: "Set api auth failed on update",
-			RepositoryFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				repo.On("GetByID", apiID).Return(modelAPIDefinition, nil).Once()
-				repo.On("Update", modelAPIDefinition).Return(testErr).Once()
-				return repo
-			},
-			Input:               *modelAuthInput,
-			ExpectedRuntimeAuth: nil,
-			ExpectedErr:         testErr,
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
-			// given
-			repo := testCase.RepositoryFn()
-
-			svc := api.NewService(repo, nil, nil)
-
-			// when
-			result, err := svc.SetAPIAuth(ctx, apiID, runtimeID, testCase.Input)
-
-			// then
-			assert.Equal(t, testCase.ExpectedRuntimeAuth, result)
-			assert.Equal(t, testCase.ExpectedErr, err)
-
-			repo.AssertExpectations(t)
-		})
-	}
-}
-
-func TestService_DeleteAPIAuth(t *testing.T) {
-	// given
-	testErr := errors.New("Test error")
-	apiID := "foo"
-	runtimeID := "bar"
-	invalidRuntimeID := "invalid"
-	headers := map[string][]string{"header": {"hval1", "hval2"}}
-	modelAuthInput := fixModelAuthInput(headers)
-
-	fixModelAPIDefinition := func(runtimeID string) *model.APIDefinition {
-		return &model.APIDefinition{
-			ID:    apiID,
-			Auths: []*model.RuntimeAuth{fixModelRuntimeAuth(runtimeID, modelAuthInput.ToAuth())},
-		}
-	}
-
-	fixModelApiDefinitionWithEmptyAuths := &model.APIDefinition{
-		ID:    apiID,
-		Auths: []*model.RuntimeAuth{},
-	}
-
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, "tenant")
-
-	testCases := []struct {
-		Name                string
-		RepositoryFn        func() *automock.APIRepository
-		Input               model.AuthInput
-		ExpectedRuntimeAuth *model.RuntimeAuth
-		ExpectedErr         error
-	}{
-		{
-			Name: "Success",
-			RepositoryFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				repo.On("GetByID", apiID).Return(fixModelAPIDefinition(runtimeID), nil).Once()
-				repo.On("Update", fixModelApiDefinitionWithEmptyAuths).Return(nil).Once()
-				return repo
-			},
-			Input:               *modelAuthInput,
-			ExpectedRuntimeAuth: fixModelRuntimeAuth(runtimeID, modelAuthInput.ToAuth()),
-			ExpectedErr:         nil,
-		},
-		{
-			Name: "Delete api auth failed on get",
-			RepositoryFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				repo.On("GetByID", apiID).Return(nil, testErr).Once()
-				return repo
-			},
-			Input:               *modelAuthInput,
-			ExpectedRuntimeAuth: nil,
-			ExpectedErr:         testErr,
-		},
-		{
-			Name: "Delete api auth failed on update",
-			RepositoryFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				repo.On("GetByID", apiID).Return(fixModelAPIDefinition(runtimeID), nil).Once()
-				repo.On("Update", fixModelApiDefinitionWithEmptyAuths).Return(testErr).Once()
-				return repo
-			},
-			Input:               *modelAuthInput,
-			ExpectedRuntimeAuth: nil,
-			ExpectedErr:         testErr,
-		},
-		{
-			Name: "No auth found",
-			RepositoryFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				repo.On("GetByID", apiID).Return(fixModelAPIDefinition(invalidRuntimeID), nil).Once()
-				return repo
-			},
-			Input:               *modelAuthInput,
-			ExpectedRuntimeAuth: nil,
-			ExpectedErr:         nil,
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
-			// given
-			repo := testCase.RepositoryFn()
-
-			svc := api.NewService(repo, nil, nil)
-
-			// when
-			result, err := svc.DeleteAPIAuth(ctx, apiID, runtimeID)
-
-			// then
-			assert.Equal(t, testCase.ExpectedRuntimeAuth, result)
-			assert.Equal(t, testCase.ExpectedErr, err)
 
 			repo.AssertExpectations(t)
 		})

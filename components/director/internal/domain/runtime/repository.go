@@ -13,7 +13,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-const runtimeTable string = `"public"."runtimes"`
+const runtimeTable string = `public.runtimes`
 
 var runtimeColumns = []string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth"}
 
@@ -100,7 +100,6 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 		Data:       items,
 		TotalCount: totalCount,
 		PageInfo:   page}, nil
-
 }
 
 func (r *pgRepository) Create(ctx context.Context, item *model.Runtime) error {

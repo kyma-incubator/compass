@@ -4,15 +4,18 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 )
 
-const tableName string = `"public"."labels"`
-const fields string = `"id", "tenant_id", "key", "value", "app_id", "runtime_id"`
+const tableName string = "public.labels"
+
+var tableColumns = []string{"id", "tenant_id", "app_id", "runtime_id", "key", "value"}
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
@@ -21,44 +24,29 @@ type Converter interface {
 }
 
 type repository struct {
+	*repo.Upserter
+
 	conv Converter
 }
 
 func NewRepository(conv Converter) *repository {
-	return &repository{conv: conv}
+	return &repository{
+		Upserter: repo.NewUpserter(tableName, tableColumns, []string{"tenant_id", "coalesce(app_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_id, '00000000-0000-0000-0000-000000000000')", "key"}, []string{"value"}),
+		conv:     conv,
+	}
 }
 
 func (r *repository) Upsert(ctx context.Context, label *model.Label) error {
 	if label == nil {
-		return errors.New("Item cannot be empty")
+		return errors.New("item can not be empty")
 	}
 
-	persist, err := persistence.FromCtx(ctx)
+	labelEntity, err := r.conv.ToEntity(*label)
 	if err != nil {
-		return errors.Wrap(err, "while fetching persistence from context")
+		return errors.Wrap(err, "while creating label entity from model")
 	}
 
-	entity, err := r.conv.ToEntity(*label)
-	if err != nil {
-		return errors.Wrap(err, "while creating Label entity from model")
-	}
-
-	stmt := fmt.Sprintf(`INSERT INTO %s (id, tenant_id, key, value, app_id, runtime_id) VALUES (:id, :tenant_id, :key, :value, :app_id, :runtime_id)
-		ON CONFLICT (id) DO UPDATE SET
-    		value = EXCLUDED.value
-		`, tableName)
-
-	_, err = persist.NamedExec(stmt, entity)
-	if err != nil {
-		pqErr, ok := err.(*pq.Error)
-		if ok && pqErr.Code == persistence.UniqueViolation {
-			return errors.Wrap(pqErr, "unique Violation error:")
-		}
-
-		return errors.Wrap(err, "while upserting the Label entity to database")
-	}
-
-	return nil
+	return r.Upserter.Upsert(ctx, labelEntity)
 }
 
 func (r *repository) GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error) {
@@ -67,8 +55,8 @@ func (r *repository) GetByKey(ctx context.Context, tenant string, objectType mod
 		return nil, errors.Wrap(err, "while fetching DB from context")
 	}
 
-	stmt := fmt.Sprintf(`SELECT %s FROM %s WHERE "key" = $1 AND "%s" = $2 AND "tenant_id" = $3`,
-		fields, tableName, labelableObjectField(objectType))
+	stmt := fmt.Sprintf(`SELECT %s FROM %s WHERE key = $1 AND %s = $2 AND tenant_id = $3`,
+		strings.Join(tableColumns, ", "), tableName, labelableObjectField(objectType))
 
 	var entity Entity
 	err = persist.Get(&entity, stmt, key, objectID, tenant)
@@ -94,8 +82,8 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 		return nil, errors.Wrap(err, "while fetching DB from context")
 	}
 
-	stmt := fmt.Sprintf(`SELECT %s FROM %s WHERE  "%s" = $1 AND "tenant_id" = $2`,
-		fields, tableName, labelableObjectField(objectType))
+	stmt := fmt.Sprintf(`SELECT %s FROM %s WHERE  %s = $1 AND tenant_id = $2`,
+		strings.Join(tableColumns, ", "), tableName, labelableObjectField(objectType))
 
 	var entities []Entity
 	err = persist.Select(&entities, stmt, objectID, tenant)
@@ -123,8 +111,8 @@ func (r *repository) ListByKey(ctx context.Context, tenant, key string) ([]*mode
 		return nil, errors.Wrap(err, "while fetching DB from context")
 	}
 
-	stmt := fmt.Sprintf(`SELECT %s FROM %s WHERE "key" = $1 AND "tenant_id" = $2`,
-		fields, tableName)
+	stmt := fmt.Sprintf(`SELECT %s FROM %s WHERE key = $1 AND tenant_id = $2`,
+		strings.Join(tableColumns, ", "), tableName)
 
 	var entities []Entity
 	err = persist.Select(&entities, stmt, key, tenant)
@@ -152,7 +140,7 @@ func (r *repository) Delete(ctx context.Context, tenant string, objectType model
 		return errors.Wrap(err, "while fetching persistence from context")
 	}
 
-	stmt := fmt.Sprintf(`DELETE FROM %s WHERE "key" = $1 AND "%s" = $2 AND "tenant_id" = $3`, tableName, labelableObjectField(objectType))
+	stmt := fmt.Sprintf(`DELETE FROM %s WHERE key = $1 AND %s = $2 AND tenant_id = $3`, tableName, labelableObjectField(objectType))
 	_, err = persist.Exec(stmt, key, objectID, tenant)
 
 	return errors.Wrap(err, "while deleting the Label entity from database")
@@ -164,7 +152,7 @@ func (r *repository) DeleteAll(ctx context.Context, tenant string, objectType mo
 		return errors.Wrap(err, "while fetching persistence from context")
 	}
 
-	stmt := fmt.Sprintf(`DELETE FROM %s WHERE "%s" = $1 AND "tenant_id" = $2`, tableName, labelableObjectField(objectType))
+	stmt := fmt.Sprintf(`DELETE FROM %s WHERE %s = $1 AND tenant_id = $2`, tableName, labelableObjectField(objectType))
 	_, err = persist.Exec(stmt, objectID, tenant)
 
 	return errors.Wrapf(err, "while deleting all Label entities from database for %s %s", objectType, objectID)
@@ -176,7 +164,7 @@ func (r *repository) DeleteByKey(ctx context.Context, tenant string, key string)
 		return errors.Wrap(err, "while fetching persistence from context")
 	}
 
-	stmt := fmt.Sprintf(`DELETE FROM %s WHERE "key" = $1 AND "tenant_id" = $2`, tableName)
+	stmt := fmt.Sprintf(`DELETE FROM %s WHERE key = $1 AND tenant_id = $2`, tableName)
 	_, err = persist.Exec(stmt, key, tenant)
 	if err != nil {
 		return errors.Wrapf(err, `while deleting all Label entities from database with key "%s"`, key)

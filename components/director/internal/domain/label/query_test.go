@@ -48,7 +48,7 @@ func Test_FilterQuery_Intersection(t *testing.T) {
 		Query: &scenariosBarPongQuery,
 	}
 
-	stmtPrefix := `SELECT "runtime_id" FROM "public"."labels" ` +
+	stmtPrefix := `SELECT "runtime_id" FROM public.labels ` +
 		`WHERE "runtime_id" IS NOT NULL AND "tenant_id" = '` + tenantID.String() + `'`
 
 	testCases := []struct {

@@ -12,13 +12,13 @@ type DocumentRepository struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: item
-func (_m *DocumentRepository) Create(item *model.Document) error {
-	ret := _m.Called(item)
+// Create provides a mock function with given fields: ctx, item
+func (_m *DocumentRepository) Create(ctx context.Context, item *model.Document) error {
+	ret := _m.Called(ctx, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*model.Document) error); ok {
-		r0 = rf(item)
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Document) error); ok {
+		r0 = rf(ctx, item)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -26,13 +26,13 @@ func (_m *DocumentRepository) Create(item *model.Document) error {
 	return r0
 }
 
-// Delete provides a mock function with given fields: item
-func (_m *DocumentRepository) Delete(item *model.Document) error {
-	ret := _m.Called(item)
+// Delete provides a mock function with given fields: ctx, tenant, id
+func (_m *DocumentRepository) Delete(ctx context.Context, tenant string, id string) error {
+	ret := _m.Called(ctx, tenant, id)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*model.Document) error); ok {
-		r0 = rf(item)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, tenant, id)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -61,13 +61,13 @@ func (_m *DocumentRepository) Exists(ctx context.Context, tenant string, id stri
 	return r0, r1
 }
 
-// GetByID provides a mock function with given fields: id
-func (_m *DocumentRepository) GetByID(id string) (*model.Document, error) {
-	ret := _m.Called(id)
+// GetByID provides a mock function with given fields: ctx, tenant, id
+func (_m *DocumentRepository) GetByID(ctx context.Context, tenant string, id string) (*model.Document, error) {
+	ret := _m.Called(ctx, tenant, id)
 
 	var r0 *model.Document
-	if rf, ok := ret.Get(0).(func(string) *model.Document); ok {
-		r0 = rf(id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Document); ok {
+		r0 = rf(ctx, tenant, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.Document)
@@ -75,8 +75,8 @@ func (_m *DocumentRepository) GetByID(id string) (*model.Document, error) {
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenant, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -84,13 +84,13 @@ func (_m *DocumentRepository) GetByID(id string) (*model.Document, error) {
 	return r0, r1
 }
 
-// ListByApplicationID provides a mock function with given fields: applicationID, pageSize, cursor
-func (_m *DocumentRepository) ListByApplicationID(applicationID string, pageSize *int, cursor *string) (*model.DocumentPage, error) {
-	ret := _m.Called(applicationID, pageSize, cursor)
+// ListByApplicationID provides a mock function with given fields: ctx, tenant, applicationID, pageSize, cursor
+func (_m *DocumentRepository) ListByApplicationID(ctx context.Context, tenant string, applicationID string, pageSize int, cursor string) (*model.DocumentPage, error) {
+	ret := _m.Called(ctx, tenant, applicationID, pageSize, cursor)
 
 	var r0 *model.DocumentPage
-	if rf, ok := ret.Get(0).(func(string, *int, *string) *model.DocumentPage); ok {
-		r0 = rf(applicationID, pageSize, cursor)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, int, string) *model.DocumentPage); ok {
+		r0 = rf(ctx, tenant, applicationID, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.DocumentPage)
@@ -98,8 +98,8 @@ func (_m *DocumentRepository) ListByApplicationID(applicationID string, pageSize
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, *int, *string) error); ok {
-		r1 = rf(applicationID, pageSize, cursor)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, int, string) error); ok {
+		r1 = rf(ctx, tenant, applicationID, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

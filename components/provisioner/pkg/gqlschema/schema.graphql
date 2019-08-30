@@ -1,0 +1,145 @@
+# We should decide if we need this.
+type AsyncOperationID {
+    id: ID!
+}
+
+# To discuss: what is the list of supported providers?
+enum InfrastructureProvider {
+    GKE
+    AKS
+    Gardener
+}
+
+enum KymaModule {
+    Backup
+    BackupInit
+    Jaeger
+    Logging
+    Monitoring
+    PrometheusOperator
+    Kiali
+    KnativeBuild
+}
+
+# Configuration of Runtime. We can consider returning kubeconfig as a part of this type.
+type RuntimeConfig {
+    clusterConfig: ClusterConfig
+    kymaConfig: KymaConfig
+}
+
+type ClusterConfig {
+    name: String
+    size: String
+    memory: String
+    computeZone: String
+    version: String
+    infrastructureProvider: InfrastructureProvider
+}
+
+type KymaConfig {
+    version: String
+    modules: [KymaModule]
+}
+
+type OperationStatus {
+    operation: OperationType!
+    state: OperationState!
+    message: String!
+    errors: [Error]
+}
+
+enum OperationType {
+    Provision
+    Upgrade
+    Deprovision
+    ReconnectRuntime
+}
+
+type Error {
+    message: String
+}
+
+type RuntimeConnectionStatus {
+    status: RuntimeAgentConnectionStatus!
+    errors: [Error!]
+}
+
+# We should consider renamig this type, as it contains more than just status.
+type RuntimeStatus {
+    lastOperationStatus: OperationStatus
+    runtimeConnectionStatus: RuntimeConnectionStatus
+    runtimeConnectionConfig: RuntimeConnectionConfig
+    runtimeConfiguration: RuntimeConfig
+}
+
+enum OperationState {
+    Pending
+    InProgress
+    Succeeded
+    Failed
+}
+
+enum RuntimeAgentConnectionStatus {
+    Pending
+    Connected
+    Disconnected
+}
+
+type RuntimeConnectionConfig {
+    kubeconfig: String!
+}
+
+# Inputs
+
+# We should decide if we need this.
+input RuntimeID {
+    id: ID!
+}
+
+input ProvisionRuntimeInput {
+    clusterConfig: ClusterConfigInput!
+    kymaConfig: KymaConfigInput!
+}
+
+# Defines the desired cluster to provision, specifying its size, memory, Kubernetes version, etc.
+input ClusterConfigInput {
+    name: String!
+    size: String
+    memory: String
+    computeZone: String!
+    version: String
+    credentials: String! # Will this API support Bring your own licence model? If no we do not need this.
+    infrastructureProvider: InfrastructureProvider!
+}
+
+input KymaConfigInput {
+    version: String!
+    modules: [KymaModule!]
+}
+
+input UpgradeRuntimeInput {
+    clusterConfig: UpgradeClusterInput
+    kymaConfig: KymaConfigInput
+}
+
+input UpgradeClusterInput {
+    version: String!
+}
+
+type Mutation {
+    # Runtime Management; only one asynchronous operation per RuntimeID can run at any given point in time
+    provisionRuntime(id: RuntimeID, config: ProvisionRuntimeInput): AsyncOperationID
+    upgradeRuntime(id: RuntimeID, config: UpgradeRuntimeInput): AsyncOperationID
+    deprovisionRuntime(id: RuntimeID): AsyncOperationID
+
+    # Compass Runtime Agent Connection Management
+    reconnectRuntimeAgent(id: RuntimeID): AsyncOperationID
+}
+
+type Query {
+    # Provides current status of specified Runtime
+    runtimeStatus(id: RuntimeID): RuntimeStatus
+
+    # Provides status of specified operation
+    runtimeOperationStatus(id: AsyncOperationID): OperationStatus
+}

@@ -10,7 +10,7 @@ global:
       version: "PR-250"
     director:
       dir: pr/
-      version: "PR-252"
+      version: "PR-253"
     gateway:
       dir: pr/
       version: "PR-251"
@@ -19,7 +19,7 @@ global:
       version: "PR-99"
     schema_migrator:
       dir: pr/
-      version: "PR-239"
+      version: "PR-253"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -29,6 +29,9 @@ global:
       e2e:
         dir: pr/
         version: "PR-221"
+      connector:
+        dir: pr/
+        version: "PR-246"
 
   isLocalEnv: false
 

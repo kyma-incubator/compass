@@ -56,11 +56,8 @@ func TestRepository_Upsert(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`INSERT INTO "public"."labels" (id, tenant_id, key, value, app_id, runtime_id) VALUES (?, ?, ?, ?, ?, ?)
-		ON CONFLICT (id) DO UPDATE SET
-    		value = EXCLUDED.value
-		`)
-		dbMock.ExpectExec(escapedQuery).WithArgs(labelEntity.ID, labelEntity.TenantID, labelEntity.Key, labelEntity.Value, labelEntity.AppID, labelEntity.RuntimeID).WillReturnResult(sqlmock.NewResult(1, 1))
+		escapedQuery := regexp.QuoteMeta(`INSERT INTO public.labels ( id, tenant_id, app_id, runtime_id, key, value ) VALUES ( ?, ?, ?, ?, ?, ? ) ON CONFLICT ( tenant_id, coalesce(app_id, '00000000-0000-0000-0000-000000000000'), coalesce(runtime_id, '00000000-0000-0000-0000-000000000000'), key ) DO UPDATE SET value=EXCLUDED.value`)
+		dbMock.ExpectExec(escapedQuery).WithArgs(labelEntity.ID, labelEntity.TenantID, labelEntity.AppID, labelEntity.RuntimeID, labelEntity.Key, labelEntity.Value).WillReturnResult(sqlmock.NewResult(1, 1))
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
@@ -107,11 +104,8 @@ func TestRepository_Upsert(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`INSERT INTO "public"."labels" (id, tenant_id, key, value, app_id, runtime_id) VALUES (?, ?, ?, ?, ?, ?)
-		ON CONFLICT (id) DO UPDATE SET
-    		value = EXCLUDED.value
-		`)
-		dbMock.ExpectExec(escapedQuery).WithArgs(labelEntity.ID, labelEntity.TenantID, labelEntity.Key, labelEntity.Value, labelEntity.AppID, labelEntity.RuntimeID).WillReturnResult(sqlmock.NewResult(1, 1))
+		escapedQuery := regexp.QuoteMeta(`INSERT INTO public.labels ( id, tenant_id, app_id, runtime_id, key, value ) VALUES ( ?, ?, ?, ?, ?, ? ) ON CONFLICT ( tenant_id, coalesce(app_id, '00000000-0000-0000-0000-000000000000'), coalesce(runtime_id, '00000000-0000-0000-0000-000000000000'), key ) DO UPDATE SET value=EXCLUDED.value`)
+		dbMock.ExpectExec(escapedQuery).WithArgs(labelEntity.ID, labelEntity.TenantID, labelEntity.AppID, labelEntity.RuntimeID, labelEntity.Key, labelEntity.Value).WillReturnResult(sqlmock.NewResult(1, 1))
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
@@ -159,11 +153,8 @@ func TestRepository_Upsert(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`INSERT INTO "public"."labels" (id, tenant_id, key, value, app_id, runtime_id) VALUES (?, ?, ?, ?, ?, ?)
-		ON CONFLICT (id) DO UPDATE SET
-    		value = EXCLUDED.value
-		`)
-		dbMock.ExpectExec(escapedQuery).WithArgs(labelEntity.ID, labelEntity.TenantID, labelEntity.Key, labelEntity.Value, labelEntity.AppID, labelEntity.RuntimeID).WillReturnError(testErr)
+		escapedQuery := regexp.QuoteMeta(`INSERT INTO public.labels ( id, tenant_id, app_id, runtime_id, key, value ) VALUES ( ?, ?, ?, ?, ?, ? ) ON CONFLICT ( tenant_id, coalesce(app_id, '00000000-0000-0000-0000-000000000000'), coalesce(runtime_id, '00000000-0000-0000-0000-000000000000'), key ) DO UPDATE SET value=EXCLUDED.value`)
+		dbMock.ExpectExec(escapedQuery).WithArgs(labelEntity.ID, labelEntity.TenantID, labelEntity.AppID, labelEntity.RuntimeID, labelEntity.Key, labelEntity.Value).WillReturnError(testErr)
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
@@ -172,18 +163,6 @@ func TestRepository_Upsert(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
-	})
-	//})
-
-	t.Run("Error - Missing persistence", func(t *testing.T) {
-		// GIVEN
-		repo := label.NewRepository(nil)
-
-		// WHEN
-		err := repo.Upsert(context.TODO(), &model.Label{})
-		// THEN
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "unable to fetch database from context")
 	})
 }
 
@@ -223,7 +202,7 @@ func TestRepository_GetByKey(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`SELECT "id", "tenant_id", "key", "value", "app_id", "runtime_id" FROM "public"."labels" WHERE "key" = $1 AND "runtime_id" = $2 AND "tenant_id" = $3`)
+		escapedQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, key, value FROM public.labels WHERE key = $1 AND runtime_id = $2 AND tenant_id = $3`)
 		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id"}).AddRow(id, tnt, key, value, nil, objID)
 		dbMock.ExpectQuery(escapedQuery).WithArgs(key, sql.NullString{Valid: true, String: objID}, tnt).WillReturnRows(mockedRows)
 
@@ -272,7 +251,7 @@ func TestRepository_GetByKey(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`SELECT "id", "tenant_id", "key", "value", "app_id", "runtime_id" FROM "public"."labels" WHERE "key" = $1 AND "app_id" = $2 AND "tenant_id" = $3`)
+		escapedQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, key, value FROM public.labels WHERE key = $1 AND app_id = $2 AND tenant_id = $3`)
 		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id"}).AddRow(id, tnt, key, value, objID, nil)
 		dbMock.ExpectQuery(escapedQuery).WithArgs(key, sql.NullString{Valid: true, String: objID}, tnt).WillReturnRows(mockedRows)
 
@@ -300,7 +279,7 @@ func TestRepository_GetByKey(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`SELECT "id", "tenant_id", "key", "value", "app_id", "runtime_id" FROM "public"."labels" WHERE "key" = $1 AND "app_id" = $2 AND "tenant_id" = $3`)
+		escapedQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, key, value FROM public.labels WHERE key = $1 AND app_id = $2 AND tenant_id = $3`)
 		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id"})
 		dbMock.ExpectQuery(escapedQuery).WithArgs(key, sql.NullString{Valid: true, String: objID}, tnt).WillReturnRows(mockedRows)
 
@@ -324,7 +303,7 @@ func TestRepository_GetByKey(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`SELECT "id", "tenant_id", "key", "value", "app_id", "runtime_id" FROM "public"."labels" WHERE "key" = $1 AND "app_id" = $2 AND "tenant_id" = $3`)
+		escapedQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, key, value FROM public.labels WHERE key = $1 AND app_id = $2 AND tenant_id = $3`)
 		dbMock.ExpectQuery(escapedQuery).WithArgs(key, sql.NullString{Valid: true, String: objID}, tnt).WillReturnError(errors.New("persistence error"))
 
 		ctx := context.TODO()
@@ -377,7 +356,7 @@ func TestRepository_ListForObject(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`SELECT "id", "tenant_id", "key", "value", "app_id", "runtime_id" FROM "public"."labels" WHERE "runtime_id" = $1 AND "tenant_id" = $2`)
+		escapedQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, key, value FROM public.labels WHERE runtime_id = $1 AND tenant_id = $2`)
 		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id"}).
 			AddRow("1", tnt, "foo", "test1", nil, objID).
 			AddRow("2", tnt, "bar", "test2", nil, objID)
@@ -418,7 +397,7 @@ func TestRepository_ListForObject(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`SELECT "id", "tenant_id", "key", "value", "app_id", "runtime_id" FROM "public"."labels" WHERE  "app_id" = $1 AND "tenant_id" = $2`)
+		escapedQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, key, value FROM public.labels WHERE app_id = $1 AND tenant_id = $2`)
 		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id"}).
 			AddRow("1", tnt, "foo", "test1", objID, nil).
 			AddRow("2", tnt, "bar", "test2", objID, nil)
@@ -448,7 +427,7 @@ func TestRepository_ListForObject(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`SELECT "id", "tenant_id", "key", "value", "app_id", "runtime_id" FROM "public"."labels" WHERE  "app_id" = $1 AND "tenant_id" = $2`)
+		escapedQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, key, value FROM public.labels WHERE app_id = $1 AND tenant_id = $2`)
 		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id"})
 		dbMock.ExpectQuery(escapedQuery).WithArgs(sql.NullString{Valid: true, String: objID}, tnt).WillReturnRows(mockedRows)
 
@@ -471,7 +450,7 @@ func TestRepository_ListForObject(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`SELECT "id", "tenant_id", "key", "value", "app_id", "runtime_id" FROM "public"."labels" WHERE  "app_id" = $1 AND "tenant_id" = $2`)
+		escapedQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, key, value FROM public.labels WHERE app_id = $1 AND tenant_id = $2`)
 		dbMock.ExpectQuery(escapedQuery).WithArgs(sql.NullString{Valid: true, String: objID}, tnt).WillReturnError(errors.New("persistence error"))
 
 		ctx := context.TODO()
@@ -524,7 +503,7 @@ func TestRepository_ListByKey(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`SELECT "id", "tenant_id", "key", "value", "app_id", "runtime_id" FROM "public"."labels" WHERE "key" = $1 AND "tenant_id" = $2`)
+		escapedQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, key, value FROM public.labels WHERE key = $1 AND tenant_id = $2`)
 		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id"}).
 			AddRow("1", tnt, labelKey, "test1", nil, rtmObjID).
 			AddRow("2", tnt, labelKey, "test2", appObjID, nil)
@@ -551,7 +530,7 @@ func TestRepository_ListByKey(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`SELECT "id", "tenant_id", "key", "value", "app_id", "runtime_id" FROM "public"."labels" WHERE  "key" = $1 AND "tenant_id" = $2`)
+		escapedQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, key, value FROM public.labels WHERE key = $1 AND tenant_id = $2`)
 		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id"})
 		dbMock.ExpectQuery(escapedQuery).WithArgs("key", tnt).WillReturnRows(mockedRows)
 
@@ -572,7 +551,7 @@ func TestRepository_ListByKey(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`SELECT "id", "tenant_id", "key", "value", "app_id", "runtime_id" FROM "public"."labels" WHERE  "key" = $1 AND "tenant_id" = $2`)
+		escapedQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, key, value FROM public.labels WHERE key = $1 AND tenant_id = $2`)
 		dbMock.ExpectQuery(escapedQuery).WithArgs("key", tnt).WillReturnError(errors.New("persistence error"))
 
 		ctx := context.TODO()
@@ -612,7 +591,7 @@ func TestRepository_Delete(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`DELETE FROM "public"."labels" WHERE "key" = $1 AND "runtime_id" = $2 AND "tenant_id" = $3`)
+		escapedQuery := regexp.QuoteMeta(`DELETE FROM public.labels WHERE key = $1 AND runtime_id = $2 AND tenant_id = $3`)
 		dbMock.ExpectExec(escapedQuery).WithArgs(key, objID, tnt).WillReturnResult(sqlmock.NewResult(1, 1))
 
 		ctx := context.TODO()
@@ -638,7 +617,7 @@ func TestRepository_Delete(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`DELETE FROM "public"."labels" WHERE "key" = $1 AND "app_id" = $2 AND "tenant_id" = $3`)
+		escapedQuery := regexp.QuoteMeta(`DELETE FROM public.labels WHERE key = $1 AND app_id = $2 AND tenant_id = $3`)
 		dbMock.ExpectExec(escapedQuery).WithArgs(key, objID, tnt).WillReturnResult(sqlmock.NewResult(1, 1))
 
 		ctx := context.TODO()
@@ -665,7 +644,7 @@ func TestRepository_Delete(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`DELETE FROM "public"."labels" WHERE "key" = $1 AND "app_id" = $2 AND "tenant_id" = $3`)
+		escapedQuery := regexp.QuoteMeta(`DELETE FROM public.labels WHERE key = $1 AND app_id = $2 AND tenant_id = $3`)
 		dbMock.ExpectExec(escapedQuery).WithArgs(key, objID, tnt).WillReturnError(testErr)
 
 		ctx := context.TODO()
@@ -706,7 +685,7 @@ func TestRepository_DeleteAll(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`DELETE FROM "public"."labels" WHERE "runtime_id" = $1 AND "tenant_id" = $2`)
+		escapedQuery := regexp.QuoteMeta(`DELETE FROM public.labels WHERE runtime_id = $1 AND tenant_id = $2`)
 		dbMock.ExpectExec(escapedQuery).WithArgs(objID, tnt).WillReturnResult(sqlmock.NewResult(1, 1))
 
 		ctx := context.TODO()
@@ -731,7 +710,7 @@ func TestRepository_DeleteAll(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`DELETE FROM "public"."labels" WHERE "app_id" = $1 AND "tenant_id" = $2`)
+		escapedQuery := regexp.QuoteMeta(`DELETE FROM public.labels WHERE app_id = $1 AND tenant_id = $2`)
 		dbMock.ExpectExec(escapedQuery).WithArgs(objID, tnt).WillReturnResult(sqlmock.NewResult(1, 1))
 
 		ctx := context.TODO()
@@ -757,7 +736,7 @@ func TestRepository_DeleteAll(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`DELETE FROM "public"."labels" WHERE "app_id" = $1 AND "tenant_id" = $2`)
+		escapedQuery := regexp.QuoteMeta(`DELETE FROM public.labels WHERE app_id = $1 AND tenant_id = $2`)
 		dbMock.ExpectExec(escapedQuery).WithArgs(objID, tnt).WillReturnError(testErr)
 
 		ctx := context.TODO()
@@ -796,7 +775,7 @@ func TestRepository_DeleteByKey(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`DELETE FROM "public"."labels" WHERE "key" = $1 AND "tenant_id" = $2`)
+		escapedQuery := regexp.QuoteMeta(`DELETE FROM public.labels WHERE key = $1 AND tenant_id = $2`)
 		dbMock.ExpectExec(escapedQuery).WithArgs(key, tenant).WillReturnResult(sqlmock.NewResult(1, 1))
 
 		ctx := context.TODO()
@@ -828,7 +807,7 @@ func TestRepository_DeleteByKey(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`DELETE FROM "public"."labels" WHERE "key" = $1 AND "tenant_id" = $2`)
+		escapedQuery := regexp.QuoteMeta(`DELETE FROM public.labels WHERE key = $1 AND tenant_id = $2`)
 		dbMock.ExpectExec(escapedQuery).WithArgs(key, tenant).WillReturnError(testErr)
 
 		ctx := context.TODO()
@@ -863,7 +842,7 @@ func TestRepository_DeleteByKey(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`DELETE FROM "public"."labels" WHERE "key" = $1 AND "tenant_id" = $2`)
+		escapedQuery := regexp.QuoteMeta(`DELETE FROM public.labels WHERE key = $1 AND tenant_id = $2`)
 		dbMock.ExpectExec(escapedQuery).WithArgs(key, tenant).WillReturnResult(sqlmock.NewResult(1, 0))
 
 		ctx := context.TODO()

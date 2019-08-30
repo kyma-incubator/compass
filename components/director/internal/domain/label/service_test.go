@@ -79,22 +79,11 @@ func TestLabelUpsertService_UpsertMultipleLabels(t *testing.T) {
 			InputObjectType: runtimeType,
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, runtimeType, runtimeID, "object").Return(nil, notFoundErr).Once()
-				repo.On("GetByKey", ctx, tnt, runtimeType, runtimeID, "string").Return(&model.Label{
-					ID:         "strFoo",
-					Key:        "string",
-					Tenant:     tnt,
-					Value:      "booo",
-					ObjectID:   runtimeID,
-					ObjectType: runtimeType,
-				}, nil).Once()
-				repo.On("GetByKey", ctx, tnt, runtimeType, runtimeID, "array").Return(nil, notFoundErr).Once()
-
 				repo.On("Upsert", ctx, &model.Label{
 					ID: id, Tenant: tnt, ObjectType: runtimeType, ObjectID: runtimeID, Key: "object", Value: objectValue,
 				}).Return(nil).Once()
 				repo.On("Upsert", ctx, &model.Label{
-					ID: "strFoo", Tenant: tnt, ObjectType: runtimeType, ObjectID: runtimeID, Key: "string", Value: stringValue,
+					ID: id, Tenant: tnt, ObjectType: runtimeType, ObjectID: runtimeID, Key: "string", Value: stringValue,
 				}).Return(nil).Once()
 				repo.On("Upsert", ctx, &model.Label{
 					ID: id, Tenant: tnt, ObjectType: runtimeType, ObjectID: runtimeID, Key: "array", Value: arrayValue,
@@ -218,11 +207,7 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 		Schema: &jsonSchema,
 	}
 
-	notFoundErr := errors.New("Label not found")
 	testErr := errors.New("Test error")
-
-	appType := model.ApplicationLabelableObject
-	appID := "appID"
 
 	objectValue := map[string]interface{}{
 		"foo": "bar",
@@ -248,8 +233,6 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, appType, appID, "test").Return(nil, notFoundErr).Once()
-
 				repo.On("Upsert", ctx, &model.Label{
 					Key:        "test",
 					Value:      "string",
@@ -289,8 +272,6 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, appType, appID, "test").Return(nil, notFoundErr).Once()
-
 				repo.On("Upsert", ctx, &model.Label{
 					Key:        "test",
 					Value:      "string",
@@ -323,14 +304,6 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, appType, appID, "test").Return(&model.Label{
-					ID:         id,
-					Tenant:     tnt,
-					ObjectType: model.ApplicationLabelableObject,
-					ObjectID:   appID,
-					Key:        "test",
-					Value:      "foo bar",
-				}, nil).Once()
 				repo.On("Upsert", ctx, &model.Label{
 					Key:        "test",
 					Value:      "string",
@@ -348,6 +321,7 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
 				return svc
 			},
 			ExpectedErrMessage: "",
@@ -362,8 +336,6 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, appType, appID, "test").Return(nil, notFoundErr).Once()
-
 				repo.On("Upsert", ctx, &model.Label{
 					Key:        "test",
 					Value:      objectValue,

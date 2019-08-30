@@ -45,7 +45,7 @@ func TestRepository_Create(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("DB Error", func(t *testing.T) {
+	t.Run("Error - DB", func(t *testing.T) {
 		// GIVEN
 		timestamp := time.Now()
 		frModel := fixFullFetchRequestModel(givenID(), timestamp)
@@ -67,7 +67,7 @@ func TestRepository_Create(t *testing.T) {
 		require.EqualError(t, err, "while inserting row to 'public.fetch_requests' table: some error")
 	})
 
-	t.Run("Converter Error", func(t *testing.T) {
+	t.Run("Error - Converter", func(t *testing.T) {
 		// GIVEN
 		timestamp := time.Now()
 		frModel := fixFullFetchRequestModel(givenID(), timestamp)
@@ -131,7 +131,7 @@ func TestRepository_GetByReferenceObjectID(t *testing.T) {
 		})
 	}
 
-	t.Run("Converter Error", func(t *testing.T) {
+	t.Run("Error - Converter", func(t *testing.T) {
 		// GIVEN
 		timestamp := time.Now()
 		frEntity := fixFullFetchRequestEntity(t, givenID(), timestamp)
@@ -157,7 +157,7 @@ func TestRepository_GetByReferenceObjectID(t *testing.T) {
 		require.EqualError(t, err, "while creating FetchRequest model from entity: some error")
 	})
 
-	t.Run("DB Error", func(t *testing.T) {
+	t.Run("Error - DB", func(t *testing.T) {
 		// GIVEN
 		repo := fetchrequest.NewRepository(nil)
 		db, dbMock := testdb.MockDatabase(t)
@@ -171,6 +171,19 @@ func TestRepository_GetByReferenceObjectID(t *testing.T) {
 		_, err := repo.GetByReferenceObjectID(ctx, givenTenant(), model.DocumentFetchRequestReference, givenID())
 		// THEN
 		require.EqualError(t, err, "while getting object from DB: some error")
+	})
+
+	t.Run("Error - Invalid Object Reference Type", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		repo := fetchrequest.NewRepository(nil)
+		// WHEN
+		_, err := repo.GetByReferenceObjectID(ctx, givenTenant(), "test", givenID())
+		// THEN
+		require.EqualError(t, err, "Invalid type of the Fetch Request reference object")
 	})
 
 }
@@ -192,7 +205,7 @@ func TestRepository_Delete(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("Error", func(t *testing.T) {
+	t.Run("Error - DB", func(t *testing.T) {
 		// GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
@@ -204,6 +217,69 @@ func TestRepository_Delete(t *testing.T) {
 		repo := fetchrequest.NewRepository(nil)
 		// WHEN
 		err := repo.Delete(ctx, givenTenant(), givenID())
+		// THEN
+		require.EqualError(t, err, "while deleting from database: some error")
+	})
+}
+
+func TestRepository_DeleteByReferenceObjectID(t *testing.T) {
+	refID := "foo"
+	testCases := []struct {
+		Name          string
+		FieldName     string
+		ObjectType    model.FetchRequestReferenceObjectType
+		DocumentID    sql.NullString
+		APIDefID      sql.NullString
+		EventAPIDefID sql.NullString
+	}{
+		{Name: "Document", FieldName: "document_id", ObjectType: model.DocumentFetchRequestReference, DocumentID: sql.NullString{String: refID, Valid: true}},
+		{Name: "API", FieldName: "api_def_id", ObjectType: model.APIFetchRequestReference, APIDefID: sql.NullString{String: refID, Valid: true}},
+		{Name: "EventAPI", FieldName: "event_api_def_id", ObjectType: model.EventAPIFetchRequestReference, EventAPIDefID: sql.NullString{String: refID, Valid: true}},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(fmt.Sprintf("Success - %s", testCase.Name), func(t *testing.T) {
+			// GIVEN
+			db, dbMock := testdb.MockDatabase(t)
+			defer dbMock.AssertExpectations(t)
+
+			dbMock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("DELETE FROM public.fetch_requests WHERE tenant_id = $1 AND %s = $2", testCase.FieldName))).WithArgs(
+				givenTenant(), givenID()).WillReturnResult(sqlmock.NewResult(-1, 1))
+
+			ctx := persistence.SaveToContext(context.TODO(), db)
+			repo := fetchrequest.NewRepository(nil)
+			// WHEN
+			err := repo.DeleteByReferenceObjectID(ctx, givenTenant(), testCase.ObjectType, givenID())
+			// THEN
+			require.NoError(t, err)
+		})
+	}
+
+	t.Run("Error - Invalid Object Reference Type", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		repo := fetchrequest.NewRepository(nil)
+		// WHEN
+		err := repo.DeleteByReferenceObjectID(ctx, givenTenant(), "test", givenID())
+		// THEN
+		require.EqualError(t, err, "Invalid type of the Fetch Request reference object")
+	})
+
+	t.Run("Error - DB", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		dbMock.ExpectExec("DELETE FROM .*").WithArgs(
+			givenTenant(), givenID()).WillReturnError(givenError())
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		repo := fetchrequest.NewRepository(nil)
+		// WHEN
+		err := repo.DeleteByReferenceObjectID(ctx, givenTenant(), model.APIFetchRequestReference, givenID())
 		// THEN
 		require.EqualError(t, err, "while deleting from database: some error")
 	})

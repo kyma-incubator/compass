@@ -51,7 +51,6 @@ func (c *converter) ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition {
 		Spec:          c.apiSpecToGraphQL(in.ID, in.Spec),
 		TargetURL:     in.TargetURL,
 		Group:         in.Group,
-		Auths:         c.runtimeAuthArrToGraphQL(in.Auths),
 		DefaultAuth:   c.auth.ToGraphQL(in.DefaultAuth),
 		Version:       c.version.ToGraphQL(in.Version),
 	}
@@ -127,29 +126,6 @@ func (c *converter) apiSpecInputFromGraphQL(in *graphql.APISpecInput) *model.API
 	}
 }
 
-func (c *converter) runtimeAuthToGraphQL(in *model.RuntimeAuth) *graphql.RuntimeAuth {
-	if in == nil {
-		return nil
-	}
-
-	return &graphql.RuntimeAuth{
-		RuntimeID: in.RuntimeID,
-		Auth:      c.auth.ToGraphQL(in.Auth),
-	}
-}
-
-func (c *converter) runtimeAuthArrToGraphQL(in []*model.RuntimeAuth) []*graphql.RuntimeAuth {
-	var auths []*graphql.RuntimeAuth
-	for _, item := range in {
-		auths = append(auths, &graphql.RuntimeAuth{
-			RuntimeID: item.RuntimeID,
-			Auth:      c.auth.ToGraphQL(item.Auth),
-		})
-	}
-
-	return auths
-}
-
 func (c *converter) FromEntity(entity Entity) (model.APIDefinition, error) {
 	defaultAuth, err := unmarshallDefaultAuth(entity.DefaultAuth)
 	if err != nil {
@@ -174,9 +150,8 @@ func (c *converter) FromEntity(entity Entity) (model.APIDefinition, error) {
 		DefaultAuth:   defaultAuth,
 		Description:   repo.StringPtrFromNullableString(entity.Description),
 		Group:         repo.StringPtrFromNullableString(entity.Group),
-		//TODO: add spec_fetch_request_ID when resolver will be implemented
-		Spec:    c.apiSpecFromEntity(entity.EntitySpec),
-		Version: vModel,
+		Spec:          c.apiSpecFromEntity(entity.EntitySpec),
+		Version:       vModel,
 	}, nil
 }
 
@@ -206,7 +181,6 @@ func (c *converter) ToEntity(apiModel model.APIDefinition) (Entity, error) {
 		EntitySpec:  c.apiSpecToEntity(apiModel.Spec),
 		DefaultAuth: repo.NewNullableString(&defaultAuth),
 		Version:     versionEntity,
-		//TODO: add spec_fetch_request_ID when resolver will be implemented
 	}, nil
 }
 

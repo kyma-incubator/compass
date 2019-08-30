@@ -28,7 +28,7 @@ type APIRepository interface {
 type FetchRequestRepository interface {
 	Create(ctx context.Context, item *model.FetchRequest) error
 	GetByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error)
-	Delete(ctx context.Context, tenant, id string) error
+	DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) error
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -72,15 +72,14 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.API
 
 	id := s.uidService.Generate()
 
-	var fetchRequestID *string
 	if in.Spec != nil && in.Spec.FetchRequest != nil {
-		fetchRequestID, err = s.createFetchRequest(ctx, tnt, in.Spec.FetchRequest, id)
+		_, err = s.createFetchRequest(ctx, tnt, in.Spec.FetchRequest, id)
 		if err != nil {
 			return "", errors.Wrapf(err, "while creating FetchRequest for APIDefinition %s", id)
 		}
 	}
 
-	api := in.ToAPIDefinition(id, applicationID, fetchRequestID)
+	api := in.ToAPIDefinition(id, applicationID)
 
 	err = s.repo.Create(api)
 	if err != nil {
@@ -101,22 +100,19 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 		return err
 	}
 
-	if api.Spec != nil && api.Spec.FetchRequestID != nil {
-		err := s.fetchRequestRepo.Delete(ctx, tnt, *api.Spec.FetchRequestID)
-		if err != nil {
-			return errors.Wrapf(err, "while deleting FetchRequest for APIDefinition %s", id)
-		}
+	err = s.fetchRequestRepo.DeleteByReferenceObjectID(ctx, tnt, model.APIFetchRequestReference, id)
+	if err != nil {
+		return errors.Wrapf(err, "while deleting FetchRequest for APIDefinition %s", id)
 	}
 
-	var fetchRequestID *string
 	if in.Spec != nil && in.Spec.FetchRequest != nil {
-		fetchRequestID, err = s.createFetchRequest(ctx, tnt, in.Spec.FetchRequest, id)
+		_, err = s.createFetchRequest(ctx, tnt, in.Spec.FetchRequest, id)
 		if err != nil {
 			return errors.Wrapf(err, "while creating FetchRequest for APIDefinition %s", id)
 		}
 	}
 
-	api = in.ToAPIDefinition(id, api.ApplicationID, fetchRequestID)
+	api = in.ToAPIDefinition(id, api.ApplicationID)
 
 	err = s.repo.Update(api)
 	if err != nil {
@@ -138,71 +134,6 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	}
 
 	return nil
-}
-
-func (s *service) SetAPIAuth(ctx context.Context, apiID string, runtimeID string, in model.AuthInput) (*model.RuntimeAuth, error) {
-	api, err := s.Get(ctx, apiID)
-	if err != nil {
-		return nil, err
-	}
-
-	var runtimeAuth *model.RuntimeAuth
-	var runtimeAuthIndex int
-	for i, a := range api.Auths {
-		if a.RuntimeID == runtimeID {
-			runtimeAuth = a
-			runtimeAuthIndex = i
-			break
-		}
-	}
-
-	newAuth := &model.RuntimeAuth{
-		RuntimeID: runtimeID,
-		Auth:      in.ToAuth(),
-	}
-
-	if runtimeAuth == nil {
-		api.Auths = append(api.Auths, newAuth)
-	} else {
-		api.Auths[runtimeAuthIndex] = newAuth
-	}
-
-	err = s.repo.Update(api)
-	if err != nil {
-		return nil, err
-	}
-
-	return newAuth, nil
-}
-
-func (s *service) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*model.RuntimeAuth, error) {
-	api, err := s.Get(ctx, apiID)
-	if err != nil {
-		return nil, err
-	}
-
-	var runtimeAuth *model.RuntimeAuth
-	var runtimeAuthIndex int
-	for i, a := range api.Auths {
-		if a.RuntimeID == runtimeID {
-			runtimeAuth = a
-			runtimeAuthIndex = i
-			break
-		}
-	}
-
-	if runtimeAuth == nil {
-		return nil, nil
-	}
-
-	api.Auths = append(api.Auths[:runtimeAuthIndex], api.Auths[runtimeAuthIndex+1:]...)
-
-	err = s.repo.Update(api)
-	if err != nil {
-		return nil, err
-	}
-
-	return runtimeAuth, nil
 }
 
 func (s *service) RefetchAPISpec(ctx context.Context, id string) (*model.APISpec, error) {

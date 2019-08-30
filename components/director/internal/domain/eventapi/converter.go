@@ -176,10 +176,9 @@ func (c *converter) apiSpecToEntity(spec *model.EventAPISpec) *EntitySpec {
 	}
 
 	return &EntitySpec{
-		SpecFormat:         repo.NewNullableString(strings.Ptr(string(spec.Format))),
-		SpecType:           repo.NewNullableString(strings.Ptr(string(spec.Type))),
-		SpecData:           repo.NewNullableString(spec.Data),
-		SpecFetchRequestID: repo.NewNullableString(spec.FetchRequestID),
+		SpecFormat: repo.NewNullableString(strings.Ptr(string(spec.Format))),
+		SpecType:   repo.NewNullableString(strings.Ptr(string(spec.Type))),
+		SpecData:   repo.NewNullableString(spec.Data),
 	}
 }
 
@@ -198,7 +197,6 @@ func (c *converter) apiSpecFromEntity(specEnt *EntitySpec) *model.EventAPISpec {
 		apiSpec.Type = model.EventAPISpecType(*specType)
 	}
 	apiSpec.Data = repo.StringPtrFromNullableString(specEnt.SpecData)
-	apiSpec.FetchRequestID = repo.StringPtrFromNullableString(specEnt.SpecFetchRequestID)
 
 	return apiSpec
 }

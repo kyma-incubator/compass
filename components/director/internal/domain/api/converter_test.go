@@ -46,10 +46,6 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
 				conv.On("ToGraphQL", modelAPIDefinition.DefaultAuth).Return(gqlAPIDefinition.DefaultAuth).Once()
-				for i, auth := range modelAPIDefinition.Auths {
-					conv.On("ToGraphQL", auth.Auth).Return(gqlAPIDefinition.Auths[i].Auth).Once()
-
-				}
 
 				return conv
 			},
@@ -361,7 +357,7 @@ func TestApiSpecDataConversionNilStaysNil(t *testing.T) {
 	require.NotNil(t, convertedInputModel)
 	require.NotNil(t, convertedInputModel.Spec)
 	require.Nil(t, convertedInputModel.Spec.Data)
-	convertedAPIDef := convertedInputModel.ToAPIDefinition("id", "app_id", strings.Ptr("fr_id"))
+	convertedAPIDef := convertedInputModel.ToAPIDefinition("id", "app_id")
 	require.NotNil(t, convertedAPIDef)
 	convertedGraphqlAPIDef := converter.ToGraphQL(convertedAPIDef)
 	require.NotNil(t, convertedGraphqlAPIDef)

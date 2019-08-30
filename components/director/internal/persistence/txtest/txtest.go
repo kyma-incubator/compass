@@ -15,12 +15,12 @@ func PersistenceContextThatExpectsCommit() *automock.PersistenceTx {
 	return persistTx
 }
 
-func PersistenceContextThatDontExpectCommit() *automock.PersistenceTx {
+func PersistenceContextThatDoesntExpectCommit() *automock.PersistenceTx {
 	persistTx := &automock.PersistenceTx{}
 	return persistTx
 }
 
-func TransactionerThatSucceed(persistTx *automock.PersistenceTx) *automock.Transactioner {
+func TransactionerThatSucceeds(persistTx *automock.PersistenceTx) *automock.Transactioner {
 	transact := &automock.Transactioner{}
 	transact.On("Begin").Return(persistTx, nil).Once()
 	transact.On("RollbackUnlessCommited", persistTx).Return().Once()
@@ -32,4 +32,53 @@ func CtxWithDBMatcher() interface{} {
 		persistenceOp, err := persistence.FromCtx(ctx)
 		return err == nil && persistenceOp != nil
 	})
+}
+
+type txCtxGenerator struct {
+	returnedError error
+}
+
+func NewTransactionContextGenerator(potentialError error) *txCtxGenerator {
+	return &txCtxGenerator{returnedError: potentialError}
+}
+
+func (g txCtxGenerator) ThatSucceeds() (*automock.PersistenceTx, *automock.Transactioner) {
+	persistTx := &automock.PersistenceTx{}
+	persistTx.On("Commit").Return(nil).Once()
+
+	transact := &automock.Transactioner{}
+	transact.On("Begin").Return(persistTx, nil).Once()
+	transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+
+	return persistTx, transact
+}
+
+func (g txCtxGenerator) ThatDoesntExpectCommit() (*automock.PersistenceTx, *automock.Transactioner) {
+	persistTx := &automock.PersistenceTx{}
+
+	transact := &automock.Transactioner{}
+	transact.On("Begin").Return(persistTx, nil).Once()
+	transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+
+	return persistTx, transact
+}
+
+func (g txCtxGenerator) ThatFailsOnCommit() (*automock.PersistenceTx, *automock.Transactioner) {
+	persistTx := &automock.PersistenceTx{}
+	persistTx.On("Commit").Return(g.returnedError).Once()
+
+	transact := &automock.Transactioner{}
+	transact.On("Begin").Return(persistTx, nil).Once()
+	transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+
+	return persistTx, transact
+}
+
+func (g txCtxGenerator) ThatFailsOnBegin() (*automock.PersistenceTx, *automock.Transactioner) {
+	persistTx := &automock.PersistenceTx{}
+
+	transact := &automock.Transactioner{}
+	transact.On("Begin").Return(persistTx, g.returnedError).Once()
+
+	return persistTx, transact
 }

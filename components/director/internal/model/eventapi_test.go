@@ -47,7 +47,7 @@ func TestEventAPIDefinitionInput_ToEventAPIDefinition(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToEventAPIDefinition(id, appID, nil)
+			result := testCase.Input.ToEventAPIDefinition(id, appID)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)
@@ -90,7 +90,7 @@ func TestEventAPIDefinitionInput_ToEventAPISpec(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToEventAPISpec(nil)
+			result := testCase.Input.ToEventAPISpec()
 
 			// then
 			assert.Equal(t, testCase.Expected, result)
