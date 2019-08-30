@@ -180,7 +180,6 @@ func TestToEntity(t *testing.T) {
 	t.Run("all fields", func(t *testing.T) {
 		givenModel := modelWithRequiredFields
 		givenModel.Data = strings.Ptr("givenData")
-		givenModel.FetchRequestID = strings.Ptr("fetchRequestID")
 		givenModel.Kind = strings.Ptr("givenKind")
 		// WHEN
 		actual, err := sut.ToEntity(givenModel)
@@ -188,7 +187,6 @@ func TestToEntity(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, sql.NullString{Valid: true, String: "givenData"}, actual.Data)
 		assert.Equal(t, sql.NullString{Valid: true, String: "givenKind"}, actual.Kind)
-		assert.Equal(t, sql.NullString{Valid: true, String: "fetchRequestID"}, actual.FetchRequestID)
 	})
 }
 
@@ -233,10 +231,6 @@ func TestFromEntity(t *testing.T) {
 			Valid:  true,
 			String: "givenKind",
 		}
-		givenEntity.FetchRequestID = sql.NullString{
-			Valid:  true,
-			String: "fetchRequestID",
-		}
 
 		// WHEN
 		actualModel, err := sut.FromEntity(givenEntity)
@@ -244,6 +238,5 @@ func TestFromEntity(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, strings.Ptr("givenData"), actualModel.Data)
 		assert.Equal(t, strings.Ptr("givenKind"), actualModel.Kind)
-		assert.Equal(t, strings.Ptr("fetchRequestID"), actualModel.FetchRequestID)
 	})
 }

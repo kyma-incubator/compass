@@ -9,7 +9,7 @@ import (
 type APIDefinition struct {
 	ID            string
 	ApplicationID string
-	TenantID      string
+	Tenant        string
 	Name          string
 	Description   *string
 	Spec          *APISpec

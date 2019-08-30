@@ -1,17 +1,26 @@
 package api_test
 
 import (
+	"database/sql/driver"
+	"fmt"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/pkg/strings"
 
-	"github.com/google/uuid"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+)
+
+const (
+	apiDefID       = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
+	appID          = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	tenantID       = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
+	fetchRequestID = "fffffffff-ffff-ffff-ffff-ffffffffffff"
 )
 
 func fixModelAPIDefinition(id, appId, name, description string) *model.APIDefinition {
@@ -23,34 +32,21 @@ func fixModelAPIDefinition(id, appId, name, description string) *model.APIDefini
 	}
 }
 
-func fixGQLAPIDefinition(id, appId, name, description string) *graphql.APIDefinition {
-	return &graphql.APIDefinition{
-		ID:            id,
-		ApplicationID: appId,
-		Name:          name,
-		Description:   &description,
-	}
-}
-
-func fixDetailedModelAPIDefinition(id, name, description string, group string) *model.APIDefinition {
-	data := "data"
-	format := model.SpecFormatJSON
-
+func fixFullModelAPIDefinition(placeholder string) *model.APIDefinition {
 	spec := &model.APISpec{
-		Data:           &data,
-		Format:         format,
+		Data:           strings.Ptr("spec_data_" + placeholder),
+		Format:         model.SpecFormatYaml,
 		Type:           model.APISpecTypeOpenAPI,
 		FetchRequestID: nil,
 	}
 
 	deprecated := false
-	deprecatedSince := "1.0"
 	forRemoval := false
 
-	version := &model.Version{
-		Value:           "1.0.0",
+	v := &model.Version{
+		Value:           "v1.1",
 		Deprecated:      &deprecated,
-		DeprecatedSince: &deprecatedSince,
+		DeprecatedSince: strings.Ptr("v1.0"),
 		ForRemoval:      &forRemoval,
 	}
 
@@ -64,38 +60,47 @@ func fixDetailedModelAPIDefinition(id, name, description string, group string) *
 	}
 
 	return &model.APIDefinition{
-		ID:            id,
-		ApplicationID: "1",
-		Name:          name,
-		Description:   &description,
+		ID:            apiDefID,
+		ApplicationID: appID,
+		Tenant:        tenantID,
+		Name:          placeholder,
+		Description:   strings.Ptr("desc_" + placeholder),
 		Spec:          spec,
-		TargetURL:     "https://test-url.com",
-		Group:         &group,
+		TargetURL:     fmt.Sprintf("https://%s.com", placeholder),
+		Group:         strings.Ptr("group_" + placeholder),
 		Auths:         []*model.RuntimeAuth{&runtimeAuth, &runtimeAuth},
 		DefaultAuth:   &auth,
-		Version:       version,
+		Version:       v,
 	}
 }
 
-func fixDetailedGQLAPIDefinition(id, name, description string, group string) *graphql.APIDefinition {
-	data := graphql.CLOB("data")
-	format := graphql.SpecFormatJSON
+func fixGQLAPIDefinition(id, appId, name, description string) *graphql.APIDefinition {
+	return &graphql.APIDefinition{
+		ID:            id,
+		ApplicationID: appId,
+		Name:          name,
+		Description:   &description,
+	}
+}
+
+func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
+	data := graphql.CLOB("spec_data_" + placeholder)
+	format := graphql.SpecFormatYaml
 
 	spec := &graphql.APISpec{
 		Data:         &data,
 		Format:       format,
 		Type:         graphql.APISpecTypeOpenAPI,
-		DefinitionID: id,
+		DefinitionID: apiDefID,
 	}
 
 	deprecated := false
-	deprecatedSince := ""
 	forRemoval := false
 
-	version := &graphql.Version{
-		Value:           "1.0.0",
+	v := &graphql.Version{
+		Value:           "v1.1",
 		Deprecated:      &deprecated,
-		DeprecatedSince: &deprecatedSince,
+		DeprecatedSince: strings.Ptr("v1.0"),
 		ForRemoval:      &forRemoval,
 	}
 
@@ -111,28 +116,27 @@ func fixDetailedGQLAPIDefinition(id, name, description string, group string) *gr
 	}
 
 	return &graphql.APIDefinition{
-		ID:            id,
-		ApplicationID: "1",
-		Name:          name,
-		Description:   &description,
+		ID:            apiDefID,
+		ApplicationID: appID,
+		Name:          placeholder,
+		Description:   strings.Ptr("desc_" + placeholder),
 		Spec:          spec,
-		TargetURL:     "https://test-url.com",
-		Group:         &group,
+		TargetURL:     fmt.Sprintf("https://%s.com", placeholder),
+		Group:         strings.Ptr("group_" + placeholder),
 		Auth:          nil,
 		Auths:         []*graphql.RuntimeAuth{&runtimeAuth, &runtimeAuth},
 		DefaultAuth:   &auth,
-		Version:       version,
+		Version:       v,
 	}
 }
 
 func fixModelAPIDefinitionInput(name, description string, group string) *model.APIDefinitionInput {
 	data := "data"
-	format := model.SpecFormatYaml
 
 	spec := &model.APISpecInput{
 		Data:         &data,
 		Type:         model.APISpecTypeOpenAPI,
-		Format:       format,
+		Format:       model.SpecFormatYaml,
 		FetchRequest: &model.FetchRequestInput{},
 	}
 
@@ -140,7 +144,7 @@ func fixModelAPIDefinitionInput(name, description string, group string) *model.A
 	deprecatedSince := ""
 	forRemoval := false
 
-	version := &model.VersionInput{
+	v := &model.VersionInput{
 		Value:           "1.0.0",
 		Deprecated:      &deprecated,
 		DeprecatedSince: &deprecatedSince,
@@ -161,7 +165,7 @@ func fixModelAPIDefinitionInput(name, description string, group string) *model.A
 		TargetURL:   "https://test-url.com",
 		Group:       &group,
 		Spec:        spec,
-		Version:     version,
+		Version:     v,
 		DefaultAuth: &authInput,
 	}
 }
@@ -180,7 +184,7 @@ func fixGQLAPIDefinitionInput(name, description string, group string) *graphql.A
 	deprecatedSince := ""
 	forRemoval := false
 
-	version := &graphql.VersionInput{
+	v := &graphql.VersionInput{
 		Value:           "1.0.0",
 		Deprecated:      &deprecated,
 		DeprecatedSince: &deprecatedSince,
@@ -203,7 +207,7 @@ func fixGQLAPIDefinitionInput(name, description string, group string) *graphql.A
 		TargetURL:   "https://test-url.com",
 		Group:       &group,
 		Spec:        spec,
-		Version:     version,
+		Version:     v,
 		DefaultAuth: &defaultAuth,
 	}
 }
@@ -236,45 +240,63 @@ func fixGQLRuntimeAuth(id string, auth *graphql.Auth) *graphql.RuntimeAuth {
 	}
 }
 
-func fixDetailedApiDefinitionEntity(placeholder string) *api.APIDefinition {
-	defaultAuthJson := `{"Credential":{"Basic":null,"Oauth":null},"AdditionalHeaders":{"testHeader":["hval1","hval2"]},
-							"AdditionalQueryParams":null,"RequestAuth":null}`
-	fetchRequestID := uuid.New().String()
-	boolPlaceholder := true
-
-	entity := api.APIDefinition{
-		ID:          uuid.New().String(),
-		TenantID:    uuid.New().String(),
-		AppID:       uuid.New().String(),
-		Name:        placeholder,
-		Description: repo.NewNullableString(&placeholder),
-		Group:       repo.NewNullableString(&placeholder),
-		TargetURL:   placeholder,
-		APISpec: &api.APISpec{
-			SpecData:   repo.NewNullableString(&placeholder),
-			SpecFormat: repo.NewNullableString(strings.Ptr(string(model.SpecFormatYaml))),
-			SpecType:   repo.NewNullableString(strings.Ptr(string(model.APISpecTypeOpenAPI))),
-		},
-		DefaultAuth:        repo.NewNullableString(&defaultAuthJson),
-		SpecFetchRequestID: repo.NewNullableString(&fetchRequestID),
-		Version: &version.Version{
-			VersionValue:           repo.NewNullableString(&placeholder),
-			VersionDepracated:      repo.NewNullableBool(&boolPlaceholder),
-			VersionDepracatedSince: repo.NewNullableString(&placeholder),
-			VersionForRemoval:      repo.NewNullableBool(&boolPlaceholder),
-		},
-	}
-
-	return &entity
-}
-
-func fixMinimalApiDefinitionEntity(id, app_id, name, targetUrl string) *api.APIDefinition {
-	return &api.APIDefinition{
+func fixEntityAPIDefinition(id, appId, name, targetUrl string) api.Entity {
+	return api.Entity{
 		ID:        id,
-		AppID:     app_id,
+		AppID:     appId,
 		Name:      name,
 		TargetURL: targetUrl,
 	}
+}
+
+func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
+	boolPlaceholder := false
+
+	return api.Entity{
+		ID:          apiDefID,
+		TenantID:    tenantID,
+		AppID:       appID,
+		Name:        placeholder,
+		Description: repo.NewValidNullableString("desc_" + placeholder),
+		Group:       repo.NewValidNullableString("group_" + placeholder),
+		TargetURL:   fmt.Sprintf("https://%s.com", placeholder),
+		EntitySpec: &api.EntitySpec{
+			SpecData:           repo.NewValidNullableString("spec_data_" + placeholder),
+			SpecFormat:         repo.NewValidNullableString(string(model.SpecFormatYaml)),
+			SpecType:           repo.NewValidNullableString(string(model.APISpecTypeOpenAPI)),
+			SpecFetchRequestID: repo.NewValidNullableString(fetchRequestID),
+		},
+		DefaultAuth: repo.NewValidNullableString(fixDefaultAuth()),
+		Version: &version.Version{
+			VersionValue:           repo.NewNullableString(strings.Ptr("v1.1")),
+			VersionDepracated:      repo.NewNullableBool(&boolPlaceholder),
+			VersionDepracatedSince: repo.NewNullableString(strings.Ptr("v1.0")),
+			VersionForRemoval:      repo.NewNullableBool(&boolPlaceholder),
+		},
+	}
+}
+
+func fixAPIDefinitionColumns() []string {
+	return []string{"id", "tenant_id", "app_id", "name", "description", "group_name", "target_url", "spec_data",
+		"spec_format", "spec_type", "default_auth", "version_value", "version_deprecated",
+		"version_deprecated_since", "version_for_removal", "spec_fetch_request_id"}
+}
+
+func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
+	return []driver.Value{id, tenantID, appID, placeholder, "desc_" + placeholder, "group_" + placeholder,
+		fmt.Sprintf("https://%s.com", placeholder), "spec_data_" + placeholder, "YAML", "OPEN_API",
+		fixDefaultAuth(), "v1.1", false, "v1.0", false, fetchRequestID}
+}
+
+func fixAPICreateArgs(id, defAuth string, api *model.APIDefinition) []driver.Value {
+	return []driver.Value{id, tenantID, appID, api.Name, api.Description, api.Group,
+		api.TargetURL, api.Spec.Data, string(api.Spec.Format), string(api.Spec.Type),
+		defAuth, api.Version.Value, api.Version.Deprecated, api.Version.DeprecatedSince,
+		api.Version.ForRemoval, fetchRequestID}
+}
+
+func fixDefaultAuth() string {
+	return `{"Credential":{"Basic":null,"Oauth":null},"AdditionalHeaders":{"testHeader":["hval1","hval2"]},"AdditionalQueryParams":null,"RequestAuth":null}`
 }
 
 func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchRequest {

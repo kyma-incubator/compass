@@ -172,7 +172,6 @@ func TestRepository_GetByReferenceObjectID(t *testing.T) {
 		// THEN
 		require.EqualError(t, err, "while getting object from DB: some error")
 	})
-
 }
 
 func TestRepository_Delete(t *testing.T) {

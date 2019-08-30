@@ -69,7 +69,7 @@ type EventAPIConverter interface {
 
 //go:generate mockery -name=DocumentService -output=automock -outpkg=automock -case=underscore
 type DocumentService interface {
-	List(ctx context.Context, applicationID string, pageSize *int, cursor *string) (*model.DocumentPage, error)
+	List(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.DocumentPage, error)
 }
 
 //go:generate mockery -name=WebhookService -output=automock -outpkg=automock -case=underscore
@@ -238,8 +238,6 @@ func (r *Resolver) CreateApplication(ctx context.Context, in graphql.Application
 	return gqlApp, nil
 }
 func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.ApplicationInput) (*graphql.Application, error) {
-	convertedIn := r.appConverter.InputFromGraphQL(in)
-
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -248,6 +246,7 @@ func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	convertedIn := r.appConverter.InputFromGraphQL(in)
 	err = r.appSvc.Update(ctx, id, convertedIn)
 	if err != nil {
 		return nil, err
@@ -405,14 +404,30 @@ func (r *Resolver) EventAPIs(ctx context.Context, obj *graphql.Application, grou
 }
 
 // TODO: Proper error handling
-// TODO: Pagination
 func (r *Resolver) Documents(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	var cursor string
 	if after != nil {
 		cursor = string(*after)
 	}
 
-	documentsPage, err := r.documentSvc.List(ctx, obj.ID, first, &cursor)
+	if first == nil {
+		return nil, errors.New("missing required parameter 'first'")
+	}
+
+	documentsPage, err := r.documentSvc.List(ctx, obj.ID, *first, cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}

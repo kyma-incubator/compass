@@ -150,7 +150,7 @@ func (c *converter) runtimeAuthArrToGraphQL(in []*model.RuntimeAuth) []*graphql.
 	return auths
 }
 
-func (c *converter) FromEntity(entity APIDefinition) (model.APIDefinition, error) {
+func (c *converter) FromEntity(entity Entity) (model.APIDefinition, error) {
 	defaultAuth, err := unmarshallDefaultAuth(entity.DefaultAuth)
 	if err != nil {
 		return model.APIDefinition{}, errors.Wrap(err, "while converting ApiDefinition")
@@ -170,50 +170,50 @@ func (c *converter) FromEntity(entity APIDefinition) (model.APIDefinition, error
 		ApplicationID: entity.AppID,
 		Name:          entity.Name,
 		TargetURL:     entity.TargetURL,
-		TenantID:      entity.TenantID,
+		Tenant:        entity.TenantID,
 		DefaultAuth:   defaultAuth,
 		Description:   repo.StringPtrFromNullableString(entity.Description),
 		Group:         repo.StringPtrFromNullableString(entity.Group),
 		//TODO: add spec_fetch_request_ID when resolver will be implemented
-		Spec:    c.apiSpecFromEntity(entity.APISpec),
+		Spec:    c.apiSpecFromEntity(entity.EntitySpec),
 		Version: vModel,
 	}, nil
 }
 
-func (c *converter) ToEntity(apiModel model.APIDefinition) (APIDefinition, error) {
+func (c *converter) ToEntity(apiModel model.APIDefinition) (Entity, error) {
 	defaultAuth, err := marshallDefaultAuth(apiModel.DefaultAuth)
 	if err != nil {
-		return APIDefinition{}, errors.Wrap(err, "while converting ApiDefinition")
+		return Entity{}, errors.Wrap(err, "while converting ApiDefinition")
 	}
 
 	var versionEntity *version.Version
 	if apiModel.Version != nil {
 		tmp, err := c.version.ToEntity(*apiModel.Version)
 		if err != nil {
-			return APIDefinition{}, errors.Wrap(err, "while converting version")
+			return Entity{}, errors.Wrap(err, "while converting version")
 		}
 		versionEntity = &tmp
 	}
 
-	return APIDefinition{
+	return Entity{
 		ID:          apiModel.ID,
-		TenantID:    apiModel.TenantID,
+		TenantID:    apiModel.Tenant,
 		AppID:       apiModel.ApplicationID,
 		Name:        apiModel.Name,
 		Description: repo.NewNullableString(apiModel.Description),
 		Group:       repo.NewNullableString(apiModel.Group),
 		TargetURL:   apiModel.TargetURL,
-		APISpec:     c.apiSpecToEntity(apiModel.Spec),
+		EntitySpec:  c.apiSpecToEntity(apiModel.Spec),
 		DefaultAuth: repo.NewNullableString(&defaultAuth),
 		Version:     versionEntity,
 		//TODO: add spec_fetch_request_ID when resolver will be implemented
 	}, nil
 }
 
-func (c *converter) apiSpecToEntity(spec *model.APISpec) *APISpec {
-	var apiSpecEnt *APISpec
+func (c *converter) apiSpecToEntity(spec *model.APISpec) *EntitySpec {
+	var apiSpecEnt *EntitySpec
 	if spec != nil {
-		tmp := APISpec{
+		tmp := EntitySpec{
 			SpecFormat: repo.NewNullableString(strings.Ptr(string(spec.Format))),
 			SpecType:   repo.NewNullableString(strings.Ptr(string(spec.Type))),
 			SpecData:   repo.NewNullableString(spec.Data),
@@ -224,7 +224,7 @@ func (c *converter) apiSpecToEntity(spec *model.APISpec) *APISpec {
 	return apiSpecEnt
 }
 
-func (c *converter) apiSpecFromEntity(specEnt *APISpec) *model.APISpec {
+func (c *converter) apiSpecFromEntity(specEnt *EntitySpec) *model.APISpec {
 	var apiSpec *model.APISpec
 
 	if specEnt != nil {

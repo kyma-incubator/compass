@@ -105,7 +105,7 @@ func TestService_Create(t *testing.T) {
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("CreateMany", mock.Anything).Return(nil).Once()
+				repo.On("Create", ctx, mock.Anything).Return(nil).Times(2)
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
@@ -157,7 +157,6 @@ func TestService_Create(t *testing.T) {
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("CreateMany", mock.Anything).Return(nil).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
@@ -207,7 +206,6 @@ func TestService_Create(t *testing.T) {
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("CreateMany", mock.Anything).Return(nil).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
@@ -475,8 +473,10 @@ func TestService_Update(t *testing.T) {
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("DeleteAllByApplicationID", id).Return(nil).Once()
-				repo.On("CreateMany", appModel.Documents).Return(nil).Once()
+				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
+				for _, doc := range appModel.Documents {
+					repo.On("Create", ctx, doc).Return(nil).Once()
+				}
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -755,7 +755,7 @@ func TestService_Delete(t *testing.T) {
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("DeleteAllByApplicationID", id).Return(nil).Once()
+				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -795,7 +795,7 @@ func TestService_Delete(t *testing.T) {
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("DeleteAllByApplicationID", id).Return(nil).Once()
+				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -1817,7 +1817,7 @@ func modelFromInput(in model.ApplicationInput, tenant, applicationID string) tes
 
 	var documentsModel []*model.Document
 	for _, item := range in.Documents {
-		documentsModel = append(documentsModel, item.ToDocument(uuid.New().String(), tenant, applicationID, nil))
+		documentsModel = append(documentsModel, item.ToDocument(uuid.New().String(), tenant, applicationID))
 	}
 
 	return testModel{

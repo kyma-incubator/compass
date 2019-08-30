@@ -3,12 +3,15 @@ package document_test
 import (
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
 var (
-	docTenant      = "tenant"
+	docTenant      = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 	docKind        = "fookind"
 	docTitle       = "footitle"
 	docData        = "foodata"
@@ -28,6 +31,20 @@ func fixModelDocument(id, applicationID string) *model.Document {
 		Format:        model.DocumentFormatMarkdown,
 		Kind:          &docKind,
 		Data:          &docData,
+	}
+}
+
+func fixEntityDocument(id, applicationID string) *document.Entity {
+	return &document.Entity{
+		ID:          id,
+		AppID:       applicationID,
+		TenantID:    docTenant,
+		Title:       docTitle,
+		DisplayName: docDisplayName,
+		Description: docDescription,
+		Format:      string(model.DocumentFormatMarkdown),
+		Kind:        repo.NewValidNullableString(docKind),
+		Data:        repo.NewValidNullableString(docData),
 	}
 }
 

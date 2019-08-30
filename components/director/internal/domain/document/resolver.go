@@ -56,6 +56,14 @@ func NewResolver(transact persistence.Transactioner, svc DocumentService, appSvc
 }
 
 func (r *Resolver) AddDocument(ctx context.Context, applicationID string, in graphql.DocumentInput) (*graphql.Document, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	convertedIn := r.converter.InputFromGraphQL(&in)
 
 	found, err := r.appSvc.Exist(ctx, applicationID)
@@ -77,12 +85,25 @@ func (r *Resolver) AddDocument(ctx context.Context, applicationID string, in gra
 		return nil, err
 	}
 
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
 	gqlDocument := r.converter.ToGraphQL(document)
 
 	return gqlDocument, nil
 }
 
 func (r *Resolver) DeleteDocument(ctx context.Context, id string) (*graphql.Document, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	document, err := r.svc.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -91,6 +112,11 @@ func (r *Resolver) DeleteDocument(ctx context.Context, id string) (*graphql.Docu
 	deletedDocument := r.converter.ToGraphQL(document)
 
 	err = r.svc.Delete(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}

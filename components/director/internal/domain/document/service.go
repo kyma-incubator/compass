@@ -16,10 +16,10 @@ import (
 //go:generate mockery -name=DocumentRepository -output=automock -outpkg=automock -case=underscore
 type DocumentRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
-	GetByID(id string) (*model.Document, error)
-	ListByApplicationID(applicationID string, pageSize *int, cursor *string) (*model.DocumentPage, error)
-	Create(item *model.Document) error
-	Delete(item *model.Document) error
+	GetByID(ctx context.Context, tenant, id string) (*model.Document, error)
+	ListByApplicationID(ctx context.Context, tenant string, applicationID string, pageSize int, cursor string) (*model.DocumentPage, error)
+	Create(ctx context.Context, item *model.Document) error
+	Delete(ctx context.Context, tenant, id string) error
 }
 
 //go:generate mockery -name=FetchRequestRepository -output=automock -outpkg=automock -case=underscore
@@ -51,7 +51,12 @@ func NewService(repo DocumentRepository, fetchRequestRepo FetchRequestRepository
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.Document, error) {
-	document, err := s.repo.GetByID(id)
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	document, err := s.repo.GetByID(ctx, tnt, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Document with ID %s", id)
 	}
@@ -59,8 +64,13 @@ func (s *service) Get(ctx context.Context, id string) (*model.Document, error) {
 	return document, nil
 }
 
-func (s *service) List(ctx context.Context, applicationID string, pageSize *int, cursor *string) (*model.DocumentPage, error) {
-	return s.repo.ListByApplicationID(applicationID, pageSize, cursor)
+func (s *service) List(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.DocumentPage, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	return s.repo.ListByApplicationID(ctx, tnt, applicationID, pageSize, cursor)
 }
 
 func (s *service) Create(ctx context.Context, applicationID string, in model.DocumentInput) (string, error) {
@@ -71,10 +81,15 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Doc
 
 	id := s.uidService.Generate()
 
-	var fetchRequestID *string
+	document := in.ToDocument(id, tnt, applicationID)
+	err = s.repo.Create(ctx, document)
+	if err != nil {
+		return "", errors.Wrap(err, "while creating Document")
+	}
+
 	if in.FetchRequest != nil {
 		generatedID := s.uidService.Generate()
-		fetchRequestID = &generatedID
+		fetchRequestID := &generatedID
 		fetchRequestModel := in.FetchRequest.ToFetchRequest(s.timestampGen(), *fetchRequestID, tnt, model.DocumentFetchRequestReference, id)
 		err := s.fetchRequestRepo.Create(ctx, fetchRequestModel)
 		if err != nil {
@@ -82,22 +97,21 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Doc
 		}
 	}
 
-	document := in.ToDocument(id, tnt, applicationID, fetchRequestID)
-	err = s.repo.Create(document)
-	if err != nil {
-		return "", errors.Wrap(err, "while creating Document")
-	}
-
 	return document.ID, nil
 }
 
 func (s *service) Delete(ctx context.Context, id string) error {
-	document, err := s.Get(ctx, id)
+	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return errors.Wrap(err, "while getting Document")
+		return err
 	}
 
-	return s.repo.Delete(document)
+	err = s.repo.Delete(ctx, tnt, id)
+	if err != nil {
+		return errors.Wrapf(err, "while deleting Document with ID %s", id)
+	}
+
+	return nil
 }
 
 func (s *service) GetFetchRequest(ctx context.Context, documentID string) (*model.FetchRequest, error) {
