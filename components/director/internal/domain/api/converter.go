@@ -24,7 +24,7 @@ type AuthConverter interface {
 type VersionConverter interface {
 	ToGraphQL(in *model.Version) *graphql.Version
 	InputFromGraphQL(in *graphql.VersionInput) *model.VersionInput
-	FromEntity(version version.Version) (model.Version, error)
+	FromEntity(version version.Version) (*model.Version, error)
 	ToEntity(version model.Version) (version.Version, error)
 }
 
@@ -132,13 +132,9 @@ func (c *converter) FromEntity(entity Entity) (model.APIDefinition, error) {
 		return model.APIDefinition{}, errors.Wrap(err, "while converting ApiDefinition")
 	}
 
-	var vModel *model.Version
-	if entity.Version != nil {
-		v, err := c.version.FromEntity(*entity.Version)
-		if err != nil {
-			return model.APIDefinition{}, err
-		}
-		vModel = &v
+	v, err := c.version.FromEntity(entity.Version)
+	if err != nil {
+		return model.APIDefinition{}, err
 	}
 
 	return model.APIDefinition{
@@ -151,7 +147,7 @@ func (c *converter) FromEntity(entity Entity) (model.APIDefinition, error) {
 		Description:   repo.StringPtrFromNullableString(entity.Description),
 		Group:         repo.StringPtrFromNullableString(entity.Group),
 		Spec:          c.apiSpecFromEntity(entity.EntitySpec),
-		Version:       vModel,
+		Version:       v,
 	}, nil
 }
 
@@ -161,13 +157,12 @@ func (c *converter) ToEntity(apiModel model.APIDefinition) (Entity, error) {
 		return Entity{}, errors.Wrap(err, "while converting ApiDefinition")
 	}
 
-	var versionEntity *version.Version
+	var versionEntity version.Version
 	if apiModel.Version != nil {
-		tmp, err := c.version.ToEntity(*apiModel.Version)
+		versionEntity, err = c.version.ToEntity(*apiModel.Version)
 		if err != nil {
 			return Entity{}, errors.Wrap(err, "while converting version")
 		}
-		versionEntity = &tmp
 	}
 
 	return Entity{
@@ -178,45 +173,43 @@ func (c *converter) ToEntity(apiModel model.APIDefinition) (Entity, error) {
 		Description: repo.NewNullableString(apiModel.Description),
 		Group:       repo.NewNullableString(apiModel.Group),
 		TargetURL:   apiModel.TargetURL,
+
 		EntitySpec:  c.apiSpecToEntity(apiModel.Spec),
-		DefaultAuth: repo.NewNullableString(&defaultAuth),
+		DefaultAuth: repo.NewNullableString(defaultAuth),
 		Version:     versionEntity,
 	}, nil
 }
 
-func (c *converter) apiSpecToEntity(spec *model.APISpec) *EntitySpec {
-	var apiSpecEnt *EntitySpec
+func (c *converter) apiSpecToEntity(spec *model.APISpec) EntitySpec {
+	var apiSpecEnt EntitySpec
 	if spec != nil {
-		tmp := EntitySpec{
+		apiSpecEnt = EntitySpec{
 			SpecFormat: repo.NewNullableString(strings.Ptr(string(spec.Format))),
 			SpecType:   repo.NewNullableString(strings.Ptr(string(spec.Type))),
 			SpecData:   repo.NewNullableString(spec.Data),
 		}
-		apiSpecEnt = &tmp
 	}
 
 	return apiSpecEnt
 }
 
-func (c *converter) apiSpecFromEntity(specEnt *EntitySpec) *model.APISpec {
-	var apiSpec *model.APISpec
-
-	if specEnt != nil {
-		tmp := model.APISpec{}
-		specFormat := repo.StringPtrFromNullableString(specEnt.SpecFormat)
-		if specFormat != nil {
-			tmp.Format = model.SpecFormat(*specFormat)
-		}
-
-		specType := repo.StringPtrFromNullableString(specEnt.SpecType)
-		if specFormat != nil {
-			tmp.Type = model.APISpecType(*specType)
-		}
-		tmp.Data = repo.StringPtrFromNullableString(specEnt.SpecData)
-		apiSpec = &tmp
+func (c *converter) apiSpecFromEntity(specEnt EntitySpec) *model.APISpec {
+	if (!specEnt.SpecData.Valid && !specEnt.SpecFormat.Valid && !specEnt.SpecType.Valid) {
+		return nil
 	}
 
-	return apiSpec
+	apiSpec := model.APISpec{}
+	specFormat := repo.StringPtrFromNullableString(specEnt.SpecFormat)
+	if specFormat != nil {
+		apiSpec.Format = model.SpecFormat(*specFormat)
+	}
+
+	specType := repo.StringPtrFromNullableString(specEnt.SpecType)
+	if specFormat != nil {
+		apiSpec.Type = model.APISpecType(*specType)
+	}
+	apiSpec.Data = repo.StringPtrFromNullableString(specEnt.SpecData)
+	return &apiSpec
 }
 
 func unmarshallDefaultAuth(defaultAuthSql sql.NullString) (*model.Auth, error) {
@@ -232,14 +225,14 @@ func unmarshallDefaultAuth(defaultAuthSql sql.NullString) (*model.Auth, error) {
 	return defaultAuth, nil
 }
 
-func marshallDefaultAuth(defaultAuth *model.Auth) (string, error) {
-	marshaledAuth := ""
-	if defaultAuth != nil {
-		output, err := json.Marshal(defaultAuth)
-		if err != nil {
-			return "", errors.Wrap(err, "while marshaling default auth")
-		}
-		marshaledAuth = string(output)
+func marshallDefaultAuth(defaultAuth *model.Auth) (*string, error) {
+	if defaultAuth == nil {
+		return nil, nil
 	}
-	return marshaledAuth, nil
+
+	output, err := json.Marshal(defaultAuth)
+	if err != nil {
+		return nil, errors.Wrap(err, "while marshaling default auth")
+	}
+	return strings.Ptr(string(output)), nil
 }

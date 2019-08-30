@@ -16,6 +16,7 @@ func TestAPIDefinitionInput_ToAPIDefinition(t *testing.T) {
 	name := "sample"
 	targetUrl := "https://foo.bar"
 	group := "sampleGroup"
+	tenant := "tenant"
 
 	testCases := []struct {
 		Name     string
@@ -50,7 +51,7 @@ func TestAPIDefinitionInput_ToAPIDefinition(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToAPIDefinition(id, appID)
+			result := testCase.Input.ToAPIDefinition(id, appID, tenant)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

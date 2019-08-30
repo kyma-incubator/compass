@@ -11,13 +11,13 @@ type APIRepository struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: item
-func (_m *APIRepository) Create(item *model.APIDefinition) error {
-	ret := _m.Called(item)
+// Create provides a mock function with given fields: ctx, tenantID, item
+func (_m *APIRepository) Create(ctx context.Context, tenantID string, item *model.APIDefinition) error {
+	ret := _m.Called(ctx, tenantID, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*model.APIDefinition) error); ok {
-		r0 = rf(item)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.APIDefinition) error); ok {
+		r0 = rf(ctx, tenantID, item)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -25,13 +25,13 @@ func (_m *APIRepository) Create(item *model.APIDefinition) error {
 	return r0
 }
 
-// CreateMany provides a mock function with given fields: item
-func (_m *APIRepository) CreateMany(item []*model.APIDefinition) error {
-	ret := _m.Called(item)
+// CreateMany provides a mock function with given fields: ctx, tenantID, item
+func (_m *APIRepository) CreateMany(ctx context.Context, tenantID string, item []*model.APIDefinition) error {
+	ret := _m.Called(ctx, tenantID, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func([]*model.APIDefinition) error); ok {
-		r0 = rf(item)
+	if rf, ok := ret.Get(0).(func(context.Context, string, []*model.APIDefinition) error); ok {
+		r0 = rf(ctx, tenantID, item)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -39,13 +39,13 @@ func (_m *APIRepository) CreateMany(item []*model.APIDefinition) error {
 	return r0
 }
 
-// Delete provides a mock function with given fields: item
-func (_m *APIRepository) Delete(item *model.APIDefinition) error {
-	ret := _m.Called(item)
+// Delete provides a mock function with given fields: ctx, tenantID, id
+func (_m *APIRepository) Delete(ctx context.Context, tenantID string, id string) error {
+	ret := _m.Called(ctx, tenantID, id)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*model.APIDefinition) error); ok {
-		r0 = rf(item)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, tenantID, id)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -53,13 +53,13 @@ func (_m *APIRepository) Delete(item *model.APIDefinition) error {
 	return r0
 }
 
-// DeleteAllByApplicationID provides a mock function with given fields: id
-func (_m *APIRepository) DeleteAllByApplicationID(id string) error {
-	ret := _m.Called(id)
+// DeleteAllByApplicationID provides a mock function with given fields: ctx, tenantID, id
+func (_m *APIRepository) DeleteAllByApplicationID(ctx context.Context, tenantID string, id string) error {
+	ret := _m.Called(ctx, tenantID, id)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string) error); ok {
-		r0 = rf(id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, tenantID, id)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -88,13 +88,13 @@ func (_m *APIRepository) Exists(ctx context.Context, tenant string, id string) (
 	return r0, r1
 }
 
-// GetByID provides a mock function with given fields: id
-func (_m *APIRepository) GetByID(id string) (*model.APIDefinition, error) {
-	ret := _m.Called(id)
+// GetByID provides a mock function with given fields: ctx, tenantID, id
+func (_m *APIRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.APIDefinition, error) {
+	ret := _m.Called(ctx, tenantID, id)
 
 	var r0 *model.APIDefinition
-	if rf, ok := ret.Get(0).(func(string) *model.APIDefinition); ok {
-		r0 = rf(id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.APIDefinition); ok {
+		r0 = rf(ctx, tenantID, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.APIDefinition)
@@ -102,8 +102,8 @@ func (_m *APIRepository) GetByID(id string) (*model.APIDefinition, error) {
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenantID, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -111,13 +111,13 @@ func (_m *APIRepository) GetByID(id string) (*model.APIDefinition, error) {
 	return r0, r1
 }
 
-// ListByApplicationID provides a mock function with given fields: applicationID, pageSize, cursor
-func (_m *APIRepository) ListByApplicationID(applicationID string, pageSize *int, cursor *string) (*model.APIDefinitionPage, error) {
-	ret := _m.Called(applicationID, pageSize, cursor)
+// ListByApplicationID provides a mock function with given fields: ctx, tenantID, applicationID, pageSize, cursor
+func (_m *APIRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
+	ret := _m.Called(ctx, tenantID, applicationID, pageSize, cursor)
 
 	var r0 *model.APIDefinitionPage
-	if rf, ok := ret.Get(0).(func(string, *int, *string) *model.APIDefinitionPage); ok {
-		r0 = rf(applicationID, pageSize, cursor)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, int, string) *model.APIDefinitionPage); ok {
+		r0 = rf(ctx, tenantID, applicationID, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.APIDefinitionPage)
@@ -125,8 +125,8 @@ func (_m *APIRepository) ListByApplicationID(applicationID string, pageSize *int
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, *int, *string) error); ok {
-		r1 = rf(applicationID, pageSize, cursor)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, int, string) error); ok {
+		r1 = rf(ctx, tenantID, applicationID, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -134,13 +134,13 @@ func (_m *APIRepository) ListByApplicationID(applicationID string, pageSize *int
 	return r0, r1
 }
 
-// Update provides a mock function with given fields: item
-func (_m *APIRepository) Update(item *model.APIDefinition) error {
-	ret := _m.Called(item)
+// Update provides a mock function with given fields: ctx, tenantID, item
+func (_m *APIRepository) Update(ctx context.Context, tenantID string, item *model.APIDefinition) error {
+	ret := _m.Called(ctx, tenantID, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*model.APIDefinition) error); ok {
-		r0 = rf(item)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.APIDefinition) error); ok {
+		r0 = rf(ctx, tenantID, item)
 	} else {
 		r0 = ret.Error(0)
 	}

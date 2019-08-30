@@ -13,7 +13,7 @@ import (
 type VersionConverter interface {
 	ToGraphQL(in *model.Version) *graphql.Version
 	InputFromGraphQL(in *graphql.VersionInput) *model.VersionInput
-	FromEntity(version version.Version) (model.Version, error)
+	FromEntity(version version.Version) (*model.Version, error)
 	ToEntity(version model.Version) (version.Version, error)
 }
 
@@ -155,7 +155,7 @@ func (c *converter) convertVersionFromEntity(inVer *version.Version) (*model.Ver
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting version")
 	}
-	return &tmp, nil
+	return tmp, nil
 }
 
 func (c *converter) convertVersionToEntity(inVer *model.Version) (*version.Version, error) {

@@ -48,9 +48,9 @@ type WebhookRepository interface {
 
 //go:generate mockery -name=APIRepository -output=automock -outpkg=automock -case=underscore
 type APIRepository interface {
-	ListByApplicationID(applicationID string, pageSize *int, cursor *string) (*model.APIDefinitionPage, error)
-	CreateMany(items []*model.APIDefinition) error
-	DeleteAllByApplicationID(id string) error
+	ListByApplicationID(ctx context.Context, tenant, applicationID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
+	CreateMany(ctx context.Context, tenant string, items []*model.APIDefinition) error
+	DeleteAllByApplicationID(ctx context.Context, tenant, id string) error
 }
 
 //go:generate mockery -name=EventAPIRepository -output=automock -outpkg=automock -case=underscore
@@ -119,16 +119,16 @@ func NewService(app ApplicationRepository, webhook WebhookRepository, api APIRep
 	}
 }
 
-func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
+func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	return s.appRepo.List(ctx, appTenant, filter, pageSize, cursor)
+	return s.appRepo.List(ctx, appTenant, filter, &pageSize, &cursor)
 }
 
-func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
+func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 
 	if err != nil {
@@ -177,7 +177,7 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, page
 		}, nil
 	}
 
-	return s.appRepo.ListByScenarios(ctx, tenantUUID, scenarios, pageSize, cursor)
+	return s.appRepo.ListByScenarios(ctx, tenantUUID, scenarios, &pageSize, &cursor)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.Application, error) {
@@ -445,10 +445,10 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 			}
 		}
 
-		apis = append(apis, item.ToAPIDefinition(apiDefID, applicationID))
+		apis = append(apis, item.ToAPIDefinition(apiDefID, applicationID, tenant))
 	}
 
-	err = s.apiRepo.CreateMany(apis)
+	err = s.apiRepo.CreateMany(ctx, tenant, apis)
 	if err != nil {
 		return errors.Wrapf(err, "while creating APIs for application")
 	}
@@ -498,7 +498,7 @@ func (s *service) deleteRelatedResources(ctx context.Context, tenant, applicatio
 		return errors.Wrapf(err, "while deleting Webhooks for application %s", applicationID)
 	}
 
-	err = s.apiRepo.DeleteAllByApplicationID(applicationID)
+	err = s.apiRepo.DeleteAllByApplicationID(ctx, tenant, applicationID)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting APIs for application %s", applicationID)
 	}

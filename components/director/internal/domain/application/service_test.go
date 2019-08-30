@@ -95,7 +95,7 @@ func TestService_Create(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("CreateMany", mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
@@ -147,7 +147,7 @@ func TestService_Create(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("CreateMany", mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
@@ -196,7 +196,7 @@ func TestService_Create(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("CreateMany", mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
@@ -461,8 +461,8 @@ func TestService_Update(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("DeleteAllByApplicationID", id).Return(nil).Once()
-				repo.On("CreateMany", appModel.Apis).Return(nil).Once()
+				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, appModel.Apis).Return(nil).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
@@ -745,7 +745,7 @@ func TestService_Delete(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("DeleteAllByApplicationID", id).Return(nil).Once()
+				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
@@ -785,7 +785,7 @@ func TestService_Delete(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("DeleteAllByApplicationID", id).Return(nil).Once()
+				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
@@ -975,6 +975,7 @@ func TestService_Get(t *testing.T) {
 				require.NoError(t, err)
 				assert.Equal(t, testCase.ExpectedApplication, app)
 			} else {
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
@@ -1013,8 +1014,6 @@ func TestService_List(t *testing.T) {
 		Name               string
 		RepositoryFn       func() *automock.ApplicationRepository
 		InputLabelFilters  []*labelfilter.LabelFilter
-		InputPageSize      *int
-		InputCursor        *string
 		ExpectedResult     *model.ApplicationPage
 		ExpectedErrMessage string
 	}{
@@ -1026,8 +1025,6 @@ func TestService_List(t *testing.T) {
 				return repo
 			},
 			InputLabelFilters:  filter,
-			InputPageSize:      &first,
-			InputCursor:        &after,
 			ExpectedResult:     applicationPage,
 			ExpectedErrMessage: "",
 		},
@@ -1039,8 +1036,6 @@ func TestService_List(t *testing.T) {
 				return repo
 			},
 			InputLabelFilters:  filter,
-			InputPageSize:      &first,
-			InputCursor:        &after,
 			ExpectedResult:     nil,
 			ExpectedErrMessage: testErr.Error(),
 		},
@@ -1053,13 +1048,14 @@ func TestService_List(t *testing.T) {
 			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// when
-			app, err := svc.List(ctx, testCase.InputLabelFilters, testCase.InputPageSize, testCase.InputCursor)
+			app, err := svc.List(ctx, testCase.InputLabelFilters, first, after)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 				assert.Equal(t, testCase.ExpectedResult, app)
 			} else {
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
@@ -1270,7 +1266,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			svc := application.NewService(appRepository, nil, nil, nil, nil, runtimeRepository, labelRepository, nil, nil, nil, nil)
 
 			//WHEN
-			results, err := svc.ListByRuntimeID(ctx, testCase.Input, &first, &cursor)
+			results, err := svc.ListByRuntimeID(ctx, testCase.Input, first, cursor)
 
 			//THEN
 			if testCase.ExpectedError != nil {
@@ -1807,7 +1803,7 @@ func modelFromInput(in model.ApplicationInput, tenant, applicationID string) tes
 
 	var apisModel []*model.APIDefinition
 	for _, item := range in.Apis {
-		apisModel = append(apisModel, item.ToAPIDefinition(uuid.New().String(), applicationID))
+		apisModel = append(apisModel, item.ToAPIDefinition(uuid.New().String(), applicationID, tenant))
 	}
 
 	var eventAPIsModel []*model.EventAPIDefinition

@@ -14,14 +14,14 @@ import (
 
 //go:generate mockery -name=APIRepository -output=automock -outpkg=automock -case=underscore
 type APIRepository interface {
-	GetByID(id string) (*model.APIDefinition, error)
+	GetByID(ctx context.Context, tenantID, id string) (*model.APIDefinition, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
-	ListByApplicationID(applicationID string, pageSize *int, cursor *string) (*model.APIDefinitionPage, error)
-	CreateMany(item []*model.APIDefinition) error
-	Create(item *model.APIDefinition) error
-	Update(item *model.APIDefinition) error
-	Delete(item *model.APIDefinition) error
-	DeleteAllByApplicationID(id string) error
+	ListByApplicationID(ctx context.Context, tenantID, applicationID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
+	CreateMany(ctx context.Context, tenantID string, item []*model.APIDefinition) error
+	Create(ctx context.Context, tenantID string, item *model.APIDefinition) error
+	Update(ctx context.Context, tenantID string, item *model.APIDefinition) error
+	Delete(ctx context.Context, tenantID string, id string) error
+	DeleteAllByApplicationID(ctx context.Context, tenantID string, id string) error
 }
 
 //go:generate mockery -name=FetchRequestRepository -output=automock -outpkg=automock -case=underscore
@@ -51,12 +51,28 @@ func NewService(repo APIRepository, fetchRequestRepo FetchRequestRepository, uid
 	}
 }
 
-func (s *service) List(ctx context.Context, applicationID string, pageSize *int, cursor *string) (*model.APIDefinitionPage, error) {
-	return s.repo.ListByApplicationID(applicationID, pageSize, cursor)
+func (s *service) List(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+
+	//TODO: Test this !
+	if pageSize < 1 || pageSize > 100 {
+		return nil, errors.New("page size must be between 1 and 100")
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return s.repo.ListByApplicationID(ctx, tnt, applicationID, pageSize, cursor)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.APIDefinition, error) {
-	api, err := s.repo.GetByID(id)
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	api, err := s.repo.GetByID(ctx, tnt, id)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +83,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.APIDefinition, err
 func (s *service) Create(ctx context.Context, applicationID string, in model.APIDefinitionInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return "", errors.Wrapf(err, "while loading tenant from context")
+		return "", err
 	}
 
 	id := s.uidService.Generate()
@@ -79,9 +95,9 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.API
 		}
 	}
 
-	api := in.ToAPIDefinition(id, applicationID)
+	api := in.ToAPIDefinition(id, applicationID, tnt)
 
-	err = s.repo.Create(api)
+	err = s.repo.Create(ctx, tnt, api)
 	if err != nil {
 		return "", err
 	}
@@ -92,7 +108,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.API
 func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionInput) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return errors.Wrapf(err, "while loading tenant from context")
+		return err
 	}
 
 	api, err := s.Get(ctx, id)
@@ -112,9 +128,9 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 		}
 	}
 
-	api = in.ToAPIDefinition(id, api.ApplicationID)
+	api = in.ToAPIDefinition(id, api.ApplicationID, tnt)
 
-	err = s.repo.Update(api)
+	err = s.repo.Update(ctx, tnt, api)
 	if err != nil {
 		return errors.Wrapf(err, "while updating APIDefinition with ID %s", id)
 	}
@@ -123,12 +139,12 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 }
 
 func (s *service) Delete(ctx context.Context, id string) error {
-	api, err := s.Get(ctx, id)
+	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return errors.Wrapf(err, "while receiving APIDefinition with ID %s", id)
+		return err
 	}
 
-	err = s.repo.Delete(api)
+	err = s.repo.Delete(ctx, tnt, id)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting APIDefinition with ID %s", id)
 	}
@@ -137,7 +153,12 @@ func (s *service) Delete(ctx context.Context, id string) error {
 }
 
 func (s *service) RefetchAPISpec(ctx context.Context, id string) (*model.APISpec, error) {
-	api, err := s.repo.GetByID(id)
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	api, err := s.repo.GetByID(ctx, tnt, id)
 	if err != nil {
 		return nil, err
 	}

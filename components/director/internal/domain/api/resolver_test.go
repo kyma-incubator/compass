@@ -172,6 +172,7 @@ func TestResolver_AddAPI(t *testing.T) {
 			// then
 			assert.Equal(t, testCase.ExpectedAPI, result)
 			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
 			} else {
 				require.Nil(t, err)
@@ -195,18 +196,22 @@ func TestResolver_DeleteAPI(t *testing.T) {
 	gqlAPIDefinition := fixGQLAPIDefinition(id, "1", "foo", "bar")
 
 	testCases := []struct {
-		Name        string
-		ServiceFn   func() *automock.APIService
-		ConverterFn func() *automock.APIConverter
-		ExpectedAPI *graphql.APIDefinition
-		ExpectedErr error
+		Name            string
+		PersistenceFn   func() *persistenceautomock.PersistenceTx
+		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ServiceFn       func() *automock.APIService
+		ConverterFn     func() *automock.APIConverter
+		ExpectedAPI     *graphql.APIDefinition
+		ExpectedErr     error
 	}{
 		{
-			Name: "Success",
+			Name:            "Success",
+			TransactionerFn: txtest.TransactionerThatSucceed,
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Get", context.TODO(), id).Return(modelAPIDefinition, nil).Once()
-				svc.On("Delete", context.TODO(), id).Return(nil).Once()
+				svc.On("Get", contextParam, id).Return(modelAPIDefinition, nil).Once()
+				svc.On("Delete", contextParam, id).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -218,10 +223,12 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "Returns error when API retrieval failed",
+			Name:            "Returns error when API retrieval failed",
+			TransactionerFn: txtest.TransactionerThatSucceed,
+			PersistenceFn:   txtest.PersistenceContextThatDontExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Get", context.TODO(), id).Return(nil, testErr).Once()
+				svc.On("Get", contextParam, id).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -232,16 +239,17 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			ExpectedErr: testErr,
 		},
 		{
-			Name: "Returns error when API deletion failed",
+			Name:            "Returns error when API deletion failed",
+			TransactionerFn: txtest.TransactionerThatSucceed,
+			PersistenceFn:   txtest.PersistenceContextThatDontExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Get", context.TODO(), id).Return(modelAPIDefinition, nil).Once()
-				svc.On("Delete", context.TODO(), id).Return(testErr).Once()
+				svc.On("Get", contextParam, id).Return(modelAPIDefinition, nil).Once()
+				svc.On("Delete", contextParam, id).Return(testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("ToGraphQL", modelAPIDefinition).Return(gqlAPIDefinition).Once()
 				return conv
 			},
 			ExpectedAPI: nil,
@@ -252,10 +260,12 @@ func TestResolver_DeleteAPI(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// given
+			persistTx := testCase.PersistenceFn()
+			tx := testCase.TransactionerFn(persistTx)
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := api.NewResolver(nil, svc, nil, nil, nil, converter, nil, nil, nil)
+			resolver := api.NewResolver(tx, svc, nil, nil, nil, converter, nil, nil, nil)
 
 			// when
 			result, err := resolver.DeleteAPI(context.TODO(), id)
@@ -266,6 +276,8 @@ func TestResolver_DeleteAPI(t *testing.T) {
 
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)
+			persistTx.AssertExpectations(t)
+			tx.AssertExpectations(t)
 		})
 	}
 }

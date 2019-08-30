@@ -47,11 +47,11 @@ func (_m *APIService) Delete(ctx context.Context, id string) error {
 }
 
 // List provides a mock function with given fields: ctx, applicationID, pageSize, cursor
-func (_m *APIService) List(ctx context.Context, applicationID string, pageSize *int, cursor *string) (*model.APIDefinitionPage, error) {
+func (_m *APIService) List(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
 	ret := _m.Called(ctx, applicationID, pageSize, cursor)
 
 	var r0 *model.APIDefinitionPage
-	if rf, ok := ret.Get(0).(func(context.Context, string, *int, *string) *model.APIDefinitionPage); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) *model.APIDefinitionPage); ok {
 		r0 = rf(ctx, applicationID, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
@@ -60,7 +60,7 @@ func (_m *APIService) List(ctx context.Context, applicationID string, pageSize *
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *int, *string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, int, string) error); ok {
 		r1 = rf(ctx, applicationID, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)

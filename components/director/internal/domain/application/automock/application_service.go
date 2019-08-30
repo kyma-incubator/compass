@@ -109,11 +109,11 @@ func (_m *ApplicationService) GetLabel(ctx context.Context, applicationID string
 }
 
 // List provides a mock function with given fields: ctx, filter, pageSize, cursor
-func (_m *ApplicationService) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
+func (_m *ApplicationService) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	ret := _m.Called(ctx, filter, pageSize, cursor)
 
 	var r0 *model.ApplicationPage
-	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter, *int, *string) *model.ApplicationPage); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter, int, string) *model.ApplicationPage); ok {
 		r0 = rf(ctx, filter, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
@@ -122,7 +122,7 @@ func (_m *ApplicationService) List(ctx context.Context, filter []*labelfilter.La
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter, *int, *string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter, int, string) error); ok {
 		r1 = rf(ctx, filter, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
@@ -132,11 +132,11 @@ func (_m *ApplicationService) List(ctx context.Context, filter []*labelfilter.La
 }
 
 // ListByRuntimeID provides a mock function with given fields: ctx, runtimeUUID, pageSize, cursor
-func (_m *ApplicationService) ListByRuntimeID(ctx context.Context, runtimeUUID uuid.UUID, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
+func (_m *ApplicationService) ListByRuntimeID(ctx context.Context, runtimeUUID uuid.UUID, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	ret := _m.Called(ctx, runtimeUUID, pageSize, cursor)
 
 	var r0 *model.ApplicationPage
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, *int, *string) *model.ApplicationPage); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, int, string) *model.ApplicationPage); ok {
 		r0 = rf(ctx, runtimeUUID, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
@@ -145,7 +145,7 @@ func (_m *ApplicationService) ListByRuntimeID(ctx context.Context, runtimeUUID u
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, *int, *string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, int, string) error); ok {
 		r1 = rf(ctx, runtimeUUID, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)

@@ -22,12 +22,12 @@ const (
 	tenantID = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
 )
 
-func fixModelAPIDefinition(id, appId, name, description string) *model.APIDefinition {
+func fixModelAPIDefinition(id, appId, name, targetURL string) *model.APIDefinition {
 	return &model.APIDefinition{
 		ID:            id,
 		ApplicationID: appId,
 		Name:          name,
-		Description:   &description,
+		TargetURL:     targetURL,
 	}
 }
 
@@ -75,12 +75,47 @@ func fixFullModelAPIDefinition(placeholder string) *model.APIDefinition {
 	}
 }
 
-func fixGQLAPIDefinition(id, appId, name, description string) *graphql.APIDefinition {
+func fixFullModelAPIDef(placeholder string) model.APIDefinition {
+	spec := &model.APISpec{
+		Data:   strings.Ptr("spec_data_" + placeholder),
+		Format: model.SpecFormatYaml,
+		Type:   model.APISpecTypeOpenAPI,
+	}
+
+	deprecated := false
+	forRemoval := false
+
+	v := &model.Version{
+		Value:           "v1.1",
+		Deprecated:      &deprecated,
+		DeprecatedSince: strings.Ptr("v1.0"),
+		ForRemoval:      &forRemoval,
+	}
+
+	auth := model.Auth{
+		AdditionalHeaders: map[string][]string{"testHeader": {"hval1", "hval2"}},
+	}
+
+	return model.APIDefinition{
+		ID:            apiDefID,
+		ApplicationID: appID,
+		Tenant:        tenantID,
+		Name:          placeholder,
+		Description:   strings.Ptr("desc_" + placeholder),
+		Spec:          spec,
+		TargetURL:     fmt.Sprintf("https://%s.com", placeholder),
+		Group:         strings.Ptr("group_" + placeholder),
+		DefaultAuth:   &auth,
+		Version:       v,
+	}
+}
+
+func fixGQLAPIDefinition(id, appId, name, targetURL string) *graphql.APIDefinition {
 	return &graphql.APIDefinition{
 		ID:            id,
 		ApplicationID: appId,
 		Name:          name,
-		Description:   &description,
+		TargetURL:     targetURL,
 	}
 }
 
@@ -305,13 +340,13 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 		Description: repo.NewValidNullableString("desc_" + placeholder),
 		Group:       repo.NewValidNullableString("group_" + placeholder),
 		TargetURL:   fmt.Sprintf("https://%s.com", placeholder),
-		EntitySpec: &api.EntitySpec{
+		EntitySpec: api.EntitySpec{
 			SpecData:   repo.NewValidNullableString("spec_data_" + placeholder),
 			SpecFormat: repo.NewValidNullableString(string(model.SpecFormatYaml)),
 			SpecType:   repo.NewValidNullableString(string(model.APISpecTypeOpenAPI)),
 		},
 		DefaultAuth: repo.NewValidNullableString(fixDefaultAuth()),
-		Version: &version.Version{
+		Version: version.Version{
 			VersionValue:           repo.NewNullableString(strings.Ptr("v1.1")),
 			VersionDepracated:      repo.NewNullableBool(&boolPlaceholder),
 			VersionDepracatedSince: repo.NewNullableString(strings.Ptr("v1.0")),
@@ -346,7 +381,7 @@ func fixDefaultAuth() string {
 func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchRequest {
 	return &model.FetchRequest{
 		ID:     id,
-		Tenant: "tenant",
+		Tenant: tenantID,
 		URL:    url,
 		Auth:   nil,
 		Mode:   "SINGLE",
