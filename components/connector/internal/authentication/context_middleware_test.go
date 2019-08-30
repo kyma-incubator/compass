@@ -1,4 +1,4 @@
-package authentication_test
+package authentication
 
 import (
 	"net/http"
@@ -7,8 +7,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/connector/internal/oathkeeper"
 
-	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
-
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
@@ -16,14 +14,26 @@ import (
 
 func TestAuthContextMiddleware_PropagateAuthentication(t *testing.T) {
 
-	connectorToken := "connector-token"
+	tokenType := "Application"
 
 	t.Run("should put authentication to context", func(t *testing.T) {
 		// given
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			token, err := authentication.GetStringFromContext(r.Context(), authentication.ConnectorTokenKey)
+			idFromToken, err := GetStringFromContext(r.Context(), ClientIdFromTokenKey)
 			require.NoError(t, err)
-			assert.Equal(t, connectorToken, token)
+			assert.Equal(t, clientId, idFromToken)
+
+			idFromCert, err := GetStringFromContext(r.Context(), ClientIdFromCertificateKey)
+			require.NoError(t, err)
+			assert.Equal(t, clientId, idFromCert)
+
+			hash, err := GetStringFromContext(r.Context(), ClientCertificateHash)
+			require.NoError(t, err)
+			assert.Equal(t, certHash, hash)
+
+			tokenT, err := GetStringFromContext(r.Context(), TokenTypeKey)
+			require.NoError(t, err)
+			assert.Equal(t, tokenType, tokenT)
 
 			w.WriteHeader(http.StatusOK)
 		})
@@ -31,10 +41,13 @@ func TestAuthContextMiddleware_PropagateAuthentication(t *testing.T) {
 		request, err := http.NewRequest(http.MethodGet, "", nil)
 		require.NoError(t, err)
 
-		request.Header.Add(oathkeeper.ConnectorTokenHeader, connectorToken)
+		request.Header.Add(oathkeeper.ClientIdFromTokenHeader, clientId)
+		request.Header.Add(oathkeeper.ClientIdFromCertificateHeader, clientId)
+		request.Header.Add(oathkeeper.TokenTypeHeader, tokenType)
+		request.Header.Add(oathkeeper.ClientCertificateHashHeader, certHash)
 		rr := httptest.NewRecorder()
 
-		authContextMiddleware := authentication.NewAuthenticationContextMiddleware()
+		authContextMiddleware := NewAuthenticationContextMiddleware()
 
 		// when
 		handlerWithMiddleware := authContextMiddleware.PropagateAuthentication(handler)

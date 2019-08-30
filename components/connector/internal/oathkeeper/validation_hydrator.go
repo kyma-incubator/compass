@@ -55,6 +55,10 @@ func (tvh ValidationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter,
 		return
 	}
 
+	if authSession.Header == nil {
+		authSession.Header = map[string][]string{}
+	}
+
 	authSession.Header.Add(ClientIdFromTokenHeader, tokenData.ClientId)
 	authSession.Header.Add(TokenTypeHeader, string(tokenData.Type))
 
@@ -73,11 +77,17 @@ func (tvh ValidationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *h
 	}
 	defer httputils.Close(r.Body)
 
+	tvh.log.Info("Trying to validate certificate header...")
+
 	commonName, hash, found := tvh.certHeaderParser.GetCertificateData(r)
 	if !found {
 		tvh.log.Info("No valid certificate header found")
 		respondWithAuthSession(w, authSession)
 		return
+	}
+
+	if authSession.Header == nil {
+		authSession.Header = map[string][]string{}
 	}
 
 	authSession.Header.Add(ClientIdFromCertificateHeader, commonName)

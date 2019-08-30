@@ -170,6 +170,7 @@ func prepareHydratorServer(cfg config, tokenService tokens.Service, subjectConst
 	router := mux.NewRouter()
 	v1Router := router.PathPrefix("/v1").Subrouter()
 	v1Router.HandleFunc("/tokens/resolve", validationHydrator.ResolveConnectorTokenHeader)
+	v1Router.HandleFunc("/subject/validate", validationHydrator.ResolveIstioCertHeader)
 
 	return &http.Server{
 		Addr:    cfg.HydratorAddress,
