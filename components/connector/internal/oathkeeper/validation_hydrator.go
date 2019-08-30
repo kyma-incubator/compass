@@ -19,8 +19,6 @@ type ValidationHydrator struct {
 	log              *logrus.Entry
 }
 
-// TODO - tests
-
 func NewValidationHydrator(tokenService tokens.Service, certHeaderParser CertificateHeaderParser) ValidationHydrator {
 	return ValidationHydrator{
 		tokenService:     tokenService,
