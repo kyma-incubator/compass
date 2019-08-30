@@ -9,7 +9,11 @@ import (
 type ContextKey string
 
 const (
-	ConnectorTokenKey ContextKey = "ConnectorToken"
+	ConnectorTokenKey          ContextKey = "ConnectorToken"
+	ClientIdFromTokenKey       ContextKey = "ClientIdFromToken"
+	TokenTypeKey               ContextKey = "TokenType"
+	ClientIdFromCertificateKey ContextKey = "ClientIdFromCertificate"
+	ClientCertificateHash      ContextKey = "ClientCertificateHash"
 )
 
 func GetStringFromContext(ctx context.Context, key ContextKey) (string, error) {

@@ -10,19 +10,22 @@ import (
 
 	"github.com/kyma-incubator/compass/components/connector/internal/httputils"
 
-	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
 )
 
 type ValidationHydrator struct {
-	tokenService tokens.Service
-	log          *logrus.Entry
+	tokenService     tokens.Service
+	certHeaderParser CertificateHeaderParser
+	log              *logrus.Entry
 }
 
-func NewValidationHydrator(tokenService tokens.Service) ValidationHydrator {
+// TODO - tests
+
+func NewValidationHydrator(tokenService tokens.Service, certHeaderParser CertificateHeaderParser) ValidationHydrator {
 	return ValidationHydrator{
-		tokenService: tokenService,
-		log:          logrus.WithField("Handler", "ValidationHydrator"),
+		tokenService:     tokenService,
+		certHeaderParser: certHeaderParser,
+		log:              logrus.WithField("Handler", "ValidationHydrator"),
 	}
 }
 
@@ -36,7 +39,7 @@ func (tvh ValidationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter,
 	}
 	defer httputils.Close(r.Body)
 
-	connectorToken := r.Header.Get(authentication.ConnectorTokenHeader)
+	connectorToken := r.Header.Get(ConnectorTokenHeader)
 	if connectorToken == "" {
 		tvh.log.Info("Token not provided")
 		respondWithAuthSession(w, authSession)
@@ -55,10 +58,33 @@ func (tvh ValidationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter,
 	authSession.Header.Add(ClientIdFromTokenHeader, tokenData.ClientId)
 	authSession.Header.Add(TokenTypeHeader, string(tokenData.Type))
 
+	tvh.tokenService.Delete(connectorToken)
+
 	respondWithAuthSession(w, authSession)
 }
 
-// TODO: implement handler that will validate Istio cert header and set appropriate headers
+func (tvh ValidationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *http.Request) {
+	var authSession AuthenticationSession
+	err := json.NewDecoder(r.Body).Decode(&authSession)
+	if err != nil {
+		tvh.log.Error(err)
+		httputils.RespondWithError(w, http.StatusBadRequest, errors.Wrap(err, "failed to decode Authentication Session from body"))
+		return
+	}
+	defer httputils.Close(r.Body)
+
+	commonName, hash, found := tvh.certHeaderParser.GetCertificateData(r)
+	if !found {
+		tvh.log.Info("No valid certificate header found")
+		respondWithAuthSession(w, authSession)
+		return
+	}
+
+	authSession.Header.Add(ClientIdFromCertificateHeader, commonName)
+	authSession.Header.Add(ClientCertificateHashHeader, hash)
+
+	respondWithAuthSession(w, authSession)
+}
 
 func respondWithAuthSession(w http.ResponseWriter, authSession AuthenticationSession) {
 	httputils.RespondWithBody(w, http.StatusOK, authSession)

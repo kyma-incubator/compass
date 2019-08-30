@@ -5,6 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/connector/internal/oathkeeper"
+
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 
 	"github.com/stretchr/testify/assert"
@@ -29,7 +31,7 @@ func TestAuthContextMiddleware_PropagateAuthentication(t *testing.T) {
 		request, err := http.NewRequest(http.MethodGet, "", nil)
 		require.NoError(t, err)
 
-		request.Header.Add(authentication.ConnectorTokenHeader, connectorToken)
+		request.Header.Add(oathkeeper.ConnectorTokenHeader, connectorToken)
 		rr := httptest.NewRecorder()
 
 		authContextMiddleware := authentication.NewAuthenticationContextMiddleware()

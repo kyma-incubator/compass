@@ -87,7 +87,7 @@ func main() {
 	tokenCache := tokens.NewTokenCache(cfg.Token.ApplicationExpiration, cfg.Token.RuntimeExpiration, cfg.Token.CSRExpiration)
 	tokenService := tokens.NewTokenService(tokenCache, tokens.NewTokenGenerator(cfg.Token.Length))
 
-	authenticator := authentication.NewAuthenticator(tokenService)
+	authenticator := authentication.NewAuthenticator()
 
 	tokenResolver := api.NewTokenResolver(tokenService)
 
@@ -117,7 +117,7 @@ func main() {
 		cfg.DirectorURL)
 
 	server := prepareGraphQLServer(cfg, tokenResolver, certificateResolver)
-	hydratorServer := prepareHydratorServer(cfg, tokenService)
+	hydratorServer := prepareHydratorServer(cfg, tokenService, csrSubjectConsts)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
@@ -162,8 +162,10 @@ func prepareGraphQLServer(cfg config, tokenResolver api.TokenResolver, certResol
 	}
 }
 
-func prepareHydratorServer(cfg config, tokenService tokens.Service) *http.Server {
-	validationHydrator := oathkeeper.NewValidationHydrator(tokenService)
+func prepareHydratorServer(cfg config, tokenService tokens.Service, subjectConsts certificates.CSRSubjectConsts) *http.Server {
+	certHeaderParser := oathkeeper.NewHeaderParser(subjectConsts)
+
+	validationHydrator := oathkeeper.NewValidationHydrator(tokenService, certHeaderParser)
 
 	router := mux.NewRouter()
 	v1Router := router.PathPrefix("/v1").Subrouter()
