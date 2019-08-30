@@ -44,7 +44,7 @@ These are the basic assumptions for the API design:
 - Cluster provisioning and Kyma installation is considered an atomic operation.
 - Provisioning, deprovisioning, upgrade and Compass Runtime Agent reconnecting is uniquely identified by OperationID.
 - Runtime is uniquely identified by RuntimeID.
-- Before runtime is provisioned it must be registered in Director API. RuntimeID returned from Director should be used in Provisioner API.
+- Before you provision the Runtime, register it in Director API. Use RuntimeID returned from Director in Provisioner API.
 - Only one asynchronous operation can be in progress on a given Runtime.  
 - It must be possible to install minimal Kyma  (Kyma Lite) and specify additional modules.
 - Two types of status information are available:
@@ -114,7 +114,7 @@ The mutation returns OperationID allowing to retrieve the operation status.
 
 ***runtimeOperationStatus*** query gets the current status of a Runtime. The query takes Runtime ID as a parameter and returns an object containing this information:
 
-- Last operation status.
+- Last operation status
 - Runtime connection configuration (kubeconfig)
 - Runtime Agent Connection status
   - Status (connected, disconnected)
