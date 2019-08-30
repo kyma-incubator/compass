@@ -57,7 +57,7 @@ These are the basic assumptions for the API design:
 
 ### Provision Runtime mutation
 
-Provisioning is implemented by ***provisionRuntime*** mutation. The object that must be passed to the mutation contains the following fields:
+***provisionRuntime*** mutation provisions Runtimes. The object passed to the mutation contains these fields:
 
 - Kyma installation settings
   - Release version
@@ -77,7 +77,7 @@ The mutation returns OperationID allowing to retrieve the operation status.
 
 ### Upgrade Runtime mutation
 
-Upgrade is implemented by ***upgradeRuntime*** mutation. The object that must be passed to the mutation contains the following fields:
+***upgradeRuntime*** mutation upgrades Runtimes. The object passed to the mutation contains these fields:
 
 - Kyma installation settings
   - Release version
@@ -89,13 +89,13 @@ The mutation returns OperationID allowing to retrieve the operation status.
 
 ### Deprovision Runtime mutation
 
-Deprovisioning is implemented by ***deprovisionRuntime*** mutation. The RuntimeID must be passed as argument. 
+***deprovisionRuntime*** mutation deprovisions Runtimes. Pass the RuntimeID as argument. 
 
 The mutation returns OperationID allowing to retrieve the operation status.
 
 ### Reconnecting Compass Runtime Agent mutation
 
-Reconnection Compass runtime Agent is implemented by ***reconnectRuntimeAgent*** mutation. The RuntimeID must be passed as argument. 
+***reconnectRuntimeAgent*** mutation reconnects Compass Runtime Agent. Pass the RuntimeID as argument. 
 
 The mutation returns OperationID allowing to retrieve the operation status.
 
@@ -103,7 +103,7 @@ The mutation returns OperationID allowing to retrieve the operation status.
 
 ### Operation status query
 
-Getting operation status is implemented by ***runtimeOperationStatus*** query. The query takes Operation ID as parameter and returns object containing the following information:
+***runtimeOperationStatus*** query gets the Runtime operation status. The query takes Operation ID as parameter and returns object containing this information:
 
 - Operation type (e.g. Provisioning)
 - Operation status (e.g. InProgress)
@@ -112,7 +112,7 @@ Getting operation status is implemented by ***runtimeOperationStatus*** query. T
 
 ### Runtime status query
 
-Getting current status of a Runtime is implemented by ***runtimeStatus*** query. The query takes Runtime ID as a parameter and returns object containing the following information:
+***runtimeOperationStatus*** query gets the current status of a Runtime. The query takes Runtime ID as a parameter and returns an object containing this information:
 
 - Last operation status.
 - Runtime connection configuration (kubeconfig)
