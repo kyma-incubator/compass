@@ -64,10 +64,12 @@ type RuntimeConnectionStatus {
     errors: [Error!]
 }
 
+# We should consider renamig this type, as it contains more than just status.
 type RuntimeStatus {
     lastOperationStatus: OperationStatus
     runtimeConnectionStatus: RuntimeConnectionStatus
     runtimeConnectionConfig: RuntimeConnectionConfig
+    runtimeConfiguration: RuntimeConfig
 }
 
 enum OperationState {
@@ -137,9 +139,6 @@ type Mutation {
 type Query {
     # Provides current status of specified Runtime
     runtimeStatus(id: RuntimeID): RuntimeStatus
-
-    # Provides configuration of existing Runtime. We can consider making it a part of RuntimeStatus.
-    runtimeConfiguration(id: RuntimeID): RuntimeConfig
 
     # Provides status of specified operation
     runtimeOperationStatus(id: AsyncOperationID): OperationStatus

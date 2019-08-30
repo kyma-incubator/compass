@@ -1,6 +1,6 @@
 # Introduction
 
-The goal of this document is to describe requirements for Provisioner component and propose an API. 
+The goal of this document is to describe the requirements for the Provisioner component and propose an API. 
 
 ## Requirements
 
@@ -19,62 +19,63 @@ The following operations must be supported:
 
 - Provisioning
 - Upgrade
-  - Kubernetes version.
-  - Kyma version.
+  - Kubernetes version
+  - Kyma version
 - Deprovisioning
 
 ### Runtime Agent connection management
 
-Resetting connection between Runtime and Management Plane Services must be supported. The goal of this functionality is to force Compass Runtime Agent installed on the Runtime to establish a new connection.
+The API must support resetting the connection between Runtime and Management Plane Services. The goal of this functionality is to force Compass Runtime Agent installed on the Runtime to establish new connection.
 
 ### Status information retrieval
 
-The following operations must be supported:
+These operations must be supported:
 
-- Getting status of an asynchronous operations (e.g. Runtime provisioning)
-- Getting current status of a Runtime 
+- Getting the status of an asynchronous operation (e.g. Runtime provisioning)
+- Getting the current status of an existing Runtime
+- Getting the configuration of an existing Runtime
 
 # API proposal
 
 ## General 
 
-The basic assumptions for API design are as follows:
+These are the basic assumptions for the API design:
 
-- Cluster provisioning and Kyma installation is considered atomic operation.
+- Cluster provisioning and Kyma installation is considered an atomic operation.
 - Provisioning, deprovisioning, upgrade and Compass Runtime Agent reconnecting is uniquely identified by OperationID.
 - Runtime is uniquely identified by RuntimeID.
 - Before runtime is provisioned it must be registered in Director API. RuntimeID returned from Director should be used in Provisioner API.
 - Only one asynchronous operation can be in progress on a given Runtime.  
 - It must be possible to install minimal Kyma  (Kyma Lite) and specify additional modules.
 - Two types of status information are available:
-  - Status of asynchronous operation.
-  - Status of Runtime comprised of:
-    - Status of the last operation.
-    - Status of Compass Runtime Agent Connection.
+  - The status of an asynchronous operation
+  - Runtime status comprised of:
+    - The status of the last operation
+    - Compass Runtime Agent Connection status
 
-## Runtime managament
+## Runtime management
 
-### Provision Runtime
+### Provision Runtime mutation
 
 Provisioning is implemented by ***provisionRuntime*** mutation. The object that must be passed to the mutation contains the following fields:
 
 - Kyma installation settings
   - Release version
-  - List of modules to be installed
+  - List of modules to install
 - Kubernetes cluster settings
-  - name
-  - size
-  - memory
-  - region and zone
-  - credentials
-  -  version
+  - Name
+  - Size
+  - Memory
+  - Region and zone
+  - Credentials
+  - Version
   - Infrastructure provider (e.g. GKE, AKS)
 
 Some Kubernetes cluster settings (such as size, memory, and version) are optional and default values are used.
 
 The mutation returns OperationID allowing to retrieve the operation status.
 
-### Upgrade Runtime
+### Upgrade Runtime mutation
 
 Upgrade is implemented by ***upgradeRuntime*** mutation. The object that must be passed to the mutation contains the following fields:
 
@@ -82,17 +83,17 @@ Upgrade is implemented by ***upgradeRuntime*** mutation. The object that must be
   - Release version
   - List of modules to be installed
 - Kubernetes cluster settings
-  -  version
+  - Version
 
 The mutation returns OperationID allowing to retrieve the operation status.
 
-### Deprovision Runtime
+### Deprovision Runtime mutation
 
 Deprovisioning is implemented by ***deprovisionRuntime*** mutation. The RuntimeID must be passed as argument. 
 
 The mutation returns OperationID allowing to retrieve the operation status.
 
-### Reconnecting Compass Runtime Agent
+### Reconnecting Compass Runtime Agent mutation
 
 Reconnection Compass runtime Agent is implemented by ***reconnectRuntimeAgent*** mutation. The RuntimeID must be passed as argument. 
 
@@ -100,21 +101,21 @@ The mutation returns OperationID allowing to retrieve the operation status.
 
 ## Retrieving operation status
 
-### Operation status
+### Operation status query
 
 Getting operation status is implemented by ***runtimeOperationStatus*** query. The query takes Operation ID as parameter and returns object containing the following information:
 
-- Operation type (e.g. Provisioning).
-- Operation status (e.g. InProgress).
-- Message.
-- Error messages list.
+- Operation type (e.g. Provisioning)
+- Operation status (e.g. InProgress)
+- Message
+- Error messages list
 
-### Current status of a Runtime
+### Runtime status query
 
-Getting current status of a Runtime is implemented by ***runtimeOperationStatus*** query. The query takes Runtime ID as a parameter and returns object containing the following information:
+Getting current status of a Runtime is implemented by ***runtimeStatus*** query. The query takes Runtime ID as a parameter and returns object containing the following information:
 
 - Last operation status.
-- Runtime connection configuration (kubeconfig).
+- Runtime connection configuration (kubeconfig)
 - Runtime Agent Connection status
-  - Status (connected, disconnected).
-  - Errors list.
+  - Status (connected, disconnected)
+  - Errors list
