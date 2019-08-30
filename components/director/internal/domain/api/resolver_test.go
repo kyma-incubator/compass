@@ -8,9 +8,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence/txtest"
 
-	"github.com/kyma-incubator/compass/components/director/internal/persistence"
-	"github.com/stretchr/testify/mock"
-
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
@@ -21,10 +18,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var contextParam = mock.MatchedBy(func(ctx context.Context) bool {
-	persistenceOp, err := persistence.FromCtx(ctx)
-	return err == nil && persistenceOp != nil
-})
+var contextParam = txtest.CtxWithDBMatcher()
 
 func TestResolver_AddAPI(t *testing.T) {
 	// given
@@ -39,24 +33,28 @@ func TestResolver_AddAPI(t *testing.T) {
 	modelAPIInput := fixModelAPIDefinitionInput("name", "foo", "bar")
 
 	testCases := []struct {
-		Name         string
-		ServiceFn    func() *automock.APIService
-		AppServiceFn func() *automock.ApplicationService
-		ConverterFn  func() *automock.APIConverter
-		ExpectedAPI  *graphql.APIDefinition
-		ExpectedErr  error
+		Name            string
+		PersistenceFn   func() *persistenceautomock.PersistenceTx
+		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ServiceFn       func() *automock.APIService
+		AppServiceFn    func() *automock.ApplicationService
+		ConverterFn     func() *automock.APIConverter
+		ExpectedAPI     *graphql.APIDefinition
+		ExpectedErr     error
 	}{
 		{
-			Name: "Success",
+			Name:            "Success",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
+			TransactionerFn: txtest.TransactionerThatSucceed,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Create", context.TODO(), appId, *modelAPIInput).Return(id, nil).Once()
-				svc.On("Get", context.TODO(), id).Return(modelAPI, nil).Once()
+				svc.On("Create", contextParam, appId, *modelAPIInput).Return(id, nil).Once()
+				svc.On("Get", contextParam, id).Return(modelAPI, nil).Once()
 				return svc
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", context.TODO(), appId).Return(true, nil)
+				appSvc.On("Exist", contextParam, appId).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -69,14 +67,16 @@ func TestResolver_AddAPI(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "Returns error when application not exist",
+			Name:            "Returns error when application not exist",
+			PersistenceFn:   txtest.PersistenceContextThatDontExpectCommit,
+			TransactionerFn: txtest.TransactionerThatSucceed,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
 				return svc
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", context.TODO(), appId).Return(false, nil)
+				appSvc.On("Exist", contextParam, appId).Return(false, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -88,14 +88,16 @@ func TestResolver_AddAPI(t *testing.T) {
 			ExpectedErr: errors.New("Cannot add API to not existing Application"),
 		},
 		{
-			Name: "Returns error when application existence check failed",
+			Name:            "Returns error when application existence check failed",
+			PersistenceFn:   txtest.PersistenceContextThatDontExpectCommit,
+			TransactionerFn: txtest.TransactionerThatSucceed,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
 				return svc
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", context.TODO(), appId).Return(false, testErr)
+				appSvc.On("Exist", contextParam, appId).Return(false, testErr)
 				return appSvc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -107,15 +109,17 @@ func TestResolver_AddAPI(t *testing.T) {
 			ExpectedErr: testErr,
 		},
 		{
-			Name: "Returns error when API creation failed",
+			Name:            "Returns error when API creation failed",
+			PersistenceFn:   txtest.PersistenceContextThatDontExpectCommit,
+			TransactionerFn: txtest.TransactionerThatSucceed,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Create", context.TODO(), appId, *modelAPIInput).Return("", testErr).Once()
+				svc.On("Create", contextParam, appId, *modelAPIInput).Return("", testErr).Once()
 				return svc
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", context.TODO(), appId).Return(true, nil)
+				appSvc.On("Exist", contextParam, appId).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -127,16 +131,18 @@ func TestResolver_AddAPI(t *testing.T) {
 			ExpectedErr: testErr,
 		},
 		{
-			Name: "Returns error when API retrieval failed",
+			Name:            "Returns error when API retrieval failed",
+			PersistenceFn:   txtest.PersistenceContextThatDontExpectCommit,
+			TransactionerFn: txtest.TransactionerThatSucceed,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Create", context.TODO(), appId, *modelAPIInput).Return(id, nil).Once()
-				svc.On("Get", context.TODO(), id).Return(nil, testErr).Once()
+				svc.On("Create", contextParam, appId, *modelAPIInput).Return(id, nil).Once()
+				svc.On("Get", contextParam, id).Return(nil, testErr).Once()
 				return svc
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", context.TODO(), appId).Return(true, nil)
+				appSvc.On("Exist", contextParam, appId).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -152,11 +158,13 @@ func TestResolver_AddAPI(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// given
+			persistTx := testCase.PersistenceFn()
+			tx := testCase.TransactionerFn(persistTx)
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 			appSvc := testCase.AppServiceFn()
 
-			resolver := api.NewResolver(nil, svc, appSvc, converter, nil, nil)
+			resolver := api.NewResolver(tx, svc, appSvc, converter, nil, nil)
 
 			// when
 			result, err := resolver.AddAPI(context.TODO(), appId, *gqlAPIInput)
@@ -169,6 +177,8 @@ func TestResolver_AddAPI(t *testing.T) {
 				require.Nil(t, err)
 			}
 
+			persistTx.AssertExpectations(t)
+			tx.AssertExpectations(t)
 			svc.AssertExpectations(t)
 			appSvc.AssertExpectations(t)
 			converter.AssertExpectations(t)
@@ -272,6 +282,8 @@ func TestResolver_UpdateAPI(t *testing.T) {
 
 	testCases := []struct {
 		Name                  string
+		PersistenceFn         func() *persistenceautomock.PersistenceTx
+		TransactionerFn       func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
 		ServiceFn             func() *automock.APIService
 		ConverterFn           func() *automock.APIConverter
 		InputWebhookID        string
@@ -280,11 +292,13 @@ func TestResolver_UpdateAPI(t *testing.T) {
 		ExpectedErr           error
 	}{
 		{
-			Name: "Success",
+			Name:            "Success",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
+			TransactionerFn: txtest.TransactionerThatSucceed,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Update", context.TODO(), id, *modelAPIDefinitionInput).Return(nil).Once()
-				svc.On("Get", context.TODO(), id).Return(modelAPIDefinition, nil).Once()
+				svc.On("Update", contextParam, id, *modelAPIDefinitionInput).Return(nil).Once()
+				svc.On("Get", contextParam, id).Return(modelAPIDefinition, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -299,10 +313,12 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			ExpectedErr:           nil,
 		},
 		{
-			Name: "Returns error when API update failed",
+			Name:            "Returns error when API update failed",
+			PersistenceFn:   txtest.PersistenceContextThatDontExpectCommit,
+			TransactionerFn: txtest.TransactionerThatSucceed,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Update", context.TODO(), id, *modelAPIDefinitionInput).Return(testErr).Once()
+				svc.On("Update", contextParam, id, *modelAPIDefinitionInput).Return(testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -316,11 +332,13 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			ExpectedErr:           testErr,
 		},
 		{
-			Name: "Returns error when API retrieval failed",
+			Name:            "Returns error when API retrieval failed",
+			PersistenceFn:   txtest.PersistenceContextThatDontExpectCommit,
+			TransactionerFn: txtest.TransactionerThatSucceed,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Update", context.TODO(), id, *modelAPIDefinitionInput).Return(nil).Once()
-				svc.On("Get", context.TODO(), id).Return(nil, testErr).Once()
+				svc.On("Update", contextParam, id, *modelAPIDefinitionInput).Return(nil).Once()
+				svc.On("Get", contextParam, id).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -338,10 +356,12 @@ func TestResolver_UpdateAPI(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// given
+			persistTx := testCase.PersistenceFn()
+			tx := testCase.TransactionerFn(persistTx)
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := api.NewResolver(nil, svc, nil, converter, nil, nil)
+			resolver := api.NewResolver(tx, svc, nil, converter, nil, nil)
 
 			// when
 			result, err := resolver.UpdateAPI(context.TODO(), id, *gqlAPIDefinitionInput)
@@ -350,6 +370,8 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			assert.Equal(t, testCase.ExpectedAPIDefinition, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
+			persistTx.AssertExpectations(t)
+			tx.AssertExpectations(t)
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)
 		})

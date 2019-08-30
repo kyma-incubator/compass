@@ -361,7 +361,7 @@ func TestApiSpecDataConversionNilStaysNil(t *testing.T) {
 	require.NotNil(t, convertedInputModel)
 	require.NotNil(t, convertedInputModel.Spec)
 	require.Nil(t, convertedInputModel.Spec.Data)
-	convertedAPIDef := convertedInputModel.ToAPIDefinition("id", "app_id", strings.Ptr("fr_id"))
+	convertedAPIDef := convertedInputModel.ToAPIDefinition("id", "app_id")
 	require.NotNil(t, convertedAPIDef)
 	convertedGraphqlAPIDef := converter.ToGraphQL(convertedAPIDef)
 	require.NotNil(t, convertedGraphqlAPIDef)

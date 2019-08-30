@@ -60,6 +60,14 @@ func NewResolver(transact persistence.Transactioner, svc EventAPIService, appSvc
 }
 
 func (r *Resolver) AddEventAPI(ctx context.Context, applicationID string, in graphql.EventAPIDefinitionInput) (*graphql.EventAPIDefinition, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	convertedIn := r.converter.InputFromGraphQL(&in)
 
 	found, err := r.appSvc.Exist(ctx, applicationID)
@@ -81,15 +89,28 @@ func (r *Resolver) AddEventAPI(ctx context.Context, applicationID string, in gra
 		return nil, err
 	}
 
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
 	gqlAPI := r.converter.ToGraphQL(api)
 
 	return gqlAPI, nil
 }
 
 func (r *Resolver) UpdateEventAPI(ctx context.Context, id string, in graphql.EventAPIDefinitionInput) (*graphql.EventAPIDefinition, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	convertedIn := r.converter.InputFromGraphQL(&in)
 
-	err := r.svc.Update(ctx, id, *convertedIn)
+	err = r.svc.Update(ctx, id, *convertedIn)
 	if err != nil {
 		return nil, err
 	}
@@ -100,6 +121,11 @@ func (r *Resolver) UpdateEventAPI(ctx context.Context, id string, in graphql.Eve
 	}
 
 	gqlAPI := r.converter.ToGraphQL(api)
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
 
 	return gqlAPI, nil
 }

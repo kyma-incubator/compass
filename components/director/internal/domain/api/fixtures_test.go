@@ -17,10 +17,9 @@ import (
 )
 
 const (
-	apiDefID       = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
-	appID          = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-	tenantID       = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
-	fetchRequestID = "fffffffff-ffff-ffff-ffff-ffffffffffff"
+	apiDefID = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
+	appID    = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	tenantID = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
 )
 
 func fixModelAPIDefinition(id, appId, name, description string) *model.APIDefinition {
@@ -34,10 +33,9 @@ func fixModelAPIDefinition(id, appId, name, description string) *model.APIDefini
 
 func fixFullModelAPIDefinition(placeholder string) *model.APIDefinition {
 	spec := &model.APISpec{
-		Data:           strings.Ptr("spec_data_" + placeholder),
-		Format:         model.SpecFormatYaml,
-		Type:           model.APISpecTypeOpenAPI,
-		FetchRequestID: nil,
+		Data:   strings.Ptr("spec_data_" + placeholder),
+		Format: model.SpecFormatYaml,
+		Type:   model.APISpecTypeOpenAPI,
 	}
 
 	deprecated := false
@@ -261,10 +259,9 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 		Group:       repo.NewValidNullableString("group_" + placeholder),
 		TargetURL:   fmt.Sprintf("https://%s.com", placeholder),
 		EntitySpec: &api.EntitySpec{
-			SpecData:           repo.NewValidNullableString("spec_data_" + placeholder),
-			SpecFormat:         repo.NewValidNullableString(string(model.SpecFormatYaml)),
-			SpecType:           repo.NewValidNullableString(string(model.APISpecTypeOpenAPI)),
-			SpecFetchRequestID: repo.NewValidNullableString(fetchRequestID),
+			SpecData:   repo.NewValidNullableString("spec_data_" + placeholder),
+			SpecFormat: repo.NewValidNullableString(string(model.SpecFormatYaml)),
+			SpecType:   repo.NewValidNullableString(string(model.APISpecTypeOpenAPI)),
 		},
 		DefaultAuth: repo.NewValidNullableString(fixDefaultAuth()),
 		Version: &version.Version{
@@ -279,20 +276,20 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 func fixAPIDefinitionColumns() []string {
 	return []string{"id", "tenant_id", "app_id", "name", "description", "group_name", "target_url", "spec_data",
 		"spec_format", "spec_type", "default_auth", "version_value", "version_deprecated",
-		"version_deprecated_since", "version_for_removal", "spec_fetch_request_id"}
+		"version_deprecated_since", "version_for_removal"}
 }
 
 func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
 	return []driver.Value{id, tenantID, appID, placeholder, "desc_" + placeholder, "group_" + placeholder,
 		fmt.Sprintf("https://%s.com", placeholder), "spec_data_" + placeholder, "YAML", "OPEN_API",
-		fixDefaultAuth(), "v1.1", false, "v1.0", false, fetchRequestID}
+		fixDefaultAuth(), "v1.1", false, "v1.0", false}
 }
 
 func fixAPICreateArgs(id, defAuth string, api *model.APIDefinition) []driver.Value {
 	return []driver.Value{id, tenantID, appID, api.Name, api.Description, api.Group,
 		api.TargetURL, api.Spec.Data, string(api.Spec.Format), string(api.Spec.Type),
 		defAuth, api.Version.Value, api.Version.Deprecated, api.Version.DeprecatedSince,
-		api.Version.ForRemoval, fetchRequestID}
+		api.Version.ForRemoval}
 }
 
 func fixDefaultAuth() string {

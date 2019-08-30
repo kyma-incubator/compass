@@ -10,7 +10,11 @@ import (
 
 const fetchRequestTable string = `public.fetch_requests`
 
-var fetchRequestColumns = []string{"id", "tenant_id", "api_def_id", "event_api_def_id", "document_id", "url", "auth", "mode", "filter", "status_condition", "status_timestamp"}
+const documentIDColumn = "document_id"
+const apiDefIDColumn = "api_def_id"
+const eventAPIDefIDColumn = "event_api_def_id"
+
+var fetchRequestColumns = []string{"id", "tenant_id", apiDefIDColumn, eventAPIDefIDColumn, documentIDColumn, "url", "auth", "mode", "filter", "status_condition", "status_timestamp"}
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
@@ -48,14 +52,9 @@ func (r *repository) Create(ctx context.Context, item *model.FetchRequest) error
 }
 
 func (r *repository) GetByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error) {
-	var fieldName string
-	switch objectType {
-	case model.DocumentFetchRequestReference:
-		fieldName = "document_id"
-	case model.APIFetchRequestReference:
-		fieldName = "api_def_id"
-	case model.EventAPIFetchRequestReference:
-		fieldName = "event_api_def_id"
+	fieldName, err := r.referenceObjectFieldName(objectType)
+	if err != nil {
+		return nil, err
 	}
 
 	var entity Entity
@@ -73,4 +72,26 @@ func (r *repository) GetByReferenceObjectID(ctx context.Context, tenant string, 
 
 func (r *repository) Delete(ctx context.Context, tenant, id string) error {
 	return r.Deleter.DeleteOne(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
+}
+
+func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) error {
+	fieldName, err := r.referenceObjectFieldName(objectType)
+	if err != nil {
+		return err
+	}
+
+	return r.Deleter.DeleteMany(ctx, tenant, repo.Conditions{{Field: fieldName, Val: objectID}})
+}
+
+func (r *repository) referenceObjectFieldName(objectType model.FetchRequestReferenceObjectType) (string, error) {
+	switch objectType {
+	case model.DocumentFetchRequestReference:
+		return documentIDColumn, nil
+	case model.APIFetchRequestReference:
+		return apiDefIDColumn, nil
+	case model.EventAPIFetchRequestReference:
+		return eventAPIDefIDColumn, nil
+	}
+
+	return "", errors.New("Invalid type of the Fetch Request reference object")
 }

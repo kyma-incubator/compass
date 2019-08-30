@@ -18,8 +18,7 @@ type Entity struct {
 }
 
 type EntitySpec struct {
-	SpecData           sql.NullString `db:"spec_data"`
-	SpecFormat         sql.NullString `db:"spec_format"`
-	SpecType           sql.NullString `db:"spec_type"`
-	SpecFetchRequestID sql.NullString `db:"spec_fetch_request_id"`
+	SpecData   sql.NullString `db:"spec_data"`
+	SpecFormat sql.NullString `db:"spec_format"`
+	SpecType   sql.NullString `db:"spec_type"`
 }

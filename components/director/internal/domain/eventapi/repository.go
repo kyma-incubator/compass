@@ -138,7 +138,7 @@ const tenantColumn string = `tenant_id`
 
 var apiDefColumns = []string{"id", "tenant_id", "app_id", "name", "description", "group_name", "spec_data",
 	"spec_format", "spec_type", "version_value", "version_deprecated", "version_deprecated_since",
-	"version_for_removal", "spec_fetch_request_id"}
+	"version_for_removal"}
 
 var idColumns = []string{"id"}
 
