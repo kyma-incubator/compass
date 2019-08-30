@@ -45,7 +45,7 @@ func TestRepository_Create(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("DB Error", func(t *testing.T) {
+	t.Run("Error - DB", func(t *testing.T) {
 		// GIVEN
 		timestamp := time.Now()
 		frModel := fixFullFetchRequestModel(givenID(), timestamp)
@@ -67,7 +67,7 @@ func TestRepository_Create(t *testing.T) {
 		require.EqualError(t, err, "while inserting row to 'public.fetch_requests' table: some error")
 	})
 
-	t.Run("Converter Error", func(t *testing.T) {
+	t.Run("Error - Converter", func(t *testing.T) {
 		// GIVEN
 		timestamp := time.Now()
 		frModel := fixFullFetchRequestModel(givenID(), timestamp)
@@ -131,7 +131,7 @@ func TestRepository_GetByReferenceObjectID(t *testing.T) {
 		})
 	}
 
-	t.Run("Converter Error", func(t *testing.T) {
+	t.Run("Error - Converter", func(t *testing.T) {
 		// GIVEN
 		timestamp := time.Now()
 		frEntity := fixFullFetchRequestEntity(t, givenID(), timestamp)
@@ -157,7 +157,7 @@ func TestRepository_GetByReferenceObjectID(t *testing.T) {
 		require.EqualError(t, err, "while creating FetchRequest model from entity: some error")
 	})
 
-	t.Run("DB Error", func(t *testing.T) {
+	t.Run("Error - DB", func(t *testing.T) {
 		// GIVEN
 		repo := fetchrequest.NewRepository(nil)
 		db, dbMock := testdb.MockDatabase(t)
@@ -172,6 +172,20 @@ func TestRepository_GetByReferenceObjectID(t *testing.T) {
 		// THEN
 		require.EqualError(t, err, "while getting object from DB: some error")
 	})
+
+	t.Run("Error - Invalid Object Reference Type", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		repo := fetchrequest.NewRepository(nil)
+		// WHEN
+		_, err := repo.GetByReferenceObjectID(ctx, givenTenant(), "test", givenID())
+		// THEN
+		require.EqualError(t, err, "Invalid type of the Fetch Request reference object")
+	})
+
 }
 
 func TestRepository_Delete(t *testing.T) {
@@ -191,7 +205,7 @@ func TestRepository_Delete(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("Error", func(t *testing.T) {
+	t.Run("Error - DB", func(t *testing.T) {
 		// GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
@@ -241,7 +255,20 @@ func TestRepository_DeleteByReferenceObjectID(t *testing.T) {
 		})
 	}
 
-	t.Run("Error", func(t *testing.T) {
+	t.Run("Error - Invalid Object Reference Type", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		repo := fetchrequest.NewRepository(nil)
+		// WHEN
+		err := repo.DeleteByReferenceObjectID(ctx, givenTenant(), "test", givenID())
+		// THEN
+		require.EqualError(t, err, "Invalid type of the Fetch Request reference object")
+	})
+
+	t.Run("Error - DB", func(t *testing.T) {
 		// GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
