@@ -965,19 +965,31 @@ func TestResolver_Documents(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	testCases := []struct {
-		Name           string
-		ServiceFn      func() *automock.DocumentService
-		ConverterFn    func() *automock.DocumentConverter
-		InputFirst     *int
-		InputAfter     *graphql.PageCursor
-		ExpectedResult *graphql.DocumentPage
-		ExpectedErr    error
+		Name            string
+		ServiceFn       func() *automock.DocumentService
+		ConverterFn     func() *automock.DocumentConverter
+		PersistenceFn   func() *persistenceautomock.PersistenceTx
+		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ExpectedResult  *graphql.DocumentPage
+		ExpectedErr     error
 	}{
 		{
 			Name: "Success",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+				return persistTx
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+
+				return transact
+			},
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("List", context.TODO(), applicationID, &first, &after).Return(fixModelDocumentPage(modelDocuments), nil).Once()
+				svc.On("List", contextParam, applicationID, first, after).Return(fixModelDocumentPage(modelDocuments), nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -985,24 +997,31 @@ func TestResolver_Documents(t *testing.T) {
 				conv.On("MultipleToGraphQL", modelDocuments).Return(gqlDocuments).Once()
 				return conv
 			},
-			InputFirst:     &first,
-			InputAfter:     &gqlAfter,
 			ExpectedResult: fixGQLDocumentPage(gqlDocuments),
 			ExpectedErr:    nil,
 		},
 		{
 			Name: "Returns error when document listing failed",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				return persistTx
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+
+				return transact
+			},
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("List", context.TODO(), applicationID, &first, &after).Return(nil, testErr).Once()
+				svc.On("List", contextParam, applicationID, first, after).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
 				conv := &automock.DocumentConverter{}
 				return conv
 			},
-			InputFirst:     &first,
-			InputAfter:     &gqlAfter,
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
 		},
@@ -1012,11 +1031,13 @@ func TestResolver_Documents(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
+			persistTx := testCase.PersistenceFn()
+			transact := testCase.TransactionerFn(persistTx)
 
-			resolver := application.NewResolver(nil, nil, nil, nil, svc, nil, nil, converter, nil, nil, nil)
+			resolver := application.NewResolver(transact, nil, nil, nil, svc, nil, nil, converter, nil, nil, nil)
 
 			// when
-			result, err := resolver.Documents(context.TODO(), app, testCase.InputFirst, testCase.InputAfter)
+			result, err := resolver.Documents(context.TODO(), app, &first, &gqlAfter)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
@@ -1024,6 +1045,8 @@ func TestResolver_Documents(t *testing.T) {
 
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)
+			persistTx.AssertExpectations(t)
+			transact.AssertExpectations(t)
 		})
 	}
 }

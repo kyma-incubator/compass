@@ -100,7 +100,6 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 		Data:       items,
 		TotalCount: totalCount,
 		PageInfo:   page}, nil
-
 }
 
 func (r *pgRepository) Create(ctx context.Context, item *model.Runtime) error {

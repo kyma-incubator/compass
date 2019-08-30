@@ -89,19 +89,17 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.DocumentInput) []*mod
 func (c *converter) ToEntity(in model.Document) (Entity, error) {
 	kind := repo.NewNullableString(in.Kind)
 	data := repo.NewNullableString(in.Data)
-	fetchRequestID := repo.NewNullableString(in.FetchRequestID)
 
 	out := Entity{
-		ID:             in.ID,
-		AppID:          in.ApplicationID,
-		TenantID:       in.Tenant,
-		Title:          in.Title,
-		DisplayName:    in.DisplayName,
-		Description:    in.Description,
-		Format:         string(in.Format),
-		Kind:           kind,
-		Data:           data,
-		FetchRequestID: fetchRequestID,
+		ID:          in.ID,
+		AppID:       in.ApplicationID,
+		TenantID:    in.Tenant,
+		Title:       in.Title,
+		DisplayName: in.DisplayName,
+		Description: in.Description,
+		Format:      string(in.Format),
+		Kind:        kind,
+		Data:        data,
 	}
 
 	return out, nil
@@ -110,19 +108,17 @@ func (c *converter) ToEntity(in model.Document) (Entity, error) {
 func (c *converter) FromEntity(in Entity) (model.Document, error) {
 	kind := repo.StringPtrFromNullableString(in.Kind)
 	data := repo.StringPtrFromNullableString(in.Data)
-	fetchRequestID := repo.StringPtrFromNullableString(in.FetchRequestID)
 
 	out := model.Document{
-		ID:             in.ID,
-		ApplicationID:  in.AppID,
-		Tenant:         in.TenantID,
-		Title:          in.Title,
-		DisplayName:    in.DisplayName,
-		Description:    in.Description,
-		Format:         model.DocumentFormat(in.Format),
-		Kind:           kind,
-		Data:           data,
-		FetchRequestID: fetchRequestID,
+		ID:            in.ID,
+		ApplicationID: in.AppID,
+		Tenant:        in.TenantID,
+		Title:         in.Title,
+		DisplayName:   in.DisplayName,
+		Description:   in.Description,
+		Format:        model.DocumentFormat(in.Format),
+		Kind:          kind,
+		Data:          data,
 	}
 	return out, nil
 }

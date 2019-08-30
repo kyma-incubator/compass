@@ -60,13 +60,13 @@ func TestResolver_AddDocument(t *testing.T) {
 			},
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("Create", context.TODO(), applicationID, *modelInput).Return(id, nil).Once()
-				svc.On("Get", context.TODO(), id).Return(modelDocument, nil).Once()
+				svc.On("Create", contextParam, applicationID, *modelInput).Return(id, nil).Once()
+				svc.On("Get", contextParam, id).Return(modelDocument, nil).Once()
 				return svc
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", context.TODO(), applicationID).Return(true, nil)
+				appSvc.On("Exist", contextParam, applicationID).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -82,7 +82,6 @@ func TestResolver_AddDocument(t *testing.T) {
 			Name: "Returns error when application not exits",
 			PersistenceFn: func() *persistenceautomock.PersistenceTx {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
 				return persistTx
 			},
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
@@ -98,7 +97,7 @@ func TestResolver_AddDocument(t *testing.T) {
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", context.TODO(), applicationID).Return(false, nil)
+				appSvc.On("Exist", contextParam, applicationID).Return(false, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -114,7 +113,6 @@ func TestResolver_AddDocument(t *testing.T) {
 			Name: "Returns error when application existence check failed",
 			PersistenceFn: func() *persistenceautomock.PersistenceTx {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
 				return persistTx
 			},
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
@@ -130,7 +128,7 @@ func TestResolver_AddDocument(t *testing.T) {
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", context.TODO(), applicationID).Return(false, testErr)
+				appSvc.On("Exist", contextParam, applicationID).Return(false, testErr)
 				return appSvc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -146,7 +144,6 @@ func TestResolver_AddDocument(t *testing.T) {
 			Name: "Returns error when document creation failed",
 			PersistenceFn: func() *persistenceautomock.PersistenceTx {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
 				return persistTx
 			},
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
@@ -158,12 +155,12 @@ func TestResolver_AddDocument(t *testing.T) {
 			},
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("Create", context.TODO(), applicationID, *modelInput).Return("", testErr).Once()
+				svc.On("Create", contextParam, applicationID, *modelInput).Return("", testErr).Once()
 				return svc
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", context.TODO(), applicationID).Return(true, nil)
+				appSvc.On("Exist", contextParam, applicationID).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -178,7 +175,6 @@ func TestResolver_AddDocument(t *testing.T) {
 			Name: "Returns error when document retrieval failed",
 			PersistenceFn: func() *persistenceautomock.PersistenceTx {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
 				return persistTx
 			},
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
@@ -190,13 +186,13 @@ func TestResolver_AddDocument(t *testing.T) {
 			},
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("Create", context.TODO(), applicationID, *modelInput).Return(id, nil).Once()
-				svc.On("Get", context.TODO(), id).Return(nil, testErr).Once()
+				svc.On("Create", contextParam, applicationID, *modelInput).Return(id, nil).Once()
+				svc.On("Get", contextParam, id).Return(nil, testErr).Once()
 				return svc
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Exist", context.TODO(), applicationID).Return(true, nil)
+				appSvc.On("Exist", contextParam, applicationID).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -232,9 +228,8 @@ func TestResolver_AddDocument(t *testing.T) {
 				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
 			}
 
-			// TODO: Uncomment when introducing Document repo
-			//persistTx.AssertExpectations(t)
-			//transact.AssertExpectations(t)
+			persistTx.AssertExpectations(t)
+			transact.AssertExpectations(t)
 			svc.AssertExpectations(t)
 			appSvc.AssertExpectations(t)
 			converter.AssertExpectations(t)
@@ -276,8 +271,8 @@ func TestResolver_DeleteDocument(t *testing.T) {
 			},
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("Get", context.TODO(), id).Return(modelDocument, nil).Once()
-				svc.On("Delete", context.TODO(), id).Return(nil).Once()
+				svc.On("Get", contextParam, id).Return(modelDocument, nil).Once()
+				svc.On("Delete", contextParam, id).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -303,7 +298,7 @@ func TestResolver_DeleteDocument(t *testing.T) {
 			},
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("Get", context.TODO(), id).Return(nil, testErr).Once()
+				svc.On("Get", contextParam, id).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -328,8 +323,8 @@ func TestResolver_DeleteDocument(t *testing.T) {
 			},
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("Get", context.TODO(), id).Return(modelDocument, nil).Once()
-				svc.On("Delete", context.TODO(), id).Return(testErr).Once()
+				svc.On("Get", contextParam, id).Return(modelDocument, nil).Once()
+				svc.On("Delete", contextParam, id).Return(testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -359,9 +354,8 @@ func TestResolver_DeleteDocument(t *testing.T) {
 			assert.Equal(t, testCase.ExpectedDocument, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
-			// TODO: Uncomment when introducing Document repo
-			//persistTx.AssertExpectations(t)
-			//transact.AssertExpectations(t)
+			persistTx.AssertExpectations(t)
+			transact.AssertExpectations(t)
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)
 		})
