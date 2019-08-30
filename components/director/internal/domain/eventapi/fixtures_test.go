@@ -1,6 +1,7 @@
 package eventapi_test
 
 import (
+	"database/sql/driver"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventapi"
@@ -13,6 +14,7 @@ import (
 )
 
 const (
+	eventAPIID     = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 	appID          = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 	tenantID       = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
 	fetchRequestID = "fffffffff-ffff-ffff-ffff-ffffffffffff"
@@ -183,6 +185,23 @@ func fixVersionEntity() version.Version {
 		VersionDepracatedSince: repo.NewValidNullableString("v1.0"),
 		VersionForRemoval:      repo.NewValidNullableBool(false),
 	}
+}
+
+func fixEventAPIDefinitionColumns() []string {
+	return []string{"id", "tenant_id", "app_id", "name", "description", "group_name", "spec_data",
+		"spec_format", "spec_type", "version_value", "version_deprecated",
+		"version_deprecated_since", "version_for_removal", "spec_fetch_request_id"}
+}
+
+func fixEventAPIDefinitionRow(id, placeholder string) []driver.Value {
+	return []driver.Value{id, tenantID, appID, placeholder, "desc_" + placeholder, "group_" + placeholder,
+		"data", "JSON", "ASYNC_API", "v1.1", false, "v1.0", false, fetchRequestID}
+}
+
+func fixEventAPICreateArgs(id string, api model.EventAPIDefinition) []driver.Value {
+	return []driver.Value{id, tenantID, appID, api.Name, api.Description, api.Group,
+		api.Spec.Data, string(api.Spec.Format), string(api.Spec.Type), api.Version.Value, api.Version.Deprecated,
+		api.Version.DeprecatedSince, api.Version.ForRemoval, fetchRequestID}
 }
 
 func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchRequest {
