@@ -92,7 +92,12 @@ type RuntimeConnectionConfig {
 # Inputs
 
 # We should decide if we need this.
-input RuntimeID {
+input AsyncOperationIDInput {
+    id: ID!
+}
+
+# We should decide if we need this.
+input RuntimeIDInput {
     id: ID!
 }
 
@@ -128,18 +133,18 @@ input UpgradeClusterInput {
 
 type Mutation {
     # Runtime Management; only one asynchronous operation per RuntimeID can run at any given point in time
-    provisionRuntime(id: RuntimeID, config: ProvisionRuntimeInput): AsyncOperationID
-    upgradeRuntime(id: RuntimeID, config: UpgradeRuntimeInput): AsyncOperationID
-    deprovisionRuntime(id: RuntimeID): AsyncOperationID
+    provisionRuntime(id: RuntimeIDInput, config: ProvisionRuntimeInput): AsyncOperationID
+    upgradeRuntime(id: RuntimeIDInput, config: UpgradeRuntimeInput): AsyncOperationID
+    deprovisionRuntime(id: RuntimeIDInput): AsyncOperationID
 
     # Compass Runtime Agent Connection Management
-    reconnectRuntimeAgent(id: RuntimeID): AsyncOperationID
+    reconnectRuntimeAgent(id: RuntimeIDInput): AsyncOperationID
 }
 
 type Query {
     # Provides current status of specified Runtime
-    runtimeStatus(id: RuntimeID): RuntimeStatus
+    runtimeStatus(id: RuntimeIDInput): RuntimeStatus
 
     # Provides status of specified operation
-    runtimeOperationStatus(id: AsyncOperationID): OperationStatus
+    runtimeOperationStatus(id: AsyncOperationIDInput): OperationStatus
 }
