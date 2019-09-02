@@ -12,7 +12,7 @@ COMPASS_HELM_RELEASE_NAMESPACE="compass-system"
 INSTALLER_CR_PATH="${ROOT_PATH}"/installation/resources/installer-cr-kyma-diet.yaml
 
 kyma provision minikube
-kyma install -o $INSTALLER_CR_PATH --release "${KYMA_RELEASE}"
+kyma install -o $INSTALLER_CR_PATH --source "${KYMA_RELEASE}"
 
 #Get Tiller tls client certificates
 kubectl get -n kyma-installer secret helm-secret -o jsonpath="{.data['global\.helm\.ca\.crt']}" | base64 --decode > "$(helm home)/ca.pem"
@@ -26,3 +26,4 @@ helm install --set=global.minikubeIP=${MINIKUBE_IP} --set=global.isLocalEnv=true
 # TODO: Remove it after next CLI release
 echo "Adding Compass entries to /etc/hosts..."
 sudo sh -c 'echo "\n$(minikube ip) compass-gateway.kyma.local compass.kyma.local compass-mf.kyma.local" >> /etc/hosts'
+
