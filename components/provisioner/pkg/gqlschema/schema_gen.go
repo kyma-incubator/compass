@@ -4224,7 +4224,7 @@ func (ec *executionContext) marshalOError2ᚕᚖgithubᚗcomᚋkymaᚑincubator�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOError2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx, sel, v[i])
+			ret[i] = ec.marshalNError2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
