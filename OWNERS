@@ -1,0 +1,22 @@
+filters:
+  ".*":
+    approvers:
+     - PK85 
+     - aszecowka 
+     - crabtree 
+     - pkosiec 
+     - kfurgol 
+     - tgorgol 
+     - dbadura
+     - akgalwas 
+     - janmedrek 
+     - Szymongib 
+     - franpog859 
+     - Maladie 
+  '\.md$|/docs/|^milv\.config\.yaml$':
+    approvers:
+      - documentation-approvers
+    reviewers:
+      - documentation-reviewers
+    labels:
+      - area/documentation
