@@ -2,14 +2,15 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"net/http"
-
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/api/mock"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
+	"log"
+	"net/http"
 )
 
 type config struct {
@@ -30,8 +31,12 @@ func main() {
 	log.Println("Starting Provisioner")
 	log.Printf("Config: %s", cfg.String())
 
+	noExpireCache := cache.New(0, 0)
+
+	resolver := mock.NewMockResolver(*noExpireCache)
+
 	gqlCfg := gqlschema.Config{
-		Resolvers: nil,
+		Resolvers: resolver,
 	}
 	executableSchema := gqlschema.NewExecutableSchema(gqlCfg)
 
@@ -44,7 +49,7 @@ func main() {
 	http.Handle("/", router)
 
 	log.Printf("API listening on %s...", cfg.Address)
-	if err := http.ListenAndServe(cfg.Address, nil); err != nil {
+	if err := http.ListenAndServe(cfg.Address, router); err != nil {
 		panic(err)
 	}
 }

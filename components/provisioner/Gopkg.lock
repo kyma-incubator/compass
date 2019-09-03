@@ -31,6 +31,12 @@
   version = "v1.0.2"
 
 [[projects]]
+  name = "github.com/google/uuid"
+  packages = ["."]
+  revision = "0cd6bf5da1e1c83f8b45653022c74f71af0538a4"
+  version = "v1.1.1"
+
+[[projects]]
   name = "github.com/gorilla/mux"
   packages = ["."]
   revision = "00bdffe0f3c77e27d2cf6f5c70232a2d3e4d9c15"
@@ -58,6 +64,12 @@
     "internal/errcheck"
   ]
   revision = "e14f8d59a22d460d56c5ee92507cd94c78fbf274"
+
+[[projects]]
+  name = "github.com/patrickmn/go-cache"
+  packages = ["."]
+  revision = "a3647f8e31d79543b2d0f0ae2fe5c379d72cedc0"
+  version = "v2.1.0"
 
 [[projects]]
   name = "github.com/pkg/errors"
@@ -117,9 +129,18 @@
   revision = "51d6538a90f86fe93ac480b35f37b2be17fef232"
   version = "v2.2.2"
 
+[[projects]]
+  name = "k8s.io/apimachinery"
+  packages = [
+    "pkg/types",
+    "pkg/util/uuid"
+  ]
+  revision = "1799e75a07195de9460b8ef7300883499f12127b"
+  version = "kubernetes-1.15.0"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0bbe9dd941af8e39b6aa77a03937d1bb4f6df47ad7d4fbb9ad9bc2940b07b0ed"
+  inputs-digest = "fbf874deab995ed90deb862b89b168cfbafda5fa3ba5b8fb2fde7a6efd74abb0"
   solver-name = "gps-cdcl"
   solver-version = 1
