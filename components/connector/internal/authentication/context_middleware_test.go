@@ -27,7 +27,7 @@ func TestAuthContextMiddleware_PropagateAuthentication(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, clientId, idFromCert)
 
-			hash, err := GetStringFromContext(r.Context(), ClientCertificateHash)
+			hash, err := GetStringFromContext(r.Context(), ClientCertificateHashKey)
 			require.NoError(t, err)
 			assert.Equal(t, certHash, hash)
 

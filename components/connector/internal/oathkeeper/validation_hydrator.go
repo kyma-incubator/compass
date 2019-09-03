@@ -13,21 +13,26 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
 )
 
-type ValidationHydrator struct {
+type ValidationHydrator interface {
+	ResolveConnectorTokenHeader(w http.ResponseWriter, r *http.Request)
+	ResolveIstioCertHeader(w http.ResponseWriter, r *http.Request)
+}
+
+type validationHydrator struct {
 	tokenService     tokens.Service
 	certHeaderParser CertificateHeaderParser
 	log              *logrus.Entry
 }
 
 func NewValidationHydrator(tokenService tokens.Service, certHeaderParser CertificateHeaderParser) ValidationHydrator {
-	return ValidationHydrator{
+	return &validationHydrator{
 		tokenService:     tokenService,
 		certHeaderParser: certHeaderParser,
 		log:              logrus.WithField("Handler", "ValidationHydrator"),
 	}
 }
 
-func (tvh ValidationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter, r *http.Request) {
+func (tvh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter, r *http.Request) {
 	var authSession AuthenticationSession
 	err := json.NewDecoder(r.Body).Decode(&authSession)
 	if err != nil {
@@ -62,10 +67,11 @@ func (tvh ValidationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter,
 
 	tvh.tokenService.Delete(connectorToken)
 
+	tvh.log.Info("Token resolved successfully")
 	respondWithAuthSession(w, authSession)
 }
 
-func (tvh ValidationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *http.Request) {
+func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *http.Request) {
 	var authSession AuthenticationSession
 	err := json.NewDecoder(r.Body).Decode(&authSession)
 	if err != nil {
@@ -91,6 +97,7 @@ func (tvh ValidationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *h
 	authSession.Header.Add(ClientIdFromCertificateHeader, commonName)
 	authSession.Header.Add(ClientCertificateHashHeader, hash)
 
+	tvh.log.Info("Certificate header validated successfully")
 	respondWithAuthSession(w, authSession)
 }
 

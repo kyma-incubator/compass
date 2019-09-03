@@ -25,7 +25,7 @@ func (acm *authContextMiddleware) PropagateAuthentication(handler http.Handler) 
 		r = r.WithContext(PutInContext(r.Context(), ClientIdFromCertificateKey, clientIdFromCertificate))
 
 		clientCertificateHash := r.Header.Get(oathkeeper.ClientCertificateHashHeader)
-		r = r.WithContext(PutInContext(r.Context(), ClientCertificateHash, clientCertificateHash))
+		r = r.WithContext(PutInContext(r.Context(), ClientCertificateHashKey, clientCertificateHash))
 
 		handler.ServeHTTP(w, r)
 	})

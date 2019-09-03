@@ -60,7 +60,7 @@ func (a *authenticator) AuthenticateCertificate(context context.Context) (string
 		return "", errors.New("Failed to authenticate with Certificate. Invalid subject.")
 	}
 
-	_, err = GetStringFromContext(context, ClientCertificateHash)
+	_, err = GetStringFromContext(context, ClientCertificateHashKey)
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to authenticate with Certificate. Invalid certificate hash.")
 	}

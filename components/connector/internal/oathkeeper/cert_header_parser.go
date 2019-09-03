@@ -14,11 +14,6 @@ type CertificateHeaderParser interface {
 	GetCertificateData(r *http.Request) (string, string, bool)
 }
 
-type CertificateData struct {
-	Hash       string
-	CommonName string
-}
-
 type certificateInfo struct {
 	Hash    string
 	Subject string
@@ -28,7 +23,7 @@ type headerParser struct {
 	certificates.CSRSubjectConsts
 }
 
-func NewHeaderParser(csrSubjectConsts certificates.CSRSubjectConsts) *headerParser {
+func NewHeaderParser(csrSubjectConsts certificates.CSRSubjectConsts) CertificateHeaderParser {
 	return &headerParser{
 		CSRSubjectConsts: csrSubjectConsts,
 	}
@@ -57,6 +52,10 @@ func (hp *headerParser) GetCertificateData(r *http.Request) (string, string, boo
 }
 
 func createCertInfos(subjects, hashes []string) []certificateInfo {
+	if len(subjects) != len(hashes) {
+		return []certificateInfo{}
+	}
+
 	certInfos := make([]certificateInfo, len(subjects))
 	for i := 0; i < len(subjects); i++ {
 		certInfo := newCertificateInfo(subjects[i], hashes[i])
@@ -93,8 +92,8 @@ func extractFromHeader(certHeader string, regex *regexp.Regexp) []string {
 	matches := regex.FindAllStringSubmatch(certHeader, -1)
 
 	for _, match := range matches {
-		hash := get(match, 1)
-		matchedStrings = append(matchedStrings, hash)
+		value := get(match, 1)
+		matchedStrings = append(matchedStrings, value)
 	}
 
 	return matchedStrings

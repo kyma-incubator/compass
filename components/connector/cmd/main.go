@@ -8,33 +8,28 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/connector/internal/oathkeeper"
-
-	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
-
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
-
-	"github.com/sirupsen/logrus"
-
-	"github.com/kyma-incubator/compass/components/connector/internal/namespacedname"
-
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connector/internal/api"
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
+	"github.com/kyma-incubator/compass/components/connector/internal/namespacedname"
+	"github.com/kyma-incubator/compass/components/connector/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/connector/internal/secrets"
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
+	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 	"k8s.io/client-go/kubernetes"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	restclient "k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 )
 
 type config struct {
-	Address               string `envconfig:"default=127.0.0.1:3000"`
+	GraphQLAddress        string `envconfig:"default=127.0.0.1:3000"`
 	APIEndpoint           string `envconfig:"default=/graphql"`
 	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
 
@@ -62,13 +57,13 @@ type config struct {
 }
 
 func (c *config) String() string {
-	return fmt.Sprintf("Address: %s, APIEndpoint: %s, HydratorAddress: %s, "+
+	return fmt.Sprintf("GraphQLAddress: %s, APIEndpoint: %s, HydratorAddress: %s, "+
 		"CSRSubjectCountry: %s, CSRSubjectOrganization: %s, CSRSubjectOrganizationalUnit: %s, "+
 		"CSRSubjectLocality: %s, CSRSubjectProvince: %s, "+
 		"CertificateValidityTime: %s, CASecretName: %s, RootCACertificateSecretName: %s, "+
 		"TokenLength: %d, TokenRuntimeExpiration: %s, TokenApplicationExpiration: %s, TokenCSRExpiration: %s, "+
 		"DirectorURL: %s",
-		c.Address, c.APIEndpoint, c.HydratorAddress,
+		c.GraphQLAddress, c.APIEndpoint, c.HydratorAddress,
 		c.CSRSubject.Country, c.CSRSubject.Organization, c.CSRSubject.OrganizationalUnit,
 		c.CSRSubject.Locality, c.CSRSubject.Province,
 		c.CertificateValidityTime, c.CASecretName, c.RootCACertificateSecretName,
@@ -123,7 +118,7 @@ func main() {
 	wg.Add(1)
 
 	go func() {
-		log.Printf("API listening on %s...", cfg.Address)
+		log.Printf("GraphQL API listening on %s...", cfg.GraphQLAddress)
 		if err := server.ListenAndServe(); err != nil {
 			panic(err)
 		}
@@ -157,7 +152,7 @@ func prepareGraphQLServer(cfg config, tokenResolver api.TokenResolver, certResol
 	externalRouter.Use(authContextMiddleware.PropagateAuthentication)
 
 	return &http.Server{
-		Addr:    cfg.Address,
+		Addr:    cfg.GraphQLAddress,
 		Handler: externalRouter,
 	}
 }
@@ -174,7 +169,7 @@ func prepareHydratorServer(cfg config, tokenService tokens.Service, subjectConst
 
 	return &http.Server{
 		Addr:    cfg.HydratorAddress,
-		Handler: router,
+		Handler: v1Router,
 	}
 }
 
