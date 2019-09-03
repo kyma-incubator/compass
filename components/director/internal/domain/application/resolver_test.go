@@ -1157,6 +1157,8 @@ func TestResolver_Webhooks(t *testing.T) {
 
 func TestResolver_Apis(t *testing.T) {
 	// given
+	testErr := errors.New("test error")
+
 	applicationID := "1"
 	group := "group"
 	app := fixGQLApplication(applicationID, "foo", "bar")
@@ -1171,25 +1173,26 @@ func TestResolver_Apis(t *testing.T) {
 		fixGQLAPIDefinition("bar", applicationID, "Bar", "Lorem Ipsum", group),
 	}
 
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
 	first := 2
 	gqlAfter := graphql.PageCursor("test")
 	after := "test"
-	testErr := errors.New("Test error")
 
 	testCases := []struct {
-		Name           string
-		ServiceFn      func() *automock.APIService
-		ConverterFn    func() *automock.APIConverter
-		InputFirst     *int
-		InputAfter     *graphql.PageCursor
-		ExpectedResult *graphql.APIDefinitionPage
-		ExpectedErr    error
+		Name            string
+		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn       func() *automock.APIService
+		ConverterFn     func() *automock.APIConverter
+		ExpectedResult  *graphql.APIDefinitionPage
+		ExpectedErr     error
 	}{
 		{
-			Name: "Success",
+			Name:            "Success",
+			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("List", context.TODO(), applicationID, &first, &after).Return(fixAPIDefinitionPage(modelAPIDefinitions), nil).Once()
+				svc.On("List", txtest.CtxWithDBMatcher(), applicationID, first, after).Return(fixAPIDefinitionPage(modelAPIDefinitions), nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -1197,24 +1200,21 @@ func TestResolver_Apis(t *testing.T) {
 				conv.On("MultipleToGraphQL", modelAPIDefinitions).Return(gqlAPIDefinitions).Once()
 				return conv
 			},
-			InputFirst:     &first,
-			InputAfter:     &gqlAfter,
 			ExpectedResult: fixGQLAPIDefinitionPage(gqlAPIDefinitions),
 			ExpectedErr:    nil,
 		},
 		{
-			Name: "Returns error when APIS listing failed",
+			Name:            "Returns error when APIS listing failed",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("List", context.TODO(), applicationID, &first, &after).Return(nil, testErr).Once()
+				svc.On("List", txtest.CtxWithDBMatcher(), applicationID, first, after).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
 				return conv
 			},
-			InputFirst:     &first,
-			InputAfter:     &gqlAfter,
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
 		},
@@ -1223,17 +1223,20 @@ func TestResolver_Apis(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// given
+			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(nil, nil, svc, nil, nil, nil, nil, nil, nil, converter, nil)
+			resolver := application.NewResolver(transact, nil, svc, nil, nil, nil, nil, nil, nil, converter, nil)
 			// when
-			result, err := resolver.Apis(context.TODO(), app, &group, testCase.InputFirst, testCase.InputAfter)
+			result, err := resolver.Apis(context.TODO(), app, &group, &first, &gqlAfter)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
+			persist.AssertExpectations(t)
+			transact.AssertExpectations(t)
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)
 		})

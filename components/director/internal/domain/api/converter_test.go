@@ -411,10 +411,6 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		require.NoError(t, err)
 		expectedModel := fixModelAPIDefinition("id", "app_id", "name", "target_url")
 		require.NotNil(t, expectedModel)
-		//have to init those struct, because Entity doesn't contain pointer fields
-		//TODO: ask team about it
-		expectedModel.Version = &model.Version{}
-		expectedModel.Spec = &model.APISpec{}
 		assert.Equal(t, *expectedModel, apiModel)
 	})
 }

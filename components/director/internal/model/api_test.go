@@ -38,6 +38,7 @@ func TestAPIDefinitionInput_ToAPIDefinition(t *testing.T) {
 				Description:   &desc,
 				TargetURL:     targetUrl,
 				Group:         &group,
+				Tenant:        tenant,
 			},
 		},
 		{

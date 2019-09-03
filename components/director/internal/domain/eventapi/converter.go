@@ -110,28 +110,33 @@ func (c *converter) eventAPISpecInputFromGraphQL(in *graphql.EventAPISpecInput) 
 	}
 }
 
-func (c *converter) FromEntity(eventEntity Entity) (model.EventAPIDefinition, error) {
-	ver, err := c.convertVersionFromEntity(eventEntity.Version)
+func (c *converter) FromEntity(entity Entity) (model.EventAPIDefinition, error) {
+	ver, err := c.vc.FromEntity(entity.Version)
 	if err != nil {
 		return model.EventAPIDefinition{}, errors.Wrap(err, "while converting version")
 	}
 
 	return model.EventAPIDefinition{
-		ID:            eventEntity.ID,
-		Tenant:        eventEntity.TenantID,
-		ApplicationID: eventEntity.AppID,
-		Name:          eventEntity.Name,
-		Description:   repo.StringPtrFromNullableString(eventEntity.Description),
-		Group:         repo.StringPtrFromNullableString(eventEntity.GroupName),
+		ID:            entity.ID,
+		Tenant:        entity.TenantID,
+		ApplicationID: entity.AppID,
+		Name:          entity.Name,
+		Description:   repo.StringPtrFromNullableString(entity.Description),
+		Group:         repo.StringPtrFromNullableString(entity.GroupName),
 		Version:       ver,
-		Spec:          c.apiSpecFromEntity(eventEntity.EntitySpec),
+		Spec:          c.apiSpecFromEntity(entity.EntitySpec),
 	}, nil
 }
 
 func (c *converter) ToEntity(eventModel model.EventAPIDefinition) (Entity, error) {
-	ver, err := c.convertVersionToEntity(eventModel.Version)
-	if err != nil {
-		return Entity{}, err
+
+	var versionEntity version.Version
+	if eventModel.Version != nil {
+		var err error
+		versionEntity, err = c.vc.ToEntity(*eventModel.Version)
+		if err != nil {
+			return Entity{}, errors.Wrap(err, "while converting version")
+		}
 	}
 
 	return Entity{
@@ -141,7 +146,7 @@ func (c *converter) ToEntity(eventModel model.EventAPIDefinition) (Entity, error
 		Name:        eventModel.Name,
 		Description: repo.NewNullableString(eventModel.Description),
 		GroupName:   repo.NewNullableString(eventModel.Group),
-		Version:     ver,
+		Version:     versionEntity,
 		EntitySpec:  c.apiSpecToEntity(eventModel.Spec),
 	}, nil
 }
@@ -170,23 +175,25 @@ func (c *converter) convertVersionToEntity(inVer *model.Version) (*version.Versi
 	return &tmp, nil
 }
 
-func (c *converter) apiSpecToEntity(spec *model.EventAPISpec) *EntitySpec {
-	if spec == nil {
-		return nil
+func (c *converter) apiSpecToEntity(spec *model.EventAPISpec) EntitySpec {
+	var apiSpecEnt EntitySpec
+	if spec != nil {
+		apiSpecEnt = EntitySpec{
+			SpecFormat: repo.NewNullableString(strings.Ptr(string(spec.Format))),
+			SpecType:   repo.NewNullableString(strings.Ptr(string(spec.Type))),
+			SpecData:   repo.NewNullableString(spec.Data),
+		}
 	}
 
-	return &EntitySpec{
-		SpecFormat: repo.NewNullableString(strings.Ptr(string(spec.Format))),
-		SpecType:   repo.NewNullableString(strings.Ptr(string(spec.Type))),
-		SpecData:   repo.NewNullableString(spec.Data),
-	}
+	return apiSpecEnt
 }
 
-func (c *converter) apiSpecFromEntity(specEnt *EntitySpec) *model.EventAPISpec {
-	if specEnt == nil {
+func (c *converter) apiSpecFromEntity(specEnt EntitySpec) *model.EventAPISpec {
+	if !specEnt.SpecType.Valid && !specEnt.SpecFormat.Valid && !specEnt.SpecData.Valid {
 		return nil
 	}
-	apiSpec := &model.EventAPISpec{}
+
+	apiSpec := model.EventAPISpec{}
 	specFormat := repo.StringPtrFromNullableString(specEnt.SpecFormat)
 	if specFormat != nil {
 		apiSpec.Format = model.SpecFormat(*specFormat)
@@ -198,5 +205,5 @@ func (c *converter) apiSpecFromEntity(specEnt *EntitySpec) *model.EventAPISpec {
 	}
 	apiSpec.Data = repo.StringPtrFromNullableString(specEnt.SpecData)
 
-	return apiSpec
+	return &apiSpec
 }

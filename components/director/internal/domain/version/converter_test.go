@@ -1,7 +1,6 @@
 package version_test
 
 import (
-	"database/sql"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
@@ -97,19 +96,19 @@ func TestConverter_FromEntity(t *testing.T) {
 		versionModel, err := versionConv.FromEntity(versionEntity)
 		//THEN
 		require.NoError(t, err)
-		assertVersion(t, versionEntity, versionModel)
+		require.NotNil(t, versionModel)
+		assertVersion(t, versionEntity, *versionModel)
 	})
 
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		// GIVEN
-		// value will be always valid, because model.Value is string.
-		versionEntity := version.Version{VersionValue: sql.NullString{Valid: true}}
+		versionEntity := version.Version{}
 		versionConv := version.NewConverter()
 		// WHEN
 		versionModel, err := versionConv.FromEntity(versionEntity)
 		//THEN
 		require.NoError(t, err)
-		assertVersion(t, versionEntity, versionModel)
+		require.Nil(t, versionModel)
 
 	})
 }

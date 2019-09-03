@@ -47,7 +47,7 @@ func (c *converter) FromEntity(version Version) (*model.Version, error) {
 		versionValue = *value
 	}
 
-	if (!version.VersionForRemoval.Valid && !version.VersionValue.Valid && !version.VersionDepracated.Valid && !version.VersionDepracatedSince.Valid) {
+	if !version.VersionForRemoval.Valid && !version.VersionValue.Valid && !version.VersionDepracated.Valid && !version.VersionDepracatedSince.Valid {
 		return nil, nil
 	}
 

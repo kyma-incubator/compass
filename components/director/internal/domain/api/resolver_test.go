@@ -206,12 +206,12 @@ func TestResolver_DeleteAPI(t *testing.T) {
 	}{
 		{
 			Name:            "Success",
-			TransactionerFn: txtest.TransactionerThatSucceed,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
 			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Get", contextParam, id).Return(modelAPIDefinition, nil).Once()
-				svc.On("Delete", contextParam, id).Return(nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelAPIDefinition, nil).Once()
+				svc.On("Delete", txtest.CtxWithDBMatcher(), id).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -224,11 +224,11 @@ func TestResolver_DeleteAPI(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when API retrieval failed",
-			TransactionerFn: txtest.TransactionerThatSucceed,
-			PersistenceFn:   txtest.PersistenceContextThatDontExpectCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Get", contextParam, id).Return(nil, testErr).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -240,12 +240,12 @@ func TestResolver_DeleteAPI(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when API deletion failed",
-			TransactionerFn: txtest.TransactionerThatSucceed,
-			PersistenceFn:   txtest.PersistenceContextThatDontExpectCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Get", contextParam, id).Return(modelAPIDefinition, nil).Once()
-				svc.On("Delete", contextParam, id).Return(testErr).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelAPIDefinition, nil).Once()
+				svc.On("Delete", txtest.CtxWithDBMatcher(), id).Return(testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -995,18 +995,22 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 		Spec: gqlAPISpec,
 	}
 
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
 	testCases := []struct {
 		Name            string
+		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn       func() *automock.APIService
 		ConvFn          func() *automock.APIConverter
 		ExpectedAPISpec *graphql.APISpec
 		ExpectedErr     error
 	}{
 		{
-			Name: "Success",
+			Name:            "Success",
+			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("RefetchAPISpec", context.TODO(), apiID).Return(modelAPISpec, nil).Once()
+				svc.On("RefetchAPISpec", txtest.CtxWithDBMatcher(), apiID).Return(modelAPISpec, nil).Once()
 				return svc
 			},
 			ConvFn: func() *automock.APIConverter {
@@ -1018,10 +1022,11 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			ExpectedErr:     nil,
 		},
 		{
-			Name: "Returns error when refetching api spec failed",
+			Name:            "Returns error when refetching api spec failed",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("RefetchAPISpec", context.TODO(), apiID).Return(nil, testErr).Once()
+				svc.On("RefetchAPISpec", txtest.CtxWithDBMatcher(), apiID).Return(nil, testErr).Once()
 				return svc
 			},
 			ConvFn: func() *automock.APIConverter {
@@ -1038,7 +1043,8 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			// given
 			svc := testCase.ServiceFn()
 			conv := testCase.ConvFn()
-			resolver := api.NewResolver(nil, svc, nil, nil, nil, conv, nil, nil, nil)
+			persist, transact := testCase.TransactionerFn()
+			resolver := api.NewResolver(transact, svc, nil, nil, nil, conv, nil, nil, nil)
 
 			// when
 			result, err := resolver.RefetchAPISpec(context.TODO(), apiID)
@@ -1047,6 +1053,8 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			assert.Equal(t, testCase.ExpectedAPISpec, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
+			persist.AssertExpectations(t)
+			transact.AssertExpectations(t)
 			svc.AssertExpectations(t)
 			conv.AssertExpectations(t)
 		})

@@ -194,7 +194,7 @@ func (c *converter) apiSpecToEntity(spec *model.APISpec) EntitySpec {
 }
 
 func (c *converter) apiSpecFromEntity(specEnt EntitySpec) *model.APISpec {
-	if (!specEnt.SpecData.Valid && !specEnt.SpecFormat.Valid && !specEnt.SpecType.Valid) {
+	if !specEnt.SpecData.Valid && !specEnt.SpecFormat.Valid && !specEnt.SpecType.Valid {
 		return nil
 	}
 
