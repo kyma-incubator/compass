@@ -18,6 +18,12 @@ func RequireTenantHeader(excludedMethods ...string) func(http.Handler) http.Hand
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			tenantValue := r.Header.Get(TenantHeaderName)
 
+			log.Println("=== HEADERS ===")
+			for key, val := range r.Header {
+				log.Printf("%s: %+v\n", key, val)
+			}
+			log.Println("=== ==== ===")
+
 			if !isExcludedMethod(r.Method, excludedMethods) && tenantValue == "" {
 				errMessage := fmt.Sprintf("Header `%s` is required", TenantHeaderName)
 
