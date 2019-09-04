@@ -129,14 +129,9 @@ func (c *converter) FromEntity(entity Entity) (model.EventAPIDefinition, error) 
 }
 
 func (c *converter) ToEntity(eventModel model.EventAPIDefinition) (Entity, error) {
-
-	var versionEntity version.Version
-	if eventModel.Version != nil {
-		var err error
-		versionEntity, err = c.vc.ToEntity(*eventModel.Version)
-		if err != nil {
-			return Entity{}, errors.Wrap(err, "while converting version")
-		}
+	versionEntity, err := c.convertVersionToEntity(eventModel.Version)
+	if err != nil {
+		return Entity{}, err
 	}
 
 	return Entity{
@@ -163,16 +158,16 @@ func (c *converter) convertVersionFromEntity(inVer *version.Version) (*model.Ver
 	return tmp, nil
 }
 
-func (c *converter) convertVersionToEntity(inVer *model.Version) (*version.Version, error) {
+func (c *converter) convertVersionToEntity(inVer *model.Version) (version.Version, error) {
 	if inVer == nil {
-		return nil, nil
+		return version.Version{}, nil
 	}
 
 	tmp, err := c.vc.ToEntity(*inVer)
 	if err != nil {
-		return nil, errors.Wrap(err, "while converting version")
+		return version.Version{}, errors.Wrap(err, "while converting version")
 	}
-	return &tmp, nil
+	return tmp, nil
 }
 
 func (c *converter) apiSpecToEntity(spec *model.EventAPISpec) EntitySpec {

@@ -638,6 +638,7 @@ func TestService_Update(t *testing.T) {
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 			} else {
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
@@ -1014,6 +1015,7 @@ func TestService_List(t *testing.T) {
 		Name               string
 		RepositoryFn       func() *automock.ApplicationRepository
 		InputLabelFilters  []*labelfilter.LabelFilter
+		InputPageSize      int
 		ExpectedResult     *model.ApplicationPage
 		ExpectedErrMessage string
 	}{
@@ -1024,6 +1026,7 @@ func TestService_List(t *testing.T) {
 				repo.On("List", ctx, tnt, filter, &first, &after).Return(applicationPage, nil).Once()
 				return repo
 			},
+			InputPageSize:      first,
 			InputLabelFilters:  filter,
 			ExpectedResult:     applicationPage,
 			ExpectedErrMessage: "",
@@ -1035,9 +1038,32 @@ func TestService_List(t *testing.T) {
 				repo.On("List", ctx, tnt, filter, &first, &after).Return(nil, testErr).Once()
 				return repo
 			},
+			InputPageSize:      first,
 			InputLabelFilters:  filter,
 			ExpectedResult:     nil,
 			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when page size is less than 1",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				return repo
+			},
+			InputPageSize:      0,
+			InputLabelFilters:  filter,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: "page size must be between 1 and 100",
+		},
+		{
+			Name: "Returns error when page size is lbigger than 100",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				return repo
+			},
+			InputPageSize:      101,
+			InputLabelFilters:  filter,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: "page size must be between 1 and 100",
 		},
 	}
 
@@ -1048,7 +1074,7 @@ func TestService_List(t *testing.T) {
 			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// when
-			app, err := svc.List(ctx, testCase.InputLabelFilters, first, after)
+			app, err := svc.List(ctx, testCase.InputLabelFilters, testCase.InputPageSize, after)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {

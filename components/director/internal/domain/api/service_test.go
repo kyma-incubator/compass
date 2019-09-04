@@ -86,6 +86,14 @@ func TestService_Get(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := api.NewService(nil, nil, nil)
+		// WHEN
+		_, err := svc.Get(context.TODO(), "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+	})
 }
 
 func TestService_List(t *testing.T) {
@@ -112,7 +120,6 @@ func TestService_List(t *testing.T) {
 		},
 	}
 
-	first := 2
 	after := "test"
 
 	ctx := context.TODO()
@@ -120,6 +127,7 @@ func TestService_List(t *testing.T) {
 
 	testCases := []struct {
 		Name               string
+		PageSize           int
 		RepositoryFn       func() *automock.APIRepository
 		ExpectedResult     *model.APIDefinitionPage
 		ExpectedErrMessage string
@@ -128,19 +136,41 @@ func TestService_List(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("ListByApplicationID", ctx, tenantID, applicationID, first, after).Return(apiDefinitionPage, nil).Once()
+				repo.On("ListByApplicationID", ctx, tenantID, applicationID, 2, after).Return(apiDefinitionPage, nil).Once()
 				return repo
 			},
+			PageSize:           2,
 			ExpectedResult:     apiDefinitionPage,
 			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Return error when page size is less than 1",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				return repo
+			},
+			PageSize:           0,
+			ExpectedResult:     apiDefinitionPage,
+			ExpectedErrMessage: "page size must be between 1 and 100",
+		},
+		{
+			Name: "Return error when page size is bigger than 100",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				return repo
+			},
+			PageSize:           101,
+			ExpectedResult:     apiDefinitionPage,
+			ExpectedErrMessage: "page size must be between 1 and 100",
 		},
 		{
 			Name: "Returns error when APIDefinition listing failed",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("ListByApplicationID", ctx, tenantID, applicationID, first, after).Return(nil, testErr).Once()
+				repo.On("ListByApplicationID", ctx, tenantID, applicationID, 2, after).Return(nil, testErr).Once()
 				return repo
 			},
+			PageSize:           2,
 			ExpectedResult:     nil,
 			ExpectedErrMessage: testErr.Error(),
 		},
@@ -153,7 +183,7 @@ func TestService_List(t *testing.T) {
 			svc := api.NewService(repo, nil, nil)
 
 			// when
-			docs, err := svc.List(ctx, applicationID, first, after)
+			docs, err := svc.List(ctx, applicationID, testCase.PageSize, after)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -167,6 +197,14 @@ func TestService_List(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := api.NewService(nil, nil, nil)
+		// WHEN
+		_, err := svc.List(context.TODO(), "", 5, "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+	})
 }
 
 func TestService_Create(t *testing.T) {
@@ -506,6 +544,14 @@ func TestService_Delete(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := api.NewService(nil, nil, nil)
+		// WHEN
+		err := svc.Delete(context.TODO(), "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+	})
 }
 
 func TestService_RefetchAPISpec(t *testing.T) {
@@ -571,6 +617,14 @@ func TestService_RefetchAPISpec(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := api.NewService(nil, nil, nil)
+		// WHEN
+		_, err := svc.RefetchAPISpec(context.TODO(), "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+	})
 }
 
 func TestService_GetFetchRequest(t *testing.T) {

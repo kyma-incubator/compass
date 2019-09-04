@@ -159,7 +159,6 @@ func (r *Resolver) DeleteAPI(ctx context.Context, id string) (*graphql.APIDefini
 		return nil, err
 	}
 	defer r.transact.RollbackUnlessCommited(tx)
-
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	api, err := r.svc.Get(ctx, id)
@@ -177,9 +176,7 @@ func (r *Resolver) DeleteAPI(ctx context.Context, id string) (*graphql.APIDefini
 		return nil, err
 	}
 
-	deletedAPI := r.converter.ToGraphQL(api)
-
-	return deletedAPI, nil
+	return r.converter.ToGraphQL(api), nil
 }
 func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.APISpec, error) {
 	tx, err := r.transact.Begin()
@@ -201,7 +198,6 @@ func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.A
 	}
 
 	convertedOut := r.converter.ToGraphQL(&model.APIDefinition{Spec: spec})
-
 	return convertedOut.Spec, nil
 }
 

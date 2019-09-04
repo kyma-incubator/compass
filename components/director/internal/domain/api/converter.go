@@ -157,12 +157,9 @@ func (c *converter) ToEntity(apiModel model.APIDefinition) (Entity, error) {
 		return Entity{}, errors.Wrap(err, "while converting ApiDefinition")
 	}
 
-	var versionEntity version.Version
-	if apiModel.Version != nil {
-		versionEntity, err = c.version.ToEntity(*apiModel.Version)
-		if err != nil {
-			return Entity{}, errors.Wrap(err, "while converting version")
-		}
+	versionEntity, err := c.convertVersionToEntity(apiModel.Version)
+	if err != nil {
+		return Entity{}, err
 	}
 
 	return Entity{
@@ -178,6 +175,18 @@ func (c *converter) ToEntity(apiModel model.APIDefinition) (Entity, error) {
 		DefaultAuth: repo.NewNullableString(defaultAuth),
 		Version:     versionEntity,
 	}, nil
+}
+
+func (c *converter) convertVersionToEntity(inVer *model.Version) (version.Version, error) {
+	if inVer == nil {
+		return version.Version{}, nil
+	}
+
+	tmp, err := c.version.ToEntity(*inVer)
+	if err != nil {
+		return version.Version{}, errors.Wrap(err, "while converting version")
+	}
+	return tmp, nil
 }
 
 func (c *converter) apiSpecToEntity(spec *model.APISpec) EntitySpec {

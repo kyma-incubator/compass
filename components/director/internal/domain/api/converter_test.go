@@ -369,7 +369,6 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		entity, err := conv.ToEntity(*apiModel)
 		//THEN
 		require.NoError(t, err)
-		assert.NotNil(t, entity)
 		assert.Equal(t, fixFullEntityAPIDefinition(apiDefID, "foo"), entity)
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
@@ -382,9 +381,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		entity, err := conv.ToEntity(*apiModel)
 		//THEN
 		require.NoError(t, err)
-		assert.NotNil(t, entity)
 		assert.Equal(t, fixEntityAPIDefinition("id", "app_id", "name", "target_url"), entity)
-		//assertApiDefinition(t, *apiModel, entity)
 	})
 }
 

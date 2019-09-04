@@ -125,6 +125,10 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
+	if pageSize < 1 || pageSize > 100 {
+		return nil, errors.New("page size must be between 1 and 100")
+	}
+
 	return s.appRepo.List(ctx, appTenant, filter, &pageSize, &cursor)
 }
 

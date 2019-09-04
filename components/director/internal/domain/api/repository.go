@@ -18,9 +18,8 @@ var apiDefColumns = []string{"id", "tenant_id", "app_id", "name", "description",
 
 var idColumns = []string{"id"}
 
-var updatableColumns = []string{"name", "description", "group_name", "target_url", "spec_data",
-	"spec_format", "spec_type", "default_auth", "version_value", "version_deprecated",
-	"version_deprecated_since", "version_for_removal"}
+var updatableColumns = []string{"name", "description", "group_name", "target_url", "spec_data", "spec_format", "spec_type",
+	"default_auth", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
 
 //go:generate mockery -name=APIDefinitionConverter -output=automock -outpkg=automock -case=underscore
 type APIDefinitionConverter interface {

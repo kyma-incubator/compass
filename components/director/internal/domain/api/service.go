@@ -53,14 +53,12 @@ func NewService(repo APIRepository, fetchRequestRepo FetchRequestRepository, uid
 
 func (s *service) List(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
-
-	//TODO: Test this !
-	if pageSize < 1 || pageSize > 100 {
-		return nil, errors.New("page size must be between 1 and 100")
-	}
-
 	if err != nil {
 		return nil, err
+	}
+
+	if pageSize < 1 || pageSize > 100 {
+		return nil, errors.New("page size must be between 1 and 100")
 	}
 
 	return s.repo.ListByApplicationID(ctx, tnt, applicationID, pageSize, cursor)

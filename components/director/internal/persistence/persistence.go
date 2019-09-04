@@ -75,7 +75,7 @@ type PersistenceOp interface {
 
 // Configure returns the instance of the database
 func Configure(logger *logrus.Logger, connString string) (Transactioner, func() error, error) {
-	db, closeFunc, err := waitForPersistance(logger, connString, 1)
+	db, closeFunc, err := waitForPersistance(logger, connString, RetryCount)
 
 	return db, closeFunc, err
 }
