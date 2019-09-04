@@ -726,16 +726,18 @@ type SpecFormat string
 const (
 	SpecFormatYaml SpecFormat = "YAML"
 	SpecFormatJSON SpecFormat = "JSON"
+	SpecFormatXML  SpecFormat = "XML"
 )
 
 var AllSpecFormat = []SpecFormat{
 	SpecFormatYaml,
 	SpecFormatJSON,
+	SpecFormatXML,
 }
 
 func (e SpecFormat) IsValid() bool {
 	switch e {
-	case SpecFormatYaml, SpecFormatJSON:
+	case SpecFormatYaml, SpecFormatJSON, SpecFormatXML:
 		return true
 	}
 	return false
