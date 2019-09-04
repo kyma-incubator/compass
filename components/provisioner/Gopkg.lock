@@ -2,7 +2,6 @@
 
 
 [[projects]]
-  digest = "1:ed6824940ee2db6fa5f2b8e5a1f48d29bef0b25dc460ab480028120ecadfb8aa"
   name = "github.com/99designs/gqlgen"
   packages = [
     "api",
@@ -20,129 +19,92 @@
     "plugin/modelgen",
     "plugin/resolvergen",
     "plugin/schemaconfig",
-    "plugin/servergen",
+    "plugin/servergen"
   ]
-  pruneopts = "UT"
   revision = "a7bc468ca1b184a5ce1b07ea331e0121fc56ae82"
   version = "v0.9.3"
 
 [[projects]]
-  digest = "1:786e862ec180708b60ee670723e3edd969fd4309e7b1c315cd7de058ac62a011"
   name = "github.com/agnivade/levenshtein"
   packages = ["."]
-  pruneopts = "UT"
   revision = "51b298ff305e72cfd29166dccc3f9878e82f9fdc"
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
-  pruneopts = "UT"
   revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:582b704bebaa06b48c29b0cec224a6058a09c86883aaddabde889cd1a5f73e1b"
   name = "github.com/google/uuid"
   packages = ["."]
-  pruneopts = "UT"
   revision = "0cd6bf5da1e1c83f8b45653022c74f71af0538a4"
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:cbec35fe4d5a4fba369a656a8cd65e244ea2c743007d8f6c1ccb132acf9d1296"
   name = "github.com/gorilla/mux"
   packages = ["."]
-  pruneopts = "UT"
   revision = "00bdffe0f3c77e27d2cf6f5c70232a2d3e4d9c15"
   version = "v1.7.3"
 
 [[projects]]
-  digest = "1:e62657cca9badaa308d86e7716083e4c5933bb78e30a17743fc67f50be26f6f4"
   name = "github.com/gorilla/websocket"
   packages = ["."]
-  pruneopts = "UT"
   revision = "c3e18be99d19e6b3e8f1559eea2c161a665c4b6b"
   version = "v1.4.1"
 
 [[projects]]
-  digest = "1:c77361e611524ec8f2ad37c408c3c916111a70b6acf806a1200855696bf8fa4d"
   name = "github.com/hashicorp/golang-lru"
   packages = [
     ".",
-    "simplelru",
+    "simplelru"
   ]
-  pruneopts = "UT"
   revision = "7f827b33c0f158ec5dfbba01bb0b14a4541fd81d"
   version = "v0.5.3"
 
 [[projects]]
-  digest = "1:b472339040c571f1085e429ad08d94218bc3fc7a635c99fd95e3f80382413317"
   name = "github.com/kisielk/errcheck"
   packages = [
     ".",
-    "internal/errcheck",
+    "internal/errcheck"
   ]
-  pruneopts = "UT"
   revision = "e14f8d59a22d460d56c5ee92507cd94c78fbf274"
 
 [[projects]]
-  branch = "implement-provisioner-mock"
-  digest = "1:d644e8109ef27aba97041db1d01983bd4a6acfbb8ab0684981dffe76b5b6d47b"
-  name = "github.com/kyma-incubator/compass"
-  packages = [
-    "components/provisioner/internal/api/mock",
-    "components/provisioner/pkg/gqlschema",
-  ]
-  pruneopts = "UT"
-  revision = "b603193221900139b9c0429b0ca83eccc9b52466"
-
-[[projects]]
-  digest = "1:808cdddf087fb64baeae67b8dfaee2069034d9704923a3cb8bd96a995421a625"
   name = "github.com/patrickmn/go-cache"
   packages = ["."]
-  pruneopts = "UT"
   revision = "a3647f8e31d79543b2d0f0ae2fe5c379d72cedc0"
   version = "v2.1.0"
 
 [[projects]]
-  digest = "1:cf31692c14422fa27c83a05292eb5cbe0fb2775972e8f1f8446a71549bd8980b"
   name = "github.com/pkg/errors"
   packages = ["."]
-  pruneopts = "UT"
   revision = "ba968bfe8b2f7e042a574c888954fccecfa385b4"
   version = "v0.8.1"
 
 [[projects]]
-  digest = "1:0028cb19b2e4c3112225cd871870f2d9cf49b9b4276531f03438a88e94be86fe"
   name = "github.com/pmezard/go-difflib"
   packages = ["difflib"]
-  pruneopts = "UT"
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:99d32780e5238c2621fff621123997c3e3cca96db8be13179013aea77dfab551"
   name = "github.com/stretchr/testify"
   packages = [
     "assert",
-    "require",
+    "require"
   ]
-  pruneopts = "UT"
   revision = "221dbe5ed46703ee255b1da0dec05086f5035f62"
   version = "v1.4.0"
 
 [[projects]]
-  digest = "1:ca4df663ad76879ad38dbd736493679cbb1aa596c6d479fd9fc5e959e5ceb4fb"
   name = "github.com/urfave/cli"
   packages = ["."]
-  pruneopts = "UT"
   revision = "e6cf83ec39f6e1158ced1927d4ed14578fda8edb"
   version = "v1.21.0"
 
 [[projects]]
-  digest = "1:b4e8aaca88f799355f4ac560bce4293fb85ff21003dd0d5741ca503f7a788e91"
   name = "github.com/vektah/gqlparser"
   packages = [
     ".",
@@ -151,23 +113,19 @@
     "lexer",
     "parser",
     "validator",
-    "validator/rules",
+    "validator/rules"
   ]
-  pruneopts = "UT"
   revision = "05741cdb0871330d8bc980d4afd21ab34eceee83"
   version = "v1.1.2"
 
 [[projects]]
-  digest = "1:bb32a7e267540d9f2d26753426d5e360c5bd858b9b78e26b9f0c99219024d8f5"
   name = "github.com/vrischmann/envconfig"
   packages = ["."]
-  pruneopts = "UT"
   revision = "cf601e2565a0a7c7418ed014d28a507be6cb1e45"
   version = "v1.2.0"
 
 [[projects]]
   branch = "master"
-  digest = "1:90452d7c50bfdfa5778f331bbcd15eaf1904f1ca0d13ecac761bfc0d49450848"
   name = "golang.org/x/tools"
   packages = [
     "cmd/goimports",
@@ -182,51 +140,28 @@
     "internal/gopathwalk",
     "internal/imports",
     "internal/module",
-    "internal/semver",
+    "internal/semver"
   ]
-  pruneopts = "UT"
-  revision = "573d9926052aeaeb5fbebcd3cf10d994c9c6d4f5"
+  revision = "be0da057c5e3c2df569a2c25cd280149b7d7e7d0"
 
 [[projects]]
-  digest = "1:4d2e5a73dc1500038e504a8d78b986630e3626dc027bc030ba5c75da257cdb96"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  pruneopts = "UT"
   revision = "51d6538a90f86fe93ac480b35f37b2be17fef232"
   version = "v2.2.2"
 
 [[projects]]
-  digest = "1:792fe9de7054743d7b93d194a046ead013e277cf8a1407477e20e5426bb606b1"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/types",
-    "pkg/util/uuid",
+    "pkg/util/uuid"
   ]
-  pruneopts = "UT"
   revision = "1799e75a07195de9460b8ef7300883499f12127b"
-  version = "kubernetes-1.15.2"
+  version = "kubernetes-1.15.0"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  input-imports = [
-    "github.com/99designs/gqlgen/cmd",
-    "github.com/99designs/gqlgen/graphql",
-    "github.com/99designs/gqlgen/graphql/introspection",
-    "github.com/99designs/gqlgen/handler",
-    "github.com/gorilla/mux",
-    "github.com/kisielk/errcheck",
-    "github.com/kyma-incubator/compass/components/provisioner/internal/api/mock",
-    "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
-    "github.com/patrickmn/go-cache",
-    "github.com/pkg/errors",
-    "github.com/stretchr/testify/assert",
-    "github.com/stretchr/testify/require",
-    "github.com/vektah/gqlparser",
-    "github.com/vektah/gqlparser/ast",
-    "github.com/vrischmann/envconfig",
-    "golang.org/x/tools/cmd/goimports",
-    "k8s.io/apimachinery/pkg/util/uuid",
-  ]
+  inputs-digest = "313d8188589f62212592189c4cfc0e952228bef8bf61acc315ce7c1147d531c2"
   solver-name = "gps-cdcl"
   solver-version = 1

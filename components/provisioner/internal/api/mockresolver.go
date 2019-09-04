@@ -1,4 +1,4 @@
-package mock
+package api
 
 import (
 	"context"
@@ -9,22 +9,22 @@ import (
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
-type Resolver struct {
+type MockResolver struct {
 	cache cache.Cache
 }
 
 type externalMutationResolver struct {
-	*Resolver
+	*MockResolver
 }
 
 type externalQueryResolver struct {
-	*Resolver
+	*MockResolver
 }
 
-func (r *Resolver) Mutation() gqlschema.MutationResolver {
+func (r *MockResolver) Mutation() gqlschema.MutationResolver {
 	return &externalMutationResolver{r}
 }
-func (r *Resolver) Query() gqlschema.QueryResolver {
+func (r *MockResolver) Query() gqlschema.QueryResolver {
 	return &externalQueryResolver{r}
 }
 
@@ -35,11 +35,11 @@ type currentOperation struct {
 	shouldStatusChange bool
 }
 
-func NewMockResolver(cache cache.Cache) *Resolver {
-	return &Resolver{cache: cache}
+func NewMockResolver(cache cache.Cache) *MockResolver {
+	return &MockResolver{cache: cache}
 }
 
-func (r *Resolver) ProvisionRuntime(ctx context.Context, id *gqlschema.RuntimeIDInput, config *gqlschema.ProvisionRuntimeInput) (*gqlschema.AsyncOperationID, error) {
+func (r *MockResolver) ProvisionRuntime(ctx context.Context, id *gqlschema.RuntimeIDInput, config *gqlschema.ProvisionRuntimeInput) (*gqlschema.AsyncOperationID, error) {
 	currentID, finished := r.checkIfFinished(id)
 	if !finished {
 		return nil, errors.Errorf("Cannot start new operation while previous one is not finished yet. Current operation: %s", currentID)
@@ -56,7 +56,7 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, id *gqlschema.RuntimeID
 	return &gqlschema.AsyncOperationID{ID: string(operationID)}, nil
 }
 
-func (r *Resolver) UpgradeRuntime(ctx context.Context, id *gqlschema.RuntimeIDInput, config *gqlschema.UpgradeRuntimeInput) (*gqlschema.AsyncOperationID, error) {
+func (r *MockResolver) UpgradeRuntime(ctx context.Context, id *gqlschema.RuntimeIDInput, config *gqlschema.UpgradeRuntimeInput) (*gqlschema.AsyncOperationID, error) {
 	currentID, finished := r.checkIfFinished(id)
 	if !finished {
 		return nil, errors.Errorf("Cannot start new operation while previous one is not finished yet. Current operation: %s", currentID)
@@ -74,7 +74,7 @@ func (r *Resolver) UpgradeRuntime(ctx context.Context, id *gqlschema.RuntimeIDIn
 	return &gqlschema.AsyncOperationID{ID: string(uuid.NewUUID())}, nil
 }
 
-func (r *Resolver) DeprovisionRuntime(ctx context.Context, id *gqlschema.RuntimeIDInput) (*gqlschema.AsyncOperationID, error) {
+func (r *MockResolver) DeprovisionRuntime(ctx context.Context, id *gqlschema.RuntimeIDInput) (*gqlschema.AsyncOperationID, error) {
 	currentID, finished := r.checkIfFinished(id)
 	if !finished {
 		return nil, errors.Errorf("Cannot start new operation while previous one is not finished yet. Current operation: %s", currentID)
@@ -92,7 +92,7 @@ func (r *Resolver) DeprovisionRuntime(ctx context.Context, id *gqlschema.Runtime
 	return &gqlschema.AsyncOperationID{ID: string(uuid.NewUUID())}, nil
 }
 
-func (r *Resolver) ReconnectRuntimeAgent(ctx context.Context, id *gqlschema.RuntimeIDInput) (*gqlschema.AsyncOperationID, error) {
+func (r *MockResolver) ReconnectRuntimeAgent(ctx context.Context, id *gqlschema.RuntimeIDInput) (*gqlschema.AsyncOperationID, error) {
 	currentID, finished := r.checkIfFinished(id)
 	if !finished {
 		return nil, errors.Errorf("Cannot start new operation while previous one is not finished yet. Current operation: %s", currentID)
@@ -112,7 +112,7 @@ func (r *Resolver) ReconnectRuntimeAgent(ctx context.Context, id *gqlschema.Runt
 	return &gqlschema.AsyncOperationID{ID: string(uuid.NewUUID())}, nil
 }
 
-func (r *Resolver) RuntimeStatus(ctx context.Context, id *gqlschema.RuntimeIDInput) (*gqlschema.RuntimeStatus, error) {
+func (r *MockResolver) RuntimeStatus(ctx context.Context, id *gqlschema.RuntimeIDInput) (*gqlschema.RuntimeStatus, error) {
 	operation, _ := r.getStatus(id)
 
 	return &gqlschema.RuntimeStatus{
@@ -126,7 +126,7 @@ func (r *Resolver) RuntimeStatus(ctx context.Context, id *gqlschema.RuntimeIDInp
 and status Succeeded in second and following calls until next operation is started.
 */
 
-func (r *Resolver) RuntimeOperationStatus(ctx context.Context, id *gqlschema.AsyncOperationIDInput) (*gqlschema.OperationStatus, error) {
+func (r *MockResolver) RuntimeOperationStatus(ctx context.Context, id *gqlschema.AsyncOperationIDInput) (*gqlschema.OperationStatus, error) {
 	operation, runtimeID, exists := r.checkOperation(id)
 
 	if !exists {
@@ -148,7 +148,7 @@ func (r *Resolver) RuntimeOperationStatus(ctx context.Context, id *gqlschema.Asy
 	}, nil
 }
 
-func (r *Resolver) checkIfFinished(runtimeID *gqlschema.RuntimeIDInput) (string, bool) {
+func (r *MockResolver) checkIfFinished(runtimeID *gqlschema.RuntimeIDInput) (string, bool) {
 	item, exists := r.cache.Get(runtimeID.ID)
 
 	if !exists {
@@ -167,11 +167,11 @@ func (r *Resolver) checkIfFinished(runtimeID *gqlschema.RuntimeIDInput) (string,
 	return operation.operationID, false
 }
 
-func (r *Resolver) changeStatus(operation currentOperation, runtimeID *gqlschema.RuntimeIDInput) {
+func (r *MockResolver) changeStatus(operation currentOperation, runtimeID *gqlschema.RuntimeIDInput) {
 	r.cache.Set(runtimeID.ID, operation, 0)
 }
 
-func (r *Resolver) getStatus(runtimeID *gqlschema.RuntimeIDInput) (currentOperation, bool) {
+func (r *MockResolver) getStatus(runtimeID *gqlschema.RuntimeIDInput) (currentOperation, bool) {
 	item, exists := r.cache.Get(runtimeID.ID)
 
 	if !exists {
@@ -181,7 +181,7 @@ func (r *Resolver) getStatus(runtimeID *gqlschema.RuntimeIDInput) (currentOperat
 	return item.(currentOperation), true
 }
 
-func (r *Resolver) checkOperation(id *gqlschema.AsyncOperationIDInput) (currentOperation, string, bool) {
+func (r *MockResolver) checkOperation(id *gqlschema.AsyncOperationIDInput) (currentOperation, string, bool) {
 	for runtimeID, item := range r.cache.Items() {
 		operation, ok := item.Object.(currentOperation)
 		if ok && operation.operationID == id.ID {

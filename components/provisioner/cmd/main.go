@@ -7,7 +7,7 @@ import (
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/api/mock"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
@@ -34,7 +34,7 @@ func main() {
 
 	noExpireCache := cache.New(0, 0)
 
-	resolver := mock.NewMockResolver(*noExpireCache)
+	resolver := api.NewMockResolver(*noExpireCache)
 
 	gqlCfg := gqlschema.Config{
 		Resolvers: resolver,
