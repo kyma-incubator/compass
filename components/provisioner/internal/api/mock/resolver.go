@@ -2,6 +2,7 @@ package mock
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
@@ -154,7 +155,11 @@ func (r *Resolver) checkIfFinished(runtimeID *gqlschema.RuntimeIDInput) (string,
 		return "", true
 	}
 
-	operation := item.(currentOperation)
+	operation, ok := item.(currentOperation)
+
+	if !ok {
+		return "", true
+	}
 
 	if operation.status == gqlschema.OperationStateSucceeded {
 		return operation.operationID, true
@@ -178,8 +183,8 @@ func (r *Resolver) getStatus(runtimeID *gqlschema.RuntimeIDInput) (currentOperat
 
 func (r *Resolver) checkOperation(id *gqlschema.AsyncOperationIDInput) (currentOperation, string, bool) {
 	for runtimeID, item := range r.cache.Items() {
-		operation := item.Object.(currentOperation)
-		if operation.operationID == id.ID {
+		operation, ok := item.Object.(currentOperation)
+		if ok && operation.operationID == id.ID {
 			return operation, runtimeID, true
 		}
 	}

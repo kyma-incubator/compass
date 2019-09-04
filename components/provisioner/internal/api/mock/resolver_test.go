@@ -2,11 +2,12 @@ package mock
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/patrickmn/go-cache"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestResolver_ProvisionRuntime(t *testing.T) {
