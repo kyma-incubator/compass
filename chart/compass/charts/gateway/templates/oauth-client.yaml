@@ -1,0 +1,9 @@
+apiVersion: hydra.ory.sh/v1alpha1
+kind: OAuth2Client
+metadata:
+  name: sample-client
+  namespace: default
+spec:
+  grantTypes:
+    - "client_credentials"
+  scope: "scope-a scope-b"

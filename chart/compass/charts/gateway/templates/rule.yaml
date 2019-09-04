@@ -11,7 +11,10 @@ spec:
     methods: ["GET", "POST", "OPTIONS"]
     url: <http|https>://compass-gateway.kyma.local/<.*>
   authenticators:
-    - handler: anonymous
+    - handler: oauth2_introspection
+      "config": {
+        "required_scope": ["scope-a", "scope-b"]
+      }
   authorizer:
     handler: allow
   mutators:

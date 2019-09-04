@@ -1,0 +1,39 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: ory-hydra-public
+  namespace: kyma-system
+spec:
+  gateways:
+    - compass-istio-gateway.compass-system.svc.cluster.local
+  hosts:
+    - oauth2.kyma.local
+  http:
+    - match:
+        - uri:
+            regex: /.*
+      route:
+        - destination:
+            host: ory-hydra-public
+            port:
+              number: 4444
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: ory-hydra-admin
+  namespace: kyma-system
+spec:
+  gateways:
+    - compass-istio-gateway.compass-system.svc.cluster.local
+  hosts:
+    - oauth2-admin.kyma.local
+  http:
+    - match:
+        - uri:
+            regex: /.*
+      route:
+        - destination:
+            host: ory-hydra-admin
+            port:
+              number: 4445
