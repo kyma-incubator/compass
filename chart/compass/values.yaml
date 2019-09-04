@@ -20,6 +20,9 @@ global:
     schema_migrator:
       dir: pr/
       version: "PR-253"
+    provisioner:
+      dir: pr/
+      version: "PR-"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
