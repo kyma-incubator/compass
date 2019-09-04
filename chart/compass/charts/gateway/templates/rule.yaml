@@ -1,0 +1,21 @@
+apiVersion: oathkeeper.ory.sh/v1alpha1
+kind: Rule
+metadata:
+  name: compass-gateway
+  namespace: compass-system
+spec:
+  description: Test
+  upstream:
+    url: http://compass-gateway.compass-system.svc.cluster.local:3000
+  match:
+    methods: ["GET", "POST", "OPTIONS"]
+    url: <http|https>://compass-gateway.kyma.local/<.*>
+  authenticators:
+    - handler: anonymous
+  authorizer:
+    handler: allow
+  mutators:
+    - handler: header
+      config:
+        headers:
+          Foo: "bar"

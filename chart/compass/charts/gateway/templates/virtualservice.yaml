@@ -19,9 +19,9 @@ spec:
             regex: /.*
       route:
         - destination:
-            host: {{ .Values.global.gateway.host }}
+            host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
             port:
-              number: {{ .Values.service.port }}
+              number: 4455
       corsPolicy:
         allowOrigin:
           - "*"

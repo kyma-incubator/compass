@@ -4,7 +4,7 @@ set -o errexit
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
 
-defaultRelease="master"
+defaultRelease="latest"
 KYMA_RELEASE=${1:-$defaultRelease}
 
 OVERRIDES_MINIKUBE_PATH="${ROOT_PATH}"/installation/resources/installer-overrides-minikube.yaml
@@ -14,7 +14,7 @@ INSTALLER_CR_PATH="${ROOT_PATH}"/installation/resources/installer-cr-kyma-diet-c
 kyma provision minikube
 MINIKUBE_IP=$(eval minikube ip)
 sed -i.bak 's/IP_PLACEHOLDER/'$MINIKUBE_IP'/g' $OVERRIDES_MINIKUBE_PATH
-kyma install -o $INSTALLER_CR_PATH -o $OVERRIDES_MINIKUBE_PATH -o $OVERRIDES_COMPASS_GATEWAY --release "${KYMA_RELEASE}"
+kyma install -o $INSTALLER_CR_PATH -o $OVERRIDES_MINIKUBE_PATH -o $OVERRIDES_COMPASS_GATEWAY --source "${KYMA_RELEASE}"
 mv -f ${OVERRIDES_MINIKUBE_PATH}.bak $OVERRIDES_MINIKUBE_PATH
 
 # TODO: Remove it after next CLI release
