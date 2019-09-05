@@ -95,7 +95,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) 
 	return &apiDefModel, nil
 }
 
-func (r *pgRepository) Create(ctx context.Context, tenantID string, item *model.APIDefinition) error {
+func (r *pgRepository) Create(ctx context.Context, item *model.APIDefinition) error {
 	if item == nil {
 		return errors.New("item cannot be nil")
 	}
@@ -113,7 +113,7 @@ func (r *pgRepository) Create(ctx context.Context, tenantID string, item *model.
 	return nil
 }
 
-func (r *pgRepository) CreateMany(ctx context.Context, tenantID string, items []*model.APIDefinition) error {
+func (r *pgRepository) CreateMany(ctx context.Context, items []*model.APIDefinition) error {
 	for index, item := range items {
 		entity, err := r.conv.ToEntity(*item)
 		if err != nil {
@@ -128,7 +128,7 @@ func (r *pgRepository) CreateMany(ctx context.Context, tenantID string, items []
 	return nil
 }
 
-func (r *pgRepository) Update(ctx context.Context, tenantID string, item *model.APIDefinition) error {
+func (r *pgRepository) Update(ctx context.Context, item *model.APIDefinition) error {
 	if item == nil {
 		return errors.New("item cannot be nil")
 	}

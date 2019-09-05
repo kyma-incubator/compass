@@ -312,7 +312,7 @@ func TestConverter_ToEntity(t *testing.T) {
 		id := "id"
 		eventModel := fixFullModelEventAPIDefinition(id, "placeholder")
 		versionConv := &automock.VersionConverter{}
-		versionConv.On("ToEntity", fixVersionModel()).Return(fixVersionEntity(), nil).Once()
+		versionConv.On("ToEntity", fixVersionModel()).Return(fixVersionEntity()).Once()
 		conv := eventapi.NewConverter(nil, versionConv)
 		//WHEN
 		eventAPIEnt, err := conv.ToEntity(eventModel)
@@ -345,7 +345,7 @@ func TestConverter_FromEntity(t *testing.T) {
 		eventEntity := fixFullEventAPIDef(id, "placeholder")
 		versionConv := &automock.VersionConverter{}
 		exptectedModel := fixVersionModel()
-		versionConv.On("FromEntity", fixVersionEntity()).Return(&exptectedModel, nil).Once()
+		versionConv.On("FromEntity", fixVersionEntity()).Return(&exptectedModel).Once()
 		conv := eventapi.NewConverter(nil, versionConv)
 		//WHEN
 		eventModel, err := conv.FromEntity(eventEntity)
@@ -360,7 +360,7 @@ func TestConverter_FromEntity(t *testing.T) {
 		id := "id"
 		eventEntity := fixMinEntityEventAPIDef(id, "placeholder")
 		versionConv := &automock.VersionConverter{}
-		versionConv.On("FromEntity", version.Version{}).Return(nil, nil).Once()
+		versionConv.On("FromEntity", version.Version{}).Return(nil).Once()
 		conv := eventapi.NewConverter(nil, versionConv)
 		//WHEN
 		eventModel, err := conv.FromEntity(eventEntity)

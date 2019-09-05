@@ -20,7 +20,7 @@ import (
 func TestConverter_ToGraphQL(t *testing.T) {
 	// given
 	placeholder := "test"
-	modelAPIDefinition := fixFullModelAPIDefinition(placeholder)
+	modelAPIDefinition := fixFullAPIDefinitionModelWithRuntimeAuth(placeholder)
 	gqlAPIDefinition := fixFullGQLAPIDefinition(placeholder)
 	emptyModelAPIDefinition := &model.APIDefinition{}
 	emptyGraphQLAPIDefinition := &graphql.APIDefinition{}
@@ -110,8 +110,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// given
 	input := []*model.APIDefinition{
-		fixModelAPIDefinition("foo", "1", "Foo", "Lorem ipsum"),
-		fixModelAPIDefinition("bar", "1", "Bar", "Dolor sit amet"),
+		fixAPIDefinitionModel("foo", "1", "Foo", "Lorem ipsum"),
+		fixAPIDefinitionModel("bar", "1", "Bar", "Dolor sit amet"),
 		{},
 		nil,
 	}
@@ -361,7 +361,7 @@ func TestApiSpecDataConversionNilStaysNil(t *testing.T) {
 func TestEntityConverter_ToEntity(t *testing.T) {
 	t.Run("success all nullable properties filled", func(t *testing.T) {
 		//GIVEN
-		apiModel := fixFullModelAPIDefinition("foo")
+		apiModel := fixFullAPIDefinitionModelWithRuntimeAuth("foo")
 		require.NotNil(t, apiModel)
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, nil, versionConv)
@@ -373,7 +373,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
-		apiModel := fixModelAPIDefinition("id", "app_id", "name", "target_url")
+		apiModel := fixAPIDefinitionModel("id", "app_id", "name", "target_url")
 		require.NotNil(t, apiModel)
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, nil, versionConv)
@@ -395,7 +395,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		apiModel, err := conv.FromEntity(entity)
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, fixFullModelAPIDef("placeholder"), apiModel)
+		assert.Equal(t, fixFullAPIDefinitionModel("placeholder"), apiModel)
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
@@ -406,7 +406,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		apiModel, err := conv.FromEntity(entity)
 		//THEN
 		require.NoError(t, err)
-		expectedModel := fixModelAPIDefinition("id", "app_id", "name", "target_url")
+		expectedModel := fixAPIDefinitionModel("id", "app_id", "name", "target_url")
 		require.NotNil(t, expectedModel)
 		assert.Equal(t, *expectedModel, apiModel)
 	})

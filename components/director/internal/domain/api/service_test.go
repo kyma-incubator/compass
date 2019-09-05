@@ -29,7 +29,7 @@ func TestService_Get(t *testing.T) {
 	name := "foo"
 	desc := "bar"
 
-	apiDefinition := fixModelAPIDefinition(id, appID, name, desc)
+	apiDefinition := fixAPIDefinitionModel(id, appID, name, desc)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID)
@@ -106,9 +106,9 @@ func TestService_List(t *testing.T) {
 	desc := "bar"
 
 	apiDefinitions := []*model.APIDefinition{
-		fixModelAPIDefinition(id, applicationID, name, desc),
-		fixModelAPIDefinition(id, applicationID, name, desc),
-		fixModelAPIDefinition(id, applicationID, name, desc),
+		fixAPIDefinitionModel(id, applicationID, name, desc),
+		fixAPIDefinitionModel(id, applicationID, name, desc),
+		fixAPIDefinitionModel(id, applicationID, name, desc),
 	}
 	apiDefinitionPage := &model.APIDefinitionPage{
 		Data:       apiDefinitions,
@@ -256,7 +256,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, tenantID, modelAPIDefinition).Return(nil).Once()
+				repo.On("Create", ctx, modelAPIDefinition).Return(nil).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
@@ -277,7 +277,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error - API Creation",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, tenantID, modelAPIDefinition).Return(testErr).Once()
+				repo.On("Create", ctx, modelAPIDefinition).Return(testErr).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
@@ -342,6 +342,14 @@ func TestService_Create(t *testing.T) {
 			uidService.AssertExpectations(t)
 		})
 	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := api.NewService(nil, nil, nil)
+		// WHEN
+		_, err := svc.Create(context.TODO(), "", model.APIDefinitionInput{})
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+	})
 }
 
 func TestService_Update(t *testing.T) {
@@ -395,7 +403,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("GetByID", ctx, tenantID, id).Return(apiDefinitionModel, nil).Once()
-				repo.On("Update", ctx, tenantID, inputAPIDefinitionModel).Return(nil).Once()
+				repo.On("Update", ctx, inputAPIDefinitionModel).Return(nil).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
@@ -418,13 +426,55 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("GetByID", ctx, tenantID, "foo").Return(apiDefinitionModel, nil).Once()
-				repo.On("Update", ctx, tenantID, inputAPIDefinitionModel).Return(testErr).Once()
+				repo.On("Update", ctx, inputAPIDefinitionModel).Return(testErr).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
 				repo := &automock.FetchRequestRepository{}
 				repo.On("DeleteByReferenceObjectID", ctx, tenantID, model.APIFetchRequestReference, id).Return(nil).Once()
 				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(frID).Once()
+				return svc
+			},
+			InputID:     "foo",
+			Input:       modelInput,
+			ExpectedErr: testErr,
+		},
+		{
+			Name: "Delete FetchRequest by reference Error",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("GetByID", ctx, tenantID, "foo").Return(apiDefinitionModel, nil).Once()
+				return repo
+			},
+			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				repo.On("DeleteByReferenceObjectID", ctx, tenantID, model.APIFetchRequestReference, id).Return(testErr).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				return svc
+			},
+			InputID:     "foo",
+			Input:       modelInput,
+			ExpectedErr: testErr,
+		},
+		{
+			Name: "Fetch Request Creation Error",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("GetByID", ctx, tenantID, "foo").Return(apiDefinitionModel, nil).Once()
+				return repo
+			},
+			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				repo.On("DeleteByReferenceObjectID", ctx, tenantID, model.APIFetchRequestReference, id).Return(nil).Once()
+				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(testErr).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -483,6 +533,14 @@ func TestService_Update(t *testing.T) {
 			uidSvc.AssertExpectations(t)
 		})
 	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := api.NewService(nil, nil, nil)
+		// WHEN
+		err := svc.Update(context.TODO(), "", model.APIDefinitionInput{})
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+	})
 }
 
 func TestService_Delete(t *testing.T) {
@@ -663,6 +721,21 @@ func TestService_GetFetchRequest(t *testing.T) {
 			InputAPIDefID:        refID,
 			ExpectedFetchRequest: fetchRequestModel,
 			ExpectedErrMessage:   "",
+		},
+		{
+			Name: "Error - API Definition Not Exist",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("Exists", ctx, tenantID, refID).Return(false, nil).Once()
+				return repo
+			},
+			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				return repo
+			},
+			InputAPIDefID:        refID,
+			ExpectedFetchRequest: nil,
+			ExpectedErrMessage:   fmt.Sprintf("API Definition with ID %s doesn't exist", refID),
 		},
 		{
 			Name: "Success - Not Found",

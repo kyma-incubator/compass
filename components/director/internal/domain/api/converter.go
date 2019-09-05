@@ -24,8 +24,8 @@ type AuthConverter interface {
 type VersionConverter interface {
 	ToGraphQL(in *model.Version) *graphql.Version
 	InputFromGraphQL(in *graphql.VersionInput) *model.VersionInput
-	FromEntity(version version.Version) (*model.Version, error)
-	ToEntity(version model.Version) (version.Version, error)
+	FromEntity(version version.Version) *model.Version
+	ToEntity(version model.Version) version.Version
 }
 
 type converter struct {
@@ -129,12 +129,7 @@ func (c *converter) apiSpecInputFromGraphQL(in *graphql.APISpecInput) *model.API
 func (c *converter) FromEntity(entity Entity) (model.APIDefinition, error) {
 	defaultAuth, err := unmarshallDefaultAuth(entity.DefaultAuth)
 	if err != nil {
-		return model.APIDefinition{}, errors.Wrap(err, "while converting ApiDefinition")
-	}
-
-	v, err := c.version.FromEntity(entity.Version)
-	if err != nil {
-		return model.APIDefinition{}, err
+		return model.APIDefinition{}, errors.Wrap(err, "while converting APIDefinition")
 	}
 
 	return model.APIDefinition{
@@ -147,19 +142,14 @@ func (c *converter) FromEntity(entity Entity) (model.APIDefinition, error) {
 		Description:   repo.StringPtrFromNullableString(entity.Description),
 		Group:         repo.StringPtrFromNullableString(entity.Group),
 		Spec:          c.apiSpecFromEntity(entity.EntitySpec),
-		Version:       v,
+		Version:       c.version.FromEntity(entity.Version),
 	}, nil
 }
 
 func (c *converter) ToEntity(apiModel model.APIDefinition) (Entity, error) {
 	defaultAuth, err := marshallDefaultAuth(apiModel.DefaultAuth)
 	if err != nil {
-		return Entity{}, errors.Wrap(err, "while converting ApiDefinition")
-	}
-
-	versionEntity, err := c.convertVersionToEntity(apiModel.Version)
-	if err != nil {
-		return Entity{}, err
+		return Entity{}, errors.Wrap(err, "while converting APIDefinition")
 	}
 
 	return Entity{
@@ -173,20 +163,16 @@ func (c *converter) ToEntity(apiModel model.APIDefinition) (Entity, error) {
 
 		EntitySpec:  c.apiSpecToEntity(apiModel.Spec),
 		DefaultAuth: repo.NewNullableString(defaultAuth),
-		Version:     versionEntity,
+		Version:     c.convertVersionToEntity(apiModel.Version),
 	}, nil
 }
 
-func (c *converter) convertVersionToEntity(inVer *model.Version) (version.Version, error) {
+func (c *converter) convertVersionToEntity(inVer *model.Version) version.Version {
 	if inVer == nil {
-		return version.Version{}, nil
+		return version.Version{}
 	}
 
-	tmp, err := c.version.ToEntity(*inVer)
-	if err != nil {
-		return version.Version{}, errors.Wrap(err, "while converting version")
-	}
-	return tmp, nil
+	return c.version.ToEntity(*inVer)
 }
 
 func (c *converter) apiSpecToEntity(spec *model.APISpec) EntitySpec {

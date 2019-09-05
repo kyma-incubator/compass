@@ -22,7 +22,7 @@ const (
 	tenantID = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
 )
 
-func fixModelAPIDefinition(id, appId, name, targetURL string) *model.APIDefinition {
+func fixAPIDefinitionModel(id, appId, name, targetURL string) *model.APIDefinition {
 	return &model.APIDefinition{
 		ID:            id,
 		ApplicationID: appId,
@@ -31,51 +31,21 @@ func fixModelAPIDefinition(id, appId, name, targetURL string) *model.APIDefiniti
 	}
 }
 
-func fixFullModelAPIDefinition(placeholder string) *model.APIDefinition {
-	spec := &model.APISpec{
-		Data:   strings.Ptr("spec_data_" + placeholder),
-		Format: model.SpecFormatYaml,
-		Type:   model.APISpecTypeOpenAPI,
-	}
-
-	deprecated := false
-	forRemoval := false
-
-	v := &model.Version{
-		Value:           "v1.1",
-		Deprecated:      &deprecated,
-		DeprecatedSince: strings.Ptr("v1.0"),
-		ForRemoval:      &forRemoval,
-	}
-
-	auth := model.Auth{
-		AdditionalHeaders: map[string][]string{"testHeader": {"hval1", "hval2"}},
-	}
+func fixFullAPIDefinitionModelWithRuntimeAuth(placeholder string) *model.APIDefinition {
+	apiModel := fixFullAPIDefinitionModel(placeholder)
 
 	runtimeAuth := model.RuntimeAuth{
 		ID:        strings.Ptr("foo"),
 		TenantID:  "tnt",
 		RuntimeID: "1",
 		APIDefID:  "2",
-		Value:     &auth,
+		Value:     apiModel.DefaultAuth,
 	}
-
-	return &model.APIDefinition{
-		ID:            apiDefID,
-		ApplicationID: appID,
-		Tenant:        tenantID,
-		Name:          placeholder,
-		Description:   strings.Ptr("desc_" + placeholder),
-		Spec:          spec,
-		TargetURL:     fmt.Sprintf("https://%s.com", placeholder),
-		Group:         strings.Ptr("group_" + placeholder),
-		Auths:         []*model.RuntimeAuth{&runtimeAuth, &runtimeAuth},
-		DefaultAuth:   &auth,
-		Version:       v,
-	}
+	apiModel.Auths = []*model.RuntimeAuth{&runtimeAuth, &runtimeAuth}
+	return &apiModel
 }
 
-func fixFullModelAPIDef(placeholder string) model.APIDefinition {
+func fixFullAPIDefinitionModel(placeholder string) model.APIDefinition {
 	spec := &model.APISpec{
 		Data:   strings.Ptr("spec_data_" + placeholder),
 		Format: model.SpecFormatYaml,

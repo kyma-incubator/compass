@@ -93,9 +93,8 @@ func TestConverter_FromEntity(t *testing.T) {
 		versionEntity := *fixVersionEntity("v1.2", true, "v1.1", false)
 		versionConv := version.NewConverter()
 		//WHEN
-		versionModel, err := versionConv.FromEntity(versionEntity)
+		versionModel := versionConv.FromEntity(versionEntity)
 		//THEN
-		require.NoError(t, err)
 		require.NotNil(t, versionModel)
 		assertVersion(t, versionEntity, *versionModel)
 	})
@@ -105,9 +104,8 @@ func TestConverter_FromEntity(t *testing.T) {
 		versionEntity := version.Version{}
 		versionConv := version.NewConverter()
 		// WHEN
-		versionModel, err := versionConv.FromEntity(versionEntity)
+		versionModel := versionConv.FromEntity(versionEntity)
 		//THEN
-		require.NoError(t, err)
 		require.Nil(t, versionModel)
 
 	})
@@ -117,9 +115,8 @@ func TestConverter_ToEntity(t *testing.T) {
 		versionModel := *fixModelVersion("v1.2", true, "v1.1", false)
 		versionConv := version.NewConverter()
 		//WHEN
-		versionEntity, err := versionConv.ToEntity(versionModel)
+		versionEntity := versionConv.ToEntity(versionModel)
 		//THEN
-		require.NoError(t, err)
 		assertVersion(t, versionEntity, versionModel)
 	})
 
@@ -127,9 +124,8 @@ func TestConverter_ToEntity(t *testing.T) {
 		versionModel := model.Version{}
 		versionConv := version.NewConverter()
 		//WHEN
-		versionEntity, err := versionConv.ToEntity(versionModel)
+		versionEntity := versionConv.ToEntity(versionModel)
 		//THEN
-		require.NoError(t, err)
 		assertVersion(t, versionEntity, versionModel)
 	})
 }

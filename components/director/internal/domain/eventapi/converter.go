@@ -6,15 +6,14 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/strings"
-	"github.com/pkg/errors"
 )
 
 //go:generate mockery -name=VersionConverter -output=automock -outpkg=automock -case=underscore
 type VersionConverter interface {
 	ToGraphQL(in *model.Version) *graphql.Version
 	InputFromGraphQL(in *graphql.VersionInput) *model.VersionInput
-	FromEntity(version version.Version) (*model.Version, error)
-	ToEntity(version model.Version) (version.Version, error)
+	FromEntity(version version.Version) *model.Version
+	ToEntity(version model.Version) version.Version
 }
 
 type converter struct {
@@ -111,11 +110,6 @@ func (c *converter) eventAPISpecInputFromGraphQL(in *graphql.EventAPISpecInput) 
 }
 
 func (c *converter) FromEntity(entity Entity) (model.EventAPIDefinition, error) {
-	ver, err := c.vc.FromEntity(entity.Version)
-	if err != nil {
-		return model.EventAPIDefinition{}, errors.Wrap(err, "while converting version")
-	}
-
 	return model.EventAPIDefinition{
 		ID:            entity.ID,
 		Tenant:        entity.TenantID,
@@ -123,17 +117,12 @@ func (c *converter) FromEntity(entity Entity) (model.EventAPIDefinition, error) 
 		Name:          entity.Name,
 		Description:   repo.StringPtrFromNullableString(entity.Description),
 		Group:         repo.StringPtrFromNullableString(entity.GroupName),
-		Version:       ver,
+		Version:       c.vc.FromEntity(entity.Version),
 		Spec:          c.apiSpecFromEntity(entity.EntitySpec),
 	}, nil
 }
 
 func (c *converter) ToEntity(eventModel model.EventAPIDefinition) (Entity, error) {
-	versionEntity, err := c.convertVersionToEntity(eventModel.Version)
-	if err != nil {
-		return Entity{}, err
-	}
-
 	return Entity{
 		ID:          eventModel.ID,
 		TenantID:    eventModel.Tenant,
@@ -141,33 +130,17 @@ func (c *converter) ToEntity(eventModel model.EventAPIDefinition) (Entity, error
 		Name:        eventModel.Name,
 		Description: repo.NewNullableString(eventModel.Description),
 		GroupName:   repo.NewNullableString(eventModel.Group),
-		Version:     versionEntity,
+		Version:     c.convertVersionToEntity(eventModel.Version),
 		EntitySpec:  c.apiSpecToEntity(eventModel.Spec),
 	}, nil
 }
 
-func (c *converter) convertVersionFromEntity(inVer *version.Version) (*model.Version, error) {
+func (c *converter) convertVersionToEntity(inVer *model.Version) version.Version {
 	if inVer == nil {
-		return nil, nil
+		return version.Version{}
 	}
 
-	tmp, err := c.vc.FromEntity(*inVer)
-	if err != nil {
-		return nil, errors.Wrap(err, "while converting version")
-	}
-	return tmp, nil
-}
-
-func (c *converter) convertVersionToEntity(inVer *model.Version) (version.Version, error) {
-	if inVer == nil {
-		return version.Version{}, nil
-	}
-
-	tmp, err := c.vc.ToEntity(*inVer)
-	if err != nil {
-		return version.Version{}, errors.Wrap(err, "while converting version")
-	}
-	return tmp, nil
+	return c.vc.ToEntity(*inVer)
 }
 
 func (c *converter) apiSpecToEntity(spec *model.EventAPISpec) EntitySpec {

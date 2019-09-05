@@ -13,7 +13,7 @@ type VersionConverter struct {
 }
 
 // FromEntity provides a mock function with given fields: _a0
-func (_m *VersionConverter) FromEntity(_a0 version.Version) (*model.Version, error) {
+func (_m *VersionConverter) FromEntity(_a0 version.Version) *model.Version {
 	ret := _m.Called(_a0)
 
 	var r0 *model.Version
@@ -25,14 +25,7 @@ func (_m *VersionConverter) FromEntity(_a0 version.Version) (*model.Version, err
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(version.Version) error); ok {
-		r1 = rf(_a0)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // InputFromGraphQL provides a mock function with given fields: in
@@ -52,7 +45,7 @@ func (_m *VersionConverter) InputFromGraphQL(in *graphql.VersionInput) *model.Ve
 }
 
 // ToEntity provides a mock function with given fields: _a0
-func (_m *VersionConverter) ToEntity(_a0 model.Version) (version.Version, error) {
+func (_m *VersionConverter) ToEntity(_a0 model.Version) version.Version {
 	ret := _m.Called(_a0)
 
 	var r0 version.Version
@@ -62,14 +55,7 @@ func (_m *VersionConverter) ToEntity(_a0 model.Version) (version.Version, error)
 		r0 = ret.Get(0).(version.Version)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(model.Version) error); ok {
-		r1 = rf(_a0)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // ToGraphQL provides a mock function with given fields: in

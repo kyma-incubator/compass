@@ -11,13 +11,13 @@ type APIRepository struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: ctx, tenantID, item
-func (_m *APIRepository) Create(ctx context.Context, tenantID string, item *model.APIDefinition) error {
-	ret := _m.Called(ctx, tenantID, item)
+// Create provides a mock function with given fields: ctx, item
+func (_m *APIRepository) Create(ctx context.Context, item *model.APIDefinition) error {
+	ret := _m.Called(ctx, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *model.APIDefinition) error); ok {
-		r0 = rf(ctx, tenantID, item)
+	if rf, ok := ret.Get(0).(func(context.Context, *model.APIDefinition) error); ok {
+		r0 = rf(ctx, item)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -25,13 +25,13 @@ func (_m *APIRepository) Create(ctx context.Context, tenantID string, item *mode
 	return r0
 }
 
-// CreateMany provides a mock function with given fields: ctx, tenantID, item
-func (_m *APIRepository) CreateMany(ctx context.Context, tenantID string, item []*model.APIDefinition) error {
-	ret := _m.Called(ctx, tenantID, item)
+// CreateMany provides a mock function with given fields: ctx, item
+func (_m *APIRepository) CreateMany(ctx context.Context, item []*model.APIDefinition) error {
+	ret := _m.Called(ctx, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, []*model.APIDefinition) error); ok {
-		r0 = rf(ctx, tenantID, item)
+	if rf, ok := ret.Get(0).(func(context.Context, []*model.APIDefinition) error); ok {
+		r0 = rf(ctx, item)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -134,13 +134,13 @@ func (_m *APIRepository) ListByApplicationID(ctx context.Context, tenantID strin
 	return r0, r1
 }
 
-// Update provides a mock function with given fields: ctx, tenantID, item
-func (_m *APIRepository) Update(ctx context.Context, tenantID string, item *model.APIDefinition) error {
-	ret := _m.Called(ctx, tenantID, item)
+// Update provides a mock function with given fields: ctx, item
+func (_m *APIRepository) Update(ctx context.Context, item *model.APIDefinition) error {
+	ret := _m.Called(ctx, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *model.APIDefinition) error); ok {
-		r0 = rf(ctx, tenantID, item)
+	if rf, ok := ret.Get(0).(func(context.Context, *model.APIDefinition) error); ok {
+		r0 = rf(ctx, item)
 	} else {
 		r0 = ret.Error(0)
 	}

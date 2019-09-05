@@ -17,9 +17,9 @@ type APIRepository interface {
 	GetByID(ctx context.Context, tenantID, id string) (*model.APIDefinition, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	ListByApplicationID(ctx context.Context, tenantID, applicationID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
-	CreateMany(ctx context.Context, tenantID string, item []*model.APIDefinition) error
-	Create(ctx context.Context, tenantID string, item *model.APIDefinition) error
-	Update(ctx context.Context, tenantID string, item *model.APIDefinition) error
+	CreateMany(ctx context.Context, item []*model.APIDefinition) error
+	Create(ctx context.Context, item *model.APIDefinition) error
+	Update(ctx context.Context, item *model.APIDefinition) error
 	Delete(ctx context.Context, tenantID string, id string) error
 	DeleteAllByApplicationID(ctx context.Context, tenantID string, id string) error
 }
@@ -87,7 +87,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.API
 	id := s.uidService.Generate()
 
 	if in.Spec != nil && in.Spec.FetchRequest != nil {
-		_, err = s.createFetchRequest(ctx, tnt, in.Spec.FetchRequest, id)
+		_, err = s.createFetchRequest(ctx, tnt, *in.Spec.FetchRequest, id)
 		if err != nil {
 			return "", errors.Wrapf(err, "while creating FetchRequest for APIDefinition %s", id)
 		}
@@ -95,7 +95,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.API
 
 	api := in.ToAPIDefinition(id, applicationID, tnt)
 
-	err = s.repo.Create(ctx, tnt, api)
+	err = s.repo.Create(ctx, api)
 	if err != nil {
 		return "", err
 	}
@@ -120,7 +120,7 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 	}
 
 	if in.Spec != nil && in.Spec.FetchRequest != nil {
-		_, err = s.createFetchRequest(ctx, tnt, in.Spec.FetchRequest, id)
+		_, err = s.createFetchRequest(ctx, tnt, *in.Spec.FetchRequest, id)
 		if err != nil {
 			return errors.Wrapf(err, "while creating FetchRequest for APIDefinition %s", id)
 		}
@@ -128,7 +128,7 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 
 	api = in.ToAPIDefinition(id, api.ApplicationID, tnt)
 
-	err = s.repo.Update(ctx, tnt, api)
+	err = s.repo.Update(ctx, api)
 	if err != nil {
 		return errors.Wrapf(err, "while updating APIDefinition with ID %s", id)
 	}
@@ -189,11 +189,7 @@ func (s *service) GetFetchRequest(ctx context.Context, apiDefID string) (*model.
 	return fetchRequest, nil
 }
 
-func (s *service) createFetchRequest(ctx context.Context, tenant string, in *model.FetchRequestInput, parentObjectID string) (*string, error) {
-	if in == nil {
-		return nil, nil
-	}
-
+func (s *service) createFetchRequest(ctx context.Context, tenant string, in model.FetchRequestInput, parentObjectID string) (*string, error) {
 	id := s.uidService.Generate()
 	fr := in.ToFetchRequest(s.timestampGen(), id, tenant, model.APIFetchRequestReference, parentObjectID)
 	err := s.fetchRequestRepo.Create(ctx, fr)
