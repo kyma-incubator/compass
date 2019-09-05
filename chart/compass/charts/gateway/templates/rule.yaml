@@ -18,7 +18,10 @@ spec:
   authorizer:
     handler: allow
   mutators:
-    - handler: header
+    - handler: hydrator
       config:
-        headers:
-          Foo: "bar"
+        api:
+          url: http://compass-healthchecker.compass-system.svc.cluster.local:3000
+    - handler: id_token
+      config:
+        claims: "{\"tenant\": \"{{ print .Extra.tenant }}\"}"

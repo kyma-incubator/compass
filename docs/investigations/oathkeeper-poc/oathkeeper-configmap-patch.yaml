@@ -1,0 +1,65 @@
+apiVersion: v1
+data:
+  config.yaml: |
+    access_rules:
+      repositories:
+      - file:///etc/rules/access-rules.json
+    authenticators:
+      anonymous:
+        enabled: true
+        subject: anonymous
+      cookie_session:
+        check_session_url: https://session-store-host
+        enabled: false
+        only:
+        - sessionid
+      jwt:
+        enabled: true
+        jwks_urls:
+        - http://dex-service.kyma-system.svc.cluster.local:5556/keys
+        scope_strategy: wildcard
+      noop:
+        enabled: true
+      oauth2_client_credentials:
+        enabled: true
+        token_url: http://ory-hydra-public:4444/oauth2/token
+      oauth2_introspection:
+        enabled: true
+        introspection_url: http://ory-hydra-admin:4445/oauth2/introspect
+        scope_strategy: exact
+      unauthorized:
+        enabled: true
+    authorizers:
+      allow:
+        enabled: true
+      deny:
+        enabled: true
+    mutators:
+      cookie:
+        enabled: true
+      header:
+        enabled: true
+      hydrator:
+        enabled: true
+      id_token:
+        enabled: true
+        issuer_url: https://my-oathkeeper/
+        jwks_url: https://raw.githubusercontent.com/ory/k8s/master/helm/charts/oathkeeper/demo/mutator.id_token.jwks.json
+        ttl: 60s
+      noop:
+        enabled: true
+    serve:
+      api:
+        port: 4456
+      proxy:
+        port: 4455
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: ory
+    app.kubernetes.io/managed-by: Tiller
+    app.kubernetes.io/name: oathkeeper
+    app.kubernetes.io/version: v0.16.0-beta.4_oryOS.12
+    helm.sh/chart: oathkeeper-0.0.1
+  name: ory-oathkeeper-config
+  namespace: kyma-system

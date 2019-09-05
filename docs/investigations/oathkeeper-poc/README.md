@@ -1,13 +1,13 @@
 # Securing Compass with OathKeeper
 
 ## Setup
-Modify `installation/resources/installer-cr-kyma-diet.yaml` and add new component:
+Modify `installation/resources/installer-cr-kyma-diet.yaml` and add new component (included in chart on this branch):
 ```yaml
     - name: "ory"
       namespace: "kyma-system"
 ```
 
-Modify VirtualService for Gateway component to point it to OathKeeper:
+Modify VirtualService for Gateway component to point it to OathKeeper (included in chart on this branch):
 ```yaml
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
@@ -47,7 +47,7 @@ spec:
           - "DELETE"
 ```
 
-Create OathKeeper rule:
+Create OathKeeper rule (included in chart on this branch):
 ```yaml
 apiVersion: oathkeeper.ory.sh/v1alpha1
 kind: Rule
@@ -82,6 +82,11 @@ Patch Hydra VirtulServices to use Compass Istio Gateway (in future we have to do
 k apply -f templates/hydra-virtualservice-patch.yaml
 ```
 
+Patch OAuthKeeper configmap: (in future we have to do it with overrides)
+```bash
+k apply -f templates/oathkeeper-configmap-patch.yaml
+```
+
 ## Get Access Token
 
 Create OAuthClient CR
@@ -109,7 +114,6 @@ export DOMAIN=kyma.local
 curl -ik -X POST "https://oauth2.kyma.local/oauth2/token" -H "Authorization: Basic $ENCODED_CREDENTIALS" -F "grant_type=client_credentials" -F "scope=scope-a scope-b"
 ```
 
-
 ## Use Access Token
 
 Use Access Token from response
@@ -119,3 +123,32 @@ curl -ik https://compass-gateway.kyma.local/healthz -H "Authorization: Bearer ${
 ```
 
 If the token is valid and scopes are correct, Gateway will respond "ok".
+
+## See logs
+
+See logs of compass-gateway and compass-healthchecker.
+
+Healthchecker is used as Tenant Mapping Service and it logs request data.
+```bash
+k logs -n compass-system compass-healthchecker-7f4b9858fd-t7pkr healthchecker
+```
+
+Gateway logs request headers.
+```bash
+k logs -n compass-system compass-gateway-688c856bd8-2x2nc gateway
+```
+
+In `Authorization` header you can see that there is valid JWT token with tenant info. Check it on [jwt.io](https://jwt.io/).
+
+In payload you will see something like:
+```json
+{
+  "exp": 1567639275,
+  "iat": 1567639215,
+  "iss": "https://my-oathkeeper/",
+  "jti": "689832e9-e0cd-4af4-95d5-5855132baa3b",
+  "nbf": 1567639215,
+  "sub": "7077e51f-e2ec-4f69-aefb-650b4bc7bba3", // subject = client_id
+  "tenant": "9ac609e1-7487-4aa6-b600-0904b272b11f" // our tenant
+}
+```

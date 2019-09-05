@@ -29,6 +29,9 @@ func EchoHandler(writer http.ResponseWriter, request *http.Request) {
 
 	var data Data
 	err := json.NewDecoder(request.Body).Decode(&data)
+
+	log.Printf("Response: \n %+v\n\n", data)
+
 	defer func() {
 		err := request.Body.Close()
 		if err != nil {
@@ -44,7 +47,7 @@ func EchoHandler(writer http.ResponseWriter, request *http.Request) {
 	if !ok {
 		log.Printf("error: Incorrect type %T\n", data.Extra)
 	}
-	extraMap["token"] = "9ac609e1-7487-4aa6-b600-0904b272b11f"
+	extraMap["tenant"] = "9ac609e1-7487-4aa6-b600-0904b272b11f"
 
 	data.Extra = extraMap
 
