@@ -16,7 +16,7 @@ global:
       version: "PR-287"
     healthchecker:
       dir: pr/
-      version: "PR-99"
+      version: "PR-287"
     schema_migrator:
       dir: pr/
       version: "PR-253"

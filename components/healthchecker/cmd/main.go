@@ -1,21 +1,55 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 )
 
 const serverPort = "3000"
 
+type Data struct {
+	Subject string      `json:"subject"`
+	Extra   interface{} `json:"extra"`
+	Header  interface{} `json:"header"`
+}
+
 func EchoHandler(writer http.ResponseWriter, request *http.Request) {
+	if request.Method != http.MethodPost {
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	log.Println("=== HEADERS ===")
+	for key, val := range request.Header {
+		log.Printf("%s: %+v\n", key, val)
+	}
+	log.Println("=== ==== ===")
 
-	log.Println("Echoing back request made to " + request.URL.Path + " to client (" + request.RemoteAddr + ")")
+	writer.Header().Set("Content-Type", "application/json")
 
-	writer.Header().Set("Access-Control-Allow-Origin", "*")
+	var data Data
+	err := json.NewDecoder(request.Body).Decode(&data)
+	defer func() {
+		err := request.Body.Close()
+		if err != nil {
+			log.Println("error: ", err)
+		}
+	}()
 
-	writer.Header().Set("Access-Control-Allow-Headers", "Content-Range, Content-Disposition, Content-Type, ETag")
+	if data.Extra == nil {
+		data.Extra = make(map[string]interface{})
+	}
 
-	err := request.Write(writer)
+	extraMap, ok := data.Extra.(map[string]interface{})
+	if !ok {
+		log.Printf("error: Incorrect type %T\n", data.Extra)
+	}
+	extraMap["token"] = "9ac609e1-7487-4aa6-b600-0904b272b11f"
+
+	data.Extra = extraMap
+
+	err = json.NewEncoder(writer).Encode(data)
+
 	if err != nil {
 		log.Println("error: ", err)
 	}
