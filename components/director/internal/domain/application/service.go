@@ -130,7 +130,7 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 		return nil, errors.New("page size must be between 1 and 100")
 	}
 
-	return s.appRepo.List(ctx, appTenant, filter, &pageSize, &cursor)
+	return s.appRepo.List(ctx, appTenant, filter, pageSize, cursor)
 }
 
 func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, pageSize int, cursor string) (*model.ApplicationPage, error) {
@@ -182,7 +182,7 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, page
 		}, nil
 	}
 
-	return s.appRepo.ListByScenarios(ctx, tenantUUID, scenarios, &pageSize, &cursor)
+	return s.appRepo.ListByScenarios(ctx, tenantUUID, scenarios, pageSize, cursor)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.Application, error) {
