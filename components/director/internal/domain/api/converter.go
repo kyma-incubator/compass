@@ -129,7 +129,7 @@ func (c *converter) apiSpecInputFromGraphQL(in *graphql.APISpecInput) *model.API
 func (c *converter) FromEntity(entity Entity) (model.APIDefinition, error) {
 	defaultAuth, err := unmarshallDefaultAuth(entity.DefaultAuth)
 	if err != nil {
-		return model.APIDefinition{}, errors.Wrap(err, "while converting APIDefinition")
+		return model.APIDefinition{}, err
 	}
 
 	return model.APIDefinition{
@@ -149,7 +149,7 @@ func (c *converter) FromEntity(entity Entity) (model.APIDefinition, error) {
 func (c *converter) ToEntity(apiModel model.APIDefinition) (Entity, error) {
 	defaultAuth, err := marshallDefaultAuth(apiModel.DefaultAuth)
 	if err != nil {
-		return Entity{}, errors.Wrap(err, "while converting APIDefinition")
+		return Entity{}, err
 	}
 
 	return Entity{
