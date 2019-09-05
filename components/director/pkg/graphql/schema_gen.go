@@ -2215,6 +2215,9 @@ type Query {
     """
     applicationsForRuntime(runtimeID: ID!, first: Int = 100, after: PageCursor): ApplicationPage!
 
+    """
+    Maximum ` + "`" + `first` + "`" + ` parameter value is 100
+    """
     runtimes(filter: [LabelFilter!], first: Int = 100, after: PageCursor): RuntimePage!
     runtime(id: ID!): Runtime
 
