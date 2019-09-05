@@ -1800,7 +1800,9 @@ type Application {
     status: ApplicationStatus!
     webhooks: [Webhook!]!
     healthCheckURL: String
-    """ group allows to find different versions of the same API """
+    """ group allows to find different versions of the same API
+    Maximum ` + "`" + `first` + "`" + ` parameter value is 100
+    """
     apis(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage!
     """ group allows to find different versions of the same event API """
     eventAPIs(group: String, first: Int = 100, after: PageCursor): EventAPIDefinitionPage!
@@ -2203,6 +2205,9 @@ input LabelFilter {
 
 
 type Query {
+    """
+    Maximum ` + "`" + `first` + "`" + ` parameter value is 100
+    """
     applications(filter: [LabelFilter!], first: Int = 100, after: PageCursor):  ApplicationPage!
     application(id: ID!): Application
     """
@@ -2210,6 +2215,9 @@ type Query {
     """
     applicationsForRuntime(runtimeID: ID!, first: Int = 100, after: PageCursor): ApplicationPage!
 
+    """
+    Maximum ` + "`" + `first` + "`" + ` parameter value is 100
+    """
     runtimes(filter: [LabelFilter!], first: Int = 100, after: PageCursor): RuntimePage!
     runtime(id: ID!): Runtime
 

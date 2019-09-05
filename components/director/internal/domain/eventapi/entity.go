@@ -13,8 +13,8 @@ type Entity struct {
 	Name        string         `db:"name"`
 	Description sql.NullString `db:"description"`
 	GroupName   sql.NullString `db:"group_name"`
-	*version.Version
-	*EntitySpec
+	version.Version
+	EntitySpec
 }
 
 type EntitySpec struct {

@@ -20,8 +20,8 @@ type ApplicationService interface {
 	Update(ctx context.Context, id string, in model.ApplicationInput) error
 	Get(ctx context.Context, id string) (*model.Application, error)
 	Delete(ctx context.Context, id string) error
-	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error)
-	ListByRuntimeID(ctx context.Context, runtimeUUID uuid.UUID, pageSize *int, cursor *string) (*model.ApplicationPage, error)
+	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
+	ListByRuntimeID(ctx context.Context, runtimeUUID uuid.UUID, pageSize int, cursor string) (*model.ApplicationPage, error)
 	SetLabel(ctx context.Context, label *model.LabelInput) error
 	GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error)
 	ListLabels(ctx context.Context, applicationID string) (map[string]*model.Label, error)
@@ -37,7 +37,7 @@ type ApplicationConverter interface {
 
 //go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
 type APIService interface {
-	List(ctx context.Context, applicationID string, pageSize *int, cursor *string) (*model.APIDefinitionPage, error)
+	List(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
 	Create(ctx context.Context, applicationID string, in model.APIDefinitionInput) (string, error)
 	Update(ctx context.Context, id string, in model.APIDefinitionInput) error
 	Delete(ctx context.Context, id string) error
@@ -135,8 +135,11 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 	if after != nil {
 		cursor = string(*after)
 	}
+	if first == nil {
+		return nil, errors.New("missing required parameter 'first'")
+	}
 
-	appPage, err := r.appSvc.List(ctx, labelFilter, first, &cursor)
+	appPage, err := r.appSvc.List(ctx, labelFilter, *first, cursor)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +186,11 @@ func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string,
 		return nil, errors.Wrap(err, "while converting runtimeID to UUID")
 	}
 
-	appPage, err := r.appSvc.ListByRuntimeID(ctx, runtimeUUID, first, &cursor)
+	if first == nil {
+		return nil, errors.New("missing required parameter 'first'")
+	}
+
+	appPage, err := r.appSvc.ListByRuntimeID(ctx, runtimeUUID, *first, cursor)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting all Application for Runtime")
 	}
@@ -355,12 +362,29 @@ func (r *Resolver) DeleteApplicationLabel(ctx context.Context, applicationID str
 }
 
 func (r *Resolver) Apis(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	var cursor string
 	if after != nil {
 		cursor = string(*after)
 	}
 
-	apisPage, err := r.apiSvc.List(ctx, obj.ID, first, &cursor)
+	if first == nil {
+		return nil, errors.New("missing required parameter 'first'")
+	}
+
+	apisPage, err := r.apiSvc.List(ctx, obj.ID, *first, cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}

@@ -36,7 +36,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.APIDefinitionConverter{}
 		convMock.On("FromEntity", apiDefEntity).Return(model.APIDefinition{ID: apiDefID, Tenant: tenantID}, nil).Once()
-		pgRepository := api.NewPostgresRepository(convMock)
+		pgRepository := api.NewRepository(convMock)
 		// WHEN
 		modelApiDef, err := pgRepository.GetByID(ctx, tenantID, apiDefID)
 		//THEN
@@ -60,7 +60,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.APIDefinitionConverter{}
 		convMock.On("FromEntity", apiDefEntity).Return(model.APIDefinition{}, testError).Once()
-		pgRepository := api.NewPostgresRepository(convMock)
+		pgRepository := api.NewRepository(convMock)
 		// WHEN
 		_, err := pgRepository.GetByID(ctx, tenantID, apiDefID)
 		//THEN
@@ -110,7 +110,7 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 		convMock := &automock.APIDefinitionConverter{}
 		convMock.On("FromEntity", firstApiDefEntity).Return(model.APIDefinition{ID: firstApiDefID}, nil)
 		convMock.On("FromEntity", secondApiDefEntity).Return(model.APIDefinition{ID: secondApiDefID}, nil)
-		pgRepository := api.NewPostgresRepository(convMock)
+		pgRepository := api.NewRepository(convMock)
 		// WHEN
 		modelAPIDef, err := pgRepository.ListByApplicationID(ctx, tenantID, appID, inputPageSize, inputCursor)
 		//THEN
@@ -141,7 +141,7 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 
 		convMock := &automock.APIDefinitionConverter{}
 		convMock.On("FromEntity", firstApiDefEntity).Return(model.APIDefinition{}, testErr).Once()
-		pgRepository := api.NewPostgresRepository(convMock)
+		pgRepository := api.NewRepository(convMock)
 		//WHEN
 		_, err := pgRepository.ListByApplicationID(ctx, tenantID, appID, inputPageSize, inputCursor)
 		//THEN
@@ -154,7 +154,7 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 
 func TestPgRepository_Create(t *testing.T) {
 	//GIVEN
-	apiDefModel := fixFullModelAPIDefinition("placeholder")
+	apiDefModel := fixFullAPIDefinitionModelWithRuntimeAuth("placeholder")
 	apiDefEntity := fixFullEntityAPIDefinition(apiDefID, "placeholder")
 	insertQuery := `^INSERT INTO "public"."api_definitions" \(.+\) VALUES \(.+\)$`
 
@@ -170,9 +170,9 @@ func TestPgRepository_Create(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := automock.APIDefinitionConverter{}
 		convMock.On("ToEntity", *apiDefModel).Return(apiDefEntity, nil).Once()
-		pgRepository := api.NewPostgresRepository(&convMock)
+		pgRepository := api.NewRepository(&convMock)
 		//WHEN
-		err = pgRepository.Create(ctx, tenantID, apiDefModel)
+		err = pgRepository.Create(ctx, apiDefModel)
 		//THEN
 		require.NoError(t, err)
 		sqlMock.AssertExpectations(t)
@@ -183,9 +183,9 @@ func TestPgRepository_Create(t *testing.T) {
 		ctx := context.TODO()
 		convMock := automock.APIDefinitionConverter{}
 		convMock.On("ToEntity", *apiDefModel).Return(api.Entity{}, errors.New("test error"))
-		pgRepository := api.NewPostgresRepository(&convMock)
+		pgRepository := api.NewRepository(&convMock)
 		// WHEN
-		err := pgRepository.Create(ctx, tenantID, apiDefModel)
+		err := pgRepository.Create(ctx, apiDefModel)
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "test error")
@@ -195,9 +195,9 @@ func TestPgRepository_Create(t *testing.T) {
 	t.Run("returns error when item is nil", func(t *testing.T) {
 		ctx := context.TODO()
 		convMock := automock.APIDefinitionConverter{}
-		pgRepository := api.NewPostgresRepository(&convMock)
+		pgRepository := api.NewRepository(&convMock)
 		// WHEN
-		err := pgRepository.Create(ctx, tenantID, nil)
+		err := pgRepository.Create(ctx, nil)
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "item cannot be nil")
@@ -211,8 +211,8 @@ func TestPgRepository_CreateMany(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		items := []*model.APIDefinition{fixFullModelAPIDefinition("first"),
-			fixFullModelAPIDefinition("second"), fixFullModelAPIDefinition("third")}
+		items := []*model.APIDefinition{fixFullAPIDefinitionModelWithRuntimeAuth("first"),
+			fixFullAPIDefinitionModelWithRuntimeAuth("second"), fixFullAPIDefinitionModelWithRuntimeAuth("third")}
 
 		convMock := &automock.APIDefinitionConverter{}
 		for _, item := range items {
@@ -221,9 +221,9 @@ func TestPgRepository_CreateMany(t *testing.T) {
 				WithArgs(fixAPICreateArgs(item.ID, fixDefaultAuth(), item)...).
 				WillReturnResult(sqlmock.NewResult(-1, 1))
 		}
-		pgRepository := api.NewPostgresRepository(convMock)
+		pgRepository := api.NewRepository(convMock)
 		//WHEN
-		err := pgRepository.CreateMany(ctx, tenantID, items)
+		err := pgRepository.CreateMany(ctx, items)
 		//THEN
 		require.NoError(t, err)
 		convMock.AssertExpectations(t)
@@ -233,15 +233,15 @@ func TestPgRepository_CreateMany(t *testing.T) {
 	t.Run("returns error when conversion from model to entity failed", func(t *testing.T) {
 		sqlxDB, _ := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		apiModel := fixFullModelAPIDefinition("api")
+		apiModel := fixFullAPIDefinitionModelWithRuntimeAuth("api")
 		require.NotNil(t, apiModel)
 		items := []*model.APIDefinition{apiModel}
 
 		convMock := automock.APIDefinitionConverter{}
 		convMock.On("ToEntity", *apiModel).Return(api.Entity{}, errors.New("test error"))
-		pgRepository := api.NewPostgresRepository(&convMock)
+		pgRepository := api.NewRepository(&convMock)
 		//WHEN
-		err := pgRepository.CreateMany(ctx, tenantID, items)
+		err := pgRepository.CreateMany(ctx, items)
 		//THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "test error")
@@ -257,7 +257,7 @@ func TestPgRepository_Update(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		apiModel := fixFullModelAPIDefinition("update")
+		apiModel := fixFullAPIDefinitionModelWithRuntimeAuth("update")
 		entity := fixFullEntityAPIDefinition(apiDefID, "update")
 
 		convMock := &automock.APIDefinitionConverter{}
@@ -268,9 +268,9 @@ func TestPgRepository_Update(t *testing.T) {
 				entity.VersionDepracatedSince, entity.VersionForRemoval, tenantID, entity.ID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		pgRepository := api.NewPostgresRepository(convMock)
+		pgRepository := api.NewRepository(convMock)
 		//WHEN
-		err := pgRepository.Update(ctx, tenantID, apiModel)
+		err := pgRepository.Update(ctx, apiModel)
 		//THEN
 		require.NoError(t, err)
 		convMock.AssertExpectations(t)
@@ -283,9 +283,9 @@ func TestPgRepository_Update(t *testing.T) {
 		apiModel := model.APIDefinition{}
 		convMock := &automock.APIDefinitionConverter{}
 		convMock.On("ToEntity", apiModel).Return(api.Entity{}, errors.New("test error")).Once()
-		pgRepository := api.NewPostgresRepository(convMock)
+		pgRepository := api.NewRepository(convMock)
 		//WHEN
-		err := pgRepository.Update(ctx, tenantID, &apiModel)
+		err := pgRepository.Update(ctx, &apiModel)
 		//THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "test error")
@@ -296,9 +296,9 @@ func TestPgRepository_Update(t *testing.T) {
 		sqlxDB, _ := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.APIDefinitionConverter{}
-		pgRepository := api.NewPostgresRepository(convMock)
+		pgRepository := api.NewRepository(convMock)
 		//WHEN
-		err := pgRepository.Update(ctx, tenantID, nil)
+		err := pgRepository.Update(ctx, nil)
 		//THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "item cannot be nil")
@@ -313,7 +313,7 @@ func TestPgRepository_Delete(t *testing.T) {
 
 	sqlMock.ExpectExec(deleteQuery).WithArgs(tenantID, apiDefID).WillReturnResult(sqlmock.NewResult(-1, 1))
 	convMock := &automock.APIDefinitionConverter{}
-	pgRepository := api.NewPostgresRepository(convMock)
+	pgRepository := api.NewRepository(convMock)
 	//WHEN
 	err := pgRepository.Delete(ctx, tenantID, apiDefID)
 	//THEN
@@ -329,7 +329,7 @@ func TestPgRepository_DeleteAllByApplicationID(t *testing.T) {
 
 	sqlMock.ExpectExec(deleteQuery).WithArgs(tenantID, appID).WillReturnResult(sqlmock.NewResult(-1, 1))
 	convMock := &automock.APIDefinitionConverter{}
-	pgRepository := api.NewPostgresRepository(convMock)
+	pgRepository := api.NewRepository(convMock)
 	//WHEN
 	err := pgRepository.DeleteAllByApplicationID(ctx, tenantID, appID)
 	//THEN
@@ -346,7 +346,7 @@ func TestPgRepository_Exists(t *testing.T) {
 
 	sqlMock.ExpectQuery(existQuery).WithArgs(tenantID, apiDefID).WillReturnRows(testdb.RowWhenObjectExist())
 	convMock := &automock.APIDefinitionConverter{}
-	pgRepository := api.NewPostgresRepository(convMock)
+	pgRepository := api.NewRepository(convMock)
 	//WHEN
 	found, err := pgRepository.Exists(ctx, tenantID, apiDefID)
 	//THEN

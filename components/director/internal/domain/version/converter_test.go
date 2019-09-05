@@ -1,7 +1,6 @@
 package version_test
 
 import (
-	"database/sql"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
@@ -94,22 +93,20 @@ func TestConverter_FromEntity(t *testing.T) {
 		versionEntity := *fixVersionEntity("v1.2", true, "v1.1", false)
 		versionConv := version.NewConverter()
 		//WHEN
-		versionModel, err := versionConv.FromEntity(versionEntity)
+		versionModel := versionConv.FromEntity(versionEntity)
 		//THEN
-		require.NoError(t, err)
-		assertVersion(t, versionEntity, versionModel)
+		require.NotNil(t, versionModel)
+		assertVersion(t, versionEntity, *versionModel)
 	})
 
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		// GIVEN
-		// value will be always valid, because model.Value is string.
-		versionEntity := version.Version{VersionValue: sql.NullString{Valid: true}}
+		versionEntity := version.Version{}
 		versionConv := version.NewConverter()
 		// WHEN
-		versionModel, err := versionConv.FromEntity(versionEntity)
+		versionModel := versionConv.FromEntity(versionEntity)
 		//THEN
-		require.NoError(t, err)
-		assertVersion(t, versionEntity, versionModel)
+		require.Nil(t, versionModel)
 
 	})
 }
@@ -118,9 +115,8 @@ func TestConverter_ToEntity(t *testing.T) {
 		versionModel := *fixModelVersion("v1.2", true, "v1.1", false)
 		versionConv := version.NewConverter()
 		//WHEN
-		versionEntity, err := versionConv.ToEntity(versionModel)
+		versionEntity := versionConv.ToEntity(versionModel)
 		//THEN
-		require.NoError(t, err)
 		assertVersion(t, versionEntity, versionModel)
 	})
 
@@ -128,9 +124,8 @@ func TestConverter_ToEntity(t *testing.T) {
 		versionModel := model.Version{}
 		versionConv := version.NewConverter()
 		//WHEN
-		versionEntity, err := versionConv.ToEntity(versionModel)
+		versionEntity := versionConv.ToEntity(versionModel)
 		//THEN
-		require.NoError(t, err)
 		assertVersion(t, versionEntity, versionModel)
 	})
 }
