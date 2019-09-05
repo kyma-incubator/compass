@@ -2,7 +2,7 @@
 
 scalar Any # -> interface{}
 
-scalar JSON # -> interface{}
+scalar JSON # -> String
 
 scalar Timestamp # -> time.Time
 

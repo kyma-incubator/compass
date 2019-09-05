@@ -17,15 +17,15 @@ const (
 
 var labeldefColumns = []string{"id", "tenant_id", "key", "schema"}
 
-type repo struct {
+type repository struct {
 	conv Converter
 }
 
-func NewRepository(conv Converter) *repo {
-	return &repo{conv: conv}
+func NewRepository(conv Converter) *repository {
+	return &repository{conv: conv}
 }
 
-func (r *repo) Create(ctx context.Context, def model.LabelDefinition) error {
+func (r *repository) Create(ctx context.Context, def model.LabelDefinition) error {
 	db, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
@@ -45,7 +45,7 @@ func (r *repo) Create(ctx context.Context, def model.LabelDefinition) error {
 	return nil
 }
 
-func (r *repo) prefixEveryWithColon(in []string) []string {
+func (r *repository) prefixEveryWithColon(in []string) []string {
 	out := make([]string, 0)
 	for _, elem := range in {
 		out = append(out, ":"+elem)
@@ -53,7 +53,7 @@ func (r *repo) prefixEveryWithColon(in []string) []string {
 	return out
 }
 
-func (r *repo) GetByKey(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error) {
+func (r *repository) GetByKey(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error) {
 	db, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func (r *repo) GetByKey(ctx context.Context, tenant string, key string) (*model.
 	return &ld, nil
 }
 
-func (r *repo) Exists(ctx context.Context, tenant string, key string) (bool, error) {
+func (r *repository) Exists(ctx context.Context, tenant string, key string) (bool, error) {
 	db, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return false, err
@@ -96,7 +96,7 @@ func (r *repo) Exists(ctx context.Context, tenant string, key string) (bool, err
 	return true, nil
 }
 
-func (r *repo) List(ctx context.Context, tenant string) ([]model.LabelDefinition, error) {
+func (r *repository) List(ctx context.Context, tenant string) ([]model.LabelDefinition, error) {
 	db, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return nil, err
@@ -120,7 +120,7 @@ func (r *repo) List(ctx context.Context, tenant string) ([]model.LabelDefinition
 	return out, nil
 }
 
-func (r *repo) Update(ctx context.Context, def model.LabelDefinition) error {
+func (r *repository) Update(ctx context.Context, def model.LabelDefinition) error {
 	db, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return errors.Wrap(err, "while fetching persistence from context")
@@ -149,7 +149,7 @@ func (r *repo) Update(ctx context.Context, def model.LabelDefinition) error {
 	return nil
 }
 
-func (r *repo) DeleteByKey(ctx context.Context, tenant, key string) error {
+func (r *repository) DeleteByKey(ctx context.Context, tenant, key string) error {
 	db, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err

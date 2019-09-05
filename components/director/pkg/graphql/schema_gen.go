@@ -1734,7 +1734,7 @@ var parsedSchema = gqlparser.MustLoadSchema(
 
 scalar Any # -> interface{}
 
-scalar JSON # -> interface{}
+scalar JSON # -> String
 
 scalar Timestamp # -> time.Time
 
@@ -5518,10 +5518,10 @@ func (ec *executionContext) _LabelDefinition_schema(ctx context.Context, field g
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*interface{})
+	res := resTmp.(*JSON)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOJSON2ᚖinterface(ctx, field.Selections, res)
+	return ec.marshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_createApplication(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -8813,7 +8813,7 @@ func (ec *executionContext) unmarshalInputLabelDefinitionInput(ctx context.Conte
 			}
 		case "schema":
 			var err error
-			it.Schema, err = ec.unmarshalOJSON2ᚖinterface(ctx, v)
+			it.Schema, err = ec.unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -12390,33 +12390,28 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return ec.marshalOInt2int(ctx, sel, *v)
 }
 
-func (ec *executionContext) unmarshalOJSON2interface(ctx context.Context, v interface{}) (interface{}, error) {
+func (ec *executionContext) unmarshalOJSON2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx context.Context, v interface{}) (JSON, error) {
+	tmp, err := graphql.UnmarshalString(v)
+	return JSON(tmp), err
+}
+
+func (ec *executionContext) marshalOJSON2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx context.Context, sel ast.SelectionSet, v JSON) graphql.Marshaler {
+	return graphql.MarshalString(string(v))
+}
+
+func (ec *executionContext) unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx context.Context, v interface{}) (*JSON, error) {
 	if v == nil {
 		return nil, nil
 	}
-	return UnmarshalJSON(v)
-}
-
-func (ec *executionContext) marshalOJSON2interface(ctx context.Context, sel ast.SelectionSet, v interface{}) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return MarshalJSON(v)
-}
-
-func (ec *executionContext) unmarshalOJSON2ᚖinterface(ctx context.Context, v interface{}) (*interface{}, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOJSON2interface(ctx, v)
+	res, err := ec.unmarshalOJSON2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOJSON2ᚖinterface(ctx context.Context, sel ast.SelectionSet, v *interface{}) graphql.Marshaler {
+func (ec *executionContext) marshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx context.Context, sel ast.SelectionSet, v *JSON) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec.marshalOJSON2interface(ctx, sel, *v)
+	return ec.marshalOJSON2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, sel, *v)
 }
 
 func (ec *executionContext) marshalOLabelDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelDefinition(ctx context.Context, sel ast.SelectionSet, v LabelDefinition) graphql.Marshaler {

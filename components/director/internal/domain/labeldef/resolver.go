@@ -28,8 +28,8 @@ func NewResolver(srv Service, conv Converter, transactioner persistence.Transact
 // dependencies
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
-	FromGraphQL(input graphql.LabelDefinitionInput, tenant string) model.LabelDefinition
-	ToGraphQL(definition model.LabelDefinition) graphql.LabelDefinition
+	FromGraphQL(input graphql.LabelDefinitionInput, tenant string) (model.LabelDefinition, error)
+	ToGraphQL(definition model.LabelDefinition) (graphql.LabelDefinition, error)
 	ToEntity(in model.LabelDefinition) (Entity, error)
 	FromEntity(in Entity) (model.LabelDefinition, error)
 }
@@ -58,7 +58,11 @@ func (r *Resolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDe
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	// TODO: Use LabelDefinitionInput
-	ld := r.conv.FromGraphQL(in, tnt)
+	ld, err := r.conv.FromGraphQL(in, tnt)
+	if err != nil {
+		return nil, err
+	}
+
 	createdLd, err := r.srv.Create(ctx, ld)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating label definition")
@@ -66,7 +70,10 @@ func (r *Resolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDe
 	if err := tx.Commit(); err != nil {
 		return nil, errors.Wrap(err, "while committing transaction")
 	}
-	out := r.conv.ToGraphQL(createdLd)
+	out, err := r.conv.ToGraphQL(createdLd)
+	if err != nil {
+		return nil, err
+	}
 
 	return &out, nil
 }
@@ -95,7 +102,11 @@ func (r *Resolver) LabelDefinitions(ctx context.Context) ([]*graphql.LabelDefini
 
 	var out []*graphql.LabelDefinition
 	for _, def := range defs {
-		c := r.conv.ToGraphQL(def)
+		c, err := r.conv.ToGraphQL(def)
+		if err != nil {
+			return nil, err
+		}
+
 		out = append(out, &c)
 	}
 	return out, nil
@@ -125,7 +136,10 @@ func (r *Resolver) LabelDefinition(ctx context.Context, key string) (*graphql.La
 	if def == nil {
 		return nil, fmt.Errorf("label definition with key '%s' does not exist", key)
 	}
-	c := r.conv.ToGraphQL(*def)
+	c, err := r.conv.ToGraphQL(*def)
+	if err != nil {
+		return nil, err
+	}
 	return &c, nil
 }
 
@@ -144,7 +158,10 @@ func (r *Resolver) UpdateLabelDefinition(ctx context.Context, in graphql.LabelDe
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	// TODO: Use LabelDefinitionInput
-	ld := r.conv.FromGraphQL(in, tnt)
+	ld, err := r.conv.FromGraphQL(in, tnt)
+	if err != nil {
+		return nil, err
+	}
 
 	err = r.srv.Update(ctx, ld)
 	if err != nil {
@@ -160,7 +177,10 @@ func (r *Resolver) UpdateLabelDefinition(ctx context.Context, in graphql.LabelDe
 		return nil, errors.Wrap(err, "while committing transaction")
 	}
 
-	out := r.conv.ToGraphQL(*updatedLd)
+	out, err := r.conv.ToGraphQL(*updatedLd)
+	if err != nil {
+		return nil, err
+	}
 
 	return &out, nil
 }
@@ -191,7 +211,10 @@ func (r *Resolver) DeleteLabelDefinition(ctx context.Context, key string, delete
 		return nil, fmt.Errorf("Label Definition with key %s not found", key)
 	}
 
-	deletedLD := r.conv.ToGraphQL(*ld)
+	deletedLD, err := r.conv.ToGraphQL(*ld)
+	if err != nil {
+		return nil, err
+	}
 
 	err = r.srv.Delete(ctx, tnt, key, *deleteRelatedLabels)
 	if err != nil {

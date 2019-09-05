@@ -3,7 +3,6 @@ package labeldef
 import (
 	"database/sql"
 	"encoding/json"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pkg/errors"
@@ -15,19 +14,37 @@ func NewConverter() *converter {
 
 type converter struct{}
 
-func (c *converter) FromGraphQL(input graphql.LabelDefinitionInput, tenant string) model.LabelDefinition {
+func (c *converter) FromGraphQL(input graphql.LabelDefinitionInput, tenant string) (model.LabelDefinition, error) {
+	var schema interface{}
+	if input.Schema != nil {
+		err := json.Unmarshal([]byte(*input.Schema), &schema)
+		if err != nil {
+			return model.LabelDefinition{}, err
+		}
+	}
+
 	return model.LabelDefinition{
 		Key:    input.Key,
-		Schema: input.Schema,
+		Schema: &schema,
 		Tenant: tenant,
-	}
+	}, nil
 }
 
-func (c *converter) ToGraphQL(in model.LabelDefinition) graphql.LabelDefinition {
+func (c *converter) ToGraphQL(in model.LabelDefinition) (graphql.LabelDefinition, error) {
+	var jsonSchema graphql.JSON
+	if in.Schema != nil {
+		schema, err := json.Marshal(in.Schema)
+		if err != nil {
+			return graphql.LabelDefinition{}, err
+		}
+		jsonSchema = graphql.JSON(string(schema))
+
+	}
+
 	return graphql.LabelDefinition{
 		Key:    in.Key,
-		Schema: in.Schema,
-	}
+		Schema: &jsonSchema,
+	}, nil
 }
 
 func (c *converter) ToEntity(in model.LabelDefinition) (Entity, error) {

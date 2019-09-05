@@ -8,9 +8,16 @@ import (
 	"io"
 )
 
-type JSON interface{}
+type JSON string
 
-func MarshalJSON(v interface{}) graphql.Marshaler {
+func UnmarshalGQL(v interface{}) (interface{}, error) {
+	if v == nil {
+		return nil, errors.New("input should not be nil")
+	}
+	return v, nil
+}
+
+func MarshalGQL(v interface{}) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		err := json.NewEncoder(w).Encode(v)
 		if err != nil {
@@ -18,11 +25,4 @@ func MarshalJSON(v interface{}) graphql.Marshaler {
 			return
 		}
 	})
-}
-
-func UnmarshalJSON(v interface{}) (interface{}, error) {
-	if v == nil {
-		return nil, errors.New("input should not be nil")
-	}
-	return v, nil
 }
