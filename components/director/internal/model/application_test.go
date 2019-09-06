@@ -3,6 +3,7 @@ package model_test
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -16,6 +17,7 @@ func TestApplicationInput_ToApplication(t *testing.T) {
 	desc := "Sample"
 	id := "foo"
 	tenant := "sample"
+	timestamp := time.Now()
 	testCases := []struct {
 		Name     string
 		Input    *model.ApplicationInput
@@ -39,6 +41,10 @@ func TestApplicationInput_ToApplication(t *testing.T) {
 				Tenant:         tenant,
 				Description:    &desc,
 				HealthCheckURL: &url,
+				Status: &model.ApplicationStatus{
+					Timestamp: timestamp,
+					Condition: model.ApplicationStatusConditionUnknown,
+				},
 			},
 		},
 		{
@@ -52,7 +58,7 @@ func TestApplicationInput_ToApplication(t *testing.T) {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToApplication(id, tenant)
+			result := testCase.Input.ToApplication(timestamp, model.ApplicationStatusConditionUnknown, id, tenant)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

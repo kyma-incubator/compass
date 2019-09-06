@@ -139,7 +139,24 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 		return nil, errors.New("missing required parameter 'first'")
 	}
 
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	if first == nil {
+		return nil, errors.New("missing required parameter 'first'")
+	}
+
 	appPage, err := r.appSvc.List(ctx, labelFilter, *first, cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +176,20 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 }
 
 func (r *Resolver) Application(ctx context.Context, id string) (*graphql.Application, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	app, err := r.appSvc.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}
@@ -180,6 +210,10 @@ func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string,
 	defer r.transact.RollbackUnlessCommited(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
+
+	if first == nil {
+		return nil, errors.New("missing required parameter 'first'")
+	}
 
 	runtimeUUID, err := uuid.Parse(runtimeID)
 	if err != nil {

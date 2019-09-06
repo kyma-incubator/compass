@@ -17,7 +17,7 @@ import (
 func TestCreateLabelWithoutLabelDefinition(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	name := "create-label-without-label-definition"
+	name := "label-without-label-def"
 	application := createApplication(t, ctx, name)
 	defer deleteApplication(t, application.ID)
 
@@ -56,7 +56,7 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	applicationName := "create-label-with-existing-label-definition"
+	applicationName := "label-with-existing-label-def"
 
 	t.Log("Create LabelDefinition")
 	labelKey := "foo"
@@ -106,8 +106,8 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 
 		//THEN
 		require.Error(t, err)
-		errMsg := fmt.Sprintf("graphql: while creating label for Application: while validating Label value for '%s': while validating value %d against JSON Schema: map[properties:map[foo:map[description:foo type:string]] required:[foo] title:foobarbaz type:object]: (root): Invalid type. Expected: object, given: integer", labelKey, invalidLabelValue)
-		assert.EqualError(t, err, errMsg)
+		errMsg := fmt.Sprintf("graphql: while creating label for Application: while validating Label value for '%s': while validating value %d against JSON Schema", labelKey, invalidLabelValue)
+		assert.Contains(t, err.Error(), errMsg)
 		saveQueryInExamples(t, createLabelDefinitionRequest.Query(), "create label definition")
 
 	})
@@ -797,7 +797,7 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
 	tenantID := uuid.New().String()
-	name := "test-deleting-last-scenario-for-application-should-fail"
+	name := "deleting-last-scenario-for-app-fail"
 	scenarios := []string{"DEFAULT", "Christmas", "New Year"}
 
 	scenarioSchema := map[string]interface{}{

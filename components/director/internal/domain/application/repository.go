@@ -8,66 +8,96 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/persistence"
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/pkg/errors"
 )
 
-type inMemoryRepository struct {
-	store map[string]*model.Application
+const applicationTable string = `public.applications`
+
+var applicationColumns = []string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url"}
+
+//go:generate mockery -name=EntityConverter -output=automock -outpkg=automock -case=underscore
+type EntityConverter interface {
+	ToEntity(in *model.Application) (*Entity, error)
+	FromEntity(entity *Entity) *model.Application
 }
 
-func NewRepository() *inMemoryRepository {
-	return &inMemoryRepository{store: make(map[string]*model.Application)}
+type pgRepository struct {
+	*repo.ExistQuerier
+	*repo.SingleGetter
+	*repo.Deleter
+	*repo.PageableQuerier
+	*repo.Creator
+	*repo.Updater
+	conv EntityConverter
 }
 
-func (r *inMemoryRepository) GetByID(ctx context.Context, tenant, id string) (*model.Application, error) {
-	application := r.store[id]
+func NewRepository(conv EntityConverter) *pgRepository {
+	return &pgRepository{
+		ExistQuerier:    repo.NewExistQuerier(applicationTable, "tenant_id"),
+		SingleGetter:    repo.NewSingleGetter(applicationTable, "tenant_id", applicationColumns),
+		Deleter:         repo.NewDeleter(applicationTable, "tenant_id"),
+		PageableQuerier: repo.NewPageableQuerier(applicationTable, "tenant_id", applicationColumns),
+		Creator:         repo.NewCreator(applicationTable, applicationColumns),
+		Updater:         repo.NewUpdater(applicationTable, []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url"}, "tenant_id", []string{"id"}),
+		conv:            conv,
+	}
+}
 
-	if application == nil || application.Tenant != tenant {
-		return nil, errors.New("application not found")
+func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
+	return r.ExistQuerier.Exists(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
+}
+
+func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
+	return r.Deleter.DeleteOne(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
+}
+
+func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Application, error) {
+	var appEnt Entity
+	if err := r.SingleGetter.Get(ctx, tenant, repo.Conditions{{Field: "id", Val: id}}, &appEnt); err != nil {
+		return nil, err
 	}
 
-	return application, nil
+	appModel := r.conv.FromEntity(&appEnt)
+
+	return appModel, nil
 }
 
-//TODO: remove this function after migrating to Database
-func (r *inMemoryRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
-	application := r.store[id]
-
-	if application == nil || application.Tenant != tenant {
-		return false, nil
+func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
+	var appsCollection EntityCollection
+	tenantID, err := uuid.Parse(tenant)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing tenant as UUID")
+	}
+	filterSubquery, err := label.FilterQuery(model.ApplicationLabelableObject, label.IntersectSet, tenantID, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while building filter query")
+	}
+	var additionalConditions string
+	if filterSubquery != "" {
+		additionalConditions = fmt.Sprintf(`"id" IN (%s)`, filterSubquery)
 	}
 
-	return true, nil
-}
+	page, totalCount, err := r.PageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &appsCollection, additionalConditions)
 
-// TODO: Make filtering and paging
-func (r *inMemoryRepository) List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
+	if err != nil {
+		return nil, err
+	}
+
 	var items []*model.Application
-	for _, item := range r.store {
-		if item.Tenant == tenant {
-			items = append(items, item)
-		}
-	}
 
+	for _, appEnt := range appsCollection {
+		m := r.conv.FromEntity(&appEnt)
+		items = append(items, m)
+	}
 	return &model.ApplicationPage{
 		Data:       items,
-		TotalCount: len(items),
-		PageInfo: &pagination.Page{
-			StartCursor: "",
-			EndCursor:   "",
-			HasNextPage: false,
-		},
-	}, nil
+		TotalCount: totalCount,
+		PageInfo:   page}, nil
 }
 
-// TODO: add pagination when PR-181 is merged
-func (r *inMemoryRepository) ListByScenarios(ctx context.Context, tenantUUID uuid.UUID, scenarios []string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
-	persist, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "while fetching DB from context")
-	}
+func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, scenarios []string, pageSize int, cursor string) (*model.ApplicationPage, error) {
+	var appsCollection EntityCollection
 
 	var scenariosFilers []*labelfilter.LabelFilter
 
@@ -76,98 +106,57 @@ func (r *inMemoryRepository) ListByScenarios(ctx context.Context, tenantUUID uui
 		scenariosFilers = append(scenariosFilers, &labelfilter.LabelFilter{Key: model.ScenariosKey, Query: &query})
 	}
 
-	stmt, err := label.FilterQuery(model.ApplicationLabelableObject, label.UnionSet, tenantUUID, scenariosFilers)
+	scenariosSubquery, err := label.FilterQuery(model.ApplicationLabelableObject, label.UnionSet, tenant, scenariosFilers)
 	if err != nil {
-		return nil, errors.Wrap(err, "while creating filter query")
+		return nil, errors.Wrap(err, "while creating scenarios filter query")
 	}
 
-	var apps []string
+	var additionalConditions string
+	if scenariosSubquery != "" {
+		additionalConditions = fmt.Sprintf(`"id" IN (%s)`, scenariosSubquery)
+	}
 
-	err = persist.Select(&apps, stmt)
+	page, totalCount, err := r.PageableQuerier.List(ctx, tenant.String(), pageSize, cursor, "id", &appsCollection, additionalConditions)
 
 	if err != nil {
-		return &model.ApplicationPage{
-			Data:       []*model.Application{},
-			TotalCount: 0,
-			PageInfo: &pagination.Page{
-				StartCursor: "",
-				EndCursor:   "",
-				HasNextPage: false,
-			}}, nil
+		return nil, err
 	}
 
 	var items []*model.Application
 
-	for _, id := range apps {
-		app, found := r.store[id]
-		if found {
-			items = append(items, app)
-		}
+	for _, appEnt := range appsCollection {
+		m := r.conv.FromEntity(&appEnt)
+		items = append(items, m)
 	}
-
 	return &model.ApplicationPage{
 		Data:       items,
-		TotalCount: len(items),
-		PageInfo: &pagination.Page{
-			StartCursor: "",
-			EndCursor:   "",
-			HasNextPage: false,
-		},
-	}, nil
+		TotalCount: totalCount,
+		PageInfo:   page}, nil
 }
 
-func (r *inMemoryRepository) Create(ctx context.Context, item *model.Application) error {
-	if item == nil {
-		return errors.New("item can not be empty")
+func (r *pgRepository) Create(ctx context.Context, model *model.Application) error {
+	if model == nil {
+		return errors.New("model can not be empty")
 	}
 
-	found := r.findApplicationNameWithinTenant(item.Tenant, item.Name)
-	if found {
-		return errors.New("Application name is not unique within tenant")
+	appEnt, err := r.conv.ToEntity(model)
+	if err != nil {
+		return errors.Wrap(err, "while converting to Application entity")
 	}
 
-	r.store[item.ID] = item
-
-	return nil
+	return r.Creator.Create(ctx, appEnt)
 }
 
-func (r *inMemoryRepository) Update(ctx context.Context, item *model.Application) error {
-	if item == nil {
-		return errors.New("item can not be empty")
+func (r *pgRepository) Update(ctx context.Context, model *model.Application) error {
+	if model == nil {
+		return errors.New("model can not be empty")
 	}
 
-	oldApplication := r.store[item.ID]
-	if oldApplication == nil {
-		return errors.New("application not found")
+	appEnt, err := r.conv.ToEntity(model)
+
+	if err != nil {
+		return errors.Wrap(err, "while converting to Application entity")
 	}
 
-	if oldApplication.Name != item.Name {
-		found := r.findApplicationNameWithinTenant(item.Tenant, item.Name)
-		if found {
-			return errors.New("Application name is not unique within tenant")
-		}
-	}
-
-	r.store[item.ID] = item
-
-	return nil
-}
-
-func (r *inMemoryRepository) Delete(ctx context.Context, item *model.Application) error {
-	if item == nil {
-		return nil
-	}
-
-	delete(r.store, item.ID)
-
-	return nil
-}
-
-func (r *inMemoryRepository) findApplicationNameWithinTenant(tenant, name string) bool {
-	for _, app := range r.store {
-		if app.Name == name && app.Tenant == tenant {
-			return true
-		}
-	}
-	return false
+	return r.Updater.UpdateSingle(ctx, appEnt)
 }
