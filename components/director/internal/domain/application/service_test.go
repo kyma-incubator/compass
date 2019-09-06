@@ -237,6 +237,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Returns errors when ensuring scenarios label definition failed",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
+				repo.On("Create", ctx, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
@@ -306,7 +307,6 @@ func TestService_Create(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
 				return repo
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
