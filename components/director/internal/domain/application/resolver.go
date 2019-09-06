@@ -53,7 +53,7 @@ type APIConverter interface {
 
 //go:generate mockery -name=EventAPIService -output=automock -outpkg=automock -case=underscore
 type EventAPIService interface {
-	List(ctx context.Context, applicationID string, pageSize *int, cursor *string) (*model.EventAPIDefinitionPage, error)
+	List(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.EventAPIDefinitionPage, error)
 	Create(ctx context.Context, applicationID string, in model.EventAPIDefinitionInput) (string, error)
 	Update(ctx context.Context, id string, in model.EventAPIDefinitionInput) error
 	Delete(ctx context.Context, id string) error
@@ -437,12 +437,28 @@ func (r *Resolver) Apis(ctx context.Context, obj *graphql.Application, group *st
 	}, nil
 }
 func (r *Resolver) EventAPIs(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.EventAPIDefinitionPage, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	var cursor string
 	if after != nil {
 		cursor = string(*after)
 	}
 
-	eventAPIPage, err := r.eventAPISvc.List(ctx, obj.ID, first, &cursor)
+	if first == nil {
+		return nil, errors.New("missing required parameter 'first'")
+	}
+
+	eventAPIPage, err := r.eventAPISvc.List(ctx, obj.ID, *first, cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}

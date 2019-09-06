@@ -33,10 +33,11 @@ func TestResolver_AddEventAPI(t *testing.T) {
 	gqlAPIInput := fixGQLEventAPIDefinitionInput()
 	modelAPIInput := fixModelEventAPIDefinitionInput()
 
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
 	testCases := []struct {
 		Name            string
-		PersistenceFn   func() *persistenceautomock.PersistenceTx
-		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn       func() *automock.EventAPIService
 		AppServiceFn    func() *automock.ApplicationService
 		ConverterFn     func() *automock.EventAPIConverter
@@ -45,8 +46,7 @@ func TestResolver_AddEventAPI(t *testing.T) {
 	}{
 		{
 			Name:            "Success",
-			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
-			TransactionerFn: txtest.TransactionerThatSucceeds,
+			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
 				svc.On("Create", contextParam, appId, *modelAPIInput).Return(id, nil).Once()
@@ -68,9 +68,26 @@ func TestResolver_AddEventAPI(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
+			Name:            "Return error when starting transaction fails",
+			TransactionerFn: txGen.ThatFailsOnBegin,
+			ServiceFn: func() *automock.EventAPIService {
+				svc := &automock.EventAPIService{}
+				return svc
+			},
+			AppServiceFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				return appSvc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				return conv
+			},
+			ExpectedAPI: nil,
+			ExpectedErr: testErr,
+		},
+		{
 			Name:            "Returns error when application not exist",
-			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
-			TransactionerFn: txtest.TransactionerThatSucceeds,
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
 				return svc
@@ -90,8 +107,7 @@ func TestResolver_AddEventAPI(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when application existence check failed",
-			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
-			TransactionerFn: txtest.TransactionerThatSucceeds,
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
 				return svc
@@ -111,8 +127,7 @@ func TestResolver_AddEventAPI(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when EventAPI creation failed",
-			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
-			TransactionerFn: txtest.TransactionerThatSucceeds,
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
 				svc.On("Create", contextParam, appId, *modelAPIInput).Return("", testErr).Once()
@@ -133,12 +148,33 @@ func TestResolver_AddEventAPI(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when EventAPI retrieval failed",
-			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
-			TransactionerFn: txtest.TransactionerThatSucceeds,
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
 				svc.On("Create", contextParam, appId, *modelAPIInput).Return(id, nil).Once()
 				svc.On("Get", contextParam, id).Return(nil, testErr).Once()
+				return svc
+			},
+			AppServiceFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Exist", contextParam, appId).Return(true, nil)
+				return appSvc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
+				return conv
+			},
+			ExpectedAPI: nil,
+			ExpectedErr: testErr,
+		},
+		{
+			Name:            "Return error when commit transaction fails",
+			TransactionerFn: txGen.ThatFailsOnCommit,
+			ServiceFn: func() *automock.EventAPIService {
+				svc := &automock.EventAPIService{}
+				svc.On("Create", contextParam, appId, *modelAPIInput).Return(id, nil).Once()
+				svc.On("Get", contextParam, id).Return(modelAPI, nil).Once()
 				return svc
 			},
 			AppServiceFn: func() *automock.ApplicationService {
@@ -159,8 +195,7 @@ func TestResolver_AddEventAPI(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// given
-			persistTx := testCase.PersistenceFn()
-			tx := testCase.TransactionerFn(persistTx)
+			persistance, tx := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 			appSvc := testCase.AppServiceFn()
@@ -178,7 +213,7 @@ func TestResolver_AddEventAPI(t *testing.T) {
 				require.Nil(t, err)
 			}
 
-			persistTx.AssertExpectations(t)
+			persistance.AssertExpectations(t)
 			tx.AssertExpectations(t)
 			svc.AssertExpectations(t)
 			appSvc.AssertExpectations(t)
@@ -195,19 +230,23 @@ func TestResolver_DeleteEventAPI(t *testing.T) {
 	modelAPIDefinition := fixMinModelEventAPIDefinition(id, "placeholder")
 	gqlAPIDefinition := fixGQLEventAPIDefinition(id, "placeholder")
 
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
 	testCases := []struct {
-		Name        string
-		ServiceFn   func() *automock.EventAPIService
-		ConverterFn func() *automock.EventAPIConverter
-		ExpectedAPI *graphql.EventAPIDefinition
-		ExpectedErr error
+		Name            string
+		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn       func() *automock.EventAPIService
+		ConverterFn     func() *automock.EventAPIConverter
+		ExpectedAPI     *graphql.EventAPIDefinition
+		ExpectedErr     error
 	}{
 		{
-			Name: "Success",
+			Name:            "Success",
+			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
-				svc.On("Get", context.TODO(), id).Return(modelAPIDefinition, nil).Once()
-				svc.On("Delete", context.TODO(), id).Return(nil).Once()
+				svc.On("Get", contextParam, id).Return(modelAPIDefinition, nil).Once()
+				svc.On("Delete", contextParam, id).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.EventAPIConverter {
@@ -219,10 +258,10 @@ func TestResolver_DeleteEventAPI(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "Returns error when EventAPI retrieval failed",
+			Name:            "Return error when starting transaction fails",
+			TransactionerFn: txGen.ThatFailsOnBegin,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
-				svc.On("Get", context.TODO(), id).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.EventAPIConverter {
@@ -233,11 +272,44 @@ func TestResolver_DeleteEventAPI(t *testing.T) {
 			ExpectedErr: testErr,
 		},
 		{
-			Name: "Returns error when API deletion failed",
+			Name:            "Returns error when EventAPI retrieval failed",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
-				svc.On("Get", context.TODO(), id).Return(modelAPIDefinition, nil).Once()
-				svc.On("Delete", context.TODO(), id).Return(testErr).Once()
+				svc.On("Get", contextParam, id).Return(nil, testErr).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				return conv
+			},
+			ExpectedAPI: nil,
+			ExpectedErr: testErr,
+		},
+		{
+			Name:            "Returns error when API deletion failed",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.EventAPIService {
+				svc := &automock.EventAPIService{}
+				svc.On("Get", contextParam, id).Return(modelAPIDefinition, nil).Once()
+				svc.On("Delete", contextParam, id).Return(testErr).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				conv.On("ToGraphQL", modelAPIDefinition).Return(gqlAPIDefinition).Once()
+				return conv
+			},
+			ExpectedAPI: nil,
+			ExpectedErr: testErr,
+		},
+		{
+			Name:            "Return error when commit transaction fails",
+			TransactionerFn: txGen.ThatFailsOnCommit,
+			ServiceFn: func() *automock.EventAPIService {
+				svc := &automock.EventAPIService{}
+				svc.On("Get", contextParam, id).Return(modelAPIDefinition, nil).Once()
+				svc.On("Delete", contextParam, id).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.EventAPIConverter {
@@ -253,10 +325,11 @@ func TestResolver_DeleteEventAPI(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// given
+			persistance, tx := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := eventapi.NewResolver(nil, svc, nil, converter, nil)
+			resolver := eventapi.NewResolver(tx, svc, nil, converter, nil)
 
 			// when
 			result, err := resolver.DeleteEventAPI(context.TODO(), id)
@@ -265,6 +338,8 @@ func TestResolver_DeleteEventAPI(t *testing.T) {
 			assert.Equal(t, testCase.ExpectedAPI, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
+			persistance.AssertExpectations(t)
+			tx.AssertExpectations(t)
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)
 		})
@@ -281,10 +356,11 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 	gqlAPIDefinition := fixGQLEventAPIDefinition(id, "placeholder")
 	modelAPIDefinition := fixMinModelEventAPIDefinition(id, "placeholder")
 
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
 	testCases := []struct {
 		Name                  string
-		PersistenceFn         func() *persistenceautomock.PersistenceTx
-		TransactionerFn       func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		TransactionerFn       func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn             func() *automock.EventAPIService
 		ConverterFn           func() *automock.EventAPIConverter
 		InputWebhookID        string
@@ -294,8 +370,7 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 	}{
 		{
 			Name:            "Success",
-			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
-			TransactionerFn: txtest.TransactionerThatSucceeds,
+			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
 				svc.On("Update", contextParam, id, *modelAPIDefinitionInput).Return(nil).Once()
@@ -314,9 +389,22 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 			ExpectedErr:           nil,
 		},
 		{
+			Name:            "Return error when starting transaction fails",
+			TransactionerFn: txGen.ThatFailsOnBegin,
+			ServiceFn: func() *automock.EventAPIService {
+				svc := &automock.EventAPIService{}
+				return svc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				return conv
+			},
+			ExpectedAPIDefinition: nil,
+			ExpectedErr:           testErr,
+		},
+		{
 			Name:            "Returns error when EventAPI update failed",
-			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
-			TransactionerFn: txtest.TransactionerThatSucceeds,
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
 				svc.On("Update", contextParam, id, *modelAPIDefinitionInput).Return(testErr).Once()
@@ -334,8 +422,7 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when EventAPI retrieval failed",
-			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
-			TransactionerFn: txtest.TransactionerThatSucceeds,
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
 				svc.On("Update", contextParam, id, *modelAPIDefinitionInput).Return(nil).Once()
@@ -352,13 +439,30 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 			ExpectedAPIDefinition: nil,
 			ExpectedErr:           testErr,
 		},
+		{
+			Name:            "Return error when commit transaction fails",
+			TransactionerFn: txGen.ThatFailsOnCommit,
+			ServiceFn: func() *automock.EventAPIService {
+				svc := &automock.EventAPIService{}
+				svc.On("Update", contextParam, id, *modelAPIDefinitionInput).Return(nil).Once()
+				svc.On("Get", contextParam, id).Return(modelAPIDefinition, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				conv.On("InputFromGraphQL", gqlAPIDefinitionInput).Return(modelAPIDefinitionInput).Once()
+				conv.On("ToGraphQL", modelAPIDefinition).Return(gqlAPIDefinition).Once()
+				return conv
+			},
+			ExpectedAPIDefinition: nil,
+			ExpectedErr:           testErr,
+		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// given
-			persistTx := testCase.PersistenceFn()
-			tx := testCase.TransactionerFn(persistTx)
+			persistance, tx := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
@@ -371,7 +475,7 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 			assert.Equal(t, testCase.ExpectedAPIDefinition, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
-			persistTx.AssertExpectations(t)
+			persistance.AssertExpectations(t)
 			tx.AssertExpectations(t)
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)

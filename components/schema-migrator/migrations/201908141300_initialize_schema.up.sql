@@ -115,7 +115,8 @@ CREATE TABLE event_api_definitions (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     tenant_id uuid NOT NULL,
     app_id uuid NOT NULL,
-    foreign key (tenant_id, app_id) references applications (tenant_id, id) ON DELETE CASCADE,
+--     TODO: uncomment when application is moved to sql
+--     foreign key (tenant_id, app_id) references applications (tenant_id, id) ON DELETE CASCADE,
     name varchar(256) NOT NULL,
     description text,
     group_name varchar(256),

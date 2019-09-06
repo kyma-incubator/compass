@@ -2,6 +2,7 @@
 
 package automock
 
+import context "context"
 import mock "github.com/stretchr/testify/mock"
 import model "github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -10,13 +11,13 @@ type EventAPIRepository struct {
 	mock.Mock
 }
 
-// CreateMany provides a mock function with given fields: items
-func (_m *EventAPIRepository) CreateMany(items []*model.EventAPIDefinition) error {
-	ret := _m.Called(items)
+// CreateMany provides a mock function with given fields: ctx, tenantID, items
+func (_m *EventAPIRepository) CreateMany(ctx context.Context, tenantID string, items []*model.EventAPIDefinition) error {
+	ret := _m.Called(ctx, tenantID, items)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func([]*model.EventAPIDefinition) error); ok {
-		r0 = rf(items)
+	if rf, ok := ret.Get(0).(func(context.Context, string, []*model.EventAPIDefinition) error); ok {
+		r0 = rf(ctx, tenantID, items)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -24,13 +25,13 @@ func (_m *EventAPIRepository) CreateMany(items []*model.EventAPIDefinition) erro
 	return r0
 }
 
-// DeleteAllByApplicationID provides a mock function with given fields: id
-func (_m *EventAPIRepository) DeleteAllByApplicationID(id string) error {
-	ret := _m.Called(id)
+// DeleteAllByApplicationID provides a mock function with given fields: ctx, tenantID, appID
+func (_m *EventAPIRepository) DeleteAllByApplicationID(ctx context.Context, tenantID string, appID string) error {
+	ret := _m.Called(ctx, tenantID, appID)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string) error); ok {
-		r0 = rf(id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, tenantID, appID)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -38,13 +39,13 @@ func (_m *EventAPIRepository) DeleteAllByApplicationID(id string) error {
 	return r0
 }
 
-// ListByApplicationID provides a mock function with given fields: applicationID, pageSize, cursor
-func (_m *EventAPIRepository) ListByApplicationID(applicationID string, pageSize *int, cursor *string) (*model.EventAPIDefinitionPage, error) {
-	ret := _m.Called(applicationID, pageSize, cursor)
+// ListByApplicationID provides a mock function with given fields: ctx, tenantID, applicationID, pageSize, cursor
+func (_m *EventAPIRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventAPIDefinitionPage, error) {
+	ret := _m.Called(ctx, tenantID, applicationID, pageSize, cursor)
 
 	var r0 *model.EventAPIDefinitionPage
-	if rf, ok := ret.Get(0).(func(string, *int, *string) *model.EventAPIDefinitionPage); ok {
-		r0 = rf(applicationID, pageSize, cursor)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, int, string) *model.EventAPIDefinitionPage); ok {
+		r0 = rf(ctx, tenantID, applicationID, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.EventAPIDefinitionPage)
@@ -52,8 +53,8 @@ func (_m *EventAPIRepository) ListByApplicationID(applicationID string, pageSize
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, *int, *string) error); ok {
-		r1 = rf(applicationID, pageSize, cursor)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, int, string) error); ok {
+		r1 = rf(ctx, tenantID, applicationID, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

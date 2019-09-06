@@ -101,7 +101,7 @@ func TestService_Create(t *testing.T) {
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("CreateMany", mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -152,7 +152,7 @@ func TestService_Create(t *testing.T) {
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("CreateMany", mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -200,7 +200,7 @@ func TestService_Create(t *testing.T) {
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("CreateMany", mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -474,8 +474,8 @@ func TestService_Update(t *testing.T) {
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("DeleteAllByApplicationID", id).Return(nil).Once()
-				repo.On("CreateMany", appModel.EventAPIs).Return(nil).Once()
+				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, appModel.EventAPIs).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -758,7 +758,7 @@ func TestService_Delete(t *testing.T) {
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("DeleteAllByApplicationID", id).Return(nil).Once()
+				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -798,7 +798,7 @@ func TestService_Delete(t *testing.T) {
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("DeleteAllByApplicationID", id).Return(nil).Once()
+				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -1841,7 +1841,7 @@ func modelFromInput(in model.ApplicationInput, tenant, applicationID string) tes
 
 	var eventAPIsModel []*model.EventAPIDefinition
 	for _, item := range in.EventAPIs {
-		eventAPIsModel = append(eventAPIsModel, item.ToEventAPIDefinition(uuid.New().String(), applicationID))
+		eventAPIsModel = append(eventAPIsModel, item.ToEventAPIDefinition(uuid.New().String(), tenant, applicationID))
 	}
 
 	var documentsModel []*model.Document

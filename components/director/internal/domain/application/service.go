@@ -56,9 +56,9 @@ type APIRepository interface {
 
 //go:generate mockery -name=EventAPIRepository -output=automock -outpkg=automock -case=underscore
 type EventAPIRepository interface {
-	ListByApplicationID(applicationID string, pageSize *int, cursor *string) (*model.EventAPIDefinitionPage, error)
-	CreateMany(items []*model.EventAPIDefinition) error
-	DeleteAllByApplicationID(id string) error
+	ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventAPIDefinitionPage, error)
+	CreateMany(ctx context.Context, tenantID string, items []*model.EventAPIDefinition) error
+	DeleteAllByApplicationID(ctx context.Context, tenantID string, appID string) error
 }
 
 //go:generate mockery -name=RuntimeRepository -output=automock -outpkg=automock -case=underscore
@@ -474,9 +474,9 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 			}
 		}
 
-		eventAPIs = append(eventAPIs, item.ToEventAPIDefinition(eventAPIDefID, applicationID))
+		eventAPIs = append(eventAPIs, item.ToEventAPIDefinition(eventAPIDefID, tenant, applicationID))
 	}
-	err = s.eventAPIRepo.CreateMany(eventAPIs)
+	err = s.eventAPIRepo.CreateMany(ctx, tenant, eventAPIs)
 	if err != nil {
 		return errors.Wrapf(err, "while creating EventAPIs for application")
 	}
@@ -513,7 +513,7 @@ func (s *service) deleteRelatedResources(ctx context.Context, tenant, applicatio
 		return errors.Wrapf(err, "while deleting APIs for application %s", applicationID)
 	}
 
-	err = s.eventAPIRepo.DeleteAllByApplicationID(applicationID)
+	err = s.eventAPIRepo.DeleteAllByApplicationID(ctx, tenant, applicationID)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting EventAPIs for application %s", applicationID)
 	}
