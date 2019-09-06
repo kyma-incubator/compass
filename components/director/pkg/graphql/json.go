@@ -1,28 +1,27 @@
 package graphql
 
 import (
-	"encoding/json"
-	"github.com/99designs/gqlgen/graphql"
-	"github.com/pkg/errors"
+	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
 	log "github.com/sirupsen/logrus"
 	"io"
+	"strconv"
 )
 
 type JSON string
 
-func UnmarshalGQL(v interface{}) (interface{}, error) {
-	if v == nil {
-		return nil, errors.New("input should not be nil")
+func (j *JSON) UnmarshalGQL(v interface{}) error {
+	val, err := scalar.ConvertToString(v)
+	if err != nil {
+		return err
 	}
-	return v, nil
+
+	*j = JSON(val)
+	return nil
 }
 
-func MarshalGQL(v interface{}) graphql.Marshaler {
-	return graphql.WriterFunc(func(w io.Writer) {
-		err := json.NewEncoder(w).Encode(v)
-		if err != nil {
-			log.Errorf("while writing %T: %s", v, err)
-			return
-		}
-	})
+func (j JSON) MarshalGQL(w io.Writer) {
+	_, err := io.WriteString(w, strconv.Quote(string(j)))
+	if err != nil {
+		log.Errorf("while writing %T: %s", j, err)
+	}
 }

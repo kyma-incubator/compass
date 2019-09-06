@@ -39,7 +39,7 @@ func TestRepositoryCreateLabelDefinition(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
-		mockConverter := &automock.Converter{}
+		mockConverter := &automock.LabelDefEntityConverter{}
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}}, nil)
 		escapedQuery := regexp.QuoteMeta("insert into public.label_definitions (id,tenant_id,key,schema) values(?,?,?,?)")

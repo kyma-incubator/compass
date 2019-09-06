@@ -12391,12 +12391,12 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 }
 
 func (ec *executionContext) unmarshalOJSON2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx context.Context, v interface{}) (JSON, error) {
-	tmp, err := graphql.UnmarshalString(v)
-	return JSON(tmp), err
+	var res JSON
+	return res, res.UnmarshalGQL(v)
 }
 
 func (ec *executionContext) marshalOJSON2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx context.Context, sel ast.SelectionSet, v JSON) graphql.Marshaler {
-	return graphql.MarshalString(string(v))
+	return v
 }
 
 func (ec *executionContext) unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx context.Context, v interface{}) (*JSON, error) {
@@ -12411,7 +12411,7 @@ func (ec *executionContext) marshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋco
 	if v == nil {
 		return graphql.Null
 	}
-	return ec.marshalOJSON2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, sel, *v)
+	return v
 }
 
 func (ec *executionContext) marshalOLabelDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelDefinition(ctx context.Context, sel ast.SelectionSet, v LabelDefinition) graphql.Marshaler {

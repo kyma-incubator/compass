@@ -12,12 +12,12 @@ import (
 )
 
 type Resolver struct {
-	conv          Converter
+	conv          ModelConverter
 	srv           Service
 	transactioner persistence.Transactioner
 }
 
-func NewResolver(srv Service, conv Converter, transactioner persistence.Transactioner) *Resolver {
+func NewResolver(srv Service, conv ModelConverter, transactioner persistence.Transactioner) *Resolver {
 	return &Resolver{
 		conv:          conv,
 		srv:           srv,
@@ -26,12 +26,10 @@ func NewResolver(srv Service, conv Converter, transactioner persistence.Transact
 }
 
 // dependencies
-//go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
-type Converter interface {
+//go:generate mockery -name=ModelConverter -output=automock -outpkg=automock -case=underscore
+type ModelConverter interface {
 	FromGraphQL(input graphql.LabelDefinitionInput, tenant string) (model.LabelDefinition, error)
 	ToGraphQL(definition model.LabelDefinition) (graphql.LabelDefinition, error)
-	ToEntity(in model.LabelDefinition) (Entity, error)
-	FromEntity(in Entity) (model.LabelDefinition, error)
 }
 
 //go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
@@ -49,6 +47,12 @@ func (r *Resolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDe
 		return nil, err
 	}
 
+	// TODO: Use LabelDefinitionInput
+	ld, err := r.conv.FromGraphQL(in, tnt)
+	if err != nil {
+		return nil, err
+	}
+
 	tx, err := r.transactioner.Begin()
 	if err != nil {
 		return nil, errors.Wrap(err, "while starting transaction")
@@ -57,12 +61,6 @@ func (r *Resolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDe
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	// TODO: Use LabelDefinitionInput
-	ld, err := r.conv.FromGraphQL(in, tnt)
-	if err != nil {
-		return nil, err
-	}
-
 	createdLd, err := r.srv.Create(ctx, ld)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating label definition")
@@ -70,6 +68,7 @@ func (r *Resolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDe
 	if err := tx.Commit(); err != nil {
 		return nil, errors.Wrap(err, "while committing transaction")
 	}
+
 	out, err := r.conv.ToGraphQL(createdLd)
 	if err != nil {
 		return nil, err

@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -601,7 +603,7 @@ func fixUUID() string {
 	return "003a0855-4eb0-486d-8fc6-3ab2f2312ca0"
 }
 
-func fixBasicSchema(t *testing.T) *interface{} {
+func fixBasicInputSchema() *graphql.JSON {
 	sch := `{
 		"$id": "https://example.com/person.schema.json",
   		"$schema": "http://json-schema.org/draft-07/schema#",
@@ -623,9 +625,16 @@ func fixBasicSchema(t *testing.T) *interface{} {
   		  }
   		}
 	  }`
+	jsonSchema := graphql.JSON(sch)
+	return &jsonSchema
+}
+
+func fixBasicSchema(t *testing.T) *interface{} {
+	sch := fixBasicInputSchema()
+	require.NotNil(t, sch)
 	var obj map[string]interface{}
 
-	err := json.Unmarshal([]byte(sch), &obj)
+	err := json.Unmarshal([]byte(*sch), &obj)
 	require.NoError(t, err)
 	var objTemp interface{}
 	objTemp = obj

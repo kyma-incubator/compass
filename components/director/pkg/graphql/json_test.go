@@ -2,88 +2,62 @@ package graphql
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestUnmarshalJSON(t *testing.T) {
 	for name, tc := range map[string]struct {
-		Input      interface{}
-		ErrOccurs  bool
-		ErrMessage string
-		Expected   JSON
+		input    interface{}
+		err      bool
+		errmsg   string
+		expected JSON
 	}{
 		//given
-		"correct input map[string]string": {
-			Input:     map[string]interface{}{"annotation": "val1"},
-			ErrOccurs: false,
-			Expected:  map[string]interface{}{"annotation": "val1"},
-		},
-		"correct input string": {
-			Input:     "annotation",
-			ErrOccurs: false,
-			Expected:  "annotation",
-		},
-		"correct input map[string]int": {
-			Input:     map[string]interface{}{"annotation": 123},
-			ErrOccurs: false,
-			Expected:  map[string]interface{}{"annotation": 123},
-		},
-		"correct input map[string][]string": {
-			Input:     map[string]interface{}{"annotation": []string{"val1", "val2"}},
-			ErrOccurs: false,
-			Expected:  map[string]interface{}{"annotation": []string{"val1", "val2"}},
-		},
-		"correct input map[int]interface{}": {
-			Input:     map[int]interface{}{123: "valid map"},
-			ErrOccurs: false,
-			Expected:  map[int]interface{}{123: "valid map"},
+		"correct input": {
+			input:    `{"schema":"schema}"`,
+			err:      false,
+			expected: JSON(`{"schema":"schema}"`),
 		},
 		"error: input is nil": {
-			Input:      nil,
-			ErrOccurs:  true,
-			ErrMessage: "input should not be nil"},
-	}{
+			input:  nil,
+			err:    true,
+			errmsg: "input should not be nil",
+		},
+		"error: invalid input": {
+			input:  123,
+			err:    true,
+			errmsg: "unexpected input type: int, should be string",
+		},
+	} {
 		t.Run(name, func(t *testing.T) {
 			//when
-			val, err := UnmarshalJSON(tc.Input)
+			var j JSON
+			err := j.UnmarshalGQL(tc.input)
 
 			//then
-			if tc.ErrOccurs {
+			if tc.err {
 				assert.Error(t, err)
-				assert.EqualError(t, err, tc.ErrMessage)
+				assert.EqualError(t, err, tc.errmsg)
+				assert.Empty(t, j)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tc.Expected, val)
+				assert.Equal(t, tc.expected, j)
 			}
 		})
 	}
 }
 
 func TestMarshalJSON(t *testing.T) {
-	as := assert.New(t)
-
 	//given
-	var tests = []struct {
-		input    JSON
-		expected string
-	}{
-		{"annotation", `"annotation"`},
-		{323, `323`},
-		{map[string]interface{}{"annotation": 123}, `{"annotation":123}`},
-		{map[string]interface{}{"annotation": []string{"val1", "val2"}}, `{"annotation":["val1","val2"]}`},
-	}
+	fixJSON:= JSON("very_big_clob")
+	expectedJSON := `"very_big_clob"`
+	buf := bytes.Buffer{}
 
-	for _, test := range tests {
-		//when
-		m := MarshalJSON(test.input)
-		buf := bytes.Buffer{}
-		m.MarshalGQL(&buf)
+	//when
+	fixJSON.MarshalGQL(&buf)
 
-		//then
-		as.NotNil(buf)
-		expected := fmt.Sprintf("%s\n", test.expected)
-		as.Equal(expected, buf.String())
-	}
+	//then
+	assert.NotNil(t, buf)
+	assert.Equal(t, expectedJSON, buf.String())
 }
