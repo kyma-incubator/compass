@@ -105,7 +105,7 @@ func deleteRuntimeInTenant(t *testing.T, id string, tenantID string) {
 func createLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, key string, schema interface{}, tenantID string) *graphql.LabelDefinition {
 	input := graphql.LabelDefinitionInput{
 		Key:    key,
-		Schema: &schema,
+		Schema: marshallJSONSchema(t, schema),
 	}
 
 	in, err := tc.graphqlizer.LabelDefinitionInputToGQL(input)

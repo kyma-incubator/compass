@@ -3,15 +3,7 @@ mutation {
   result: updateLabelDefinition(
     in: {
       key: "foo"
-      schema: {
-        properties: {
-          bar: { description: "integer value", type: "integer" }
-          foo: { description: "string value", type: "string" }
-        }
-        required: ["foo"]
-        title: "foobarbaz"
-        type: "object"
-      }
+      schema: "{\"properties\":{\"bar\":{\"description\":\"integer value\",\"type\":\"integer\"},\"foo\":{\"description\":\"string value\",\"type\":\"string\"}},\"required\":[\"foo\"],\"title\":\"foobarbaz\",\"type\":\"object\"}"
     }
   ) {
     key

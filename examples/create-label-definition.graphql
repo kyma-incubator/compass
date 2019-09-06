@@ -3,12 +3,7 @@ mutation {
   result: createLabelDefinition(
     in: {
       key: "foo"
-      schema: {
-        properties: { foo: { description: "foo", type: "string" } }
-        required: ["foo"]
-        title: "foobarbaz"
-        type: "object"
-      }
+      schema: "{\"properties\":{\"foo\":{\"description\":\"foo\",\"type\":\"string\"}},\"required\":[\"foo\"],\"title\":\"foobarbaz\",\"type\":\"object\"}"
     }
   ) {
     key

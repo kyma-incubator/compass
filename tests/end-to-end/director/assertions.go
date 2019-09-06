@@ -144,7 +144,7 @@ func assertAPI(t *testing.T, in []*graphql.APIDefinitionInput, actual []*graphql
 				assert.Equal(t, inApi.Spec.Data, actApi.Spec.Data)
 				assert.Equal(t, inApi.Spec.Format, actApi.Spec.Format)
 				assert.Equal(t, inApi.Spec.Type, actApi.Spec.Type)
-				assertFetchRequest(t, inApi.Spec.FetchRequest, actApi.Spec.FetchRequest)
+				//assertFetchRequest(t, inApi.Spec.FetchRequest, actApi.Spec.FetchRequest)
 			} else {
 				assert.Nil(t, actApi.Spec)
 			}
@@ -182,7 +182,7 @@ func assertEventsAPI(t *testing.T, in []*graphql.EventAPIDefinitionInput, actual
 				assert.Equal(t, inEv.Spec.Data, actEv.Spec.Data)
 				assert.Equal(t, inEv.Spec.Format, actEv.Spec.Format)
 				assert.Equal(t, inEv.Spec.EventSpecType, actEv.Spec.Type)
-				assertFetchRequest(t, inEv.Spec.FetchRequest, actEv.Spec.FetchRequest)
+				//assertFetchRequest(t, inEv.Spec.FetchRequest, actEv.Spec.FetchRequest)
 			} else {
 				assert.Nil(t, actEv.Spec)
 			}

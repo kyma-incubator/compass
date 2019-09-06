@@ -2,7 +2,9 @@ package director
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -76,7 +78,7 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 	var schema interface{} = jsonSchema
 	labelDefinitionInput := graphql.LabelDefinitionInput{
 		Key:    labelKey,
-		Schema: &schema,
+		Schema: marshallJSONSchema(t, schema),
 	}
 
 	labelDefinitionInputGQL, err := tc.graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
@@ -204,7 +206,7 @@ func TestEditLabelDefinition(t *testing.T) {
 	var schema interface{} = jsonSchema
 	labelDefinitionInput := graphql.LabelDefinitionInput{
 		Key:    labelKey,
-		Schema: &schema,
+		Schema: marshallJSONSchema(t, schema),
 	}
 
 	labelDefinitionInputGQL, err := tc.graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
@@ -238,7 +240,7 @@ func TestEditLabelDefinition(t *testing.T) {
 		var invalidSchema interface{} = invalidJsonSchema
 		labelDefinitionInput = graphql.LabelDefinitionInput{
 			Key:    labelKey,
-			Schema: &invalidSchema,
+			Schema: marshallJSONSchema(t, invalidSchema),
 		}
 
 		ldInputGql, err := tc.graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
@@ -279,7 +281,7 @@ func TestEditLabelDefinition(t *testing.T) {
 		var newSchema interface{} = newValidJsonSchema
 		labelDefinitionInput = graphql.LabelDefinitionInput{
 			Key:    labelKey,
-			Schema: &newSchema,
+			Schema: marshallJSONSchema(t, newSchema),
 		}
 
 		ldInputGql, err := tc.graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
@@ -294,7 +296,7 @@ func TestEditLabelDefinition(t *testing.T) {
 		//THEN
 		require.NoError(t, err)
 
-		schemaVal, ok := (*labelDefinition.Schema).(map[string]interface{})
+		schemaVal, ok := (unmarshallJSONSchema(t, labelDefinition.Schema)).(map[string]interface{})
 		require.True(t, ok)
 		actualProperties, ok := schemaVal["properties"].(map[string]interface{})
 		require.True(t, ok)
@@ -371,7 +373,7 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	var schema interface{} = jsonSchema
 	ldInput := graphql.LabelDefinitionInput{
 		Key:    labelKey,
-		Schema: &schema,
+		Schema: marshallJSONSchema(t, schema),
 	}
 
 	ldInputGQL, err := tc.graphqlizer.LabelDefinitionInputToGQL(ldInput)
@@ -428,7 +430,7 @@ func TestDeleteLabelDefinition(t *testing.T) {
 	var schema interface{} = jsonSchema
 	labelDefinitionInput := graphql.LabelDefinitionInput{
 		Key:    labelKey,
-		Schema: &schema,
+		Schema: marshallJSONSchema(t, schema),
 	}
 
 	ldInputGql, err := tc.graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
@@ -587,7 +589,7 @@ func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
 	var schema interface{} = jsonSchema
 	ldInput := graphql.LabelDefinitionInput{
 		Key:    labelKey,
-		Schema: &schema,
+		Schema: marshallJSONSchema(t, schema),
 	}
 
 	ldInputGQL, err := tc.graphqlizer.LabelDefinitionInputToGQL(ldInput)
@@ -833,4 +835,21 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 	//THEN
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), `must be one of the following: "DEFAULT", "Christmas", "New Year"`)
+}
+
+func marshallJSONSchema(t *testing.T, schema interface{}) *graphql.JSON {
+	out, err := json.Marshal(schema)
+	require.NoError(t, err)
+	output := strings.ReplaceAll(string(out), `"`, `\"`)
+	jsonSchema := graphql.JSON(output)
+	return &jsonSchema
+}
+
+func unmarshallJSONSchema(t *testing.T, schema *graphql.JSON) interface{} {
+	require.NotNil(t, schema)
+	var output interface{}
+	err := json.Unmarshal([]byte(*schema), &output)
+	require.NoError(t, err)
+
+	return output
 }
