@@ -160,7 +160,20 @@ func (r *Resolver) DeleteEventAPI(ctx context.Context, id string) (*graphql.Even
 }
 
 func (r *Resolver) RefetchEventAPISpec(ctx context.Context, eventID string) (*graphql.EventAPISpec, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	spec, err := r.svc.RefetchAPISpec(ctx, eventID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}

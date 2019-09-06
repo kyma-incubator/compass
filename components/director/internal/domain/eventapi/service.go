@@ -58,7 +58,6 @@ func (s *service) List(ctx context.Context, applicationID string, pageSize int, 
 		return nil, errors.Wrap(err, "while loading tenant from context")
 	}
 
-	//TODO: Test this !
 	if pageSize < 1 || pageSize > 100 {
 		return nil, errors.New("page size must be between 1 and 100")
 	}

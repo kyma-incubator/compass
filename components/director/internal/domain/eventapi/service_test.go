@@ -81,6 +81,14 @@ func TestService_Get(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := eventapi.NewService(nil, nil, nil)
+		// WHEN
+		_, err := svc.Get(context.TODO(), "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+	})
 }
 
 func TestService_List(t *testing.T) {
@@ -114,8 +122,8 @@ func TestService_List(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		RepositoryFn       func() *automock.EventAPIRepository
-		InputPageSize      *int
-		InputCursor        *string
+		InputPageSize      int
+		InputCursor        string
 		ExpectedResult     *model.EventAPIDefinitionPage
 		ExpectedErrMessage string
 	}{
@@ -126,10 +134,32 @@ func TestService_List(t *testing.T) {
 				repo.On("ListByApplicationID", ctx, tenantID, applicationID, first, after).Return(eventAPIDefinitionPage, nil).Once()
 				return repo
 			},
-			InputPageSize:      &first,
-			InputCursor:        &after,
+			InputPageSize:      first,
+			InputCursor:        after,
 			ExpectedResult:     eventAPIDefinitionPage,
 			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Return error when page size is less than 1",
+			RepositoryFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				return repo
+			},
+			InputPageSize:      0,
+			InputCursor:        after,
+			ExpectedResult:     eventAPIDefinitionPage,
+			ExpectedErrMessage: "page size must be between 1 and 100",
+		},
+		{
+			Name: "Return error when page size is bigger than 100",
+			RepositoryFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				return repo
+			},
+			InputPageSize:      101,
+			InputCursor:        after,
+			ExpectedResult:     eventAPIDefinitionPage,
+			ExpectedErrMessage: "page size must be between 1 and 100",
 		},
 		{
 			Name: "Returns error when EventAPI listing failed",
@@ -138,8 +168,8 @@ func TestService_List(t *testing.T) {
 				repo.On("ListByApplicationID", ctx, tenantID, applicationID, first, after).Return(nil, testErr).Once()
 				return repo
 			},
-			InputPageSize:      &first,
-			InputCursor:        &after,
+			InputPageSize:      first,
+			InputCursor:        after,
 			ExpectedResult:     nil,
 			ExpectedErrMessage: testErr.Error(),
 		},
@@ -152,7 +182,7 @@ func TestService_List(t *testing.T) {
 			svc := eventapi.NewService(repo, nil, nil)
 
 			// when
-			docs, err := svc.List(ctx, applicationID, *testCase.InputPageSize, *testCase.InputCursor)
+			docs, err := svc.List(ctx, applicationID, testCase.InputPageSize, testCase.InputCursor)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -165,6 +195,14 @@ func TestService_List(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := eventapi.NewService(nil, nil, nil)
+		// WHEN
+		_, err := svc.List(context.TODO(), "", 5, "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+	})
 }
 
 func TestService_Create(t *testing.T) {
@@ -299,6 +337,14 @@ func TestService_Create(t *testing.T) {
 			uidSvc.AssertExpectations(t)
 		})
 	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := eventapi.NewService(nil, nil, nil)
+		// WHEN
+		_, err := svc.Create(context.TODO(), "", model.EventAPIDefinitionInput{})
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+	})
 }
 
 func TestService_Update(t *testing.T) {
@@ -437,6 +483,14 @@ func TestService_Update(t *testing.T) {
 			uidSvc.AssertExpectations(t)
 		})
 	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := eventapi.NewService(nil, nil, nil)
+		// WHEN
+		err := svc.Update(context.TODO(), "", model.EventAPIDefinitionInput{})
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+	})
 }
 
 func TestService_Delete(t *testing.T) {
@@ -497,6 +551,14 @@ func TestService_Delete(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := eventapi.NewService(nil, nil, nil)
+		// WHEN
+		err := svc.Delete(context.TODO(), "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+	})
 }
 
 func TestService_RefetchAPISpec(t *testing.T) {
@@ -562,6 +624,14 @@ func TestService_RefetchAPISpec(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := eventapi.NewService(nil, nil, nil)
+		// WHEN
+		_, err := svc.RefetchAPISpec(context.TODO(), "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+	})
 }
 
 func TestService_GetFetchRequest(t *testing.T) {
