@@ -227,7 +227,14 @@ func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string
 	id := s.uidService.Generate()
 	app := in.ToApplication(s.timestampGen(), model.ApplicationStatusConditionInitial, id, appTenant)
 
-	// TODO: Checking if Label Definition exists could be moved after application creation, once application repository is ported to sql
+	err = s.appRepo.Create(ctx, app)
+	if err != nil {
+		if repo.IsNotUnique(err) {
+			return "", errors.New("Application name is not unique within tenant")
+		}
+		return "", err
+	}
+
 	err = s.scenariosService.EnsureScenariosLabelDefinitionExists(ctx, appTenant)
 	if err != nil {
 		return "", err
@@ -243,14 +250,6 @@ func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
 	if err != nil {
 		return id, errors.Wrapf(err, "while creating multiple labels for Application")
-	}
-
-	err = s.appRepo.Create(ctx, app)
-	if err != nil {
-		if repo.IsNotUnique(err) {
-			return "", errors.New("Application name is not unique within tenant")
-		}
-		return "", err
 	}
 
 	err = s.createRelatedResources(ctx, in, app.Tenant, app.ID)
