@@ -11,13 +11,13 @@ type EventAPIRepository struct {
 	mock.Mock
 }
 
-// CreateMany provides a mock function with given fields: ctx, tenantID, items
-func (_m *EventAPIRepository) CreateMany(ctx context.Context, tenantID string, items []*model.EventAPIDefinition) error {
-	ret := _m.Called(ctx, tenantID, items)
+// CreateMany provides a mock function with given fields: ctx, items
+func (_m *EventAPIRepository) CreateMany(ctx context.Context, items []*model.EventAPIDefinition) error {
+	ret := _m.Called(ctx, items)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, []*model.EventAPIDefinition) error); ok {
-		r0 = rf(ctx, tenantID, items)
+	if rf, ok := ret.Get(0).(func(context.Context, []*model.EventAPIDefinition) error); ok {
+		r0 = rf(ctx, items)
 	} else {
 		r0 = ret.Error(0)
 	}

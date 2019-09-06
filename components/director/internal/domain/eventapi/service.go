@@ -18,9 +18,9 @@ type EventAPIRepository interface {
 	GetByID(ctx context.Context, tenantID string, id string) (*model.EventAPIDefinition, error)
 	Exists(ctx context.Context, tenantID, id string) (bool, error)
 	ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventAPIDefinitionPage, error)
-	Create(ctx context.Context, tenantID string, item *model.EventAPIDefinition) error
-	CreateMany(ctx context.Context, tenantID string, items []*model.EventAPIDefinition) error
-	Update(ctx context.Context, tenantID string, item *model.EventAPIDefinition) error
+	Create(ctx context.Context, item *model.EventAPIDefinition) error
+	CreateMany(ctx context.Context, items []*model.EventAPIDefinition) error
+	Update(ctx context.Context, item *model.EventAPIDefinition) error
 	Delete(ctx context.Context, tenantID string, id string) error
 	DeleteAllByApplicationID(ctx context.Context, tenantID string, appID string) error
 }
@@ -96,7 +96,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Eve
 	}
 	eventAPI := in.ToEventAPIDefinition(id, tnt, applicationID)
 
-	err = s.eventAPIRepo.Create(ctx, tnt, eventAPI)
+	err = s.eventAPIRepo.Create(ctx, eventAPI)
 	if err != nil {
 		return "", err
 	}
@@ -129,7 +129,7 @@ func (s *service) Update(ctx context.Context, id string, in model.EventAPIDefini
 
 	eventAPI = in.ToEventAPIDefinition(id, tnt, eventAPI.ApplicationID)
 
-	err = s.eventAPIRepo.Update(ctx, tnt, eventAPI)
+	err = s.eventAPIRepo.Update(ctx, eventAPI)
 	if err != nil {
 		return errors.Wrapf(err, "while updating EventAPIDefinition with ID %s", id)
 	}

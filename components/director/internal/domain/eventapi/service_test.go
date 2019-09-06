@@ -213,7 +213,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, tenantID, modelEventAPIDefinition).Return(nil).Once()
+				repo.On("Create", ctx, modelEventAPIDefinition).Return(nil).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
@@ -234,7 +234,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error - EventAPI Creation",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, tenantID, modelEventAPIDefinition).Return(testErr).Once()
+				repo.On("Create", ctx, modelEventAPIDefinition).Return(testErr).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
@@ -349,7 +349,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
 				repo.On("GetByID", ctx, tenantID, id).Return(eventAPIDefinitionModel, nil).Once()
-				repo.On("Update", ctx, tenantID, inputEventAPIDefinitionModel).Return(nil).Once()
+				repo.On("Update", ctx, inputEventAPIDefinitionModel).Return(nil).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
@@ -372,7 +372,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
 				repo.On("GetByID", ctx, tenantID, id).Return(eventAPIDefinitionModel, nil).Once()
-				repo.On("Update", ctx, tenantID, inputEventAPIDefinitionModel).Return(testErr).Once()
+				repo.On("Update", ctx, inputEventAPIDefinitionModel).Return(testErr).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {

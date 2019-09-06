@@ -12,13 +12,13 @@ type EventAPIRepository struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: ctx, tenantID, item
-func (_m *EventAPIRepository) Create(ctx context.Context, tenantID string, item *model.EventAPIDefinition) error {
-	ret := _m.Called(ctx, tenantID, item)
+// Create provides a mock function with given fields: ctx, item
+func (_m *EventAPIRepository) Create(ctx context.Context, item *model.EventAPIDefinition) error {
+	ret := _m.Called(ctx, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *model.EventAPIDefinition) error); ok {
-		r0 = rf(ctx, tenantID, item)
+	if rf, ok := ret.Get(0).(func(context.Context, *model.EventAPIDefinition) error); ok {
+		r0 = rf(ctx, item)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -26,13 +26,13 @@ func (_m *EventAPIRepository) Create(ctx context.Context, tenantID string, item 
 	return r0
 }
 
-// CreateMany provides a mock function with given fields: ctx, tenantID, items
-func (_m *EventAPIRepository) CreateMany(ctx context.Context, tenantID string, items []*model.EventAPIDefinition) error {
-	ret := _m.Called(ctx, tenantID, items)
+// CreateMany provides a mock function with given fields: ctx, items
+func (_m *EventAPIRepository) CreateMany(ctx context.Context, items []*model.EventAPIDefinition) error {
+	ret := _m.Called(ctx, items)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, []*model.EventAPIDefinition) error); ok {
-		r0 = rf(ctx, tenantID, items)
+	if rf, ok := ret.Get(0).(func(context.Context, []*model.EventAPIDefinition) error); ok {
+		r0 = rf(ctx, items)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -135,13 +135,13 @@ func (_m *EventAPIRepository) ListByApplicationID(ctx context.Context, tenantID 
 	return r0, r1
 }
 
-// Update provides a mock function with given fields: ctx, tenantID, item
-func (_m *EventAPIRepository) Update(ctx context.Context, tenantID string, item *model.EventAPIDefinition) error {
-	ret := _m.Called(ctx, tenantID, item)
+// Update provides a mock function with given fields: ctx, item
+func (_m *EventAPIRepository) Update(ctx context.Context, item *model.EventAPIDefinition) error {
+	ret := _m.Called(ctx, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *model.EventAPIDefinition) error); ok {
-		r0 = rf(ctx, tenantID, item)
+	if rf, ok := ret.Get(0).(func(context.Context, *model.EventAPIDefinition) error); ok {
+		r0 = rf(ctx, item)
 	} else {
 		r0 = ret.Error(0)
 	}
