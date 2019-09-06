@@ -321,8 +321,6 @@ func (r *Resolver) DeleteApplication(ctx context.Context, id string) (*graphql.A
 		return nil, err
 	}
 
-	deletedApp := r.appConverter.ToGraphQL(app)
-
 	err = r.appSvc.Delete(ctx, id)
 	if err != nil {
 		return nil, err
@@ -332,6 +330,8 @@ func (r *Resolver) DeleteApplication(ctx context.Context, id string) (*graphql.A
 	if err != nil {
 		return nil, err
 	}
+
+	deletedApp := r.appConverter.ToGraphQL(app)
 
 	return deletedApp, nil
 }

@@ -2,9 +2,10 @@ package eventapi_test
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence/txtest"
 
@@ -507,18 +508,21 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 		Spec: gqlEventAPISpec,
 	}
 
+	txGen := txtest.NewTransactionContextGenerator(testErr)
 	testCases := []struct {
 		Name            string
+		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn       func() *automock.EventAPIService
 		ConvFn          func() *automock.EventAPIConverter
 		ExpectedAPISpec *graphql.EventAPISpec
 		ExpectedErr     error
 	}{
 		{
-			Name: "Success",
+			Name:            "Success",
+			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
-				svc.On("RefetchAPISpec", context.TODO(), apiID).Return(modelEventAPISpec, nil).Once()
+				svc.On("RefetchAPISpec", txtest.CtxWithDBMatcher(), apiID).Return(modelEventAPISpec, nil).Once()
 				return svc
 			},
 			ConvFn: func() *automock.EventAPIConverter {
@@ -530,15 +534,44 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			ExpectedErr:     nil,
 		},
 		{
-			Name: "Returns error when refetching EventAPI spec failed",
+			Name:            "Retuns error when transaction commit faied",
+			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
-				svc.On("RefetchAPISpec", context.TODO(), apiID).Return(nil, testErr).Once()
+				svc.On("RefetchAPISpec", txtest.CtxWithDBMatcher(), apiID).Return(modelEventAPISpec, nil).Once()
 				return svc
 			},
 			ConvFn: func() *automock.EventAPIConverter {
 				conv := &automock.EventAPIConverter{}
-				conv.On("ToGraphQL", modelEventAPIDefinition).Return(gqlEventAPIDefinition).Once()
+				return conv
+			},
+			ExpectedAPISpec: nil,
+			ExpectedErr:     testErr,
+		},
+		{
+			Name:            "Returns error when refetching EventAPI spec failed",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.EventAPIService {
+				svc := &automock.EventAPIService{}
+				svc.On("RefetchAPISpec", txtest.CtxWithDBMatcher(), apiID).Return(nil, testErr).Once()
+				return svc
+			},
+			ConvFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				return conv
+			},
+			ExpectedAPISpec: nil,
+			ExpectedErr:     testErr,
+		},
+		{
+			Name:            "Returns error when transaction start failed",
+			TransactionerFn: txGen.ThatFailsOnBegin,
+			ServiceFn: func() *automock.EventAPIService {
+				svc := &automock.EventAPIService{}
+				return svc
+			},
+			ConvFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
 				return conv
 			},
 			ExpectedAPISpec: nil,
@@ -549,9 +582,10 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// given
+			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			conv := testCase.ConvFn()
-			resolver := eventapi.NewResolver(nil, svc, nil, conv, nil)
+			resolver := eventapi.NewResolver(transact, svc, nil, conv, nil)
 
 			// when
 			result, err := resolver.RefetchEventAPISpec(context.TODO(), apiID)
@@ -561,6 +595,9 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			assert.Equal(t, testCase.ExpectedErr, err)
 
 			svc.AssertExpectations(t)
+			conv.AssertExpectations(t)
+			persist.AssertExpectations(t)
+			transact.AssertExpectations(t)
 		})
 	}
 }
@@ -667,6 +704,21 @@ func TestResolver_FetchRequest(t *testing.T) {
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
 		},
+		{
+			Name:            "Returns error when obj is nil",
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
+			ServiceFn: func() *automock.EventAPIService {
+				svc := &automock.EventAPIService{}
+				return svc
+			},
+			ConverterFn: func() *automock.FetchRequestConverter {
+				conv := &automock.FetchRequestConverter{}
+				return conv
+			},
+			EventApiSpec:   nil,
+			ExpectedResult: nil,
+			ExpectedErr:    errors.New("Event API Spec cannot be empty"),
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -682,7 +734,12 @@ func TestResolver_FetchRequest(t *testing.T) {
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
-			assert.Equal(t, testCase.ExpectedErr, err)
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
 
 			persistTx.AssertExpectations(t)
 			transact.AssertExpectations(t)
