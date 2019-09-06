@@ -39,7 +39,7 @@ type pgRepository struct {
 	conv EventAPIDefinitionConverter
 }
 
-func NewPostgresRepository(conv EventAPIDefinitionConverter) *pgRepository {
+func NewRepository(conv EventAPIDefinitionConverter) *pgRepository {
 	return &pgRepository{
 		SingleGetter:    repo.NewSingleGetter(eventAPIDefTable, tenantColumn, apiDefColumns),
 		PageableQuerier: repo.NewPageableQuerier(eventAPIDefTable, tenantColumn, apiDefColumns),

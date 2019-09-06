@@ -61,7 +61,7 @@ func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 
 	webhookRepo := webhook.NewRepository(webhookConverter)
 	apiRepo := api.NewRepository(apiConverter)
-	eventAPIRepo := eventapi.NewPostgresRepository(eventAPIConverter)
+	eventAPIRepo := eventapi.NewRepository(eventAPIConverter)
 	docRepo := document.NewRepository(docConverter)
 	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
 	runtimeAuthRepo := runtime_auth.NewRepository(runtimeAuthConverter)
