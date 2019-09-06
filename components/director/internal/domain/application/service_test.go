@@ -101,7 +101,8 @@ func TestService_Create(t *testing.T) {
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventAPIDefinition{ID: "foo", ApplicationID: "foo", Tenant: tnt, Name: "foo", Spec: &model.EventAPISpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventAPIDefinition{ID: "foo", ApplicationID: "foo", Tenant: tnt, Name: "bar"}).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -152,7 +153,6 @@ func TestService_Create(t *testing.T) {
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -200,7 +200,6 @@ func TestService_Create(t *testing.T) {
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -467,23 +466,16 @@ func TestService_Update(t *testing.T) {
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
-				for _, api := range appModel.Apis {
-					repo.On("CreateMany", ctx, api).Return(nil).Once()
-				}
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
 				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
-				repo.On("CreateMany", ctx, appModel.EventAPIs).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
 				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
-				for _, doc := range appModel.Documents {
-					repo.On("Create", ctx, doc).Return(nil).Once()
-				}
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {

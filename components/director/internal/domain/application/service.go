@@ -57,7 +57,7 @@ type APIRepository interface {
 //go:generate mockery -name=EventAPIRepository -output=automock -outpkg=automock -case=underscore
 type EventAPIRepository interface {
 	ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventAPIDefinitionPage, error)
-	CreateMany(ctx context.Context, items []*model.EventAPIDefinition) error
+	Create(ctx context.Context, items *model.EventAPIDefinition) error
 	DeleteAllByApplicationID(ctx context.Context, tenantID string, appID string) error
 }
 
@@ -447,9 +447,7 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 	}
 
 	for _, item := range in.Apis {
-
 		apiDefID := s.uidService.Generate()
-
 		err = s.apiRepo.Create(ctx, item.ToAPIDefinition(apiDefID, applicationID, tenant))
 		if err != nil {
 			return errors.Wrapf(err, "while creating APIs for application")
@@ -463,9 +461,12 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 		}
 	}
 
-	var eventAPIs []*model.EventAPIDefinition
 	for _, item := range in.EventAPIs {
 		eventAPIDefID := s.uidService.Generate()
+		err = s.eventAPIRepo.Create(ctx, item.ToEventAPIDefinition(eventAPIDefID, applicationID, tenant))
+		if err != nil {
+			return errors.Wrapf(err, "while creating EventAPIs for application")
+		}
 
 		if item.Spec != nil && item.Spec.FetchRequest != nil {
 			_, err = s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.EventAPIFetchRequestReference, eventAPIDefID)
@@ -473,12 +474,6 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 				return err
 			}
 		}
-
-		eventAPIs = append(eventAPIs, item.ToEventAPIDefinition(eventAPIDefID, tenant, applicationID))
-	}
-	err = s.eventAPIRepo.CreateMany(ctx, eventAPIs)
-	if err != nil {
-		return errors.Wrapf(err, "while creating EventAPIs for application")
 	}
 
 	for _, item := range in.Documents {

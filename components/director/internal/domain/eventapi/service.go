@@ -93,7 +93,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Eve
 			return "", errors.Wrapf(err, "while creating FetchRequest for EventAPIDefinition %s", id)
 		}
 	}
-	eventAPI := in.ToEventAPIDefinition(id, tnt, applicationID)
+	eventAPI := in.ToEventAPIDefinition(id, applicationID, tnt)
 
 	err = s.eventAPIRepo.Create(ctx, eventAPI)
 	if err != nil {
@@ -126,7 +126,7 @@ func (s *service) Update(ctx context.Context, id string, in model.EventAPIDefini
 		}
 	}
 
-	eventAPI = in.ToEventAPIDefinition(id, tnt, eventAPI.ApplicationID)
+	eventAPI = in.ToEventAPIDefinition(id, eventAPI.ApplicationID, tnt)
 
 	err = s.eventAPIRepo.Update(ctx, eventAPI)
 	if err != nil {
