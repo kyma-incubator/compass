@@ -57,8 +57,7 @@ CREATE TABLE webhooks (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     tenant_id uuid NOT NULL,
     app_id uuid NOT NULL,
---     TODO uncomment when applications moved to DB
---     foreign key (tenant_id, app_id) REFERENCES applications (tenant_id, id) ON DELETE CASCADE,
+    foreign key (tenant_id, app_id) REFERENCES applications (tenant_id, id) ON DELETE CASCADE,
     url varchar(256) NOT NULL,
     type webhook_type NOT NULL,
     auth jsonb
@@ -83,7 +82,7 @@ CREATE TABLE api_definitions (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     tenant_id uuid NOT NULL,
     app_id uuid NOT NULL,
-    --- foreign key (tenant_id, app_id) REFERENCES applications (tenant_id, id) ON DELETE CASCADE, --- TODO: Uncomment after implementing Application pg repository
+    foreign key (tenant_id, app_id) REFERENCES applications (tenant_id, id) ON DELETE CASCADE,
     name varchar(256) NOT NULL,
     description text,
     group_name varchar(256),
@@ -140,7 +139,7 @@ CREATE TABLE runtime_auths (
     runtime_id uuid NOT NULL,
     foreign key (tenant_id, runtime_id) references runtimes (tenant_id, id) ON DELETE CASCADE,
     api_def_id uuid NOT NULL,
-    --- foreign key (tenant_id, api_def_id) references api_definitions (tenant_id, id) ON DELETE CASCADE, --- TODO: Uncomment after implementing APIDefinition pg repository
+    foreign key (tenant_id, api_def_id) references api_definitions (tenant_id, id) ON DELETE CASCADE,
     value jsonb
 );
 
@@ -158,7 +157,7 @@ CREATE TABLE documents (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     tenant_id uuid NOT NULL,
     app_id uuid NOT NULL,
---     foreign key (tenant_id, app_id) references applications (tenant_id, id) ON DELETE CASCADE, //TODO: Uncomment when Apps are ready
+    foreign key (tenant_id, app_id) references applications (tenant_id, id) ON DELETE CASCADE,
     title varchar(256) NOT NULL,
     display_name varchar(256) NOT NULL,
     description text NOT NULL,
@@ -187,7 +186,8 @@ CREATE UNIQUE INDEX ON label_definitions (tenant_id, key);
 CREATE TABLE labels (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     tenant_id uuid NOT NULL,
-    app_id uuid, -- TODO: Update when Applications switch to DB repository
+    app_id uuid,
+    foreign key (tenant_id, app_id) references applications (tenant_id, id) ON DELETE CASCADE,
     runtime_id uuid,
     foreign key (tenant_id, runtime_id) references runtimes (tenant_id, id) ON DELETE CASCADE,
     key varchar(256) NOT NULL,
@@ -219,9 +219,9 @@ CREATE TABLE fetch_requests (
     tenant_id uuid NOT NULL,
 
     api_def_id uuid,
---     foreign key (tenant_id, api_def_id) references api_definitions (tenant_id, id) ON DELETE CASCADE,  --TODO: Uncomment after API repo
+    foreign key (tenant_id, api_def_id) references api_definitions (tenant_id, id) ON DELETE CASCADE,
     event_api_def_id uuid,
---     foreign key (tenant_id, event_api_def_id) references event_api_definitions (tenant_id, id) ON DELETE CASCADE, --TODO: Uncomment after EventAPI repo
+    foreign key (tenant_id, event_api_def_id) references event_api_definitions (tenant_id, id) ON DELETE CASCADE,
     document_id uuid,
     foreign key (tenant_id, document_id) references documents (tenant_id, id) ON DELETE CASCADE,
 
