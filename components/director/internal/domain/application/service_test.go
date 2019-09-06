@@ -95,7 +95,8 @@ func TestService_Create(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", ApplicationID: "foo", Tenant: tnt, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", ApplicationID: "foo", Tenant: tnt, Name: "bar"}).Return(nil).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
@@ -147,7 +148,6 @@ func TestService_Create(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
@@ -196,7 +196,6 @@ func TestService_Create(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
@@ -462,7 +461,9 @@ func TestService_Update(t *testing.T) {
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
-				repo.On("CreateMany", ctx, appModel.Apis).Return(nil).Once()
+				for _, api := range appModel.Apis {
+					repo.On("CreateMany", ctx, api).Return(nil).Once()
+				}
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {

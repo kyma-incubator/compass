@@ -49,7 +49,7 @@ type WebhookRepository interface {
 //go:generate mockery -name=APIRepository -output=automock -outpkg=automock -case=underscore
 type APIRepository interface {
 	ListByApplicationID(ctx context.Context, tenant, applicationID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
-	CreateMany(ctx context.Context, items []*model.APIDefinition) error
+	Create(ctx context.Context, item *model.APIDefinition) error
 	DeleteAllByApplicationID(ctx context.Context, tenant, id string) error
 }
 
@@ -437,10 +437,14 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 		return errors.Wrapf(err, "while creating Webhooks for application")
 	}
 
-	var apis []*model.APIDefinition
 	for _, item := range in.Apis {
 
 		apiDefID := s.uidService.Generate()
+
+		err = s.apiRepo.Create(ctx, item.ToAPIDefinition(apiDefID, applicationID, tenant))
+		if err != nil {
+			return errors.Wrapf(err, "while creating APIs for application")
+		}
 
 		if item.Spec != nil && item.Spec.FetchRequest != nil {
 			_, err = s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.APIFetchRequestReference, apiDefID)
@@ -448,13 +452,6 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 				return err
 			}
 		}
-
-		apis = append(apis, item.ToAPIDefinition(apiDefID, applicationID, tenant))
-	}
-
-	err = s.apiRepo.CreateMany(ctx, apis)
-	if err != nil {
-		return errors.Wrapf(err, "while creating APIs for application")
 	}
 
 	var eventAPIs []*model.EventAPIDefinition
