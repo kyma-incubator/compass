@@ -30,7 +30,7 @@ func EchoHandler(writer http.ResponseWriter, request *http.Request) {
 	var data Data
 	err := json.NewDecoder(request.Body).Decode(&data)
 
-	log.Printf("Response: \n %+v\n\n", data)
+	log.Printf("Body: \n %+v\n", data)
 
 	defer func() {
 		err := request.Body.Close()
@@ -50,6 +50,9 @@ func EchoHandler(writer http.ResponseWriter, request *http.Request) {
 	extraMap["tenant"] = "9ac609e1-7487-4aa6-b600-0904b272b11f"
 
 	data.Extra = extraMap
+
+	log.Println("=== ==== ===")
+	log.Printf("Response: \n %+v\n\n", data)
 
 	err = json.NewEncoder(writer).Encode(data)
 
