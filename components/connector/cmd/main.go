@@ -29,7 +29,7 @@ import (
 )
 
 type config struct {
-	GraphQLAddress        string `envconfig:"default=127.0.0.1:3000"`
+	Address               string `envconfig:"default=127.0.0.1:3000"`
 	APIEndpoint           string `envconfig:"default=/graphql"`
 	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
 
@@ -57,13 +57,13 @@ type config struct {
 }
 
 func (c *config) String() string {
-	return fmt.Sprintf("GraphQLAddress: %s, APIEndpoint: %s, HydratorAddress: %s, "+
+	return fmt.Sprintf("Address: %s, APIEndpoint: %s, HydratorAddress: %s, "+
 		"CSRSubjectCountry: %s, CSRSubjectOrganization: %s, CSRSubjectOrganizationalUnit: %s, "+
 		"CSRSubjectLocality: %s, CSRSubjectProvince: %s, "+
 		"CertificateValidityTime: %s, CASecretName: %s, RootCACertificateSecretName: %s, "+
 		"TokenLength: %d, TokenRuntimeExpiration: %s, TokenApplicationExpiration: %s, TokenCSRExpiration: %s, "+
 		"DirectorURL: %s",
-		c.GraphQLAddress, c.APIEndpoint, c.HydratorAddress,
+		c.Address, c.APIEndpoint, c.HydratorAddress,
 		c.CSRSubject.Country, c.CSRSubject.Organization, c.CSRSubject.OrganizationalUnit,
 		c.CSRSubject.Locality, c.CSRSubject.Province,
 		c.CertificateValidityTime, c.CASecretName, c.RootCACertificateSecretName,
@@ -118,7 +118,7 @@ func main() {
 	wg.Add(1)
 
 	go func() {
-		log.Printf("GraphQL API listening on %s...", cfg.GraphQLAddress)
+		log.Printf("GraphQL API listening on %s...", cfg.Address)
 		if err := server.ListenAndServe(); err != nil {
 			panic(err)
 		}
@@ -152,7 +152,7 @@ func prepareGraphQLServer(cfg config, tokenResolver api.TokenResolver, certResol
 	externalRouter.Use(authContextMiddleware.PropagateAuthentication)
 
 	return &http.Server{
-		Addr:    cfg.GraphQLAddress,
+		Addr:    cfg.Address,
 		Handler: externalRouter,
 	}
 }
@@ -169,7 +169,7 @@ func prepareHydratorServer(cfg config, tokenService tokens.Service, subjectConst
 
 	return &http.Server{
 		Addr:    cfg.HydratorAddress,
-		Handler: v1Router,
+		Handler: router,
 	}
 }
 
