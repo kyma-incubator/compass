@@ -1,0 +1,24 @@
+openapi: '3.0.0'
+info:
+  version: '1.0.0'
+  title: 'Kyma Connector Service API'
+paths:
+  /v1/applications/tokens:
+    post:
+      
+  /v1/applications/certificates/revocations:
+    post:
+      tags:
+      - applications internal API
+      summary: 'Marks certificate as revoked.'
+      responses:
+        '201':
+          description: 'Successful operation.'
+        
+  /v1/runtimes/tokens:
+    post:
+      
+  /v1/runtimes/certificates/revocations:
+    post:
+      parameters:
+      
