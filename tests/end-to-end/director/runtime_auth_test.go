@@ -69,14 +69,10 @@ func TestQueryRuntimeAuths(t *testing.T) {
 			defer deleteApplication(t, app.ID)
 
 			var rtmIDs []string
-			defer func() {
-				for _, id := range rtmIDs {
-					deleteRuntime(t, id)
-				}
-			}()
 			for i := 0; i < rtmsToCreate; i++ {
 				rtm := createRuntime(t, ctx, fmt.Sprintf("test-rtm-%d", i))
 				rtmIDs = append(rtmIDs, rtm.ID)
+				defer deleteRuntime(t, rtm.ID)
 			}
 			require.Len(t, rtmIDs, rtmsToCreate)
 
@@ -103,7 +99,6 @@ func TestQueryRuntimeAuths(t *testing.T) {
 			for _, innerTestCase := range innerTestCases {
 				t.Run(innerTestCase.Name, func(t *testing.T) {
 					result := ApplicationExt{}
-
 					request := fixRuntimeAuthRequest(app.ID, innerTestCase.QueriedRtmID)
 
 					// WHEN
