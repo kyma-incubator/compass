@@ -2,10 +2,33 @@ package director
 
 import (
 	"fmt"
+	"strings"
 )
 
 // gqlFieldsProvider is responsible for generating GraphQL queries that request for all fields for given type
 type gqlFieldsProvider struct{}
+
+// fieldCtx is a map of optional fields that can be passed to FieldsProvider
+// Map keys should be in following format: `type.field` eg. `APIDefinition.auth`
+type fieldCtx map[string]string
+
+// addFieldsFromContext checks if field context contains specific keys, adds them to provided fields and returns them
+func addFieldsFromContext(oldFields string, ctx []fieldCtx, keys []string) string {
+	var newFields []string
+	for _, key := range keys {
+		for _, dict := range ctx {
+			if val, ok := dict[key]; ok {
+				newFields = append(newFields, val)
+				break
+			}
+		}
+	}
+	if len(newFields) == 0 {
+		return oldFields
+	}
+
+	return fmt.Sprintf("%s\n%s", oldFields, strings.Join(newFields, "\n"))
+}
 
 func (fp *gqlFieldsProvider) Page(item string) string {
 	return fmt.Sprintf(`data {
@@ -16,7 +39,7 @@ func (fp *gqlFieldsProvider) Page(item string) string {
 	`, item, fp.ForPageInfo())
 }
 
-func (fp *gqlFieldsProvider) ForApplication() string {
+func (fp *gqlFieldsProvider) ForApplication(ctx ...fieldCtx) string {
 	return fmt.Sprintf(`id
 		name
 		description
@@ -27,7 +50,7 @@ func (fp *gqlFieldsProvider) ForApplication() string {
 		apis {%s}
 		eventAPIs {%s}
 		documents {%s}
-	`, fp.ForWebhooks(), fp.Page(fp.ForAPIDefinition()), fp.Page(fp.ForEventAPI()), fp.Page(fp.ForDocument()))
+	`, fp.ForWebhooks(), fp.Page(fp.ForAPIDefinition(ctx...)), fp.Page(fp.ForEventAPI()), fp.Page(fp.ForDocument()))
 }
 
 func (fp *gqlFieldsProvider) ForWebhooks() string {
@@ -41,8 +64,8 @@ func (fp *gqlFieldsProvider) ForWebhooks() string {
 		}`, fp.ForAuth())
 }
 
-func (fp *gqlFieldsProvider) ForAPIDefinition() string {
-	return fmt.Sprintf(`		id
+func (fp *gqlFieldsProvider) ForAPIDefinition(ctx ...fieldCtx) string {
+	return addFieldsFromContext(fmt.Sprintf(`		id
 		name
 		description
 		spec {%s}
@@ -50,7 +73,8 @@ func (fp *gqlFieldsProvider) ForAPIDefinition() string {
 		group
 		auths {%s}
 		defaultAuth {%s}
-		version {%s}`, fp.ForApiSpec(), fp.ForRuntimeAuth(), fp.ForAuth(), fp.ForVersion())
+		version {%s}`, fp.ForApiSpec(), fp.ForRuntimeAuth(), fp.ForAuth(), fp.ForVersion()),
+		ctx, []string{"APIDefinition.auth"})
 }
 
 func (fp *gqlFieldsProvider) ForApiSpec() string {

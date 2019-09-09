@@ -70,7 +70,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 			}`, actualRuntime.ID, tc.gqlFieldsProvider.ForRuntime()))
 	err = tc.RunQuery(ctx, getRuntimeReq, &actualRuntime)
 	require.NoError(t, err)
-	//assert.Len(t, actualRuntime.Labels, 2) // TODO: Make it work when labels are in place
+	assert.Len(t, actualRuntime.Labels, 2)
 
 	// add agent auth
 	// GIVEN

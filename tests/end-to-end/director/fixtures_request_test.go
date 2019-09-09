@@ -82,6 +82,15 @@ func fixSetRuntimeLabelRequest(runtimeID, labelKey string, labelValue interface{
 			runtimeID, labelKey, value, tc.gqlFieldsProvider.ForLabel()))
 }
 
+func fixSetAPIAuthRequest(apiID string, rtmID string, authInStr string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: setAPIAuth(apiID: "%s", runtimeID: "%s", in: %s) {
+					%s
+				}
+			}`, apiID, rtmID, authInStr, tc.gqlFieldsProvider.ForRuntimeAuth()))
+}
+
 // QUERY
 func fixApplicationForRuntimeRequest(runtimeID string) *gcli.Request {
 	return gcli.NewRequest(
@@ -102,6 +111,17 @@ func fixRuntimeRequestWithPagination(after int, cursor string) *gcli.Request {
 					%s
 				}
 			}`, after, cursor, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForRuntime())))
+}
+
+func fixRuntimeAuthRequest(applicationID string, runtimeID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+							result: application(id: "%s") {
+								%s
+							}
+						}`, applicationID, tc.gqlFieldsProvider.ForApplication(fieldCtx{
+			"APIDefinition.auth": fmt.Sprintf(`auth(runtimeID: "%s") {%s}`, runtimeID, tc.gqlFieldsProvider.ForRuntimeAuth()),
+		})))
 }
 
 func fixRuntimeQuery(runtimeID string) *gcli.Request {
@@ -186,4 +206,13 @@ func fixDeleteApplicationLabel(applicationID, labelKey string) *gcli.Request {
 					%s
 				}
 			}`, applicationID, labelKey, tc.gqlFieldsProvider.ForLabel()))
+}
+
+func fixDeleteAPIAuthRequest(apiID string, rtmID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: deleteAPIAuth(apiID: "%s",runtimeID: "%s") {
+					%s
+				} 
+			}`, apiID, rtmID, tc.gqlFieldsProvider.ForRuntimeAuth()))
 }
