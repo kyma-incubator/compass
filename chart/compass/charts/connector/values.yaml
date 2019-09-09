@@ -2,7 +2,6 @@ deployment:
   image:
     pullPolicy: IfNotPresent
   args:
-    containerPort: 3000
     token:
       length: 64
       runtimeExpiration: 60m

@@ -15,13 +15,21 @@ spec:
     - {{ .Values.global.istio.gateway.name }}.{{ .Values.global.istio.gateway.namespace }}.svc.cluster.local
   http:
     - match:
-        - uri:
-            regex: /.*
+      - uri:
+          prefix: /connector
+      route:
+      - destination:
+          host: {{ .Values.oathkeeper.host }}
+          port:
+            number: {{ .Values.oathkeeper.port }}
+    - match:
+      - uri:
+          regex: /.*
       route:
         - destination:
             host: {{ .Values.global.gateway.host }}
             port:
-              number: {{ .Values.service.port }}
+              number: {{ .Values.global.gateway.port }}
       corsPolicy:
         allowOrigin:
           - "*"

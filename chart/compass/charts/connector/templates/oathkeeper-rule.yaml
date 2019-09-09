@@ -1,0 +1,34 @@
+---
+apiVersion: oathkeeper.ory.sh/v1alpha1
+kind: Rule
+metadata:
+  name: {{ template "fullname" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  description: Connector Tokens and Istio certificate headers validation rule
+  upstream:
+    url: "http://compass-gateway.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.gateway.port }}/connector" # TODO - move to values
+    preserveHost: false
+    stripPath: /connector
+  match:
+    methods: ["GET", "POST"]
+    url: <http|https>://{{ .Values.global.gateway.host }}.{{ .Values.global.ingress.domainName }}/connector/graphql # OathKeeper proxy URL with path used in Connector
+  authenticators:
+    - handler: noop
+  authorizer:
+    handler: allow
+  mutators:
+    - handler: hydrator
+      config:
+        api:
+          url: http://{{ template "fullname" . }}.{{ .Release.Namespace }}:{{ .Values.global.connector.validator.port }}/v1/subject/validate # URL of Connector Service REST API authenticator
+          retry:
+            number: 3
+            delayInMilliseconds: 3000
+    - handler: hydrator
+      config:
+        api:
+          url: http://{{ template "fullname" . }}.{{ .Release.Namespace }}:{{ .Values.global.connector.validator.port }}/v1/tokens/resolve # URL of Connector Service REST API authenticator
+          retry:
+            number: 3
+            delayInMilliseconds: 3000

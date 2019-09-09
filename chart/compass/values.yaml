@@ -39,7 +39,10 @@ global:
     port: 3000
 
   connector:
-    port: 3000
+    graphql:
+      port: 3000
+    validator:
+      port: 8080
     # If secrets do not exist they will be created
     secrets:
       ca:
@@ -53,6 +56,7 @@ global:
     caCertificate: ""
 
   gateway:
+    port: 3000
     host: compass-gateway
   
   ingress:
