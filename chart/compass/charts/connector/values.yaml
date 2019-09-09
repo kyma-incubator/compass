@@ -19,5 +19,15 @@ deployment:
     runAsUser: 2000
     allowPrivilegeEscalation: false
 
+oathkeeper:
+  connectorTokenHydrator:
+    retry:
+      number: 3
+      delayInMilliseconds: 3000
+  istioCertHeaderHydrator:
+    retry:
+      number: 3
+      delayInMilliseconds: 3000
+
 certsSetupJob:
   generatedCertificateValidity: 92d
