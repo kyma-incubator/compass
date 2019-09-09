@@ -101,7 +101,8 @@ func TestService_Create(t *testing.T) {
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("CreateMany", mock.Anything).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventAPIDefinition{ID: "foo", ApplicationID: "foo", Tenant: tnt, Name: "foo", Spec: &model.EventAPISpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventAPIDefinition{ID: "foo", ApplicationID: "foo", Tenant: tnt, Name: "bar"}).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -152,7 +153,6 @@ func TestService_Create(t *testing.T) {
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("CreateMany", mock.Anything).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -200,7 +200,6 @@ func TestService_Create(t *testing.T) {
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("CreateMany", mock.Anything).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -467,23 +466,16 @@ func TestService_Update(t *testing.T) {
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
-				for _, api := range appModel.Apis {
-					repo.On("CreateMany", ctx, api).Return(nil).Once()
-				}
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("DeleteAllByApplicationID", id).Return(nil).Once()
-				repo.On("CreateMany", appModel.EventAPIs).Return(nil).Once()
+				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
 				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
-				for _, doc := range appModel.Documents {
-					repo.On("Create", ctx, doc).Return(nil).Once()
-				}
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -709,11 +701,8 @@ func TestService_UpdateWithInvalidNames(t *testing.T) {
 func TestService_Delete(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
-
 	id := "foo"
-
 	desc := "Lorem ipsum"
-
 	tnt := "tenant"
 	applicationModel := &model.Application{
 		ID:          id,
@@ -728,12 +717,6 @@ func TestService_Delete(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		AppRepoFn          func() *automock.ApplicationRepository
-		WebhookRepoFn      func() *automock.WebhookRepository
-		APIRepoFn          func() *automock.APIRepository
-		EventAPIRepoFn     func() *automock.EventAPIRepository
-		DocumentRepoFn     func() *automock.DocumentRepository
-		LabelRepoFn        func() *automock.LabelRepository
-		FetchRequestRepoFn func() *automock.FetchRequestRepository
 		Input              model.ApplicationInput
 		InputID            string
 		ExpectedErrMessage string
@@ -742,37 +725,7 @@ func TestService_Delete(t *testing.T) {
 			Name: "Success",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, tnt, id).Return(applicationModel, nil).Once()
 				repo.On("Delete", ctx, applicationModel.Tenant, applicationModel.ID).Return(nil).Once()
-				return repo
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				repo := &automock.WebhookRepository{}
-				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
-				return repo
-			},
-			APIRepoFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
-				return repo
-			},
-			EventAPIRepoFn: func() *automock.EventAPIRepository {
-				repo := &automock.EventAPIRepository{}
-				repo.On("DeleteAllByApplicationID", id).Return(nil).Once()
-				return repo
-			},
-			DocumentRepoFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
-				return repo
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("DeleteAll", ctx, tnt, model.ApplicationLabelableObject, id).Return(nil).Once()
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
 				return repo
 			},
 			InputID:            id,
@@ -782,105 +735,7 @@ func TestService_Delete(t *testing.T) {
 			Name: "Returns error when application deletion failed",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, tnt, id).Return(applicationModel, nil).Once()
 				repo.On("Delete", ctx, applicationModel.Tenant, applicationModel.ID).Return(testErr).Once()
-				return repo
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				repo := &automock.WebhookRepository{}
-				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
-				return repo
-			},
-			APIRepoFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
-				return repo
-			},
-			EventAPIRepoFn: func() *automock.EventAPIRepository {
-				repo := &automock.EventAPIRepository{}
-				repo.On("DeleteAllByApplicationID", id).Return(nil).Once()
-				return repo
-			},
-			DocumentRepoFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
-				return repo
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				return repo
-			},
-			InputID:            id,
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "Returns error when deleting application's subresource failed",
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, tnt, id).Return(applicationModel, nil).Once()
-				return repo
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				repo := &automock.WebhookRepository{}
-				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(testErr).Once()
-				return repo
-			},
-			APIRepoFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				return repo
-			},
-			EventAPIRepoFn: func() *automock.EventAPIRepository {
-				repo := &automock.EventAPIRepository{}
-				return repo
-			},
-			DocumentRepoFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				return repo
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				return repo
-			},
-			InputID:            id,
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "Returns error when application retrieval failed",
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, tnt, id).Return(nil, testErr).Once()
-				return repo
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				repo := &automock.WebhookRepository{}
-				return repo
-			},
-			APIRepoFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				return repo
-			},
-			EventAPIRepoFn: func() *automock.EventAPIRepository {
-				repo := &automock.EventAPIRepository{}
-				return repo
-			},
-			DocumentRepoFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				return repo
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
 				return repo
 			},
 			InputID:            id,
@@ -891,13 +746,7 @@ func TestService_Delete(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appRepo := testCase.AppRepoFn()
-			webhookRepo := testCase.WebhookRepoFn()
-			apiRepo := testCase.APIRepoFn()
-			eventAPIRepo := testCase.EventAPIRepoFn()
-			documentRepo := testCase.DocumentRepoFn()
-			labelRepo := testCase.LabelRepoFn()
-			fetchRequestRepo := testCase.FetchRequestRepoFn()
-			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo, nil, labelRepo, fetchRequestRepo, nil, nil, nil)
+			svc := application.NewService(appRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -906,15 +755,11 @@ func TestService_Delete(t *testing.T) {
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 			} else {
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
 			appRepo.AssertExpectations(t)
-			webhookRepo.AssertExpectations(t)
-			apiRepo.AssertExpectations(t)
-			eventAPIRepo.AssertExpectations(t)
-			documentRepo.AssertExpectations(t)
-			fetchRequestRepo.AssertExpectations(t)
 		})
 	}
 }
@@ -1062,7 +907,7 @@ func TestService_List(t *testing.T) {
 			ExpectedErrMessage: "page size must be between 1 and 100",
 		},
 		{
-			Name: "Returns error when page size is lbigger than 100",
+			Name: "Returns error when page size is bigger than 100",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				return repo
@@ -1841,7 +1686,7 @@ func modelFromInput(in model.ApplicationInput, tenant, applicationID string) tes
 
 	var eventAPIsModel []*model.EventAPIDefinition
 	for _, item := range in.EventAPIs {
-		eventAPIsModel = append(eventAPIsModel, item.ToEventAPIDefinition(uuid.New().String(), applicationID))
+		eventAPIsModel = append(eventAPIsModel, item.ToEventAPIDefinition(uuid.New().String(), tenant, applicationID))
 	}
 
 	var documentsModel []*model.Document

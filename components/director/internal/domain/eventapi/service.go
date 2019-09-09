@@ -6,7 +6,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
 
@@ -16,15 +15,14 @@ import (
 
 //go:generate mockery -name=EventAPIRepository -output=automock -outpkg=automock -case=underscore
 type EventAPIRepository interface {
-	GetByID(id string) (*model.EventAPIDefinition, error)
-	Exists(ctx context.Context, tenant, id string) (bool, error)
-	List(filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.EventAPIDefinitionPage, error)
-	ListByApplicationID(applicationID string, pageSize *int, cursor *string) (*model.EventAPIDefinitionPage, error)
-	Create(item *model.EventAPIDefinition) error
-	CreateMany(items []*model.EventAPIDefinition) error
-	Update(item *model.EventAPIDefinition) error
-	Delete(item *model.EventAPIDefinition) error
-	DeleteAllByApplicationID(id string) error
+	GetByID(ctx context.Context, tenantID string, id string) (*model.EventAPIDefinition, error)
+	Exists(ctx context.Context, tenantID, id string) (bool, error)
+	ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventAPIDefinitionPage, error)
+	Create(ctx context.Context, item *model.EventAPIDefinition) error
+	CreateMany(ctx context.Context, items []*model.EventAPIDefinition) error
+	Update(ctx context.Context, item *model.EventAPIDefinition) error
+	Delete(ctx context.Context, tenantID string, id string) error
+	DeleteAllByApplicationID(ctx context.Context, tenantID string, appID string) error
 }
 
 //go:generate mockery -name=FetchRequestRepository -output=automock -outpkg=automock -case=underscore
@@ -54,12 +52,26 @@ func NewService(eventAPIRepo EventAPIRepository, fetchRequestRepo FetchRequestRe
 	}
 }
 
-func (s *service) List(ctx context.Context, applicationID string, pageSize *int, cursor *string) (*model.EventAPIDefinitionPage, error) {
-	return s.eventAPIRepo.ListByApplicationID(applicationID, pageSize, cursor)
+func (s *service) List(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.EventAPIDefinitionPage, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "while loading tenant from context")
+	}
+
+	if pageSize < 1 || pageSize > 100 {
+		return nil, errors.New("page size must be between 1 and 100")
+	}
+
+	return s.eventAPIRepo.ListByApplicationID(ctx, tnt, applicationID, pageSize, cursor)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.EventAPIDefinition, error) {
-	eventAPI, err := s.eventAPIRepo.GetByID(id)
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	eventAPI, err := s.eventAPIRepo.GetByID(ctx, tnt, id)
 	if err != nil {
 		return nil, err
 	}
@@ -81,9 +93,9 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Eve
 			return "", errors.Wrapf(err, "while creating FetchRequest for EventAPIDefinition %s", id)
 		}
 	}
-	eventAPI := in.ToEventAPIDefinition(id, applicationID)
+	eventAPI := in.ToEventAPIDefinition(id, applicationID, tnt)
 
-	err = s.eventAPIRepo.Create(eventAPI)
+	err = s.eventAPIRepo.Create(ctx, eventAPI)
 	if err != nil {
 		return "", err
 	}
@@ -114,9 +126,9 @@ func (s *service) Update(ctx context.Context, id string, in model.EventAPIDefini
 		}
 	}
 
-	eventAPI = in.ToEventAPIDefinition(id, eventAPI.ApplicationID)
+	eventAPI = in.ToEventAPIDefinition(id, eventAPI.ApplicationID, tnt)
 
-	err = s.eventAPIRepo.Update(eventAPI)
+	err = s.eventAPIRepo.Update(ctx, eventAPI)
 	if err != nil {
 		return errors.Wrapf(err, "while updating EventAPIDefinition with ID %s", id)
 	}
@@ -125,12 +137,12 @@ func (s *service) Update(ctx context.Context, id string, in model.EventAPIDefini
 }
 
 func (s *service) Delete(ctx context.Context, id string) error {
-	eventAPI, err := s.Get(ctx, id)
+	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return errors.Wrapf(err, "while receiving EventAPIDefinition with ID %s", id)
+		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	err = s.eventAPIRepo.Delete(eventAPI)
+	err = s.eventAPIRepo.Delete(ctx, tnt, id)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting EventAPIDefinition with ID %s", id)
 	}
@@ -139,7 +151,12 @@ func (s *service) Delete(ctx context.Context, id string) error {
 }
 
 func (s *service) RefetchAPISpec(ctx context.Context, id string) (*model.EventAPISpec, error) {
-	eventAPI, err := s.eventAPIRepo.GetByID(id)
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	eventAPI, err := s.eventAPIRepo.GetByID(ctx, tnt, id)
 	if err != nil {
 		return nil, err
 	}

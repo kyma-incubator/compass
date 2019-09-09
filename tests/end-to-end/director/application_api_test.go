@@ -687,7 +687,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		require.NotNil(t, id)
 		assert.Equal(t, "new-api-name", actualAPI.Name)
 		assert.Equal(t, "new-api-url", actualAPI.TargetURL)
-		//
+
 		updatedApp := getApp(ctx, t, actualApp.ID)
 		assert.Len(t, updatedApp.Apis.Data, 2)
 		actualAPINames := make(map[string]struct{})

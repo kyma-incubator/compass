@@ -21,6 +21,7 @@ Below you can find a list of mock GraphQL queries and mutations:
 - [delete runtime](./delete-runtime.graphql)
 - [query application](./query-application.graphql)
 - [query applications for runtime](./query-applications-for-runtime.graphql)
+- [query applications with label filter](./query-applications-with-label-filter.graphql)
 - [query applications](./query-applications.graphql)
 - [query label definition](./query-label-definition.graphql)
 - [query runtime](./query-runtime.graphql)

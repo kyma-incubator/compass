@@ -607,8 +607,6 @@ func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
 
 func TestSearchApplicationsByLabels(t *testing.T) {
 	// GIVEN
-	//TODO: enable this test after implementing filtering on applications
-	t.SkipNow()
 	//Create first application
 	ctx := context.Background()
 	labelKeyFoo := "foo"

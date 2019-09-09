@@ -56,9 +56,9 @@ type APIRepository interface {
 
 //go:generate mockery -name=EventAPIRepository -output=automock -outpkg=automock -case=underscore
 type EventAPIRepository interface {
-	ListByApplicationID(applicationID string, pageSize *int, cursor *string) (*model.EventAPIDefinitionPage, error)
-	CreateMany(items []*model.EventAPIDefinition) error
-	DeleteAllByApplicationID(id string) error
+	ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventAPIDefinitionPage, error)
+	Create(ctx context.Context, items *model.EventAPIDefinition) error
+	DeleteAllByApplicationID(ctx context.Context, tenantID string, appID string) error
 }
 
 //go:generate mockery -name=RuntimeRepository -output=automock -outpkg=automock -case=underscore
@@ -317,25 +317,9 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	app, err := s.Get(ctx, id)
-	if err != nil {
-		return errors.Wrapf(err, "while getting Application with ID %s", id)
-	}
-
-	err = s.deleteRelatedResources(ctx, app.Tenant, id)
-	if err != nil {
-		return errors.Wrapf(err, "while deleting related Application resources")
-	}
-
-	err = s.appRepo.Delete(ctx, app.Tenant, id)
+	err = s.appRepo.Delete(ctx, appTenant, id)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting Application")
-	}
-
-	// TODO: Set cascade delete when implementing DB repository for Application domain
-	err = s.labelRepo.DeleteAll(ctx, appTenant, model.ApplicationLabelableObject, id)
-	if err != nil {
-		return errors.Wrapf(err, "while deleting all labels for Runtime")
 	}
 
 	return nil
@@ -447,9 +431,7 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 	}
 
 	for _, item := range in.Apis {
-
 		apiDefID := s.uidService.Generate()
-
 		err = s.apiRepo.Create(ctx, item.ToAPIDefinition(apiDefID, applicationID, tenant))
 		if err != nil {
 			return errors.Wrapf(err, "while creating APIs for application")
@@ -463,9 +445,12 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 		}
 	}
 
-	var eventAPIs []*model.EventAPIDefinition
 	for _, item := range in.EventAPIs {
 		eventAPIDefID := s.uidService.Generate()
+		err = s.eventAPIRepo.Create(ctx, item.ToEventAPIDefinition(eventAPIDefID, applicationID, tenant))
+		if err != nil {
+			return errors.Wrapf(err, "while creating EventAPIs for application")
+		}
 
 		if item.Spec != nil && item.Spec.FetchRequest != nil {
 			_, err = s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.EventAPIFetchRequestReference, eventAPIDefID)
@@ -473,12 +458,6 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 				return err
 			}
 		}
-
-		eventAPIs = append(eventAPIs, item.ToEventAPIDefinition(eventAPIDefID, applicationID))
-	}
-	err = s.eventAPIRepo.CreateMany(eventAPIs)
-	if err != nil {
-		return errors.Wrapf(err, "while creating EventAPIs for application")
 	}
 
 	for _, item := range in.Documents {
@@ -513,7 +492,7 @@ func (s *service) deleteRelatedResources(ctx context.Context, tenant, applicatio
 		return errors.Wrapf(err, "while deleting APIs for application %s", applicationID)
 	}
 
-	err = s.eventAPIRepo.DeleteAllByApplicationID(applicationID)
+	err = s.eventAPIRepo.DeleteAllByApplicationID(ctx, tenant, applicationID)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting EventAPIs for application %s", applicationID)
 	}

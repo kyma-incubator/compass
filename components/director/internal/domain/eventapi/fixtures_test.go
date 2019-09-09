@@ -204,7 +204,7 @@ func fixEventAPICreateArgs(id string, api model.EventAPIDefinition) []driver.Val
 func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchRequest {
 	return &model.FetchRequest{
 		ID:     id,
-		Tenant: "tenant",
+		Tenant: tenantID,
 		URL:    url,
 		Auth:   nil,
 		Mode:   "SINGLE",

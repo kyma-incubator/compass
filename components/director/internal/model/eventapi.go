@@ -50,7 +50,7 @@ type EventAPISpecInput struct {
 	FetchRequest  *FetchRequestInput
 }
 
-func (e *EventAPIDefinitionInput) ToEventAPIDefinition(id, appID string) *EventAPIDefinition {
+func (e *EventAPIDefinitionInput) ToEventAPIDefinition(id, appID, tenant string) *EventAPIDefinition {
 	if e == nil {
 		return nil
 	}
@@ -58,6 +58,7 @@ func (e *EventAPIDefinitionInput) ToEventAPIDefinition(id, appID string) *EventA
 	return &EventAPIDefinition{
 		ID:            id,
 		ApplicationID: appID,
+		Tenant:        tenant,
 		Name:          e.Name,
 		Description:   e.Description,
 		Group:         e.Group,
