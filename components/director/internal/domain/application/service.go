@@ -317,25 +317,9 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	app, err := s.Get(ctx, id)
-	if err != nil {
-		return errors.Wrapf(err, "while getting Application with ID %s", id)
-	}
-
-	err = s.deleteRelatedResources(ctx, app.Tenant, id)
-	if err != nil {
-		return errors.Wrapf(err, "while deleting related Application resources")
-	}
-
-	err = s.appRepo.Delete(ctx, app.Tenant, id)
+	err = s.appRepo.Delete(ctx, appTenant, id)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting Application")
-	}
-
-	// TODO: Set cascade delete when implementing DB repository for Application domain
-	err = s.labelRepo.DeleteAll(ctx, appTenant, model.ApplicationLabelableObject, id)
-	if err != nil {
-		return errors.Wrapf(err, "while deleting all labels for Runtime")
 	}
 
 	return nil

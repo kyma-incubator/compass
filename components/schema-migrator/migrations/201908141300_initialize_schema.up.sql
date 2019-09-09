@@ -115,8 +115,7 @@ CREATE TABLE event_api_definitions (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     tenant_id uuid NOT NULL,
     app_id uuid NOT NULL,
---     TODO: uncomment when application is moved to sql
---     foreign key (tenant_id, app_id) references applications (tenant_id, id) ON DELETE CASCADE,
+    foreign key (tenant_id, app_id) references applications (tenant_id, id) ON DELETE CASCADE,
     name varchar(256) NOT NULL,
     description text,
     group_name varchar(256),
@@ -222,7 +221,7 @@ CREATE TABLE fetch_requests (
     api_def_id uuid,
     foreign key (tenant_id, api_def_id) references api_definitions (tenant_id, id) ON DELETE CASCADE,
     event_api_def_id uuid,
-    -- foreign key (tenant_id, event_api_def_id) references event_api_definitions (tenant_id, id) ON DELETE CASCADE,
+    foreign key (tenant_id, event_api_def_id) references event_api_definitions (tenant_id, id) ON DELETE CASCADE,
     document_id uuid,
     foreign key (tenant_id, document_id) references documents (tenant_id, id) ON DELETE CASCADE,
 
