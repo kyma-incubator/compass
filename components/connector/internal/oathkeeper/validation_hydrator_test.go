@@ -26,12 +26,6 @@ const (
 )
 
 var (
-	authenticationSession = AuthenticationSession{
-		Subject: "client",
-		Extra:   nil,
-		Header:  nil,
-	}
-
 	tokenData = tokens.TokenData{
 		Type:     tokens.ApplicationToken,
 		ClientId: clientId,
@@ -39,8 +33,7 @@ var (
 )
 
 func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
-
-	marshalledSession, err := json.Marshal(authenticationSession)
+	marshalledSession, err := json.Marshal(emptyAuthSession())
 	require.NoError(t, err)
 
 	t.Run("should resolve token and add header to response", func(t *testing.T) {
@@ -92,7 +85,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		err = json.NewDecoder(rr.Body).Decode(&authSession)
 		require.NoError(t, err)
 
-		assert.Equal(t, authenticationSession, authSession)
+		assert.Equal(t, emptyAuthSession(), authSession)
 	})
 
 	t.Run("should not modify authentication session if no token provided", func(t *testing.T) {
@@ -115,7 +108,37 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		err = json.NewDecoder(rr.Body).Decode(&authSession)
 		require.NoError(t, err)
 
-		assert.Equal(t, authenticationSession, authSession)
+		assert.Equal(t, emptyAuthSession(), authSession)
+	})
+
+	t.Run("should trim headers used in validation", func(t *testing.T) {
+		// given
+		authenticationSession := emptyAuthSession()
+		setForbiddenHeaders(&authenticationSession)
+		marshalledSession, err := json.Marshal(authenticationSession)
+		require.NoError(t, err)
+
+		req, err := http.NewRequest(http.MethodPost, "", bytes.NewBuffer(marshalledSession))
+		require.NoError(t, err)
+		rr := httptest.NewRecorder()
+
+		tokenService := &mocks.Service{}
+
+		validator := NewValidationHydrator(tokenService, nil)
+
+		// when
+		validator.ResolveConnectorTokenHeader(rr, req)
+
+		// then
+		assert.Equal(t, http.StatusOK, rr.Code)
+
+		var authSession AuthenticationSession
+		err = json.NewDecoder(rr.Body).Decode(&authSession)
+		require.NoError(t, err)
+
+		assertForbiddenHeadersNotSet(t, authSession)
+		assert.Equal(t, authenticationSession.Subject, authSession.Subject)
+		assert.Equal(t, authenticationSession.Extra, authSession.Extra)
 	})
 
 	t.Run("should return error when failed to unmarshal authentication session", func(t *testing.T) {
@@ -135,8 +158,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 }
 
 func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
-
-	marshalledSession, err := json.Marshal(authenticationSession)
+	marshalledSession, err := json.Marshal(emptyAuthSession())
 	require.NoError(t, err)
 
 	t.Run("should resolve cert header and add header to response", func(t *testing.T) {
@@ -184,7 +206,38 @@ func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
 		err = json.NewDecoder(rr.Body).Decode(&authSession)
 		require.NoError(t, err)
 
-		assert.Equal(t, authenticationSession, authSession)
+		assert.Equal(t, emptyAuthSession(), authSession)
+	})
+
+	t.Run("should trim headers used in validation", func(t *testing.T) {
+		// given
+		authenticationSession := emptyAuthSession()
+		setForbiddenHeaders(&authenticationSession)
+		marshalledSession, err := json.Marshal(authenticationSession)
+		require.NoError(t, err)
+
+		req, err := http.NewRequest(http.MethodPost, "", bytes.NewBuffer(marshalledSession))
+		require.NoError(t, err)
+		rr := httptest.NewRecorder()
+
+		certHeaderParser := &oathkeeperMocks.CertificateHeaderParser{}
+		certHeaderParser.On("GetCertificateData", req).Return("", "", false)
+
+		validator := NewValidationHydrator(nil, certHeaderParser)
+
+		// when
+		validator.ResolveIstioCertHeader(rr, req)
+
+		// then
+		assert.Equal(t, http.StatusOK, rr.Code)
+
+		var authSession AuthenticationSession
+		err = json.NewDecoder(rr.Body).Decode(&authSession)
+		require.NoError(t, err)
+
+		assertForbiddenHeadersNotSet(t, authSession)
+		assert.Equal(t, authenticationSession.Subject, authSession.Subject)
+		assert.Equal(t, authenticationSession.Extra, authSession.Extra)
 	})
 
 	t.Run("should return error when failed to unmarshal authentication session", func(t *testing.T) {
@@ -201,4 +254,26 @@ func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
 		// then
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
 	})
+}
+
+func emptyAuthSession() AuthenticationSession {
+	return AuthenticationSession{
+		Subject: "client",
+		Extra:   nil,
+		Header:  http.Header{},
+	}
+}
+
+func setForbiddenHeaders(session *AuthenticationSession) {
+	session.Header.Add(ClientIdFromTokenHeader, "header")
+	session.Header.Add(TokenTypeHeader, "header")
+	session.Header.Add(ClientIdFromCertificateHeader, "header")
+	session.Header.Add(ClientCertificateHashHeader, "header")
+}
+
+func assertForbiddenHeadersNotSet(t *testing.T, session AuthenticationSession) {
+	assert.Nil(t, session.Header[ClientIdFromTokenHeader])
+	assert.Nil(t, session.Header[TokenTypeHeader])
+	assert.Nil(t, session.Header[ClientIdFromCertificateHeader])
+	assert.Nil(t, session.Header[ClientCertificateHashHeader])
 }

@@ -41,6 +41,7 @@ func (tvh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter
 		return
 	}
 	defer httputils.Close(r.Body)
+	authSession.TrimHeaders() // TODO: make sure it is enough (do not need to remove header from request)
 
 	connectorToken := r.Header.Get(ConnectorTokenHeader)
 	if connectorToken == "" {
@@ -80,6 +81,7 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 		return
 	}
 	defer httputils.Close(r.Body)
+	authSession.TrimHeaders() // TODO: make sure it is enough (do not need to remove header from request)
 
 	tvh.log.Info("Trying to validate certificate header...")
 

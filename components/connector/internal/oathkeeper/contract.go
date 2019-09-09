@@ -19,3 +19,10 @@ type AuthenticationSession struct {
 	Extra   map[string]interface{} `json:"extra"`
 	Header  http.Header            `json:"header"`
 }
+
+func (as *AuthenticationSession) TrimHeaders() {
+	as.Header.Del(ClientIdFromTokenHeader)
+	as.Header.Del(TokenTypeHeader)
+	as.Header.Del(ClientIdFromCertificateHeader)
+	as.Header.Del(ClientCertificateHashHeader)
+}
