@@ -57,6 +57,21 @@ func (r EventAPIDefCollection) Len() int {
 	return len(r)
 }
 
+func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.EventAPIDefinition, error) {
+	var eventAPIDefEntity Entity
+	err := r.SingleGetter.Get(ctx, tenantID, repo.Conditions{{Field: "id", Val: id}}, &eventAPIDefEntity)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting EventAPIDefinition")
+	}
+
+	eventAPIDefModel, err := r.conv.FromEntity(eventAPIDefEntity)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating EventAPIDefinition entity to model")
+	}
+
+	return &eventAPIDefModel, nil
+}
+
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventAPIDefinitionPage, error) {
 	appCond := fmt.Sprintf("app_id = %s ", pq.QuoteLiteral(applicationID))
 	var eventAPIDefCollection EventAPIDefCollection
@@ -80,21 +95,6 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string,
 		TotalCount: totalCount,
 		PageInfo:   page,
 	}, nil
-}
-
-func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.EventAPIDefinition, error) {
-	var eventAPIDefEntity Entity
-	err := r.SingleGetter.Get(ctx, tenantID, repo.Conditions{{Field: "id", Val: id}}, &eventAPIDefEntity)
-	if err != nil {
-		return nil, errors.Wrap(err, "while getting EventAPIDefinition")
-	}
-
-	eventAPIDefModel, err := r.conv.FromEntity(eventAPIDefEntity)
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating EventAPIDefinition entity to model")
-	}
-
-	return &eventAPIDefModel, nil
 }
 
 func (r *pgRepository) Create(ctx context.Context, item *model.EventAPIDefinition) error {
