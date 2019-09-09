@@ -2,14 +2,14 @@
 
 ## Introduction
 
-Oathkeeper provides several ways to authenticate, authorize or mutate request.
+Oathkeeper provides several ways to authenticate, authorize, and mutate request.
 
-To Authenticate the request with one time token issued by Connector or to validate certificates subject the mutator of type Hydrator can be used.
+Appropriate configuration of the mutator of type Hydrator allows to authenticate requests with a one-time token issued by the Connector or to validate the subject of the certificate.
 
 
 ## Oathkeeper configuration
 
-One time token authentication can be achieved with the following Oathkeeper configuration:
+To authenticate requests with a one-time token, configure the Oathkeeper like this: 
 ```
 serve:
   api:
@@ -37,7 +37,7 @@ mutators:
     enabled: true
 ```
 
-And access rules configuration:
+Use this access rules configuration:
 ```
 - id: some-id
   upstream:
@@ -66,15 +66,15 @@ And access rules configuration:
 
 ## One-time-token authentication
 
-The request to Connector Service is processed as follows:
-1. Hydrator mutator calls `/v1/tokens/resolve` endpoint on Connector Service Validator API
-2. If the `Connector-Token` header is present, the token is resolved and client ID is set as `ClientIdFromToken` header.
-3. The request goes through Compass Gateway to Connector Service.
-4. If the header `ClientIdFromToken` is present, the client is considered to be authenticated and the client ID is used to perform requested operation.
+The request to the Connector Service is processed like this:
+1. Hydrator mutator calls the `/v1/tokens/resolve` endpoint on the Connector Service Validator API.
+2. If the `Connector-Token` header is present, the Connector Service Validator resolves the one-time token and sets the client ID as the value of the `ClientIdFromToken` header.
+3. The request goes through the Compass Gateway to the Connector Service.
+4. The header `ClientIdFromToken` confirms the request authentication and enables the Connector Service to use the client ID to perform a requested operation.
 
-## Things to consider
+## Security improvements to implement
 
-To prevent any security issues, the following should be considered:
-- `ClientIdFromToken` should be stripped either on Oathkeeper level or in Connector Service Validator API
+To prevent any security issues:
+- Strip the `ClientIdFromToken` header either on the Oathkeeper level or in the Connector Service Validator API.
 
  
