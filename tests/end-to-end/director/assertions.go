@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func assertApplication(t *testing.T, in graphql.ApplicationInput, actualApp ApplicationExt) {
+func assertApplication(t *testing.T, in graphql.ApplicationInput, actualApp graphql.ApplicationExt) {
 	require.NotEmpty(t, actualApp.ID)
 
 	assert.Equal(t, in.Name, actualApp.Name)
@@ -89,7 +89,7 @@ func assertAuth(t *testing.T, in *graphql.AuthInput, actual *graphql.Auth) {
 	}
 }
 
-func assertDocuments(t *testing.T, in []*graphql.DocumentInput, actual []*graphql.Document) {
+func assertDocuments(t *testing.T, in []*graphql.DocumentInput, actual []*graphql.DocumentExt) {
 	assert.Equal(t, len(in), len(actual))
 	for _, inDocu := range in {
 		found := false
@@ -125,7 +125,7 @@ func assertFetchRequest(t *testing.T, in *graphql.FetchRequestInput, actual *gra
 	assertAuth(t, in.Auth, actual.Auth)
 }
 
-func assertAPI(t *testing.T, in []*graphql.APIDefinitionInput, actual []*graphql.APIDefinition) {
+func assertAPI(t *testing.T, in []*graphql.APIDefinitionInput, actual []*graphql.APIDefinitionExt) {
 	assert.Equal(t, len(in), len(actual))
 	for _, inApi := range in {
 		found := false
@@ -165,7 +165,7 @@ func assertVersion(t *testing.T, in *graphql.VersionInput, actual *graphql.Versi
 	}
 }
 
-func assertEventsAPI(t *testing.T, in []*graphql.EventAPIDefinitionInput, actual []*graphql.EventAPIDefinition) {
+func assertEventsAPI(t *testing.T, in []*graphql.EventAPIDefinitionInput, actual []*graphql.EventAPIDefinitionExt) {
 	assert.Equal(t, len(in), len(actual))
 	for _, inEv := range in {
 		found := false

@@ -26,7 +26,7 @@ func TestCreateApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
-	actualApp := ApplicationExt{}
+	actualApp := graphql.ApplicationExt{}
 
 	// WHEN
 	request := gcli.NewRequest(
@@ -65,7 +65,7 @@ func TestCreateApplicationWithWebhooks(t *testing.T) {
 
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
-	actualApp := ApplicationExt{}
+	actualApp := graphql.ApplicationExt{}
 
 	// WHEN
 	request := gcli.NewRequest(
@@ -130,6 +130,15 @@ func TestCreateApplicationWithAPIs(t *testing.T) {
 					},
 				},
 			},
+			{
+				Name:      "xml",
+				TargetURL: "http://mywordpress.com/xml",
+				Spec: &graphql.APISpecInput{
+					Type:   graphql.APISpecTypeOdata,
+					Format: graphql.SpecFormatXML,
+					Data:   ptrCLOB(graphql.CLOB("odata")),
+				},
+			},
 		},
 		Labels: &graphql.Labels{
 			"scenarios": []interface{}{"DEFAULT"},
@@ -138,7 +147,7 @@ func TestCreateApplicationWithAPIs(t *testing.T) {
 
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
-	actualApp := ApplicationExt{}
+	actualApp := graphql.ApplicationExt{}
 
 	// WHEN
 	request := gcli.NewRequest(
@@ -202,7 +211,7 @@ func TestCreateApplicationWithEventAPIs(t *testing.T) {
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
 
-	actualApp := ApplicationExt{}
+	actualApp := graphql.ApplicationExt{}
 	// WHEN
 	request := gcli.NewRequest(
 		fmt.Sprintf(
@@ -256,7 +265,7 @@ func TestCreateApplicationWithDocuments(t *testing.T) {
 	}
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
-	actualApp := ApplicationExt{}
+	actualApp := graphql.ApplicationExt{}
 
 	// WHEN
 	request := gcli.NewRequest(
@@ -386,7 +395,7 @@ func TestUpdateApplication(t *testing.T) {
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
 
-	actualApp := ApplicationExt{}
+	actualApp := graphql.ApplicationExt{}
 
 	// WHEN
 	request := gcli.NewRequest(
@@ -415,7 +424,7 @@ func TestUpdateApplication(t *testing.T) {
 				}`, id, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
 	saveQueryInExamples(t, request.Query(), "update application")
 
-	updatedApp := ApplicationExt{}
+	updatedApp := graphql.ApplicationExt{}
 
 	//WHEN
 	err = tc.RunQuery(ctx, request, &updatedApp)
@@ -518,7 +527,7 @@ func TestDeleteApplication(t *testing.T) {
     					id
 					}
 				}`, appInputGQL))
-	actualApp := ApplicationExt{}
+	actualApp := graphql.ApplicationExt{}
 	err = tc.RunQuery(ctx, createReq, &actualApp)
 	require.NoError(t, err)
 
@@ -551,7 +560,7 @@ func TestUpdateApplicationParts(t *testing.T) {
     					id
 					}
 				}`, appInputGQL))
-	actualApp := ApplicationExt{}
+	actualApp := graphql.ApplicationExt{}
 	err = tc.RunQuery(ctx, createReq, &actualApp)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
@@ -976,7 +985,7 @@ func TestTenantSeparation(t *testing.T) {
 					}
 				}`,
 			inStr, tc.gqlFieldsProvider.ForApplication()))
-	actualApp := ApplicationExt{}
+	actualApp := graphql.ApplicationExt{}
 	ctx := context.Background()
 	err = tc.RunQuery(ctx, createReq, &actualApp)
 	require.NoError(t, err)
@@ -999,14 +1008,14 @@ func TestTenantSeparation(t *testing.T) {
 
 }
 
-func getApp(ctx context.Context, t *testing.T, id string) ApplicationExt {
+func getApp(ctx context.Context, t *testing.T, id string) graphql.ApplicationExt {
 	q := gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
 				%s
 			} 
 		}`, id, tc.gqlFieldsProvider.ForApplication()))
-	var app ApplicationExt
+	var app graphql.ApplicationExt
 	require.NoError(t, tc.RunQuery(ctx, q, &app))
 	return app
 
