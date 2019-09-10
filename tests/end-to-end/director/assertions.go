@@ -191,7 +191,7 @@ func assertEventsAPI(t *testing.T, in []*graphql.EventAPIDefinitionInput, actual
 	}
 }
 
-func assertRuntime(t *testing.T, in graphql.RuntimeInput, actualRuntime RuntimeExt) {
+func assertRuntime(t *testing.T, in graphql.RuntimeInput, actualRuntime graphql.RuntimeExt) {
 	assert.Equal(t, in.Name, actualRuntime.Name)
 	assert.Equal(t, in.Description, actualRuntime.Description)
 	if in.Labels != nil {

@@ -98,7 +98,7 @@ func TestQueryRuntimeAuths(t *testing.T) {
 
 			for _, innerTestCase := range innerTestCases {
 				t.Run(innerTestCase.Name, func(t *testing.T) {
-					result := ApplicationExt{}
+					result := graphql.ApplicationExt{}
 					request := fixRuntimeAuthRequest(app.ID, innerTestCase.QueriedRtmID)
 
 					// WHEN
