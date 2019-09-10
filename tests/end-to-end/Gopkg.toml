@@ -14,7 +14,8 @@ required = [
 
 [[constraint]]
   name = "github.com/kyma-incubator/compass"
-  branch = "master"
+  source = "github.com/tgorgol/compass"
+  branch = "gql-ext-types"
 
 [[constraint]]
   name = "github.com/google/uuid"
