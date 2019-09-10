@@ -95,16 +95,15 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "gql-ext-types"
-  digest = "1:1f3a245febcf9a02c12fc566b4314aaaa5eab7f6abaed66c937c0e4847b9376d"
+  branch = "master"
+  digest = "1:c01eddc62e303900aa4281e961a97b660c76e3f29628264a475343f5e569d8ef"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/pkg/graphql",
     "components/director/pkg/scalar",
   ]
   pruneopts = "UT"
-  revision = "284f788c23aa268ae734d800c1096d337ef2bc88"
-  source = "github.com/tgorgol/compass"
+  revision = "8553e69a73497585fc059a1b97993301c228caed"
 
 [[projects]]
   branch = "master"
@@ -209,15 +208,43 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/99designs/gqlgen/graphql",
+    "github.com/99designs/gqlgen/graphql/introspection",
+    "github.com/Masterminds/goutils",
+    "github.com/Masterminds/semver",
     "github.com/Masterminds/sprig",
+    "github.com/agnivade/levenshtein",
+    "github.com/davecgh/go-spew/spew",
     "github.com/google/uuid",
+    "github.com/huandu/xstrings",
+    "github.com/imdario/mergo",
     "github.com/kisielk/errcheck",
+    "github.com/kisielk/errcheck/internal/errcheck",
+    "github.com/konsorten/go-windows-terminal-sequences",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
+    "github.com/kyma-incubator/compass/components/director/pkg/scalar",
     "github.com/machinebox/graphql",
     "github.com/pkg/errors",
+    "github.com/pmezard/go-difflib/difflib",
+    "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/require",
+    "github.com/vektah/gqlparser",
+    "github.com/vektah/gqlparser/ast",
+    "github.com/vektah/gqlparser/gqlerror",
+    "github.com/vektah/gqlparser/lexer",
+    "github.com/vektah/gqlparser/parser",
+    "github.com/vektah/gqlparser/validator",
+    "github.com/vektah/gqlparser/validator/rules",
+    "golang.org/x/crypto/scrypt",
+    "golang.org/x/sys/unix",
     "golang.org/x/tools/cmd/goimports",
+    "golang.org/x/tools/go/ast/astutil",
+    "golang.org/x/tools/go/packages",
+    "golang.org/x/tools/internal/fastwalk",
+    "golang.org/x/tools/internal/gopathwalk",
+    "golang.org/x/tools/internal/module",
+    "golang.org/x/tools/internal/semver",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
