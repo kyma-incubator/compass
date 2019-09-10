@@ -7,8 +7,6 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
 )
 
-const ClientCertHeader = "X-Forwarded-Client-Cert"
-
 //go:generate mockery -name=CertificateHeaderParser
 type CertificateHeaderParser interface {
 	GetCertificateData(r *http.Request) (string, string, bool)
@@ -20,17 +18,19 @@ type certificateInfo struct {
 }
 
 type headerParser struct {
+	certHeaderName string
 	certificates.CSRSubjectConsts
 }
 
-func NewHeaderParser(csrSubjectConsts certificates.CSRSubjectConsts) CertificateHeaderParser {
+func NewHeaderParser(certHeaderName string, csrSubjectConsts certificates.CSRSubjectConsts) CertificateHeaderParser {
 	return &headerParser{
+		certHeaderName:   certHeaderName,
 		CSRSubjectConsts: csrSubjectConsts,
 	}
 }
 
 func (hp *headerParser) GetCertificateData(r *http.Request) (string, string, bool) {
-	certHeader := r.Header.Get(ClientCertHeader)
+	certHeader := r.Header.Get(hp.certHeaderName)
 	if certHeader == "" {
 		return "", "", false
 	}

@@ -20,8 +20,6 @@ func NewAuthenticator() Authenticator {
 type authenticator struct {
 }
 
-// TODO - tests
-
 func (a *authenticator) AuthenticateTokenOrCertificate(context context.Context) (string, error) {
 	clientId, tokenAuthErr := a.AuthenticateToken(context)
 	if tokenAuthErr == nil {

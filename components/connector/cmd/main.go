@@ -46,6 +46,8 @@ type config struct {
 	CASecretName                string        `envconfig:"default=namespace/name"`
 	RootCACertificateSecretName string        `envconfig:"optional"`
 
+	CertificateDataHeader string `envconfig:"default=Certificate-Data"`
+
 	Token struct {
 		Length                int           `envconfig:"default=64"`
 		RuntimeExpiration     time.Duration `envconfig:"default=60m"`
@@ -60,13 +62,13 @@ func (c *config) String() string {
 	return fmt.Sprintf("Address: %s, APIEndpoint: %s, HydratorAddress: %s, "+
 		"CSRSubjectCountry: %s, CSRSubjectOrganization: %s, CSRSubjectOrganizationalUnit: %s, "+
 		"CSRSubjectLocality: %s, CSRSubjectProvince: %s, "+
-		"CertificateValidityTime: %s, CASecretName: %s, RootCACertificateSecretName: %s, "+
+		"CertificateValidityTime: %s, CASecretName: %s, RootCACertificateSecretName: %s, CertificateDataHeader: %s, "+
 		"TokenLength: %d, TokenRuntimeExpiration: %s, TokenApplicationExpiration: %s, TokenCSRExpiration: %s, "+
 		"DirectorURL: %s",
 		c.Address, c.APIEndpoint, c.HydratorAddress,
 		c.CSRSubject.Country, c.CSRSubject.Organization, c.CSRSubject.OrganizationalUnit,
 		c.CSRSubject.Locality, c.CSRSubject.Province,
-		c.CertificateValidityTime, c.CASecretName, c.RootCACertificateSecretName,
+		c.CertificateValidityTime, c.CASecretName, c.RootCACertificateSecretName, c.CertificateDataHeader,
 		c.Token.Length, c.Token.RuntimeExpiration.String(), c.Token.ApplicationExpiration.String(), c.Token.CSRExpiration.String(),
 		c.DirectorURL)
 }
@@ -158,7 +160,7 @@ func prepareGraphQLServer(cfg config, tokenResolver api.TokenResolver, certResol
 }
 
 func prepareHydratorServer(cfg config, tokenService tokens.Service, subjectConsts certificates.CSRSubjectConsts) *http.Server {
-	certHeaderParser := oathkeeper.NewHeaderParser(subjectConsts)
+	certHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, subjectConsts)
 
 	validationHydrator := oathkeeper.NewValidationHydrator(tokenService, certHeaderParser)
 

@@ -50,14 +50,17 @@ global:
         namespace: compass-system
       rootCA:
         name: compass-connector-root-ca
-        namespace: compass-system
+        namespace: istio-system # For Ingress Gateway to work properly the namespace needs to be istio-system
+    certificateDataHeader: "Certificate-Data"
     # If key and certificate are not provided they will be generated
     caKey: ""
     caCertificate: ""
 
   gateway:
     port: 3000
-    host: compass-gateway
+    host: compass-gateway # TODO: better values structure?
+    mtls:
+      host: compass-gateway-mtls
   
   ingress:
     domainName: kyma.local
