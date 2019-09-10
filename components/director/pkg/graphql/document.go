@@ -15,9 +15,8 @@ type Document struct {
 // Extended types used by external API
 
 type DocumentPageExt struct {
-	Data       []*DocumentExt `json:"data"`
-	PageInfo   *PageInfo      `json:"pageInfo"`
-	TotalCount int            `json:"totalCount"`
+	DocumentPage
+	Data []*DocumentExt `json:"data"`
 }
 
 type DocumentExt struct {

@@ -11,16 +11,15 @@ type Application struct {
 // Extended types used by external API
 
 type ApplicationPageExt struct {
-	Data       []*ApplicationExt `json:"data"`
-	PageInfo   *PageInfo         `json:"pageInfo"`
-	TotalCount int               `json:"totalCount"`
+	ApplicationPage
+	Data []*ApplicationExt `json:"data"`
 }
 
 type ApplicationExt struct {
 	Application
-	Labels    Labels                 `json:"labels"`
-	Webhooks  []Webhook              `json:"webhooks"`
-	Apis      APIDefinitionPage      `json:"apis"`
-	EventAPIs EventAPIDefinitionPage `json:"eventAPIs"`
-	Documents DocumentPage           `json:"documents"`
+	Labels    Labels                    `json:"labels"`
+	Webhooks  []Webhook                 `json:"webhooks"`
+	Apis      APIDefinitionPageExt      `json:"apis"`
+	EventAPIs EventAPIDefinitionPageExt `json:"eventAPIs"`
+	Documents DocumentPageExt           `json:"documents"`
 }
