@@ -65,13 +65,14 @@ func (r *Resolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDe
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating label definition")
 	}
-	if err := tx.Commit(); err != nil {
-		return nil, errors.Wrap(err, "while committing transaction")
-	}
 
 	out, err := r.conv.ToGraphQL(createdLd)
 	if err != nil {
 		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, errors.Wrap(err, "while committing transaction")
 	}
 
 	return &out, nil
@@ -147,6 +148,11 @@ func (r *Resolver) UpdateLabelDefinition(ctx context.Context, in graphql.LabelDe
 	if err != nil {
 		return nil, err
 	}
+	// TODO: Use LabelDefinitionInput
+	ld, err := r.conv.FromGraphQL(in, tnt)
+	if err != nil {
+		return nil, err
+	}
 
 	tx, err := r.transactioner.Begin()
 	if err != nil {
@@ -155,12 +161,6 @@ func (r *Resolver) UpdateLabelDefinition(ctx context.Context, in graphql.LabelDe
 	defer r.transactioner.RollbackUnlessCommited(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
-
-	// TODO: Use LabelDefinitionInput
-	ld, err := r.conv.FromGraphQL(in, tnt)
-	if err != nil {
-		return nil, err
-	}
 
 	err = r.srv.Update(ctx, ld)
 	if err != nil {
@@ -172,13 +172,13 @@ func (r *Resolver) UpdateLabelDefinition(ctx context.Context, in graphql.LabelDe
 		return nil, errors.Wrap(err, "while receiving updated label definition")
 	}
 
-	if err := tx.Commit(); err != nil {
-		return nil, errors.Wrap(err, "while committing transaction")
-	}
-
 	out, err := r.conv.ToGraphQL(*updatedLd)
 	if err != nil {
 		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, errors.Wrap(err, "while committing transaction")
 	}
 
 	return &out, nil
@@ -210,12 +210,12 @@ func (r *Resolver) DeleteLabelDefinition(ctx context.Context, key string, delete
 		return nil, fmt.Errorf("Label Definition with key %s not found", key)
 	}
 
-	deletedLD, err := r.conv.ToGraphQL(*ld)
+	err = r.srv.Delete(ctx, tnt, key, *deleteRelatedLabels)
 	if err != nil {
 		return nil, err
 	}
 
-	err = r.srv.Delete(ctx, tnt, key, *deleteRelatedLabels)
+	deletedLD, err := r.conv.ToGraphQL(*ld)
 	if err != nil {
 		return nil, err
 	}

@@ -23,15 +23,15 @@ type EntityConverter interface {
 
 var labeldefColumns = []string{"id", "tenant_id", "key", "schema"}
 
-type repository struct {
+type repo struct {
 	conv EntityConverter
 }
 
-func NewRepository(conv EntityConverter) *repository {
-	return &repository{conv: conv}
+func NewRepository(conv EntityConverter) *repo {
+	return &repo{conv: conv}
 }
 
-func (r *repository) Create(ctx context.Context, def model.LabelDefinition) error {
+func (r *repo) Create(ctx context.Context, def model.LabelDefinition) error {
 	db, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
@@ -51,7 +51,7 @@ func (r *repository) Create(ctx context.Context, def model.LabelDefinition) erro
 	return nil
 }
 
-func (r *repository) prefixEveryWithColon(in []string) []string {
+func (r *repo) prefixEveryWithColon(in []string) []string {
 	out := make([]string, 0)
 	for _, elem := range in {
 		out = append(out, ":"+elem)
@@ -59,7 +59,7 @@ func (r *repository) prefixEveryWithColon(in []string) []string {
 	return out
 }
 
-func (r *repository) GetByKey(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error) {
+func (r *repo) GetByKey(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error) {
 	db, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return nil, err
@@ -83,7 +83,7 @@ func (r *repository) GetByKey(ctx context.Context, tenant string, key string) (*
 	return &ld, nil
 }
 
-func (r *repository) Exists(ctx context.Context, tenant string, key string) (bool, error) {
+func (r *repo) Exists(ctx context.Context, tenant string, key string) (bool, error) {
 	db, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return false, err
@@ -102,7 +102,7 @@ func (r *repository) Exists(ctx context.Context, tenant string, key string) (boo
 	return true, nil
 }
 
-func (r *repository) List(ctx context.Context, tenant string) ([]model.LabelDefinition, error) {
+func (r *repo) List(ctx context.Context, tenant string) ([]model.LabelDefinition, error) {
 	db, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return nil, err
@@ -126,7 +126,7 @@ func (r *repository) List(ctx context.Context, tenant string) ([]model.LabelDefi
 	return out, nil
 }
 
-func (r *repository) Update(ctx context.Context, def model.LabelDefinition) error {
+func (r *repo) Update(ctx context.Context, def model.LabelDefinition) error {
 	db, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return errors.Wrap(err, "while fetching persistence from context")
@@ -155,7 +155,7 @@ func (r *repository) Update(ctx context.Context, def model.LabelDefinition) erro
 	return nil
 }
 
-func (r *repository) DeleteByKey(ctx context.Context, tenant, key string) error {
+func (r *repo) DeleteByKey(ctx context.Context, tenant, key string) error {
 	db, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
