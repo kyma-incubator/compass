@@ -392,7 +392,7 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 
 	t.Log("Check if new scenario label value was set correctly")
 	appRequest := fixApplicationRequest(app.ID)
-	app = ApplicationExt{}
+	app = graphql.ApplicationExt{}
 
 	err = tc.RunQuery(ctx, appRequest, &app)
 	require.NoError(t, err)
@@ -651,7 +651,7 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	require.NoError(t, err)
 
 	applicationRequest := fixApplications(labelFilterGQL, 5, "")
-	applicationPage := ApplicationPageExt{}
+	applicationPage := graphql.ApplicationPageExt{}
 	err = tc.RunQuery(ctx, applicationRequest, &applicationPage)
 	require.NoError(t, err)
 
@@ -673,7 +673,7 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	require.NoError(t, err)
 
 	applicationRequest = fixApplications(labelFilterGQL, 5, "")
-	applicationPage = ApplicationPageExt{}
+	applicationPage = graphql.ApplicationPageExt{}
 	err = tc.RunQuery(ctx, applicationRequest, &applicationPage)
 	require.NoError(t, err)
 
@@ -730,7 +730,7 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	require.NoError(t, err)
 
 	runtimesRequest := fixRuntimes(labelFilterGQL, 5, "")
-	runtimePage := RuntimePageExt{}
+	runtimePage := graphql.RuntimePageExt{}
 	err = tc.RunQuery(ctx, runtimesRequest, &runtimePage)
 	require.NoError(t, err)
 
@@ -752,7 +752,7 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	require.NoError(t, err)
 
 	runtimesRequest = fixRuntimes(labelFilterGQL, 5, "")
-	runtimePage = RuntimePageExt{}
+	runtimePage = graphql.RuntimePageExt{}
 	err = tc.RunQuery(ctx, runtimesRequest, &runtimePage)
 	require.NoError(t, err)
 

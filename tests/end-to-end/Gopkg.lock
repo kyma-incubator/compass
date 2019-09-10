@@ -96,14 +96,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:bdcf690dbe0400221778efd2009249748ecedf9fdac10fcb5d0dc03eaab78437"
+  digest = "1:1f3a245febcf9a02c12fc566b4314aaaa5eab7f6abaed66c937c0e4847b9376d"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/pkg/graphql",
     "components/director/pkg/scalar",
   ]
   pruneopts = "UT"
-  revision = "afa044eebe1353cb02f8fb39a225f281fb48f0ac"
+  revision = "e5daeb53325463420dd42e006d07df9b5bcf7e1e"
 
 [[projects]]
   branch = "master"

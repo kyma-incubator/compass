@@ -70,6 +70,7 @@ CREATE INDEX ON webhooks (tenant_id, id);
 
 CREATE TYPE api_spec_format AS ENUM (
     'YAML',
+    'XML',
     'JSON'
 );
 
@@ -104,6 +105,7 @@ CREATE UNIQUE INDEX ON api_definitions (tenant_id, id);
 
 CREATE TYPE event_api_spec_format AS ENUM (
     'YAML',
+    'XML',
     'JSON'
 );
 

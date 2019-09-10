@@ -25,7 +25,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	}
 	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
-	actualRuntime := RuntimeExt{}
+	actualRuntime := graphql.RuntimeExt{}
 
 	// WHEN
 	createReq := gcli.NewRequest(
@@ -84,7 +84,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
     					%s
 					}
 				}`, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
-	actualApp := ApplicationExt{}
+	actualApp := graphql.ApplicationExt{}
 
 	//WHEN
 	err = tc.RunQuery(ctx, createAppReq, &actualApp)
@@ -174,7 +174,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	}
 	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
-	firstRuntime := RuntimeExt{}
+	firstRuntime := graphql.RuntimeExt{}
 	createReq := gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			result: createRuntime(in: %s) {
@@ -224,7 +224,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	}
 	runtimeInGQL, err = tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
-	secondRuntime := RuntimeExt{}
+	secondRuntime := graphql.RuntimeExt{}
 	createReq = gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			result: createRuntime(in: %s) {
@@ -281,7 +281,7 @@ func TestSetAndDeleteAPIAuth(t *testing.T) {
     					%s
 					}
 				}`, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
-	actualApp := ApplicationExt{}
+	actualApp := graphql.ApplicationExt{}
 	err = tc.RunQuery(ctx, createReq, &actualApp)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)

@@ -65,6 +65,11 @@ mutation {
             }
           }
         }
+        {
+          name: "xml"
+          targetURL: "http://mywordpress.com/xml"
+          spec: { data: "odata", type: ODATA, format: XML }
+        }
       ]
     }
   ) {
