@@ -50,8 +50,8 @@ func TestUnmarshalJSON(t *testing.T) {
 
 func TestMarshalJSON(t *testing.T) {
 	//given
-	fixJSON:= JSON("schema:json")
-	expectedJSON := `"schema:json"`
+	fixJSON:= JSON("schema")
+	expectedJSON := `"schema"`
 	buf := bytes.Buffer{}
 
 	//when
