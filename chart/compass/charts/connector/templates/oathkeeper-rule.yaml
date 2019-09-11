@@ -13,7 +13,7 @@ spec:
     stripPath: /connector
   match:
     methods: ["GET", "POST"]
-    url: <http|https>://{{ .Values.global.gateway.host }}.{{ .Values.global.ingress.domainName }}/connector/graphql
+    url: <http|https>://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}/connector/graphql
   authenticators:
     - handler: noop
   authorizer:

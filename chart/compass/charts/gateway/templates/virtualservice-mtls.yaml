@@ -17,6 +17,12 @@ spec:
     - match:
         - uri:
             regex: /.*
+      headers:
+        request:
+          remove:
+            {{- range .Values.headers.request.remove }}
+            - {{ . }}
+            {{- end }}
       route:
         - destination:
             host: {{ .Values.oathkeeper.host }}

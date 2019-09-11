@@ -63,7 +63,7 @@ spec:
             - name: APP_CSR_SUBJECT_PROVINCE
               value: "{{ .Values.deployment.args.csrSubject.province }}"
             - name: APP_DIRECTOR_URL
-              value: "{{ .Values.global.gateway.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
+              value: "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
           {{- with .Values.deployment.securityContext }}
           securityContext:
 {{ toYaml . | indent 12 }}

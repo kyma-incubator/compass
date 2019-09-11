@@ -58,7 +58,8 @@ global:
 
   gateway:
     port: 3000
-    host: compass-gateway # TODO: better values structure?
+    tls:
+      host: compass-gateway
     mtls:
       host: compass-gateway-mtls
   

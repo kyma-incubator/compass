@@ -14,8 +14,6 @@ import (
 
 func TestAuthContextMiddleware_PropagateAuthentication(t *testing.T) {
 
-	tokenType := "Application"
-
 	t.Run("should put authentication to context", func(t *testing.T) {
 		// given
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -31,10 +29,6 @@ func TestAuthContextMiddleware_PropagateAuthentication(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, certHash, hash)
 
-			tokenT, err := GetStringFromContext(r.Context(), TokenTypeKey)
-			require.NoError(t, err)
-			assert.Equal(t, tokenType, tokenT)
-
 			w.WriteHeader(http.StatusOK)
 		})
 
@@ -43,7 +37,6 @@ func TestAuthContextMiddleware_PropagateAuthentication(t *testing.T) {
 
 		request.Header.Add(oathkeeper.ClientIdFromTokenHeader, clientId)
 		request.Header.Add(oathkeeper.ClientIdFromCertificateHeader, clientId)
-		request.Header.Add(oathkeeper.TokenTypeHeader, tokenType)
 		request.Header.Add(oathkeeper.ClientCertificateHashHeader, certHash)
 		rr := httptest.NewRecorder()
 

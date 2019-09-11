@@ -18,9 +18,6 @@ func (acm *authContextMiddleware) PropagateAuthentication(handler http.Handler) 
 		clientIdFromToken := r.Header.Get(oathkeeper.ClientIdFromTokenHeader)
 		r = r.WithContext(PutInContext(r.Context(), ClientIdFromTokenKey, clientIdFromToken))
 
-		tokenType := r.Header.Get(oathkeeper.TokenTypeHeader)
-		r = r.WithContext(PutInContext(r.Context(), TokenTypeKey, tokenType))
-
 		clientIdFromCertificate := r.Header.Get(oathkeeper.ClientIdFromCertificateHeader)
 		r = r.WithContext(PutInContext(r.Context(), ClientIdFromCertificateKey, clientIdFromCertificate))
 
