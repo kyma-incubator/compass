@@ -277,7 +277,7 @@ func (g *graphqlizer) LabelDefinitionInputToGQL(in graphql.LabelDefinitionInput)
 	return g.genericToGQL(in, `{
 		key: "{{.Key}}",
 		{{- if .Schema }}
-		schema: "{{.Schema}}",
+		schema: {{.Schema}},
 		{{- end }}
 	}`)
 }

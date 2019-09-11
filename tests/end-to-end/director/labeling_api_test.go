@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
+	"strconv"
 	"testing"
 
 	"github.com/google/uuid"
@@ -840,7 +840,7 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 func marshallJSONSchema(t *testing.T, schema interface{}) *graphql.JSON {
 	out, err := json.Marshal(schema)
 	require.NoError(t, err)
-	output := strings.ReplaceAll(string(out), `"`, `\"`)
+	output := strconv.Quote(string(out))
 	jsonSchema := graphql.JSON(output)
 	return &jsonSchema
 }
