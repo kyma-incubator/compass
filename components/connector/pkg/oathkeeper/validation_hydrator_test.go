@@ -50,7 +50,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		validator := NewValidationHydrator(tokenService, nil)
 
 		// when
-		ResolveConnectorTokenHeader(rr, req)
+		validator.ResolveConnectorTokenHeader(rr, req)
 
 		// then
 		assert.Equal(t, http.StatusOK, rr.Code)
@@ -75,7 +75,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		validator := NewValidationHydrator(tokenService, nil)
 
 		// when
-		ResolveConnectorTokenHeader(rr, req)
+		validator.ResolveConnectorTokenHeader(rr, req)
 
 		// then
 		assert.Equal(t, http.StatusOK, rr.Code)
@@ -98,7 +98,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		validator := NewValidationHydrator(tokenService, nil)
 
 		// when
-		ResolveConnectorTokenHeader(rr, req)
+		validator.ResolveConnectorTokenHeader(rr, req)
 
 		// then
 		assert.Equal(t, http.StatusOK, rr.Code)
@@ -119,7 +119,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		validator := NewValidationHydrator(nil, nil)
 
 		// when
-		ResolveConnectorTokenHeader(rr, req)
+		validator.ResolveConnectorTokenHeader(rr, req)
 
 		// then
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
@@ -142,7 +142,7 @@ func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
 		validator := NewValidationHydrator(nil, certHeaderParser)
 
 		// when
-		ResolveIstioCertHeader(rr, req)
+		validator.ResolveIstioCertHeader(rr, req)
 
 		// then
 		assert.Equal(t, http.StatusOK, rr.Code)
@@ -166,7 +166,7 @@ func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
 		validator := NewValidationHydrator(nil, certHeaderParser)
 
 		// when
-		ResolveIstioCertHeader(rr, req)
+		validator.ResolveIstioCertHeader(rr, req)
 
 		// then
 		assert.Equal(t, http.StatusOK, rr.Code)
@@ -187,7 +187,7 @@ func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
 		validator := NewValidationHydrator(nil, nil)
 
 		// when
-		ResolveIstioCertHeader(rr, req)
+		validator.ResolveIstioCertHeader(rr, req)
 
 		// then
 		assert.Equal(t, http.StatusBadRequest, rr.Code)

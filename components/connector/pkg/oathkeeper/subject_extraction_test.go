@@ -1,4 +1,4 @@
-package oathkeeper_test
+package oathkeeper
 
 import (
 	"testing"

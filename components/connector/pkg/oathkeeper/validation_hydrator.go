@@ -82,7 +82,7 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 
 	tvh.log.Info("Trying to validate certificate header...")
 
-	commonName, hash, found := GetCertificateData(r)
+	commonName, hash, found := tvh.certHeaderParser.GetCertificateData(r)
 	if !found {
 		tvh.log.Info("No valid certificate header found")
 		respondWithAuthSession(w, authSession)

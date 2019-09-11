@@ -60,7 +60,8 @@ type ComplexityRoot struct {
 	}
 
 	ManagementPlaneInfo struct {
-		DirectorURL func(childComplexity int) int
+		CertificateSecuredConnectorURL func(childComplexity int) int
+		DirectorURL                    func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -159,6 +160,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Configuration.Token(childComplexity), true
+
+	case "ManagementPlaneInfo.certificateSecuredConnectorUrl":
+		if e.complexity.ManagementPlaneInfo.CertificateSecuredConnectorURL == nil {
+			break
+		}
+
+		return e.complexity.ManagementPlaneInfo.CertificateSecuredConnectorURL(childComplexity), true
 
 	case "ManagementPlaneInfo.directorURL":
 		if e.complexity.ManagementPlaneInfo.DirectorURL == nil {
@@ -315,7 +323,8 @@ type CertificationResult {
 
 # ManagementPlaneInfo
 type ManagementPlaneInfo {
-    directorURL: String! # eg.: "https://director.cluster.kyma.cx/graphql"
+    directorURL: String # eg.: "https://director.cluster.kyma.cx/graphql"
+    certificateSecuredConnectorUrl: String # eg.: "https://connector-mtls.cluster.kyma.cx/graphql"
 }
 
 type Configuration {
@@ -666,15 +675,36 @@ func (ec *executionContext) _ManagementPlaneInfo_directorURL(ctx context.Context
 		return obj.DirectorURL, nil
 	})
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ManagementPlaneInfo_certificateSecuredConnectorUrl(ctx context.Context, field graphql.CollectedField, obj *ManagementPlaneInfo) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "ManagementPlaneInfo",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CertificateSecuredConnectorURL, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_generateApplicationToken(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -1864,9 +1894,8 @@ func (ec *executionContext) _ManagementPlaneInfo(ctx context.Context, sel ast.Se
 			out.Values[i] = graphql.MarshalString("ManagementPlaneInfo")
 		case "directorURL":
 			out.Values[i] = ec._ManagementPlaneInfo_directorURL(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+		case "certificateSecuredConnectorUrl":
+			out.Values[i] = ec._ManagementPlaneInfo_certificateSecuredConnectorUrl(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

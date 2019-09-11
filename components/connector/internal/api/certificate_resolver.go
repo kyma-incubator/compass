@@ -20,12 +20,13 @@ type CertificateResolver interface {
 }
 
 type certificateResolver struct {
-	authenticator       authentication.Authenticator
-	tokenService        tokens.Service
-	certificatesService certificates.Service
-	csrSubjectConsts    certificates.CSRSubjectConsts
-	directorURL         string
-	log                 *logrus.Entry
+	authenticator                  authentication.Authenticator
+	tokenService                   tokens.Service
+	certificatesService            certificates.Service
+	csrSubjectConsts               certificates.CSRSubjectConsts
+	directorURL                    string
+	certificateSecuredConnectorURL string
+	log                            *logrus.Entry
 }
 
 func NewCertificateResolver(
@@ -33,14 +34,16 @@ func NewCertificateResolver(
 	tokenService tokens.Service,
 	certificatesService certificates.Service,
 	csrSubjectConsts certificates.CSRSubjectConsts,
-	directorURL string) CertificateResolver {
+	directorURL string,
+	certificateSecuredConnectorURL string) CertificateResolver {
 	return &certificateResolver{
-		authenticator:       authenticator,
-		tokenService:        tokenService,
-		certificatesService: certificatesService,
-		csrSubjectConsts:    csrSubjectConsts,
-		directorURL:         directorURL,
-		log:                 logrus.WithField("Resolver", "Certificate"),
+		authenticator:                  authenticator,
+		tokenService:                   tokenService,
+		certificatesService:            certificatesService,
+		csrSubjectConsts:               csrSubjectConsts,
+		directorURL:                    directorURL,
+		certificateSecuredConnectorURL: certificateSecuredConnectorURL,
+		log:                            logrus.WithField("Resolver", "Certificate"),
 	}
 }
 
@@ -103,7 +106,10 @@ func (r *certificateResolver) Configuration(ctx context.Context) (*gqlschema.Con
 	return &gqlschema.Configuration{
 		Token:                         &gqlschema.Token{Token: token},
 		CertificateSigningRequestInfo: csrInfo,
-		ManagementPlaneInfo:           &gqlschema.ManagementPlaneInfo{DirectorURL: r.directorURL},
+		ManagementPlaneInfo: &gqlschema.ManagementPlaneInfo{
+			DirectorURL:                    &r.directorURL,
+			CertificateSecuredConnectorURL: &r.certificateSecuredConnectorURL,
+		},
 	}, nil
 }
 

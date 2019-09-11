@@ -55,7 +55,8 @@ type config struct {
 		CSRExpiration         time.Duration `envconfig:"default=5m"`
 	}
 
-	DirectorURL string `envconfig:"default=127.0.0.1:3003"`
+	DirectorURL                    string `envconfig:"default=127.0.0.1:3003"`
+	CertificateSecuredConnectorURL string `envconfig:"default=https://compass-gateway-mtls.kyma.local"`
 }
 
 func (c *config) String() string {
@@ -63,12 +64,14 @@ func (c *config) String() string {
 		"CSRSubjectCountry: %s, CSRSubjectOrganization: %s, CSRSubjectOrganizationalUnit: %s, "+
 		"CSRSubjectLocality: %s, CSRSubjectProvince: %s, "+
 		"CertificateValidityTime: %s, CASecretName: %s, RootCACertificateSecretName: %s, CertificateDataHeader: %s, "+
+		"CertificateSecuredConnectorURL: %s, "+
 		"TokenLength: %d, TokenRuntimeExpiration: %s, TokenApplicationExpiration: %s, TokenCSRExpiration: %s, "+
 		"DirectorURL: %s",
 		c.Address, c.APIEndpoint, c.HydratorAddress,
 		c.CSRSubject.Country, c.CSRSubject.Organization, c.CSRSubject.OrganizationalUnit,
 		c.CSRSubject.Locality, c.CSRSubject.Province,
 		c.CertificateValidityTime, c.CASecretName, c.RootCACertificateSecretName, c.CertificateDataHeader,
+		c.CertificateSecuredConnectorURL,
 		c.Token.Length, c.Token.RuntimeExpiration.String(), c.Token.ApplicationExpiration.String(), c.Token.CSRExpiration.String(),
 		c.DirectorURL)
 }
@@ -111,7 +114,8 @@ func main() {
 		tokenService,
 		certificateService,
 		csrSubjectConsts,
-		cfg.DirectorURL)
+		cfg.DirectorURL,
+		cfg.CertificateSecuredConnectorURL)
 
 	server := prepareGraphQLServer(cfg, tokenResolver, certificateResolver)
 	hydratorServer := prepareHydratorServer(cfg, tokenService, csrSubjectConsts)

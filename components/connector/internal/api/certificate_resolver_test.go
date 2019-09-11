@@ -32,7 +32,8 @@ var (
 			Province:           "province",
 		},
 	}
-	directorURL = "https://compass-gateway.kyma.local/director/graphql"
+	directorURL             = "https://compass-gateway.kyma.local/director/graphql"
+	certSecuredConnectorURL = "https://compass-gateway-mtls.kyma.local/connector/graphql"
 )
 
 func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
@@ -55,7 +56,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 		certService := &certificatesMocks.Service{}
 		certService.On("SignCSR", decodedCSR, subject).Return(encodedChain, nil)
 
-		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL)
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL)
 
 		// when
 		certificationResult, err := certificateResolver.SignCertificateSigningRequest(context.TODO(), CSR)
@@ -86,7 +87,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 		certService := &certificatesMocks.Service{}
 		certService.On("SignCSR", decodedCSR, subject).Return(encodedChain, nil)
 
-		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL)
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL)
 
 		// when
 		_, err := certificateResolver.SignCertificateSigningRequest(context.TODO(), CSR)
@@ -114,7 +115,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 		certService := &certificatesMocks.Service{}
 		certService.On("SignCSR", decodedCSR, subject).Return(encodedChain, nil)
 
-		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL)
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL)
 
 		// when
 		_, err := certificateResolver.SignCertificateSigningRequest(context.TODO(), "not base 64 csr")
@@ -132,7 +133,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 		certService := &certificatesMocks.Service{}
 		certService.On("SignCSR", decodedCSR, subject).Return(certificates.EncodedCertificateChain{}, apperrors.Internal("error"))
 
-		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL)
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL)
 
 		// when
 		_, err := certificateResolver.SignCertificateSigningRequest(context.TODO(), CSR)
@@ -151,7 +152,7 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 		tokenService := &tokensMocks.Service{}
 		tokenService.On("CreateToken", subject.CommonName, tokens.CSRToken).Return(token, nil)
 
-		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL)
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL)
 
 		// when
 		configurationResult, err := certificateResolver.Configuration(context.Background())
@@ -159,7 +160,8 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 		// then
 		require.NoError(t, err)
 		assert.Equal(t, token, configurationResult.Token.Token)
-		assert.Equal(t, directorURL, configurationResult.ManagementPlaneInfo.DirectorURL)
+		assert.Equal(t, &directorURL, configurationResult.ManagementPlaneInfo.DirectorURL)
+		assert.Equal(t, &certSecuredConnectorURL, configurationResult.ManagementPlaneInfo.CertificateSecuredConnectorURL)
 		assert.Equal(t, expectedSubject(subject.CSRSubjectConsts, subject.CommonName), configurationResult.CertificateSigningRequestInfo.Subject)
 		assert.Equal(t, "rsa2048", configurationResult.CertificateSigningRequestInfo.KeyAlgorithm)
 	})
@@ -171,7 +173,7 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 		tokenService := &tokensMocks.Service{}
 		tokenService.On("CreateToken", subject.CommonName, tokens.CSRToken).Return("", apperrors.Internal("error"))
 
-		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL)
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL)
 
 		// when
 		configurationResult, err := certificateResolver.Configuration(context.Background())
@@ -187,7 +189,7 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 		authenticator.On("AuthenticateTokenOrCertificate", context.Background()).Return("", apperrors.Forbidden("Error"))
 		tokenService := &tokensMocks.Service{}
 
-		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL)
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL)
 
 		// when
 		configurationResult, err := certificateResolver.Configuration(context.Background())
