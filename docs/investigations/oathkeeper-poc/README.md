@@ -1,13 +1,13 @@
 # Securing Compass with OathKeeper
 
 ## Setup
-Modify `installation/resources/installer-cr-kyma-diet.yaml` and add new component (included in chart on this branch):
+Modify `installation/resources/installer-cr-kyma-diet.yaml` and add new component which configures and installs ORY OathKeeper and ORY Hydra charts (already done on this branch):
 ```yaml
     - name: "ory"
       namespace: "kyma-system"
 ```
 
-Modify VirtualService for Gateway component to point it to OathKeeper (included in chart on this branch):
+Modify VirtualService for Gateway component to point it to OathKeeper proxy (already done on this branch):
 ```yaml
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
@@ -47,7 +47,23 @@ spec:
           - "DELETE"
 ```
 
-Create OathKeeper rule (included in chart on this branch):
+Install Compass with `installation/cmd/run.sh` script.
+
+Create OathKeeper rule
+```bash
+kubectl apply -f ./oathkeeper-rule.yaml
+```
+
+This rule configures Oathkeeper's decision engine. There are 4 steps that occur in specific order while handling any incoming HTTP request.
+Following fields define those steps:
+- `match` field specifies rules for matching HTTP requests (HTTP method, path, host) that should be further processed (unmatched requests are blocked).
+- `authenticators` field specifies method of validating user credentials passed with request, in our case we use oauth2 authenticator.
+- `authorizer` field defines authorizer which decides if subject passed from authenticator is authorized to perform specific action. We don't perform any subject authorization at this step, so we just use `allow` authorizer.
+- `mutators` field describes mutators which add session data to request before forwarding it to upstream. We use two mutators:
+  - `hydrator` which communicates with tenant mapping service.
+  - `token_id` which crafts signed JWT token with additional claim containing tenant retrieved by `hydrator`.
+
+`upstream` field points to location of server where requests matching this rule will be forwarded to, we are pointing them at Compass Gateway component.
 ```yaml
 apiVersion: oathkeeper.ory.sh/v1alpha1
 kind: Rule
@@ -69,34 +85,35 @@ spec:
   authorizer:
     handler: allow
   mutators:
-    - handler: header
+    - handler: hydrator
       config:
-        headers:
-          Foo: "bar"
+        api:
+          url: http://compass-healthchecker.compass-system.svc.cluster.local:3000
+    - handler: id_token
+      config:
+        claims: "{\"tenant\": \"{{ print .Extra.tenant }}\"}"
 ```
 
-Install Compass with `installation/cmd/run.sh` script.
-
-Patch Hydra VirtulServices to use Compass Istio Gateway (in future we have to do it with overrides)
+Patch Hydra VirtulServices to use Compass Istio Gateway because by default it would point at kyma gateway that is not created in compass-only Kyma configuration (in future we have to do it with overrides)
 ```bash
-k apply -f templates/hydra-virtualservice-patch.yaml
+kubectl apply -f ./hydra-virtualservice-patch.yaml
 ```
 
-Patch OAuthKeeper configmap: (in future we have to do it with overrides)
+Patch OathKeeper configmap to enable and configure `id_token` mutator: (in future we have to do it with overrides)
 ```bash
-k apply -f templates/oathkeeper-configmap-patch.yaml
+kubectl apply -f ./oathkeeper-configmap-patch.yaml
 ```
 
 ## Get Access Token
 
-Create OAuthClient CR
+Create OAuth2Client CR. This client automatically generates client OAuth2 credentials (client id and client secret) and registers a client.
 ```bash
-kubectl apply -f templates/oauth-client.yaml
+kubectl apply -f ./oauth-client.yaml
 ```
 
 > **NOTE**: Instead of CR, you can do simple POST request. Read more on: https://github.com/kyma-incubator/examples/tree/master/ory-hydra/scenarios/client-credentials
 
-Get client_id and client_secret from created secret
+Get client_id and client_secret from created secret:
 ```bash
 kubectl get secrets -n default sample-client -oyaml
 ```
@@ -107,17 +124,15 @@ export CLIENT_ID=$(echo '{client_id_value}' | base64 -D)
 export CLIENT_SECRET=$(echo '{client_secret_value}' | base64 -D)
 ```
 
-Get Access Token
+Get Access Token:
 ```bash
 export ENCODED_CREDENTIALS=$(echo -n "$CLIENT_ID:$CLIENT_SECRET" | base64)
-export DOMAIN=kyma.local
 curl -ik -X POST "https://oauth2.kyma.local/oauth2/token" -H "Authorization: Basic $ENCODED_CREDENTIALS" -F "grant_type=client_credentials" -F "scope=scope-a scope-b"
 ```
 
 ## Use Access Token
 
-Use Access Token from response
-
+Use Access Token from response:
 ```bash
 curl -ik https://compass-gateway.kyma.local/healthz -H "Authorization: Bearer ${access_token}"
 ```
@@ -130,12 +145,12 @@ See logs of compass-gateway and compass-healthchecker.
 
 Healthchecker is used as Tenant Mapping Service and it logs request data.
 ```bash
-k logs -n compass-system compass-healthchecker-7f4b9858fd-t7pkr healthchecker
+kubectl logs -n compass-system compass-healthchecker-7f4b9858fd-t7pkr healthchecker
 ```
 
 Gateway logs request headers.
 ```bash
-k logs -n compass-system compass-gateway-688c856bd8-2x2nc gateway
+kubectl logs -n compass-system compass-gateway-688c856bd8-2x2nc gateway
 ```
 
 In `Authorization` header you can see that there is valid JWT token with tenant info. Check it on [jwt.io](https://jwt.io/).
