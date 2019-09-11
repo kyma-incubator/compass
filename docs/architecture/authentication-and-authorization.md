@@ -33,7 +33,7 @@ We will need to have a table in the database which will consist of `tenant` and 
 #### Oauth2
 Request flow:
 1. Oathkeeper calls Hydra for introspection of token
-2. If the token was valid, Oathkeeper sends request to Hydrator 
+2. If the token was valid, Oathkeeper sends the request to Hydrator 
 3. Hydrator calls Mapping Service to get `tenant` from a `client_id`
 4. Hydrator calls ID_Token mutator to create a JWT token with injected `tenant` field
 5. ID_Token mutator calls the Compass Gateway
