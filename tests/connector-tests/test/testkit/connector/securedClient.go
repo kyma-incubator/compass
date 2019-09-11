@@ -1,31 +1,32 @@
-package testkit
+package connector
 
 import (
 	"context"
 	"crypto/rsa"
 	"crypto/tls"
+	"crypto/x509"
 	"net/http"
+
+	"github.com/sirupsen/logrus"
 
 	schema "github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
 
-//Currently unused. SecuredConnectorClient will be used in future test cases
-type SecuredConnectorClient interface {
-	Configuration() (schema.Configuration, error)
-	RenewCertificate(csr string) (schema.CertificationResult, error)
-	RevokeCertificate() (bool, error)
-}
-
-type securedClient struct {
+type SecuredClient struct {
 	graphQlClient *gcli.Client
 	queryProvider queryProvider
 }
 
-func NewSecuredConnectorClient(endpoint string, key *rsa.PrivateKey, certificate ...[]byte) ConnectorClient {
+func NewSecuredConnectorClient(endpoint string, key *rsa.PrivateKey, certificates ...*x509.Certificate) *SecuredClient {
+	rawCerts := make([][]byte, len(certificates))
+	for i, c := range certificates {
+		rawCerts[i] = c.Raw
+	}
+
 	tlsCert := tls.Certificate{
-		Certificate: certificate,
+		Certificate: rawCerts,
 		PrivateKey:  key,
 	}
 
@@ -43,13 +44,17 @@ func NewSecuredConnectorClient(endpoint string, key *rsa.PrivateKey, certificate
 
 	graphQlClient := gcli.NewClient(endpoint, gcli.WithHTTPClient(httpClient))
 
-	return &client{
+	graphQlClient.Log = func(s string) {
+		logrus.Info(s)
+	}
+
+	return &SecuredClient{
 		graphQlClient: graphQlClient,
 		queryProvider: queryProvider{},
 	}
 }
 
-func (c securedClient) Configuration() (schema.Configuration, error) {
+func (c SecuredClient) Configuration(headers ...http.Header) (schema.Configuration, error) {
 	query := c.queryProvider.configuration()
 	req := gcli.NewRequest(query)
 
@@ -62,7 +67,7 @@ func (c securedClient) Configuration() (schema.Configuration, error) {
 	return response.Result, nil
 }
 
-func (c securedClient) RenewCert(csr string, token string) (schema.CertificationResult, error) {
+func (c SecuredClient) RenewCert(csr string, headers ...http.Header) (schema.CertificationResult, error) {
 	query := c.queryProvider.generateCert(csr)
 	req := gcli.NewRequest(query)
 
@@ -75,7 +80,7 @@ func (c securedClient) RenewCert(csr string, token string) (schema.Certification
 	return response.Result, nil
 }
 
-func (c securedClient) RevokeCertificate() (bool, error) {
+func (c SecuredClient) RevokeCertificate() (bool, error) {
 	query := c.queryProvider.revokeCert()
 	req := gcli.NewRequest(query)
 

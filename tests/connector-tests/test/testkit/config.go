@@ -8,7 +8,9 @@ import (
 )
 
 type TestConfig struct {
-	InternalConnectorUrl string `envconfig:"default=http://compass-connector:3000/graphql"`
+	InternalConnectorURL string `envconfig:"default=http://compass-connector:3000/graphql"`
+	ConnectorURL         string
+	SecuredConnectorURL  string
 }
 
 func ReadConfig() (TestConfig, error) {

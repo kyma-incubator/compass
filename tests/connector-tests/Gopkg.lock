@@ -29,6 +29,14 @@
   version = "v1.1.1"
 
 [[projects]]
+  digest = "1:0f51cee70b0d254dbc93c22666ea2abf211af81c1701a96d04e2284b408621db"
+  name = "github.com/konsorten/go-windows-terminal-sequences"
+  packages = ["."]
+  pruneopts = ""
+  revision = "f55edac94c9bbba5d6182a4be46d86a2c9b5b50e"
+  version = "v1.0.2"
+
+[[projects]]
   digest = "1:0085bf6f8ff0a59b4eb44b4aede85aa21362bb155531c06f7d92840b01237337"
   name = "github.com/kyma-incubator/compass"
   packages = ["components/connector/pkg/gqlschema"]
@@ -58,6 +66,14 @@
   pruneopts = ""
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
+
+[[projects]]
+  digest = "1:1a405cddcf3368445051fb70ab465ae99da56ad7be8d8ca7fc52159d1c2d873c"
+  name = "github.com/sirupsen/logrus"
+  packages = ["."]
+  pruneopts = ""
+  revision = "839c75faf7f98a33d445d181f3018b5c3409a45e"
+  version = "v1.4.2"
 
 [[projects]]
   digest = "1:f7b541897bcde05a04a044c342ddc7425aab7e331f37b47fbb486cd16324b48e"
@@ -96,6 +112,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:7340151bcf028f4deae54d53a3ab97840214b4b5dabaf1be7c9e16fae9c714ff"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  pruneopts = ""
+  revision = "bbd175535a8b9969bb0b33f1502f681ee0b122bd"
+
+[[projects]]
+  branch = "master"
   digest = "1:85f84c61adcc298430dc886a3353c6aba95ba73f7de3d474294bbcd23fa228e4"
   name = "golang.org/x/tools"
   packages = [
@@ -130,6 +154,7 @@
     "github.com/kyma-incubator/compass/components/connector/pkg/gqlschema",
     "github.com/machinebox/graphql",
     "github.com/pkg/errors",
+    "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/require",
     "github.com/vrischmann/envconfig",
     "golang.org/x/tools/cmd/goimports",

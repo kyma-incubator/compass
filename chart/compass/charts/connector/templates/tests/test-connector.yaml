@@ -20,6 +20,10 @@ spec:
         env:
         - name: APP_INTERNAL_CONNECTOR_URL
           value: 'http://{{ template "fullname" . }}:{{ .Values.global.connector.port }}/graphql'
+        - name: APP_CONNECTOR_URL
+          value: 'http://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}/connector/graphql'
+        - name: APP_SECURED_CONNECTOR_URL
+          value: 'http://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}/connector/graphql'
         command:
         - "/bin/sh"
         args:

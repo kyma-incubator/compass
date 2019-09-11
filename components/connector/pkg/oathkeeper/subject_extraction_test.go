@@ -3,8 +3,6 @@ package oathkeeper_test
 import (
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/connector/internal/oathkeeper"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -39,12 +37,12 @@ func TestSubjectExtraction(t *testing.T) {
 		},
 	} {
 		t.Run("should extract subject values", func(t *testing.T) {
-			assert.Equal(t, testCase.country, oathkeeper.GetCountry(testCase.subject))
-			assert.Equal(t, testCase.locality, oathkeeper.GetLocality(testCase.subject))
-			assert.Equal(t, testCase.province, oathkeeper.GetProvince(testCase.subject))
-			assert.Equal(t, testCase.org, oathkeeper.GetOrganization(testCase.subject))
-			assert.Equal(t, testCase.orgUnit, oathkeeper.GetOrganizationalUnit(testCase.subject))
-			assert.Equal(t, testCase.commonName, oathkeeper.GetCommonName(testCase.subject))
+			assert.Equal(t, testCase.country, GetCountry(testCase.subject))
+			assert.Equal(t, testCase.locality, GetLocality(testCase.subject))
+			assert.Equal(t, testCase.province, GetProvince(testCase.subject))
+			assert.Equal(t, testCase.org, GetOrganization(testCase.subject))
+			assert.Equal(t, testCase.orgUnit, GetOrganizationalUnit(testCase.subject))
+			assert.Equal(t, testCase.commonName, GetCommonName(testCase.subject))
 		})
 	}
 

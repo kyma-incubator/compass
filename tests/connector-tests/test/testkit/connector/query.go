@@ -1,12 +1,20 @@
-package testkit
+package connector
 
 import "fmt"
 
 type queryProvider struct{}
 
-func (qp queryProvider) generateToken(id string) string {
+func (qp queryProvider) generateApplicationToken(id string) string {
 	return fmt.Sprintf(`mutation {
 	result: generateApplicationToken(appID: "%s") {
+		token
+	}
+}`, id)
+}
+
+func (qp queryProvider) generateRuntimeToken(id string) string {
+	return fmt.Sprintf(`mutation {
+	result: generateRuntimeToken(runtimeID: "%s") {
 		token
 	}
 }`, id)

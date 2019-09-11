@@ -3,7 +3,7 @@ package authentication
 import (
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/connector/internal/oathkeeper"
+	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 )
 
 type authContextMiddleware struct {

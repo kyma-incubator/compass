@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/connector/internal/oathkeeper"
+	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 
 	"github.com/stretchr/testify/assert"
 

@@ -7,9 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
+	mocks2 "github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper/mocks"
 
-	oathkeeperMocks "github.com/kyma-incubator/compass/components/connector/internal/oathkeeper/mocks"
+	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 
 	"github.com/stretchr/testify/assert"
 
@@ -50,7 +50,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		validator := NewValidationHydrator(tokenService, nil)
 
 		// when
-		validator.ResolveConnectorTokenHeader(rr, req)
+		ResolveConnectorTokenHeader(rr, req)
 
 		// then
 		assert.Equal(t, http.StatusOK, rr.Code)
@@ -75,7 +75,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		validator := NewValidationHydrator(tokenService, nil)
 
 		// when
-		validator.ResolveConnectorTokenHeader(rr, req)
+		ResolveConnectorTokenHeader(rr, req)
 
 		// then
 		assert.Equal(t, http.StatusOK, rr.Code)
@@ -98,7 +98,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		validator := NewValidationHydrator(tokenService, nil)
 
 		// when
-		validator.ResolveConnectorTokenHeader(rr, req)
+		ResolveConnectorTokenHeader(rr, req)
 
 		// then
 		assert.Equal(t, http.StatusOK, rr.Code)
@@ -119,7 +119,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		validator := NewValidationHydrator(nil, nil)
 
 		// when
-		validator.ResolveConnectorTokenHeader(rr, req)
+		ResolveConnectorTokenHeader(rr, req)
 
 		// then
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
@@ -136,13 +136,13 @@ func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
 		require.NoError(t, err)
 		rr := httptest.NewRecorder()
 
-		certHeaderParser := &oathkeeperMocks.CertificateHeaderParser{}
+		certHeaderParser := &mocks2.CertificateHeaderParser{}
 		certHeaderParser.On("GetCertificateData", req).Return(clientId, hash, true)
 
 		validator := NewValidationHydrator(nil, certHeaderParser)
 
 		// when
-		validator.ResolveIstioCertHeader(rr, req)
+		ResolveIstioCertHeader(rr, req)
 
 		// then
 		assert.Equal(t, http.StatusOK, rr.Code)
@@ -160,13 +160,13 @@ func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
 		require.NoError(t, err)
 		rr := httptest.NewRecorder()
 
-		certHeaderParser := &oathkeeperMocks.CertificateHeaderParser{}
+		certHeaderParser := &mocks2.CertificateHeaderParser{}
 		certHeaderParser.On("GetCertificateData", req).Return("", "", false)
 
 		validator := NewValidationHydrator(nil, certHeaderParser)
 
 		// when
-		validator.ResolveIstioCertHeader(rr, req)
+		ResolveIstioCertHeader(rr, req)
 
 		// then
 		assert.Equal(t, http.StatusOK, rr.Code)
@@ -187,7 +187,7 @@ func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
 		validator := NewValidationHydrator(nil, nil)
 
 		// when
-		validator.ResolveIstioCertHeader(rr, req)
+		ResolveIstioCertHeader(rr, req)
 
 		// then
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
