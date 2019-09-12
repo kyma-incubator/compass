@@ -4,8 +4,7 @@ type: Tutorials
 ---
 
 After you have established a secure connection with Compass, you can fetch the configuration details and renew the client certificate before it expires.  
-This guide shows you how to do that. 
-<!--- TODO ---> 
+This guide shows you how to do that.
 
 ## Prerequisites
 

@@ -3,9 +3,7 @@ title: Establish a secure connection with Compass
 type: Tutorials
 ---
 
-After you create an Application (App), connect it to an external solution to consume the solution's APIs and Event catalogs in Kyma. To accomplish this, get the client certificate for the external solution and register its services.
-
-This guide shows you how to get the client certificate.
+To establish a secure connection with Compass and generate the client certificate, follow this tutorial. 
 
 ## Prerequisites
 
