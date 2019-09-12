@@ -28,6 +28,7 @@ func NewResolver(srv Service, conv ModelConverter, transactioner persistence.Tra
 // dependencies
 //go:generate mockery -name=ModelConverter -output=automock -outpkg=automock -case=underscore
 type ModelConverter interface {
+	// TODO: Use model.LabelDefinitionInput
 	FromGraphQL(input graphql.LabelDefinitionInput, tenant string) (model.LabelDefinition, error)
 	ToGraphQL(definition model.LabelDefinition) (graphql.LabelDefinition, error)
 }
@@ -47,17 +48,16 @@ func (r *Resolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDe
 		return nil, err
 	}
 
-	// TODO: Use LabelDefinitionInput
-	ld, err := r.conv.FromGraphQL(in, tnt)
-	if err != nil {
-		return nil, err
-	}
-
 	tx, err := r.transactioner.Begin()
 	if err != nil {
 		return nil, errors.Wrap(err, "while starting transaction")
 	}
 	defer r.transactioner.RollbackUnlessCommited(tx)
+
+	ld, err := r.conv.FromGraphQL(in, tnt)
+	if err != nil {
+		return nil, err
+	}
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -148,17 +148,17 @@ func (r *Resolver) UpdateLabelDefinition(ctx context.Context, in graphql.LabelDe
 	if err != nil {
 		return nil, err
 	}
-	// TODO: Use LabelDefinitionInput
-	ld, err := r.conv.FromGraphQL(in, tnt)
-	if err != nil {
-		return nil, err
-	}
 
 	tx, err := r.transactioner.Begin()
 	if err != nil {
 		return nil, errors.Wrap(err, "while starting transaction")
 	}
 	defer r.transactioner.RollbackUnlessCommited(tx)
+
+	ld, err := r.conv.FromGraphQL(in, tnt)
+	if err != nil {
+		return nil, err
+	}
 
 	ctx = persistence.SaveToContext(ctx, tx)
 

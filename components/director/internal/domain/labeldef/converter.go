@@ -16,35 +16,26 @@ func NewConverter() *converter {
 type converter struct{}
 
 func (c *converter) FromGraphQL(input graphql.LabelDefinitionInput, tenant string) (model.LabelDefinition, error) {
-	var schema interface{}
-	if input.Schema != nil {
-		err := json.Unmarshal([]byte(*input.Schema), &schema)
-		if err != nil {
-			return model.LabelDefinition{}, err
-		}
+	schema, err := input.Schema.UnmarshalSchema()
+	if err != nil {
+		return model.LabelDefinition{}, err
 	}
 
 	return model.LabelDefinition{
 		Key:    input.Key,
-		Schema: &schema,
+		Schema: schema,
 		Tenant: tenant,
 	}, nil
 }
 
 func (c *converter) ToGraphQL(in model.LabelDefinition) (graphql.LabelDefinition, error) {
-	var jsonSchema graphql.JSON
-	if in.Schema != nil {
-		schema, err := json.Marshal(in.Schema)
-		if err != nil {
-			return graphql.LabelDefinition{}, err
-		}
-		jsonSchema = graphql.JSON(string(schema))
-
+	schema, err := graphql.MarshalSchema(in.Schema)
+	if err != nil {
+		return graphql.LabelDefinition{}, err
 	}
-
 	return graphql.LabelDefinition{
 		Key:    in.Key,
-		Schema: &jsonSchema,
+		Schema: schema,
 	}, nil
 }
 

@@ -97,10 +97,6 @@ func TestCreateLabelDefinition(t *testing.T) {
 
 		mockConverter := &automock.ModelConverter{}
 		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("FromGraphQL", labelDefInput, tnt).Return(model.LabelDefinition{
-			Key:    "scenarios",
-			Tenant: tnt,
-		}, nil)
 		sut := labeldef.NewResolver(nil, mockConverter, transact)
 		// WHEN
 		_, err := sut.CreateLabelDefinition(ctx, graphql.LabelDefinitionInput{Key: "scenarios"})
@@ -137,16 +133,19 @@ func TestCreateLabelDefinition(t *testing.T) {
 
 	t.Run("got error on converting to model", func(t *testing.T) {
 		// GIVEN
+		persist, transact := txGen.ThatDoesntExpectCommit()
 		mockConverter := &automock.ModelConverter{}
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("FromGraphQL", labelDefInput, tnt).Return(model.LabelDefinition{}, errors.New("json schema is not valid"))
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt)
-		sut := labeldef.NewResolver(nil, mockConverter, nil)
+		sut := labeldef.NewResolver(nil, mockConverter, transact)
 		// WHEN
 		_, err := sut.CreateLabelDefinition(ctx, labelDefInput)
 		// THEN
 		require.EqualError(t, err, "json schema is not valid")
+		transact.AssertExpectations(t)
+		persist.AssertExpectations(t)
 	})
 
 	t.Run("got error on committing transaction", func(t *testing.T) {
@@ -820,7 +819,6 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		mockConverter := &automock.ModelConverter{}
 		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("FromGraphQL", gqlLabelDefinitionInput, tnt).Return(modelLabelDefinition, nil)
 
 		ctx := persistence.SaveToContext(context.TODO(), nil)
 		ctx = tenant.SaveToContext(ctx, tnt)
@@ -833,18 +831,22 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 	t.Run("got error when convert to model failed", func(t *testing.T) {
 		// GIVEN
+		persist, transact := txGen.ThatDoesntExpectCommit()
+
 		mockConverter := &automock.ModelConverter{}
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("FromGraphQL", gqlLabelDefinitionInput, tnt).Return(model.LabelDefinition{}, testErr)
 
 		ctx := persistence.SaveToContext(context.TODO(), nil)
 		ctx = tenant.SaveToContext(ctx, tnt)
-		sut := labeldef.NewResolver(nil, mockConverter, nil)
+		sut := labeldef.NewResolver(nil, mockConverter, transact)
 		// WHEN
 		_, err := sut.UpdateLabelDefinition(ctx, gqlLabelDefinitionInput)
 		// THEN
 		require.Error(t, err)
 		require.EqualError(t, err, testErr.Error())
+		transact.AssertExpectations(t)
+		persist.AssertExpectations(t)
 	})
 
 	t.Run("got error on updating Label Definition", func(t *testing.T) {
