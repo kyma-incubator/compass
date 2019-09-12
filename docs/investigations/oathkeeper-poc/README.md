@@ -94,7 +94,7 @@ spec:
         claims: "{\"tenant\": \"{{ print .Extra.tenant }}\"}"
 ```
 
-Patch Hydra VirtulServices to use Compass Istio Gateway because by default it would point at kyma gateway that is not created in compass-only Kyma configuration (in future we have to do it with overrides)
+Patch Hydra VirtualServices to use Compass Istio Gateway because by default it would point at kyma gateway that is not created in compass-only Kyma configuration (in future we have to do it with overrides)
 ```bash
 kubectl apply -f ./hydra-virtualservice-patch.yaml
 ```
