@@ -2,6 +2,7 @@ package apitests
 
 import (
 	"crypto/rsa"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
@@ -102,7 +103,7 @@ func TestCertificateGeneration(t *testing.T) {
 		require.NoError(t, e)
 
 		//when
-		cert, e := connectorClient.GenerateCert(csr, certToken)
+		cert, e := connectorClient.SignCSR(csr, certToken)
 
 		//then
 		require.Error(t, e)
@@ -136,7 +137,7 @@ func TestCertificateGeneration(t *testing.T) {
 		wrongToken := "wrongToken"
 
 		//when
-		cert, e := connectorClient.GenerateCert(csr, wrongToken)
+		cert, e := connectorClient.SignCSR(csr, wrongToken)
 
 		//then
 		require.Error(t, e)
@@ -161,7 +162,7 @@ func TestCertificateGeneration(t *testing.T) {
 		wrongCSR := "wrongCSR"
 
 		//when
-		cert, e := connectorClient.GenerateCert(wrongCSR, certToken)
+		cert, e := connectorClient.SignCSR(wrongCSR, certToken)
 
 		//then
 		require.Error(t, e)
@@ -192,7 +193,7 @@ func TestFullConnectorFlow(t *testing.T) {
 	csr, err := testkit.CreateCsr(configWithCert.CertificateSigningRequestInfo.Subject, clientKey)
 	require.NoError(t, err)
 
-	renewalResult, err := securedClient.RenewCert(csr)
+	renewalResult, err := securedClient.SignCSR(csr)
 	require.NoError(t, err)
 
 	// then
@@ -223,7 +224,7 @@ func generateCertificate(t *testing.T, appID string, clientKey *rsa.PrivateKey) 
 	require.NoError(t, err)
 	require.Equal(t, testkit.RSAKey, certInfo.KeyAlgorithm)
 
-	result, err := connectorClient.GenerateCert(csr, certToken)
+	result, err := connectorClient.SignCSR(csr, certToken)
 	require.NoError(t, err)
 
 	return result, configuration
@@ -247,7 +248,6 @@ func TestHydrators(t *testing.T) {
 	// TODO: test hydrators
 }
 
-// TODO: Tests - headers stripping (internal and Istio), cert validation
 func TestOathkeeperSecurity(t *testing.T) {
 	appID := "54f83a73-b340-418d-b653-d95b5e347d74"
 	clientKey := testkit.CreateKey(t)
@@ -256,7 +256,7 @@ func TestOathkeeperSecurity(t *testing.T) {
 	certChain := testkit.DecodeCertChain(t, certResult.CertificateChain)
 	securedClient := connector.NewSecuredConnectorClient(config.SecuredConnectorURL, clientKey, certChain...)
 
-	t.Run("client id headers should be stripped", func(t *testing.T) {
+	t.Run("client id headers should be stripped when calling token-secured api", func(t *testing.T) {
 		// given
 		forbiddenHeaders := map[string][]string{
 			oathkeeper.ClientIdFromTokenHeader:       {appID},
@@ -272,10 +272,61 @@ func TestOathkeeperSecurity(t *testing.T) {
 		require.Error(t, err)
 
 		// when
-		_, err = connectorClient.GenerateCert(csr, "", forbiddenHeaders)
+		_, err = connectorClient.SignCSR(csr, "", forbiddenHeaders)
 
 		// then
 		require.Error(t, err)
 	})
 
+	t.Run("certificate data header should be stripped", func(t *testing.T) {
+		// given
+		changedAppID := "aaabbbcc-b340-418d-b653-d95b5e347d74"
+
+		newSubject := changeCommonName(configuration.CertificateSigningRequestInfo.Subject, changedAppID)
+		certDataHeader := fmt.Sprintf(`By=spiffe://cluster.local/ns/kyma-system/sa/default;Hash=df6ab69b34100a1808ddc6211010fa289518f14606d0c8eaa03a0f53ecba578a;Subject="%s";URI=`, newSubject)
+
+		forbiddenHeaders := map[string][]string{
+			"Certificate-Data": {certDataHeader},
+		}
+
+		csr, err := testkit.CreateCsr(newSubject, clientKey)
+
+		t.Run("when calling token-secured API", func(t *testing.T) {
+			// when
+			_, err = connectorClient.Configuration("", forbiddenHeaders)
+
+			// then
+			require.Error(t, err)
+
+			// when
+			_, err = connectorClient.SignCSR(csr, "", forbiddenHeaders)
+
+			// then
+			require.Error(t, err)
+		})
+
+		t.Run("when calling certificate-secured API", func(t *testing.T) {
+			// when
+			config, err := securedClient.Configuration(forbiddenHeaders)
+
+			// then
+			require.NoError(t, err)
+			require.Equal(t, configuration.CertificateSigningRequestInfo.Subject, config.CertificateSigningRequestInfo.Subject)
+
+			// when
+			_, err = securedClient.SignCSR(csr, forbiddenHeaders)
+
+			// then
+			require.Error(t, err)
+		})
+	})
+
+}
+
+func changeCommonName(subject, commonName string) string {
+	splitSubject := testkit.ParseSubject(subject)
+
+	splitSubject.CommonName = commonName
+
+	return splitSubject.String()
 }

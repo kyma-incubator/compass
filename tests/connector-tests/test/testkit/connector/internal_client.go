@@ -5,8 +5,6 @@ import (
 	"crypto/tls"
 	"net/http"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
@@ -27,10 +25,6 @@ func NewInternalClient(endpoint string) *InternalClient {
 	}
 
 	graphQlClient := gcli.NewClient(endpoint, gcli.WithHTTPClient(httpClient))
-
-	graphQlClient.Log = func(s string) {
-		logrus.Info(s)
-	}
 
 	return &InternalClient{
 		graphQlClient: graphQlClient,

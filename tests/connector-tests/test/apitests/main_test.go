@@ -4,8 +4,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit"
 	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit/connector"
+
+	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit"
 	"github.com/sirupsen/logrus"
 )
 

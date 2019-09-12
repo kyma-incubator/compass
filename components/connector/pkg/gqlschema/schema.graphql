@@ -13,7 +13,7 @@ type CertificationResult {
 # ManagementPlaneInfo
 type ManagementPlaneInfo {
     directorURL: String # eg.: "https://director.cluster.kyma.cx/graphql"
-    certificateSecuredConnectorUrl: String # eg.: "https://connector-mtls.cluster.kyma.cx/graphql"
+    certificateSecuredConnectorURL: String # eg.: "https://connector-mtls.cluster.kyma.cx/graphql"
 }
 
 type Configuration {

@@ -7,8 +7,6 @@ import (
 	"crypto/x509"
 	"net/http"
 
-	"github.com/sirupsen/logrus"
-
 	schema "github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
@@ -44,10 +42,6 @@ func NewSecuredConnectorClient(endpoint string, key *rsa.PrivateKey, certificate
 
 	graphQlClient := gcli.NewClient(endpoint, gcli.WithHTTPClient(httpClient))
 
-	graphQlClient.Log = func(s string) {
-		logrus.Info(s)
-	}
-
 	return &SecuredClient{
 		graphQlClient: graphQlClient,
 		queryProvider: queryProvider{},
@@ -67,8 +61,8 @@ func (c SecuredClient) Configuration(headers ...http.Header) (schema.Configurati
 	return response.Result, nil
 }
 
-func (c SecuredClient) RenewCert(csr string, headers ...http.Header) (schema.CertificationResult, error) {
-	query := c.queryProvider.generateCert(csr)
+func (c SecuredClient) SignCSR(csr string, headers ...http.Header) (schema.CertificationResult, error) {
+	query := c.queryProvider.signCSR(csr)
 	req := gcli.NewRequest(query)
 
 	var response CertificationResponse

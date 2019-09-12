@@ -12,12 +12,17 @@ if [ "${discoverUnsetVar}" = true ] ; then
     exit 1
 fi
 
+echo CONNECTOR_URL=${APP_CONNECTOR_URL}
+echo SECURED_CONNECTOR_URL=${APP_SECURED_CONNECTOR_URL}
+
 kubectl -n compass-system port-forward svc/compass-connector 3000:3000 &
 PORT_FWD_PID=$!
 
 export APP_INTERNAL_CONNECTOR_URL=http://localhost:3000/graphql
 
 pushd ${CURRENT_DIR}/..
+
+go clean --testcache
 
 go test ./...
 

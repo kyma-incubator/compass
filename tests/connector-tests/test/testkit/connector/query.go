@@ -28,7 +28,7 @@ func (qp queryProvider) configuration() string {
 }`, configurationResult())
 }
 
-func (qp queryProvider) generateCert(csr string) string {
+func (qp queryProvider) signCSR(csr string) string {
 	return fmt.Sprintf(`mutation {
 	result: signCertificateSigningRequest(csr: "%s") {
 		%s
