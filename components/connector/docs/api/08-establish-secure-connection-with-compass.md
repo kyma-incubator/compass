@@ -49,11 +49,10 @@ openssl req -new -sha256 -out generated.csr -key generated.key -subj "{SUBJECT}"
 openssl base64 -in generated.csr
 ```
 
-Replace the `BASE64_ENCODED_CSR` with the encoded CSR in this GraphQL mutation:
-
+Use the encoded CSR in this GraphQL mutation:
 ```
 mutation {
-    result: signCertificateSigningRequest(csr: "BASE64_ENCODED_CSR") {
+    result: signCertificateSigningRequest(csr: "{BASE64_ENCODED_CSR}") {
         certificateChain
         caCertificate
         clientCertificate

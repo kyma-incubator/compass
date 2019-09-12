@@ -46,19 +46,16 @@ openssl req -new -sha256 -out generated.csr -key generated.key -subj "{SUBJECT}"
 openssl base64 -in generated.csr
 ```
 
-Replace the `BASE64_ENCODED_CSR` with the encoded CSR in this GraphQL mutation:
+Send this GraphQL mutation with the encoded CSR to the Certificate-Secured Connector URL:
 
 ```
 mutation {
-    result: signCertificateSigningRequest(csr: "BASE64_ENCODED_CSR") {
+    result: signCertificateSigningRequest(csr: "{BASE64_ENCODED_CSR}") {
         certificateChain
         caCertificate
         clientCertificate
     }
 }
 ```
-Send the modified GraphQL mutation to the Certificate-Secured Connector URL.
 
 The response contains a renewed client certificate signed by the Kyma Certificate Authority (CA) and the CA certificate.
-
-After you receive the certificate, decode it and use it in your application. 
