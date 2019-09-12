@@ -13,7 +13,8 @@ import (
 var (
 	config          testkit.TestConfig
 	internalClient  *connector.InternalClient
-	connectorClient *connector.ConnectorClient
+	hydratorClient  *connector.HydratorClient
+	connectorClient *connector.TokenSecuredClient
 )
 
 func TestMain(m *testing.M) {
@@ -27,6 +28,7 @@ func TestMain(m *testing.M) {
 
 	config = cfg
 	internalClient = connector.NewInternalClient(config.InternalConnectorURL)
+	hydratorClient = connector.NewHydratorClient(config.HydratorURL)
 	connectorClient = connector.NewConnectorClient(config.ConnectorURL)
 
 	exitCode := m.Run()

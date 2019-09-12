@@ -3,7 +3,10 @@ package apitests
 import (
 	"crypto/rsa"
 	"fmt"
+	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 
@@ -14,6 +17,8 @@ import (
 	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit"
 	"github.com/stretchr/testify/require"
 )
+
+// TODO - check cert header url
 
 func TestTokens(t *testing.T) {
 	appID := "54f83a73-b340-418d-b653-d25b5ed47d75"
@@ -181,7 +186,7 @@ func TestFullConnectorFlow(t *testing.T) {
 
 	// when
 	certChain := testkit.DecodeCertChain(t, certificationResult.CertificateChain)
-	securedClient := connector.NewSecuredConnectorClient(config.SecuredConnectorURL, clientKey, certChain...)
+	securedClient := connector.NewCertificateSecuredConnectorClient(config.SecuredConnectorURL, clientKey, certChain...)
 
 	// then
 	configWithCert, err := securedClient.Configuration()
@@ -201,7 +206,7 @@ func TestFullConnectorFlow(t *testing.T) {
 
 	// when
 	renewedCertChain := testkit.DecodeCertChain(t, certificationResult.CertificateChain)
-	securedClientWithRenewedCert := connector.NewSecuredConnectorClient(config.SecuredConnectorURL, clientKey, renewedCertChain...)
+	securedClientWithRenewedCert := connector.NewCertificateSecuredConnectorClient(config.SecuredConnectorURL, clientKey, renewedCertChain...)
 
 	configWithRenewedCert, err := securedClientWithRenewedCert.Configuration()
 	require.NoError(t, err)
@@ -213,7 +218,11 @@ func generateCertificate(t *testing.T, appID string, clientKey *rsa.PrivateKey) 
 	token, err := internalClient.GenerateApplicationToken(appID)
 	require.NoError(t, err)
 
-	configuration, err := connectorClient.Configuration(token.Token)
+	return generateCertificateForToken(t, token.Token, clientKey)
+}
+
+func generateCertificateForToken(t *testing.T, token string, clientKey *rsa.PrivateKey) (gqlschema.CertificationResult, gqlschema.Configuration) {
+	configuration, err := connectorClient.Configuration(token)
 	require.NoError(t, err)
 
 	certInfo := configuration.CertificateSigningRequestInfo
@@ -245,7 +254,86 @@ func assertCertificate(t *testing.T, expectedSubject string, certificationResult
 }
 
 func TestHydrators(t *testing.T) {
-	// TODO: test hydrators
+
+	appID := "54f83a73-b340-418d-b653-d25b5ed47d75"
+	runtimeID := "75f42q66-b340-418d-b653-d25b5ed47d75"
+
+	hash := "df6ab69b34100a1808ddc6211010fa289518f14606d0c8eaa03a0f53ecba578a"
+
+	for _, testCase := range []struct {
+		clientType           string
+		clientId             string
+		tokenGenerationFunc  func(id string) (gqlschema.Token, error)
+		expectedTokenHeaders http.Header
+		expectedCertsHeaders http.Header
+	}{
+		{
+			clientType:          "Application",
+			clientId:            appID,
+			tokenGenerationFunc: internalClient.GenerateApplicationToken,
+			expectedTokenHeaders: http.Header{
+				oathkeeper.ClientIdFromTokenHeader: []string{appID},
+			},
+			expectedCertsHeaders: http.Header{
+				oathkeeper.ClientIdFromCertificateHeader: []string{appID},
+				oathkeeper.ClientCertificateHashHeader:   []string{hash},
+			},
+		},
+		{
+			clientType:          "Runtime",
+			clientId:            runtimeID,
+			tokenGenerationFunc: internalClient.GenerateRuntimeToken,
+			expectedTokenHeaders: http.Header{
+				oathkeeper.ClientIdFromTokenHeader: []string{runtimeID},
+			},
+			expectedCertsHeaders: http.Header{
+				oathkeeper.ClientIdFromCertificateHeader: []string{runtimeID},
+				oathkeeper.ClientCertificateHashHeader:   []string{hash},
+			},
+		},
+	} {
+		t.Run("should resolve one-time token for "+testCase.clientType, func(t *testing.T) {
+			//given
+			token, err := testCase.tokenGenerationFunc(testCase.clientId)
+			require.NoError(t, err)
+			require.NotEmpty(t, token.Token)
+
+			headers := map[string][]string{
+				oathkeeper.ConnectorTokenHeader: {token.Token},
+			}
+
+			//when
+			authSession := hydratorClient.ResolveToken(t, headers)
+
+			//then
+			assert.Equal(t, testCase.expectedTokenHeaders, authSession.Header)
+		})
+
+		t.Run("should resolve certificate for "+testCase.clientType, func(t *testing.T) {
+			//given
+			token, err := testCase.tokenGenerationFunc(testCase.clientId)
+			require.NoError(t, err)
+			require.NotEmpty(t, token.Token)
+
+			configuration, err := connectorClient.Configuration(token.Token)
+			require.NoError(t, err)
+
+			certDataHeader := createCertDataHeader(configuration.CertificateSigningRequestInfo.Subject, hash)
+
+			headers := map[string][]string{
+				config.CertificateDataHeader: {certDataHeader},
+			}
+
+			//when
+			authSession := hydratorClient.ResolveCertificateData(t, headers)
+
+			//then
+			assert.Equal(t, testCase.expectedCertsHeaders, authSession.Header)
+		})
+	}
+
+	// TODO - no headers - empty auth
+
 }
 
 func TestOathkeeperSecurity(t *testing.T) {
@@ -254,7 +342,7 @@ func TestOathkeeperSecurity(t *testing.T) {
 
 	certResult, configuration := generateCertificate(t, appID, clientKey)
 	certChain := testkit.DecodeCertChain(t, certResult.CertificateChain)
-	securedClient := connector.NewSecuredConnectorClient(config.SecuredConnectorURL, clientKey, certChain...)
+	securedClient := connector.NewCertificateSecuredConnectorClient(config.SecuredConnectorURL, clientKey, certChain...)
 
 	t.Run("client id headers should be stripped when calling token-secured api", func(t *testing.T) {
 		// given
@@ -283,10 +371,10 @@ func TestOathkeeperSecurity(t *testing.T) {
 		changedAppID := "aaabbbcc-b340-418d-b653-d95b5e347d74"
 
 		newSubject := changeCommonName(configuration.CertificateSigningRequestInfo.Subject, changedAppID)
-		certDataHeader := fmt.Sprintf(`By=spiffe://cluster.local/ns/kyma-system/sa/default;Hash=df6ab69b34100a1808ddc6211010fa289518f14606d0c8eaa03a0f53ecba578a;Subject="%s";URI=`, newSubject)
+		certDataHeader := createCertDataHeader("df6ab69b34100a1808ddc6211010fa289518f14606d0c8eaa03a0f53ecba578a", newSubject)
 
 		forbiddenHeaders := map[string][]string{
-			"Certificate-Data": {certDataHeader},
+			config.CertificateDataHeader: {certDataHeader},
 		}
 
 		csr, err := testkit.CreateCsr(newSubject, clientKey)
@@ -329,4 +417,8 @@ func changeCommonName(subject, commonName string) string {
 	splitSubject.CommonName = commonName
 
 	return splitSubject.String()
+}
+
+func createCertDataHeader(subject, hash string) string {
+	return fmt.Sprintf(`By=spiffe://cluster.local/ns/kyma-system/sa/default;Hash=%s;Subject="%s";URI=`, hash, subject)
 }

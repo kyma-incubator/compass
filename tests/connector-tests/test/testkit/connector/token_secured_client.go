@@ -2,9 +2,7 @@ package connector
 
 import (
 	"context"
-	"crypto/rsa"
 	"crypto/tls"
-	"crypto/x509"
 	"net/http"
 
 	schema "github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
@@ -12,45 +10,36 @@ import (
 	"github.com/pkg/errors"
 )
 
-type SecuredClient struct {
+const (
+	TokenHeader = "Connector-Token"
+)
+
+type TokenSecuredClient struct {
 	graphQlClient *gcli.Client
 	queryProvider queryProvider
 }
 
-func NewSecuredConnectorClient(endpoint string, key *rsa.PrivateKey, certificates ...*x509.Certificate) *SecuredClient {
-	rawCerts := make([][]byte, len(certificates))
-	for i, c := range certificates {
-		rawCerts[i] = c.Raw
-	}
-
-	tlsCert := tls.Certificate{
-		Certificate: rawCerts,
-		PrivateKey:  key,
-	}
-
-	tlsConfig := &tls.Config{
-		Certificates:       []tls.Certificate{tlsCert},
-		ClientAuth:         tls.RequireAndVerifyClientCert,
-		InsecureSkipVerify: true,
-	}
-
+func NewConnectorClient(endpoint string) *TokenSecuredClient {
 	httpClient := &http.Client{
 		Transport: &http.Transport{
-			TLSClientConfig: tlsConfig,
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
 		},
 	}
 
 	graphQlClient := gcli.NewClient(endpoint, gcli.WithHTTPClient(httpClient))
 
-	return &SecuredClient{
+	return &TokenSecuredClient{
 		graphQlClient: graphQlClient,
 		queryProvider: queryProvider{},
 	}
 }
 
-func (c SecuredClient) Configuration(headers ...http.Header) (schema.Configuration, error) {
+func (c *TokenSecuredClient) Configuration(token string, headers ...http.Header) (schema.Configuration, error) {
 	query := c.queryProvider.configuration()
 	req := gcli.NewRequest(query)
+	req.Header.Add(TokenHeader, token)
 
 	var response ConfigurationResponse
 
@@ -61,9 +50,10 @@ func (c SecuredClient) Configuration(headers ...http.Header) (schema.Configurati
 	return response.Result, nil
 }
 
-func (c SecuredClient) SignCSR(csr string, headers ...http.Header) (schema.CertificationResult, error) {
+func (c *TokenSecuredClient) SignCSR(csr string, token string, headers ...http.Header) (schema.CertificationResult, error) {
 	query := c.queryProvider.signCSR(csr)
 	req := gcli.NewRequest(query)
+	req.Header.Add(TokenHeader, token)
 
 	var response CertificationResponse
 
@@ -74,15 +64,14 @@ func (c SecuredClient) SignCSR(csr string, headers ...http.Header) (schema.Certi
 	return response.Result, nil
 }
 
-func (c SecuredClient) RevokeCertificate() (bool, error) {
-	query := c.queryProvider.revokeCert()
-	req := gcli.NewRequest(query)
+type ConfigurationResponse struct {
+	Result schema.Configuration `json:"result"`
+}
 
-	var response RevokeResult
+type CertificationResponse struct {
+	Result schema.CertificationResult `json:"result"`
+}
 
-	err := c.graphQlClient.Run(context.Background(), req, &response)
-	if err != nil {
-		return false, errors.Wrap(err, "Failed to revoke certificate")
-	}
-	return response.Result, nil
+type RevokeResult struct {
+	Result bool `json:"result"`
 }

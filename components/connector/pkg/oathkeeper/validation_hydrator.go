@@ -66,7 +66,7 @@ func (tvh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter
 
 	tvh.tokenService.Delete(connectorToken)
 
-	tvh.log.Info("Token resolved successfully")
+	tvh.log.Infof("Token for %s resolved successfully", tokenData.ClientId)
 	respondWithAuthSession(w, authSession)
 }
 

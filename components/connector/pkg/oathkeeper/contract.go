@@ -5,7 +5,6 @@ import "net/http"
 const (
 	ConnectorTokenHeader string = "Connector-Token"
 
-	// TODO: test header strip
 	ClientIdFromTokenHeader       = "Client-Id-From-Token"
 	ClientIdFromCertificateHeader = "Client-Id-From-Certificate"
 	ClientCertificateHashHeader   = "Client-Certificate-Hash"
