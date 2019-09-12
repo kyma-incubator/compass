@@ -1,5 +1,5 @@
 ---
-title: Establish secure connection with Compass
+title: Establish a secure connection with Compass
 type: Tutorials
 ---
 
