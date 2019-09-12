@@ -18,7 +18,7 @@ func TestFromGraphQL(t *testing.T) {
 	t.Run("Correct schema", func(t *testing.T) {
 		// GIVEN
 		sut := labeldef.NewConverter()
-		schema := graphql.JSON(`{"schema":"schema"}`)
+		schema := graphql.JSONSchema(`{"schema":"schema"}`)
 		expectedSchema := map[string]interface{}{
 			"schema": interface{}("schema"),
 		}
@@ -40,7 +40,7 @@ func TestFromGraphQL(t *testing.T) {
 	t.Run("Error - invalid schema", func(t *testing.T) {
 		// GIVEN
 		sut := labeldef.NewConverter()
-		invalidSchema := graphql.JSON(`"schema":`)
+		invalidSchema := graphql.JSONSchema(`"schema":`)
 		// WHEN
 		_, err := sut.FromGraphQL(graphql.LabelDefinitionInput{
 			Key:    "some-key",
@@ -56,7 +56,7 @@ func TestToGraphQL(t *testing.T) {
 		// GIVEN
 		sut := labeldef.NewConverter()
 		// WHEN
-		expectedSchema := graphql.JSON(`{"schema":"schema"}`)
+		expectedSchema := graphql.JSONSchema(`{"schema":"schema"}`)
 		anySchema := map[string]interface{}{
 			"schema": interface{}("schema"),
 		}

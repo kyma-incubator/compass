@@ -603,7 +603,7 @@ func fixUUID() string {
 	return "003a0855-4eb0-486d-8fc6-3ab2f2312ca0"
 }
 
-func fixBasicInputSchema() *graphql.JSON {
+func fixBasicInputSchema() *graphql.JSONSchema {
 	sch := `{
 		"$id": "https://example.com/person.schema.json",
   		"$schema": "http://json-schema.org/draft-07/schema#",
@@ -625,7 +625,7 @@ func fixBasicInputSchema() *graphql.JSON {
   		  }
   		}
 	  }`
-	jsonSchema := graphql.JSON(sch)
+	jsonSchema := graphql.JSONSchema(sch)
 	return &jsonSchema
 }
 

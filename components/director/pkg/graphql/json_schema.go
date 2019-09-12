@@ -8,26 +8,26 @@ import (
 	"strconv"
 )
 
-type JSON string
+type JSONSchema string
 
-func (j *JSON) UnmarshalGQL(v interface{}) error {
+func (j *JSONSchema) UnmarshalGQL(v interface{}) error {
 	val, err := scalar.ConvertToString(v)
 	if err != nil {
 		return err
 	}
 
-	*j = JSON(val)
+	*j = JSONSchema(val)
 	return nil
 }
 
-func (j JSON) MarshalGQL(w io.Writer) {
+func (j JSONSchema) MarshalGQL(w io.Writer) {
 	_, err := io.WriteString(w, strconv.Quote(string(j)))
 	if err != nil {
 		log.Errorf("while writing %T: %s", j, err)
 	}
 }
 
-func (j *JSON) UnmarshalSchema() (*interface{}, error) {
+func (j *JSONSchema) Unmarshal() (*interface{}, error) {
 	if j == nil {
 		return nil, nil;
 	}
@@ -39,7 +39,7 @@ func (j *JSON) UnmarshalSchema() (*interface{}, error) {
 	return &output, nil
 }
 
-func MarshalSchema(input *interface{}) (*JSON, error) {
+func MarshalSchema(input *interface{}) (*JSONSchema, error) {
 	if input == nil {
 		return nil, nil
 	}
@@ -47,6 +47,6 @@ func MarshalSchema(input *interface{}) (*JSON, error) {
 	if err != nil {
 		return nil, err
 	}
-	output := JSON(string(schema))
+	output := JSONSchema(string(schema))
 	return &output, nil
 }

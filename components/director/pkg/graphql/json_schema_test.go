@@ -13,13 +13,13 @@ func TestUnmarshalGQLJSON(t *testing.T) {
 		input    interface{}
 		err      bool
 		errmsg   string
-		expected JSON
+		expected JSONSchema
 	}{
 		//given
 		"correct input": {
 			input:    `{"schema":"schema}"`,
 			err:      false,
-			expected: JSON(`{"schema":"schema}"`),
+			expected: JSONSchema(`{"schema":"schema}"`),
 		},
 		"error: input is nil": {
 			input:  nil,
@@ -34,7 +34,7 @@ func TestUnmarshalGQLJSON(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			//when
-			var j JSON
+			var j JSONSchema
 			err := j.UnmarshalGQL(tc.input)
 
 			//then
@@ -52,7 +52,7 @@ func TestUnmarshalGQLJSON(t *testing.T) {
 
 func TestMarshalGQLJSON(t *testing.T) {
 	//given
-	fixJSON := JSON("schema")
+	fixJSON := JSONSchema("schema")
 	expectedJSON := `"schema"`
 	buf := bytes.Buffer{}
 
@@ -68,13 +68,13 @@ func TestJSON_MarshalSchema(t *testing.T) {
 	testCases := []struct {
 		Name        string
 		InputSchema *interface{}
-		Expected    *JSON
+		Expected    *JSONSchema
 		ExpectedErr error
 	}{
 		{
 			Name:        "Success",
 			InputSchema: interfacePtr(map[string]interface{}{"annotation": []string{"val1", "val2"}}),
-			Expected:    jsonPtr(JSON(`{"annotation":["val1","val2"]}`)),
+			Expected:    jsonPtr(JSONSchema(`{"annotation":["val1","val2"]}`)),
 			ExpectedErr: nil,
 		},
 		{
@@ -106,10 +106,10 @@ func TestJSON_MarshalSchema(t *testing.T) {
 func TestJSON_UnmarshalSchema(t *testing.T) {
 	t.Run("Success nil JSON", func(t *testing.T) {
 		//GIVEN
-		var json *JSON = nil
+		var json *JSONSchema = nil
 		var expected *interface{}
 		//WHEN
-		output, err := json.UnmarshalSchema()
+		output, err := json.Unmarshal()
 		//THEN
 		require.NoError(t, err)
 		assert.Equal(t, expected, output)
@@ -120,7 +120,7 @@ func TestJSON_UnmarshalSchema(t *testing.T) {
 		input := jsonPtr(`{"annotation":["val1","val2"]}`)
 		expected := map[string]interface{}{"annotation": []interface{}{"val1", "val2"}}
 		//WHEN
-		output, err := input.UnmarshalSchema()
+		output, err := input.Unmarshal()
 		//THEN
 		require.NoError(t, err)
 		assert.Equal(t, expected, *output)
@@ -132,7 +132,7 @@ func TestJSON_UnmarshalSchema(t *testing.T) {
 
 		input := jsonPtr(`blblbl"`)
 		//WHEN
-		output, err := input.UnmarshalSchema()
+		output, err := input.Unmarshal()
 		//THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, expectedErr.Error())
@@ -145,6 +145,6 @@ func interfacePtr(input interface{}) (*interface{}) {
 	return &tmp
 }
 
-func jsonPtr(json JSON) *JSON {
+func jsonPtr(json JSONSchema) *JSONSchema {
 	return &json
 }

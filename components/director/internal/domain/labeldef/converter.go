@@ -16,7 +16,7 @@ func NewConverter() *converter {
 type converter struct{}
 
 func (c *converter) FromGraphQL(input graphql.LabelDefinitionInput, tenant string) (model.LabelDefinition, error) {
-	schema, err := input.Schema.UnmarshalSchema()
+	schema, err := input.Schema.Unmarshal()
 	if err != nil {
 		return model.LabelDefinition{}, err
 	}
