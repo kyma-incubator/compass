@@ -324,6 +324,7 @@ type CertificationResult {
 # ManagementPlaneInfo
 type ManagementPlaneInfo {
     directorURL: String # eg.: "https://director.cluster.kyma.cx/graphql"
+    # TODO: we can consider renaming this URL to something like renewalURL/connectionMaintananceURL or something like that.
     certificateSecuredConnectorURL: String # eg.: "https://connector-mtls.cluster.kyma.cx/graphql"
 }
 
