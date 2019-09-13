@@ -90,18 +90,29 @@ There are two ways of creating a `client_id` and `client_secret` pair in the Hyd
 **Request flow:**
 1. Authenticator calls Hydra for introspection of the token.
 1. If the token is valid, OathKeeper sends the request to Hydrator. 
-1. Hydrator calls Tenants handler hosted by `Director` to get `tenant` based on a `client_id`.
-1. Hydrator calls ID_Token mutator which constructs a JWT token with scopes and `tenant` in the payload.
+1. Hydrator calls Tenant mapping handler hosted by `Director` to get `tenant` based on a `client_id`.
+1. Hydrator passes response to ID_Token mutator which constructs a JWT token with scopes and `tenant` in the payload.
 1. The request is then forwarded to the desired component (such as `Director` or `Connector`) through the `Gateway` component.
  
 ![Auth](./assets/oauth2-security-diagram.svg)
 
 **Proof of concept:** [kyma-incubator/compass#287](https://github.com/kyma-incubator/compass/pull/287)
 
-### JWT token issued by Dex
+### JWT token issued by identity service
 
 To be defined.
 
+**Obtaining token:**
+User logs in to Compass UI 
+
+**Request flow:**
+1. Authenticator validates the token using keys provided by identity service. In production environment, tenant **must be** included in token payload. For local development, the `tenant` property is missing from token issued by Dex.
+1. If the token is valid, OathKeeper sends the request to Hydrator.
+1. Hydrator calls Tenant mapping handler hosted by `Director`, which, in production environment, returns **the same** authentication session (as the `tenant` is already in place). For local development, `tenant` is loaded from ConfigMap, where static `user:tenant` mapping is done.
+1. Hydrator passes response to ID_Token mutator which constructs a JWT token with scopes and `tenant` in the payload.
+1. The request is then forwarded to the desired component (such as `Director` or `Connector`) through the `Gateway` component.
+ 
+![Auth](./assets/dex-security-diagram.svg)
 
 ### Certificates
 
