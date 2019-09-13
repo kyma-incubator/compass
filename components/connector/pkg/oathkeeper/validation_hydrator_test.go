@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
+
 	mocks2 "github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper/mocks"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
@@ -36,11 +38,16 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 	marshalledSession, err := json.Marshal(emptyAuthSession())
 	require.NoError(t, err)
 
-	t.Run("should resolve token and add header to response", func(t *testing.T) {
-		// given
+	createAuthRequestWithToken := func(t *testing.T) *http.Request {
 		req, err := http.NewRequest(http.MethodPost, "", bytes.NewBuffer(marshalledSession))
 		require.NoError(t, err)
 		req.Header.Add(ConnectorTokenHeader, token)
+		return req
+	}
+
+	t.Run("should resolve token and add header to response", func(t *testing.T) {
+		// given
+		req := createAuthRequestWithToken(t)
 		rr := httptest.NewRecorder()
 
 		tokenService := &mocks.Service{}
@@ -60,13 +67,12 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, []string{clientId}, authSession.Header[ClientIdFromTokenHeader])
+		mock.AssertExpectationsForObjects(t, tokenService)
 	})
 
 	t.Run("should not modify authentication session if failed to resolved token", func(t *testing.T) {
 		// given
-		req, err := http.NewRequest(http.MethodPost, "", bytes.NewBuffer(marshalledSession))
-		require.NoError(t, err)
-		req.Header.Add(ConnectorTokenHeader, token)
+		req := createAuthRequestWithToken(t)
 		rr := httptest.NewRecorder()
 
 		tokenService := &mocks.Service{}
@@ -85,6 +91,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, emptyAuthSession(), authSession)
+		mock.AssertExpectationsForObjects(t, tokenService)
 	})
 
 	t.Run("should not modify authentication session if no token provided", func(t *testing.T) {
@@ -108,6 +115,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, emptyAuthSession(), authSession)
+		mock.AssertExpectationsForObjects(t, tokenService)
 	})
 
 	t.Run("should return error when failed to unmarshal authentication session", func(t *testing.T) {
@@ -152,6 +160,7 @@ func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, []string{clientId}, authSession.Header[ClientIdFromCertificateHeader])
+		mock.AssertExpectationsForObjects(t, certHeaderParser)
 	})
 
 	t.Run("should not modify authentication session if no valid cert header found", func(t *testing.T) {
@@ -176,6 +185,7 @@ func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, emptyAuthSession(), authSession)
+		mock.AssertExpectationsForObjects(t, certHeaderParser)
 	})
 
 	t.Run("should return error when failed to unmarshal authentication session", func(t *testing.T) {

@@ -27,6 +27,6 @@ func GetStringFromContext(ctx context.Context, key ContextKey) (string, error) {
 	return str, nil
 }
 
-func PutInContext(ctx context.Context, key ContextKey, value string) context.Context {
+func PutIntoContext(ctx context.Context, key ContextKey, value string) context.Context {
 	return context.WithValue(ctx, key, value)
 }

@@ -9,7 +9,7 @@ import (
 //go:generate mockery -name=Authenticator
 type Authenticator interface {
 	AuthenticateToken(context context.Context) (string, error)
-	AuthenticateTokenOrCertificate(context context.Context) (string, error)
+	Authenticate(context context.Context) (string, error)
 	AuthenticateCertificate(context context.Context) (string, error)
 }
 
@@ -20,7 +20,7 @@ func NewAuthenticator() Authenticator {
 type authenticator struct {
 }
 
-func (a *authenticator) AuthenticateTokenOrCertificate(context context.Context) (string, error) {
+func (a *authenticator) Authenticate(context context.Context) (string, error) {
 	clientId, tokenAuthErr := a.AuthenticateToken(context)
 	if tokenAuthErr == nil {
 		return clientId, nil

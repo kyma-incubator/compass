@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
+
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 	authenticationMocks "github.com/kyma-incubator/compass/components/connector/internal/authentication/mocks"
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
@@ -51,7 +53,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 
 		tokenService := &tokensMocks.Service{}
 		authenticator := &authenticationMocks.Authenticator{}
-		authenticator.On("AuthenticateTokenOrCertificate", context.TODO()).Return(clientId, nil)
+		authenticator.On("Authenticate", context.TODO()).Return(clientId, nil)
 
 		certService := &certificatesMocks.Service{}
 		certService.On("SignCSR", decodedCSR, subject).Return(encodedChain, nil)
@@ -66,6 +68,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 		assert.Equal(t, certChainBase64, certificationResult.CertificateChain)
 		assert.Equal(t, caCertificate, certificationResult.CaCertificate)
 		assert.Equal(t, clientCertificate, certificationResult.ClientCertificate)
+		mock.AssertExpectationsForObjects(t, tokenService, authenticator)
 	})
 
 	t.Run("should return error when unauthenticated call", func(t *testing.T) {
@@ -82,7 +85,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 
 		tokenService := &tokensMocks.Service{}
 		authenticator := &authenticationMocks.Authenticator{}
-		authenticator.On("AuthenticateTokenOrCertificate", context.TODO()).Return("", fmt.Errorf("error"))
+		authenticator.On("Authenticate", context.TODO()).Return("", fmt.Errorf("error"))
 
 		certService := &certificatesMocks.Service{}
 		certService.On("SignCSR", decodedCSR, subject).Return(encodedChain, nil)
@@ -94,6 +97,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 
 		// then
 		require.Error(t, err)
+		mock.AssertExpectationsForObjects(t, tokenService, authenticator)
 	})
 
 	t.Run("should return error when failed to decode base64", func(t *testing.T) {
@@ -110,7 +114,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 
 		tokenService := &tokensMocks.Service{}
 		authenticator := &authenticationMocks.Authenticator{}
-		authenticator.On("AuthenticateTokenOrCertificate", context.TODO()).Return(clientId, nil)
+		authenticator.On("Authenticate", context.TODO()).Return(clientId, nil)
 
 		certService := &certificatesMocks.Service{}
 		certService.On("SignCSR", decodedCSR, subject).Return(encodedChain, nil)
@@ -122,13 +126,14 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 
 		// then
 		require.Error(t, err)
+		mock.AssertExpectationsForObjects(t, tokenService, authenticator)
 	})
 
 	t.Run("should return error when failed to sign CSR", func(t *testing.T) {
 		// given
 		tokenService := &tokensMocks.Service{}
 		authenticator := &authenticationMocks.Authenticator{}
-		authenticator.On("AuthenticateTokenOrCertificate", context.TODO()).Return(clientId, nil)
+		authenticator.On("Authenticate", context.TODO()).Return(clientId, nil)
 
 		certService := &certificatesMocks.Service{}
 		certService.On("SignCSR", decodedCSR, subject).Return(certificates.EncodedCertificateChain{}, apperrors.Internal("error"))
@@ -140,6 +145,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 
 		// then
 		require.Error(t, err)
+		mock.AssertExpectationsForObjects(t, tokenService, authenticator, certService)
 	})
 }
 
@@ -148,7 +154,7 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 	t.Run("should return configuration", func(t *testing.T) {
 		// given
 		authenticator := &authenticationMocks.Authenticator{}
-		authenticator.On("AuthenticateTokenOrCertificate", context.Background()).Return(clientId, nil)
+		authenticator.On("Authenticate", context.Background()).Return(clientId, nil)
 		tokenService := &tokensMocks.Service{}
 		tokenService.On("CreateToken", subject.CommonName, tokens.CSRToken).Return(token, nil)
 
@@ -164,12 +170,13 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 		assert.Equal(t, &certSecuredConnectorURL, configurationResult.ManagementPlaneInfo.CertificateSecuredConnectorURL)
 		assert.Equal(t, expectedSubject(subject.CSRSubjectConsts, subject.CommonName), configurationResult.CertificateSigningRequestInfo.Subject)
 		assert.Equal(t, "rsa2048", configurationResult.CertificateSigningRequestInfo.KeyAlgorithm)
+		mock.AssertExpectationsForObjects(t, tokenService, authenticator)
 	})
 
 	t.Run("should return error when failed to generate token", func(t *testing.T) {
 		// given
 		authenticator := &authenticationMocks.Authenticator{}
-		authenticator.On("AuthenticateTokenOrCertificate", context.Background()).Return(clientId, nil)
+		authenticator.On("Authenticate", context.Background()).Return(clientId, nil)
 		tokenService := &tokensMocks.Service{}
 		tokenService.On("CreateToken", subject.CommonName, tokens.CSRToken).Return("", apperrors.Internal("error"))
 
@@ -181,12 +188,13 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 		// then
 		require.Error(t, err)
 		require.Nil(t, configurationResult)
+		mock.AssertExpectationsForObjects(t, tokenService, authenticator)
 	})
 
 	t.Run("should return error when failed to authenticate", func(t *testing.T) {
 		// given
 		authenticator := &authenticationMocks.Authenticator{}
-		authenticator.On("AuthenticateTokenOrCertificate", context.Background()).Return("", apperrors.Forbidden("Error"))
+		authenticator.On("Authenticate", context.Background()).Return("", apperrors.Forbidden("Error"))
 		tokenService := &tokensMocks.Service{}
 
 		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL)
@@ -197,6 +205,7 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 		// then
 		require.Error(t, err)
 		require.Nil(t, configurationResult)
+		mock.AssertExpectationsForObjects(t, tokenService, authenticator)
 	})
 
 }

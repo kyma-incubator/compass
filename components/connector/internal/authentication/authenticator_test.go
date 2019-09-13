@@ -17,7 +17,7 @@ func TestAuthenticator_AuthenticateToken(t *testing.T) {
 
 	t.Run("should authenticate with token", func(t *testing.T) {
 		// given
-		ctx := PutInContext(context.Background(), ClientIdFromTokenKey, clientId)
+		ctx := PutIntoContext(context.Background(), ClientIdFromTokenKey, clientId)
 
 		authenticator := NewAuthenticator()
 
@@ -31,7 +31,7 @@ func TestAuthenticator_AuthenticateToken(t *testing.T) {
 
 	t.Run("should return error if client id is empty", func(t *testing.T) {
 		// given
-		ctx := PutInContext(context.Background(), ClientIdFromTokenKey, "")
+		ctx := PutIntoContext(context.Background(), ClientIdFromTokenKey, "")
 
 		authenticator := NewAuthenticator()
 
@@ -61,8 +61,8 @@ func TestAuthenticator_AuthenticateCertificate(t *testing.T) {
 
 	t.Run("should authenticate with certificate", func(t *testing.T) {
 		// given
-		ctx := PutInContext(context.Background(), ClientIdFromCertificateKey, clientId)
-		ctx = PutInContext(ctx, ClientCertificateHashKey, certHash)
+		ctx := PutIntoContext(context.Background(), ClientIdFromCertificateKey, clientId)
+		ctx = PutIntoContext(ctx, ClientCertificateHashKey, certHash)
 
 		authenticator := NewAuthenticator()
 
@@ -76,8 +76,8 @@ func TestAuthenticator_AuthenticateCertificate(t *testing.T) {
 
 	t.Run("should return error if client id is empty", func(t *testing.T) {
 		// given
-		ctx := PutInContext(context.Background(), ClientIdFromCertificateKey, "")
-		ctx = PutInContext(ctx, ClientCertificateHashKey, certHash)
+		ctx := PutIntoContext(context.Background(), ClientIdFromCertificateKey, "")
+		ctx = PutIntoContext(ctx, ClientCertificateHashKey, certHash)
 
 		authenticator := NewAuthenticator()
 
@@ -91,7 +91,7 @@ func TestAuthenticator_AuthenticateCertificate(t *testing.T) {
 
 	t.Run("should return error if hash not in context", func(t *testing.T) {
 		// given
-		ctx := PutInContext(context.Background(), ClientIdFromCertificateKey, clientId)
+		ctx := PutIntoContext(context.Background(), ClientIdFromCertificateKey, clientId)
 
 		authenticator := NewAuthenticator()
 
@@ -105,7 +105,7 @@ func TestAuthenticator_AuthenticateCertificate(t *testing.T) {
 
 	t.Run("should return error if client id not found in context", func(t *testing.T) {
 		// given
-		ctx := PutInContext(context.Background(), ClientCertificateHashKey, certHash)
+		ctx := PutIntoContext(context.Background(), ClientCertificateHashKey, certHash)
 
 		authenticator := NewAuthenticator()
 
@@ -123,12 +123,12 @@ func TestAuthenticator_AuthenticateTokenOrCertificate(t *testing.T) {
 
 	t.Run("should authenticate with token", func(t *testing.T) {
 		// given
-		ctx := PutInContext(context.Background(), ClientIdFromTokenKey, clientId)
+		ctx := PutIntoContext(context.Background(), ClientIdFromTokenKey, clientId)
 
 		authenticator := NewAuthenticator()
 
 		// when
-		receivedId, err := authenticator.AuthenticateTokenOrCertificate(ctx)
+		receivedId, err := authenticator.Authenticate(ctx)
 
 		// then
 		require.NoError(t, err)
@@ -137,13 +137,13 @@ func TestAuthenticator_AuthenticateTokenOrCertificate(t *testing.T) {
 
 	t.Run("should authenticate with certificate", func(t *testing.T) {
 		// given
-		ctx := PutInContext(context.Background(), ClientIdFromCertificateKey, clientId)
-		ctx = PutInContext(ctx, ClientCertificateHashKey, certHash)
+		ctx := PutIntoContext(context.Background(), ClientIdFromCertificateKey, clientId)
+		ctx = PutIntoContext(ctx, ClientCertificateHashKey, certHash)
 
 		authenticator := NewAuthenticator()
 
 		// when
-		id, err := authenticator.AuthenticateTokenOrCertificate(ctx)
+		id, err := authenticator.Authenticate(ctx)
 
 		// then
 		require.NoError(t, err)
@@ -155,7 +155,7 @@ func TestAuthenticator_AuthenticateTokenOrCertificate(t *testing.T) {
 		authenticator := NewAuthenticator()
 
 		// when
-		id, err := authenticator.AuthenticateTokenOrCertificate(context.Background())
+		id, err := authenticator.Authenticate(context.Background())
 
 		// then
 		require.Error(t, err)

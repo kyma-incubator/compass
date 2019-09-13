@@ -48,7 +48,7 @@ func NewCertificateResolver(
 }
 
 func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context, csr string) (*gqlschema.CertificationResult, error) {
-	clientId, err := r.authenticator.AuthenticateTokenOrCertificate(ctx)
+	clientId, err := r.authenticator.Authenticate(ctx)
 	if err != nil {
 		r.log.Errorf(err.Error())
 		return nil, errors.Wrap(err, "Failed to authenticate with token")
@@ -84,7 +84,7 @@ func (r *certificateResolver) RevokeCertificate(ctx context.Context) (bool, erro
 }
 
 func (r *certificateResolver) Configuration(ctx context.Context) (*gqlschema.Configuration, error) {
-	clientId, err := r.authenticator.AuthenticateTokenOrCertificate(ctx)
+	clientId, err := r.authenticator.Authenticate(ctx)
 	if err != nil {
 		r.log.Errorf(err.Error())
 		return nil, err
