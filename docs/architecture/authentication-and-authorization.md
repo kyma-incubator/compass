@@ -36,7 +36,7 @@ Receiving token:
 
 Request flow:
 1. OathKeeper calls Hydra for introspection of the token.
-2. If the token was valid, OathKeeper sends the request to Hydrator. 
+2. If the token is valid, OathKeeper sends the request to Hydrator. 
 3. Hydrator calls Tenant Service to get `tenant` from a `client_id`.
 4. Hydrator calls ID_Token mutator which constructs a JWT token with scopes and `tenant` in the payload.
 5. ID_Token mutator calls the Compass Gateway.
