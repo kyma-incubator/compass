@@ -24,6 +24,9 @@ PORT_FWD_PID_2=$!
 export APP_INTERNAL_CONNECTOR_URL=http://localhost:3000/graphql
 export APP_HYDRATOR_URL=http://localhost:8080
 
+echo "Wait 5s for port forward to handle requests properly..."
+sleep 5
+
 pushd ${CURRENT_DIR}/..
 
 go clean --testcache

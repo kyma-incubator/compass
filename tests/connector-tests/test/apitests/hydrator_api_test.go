@@ -87,8 +87,19 @@ func TestHydrators(t *testing.T) {
 			//then
 			assert.Equal(t, testCase.expectedCertsHeaders, authSession.Header)
 		})
-	}
 
-	// TODO - no headers - empty auth
+		t.Run("should return empty Authentication Session when no valid headers found", func(t *testing.T) {
+			//given
+			token, err := testCase.tokenGenerationFunc(testCase.clientId)
+			require.NoError(t, err)
+			require.NotEmpty(t, token.Token)
+
+			//when
+			authSession := hydratorClient.ResolveToken(t, nil)
+
+			//then
+			assert.Empty(t, authSession)
+		})
+	}
 
 }

@@ -13,16 +13,28 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TODO - check cert header url
-
-// TODO - test with invalid cert
-
 func TestTokens(t *testing.T) {
 	appID := "54f83a73-b340-418d-b653-d25b5ed47d75"
+	runtimeID := "75f42q66-b340-418d-b653-d25b5ed47d75"
 
 	t.Run("should return valid response on Configuration query for Application token", func(t *testing.T) {
 		//when
 		token, e := internalClient.GenerateApplicationToken(appID)
+
+		//then
+		require.NoError(t, e)
+
+		//when
+		config, e := connectorClient.Configuration(token.Token)
+
+		//then
+		require.NoError(t, e)
+		assertConfiguration(t, config)
+	})
+
+	t.Run("should return valid response on Configuration query for Runtime token", func(t *testing.T) {
+		//when
+		token, e := internalClient.GenerateRuntimeToken(runtimeID)
 
 		//then
 		require.NoError(t, e)
@@ -41,6 +53,15 @@ func TestTokens(t *testing.T) {
 
 		//when
 		configuration, e := connectorClient.Configuration(wrongToken)
+
+		//then
+		require.Empty(t, configuration)
+		require.Error(t, e)
+	})
+
+	t.Run("should return error when token not provided", func(t *testing.T) {
+		//when
+		configuration, e := connectorClient.Configuration("")
 
 		//then
 		require.Empty(t, configuration)
