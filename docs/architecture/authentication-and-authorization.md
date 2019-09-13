@@ -3,21 +3,19 @@
 ## Introduction
 Currently, communication between the Compass and both runtimes and applications are not secured. We need to provide some security possibilities.
 We want to secure the Compass using ORY's Hydra and OathKeeper. There would be two ways of authentication:
- - Oauth 2.0 
- - SSL/TLS Certificates.
+ - OAuth 2.0 
+ - Client Certificates (mTLS)
 
 ## Proposed solution
-As mentioned, there would be two possibilities for securing the connection. To achieve that, first, we need to integrate Hydra and OathKeeper into the Compass. Then we will introduce a new component - Tenant Service.
-Tenant Service would be a part of Management Plane Services, responsible for extracting from database a `tenant` based on `client_id`.
-We would also use a Hydrator and ID_token mutator which are ORY's mutators.
+As mentioned, there would be two possibilities for securing the connection. To achieve that, first, we need to integrate Hydra and OathKeeper into the Compass. We need to implement additional supporting components to make our scenarios valid. On the Director component, we will implement an OathKeeper [hydrator](https://github.com/ory/docs/blob/525608c65694539384b785355d293bc0ad00da27/docs/oathkeeper/pipeline/mutator.md#hydrator) handler that will resolve `client_id` (which can be `runtime ID` or `application ID`) to particular `tenant ID`. The ID_token mutator which is Hydra built-in, will be responsible for creating a JWT token with the `tenant` field.
 
 Having that setup, the flow would be as follows: 
 
 1. Runtime/Application calls the OathKeeper.
-2. OathKeeper calls Hydrator with `client_id` or `runtime ID`/`application ID`  attached to request.
+2. OathKeeper calls Hydrator with `client_id` or `runtime ID`/`application ID` attached to the request.
 3. Hydrator calls Tenant Service and gets `tenant` in response.
 4. Hydrator calls ID_token mutator with `tenant` attached to the request
-5. The ID_token mutator constructs a JWT token with scopes and `tenant` in payload.
+5. The ID_token mutator constructs a JWT token with scopes and `tenant` in the payload.
 6. The token issued by ID_token mutator can be used to authenticate to the Gateway.
 
 ![Auth](./assets/compass-auth.svg)
@@ -25,10 +23,7 @@ Having that setup, the flow would be as follows:
 ## Architecture
 
 ### Tenant service
-It is a service responsible for mapping `client_id` (OAuth 2.0 flow), `runtime ID` or `application ID` (certificates flow) to `tenant`. There will be a simple HTTP endpoint on the Director component, responsible for retrieving it from database. 
-
-### Managing tenants
-There will be a neccessary schema extension. For now, Runtimes have field `runtimeAuth` which has `client_id`. We will need the same for Applications.
+It is a service responsible for mapping `client_id` (OAuth 2.0 flow), `runtime ID` or `application ID` (certificates flow) to `tenant`. There will be a simple HTTP endpoint on the Director component, responsible for retrieving it from the database. 
 
 ## Flows
 
@@ -40,12 +35,12 @@ Receiving token:
 2. If the requested scopes are valid, Runtime/Application receives in response an access token, otherwise receives an error.
 
 Request flow:
-1. OathKeeper calls Hydra for introspection of token.
+1. OathKeeper calls Hydra for introspection of the token.
 2. If the token was valid, OathKeeper sends the request to Hydrator. 
 3. Hydrator calls Tenant Service to get `tenant` from a `client_id`.
-4. Hydrator calls ID_Token mutator which constructs a JWT token with scopes and `tenant` in payload.
+4. Hydrator calls ID_Token mutator which constructs a JWT token with scopes and `tenant` in the payload.
 5. ID_Token mutator calls the Compass Gateway.
-   
+ 
 ![Auth](./assets/oauth2-diagram.svg)
 
 ### Certificates
