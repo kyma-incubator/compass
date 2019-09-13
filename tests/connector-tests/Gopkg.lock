@@ -56,6 +56,23 @@
   version = "v1.0.2"
 
 [[projects]]
+  branch = "oathkeeper-poc"
+  digest = "1:15883093263d50ff910bec63c1d99ca4d9eb65e0cdbd83d9643ba2e62040a47c"
+  name = "github.com/kyma-incubator/compass"
+  packages = [
+    "components/connector/internal/apperrors",
+    "components/connector/internal/certificates",
+    "components/connector/internal/httputils",
+    "components/connector/internal/secrets",
+    "components/connector/internal/tokens",
+    "components/connector/pkg/gqlschema",
+    "components/connector/pkg/oathkeeper",
+  ]
+  pruneopts = "UT"
+  revision = "7b0529c24d4c8dd4b9cd28aba4925f575da7008f"
+  source = "github.com/Szymongib/compass"
+
+[[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
   name = "github.com/machinebox/graphql"
   packages = ["."]
@@ -132,7 +149,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:4c1f5f0703cd131d3ee58a16287e03bc13267991ecf1cdba2767b0993272d3bd"
+  digest = "1:2a2c7bd1100d08e9c079ec0eff95c630162588b5907b22116ba6adff798723fb"
   name = "golang.org/x/net"
   packages = [
     "http/httpguts",
@@ -141,15 +158,15 @@
     "idna",
   ]
   pruneopts = "UT"
-  revision = "a7b16738d86b947dd0fadb08ca2c2342b51958b6"
+  revision = "24e19bdeb0f2d062d8e2640d50a7aaf2a7f80e7a"
 
 [[projects]]
   branch = "master"
-  digest = "1:9a9d873379b3a947a4a1606caea86ce9c4aec8e5b0fae406c5785b052664eb16"
+  digest = "1:6465a0bb4bc14250ff15eeef30d436baa62aabccb803306a047865790fcf5297"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "bbd175535a8b9969bb0b33f1502f681ee0b122bd"
+  revision = "bc967efca4b87fb45e946a3ea4cb891883404fd0"
 
 [[projects]]
   digest = "1:8d8faad6b12a3a4c819a3f9618cb6ee1fa1cfc33253abeeea8b55336721e3405"
@@ -178,7 +195,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:48ced5ed20818ea36810344882c6374e0f42405f4a7ac7a94884e1f6576af57f"
+  digest = "1:3575e65696a9950cd05e507a75b91a76f51010c7224db68737e019193e7f7bea"
   name = "golang.org/x/tools"
   packages = [
     "cmd/goimports",
@@ -195,7 +212,7 @@
     "internal/semver",
   ]
   pruneopts = "UT"
-  revision = "42f498d34c4d67145e3950193a8f23db9328e7f3"
+  revision = "3720d1ec36787cbb1ba1d4b76e4b0049db3ea911"
 
 [[projects]]
   digest = "1:2d1fbdc6777e5408cabeb02bf336305e724b925ff4546ded0fa8715a7267922a"
