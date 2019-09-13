@@ -169,6 +169,10 @@ func prepareHydratorServer(cfg config, tokenService tokens.Service, subjectConst
 	validationHydrator := oathkeeper.NewValidationHydrator(tokenService, certHeaderParser)
 
 	router := mux.NewRouter()
+	router.Path("/health").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
 	v1Router := router.PathPrefix("/v1").Subrouter()
 	v1Router.HandleFunc("/tokens/resolve", validationHydrator.ResolveConnectorTokenHeader)
 	v1Router.HandleFunc("/certificate/data/resolve", validationHydrator.ResolveIstioCertHeader)
