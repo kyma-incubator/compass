@@ -48,6 +48,7 @@ func TestMain(m *testing.M) {
 	connectorClient = connector.NewConnectorClient(config.ConnectorURL)
 
 	// Wait for sidecar to initialize
+	logrus.Infoln("Waiting for sidecar to initialize and access to API...")
 	err = testkit.WaitForFunction(apiAccessInterval, apiAccessTimeout, func() bool {
 		resp, err := http.Get(fmt.Sprintf("%s/%s", config.HydratorURL, "health"))
 		if err != nil {
