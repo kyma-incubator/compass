@@ -39,7 +39,7 @@ Request flow:
 2. If the token is valid, OathKeeper sends the request to Hydrator. 
 3. Hydrator calls Tenants handler hosted by `Director` to get `tenant` based on a `client_id`.
 4. Hydrator calls ID_Token mutator which constructs a JWT token with scopes and `tenant` in the payload.
-5. ID_Token mutator calls the Compass Gateway.
+5. The request is then forwarded to the desired component (`Director` or `Connector`) through the `Gateway` component.
  
 ![Auth](./assets/oauth2-diagram.svg)
 
