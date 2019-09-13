@@ -161,7 +161,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Configuration.Token(childComplexity), true
 
-	case "ManagementPlaneInfo.certificateSecuredConnectorUrl":
+	case "ManagementPlaneInfo.certificateSecuredConnectorURL":
 		if e.complexity.ManagementPlaneInfo.CertificateSecuredConnectorURL == nil {
 			break
 		}
@@ -324,7 +324,7 @@ type CertificationResult {
 # ManagementPlaneInfo
 type ManagementPlaneInfo {
     directorURL: String # eg.: "https://director.cluster.kyma.cx/graphql"
-    certificateSecuredConnectorUrl: String # eg.: "https://connector-mtls.cluster.kyma.cx/graphql"
+    certificateSecuredConnectorURL: String # eg.: "https://connector-mtls.cluster.kyma.cx/graphql"
 }
 
 type Configuration {
@@ -683,7 +683,7 @@ func (ec *executionContext) _ManagementPlaneInfo_directorURL(ctx context.Context
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ManagementPlaneInfo_certificateSecuredConnectorUrl(ctx context.Context, field graphql.CollectedField, obj *ManagementPlaneInfo) graphql.Marshaler {
+func (ec *executionContext) _ManagementPlaneInfo_certificateSecuredConnectorURL(ctx context.Context, field graphql.CollectedField, obj *ManagementPlaneInfo) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -1894,8 +1894,8 @@ func (ec *executionContext) _ManagementPlaneInfo(ctx context.Context, sel ast.Se
 			out.Values[i] = graphql.MarshalString("ManagementPlaneInfo")
 		case "directorURL":
 			out.Values[i] = ec._ManagementPlaneInfo_directorURL(ctx, field, obj)
-		case "certificateSecuredConnectorUrl":
-			out.Values[i] = ec._ManagementPlaneInfo_certificateSecuredConnectorUrl(ctx, field, obj)
+		case "certificateSecuredConnectorURL":
+			out.Values[i] = ec._ManagementPlaneInfo_certificateSecuredConnectorURL(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
