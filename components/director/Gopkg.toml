@@ -21,7 +21,8 @@ required = [
 
 [[constraint]]
   name = "github.com/xeipuuv/gojsonschema"
-  version = "1.1.0"
+  #revision with fix for https://github.com/kyma-incubator/compass/issues/256
+  revision = "6a016cf16650f6be7151db7c3be6fc90a2c4d9b1"
 
 [prune]
   go-tests = true
