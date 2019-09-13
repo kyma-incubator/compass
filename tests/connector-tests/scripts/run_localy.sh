@@ -22,7 +22,7 @@ kubectl -n compass-system port-forward svc/compass-connector 8080:8080 &
 PORT_FWD_PID_2=$!
 
 export APP_INTERNAL_CONNECTOR_URL=http://localhost:3000/graphql
-export APP_HYDRATOR_URL=http://localhost:8080/
+export APP_HYDRATOR_URL=http://localhost:8080
 
 pushd ${CURRENT_DIR}/..
 

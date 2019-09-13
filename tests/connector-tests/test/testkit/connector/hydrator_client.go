@@ -44,19 +44,18 @@ func (vc *HydratorClient) ResolveCertificateData(t *testing.T, headers map[strin
 
 func (vc *HydratorClient) executeHydratorRequest(t *testing.T, path string, headers map[string][]string) oathkeeper.AuthenticationSession {
 	authSession := oathkeeper.AuthenticationSession{}
-	body, err := json.Marshal(authSession)
+	marshalledSession, err := json.Marshal(authSession)
 	require.NoError(t, err)
 
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/%s", vc.validatorURL, path), bytes.NewBuffer(body))
+	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s%s", vc.validatorURL, path), bytes.NewBuffer(marshalledSession))
 	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
 
 	for h, vals := range headers {
 		for _, v := range vals {
 			req.Header.Set(h, v)
 		}
 	}
-
-	fmt.Println(req.Header)
 
 	response, err := vc.httpClient.Do(req)
 	require.NoError(t, err)

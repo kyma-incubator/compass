@@ -1,6 +1,7 @@
 package apitests
 
 import (
+	"crypto/rsa"
 	"os"
 	"testing"
 
@@ -15,6 +16,8 @@ var (
 	internalClient  *connector.InternalClient
 	hydratorClient  *connector.HydratorClient
 	connectorClient *connector.TokenSecuredClient
+
+	clientKey *rsa.PrivateKey
 )
 
 func TestMain(m *testing.M) {
@@ -27,6 +30,11 @@ func TestMain(m *testing.M) {
 	}
 
 	config = cfg
+	clientKey, err = testkit.GenerateKey()
+	if err != nil {
+		logrus.Errorf("Failed to generate private key: %s", err.Error())
+		os.Exit(1)
+	}
 	internalClient = connector.NewInternalClient(config.InternalConnectorURL)
 	hydratorClient = connector.NewHydratorClient(config.HydratorURL)
 	connectorClient = connector.NewConnectorClient(config.ConnectorURL)

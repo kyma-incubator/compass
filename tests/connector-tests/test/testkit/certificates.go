@@ -19,10 +19,14 @@ const (
 )
 
 func CreateKey(t *testing.T) *rsa.PrivateKey {
-	key, err := rsa.GenerateKey(rand.Reader, RSAKeySize)
+	key, err := GenerateKey()
 	require.NoError(t, err)
 
 	return key
+}
+
+func GenerateKey() (*rsa.PrivateKey, error) {
+	return rsa.GenerateKey(rand.Reader, RSAKeySize)
 }
 
 func CreateCsr(strSubject string, keys *rsa.PrivateKey) (string, error) {

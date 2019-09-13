@@ -47,7 +47,10 @@ func (qp queryProvider) revokeCert() string {
 func configurationResult() string {
 	return `token { token }
 	certificateSigningRequestInfo { subject keyAlgorithm }
-	managementPlaneInfo { directorURL }`
+	managementPlaneInfo { 
+		directorURL
+		certificateSecuredConnectorURL
+	}`
 }
 
 func certificationResult() string {

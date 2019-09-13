@@ -56,23 +56,6 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "oathkeeper-poc"
-  digest = "1:90fd9aa23372dcdff152dcd8fc25400d9cc036ca244f855fd78af0bd891a1c9b"
-  name = "github.com/kyma-incubator/compass"
-  packages = [
-    "components/connector/internal/apperrors",
-    "components/connector/internal/certificates",
-    "components/connector/internal/httputils",
-    "components/connector/internal/secrets",
-    "components/connector/internal/tokens",
-    "components/connector/pkg/gqlschema",
-    "components/connector/pkg/oathkeeper",
-  ]
-  pruneopts = "UT"
-  revision = "6459cc01f299f42656793a37bb3122a474ec944a"
-  source = "github.com/Szymongib/compass"
-
-[[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
   name = "github.com/machinebox/graphql"
   packages = ["."]
@@ -286,6 +269,7 @@
     "github.com/machinebox/graphql",
     "github.com/pkg/errors",
     "github.com/sirupsen/logrus",
+    "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/require",
     "github.com/vrischmann/envconfig",
     "golang.org/x/tools/cmd/goimports",
