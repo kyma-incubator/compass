@@ -8,6 +8,7 @@ The Connector Service generates client certificates which are used to secure the
 Generating a new client certificate is the first step in the process of configuring an Application (App). Kyma stores the root certificate and serves as the Certificate Authority (CA) when you configure a new App. When you generate a new client certificate, the Connector Service returns it along with the CA certificate (the root certificate) to allow validation.  
 
 This diagram illustrates the client certificate generation flow in details:
+
 ![Client certificate generation operation flow](002-automatic-configuration.svg)
 
 1. The administrator requests a token using <!--- the CLI or --> the UI and receives the Connector URL and the one-time token, which is valid for a limited period of time.
