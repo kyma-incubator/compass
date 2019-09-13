@@ -21,7 +21,9 @@ required = [
 
 [[constraint]]
   name = "github.com/xeipuuv/gojsonschema"
-  version = "1.1.0"
+  #git version = "1.1.0"
+  # we fixed this library and this is the master commit with our fix
+  revision = "6a016cf16650f6be7151db7c3be6fc90a2c4d9b1"
 
 [prune]
   go-tests = true
