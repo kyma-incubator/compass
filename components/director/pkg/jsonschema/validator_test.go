@@ -187,3 +187,14 @@ func TestValidator_ValidateRaw(t *testing.T) {
 		})
 	}
 }
+
+// Test for this issue https://github.com/kyma-incubator/compass/issues/256
+func TestNewValidatorFromStringSchema_NotValidSchema(t *testing.T) {
+	//GIVEN
+	stringSchema := `"schema"`
+	//WHEN
+	_, err := jsonschema.NewValidatorFromStringSchema(stringSchema)
+	//THEN
+	require.Error(t, err)
+	assert.EqualError(t, err, "schema is invalid")
+}
