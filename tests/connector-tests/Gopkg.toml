@@ -3,5 +3,10 @@ required = [
 ]
 
 [[constraint]]
-  name = "github.com/99designs/gqlgen"
-  version = "0.9.0"
+  name = "github.com/kyma-incubator/compass"
+  source = "github.com/Szymongib/compass"
+  branch = "oathkeeper-poc"
+
+[prune]
+  go-tests = true
+  unused-packages = true

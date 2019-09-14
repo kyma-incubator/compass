@@ -19,10 +19,14 @@ const (
 )
 
 func CreateKey(t *testing.T) *rsa.PrivateKey {
-	key, err := rsa.GenerateKey(rand.Reader, RSAKeySize)
+	key, err := GenerateKey()
 	require.NoError(t, err)
 
 	return key
+}
+
+func GenerateKey() (*rsa.PrivateKey, error) {
+	return rsa.GenerateKey(rand.Reader, RSAKeySize)
 }
 
 func CreateCsr(strSubject string, keys *rsa.PrivateKey) (string, error) {
@@ -60,7 +64,7 @@ func ParseSubject(subject string) pkix.Name {
 	}
 }
 
-func CheckIfSubjectEquals(t *testing.T, certificateStr, expectedSubject string) {
+func CheckIfSubjectEquals(t *testing.T, expectedSubject, certificateStr string) {
 	certificate := decodeCert(t, certificateStr)
 
 	actualSubject := certificate.Subject
@@ -75,7 +79,7 @@ func CheckIfSubjectEquals(t *testing.T, certificateStr, expectedSubject string) 
 }
 
 func CheckIfChainContainsTwoCertificates(t *testing.T, certChain string) {
-	certificates := decodeCertChain(t, certChain)
+	certificates := DecodeCertChain(t, certChain)
 	require.Equal(t, 2, len(certificates))
 }
 
@@ -99,7 +103,7 @@ func decodeCert(t *testing.T, certificateStr string) *x509.Certificate {
 	return certificate
 }
 
-func decodeCertChain(t *testing.T, certificateChain string) []*x509.Certificate {
+func DecodeCertChain(t *testing.T, certificateChain string) []*x509.Certificate {
 	crtBytes := decodeBase64Cert(t, certificateChain)
 
 	clientCrtPem, rest := pem.Decode(crtBytes)
