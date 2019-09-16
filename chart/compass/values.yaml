@@ -31,7 +31,7 @@ global:
         version: "PR-297"
       connector:
         dir: pr/
-        version: "PR-273"
+        version: "PR-303"
 
   isLocalEnv: false
 

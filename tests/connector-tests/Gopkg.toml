@@ -4,8 +4,7 @@ required = [
 
 [[constraint]]
   name = "github.com/kyma-incubator/compass"
-  source = "github.com/Szymongib/compass"
-  branch = "oathkeeper-poc"
+  revision = "1adfa459f90d6c2f50df54d06b22031d212a5dce"
 
 [prune]
   go-tests = true
