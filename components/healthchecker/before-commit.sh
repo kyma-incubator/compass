@@ -59,14 +59,17 @@ fi
 ##
 # GO TEST
 ##
+TEST_OUTPUT="gotests.log"
 echo "? go test"
-go test ./...
+go test -v ./... > "$TEST_OUTPUT"
 # Check if tests passed
-if [ $? != 0 ];
-    then
-    	echo -e "${RED}✗ go test\n${NC}"
-    	exit 1;
-	else echo -e "${GREEN}√ go test${NC}"
+if [ $? != 0 ]; then
+	echo -e "${RED}✗ go test\n${NC}"
+	cat "$TEST_OUTPUT"; rm "$TEST_OUTPUT"
+	exit 1;
+else
+	echo -e "${GREEN}√ go test${NC}"
+	rm "$TEST_OUTPUT"
 fi
 
 filesToCheck=$(find . -type f -name "*.go" | egrep -v "\/vendor\/|_*/automock/|_*/testdata/|/pkg\/|_*export_test.go")
