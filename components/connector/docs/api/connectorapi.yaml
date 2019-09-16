@@ -3,22 +3,66 @@ info:
   version: '1.0.0'
   title: 'Kyma Connector Service API'
 paths:
-  /v1/applications/tokens:
-    post:
-      
-  /v1/applications/certificates/revocations:
-    post:
-      tags:
-      - applications internal API
-      summary: 'Marks certificate as revoked.'
+  /health:
+    get:
+      summary: 'Returns health status.'
       responses:
-        '201':
-          description: 'Successful operation.'
-        
-  /v1/runtimes/tokens:
+        '200':
+          description: 'The service is up.'
+
+  /v1/tokens/resolve:
     post:
-      
-  /v1/runtimes/certificates/revocations:
+      summary: 'Resolves token and sets custom headers.'
+      responses: 
+        '200':
+          description: 'Token resolved.'
+          content: 
+            application/json:
+              schema:
+                $ref: '#/components/schemas/authenticationSession'
+        '400':
+          description: 'Invalid request body.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/appError'
+
+  /v1/certificate/data/resolve:
     post:
-      parameters:
-      
+      summary: 'Converts certificate header to custom headers.'
+      responses: 
+        '200':
+          description: 'Token resolved.'
+          content: 
+            application/json:
+              schema:
+                $ref: '#/components/schemas/authenticationSession'
+        '400':
+          description: 'Invalid request body.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/appError'
+
+components:
+  schemas:
+    authenticationSession:
+      type: 'object'
+      properties:
+        subject:
+          type: 'string'
+          example: 'user-abcd'
+        extra:
+          type: 'object'
+          additionalProperties:
+            type: object
+        header:
+          type: 'object'
+          additionalProperties: 
+            type: 'array'
+
+    appError:
+      type: 'object'
+      properties:
+        error:
+          type: 'string'
