@@ -191,7 +191,7 @@ func TestCertificateGeneration(t *testing.T) {
 }
 
 func TestFullConnectorFlow(t *testing.T) {
-	appID := "54f83a73-b340-418d-b653-d95b5e347d74"
+	appID := "54f83a73-b340-418d-b653-d95b5e347d76"
 
 	t.Log("Generating certificate...")
 	certificationResult, configuration := generateCertificate(t, appID, clientKey)
