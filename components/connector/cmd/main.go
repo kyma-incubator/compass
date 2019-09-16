@@ -125,7 +125,7 @@ func main() {
 		revokedCertsRepository)
 
 	server := prepareGraphQLServer(cfg, tokenResolver, certificateResolver)
-	hydratorServer := prepareHydratorServer(cfg, tokenService, csrSubjectConsts)
+	hydratorServer := prepareHydratorServer(cfg, tokenService, csrSubjectConsts, revokedCertsRepository)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
@@ -170,10 +170,10 @@ func prepareGraphQLServer(cfg config, tokenResolver api.TokenResolver, certResol
 	}
 }
 
-func prepareHydratorServer(cfg config, tokenService tokens.Service, subjectConsts certificates.CSRSubjectConsts) *http.Server {
+func prepareHydratorServer(cfg config, tokenService tokens.Service, subjectConsts certificates.CSRSubjectConsts, revokedCertsRepository revocation.RevocationListRepository) *http.Server {
 	certHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, subjectConsts)
 
-	validationHydrator := oathkeeper.NewValidationHydrator(tokenService, certHeaderParser)
+	validationHydrator := oathkeeper.NewValidationHydrator(tokenService, certHeaderParser, revokedCertsRepository)
 
 	router := mux.NewRouter()
 	router.Path("/health").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

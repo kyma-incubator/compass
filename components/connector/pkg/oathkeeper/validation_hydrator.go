@@ -2,6 +2,7 @@ package oathkeeper
 
 import (
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/connector/internal/revocation"
 	"net/http"
 
 	"github.com/sirupsen/logrus"
@@ -21,13 +22,15 @@ type ValidationHydrator interface {
 type validationHydrator struct {
 	tokenService     tokens.Service
 	certHeaderParser CertificateHeaderParser
+	revocationList                 revocation.RevocationListRepository
 	log              *logrus.Entry
 }
 
-func NewValidationHydrator(tokenService tokens.Service, certHeaderParser CertificateHeaderParser) ValidationHydrator {
+func NewValidationHydrator(tokenService tokens.Service, certHeaderParser CertificateHeaderParser, revocationList revocation.RevocationListRepository) ValidationHydrator {
 	return &validationHydrator{
 		tokenService:     tokenService,
 		certHeaderParser: certHeaderParser,
+		revocationList:revocationList,
 		log:              logrus.WithField("Handler", "ValidationHydrator"),
 	}
 }
@@ -89,7 +92,17 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 		return
 	}
 
-	// TODO: Check if certificate is revoked
+	isCertificateRevoked, err := tvh.revocationList.Contains(hash)
+	if err != nil {
+		tvh.log.Info("Failed to check if certificate is revoked.")
+		respondWithAuthSession(w, authSession)
+		return
+	}
+	if isCertificateRevoked {
+		tvh.log.Info("Certificate is revoked.")
+		respondWithAuthSession(w, authSession)
+		return
+	}
 
 	if authSession.Header == nil {
 		authSession.Header = map[string][]string{}
