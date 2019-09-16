@@ -2,15 +2,12 @@ package oathkeeper
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/connector/internal/revocation"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/connector/internal/revocation"
 	"github.com/sirupsen/logrus"
-
 	"github.com/pkg/errors"
-
 	"github.com/kyma-incubator/compass/components/connector/internal/httputils"
-
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
 )
 
@@ -22,7 +19,7 @@ type ValidationHydrator interface {
 type validationHydrator struct {
 	tokenService     tokens.Service
 	certHeaderParser CertificateHeaderParser
-	revocationList                 revocation.RevocationListRepository
+	revocationList   revocation.RevocationListRepository
 	log              *logrus.Entry
 }
 
@@ -30,7 +27,7 @@ func NewValidationHydrator(tokenService tokens.Service, certHeaderParser Certifi
 	return &validationHydrator{
 		tokenService:     tokenService,
 		certHeaderParser: certHeaderParser,
-		revocationList:revocationList,
+		revocationList:   revocationList,
 		log:              logrus.WithField("Handler", "ValidationHydrator"),
 	}
 }
