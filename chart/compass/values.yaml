@@ -7,7 +7,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir: pr/
-      version: "PR-273"
+      version: "PR-247"
     director:
       dir: pr/
       version: "PR-301"
@@ -31,7 +31,7 @@ global:
         version: "PR-297"
       connector:
         dir: pr/
-        version: "PR-303"
+        version: "PR-247"
 
   isLocalEnv: false
 
