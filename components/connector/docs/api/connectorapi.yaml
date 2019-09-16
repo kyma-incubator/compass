@@ -60,6 +60,8 @@ components:
           type: 'object'
           additionalProperties: 
             type: 'array'
+            items:
+              type: 'string'
 
     appError:
       type: 'object'
