@@ -9,7 +9,11 @@ import (
 type ContextKey string
 
 const (
-	ConnectorTokenKey ContextKey = "ConnectorToken"
+	ConnectorTokenKey          ContextKey = "ConnectorToken"
+	ClientIdFromTokenKey       ContextKey = "ClientIdFromToken"
+	TokenTypeKey               ContextKey = "TokenType"
+	ClientIdFromCertificateKey ContextKey = "ClientIdFromCertificate"
+	ClientCertificateHashKey   ContextKey = "ClientCertificateHash"
 )
 
 func GetStringFromContext(ctx context.Context, key ContextKey) (string, error) {
@@ -23,6 +27,6 @@ func GetStringFromContext(ctx context.Context, key ContextKey) (string, error) {
 	return str, nil
 }
 
-func PutInContext(ctx context.Context, key ContextKey, value string) context.Context {
+func PutIntoContext(ctx context.Context, key ContextKey, value string) context.Context {
 	return context.WithValue(ctx, key, value)
 }

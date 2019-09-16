@@ -1,11 +1,11 @@
-package authentication_test
+package authentication
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
+	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 
 	"github.com/stretchr/testify/assert"
 
@@ -14,14 +14,20 @@ import (
 
 func TestAuthContextMiddleware_PropagateAuthentication(t *testing.T) {
 
-	connectorToken := "connector-token"
-
 	t.Run("should put authentication to context", func(t *testing.T) {
 		// given
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			token, err := authentication.GetStringFromContext(r.Context(), authentication.ConnectorTokenKey)
+			idFromToken, err := GetStringFromContext(r.Context(), ClientIdFromTokenKey)
 			require.NoError(t, err)
-			assert.Equal(t, connectorToken, token)
+			assert.Equal(t, clientId, idFromToken)
+
+			idFromCert, err := GetStringFromContext(r.Context(), ClientIdFromCertificateKey)
+			require.NoError(t, err)
+			assert.Equal(t, clientId, idFromCert)
+
+			hash, err := GetStringFromContext(r.Context(), ClientCertificateHashKey)
+			require.NoError(t, err)
+			assert.Equal(t, certHash, hash)
 
 			w.WriteHeader(http.StatusOK)
 		})
@@ -29,10 +35,12 @@ func TestAuthContextMiddleware_PropagateAuthentication(t *testing.T) {
 		request, err := http.NewRequest(http.MethodGet, "", nil)
 		require.NoError(t, err)
 
-		request.Header.Add(authentication.ConnectorTokenHeader, connectorToken)
+		request.Header.Add(oathkeeper.ClientIdFromTokenHeader, clientId)
+		request.Header.Add(oathkeeper.ClientIdFromCertificateHeader, clientId)
+		request.Header.Add(oathkeeper.ClientCertificateHashHeader, certHash)
 		rr := httptest.NewRecorder()
 
-		authContextMiddleware := authentication.NewAuthenticationContextMiddleware()
+		authContextMiddleware := NewAuthenticationContextMiddleware()
 
 		// when
 		handlerWithMiddleware := authContextMiddleware.PropagateAuthentication(handler)

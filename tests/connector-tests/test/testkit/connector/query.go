@@ -1,12 +1,20 @@
-package testkit
+package connector
 
 import "fmt"
 
 type queryProvider struct{}
 
-func (qp queryProvider) generateToken(id string) string {
+func (qp queryProvider) generateApplicationToken(id string) string {
 	return fmt.Sprintf(`mutation {
 	result: generateApplicationToken(appID: "%s") {
+		token
+	}
+}`, id)
+}
+
+func (qp queryProvider) generateRuntimeToken(id string) string {
+	return fmt.Sprintf(`mutation {
+	result: generateRuntimeToken(runtimeID: "%s") {
 		token
 	}
 }`, id)
@@ -20,7 +28,7 @@ func (qp queryProvider) configuration() string {
 }`, configurationResult())
 }
 
-func (qp queryProvider) generateCert(csr string) string {
+func (qp queryProvider) signCSR(csr string) string {
 	return fmt.Sprintf(`mutation {
 	result: signCertificateSigningRequest(csr: "%s") {
 		%s
@@ -39,7 +47,10 @@ func (qp queryProvider) revokeCert() string {
 func configurationResult() string {
 	return `token { token }
 	certificateSigningRequestInfo { subject keyAlgorithm }
-	managementPlaneInfo { directorURL }`
+	managementPlaneInfo { 
+		directorURL
+		certificateSecuredConnectorURL
+	}`
 }
 
 func certificationResult() string {

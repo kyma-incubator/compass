@@ -253,12 +253,11 @@
   revision = "bd5ef7bd5415a7ac448318e64f11a24cd21e594b"
 
 [[projects]]
-  digest = "1:1c898ea6c30c16e8d55fdb6fe44c4bee5f9b7d68aa260cfdfc3024491dcc7bea"
+  digest = "1:8ac21ff5a6e85f32d70f2d10351bb55a2414b6f346894826b61dac894af5dc37"
   name = "github.com/xeipuuv/gojsonschema"
   packages = ["."]
   pruneopts = "UT"
-  revision = "f971f3cd73b2899de6923801c147f075263e0c50"
-  version = "v1.1.0"
+  revision = "6a016cf16650f6be7151db7c3be6fc90a2c4d9b1"
 
 [[projects]]
   branch = "master"
