@@ -1,6 +1,8 @@
 package version
 
-import "database/sql"
+import (
+	"database/sql"
+)
 
 type Version struct {
 	VersionValue           sql.NullString `db:"version_value"`

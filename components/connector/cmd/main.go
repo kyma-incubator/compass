@@ -5,35 +5,35 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+	"sync"
 	"time"
-
-	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
-
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
-
-	"github.com/sirupsen/logrus"
-
-	"github.com/kyma-incubator/compass/components/connector/internal/namespacedname"
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connector/internal/api"
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
+	"github.com/kyma-incubator/compass/components/connector/internal/namespacedname"
 	"github.com/kyma-incubator/compass/components/connector/internal/secrets"
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
+	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
+	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 	"k8s.io/client-go/kubernetes"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	restclient "k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 )
 
 type config struct {
 	Address               string `envconfig:"default=127.0.0.1:3000"`
 	APIEndpoint           string `envconfig:"default=/graphql"`
 	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
+
+	HydratorAddress string `envconfig:"default=127.0.0.1:8080"`
 
 	CSRSubject struct {
 		Country            string `envconfig:"default=PL"`
@@ -46,6 +46,8 @@ type config struct {
 	CASecretName                string        `envconfig:"default=namespace/name"`
 	RootCACertificateSecretName string        `envconfig:"optional"`
 
+	CertificateDataHeader string `envconfig:"default=Certificate-Data"`
+
 	Token struct {
 		Length                int           `envconfig:"default=64"`
 		RuntimeExpiration     time.Duration `envconfig:"default=60m"`
@@ -53,20 +55,23 @@ type config struct {
 		CSRExpiration         time.Duration `envconfig:"default=5m"`
 	}
 
-	DirectorURL string `envconfig:"default=127.0.0.1:3003"`
+	DirectorURL                    string `envconfig:"default=127.0.0.1:3003"`
+	CertificateSecuredConnectorURL string `envconfig:"default=https://compass-gateway-mtls.kyma.local"`
 }
 
 func (c *config) String() string {
-	return fmt.Sprintf("Address: %s, APIEndpoint: %s, "+
+	return fmt.Sprintf("Address: %s, APIEndpoint: %s, HydratorAddress: %s, "+
 		"CSRSubjectCountry: %s, CSRSubjectOrganization: %s, CSRSubjectOrganizationalUnit: %s, "+
 		"CSRSubjectLocality: %s, CSRSubjectProvince: %s, "+
-		"CertificateValidityTime: %s, CASecretName: %s, RootCACertificateSecretName: %s, "+
+		"CertificateValidityTime: %s, CASecretName: %s, RootCACertificateSecretName: %s, CertificateDataHeader: %s, "+
+		"CertificateSecuredConnectorURL: %s, "+
 		"TokenLength: %d, TokenRuntimeExpiration: %s, TokenApplicationExpiration: %s, TokenCSRExpiration: %s, "+
 		"DirectorURL: %s",
-		c.Address, c.APIEndpoint,
+		c.Address, c.APIEndpoint, c.HydratorAddress,
 		c.CSRSubject.Country, c.CSRSubject.Organization, c.CSRSubject.OrganizationalUnit,
 		c.CSRSubject.Locality, c.CSRSubject.Province,
-		c.CertificateValidityTime, c.CASecretName, c.RootCACertificateSecretName,
+		c.CertificateValidityTime, c.CASecretName, c.RootCACertificateSecretName, c.CertificateDataHeader,
+		c.CertificateSecuredConnectorURL,
 		c.Token.Length, c.Token.RuntimeExpiration.String(), c.Token.ApplicationExpiration.String(), c.Token.CSRExpiration.String(),
 		c.DirectorURL)
 }
@@ -82,7 +87,7 @@ func main() {
 	tokenCache := tokens.NewTokenCache(cfg.Token.ApplicationExpiration, cfg.Token.RuntimeExpiration, cfg.Token.CSRExpiration)
 	tokenService := tokens.NewTokenService(tokenCache, tokens.NewTokenGenerator(cfg.Token.Length))
 
-	authenticator := authentication.NewAuthenticator(tokenService)
+	authenticator := authentication.NewAuthenticator()
 
 	tokenResolver := api.NewTokenResolver(tokenService)
 
@@ -109,17 +114,33 @@ func main() {
 		tokenService,
 		certificateService,
 		csrSubjectConsts,
-		cfg.DirectorURL)
+		cfg.DirectorURL,
+		cfg.CertificateSecuredConnectorURL)
 
-	server := prepareServer(cfg, tokenResolver, certificateResolver)
+	server := prepareGraphQLServer(cfg, tokenResolver, certificateResolver)
+	hydratorServer := prepareHydratorServer(cfg, tokenService, csrSubjectConsts)
 
-	log.Printf("API listening on %s...", cfg.Address)
-	if err := server.ListenAndServe(); err != nil {
-		panic(err)
-	}
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+
+	go func() {
+		log.Printf("GraphQL API listening on %s...", cfg.Address)
+		if err := server.ListenAndServe(); err != nil {
+			panic(err)
+		}
+	}()
+
+	go func() {
+		log.Printf("Hydrator API listening on %s...", cfg.HydratorAddress)
+		if err := hydratorServer.ListenAndServe(); err != nil {
+			panic(err)
+		}
+	}()
+
+	wg.Wait()
 }
 
-func prepareServer(cfg config, tokenResolver api.TokenResolver, certResolver api.CertificateResolver) *http.Server {
+func prepareGraphQLServer(cfg config, tokenResolver api.TokenResolver, certResolver api.CertificateResolver) *http.Server {
 	externalResolver := api.Resolver{CertificateResolver: certResolver, TokenResolver: tokenResolver}
 
 	gqlInternalCfg := gqlschema.Config{
@@ -139,6 +160,26 @@ func prepareServer(cfg config, tokenResolver api.TokenResolver, certResolver api
 	return &http.Server{
 		Addr:    cfg.Address,
 		Handler: externalRouter,
+	}
+}
+
+func prepareHydratorServer(cfg config, tokenService tokens.Service, subjectConsts certificates.CSRSubjectConsts) *http.Server {
+	certHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, subjectConsts)
+
+	validationHydrator := oathkeeper.NewValidationHydrator(tokenService, certHeaderParser)
+
+	router := mux.NewRouter()
+	router.Path("/health").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	v1Router := router.PathPrefix("/v1").Subrouter()
+	v1Router.HandleFunc("/tokens/resolve", validationHydrator.ResolveConnectorTokenHeader)
+	v1Router.HandleFunc("/certificate/data/resolve", validationHydrator.ResolveIstioCertHeader)
+
+	return &http.Server{
+		Addr:    cfg.HydratorAddress,
+		Handler: router,
 	}
 }
 

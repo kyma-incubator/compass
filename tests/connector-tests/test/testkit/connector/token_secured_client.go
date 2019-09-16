@@ -1,4 +1,4 @@
-package testkit
+package connector
 
 import (
 	"context"
@@ -14,18 +14,12 @@ const (
 	TokenHeader = "Connector-Token"
 )
 
-type ConnectorClient interface {
-	GenerateToken(appID string) (schema.Token, error)
-	Configuration(token string) (schema.Configuration, error)
-	GenerateCert(csr string, token string) (schema.CertificationResult, error)
-}
-
-type client struct {
+type TokenSecuredClient struct {
 	graphQlClient *gcli.Client
 	queryProvider queryProvider
 }
 
-func NewConnectorClient(endpoint string) ConnectorClient {
+func NewConnectorClient(endpoint string) *TokenSecuredClient {
 	httpClient := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
@@ -36,26 +30,13 @@ func NewConnectorClient(endpoint string) ConnectorClient {
 
 	graphQlClient := gcli.NewClient(endpoint, gcli.WithHTTPClient(httpClient))
 
-	return &client{
+	return &TokenSecuredClient{
 		graphQlClient: graphQlClient,
 		queryProvider: queryProvider{},
 	}
 }
 
-func (c client) GenerateToken(appID string) (schema.Token, error) {
-	query := c.queryProvider.generateToken(appID)
-	req := gcli.NewRequest(query)
-
-	var response TokenResponse
-
-	err := c.graphQlClient.Run(context.Background(), req, &response)
-	if err != nil {
-		return schema.Token{}, errors.Wrap(err, "Failed to generate token")
-	}
-	return response.Result, nil
-}
-
-func (c client) Configuration(token string) (schema.Configuration, error) {
+func (c *TokenSecuredClient) Configuration(token string, headers ...http.Header) (schema.Configuration, error) {
 	query := c.queryProvider.configuration()
 	req := gcli.NewRequest(query)
 	req.Header.Add(TokenHeader, token)
@@ -69,8 +50,8 @@ func (c client) Configuration(token string) (schema.Configuration, error) {
 	return response.Result, nil
 }
 
-func (c client) GenerateCert(csr string, token string) (schema.CertificationResult, error) {
-	query := c.queryProvider.generateCert(csr)
+func (c *TokenSecuredClient) SignCSR(csr string, token string, headers ...http.Header) (schema.CertificationResult, error) {
+	query := c.queryProvider.signCSR(csr)
 	req := gcli.NewRequest(query)
 	req.Header.Add(TokenHeader, token)
 
@@ -81,10 +62,6 @@ func (c client) GenerateCert(csr string, token string) (schema.CertificationResu
 		return schema.CertificationResult{}, errors.Wrap(err, "Failed to generate certificate")
 	}
 	return response.Result, nil
-}
-
-type TokenResponse struct {
-	Result schema.Token `json:"result"`
 }
 
 type ConfigurationResponse struct {

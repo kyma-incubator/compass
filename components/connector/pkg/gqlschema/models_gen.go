@@ -20,7 +20,8 @@ type Configuration struct {
 }
 
 type ManagementPlaneInfo struct {
-	DirectorURL string `json:"directorURL"`
+	DirectorURL                    *string `json:"directorURL"`
+	CertificateSecuredConnectorURL *string `json:"certificateSecuredConnectorURL"`
 }
 
 type Token struct {

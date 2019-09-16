@@ -3,5 +3,9 @@ required = [
 ]
 
 [[constraint]]
-  name = "github.com/99designs/gqlgen"
-  version = "0.9.0"
+  name = "github.com/kyma-incubator/compass"
+  revision = "1adfa459f90d6c2f50df54d06b22031d212a5dce"
+
+[prune]
+  go-tests = true
+  unused-packages = true

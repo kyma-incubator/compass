@@ -27,13 +27,13 @@ func (_m *ApplicationRepository) Create(ctx context.Context, item *model.Applica
 	return r0
 }
 
-// Delete provides a mock function with given fields: ctx, item
-func (_m *ApplicationRepository) Delete(ctx context.Context, item *model.Application) error {
-	ret := _m.Called(ctx, item)
+// Delete provides a mock function with given fields: ctx, tenant, id
+func (_m *ApplicationRepository) Delete(ctx context.Context, tenant string, id string) error {
+	ret := _m.Called(ctx, tenant, id)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.Application) error); ok {
-		r0 = rf(ctx, item)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, tenant, id)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -86,11 +86,11 @@ func (_m *ApplicationRepository) GetByID(ctx context.Context, tenant string, id 
 }
 
 // List provides a mock function with given fields: ctx, tenant, filter, pageSize, cursor
-func (_m *ApplicationRepository) List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
+func (_m *ApplicationRepository) List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	ret := _m.Called(ctx, tenant, filter, pageSize, cursor)
 
 	var r0 *model.ApplicationPage
-	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter, *int, *string) *model.ApplicationPage); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter, int, string) *model.ApplicationPage); ok {
 		r0 = rf(ctx, tenant, filter, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
@@ -99,7 +99,7 @@ func (_m *ApplicationRepository) List(ctx context.Context, tenant string, filter
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, []*labelfilter.LabelFilter, *int, *string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, []*labelfilter.LabelFilter, int, string) error); ok {
 		r1 = rf(ctx, tenant, filter, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
@@ -109,11 +109,11 @@ func (_m *ApplicationRepository) List(ctx context.Context, tenant string, filter
 }
 
 // ListByScenarios provides a mock function with given fields: ctx, tenantID, scenarios, pageSize, cursor
-func (_m *ApplicationRepository) ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize *int, cursor *string) (*model.ApplicationPage, error) {
+func (_m *ApplicationRepository) ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	ret := _m.Called(ctx, tenantID, scenarios, pageSize, cursor)
 
 	var r0 *model.ApplicationPage
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, []string, *int, *string) *model.ApplicationPage); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, []string, int, string) *model.ApplicationPage); ok {
 		r0 = rf(ctx, tenantID, scenarios, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
@@ -122,7 +122,7 @@ func (_m *ApplicationRepository) ListByScenarios(ctx context.Context, tenantID u
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, []string, *int, *string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, []string, int, string) error); ok {
 		r1 = rf(ctx, tenantID, scenarios, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)

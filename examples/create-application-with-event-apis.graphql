@@ -2,7 +2,7 @@
 mutation {
   result: createApplication(
     in: {
-      name: "test-create-application-with-event-apis"
+      name: "create-application-with-event-apis"
       labels: { scenarios: ["DEFAULT"] }
       eventAPIs: [
         {

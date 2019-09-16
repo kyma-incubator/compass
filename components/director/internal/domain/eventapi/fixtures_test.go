@@ -151,12 +151,12 @@ func fixFullEventAPIDef(id, placeholder string) eventapi.Entity {
 		Name:        placeholder,
 		GroupName:   repo.NewValidNullableString("group_" + placeholder),
 		Description: repo.NewValidNullableString("desc_" + placeholder),
-		EntitySpec: &eventapi.EntitySpec{
+		EntitySpec: eventapi.EntitySpec{
 			SpecData:   repo.NewValidNullableString("data"),
 			SpecType:   repo.NewValidNullableString(string(model.EventAPISpecTypeAsyncAPI)),
 			SpecFormat: repo.NewValidNullableString(string(model.SpecFormatJSON)),
 		},
-		Version: &v,
+		Version: v,
 	}
 }
 
@@ -204,7 +204,7 @@ func fixEventAPICreateArgs(id string, api model.EventAPIDefinition) []driver.Val
 func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchRequest {
 	return &model.FetchRequest{
 		ID:     id,
-		Tenant: "tenant",
+		Tenant: tenantID,
 		URL:    url,
 		Auth:   nil,
 		Mode:   "SINGLE",

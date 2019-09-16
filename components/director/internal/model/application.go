@@ -50,7 +50,7 @@ type ApplicationInput struct {
 	Documents      []*DocumentInput
 }
 
-func (i *ApplicationInput) ToApplication(id, tenant string) *Application {
+func (i *ApplicationInput) ToApplication(timestamp time.Time, condition ApplicationStatusCondition, id, tenant string) *Application {
 	if i == nil {
 		return nil
 	}
@@ -61,6 +61,10 @@ func (i *ApplicationInput) ToApplication(id, tenant string) *Application {
 		Description:    i.Description,
 		Tenant:         tenant,
 		HealthCheckURL: i.HealthCheckURL,
+		Status: &ApplicationStatus{
+			Condition: condition,
+			Timestamp: timestamp,
+		},
 	}
 }
 

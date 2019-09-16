@@ -15,8 +15,8 @@ type Entity struct {
 	Group       sql.NullString `db:"group_name"`
 	TargetURL   string         `db:"target_url"`
 	DefaultAuth sql.NullString `db:"default_auth"`
-	*EntitySpec
-	*version.Version
+	EntitySpec
+	version.Version
 }
 
 type EntitySpec struct {

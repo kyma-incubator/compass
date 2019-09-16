@@ -6,132 +6,10 @@ import (
 
 	"github.com/lib/pq"
 
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/pkg/errors"
 )
-
-type inMemoryRepository struct {
-	store map[string]*model.EventAPIDefinition
-}
-
-func NewRepository() *inMemoryRepository {
-	return &inMemoryRepository{store: make(map[string]*model.EventAPIDefinition)}
-}
-
-func (r *inMemoryRepository) GetByID(id string) (*model.EventAPIDefinition, error) {
-	eventAPIDefinition := r.store[id]
-
-	if eventAPIDefinition == nil {
-		return nil, errors.Errorf("EventAPIDefinition with %s ID does not exist", id)
-	}
-
-	return eventAPIDefinition, nil
-}
-
-func (r *inMemoryRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
-	item := r.store[id]
-
-	if item == nil { // TODO: Temporary because tenant is not populated
-		//if item == nil || item.Tenant != tenant {
-		return false, nil
-	}
-
-	return true, nil
-}
-
-// TODO: Make filtering and paging
-func (r *inMemoryRepository) List(filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.EventAPIDefinitionPage, error) {
-	var items []*model.EventAPIDefinition
-	for _, r := range r.store {
-		items = append(items, r)
-	}
-
-	return &model.EventAPIDefinitionPage{
-		Data:       items,
-		TotalCount: len(items),
-		PageInfo: &pagination.Page{
-			StartCursor: "",
-			EndCursor:   "",
-			HasNextPage: false,
-		},
-	}, nil
-}
-
-func (r *inMemoryRepository) ListByApplicationID(applicationID string, pageSize *int, cursor *string) (*model.EventAPIDefinitionPage, error) {
-	var items []*model.EventAPIDefinition
-	for _, a := range r.store {
-		if a.ApplicationID == applicationID {
-			items = append(items, a)
-		}
-	}
-
-	return &model.EventAPIDefinitionPage{
-		Data:       items,
-		TotalCount: len(items),
-		PageInfo: &pagination.Page{
-			StartCursor: "",
-			EndCursor:   "",
-			HasNextPage: false,
-		},
-	}, nil
-}
-
-func (r *inMemoryRepository) Create(item *model.EventAPIDefinition) error {
-	if item == nil {
-		return errors.New("item can not be nil")
-	}
-
-	r.store[item.ID] = item
-
-	return nil
-}
-
-func (r *inMemoryRepository) CreateMany(items []*model.EventAPIDefinition) error {
-	for _, item := range items {
-		err := r.Create(item)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (r *inMemoryRepository) Update(item *model.EventAPIDefinition) error {
-	if item == nil {
-		return errors.New("item can not be nil")
-	}
-
-	r.store[item.ID] = item
-
-	return nil
-}
-
-func (r *inMemoryRepository) Delete(item *model.EventAPIDefinition) error {
-	if item == nil {
-		return errors.New("item can not be nil")
-	}
-
-	delete(r.store, item.ID)
-
-	return nil
-}
-
-func (r *inMemoryRepository) DeleteAllByApplicationID(id string) error {
-	for _, item := range r.store {
-		if item.ApplicationID == id {
-			err := r.Delete(item)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
 
 const eventAPIDefTable string = `"public"."event_api_definitions"`
 const tenantColumn string = `tenant_id`
@@ -161,7 +39,7 @@ type pgRepository struct {
 	conv EventAPIDefinitionConverter
 }
 
-func NewPostgresRepository(conv EventAPIDefinitionConverter) *pgRepository {
+func NewRepository(conv EventAPIDefinitionConverter) *pgRepository {
 	return &pgRepository{
 		SingleGetter:    repo.NewSingleGetter(eventAPIDefTable, tenantColumn, apiDefColumns),
 		PageableQuerier: repo.NewPageableQuerier(eventAPIDefTable, tenantColumn, apiDefColumns),
@@ -177,6 +55,21 @@ type EventAPIDefCollection []Entity
 
 func (r EventAPIDefCollection) Len() int {
 	return len(r)
+}
+
+func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.EventAPIDefinition, error) {
+	var eventAPIDefEntity Entity
+	err := r.SingleGetter.Get(ctx, tenantID, repo.Conditions{{Field: "id", Val: id}}, &eventAPIDefEntity)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting EventAPIDefinition")
+	}
+
+	eventAPIDefModel, err := r.conv.FromEntity(eventAPIDefEntity)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating EventAPIDefinition entity to model")
+	}
+
+	return &eventAPIDefModel, nil
 }
 
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventAPIDefinitionPage, error) {
@@ -204,22 +97,7 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string,
 	}, nil
 }
 
-func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.EventAPIDefinition, error) {
-	var eventAPIDefEntity Entity
-	err := r.SingleGetter.Get(ctx, tenantID, repo.Conditions{{Field: "id", Val: id}}, &eventAPIDefEntity)
-	if err != nil {
-		return nil, errors.Wrap(err, "while getting EventAPIDefinition")
-	}
-
-	eventAPIDefModel, err := r.conv.FromEntity(eventAPIDefEntity)
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating EventAPIDefinition entity to model")
-	}
-
-	return &eventAPIDefModel, nil
-}
-
-func (r *pgRepository) Create(ctx context.Context, tenantID string, item *model.EventAPIDefinition) error {
+func (r *pgRepository) Create(ctx context.Context, item *model.EventAPIDefinition) error {
 	if item == nil {
 		return errors.New("item cannot be nil")
 	}
@@ -237,7 +115,7 @@ func (r *pgRepository) Create(ctx context.Context, tenantID string, item *model.
 	return nil
 }
 
-func (r *pgRepository) CreateMany(ctx context.Context, tenantID string, items []*model.EventAPIDefinition) error {
+func (r *pgRepository) CreateMany(ctx context.Context, items []*model.EventAPIDefinition) error {
 	for index, item := range items {
 		entity, err := r.conv.ToEntity(*item)
 		if err != nil {
@@ -252,7 +130,7 @@ func (r *pgRepository) CreateMany(ctx context.Context, tenantID string, items []
 	return nil
 }
 
-func (r *pgRepository) Update(ctx context.Context, tenantID string, item *model.EventAPIDefinition) error {
+func (r *pgRepository) Update(ctx context.Context, item *model.EventAPIDefinition) error {
 	if item == nil {
 		return errors.New("item cannot be nil")
 	}

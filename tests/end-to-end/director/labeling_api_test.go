@@ -17,7 +17,7 @@ import (
 func TestCreateLabelWithoutLabelDefinition(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	name := "create-label-without-label-definition"
+	name := "label-without-label-def"
 	application := createApplication(t, ctx, name)
 	defer deleteApplication(t, application.ID)
 
@@ -56,7 +56,7 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	applicationName := "create-label-with-existing-label-definition"
+	applicationName := "label-with-existing-label-def"
 
 	t.Log("Create LabelDefinition")
 	labelKey := "foo"
@@ -106,8 +106,8 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 
 		//THEN
 		require.Error(t, err)
-		errMsg := fmt.Sprintf("graphql: while creating label for Application: while validating Label value for '%s': while validating value %d against JSON Schema: map[properties:map[foo:map[description:foo type:string]] required:[foo] title:foobarbaz type:object]: (root): Invalid type. Expected: object, given: integer", labelKey, invalidLabelValue)
-		assert.EqualError(t, err, errMsg)
+		errMsg := fmt.Sprintf("graphql: while creating label for Application: while validating Label value for '%s': while validating value %d against JSON Schema", labelKey, invalidLabelValue)
+		assert.Contains(t, err.Error(), errMsg)
 		saveQueryInExamples(t, createLabelDefinitionRequest.Query(), "create label definition")
 
 	})
@@ -392,7 +392,7 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 
 	t.Log("Check if new scenario label value was set correctly")
 	appRequest := fixApplicationRequest(app.ID)
-	app = ApplicationExt{}
+	app = graphql.ApplicationExt{}
 
 	err = tc.RunQuery(ctx, appRequest, &app)
 	require.NoError(t, err)
@@ -607,8 +607,6 @@ func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
 
 func TestSearchApplicationsByLabels(t *testing.T) {
 	// GIVEN
-	//TODO: enable this test after implementing filtering on applications
-	t.SkipNow()
 	//Create first application
 	ctx := context.Background()
 	labelKeyFoo := "foo"
@@ -653,7 +651,7 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	require.NoError(t, err)
 
 	applicationRequest := fixApplications(labelFilterGQL, 5, "")
-	applicationPage := ApplicationPageExt{}
+	applicationPage := graphql.ApplicationPageExt{}
 	err = tc.RunQuery(ctx, applicationRequest, &applicationPage)
 	require.NoError(t, err)
 
@@ -675,7 +673,7 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	require.NoError(t, err)
 
 	applicationRequest = fixApplications(labelFilterGQL, 5, "")
-	applicationPage = ApplicationPageExt{}
+	applicationPage = graphql.ApplicationPageExt{}
 	err = tc.RunQuery(ctx, applicationRequest, &applicationPage)
 	require.NoError(t, err)
 
@@ -732,7 +730,7 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	require.NoError(t, err)
 
 	runtimesRequest := fixRuntimes(labelFilterGQL, 5, "")
-	runtimePage := RuntimePageExt{}
+	runtimePage := graphql.RuntimePageExt{}
 	err = tc.RunQuery(ctx, runtimesRequest, &runtimePage)
 	require.NoError(t, err)
 
@@ -754,7 +752,7 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	require.NoError(t, err)
 
 	runtimesRequest = fixRuntimes(labelFilterGQL, 5, "")
-	runtimePage = RuntimePageExt{}
+	runtimePage = graphql.RuntimePageExt{}
 	err = tc.RunQuery(ctx, runtimesRequest, &runtimePage)
 	require.NoError(t, err)
 
@@ -797,7 +795,7 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
 	tenantID := uuid.New().String()
-	name := "test-deleting-last-scenario-for-application-should-fail"
+	name := "deleting-last-scenario-for-app-fail"
 	scenarios := []string{"DEFAULT", "Christmas", "New Year"}
 
 	scenarioSchema := map[string]interface{}{

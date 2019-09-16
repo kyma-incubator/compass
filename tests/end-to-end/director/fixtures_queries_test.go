@@ -9,26 +9,26 @@ import (
 )
 
 //Application
-func getApplication(t *testing.T, ctx context.Context, id string) ApplicationExt {
+func getApplication(t *testing.T, ctx context.Context, id string) graphql.ApplicationExt {
 	appRequest := fixApplicationRequest(id)
-	app := ApplicationExt{}
+	app := graphql.ApplicationExt{}
 	require.NoError(t, tc.RunQuery(ctx, appRequest, &app))
 	return app
 }
 
-func createApplication(t *testing.T, ctx context.Context, name string) ApplicationExt {
+func createApplication(t *testing.T, ctx context.Context, name string) graphql.ApplicationExt {
 	in := generateSampleApplicationInputWithName("first", name)
 	return createApplicationFromInputWithinTenant(t, ctx, in, defaultTenant)
 }
 
-func createApplicationFromInputWithinTenant(t *testing.T, ctx context.Context, in graphql.ApplicationInput, tenantID string) ApplicationExt {
+func createApplicationFromInputWithinTenant(t *testing.T, ctx context.Context, in graphql.ApplicationInput, tenantID string) graphql.ApplicationExt {
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
 
 	createRequest := fixCreateApplicationRequest(appInputGQL)
 	createRequest.Header["Tenant"] = []string{tenantID}
 
-	app := ApplicationExt{}
+	app := graphql.ApplicationExt{}
 
 	require.NoError(t, tc.RunQuery(ctx, createRequest, &app))
 	require.NotEmpty(t, app.ID)
@@ -70,8 +70,8 @@ func createRuntimeFromInput(t *testing.T, ctx context.Context, input *graphql.Ru
 	return &runtime
 }
 
-func getRuntime(t *testing.T, ctx context.Context, runtimeID string) *RuntimeExt {
-	var runtime RuntimeExt
+func getRuntime(t *testing.T, ctx context.Context, runtimeID string) *graphql.RuntimeExt {
+	var runtime graphql.RuntimeExt
 	runtimeQuery := fixRuntimeQuery(runtimeID)
 
 	err := tc.RunQuery(ctx, runtimeQuery, &runtime)
@@ -142,4 +142,26 @@ func listLabelDefinitionsWithinTenant(t *testing.T, ctx context.Context, tenantI
 
 	err := tc.RunQuery(ctx, labelDefinitionsRequest, &labelDefinitions)
 	return labelDefinitions, err
+}
+
+// API Definition
+func setAPIAuth(t *testing.T, ctx context.Context, apiID string, rtmID string, auth graphql.AuthInput) *graphql.RuntimeAuth {
+	authInStr, err := tc.graphqlizer.AuthInputToGQL(&auth)
+	require.NoError(t, err)
+
+	var rtmAuth graphql.RuntimeAuth
+
+	request := fixSetAPIAuthRequest(apiID, rtmID, authInStr)
+	err = tc.RunQuery(ctx, request, &rtmAuth)
+	require.NoError(t, err)
+
+	return &rtmAuth
+}
+
+func deleteAPIAuth(t *testing.T, ctx context.Context, apiID string, rtmID string) {
+	request := fixDeleteAPIAuthRequest(apiID, rtmID)
+
+	err := tc.RunQuery(ctx, request, nil)
+
+	require.NoError(t, err)
 }

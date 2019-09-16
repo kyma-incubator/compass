@@ -55,13 +55,13 @@ func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewRepository()
-	applicationRepo := application.NewRepository()
+	applicationRepo := application.NewRepository(appConverter)
 	labelRepo := label.NewRepository(labelConverter)
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 
 	webhookRepo := webhook.NewRepository(webhookConverter)
-	apiRepo := api.NewAPIRepository()
-	eventAPIRepo := eventapi.NewRepository()
+	apiRepo := api.NewRepository(apiConverter)
+	eventAPIRepo := eventapi.NewRepository(eventAPIConverter)
 	docRepo := document.NewRepository(docConverter)
 	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
 	runtimeAuthRepo := runtime_auth.NewRepository(runtimeAuthConverter)

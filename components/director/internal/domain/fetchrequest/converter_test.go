@@ -129,7 +129,7 @@ func TestConverter_FromEntity(t *testing.T) {
 				StatusTimestamp: timestamp,
 				StatusCondition: string(model.FetchRequestStatusConditionFailed),
 			},
-			ExpectedErrMessage: "Incorrect Object Reference ID and its type for Entity with ID '2'",
+			ExpectedErrMessage: "while determining object reference: Incorrect Object Reference ID and its type for Entity with ID '2'",
 		},
 		{
 			Name: "Error",

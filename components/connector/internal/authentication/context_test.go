@@ -17,7 +17,7 @@ func TestContextExtension(t *testing.T) {
 		ctx := context.Background()
 
 		// when
-		ctx = authentication.PutInContext(ctx, authentication.ConnectorTokenKey, "abcd")
+		ctx = authentication.PutIntoContext(ctx, authentication.ConnectorTokenKey, "abcd")
 
 		// then
 		token, err := authentication.GetStringFromContext(ctx, authentication.ConnectorTokenKey)

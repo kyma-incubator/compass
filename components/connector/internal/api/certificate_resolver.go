@@ -20,12 +20,13 @@ type CertificateResolver interface {
 }
 
 type certificateResolver struct {
-	authenticator       authentication.Authenticator
-	tokenService        tokens.Service
-	certificatesService certificates.Service
-	csrSubjectConsts    certificates.CSRSubjectConsts
-	directorURL         string
-	log                 *logrus.Entry
+	authenticator                  authentication.Authenticator
+	tokenService                   tokens.Service
+	certificatesService            certificates.Service
+	csrSubjectConsts               certificates.CSRSubjectConsts
+	directorURL                    string
+	certificateSecuredConnectorURL string
+	log                            *logrus.Entry
 }
 
 func NewCertificateResolver(
@@ -33,25 +34,27 @@ func NewCertificateResolver(
 	tokenService tokens.Service,
 	certificatesService certificates.Service,
 	csrSubjectConsts certificates.CSRSubjectConsts,
-	directorURL string) CertificateResolver {
+	directorURL string,
+	certificateSecuredConnectorURL string) CertificateResolver {
 	return &certificateResolver{
-		authenticator:       authenticator,
-		tokenService:        tokenService,
-		certificatesService: certificatesService,
-		csrSubjectConsts:    csrSubjectConsts,
-		directorURL:         directorURL,
-		log:                 logrus.WithField("Resolver", "Certificate"),
+		authenticator:                  authenticator,
+		tokenService:                   tokenService,
+		certificatesService:            certificatesService,
+		csrSubjectConsts:               csrSubjectConsts,
+		directorURL:                    directorURL,
+		certificateSecuredConnectorURL: certificateSecuredConnectorURL,
+		log:                            logrus.WithField("Resolver", "Certificate"),
 	}
 }
 
 func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context, csr string) (*gqlschema.CertificationResult, error) {
-	tokenData, err := r.authenticator.AuthenticateToken(ctx)
+	clientId, err := r.authenticator.Authenticate(ctx)
 	if err != nil {
 		r.log.Errorf(err.Error())
 		return nil, errors.Wrap(err, "Failed to authenticate with token")
 	}
 
-	r.log.Infof("Signing Certificate Signing Request for %s client.", tokenData.ClientId)
+	r.log.Infof("Signing Certificate Signing Request for %s client.", clientId)
 
 	rawCSR, err := decodeStringFromBase64(csr)
 	if err != nil {
@@ -60,7 +63,7 @@ func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context,
 	}
 
 	subject := certificates.CSRSubject{
-		CommonName:       tokenData.ClientId,
+		CommonName:       clientId,
 		CSRSubjectConsts: r.csrSubjectConsts,
 	}
 
@@ -81,29 +84,32 @@ func (r *certificateResolver) RevokeCertificate(ctx context.Context) (bool, erro
 }
 
 func (r *certificateResolver) Configuration(ctx context.Context) (*gqlschema.Configuration, error) {
-	tokenData, err := r.authenticator.AuthenticateToken(ctx)
+	clientId, err := r.authenticator.Authenticate(ctx)
 	if err != nil {
 		r.log.Errorf(err.Error())
 		return nil, err
 	}
 
-	r.log.Infof("Fetching configuration for %s client.", tokenData.ClientId)
+	r.log.Infof("Fetching configuration for %s client.", clientId)
 
-	token, err := r.tokenService.CreateToken(tokenData.ClientId, tokens.CSRToken)
+	token, err := r.tokenService.CreateToken(clientId, tokens.CSRToken)
 	if err != nil {
 		r.log.Errorf(err.Error())
 		return nil, err
 	}
 
 	csrInfo := &gqlschema.CertificateSigningRequestInfo{
-		Subject:      r.csrSubjectConsts.ToString(tokenData.ClientId),
+		Subject:      r.csrSubjectConsts.ToString(clientId),
 		KeyAlgorithm: "rsa2048",
 	}
 
 	return &gqlschema.Configuration{
 		Token:                         &gqlschema.Token{Token: token},
 		CertificateSigningRequestInfo: csrInfo,
-		ManagementPlaneInfo:           &gqlschema.ManagementPlaneInfo{DirectorURL: r.directorURL},
+		ManagementPlaneInfo: &gqlschema.ManagementPlaneInfo{
+			DirectorURL:                    &r.directorURL,
+			CertificateSecuredConnectorURL: &r.certificateSecuredConnectorURL,
+		},
 	}, nil
 }
 

@@ -4,6 +4,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -34,9 +37,10 @@ func fixGQLApplicationPage(applications []*graphql.Application) *graphql.Applica
 	}
 }
 
-func fixModelApplication(id, name, description string) *model.Application {
+func fixModelApplication(id, tenant, name, description string) *model.Application {
 	return &model.Application{
-		ID: id,
+		ID:     id,
+		Tenant: tenant,
 		Status: &model.ApplicationStatus{
 			Condition: model.ApplicationStatusConditionInitial,
 		},
@@ -56,7 +60,7 @@ func fixGQLApplication(id, name, description string) *graphql.Application {
 	}
 }
 
-func fixDetailedModelApplication(t *testing.T, id, name, description string) *model.Application {
+func fixDetailedModelApplication(t *testing.T, id, tenant, name, description string) *model.Application {
 	time, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
 
@@ -69,7 +73,7 @@ func fixDetailedModelApplication(t *testing.T, id, name, description string) *mo
 		},
 		Name:           name,
 		Description:    &description,
-		Tenant:         "tenant",
+		Tenant:         tenant,
 		HealthCheckURL: &url,
 	}
 }
@@ -88,6 +92,22 @@ func fixDetailedGQLApplication(t *testing.T, id, name, description string) *grap
 		Name:           name,
 		Description:    &description,
 		HealthCheckURL: &url,
+	}
+}
+
+func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description string) *application.Entity {
+	ts, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
+	require.NoError(t, err)
+	url := "https://foo.bar"
+
+	return &application.Entity{
+		ID:              id,
+		TenantID:        tenant,
+		Name:            name,
+		Description:     repo.NewValidNullableString(description),
+		StatusCondition: string(model.ApplicationStatusConditionInitial),
+		StatusTimestamp: ts,
+		HealthCheckURL:  repo.NewValidNullableString(url),
 	}
 }
 

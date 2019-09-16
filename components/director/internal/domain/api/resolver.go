@@ -154,28 +154,50 @@ func (r *Resolver) UpdateAPI(ctx context.Context, id string, in graphql.APIDefin
 	return gqlAPI, nil
 }
 func (r *Resolver) DeleteAPI(ctx context.Context, id string) (*graphql.APIDefinition, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	api, err := r.svc.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-
-	deletedAPI := r.converter.ToGraphQL(api)
 
 	err = r.svc.Delete(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	return deletedAPI, nil
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.converter.ToGraphQL(api), nil
 }
 func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.APISpec, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	spec, err := r.svc.RefetchAPISpec(ctx, apiID)
 	if err != nil {
 		return nil, err
 	}
 
-	convertedOut := r.converter.ToGraphQL(&model.APIDefinition{Spec: spec})
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
 
+	convertedOut := r.converter.ToGraphQL(&model.APIDefinition{Spec: spec})
 	return convertedOut.Spec, nil
 }
 

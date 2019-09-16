@@ -12,9 +12,8 @@ type Runtime struct {
 // Extended types used by external API
 
 type RuntimePageExt struct {
-	Data       []*RuntimeExt     `json:"data"`
-	PageInfo   *PageInfo `json:"pageInfo"`
-	TotalCount int               `json:"totalCount"`
+	RuntimePage
+	Data []*RuntimeExt `json:"data"`
 }
 
 type RuntimeExt struct {

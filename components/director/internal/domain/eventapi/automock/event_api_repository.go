@@ -4,7 +4,6 @@ package automock
 
 import context "context"
 
-import labelfilter "github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 import mock "github.com/stretchr/testify/mock"
 import model "github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -13,13 +12,13 @@ type EventAPIRepository struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: item
-func (_m *EventAPIRepository) Create(item *model.EventAPIDefinition) error {
-	ret := _m.Called(item)
+// Create provides a mock function with given fields: ctx, item
+func (_m *EventAPIRepository) Create(ctx context.Context, item *model.EventAPIDefinition) error {
+	ret := _m.Called(ctx, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*model.EventAPIDefinition) error); ok {
-		r0 = rf(item)
+	if rf, ok := ret.Get(0).(func(context.Context, *model.EventAPIDefinition) error); ok {
+		r0 = rf(ctx, item)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -27,13 +26,13 @@ func (_m *EventAPIRepository) Create(item *model.EventAPIDefinition) error {
 	return r0
 }
 
-// CreateMany provides a mock function with given fields: items
-func (_m *EventAPIRepository) CreateMany(items []*model.EventAPIDefinition) error {
-	ret := _m.Called(items)
+// CreateMany provides a mock function with given fields: ctx, items
+func (_m *EventAPIRepository) CreateMany(ctx context.Context, items []*model.EventAPIDefinition) error {
+	ret := _m.Called(ctx, items)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func([]*model.EventAPIDefinition) error); ok {
-		r0 = rf(items)
+	if rf, ok := ret.Get(0).(func(context.Context, []*model.EventAPIDefinition) error); ok {
+		r0 = rf(ctx, items)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -41,13 +40,13 @@ func (_m *EventAPIRepository) CreateMany(items []*model.EventAPIDefinition) erro
 	return r0
 }
 
-// Delete provides a mock function with given fields: item
-func (_m *EventAPIRepository) Delete(item *model.EventAPIDefinition) error {
-	ret := _m.Called(item)
+// Delete provides a mock function with given fields: ctx, tenantID, id
+func (_m *EventAPIRepository) Delete(ctx context.Context, tenantID string, id string) error {
+	ret := _m.Called(ctx, tenantID, id)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*model.EventAPIDefinition) error); ok {
-		r0 = rf(item)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, tenantID, id)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -55,13 +54,13 @@ func (_m *EventAPIRepository) Delete(item *model.EventAPIDefinition) error {
 	return r0
 }
 
-// DeleteAllByApplicationID provides a mock function with given fields: id
-func (_m *EventAPIRepository) DeleteAllByApplicationID(id string) error {
-	ret := _m.Called(id)
+// DeleteAllByApplicationID provides a mock function with given fields: ctx, tenantID, appID
+func (_m *EventAPIRepository) DeleteAllByApplicationID(ctx context.Context, tenantID string, appID string) error {
+	ret := _m.Called(ctx, tenantID, appID)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string) error); ok {
-		r0 = rf(id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, tenantID, appID)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -69,20 +68,20 @@ func (_m *EventAPIRepository) DeleteAllByApplicationID(id string) error {
 	return r0
 }
 
-// Exists provides a mock function with given fields: ctx, tenant, id
-func (_m *EventAPIRepository) Exists(ctx context.Context, tenant string, id string) (bool, error) {
-	ret := _m.Called(ctx, tenant, id)
+// Exists provides a mock function with given fields: ctx, tenantID, id
+func (_m *EventAPIRepository) Exists(ctx context.Context, tenantID string, id string) (bool, error) {
+	ret := _m.Called(ctx, tenantID, id)
 
 	var r0 bool
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
-		r0 = rf(ctx, tenant, id)
+		r0 = rf(ctx, tenantID, id)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, tenant, id)
+		r1 = rf(ctx, tenantID, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -90,13 +89,13 @@ func (_m *EventAPIRepository) Exists(ctx context.Context, tenant string, id stri
 	return r0, r1
 }
 
-// GetByID provides a mock function with given fields: id
-func (_m *EventAPIRepository) GetByID(id string) (*model.EventAPIDefinition, error) {
-	ret := _m.Called(id)
+// GetByID provides a mock function with given fields: ctx, tenantID, id
+func (_m *EventAPIRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.EventAPIDefinition, error) {
+	ret := _m.Called(ctx, tenantID, id)
 
 	var r0 *model.EventAPIDefinition
-	if rf, ok := ret.Get(0).(func(string) *model.EventAPIDefinition); ok {
-		r0 = rf(id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.EventAPIDefinition); ok {
+		r0 = rf(ctx, tenantID, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.EventAPIDefinition)
@@ -104,8 +103,8 @@ func (_m *EventAPIRepository) GetByID(id string) (*model.EventAPIDefinition, err
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenantID, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -113,13 +112,13 @@ func (_m *EventAPIRepository) GetByID(id string) (*model.EventAPIDefinition, err
 	return r0, r1
 }
 
-// List provides a mock function with given fields: filter, pageSize, cursor
-func (_m *EventAPIRepository) List(filter []*labelfilter.LabelFilter, pageSize *int, cursor *string) (*model.EventAPIDefinitionPage, error) {
-	ret := _m.Called(filter, pageSize, cursor)
+// ListByApplicationID provides a mock function with given fields: ctx, tenantID, applicationID, pageSize, cursor
+func (_m *EventAPIRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventAPIDefinitionPage, error) {
+	ret := _m.Called(ctx, tenantID, applicationID, pageSize, cursor)
 
 	var r0 *model.EventAPIDefinitionPage
-	if rf, ok := ret.Get(0).(func([]*labelfilter.LabelFilter, *int, *string) *model.EventAPIDefinitionPage); ok {
-		r0 = rf(filter, pageSize, cursor)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, int, string) *model.EventAPIDefinitionPage); ok {
+		r0 = rf(ctx, tenantID, applicationID, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.EventAPIDefinitionPage)
@@ -127,8 +126,8 @@ func (_m *EventAPIRepository) List(filter []*labelfilter.LabelFilter, pageSize *
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func([]*labelfilter.LabelFilter, *int, *string) error); ok {
-		r1 = rf(filter, pageSize, cursor)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, int, string) error); ok {
+		r1 = rf(ctx, tenantID, applicationID, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -136,36 +135,13 @@ func (_m *EventAPIRepository) List(filter []*labelfilter.LabelFilter, pageSize *
 	return r0, r1
 }
 
-// ListByApplicationID provides a mock function with given fields: applicationID, pageSize, cursor
-func (_m *EventAPIRepository) ListByApplicationID(applicationID string, pageSize *int, cursor *string) (*model.EventAPIDefinitionPage, error) {
-	ret := _m.Called(applicationID, pageSize, cursor)
-
-	var r0 *model.EventAPIDefinitionPage
-	if rf, ok := ret.Get(0).(func(string, *int, *string) *model.EventAPIDefinitionPage); ok {
-		r0 = rf(applicationID, pageSize, cursor)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.EventAPIDefinitionPage)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(string, *int, *string) error); ok {
-		r1 = rf(applicationID, pageSize, cursor)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// Update provides a mock function with given fields: item
-func (_m *EventAPIRepository) Update(item *model.EventAPIDefinition) error {
-	ret := _m.Called(item)
+// Update provides a mock function with given fields: ctx, item
+func (_m *EventAPIRepository) Update(ctx context.Context, item *model.EventAPIDefinition) error {
+	ret := _m.Called(ctx, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*model.EventAPIDefinition) error); ok {
-		r0 = rf(item)
+	if rf, ok := ret.Get(0).(func(context.Context, *model.EventAPIDefinition) error); ok {
+		r0 = rf(ctx, item)
 	} else {
 		r0 = ret.Error(0)
 	}

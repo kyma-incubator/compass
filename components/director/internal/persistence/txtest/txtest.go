@@ -82,3 +82,10 @@ func (g txCtxGenerator) ThatFailsOnBegin() (*automock.PersistenceTx, *automock.T
 
 	return persistTx, transact
 }
+
+func (g txCtxGenerator) ThatDoesntStartTransaction() (*automock.PersistenceTx, *automock.Transactioner) {
+	persistTx := &automock.PersistenceTx{}
+	transact := &automock.Transactioner{}
+
+	return persistTx, transact
+}
