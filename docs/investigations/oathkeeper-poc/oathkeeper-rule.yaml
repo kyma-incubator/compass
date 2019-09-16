@@ -24,4 +24,4 @@ spec:
           url: http://compass-healthchecker.compass-system.svc.cluster.local:3000
     - handler: id_token
       config:
-        claims: "{\"tenant\": \"{{ print .Extra.tenant }}\"}"
+        claims: '{"tenant": "{{ print .Extra.tenant }}", "scope": "{{print .Extra.scope }}"}'

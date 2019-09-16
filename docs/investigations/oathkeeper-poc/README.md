@@ -158,12 +158,13 @@ In `Authorization` header you can see that there is valid JWT token with tenant 
 In payload you will see something like:
 ```json
 {
-  "exp": 1567639275,
-  "iat": 1567639215,
+  "exp": 1568614624,
+  "iat": 1568614564,
   "iss": "https://my-oathkeeper/",
-  "jti": "689832e9-e0cd-4af4-95d5-5855132baa3b",
-  "nbf": 1567639215,
-  "sub": "7077e51f-e2ec-4f69-aefb-650b4bc7bba3", // subject = client_id
-  "tenant": "9ac609e1-7487-4aa6-b600-0904b272b11f" // our tenant
+  "jti": "0294042a-b10b-4b38-8568-d9f3729631f6",
+  "nbf": 1568614564,
+  "scope": "scope-a scope-b",
+  "sub": "0cd4a0d4-2859-4b69-9ad1-92c819e89ceb",
+  "tenant": "9ac609e1-7487-4aa6-b600-0904b272b11f"
 }
 ```
