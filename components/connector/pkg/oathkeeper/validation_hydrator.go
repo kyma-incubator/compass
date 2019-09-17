@@ -91,7 +91,7 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 
 	isCertificateRevoked, err := tvh.revocationList.Contains(hash)
 	if err != nil {
-		tvh.log.Info("Failed to check if certificate is revoked.")
+		tvh.log.Infof("Failed to check if certificate is revoked: %s", err.Error())
 		respondWithAuthSession(w, authSession)
 		return
 	}

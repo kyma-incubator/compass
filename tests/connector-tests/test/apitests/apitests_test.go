@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit/connector"
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
@@ -197,6 +199,8 @@ func TestFullConnectorFlow(t *testing.T) {
 	certificationResult, configuration := generateCertificate(t, appID, clientKey)
 	assertCertificate(t, configuration.CertificateSigningRequestInfo.Subject, certificationResult)
 
+	defer cleanup(t, certificationResult)
+
 	t.Log("Certificate generated. Creating secured client...")
 	certChain := testkit.DecodeCertChain(t, certificationResult.CertificateChain)
 	securedClient := connector.NewCertificateSecuredConnectorClient(config.SecuredConnectorURL, clientKey, certChain...)
@@ -233,8 +237,6 @@ func TestFullConnectorFlow(t *testing.T) {
 	configWithRevokedCert, err := securedClientWithRenewedCert.Configuration()
 	require.Error(t, err)
 	require.Equal(t, nil, configWithRevokedCert)
-
-	defer cleanup(t, certificationResult)
 }
 
 func getConfiguration(t *testing.T, appID string) gqlschema.Configuration {
@@ -308,5 +310,6 @@ func createCertDataHeader(subject, hash string) string {
 
 func cleanup(t *testing.T, certificationResult gqlschema.CertificationResult) {
 	hash := testkit.GetCertificateHash(t, certificationResult.ClientCertificate)
-	_ = configmapCleaner.CleanRevocationList(hash)
+	err := configmapCleaner.CleanRevocationList(hash)
+	assert.NoError(t, err)
 }
