@@ -12,14 +12,14 @@ type ApplicationConverter struct {
 }
 
 // InputFromGraphQL provides a mock function with given fields: in
-func (_m *ApplicationConverter) InputFromGraphQL(in graphql.ApplicationInput) model.ApplicationInput {
+func (_m *ApplicationConverter) InputFromGraphQL(in graphql.ApplicationInput) model.ApplicationCreateInput {
 	ret := _m.Called(in)
 
-	var r0 model.ApplicationInput
-	if rf, ok := ret.Get(0).(func(graphql.ApplicationInput) model.ApplicationInput); ok {
+	var r0 model.ApplicationCreateInput
+	if rf, ok := ret.Get(0).(func(graphql.ApplicationInput) model.ApplicationCreateInput); ok {
 		r0 = rf(in)
 	} else {
-		r0 = ret.Get(0).(model.ApplicationInput)
+		r0 = ret.Get(0).(model.ApplicationCreateInput)
 	}
 
 	return r0

@@ -39,7 +39,7 @@ type ApplicationPage struct {
 	TotalCount int
 }
 
-type ApplicationInput struct {
+type ApplicationCreateInput struct {
 	Name           string
 	Description    *string
 	Labels         map[string]interface{}
@@ -50,7 +50,7 @@ type ApplicationInput struct {
 	Documents      []*DocumentInput
 }
 
-func (i *ApplicationInput) ToApplication(timestamp time.Time, condition ApplicationStatusCondition, id, tenant string) *Application {
+func (i *ApplicationCreateInput) ToApplication(timestamp time.Time, condition ApplicationStatusCondition, id, tenant string) *Application {
 	if i == nil {
 		return nil
 	}
@@ -68,7 +68,20 @@ func (i *ApplicationInput) ToApplication(timestamp time.Time, condition Applicat
 	}
 }
 
-func (i *ApplicationInput) Validate() error {
+func (i *ApplicationCreateInput) Validate() error {
+	if errorMgs := validation.NameIsDNSSubdomain(i.Name, false); errorMgs != nil {
+		return errors.Errorf("%v", errorMgs)
+	}
+	return nil
+}
+
+type ApplicationUpdateInput struct {
+	Name           string
+	Description    *string
+	HealthCheckURL *string
+}
+
+func (i *ApplicationUpdateInput) Validate() error {
 	if errorMgs := validation.NameIsDNSSubdomain(i.Name, false); errorMgs != nil {
 		return errors.Errorf("%v", errorMgs)
 	}

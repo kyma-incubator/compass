@@ -45,7 +45,7 @@ type APISpecInput struct {
 	FetchRequest *FetchRequestInput `json:"fetchRequest"`
 }
 
-type ApplicationInput struct {
+type ApplicationCreateInput struct {
 	Name           string                     `json:"name"`
 	Description    *string                    `json:"description"`
 	Labels         *Labels                    `json:"labels"`
@@ -67,6 +67,12 @@ func (ApplicationPage) IsPageable() {}
 type ApplicationStatus struct {
 	Condition ApplicationStatusCondition `json:"condition"`
 	Timestamp Timestamp                  `json:"timestamp"`
+}
+
+type ApplicationUpdateInput struct {
+	Name           string  `json:"name"`
+	Description    *string `json:"description"`
+	HealthCheckURL *string `json:"healthCheckURL"`
 }
 
 type Auth struct {

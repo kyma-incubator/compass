@@ -86,7 +86,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 	testCases := []struct {
 		Name                string
 		Input               graphql.ApplicationInput
-		Expected            model.ApplicationInput
+		Expected            model.ApplicationCreateInput
 		WebhookConverterFn  func() *automock.WebhookConverter
 		DocumentConverterFn func() *automock.DocumentConverter
 		APIConverterFn      func() *automock.APIConverter
@@ -120,7 +120,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 		{
 			Name:     "Empty",
 			Input:    graphql.ApplicationInput{},
-			Expected: model.ApplicationInput{},
+			Expected: model.ApplicationCreateInput{},
 			WebhookConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
 				conv.On("MultipleInputFromGraphQL", []*graphql.WebhookInput(nil)).Return(nil)

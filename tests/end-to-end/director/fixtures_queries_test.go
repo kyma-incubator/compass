@@ -17,7 +17,7 @@ func getApplication(t *testing.T, ctx context.Context, id string) graphql.Applic
 }
 
 func createApplication(t *testing.T, ctx context.Context, name string) graphql.ApplicationExt {
-	in := generateSampleApplicationInputWithName("first", name)
+	in := generateSampleApplicationCreateInputWithName("first", name)
 	return createApplicationFromInputWithinTenant(t, ctx, in, defaultTenant)
 }
 

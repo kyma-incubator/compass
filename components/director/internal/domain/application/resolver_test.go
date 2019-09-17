@@ -31,7 +31,7 @@ func TestResolver_CreateApplication(t *testing.T) {
 		Name:        "Foo",
 		Description: &desc,
 	}
-	modelInput := model.ApplicationInput{
+	modelInput := model.ApplicationCreateInput{
 		Name:        "Foo",
 		Description: &desc,
 	}
@@ -154,7 +154,7 @@ func TestResolver_UpdateApplication(t *testing.T) {
 		Name:        "Foo",
 		Description: &desc,
 	}
-	modelInput := model.ApplicationInput{
+	modelInput := model.ApplicationCreateInput{
 		Name:        "Foo",
 		Description: &desc,
 	}

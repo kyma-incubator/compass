@@ -111,12 +111,12 @@ func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description st
 	}
 }
 
-func fixModelApplicationInput(name, description string) model.ApplicationInput {
+func fixModelApplicationInput(name, description string) model.ApplicationCreateInput {
 	url := "https://foo.bar"
 
 	desc := "Sample"
 	kind := "test"
-	return model.ApplicationInput{
+	return model.ApplicationCreateInput{
 		Name:        name,
 		Description: &description,
 		Labels: map[string]interface{}{

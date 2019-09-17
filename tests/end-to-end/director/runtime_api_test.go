@@ -74,7 +74,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 
 	// add agent auth
 	// GIVEN
-	in := generateSampleApplicationInput("app")
+	in := generateSampleApplicationCreateInput("app")
 
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
@@ -271,7 +271,7 @@ func TestSetAndDeleteAPIAuth(t *testing.T) {
 	// create application
 	ctx := context.Background()
 	placeholder := "app"
-	in := generateSampleApplicationInput(placeholder)
+	in := generateSampleApplicationCreateInput(placeholder)
 
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
@@ -514,7 +514,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 	}
 
 	for _, testApp := range applications {
-		applicationInput := generateSampleApplicationInput(testApp.ApplicationName)
+		applicationInput := generateSampleApplicationCreateInput(testApp.ApplicationName)
 		applicationInput.Labels = &graphql.Labels{scenariosLabel: testApp.Scenarios}
 		appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(applicationInput)
 		require.NoError(t, err)

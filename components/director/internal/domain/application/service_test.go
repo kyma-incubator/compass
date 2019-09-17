@@ -23,7 +23,7 @@ func TestService_Create(t *testing.T) {
 	// given
 	timestamp := time.Now()
 	testErr := errors.New("Test error")
-	modelInput := model.ApplicationInput{
+	modelInput := model.ApplicationCreateInput{
 		Name: "foo.bar-not",
 		Webhooks: []*model.WebhookInput{
 			{URL: "test.foo.com"},
@@ -78,7 +78,7 @@ func TestService_Create(t *testing.T) {
 		ScenariosServiceFn func() *automock.ScenariosService
 		LabelServiceFn     func() *automock.LabelUpsertService
 		UIDServiceFn       func() *automock.UIDService
-		Input              model.ApplicationInput
+		Input              model.ApplicationCreateInput
 		ExpectedErr        error
 	}{
 		{
@@ -179,7 +179,7 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			Input:       model.ApplicationInput{Name: "test"},
+			Input:       model.ApplicationCreateInput{Name: "test"},
 			ExpectedErr: nil,
 		},
 		{
@@ -226,7 +226,7 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			Input: model.ApplicationInput{
+			Input: model.ApplicationCreateInput{
 				Name:   "test",
 				Labels: scenariosDefaultLabel,
 			},
@@ -363,7 +363,7 @@ func TestService_Create(t *testing.T) {
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// when
-		_, err := svc.Create(context.TODO(), model.ApplicationInput{})
+		_, err := svc.Create(context.TODO(), model.ApplicationCreateInput{})
 		assert.Equal(t, tenant.NoTenantError, err)
 	})
 }
@@ -377,13 +377,13 @@ func TestService_CreateWithInvalidNames(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		InputID            string
-		Input              model.ApplicationInput
+		Input              model.ApplicationCreateInput
 		ExpectedErrMessage string
 	}{
 		{
 			Name:               "Returns error when application name is empty",
 			InputID:            "foo",
-			Input:              model.ApplicationInput{Name: ""},
+			Input:              model.ApplicationCreateInput{Name: ""},
 			ExpectedErrMessage: "a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character",
 		},
 	}
@@ -409,7 +409,7 @@ func TestService_Update(t *testing.T) {
 	timestamp := time.Now()
 
 	desc := "Lorem ipsum"
-	modelInput := model.ApplicationInput{
+	modelInput := model.ApplicationCreateInput{
 		Name: "bar",
 	}
 	id := "foo"
@@ -445,7 +445,7 @@ func TestService_Update(t *testing.T) {
 		LabelRepoFn        func() *automock.LabelRepository
 		FetchRequestRepoFn func() *automock.FetchRequestRepository
 		LabelServiceFn     func() *automock.LabelUpsertService
-		Input              model.ApplicationInput
+		Input              model.ApplicationCreateInput
 		InputID            string
 		ExpectedErrMessage string
 	}{
@@ -652,7 +652,7 @@ func TestService_Update(t *testing.T) {
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// when
-		err := svc.Update(context.TODO(), "Dd", model.ApplicationInput{})
+		err := svc.Update(context.TODO(), "Dd", model.ApplicationCreateInput{})
 		assert.Equal(t, tenant.NoTenantError, err)
 	})
 }
@@ -668,19 +668,19 @@ func TestService_UpdateWithInvalidNames(t *testing.T) {
 	testCases := []struct {
 		Name        string
 		InputID     string
-		Input       model.ApplicationInput
+		Input       model.ApplicationCreateInput
 		ExpectedErr error
 	}{
 		{
 			Name:        "Returns error when application name is empty",
 			InputID:     "foo",
-			Input:       model.ApplicationInput{Name: ""},
+			Input:       model.ApplicationCreateInput{Name: ""},
 			ExpectedErr: testError,
 		},
 		{
 			Name:        "Returns error when application name contains upper case letter",
 			InputID:     "foo",
-			Input:       model.ApplicationInput{Name: "upperCase"},
+			Input:       model.ApplicationCreateInput{Name: "upperCase"},
 			ExpectedErr: testError,
 		}}
 
@@ -717,7 +717,7 @@ func TestService_Delete(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		AppRepoFn          func() *automock.ApplicationRepository
-		Input              model.ApplicationInput
+		Input              model.ApplicationCreateInput
 		InputID            string
 		ExpectedErrMessage string
 	}{
@@ -785,7 +785,7 @@ func TestService_Get(t *testing.T) {
 	testCases := []struct {
 		Name                string
 		RepositoryFn        func() *automock.ApplicationRepository
-		Input               model.ApplicationInput
+		Input               model.ApplicationCreateInput
 		InputID             string
 		ExpectedApplication *model.Application
 		ExpectedErrMessage  string
@@ -1671,7 +1671,7 @@ type testModel struct {
 	Documents            []*model.Document
 }
 
-func modelFromInput(in model.ApplicationInput, tenant, applicationID string) testModel {
+func modelFromInput(in model.ApplicationCreateInput, tenant, applicationID string) testModel {
 	applicationModelMatcherFn := applicationMatcher(in.Name, in.Description)
 
 	var webhooksModel []*model.Webhook

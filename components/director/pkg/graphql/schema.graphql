@@ -331,7 +331,7 @@ type HealthCheck {
 
 # Application Input
 
-input ApplicationInput {
+input ApplicationCreateInput {
     name: String!
     description: String
     labels: Labels
@@ -340,6 +340,12 @@ input ApplicationInput {
     apis: [APIDefinitionInput!]
     eventAPIs: [EventAPIDefinitionInput!]
     documents: [DocumentInput!]
+}
+
+input ApplicationUpdateInput {
+    name: String!
+    description: String
+    healthCheckURL: String
 }
 
 # Runtime Input
@@ -497,8 +503,8 @@ type Query {
 
 type Mutation {
     # Application
-    createApplication(in: ApplicationInput!): Application!
-    updateApplication(id: ID!, in: ApplicationInput!): Application!
+    createApplication(in: ApplicationCreateInput!): Application!
+    updateApplication(id: ID!, in: ApplicationUpdateInput!): Application!
     deleteApplication(id: ID!): Application
 
     # Runtime

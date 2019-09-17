@@ -389,7 +389,7 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 func TestUpdateApplication(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	in := generateSampleApplicationInput("before")
+	in := generateSampleApplicationCreateInput("before")
 	in.Description = ptrString("before")
 
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
@@ -413,7 +413,7 @@ func TestUpdateApplication(t *testing.T) {
 	defer deleteApplication(t, id)
 
 	//GIVEN
-	in = generateSampleApplicationInput("after")
+	in = generateSampleApplicationCreateInput("after")
 	appInputGQL, err = tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
 	request = gcli.NewRequest(
@@ -437,7 +437,7 @@ func TestUpdateApplication(t *testing.T) {
 func TestCreateUpdateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	in := generateSampleApplicationInput("first")
+	in := generateSampleApplicationCreateInput("first")
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
 	createReq := gcli.NewRequest(
@@ -517,7 +517,7 @@ func TestCreateUpdateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
 func TestDeleteApplication(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	in := generateSampleApplicationInput("app")
+	in := generateSampleApplicationCreateInput("app")
 
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
@@ -550,7 +550,7 @@ func TestDeleteApplication(t *testing.T) {
 func TestUpdateApplicationParts(t *testing.T) {
 	ctx := context.Background()
 	placeholder := "app"
-	in := generateSampleApplicationInput(placeholder)
+	in := generateSampleApplicationCreateInput(placeholder)
 
 	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
 	require.NoError(t, err)
@@ -975,7 +975,7 @@ func TestQuerySpecificApplication(t *testing.T) {
 
 func TestTenantSeparation(t *testing.T) {
 	// GIVEN
-	appIn := generateSampleApplicationInput("adidas")
+	appIn := generateSampleApplicationCreateInput("adidas")
 	inStr, err := tc.graphqlizer.ApplicationInputToGQL(appIn)
 	require.NoError(t, err)
 	createReq := gcli.NewRequest(
@@ -1021,7 +1021,7 @@ func getApp(ctx context.Context, t *testing.T, id string) graphql.ApplicationExt
 
 }
 
-func generateSampleApplicationInput(placeholder string) graphql.ApplicationInput {
+func generateSampleApplicationCreateInput(placeholder string) graphql.ApplicationInput {
 	return graphql.ApplicationInput{
 		Name: placeholder,
 		Documents: []*graphql.DocumentInput{{
@@ -1044,7 +1044,7 @@ func generateSampleApplicationInput(placeholder string) graphql.ApplicationInput
 	}
 }
 
-func generateSampleApplicationInputWithName(placeholder, name string) graphql.ApplicationInput {
+func generateSampleApplicationCreateInputWithName(placeholder, name string) graphql.ApplicationInput {
 	return graphql.ApplicationInput{
 		Name: name,
 		Documents: []*graphql.DocumentInput{{
