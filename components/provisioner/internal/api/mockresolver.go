@@ -31,11 +31,11 @@ func (r *MockResolver) Query() gqlschema.QueryResolver {
 }
 
 type runtimeOperation struct {
+	operationID        string
 	operationType      gqlschema.OperationType
 	status             gqlschema.OperationState
-	operationID        string
-	shouldStatusChange bool
 	runtimeID          string
+	shouldStatusChange bool
 	startTime          time.Time
 }
 
