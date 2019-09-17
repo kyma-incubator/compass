@@ -3,9 +3,11 @@ package testkit
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/pem"
 	"strings"
 	"testing"
@@ -90,6 +92,12 @@ func CheckIfCertIsSigned(t *testing.T, clientCertStr, caCertStr string) {
 
 	err := clientCert.CheckSignatureFrom(caCert)
 	require.NoError(t, err)
+}
+
+func GetCertificateHash(t *testing.T, certificateStr string) string {
+	cert := decodeCert(t, certificateStr)
+	sha := sha256.Sum256(cert.Raw)
+	return hex.EncodeToString(sha[:])
 }
 
 func decodeCert(t *testing.T, certificateStr string) *x509.Certificate {

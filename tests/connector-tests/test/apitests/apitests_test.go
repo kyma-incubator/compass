@@ -233,6 +233,8 @@ func TestFullConnectorFlow(t *testing.T) {
 	configWithRevokedCert, err := securedClientWithRenewedCert.Configuration()
 	require.Error(t, err)
 	require.Equal(t, nil, configWithRevokedCert)
+
+	defer cleanup(t, certificationResult)
 }
 
 func getConfiguration(t *testing.T, appID string) gqlschema.Configuration {
@@ -302,4 +304,9 @@ func changeCommonName(subject, commonName string) string {
 
 func createCertDataHeader(subject, hash string) string {
 	return fmt.Sprintf(`By=spiffe://cluster.local/ns/kyma-system/sa/default;Hash=%s;Subject="%s";URI=`, hash, subject)
+}
+
+func cleanup(t *testing.T, certificationResult gqlschema.CertificationResult) {
+	hash := testkit.GetCertificateHash(t, certificationResult.ClientCertificate)
+	_ = configmapCleaner.CleanRevocationList(hash)
 }

@@ -48,7 +48,7 @@ type config struct {
 	RootCACertificateSecretName string        `envconfig:"optional"`
 
 	CertificateDataHeader   string `envconfig:"default=Certificate-Data"`
-	Namespace               string `envconfig:"default=kyma-integration"`
+	Namespace               string `envconfig:"default=compass-system"`
 	RevocationConfigMapName string `envconfig:"default=revocations-config"`
 
 	Token struct {
