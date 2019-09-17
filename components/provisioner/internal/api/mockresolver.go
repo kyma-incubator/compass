@@ -188,19 +188,19 @@ func (r *MockResolver) changeStatus(operation runtimeOperation) {
 }
 
 func (r *MockResolver) getStatus(runtimeID *gqlschema.RuntimeIDInput) (runtimeOperation, bool) {
-	itemsMatchingRuntime := []runtimeOperation{}
+	operationsMatchingRuntime := []runtimeOperation{}
 	for _, item := range r.cache.Items() {
 		operation := item.Object.(runtimeOperation)
 		if operation.runtimeID == runtimeID.ID {
-			itemsMatchingRuntime = append(itemsMatchingRuntime, operation)
+			operationsMatchingRuntime = append(operationsMatchingRuntime, operation)
 		}
 	}
 
-	if len(itemsMatchingRuntime) != 0 {
-		sort.Slice(itemsMatchingRuntime, func(first, second int) bool {
-			return itemsMatchingRuntime[first].startTime.After(itemsMatchingRuntime[second].startTime)
+	if len(operationsMatchingRuntime) != 0 {
+		sort.Slice(operationsMatchingRuntime, func(first, second int) bool {
+			return operationsMatchingRuntime[first].startTime.After(operationsMatchingRuntime[second].startTime)
 		})
-		return itemsMatchingRuntime[0], true
+		return operationsMatchingRuntime[0], true
 	}
 
 	return runtimeOperation{}, false
