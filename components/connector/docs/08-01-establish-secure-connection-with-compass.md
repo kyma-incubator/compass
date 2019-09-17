@@ -12,7 +12,7 @@ To establish a secure connection with Compass and generate the client certificat
 ## Get the Connector URL and the one-time token
 
 To get the Connector URL and the one-time token which allow you to fetch the required configuration details, use the Compass Console.
-<!--- TO DO --->
+<!--- TODO --->
 
 ## Get the CSR information and configuration details from Kyma using the one-time token
 

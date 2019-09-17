@@ -11,7 +11,7 @@ This guide shows you how to do that.
 - [OpenSSL toolkit](https://www.openssl.org/docs/man1.0.2/apps/openssl.html) to create a Certificate Signing Request (CSR), keys, and certificates which meet high security standards
 - Established secure connection with Compass
 
-> **NOTE**: To see how to establish a secure connection with Compass, see [this]() document. 
+> **NOTE**: To see how to establish a secure connection with Compass, see [this](08-01-establish-secure-connection-with-compass.md) document. 
 
 <!--- TODO: link in the note above --->
 
