@@ -27,11 +27,11 @@ func TestResolver_CreateApplication(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	desc := "Lorem ipsum"
-	gqlInput := graphql.ApplicationInput{
+	gqlInput := graphql.ApplicationCreateInput{
 		Name:        "Foo",
 		Description: &desc,
 	}
-	modelInput := model.ApplicationInput{
+	modelInput := model.ApplicationCreateInput{
 		Name:        "Foo",
 		Description: &desc,
 	}
@@ -42,7 +42,7 @@ func TestResolver_CreateApplication(t *testing.T) {
 		TransactionerFn     func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn           func() *automock.ApplicationService
 		ConverterFn         func() *automock.ApplicationConverter
-		Input               graphql.ApplicationInput
+		Input               graphql.ApplicationCreateInput
 		ExpectedApplication *graphql.Application
 		ExpectedErr         error
 	}{
@@ -57,7 +57,7 @@ func TestResolver_CreateApplication(t *testing.T) {
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
 				conv := &automock.ApplicationConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+				conv.On("CreateInputFromGraphQL", gqlInput).Return(modelInput).Once()
 				conv.On("ToGraphQL", modelApplication).Return(gqlApplication).Once()
 				return conv
 			},
@@ -76,7 +76,7 @@ func TestResolver_CreateApplication(t *testing.T) {
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
 				conv := &automock.ApplicationConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+				conv.On("CreateInputFromGraphQL", gqlInput).Return(modelInput).Once()
 				return conv
 			},
 			Input:               gqlInput,
@@ -93,7 +93,7 @@ func TestResolver_CreateApplication(t *testing.T) {
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
 				conv := &automock.ApplicationConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+				conv.On("CreateInputFromGraphQL", gqlInput).Return(modelInput).Once()
 				return conv
 			},
 			Input:               gqlInput,
@@ -111,7 +111,7 @@ func TestResolver_CreateApplication(t *testing.T) {
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
 				conv := &automock.ApplicationConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+				conv.On("CreateInputFromGraphQL", gqlInput).Return(modelInput).Once()
 				return conv
 			},
 			Input:               gqlInput,
@@ -150,11 +150,11 @@ func TestResolver_UpdateApplication(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	desc := "Lorem ipsum"
-	gqlInput := graphql.ApplicationInput{
+	gqlInput := graphql.ApplicationUpdateInput{
 		Name:        "Foo",
 		Description: &desc,
 	}
-	modelInput := model.ApplicationInput{
+	modelInput := model.ApplicationUpdateInput{
 		Name:        "Foo",
 		Description: &desc,
 	}
@@ -168,7 +168,7 @@ func TestResolver_UpdateApplication(t *testing.T) {
 		ServiceFn           func() *automock.ApplicationService
 		ConverterFn         func() *automock.ApplicationConverter
 		ApplicationID       string
-		Input               graphql.ApplicationInput
+		Input               graphql.ApplicationUpdateInput
 		ExpectedApplication *graphql.Application
 		ExpectedErr         error
 	}{
@@ -183,7 +183,7 @@ func TestResolver_UpdateApplication(t *testing.T) {
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
 				conv := &automock.ApplicationConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+				conv.On("UpdateInputFromGraphQL", gqlInput).Return(modelInput).Once()
 				conv.On("ToGraphQL", modelApplication).Return(gqlApplication).Once()
 				return conv
 			},
@@ -203,7 +203,7 @@ func TestResolver_UpdateApplication(t *testing.T) {
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
 				conv := &automock.ApplicationConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+				conv.On("UpdateInputFromGraphQL", gqlInput).Return(modelInput).Once()
 				return conv
 			},
 			ApplicationID:       applicationID,
@@ -221,7 +221,7 @@ func TestResolver_UpdateApplication(t *testing.T) {
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
 				conv := &automock.ApplicationConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+				conv.On("UpdateInputFromGraphQL", gqlInput).Return(modelInput).Once()
 				return conv
 			},
 			ApplicationID:       applicationID,
@@ -240,7 +240,7 @@ func TestResolver_UpdateApplication(t *testing.T) {
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
 				conv := &automock.ApplicationConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+				conv.On("UpdateInputFromGraphQL", gqlInput).Return(modelInput).Once()
 				return conv
 			},
 			ApplicationID:       applicationID,

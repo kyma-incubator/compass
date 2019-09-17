@@ -26,7 +26,7 @@ func TestService_Create(t *testing.T) {
 	// given
 	timestamp := time.Now()
 	testErr := errors.New("Test error")
-	modelInput := model.ApplicationInput{
+	modelInput := model.ApplicationCreateInput{
 		Name: "foo.bar-not",
 		Webhooks: []*model.WebhookInput{
 			{URL: "test.foo.com"},
@@ -81,7 +81,7 @@ func TestService_Create(t *testing.T) {
 		ScenariosServiceFn func() *automock.ScenariosService
 		LabelServiceFn     func() *automock.LabelUpsertService
 		UIDServiceFn       func() *automock.UIDService
-		Input              model.ApplicationInput
+		Input              model.ApplicationCreateInput
 		ExpectedErr        error
 	}{
 		{
@@ -182,7 +182,7 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			Input:       model.ApplicationInput{Name: "test"},
+			Input:       model.ApplicationCreateInput{Name: "test"},
 			ExpectedErr: nil,
 		},
 		{
@@ -229,7 +229,7 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			Input: model.ApplicationInput{
+			Input: model.ApplicationCreateInput{
 				Name:   "test",
 				Labels: scenariosDefaultLabel,
 			},
@@ -366,7 +366,7 @@ func TestService_Create(t *testing.T) {
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// when
-		_, err := svc.Create(context.TODO(), model.ApplicationInput{})
+		_, err := svc.Create(context.TODO(), model.ApplicationCreateInput{})
 		assert.Equal(t, tenant.NoTenantError, err)
 	})
 }
@@ -380,13 +380,13 @@ func TestService_CreateWithInvalidNames(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		InputID            string
-		Input              model.ApplicationInput
+		Input              model.ApplicationCreateInput
 		ExpectedErrMessage string
 	}{
 		{
 			Name:               "Returns error when application name is empty",
 			InputID:            "foo",
-			Input:              model.ApplicationInput{Name: ""},
+			Input:              model.ApplicationCreateInput{Name: ""},
 			ExpectedErrMessage: "a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character",
 		},
 	}
@@ -409,31 +409,15 @@ func TestService_Update(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
-	timestamp := time.Now()
-
-	desc := "Lorem ipsum"
-	modelInput := model.ApplicationInput{
-		Name: "bar",
-	}
 	id := "foo"
-
 	tnt := "tenant"
-	appModel := modelFromInput(modelInput, tnt, id)
 
-	inputApplicationModel := mock.MatchedBy(func(app *model.Application) bool {
-		return app.Name == modelInput.Name
-	})
-
-	applicationModel := &model.Application{
-		ID:          id,
-		Name:        "foo",
-		Tenant:      tnt,
-		Description: &desc,
-		Status: &model.ApplicationStatus{
-			Condition: model.ApplicationStatusConditionInitial,
-			Timestamp: timestamp,
-		},
-	}
+	updatedName := "updatedn"
+	updatedDescription := "updatedd"
+	updatedURL := "updatedu"
+	updateInput := fixModelApplicationUpdateInput(updatedName, updatedDescription, updatedURL)
+	applicationModelBefore := fixModelApplicationWithAllUpdatableFields(id, tnt, "initialn", "initiald", "initialu")
+	applicationModelAfter := fixModelApplicationWithAllUpdatableFields(id, tnt, updatedName, updatedDescription, updatedURL)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt)
@@ -441,14 +425,7 @@ func TestService_Update(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		AppRepoFn          func() *automock.ApplicationRepository
-		WebhookRepoFn      func() *automock.WebhookRepository
-		APIRepoFn          func() *automock.APIRepository
-		EventAPIRepoFn     func() *automock.EventAPIRepository
-		DocumentRepoFn     func() *automock.DocumentRepository
-		LabelRepoFn        func() *automock.LabelRepository
-		FetchRequestRepoFn func() *automock.FetchRequestRepository
-		LabelServiceFn     func() *automock.LabelUpsertService
-		Input              model.ApplicationInput
+		Input              model.ApplicationUpdateInput
 		InputID            string
 		ExpectedErrMessage string
 	}{
@@ -456,87 +433,24 @@ func TestService_Update(t *testing.T) {
 			Name: "Success",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, tnt, "foo").Return(applicationModel, nil).Once()
-				repo.On("Update", ctx, inputApplicationModel).Return(nil).Once()
+				repo.On("GetByID", ctx, tnt, "foo").Return(applicationModelBefore, nil).Once()
+				repo.On("Update", ctx, applicationModelAfter).Return(nil).Once()
 				return repo
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				repo := &automock.WebhookRepository{}
-				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
-				repo.On("CreateMany", ctx, appModel.Webhooks).Return(nil).Once()
-				return repo
-			},
-			APIRepoFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
-				return repo
-			},
-			EventAPIRepoFn: func() *automock.EventAPIRepository {
-				repo := &automock.EventAPIRepository{}
-				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
-				return repo
-			},
-			DocumentRepoFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(nil).Once()
-				return repo
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("DeleteAll", ctx, tnt, model.ApplicationLabelableObject, id).Return(nil).Once()
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				return repo
-			},
-			LabelServiceFn: func() *automock.LabelUpsertService {
-				svc := &automock.LabelUpsertService{}
-				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, modelInput.Labels).Return(nil).Once()
-				return svc
 			},
 			InputID:            "foo",
-			Input:              modelInput,
+			Input:              updateInput,
 			ExpectedErrMessage: "",
 		},
 		{
 			Name: "Returns error when application update failed",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, tnt, "foo").Return(applicationModel, nil).Once()
-				repo.On("Update", ctx, inputApplicationModel).Return(testErr).Once()
+				repo.On("GetByID", ctx, tnt, "foo").Return(applicationModelBefore, nil).Once()
+				repo.On("Update", ctx, applicationModelAfter).Return(testErr).Once()
 				return repo
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				repo := &automock.WebhookRepository{}
-				return repo
-			},
-			APIRepoFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				return repo
-			},
-			EventAPIRepoFn: func() *automock.EventAPIRepository {
-				repo := &automock.EventAPIRepository{}
-				return repo
-			},
-			DocumentRepoFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				return repo
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				return repo
-			},
-			LabelServiceFn: func() *automock.LabelUpsertService {
-				svc := &automock.LabelUpsertService{}
-				return svc
 			},
 			InputID:            "foo",
-			Input:              modelInput,
+			Input:              updateInput,
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
@@ -546,77 +460,8 @@ func TestService_Update(t *testing.T) {
 				repo.On("GetByID", ctx, tnt, "foo").Return(nil, testErr).Once()
 				return repo
 			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				repo := &automock.WebhookRepository{}
-				return repo
-			},
-			APIRepoFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				return repo
-			},
-			EventAPIRepoFn: func() *automock.EventAPIRepository {
-				repo := &automock.EventAPIRepository{}
-				return repo
-			},
-			DocumentRepoFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				return repo
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				return repo
-			},
-			LabelServiceFn: func() *automock.LabelUpsertService {
-				svc := &automock.LabelUpsertService{}
-				return svc
-			},
 			InputID:            "foo",
-			Input:              modelInput,
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "Returns error when deleting apllication's subresource failed",
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, tnt, "foo").Return(applicationModel, nil).Once()
-				repo.On("Update", ctx, inputApplicationModel).Return(nil).Once()
-				return repo
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				repo := &automock.WebhookRepository{}
-				repo.On("DeleteAllByApplicationID", ctx, tnt, id).Return(testErr).Once()
-				return repo
-			},
-			APIRepoFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				return repo
-			},
-			EventAPIRepoFn: func() *automock.EventAPIRepository {
-				repo := &automock.EventAPIRepository{}
-				return repo
-			},
-			DocumentRepoFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				return repo
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				return repo
-			},
-			LabelServiceFn: func() *automock.LabelUpsertService {
-				svc := &automock.LabelUpsertService{}
-				return svc
-			},
-			InputID:            "foo",
-			Input:              modelInput,
+			Input:              updateInput,
 			ExpectedErrMessage: testErr.Error(),
 		},
 	}
@@ -624,14 +469,7 @@ func TestService_Update(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appRepo := testCase.AppRepoFn()
-			webhookRepo := testCase.WebhookRepoFn()
-			apiRepo := testCase.APIRepoFn()
-			eventAPIRepo := testCase.EventAPIRepoFn()
-			documentRepo := testCase.DocumentRepoFn()
-			labelRepo := testCase.LabelRepoFn()
-			fetchRequestRepo := testCase.FetchRequestRepoFn()
-			labelSvc := testCase.LabelServiceFn()
-			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo, nil, labelRepo, fetchRequestRepo, labelSvc, nil, nil)
+			svc := application.NewService(appRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -645,19 +483,8 @@ func TestService_Update(t *testing.T) {
 			}
 
 			appRepo.AssertExpectations(t)
-			webhookRepo.AssertExpectations(t)
-			apiRepo.AssertExpectations(t)
-			eventAPIRepo.AssertExpectations(t)
-			documentRepo.AssertExpectations(t)
 		})
 	}
-
-	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-		// when
-		err := svc.Update(context.TODO(), "Dd", model.ApplicationInput{})
-		assert.Equal(t, tenant.NoTenantError, err)
-	})
 }
 
 func TestService_UpdateWithInvalidNames(t *testing.T) {
@@ -671,19 +498,19 @@ func TestService_UpdateWithInvalidNames(t *testing.T) {
 	testCases := []struct {
 		Name        string
 		InputID     string
-		Input       model.ApplicationInput
+		Input       model.ApplicationUpdateInput
 		ExpectedErr error
 	}{
 		{
 			Name:        "Returns error when application name is empty",
 			InputID:     "foo",
-			Input:       model.ApplicationInput{Name: ""},
+			Input:       model.ApplicationUpdateInput{Name: ""},
 			ExpectedErr: testError,
 		},
 		{
 			Name:        "Returns error when application name contains upper case letter",
 			InputID:     "foo",
-			Input:       model.ApplicationInput{Name: "upperCase"},
+			Input:       model.ApplicationUpdateInput{Name: "upperCase"},
 			ExpectedErr: testError,
 		}}
 
@@ -720,7 +547,7 @@ func TestService_Delete(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		AppRepoFn          func() *automock.ApplicationRepository
-		Input              model.ApplicationInput
+		Input              model.ApplicationCreateInput
 		InputID            string
 		ExpectedErrMessage string
 	}{
@@ -788,7 +615,7 @@ func TestService_Get(t *testing.T) {
 	testCases := []struct {
 		Name                string
 		RepositoryFn        func() *automock.ApplicationRepository
-		Input               model.ApplicationInput
+		Input               model.ApplicationCreateInput
 		InputID             string
 		ExpectedApplication *model.Application
 		ExpectedErrMessage  string
@@ -1677,7 +1504,7 @@ type testModel struct {
 	Documents            []*model.Document
 }
 
-func modelFromInput(in model.ApplicationInput, tenant, applicationID string) testModel {
+func modelFromInput(in model.ApplicationCreateInput, tenant, applicationID string) testModel {
 	applicationModelMatcherFn := applicationMatcher(in.Name, in.Description)
 
 	var webhooksModel []*model.Webhook

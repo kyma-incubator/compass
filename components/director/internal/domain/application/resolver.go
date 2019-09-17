@@ -18,8 +18,8 @@ import (
 
 //go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
 type ApplicationService interface {
-	Create(ctx context.Context, in model.ApplicationInput) (string, error)
-	Update(ctx context.Context, id string, in model.ApplicationInput) error
+	Create(ctx context.Context, in model.ApplicationCreateInput) (string, error)
+	Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error
 	Get(ctx context.Context, id string) (*model.Application, error)
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
@@ -34,7 +34,8 @@ type ApplicationService interface {
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
 	MultipleToGraphQL(in []*model.Application) []*graphql.Application
-	InputFromGraphQL(in graphql.ApplicationInput) model.ApplicationInput
+	CreateInputFromGraphQL(in graphql.ApplicationCreateInput) model.ApplicationCreateInput
+	UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) model.ApplicationUpdateInput
 }
 
 //go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
@@ -270,9 +271,7 @@ func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string,
 	}, nil
 }
 
-func (r *Resolver) CreateApplication(ctx context.Context, in graphql.ApplicationInput) (*graphql.Application, error) {
-	convertedIn := r.appConverter.InputFromGraphQL(in)
-
+func (r *Resolver) CreateApplication(ctx context.Context, in graphql.ApplicationCreateInput) (*graphql.Application, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -281,6 +280,7 @@ func (r *Resolver) CreateApplication(ctx context.Context, in graphql.Application
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	convertedIn := r.appConverter.CreateInputFromGraphQL(in)
 	id, err := r.appSvc.Create(ctx, convertedIn)
 	if err != nil {
 		return nil, err
@@ -300,7 +300,7 @@ func (r *Resolver) CreateApplication(ctx context.Context, in graphql.Application
 
 	return gqlApp, nil
 }
-func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.ApplicationInput) (*graphql.Application, error) {
+func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.ApplicationUpdateInput) (*graphql.Application, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -309,7 +309,7 @@ func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn := r.appConverter.InputFromGraphQL(in)
+	convertedIn := r.appConverter.UpdateInputFromGraphQL(in)
 	err = r.appSvc.Update(ctx, id, convertedIn)
 	if err != nil {
 		return nil, err

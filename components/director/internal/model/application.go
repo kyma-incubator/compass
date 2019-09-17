@@ -41,7 +41,7 @@ type ApplicationPage struct {
 	TotalCount int
 }
 
-type ApplicationInput struct {
+type ApplicationCreateInput struct {
 	Name           string
 	Description    *string
 	Labels         map[string]interface{}
@@ -52,7 +52,7 @@ type ApplicationInput struct {
 	Documents      []*DocumentInput
 }
 
-func (i *ApplicationInput) ToApplication(timestamp time.Time, condition ApplicationStatusCondition, id, tenant string) *Application {
+func (i *ApplicationCreateInput) ToApplication(timestamp time.Time, condition ApplicationStatusCondition, id, tenant string) *Application {
 	if i == nil {
 		return nil
 	}
@@ -70,13 +70,26 @@ func (i *ApplicationInput) ToApplication(timestamp time.Time, condition Applicat
 	}
 }
 
-func (i *ApplicationInput) Validate() error {
-	if errorMgs := validation.NameIsDNSSubdomain(i.Name, false); errorMgs != nil {
-		return errors.Errorf("%v", errorMgs)
+func (i *ApplicationCreateInput) Validate() error {
+	return validateApplicationName(i.Name)
+}
+
+type ApplicationUpdateInput struct {
+	Name           string
+	Description    *string
+	HealthCheckURL *string
+}
+
+func (i *ApplicationUpdateInput) Validate() error {
+	return validateApplicationName(i.Name)
+}
+
+func validateApplicationName(name string) error {
+	if errorMsg := validation.NameIsDNSSubdomain(name, false); errorMsg != nil {
+		return errors.Errorf("%v", errorMsg)
 	}
-	if len(i.Name) > applicationNameMaxLength {
-		err := errors.New("application name is too long, must be maximum 36 characters long")
-		return err
+	if len(name) > applicationNameMaxLength {
+		return errors.Errorf("application name is too long, must be maximum %d characters long", applicationNameMaxLength)
 	}
 	return nil
 }

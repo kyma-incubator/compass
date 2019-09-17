@@ -14,18 +14,18 @@ type ApplicationService struct {
 }
 
 // Create provides a mock function with given fields: ctx, in
-func (_m *ApplicationService) Create(ctx context.Context, in model.ApplicationInput) (string, error) {
+func (_m *ApplicationService) Create(ctx context.Context, in model.ApplicationCreateInput) (string, error) {
 	ret := _m.Called(ctx, in)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationInput) string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationCreateInput) string); ok {
 		r0 = rf(ctx, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, model.ApplicationInput) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, model.ApplicationCreateInput) error); ok {
 		r1 = rf(ctx, in)
 	} else {
 		r1 = ret.Error(1)
@@ -192,11 +192,11 @@ func (_m *ApplicationService) SetLabel(ctx context.Context, label *model.LabelIn
 }
 
 // Update provides a mock function with given fields: ctx, id, in
-func (_m *ApplicationService) Update(ctx context.Context, id string, in model.ApplicationInput) error {
+func (_m *ApplicationService) Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error {
 	ret := _m.Called(ctx, id, in)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.ApplicationInput) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.ApplicationUpdateInput) error); ok {
 		r0 = rf(ctx, id, in)
 	} else {
 		r0 = ret.Error(0)

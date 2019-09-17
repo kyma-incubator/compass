@@ -11,15 +11,15 @@ type ApplicationConverter struct {
 	mock.Mock
 }
 
-// InputFromGraphQL provides a mock function with given fields: in
-func (_m *ApplicationConverter) InputFromGraphQL(in graphql.ApplicationInput) model.ApplicationInput {
+// CreateInputFromGraphQL provides a mock function with given fields: in
+func (_m *ApplicationConverter) CreateInputFromGraphQL(in graphql.ApplicationCreateInput) model.ApplicationCreateInput {
 	ret := _m.Called(in)
 
-	var r0 model.ApplicationInput
-	if rf, ok := ret.Get(0).(func(graphql.ApplicationInput) model.ApplicationInput); ok {
+	var r0 model.ApplicationCreateInput
+	if rf, ok := ret.Get(0).(func(graphql.ApplicationCreateInput) model.ApplicationCreateInput); ok {
 		r0 = rf(in)
 	} else {
-		r0 = ret.Get(0).(model.ApplicationInput)
+		r0 = ret.Get(0).(model.ApplicationCreateInput)
 	}
 
 	return r0
@@ -52,6 +52,20 @@ func (_m *ApplicationConverter) ToGraphQL(in *model.Application) *graphql.Applic
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*graphql.Application)
 		}
+	}
+
+	return r0
+}
+
+// UpdateInputFromGraphQL provides a mock function with given fields: in
+func (_m *ApplicationConverter) UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) model.ApplicationUpdateInput {
+	ret := _m.Called(in)
+
+	var r0 model.ApplicationUpdateInput
+	if rf, ok := ret.Get(0).(func(graphql.ApplicationUpdateInput) model.ApplicationUpdateInput); ok {
+		r0 = rf(in)
+	} else {
+		r0 = ret.Get(0).(model.ApplicationUpdateInput)
 	}
 
 	return r0
