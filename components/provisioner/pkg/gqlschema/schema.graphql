@@ -63,7 +63,6 @@ type RuntimeConnectionStatus {
 # We should consider renamig this type, as it contains more than just status.
 type RuntimeStatus {
     lastOperationStatus: OperationStatus
-    runtimeID: String!
     runtimeConnectionStatus: RuntimeConnectionStatus
     runtimeConnectionConfig: RuntimeConnectionConfig
     runtimeConfiguration: RuntimeConfig

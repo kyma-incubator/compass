@@ -98,7 +98,6 @@ type ComplexityRoot struct {
 		RuntimeConfiguration    func(childComplexity int) int
 		RuntimeConnectionConfig func(childComplexity int) int
 		RuntimeConnectionStatus func(childComplexity int) int
-		RuntimeID               func(childComplexity int) int
 	}
 }
 
@@ -361,13 +360,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RuntimeStatus.RuntimeConnectionStatus(childComplexity), true
 
-	case "RuntimeStatus.runtimeID":
-		if e.complexity.RuntimeStatus.RuntimeID == nil {
-			break
-		}
-
-		return e.complexity.RuntimeStatus.RuntimeID(childComplexity), true
-
 	}
 	return 0, false
 }
@@ -495,7 +487,6 @@ type RuntimeConnectionStatus {
 # We should consider renamig this type, as it contains more than just status.
 type RuntimeStatus {
     lastOperationStatus: OperationStatus
-    runtimeID: String!
     runtimeConnectionStatus: RuntimeConnectionStatus
     runtimeConnectionConfig: RuntimeConnectionConfig
     runtimeConfiguration: RuntimeConfig
@@ -1753,43 +1744,6 @@ func (ec *executionContext) _RuntimeStatus_lastOperationStatus(ctx context.Conte
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOOperationStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _RuntimeStatus_runtimeID(ctx context.Context, field graphql.CollectedField, obj *RuntimeStatus) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "RuntimeStatus",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.RuntimeID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimeStatus_runtimeConnectionStatus(ctx context.Context, field graphql.CollectedField, obj *RuntimeStatus) (ret graphql.Marshaler) {
@@ -3518,11 +3472,6 @@ func (ec *executionContext) _RuntimeStatus(ctx context.Context, sel ast.Selectio
 			out.Values[i] = graphql.MarshalString("RuntimeStatus")
 		case "lastOperationStatus":
 			out.Values[i] = ec._RuntimeStatus_lastOperationStatus(ctx, field, obj)
-		case "runtimeID":
-			out.Values[i] = ec._RuntimeStatus_runtimeID(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "runtimeConnectionStatus":
 			out.Values[i] = ec._RuntimeStatus_runtimeConnectionStatus(ctx, field, obj)
 		case "runtimeConnectionConfig":
@@ -4187,7 +4136,7 @@ func (ec *executionContext) marshalOError2ᚕᚖgithubᚗcomᚋkymaᚑincubator�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOError2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx, sel, v[i])
+			ret[i] = ec.marshalNError2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)

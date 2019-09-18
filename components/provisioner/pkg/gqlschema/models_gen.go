@@ -70,7 +70,6 @@ type RuntimeConnectionStatus struct {
 
 type RuntimeStatus struct {
 	LastOperationStatus     *OperationStatus         `json:"lastOperationStatus"`
-	RuntimeID               string                   `json:"runtimeID"`
 	RuntimeConnectionStatus *RuntimeConnectionStatus `json:"runtimeConnectionStatus"`
 	RuntimeConnectionConfig *RuntimeConnectionConfig `json:"runtimeConnectionConfig"`
 	RuntimeConfiguration    *RuntimeConfig           `json:"runtimeConfiguration"`
