@@ -5,13 +5,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
-	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit/connector"
-
 	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
-
 	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit"
+	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit/connector"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 

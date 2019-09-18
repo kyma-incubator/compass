@@ -47,9 +47,9 @@ type config struct {
 	CASecretName                string        `envconfig:"default=kyma-integration/nginx-auth-ca"`
 	RootCACertificateSecretName string        `envconfig:"optional"`
 
-	CertificateDataHeader   string `envconfig:"default=Certificate-Data"`
-	Namespace               string `envconfig:"default=compass-system"`
-	RevocationConfigMapName string `envconfig:"default=revocations-config"`
+	CertificateDataHeader        string `envconfig:"default=Certificate-Data"`
+	RevocationConfigMapNamespace string `envconfig:"default=compass-system"`
+	RevocationConfigMapName      string `envconfig:"default=revocations-config"`
 
 	Token struct {
 		Length                int           `envconfig:"default=64"`
@@ -68,7 +68,7 @@ func (c *config) String() string {
 		"CSRSubjectLocality: %s, CSRSubjectProvince: %s, "+
 		"CertificateValidityTime: %s, CASecretName: %s, RootCACertificateSecretName: %s, CertificateDataHeader: %s, "+
 		"CertificateSecuredConnectorURL: %s, "+
-		"Namespace: %s, RevocationConfigMapName: %s, "+
+		"RevocationConfigMapNamespace: %s, RevocationConfigMapName: %s, "+
 		"TokenLength: %d, TokenRuntimeExpiration: %s, TokenApplicationExpiration: %s, TokenCSRExpiration: %s, "+
 		"DirectorURL: %s",
 		c.Address, c.APIEndpoint, c.HydratorAddress,
@@ -76,7 +76,7 @@ func (c *config) String() string {
 		c.CSRSubject.Locality, c.CSRSubject.Province,
 		c.CertificateValidityTime, c.CASecretName, c.RootCACertificateSecretName, c.CertificateDataHeader,
 		c.CertificateSecuredConnectorURL,
-		c.Namespace, c.RevocationConfigMapName,
+		c.RevocationConfigMapNamespace, c.RevocationConfigMapName,
 		c.Token.Length, c.Token.RuntimeExpiration.String(), c.Token.ApplicationExpiration.String(), c.Token.CSRExpiration.String(),
 		c.DirectorURL)
 }
@@ -93,7 +93,7 @@ func main() {
 	tokenService := tokens.NewTokenService(tokenCache, tokens.NewTokenGenerator(cfg.Token.Length))
 	coreClientSet, appErr := newCoreClientSet()
 	exitOnError(appErr, "Failed to initialize Kubernetes client.")
-	revokedCertsRepository := newRevokedCertsRepository(coreClientSet, cfg.Namespace, cfg.RevocationConfigMapName)
+	revokedCertsRepository := newRevokedCertsRepository(coreClientSet, cfg.RevocationConfigMapNamespace, cfg.RevocationConfigMapName)
 
 	authenticator := authentication.NewAuthenticator()
 

@@ -61,7 +61,7 @@ func TestMain(m *testing.M) {
 		logrus.Errorf("Failed to create config map interface: %s", err.Error())
 		os.Exit(1)
 	}
-	configmapCleaner = testkit.NewConfigMapCleaner(configmapInterface, config.RevocationConfigmapName)
+	configmapCleaner = testkit.NewConfigMapCleaner(configmapInterface, config.RevocationConfigMapName)
 
 	// Wait for sidecar to initialize
 	logrus.Infoln("Waiting for sidecar to initialize and access to API...")
@@ -109,6 +109,6 @@ func newConfigMapInterface() (v1.ConfigMapInterface, error) {
 		return nil, errors.Errorf("failed to create k8s core client, %s", err.Error())
 	}
 
-	configmapInterface := coreClientSet.CoreV1().ConfigMaps(config.RevocationConfigmapNamespace)
+	configmapInterface := coreClientSet.CoreV1().ConfigMaps(config.RevocationConfigMapNamespace)
 	return configmapInterface, nil
 }
