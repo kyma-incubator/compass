@@ -25,7 +25,7 @@ func TestScopesContext(t *testing.T) {
 	t.Run("cannot override scopes accidentally", func(t *testing.T) {
 		givenScopes := []string{"aaa", "bbb"}
 		ctx := scope.SaveToContext(context.Background(), givenScopes)
-		ctx = context.WithValue(ctx, 0, "aaa")
+		ctx = context.WithValue(ctx, 0, "some random value")
 		actual, err := scope.LoadFromContext(ctx)
 		require.NoError(t, err)
 		assert.Equal(t, givenScopes, actual)
