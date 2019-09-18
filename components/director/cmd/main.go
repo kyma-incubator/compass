@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
+
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 
@@ -69,6 +71,9 @@ func main() {
 	router.HandleFunc(cfg.APIEndpoint, handler.GraphQL(executableSchema))
 
 	http.Handle("/", router)
+
+	tenantMappingHandler := tenantmapping.NewHandler()
+	http.Handle("/tenant-mapping", tenantMappingHandler)
 
 	log.Infof("Listening on %s...", cfg.Address)
 	if err := http.ListenAndServe(cfg.Address, nil); err != nil {
