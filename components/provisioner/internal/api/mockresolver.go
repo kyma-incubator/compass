@@ -6,13 +6,12 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
 type MockResolver struct {
-	cache cache.Cache
+	repository map[string]RuntimeOperation
 }
 
 type externalMutationResolver struct {
@@ -30,7 +29,7 @@ func (r *MockResolver) Query() gqlschema.QueryResolver {
 	return &externalQueryResolver{r}
 }
 
-type runtimeOperation struct {
+type RuntimeOperation struct {
 	operationID        string
 	operationType      gqlschema.OperationType
 	status             gqlschema.OperationState
@@ -39,8 +38,8 @@ type runtimeOperation struct {
 	startTime          time.Time
 }
 
-func NewMockResolver(cache cache.Cache) *MockResolver {
-	return &MockResolver{cache: cache}
+func NewMockResolver(repository map[string]RuntimeOperation) *MockResolver {
+	return &MockResolver{repository: repository}
 }
 
 func (r *MockResolver) ProvisionRuntime(ctx context.Context, id string, config *gqlschema.ProvisionRuntimeInput) (string, error) {
@@ -72,7 +71,7 @@ func (r *MockResolver) startNewOperation(ctx context.Context, runtimeID string, 
 
 	operationID := string(uuid.NewUUID())
 
-	operation := runtimeOperation{
+	operation := RuntimeOperation{
 		operationType: operationType,
 		status:        gqlschema.OperationStateInProgress,
 		operationID:   operationID,
@@ -131,16 +130,13 @@ func (r *MockResolver) RuntimeOperationStatus(ctx context.Context, operationID s
 	return &gqlschema.OperationStatus{
 		Operation: operation.operationType,
 		State:     operation.status,
+		RuntimeID: operation.runtimeID,
 		Message:   "",
 	}, nil
 }
 
 func (r *MockResolver) checkIfLastOperationFinished(runtimeID string) (string, bool) {
-	for _, item := range r.cache.Items() {
-		operation, ok := item.Object.(runtimeOperation)
-		if !ok {
-			continue
-		}
+	for _, operation := range r.repository {
 		if operation.runtimeID == runtimeID && operation.status == gqlschema.OperationStateInProgress {
 			return operation.operationID, false
 		}
@@ -148,18 +144,18 @@ func (r *MockResolver) checkIfLastOperationFinished(runtimeID string) (string, b
 	return "", true
 }
 
-func (r *MockResolver) changeStatus(operation runtimeOperation) {
-	r.cache.Set(operation.operationID, operation, 0)
+func (r *MockResolver) changeStatus(operation RuntimeOperation) {
+	r.repository[operation.operationID] = operation
 }
 
-func (r *MockResolver) getLastOperationStatus(runtimeID string) (runtimeOperation, bool) {
+func (r *MockResolver) getLastOperationStatus(runtimeID string) (RuntimeOperation, bool) {
 	operationsMatchingRuntime := r.getRuntimeOperationsSorted(runtimeID)
 
 	if len(operationsMatchingRuntime) != 0 {
 		return operationsMatchingRuntime[0], true
 	}
 
-	return runtimeOperation{}, false
+	return RuntimeOperation{}, false
 }
 
 func (r *MockResolver) runtimeExists(runtimeID string) bool {
@@ -176,13 +172,9 @@ func (r *MockResolver) runtimeExists(runtimeID string) bool {
 	return false
 }
 
-func (r *MockResolver) getRuntimeOperationsSorted(runtimeID string) []runtimeOperation {
-	operationsMatchingRuntime := make([]runtimeOperation, 0)
-	for _, item := range r.cache.Items() {
-		operation, ok := item.Object.(runtimeOperation)
-		if !ok {
-			continue
-		}
+func (r *MockResolver) getRuntimeOperationsSorted(runtimeID string) []RuntimeOperation {
+	operationsMatchingRuntime := make([]RuntimeOperation, 0)
+	for _, operation := range r.repository {
 		if operation.runtimeID == runtimeID {
 			operationsMatchingRuntime = append(operationsMatchingRuntime, operation)
 		}
@@ -194,11 +186,11 @@ func (r *MockResolver) getRuntimeOperationsSorted(runtimeID string) []runtimeOpe
 	return operationsMatchingRuntime
 }
 
-func (r *MockResolver) checkOperation(operationID string) (runtimeOperation, bool) {
-	item, exists := r.cache.Get(operationID)
+func (r *MockResolver) checkOperation(operationID string) (RuntimeOperation, bool) {
+	item, exists := r.repository[operationID]
 
 	if exists {
-		return item.(runtimeOperation), true
+		return item, true
 	}
-	return runtimeOperation{}, false
+	return RuntimeOperation{}, false
 }

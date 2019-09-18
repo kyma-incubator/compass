@@ -9,7 +9,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
 )
@@ -32,9 +31,9 @@ func main() {
 	log.Println("Starting Provisioner")
 	log.Printf("Config: %s", cfg.String())
 
-	noExpireCache := cache.New(0, 0)
+	repository := make(map[string]api.RuntimeOperation)
 
-	resolver := api.NewMockResolver(*noExpireCache)
+	resolver := api.NewMockResolver(repository)
 
 	gqlCfg := gqlschema.Config{
 		Resolvers: resolver,
