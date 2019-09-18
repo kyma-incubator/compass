@@ -231,12 +231,14 @@ func TestFullConnectorFlow(t *testing.T) {
 	t.Logf("Revoking certificate...")
 	isRevoked, err := securedClientWithRenewedCert.RevokeCertificate()
 	require.NoError(t, err)
-	require.Equal(t, true, isRevoked)
+	require.True(t, isRevoked)
 
 	t.Logf("Certificate revoked. Failing to fetch configuration with revoked certificate...")
 	configWithRevokedCert, err := securedClientWithRenewedCert.Configuration()
 	require.Error(t, err)
-	require.Equal(t, nil, configWithRevokedCert)
+	require.Nil(t, configWithRevokedCert.Token)
+	require.Nil(t, configWithRevokedCert.CertificateSigningRequestInfo)
+	require.Nil(t, configWithRevokedCert.ManagementPlaneInfo)
 }
 
 func getConfiguration(t *testing.T, appID string) gqlschema.Configuration {

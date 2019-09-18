@@ -12,6 +12,7 @@ spec:
   disableConcurrency: true
   template:
     spec:
+      serviceAccountName: {{ template "fullname" . }}-tests
       shareProcessNamespace: true
       containers:
       - name: tests
