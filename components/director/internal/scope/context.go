@@ -13,13 +13,10 @@ var NoScopesError = errors.New("cannot read scopes from context")
 
 func LoadFromContext(ctx context.Context) ([]string, error) {
 	value := ctx.Value(ScopesContextKey)
-
 	scopes, ok := value.([]string)
-
 	if !ok {
 		return nil, NoScopesError
 	}
-
 	return scopes, nil
 }
 
