@@ -8,14 +8,6 @@ import (
 	"strconv"
 )
 
-type AsyncOperationID struct {
-	ID string `json:"id"`
-}
-
-type AsyncOperationIDInput struct {
-	ID string `json:"id"`
-}
-
 type ClusterConfig struct {
 	Name                   *string                 `json:"name"`
 	Size                   *string                 `json:"size"`
@@ -53,6 +45,7 @@ type OperationStatus struct {
 	Operation OperationType  `json:"operation"`
 	State     OperationState `json:"state"`
 	Message   string         `json:"message"`
+	RuntimeID string         `json:"runtimeID"`
 	Errors    []*Error       `json:"errors"`
 }
 
@@ -73,10 +66,6 @@ type RuntimeConnectionConfig struct {
 type RuntimeConnectionStatus struct {
 	Status RuntimeAgentConnectionStatus `json:"status"`
 	Errors []*Error                     `json:"errors"`
-}
-
-type RuntimeIDInput struct {
-	ID string `json:"id"`
 }
 
 type RuntimeStatus struct {

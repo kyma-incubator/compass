@@ -6,13 +6,12 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
 type MockResolver struct {
-	cache cache.Cache
+	repository map[string]RuntimeOperation
 }
 
 type externalMutationResolver struct {
@@ -30,7 +29,7 @@ func (r *MockResolver) Query() gqlschema.QueryResolver {
 	return &externalQueryResolver{r}
 }
 
-type runtimeOperation struct {
+type RuntimeOperation struct {
 	operationID        string
 	operationType      gqlschema.OperationType
 	status             gqlschema.OperationState
@@ -39,51 +38,56 @@ type runtimeOperation struct {
 	startTime          time.Time
 }
 
-func NewMockResolver(cache cache.Cache) *MockResolver {
-	return &MockResolver{cache: cache}
+func NewMockResolver(repository map[string]RuntimeOperation) *MockResolver {
+	return &MockResolver{repository: repository}
 }
 
-func (r *MockResolver) ProvisionRuntime(ctx context.Context, id *gqlschema.RuntimeIDInput, config *gqlschema.ProvisionRuntimeInput) (*gqlschema.AsyncOperationID, error) {
+func (r *MockResolver) ProvisionRuntime(ctx context.Context, id string, config *gqlschema.ProvisionRuntimeInput) (string, error) {
 	return r.startNewOperation(ctx, id, gqlschema.OperationTypeProvision)
 }
 
-func (r *MockResolver) UpgradeRuntime(ctx context.Context, id *gqlschema.RuntimeIDInput, config *gqlschema.UpgradeRuntimeInput) (*gqlschema.AsyncOperationID, error) {
+func (r *MockResolver) UpgradeRuntime(ctx context.Context, id string, config *gqlschema.UpgradeRuntimeInput) (string, error) {
 	return r.startNewOperation(ctx, id, gqlschema.OperationTypeUpgrade)
 }
 
-func (r *MockResolver) DeprovisionRuntime(ctx context.Context, id *gqlschema.RuntimeIDInput) (*gqlschema.AsyncOperationID, error) {
+func (r *MockResolver) DeprovisionRuntime(ctx context.Context, id string) (string, error) {
 	return r.startNewOperation(ctx, id, gqlschema.OperationTypeDeprovision)
 }
 
-func (r *MockResolver) ReconnectRuntimeAgent(ctx context.Context, id *gqlschema.RuntimeIDInput) (*gqlschema.AsyncOperationID, error) {
+func (r *MockResolver) ReconnectRuntimeAgent(ctx context.Context, id string) (string, error) {
 	return r.startNewOperation(ctx, id, gqlschema.OperationTypeReconnectRuntime)
 }
 
-func (r *MockResolver) startNewOperation(ctx context.Context, id *gqlschema.RuntimeIDInput, operationType gqlschema.OperationType) (*gqlschema.AsyncOperationID, error) {
-	currentID, finished := r.checkIfLastOperationFinished(id)
+func (r *MockResolver) startNewOperation(ctx context.Context, runtimeID string, operationType gqlschema.OperationType) (string, error) {
+	if operationType != gqlschema.OperationTypeProvision {
+		if !r.runtimeExists(runtimeID) {
+			return "", errors.Errorf("Runtime %s does not exist", runtimeID)
+		}
+	}
+	currentID, finished := r.checkIfLastOperationFinished(runtimeID)
 	if !finished {
-		return nil, errors.Errorf("Cannot start new operation while previous one is not finished yet. Current operation: %s", currentID)
+		return "", errors.Errorf("Cannot start new operation while previous one is not finished yet. Current operation: %s", currentID)
 	}
 
 	operationID := string(uuid.NewUUID())
 
-	operation := runtimeOperation{
+	operation := RuntimeOperation{
 		operationType: operationType,
 		status:        gqlschema.OperationStateInProgress,
 		operationID:   operationID,
-		runtimeID:     id.ID,
+		runtimeID:     runtimeID,
 		startTime:     time.Now(),
 	}
 
 	r.changeStatus(operation)
-	return &gqlschema.AsyncOperationID{ID: operationID}, nil
+	return operationID, nil
 }
 
-func (r *MockResolver) RuntimeStatus(ctx context.Context, id *gqlschema.RuntimeIDInput) (*gqlschema.RuntimeStatus, error) {
-	operation, exists := r.getStatus(id)
+func (r *MockResolver) RuntimeStatus(ctx context.Context, runtimeID string) (*gqlschema.RuntimeStatus, error) {
+	operation, exists := r.getLastOperationStatus(runtimeID)
 
 	if !exists {
-		return nil, errors.Errorf("Runtime %s does not exist", id.ID)
+		return nil, errors.Errorf("Runtime %s does not exist", runtimeID)
 	}
 
 	return &gqlschema.RuntimeStatus{
@@ -108,11 +112,11 @@ func (r *MockResolver) RuntimeStatus(ctx context.Context, id *gqlschema.RuntimeI
 and status Succeeded in second and following calls until next operation is started.
 */
 
-func (r *MockResolver) RuntimeOperationStatus(ctx context.Context, id *gqlschema.AsyncOperationIDInput) (*gqlschema.OperationStatus, error) {
-	operation, exists := r.checkOperation(id)
+func (r *MockResolver) RuntimeOperationStatus(ctx context.Context, operationID string) (*gqlschema.OperationStatus, error) {
+	operation, exists := r.checkOperation(operationID)
 
 	if !exists {
-		return nil, errors.Errorf("Operation: %s does not exist", id)
+		return nil, errors.Errorf("Operation: %s does not exist", operationID)
 	}
 
 	if operation.shouldStatusChange {
@@ -126,54 +130,67 @@ func (r *MockResolver) RuntimeOperationStatus(ctx context.Context, id *gqlschema
 	return &gqlschema.OperationStatus{
 		Operation: operation.operationType,
 		State:     operation.status,
+		RuntimeID: operation.runtimeID,
 		Message:   "",
 	}, nil
 }
 
-func (r *MockResolver) checkIfLastOperationFinished(runtimeID *gqlschema.RuntimeIDInput) (string, bool) {
-	for _, item := range r.cache.Items() {
-		operation, ok := item.Object.(runtimeOperation)
-		if !ok {
-			continue
-		}
-		if operation.runtimeID == runtimeID.ID && operation.status == gqlschema.OperationStateInProgress {
+func (r *MockResolver) checkIfLastOperationFinished(runtimeID string) (string, bool) {
+	for _, operation := range r.repository {
+		if operation.runtimeID == runtimeID && operation.status == gqlschema.OperationStateInProgress {
 			return operation.operationID, false
 		}
 	}
 	return "", true
 }
 
-func (r *MockResolver) changeStatus(operation runtimeOperation) {
-	r.cache.Set(operation.operationID, operation, 0)
+func (r *MockResolver) changeStatus(operation RuntimeOperation) {
+	r.repository[operation.operationID] = operation
 }
 
-func (r *MockResolver) getStatus(runtimeID *gqlschema.RuntimeIDInput) (runtimeOperation, bool) {
-	operationsMatchingRuntime := make([]runtimeOperation, 0)
-	for _, item := range r.cache.Items() {
-		operation, ok := item.Object.(runtimeOperation)
-		if !ok {
-			continue
-		}
-		if operation.runtimeID == runtimeID.ID {
-			operationsMatchingRuntime = append(operationsMatchingRuntime, operation)
-		}
-	}
+func (r *MockResolver) getLastOperationStatus(runtimeID string) (RuntimeOperation, bool) {
+	operationsMatchingRuntime := r.getRuntimeOperationsSorted(runtimeID)
 
 	if len(operationsMatchingRuntime) != 0 {
-		sort.Slice(operationsMatchingRuntime, func(first, second int) bool {
-			return operationsMatchingRuntime[first].startTime.After(operationsMatchingRuntime[second].startTime)
-		})
 		return operationsMatchingRuntime[0], true
 	}
 
-	return runtimeOperation{}, false
+	return RuntimeOperation{}, false
 }
 
-func (r *MockResolver) checkOperation(id *gqlschema.AsyncOperationIDInput) (runtimeOperation, bool) {
-	item, exists := r.cache.Get(id.ID)
+func (r *MockResolver) runtimeExists(runtimeID string) bool {
+	operationsMatchingRuntime := r.getRuntimeOperationsSorted(runtimeID)
+
+	for _, runtimeOpt := range operationsMatchingRuntime {
+		if runtimeOpt.operationType == gqlschema.OperationTypeDeprovision && runtimeOpt.status == gqlschema.OperationStateSucceeded {
+			return false
+		}
+		if runtimeOpt.operationType == gqlschema.OperationTypeProvision && runtimeOpt.status == gqlschema.OperationStateSucceeded {
+			return true
+		}
+	}
+	return false
+}
+
+func (r *MockResolver) getRuntimeOperationsSorted(runtimeID string) []RuntimeOperation {
+	operationsMatchingRuntime := make([]RuntimeOperation, 0)
+	for _, operation := range r.repository {
+		if operation.runtimeID == runtimeID {
+			operationsMatchingRuntime = append(operationsMatchingRuntime, operation)
+		}
+	}
+	sort.Slice(operationsMatchingRuntime, func(first, second int) bool {
+		return operationsMatchingRuntime[first].startTime.After(operationsMatchingRuntime[second].startTime)
+	})
+
+	return operationsMatchingRuntime
+}
+
+func (r *MockResolver) checkOperation(operationID string) (RuntimeOperation, bool) {
+	item, exists := r.repository[operationID]
 
 	if exists {
-		return item.(runtimeOperation), true
+		return item, true
 	}
-	return runtimeOperation{}, false
+	return RuntimeOperation{}, false
 }

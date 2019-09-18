@@ -1,8 +1,3 @@
-# We should decide if we need this.
-type AsyncOperationID {
-    id: ID!
-}
-
 # To discuss: what is the list of supported providers?
 enum InfrastructureProvider {
     GKE
@@ -45,6 +40,7 @@ type OperationStatus {
     operation: OperationType!
     state: OperationState!
     message: String!
+    runtimeID: String!
     errors: [Error]
 }
 
@@ -91,16 +87,6 @@ type RuntimeConnectionConfig {
 
 # Inputs
 
-# We should decide if we need this.
-input AsyncOperationIDInput {
-    id: ID!
-}
-
-# We should decide if we need this.
-input RuntimeIDInput {
-    id: ID!
-}
-
 input ProvisionRuntimeInput {
     clusterConfig: ClusterConfigInput!
     kymaConfig: KymaConfigInput!
@@ -133,18 +119,18 @@ input UpgradeClusterInput {
 
 type Mutation {
     # Runtime Management; only one asynchronous operation per RuntimeID can run at any given point in time
-    provisionRuntime(id: RuntimeIDInput, config: ProvisionRuntimeInput): AsyncOperationID
-    upgradeRuntime(id: RuntimeIDInput, config: UpgradeRuntimeInput): AsyncOperationID
-    deprovisionRuntime(id: RuntimeIDInput): AsyncOperationID
+    provisionRuntime(id: String!, config: ProvisionRuntimeInput): String!
+    upgradeRuntime(id: String!, config: UpgradeRuntimeInput): String!
+    deprovisionRuntime(id: String!): String!
 
     # Compass Runtime Agent Connection Management
-    reconnectRuntimeAgent(id: RuntimeIDInput): AsyncOperationID
+    reconnectRuntimeAgent(id: String!): String!
 }
 
 type Query {
     # Provides current status of specified Runtime
-    runtimeStatus(id: RuntimeIDInput): RuntimeStatus
+    runtimeStatus(id: String!): RuntimeStatus
 
     # Provides status of specified operation
-    runtimeOperationStatus(id: AsyncOperationIDInput): OperationStatus
+    runtimeOperationStatus(id: String!): OperationStatus
 }
