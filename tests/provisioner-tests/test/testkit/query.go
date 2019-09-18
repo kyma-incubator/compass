@@ -37,25 +37,34 @@ func (qp queryProvider) reconnectRuntimeAgent(runtimeID string) string {
 }
 
 func (qp queryProvider) runtimeStatus(operationID string) string {
-	return fmt.Sprintf(`mutation {
+	return fmt.Sprintf(`query {
 	result: reconnectRuntimeAgent(id: %s) {
 	%s
 	}
-}`, operationID)
+}`, operationID, runtimeStatusResult)
 }
 
 func (qp queryProvider) runtimeOperationStatus(operationID string) string {
-	return fmt.Sprintf(`mutation {
+	return fmt.Sprintf(`query {
 	result: reconnectRuntimeAgent(id: %s) {
 	%s
 	}
-}`, operationID, operationStatusRestult())
+}`, operationID, operationStatusResult())
 }
 
 func runtimeStatusResult() string {
-	return ``
+	return `lastOperationStatus { operation state message errors }
+			runtimeConnectionStatus { status errors }
+			runtimeConnectionConfig { kubeconfig }
+			runtimeConfiguration { 
+				clusterConfig { name size memory computeZone version infrastructureProvider } 
+				kymaConfig { version modules } 
+			}`
 }
 
-func operationStatusRestult() string {
-	return ``
+func operationStatusResult() string {
+	return `operation 
+			state
+			message
+			errors`
 }

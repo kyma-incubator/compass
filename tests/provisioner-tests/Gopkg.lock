@@ -2,50 +2,75 @@
 
 
 [[projects]]
-  digest = "1:f754f76822450dcc04043908ef2b68e92632d8f1371384fec54f9e60fcdd1e9d"
   name = "github.com/99designs/gqlgen"
   packages = [
     "graphql",
-    "graphql/introspection",
+    "graphql/introspection"
   ]
-  pruneopts = ""
   revision = "a7bc468ca1b184a5ce1b07ea331e0121fc56ae82"
   version = "v0.9.3"
 
 [[projects]]
-  digest = "1:3363a8a959a26feaeb9824ec5a361d50e1acaf8e9fa352064b865bacc451da66"
+  name = "github.com/Masterminds/goutils"
+  packages = ["."]
+  revision = "41ac8693c5c10a92ea1ff5ac3a7f95646f6123b0"
+  version = "v1.1.0"
+
+[[projects]]
+  name = "github.com/Masterminds/semver"
+  packages = ["."]
+  revision = "fe7c21038085e01e67044ec1efe3afb1eaa59f75"
+  version = "v3.0.1"
+
+[[projects]]
+  name = "github.com/Masterminds/sprig"
+  packages = ["."]
+  revision = "258b00ffa7318e8b109a141349980ffbd30a35db"
+  version = "v2.20.0"
+
+[[projects]]
   name = "github.com/agnivade/levenshtein"
   packages = ["."]
-  pruneopts = ""
   revision = "51b298ff305e72cfd29166dccc3f9878e82f9fdc"
   version = "v1.0.2"
 
 [[projects]]
-  branch = "master"
-  digest = "1:76dee279815e328b42a0eaaa0fc0d89ebc8151f29e3f9c4e49e800fcc055a688"
-  name = "github.com/kyma-incubator/compass"
-  packages = ["components/provisioner/pkg/gqlschema"]
-  pruneopts = ""
-  revision = "1ef32a23ef77168262acd66879bd86d79f3de9f9"
+  name = "github.com/google/uuid"
+  packages = ["."]
+  revision = "0cd6bf5da1e1c83f8b45653022c74f71af0538a4"
+  version = "v1.1.1"
 
 [[projects]]
-  digest = "1:953a3dedbd5d1c988528b0aa45b6fae0e449e342adec639ad398dd858804c5ca"
+  name = "github.com/huandu/xstrings"
+  packages = ["."]
+  revision = "f02667b379e2fb5916c3cda2cf31e0eb885d79f8"
+  version = "v1.2.0"
+
+[[projects]]
+  name = "github.com/imdario/mergo"
+  packages = ["."]
+  revision = "7c29201646fa3de8506f701213473dd407f19646"
+  version = "v0.3.7"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/kyma-incubator/compass"
+  packages = ["components/provisioner/pkg/gqlschema"]
+  revision = "d020cd970c4514de587a10653ab47ab133dddba4"
+
+[[projects]]
   name = "github.com/machinebox/graphql"
   packages = ["."]
-  pruneopts = ""
   revision = "05b17f3157491bbfa5d6fc2006443a272d960d15"
   version = "v0.2.2"
 
 [[projects]]
-  digest = "1:1d7e1867c49a6dd9856598ef7c3123604ea3daabf5b83f303ff457bcbc410b1d"
   name = "github.com/pkg/errors"
   packages = ["."]
-  pruneopts = ""
   revision = "ba968bfe8b2f7e042a574c888954fccecfa385b4"
   version = "v0.8.1"
 
 [[projects]]
-  digest = "1:6865dfbc0c5bbeaad0ef762dd36330d01a32ca50318a3dd9a5ed3a332c7b263b"
   name = "github.com/vektah/gqlparser"
   packages = [
     ".",
@@ -54,50 +79,29 @@
     "lexer",
     "parser",
     "validator",
-    "validator/rules",
+    "validator/rules"
   ]
-  pruneopts = ""
   revision = "05741cdb0871330d8bc980d4afd21ab34eceee83"
   version = "v1.1.2"
 
 [[projects]]
-  digest = "1:3582b2a952f93c863486d0bf56827e2db4e78d970a101d597bc6359587f3936a"
   name = "github.com/vrischmann/envconfig"
   packages = ["."]
-  pruneopts = ""
   revision = "cf601e2565a0a7c7418ed014d28a507be6cb1e45"
   version = "v1.2.0"
 
 [[projects]]
   branch = "master"
-  digest = "1:1b4fd41c8f091a7e3520464fd38c9b5c477556b4fb75de1a016b55be74e7d572"
-  name = "golang.org/x/tools"
+  name = "golang.org/x/crypto"
   packages = [
-    "cmd/goimports",
-    "go/ast/astutil",
-    "go/gcexportdata",
-    "go/internal/gcimporter",
-    "go/internal/packagesdriver",
-    "go/packages",
-    "go/types/typeutil",
-    "internal/fastwalk",
-    "internal/gopathwalk",
-    "internal/imports",
-    "internal/module",
-    "internal/semver",
+    "pbkdf2",
+    "scrypt"
   ]
-  pruneopts = ""
-  revision = "be0da057c5e3c2df569a2c25cd280149b7d7e7d0"
+  revision = "227b76d455e791cb042b03e633e2f7fbcfdf74a5"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  input-imports = [
-    "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
-    "github.com/machinebox/graphql",
-    "github.com/pkg/errors",
-    "github.com/vrischmann/envconfig",
-    "golang.org/x/tools/cmd/goimports",
-  ]
+  inputs-digest = "6620e2f488c55fb39355dc0db10c65a8a3b11b5728bbe3dfb0bb7c0e24ba8e28"
   solver-name = "gps-cdcl"
   solver-version = 1
