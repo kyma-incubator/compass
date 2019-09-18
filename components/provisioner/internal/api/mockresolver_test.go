@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/patrickmn/go-cache"
@@ -39,9 +40,10 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		runtimeID := &gqlschema.RuntimeIDInput{ID: id}
 		input := &gqlschema.ProvisionRuntimeInput{}
 
-		operation := currentOperation{
-			lastOperation: gqlschema.OperationTypeReconnectRuntime,
+		operation := runtimeOperation{
+			operationType: gqlschema.OperationTypeReconnectRuntime,
 			status:        gqlschema.OperationStateInProgress,
+			runtimeID:     id,
 		}
 
 		resolver.cache.Set(id, operation, 0)
@@ -85,9 +87,10 @@ func TestResolver_ReconnectRuntimeAgent(t *testing.T) {
 		id := "1234"
 		runtimeID := &gqlschema.RuntimeIDInput{ID: id}
 
-		operation := currentOperation{
-			lastOperation: gqlschema.OperationTypeReconnectRuntime,
+		operation := runtimeOperation{
+			operationType: gqlschema.OperationTypeReconnectRuntime,
 			status:        gqlschema.OperationStateInProgress,
+			runtimeID:     id,
 		}
 
 		resolver.cache.Set(id, operation, 0)
@@ -133,9 +136,10 @@ func TestResolver_UpgradeRuntime(t *testing.T) {
 		runtimeID := &gqlschema.RuntimeIDInput{ID: id}
 		input := &gqlschema.UpgradeRuntimeInput{}
 
-		operation := currentOperation{
-			lastOperation: gqlschema.OperationTypeDeprovision,
+		operation := runtimeOperation{
+			operationType: gqlschema.OperationTypeDeprovision,
 			status:        gqlschema.OperationStateInProgress,
+			runtimeID:     id,
 		}
 
 		resolver.cache.Set(id, operation, 0)
@@ -179,9 +183,10 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 		id := "1234"
 		runtimeID := &gqlschema.RuntimeIDInput{ID: id}
 
-		operation := currentOperation{
-			lastOperation: gqlschema.OperationTypeReconnectRuntime,
+		operation := runtimeOperation{
+			operationType: gqlschema.OperationTypeReconnectRuntime,
 			status:        gqlschema.OperationStateInProgress,
+			runtimeID:     id,
 		}
 
 		resolver.cache.Set(id, operation, 0)
@@ -209,13 +214,14 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 		id := "1234"
 		operationID := "51015a1a-3719-4e24-ba89-4971bc689e86"
 
-		operation := currentOperation{
-			lastOperation: gqlschema.OperationTypeReconnectRuntime,
+		operation := runtimeOperation{
+			operationType: gqlschema.OperationTypeReconnectRuntime,
 			status:        gqlschema.OperationStateInProgress,
 			operationID:   operationID,
+			runtimeID:     id,
 		}
 
-		resolver.cache.Set(id, operation, 0)
+		resolver.cache.Set(operationID, operation, 0)
 
 		//when
 		status, e := resolver.RuntimeOperationStatus(ctx, &gqlschema.AsyncOperationIDInput{ID: operationID})
@@ -224,6 +230,42 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 		require.NoError(t, e)
 		assert.Equal(t, status.Operation, gqlschema.OperationTypeReconnectRuntime)
 		assert.Equal(t, status.State, gqlschema.OperationStateInProgress)
+
+		//cleanup
+		resolver.cache.Flush()
+	})
+
+	t.Run("Should return status of previous operation", func(t *testing.T) {
+		//given
+		ctx := context.Background()
+		id := "1234"
+		operationID := "51015a1a-3719-4e24-ba89-4971bc689e86"
+		secondOperationID := "51015a1a-3719-4e24-ba89-4971bc762ef9"
+
+		operation := runtimeOperation{
+			operationType: gqlschema.OperationTypeReconnectRuntime,
+			status:        gqlschema.OperationStateInProgress,
+			operationID:   operationID,
+			runtimeID:     id,
+		}
+
+		secondOperation := runtimeOperation{
+			operationType: gqlschema.OperationTypeProvision,
+			status:        gqlschema.OperationStateSucceeded,
+			operationID:   secondOperationID,
+			runtimeID:     id,
+		}
+
+		resolver.cache.Set(operationID, operation, 0)
+		resolver.cache.Set(secondOperationID, secondOperation, 0)
+
+		//when
+		status, e := resolver.RuntimeOperationStatus(ctx, &gqlschema.AsyncOperationIDInput{ID: secondOperationID})
+
+		//then
+		require.NoError(t, e)
+		assert.Equal(t, status.Operation, gqlschema.OperationTypeProvision)
+		assert.Equal(t, status.State, gqlschema.OperationStateSucceeded)
 
 		//cleanup
 		resolver.cache.Flush()
@@ -248,13 +290,14 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 		id := "1234"
 		operationID := "51015a1a-3719-4e24-ba89-4971bc689e86"
 
-		operation := currentOperation{
-			lastOperation: gqlschema.OperationTypeReconnectRuntime,
+		operation := runtimeOperation{
+			operationType: gqlschema.OperationTypeReconnectRuntime,
 			status:        gqlschema.OperationStateInProgress,
 			operationID:   operationID,
+			runtimeID:     id,
 		}
 
-		resolver.cache.Set(id, operation, 0)
+		resolver.cache.Set(operationID, operation, 0)
 
 		//when
 		status, e := resolver.RuntimeOperationStatus(ctx, &gqlschema.AsyncOperationIDInput{ID: operationID})
@@ -274,5 +317,70 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 
 		//cleanup
 		resolver.cache.Flush()
+	})
+}
+
+func TestResolver_RuntimeStatus(t *testing.T) {
+	noExpireCache := cache.New(0, 0)
+
+	resolver := NewMockResolver(*noExpireCache)
+
+	t.Run("should return last operation status", func(t *testing.T) {
+		//given
+		ctx := context.Background()
+		id := "1234"
+		operationID := "51015a1a-3719-4e24-ba89-4971bc689e86"
+		secondOperationID := "51015a1a-3719-4e24-ba89-4971bc762ef9"
+		thirdOperationID := "51015a1a-3719-4e24-ba89-4971bc762agh3"
+
+		operation := runtimeOperation{
+			operationType: gqlschema.OperationTypeProvision,
+			status:        gqlschema.OperationStateSucceeded,
+			operationID:   operationID,
+			runtimeID:     id,
+			startTime:     time.Now(),
+		}
+
+		secondOperation := runtimeOperation{
+			operationType: gqlschema.OperationTypeReconnectRuntime,
+			status:        gqlschema.OperationStateSucceeded,
+			operationID:   secondOperationID,
+			runtimeID:     id,
+			startTime:     time.Now(),
+		}
+
+		thirdOperation := runtimeOperation{
+			operationType: gqlschema.OperationTypeUpgrade,
+			status:        gqlschema.OperationStateInProgress,
+			operationID:   thirdOperationID,
+			runtimeID:     id,
+			startTime:     time.Now(),
+		}
+
+		resolver.cache.Set(operationID, operation, 0)
+		resolver.cache.Set(secondOperationID, secondOperation, 0)
+		resolver.cache.Set(thirdOperationID, thirdOperation, 0)
+
+		//when
+		status, e := resolver.RuntimeStatus(ctx, &gqlschema.RuntimeIDInput{ID: id})
+
+		//then
+		require.NoError(t, e)
+		assert.Equal(t, gqlschema.OperationTypeUpgrade, status.LastOperationStatus.Operation)
+		assert.Equal(t, gqlschema.OperationStateInProgress, status.LastOperationStatus.State)
+
+		//cleanup
+		resolver.cache.Flush()
+	})
+
+	t.Run("should return error when runtime does not exists", func(t *testing.T) {
+		ctx := context.Background()
+		id := "1234"
+
+		//when
+		_, e := resolver.RuntimeStatus(ctx, &gqlschema.RuntimeIDInput{ID: id})
+
+		//then
+		require.Error(t, e)
 	})
 }
