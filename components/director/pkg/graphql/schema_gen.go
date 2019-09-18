@@ -46,6 +46,7 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
+	HasScopes func(ctx context.Context, obj interface{}, next graphql.Resolver, scopesDefinition string) (res interface{}, err error)
 }
 
 type ComplexityRoot struct {
@@ -1707,6 +1708,24 @@ func (ec *executionContext) FieldMiddleware(ctx context.Context, obj interface{}
 			ret = nil
 		}
 	}()
+	rctx := graphql.GetResolverContext(ctx)
+	for _, d := range rctx.Field.Definition.Directives {
+		switch d.Name {
+		case "hasScopes":
+			if ec.directives.HasScopes != nil {
+				rawArgs := d.ArgumentMap(ec.Variables)
+				args, err := ec.dir_hasScopes_args(ctx, rawArgs)
+				if err != nil {
+					ec.Error(ctx, err)
+					return nil
+				}
+				n := next
+				next = func(ctx context.Context) (interface{}, error) {
+					return ec.directives.HasScopes(ctx, obj, n, args["scopesDefinition"].(string))
+				}
+			}
+		}
+	}
 	res, err := ec.ResolverMiddleware(ctx, next)
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1730,7 +1749,10 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var parsedSchema = gqlparser.MustLoadSchema(
-	&ast.Source{Name: "schema.graphql", Input: `# Scalars
+	&ast.Source{Name: "schema.graphql", Input: `# Directives
+
+directive @hasScopes(scopesDefinition:String!) on FIELD_DEFINITION
+# Scalars
 
 scalar Any # -> interface{}
 
@@ -2229,7 +2251,7 @@ type Query {
 
 type Mutation {
     # Application
-    createApplication(in: ApplicationInput!): Application!
+    createApplication(in: ApplicationInput!): Application! @hasScopes(scopesDefinition: "mutation.screate.application")
     updateApplication(id: ID!, in: ApplicationInput!): Application!
     deleteApplication(id: ID!): Application
 
@@ -2285,6 +2307,20 @@ type Mutation {
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) dir_hasScopes_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["scopesDefinition"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["scopesDefinition"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_APIDefinition_auth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error

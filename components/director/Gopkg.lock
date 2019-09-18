@@ -395,6 +395,7 @@
     "github.com/99designs/gqlgen/graphql/introspection",
     "github.com/99designs/gqlgen/handler",
     "github.com/DATA-DOG/go-sqlmock",
+    "github.com/davecgh/go-spew/spew",
     "github.com/google/uuid",
     "github.com/gorilla/mux",
     "github.com/hashicorp/go-multierror",
