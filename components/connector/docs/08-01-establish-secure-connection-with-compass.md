@@ -23,11 +23,11 @@ query {
     result: configuration {
         token {
             token
-        },
+        }
         certificateSigningRequestInfo {
             subject,
             keyAlgorithm
-        },
+        }
         managementPlaneInfo {
             directorURL
             certificateSecuredConnectorURL
