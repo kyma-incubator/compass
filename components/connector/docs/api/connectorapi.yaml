@@ -1,7 +1,7 @@
 openapi: '3.0.0'
 info:
   version: '1.0.0'
-  title: 'Kyma Connector Service API'
+  title: 'Compass Connector Resolver API'
 paths:
   /health:
     get:
@@ -12,6 +12,12 @@ paths:
 
   /v1/tokens/resolve:
     post:
+      parameters:
+      - in: header
+      name: Connector-Token
+        schema:
+          type: string
+        required: false
       summary: 'Resolves token and sets custom headers.'
       responses: 
         '200':
@@ -29,6 +35,12 @@ paths:
 
   /v1/certificate/data/resolve:
     post:
+      parameters:
+      - in: header
+      name: Certificate-Data
+        schema:
+          type: string
+        required: false
       summary: 'Converts certificate header to custom headers.'
       responses: 
         '200':

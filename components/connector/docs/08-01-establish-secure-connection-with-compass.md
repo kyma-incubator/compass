@@ -61,4 +61,4 @@ Send the modified GraphQL mutation to the Connector URL including the one-time t
 
 The response contains a valid client certificate signed by the Kyma Certificate Authority (CA) and the CA certificate.
 
-After you receive the certificate, decode it and use it in your application. 
+After you receive the certificate, decode it with the base64 method and use it in your application. 

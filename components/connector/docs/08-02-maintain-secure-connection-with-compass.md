@@ -22,7 +22,7 @@ The Certificate-Secured Connector URL is the `certificateSecuredConnectorURL` ob
 Send this query with the call:
 ```
 query {
-    result: configuration() {
+    result: configuration {
         certificateSigningRequestInfo { 
             subject 
             keyAlgorithm 
