@@ -41,10 +41,6 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
-	AsyncOperationID struct {
-		ID func(childComplexity int) int
-	}
-
 	ClusterConfig struct {
 		ComputeZone            func(childComplexity int) int
 		InfrastructureProvider func(childComplexity int) int
@@ -64,22 +60,23 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		DeprovisionRuntime    func(childComplexity int, id *RuntimeIDInput) int
-		ProvisionRuntime      func(childComplexity int, id *RuntimeIDInput, config *ProvisionRuntimeInput) int
-		ReconnectRuntimeAgent func(childComplexity int, id *RuntimeIDInput) int
-		UpgradeRuntime        func(childComplexity int, id *RuntimeIDInput, config *UpgradeRuntimeInput) int
+		DeprovisionRuntime    func(childComplexity int, id string) int
+		ProvisionRuntime      func(childComplexity int, id string, config *ProvisionRuntimeInput) int
+		ReconnectRuntimeAgent func(childComplexity int, id string) int
+		UpgradeRuntime        func(childComplexity int, id string, config *UpgradeRuntimeInput) int
 	}
 
 	OperationStatus struct {
 		Errors    func(childComplexity int) int
 		Message   func(childComplexity int) int
 		Operation func(childComplexity int) int
+		RuntimeID func(childComplexity int) int
 		State     func(childComplexity int) int
 	}
 
 	Query struct {
-		RuntimeOperationStatus func(childComplexity int, id *AsyncOperationIDInput) int
-		RuntimeStatus          func(childComplexity int, id *RuntimeIDInput) int
+		RuntimeOperationStatus func(childComplexity int, id string) int
+		RuntimeStatus          func(childComplexity int, id string) int
 	}
 
 	RuntimeConfig struct {
@@ -101,18 +98,19 @@ type ComplexityRoot struct {
 		RuntimeConfiguration    func(childComplexity int) int
 		RuntimeConnectionConfig func(childComplexity int) int
 		RuntimeConnectionStatus func(childComplexity int) int
+		RuntimeID               func(childComplexity int) int
 	}
 }
 
 type MutationResolver interface {
-	ProvisionRuntime(ctx context.Context, id *RuntimeIDInput, config *ProvisionRuntimeInput) (*AsyncOperationID, error)
-	UpgradeRuntime(ctx context.Context, id *RuntimeIDInput, config *UpgradeRuntimeInput) (*AsyncOperationID, error)
-	DeprovisionRuntime(ctx context.Context, id *RuntimeIDInput) (*AsyncOperationID, error)
-	ReconnectRuntimeAgent(ctx context.Context, id *RuntimeIDInput) (*AsyncOperationID, error)
+	ProvisionRuntime(ctx context.Context, id string, config *ProvisionRuntimeInput) (string, error)
+	UpgradeRuntime(ctx context.Context, id string, config *UpgradeRuntimeInput) (string, error)
+	DeprovisionRuntime(ctx context.Context, id string) (string, error)
+	ReconnectRuntimeAgent(ctx context.Context, id string) (string, error)
 }
 type QueryResolver interface {
-	RuntimeStatus(ctx context.Context, id *RuntimeIDInput) (*RuntimeStatus, error)
-	RuntimeOperationStatus(ctx context.Context, id *AsyncOperationIDInput) (*OperationStatus, error)
+	RuntimeStatus(ctx context.Context, id string) (*RuntimeStatus, error)
+	RuntimeOperationStatus(ctx context.Context, id string) (*OperationStatus, error)
 }
 
 type executableSchema struct {
@@ -129,13 +127,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
-
-	case "AsyncOperationID.id":
-		if e.complexity.AsyncOperationID.ID == nil {
-			break
-		}
-
-		return e.complexity.AsyncOperationID.ID(childComplexity), true
 
 	case "ClusterConfig.computeZone":
 		if e.complexity.ClusterConfig.ComputeZone == nil {
@@ -210,7 +201,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeprovisionRuntime(childComplexity, args["id"].(*RuntimeIDInput)), true
+		return e.complexity.Mutation.DeprovisionRuntime(childComplexity, args["id"].(string)), true
 
 	case "Mutation.provisionRuntime":
 		if e.complexity.Mutation.ProvisionRuntime == nil {
@@ -222,7 +213,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.ProvisionRuntime(childComplexity, args["id"].(*RuntimeIDInput), args["config"].(*ProvisionRuntimeInput)), true
+		return e.complexity.Mutation.ProvisionRuntime(childComplexity, args["id"].(string), args["config"].(*ProvisionRuntimeInput)), true
 
 	case "Mutation.reconnectRuntimeAgent":
 		if e.complexity.Mutation.ReconnectRuntimeAgent == nil {
@@ -234,7 +225,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.ReconnectRuntimeAgent(childComplexity, args["id"].(*RuntimeIDInput)), true
+		return e.complexity.Mutation.ReconnectRuntimeAgent(childComplexity, args["id"].(string)), true
 
 	case "Mutation.upgradeRuntime":
 		if e.complexity.Mutation.UpgradeRuntime == nil {
@@ -246,7 +237,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpgradeRuntime(childComplexity, args["id"].(*RuntimeIDInput), args["config"].(*UpgradeRuntimeInput)), true
+		return e.complexity.Mutation.UpgradeRuntime(childComplexity, args["id"].(string), args["config"].(*UpgradeRuntimeInput)), true
 
 	case "OperationStatus.errors":
 		if e.complexity.OperationStatus.Errors == nil {
@@ -269,6 +260,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OperationStatus.Operation(childComplexity), true
 
+	case "OperationStatus.runtimeID":
+		if e.complexity.OperationStatus.RuntimeID == nil {
+			break
+		}
+
+		return e.complexity.OperationStatus.RuntimeID(childComplexity), true
+
 	case "OperationStatus.state":
 		if e.complexity.OperationStatus.State == nil {
 			break
@@ -286,7 +284,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.RuntimeOperationStatus(childComplexity, args["id"].(*AsyncOperationIDInput)), true
+		return e.complexity.Query.RuntimeOperationStatus(childComplexity, args["id"].(string)), true
 
 	case "Query.runtimeStatus":
 		if e.complexity.Query.RuntimeStatus == nil {
@@ -298,7 +296,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.RuntimeStatus(childComplexity, args["id"].(*RuntimeIDInput)), true
+		return e.complexity.Query.RuntimeStatus(childComplexity, args["id"].(string)), true
 
 	case "RuntimeConfig.clusterConfig":
 		if e.complexity.RuntimeConfig.ClusterConfig == nil {
@@ -363,6 +361,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RuntimeStatus.RuntimeConnectionStatus(childComplexity), true
 
+	case "RuntimeStatus.runtimeID":
+		if e.complexity.RuntimeStatus.RuntimeID == nil {
+			break
+		}
+
+		return e.complexity.RuntimeStatus.RuntimeID(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -425,12 +430,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var parsedSchema = gqlparser.MustLoadSchema(
-	&ast.Source{Name: "schema.graphql", Input: `# We should decide if we need this.
-type AsyncOperationID {
-    id: ID!
-}
-
-# To discuss: what is the list of supported providers?
+	&ast.Source{Name: "schema.graphql", Input: `# To discuss: what is the list of supported providers?
 enum InfrastructureProvider {
     GKE
     AKS
@@ -472,6 +472,7 @@ type OperationStatus {
     operation: OperationType!
     state: OperationState!
     message: String!
+    runtimeID: String!
     errors: [Error]
 }
 
@@ -494,6 +495,7 @@ type RuntimeConnectionStatus {
 # We should consider renamig this type, as it contains more than just status.
 type RuntimeStatus {
     lastOperationStatus: OperationStatus
+    runtimeID: String!
     runtimeConnectionStatus: RuntimeConnectionStatus
     runtimeConnectionConfig: RuntimeConnectionConfig
     runtimeConfiguration: RuntimeConfig
@@ -517,16 +519,6 @@ type RuntimeConnectionConfig {
 }
 
 # Inputs
-
-# We should decide if we need this.
-input AsyncOperationIDInput {
-    id: ID!
-}
-
-# We should decide if we need this.
-input RuntimeIDInput {
-    id: ID!
-}
 
 input ProvisionRuntimeInput {
     clusterConfig: ClusterConfigInput!
@@ -560,20 +552,20 @@ input UpgradeClusterInput {
 
 type Mutation {
     # Runtime Management; only one asynchronous operation per RuntimeID can run at any given point in time
-    provisionRuntime(id: RuntimeIDInput, config: ProvisionRuntimeInput): AsyncOperationID
-    upgradeRuntime(id: RuntimeIDInput, config: UpgradeRuntimeInput): AsyncOperationID
-    deprovisionRuntime(id: RuntimeIDInput): AsyncOperationID
+    provisionRuntime(id: String!, config: ProvisionRuntimeInput): String!
+    upgradeRuntime(id: String!, config: UpgradeRuntimeInput): String!
+    deprovisionRuntime(id: String!): String!
 
     # Compass Runtime Agent Connection Management
-    reconnectRuntimeAgent(id: RuntimeIDInput): AsyncOperationID
+    reconnectRuntimeAgent(id: String!): String!
 }
 
 type Query {
     # Provides current status of specified Runtime
-    runtimeStatus(id: RuntimeIDInput): RuntimeStatus
+    runtimeStatus(id: String!): RuntimeStatus
 
     # Provides status of specified operation
-    runtimeOperationStatus(id: AsyncOperationIDInput): OperationStatus
+    runtimeOperationStatus(id: String!): OperationStatus
 }
 `},
 )
@@ -585,9 +577,9 @@ type Query {
 func (ec *executionContext) field_Mutation_deprovisionRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *RuntimeIDInput
+	var arg0 string
 	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalORuntimeIDInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeIDInput(ctx, tmp)
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -599,9 +591,9 @@ func (ec *executionContext) field_Mutation_deprovisionRuntime_args(ctx context.C
 func (ec *executionContext) field_Mutation_provisionRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *RuntimeIDInput
+	var arg0 string
 	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalORuntimeIDInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeIDInput(ctx, tmp)
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -621,9 +613,9 @@ func (ec *executionContext) field_Mutation_provisionRuntime_args(ctx context.Con
 func (ec *executionContext) field_Mutation_reconnectRuntimeAgent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *RuntimeIDInput
+	var arg0 string
 	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalORuntimeIDInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeIDInput(ctx, tmp)
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -635,9 +627,9 @@ func (ec *executionContext) field_Mutation_reconnectRuntimeAgent_args(ctx contex
 func (ec *executionContext) field_Mutation_upgradeRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *RuntimeIDInput
+	var arg0 string
 	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalORuntimeIDInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeIDInput(ctx, tmp)
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -671,9 +663,9 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 func (ec *executionContext) field_Query_runtimeOperationStatus_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *AsyncOperationIDInput
+	var arg0 string
 	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalOAsyncOperationIDInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAsyncOperationIDInput(ctx, tmp)
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -685,9 +677,9 @@ func (ec *executionContext) field_Query_runtimeOperationStatus_args(ctx context.
 func (ec *executionContext) field_Query_runtimeStatus_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *RuntimeIDInput
+	var arg0 string
 	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalORuntimeIDInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeIDInput(ctx, tmp)
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -731,43 +723,6 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
-
-func (ec *executionContext) _AsyncOperationID_id(ctx context.Context, field graphql.CollectedField, obj *AsyncOperationID) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "AsyncOperationID",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
 
 func (ec *executionContext) _ClusterConfig_name(ctx context.Context, field graphql.CollectedField, obj *ClusterConfig) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
@@ -1101,19 +1056,22 @@ func (ec *executionContext) _Mutation_provisionRuntime(ctx context.Context, fiel
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().ProvisionRuntime(rctx, args["id"].(*RuntimeIDInput), args["config"].(*ProvisionRuntimeInput))
+		return ec.resolvers.Mutation().ProvisionRuntime(rctx, args["id"].(string), args["config"].(*ProvisionRuntimeInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*AsyncOperationID)
+	res := resTmp.(string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAsyncOperationID2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAsyncOperationID(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_upgradeRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1142,19 +1100,22 @@ func (ec *executionContext) _Mutation_upgradeRuntime(ctx context.Context, field 
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpgradeRuntime(rctx, args["id"].(*RuntimeIDInput), args["config"].(*UpgradeRuntimeInput))
+		return ec.resolvers.Mutation().UpgradeRuntime(rctx, args["id"].(string), args["config"].(*UpgradeRuntimeInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*AsyncOperationID)
+	res := resTmp.(string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAsyncOperationID2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAsyncOperationID(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deprovisionRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1183,19 +1144,22 @@ func (ec *executionContext) _Mutation_deprovisionRuntime(ctx context.Context, fi
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeprovisionRuntime(rctx, args["id"].(*RuntimeIDInput))
+		return ec.resolvers.Mutation().DeprovisionRuntime(rctx, args["id"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*AsyncOperationID)
+	res := resTmp.(string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAsyncOperationID2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAsyncOperationID(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_reconnectRuntimeAgent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1224,19 +1188,22 @@ func (ec *executionContext) _Mutation_reconnectRuntimeAgent(ctx context.Context,
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().ReconnectRuntimeAgent(rctx, args["id"].(*RuntimeIDInput))
+		return ec.resolvers.Mutation().ReconnectRuntimeAgent(rctx, args["id"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*AsyncOperationID)
+	res := resTmp.(string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAsyncOperationID2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAsyncOperationID(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OperationStatus_operation(ctx context.Context, field graphql.CollectedField, obj *OperationStatus) (ret graphql.Marshaler) {
@@ -1350,6 +1317,43 @@ func (ec *executionContext) _OperationStatus_message(ctx context.Context, field 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _OperationStatus_runtimeID(ctx context.Context, field graphql.CollectedField, obj *OperationStatus) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OperationStatus",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RuntimeID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _OperationStatus_errors(ctx context.Context, field graphql.CollectedField, obj *OperationStatus) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -1410,7 +1414,7 @@ func (ec *executionContext) _Query_runtimeStatus(ctx context.Context, field grap
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().RuntimeStatus(rctx, args["id"].(*RuntimeIDInput))
+		return ec.resolvers.Query().RuntimeStatus(rctx, args["id"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1451,7 +1455,7 @@ func (ec *executionContext) _Query_runtimeOperationStatus(ctx context.Context, f
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().RuntimeOperationStatus(rctx, args["id"].(*AsyncOperationIDInput))
+		return ec.resolvers.Query().RuntimeOperationStatus(rctx, args["id"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1749,6 +1753,43 @@ func (ec *executionContext) _RuntimeStatus_lastOperationStatus(ctx context.Conte
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOOperationStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RuntimeStatus_runtimeID(ctx context.Context, field graphql.CollectedField, obj *RuntimeStatus) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "RuntimeStatus",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RuntimeID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimeStatus_runtimeConnectionStatus(ctx context.Context, field graphql.CollectedField, obj *RuntimeStatus) (ret graphql.Marshaler) {
@@ -3004,24 +3045,6 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputAsyncOperationIDInput(ctx context.Context, obj interface{}) (AsyncOperationIDInput, error) {
-	var it AsyncOperationIDInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "id":
-			var err error
-			it.ID, err = ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputClusterConfigInput(ctx context.Context, obj interface{}) (ClusterConfigInput, error) {
 	var it ClusterConfigInput
 	var asMap = obj.(map[string]interface{})
@@ -3124,24 +3147,6 @@ func (ec *executionContext) unmarshalInputProvisionRuntimeInput(ctx context.Cont
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputRuntimeIDInput(ctx context.Context, obj interface{}) (RuntimeIDInput, error) {
-	var it RuntimeIDInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "id":
-			var err error
-			it.ID, err = ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputUpgradeClusterInput(ctx context.Context, obj interface{}) (UpgradeClusterInput, error) {
 	var it UpgradeClusterInput
 	var asMap = obj.(map[string]interface{})
@@ -3191,33 +3196,6 @@ func (ec *executionContext) unmarshalInputUpgradeRuntimeInput(ctx context.Contex
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
-
-var asyncOperationIDImplementors = []string{"AsyncOperationID"}
-
-func (ec *executionContext) _AsyncOperationID(ctx context.Context, sel ast.SelectionSet, obj *AsyncOperationID) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, asyncOperationIDImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("AsyncOperationID")
-		case "id":
-			out.Values[i] = ec._AsyncOperationID_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
 
 var clusterConfigImplementors = []string{"ClusterConfig"}
 
@@ -3320,12 +3298,24 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = graphql.MarshalString("Mutation")
 		case "provisionRuntime":
 			out.Values[i] = ec._Mutation_provisionRuntime(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "upgradeRuntime":
 			out.Values[i] = ec._Mutation_upgradeRuntime(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "deprovisionRuntime":
 			out.Values[i] = ec._Mutation_deprovisionRuntime(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "reconnectRuntimeAgent":
 			out.Values[i] = ec._Mutation_reconnectRuntimeAgent(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3360,6 +3350,11 @@ func (ec *executionContext) _OperationStatus(ctx context.Context, sel ast.Select
 			}
 		case "message":
 			out.Values[i] = ec._OperationStatus_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "runtimeID":
+			out.Values[i] = ec._OperationStatus_runtimeID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -3523,6 +3518,11 @@ func (ec *executionContext) _RuntimeStatus(ctx context.Context, sel ast.Selectio
 			out.Values[i] = graphql.MarshalString("RuntimeStatus")
 		case "lastOperationStatus":
 			out.Values[i] = ec._RuntimeStatus_lastOperationStatus(ctx, field, obj)
+		case "runtimeID":
+			out.Values[i] = ec._RuntimeStatus_runtimeID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "runtimeConnectionStatus":
 			out.Values[i] = ec._RuntimeStatus_runtimeConnectionStatus(ctx, field, obj)
 		case "runtimeConnectionConfig":
@@ -3825,20 +3825,6 @@ func (ec *executionContext) marshalNError2ᚖgithubᚗcomᚋkymaᚑincubatorᚋc
 	return ec._Error(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
-	return graphql.UnmarshalID(v)
-}
-
-func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	res := graphql.MarshalID(v)
-	if res == graphql.Null {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-	}
-	return res
-}
-
 func (ec *executionContext) unmarshalNInfrastructureProvider2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐInfrastructureProvider(ctx context.Context, v interface{}) (InfrastructureProvider, error) {
 	var res InfrastructureProvider
 	return res, res.UnmarshalGQL(v)
@@ -4136,29 +4122,6 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
-func (ec *executionContext) marshalOAsyncOperationID2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAsyncOperationID(ctx context.Context, sel ast.SelectionSet, v AsyncOperationID) graphql.Marshaler {
-	return ec._AsyncOperationID(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOAsyncOperationID2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAsyncOperationID(ctx context.Context, sel ast.SelectionSet, v *AsyncOperationID) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._AsyncOperationID(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOAsyncOperationIDInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAsyncOperationIDInput(ctx context.Context, v interface{}) (AsyncOperationIDInput, error) {
-	return ec.unmarshalInputAsyncOperationIDInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOAsyncOperationIDInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAsyncOperationIDInput(ctx context.Context, v interface{}) (*AsyncOperationIDInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOAsyncOperationIDInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAsyncOperationIDInput(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	return graphql.UnmarshalBoolean(v)
 }
@@ -4224,7 +4187,7 @@ func (ec *executionContext) marshalOError2ᚕᚖgithubᚗcomᚋkymaᚑincubator�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNError2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx, sel, v[i])
+			ret[i] = ec.marshalOError2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -4489,18 +4452,6 @@ func (ec *executionContext) marshalORuntimeConnectionStatus2ᚖgithubᚗcomᚋky
 		return graphql.Null
 	}
 	return ec._RuntimeConnectionStatus(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalORuntimeIDInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeIDInput(ctx context.Context, v interface{}) (RuntimeIDInput, error) {
-	return ec.unmarshalInputRuntimeIDInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalORuntimeIDInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeIDInput(ctx context.Context, v interface{}) (*RuntimeIDInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalORuntimeIDInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeIDInput(ctx, v)
-	return &res, err
 }
 
 func (ec *executionContext) marshalORuntimeStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeStatus(ctx context.Context, sel ast.SelectionSet, v RuntimeStatus) graphql.Marshaler {
