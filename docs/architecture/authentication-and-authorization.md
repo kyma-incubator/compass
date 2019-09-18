@@ -17,7 +17,7 @@ The following diagram represents architecture of the security in Compass:
 
 ### Tenant mapping handler
 
-It is a OathKeeper [hydrator](https://github.com/ory/docs/blob/525608c65694539384b785355d293bc0ad00da27/docs/oathkeeper/pipeline/mutator.md#hydrator) handler responsible for mapping `client_id` to tenant. It will be built into the Director component, as a separate endpoint responsible for retrieving the tenant ID based on database query.
+It is an OathKeeper [hydrator](https://github.com/ory/docs/blob/525608c65694539384b785355d293bc0ad00da27/docs/oathkeeper/pipeline/mutator.md#hydrator) handler responsible for mapping `client_id` to tenant. It will be built into the Director component, as a separate endpoint responsible for retrieving the tenant ID based on database query.
 In order to map client_id from Runtime Agent to tenant, we will query `client_id` from Runtime `agentAuth` JSONB field.
 In order to map client_id from Application to tenant, we need to extend Application model with `auth` JSONB field. Then, we can query `client_id` from Application `auth` JSONB field.
 
@@ -123,3 +123,5 @@ User logs in to Compass UI
 ### Certificates
 
 To be defined.
+
+
