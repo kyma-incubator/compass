@@ -11,7 +11,7 @@ We want to secure the Compass using ORY's Hydra and OathKeeper. There would be t
 
 ## Architecture
 
-The following diagram represents architecture of the security in Compass:
+The following diagram represents the architecture of the security in Compass:
 
 ![](./assets/security-architecture.svg)
 
@@ -27,7 +27,7 @@ To unify tenant mapping, `client_id` will be not only generated in OAuth 2.0 flo
 
 The Gateway passes request along with JWT token to Compass GraphQL services, such as Director or Connector. The GraphQL components will have authentication middleware and GraphQL [directives](https://graphql.org/learn/queries/#directives) set up for all GraphQL operations (and some specific type fields, if necessary).
 
-In GraphQL services, there will be a HTTP authentication middleware set up, which validates and decodes JWT token. It puts user scopes and tenant in request context 
+In GraphQL services, there will be an HTTP authentication middleware set up, which validates and decodes JWT token. It puts user scopes and tenant in request context 
 (`context.Context`).
 
 ![](./assets/graphql-security.svg)
@@ -123,5 +123,3 @@ User logs in to Compass UI
 ### Certificates
 
 To be defined.
-
-
