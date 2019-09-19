@@ -34,6 +34,7 @@ type config struct {
 		SSLMode  string `envconfig:"default=disable,APP_DB_SSL"`
 	}
 	APIEndpoint           string `envconfig:"default=/graphql"`
+	TenantMappingEndpoint string `envconfig:"default=/tenant-mapping"`
 	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
 }
 
@@ -63,17 +64,18 @@ func main() {
 	}
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
 
-	log.Infof("Registering endpoint on %s...", cfg.APIEndpoint)
 	router := mux.NewRouter()
 
+	log.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
 	router.Use(tenant.RequireAndPassContext)
 	router.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 	router.HandleFunc(cfg.APIEndpoint, handler.GraphQL(executableSchema))
 
 	http.Handle("/", router)
 
+	log.Infof("Registering Tenant Mapping endpoint on %s...", cfg.TenantMappingEndpoint)
 	tenantMappingHandler := tenantmapping.NewHandler()
-	http.Handle("/tenant-mapping", tenantMappingHandler)
+	http.Handle(cfg.TenantMappingEndpoint, tenantMappingHandler)
 
 	log.Infof("Listening on %s...", cfg.Address)
 	if err := http.ListenAndServe(cfg.Address, nil); err != nil {

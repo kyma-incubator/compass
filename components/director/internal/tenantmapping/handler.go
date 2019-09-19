@@ -3,7 +3,9 @@ package tenantmapping
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"strings"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -23,31 +25,38 @@ func NewHandler() *Handler {
 
 func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodPost {
-		log.Infof("Bad request method. Got %s, expected POST", request.Method)
-		writer.WriteHeader(http.StatusBadRequest)
+		http.Error(writer, "Bad request method. Got %s, expected POST", http.StatusBadRequest)
 		return
 	}
 
-	log.Println("===")
-	log.Printf("Headers:\n%+v\n\n", request.Header)
+	logBuilder := strings.Builder{}
+	logBuilder.WriteString(fmt.Sprintf("\nHeaders: %+v", request.Header))
 
 	writer.Header().Set("Content-Type", "application/json")
 
 	var data Data
 	err := json.NewDecoder(request.Body).Decode(&data)
 	if err != nil {
-		log.Error(errors.Wrap(err, "while decoding request body"))
+		if err == io.EOF {
+			http.Error(writer, "Request body is empty", http.StatusBadRequest)
+			return
+		}
+
+		wrappedErr := errors.Wrap(err, "while decoding request body")
+		http.Error(writer, wrappedErr.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	defer func() {
 		err := request.Body.Close()
 		if err != nil {
-			log.Error(errors.Wrap(err, "while closing body"))
+			wrappedErr := errors.Wrap(err, "while decoding request body")
+			log.Error(wrappedErr)
+			http.Error(writer, wrappedErr.Error(), http.StatusInternalServerError)
 		}
 	}()
 
-	log.Printf("Input:\n%+v\n\n", data)
+	logBuilder.WriteString(fmt.Sprintf("\nInput: %+v", data))
 
 	if data.Extra == nil {
 		data.Extra = make(map[string]interface{})
@@ -55,25 +64,24 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 
 	extraMap, ok := data.Extra.(map[string]interface{})
 	if !ok {
-		log.Error(fmt.Errorf("Incorrect type %T; expected map[string]interface{}\n", data.Extra))
+		err := fmt.Errorf("Incorrect type %T; expected map[string]interface{}\n", data.Extra)
+		log.Info(logBuilder.String())
+		log.Error(err)
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	extraMap["tenant"] = "9ac609e1-7487-4aa6-b600-0904b272b11f"
 	data.Extra = extraMap
 
-	log.Printf("Output:\n%+v\n\n", data)
-	log.Println("===")
+	logBuilder.WriteString(fmt.Sprintf("\nOutput: %+v\n", data))
+	log.Info(logBuilder.String())
 
 	err = json.NewEncoder(writer).Encode(data)
 	if err != nil {
-		log.Error(errors.Wrap(err, "while encoding data"))
-		return
-	}
-
-	err = request.Write(writer)
-	if err != nil {
-		log.Error(errors.Wrap(err, "while writing request"))
+		wrappedErr := errors.Wrap(err, "while encoding data")
+		log.Error(wrappedErr)
+		http.Error(writer, wrappedErr.Error(), http.StatusInternalServerError)
 		return
 	}
 }
