@@ -5,8 +5,7 @@ type Runtime struct {
 	Name        string         `json:"name"`
 	Description *string        `json:"description"`
 	Status      *RuntimeStatus `json:"status"`
-	// TODO: directive for checking auth
-	AgentAuth *Auth `json:"agentAuth"`
+	AgentAuth   *Auth          `json:"agentAuth"`
 }
 
 // Extended types used by external API
@@ -19,4 +18,6 @@ type RuntimePageExt struct {
 type RuntimeExt struct {
 	Runtime
 	Labels Labels `json:"labels"`
+	// Returns array of authentication details for Runtime. For now at most one element in array will be returned.
+	Auths []*SystemAuth `json:"auths"`
 }

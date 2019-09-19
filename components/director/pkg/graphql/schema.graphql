@@ -46,8 +46,10 @@ type Runtime {
     description: String
     labels(key: String): Labels!
     status: RuntimeStatus!
-    """TODO: directive for checking auth"""
-    agentAuth: Auth!
+    # TODO: directive for checking auth
+    """Returns array of authentication details for Runtime. For now at most one element in array will be returned."""
+    auths: [SystemAuth!]!
+    agentAuth: Auth! @deprecated
 }
 
 type RuntimeStatus {
@@ -186,6 +188,11 @@ type APIDefinition {
 
 type RuntimeAuth {
     runtimeID: ID!
+    auth: Auth
+}
+
+type SystemAuth {
+    id: ID!
     auth: Auth
 }
 

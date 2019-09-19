@@ -1,7 +1,0 @@
-mutation {
-  deleteRuntime(id: "123"){
-    id
-    name
-    #...
-  }
-}

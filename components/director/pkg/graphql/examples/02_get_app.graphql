@@ -1,6 +1,0 @@
-query {
-    application(id:"1") {
-        id
-        name
-    }
-}

@@ -28,6 +28,11 @@ type RuntimeService interface {
 	DeleteLabel(ctx context.Context, runtimeID string, key string) error
 }
 
+//go:generate mockery -name=SystemAuthService -output=automock -outpkg=automock -case=underscore
+type SystemAuthService interface {
+	ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
+}
+
 //go:generate mockery -name=RuntimeConverter -output=automock -outpkg=automock -case=underscore
 type RuntimeConverter interface {
 	ToGraphQL(in *model.Runtime) *graphql.Runtime
@@ -35,17 +40,26 @@ type RuntimeConverter interface {
 	InputFromGraphQL(in graphql.RuntimeInput) model.RuntimeInput
 }
 
-type Resolver struct {
-	transact  persistence.Transactioner
-	svc       RuntimeService
-	converter RuntimeConverter
+//go:generate mockery -name=SystemAuthConverter -output=automock -outpkg=automock -case=underscore
+type SystemAuthConverter interface {
+	ToGraphQL(in *model.SystemAuth) *graphql.SystemAuth
 }
 
-func NewResolver(transact persistence.Transactioner, svc RuntimeService, conv RuntimeConverter) *Resolver {
+type Resolver struct {
+	transact    persistence.Transactioner
+	svc         RuntimeService
+	sysAuthSvc  SystemAuthService
+	converter   RuntimeConverter
+	sysAuthConv SystemAuthConverter
+}
+
+func NewResolver(transact persistence.Transactioner, svc RuntimeService, sysAuthSvc SystemAuthService, conv RuntimeConverter, sysAuthConv SystemAuthConverter) *Resolver {
 	return &Resolver{
-		transact:  transact,
-		svc:       svc,
-		converter: conv,
+		transact:    transact,
+		svc:         svc,
+		sysAuthSvc:  sysAuthSvc,
+		converter:   conv,
+		sysAuthConv: sysAuthConv,
 	}
 }
 
@@ -299,4 +313,36 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string
 	}
 
 	return resultLabels, nil
+}
+
+func (r *Resolver) Auths(ctx context.Context, obj *graphql.Runtime) ([]*graphql.SystemAuth, error) {
+	if obj == nil {
+		return nil, errors.New("Runtime cannot be empty")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	sysAuths, err := r.sysAuthSvc.ListForObject(ctx, model.RuntimeReference, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	var out []*graphql.SystemAuth
+	for _, sa := range sysAuths {
+		c := r.sysAuthConv.ToGraphQL(&sa)
+		out = append(out, c)
+	}
+
+	return out, nil
 }

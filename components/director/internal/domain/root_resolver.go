@@ -3,6 +3,8 @@ package domain
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_auth"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -40,7 +42,6 @@ type RootResolver struct {
 
 func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 	authConverter := auth.NewConverter()
-
 	runtimeAuthConverter := runtime_auth.NewConverter(authConverter)
 	runtimeConverter := runtime.NewConverter(authConverter)
 	frConverter := fetchrequest.NewConverter(authConverter)
@@ -52,42 +53,44 @@ func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 	appConverter := application.NewConverter(webhookConverter, apiConverter, eventAPIConverter, docConverter)
 	labelDefConverter := labeldef.NewConverter()
 	labelConverter := label.NewConverter()
+	systemAuthConverter := systemauth.NewConverter(authConverter)
 
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewRepository()
 	applicationRepo := application.NewRepository(appConverter)
 	labelRepo := label.NewRepository(labelConverter)
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
-
 	webhookRepo := webhook.NewRepository(webhookConverter)
 	apiRepo := api.NewRepository(apiConverter)
 	eventAPIRepo := eventapi.NewRepository(eventAPIConverter)
 	docRepo := document.NewRepository(docConverter)
 	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
 	runtimeAuthRepo := runtime_auth.NewRepository(runtimeAuthConverter)
+	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
 
-	uidService := uid.NewService()
-	runtimeAuthSvc := runtime_auth.NewService(runtimeAuthRepo, uidService)
-	labelUpsertService := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidService)
-	scenariosService := labeldef.NewScenariosService(labelDefRepo, uidService)
-	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo, runtimeRepo, labelRepo, fetchRequestRepo, labelUpsertService, scenariosService, uidService)
-	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidService)
-	eventAPISvc := eventapi.NewService(eventAPIRepo, fetchRequestRepo, uidService)
-	webhookSvc := webhook.NewService(webhookRepo, uidService)
-	docSvc := document.NewService(docRepo, fetchRequestRepo, uidService)
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosService, labelUpsertService, uidService)
+	uidSvc := uid.NewService()
+	runtimeAuthSvc := runtime_auth.NewService(runtimeAuthRepo, uidSvc)
+	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
+	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc)
+	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo, runtimeRepo, labelRepo, fetchRequestRepo, labelUpsertSvc, scenariosSvc, uidSvc)
+	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidSvc)
+	eventAPISvc := eventapi.NewService(eventAPIRepo, fetchRequestRepo, uidSvc)
+	webhookSvc := webhook.NewService(webhookRepo, uidSvc)
+	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
-	labelDefService := labeldef.NewService(labelDefRepo, labelRepo, uidService)
+	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, uidSvc)
+	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 
 	return &RootResolver{
 		app:         application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter),
 		api:         api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, runtimeAuthSvc, apiConverter, authConverter, frConverter, runtimeAuthConverter),
 		eventAPI:    eventapi.NewResolver(transact, eventAPISvc, appSvc, eventAPIConverter, frConverter),
 		doc:         document.NewResolver(transact, docSvc, appSvc, frConverter),
-		runtime:     runtime.NewResolver(transact, runtimeSvc, runtimeConverter),
+		runtime:     runtime.NewResolver(transact, runtimeSvc, systemAuthSvc, runtimeConverter, systemAuthConverter),
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
 		webhook:     webhook.NewResolver(transact, webhookSvc, appSvc, webhookConverter),
-		labelDef:    labeldef.NewResolver(labelDefService, labelDefConverter, transact),
+		labelDef:    labeldef.NewResolver(labelDefSvc, labelDefConverter, transact),
 	}
 }
 
@@ -260,6 +263,10 @@ type runtimeResolver struct {
 
 func (r *runtimeResolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string) (graphql.Labels, error) {
 	return r.runtime.Labels(ctx, obj, key)
+}
+
+func (r *runtimeResolver) Auths(ctx context.Context, obj *graphql.Runtime) ([]*graphql.SystemAuth, error) {
+	return r.runtime.Auths(ctx, obj)
 }
 
 type apiDefinitionResolver struct {
