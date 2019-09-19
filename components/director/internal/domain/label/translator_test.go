@@ -3,6 +3,8 @@ package label
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,7 +28,7 @@ func Test_ExtractValueFromJSONPath_WithValidInput(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			extractedVal, err := ExtractValueFromJSONPath(testCase.Input)
-
+			require.NotNil(t, extractedVal)
 			assert.Equal(t, testCase.Expected, *extractedVal)
 			assert.NoError(t, err)
 		})

@@ -15,39 +15,63 @@ import (
 const testTenant = "e9ed370d-4056-45ee-8257-49a64f99771b"
 
 func TestFromGraphQL(t *testing.T) {
-	// GIVEN
-	sut := labeldef.NewConverter()
-	anyString := "anyString"
-	var schema interface{}
-	schema = anyString
-	// WHEN
-	actual := sut.FromGraphQL(graphql.LabelDefinitionInput{
-		Key:    "some-key",
-		Schema: &schema,
-	}, testTenant)
-	// THEN
-	assert.Empty(t, actual.ID)
-	assert.Equal(t, testTenant, actual.Tenant)
-	require.NotNil(t, actual.Schema)
-	assert.Equal(t, anyString, *actual.Schema)
-	assert.Equal(t, "some-key", actual.Key)
+	t.Run("Correct schema", func(t *testing.T) {
+		// GIVEN
+		sut := labeldef.NewConverter()
+		schema := graphql.JSONSchema(`{"schema":"schema"}`)
+		expectedSchema := map[string]interface{}{
+			"schema": interface{}("schema"),
+		}
+
+		// WHEN
+		actual, err := sut.FromGraphQL(graphql.LabelDefinitionInput{
+			Key:    "some-key",
+			Schema: &schema,
+		}, testTenant)
+		// THEN
+		require.NoError(t, err)
+		assert.Empty(t, actual.ID)
+		assert.Equal(t, testTenant, actual.Tenant)
+		require.NotNil(t, actual.Schema)
+		assert.Equal(t, expectedSchema, *actual.Schema)
+		assert.Equal(t, "some-key", actual.Key)
+	})
+
+	t.Run("Error - invalid schema", func(t *testing.T) {
+		// GIVEN
+		sut := labeldef.NewConverter()
+		invalidSchema := graphql.JSONSchema(`"schema":`)
+		// WHEN
+		_, err := sut.FromGraphQL(graphql.LabelDefinitionInput{
+			Key:    "some-key",
+			Schema: &invalidSchema,
+		}, testTenant)
+		// THEN
+		require.Error(t, err)
+	})
 }
 
 func TestToGraphQL(t *testing.T) {
-	// GIVEN
-	sut := labeldef.NewConverter()
-	// WHEN
-	anyString := "anyString"
-	var schema interface{}
-	schema = anyString
-	actual := sut.ToGraphQL(model.LabelDefinition{
-		Key:    "some-key",
-		Schema: &schema,
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		sut := labeldef.NewConverter()
+		// WHEN
+		expectedSchema := graphql.JSONSchema(`{"schema":"schema"}`)
+		anySchema := map[string]interface{}{
+			"schema": interface{}("schema"),
+		}
+		var schema interface{}
+		schema = anySchema
+		actual, err := sut.ToGraphQL(model.LabelDefinition{
+			Key:    "some-key",
+			Schema: &schema,
+		})
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, "some-key", actual.Key)
+		require.NotNil(t, actual.Schema)
+		assert.Equal(t, expectedSchema, *actual.Schema)
 	})
-	// THEN
-	assert.Equal(t, "some-key", actual.Key)
-	require.NotNil(t, actual.Schema)
-	assert.Equal(t, anyString, *actual.Schema)
 }
 
 func TestToEntity(t *testing.T) {

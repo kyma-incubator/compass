@@ -39,7 +39,7 @@ func TestRepositoryCreateLabelDefinition(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
-		mockConverter := &automock.Converter{}
+		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}}, nil)
 		escapedQuery := regexp.QuoteMeta("insert into public.label_definitions (id,tenant_id,key,schema) values(?,?,?,?)")
@@ -57,7 +57,7 @@ func TestRepositoryCreateLabelDefinition(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
-		mockConverter := &automock.Converter{}
+		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID}, nil)
 		escapedQuery := regexp.QuoteMeta("insert into public.label_definitions (id,tenant_id,key,schema) values(?,?,?,?)")
@@ -78,7 +78,7 @@ func TestRepositoryCreateLabelDefinition(t *testing.T) {
 	})
 
 	t.Run("returns error if insert fails", func(t *testing.T) {
-		mockConverter := &automock.Converter{}
+		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}}, nil)
 
@@ -117,7 +117,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
 
-		mockConverter := &automock.Converter{}
+		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}}, nil)
 
@@ -139,7 +139,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
 
-		mockConverter := &automock.Converter{}
+		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID}, nil)
 
@@ -163,7 +163,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 	})
 
 	t.Run("returns error if update fails", func(t *testing.T) {
-		mockConverter := &automock.Converter{}
+		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}}, nil)
 
@@ -184,7 +184,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 	})
 
 	t.Run("returns error if update fails", func(t *testing.T) {
-		mockConverter := &automock.Converter{}
+		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}}, nil)
 
@@ -210,7 +210,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
 
-		mockConverter := &automock.Converter{}
+		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}}, nil)
 
@@ -230,7 +230,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 func TestRepositoryGetByKey(t *testing.T) {
 	t.Run("returns LabelDefinition", func(t *testing.T) {
 		// GIVEN
-		mockConverter := &automock.Converter{}
+		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
 
 		var someSchema interface{} = ExampleSchema{Title: "title"}
@@ -282,7 +282,7 @@ func TestRepositoryGetByKey(t *testing.T) {
 	})
 	t.Run("returns error when conversion fails", func(t *testing.T) {
 		// GIVEN
-		mockConverter := &automock.Converter{}
+		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("FromEntity", mock.Anything).Return(model.LabelDefinition{}, errors.New("conversion error"))
 		sut := labeldef.NewRepository(mockConverter)
@@ -330,7 +330,7 @@ func TestRepositoryGetByKey(t *testing.T) {
 func TestRepositoryList(t *testing.T) {
 	t.Run("returns list of Label Definitions", func(t *testing.T) {
 		// GIVEN
-		mockConverter := &automock.Converter{}
+		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
 
 		mockConverter.On("FromEntity",
@@ -396,7 +396,7 @@ func TestRepositoryList(t *testing.T) {
 
 	t.Run("returns error when conversion fails", func(t *testing.T) {
 		// GIVEN
-		mockConverter := &automock.Converter{}
+		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
 
 		mockConverter.On("FromEntity",
@@ -521,7 +521,7 @@ func TestRepository_DeleteByKey(t *testing.T) {
 		key := "test"
 		tnt := "tenant"
 
-		mockConverter := &automock.Converter{}
+		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
 
 		repo := labeldef.NewRepository(mockConverter)
@@ -546,7 +546,7 @@ func TestRepository_DeleteByKey(t *testing.T) {
 		tnt := "tenant"
 		testErr := errors.New("Test err")
 
-		mockConverter := &automock.Converter{}
+		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
 
 		repo := labeldef.NewRepository(mockConverter)
@@ -585,7 +585,7 @@ func TestRepository_DeleteByKey(t *testing.T) {
 		key := "test"
 		tnt := "tenant"
 
-		mockConverter := &automock.Converter{}
+		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
 
 		repo := labeldef.NewRepository(mockConverter)

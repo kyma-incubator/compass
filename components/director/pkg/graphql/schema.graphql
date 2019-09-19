@@ -2,7 +2,7 @@
 
 scalar Any # -> interface{}
 
-scalar JSON # -> interface{}
+scalar JSONSchema # -> String
 
 scalar Timestamp # -> time.Time
 
@@ -27,12 +27,12 @@ scalar Labels # -> map[string]interface{}
 
 type LabelDefinition {
     key: String!
-    schema: JSON
+    schema: JSONSchema
 }
 
 input LabelDefinitionInput {
     key: String!
-    schema: JSON
+    schema: JSONSchema
 }
 
 # Runtime

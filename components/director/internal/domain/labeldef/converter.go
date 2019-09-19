@@ -15,19 +15,28 @@ func NewConverter() *converter {
 
 type converter struct{}
 
-func (c *converter) FromGraphQL(input graphql.LabelDefinitionInput, tenant string) model.LabelDefinition {
+func (c *converter) FromGraphQL(input graphql.LabelDefinitionInput, tenant string) (model.LabelDefinition, error) {
+	schema, err := input.Schema.Unmarshal()
+	if err != nil {
+		return model.LabelDefinition{}, err
+	}
+
 	return model.LabelDefinition{
 		Key:    input.Key,
-		Schema: input.Schema,
+		Schema: schema,
 		Tenant: tenant,
-	}
+	}, nil
 }
 
-func (c *converter) ToGraphQL(in model.LabelDefinition) graphql.LabelDefinition {
+func (c *converter) ToGraphQL(in model.LabelDefinition) (graphql.LabelDefinition, error) {
+	schema, err := graphql.MarshalSchema(in.Schema)
+	if err != nil {
+		return graphql.LabelDefinition{}, err
+	}
 	return graphql.LabelDefinition{
 		Key:    in.Key,
-		Schema: in.Schema,
-	}
+		Schema: schema,
+	}, nil
 }
 
 func (c *converter) ToEntity(in model.LabelDefinition) (Entity, error) {

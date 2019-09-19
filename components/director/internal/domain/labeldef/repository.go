@@ -15,13 +15,19 @@ const (
 	tableName = "public.label_definitions"
 )
 
+//go:generate mockery -name=EntityConverter -output=automock -outpkg=automock -case=underscore
+type EntityConverter interface {
+	ToEntity(in model.LabelDefinition) (Entity, error)
+	FromEntity(in Entity) (model.LabelDefinition, error)
+}
+
 var labeldefColumns = []string{"id", "tenant_id", "key", "schema"}
 
 type repo struct {
-	conv Converter
+	conv EntityConverter
 }
 
-func NewRepository(conv Converter) *repo {
+func NewRepository(conv EntityConverter) *repo {
 	return &repo{conv: conv}
 }
 
