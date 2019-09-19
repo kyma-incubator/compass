@@ -202,34 +202,35 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AddAPI                 func(childComplexity int, applicationID string, in APIDefinitionInput) int
-		AddDocument            func(childComplexity int, applicationID string, in DocumentInput) int
-		AddEventAPI            func(childComplexity int, applicationID string, in EventAPIDefinitionInput) int
-		AddWebhook             func(childComplexity int, applicationID string, in WebhookInput) int
-		CreateApplication      func(childComplexity int, in ApplicationInput) int
-		CreateLabelDefinition  func(childComplexity int, in LabelDefinitionInput) int
-		CreateRuntime          func(childComplexity int, in RuntimeInput) int
-		DeleteAPI              func(childComplexity int, id string) int
-		DeleteAPIAuth          func(childComplexity int, apiID string, runtimeID string) int
-		DeleteApplication      func(childComplexity int, id string) int
-		DeleteApplicationLabel func(childComplexity int, applicationID string, key string) int
-		DeleteDocument         func(childComplexity int, id string) int
-		DeleteEventAPI         func(childComplexity int, id string) int
-		DeleteLabelDefinition  func(childComplexity int, key string, deleteRelatedLabels *bool) int
-		DeleteRuntime          func(childComplexity int, id string) int
-		DeleteRuntimeLabel     func(childComplexity int, runtimeID string, key string) int
-		DeleteWebhook          func(childComplexity int, webhookID string) int
-		RefetchAPISpec         func(childComplexity int, apiID string) int
-		RefetchEventAPISpec    func(childComplexity int, eventID string) int
-		SetAPIAuth             func(childComplexity int, apiID string, runtimeID string, in AuthInput) int
-		SetApplicationLabel    func(childComplexity int, applicationID string, key string, value interface{}) int
-		SetRuntimeLabel        func(childComplexity int, runtimeID string, key string, value interface{}) int
-		UpdateAPI              func(childComplexity int, id string, in APIDefinitionInput) int
-		UpdateApplication      func(childComplexity int, id string, in ApplicationInput) int
-		UpdateEventAPI         func(childComplexity int, id string, in EventAPIDefinitionInput) int
-		UpdateLabelDefinition  func(childComplexity int, in LabelDefinitionInput) int
-		UpdateRuntime          func(childComplexity int, id string, in RuntimeInput) int
-		UpdateWebhook          func(childComplexity int, webhookID string, in WebhookInput) int
+		AddAPI                         func(childComplexity int, applicationID string, in APIDefinitionInput) int
+		AddDocument                    func(childComplexity int, applicationID string, in DocumentInput) int
+		AddEventAPI                    func(childComplexity int, applicationID string, in EventAPIDefinitionInput) int
+		AddWebhook                     func(childComplexity int, applicationID string, in WebhookInput) int
+		CreateApplication              func(childComplexity int, in ApplicationInput) int
+		CreateLabelDefinition          func(childComplexity int, in LabelDefinitionInput) int
+		CreateRuntime                  func(childComplexity int, in RuntimeInput) int
+		DeleteAPI                      func(childComplexity int, id string) int
+		DeleteAPIAuth                  func(childComplexity int, apiID string, runtimeID string) int
+		DeleteApplication              func(childComplexity int, id string) int
+		DeleteApplicationLabel         func(childComplexity int, applicationID string, key string) int
+		DeleteDocument                 func(childComplexity int, id string) int
+		DeleteEventAPI                 func(childComplexity int, id string) int
+		DeleteLabelDefinition          func(childComplexity int, key string, deleteRelatedLabels *bool) int
+		DeleteRuntime                  func(childComplexity int, id string) int
+		DeleteRuntimeLabel             func(childComplexity int, runtimeID string, key string) int
+		DeleteWebhook                  func(childComplexity int, webhookID string) int
+		GenerateOneTimeTokenForRuntime func(childComplexity int, id string) int
+		RefetchAPISpec                 func(childComplexity int, apiID string) int
+		RefetchEventAPISpec            func(childComplexity int, eventID string) int
+		SetAPIAuth                     func(childComplexity int, apiID string, runtimeID string, in AuthInput) int
+		SetApplicationLabel            func(childComplexity int, applicationID string, key string, value interface{}) int
+		SetRuntimeLabel                func(childComplexity int, runtimeID string, key string, value interface{}) int
+		UpdateAPI                      func(childComplexity int, id string, in APIDefinitionInput) int
+		UpdateApplication              func(childComplexity int, id string, in ApplicationInput) int
+		UpdateEventAPI                 func(childComplexity int, id string, in EventAPIDefinitionInput) int
+		UpdateLabelDefinition          func(childComplexity int, in LabelDefinitionInput) int
+		UpdateRuntime                  func(childComplexity int, id string, in RuntimeInput) int
+		UpdateWebhook                  func(childComplexity int, webhookID string, in WebhookInput) int
 	}
 
 	OAuthCredentialData struct {
@@ -280,6 +281,10 @@ type ComplexityRoot struct {
 		Timestamp func(childComplexity int) int
 	}
 
+	Token struct {
+		Token func(childComplexity int) int
+	}
+
 	Version struct {
 		Deprecated      func(childComplexity int) int
 		DeprecatedSince func(childComplexity int) int
@@ -325,6 +330,7 @@ type MutationResolver interface {
 	CreateRuntime(ctx context.Context, in RuntimeInput) (*Runtime, error)
 	UpdateRuntime(ctx context.Context, id string, in RuntimeInput) (*Runtime, error)
 	DeleteRuntime(ctx context.Context, id string) (*Runtime, error)
+	GenerateOneTimeTokenForRuntime(ctx context.Context, id string) (*Token, error)
 	AddWebhook(ctx context.Context, applicationID string, in WebhookInput) (*Webhook, error)
 	UpdateWebhook(ctx context.Context, webhookID string, in WebhookInput) (*Webhook, error)
 	DeleteWebhook(ctx context.Context, webhookID string) (*Webhook, error)
@@ -1229,6 +1235,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteWebhook(childComplexity, args["webhookID"].(string)), true
 
+	case "Mutation.generateOneTimeTokenForRuntime":
+		if e.complexity.Mutation.GenerateOneTimeTokenForRuntime == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_generateOneTimeTokenForRuntime_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.GenerateOneTimeTokenForRuntime(childComplexity, args["id"].(string)), true
+
 	case "Mutation.refetchAPISpec":
 		if e.complexity.Mutation.RefetchAPISpec == nil {
 			break
@@ -1590,6 +1608,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RuntimeStatus.Timestamp(childComplexity), true
 
+	case "Token.token":
+		if e.complexity.Token.Token == nil {
+			break
+		}
+
+		return e.complexity.Token.Token(childComplexity), true
+
 	case "Version.deprecated":
 		if e.complexity.Version.Deprecated == nil {
 			break
@@ -1881,6 +1906,12 @@ type Webhook {
 
 enum ApplicationWebhookType {
     CONFIGURATION_CHANGED
+}
+
+# Token
+
+type Token {
+    token: String!
 }
 
 # API
@@ -2237,6 +2268,7 @@ type Mutation {
     createRuntime(in: RuntimeInput!): Runtime!
     updateRuntime(id: ID!, in: RuntimeInput!): Runtime!
     deleteRuntime(id: ID!): Runtime
+    generateOneTimeTokenForRuntime(id: ID!): Token!
 
     # Webhook
     addWebhook(applicationID: ID!, in: WebhookInput!): Webhook!
@@ -2695,6 +2727,20 @@ func (ec *executionContext) field_Mutation_deleteWebhook_args(ctx context.Contex
 		}
 	}
 	args["webhookID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_generateOneTimeTokenForRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -5722,6 +5768,40 @@ func (ec *executionContext) _Mutation_deleteRuntime(ctx context.Context, field g
 	return ec.marshalORuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntime(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_generateOneTimeTokenForRuntime(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_generateOneTimeTokenForRuntime_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().GenerateOneTimeTokenForRuntime(rctx, args["id"].(string))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Token)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNToken2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐToken(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_addWebhook(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -7275,6 +7355,33 @@ func (ec *executionContext) _RuntimeStatus_timestamp(ctx context.Context, field 
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Token_token(ctx context.Context, field graphql.CollectedField, obj *Token) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Token",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Token, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Version_value(ctx context.Context, field graphql.CollectedField, obj *Version) graphql.Marshaler {
@@ -9983,6 +10090,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "deleteRuntime":
 			out.Values[i] = ec._Mutation_deleteRuntime(ctx, field)
+		case "generateOneTimeTokenForRuntime":
+			out.Values[i] = ec._Mutation_generateOneTimeTokenForRuntime(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "addWebhook":
 			out.Values[i] = ec._Mutation_addWebhook(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -10435,6 +10547,33 @@ func (ec *executionContext) _RuntimeStatus(ctx context.Context, sel ast.Selectio
 			}
 		case "timestamp":
 			out.Values[i] = ec._RuntimeStatus_timestamp(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var tokenImplementors = []string{"Token"}
+
+func (ec *executionContext) _Token(ctx context.Context, sel ast.SelectionSet, obj *Token) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, tokenImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Token")
+		case "token":
+			out.Values[i] = ec._Token_token(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -11656,6 +11795,20 @@ func (ec *executionContext) unmarshalNTimestamp2githubᚗcomᚋkymaᚑincubator�
 
 func (ec *executionContext) marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx context.Context, sel ast.SelectionSet, v Timestamp) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNToken2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐToken(ctx context.Context, sel ast.SelectionSet, v Token) graphql.Marshaler {
+	return ec._Token(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNToken2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐToken(ctx context.Context, sel ast.SelectionSet, v *Token) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Token(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNWebhook2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx context.Context, sel ast.SelectionSet, v Webhook) graphql.Marshaler {

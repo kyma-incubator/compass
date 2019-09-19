@@ -278,6 +278,10 @@ type RuntimeStatus struct {
 	Timestamp Timestamp              `json:"timestamp"`
 }
 
+type Token struct {
+	Token string `json:"token"`
+}
+
 type Version struct {
 	// for example 4.6
 	Value      string `json:"value"`

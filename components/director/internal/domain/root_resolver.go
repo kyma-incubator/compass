@@ -149,6 +149,10 @@ type mutationResolver struct {
 	*RootResolver
 }
 
+func (r *mutationResolver) GenerateOneTimeTokenForRuntime(ctx context.Context, id string) (*graphql.Token, error) {
+	return r.runtime.GenerateOneTimeToken(ctx, id)
+}
+
 func (r *mutationResolver) CreateApplication(ctx context.Context, in graphql.ApplicationInput) (*graphql.Application, error) {
 	return r.app.CreateApplication(ctx, in)
 }
