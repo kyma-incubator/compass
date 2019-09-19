@@ -61,7 +61,7 @@ func (m *scopesDecoratorPlugin) MutateConfig(cfg *config.Config) error {
 			})
 		}
 	}
-	
+
 	if err := cfg.Check(); err != nil {
 		return err
 	}

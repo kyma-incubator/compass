@@ -258,7 +258,6 @@ type ComplexityRoot struct {
 
 	Runtime struct {
 		AgentAuth   func(childComplexity int) int
-		Auths       func(childComplexity int) int
 		Description func(childComplexity int) int
 		ID          func(childComplexity int) int
 		Labels      func(childComplexity int, key *string) int
@@ -280,11 +279,6 @@ type ComplexityRoot struct {
 	RuntimeStatus struct {
 		Condition func(childComplexity int) int
 		Timestamp func(childComplexity int) int
-	}
-
-	SystemAuth struct {
-		Auth func(childComplexity int) int
-		ID   func(childComplexity int) int
 	}
 
 	Version struct {
@@ -367,8 +361,6 @@ type QueryResolver interface {
 }
 type RuntimeResolver interface {
 	Labels(ctx context.Context, obj *Runtime, key *string) (Labels, error)
-
-	Auths(ctx context.Context, obj *Runtime) ([]*SystemAuth, error)
 }
 
 type executableSchema struct {
@@ -1510,13 +1502,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Runtime.AgentAuth(childComplexity), true
 
-	case "Runtime.auths":
-		if e.complexity.Runtime.Auths == nil {
-			break
-		}
-
-		return e.complexity.Runtime.Auths(childComplexity), true
-
 	case "Runtime.description":
 		if e.complexity.Runtime.Description == nil {
 			break
@@ -1605,20 +1590,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.RuntimeStatus.Timestamp(childComplexity), true
-
-	case "SystemAuth.auth":
-		if e.complexity.SystemAuth.Auth == nil {
-			break
-		}
-
-		return e.complexity.SystemAuth.Auth(childComplexity), true
-
-	case "SystemAuth.id":
-		if e.complexity.SystemAuth.ID == nil {
-			break
-		}
-
-		return e.complexity.SystemAuth.ID(childComplexity), true
 
 	case "Version.deprecated":
 		if e.complexity.Version.Deprecated == nil {
@@ -1778,565 +1749,538 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var parsedSchema = gqlparser.MustLoadSchema(
-	&ast.Source{Name: "schema.graphql", Input: `# Directives
+	&ast.Source{Name: "schema.graphql", Input: `directive @hasScopes(path: String!) on FIELD_DEFINITION
+scalar Any
 
-directive @hasScopes(path:String!) on FIELD_DEFINITION
-# Scalars
+scalar CLOB
 
-scalar Any # -> interface{}
+scalar HttpHeaders
 
-scalar JSONSchema # -> String
+scalar JSONSchema
 
-scalar Timestamp # -> time.Time
+scalar Labels
 
-scalar Tenant # -> String
+scalar PageCursor
 
-scalar HttpHeaders # -> map[string][]string
+scalar QueryParams
 
-scalar QueryParams # -> map[string][]string
+scalar Tenant
 
-scalar CLOB # -> String
+scalar Timestamp
 
-scalar PageCursor # -> String
-
-# Label
-
-type Label {
-    key: String!
-    value: Any!
-}
-
-scalar Labels # -> map[string]interface{}
-
-type LabelDefinition {
-    key: String!
-    schema: JSONSchema
-}
-
-input LabelDefinitionInput {
-    key: String!
-    schema: JSONSchema
-}
-
-# Runtime
-
-type Runtime {
-    id: ID!
-    name: String!
-    description: String
-    labels(key: String): Labels!
-    status: RuntimeStatus!
-    # TODO: directive for checking auth
-    """Returns array of authentication details for Runtime. For now at most one element in array will be returned."""
-    auths: [SystemAuth!]!
-    agentAuth: Auth! @deprecated
-}
-
-type RuntimeStatus {
-    condition: RuntimeStatusCondition!
-    timestamp: Timestamp!
-}
-
-enum RuntimeStatusCondition {
-    INITIAL
-    READY
-    FAILED
-}
-
-# Application
-
-type Application {
-    id: ID!
-    name: String!
-    description: String
-    labels(key: String): Labels!
-    status: ApplicationStatus!
-    webhooks: [Webhook!]!
-    healthCheckURL: String
-    """ group allows to find different versions of the same API
-    Maximum ` + "`" + `first` + "`" + ` parameter value is 100
-    """
-    apis(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage!
-    """ group allows to find different versions of the same event API """
-    eventAPIs(group: String, first: Int = 100, after: PageCursor): EventAPIDefinitionPage!
-    documents(first: Int = 100, after: PageCursor): DocumentPage!
-}
-
-""" Every query that implements pagination returns object that implements Pageable interface.
-To specify page details, query specify two parameters: ` + "`" + `first` + "`" + ` and ` + "`" + `after` + "`" + `.
-` + "`" + `first` + "`" + ` specify page size, ` + "`" + `after` + "`" + ` is a cursor for the next page. When requesting first page, set ` + "`" + `after` + "`" + ` to empty value.
-For requesting next page, set ` + "`" + `after` + "`" + ` to ` + "`" + `pageInfo.endCursor` + "`" + ` returned from previous query. """
-interface Pageable {
-    pageInfo: PageInfo!
-    totalCount: Int!
-}
-
-type PageInfo {
-    startCursor: PageCursor!
-    endCursor: PageCursor!
-    hasNextPage: Boolean!
-}
-
-type ApplicationPage implements Pageable {
-    data: [Application!]!
-    pageInfo: PageInfo!
-    totalCount: Int!
-}
-
-type RuntimePage implements Pageable {
-    data: [Runtime!]!
-    pageInfo: PageInfo!
-    totalCount: Int!
-}
-
-type HealthCheckPage implements Pageable {
-    data: [HealthCheck!]!
-    pageInfo: PageInfo!
-    totalCount: Int!
-}
-
-type APIDefinitionPage implements Pageable {
-    data: [APIDefinition!]!
-    pageInfo: PageInfo!
-    totalCount: Int!
-}
-type EventAPIDefinitionPage implements Pageable {
-    data: [EventAPIDefinition!]!
-    pageInfo: PageInfo!
-    totalCount: Int!
-}
-
-type DocumentPage implements Pageable {
-    data: [Document!]!
-    pageInfo: PageInfo!
-    totalCount: Int!
-}
-
-type ApplicationStatus {
-    condition: ApplicationStatusCondition!
-    timestamp: Timestamp!
+enum APISpecType {
+	ODATA
+	OPEN_API
 }
 
 enum ApplicationStatusCondition {
-    INITIAL
-    UNKNOWN
-    READY
-    FAILED
-}
-
-type Webhook {
-    id: ID!
-    applicationID: ID!
-    type: ApplicationWebhookType!
-    url: String!
-    auth: Auth
+	INITIAL
+	UNKNOWN
+	READY
+	FAILED
 }
 
 enum ApplicationWebhookType {
-    CONFIGURATION_CHANGED
-}
-
-# API
-
-type Version {
-    """for example 4.6"""
-    value: String!
-    deprecated: Boolean
-    """for example 4.5"""
-    deprecatedSince: String
-    """if true, will be removed in the next version"""
-    forRemoval: Boolean
-}
-
-type APIDefinition {
-    id: ID!
-    applicationID: ID!
-    name: String!
-    description: String
-    spec: APISpec
-    targetURL: String!
-    """ group allows you to find the same API but in different version """
-    group: String
-    """"If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified."""
-    auth(runtimeID: ID!): RuntimeAuth!
-    """Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified."""
-    auths: [RuntimeAuth!]!
-    """If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly."""
-    defaultAuth: Auth
-    version: Version
-}
-
-type RuntimeAuth {
-    runtimeID: ID!
-    auth: Auth
-}
-
-type SystemAuth {
-    id: ID!
-    auth: Auth
-}
-
-type APISpec {
-    """when fetch request specified, data will be automatically populated"""
-    data: CLOB
-    format: SpecFormat!
-    type: APISpecType!
-    fetchRequest: FetchRequest
-}
-
-enum SpecFormat {
-    YAML
-    JSON
-    XML
-}
-
-enum APISpecType {
-    ODATA,
-    OPEN_API
-}
-
-enum EventAPISpecType {
-    ASYNC_API
-}
-
-# Event
-
-type EventAPIDefinition {
-    id: ID!
-    applicationID: ID!
-    name: String!
-    description: String
-    """group allows you to find the same API but in different version"""
-    group: String
-    spec: EventAPISpec!
-    version: Version
-}
-
-type EventAPISpec {
-    data: CLOB
-    type: EventAPISpecType!
-    format: SpecFormat!
-    fetchRequest: FetchRequest
-}
-
-# Document
-
-type Document {
-    id: ID!
-    applicationID: ID!
-    title: String!
-    displayName: String!
-    description: String!
-    format: DocumentFormat!
-    """for example Service Class, API etc"""
-    kind: String
-    data: CLOB
-    fetchRequest: FetchRequest
+	CONFIGURATION_CHANGED
 }
 
 enum DocumentFormat {
-    MARKDOWN
+	MARKDOWN
 }
 
-
-""" Compass performs fetch to validate if request is correct and stores a copy"""
-type FetchRequest {
-    url: String!
-    auth: Auth
-    mode: FetchMode!
-    filter: String
-    status: FetchRequestStatus!
-}
-
-type FetchRequestStatus {
-    condition: FetchRequestStatusCondition!
-    timestamp: Timestamp!
-}
-
-enum FetchRequestStatusCondition {
-    INITIAL
-    SUCCEEDED
-    FAILED
+enum EventAPISpecType {
+	ASYNC_API
 }
 
 enum FetchMode {
-    SINGLE
-    PACKAGE
-    INDEX
+	SINGLE
+	PACKAGE
+	INDEX
 }
 
-# Authentication
-type Auth {
-    credential: CredentialData!
-    additionalHeaders: HttpHeaders
-    additionalQueryParams: QueryParams
-    requestAuth: CredentialRequestAuth
+enum FetchRequestStatusCondition {
+	INITIAL
+	SUCCEEDED
+	FAILED
+}
+
+enum HealthCheckStatusCondition {
+	SUCCEEDED
+	FAILED
+}
+
+enum HealthCheckType {
+	MANAGEMENT_PLANE_APPLICATION_HEALTHCHECK
+}
+
+enum RuntimeStatusCondition {
+	INITIAL
+	READY
+	FAILED
+}
+
+enum SpecFormat {
+	YAML
+	JSON
+	XML
+}
+
+"""
+ Every query that implements pagination returns object that implements Pageable interface.
+To specify page details, query specify two parameters: ` + "`" + `first` + "`" + ` and ` + "`" + `after` + "`" + `.
+` + "`" + `first` + "`" + ` specify page size, ` + "`" + `after` + "`" + ` is a cursor for the next page. When requesting first page, set ` + "`" + `after` + "`" + ` to empty value.
+For requesting next page, set ` + "`" + `after` + "`" + ` to ` + "`" + `pageInfo.endCursor` + "`" + ` returned from previous query. 
+"""
+interface Pageable {
+	pageInfo: PageInfo!
+	totalCount: Int!
 }
 
 union CredentialData = BasicCredentialData | OAuthCredentialData
 
-type OAuthCredentialData {
-    clientId: ID!
-    clientSecret: String!
-    url: String!
-}
-
-type BasicCredentialData {
-    username: String!
-    password: String!
-}
-
-type CredentialRequestAuth {
-    csrf: CSRFTokenCredentialRequestAuth
-}
-
-type CSRFTokenCredentialRequestAuth {
-    tokenEndpointURL: String!
-    credential: CredentialData!
-    additionalHeaders: HttpHeaders
-    additionalQueryParams: QueryParams
-}
-
-# HealthCheck
-
-enum HealthCheckStatusCondition {
-    SUCCEEDED
-    FAILED
-}
-
-enum HealthCheckType {
-    MANAGEMENT_PLANE_APPLICATION_HEALTHCHECK
-}
-
-type HealthCheck {
-    type: HealthCheckType!
-    condition: HealthCheckStatusCondition!
-    origin: ID
-    message: String
-    timestamp: Timestamp!
-}
-
-
-# INPUTS
-
-# Application Input
-
-input ApplicationInput {
-    name: String!
-    description: String
-    labels: Labels
-    webhooks: [WebhookInput!]
-    healthCheckURL: String
-    apis: [APIDefinitionInput!]
-    eventAPIs: [EventAPIDefinitionInput!]
-    documents: [DocumentInput!]
-}
-
-# Runtime Input
-
-input RuntimeInput {
-    name: String!
-    description: String
-    labels: Labels
-}
-
-# FetchRequest Input
-
-input FetchRequestInput {
-    url: String!
-    auth: AuthInput
-    mode: FetchMode = SINGLE
-    filter: String
-}
-
-# Webhook Input
-
-input WebhookInput {
-    type: ApplicationWebhookType!
-    url: String!
-    auth: AuthInput
-}
-
-# API Input
-# You can specify defaultAuth to specify Auth used for all runtimes. If you want to specify auth only for a dedicated Runtime,
-# you need to perform separate mutation setAPIAuth.
 input APIDefinitionInput {
-    name: String!
-    description: String
-    targetURL: String!
-    group: String
-    spec: APISpecInput
-    version: VersionInput
-    defaultAuth: AuthInput
+	name: String!
+	description: String
+	targetURL: String!
+	group: String
+	spec: APISpecInput
+	version: VersionInput
+	defaultAuth: AuthInput
 }
-
-input VersionInput {
-    value: String!
-    deprecated: Boolean = false
-    deprecatedSince: String
-    forRemoval: Boolean = false
-}
-
 
 input APISpecInput {
-    data: CLOB
-    type: APISpecType!
-    format: SpecFormat!
-    fetchRequest: FetchRequestInput
+	data: CLOB
+	type: APISpecType!
+	format: SpecFormat!
+	fetchRequest: FetchRequestInput
 }
 
-# Event Input
-
-input EventAPIDefinitionInput {
-    name: String!
-    description: String
-    spec: EventAPISpecInput!
-    group: String
-    version: VersionInput
+input ApplicationInput {
+	name: String!
+	description: String
+	labels: Labels
+	webhooks: [WebhookInput!]
+	healthCheckURL: String
+	apis: [APIDefinitionInput!]
+	eventAPIs: [EventAPIDefinitionInput!]
+	documents: [DocumentInput!]
 }
-
-input EventAPISpecInput {
-    data: CLOB
-    eventSpecType: EventAPISpecType!
-    format: SpecFormat!
-    fetchRequest: FetchRequestInput
-}
-
-# Document Input
-
-input DocumentInput {
-    title: String!
-    displayName: String!
-    description: String!
-    format: DocumentFormat!
-    kind: String
-    data: CLOB
-    fetchRequest: FetchRequestInput
-}
-
-
-# Auth Input
 
 input AuthInput {
-    credential: CredentialDataInput!
-    additionalHeaders: HttpHeaders
-    additionalQueryParams: QueryParams
-    requestAuth: CredentialRequestAuthInput
-}
-
-input CredentialRequestAuthInput {
-    csrf: CSRFTokenCredentialRequestAuthInput
-}
-
-input CSRFTokenCredentialRequestAuthInput {
-    tokenEndpointURL: String!
-    credential: CredentialDataInput!
-    additionalHeaders: HttpHeaders
-    additionalQueryParams: QueryParams
-}
-
-input CredentialDataInput {
-    basic: BasicCredentialDataInput
-    oauth: OAuthCredentialDataInput
-}
-
-input OAuthCredentialDataInput {
-    clientId: ID!
-    clientSecret: String!
-    url: String!
+	credential: CredentialDataInput!
+	additionalHeaders: HttpHeaders
+	additionalQueryParams: QueryParams
+	requestAuth: CredentialRequestAuthInput
 }
 
 input BasicCredentialDataInput {
-    username: String!
-    password: String!
+	username: String!
+	password: String!
+}
+
+input CSRFTokenCredentialRequestAuthInput {
+	tokenEndpointURL: String!
+	credential: CredentialDataInput!
+	additionalHeaders: HttpHeaders
+	additionalQueryParams: QueryParams
+}
+
+input CredentialDataInput {
+	basic: BasicCredentialDataInput
+	oauth: OAuthCredentialDataInput
+}
+
+input CredentialRequestAuthInput {
+	csrf: CSRFTokenCredentialRequestAuthInput
+}
+
+input DocumentInput {
+	title: String!
+	displayName: String!
+	description: String!
+	format: DocumentFormat!
+	kind: String
+	data: CLOB
+	fetchRequest: FetchRequestInput
+}
+
+input EventAPIDefinitionInput {
+	name: String!
+	description: String
+	spec: EventAPISpecInput!
+	group: String
+	version: VersionInput
+}
+
+input EventAPISpecInput {
+	data: CLOB
+	eventSpecType: EventAPISpecType!
+	format: SpecFormat!
+	fetchRequest: FetchRequestInput
+}
+
+input FetchRequestInput {
+	url: String!
+	auth: AuthInput
+	mode: FetchMode = SINGLE
+	filter: String
+}
+
+input LabelDefinitionInput {
+	key: String!
+	schema: JSONSchema
 }
 
 input LabelFilter {
-    """Label key. If query for the filter is not provided, returns every object with given label key regardless of its value."""
-    key: String!
-    """
-    Optional SQL/JSON Path expression. If query is not provided, returns every object with given label key regardless of its value.
-    Currently only a limited subset of expressions is supported.
-    """ #TODO: Point to document describing expression subset that is supported: https://github.com/kyma-incubator/compass/issues/163
-    query: String
+	"""
+	Label key. If query for the filter is not provided, returns every object with given label key regardless of its value.
+	"""
+	key: String!
+	"""
+	Optional SQL/JSON Path expression. If query is not provided, returns every object with given label key regardless of its value.
+	Currently only a limited subset of expressions is supported.
+	"""
+	query: String
 }
 
+input OAuthCredentialDataInput {
+	clientId: ID!
+	clientSecret: String!
+	url: String!
+}
+
+input RuntimeInput {
+	name: String!
+	description: String
+	labels: Labels
+}
+
+input VersionInput {
+	value: String!
+	deprecated: Boolean = false
+	deprecatedSince: String
+	forRemoval: Boolean = false
+}
+
+input WebhookInput {
+	type: ApplicationWebhookType!
+	url: String!
+	auth: AuthInput
+}
+
+type APIDefinition {
+	id: ID!
+	applicationID: ID!
+	name: String!
+	description: String
+	spec: APISpec
+	targetURL: String!
+	"""
+	group allows you to find the same API but in different version 
+	"""
+	group: String
+	"""
+	"If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified.
+	"""
+	auth(runtimeID: ID!): RuntimeAuth!
+	"""
+	Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified.
+	"""
+	auths: [RuntimeAuth!]!
+	"""
+	If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly.
+	"""
+	defaultAuth: Auth
+	version: Version
+}
+
+type APIDefinitionPage implements Pageable {
+	data: [APIDefinition!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
+}
+
+type APISpec {
+	"""
+	when fetch request specified, data will be automatically populated
+	"""
+	data: CLOB
+	format: SpecFormat!
+	type: APISpecType!
+	fetchRequest: FetchRequest
+}
+
+type Application {
+	id: ID!
+	name: String!
+	description: String
+	labels(key: String): Labels!
+	status: ApplicationStatus!
+	webhooks: [Webhook!]!
+	healthCheckURL: String
+	"""
+	group allows to find different versions of the same API
+	  Maximum ` + "`" + `first` + "`" + ` parameter value is 100
+	"""
+	apis(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage!
+	"""
+	group allows to find different versions of the same event API 
+	"""
+	eventAPIs(group: String, first: Int = 100, after: PageCursor): EventAPIDefinitionPage!
+	documents(first: Int = 100, after: PageCursor): DocumentPage!
+}
+
+type ApplicationPage implements Pageable {
+	data: [Application!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
+}
+
+type ApplicationStatus {
+	condition: ApplicationStatusCondition!
+	timestamp: Timestamp!
+}
+
+type Auth {
+	credential: CredentialData!
+	additionalHeaders: HttpHeaders
+	additionalQueryParams: QueryParams
+	requestAuth: CredentialRequestAuth
+}
+
+type BasicCredentialData {
+	username: String!
+	password: String!
+}
+
+type CSRFTokenCredentialRequestAuth {
+	tokenEndpointURL: String!
+	credential: CredentialData!
+	additionalHeaders: HttpHeaders
+	additionalQueryParams: QueryParams
+}
+
+type CredentialRequestAuth {
+	csrf: CSRFTokenCredentialRequestAuth
+}
+
+type Document {
+	id: ID!
+	applicationID: ID!
+	title: String!
+	displayName: String!
+	description: String!
+	format: DocumentFormat!
+	"""
+	for example Service Class, API etc
+	"""
+	kind: String
+	data: CLOB
+	fetchRequest: FetchRequest
+}
+
+type DocumentPage implements Pageable {
+	data: [Document!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
+}
+
+type EventAPIDefinition {
+	id: ID!
+	applicationID: ID!
+	name: String!
+	description: String
+	"""
+	group allows you to find the same API but in different version
+	"""
+	group: String
+	spec: EventAPISpec!
+	version: Version
+}
+
+type EventAPIDefinitionPage implements Pageable {
+	data: [EventAPIDefinition!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
+}
+
+type EventAPISpec {
+	data: CLOB
+	type: EventAPISpecType!
+	format: SpecFormat!
+	fetchRequest: FetchRequest
+}
+
+"""
+Compass performs fetch to validate if request is correct and stores a copy
+"""
+type FetchRequest {
+	url: String!
+	auth: Auth
+	mode: FetchMode!
+	filter: String
+	status: FetchRequestStatus!
+}
+
+type FetchRequestStatus {
+	condition: FetchRequestStatusCondition!
+	timestamp: Timestamp!
+}
+
+type HealthCheck {
+	type: HealthCheckType!
+	condition: HealthCheckStatusCondition!
+	origin: ID
+	message: String
+	timestamp: Timestamp!
+}
+
+type HealthCheckPage implements Pageable {
+	data: [HealthCheck!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
+}
+
+type Label {
+	key: String!
+	value: Any!
+}
+
+type LabelDefinition {
+	key: String!
+	schema: JSONSchema
+}
+
+type OAuthCredentialData {
+	clientId: ID!
+	clientSecret: String!
+	url: String!
+}
+
+type PageInfo {
+	startCursor: PageCursor!
+	endCursor: PageCursor!
+	hasNextPage: Boolean!
+}
+
+type Runtime {
+	id: ID!
+	name: String!
+	description: String
+	labels(key: String): Labels!
+	status: RuntimeStatus!
+	"""
+	TODO: directive for checking auth
+	"""
+	agentAuth: Auth!
+}
+
+type RuntimeAuth {
+	runtimeID: ID!
+	auth: Auth
+}
+
+type RuntimePage implements Pageable {
+	data: [Runtime!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
+}
+
+type RuntimeStatus {
+	condition: RuntimeStatusCondition!
+	timestamp: Timestamp!
+}
+
+type Version {
+	"""
+	for example 4.6
+	"""
+	value: String!
+	deprecated: Boolean
+	"""
+	for example 4.5
+	"""
+	deprecatedSince: String
+	"""
+	if true, will be removed in the next version
+	"""
+	forRemoval: Boolean
+}
+
+type Webhook {
+	id: ID!
+	applicationID: ID!
+	type: ApplicationWebhookType!
+	url: String!
+	auth: Auth
+}
 
 type Query {
-    """
-    Maximum ` + "`" + `first` + "`" + ` parameter value is 100
-    """
-    applications(filter: [LabelFilter!], first: Int = 100, after: PageCursor):  ApplicationPage!
-    application(id: ID!): Application
-    """
-    Maximum ` + "`" + `first` + "`" + ` parameter value is 100
-    """
-    applicationsForRuntime(runtimeID: ID!, first: Int = 100, after: PageCursor): ApplicationPage!
-
-    """
-    Maximum ` + "`" + `first` + "`" + ` parameter value is 100
-    """
-    runtimes(filter: [LabelFilter!], first: Int = 100, after: PageCursor): RuntimePage!
-    runtime(id: ID!): Runtime
-
-    labelDefinitions: [LabelDefinition!]!
-    labelDefinition(key: String!): LabelDefinition
-
-    healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: PageCursor): HealthCheckPage!
+	"""
+	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
+	"""
+	applications(filter: [LabelFilter!], first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "query.applications")
+	application(id: ID!): Application @hasScopes(path: "query.application")
+	"""
+	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
+	"""
+	applicationsForRuntime(runtimeID: ID!, first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "query.applicationsForRuntime")
+	"""
+	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
+	"""
+	runtimes(filter: [LabelFilter!], first: Int = 100, after: PageCursor): RuntimePage! @hasScopes(path: "query.runtimes")
+	runtime(id: ID!): Runtime @hasScopes(path: "query.runtime")
+	labelDefinitions: [LabelDefinition!]! @hasScopes(path: "query.labelDefinitions")
+	labelDefinition(key: String!): LabelDefinition @hasScopes(path: "query.labelDefinition")
+	healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: PageCursor): HealthCheckPage! @hasScopes(path: "query.healthChecks")
 }
 
 type Mutation {
-    # Application
-    createApplication(in: ApplicationInput!): Application! @hasScopes(path: "mutation.createApplication")
-    updateApplication(id: ID!, in: ApplicationInput!): Application!
-    deleteApplication(id: ID!): Application
-
-    # Runtime
-    createRuntime(in: RuntimeInput!): Runtime!
-    updateRuntime(id: ID!, in: RuntimeInput!): Runtime!
-    deleteRuntime(id: ID!): Runtime
-
-    # Webhook
-    addWebhook(applicationID: ID!, in: WebhookInput!): Webhook!
-    updateWebhook(webhookID: ID!, in: WebhookInput!): Webhook!
-    deleteWebhook(webhookID: ID!): Webhook
-
-    # API
-    addAPI(applicationID: ID!, in: APIDefinitionInput!): APIDefinition!
-    updateAPI(id: ID!, in: APIDefinitionInput!): APIDefinition!
-    deleteAPI(id: ID!): APIDefinition
-    refetchAPISpec(apiID: ID!): APISpec
-
-    """Sets Auth for given Application and Runtime. To set default Auth for API, use updateAPI mutation"""
-    setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput!): RuntimeAuth!
-    deleteAPIAuth(apiID: ID!, runtimeID: ID!): RuntimeAuth!
-
-    # Event API
-    addEventAPI(applicationID: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition!
-    updateEventAPI(id: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition!
-    deleteEventAPI(id: ID!): EventAPIDefinition
-    refetchEventAPISpec(eventID: ID!): EventAPISpec
-
-    # Document
-    addDocument(applicationID: ID!, in: DocumentInput!): Document!
-    deleteDocument(id: ID!): Document
-
-    # LabelDefinition
-    createLabelDefinition(in: LabelDefinitionInput!): LabelDefinition!
-    updateLabelDefinition(in: LabelDefinitionInput!): LabelDefinition!
-    deleteLabelDefinition(key: String!, deleteRelatedLabels: Boolean=false): LabelDefinition!
-
-    # Label
-    """If a label with given key already exist, it will be replaced with provided value."""
-    setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label!
-    """If Application does not exist or the label key is not found, it returns an error."""
-    deleteApplicationLabel(applicationID: ID!, key: String!): Label!
-
-    """If a label with given key already exist, it will be replaced with provided value."""
-    setRuntimeLabel(runtimeID: ID!, key: String!, value: Any!): Label!
-    """If Runtime does not exist or the label key is not found, it returns an error."""
-    deleteRuntimeLabel(runtimeID: ID!, key: String!): Label!
+	createApplication(in: ApplicationInput!): Application! @hasScopes(path: "mutation.createApplication")
+	updateApplication(id: ID!, in: ApplicationInput!): Application! @hasScopes(path: "mutation.updateApplication")
+	deleteApplication(id: ID!): Application @hasScopes(path: "mutation.deleteApplication")
+	createRuntime(in: RuntimeInput!): Runtime! @hasScopes(path: "mutation.createRuntime")
+	updateRuntime(id: ID!, in: RuntimeInput!): Runtime! @hasScopes(path: "mutation.updateRuntime")
+	deleteRuntime(id: ID!): Runtime @hasScopes(path: "mutation.deleteRuntime")
+	addWebhook(applicationID: ID!, in: WebhookInput!): Webhook! @hasScopes(path: "mutation.addWebhook")
+	updateWebhook(webhookID: ID!, in: WebhookInput!): Webhook! @hasScopes(path: "mutation.updateWebhook")
+	deleteWebhook(webhookID: ID!): Webhook @hasScopes(path: "mutation.deleteWebhook")
+	addAPI(applicationID: ID!, in: APIDefinitionInput!): APIDefinition! @hasScopes(path: "mutation.addAPI")
+	updateAPI(id: ID!, in: APIDefinitionInput!): APIDefinition! @hasScopes(path: "mutation.updateAPI")
+	deleteAPI(id: ID!): APIDefinition @hasScopes(path: "mutation.deleteAPI")
+	refetchAPISpec(apiID: ID!): APISpec @hasScopes(path: "mutation.refetchAPISpec")
+	"""
+	Sets Auth for given Application and Runtime. To set default Auth for API, use updateAPI mutation
+	"""
+	setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput!): RuntimeAuth! @hasScopes(path: "mutation.setAPIAuth")
+	deleteAPIAuth(apiID: ID!, runtimeID: ID!): RuntimeAuth! @hasScopes(path: "mutation.deleteAPIAuth")
+	addEventAPI(applicationID: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition! @hasScopes(path: "mutation.addEventAPI")
+	updateEventAPI(id: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition! @hasScopes(path: "mutation.updateEventAPI")
+	deleteEventAPI(id: ID!): EventAPIDefinition @hasScopes(path: "mutation.deleteEventAPI")
+	refetchEventAPISpec(eventID: ID!): EventAPISpec @hasScopes(path: "mutation.refetchEventAPISpec")
+	addDocument(applicationID: ID!, in: DocumentInput!): Document! @hasScopes(path: "mutation.addDocument")
+	deleteDocument(id: ID!): Document @hasScopes(path: "mutation.deleteDocument")
+	createLabelDefinition(in: LabelDefinitionInput!): LabelDefinition! @hasScopes(path: "mutation.createLabelDefinition")
+	updateLabelDefinition(in: LabelDefinitionInput!): LabelDefinition! @hasScopes(path: "mutation.updateLabelDefinition")
+	deleteLabelDefinition(key: String!, deleteRelatedLabels: Boolean = false): LabelDefinition! @hasScopes(path: "mutation.deleteLabelDefinition")
+	"""
+	If a label with given key already exist, it will be replaced with provided value.
+	"""
+	setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "mutation.setApplicationLabel")
+	"""
+	If Application does not exist or the label key is not found, it returns an error.
+	"""
+	deleteApplicationLabel(applicationID: ID!, key: String!): Label! @hasScopes(path: "mutation.deleteApplicationLabel")
+	"""
+	If a label with given key already exist, it will be replaced with provided value.
+	"""
+	setRuntimeLabel(runtimeID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "mutation.setRuntimeLabel")
+	"""
+	If Runtime does not exist or the label key is not found, it returns an error.
+	"""
+	deleteRuntimeLabel(runtimeID: ID!, key: String!): Label! @hasScopes(path: "mutation.deleteRuntimeLabel")
 }
+
 `},
 )
 
@@ -7136,33 +7080,6 @@ func (ec *executionContext) _Runtime_status(ctx context.Context, field graphql.C
 	return ec.marshalNRuntimeStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeStatus(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Runtime_auths(ctx context.Context, field graphql.CollectedField, obj *Runtime) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "Runtime",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Runtime().Auths(rctx, obj)
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*SystemAuth)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Runtime_agentAuth(ctx context.Context, field graphql.CollectedField, obj *Runtime) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -7374,57 +7291,6 @@ func (ec *executionContext) _RuntimeStatus_timestamp(ctx context.Context, field 
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _SystemAuth_id(ctx context.Context, field graphql.CollectedField, obj *SystemAuth) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "SystemAuth",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _SystemAuth_auth(ctx context.Context, field graphql.CollectedField, obj *SystemAuth) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "SystemAuth",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Auth, nil
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*Auth)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Version_value(ctx context.Context, field graphql.CollectedField, obj *Version) graphql.Marshaler {
@@ -9148,30 +9014,30 @@ func (ec *executionContext) _Pageable(ctx context.Context, sel ast.SelectionSet,
 	switch obj := (*obj).(type) {
 	case nil:
 		return graphql.Null
-	case ApplicationPage:
-		return ec._ApplicationPage(ctx, sel, &obj)
-	case *ApplicationPage:
-		return ec._ApplicationPage(ctx, sel, obj)
-	case RuntimePage:
-		return ec._RuntimePage(ctx, sel, &obj)
-	case *RuntimePage:
-		return ec._RuntimePage(ctx, sel, obj)
-	case HealthCheckPage:
-		return ec._HealthCheckPage(ctx, sel, &obj)
-	case *HealthCheckPage:
-		return ec._HealthCheckPage(ctx, sel, obj)
 	case APIDefinitionPage:
 		return ec._APIDefinitionPage(ctx, sel, &obj)
 	case *APIDefinitionPage:
 		return ec._APIDefinitionPage(ctx, sel, obj)
-	case EventAPIDefinitionPage:
-		return ec._EventAPIDefinitionPage(ctx, sel, &obj)
-	case *EventAPIDefinitionPage:
-		return ec._EventAPIDefinitionPage(ctx, sel, obj)
+	case ApplicationPage:
+		return ec._ApplicationPage(ctx, sel, &obj)
+	case *ApplicationPage:
+		return ec._ApplicationPage(ctx, sel, obj)
 	case DocumentPage:
 		return ec._DocumentPage(ctx, sel, &obj)
 	case *DocumentPage:
 		return ec._DocumentPage(ctx, sel, obj)
+	case EventAPIDefinitionPage:
+		return ec._EventAPIDefinitionPage(ctx, sel, &obj)
+	case *EventAPIDefinitionPage:
+		return ec._EventAPIDefinitionPage(ctx, sel, obj)
+	case HealthCheckPage:
+		return ec._HealthCheckPage(ctx, sel, &obj)
+	case *HealthCheckPage:
+		return ec._HealthCheckPage(ctx, sel, obj)
+	case RuntimePage:
+		return ec._RuntimePage(ctx, sel, &obj)
+	case *RuntimePage:
+		return ec._RuntimePage(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -10485,20 +10351,6 @@ func (ec *executionContext) _Runtime(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "auths":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Runtime_auths(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
 		case "agentAuth":
 			out.Values[i] = ec._Runtime_agentAuth(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -10602,35 +10454,6 @@ func (ec *executionContext) _RuntimeStatus(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var systemAuthImplementors = []string{"SystemAuth"}
-
-func (ec *executionContext) _SystemAuth(ctx context.Context, sel ast.SelectionSet, obj *SystemAuth) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, systemAuthImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("SystemAuth")
-		case "id":
-			out.Values[i] = ec._SystemAuth_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "auth":
-			out.Values[i] = ec._SystemAuth_auth(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -11840,57 +11663,6 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
-}
-
-func (ec *executionContext) marshalNSystemAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx context.Context, sel ast.SelectionSet, v SystemAuth) graphql.Marshaler {
-	return ec._SystemAuth(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx context.Context, sel ast.SelectionSet, v []*SystemAuth) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		rctx := &graphql.ResolverContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithResolverContext(ctx, rctx)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
-func (ec *executionContext) marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx context.Context, sel ast.SelectionSet, v *SystemAuth) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._SystemAuth(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx context.Context, v interface{}) (Timestamp, error) {
