@@ -2,3 +2,4 @@
 .idea
 vendor
 /licenses
+*.log
