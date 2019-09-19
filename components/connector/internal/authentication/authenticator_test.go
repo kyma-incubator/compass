@@ -1,70 +1,51 @@
-package authentication_test
+package authentication
 
 import (
 	"context"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
-
-	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
-
-	"github.com/kyma-incubator/compass/components/connector/internal/tokens/mocks"
 )
 
 const (
-	token    = "abcd-efgh"
 	clientId = "client-id"
 	certHash = "qwertyuiop"
 )
 
 func TestAuthenticator_AuthenticateToken(t *testing.T) {
 
-	tokenData := tokens.TokenData{ClientId: clientId, Type: tokens.ApplicationToken}
-
 	t.Run("should authenticate with token", func(t *testing.T) {
 		// given
-		ctx := authentication.PutInContext(context.Background(), authentication.ConnectorTokenKey, token)
+		ctx := PutIntoContext(context.Background(), ClientIdFromTokenKey, clientId)
 
-		tokenSvc := &mocks.Service{}
-		tokenSvc.On("Resolve", token).Return(tokenData, nil)
-		tokenSvc.On("Delete", token).Return()
-
-		authenticator := authentication.NewAuthenticator(tokenSvc)
+		authenticator := NewAuthenticator()
 
 		// when
-		data, err := authenticator.AuthenticateToken(ctx)
+		receivedId, err := authenticator.AuthenticateToken(ctx)
 
 		// then
 		require.NoError(t, err)
-		assert.Equal(t, tokenData, data)
+		assert.Equal(t, clientId, receivedId)
 	})
 
-	t.Run("should return error if token not found in cache", func(t *testing.T) {
+	t.Run("should return error if client id is empty", func(t *testing.T) {
 		// given
-		ctx := authentication.PutInContext(context.Background(), authentication.ConnectorTokenKey, token)
+		ctx := PutIntoContext(context.Background(), ClientIdFromTokenKey, "")
 
-		tokenSvc := &mocks.Service{}
-		tokenSvc.On("Resolve", token).Return(tokens.TokenData{}, apperrors.NotFound("error"))
-		tokenSvc.On("Delete", token).Return()
-
-		authenticator := authentication.NewAuthenticator(tokenSvc)
+		authenticator := NewAuthenticator()
 
 		// when
-		data, err := authenticator.AuthenticateToken(ctx)
+		receivedId, err := authenticator.AuthenticateToken(ctx)
 
 		// then
 		require.Error(t, err)
-		assert.Empty(t, data)
+		require.Empty(t, receivedId)
 	})
 
 	t.Run("should return error if token not found in context", func(t *testing.T) {
 		// given
-		authenticator := authentication.NewAuthenticator(nil)
+		authenticator := NewAuthenticator()
 
 		// when
 		data, err := authenticator.AuthenticateToken(context.Background())
@@ -74,4 +55,110 @@ func TestAuthenticator_AuthenticateToken(t *testing.T) {
 		assert.Empty(t, data)
 	})
 
+}
+
+func TestAuthenticator_AuthenticateCertificate(t *testing.T) {
+
+	t.Run("should authenticate with certificate", func(t *testing.T) {
+		// given
+		ctx := PutIntoContext(context.Background(), ClientIdFromCertificateKey, clientId)
+		ctx = PutIntoContext(ctx, ClientCertificateHashKey, certHash)
+
+		authenticator := NewAuthenticator()
+
+		// when
+		id, err := authenticator.AuthenticateCertificate(ctx)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, clientId, id)
+	})
+
+	t.Run("should return error if client id is empty", func(t *testing.T) {
+		// given
+		ctx := PutIntoContext(context.Background(), ClientIdFromCertificateKey, "")
+		ctx = PutIntoContext(ctx, ClientCertificateHashKey, certHash)
+
+		authenticator := NewAuthenticator()
+
+		// when
+		id, err := authenticator.AuthenticateCertificate(ctx)
+
+		// then
+		require.Error(t, err)
+		assert.Empty(t, id)
+	})
+
+	t.Run("should return error if hash not in context", func(t *testing.T) {
+		// given
+		ctx := PutIntoContext(context.Background(), ClientIdFromCertificateKey, clientId)
+
+		authenticator := NewAuthenticator()
+
+		// when
+		id, err := authenticator.AuthenticateCertificate(ctx)
+
+		// then
+		require.Error(t, err)
+		assert.Empty(t, id)
+	})
+
+	t.Run("should return error if client id not found in context", func(t *testing.T) {
+		// given
+		ctx := PutIntoContext(context.Background(), ClientCertificateHashKey, certHash)
+
+		authenticator := NewAuthenticator()
+
+		// when
+		id, err := authenticator.AuthenticateCertificate(ctx)
+
+		// then
+		require.Error(t, err)
+		assert.Empty(t, id)
+	})
+
+}
+
+func TestAuthenticator_AuthenticateTokenOrCertificate(t *testing.T) {
+
+	t.Run("should authenticate with token", func(t *testing.T) {
+		// given
+		ctx := PutIntoContext(context.Background(), ClientIdFromTokenKey, clientId)
+
+		authenticator := NewAuthenticator()
+
+		// when
+		receivedId, err := authenticator.Authenticate(ctx)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, clientId, receivedId)
+	})
+
+	t.Run("should authenticate with certificate", func(t *testing.T) {
+		// given
+		ctx := PutIntoContext(context.Background(), ClientIdFromCertificateKey, clientId)
+		ctx = PutIntoContext(ctx, ClientCertificateHashKey, certHash)
+
+		authenticator := NewAuthenticator()
+
+		// when
+		id, err := authenticator.Authenticate(ctx)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, clientId, id)
+	})
+
+	t.Run("should return error if failed to authenticate with token and cert", func(t *testing.T) {
+		// given
+		authenticator := NewAuthenticator()
+
+		// when
+		id, err := authenticator.Authenticate(context.Background())
+
+		// then
+		require.Error(t, err)
+		assert.Empty(t, id)
+	})
 }

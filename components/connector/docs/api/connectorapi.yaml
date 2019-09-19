@@ -1,0 +1,82 @@
+openapi: '3.0.0'
+info:
+  version: '1.0.0'
+  title: 'Compass Connector Resolver API'
+paths:
+  /health:
+    get:
+      summary: 'Returns health status.'
+      responses:
+        '200':
+          description: 'The service is up.'
+
+  /v1/tokens/resolve:
+    post:
+      parameters:
+      - in: header
+        name: Connector-Token
+        schema:
+          type: string
+        required: false
+      summary: 'Resolves token and sets custom headers.'
+      responses: 
+        '200':
+          description: 'Token resolved.'
+          content: 
+            application/json:
+              schema:
+                $ref: '#/components/schemas/authenticationSession'
+        '400':
+          description: 'Invalid request body.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/appError'
+
+  /v1/certificate/data/resolve:
+    post:
+      parameters:
+      - in: header
+        name: Certificate-Data
+        schema:
+          type: string
+        required: false
+      summary: 'Converts certificate header to custom headers.'
+      responses: 
+        '200':
+          description: 'Token resolved.'
+          content: 
+            application/json:
+              schema:
+                $ref: '#/components/schemas/authenticationSession'
+        '400':
+          description: 'Invalid request body.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/appError'
+
+components:
+  schemas:
+    authenticationSession:
+      type: 'object'
+      properties:
+        subject:
+          type: 'string'
+          example: 'user-abcd'
+        extra:
+          type: 'object'
+          additionalProperties:
+            type: object
+        header:
+          type: 'object'
+          additionalProperties: 
+            type: 'array'
+            items:
+              type: 'string'
+
+    appError:
+      type: 'object'
+      properties:
+        error:
+          type: 'string'

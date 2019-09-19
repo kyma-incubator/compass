@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
+
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens/mocks"
@@ -32,6 +34,7 @@ func TestTokenResolver_GenerateApplicationToken(t *testing.T) {
 		// then
 		require.NoError(t, err)
 		assert.Equal(t, token, generatedToken.Token)
+		mock.AssertExpectationsForObjects(t, tokenSvc)
 	})
 
 	t.Run("should return error when failed generate Application token", func(t *testing.T) {
@@ -47,6 +50,7 @@ func TestTokenResolver_GenerateApplicationToken(t *testing.T) {
 		// then
 		require.Error(t, err)
 		assert.Empty(t, generatedToken)
+		mock.AssertExpectationsForObjects(t, tokenSvc)
 	})
 
 }
@@ -66,6 +70,7 @@ func TestTokenResolver_GenerateRuntimeToken(t *testing.T) {
 		// then
 		require.NoError(t, err)
 		assert.Equal(t, token, generatedToken.Token)
+		mock.AssertExpectationsForObjects(t, tokenSvc)
 	})
 
 	t.Run("should return error when failed generate Runtime token", func(t *testing.T) {
@@ -81,5 +86,6 @@ func TestTokenResolver_GenerateRuntimeToken(t *testing.T) {
 		// then
 		require.Error(t, err)
 		assert.Empty(t, generatedToken)
+		mock.AssertExpectationsForObjects(t, tokenSvc)
 	})
 }
