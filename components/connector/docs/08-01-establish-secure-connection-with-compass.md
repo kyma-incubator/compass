@@ -18,14 +18,14 @@ To get the Connector URL and the one-time token which allow you to fetch the req
 
 To get the CSR information and configuration details, send this GraphQL query with the one-time token included in the `connector-token` header to the Connector URL:
 
-```
+```graphql
 query {
     result: configuration {
         token {
             token
         }
         certificateSigningRequestInfo {
-            subject,
+            subject
             keyAlgorithm
         }
         managementPlaneInfo {
@@ -48,7 +48,7 @@ openssl base64 -in generated.csr
 ```
 
 Use the encoded CSR in this GraphQL mutation:
-```
+```graphql
 mutation {
     result: signCertificateSigningRequest(csr: "{BASE64_ENCODED_CSR}") {
         certificateChain

@@ -14,7 +14,7 @@ paths:
     post:
       parameters:
       - in: header
-      name: Connector-Token
+        name: Connector-Token
         schema:
           type: string
         required: false
@@ -37,7 +37,7 @@ paths:
     post:
       parameters:
       - in: header
-      name: Certificate-Data
+        name: Certificate-Data
         schema:
           type: string
         required: false

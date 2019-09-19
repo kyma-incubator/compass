@@ -3,7 +3,7 @@ title: Connector Service
 type: Architecture
 ---
 
-The Connector Service generates client certificates which are used to secure the communication between Kyma and the connected external solutions.        
+The Connector Service generates client certificates which are used to secure the communication between Compass and the connected external solutions.        
 
 Generating a new client certificate is the first step in the process of configuring an Application (App). Kyma stores the root certificate and serves as the Certificate Authority (CA) when you configure a new App. When you generate a new client certificate, the Connector Service returns it along with the CA certificate (the root certificate) to allow validation.  
 

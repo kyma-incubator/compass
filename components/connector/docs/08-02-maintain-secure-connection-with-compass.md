@@ -20,7 +20,7 @@ This guide shows you how to do that.
 To fetch the configuration, make a call to the Certificate-Secured Connector URL using the client certificate. 
 The Certificate-Secured Connector URL is the `certificateSecuredConnectorURL` obtained when establishing a secure connection with Compass. 
 Send this query with the call:
-```
+```graphql
 query {
     result: configuration {
         certificateSigningRequestInfo { 
@@ -47,7 +47,7 @@ openssl base64 -in generated.csr
 
 Send this GraphQL mutation with the encoded CSR to the Certificate-Secured Connector URL:
 
-```
+```graphql
 mutation {
     result: signCertificateSigningRequest(csr: "{BASE64_ENCODED_CSR}") {
         certificateChain
