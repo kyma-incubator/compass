@@ -17,7 +17,10 @@ The following diagram represents architecture of the security in Compass:
 
 ### Tenant mapping handler
 
-It is an OathKeeper [hydrator](https://github.com/ory/docs/blob/525608c65694539384b785355d293bc0ad00da27/docs/oathkeeper/pipeline/mutator.md#hydrator) handler responsible for mapping `authorization_id` to tenant.
+It is an OathKeeper [hydrator](https://github.com/ory/docs/blob/525608c65694539384b785355d293bc0ad00da27/docs/oathkeeper/pipeline/mutator.md#hydrator) handler responsible for mapping `authorization_id` to tenant. `authorization_id` is used in multiple authentication flows:
+- in OAuth 2.0 it is equal to `client_id`
+- in Basic authentication it is equal to `username`
+- in Certificates authentication flow it is equal to Common Name (CN).
 
 It will be built into the Director component, as a separate endpoint responsible for retrieving the tenant ID based on database query.
 In order to map client_id from Runtime Agent to tenant, we will query `client_id` from Runtime `agentAuth` JSONB field.
@@ -29,10 +32,14 @@ To unify tenant mapping, `client_id` will be not only generated in OAuth 2.0 flo
 
 The Gateway passes request along with JWT token to Compass GraphQL services, such as Director or Connector. The GraphQL components will have authentication middleware and GraphQL [directives](https://graphql.org/learn/queries/#directives) set up for all GraphQL operations (and some specific type fields, if necessary).
 
-In GraphQL services, there will be a HTTP authentication middleware set up, which validates and decodes JWT token. It puts user scopes and tenant in request context 
+#### HTTP middleware
+
+In GraphQL servers, such as Director or Connector, there will be a HTTP authentication middleware set up, which validates and decodes JWT token. It puts user scopes and tenant in request context 
 (`context.Context`).
 
 ![](./assets/graphql-security.svg)
+
+#### GraphQL Directives
 
 When GraphQL operation is processed, an authorization directive is triggered, before actual GraphQL resolver. It will check if the client has required scopes to do the requested operation. To avoid defining permissions statically in GraphQL schema, a YAML file will be loaded with needed requests. In a reality, it will be a ConfigMap injected to Director/Connector. 
 
@@ -84,18 +91,34 @@ types:
         eventAPIs: "eventapi:view"
         documents: "document:view"
 ```
+
 The actual scopes will be defined later.
 
-## Authentication types
+#### Limiting Application/Runtime modifications
 
-Each authentication type will be handled on a separate host via different VirtualService, as currently OathKeeper doesn't support certificates and multiple `Bearer` authenticators.
+Application/Runtime shouldn't be able to modify other Applications or Runtimes. In future, to limit the functionality, we could introduce another GraphQL directive.
+
+```graphql
+type Mutation {
+    updateApplication(id: ID!, in: ApplicationInput!): Application! @secureWithScopes(path: "mutations.updateApplication") @limitModifications(type: APPLICATION, idParamName: "id")
+}
+```
+
+The `limitModifications` mutation would compare ID provided for the `updateApplication` mutation with Application ID saved in the context by Tenant Mapping Handler.
+
+## Authentication flows
+
+Each authentication flow will be handled on a separate host via different VirtualService, as currently OathKeeper doesn't support certificates and multiple `Bearer` authenticators.
 
 ### OAuth 2.0 Access Token
+
+**Used by:** Integration System / Application / Runtime
+
 There are two ways of creating a `client_id` and `client_secret` pair in the Hydra, using Hydra's [oauth client](https://github.com/kyma-project/kyma/blob/ab3d8878d013f8cc34c3f549dfa2f50f06502f14/docs/security/03-06-oauth2-server.md#register-an-oauth2-client) or [simple POST request](https://github.com/kyma-incubator/examples/tree/master/ory-hydra/scenarios/client-credentials#setup-an-oauth2-client).
 
 **Obtaining token:**
 
-1. Runtime/Application/IntegrationSystem requests `client_id` and `client_credentials` pair from Director. Director generates the pair, registers it in Hydra with proper scopes (defined by object type) and writes it in database.
+1. Runtime/Application/IntegrationSystem requests `client_id` and `client_credentials` pair from Director by separate GraphQL mutation. Director generates the pair, registers it in Hydra with proper scopes (defined by object type) and writes it in database.
 1. Runtime/Application/IntegrationSystem calls Hydra with encoded credentials (`client_id` is the ID of `SystemAuth` entry related to given Runtime/Application/IntegrationSystem) and requested scopes.
 1. If the requested scopes are valid, Runtime/Application/IntegrationSystem receives in response an access token, otherwise receives an error.
 
@@ -103,7 +126,7 @@ There are two ways of creating a `client_id` and `client_secret` pair in the Hyd
 
 1. Authenticator calls Hydra for introspection of the token.
 1. If the token is valid, OathKeeper sends the request to Hydrator. 
-1. Hydrator calls Tenant mapping handler hosted by `Director` to get `tenant` based on a `client_id`.
+1. Hydrator calls Tenant mapping handler hosted by `Director` to get `tenant` based on a `client_id` (`client_id` is the ID of `SystemAuth` entry related to given Runtime/Application/IntegrationSystem) .
 1. Hydrator passes response to ID_Token mutator which constructs a JWT token with scopes and `tenant` in the payload.
 1. The request is then forwarded to the desired component (such as `Director` or `Connector`) through the `Gateway` component.
  
@@ -117,19 +140,40 @@ In this authentication flow, scopes are read from OAuth 2.0 access token and wri
 
 ### JWT token issued by identity service
 
-To be defined.
+**Used by:** User
 
 **Obtaining token:**
+
 User logs in to Compass UI 
 
 **Request flow:**
+
 1. Authenticator validates the token using keys provided by identity service. In production environment, tenant **must be** included in token payload. For local development, the `tenant` property is missing from token issued by Dex.
 1. If the token is valid, OathKeeper sends the request to Hydrator.
-1. Hydrator calls Tenant mapping handler hosted by `Director`, which, in production environment, returns **the same** authentication session (as the `tenant` is already in place). For local development, `tenant` is loaded from ConfigMap, where static `user:tenant` mapping is done.
+1. Hydrator calls Tenant mapping handler hosted by `Director`, which, in production environment, returns **the same** authentication session (as the `tenant` is already in place). For local development, `tenant` is loaded from ConfigMap, where static `user - tenant` mapping is done.
 1. Hydrator passes response to ID_Token mutator which constructs a JWT token with scopes and `tenant` in the payload.
 1. The request is then forwarded to the desired component (such as `Director` or `Connector`) through the `Gateway` component.
  
 ![Auth](./assets/dex-security-diagram.svg)
+
+**Scopes**
+
+For local development, user scopes will be loaded from ConfigMap, where static `user - scopes` mapping is done.
+
+**Example ConfigMap for local development**
+
+```yaml
+admin@kyma.cx:
+    tenant: edf2e0c0-58b1-45c6-b345-fabc9774600c
+    scopes:
+        - application:admin
+        - runtime:admin
+foo@bar.com:
+    tenant: c862d791-2735-4ffb-ae2d-3ace408d6cff
+    scopes:
+        - application:view
+        - runtime:view
+```
 
 ### Certificates
 
