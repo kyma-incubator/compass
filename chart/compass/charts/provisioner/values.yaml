@@ -1,5 +1,3 @@
 deployment:
   image:
     pullPolicy: IfNotPresent
-  args:
-    containerPort: 3050

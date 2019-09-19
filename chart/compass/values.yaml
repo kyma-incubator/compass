@@ -59,6 +59,10 @@ global:
     caKey: ""
     caCertificate: ""
 
+  provisioner:
+    graphql:
+      port: 3050
+
   gateway:
     port: 3000
     tls:

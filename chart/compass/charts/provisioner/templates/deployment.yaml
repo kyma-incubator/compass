@@ -24,10 +24,10 @@ spec:
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: {{ .Values.deployment.args.containerPort }}
+              containerPort: {{ .Values.global.provisioner.graphql.port }}
               protocol: TCP
           env:
             - name: APP_ADDRESS
-              value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
+              value: "0.0.0.0:{{ .Values.global.provisioner.graphql.port }}"
             - name: APP_API_ENDPOINT
               value: "/provisioner/graphql"
