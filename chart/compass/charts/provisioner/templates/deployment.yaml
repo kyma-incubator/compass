@@ -30,4 +30,4 @@ spec:
             - name: APP_ADDRESS
               value: "0.0.0.0:{{ .Values.global.provisioner.graphql.port }}"
             - name: APP_API_ENDPOINT
-              value: "/provisioner/graphql"
+              value: "/graphql"
