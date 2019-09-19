@@ -38,7 +38,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		input := &gqlschema.ProvisionRuntimeInput{}
 
 		operation := RuntimeOperation{
-			operationType: gqlschema.OperationTypeReconnectRuntime,
+			operationType: gqlschema.OperationTypeDeprovision,
 			status:        gqlschema.OperationStateInProgress,
 			runtimeID:     runtimeID,
 		}

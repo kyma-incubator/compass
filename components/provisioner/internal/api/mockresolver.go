@@ -14,6 +14,21 @@ type MockResolver struct {
 	repository map[string]RuntimeOperation
 }
 
+type externalMutationResolver struct {
+	*MockResolver
+}
+
+type externalQueryResolver struct {
+	*MockResolver
+}
+
+func (r *MockResolver) Mutation() gqlschema.MutationResolver {
+	return &externalMutationResolver{r}
+}
+func (r *MockResolver) Query() gqlschema.QueryResolver {
+	return &externalQueryResolver{r}
+}
+
 type RuntimeOperation struct {
 	operationID   string
 	operationType gqlschema.OperationType
