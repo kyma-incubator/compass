@@ -81,6 +81,11 @@ type WebhookService interface {
 	Delete(ctx context.Context, id string) error
 }
 
+//go:generate mockery -name=SystemAuthService -output=automock -outpkg=automock -case=underscore
+type SystemAuthService interface {
+	ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
+}
+
 //go:generate mockery -name=DocumentConverter -output=automock -outpkg=automock -case=underscore
 type DocumentConverter interface {
 	MultipleToGraphQL(in []*model.Document) []*graphql.Document
@@ -95,6 +100,11 @@ type WebhookConverter interface {
 	MultipleInputFromGraphQL(in []*graphql.WebhookInput) []*model.WebhookInput
 }
 
+//go:generate mockery -name=SystemAuthConverter -output=automock -outpkg=automock -case=underscore
+type SystemAuthConverter interface {
+	ToGraphQL(in *model.SystemAuth) *graphql.SystemAuth
+}
+
 type Resolver struct {
 	transact persistence.Transactioner
 
@@ -105,14 +115,16 @@ type Resolver struct {
 	eventAPISvc EventAPIService
 	webhookSvc  WebhookService
 	documentSvc DocumentService
+	sysAuthSvc  SystemAuthService
 
 	documentConverter DocumentConverter
 	webhookConverter  WebhookConverter
 	apiConverter      APIConverter
 	eventApiConverter EventAPIConverter
+	sysAuthConv       SystemAuthConverter
 }
 
-func NewResolver(transact persistence.Transactioner, svc ApplicationService, apiSvc APIService, eventAPISvc EventAPIService, documentSvc DocumentService, webhookSvc WebhookService, appConverter ApplicationConverter, documentConverter DocumentConverter, webhookConverter WebhookConverter, apiConverter APIConverter, eventAPIConverter EventAPIConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc ApplicationService, apiSvc APIService, eventAPISvc EventAPIService, documentSvc DocumentService, webhookSvc WebhookService, sysAuthSvc SystemAuthService, appConverter ApplicationConverter, documentConverter DocumentConverter, webhookConverter WebhookConverter, apiConverter APIConverter, eventAPIConverter EventAPIConverter, sysAuthConv SystemAuthConverter) *Resolver {
 	return &Resolver{
 		transact:          transact,
 		appSvc:            svc,
@@ -120,11 +132,13 @@ func NewResolver(transact persistence.Transactioner, svc ApplicationService, api
 		eventAPISvc:       eventAPISvc,
 		documentSvc:       documentSvc,
 		webhookSvc:        webhookSvc,
+		sysAuthSvc:        sysAuthSvc,
 		appConverter:      appConverter,
 		documentConverter: documentConverter,
 		webhookConverter:  webhookConverter,
 		apiConverter:      apiConverter,
 		eventApiConverter: eventAPIConverter,
+		sysAuthConv:       sysAuthConv,
 	}
 }
 
@@ -577,4 +591,35 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *st
 	}
 
 	return resultLabels, nil
+}
+
+func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*graphql.SystemAuth, error) {
+	if obj == nil {
+		return nil, errors.New("Application cannot be empty")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	sysAuths, err := r.sysAuthSvc.ListForObject(ctx, model.ApplicationReference, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	var out []*graphql.SystemAuth
+	for _, sa := range sysAuths {
+		c := r.sysAuthConv.ToGraphQL(&sa)
+		out = append(out, c)
+	}
+
+	return out, nil
 }

@@ -22,4 +22,5 @@ type ApplicationExt struct {
 	Apis      APIDefinitionPageExt      `json:"apis"`
 	EventAPIs EventAPIDefinitionPageExt `json:"eventAPIs"`
 	Documents DocumentPageExt           `json:"documents"`
+	Auths     []*SystemAuth             `json:"auths"`
 }

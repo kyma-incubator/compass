@@ -48,6 +48,8 @@ models:
         resolver: true
       labels:
         resolver: true
+      auths:
+        resolver: true
   APISpec:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.APISpec"
     fields:

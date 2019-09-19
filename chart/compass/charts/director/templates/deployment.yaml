@@ -66,6 +66,11 @@ spec:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-sslMode
+            - name: APP_ONE_TIME_TOKEN_URL
+              value: "http://compass-connector.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connector.graphql.port }}/graphql"
+            - name: APP_CONNECTOR_URL
+              value: "http://compass-connector.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connector.graphql.port }}/graphql"
+
             - name: APP_SCOPES_CONFIGURATION_FILE
               value: /config/scopes.yaml
           volumeMounts:
