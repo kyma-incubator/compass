@@ -11,7 +11,6 @@ required = [
   name = "github.com/machinebox/graphql"
   branch = "master"
 
-
 [[constraint]]
   name = "github.com/kyma-incubator/compass"
   branch = "master"
@@ -19,6 +18,10 @@ required = [
 [[constraint]]
   name = "github.com/google/uuid"
   version = "1.1.1"
+
+[[constraint]]
+  name = "github.com/stretchr/testify"
+  version = "v1.4.0"
 
 [prune]
   go-tests = true

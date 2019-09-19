@@ -2,15 +2,15 @@
 
 
 [[projects]]
-  digest = "1:c2d520d6035524b609322761ced15ab5ba3d47daa2d04d136a8e21b2b5b9cb98"
+  digest = "1:711cd11b4ae785822be831e4c5072963f6f8e32fef376d1796501e5b2a62b997"
   name = "github.com/99designs/gqlgen"
   packages = [
     "graphql",
     "graphql/introspection",
   ]
   pruneopts = "UT"
-  revision = "a7bc468ca1b184a5ce1b07ea331e0121fc56ae82"
-  version = "v0.9.3"
+  revision = "efb6efe06c6e4fc706440acebf6f81fff85f295c"
+  version = "v0.10.1"
 
 [[projects]]
   digest = "1:3b10c6fd33854dc41de2cf78b7bae105da94c2789b6fa5b9ac9e593ea43484ac"
@@ -21,20 +21,20 @@
   version = "v1.1.0"
 
 [[projects]]
-  digest = "1:55388fd080150b9a072912f97b1f5891eb0b50df43401f8b75fb4273d3fec9fc"
+  digest = "1:d37f34e1e231ee4b8657d1b6153e2696b1d7341850f648f5d78151d3bc1f677b"
   name = "github.com/Masterminds/semver"
   packages = ["."]
   pruneopts = "UT"
-  revision = "c7af12943936e8c39859482e61f0574c2fd7fc75"
-  version = "v1.4.2"
+  revision = "fe7c21038085e01e67044ec1efe3afb1eaa59f75"
+  version = "v3.0.1"
 
 [[projects]]
-  digest = "1:ab506cfc00b11d6d406789c15abb0b341e8db076640e3f5255615a7e327398c1"
+  digest = "1:8eeb8f0485a4be0e346d5ef0dd5662b7ac4f693b132c889db696c4ee77a816f4"
   name = "github.com/Masterminds/sprig"
   packages = ["."]
   pruneopts = "UT"
-  revision = "258b00ffa7318e8b109a141349980ffbd30a35db"
-  version = "v2.20.0"
+  revision = "2691a9cba2adee8d9a60100a1bc49e770f97b7db"
+  version = "v2.21.0"
 
 [[projects]]
   digest = "1:786e862ec180708b60ee670723e3edd969fd4309e7b1c315cd7de058ac62a011"
@@ -51,6 +51,14 @@
   pruneopts = "UT"
   revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
   version = "v1.1.1"
+
+[[projects]]
+  digest = "1:76dc72490af7174349349838f2fe118996381b31ea83243812a97e5a0fd5ed55"
+  name = "github.com/dgrijalva/jwt-go"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
+  version = "v3.2.0"
 
 [[projects]]
   digest = "1:582b704bebaa06b48c29b0cec224a6058a09c86883aaddabde889cd1a5f73e1b"
@@ -96,14 +104,15 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:184843745a20dcee95de6193bc4e4c92575975aa0a427cc615aa424653d1cf22"
+  digest = "1:a76b853e3d1b52e6243c5007b01760d40a1181d44608d7eea8a7d84d89dd0009"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/pkg/graphql",
     "components/director/pkg/scalar",
+    "components/director/pkg/strings",
   ]
   pruneopts = "UT"
-  revision = "bd4202422cb93b8b73258c543bbbb7150f273e83"
+  revision = "6753554723fc903e97d5d0124b2864fbe621e304"
 
 [[projects]]
   branch = "master"
@@ -173,19 +182,19 @@
     "scrypt",
   ]
   pruneopts = "UT"
-  revision = "094676da4a83be5288d281081bba63a173ce6772"
+  revision = "9ee001bba392397c76f100a2d5b13afc86f167f1"
 
 [[projects]]
   branch = "master"
-  digest = "1:9a9d873379b3a947a4a1606caea86ce9c4aec8e5b0fae406c5785b052664eb16"
+  digest = "1:1b90e63244513e8514749f45da58e89350d35cb3e12416ce6ed95f41c2a1f177"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "bbd175535a8b9969bb0b33f1502f681ee0b122bd"
+  revision = "2837fb4f24fee082b8c39b1a6dc9e0ed9f3fbd4f"
 
 [[projects]]
   branch = "master"
-  digest = "1:edd06930152b1c30820bb5608929fe04d20582e832752284a0602c8c7eb3c770"
+  digest = "1:a5a274657f09a884d261a8c411b468bb0214de791fb9f1d5419b91514eeed03d"
   name = "golang.org/x/tools"
   packages = [
     "cmd/goimports",
@@ -202,7 +211,7 @@
     "internal/semver",
   ]
   pruneopts = "UT"
-  revision = "238129aa638afb6cf8cf56a290487ddd93c2fad7"
+  revision = "ea99b82c7b93d10d6b83cfbb3543a570b10dd0ac"
 
 [[projects]]
   digest = "1:4d2e5a73dc1500038e504a8d78b986630e3626dc027bc030ba5c75da257cdb96"
@@ -217,9 +226,11 @@
   analyzer-version = 1
   input-imports = [
     "github.com/Masterminds/sprig",
+    "github.com/dgrijalva/jwt-go",
     "github.com/google/uuid",
     "github.com/kisielk/errcheck",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
+    "github.com/kyma-incubator/compass/components/director/pkg/strings",
     "github.com/machinebox/graphql",
     "github.com/pkg/errors",
     "github.com/stretchr/testify/assert",

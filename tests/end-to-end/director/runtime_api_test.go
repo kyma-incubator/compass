@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/ptr"
+
 	"github.com/google/uuid"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -20,7 +22,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	ctx := context.Background()
 	givenInput := graphql.RuntimeInput{
 		Name:        "runtime-create-update-delete",
-		Description: ptrString("runtime-1-description"),
+		Description: ptr.String("runtime-1-description"),
 		Labels:      &graphql.Labels{"ggg": []interface{}{"hhh"}},
 	}
 	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
@@ -35,7 +37,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 				}
 			}`, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
 	saveQueryInExamples(t, createReq.Query(), "create runtime")
-	err = tc.RunQuery(ctx, createReq, &actualRuntime)
+	err = tc.RunOperation(ctx, createReq, &actualRuntime)
 
 	//THEN
 	require.NoError(t, err)
@@ -52,7 +54,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 					%s
 				}
 			}`, actualRuntime.ID, "new-label", "[\"bbb\"]", tc.gqlFieldsProvider.ForLabel()))
-	err = tc.RunQuery(ctx, addLabelReq, &actualLabel)
+	err = tc.RunOperation(ctx, addLabelReq, &actualLabel)
 
 	//THEN
 	require.NoError(t, err)
@@ -67,7 +69,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 					%s
 				}
 			}`, actualRuntime.ID, tc.gqlFieldsProvider.ForRuntime()))
-	err = tc.RunQuery(ctx, getRuntimeReq, &actualRuntime)
+	err = tc.RunOperation(ctx, getRuntimeReq, &actualRuntime)
 	require.NoError(t, err)
 	assert.Len(t, actualRuntime.Labels, 2)
 
@@ -86,7 +88,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	actualApp := graphql.ApplicationExt{}
 
 	//WHEN
-	err = tc.RunQuery(ctx, createAppReq, &actualApp)
+	err = tc.RunOperation(ctx, createAppReq, &actualApp)
 
 	//THEN
 	require.NoError(t, err)
@@ -113,7 +115,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 			}`, actualApp.Apis.Data[0].ID, actualRuntime.ID, authInStr, tc.gqlFieldsProvider.ForRuntimeAuth()))
 
 	//WHEN
-	err = tc.RunQuery(ctx, setAuthReq, &actualRuntimeAuth)
+	err = tc.RunOperation(ctx, setAuthReq, &actualRuntimeAuth)
 
 	//THEN
 	require.NoError(t, err)
@@ -127,7 +129,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	// update runtime, check if only simple values are updated
 	//GIVEN
 	givenInput.Name = "updated-name"
-	givenInput.Description = ptrString("updated-description")
+	givenInput.Description = ptr.String("updated-description")
 	givenInput.Labels = &graphql.Labels{
 		"key": []interface{}{"values", "aabbcc"},
 	}
@@ -143,7 +145,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 		`, actualRuntime.ID, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
 	saveQueryInExamples(t, updateRuntimeReq.Query(), "update runtime")
 	//WHEN
-	err = tc.RunQuery(ctx, updateRuntimeReq, &actualRuntime)
+	err = tc.RunOperation(ctx, updateRuntimeReq, &actualRuntime)
 
 	//THEN
 	require.NoError(t, err)
@@ -155,7 +157,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	// WHEN
 	delReq := gcli.NewRequest(fmt.Sprintf(`mutation{result: deleteRuntime(id: "%s") {%s}}`, actualRuntime.ID, tc.gqlFieldsProvider.ForRuntime()))
 	saveQueryInExamples(t, delReq.Query(), "delete runtime")
-	err = tc.RunQuery(ctx, delReq, nil)
+	err = tc.RunOperation(ctx, delReq, nil)
 
 	//THEN
 	require.NoError(t, err)
@@ -167,7 +169,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	firstRuntimeName := "unique-name-1"
 	givenInput := graphql.RuntimeInput{
 		Name:        firstRuntimeName,
-		Description: ptrString("runtime-1-description"),
+		Description: ptr.String("runtime-1-description"),
 		Labels:      &graphql.Labels{"ggg": []interface{}{"hhh"}},
 	}
 	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
@@ -180,7 +182,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 				}
 			}`, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
 	// WHEN
-	err = tc.RunQuery(ctx, createReq, &firstRuntime)
+	err = tc.RunOperation(ctx, createReq, &firstRuntime)
 
 	//THEN
 	require.NoError(t, err)
@@ -192,7 +194,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	//GIVEN
 	givenInput = graphql.RuntimeInput{
 		Name:        firstRuntimeName,
-		Description: ptrString("runtime-1-description"),
+		Description: ptr.String("runtime-1-description"),
 	}
 	runtimeInGQL, err = tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
@@ -205,7 +207,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	saveQueryInExamples(t, createReq.Query(), "create runtime")
 
 	// WHEN
-	err = tc.RunQuery(ctx, createReq, nil)
+	err = tc.RunOperation(ctx, createReq, nil)
 
 	//THEN
 	require.Error(t, err)
@@ -216,7 +218,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	secondRuntimeName := "unique-name-2"
 	givenInput = graphql.RuntimeInput{
 		Name:        secondRuntimeName,
-		Description: ptrString("runtime-1-description"),
+		Description: ptr.String("runtime-1-description"),
 		Labels:      &graphql.Labels{"ggg": []interface{}{"hhh"}},
 	}
 	runtimeInGQL, err = tc.graphqlizer.RuntimeInputToGQL(givenInput)
@@ -230,7 +232,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 			}`, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
 
 	// WHEN
-	err = tc.RunQuery(ctx, createReq, &secondRuntime)
+	err = tc.RunOperation(ctx, createReq, &secondRuntime)
 
 	//THEN
 	require.NoError(t, err)
@@ -243,7 +245,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	//GIVEN
 	givenInput = graphql.RuntimeInput{
 		Name:        secondRuntimeName,
-		Description: ptrString("runtime-1-description"),
+		Description: ptr.String("runtime-1-description"),
 	}
 	runtimeInGQL, err = tc.graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
@@ -255,7 +257,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 			}`, firstRuntime.ID, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
 
 	// WHEN
-	err = tc.RunQuery(ctx, createReq, &secondRuntime)
+	err = tc.RunOperation(ctx, createReq, &secondRuntime)
 
 	//THEN
 	require.Error(t, err)
@@ -278,7 +280,7 @@ func TestSetAndDeleteAPIAuth(t *testing.T) {
 					}
 				}`, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
 	actualApp := graphql.ApplicationExt{}
-	err = tc.RunQuery(ctx, createReq, &actualApp)
+	err = tc.RunOperation(ctx, createReq, &actualApp)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
 	defer deleteApplication(t, actualApp.ID)
@@ -286,7 +288,7 @@ func TestSetAndDeleteAPIAuth(t *testing.T) {
 	// create runtime
 	runtimeInput := graphql.RuntimeInput{
 		Name:        "runtime-set-delete-api",
-		Description: ptrString("runtime-1-description"),
+		Description: ptr.String("runtime-1-description"),
 	}
 	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInput)
 	require.NoError(t, err)
@@ -297,7 +299,7 @@ func TestSetAndDeleteAPIAuth(t *testing.T) {
 						%s
 					}
 				}`, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
-	err = tc.RunQuery(ctx, createRuntimeReq, &actualRuntime)
+	err = tc.RunOperation(ctx, createRuntimeReq, &actualRuntime)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualRuntime.ID)
 
@@ -322,7 +324,7 @@ func TestSetAndDeleteAPIAuth(t *testing.T) {
 					%s
 				}
 			}`, actualApp.Apis.Data[0].ID, actualRuntime.ID, authInStr, tc.gqlFieldsProvider.ForRuntimeAuth()))
-	err = tc.RunQuery(ctx, setAuthReq, &actualRuntimeAuth)
+	err = tc.RunOperation(ctx, setAuthReq, &actualRuntimeAuth)
 
 	//THEN
 	require.NoError(t, err)
@@ -340,7 +342,7 @@ func TestSetAndDeleteAPIAuth(t *testing.T) {
 					%s
 				} 
 			}`, actualApp.Apis.Data[0].ID, actualRuntime.ID, tc.gqlFieldsProvider.ForRuntimeAuth()))
-	err = tc.RunQuery(ctx, delAuthReq, nil)
+	err = tc.RunOperation(ctx, delAuthReq, nil)
 	require.NoError(t, err)
 }
 
@@ -358,8 +360,8 @@ func TestQueryRuntimes(t *testing.T) {
 	}()
 
 	inputRuntimes := []*graphql.Runtime{
-		{Name: "runtime-query-1", Description: ptrString("test description")},
-		{Name: "runtime-query-2", Description: ptrString("another description")},
+		{Name: "runtime-query-1", Description: ptr.String("test description")},
+		{Name: "runtime-query-2", Description: ptr.String("another description")},
 		{Name: "runtime-query-3"},
 	}
 
@@ -372,7 +374,7 @@ func TestQueryRuntimes(t *testing.T) {
 		require.NoError(t, err)
 		createReq := fixCreateRuntimeRequest(runtimeInGQL)
 		actualRuntime := graphql.Runtime{}
-		err = tc.RunQuery(ctx, createReq, &actualRuntime)
+		err = tc.RunOperation(ctx, createReq, &actualRuntime)
 		require.NoError(t, err)
 		require.NotEmpty(t, actualRuntime.ID)
 		rtm.ID = actualRuntime.ID
@@ -387,7 +389,7 @@ func TestQueryRuntimes(t *testing.T) {
 					%s
 				}
 			}`, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForRuntime())))
-	err := tc.RunQuery(ctx, queryReq, &actualPage)
+	err := tc.RunOperation(ctx, queryReq, &actualPage)
 	saveQueryInExamples(t, queryReq.Query(), "query runtimes")
 
 	//THEN
@@ -424,7 +426,7 @@ func TestQuerySpecificRuntime(t *testing.T) {
 				}
 			}`, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
 	createdRuntime := graphql.Runtime{}
-	err = tc.RunQuery(ctx, createReq, &createdRuntime)
+	err = tc.RunOperation(ctx, createReq, &createdRuntime)
 	require.NoError(t, err)
 	require.NotEmpty(t, createdRuntime.ID)
 
@@ -438,7 +440,7 @@ func TestQuerySpecificRuntime(t *testing.T) {
 					%s
 				}
 			}`, createdRuntime.ID, tc.gqlFieldsProvider.ForRuntime()))
-	err = tc.RunQuery(ctx, queryReq, &queriedRuntime)
+	err = tc.RunOperation(ctx, queryReq, &queriedRuntime)
 	saveQueryInExamples(t, queryReq.Query(), "query runtime")
 
 	//THEN
@@ -517,9 +519,8 @@ func TestApplicationsForRuntime(t *testing.T) {
 
 		createApplicationReq := fixCreateApplicationRequest(appInputGQL)
 		application := graphql.Application{}
-		createApplicationReq.Header["Tenant"] = []string{testApp.Tenant}
 
-		err = tc.RunQuery(ctx, createApplicationReq, &application)
+		err = tc.RunOperationWithCustomTenant(ctx, testApp.Tenant, createApplicationReq, &application)
 
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
@@ -536,19 +537,17 @@ func TestApplicationsForRuntime(t *testing.T) {
 	runtimeInputGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInput)
 	require.NoError(t, err)
 	createRuntimeRequest := fixCreateRuntimeRequest(runtimeInputGQL)
-	createRuntimeRequest.Header["Tenant"] = []string{tenantID}
 	runtime := graphql.Runtime{}
-	err = tc.RunQuery(ctx, createRuntimeRequest, &runtime)
+	err = tc.RunOperationWithCustomTenant(ctx, tenantID, createRuntimeRequest, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 	defer deleteRuntimeWithinTenant(t, runtime.ID, tenantID)
 
 	//WHEN
 	request := fixApplicationForRuntimeRequest(runtime.ID)
-	request.Header["Tenant"] = []string{tenantID}
 	applicationPage := graphql.ApplicationPage{}
 
-	err = tc.RunQuery(ctx, request, &applicationPage)
+	err = tc.RunOperationWithCustomTenant(ctx, tenantID, request, &applicationPage)
 	saveQueryInExamples(t, request.Query(), "query applications for runtime")
 
 	//THEN
@@ -572,7 +571,7 @@ func TestQueryRuntimesWithPagination(t *testing.T) {
 		createReq := fixCreateRuntimeRequest(runtimeInputGQL)
 
 		runtime := graphql.Runtime{}
-		err = tc.RunQuery(ctx, createReq, &runtime)
+		err = tc.RunOperation(ctx, createReq, &runtime)
 
 		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)
@@ -589,7 +588,7 @@ func TestQueryRuntimesWithPagination(t *testing.T) {
 
 		//WHEN
 		runtimePage := graphql.RuntimePage{}
-		err := tc.RunQuery(ctx, runtimesRequest, &runtimePage)
+		err := tc.RunOperation(ctx, runtimesRequest, &runtimePage)
 		require.NoError(t, err)
 
 		//THEN
@@ -606,7 +605,7 @@ func TestQueryRuntimesWithPagination(t *testing.T) {
 	//WHEN get last page with last runtime
 	runtimesRequest := fixRuntimeRequestWithPagination(after, cursor)
 	lastRuntimePage := graphql.RuntimePage{}
-	err := tc.RunQuery(ctx, runtimesRequest, &lastRuntimePage)
+	err := tc.RunOperation(ctx, runtimesRequest, &lastRuntimePage)
 	require.NoError(t, err)
 	saveQueryInExamples(t, runtimesRequest.Query(), "query runtimes with pagination")
 
