@@ -837,15 +837,15 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 	assert.Contains(t, err.Error(), `must be one of the following: "DEFAULT", "Christmas", "New Year"`)
 }
 
-func marshallJSONSchema(t *testing.T, schema interface{}) *graphql.JSON {
+func marshallJSONSchema(t *testing.T, schema interface{}) *graphql.JSONSchema {
 	out, err := json.Marshal(schema)
 	require.NoError(t, err)
 	output := strconv.Quote(string(out))
-	jsonSchema := graphql.JSON(output)
+	jsonSchema := graphql.JSONSchema(output)
 	return &jsonSchema
 }
 
-func unmarshallJSONSchema(t *testing.T, schema *graphql.JSON) interface{} {
+func unmarshallJSONSchema(t *testing.T, schema *graphql.JSONSchema) interface{} {
 	require.NotNil(t, schema)
 	var output interface{}
 	err := json.Unmarshal([]byte(*schema), &output)

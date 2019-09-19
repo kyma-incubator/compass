@@ -95,16 +95,15 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "fix-schema-as-string"
-  digest = "1:551e109d7b7b094cdd57dd4258d76ea916439fef22a98257dd275ae245c7b023"
+  branch = "master"
+  digest = "1:a1bccfad08a451631f68bd47d1beb2e21b8147c44175be661ed2ec5d9d7a7be0"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/pkg/graphql",
     "components/director/pkg/scalar",
   ]
   pruneopts = "UT"
-  revision = "e6453d46394610e841f9a80157d5c7e4089bca83"
-  source = "github.com/dbadura/compass"
+  revision = "ce9087a1bb3afe781f53d0a3dccb241e1b086095"
 
 [[projects]]
   branch = "master"
