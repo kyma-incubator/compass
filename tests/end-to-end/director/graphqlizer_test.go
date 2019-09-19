@@ -2,7 +2,6 @@ package director
 
 import (
 	"bytes"
-	"encoding/json"
 	"text/template"
 
 	"github.com/Masterminds/sprig"
@@ -278,7 +277,7 @@ func (g *graphqlizer) LabelDefinitionInputToGQL(in graphql.LabelDefinitionInput)
 	return g.genericToGQL(in, `{
 		key: "{{.Key}}",
 		{{- if .Schema }}
-		schema: {{ SchemaToGQL .Schema }},
+		schema: {{.Schema}},
 		{{- end }}
 	}`)
 }
@@ -290,17 +289,6 @@ func (g *graphqlizer) LabelFilterToGQL(in graphql.LabelFilter) (string, error) {
 		query: "{{.Query}}",
 		{{- end }}
 	}`)
-}
-
-func (g *graphqlizer) SchemaToGQL(in *interface{}) (string, error) {
-	out, err := json.Marshal(in)
-	if err != nil {
-		return "", errors.Wrap(err, "while marshalling json schema")
-	}
-
-	output := removeDoubleQuotesFromJSONKeys(string(out))
-
-	return output, nil
 }
 
 func (g *graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error) {
@@ -322,7 +310,6 @@ func (g *graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	fm["CredentialRequestAuthInputToGQL"] = g.CredentialRequestAuthInputToGQL
 	fm["LabelDefinitionInputToGQL"] = g.LabelDefinitionInputToGQL
 	fm["LabelFilterToGQL"] = g.LabelFilterToGQL
-	fm["SchemaToGQL"] = g.SchemaToGQL
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)
 	if err != nil {
