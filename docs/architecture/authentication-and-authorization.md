@@ -15,18 +15,27 @@ The following diagram represents architecture of the security in Compass:
 
 ![](./assets/security-architecture.svg)
 
-### Tenant mapping handler
+### Tenant Mapping Handler
 
-It is an OathKeeper [hydrator](https://github.com/ory/docs/blob/525608c65694539384b785355d293bc0ad00da27/docs/oathkeeper/pipeline/mutator.md#hydrator) handler responsible for mapping `authorization_id` to tenant. `authorization_id` is used in multiple authentication flows:
-- in OAuth 2.0 it is equal to `client_id`
-- in Basic authentication it is equal to `username`
-- in Certificates authentication flow it is equal to Common Name (CN).
+It is an OathKeeper [hydrator](https://github.com/ory/docs/blob/525608c65694539384b785355d293bc0ad00da27/docs/oathkeeper/pipeline/mutator.md#hydrator) handler responsible for mapping authentication session data to tenant. It could be built into Director itself, as it will also use the same database. It would be implemented as a separate endpoint, such as `/tenant-mapping`.
 
-It will be built into the Director component, as a separate endpoint responsible for retrieving the tenant ID based on database query.
-In order to map client_id from Runtime Agent to tenant, we will query `client_id` from Runtime `agentAuth` JSONB field.
-In order to map client_id from Application to tenant, we need to extend Application model with `auth` JSONB field. Then, we can query `client_id` from Application `auth` JSONB field.
+To unify the approach for mapping, we could introduce `authorization_id`, widely used by multiple authentication flows.
+The `authorization_id` is equal to:
+- `client_id` in OAuth 2.0 authentication flow 
+- `username` in Basic authentication flow
+- Common Name (CN) in Certificates authentication flow
 
-To unify tenant mapping, `client_id` will be not only generated in OAuth 2.0 flow, but also in Certificates flow. We will write it into certificate. In a result, these two flows we will map `client_id` to tenant.
+While generating one-time token, `client_id`/`client_secret` pair or basic authentication details for Runtime/Application/IntegrationSystem (using proper GraphQL mutation on Director), an entry in `system_auths` table in Director database is created. The `system_auths` table is used for tenant mapping.
+
+#### `system_auths` table
+
+The table is used by Director and Tenant Mapping Handler. It would contain the following fields:
+- `id`, which will be the `authorization_id`
+- `tenant` (optional field - used for Application and Runtime, not used for Integration System)
+- `app_id` foreign key of type UUID
+- `runtime_id` foreign key of type UUID
+- `integration_system_id` foreign key of type UUID
+- `value` of type JSONB (with authentication details, such as `client_id/client_secret`, `username/password`; in case of certificates it will be empty)
 
 ### GraphQL security
 
@@ -126,7 +135,7 @@ There are two ways of creating a `client_id` and `client_secret` pair in the Hyd
 
 1. Authenticator calls Hydra for introspection of the token.
 1. If the token is valid, OathKeeper sends the request to Hydrator. 
-1. Hydrator calls Tenant mapping handler hosted by `Director` to get `tenant` based on a `client_id` (`client_id` is the ID of `SystemAuth` entry related to given Runtime/Application/IntegrationSystem) .
+1. Hydrator calls Tenant Mapping Handler hosted by `Director` to get `tenant` based on a `client_id` (`client_id` is the ID of `SystemAuth` entry related to given Runtime/Application/IntegrationSystem) .
 1. Hydrator passes response to ID_Token mutator which constructs a JWT token with scopes and `tenant` in the payload.
 1. The request is then forwarded to the desired component (such as `Director` or `Connector`) through the `Gateway` component.
  
@@ -150,7 +159,7 @@ User logs in to Compass UI
 
 1. Authenticator validates the token using keys provided by identity service. In production environment, tenant **must be** included in token payload. For local development, the `tenant` property is missing from token issued by Dex.
 1. If the token is valid, OathKeeper sends the request to Hydrator.
-1. Hydrator calls Tenant mapping handler hosted by `Director`, which, in production environment, returns **the same** authentication session (as the `tenant` is already in place). For local development, `tenant` is loaded from ConfigMap, where static `user - tenant` mapping is done.
+1. Hydrator calls Tenant Mapping Handler hosted by `Director`, which, in production environment, returns **the same** authentication session (as the `tenant` is already in place). For local development, `tenant` is loaded from ConfigMap, where static `user - tenant` mapping is done.
 1. Hydrator passes response to ID_Token mutator which constructs a JWT token with scopes and `tenant` in the payload.
 1. The request is then forwarded to the desired component (such as `Director` or `Connector`) through the `Gateway` component.
  
@@ -178,5 +187,4 @@ foo@bar.com:
 ### Certificates
 
 To be defined.
-
 
