@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/scope"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
@@ -67,9 +68,11 @@ func main() {
 		Resolvers: domain.NewRootResolver(transact),
 	}
 	gqlCfg.Directives.HasScopes = func(ctx context.Context, obj interface{}, next graphql2.Resolver, scopesDefinition string) (res interface{}, err error) {
-		spew.Dump("ctx", ctx)
-		spew.Dump("obj", obj)
-		spew.Dump("scopesDefintion", scopesDefinition)
+		scopes, err := scope.LoadFromContext(ctx)
+		if err != nil {
+			return nil, err
+		}
+
 		return next(ctx)
 	}
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)

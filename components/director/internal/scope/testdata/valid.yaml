@@ -1,0 +1,6 @@
+queries:
+  runtime: "runtime:get"
+  application: "application:get"
+mutations:
+  createApplication: ["application:create","global:create"]
+  deleteApplication: "application:delete"
