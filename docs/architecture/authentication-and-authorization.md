@@ -184,7 +184,28 @@ foo@bar.com:
         - runtime:view
 ```
 
-### Certificates
+### Client certificates
 
-To be defined.
+**Compass Connector flow:**
+
+1. Runtime/Application/IntegrationSystem makes a call to the Connector to the certificate-secured subdomain. 
+2. ISTIO verifies the client certificate. If the certificate is invalid, ISTIO rejects the request. 
+3. The certificate info (subject and certificate hash) is added to the `Certificate-Data` header.
+4. The Oathkeeper uses the Certificate Resolver as a mutator, which turns the `Certificate-Data` header into the `Client-Certificate-Hash` header and the `Client-Id-From-Certificate` header. If the certificate has been revoked, the two headers are empty. 
+5. The request is forwarded to the Connector through the Compass Gateway.
+
+![Cert-Con](./assets/certificate-security-diagram-connector.svg)
+
+**Compass Director Flow:**
+
+1. Runtime/Application/IntegrationSystem makes a call to the Director to the certificate-secured subdomain. 
+2. ISTIO verifies the client certificate. If the certificate is invalid, ISTIO rejects the request. 
+3. The certificate info (subject and certificate hash) is added to the `Certificate-Data` header.
+4. The Oathkeeper uses the Certificate Resolver as a mutator, which turns the `Certificate-Data` header into the `Client-Certificate-Hash` header and the `Client-Id-From-Certificate` header. If the certificate has been revoked, the two headers are empty. 
+5. The call is then proxied to the Tenant mapping handler, where the `client_id` is mapped onto the `tenant` and returned to the Oathkeeper. If the Common Name is invalid, the `tenant` will be empty. 
+6. Hydrator passes the response to ID_Token mutator which constructs a JWT token with scopes and tenant in the payload.
+7. The Oathkeeper proxies the request further to the Compass Gateway.
+8. The request is forwarded to the Director. 
+
+![Cert-Dir](./assets/certificate-security-diagram-director.svg)
 
