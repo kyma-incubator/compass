@@ -38,7 +38,7 @@ A successful call returns the data requested in the query.
 
 ## Renew the client certificate 
 
-Generate a CSR with this command using the certificate subject data obtained with the CRS information: 
+Generate a CSR with this command using the certificate subject data obtained with the CSR information: 
 ```
 openssl genrsa -out generated.key 2048
 openssl req -new -sha256 -out generated.csr -key generated.key -subj "{SUBJECT}"
