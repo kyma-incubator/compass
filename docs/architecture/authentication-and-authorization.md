@@ -17,7 +17,9 @@ The following diagram represents the architecture of the security in Compass:
 
 ### Tenant mapping handler
 
-It is an OathKeeper [hydrator](https://github.com/ory/docs/blob/525608c65694539384b785355d293bc0ad00da27/docs/oathkeeper/pipeline/mutator.md#hydrator) handler responsible for mapping `client_id` to tenant. It will be built into the Director component, as a separate endpoint responsible for retrieving the tenant ID based on database query.
+It is an OathKeeper [hydrator](https://github.com/ory/docs/blob/525608c65694539384b785355d293bc0ad00da27/docs/oathkeeper/pipeline/mutator.md#hydrator) handler responsible for mapping `authorization_id` to tenant.
+
+It will be built into the Director component, as a separate endpoint responsible for retrieving the tenant ID based on database query.
 In order to map client_id from Runtime Agent to tenant, we will query `client_id` from Runtime `agentAuth` JSONB field.
 In order to map client_id from Application to tenant, we need to extend Application model with `auth` JSONB field. Then, we can query `client_id` from Application `auth` JSONB field.
 
@@ -64,36 +66,41 @@ type Application {
 }
 ```
 
+Instead of defining manually these directives in GraphQL schema, we can automate it using [gqlgen](https://gqlgen.com/reference/plugins/) plugins.
+
 The `path` parameter would specify path in YAML file (ConfigMap) with required scopes for a given resolver. For example:
 ```yaml
 queries:
-    runtimes: "runtime:list"
-    runtime: "runtime:get"
+    runtimes: "runtime:view"
+    runtime: "runtime:view"
 mutations:
-    createApplication: "application:create"
-    updateApplication: "application:update"
-    deleteApplication: "application:delete"
+    createApplication: "application:admin"
+    updateApplication: "application:admin"
+    deleteApplication: "application:admin"
 types:
     Application:
-        webhooks: "webhook:list"
-        apis: "api:list"
-        eventAPIs: "eventapi:list"
-        documents: "document:list"
+        webhooks: "webhook:view"
+        apis: "api:view"
+        eventAPIs: "eventapi:view"
+        documents: "document:view"
 ```
 The actual scopes will be defined later.
 
-## Flows
+## Authentication types
 
-Each flow will be set up on a separate host via different VirtualService, as currently OathKeeper doesn't support certificates and multiple `Bearer` authenticators.
+Each authentication type will be handled on a separate host via different VirtualService, as currently OathKeeper doesn't support certificates and multiple `Bearer` authenticators.
 
-### OAuth 2.0
+### OAuth 2.0 Access Token
 There are two ways of creating a `client_id` and `client_secret` pair in the Hydra, using Hydra's [oauth client](https://github.com/kyma-project/kyma/blob/ab3d8878d013f8cc34c3f549dfa2f50f06502f14/docs/security/03-06-oauth2-server.md#register-an-oauth2-client) or [simple POST request](https://github.com/kyma-incubator/examples/tree/master/ory-hydra/scenarios/client-credentials#setup-an-oauth2-client).
 
 **Obtaining token:**
-1. Runtime/Application calls Hydra with encoded credentials (`client_id` is the `runtime ID` or `application ID`) and requested scopes.
-2. If the requested scopes are valid, Runtime/Application receives in response an access token, otherwise receives an error.
+
+1. Runtime/Application/IntegrationSystem requests `client_id` and `client_credentials` pair from Director. Director generates the pair, registers it in Hydra with proper scopes (defined by object type) and writes it in database.
+1. Runtime/Application/IntegrationSystem calls Hydra with encoded credentials (`client_id` is the ID of `SystemAuth` entry related to given Runtime/Application/IntegrationSystem) and requested scopes.
+1. If the requested scopes are valid, Runtime/Application/IntegrationSystem receives in response an access token, otherwise receives an error.
 
 **Request flow:**
+
 1. Authenticator calls Hydra for introspection of the token.
 1. If the token is valid, OathKeeper sends the request to Hydrator. 
 1. Hydrator calls Tenant mapping handler hosted by `Director` to get `tenant` based on a `client_id`.
@@ -101,6 +108,10 @@ There are two ways of creating a `client_id` and `client_secret` pair in the Hyd
 1. The request is then forwarded to the desired component (such as `Director` or `Connector`) through the `Gateway` component.
  
 ![Auth](./assets/oauth2-security-diagram.svg)
+
+**Scopes**
+
+In this authentication flow, scopes are read from OAuth 2.0 access token and written directly in output JWT token. Hydra validates if user can request access token with given scopes.
 
 **Proof of concept:** [kyma-incubator/compass#287](https://github.com/kyma-incubator/compass/pull/287)
 
