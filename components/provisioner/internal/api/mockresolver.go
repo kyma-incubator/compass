@@ -14,28 +14,13 @@ type MockResolver struct {
 	repository map[string]RuntimeOperation
 }
 
-type externalMutationResolver struct {
-	*MockResolver
-}
-
-type externalQueryResolver struct {
-	*MockResolver
-}
-
-func (r *MockResolver) Mutation() gqlschema.MutationResolver {
-	return &externalMutationResolver{r}
-}
-func (r *MockResolver) Query() gqlschema.QueryResolver {
-	return &externalQueryResolver{r}
-}
-
 type RuntimeOperation struct {
-	operationID        string
-	operationType      gqlschema.OperationType
-	status             gqlschema.OperationState
-	runtimeID          string
-	shouldStatusChange bool
-	startTime          time.Time
+	operationID   string
+	operationType gqlschema.OperationType
+	status        gqlschema.OperationState
+	runtimeID     string
+	succeeded     bool
+	startTime     time.Time
 }
 
 func NewMockResolver(repository map[string]RuntimeOperation) *MockResolver {
@@ -79,7 +64,7 @@ func (r *MockResolver) startNewOperation(ctx context.Context, runtimeID string, 
 		startTime:     time.Now(),
 	}
 
-	r.changeStatus(operation)
+	r.save(operation)
 	return operationID, nil
 }
 
@@ -113,19 +98,19 @@ and status Succeeded in second and following calls until next operation is start
 */
 
 func (r *MockResolver) RuntimeOperationStatus(ctx context.Context, operationID string) (*gqlschema.OperationStatus, error) {
-	operation, exists := r.checkOperation(operationID)
+	operation, exists := r.load(operationID)
 
 	if !exists {
 		return nil, errors.Errorf("Operation: %s does not exist", operationID)
 	}
 
-	if operation.shouldStatusChange {
+	if operation.succeeded {
 		operation.status = gqlschema.OperationStateSucceeded
 	} else {
-		operation.shouldStatusChange = true
+		operation.succeeded = true
 	}
 
-	r.changeStatus(operation)
+	r.save(operation)
 
 	return &gqlschema.OperationStatus{
 		Operation: operation.operationType,
@@ -144,7 +129,7 @@ func (r *MockResolver) checkIfLastOperationFinished(runtimeID string) (string, b
 	return "", true
 }
 
-func (r *MockResolver) changeStatus(operation RuntimeOperation) {
+func (r *MockResolver) save(operation RuntimeOperation) {
 	r.repository[operation.operationID] = operation
 }
 
@@ -186,7 +171,7 @@ func (r *MockResolver) getRuntimeOperationsSorted(runtimeID string) []RuntimeOpe
 	return operationsMatchingRuntime
 }
 
-func (r *MockResolver) checkOperation(operationID string) (RuntimeOperation, bool) {
+func (r *MockResolver) load(operationID string) (RuntimeOperation, bool) {
 	item, exists := r.repository[operationID]
 
 	if exists {

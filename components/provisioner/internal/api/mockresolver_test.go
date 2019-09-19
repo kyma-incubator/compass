@@ -29,7 +29,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		require.NotEmpty(t, id)
 
 		//cleanup
-		resolver.repository = make(map[string]RuntimeOperation)
+		flushRepository(resolver)
 	})
 
 	t.Run("Should return error when another operation is in progress", func(t *testing.T) {
