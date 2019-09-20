@@ -5,6 +5,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/pkg/errors"
 )
 
 //go:generate mockery -name=TokenService -output=automock -outpkg=automock -case=underscore
@@ -12,7 +13,7 @@ type TokenService interface {
 	GenerateOneTimeToken(ctx context.Context, runtimeID string, tokenType TokenType) (model.OneTimeToken, error)
 }
 
-//go:generate mockery -name=OneTimeTokenConverter -output=automock -outpkg=automock -case=underscore
+//generate mockery -name=TokenConverter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
 	ToGraphQL(model model.OneTimeToken) (graphql.OneTimeToken, error)
 }
@@ -40,6 +41,9 @@ func (r *Resolver) GenerateOneTimeTokenForRuntime(ctx context.Context, id string
 		return nil, err
 	}
 	err = tx.Commit()
+	if err != nil {
+		return nil, errors.Wrap(err, "while commiting transaction")
+	}
 
 	//TODO: Write converter
 	return &graphql.OneTimeToken{Token: token.Token, ConnectorURL: token.ConnectorURL}, nil
@@ -57,8 +61,11 @@ func (r *Resolver) GenerateOneTimeTokenForApp(ctx context.Context, id string) (*
 	if err != nil {
 		return nil, err
 	}
-	err = tx.Commit()
 
+	err = tx.Commit()
+	if err != nil {
+		return nil, errors.Wrap(err, "while commiting transaction")
+	}
 	//TODO: Write converter
 	return &graphql.OneTimeToken{Token: token.Token, ConnectorURL: token.ConnectorURL}, nil
 }
