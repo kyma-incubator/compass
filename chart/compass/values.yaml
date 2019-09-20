@@ -35,6 +35,9 @@ global:
       connector:
         dir: pr/
         version: "PR-303"
+      provisioner:
+        dir: pr/
+        version: "PR-"
 
   isLocalEnv: false
 
