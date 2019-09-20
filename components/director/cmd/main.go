@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/scope"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 
+
+	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
@@ -65,9 +67,17 @@ func main() {
 		Resolvers: domain.NewRootResolver(transact),
 	}
 
+	provider := scope.NewProvider("xxx.txt")
+	fw, err := scope.NewFileWatcher()
+	exitOnError(err, "Error on creating File Watcher")
+	reloader, err := scope.NewReloader("xxx.txt", provider, fw)
+	exitOnError(err, "Error on creating Reloader")
+	go func() {
+		err := reloader.Watch(context.Background())
+		exitOnError(err, "Error from Reloader watch")
+	}()
 
-
-	gqlCfg.Directives.HasScopes = scope.NewDirective().Has
+	gqlCfg.Directives.HasScopes = scope.NewDirective(provider).Has
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
 
 	router := mux.NewRouter()
