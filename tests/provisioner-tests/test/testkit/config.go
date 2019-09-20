@@ -8,7 +8,7 @@ import (
 )
 
 type TestConfig struct {
-	InternalProvisionerUrl string `envconfig:"default=http://compass-provisioner:3050/graphql"`
+	InternalProvisionerUrl string `envconfig:"default=http://compass-provisioner:3000/graphql"`
 }
 
 func ReadConfig() (TestConfig, error) {
