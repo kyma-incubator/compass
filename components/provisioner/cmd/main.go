@@ -7,13 +7,14 @@ import (
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
 )
 
 type config struct {
-	Address               string `envconfig:"default=127.0.0.1:3000"`
+	Address               string `envconfig:"default=127.0.0.1:3050"`
 	APIEndpoint           string `envconfig:"default=/graphql"`
 	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
 }
@@ -30,8 +31,12 @@ func main() {
 	log.Println("Starting Provisioner")
 	log.Printf("Config: %s", cfg.String())
 
+	repository := make(map[string]api.RuntimeOperation)
+
+	resolver := api.NewMockResolver(repository)
+
 	gqlCfg := gqlschema.Config{
-		Resolvers: nil,
+		Resolvers: resolver,
 	}
 	executableSchema := gqlschema.NewExecutableSchema(gqlCfg)
 
@@ -44,7 +49,7 @@ func main() {
 	http.Handle("/", router)
 
 	log.Printf("API listening on %s...", cfg.Address)
-	if err := http.ListenAndServe(cfg.Address, nil); err != nil {
+	if err := http.ListenAndServe(cfg.Address, router); err != nil {
 		panic(err)
 	}
 }

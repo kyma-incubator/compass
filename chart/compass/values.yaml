@@ -20,6 +20,9 @@ global:
     schema_migrator:
       dir: pr/
       version: "PR-297"
+    provisioner:
+      dir: pr/
+      version: "PR-305"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -55,6 +58,10 @@ global:
     # If key and certificate are not provided they will be generated
     caKey: ""
     caCertificate: ""
+
+  provisioner:
+    graphql:
+      port: 3000
 
   gateway:
     port: 3000
