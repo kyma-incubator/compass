@@ -37,9 +37,10 @@ type config struct {
 		Name     string `envconfig:"default=postgres,APP_DB_NAME"`
 		SSLMode  string `envconfig:"default=disable,APP_DB_SSL"`
 	}
-	APIEndpoint           string `envconfig:"default=/graphql"`
+	APIEndpoint             string `envconfig:"default=/graphql"`
 	TenantMappingEndpoint string `envconfig:"default=/tenant-mapping"`
-	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
+	PlaygroundAPIEndpoint   string `envconfig:"default=/graphql"`
+	ScopesConfigurationFile string // TODO adjust run.sh, charts
 }
 
 func main() {
@@ -67,10 +68,12 @@ func main() {
 		Resolvers: domain.NewRootResolver(transact),
 	}
 
-	provider := scope.NewProvider("xxx.txt")
+	provider := scope.NewProvider(cfg.ScopesConfigurationFile)
+	err = provider.Load()
+	exitOnError(err,"Error on loading scopes config file")
 	fw, err := scope.NewFileWatcher()
 	exitOnError(err, "Error on creating File Watcher")
-	reloader, err := scope.NewReloader("xxx.txt", provider, fw)
+	reloader, err := scope.NewReloader(cfg.ScopesConfigurationFile, provider, fw)
 	exitOnError(err, "Error on creating Reloader")
 	go func() {
 		err := reloader.Watch(context.Background())
