@@ -19,10 +19,10 @@ global:
       version: "PR-99"
     schema_migrator:
       dir: pr/
-      version: "PR-253"
+      version: "PR-297"
     provisioner:
       dir: pr/
-      version: "PR-297"
+      version: "PR-305"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -61,7 +61,7 @@ global:
 
   provisioner:
     graphql:
-      port: 3050
+      port: 3000
 
   gateway:
     port: 3000
