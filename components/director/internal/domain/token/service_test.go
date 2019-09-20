@@ -3,8 +3,8 @@ package token
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/token/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/graphql_client"
-	"github.com/kyma-incubator/compass/components/director/internal/token/automock"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -37,7 +37,7 @@ func TestTokenService_GetOneTimeTokenForRuntime(t *testing.T) {
 		svc := NewTokenService(cli)
 
 		//WHEN
-		token, err := svc.GetOneTimeTokenForRuntime(ctx, runtimeID)
+		token, err := svc.getOneTimeToken(ctx, runtimeID)
 
 		//THEN
 		require.NoError(t, err)
@@ -54,7 +54,7 @@ func TestTokenService_GetOneTimeTokenForRuntime(t *testing.T) {
 		svc := NewTokenService(cli)
 
 		//WHEN
-		_, err := svc.GetOneTimeTokenForRuntime(ctx, runtimeID)
+		_, err := svc.getOneTimeToken(ctx, runtimeID)
 
 		//THEN
 		require.Error(t, err)
@@ -73,6 +73,7 @@ func mockReturnFilledToken(t *testing.T, input, output ExternalTokenModel) func(
 	}
 }
 
+//TODO: remove those things below
 func TestTokenService_GetOneTimeTokenForRuntime2(t *testing.T) {
 	runtimeID := "runtime_ID"
 	ctx := context.TODO()
@@ -80,7 +81,7 @@ func TestTokenService_GetOneTimeTokenForRuntime2(t *testing.T) {
 	cli := graphql_client.NewGraphQLClient(URL)
 
 	svc := NewTokenService(cli)
-	token, err := svc.GetOneTimeTokenForRuntime(ctx, runtimeID)
+	token, err := svc.getOneTimeToken(ctx, runtimeID)
 
 	require.NoError(t, err)
 	fmt.Println(token)

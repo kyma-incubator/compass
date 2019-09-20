@@ -2,6 +2,9 @@ package domain
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/config"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/token"
+	"github.com/kyma-incubator/compass/components/director/internal/graphql_client"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_auth"
 
@@ -36,9 +39,10 @@ type RootResolver struct {
 	healthCheck *healthcheck.Resolver
 	webhook     *webhook.Resolver
 	labelDef    *labeldef.Resolver
+	token       *token.Resolver
 }
 
-func NewRootResolver(transact persistence.Transactioner) *RootResolver {
+func NewRootResolver(transact persistence.Transactioner, cfg config.ExternalSystemConfig) *RootResolver {
 	authConverter := auth.NewConverter()
 
 	runtimeAuthConverter := runtime_auth.NewConverter(authConverter)
@@ -66,6 +70,9 @@ func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
 	runtimeAuthRepo := runtime_auth.NewRepository(runtimeAuthConverter)
 
+	connectorGCLI := graphql_client.NewGraphQLClient(cfg.ConnectorURL)
+
+	tokenService := token.NewTokenService(connectorGCLI, cfg.ConnectorURL)
 	uidService := uid.NewService()
 	runtimeAuthSvc := runtime_auth.NewService(runtimeAuthRepo, uidService)
 	labelUpsertService := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidService)
@@ -88,6 +95,7 @@ func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
 		webhook:     webhook.NewResolver(transact, webhookSvc, appSvc, webhookConverter),
 		labelDef:    labeldef.NewResolver(labelDefService, labelDefConverter, transact),
+		token:       token.NewTokenResolver(transact, tokenService),
 	}
 }
 
@@ -149,8 +157,12 @@ type mutationResolver struct {
 	*RootResolver
 }
 
-func (r *mutationResolver) GenerateOneTimeTokenForRuntime(ctx context.Context, id string) (*graphql.Token, error) {
-	return r.runtime.GenerateOneTimeToken(ctx, id)
+func (r *mutationResolver) GenerateOneTimeTokenForApp(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
+	return r.token.GenerateOneTimeTokenForApp(ctx, id)
+}
+
+func (r *mutationResolver) GenerateOneTimeTokenForRuntime(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
+	return r.token.GenerateOneTimeTokenForRuntime(ctx, id)
 }
 
 func (r *mutationResolver) CreateApplication(ctx context.Context, in graphql.ApplicationInput) (*graphql.Application, error) {

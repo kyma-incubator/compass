@@ -300,7 +300,3 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string
 
 	return resultLabels, nil
 }
-
-func (r *Resolver) GenerateOneTimeToken(ctx context.Context, id string) (*graphql.Token, error) {
-	return &graphql.Token{Token:"Token"}, nil
-}

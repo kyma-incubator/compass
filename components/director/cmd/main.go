@@ -9,6 +9,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	ecfg "github.com/kyma-incubator/compass/components/director/internal/config"
 	"github.com/kyma-incubator/compass/components/director/internal/domain"
 
 	"github.com/pkg/errors"
@@ -21,6 +22,8 @@ import (
 
 const connStringf string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
 
+
+
 type config struct {
 	Address  string `envconfig:"default=127.0.0.1:3000"`
 	Database struct {
@@ -31,10 +34,7 @@ type config struct {
 		Name     string `envconfig:"default=postgres,APP_DB_NAME"`
 		SSLMode  string `envconfig:"default=disable,APP_DB_SSL"`
 	}
-	Connector struct {
-		URL  string `envconfig:"default=localhost, CONNECTOR_URL"`
-		Port string `envconfig:"default=3000, CONNECTOR_PORT"`
-	}
+	ExternalSystems       ecfg.ExternalSystemConfig
 	APIEndpoint           string `envconfig:"default=/graphql"`
 	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
 }
@@ -60,9 +60,9 @@ func main() {
 		}
 	}()
 
-	//TODO: add config parameter to NewRootResolver
+	fmt.Println(cfg.ExternalSystems.ConnectorURL)
 	gqlCfg := graphql.Config{
-		Resolvers: domain.NewRootResolver(transact),
+		Resolvers: domain.NewRootResolver(transact, cfg.ExternalSystems),
 	}
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
 

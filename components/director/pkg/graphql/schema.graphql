@@ -151,10 +151,11 @@ enum ApplicationWebhookType {
     CONFIGURATION_CHANGED
 }
 
-# Token
+# OneTimeToken
 
-type Token {
+type OneTimeToken {
     token: String!
+    connectorURL: String!
 }
 
 # API
@@ -511,7 +512,10 @@ type Mutation {
     createRuntime(in: RuntimeInput!): Runtime!
     updateRuntime(id: ID!, in: RuntimeInput!): Runtime!
     deleteRuntime(id: ID!): Runtime
-    generateOneTimeTokenForRuntime(id: ID!): Token!
+
+    # Token
+    generateOneTimeTokenForRuntime(id: ID!): OneTimeToken!
+    generateOneTimeTokenForApp(id: ID!): OneTimeToken!
 
     # Webhook
     addWebhook(applicationID: ID!, in: WebhookInput!): Webhook!
