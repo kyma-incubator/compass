@@ -284,6 +284,17 @@
   revision = "6a016cf16650f6be7151db7c3be6fc90a2c4d9b1"
 
 [[projects]]
+  digest = "1:9a1bb99a85e2ccddbc593aa0af084cdf6ea18ed081469eb90e7f6d0d303af6cd"
+  name = "go.uber.org/goleak"
+  packages = [
+    ".",
+    "internal/stack",
+  ]
+  pruneopts = "UT"
+  revision = "1ac8aeca0a53163331564467638f6ffb639636bf"
+  version = "v0.10.0"
+
+[[projects]]
   branch = "master"
   digest = "1:ac3a95fb47a3b5ad909204de06eed59b019252203c18d3747b0090723c3fc4b7"
   name = "golang.org/x/net"
@@ -437,6 +448,7 @@
     "github.com/vektah/gqlparser/ast",
     "github.com/vrischmann/envconfig",
     "github.com/xeipuuv/gojsonschema",
+    "go.uber.org/goleak",
     "golang.org/x/tools/cmd/goimports",
     "k8s.io/apimachinery/pkg/api/validation",
   ]
