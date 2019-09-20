@@ -3,10 +3,11 @@ package testkit
 import (
 	"context"
 	"crypto/tls"
+	"net/http"
+
 	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
-	"net/http"
 )
 
 type ProvisionerClient interface {

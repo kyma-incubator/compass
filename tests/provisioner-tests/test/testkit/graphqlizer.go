@@ -2,10 +2,11 @@ package testkit
 
 import (
 	"bytes"
+	"text/template"
+
 	"github.com/Masterminds/sprig"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
-	"text/template"
 )
 
 // Graphqlizer is responsible for converting Go objects to input arguments in graphql format

@@ -24,15 +24,14 @@
 #   go-tests = true
 #   unused-packages = true
 
+required = [
+    "golang.org/x/tools/cmd/goimports",
+    "github.com/kisielk/errcheck",
+]
 
 [[constraint]]
   name = "github.com/Masterminds/sprig"
   version = "2.20.0"
-
-[[constraint]]
-  name = "github.com/kyma-incubator/compass"
-  source = "github.com/Maladie/compass"
-  branch = "maladie-implement-provisioner-mock"
 
 [[constraint]]
   name = "github.com/machinebox/graphql"
