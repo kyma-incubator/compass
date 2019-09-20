@@ -66,6 +66,9 @@ spec:
                   key: postgresql-sslMode
             - name: APP_SCOPES_CONFIGURATION_FILE
               value: /config/scopes.yaml
+          volumeMounts:
+            - mountPath: /config
+              name: scopes-config
 
         {{if eq .Values.global.database.useEmbedded false}}
         - name: cloudsql-proxy
@@ -81,13 +84,14 @@ spec:
             - name: cloudsql-instance-credentials
               mountPath: /secrets/cloudsql-instance-credentials
               readOnly: true
-            - name: scopes-config
-              mountPath: /config/
+          {{end}}
       volumes:
+        {{if eq .Values.global.database.useEmbedded false}}
         - name: cloudsql-instance-credentials
           secret:
             secretName: cloudsql-instance-credentials
+        {{end}}
         - name: scopes-config
           configMap:
             name: {{ template "fullname" . }}-scopes
-        {{end}}
+
