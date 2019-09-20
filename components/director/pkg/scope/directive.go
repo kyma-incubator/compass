@@ -2,8 +2,6 @@ package scope
 
 import (
 	"context"
-	"fmt"
-
 	"github.com/pkg/errors"
 )
 import "github.com/99designs/gqlgen/graphql"
@@ -28,13 +26,11 @@ func (d *directive) Has(ctx context.Context, obj interface{}, next graphql.Resol
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(actualScopes)
 	requiredScopes, err := d.scopesGetter.GetRequiredScopes(scopesDefinition)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting required scopes")
 	}
 
-	fmt.Println(requiredScopes)
 	if d.matches(actualScopes, requiredScopes) {
 		return next(ctx)
 	}

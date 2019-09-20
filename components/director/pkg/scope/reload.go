@@ -43,7 +43,6 @@ func NewFileWatcher() (*fileWatcherAdapter, error) {
 }
 
 type reloader struct {
-	fileName    string
 	loader      Loader
 	fileWatcher FileWatcher
 }
@@ -54,7 +53,6 @@ func NewReloader(fileName string, loader Loader, fw FileWatcher) (*reloader, err
 		return nil, errors.Wrapf(err, "while adding file %s to watch", fileName)
 	}
 	return &reloader{
-		fileName:    fileName,
 		loader:      loader,
 		fileWatcher: fw,
 	}, nil
@@ -76,7 +74,7 @@ func (r *reloader) Watch(ctx context.Context) error {
 			return ctx.Err()
 		case e := <-evChan:
 			if (e.Op & fsnotify.Write) == fsnotify.Write {
-				fmt.Println("WRITE")
+				fmt.Println("WRITE EVENT RECEIVED")
 				err := r.loader.Load()
 				if err != nil {
 					return err

@@ -39,7 +39,7 @@ type config struct {
 	APIEndpoint             string `envconfig:"default=/graphql"`
 	TenantMappingEndpoint   string `envconfig:"default=/tenant-mapping"`
 	PlaygroundAPIEndpoint   string `envconfig:"default=/graphql"`
-	ScopesConfigurationFile string // TODO adjust run.sh, charts
+	ScopesConfigurationFile string
 }
 
 func main() {

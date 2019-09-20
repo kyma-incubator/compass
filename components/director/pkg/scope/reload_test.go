@@ -2,7 +2,6 @@ package scope_test
 
 import (
 	"context"
-	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope/automock"
 	"io/ioutil"
 	"testing"
@@ -127,7 +126,6 @@ func TestReloaderWithFileWatcherAdapter(t *testing.T) {
 		// WHEN
 		err := reloader.Watch(ctx)
 		// THEN
-		fmt.Println("watch got error", err)
 		require.Equal(t, context.Canceled, err)
 		done <- struct{}{}
 	}(t)
