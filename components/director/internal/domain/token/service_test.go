@@ -3,6 +3,8 @@ package token_test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/token"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/token/automock"
 	gcli "github.com/machinebox/graphql"
@@ -10,7 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 var URL = `http://localhost:3001/graphql`

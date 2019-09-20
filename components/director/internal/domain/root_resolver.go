@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/config"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/token"
 	"github.com/kyma-incubator/compass/components/director/internal/graphql_client"
@@ -56,6 +57,7 @@ func NewRootResolver(transact persistence.Transactioner, cfg config.ExternalSyst
 	appConverter := application.NewConverter(webhookConverter, apiConverter, eventAPIConverter, docConverter)
 	labelDefConverter := labeldef.NewConverter()
 	labelConverter := label.NewConverter()
+	tokenConverter := token.NewConverter()
 
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewRepository()
@@ -95,7 +97,7 @@ func NewRootResolver(transact persistence.Transactioner, cfg config.ExternalSyst
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
 		webhook:     webhook.NewResolver(transact, webhookSvc, appSvc, webhookConverter),
 		labelDef:    labeldef.NewResolver(labelDefService, labelDefConverter, transact),
-		token:       token.NewTokenResolver(transact, tokenService),
+		token:       token.NewTokenResolver(transact, tokenService, tokenConverter),
 	}
 }
 

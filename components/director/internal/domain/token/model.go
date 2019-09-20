@@ -9,7 +9,7 @@ type ExternalRuntimeToken struct {
 	Token string `json:"token"`
 }
 
-func (t *ExternalTokenModel) Token(tokenType TokenType) string {
+func (t *ExternalTokenModel) Token(tokenType Type) string {
 	switch tokenType {
 	case ApplicationToken:
 		return t.AppToken.Token
@@ -19,9 +19,9 @@ func (t *ExternalTokenModel) Token(tokenType TokenType) string {
 	return ""
 }
 
-type TokenType string
+type Type string
 
 const (
-	RuntimeToken     TokenType = "Runtime"
-	ApplicationToken TokenType = "Application"
+	RuntimeToken     Type = "Runtime"
+	ApplicationToken Type = "Application"
 )

@@ -2,6 +2,7 @@ package token
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -10,22 +11,22 @@ import (
 
 //go:generate mockery -name=TokenService -output=automock -outpkg=automock -case=underscore
 type TokenService interface {
-	GenerateOneTimeToken(ctx context.Context, runtimeID string, tokenType TokenType) (model.OneTimeToken, error)
+	GenerateOneTimeToken(ctx context.Context, runtimeID string, tokenType Type) (model.OneTimeToken, error)
 }
 
-//generate mockery -name=TokenConverter -output=automock -outpkg=automock -case=underscore
-type Converter interface {
-	ToGraphQL(model model.OneTimeToken) (graphql.OneTimeToken, error)
+//go:generate mockery -name=TokenConverter -output=automock -outpkg=automock -case=underscore
+type TokenConverter interface {
+	ToGraphQL(model model.OneTimeToken) graphql.OneTimeToken
 }
 
 type Resolver struct {
 	transact persistence.Transactioner
 	svc      TokenService
-	c        Converter
+	conv     TokenConverter
 }
 
-func NewTokenResolver(transact persistence.Transactioner, svc TokenService) *Resolver {
-	return &Resolver{transact: transact, svc: svc}
+func NewTokenResolver(transact persistence.Transactioner, svc TokenService, conv TokenConverter) *Resolver {
+	return &Resolver{transact: transact, svc: svc, conv: conv}
 }
 
 func (r *Resolver) GenerateOneTimeTokenForRuntime(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
@@ -45,8 +46,8 @@ func (r *Resolver) GenerateOneTimeTokenForRuntime(ctx context.Context, id string
 		return nil, errors.Wrap(err, "while commiting transaction")
 	}
 
-	//TODO: Write converter
-	return &graphql.OneTimeToken{Token: token.Token, ConnectorURL: token.ConnectorURL}, nil
+	gqlToken := r.conv.ToGraphQL(token)
+	return &gqlToken, nil
 }
 
 func (r *Resolver) GenerateOneTimeTokenForApp(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
@@ -66,6 +67,6 @@ func (r *Resolver) GenerateOneTimeTokenForApp(ctx context.Context, id string) (*
 	if err != nil {
 		return nil, errors.Wrap(err, "while commiting transaction")
 	}
-	//TODO: Write converter
-	return &graphql.OneTimeToken{Token: token.Token, ConnectorURL: token.ConnectorURL}, nil
+	gqlToken := r.conv.ToGraphQL(token)
+	return &gqlToken, nil
 }

@@ -2,9 +2,10 @@ package graphql_client
 
 import (
 	"crypto/tls"
-	gcli "github.com/machinebox/graphql"
 	"net/http"
 	"time"
+
+	gcli "github.com/machinebox/graphql"
 )
 
 func NewGraphQLClient(URL string) *gcli.Client {

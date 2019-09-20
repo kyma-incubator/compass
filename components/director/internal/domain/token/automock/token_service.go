@@ -13,18 +13,18 @@ type TokenService struct {
 }
 
 // GenerateOneTimeToken provides a mock function with given fields: ctx, runtimeID, tokenType
-func (_m *TokenService) GenerateOneTimeToken(ctx context.Context, runtimeID string, tokenType token.TokenType) (model.OneTimeToken, error) {
+func (_m *TokenService) GenerateOneTimeToken(ctx context.Context, runtimeID string, tokenType token.Type) (model.OneTimeToken, error) {
 	ret := _m.Called(ctx, runtimeID, tokenType)
 
 	var r0 model.OneTimeToken
-	if rf, ok := ret.Get(0).(func(context.Context, string, token.TokenType) model.OneTimeToken); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, token.Type) model.OneTimeToken); ok {
 		r0 = rf(ctx, runtimeID, tokenType)
 	} else {
 		r0 = ret.Get(0).(model.OneTimeToken)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, token.TokenType) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, token.Type) error); ok {
 		r1 = rf(ctx, runtimeID, tokenType)
 	} else {
 		r1 = ret.Error(1)

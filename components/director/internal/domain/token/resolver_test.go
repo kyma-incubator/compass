@@ -3,6 +3,8 @@ package token_test
 import (
 	"context"
 	"errors"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/token"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/token/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -10,7 +12,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
@@ -19,13 +20,15 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 	appID := "08d805a5-87f0-4194-adc7-277ec10de2ef"
 	ctx := context.TODO()
 	tokenModel := model.OneTimeToken{Token: "Token", ConnectorURL: "conenctorURL"}
-	expecedToken := graphql.OneTimeToken{Token: "Token", ConnectorURL: "conenctorURL"}
+	expectedToken := graphql.OneTimeToken{Token: "Token", ConnectorURL: "conenctorURL"}
 	t.Run("Success", func(t *testing.T) {
 		//GIVEN
 		svc := &automock.TokenService{}
 		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, token.ApplicationToken).Return(tokenModel, nil)
+		conv := &automock.TokenConverter{}
+		conv.On("ToGraphQL", tokenModel).Return(expectedToken)
 		persist, transact := txGen.ThatSucceeds()
-		r := token.NewTokenResolver(transact, svc)
+		r := token.NewTokenResolver(transact, svc, conv)
 
 		//WHEN
 		oneTimeToken, err := r.GenerateOneTimeTokenForApp(ctx, appID)
@@ -33,10 +36,11 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 		//THEN
 		require.NoError(t, err)
 		require.NotNil(t, oneTimeToken)
-		assert.Equal(t, expecedToken, *oneTimeToken)
+		assert.Equal(t, expectedToken, *oneTimeToken)
 		persist.AssertExpectations(t)
 		transact.AssertExpectations(t)
 		svc.AssertExpectations(t)
+		conv.AssertExpectations(t)
 	})
 
 	t.Run("Error - transaction commit failed", func(t *testing.T) {
@@ -44,7 +48,8 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 		svc := &automock.TokenService{}
 		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, token.ApplicationToken).Return(tokenModel, nil)
 		persist, transact := txGen.ThatFailsOnCommit()
-		r := token.NewTokenResolver(transact, svc)
+		conv := &automock.TokenConverter{}
+		r := token.NewTokenResolver(transact, svc, conv)
 
 		//WHEN
 		_, err := r.GenerateOneTimeTokenForApp(ctx, appID)
@@ -54,6 +59,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 		persist.AssertExpectations(t)
 		transact.AssertExpectations(t)
 		svc.AssertExpectations(t)
+		conv.AssertExpectations(t)
 	})
 
 	t.Run("Error - service return error", func(t *testing.T) {
@@ -61,7 +67,8 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 		svc := &automock.TokenService{}
 		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, token.ApplicationToken).Return(tokenModel, testErr)
 		persist, transact := txGen.ThatDoesntExpectCommit()
-		r := token.NewTokenResolver(transact, svc)
+		conv := &automock.TokenConverter{}
+		r := token.NewTokenResolver(transact, svc, conv)
 
 		//WHEN
 		_, err := r.GenerateOneTimeTokenForApp(ctx, appID)
@@ -71,13 +78,15 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 		persist.AssertExpectations(t)
 		transact.AssertExpectations(t)
 		svc.AssertExpectations(t)
+		conv.AssertExpectations(t)
 	})
 
 	t.Run("Error - begin transaction failed", func(t *testing.T) {
 		//GIVEN
 		svc := &automock.TokenService{}
 		persist, transact := txGen.ThatFailsOnBegin()
-		r := token.NewTokenResolver(transact, svc)
+		conv := &automock.TokenConverter{}
+		r := token.NewTokenResolver(transact, svc, conv)
 
 		//WHEN
 		_, err := r.GenerateOneTimeTokenForApp(ctx, appID)
@@ -87,6 +96,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 		persist.AssertExpectations(t)
 		transact.AssertExpectations(t)
 		svc.AssertExpectations(t)
+		conv.AssertExpectations(t)
 	})
 }
 
@@ -96,13 +106,15 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 	runtimeID := "08d805a5-87f0-4194-adc7-277ec10de2ef"
 	ctx := context.TODO()
 	tokenModel := model.OneTimeToken{Token: "Token", ConnectorURL: "conenctorURL"}
-	expecedToken := graphql.OneTimeToken{Token: "Token", ConnectorURL: "conenctorURL"}
+	expectedToken := graphql.OneTimeToken{Token: "Token", ConnectorURL: "conenctorURL"}
 	t.Run("Success", func(t *testing.T) {
 		//GIVEN
 		svc := &automock.TokenService{}
 		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), runtimeID, token.RuntimeToken).Return(tokenModel, nil)
 		persist, transact := txGen.ThatSucceeds()
-		r := token.NewTokenResolver(transact, svc)
+		conv := &automock.TokenConverter{}
+		conv.On("ToGraphQL", tokenModel).Return(expectedToken)
+		r := token.NewTokenResolver(transact, svc, conv)
 
 		//WHEN
 		oneTimeToken, err := r.GenerateOneTimeTokenForRuntime(ctx, runtimeID)
@@ -110,10 +122,11 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 		//THEN
 		require.NoError(t, err)
 		require.NotNil(t, oneTimeToken)
-		assert.Equal(t, expecedToken, *oneTimeToken)
+		assert.Equal(t, expectedToken, *oneTimeToken)
 		persist.AssertExpectations(t)
 		transact.AssertExpectations(t)
 		svc.AssertExpectations(t)
+		conv.AssertExpectations(t)
 	})
 
 	t.Run("Error - transaction commit failed", func(t *testing.T) {
@@ -121,7 +134,8 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 		svc := &automock.TokenService{}
 		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), runtimeID, token.RuntimeToken).Return(tokenModel, nil)
 		persist, transact := txGen.ThatFailsOnCommit()
-		r := token.NewTokenResolver(transact, svc)
+		conv := &automock.TokenConverter{}
+		r := token.NewTokenResolver(transact, svc, conv)
 
 		//WHEN
 		_, err := r.GenerateOneTimeTokenForRuntime(ctx, runtimeID)
@@ -131,6 +145,7 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 		persist.AssertExpectations(t)
 		transact.AssertExpectations(t)
 		svc.AssertExpectations(t)
+		conv.AssertExpectations(t)
 	})
 
 	t.Run("Error - service return error", func(t *testing.T) {
@@ -138,7 +153,8 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 		svc := &automock.TokenService{}
 		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), runtimeID, token.RuntimeToken).Return(tokenModel, testErr)
 		persist, transact := txGen.ThatDoesntExpectCommit()
-		r := token.NewTokenResolver(transact, svc)
+		conv := &automock.TokenConverter{}
+		r := token.NewTokenResolver(transact, svc, conv)
 
 		//WHEN
 		_, err := r.GenerateOneTimeTokenForRuntime(ctx, runtimeID)
@@ -148,13 +164,15 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 		persist.AssertExpectations(t)
 		transact.AssertExpectations(t)
 		svc.AssertExpectations(t)
+		conv.AssertExpectations(t)
 	})
 
 	t.Run("Error - begin transaction failed", func(t *testing.T) {
 		//GIVEN
 		svc := &automock.TokenService{}
 		persist, transact := txGen.ThatFailsOnBegin()
-		r := token.NewTokenResolver(transact, svc)
+		conv := &automock.TokenConverter{}
+		r := token.NewTokenResolver(transact, svc, conv)
 
 		//WHEN
 		_, err := r.GenerateOneTimeTokenForRuntime(ctx, runtimeID)
@@ -164,5 +182,6 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 		persist.AssertExpectations(t)
 		transact.AssertExpectations(t)
 		svc.AssertExpectations(t)
+		conv.AssertExpectations(t)
 	})
 }

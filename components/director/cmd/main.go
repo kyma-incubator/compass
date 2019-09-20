@@ -22,8 +22,6 @@ import (
 
 const connStringf string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
 
-
-
 type config struct {
 	Address  string `envconfig:"default=127.0.0.1:3000"`
 	Database struct {

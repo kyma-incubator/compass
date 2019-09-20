@@ -3,6 +3,7 @@ package token
 import (
 	"context"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
@@ -27,6 +28,10 @@ type GraphQLClient interface {
 	Run(ctx context.Context, req *gcli.Request, resp interface{}) error
 }
 
+//go:generate mockery -name=SystemAuthRepository -output=automock -outpkg=automock -case=underscore
+type SystemAuthRepository interface {
+}
+
 type service struct {
 	cli          GraphQLClient
 	connectorURL string
@@ -36,7 +41,7 @@ func NewTokenService(gcli GraphQLClient, connectorURL string) *service {
 	return &service{cli: gcli, connectorURL: connectorURL}
 }
 
-func (s service) GenerateOneTimeToken(ctx context.Context, id string, tokenType TokenType) (model.OneTimeToken, error) {
+func (s service) GenerateOneTimeToken(ctx context.Context, id string, tokenType Type) (model.OneTimeToken, error) {
 
 	token, err := s.getOneTimeToken(ctx, id, tokenType)
 	if err != nil {
@@ -47,7 +52,7 @@ func (s service) GenerateOneTimeToken(ctx context.Context, id string, tokenType 
 	return model.OneTimeToken{Token: token, ConnectorURL: s.connectorURL}, nil
 }
 
-func (s service) getOneTimeToken(ctx context.Context, id string, tokenType TokenType) (string, error) {
+func (s service) getOneTimeToken(ctx context.Context, id string, tokenType Type) (string, error) {
 	var request *gcli.Request
 	switch tokenType {
 	case RuntimeToken:
