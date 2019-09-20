@@ -20,7 +20,7 @@ spec:
       serviceAccountName: {{ template "fullname" . }}
       containers:
         - name: {{ .Chart.Name }}
-          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.connector.dir }}compass-provisioner:{{ .Values.global.images.connector.version }}
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.provisioner.dir }}compass-provisioner:{{ .Values.global.images.provisioner.version }}
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - name: http
