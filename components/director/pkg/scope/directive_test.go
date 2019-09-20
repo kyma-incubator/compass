@@ -38,7 +38,7 @@ func TestHasScope(t *testing.T) {
 		// WHEN
 		_, err := sut.Has(ctx, nil, nil, fixScopesDefinition())
 		// THEN
-		assert.Equal(t, scope.InsufficientScopesError, err)
+		assert.EqualError(t, err,"insufficient scopes provided, required: [read write], actual: [delete]")
 	})
 
 	t.Run("returns error on getting scopes from context", func(t *testing.T) {

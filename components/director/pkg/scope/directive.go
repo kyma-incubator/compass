@@ -34,7 +34,7 @@ func (d *directive) Has(ctx context.Context, obj interface{}, next graphql.Resol
 	if d.matches(actualScopes, requiredScopes) {
 		return next(ctx)
 	}
-	return nil, InsufficientScopesError
+	return nil, InsufficientScopesError(requiredScopes,actualScopes)
 }
 
 func (d *directive) matches(actual []string, required []string) bool {

@@ -59,6 +59,7 @@ func NewReloader(fileName string, loader Loader, fw FileWatcher) (*reloader, err
 }
 
 func (r *reloader) Watch(ctx context.Context) error {
+
 	defer func() {
 		if err := r.fileWatcher.Close(); err != nil {
 			panic(err)
@@ -69,10 +70,12 @@ func (r *reloader) Watch(ctx context.Context) error {
 	errChan := r.fileWatcher.ErrorsChannel()
 
 	for {
+		fmt.Println("I am watching you")
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		case e := <-evChan:
+			fmt.Println("Event received",e)
 			if (e.Op & fsnotify.Write) == fsnotify.Write {
 				fmt.Println("WRITE EVENT RECEIVED")
 				err := r.loader.Load()
