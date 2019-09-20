@@ -4,3 +4,5 @@ queries:
 mutations:
   createApplication: ["application:create","global:create"]
   deleteApplication: "application:delete"
+  updateApplication: [1,2,3]
+  empty:

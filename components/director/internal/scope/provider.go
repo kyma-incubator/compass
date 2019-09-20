@@ -9,8 +9,6 @@ import (
 	"io/ioutil"
 )
 
-var NotDefinedScopesError = errors.New("scopes are not defined")
-
 func NewProvider(fileName string) *provider {
 	return &provider{
 		fileName: fileName,
@@ -35,7 +33,7 @@ func (p *provider) Load() error {
 	out := map[string]interface{}{}
 	err = json.Unmarshal(([]byte)(jsonRepresentation), &out)
 	if err != nil {
-		return errors.Wrap(err, "While unmarshalling JSON")
+		return errors.Wrap(err, "while unmarshalling JSON")
 	}
 
 	p.cachedConfig = out
@@ -44,18 +42,18 @@ func (p *provider) Load() error {
 
 }
 
-func (p *provider) GetRequiredScopes(scopesDefinition string) ([]string, error) {
+func (p *provider) GetRequiredScopes(path string) ([]string, error) {
 	if p.cachedConfig == nil {
-		return nil, errors.New("missing definition of required scopes")
+		return nil, errors.New("required scopes configuration not loaded")
 	}
-	path := fmt.Sprintf("$.%s", scopesDefinition)
-	res, err := jsonpath.JsonPathLookup(p.cachedConfig, path)
+	jPath := fmt.Sprintf("$.%s", path)
+	res, err := jsonpath.JsonPathLookup(p.cachedConfig, jPath)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while searching configuration using path %s", path)
+		return nil, errors.Wrapf(err, "while searching configuration using path %s", jPath)
 	}
 
 	if res == nil {
-		return nil, NotDefinedScopesError
+		return nil, RequiredScopesNotDefinedError
 	}
 	singleVal, ok := res.(string)
 	if ok {
@@ -70,7 +68,7 @@ func (p *provider) GetRequiredScopes(scopesDefinition string) ([]string, error) 
 	for _, val := range manyVals {
 		strVal, ok := val.(string)
 		if !ok {
-			return nil, fmt.Errorf("unexpected scope value ina list, should be string but was %T", strVal)
+			return nil, fmt.Errorf("unexpected scope value in a list, should be string but was %T", val)
 		}
 		scopes = append(scopes, strVal)
 

@@ -1,15 +1,12 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/scope"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 
-	graphql2 "github.com/99designs/gqlgen/graphql"
-	"github.com/davecgh/go-spew/spew"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
@@ -67,14 +64,10 @@ func main() {
 	gqlCfg := graphql.Config{
 		Resolvers: domain.NewRootResolver(transact),
 	}
-	gqlCfg.Directives.HasScopes = func(ctx context.Context, obj interface{}, next graphql2.Resolver, scopesDefinition string) (res interface{}, err error) {
-		scopes, err := scope.LoadFromContext(ctx)
-		if err != nil {
-			return nil, err
-		}
 
-		return next(ctx)
-	}
+
+
+	gqlCfg.Directives.HasScopes = scope.NewDirective().Has
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
 
 	router := mux.NewRouter()

@@ -39,8 +39,8 @@ func TestReloader(t *testing.T) {
 			done <- struct{}{}
 		}(t)
 
-		evChan <- writeEvent()
-		evChan <- writeEvent()
+		evChan <- fixWriteEvent()
+		evChan <- fixWriteEvent()
 		cancelFunc()
 		<-done
 	})
@@ -50,7 +50,7 @@ func TestReloader(t *testing.T) {
 		mockLoader := &automock.Loader{}
 		defer mockLoader.AssertExpectations(t)
 
-		mockLoader.On("Load").Return(givenError()).Once()
+		mockLoader.On("Load").Return(fixGivenError()).Once()
 		evChan := make(chan fsnotify.Event)
 		errChan := make(chan error)
 		mockFileWatcher := configureFileWatcher(evChan, errChan)
@@ -67,7 +67,7 @@ func TestReloader(t *testing.T) {
 			done <- struct{}{}
 		}(t)
 
-		evChan <- writeEvent()
+		evChan <- fixWriteEvent()
 		<-done
 	})
 
@@ -89,14 +89,14 @@ func TestReloader(t *testing.T) {
 			done <- struct{}{}
 		}(t)
 
-		errChan <- givenError()
+		errChan <- fixGivenError()
 		<-done
 	})
 
 	t.Run("returns error if adding file to watch failed", func(t *testing.T) {
 		// GIVEN
 		mockFileWatcher := &automock.FileWatcher{}
-		mockFileWatcher.On("Add", "file.data").Return(givenError())
+		mockFileWatcher.On("Add", "file.data").Return(fixGivenError())
 		mockFileWatcher.On("Close").Return(nil)
 		mockFileWatcher.On("FileChangeEventsChannel").Return(make(chan fsnotify.Event)).Once()
 		mockFileWatcher.On("ErrorsChannel").Return(make(chan error)).Once()
@@ -119,13 +119,15 @@ func TestReloader(t *testing.T) {
 
 func TestReloaderWithFileWatcherAdapter(t *testing.T) {
 	watchedFile := "testdata/watched_file.txt"
-	mockLoader := &automock.Loader{}
-	defer mockLoader.AssertExpectations(t)
 
-	mockLoader.On("Load").Return(nil).Maybe()
+	loadExecuted := make(chan struct{})
+	dummyLoader := dummyLoader{
+		loaded: loadExecuted,
+	}
+
 	watcher, err := scope.NewFileWatcher()
 	require.NoError(t, err)
-	reloader := scope.NewReloader(watchedFile, mockLoader, watcher)
+	reloader := scope.NewReloader(watchedFile, &dummyLoader, watcher)
 	done := make(chan struct{})
 
 	ctx, cancelFunc := context.WithCancel(context.TODO())
@@ -133,15 +135,28 @@ func TestReloaderWithFileWatcherAdapter(t *testing.T) {
 		// WHEN
 		err := reloader.Watch(ctx)
 		// THEN
-		fmt.Println(err)
+		fmt.Println("watch got error",err)
+		require.Equal(t,context.Canceled, err)
 		done <- struct{}{}
 	}(t)
 
 	writeToFile(t, watchedFile, time.Now().String())
+	<-loadExecuted
 	cancelFunc()
 	<-done
-	writeToFile(t, watchedFile, "aaa")
+	//writeToFile(t, watchedFile, "default content")
 
+}
+
+type dummyLoader struct {
+	loaded chan struct{}
+}
+
+func (d *dummyLoader) Load() error {
+	go func() {
+		d.loaded <- struct{}{}
+	}()
+	return nil
 }
 
 func writeToFile(t *testing.T, fileName, content string) {
@@ -149,8 +164,12 @@ func writeToFile(t *testing.T, fileName, content string) {
 	require.NoError(t, err)
 }
 
-func givenError() error {
+func fixGivenError() error {
 	return errors.New("some error")
+}
+
+func fixWriteEvent() fsnotify.Event {
+	return fsnotify.Event{Op: fsnotify.Write}
 }
 
 func configureFileWatcher(evChan chan fsnotify.Event, errChan chan error) *automock.FileWatcher {
@@ -160,8 +179,4 @@ func configureFileWatcher(evChan chan fsnotify.Event, errChan chan error) *autom
 	mockFileWatcher.On("FileChangeEventsChannel").Return(evChan).Once()
 	mockFileWatcher.On("ErrorsChannel").Return(errChan).Once()
 	return mockFileWatcher
-}
-
-func writeEvent() fsnotify.Event {
-	return fsnotify.Event{Op:fsnotify.Write}
 }

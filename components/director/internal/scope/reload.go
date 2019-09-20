@@ -55,7 +55,10 @@ func NewReloader(fileName string, loader Loader, fw FileWatcher) *reloader {
 }
 
 func (r *reloader) Watch(ctx context.Context) error {
-	defer r.fileWatcher.Close()
+	defer func () {
+		err := r.fileWatcher.Close()
+		fmt.Println("Watcher closed with err",err)
+	}()
 
 	evChan := r.fileWatcher.FileChangeEventsChannel()
 	errChan := r.fileWatcher.ErrorsChannel()
@@ -63,27 +66,23 @@ func (r *reloader) Watch(ctx context.Context) error {
 
 	addFailed := make(chan struct{})
 	go func() {
-		defer fmt.Println("goroutine ended")
 		for {
 			select {
 			case <-addFailed:
-				fmt.Println("add failed")
 				return
 			case <-ctx.Done():
-				fmt.Println("ctx done")
 				result <- ctx.Err()
 				return
 			case e := <-evChan:
 				if (e.Op & fsnotify.Write) == fsnotify.Write {
+					fmt.Println("WRITE")
 					err := r.loader.Load()
-					fmt.Println("load err", err)
 					if err != nil {
 						result <- err
 						return
 					}
 				}
 			case err := <-errChan:
-				fmt.Println("errchan")
 				result <- err
 				return
 			}
