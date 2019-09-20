@@ -7,7 +7,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 
-
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
@@ -38,7 +37,7 @@ type config struct {
 		SSLMode  string `envconfig:"default=disable,APP_DB_SSL"`
 	}
 	APIEndpoint             string `envconfig:"default=/graphql"`
-	TenantMappingEndpoint string `envconfig:"default=/tenant-mapping"`
+	TenantMappingEndpoint   string `envconfig:"default=/tenant-mapping"`
 	PlaygroundAPIEndpoint   string `envconfig:"default=/graphql"`
 	ScopesConfigurationFile string // TODO adjust run.sh, charts
 }
@@ -70,7 +69,7 @@ func main() {
 
 	provider := scope.NewProvider(cfg.ScopesConfigurationFile)
 	err = provider.Load()
-	exitOnError(err,"Error on loading scopes config file")
+	exitOnError(err, "Error on loading scopes config file")
 	fw, err := scope.NewFileWatcher()
 	exitOnError(err, "Error on creating File Watcher")
 	reloader, err := scope.NewReloader(cfg.ScopesConfigurationFile, provider, fw)
