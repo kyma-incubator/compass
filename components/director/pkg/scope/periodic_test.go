@@ -16,16 +16,14 @@ func TestPeriodic(t *testing.T) {
 		// GIVEN
 		mockLoader := &automock.Loader{}
 		defer mockLoader.AssertExpectations(t)
-
 		mockLoader.On("Load").Return(nil).Twice()
 
 		mockPrinter := &automock.InfoPrinter{}
 		defer mockPrinter.AssertExpectations(t)
-
 		mockPrinter.On("Infof", "Successfully reloaded scopes configuration").Twice()
 
-		mockTicker := NewDummyTicker()
-		p := scope.NewPeriodicReloader(mockLoader, mockPrinter, mockTicker)
+		dummyTicker := NewDummyTicker()
+		p := scope.NewPeriodicReloader(mockLoader, mockPrinter, dummyTicker)
 
 		ctx, cancelFunc := context.WithCancel(context.TODO())
 		done := make(chan struct{})
@@ -37,23 +35,21 @@ func TestPeriodic(t *testing.T) {
 			done <- struct{}{}
 		}()
 
-		mockTicker.ticks <- time.Now()
-		mockTicker.ticks <- time.Now()
+		dummyTicker.ticks <- time.Now()
+		dummyTicker.ticks <- time.Now()
 		cancelFunc()
 		<-done
-		assert.True(t, mockTicker.stopped)
+		assert.True(t, dummyTicker.stopped)
 	})
 
 	t.Run("watch returns error if Load failed", func(t *testing.T) {
 		// GIVEN
 		mockLoader := &automock.Loader{}
 		defer mockLoader.AssertExpectations(t)
-
 		mockLoader.On("Load").Return(fixGivenError()).Once()
 
-
-		mockTicker := NewDummyTicker()
-		p := scope.NewPeriodicReloader(mockLoader, nil, mockTicker)
+		dummyTicker := NewDummyTicker()
+		p := scope.NewPeriodicReloader(mockLoader, nil, dummyTicker)
 
 		done := make(chan struct{})
 		go func() {
@@ -64,9 +60,9 @@ func TestPeriodic(t *testing.T) {
 			done <- struct{}{}
 		}()
 
-		mockTicker.ticks <- time.Now()
+		dummyTicker.ticks <- time.Now()
 		<-done
-		assert.True(t, mockTicker.stopped)
+		assert.True(t, dummyTicker.stopped)
 	})
 
 }

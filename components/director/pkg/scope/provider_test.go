@@ -31,7 +31,7 @@ func TestScopeProviderLoad(t *testing.T) {
 }
 
 func TestScopeProviderGetRequiredScopes(t *testing.T) {
-	t.Run("GetRequiredScopes requires Load", func(t *testing.T) {
+	t.Run("requires Load", func(t *testing.T) {
 		sut := scope.NewProvider("anything")
 		_, err := sut.GetRequiredScopes("queries.runtime")
 		require.Error(t, err, "required scopes configuration not loaded")
