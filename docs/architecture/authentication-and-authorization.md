@@ -213,5 +213,4 @@ foo@bar.com:
 
 **Scopes**
 
-To be defined.
-
+Scopes will be added to the authentication session in Tenant Mapping Handler. The handler will get not only `tenant` and `applicationID`/`runtimeID`, but also `scopes`, which will be fixed regarding of type of the object (Application / Runtime). Application and Runtime will always have the same scopes defined.
