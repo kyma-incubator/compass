@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 
@@ -36,10 +37,12 @@ type config struct {
 		Name     string `envconfig:"default=postgres,APP_DB_NAME"`
 		SSLMode  string `envconfig:"default=disable,APP_DB_SSL"`
 	}
-	APIEndpoint             string `envconfig:"default=/graphql"`
-	TenantMappingEndpoint   string `envconfig:"default=/tenant-mapping"`
-	PlaygroundAPIEndpoint   string `envconfig:"default=/graphql"`
-	ScopesConfigurationFile string
+	APIEndpoint                   string `envconfig:"default=/graphql"`
+	TenantMappingEndpoint         string `envconfig:"default=/tenant-mapping"`
+	PlaygroundAPIEndpoint         string `envconfig:"default=/graphql"`
+	ScopesConfigurationFile       string
+	ScopesConfigurationFileReload time.Duration `envconfig:"default=1m"`
+	EnableScopesChecking          bool          `envconfig:"default=false"`
 }
 
 func main() {
@@ -67,19 +70,20 @@ func main() {
 		Resolvers: domain.NewRootResolver(transact),
 	}
 
-	provider := scope.NewProvider(cfg.ScopesConfigurationFile)
-	err = provider.Load()
-	exitOnError(err, "Error on loading scopes config file")
-	fw, err := scope.NewFileWatcher()
-	exitOnError(err, "Error on creating File Watcher")
-	reloader, err := scope.NewReloader(cfg.ScopesConfigurationFile, provider, fw)
-	exitOnError(err, "Error on creating Reloader")
-	go func() {
-		err := reloader.Watch(context.Background())
-		exitOnError(err, "Error from Reloader watch")
-	}()
+	if cfg.EnableScopesChecking {
+		log.Info("Scopes checking is enabled")
+		provider := scope.NewProvider(cfg.ScopesConfigurationFile)
+		err = provider.Load()
+		exitOnError(err, "Error on loading scopes config file")
+		ticker := scope.NewTicker(cfg.ScopesConfigurationFileReload)
+		reloader := scope.NewPeriodicReloader(provider, &infoLogger{}, ticker)
+		go func() {
+			err := reloader.Watch(context.Background())
+			exitOnError(err, "Error from Reloader watch")
+		}()
 
-	gqlCfg.Directives.HasScopes = scope.NewDirective(provider).Has
+		gqlCfg.Directives.HasScopes = scope.NewDirective(provider).Has
+	}
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
 
 	router := mux.NewRouter()
@@ -113,4 +117,11 @@ func configureLogger() {
 		FullTimestamp: true,
 	})
 	log.SetReportCaller(true)
+}
+
+type infoLogger struct {
+}
+
+func (i *infoLogger) Infof(format string, args ...interface{}) {
+	log.Infof(format, args...)
 }
