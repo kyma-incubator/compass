@@ -157,6 +157,14 @@
   version = "v1.0.2"
 
 [[projects]]
+  digest = "1:bfb44f11a95913a4e8d954e432efc074c52db4bdcb183d9a6358db2dc55b9fb3"
+  name = "github.com/kyma-project/kyma"
+  packages = ["components/console-backend-service/pkg/executor"]
+  pruneopts = "UT"
+  revision = "69599d4a33a2d206a906bd87c95af3e615830216"
+  version = "1.5.0"
+
+[[projects]]
   digest = "1:12cb143f2148bf54bcd9fe622abac17325e85eeb1d84b8ec6caf1c80232108fd"
   name = "github.com/lib/pq"
   packages = [
@@ -274,17 +282,6 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "6a016cf16650f6be7151db7c3be6fc90a2c4d9b1"
-
-[[projects]]
-  digest = "1:9a1bb99a85e2ccddbc593aa0af084cdf6ea18ed081469eb90e7f6d0d303af6cd"
-  name = "go.uber.org/goleak"
-  packages = [
-    ".",
-    "internal/stack",
-  ]
-  pruneopts = "UT"
-  revision = "1ac8aeca0a53163331564467638f6ffb639636bf"
-  version = "v0.10.0"
 
 [[projects]]
   branch = "master"
@@ -428,6 +425,7 @@
     "github.com/hashicorp/go-multierror",
     "github.com/jmoiron/sqlx",
     "github.com/kisielk/errcheck",
+    "github.com/kyma-project/kyma/components/console-backend-service/pkg/executor",
     "github.com/lib/pq",
     "github.com/oliveagle/jsonpath",
     "github.com/pkg/errors",
@@ -439,7 +437,6 @@
     "github.com/vektah/gqlparser/ast",
     "github.com/vrischmann/envconfig",
     "github.com/xeipuuv/gojsonschema",
-    "go.uber.org/goleak",
     "golang.org/x/tools/cmd/goimports",
     "k8s.io/apimachinery/pkg/api/validation",
   ]

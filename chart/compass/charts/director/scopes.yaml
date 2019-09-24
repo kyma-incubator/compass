@@ -1,3 +1,2 @@
 mutation:
-  create:
-    application: ["read_application","write_application"]
+  createApplication: ["read_application","write_application"]

@@ -2,6 +2,7 @@ package scope_test
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
@@ -21,7 +22,7 @@ func TestHasScope(t *testing.T) {
 		next := dummyResolver{}
 		ctx := scope.SaveToContext(context.TODO(), []string{readScope, writeScope, deleteScope})
 		// WHEN
-		act, err := sut.Has(ctx, nil, next.SuccessResolve, fixScopesDefinition())
+		act, err := sut.VerifyScopes(ctx, nil, next.SuccessResolve, fixScopesDefinition())
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, fixNextOutput(), act)
@@ -36,16 +37,16 @@ func TestHasScope(t *testing.T) {
 		mockRequiredScopesGetter.On("GetRequiredScopes", fixScopesDefinition()).Return([]string{readScope, writeScope}, nil).Once()
 		ctx := scope.SaveToContext(context.TODO(), []string{deleteScope})
 		// WHEN
-		_, err := sut.Has(ctx, nil, nil, fixScopesDefinition())
+		_, err := sut.VerifyScopes(ctx, nil, nil, fixScopesDefinition())
 		// THEN
-		assert.EqualError(t, err,"insufficient scopes provided, required: [read write], actual: [delete]")
+		assert.EqualError(t, err, "insufficient scopes provided, required: [read write], actual: [delete]")
 	})
 
 	t.Run("returns error on getting scopes from context", func(t *testing.T) {
 		// GIVEN
 		sut := scope.NewDirective(nil)
 		// WHEN
-		_, err := sut.Has(context.TODO(), nil, nil, fixScopesDefinition())
+		_, err := sut.VerifyScopes(context.TODO(), nil, nil, fixScopesDefinition())
 		// THEN
 		assert.Equal(t, scope.NoScopesInContextError, err)
 
@@ -59,11 +60,15 @@ func TestHasScope(t *testing.T) {
 		sut := scope.NewDirective(mockRequiredScopesGetter)
 		ctx := scope.SaveToContext(context.TODO(), []string{readScope, writeScope, deleteScope})
 		// WHEN
-		_, err := sut.Has(ctx, nil, nil, fixScopesDefinition())
+		_, err := sut.VerifyScopes(ctx, nil, nil, fixScopesDefinition())
 		// THEN
 		assert.EqualError(t, err, "while getting required scopes: some error")
 	})
 
+}
+
+func fixGivenError() error {
+	return errors.New("some error")
 }
 
 const (

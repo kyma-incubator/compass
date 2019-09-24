@@ -21,7 +21,7 @@ func NewDirective(getter ScopesGetter) *directive {
 	}
 }
 
-func (d *directive) Has(ctx context.Context, obj interface{}, next graphql.Resolver, scopesDefinition string) (res interface{}, err error) {
+func (d *directive) VerifyScopes(ctx context.Context, obj interface{}, next graphql.Resolver, scopesDefinition string) (interface{}, error) {
 	actualScopes, err := LoadFromContext(ctx)
 	if err != nil {
 		return nil, err

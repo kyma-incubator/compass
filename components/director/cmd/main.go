@@ -1,10 +1,11 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/kyma-project/kyma/components/console-backend-service/pkg/executor"
 
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 
@@ -42,7 +43,7 @@ type config struct {
 	PlaygroundAPIEndpoint         string `envconfig:"default=/graphql"`
 	ScopesConfigurationFile       string
 	ScopesConfigurationFileReload time.Duration `envconfig:"default=1m"`
-	EnableScopesChecking          bool          `envconfig:"default=false"`
+	EnableScopesValidation        bool          `envconfig:"default=false"`
 }
 
 func main() {
@@ -70,19 +71,20 @@ func main() {
 		Resolvers: domain.NewRootResolver(transact),
 	}
 
-	if cfg.EnableScopesChecking {
-		log.Info("Scopes checking is enabled")
+	stopCh := make(chan struct{})
+	if cfg.EnableScopesValidation {
+		log.Info("Scopes validation is enabled")
 		provider := scope.NewProvider(cfg.ScopesConfigurationFile)
 		err = provider.Load()
 		exitOnError(err, "Error on loading scopes config file")
-		ticker := scope.NewTicker(cfg.ScopesConfigurationFileReload)
-		reloader := scope.NewPeriodicReloader(provider, log.StandardLogger(), ticker)
-		go func() {
-			err := reloader.Watch(context.Background())
-			exitOnError(err, "Error from Reloader watch")
-		}()
+		executor.NewPeriodic(cfg.ScopesConfigurationFileReload, func(stopCh <-chan struct{}) {
+			if err := provider.Load(); err != nil {
+				exitOnError(err, "Error from Reloader watch")
+			}
+			log.Infof("Successfully reloaded scopes configuration")
 
-		gqlCfg.Directives.HasScopes = scope.NewDirective(provider).Has
+		}).Run(stopCh)
+		gqlCfg.Directives.HasScopes = scope.NewDirective(provider).VerifyScopes
 	}
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
 
