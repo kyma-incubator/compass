@@ -44,7 +44,7 @@ type config struct {
 		Province           string `envconfig:"default=State"`
 	}
 	CertificateValidityTime     time.Duration `envconfig:"default=2160h"`
-	CASecretName                string        `envconfig:"default=kyma-integration/nginx-auth-ca"`
+	CASecretName                string        `envconfig:"default=kyma-integration/connector-service-app-ca"`
 	RootCACertificateSecretName string        `envconfig:"optional"`
 
 	CertificateDataHeader        string `envconfig:"default=Certificate-Data"`

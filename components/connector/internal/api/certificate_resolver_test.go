@@ -175,7 +175,7 @@ func TestCertificateResolver_RevokeCertificate(t *testing.T) {
 		assert.Equal(t, true, revocationResult)
 	})
 
-	t.Run("should return error if unauthenticated call", func(t *testing.T) {
+	t.Run("should return error if failed to verify certificate", func(t *testing.T) {
 		// given
 		authenticator := &authenticationMocks.Authenticator{}
 		authenticator.On("AuthenticateCertificate", context.Background()).Return("", "", errors.Errorf("error"))
