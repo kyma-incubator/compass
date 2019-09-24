@@ -1,4 +1,4 @@
-package runtime_auth
+package apiruntimeauth
 
 import (
 	"context"
@@ -11,10 +11,10 @@ import (
 
 //go:generate mockery -name=Repository -output=automock -outpkg=automock -case=underscore
 type Repository interface {
-	Get(ctx context.Context, tenant string, apiID string, runtimeID string) (*model.RuntimeAuth, error)
-	GetOrDefault(ctx context.Context, tenant string, apiID string, runtimeID string) (*model.RuntimeAuth, error)
-	ListForAllRuntimes(ctx context.Context, tenant string, apiID string) ([]model.RuntimeAuth, error)
-	Upsert(ctx context.Context, item model.RuntimeAuth) error
+	Get(ctx context.Context, tenant string, apiID string, runtimeID string) (*model.APIRuntimeAuth, error)
+	GetOrDefault(ctx context.Context, tenant string, apiID string, runtimeID string) (*model.APIRuntimeAuth, error)
+	ListForAllRuntimes(ctx context.Context, tenant string, apiID string) ([]model.APIRuntimeAuth, error)
+	Upsert(ctx context.Context, item model.APIRuntimeAuth) error
 	Delete(ctx context.Context, tenant string, apiID string, runtimeID string) error
 }
 
@@ -35,46 +35,46 @@ func NewService(repo Repository, uidService UIDService) *service {
 	}
 }
 
-func (s *service) Get(ctx context.Context, apiID string, runtimeID string) (*model.RuntimeAuth, error) {
+func (s *service) Get(ctx context.Context, apiID string, runtimeID string) (*model.APIRuntimeAuth, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	ra, err := s.repo.Get(ctx, tnt, apiID, runtimeID)
+	apiRtmAuth, err := s.repo.Get(ctx, tnt, apiID, runtimeID)
 	if err != nil {
-		return nil, errors.Wrap(err, "while fetching Runtime Auth")
+		return nil, errors.Wrap(err, "while fetching API Runtime Auth")
 	}
 
-	return ra, nil
+	return apiRtmAuth, nil
 }
 
-func (s *service) GetOrDefault(ctx context.Context, apiID string, runtimeID string) (*model.RuntimeAuth, error) {
+func (s *service) GetOrDefault(ctx context.Context, apiID string, runtimeID string) (*model.APIRuntimeAuth, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	ra, err := s.repo.GetOrDefault(ctx, tnt, apiID, runtimeID)
+	apiRtmAuth, err := s.repo.GetOrDefault(ctx, tnt, apiID, runtimeID)
 	if err != nil {
-		return nil, errors.Wrap(err, "while fetching Runtime Auth")
+		return nil, errors.Wrap(err, "while fetching API Runtime Auth")
 	}
 
-	return ra, nil
+	return apiRtmAuth, nil
 }
 
-func (s *service) ListForAllRuntimes(ctx context.Context, apiID string) ([]model.RuntimeAuth, error) {
+func (s *service) ListForAllRuntimes(ctx context.Context, apiID string) ([]model.APIRuntimeAuth, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	ras, err := s.repo.ListForAllRuntimes(ctx, tnt, apiID)
+	apiRtmAuths, err := s.repo.ListForAllRuntimes(ctx, tnt, apiID)
 	if err != nil {
-		return nil, errors.Wrap(err, "while listing Runtime Auths")
+		return nil, errors.Wrap(err, "while listing API Runtime Auths")
 	}
 
-	return ras, nil
+	return apiRtmAuths, nil
 }
 
 func (s *service) Set(ctx context.Context, apiID string, runtimeID string, in model.AuthInput) error {
@@ -85,7 +85,7 @@ func (s *service) Set(ctx context.Context, apiID string, runtimeID string, in mo
 
 	id := s.uidService.Generate()
 
-	newAuth := &model.RuntimeAuth{
+	newAuth := &model.APIRuntimeAuth{
 		ID:        &id,
 		TenantID:  tnt,
 		RuntimeID: runtimeID,
@@ -95,7 +95,7 @@ func (s *service) Set(ctx context.Context, apiID string, runtimeID string, in mo
 
 	err = s.repo.Upsert(ctx, *newAuth)
 
-	return errors.Wrap(err, "while setting Runtime Auth")
+	return errors.Wrap(err, "while setting API Runtime Auth")
 }
 
 func (s *service) Delete(ctx context.Context, apiID string, runtimeID string) error {
@@ -106,5 +106,5 @@ func (s *service) Delete(ctx context.Context, apiID string, runtimeID string) er
 
 	err = s.repo.Delete(ctx, tnt, apiID, runtimeID)
 
-	return errors.Wrap(err, "while deleting Runtime Auth")
+	return errors.Wrap(err, "while deleting API Runtime Auth")
 }

@@ -1,0 +1,1 @@
+ALTER TABLE runtime_auths RENAME TO api_runtime_auths;

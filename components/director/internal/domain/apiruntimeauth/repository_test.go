@@ -1,4 +1,4 @@
-package runtime_auth_test
+package apiruntimeauth_test
 
 import (
 	"context"
@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_auth"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_auth/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/apiruntimeauth"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/apiruntimeauth/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
@@ -22,32 +22,32 @@ func TestPgRepository_Get(t *testing.T) {
 	// GIVEN
 	apiID := "foo"
 	rtmID := "bar"
-	rtmAuthID := "baz"
+	apiRtmAuthID := "baz"
 
-	modelRtmAuth := fixModelRuntimeAuth(&rtmAuthID, rtmID, apiID, fixModelAuth())
-	ent := fixEntity(&rtmAuthID, rtmID, apiID, true)
+	modelAPIRtmAuth := fixModelAPIRuntimeAuth(&apiRtmAuthID, rtmID, apiID, fixModelAuth())
+	ent := fixEntity(&apiRtmAuthID, rtmID, apiID, true)
 
 	testErr := errors.New("test error")
 
-	stmt := `SELECT id, tenant_id, runtime_id, api_def_id, value FROM public.runtime_auths WHERE tenant_id = $1 AND runtime_id = $2 AND api_def_id = $3`
+	stmt := `SELECT id, tenant_id, runtime_id, api_def_id, value FROM public.api_runtime_auths WHERE tenant_id = $1 AND runtime_id = $2 AND api_def_id = $3`
 
 	t.Run("Success", func(t *testing.T) {
 		conv := &automock.Converter{}
-		conv.On("FromEntity", ent).Return(*modelRtmAuth, nil).Once()
+		conv.On("FromEntity", ent).Return(*modelAPIRtmAuth, nil).Once()
 
 		db, dbMock := testdb.MockDatabase(t)
-		rows := fixSQLRows([]sqlRow{{id: rtmAuthID, rtmID: rtmID, apiID: apiID}})
+		rows := fixSQLRows([]sqlRow{{id: apiRtmAuthID, rtmID: rtmID, apiID: apiID}})
 		dbMock.ExpectQuery(regexp.QuoteMeta(stmt)).WithArgs(testTenant, rtmID, apiID).WillReturnRows(rows)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		repo := runtime_auth.NewRepository(conv)
+		repo := apiruntimeauth.NewRepository(conv)
 
 		// WHEN
 		result, err := repo.Get(ctx, testTenant, apiID, rtmID)
 
 		// THEN
 		assert.NoError(t, err)
-		assert.Equal(t, modelRtmAuth, result)
+		assert.Equal(t, modelAPIRtmAuth, result)
 
 		conv.AssertExpectations(t)
 		dbMock.AssertExpectations(t)
@@ -59,7 +59,7 @@ func TestPgRepository_Get(t *testing.T) {
 		dbMock.ExpectQuery(regexp.QuoteMeta(stmt)).WithArgs(testTenant, rtmID, apiID).WillReturnError(testErr)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		repo := runtime_auth.NewRepository(nil)
+		repo := apiruntimeauth.NewRepository(nil)
 
 		// WHEN
 		result, err := repo.Get(ctx, testTenant, apiID, rtmID)
@@ -72,16 +72,16 @@ func TestPgRepository_Get(t *testing.T) {
 		dbMock.AssertExpectations(t)
 	})
 
-	t.Run("Error when converting runtime auth", func(t *testing.T) {
+	t.Run("Error when converting api runtime auth", func(t *testing.T) {
 		conv := &automock.Converter{}
-		conv.On("FromEntity", ent).Return(model.RuntimeAuth{}, testErr).Once()
+		conv.On("FromEntity", ent).Return(model.APIRuntimeAuth{}, testErr).Once()
 
 		db, dbMock := testdb.MockDatabase(t)
-		rows := fixSQLRows([]sqlRow{{id: rtmAuthID, rtmID: rtmID, apiID: apiID}})
+		rows := fixSQLRows([]sqlRow{{id: apiRtmAuthID, rtmID: rtmID, apiID: apiID}})
 		dbMock.ExpectQuery(regexp.QuoteMeta(stmt)).WithArgs(testTenant, rtmID, apiID).WillReturnRows(rows)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		repo := runtime_auth.NewRepository(conv)
+		repo := apiruntimeauth.NewRepository(conv)
 
 		// WHEN
 		result, err := repo.Get(ctx, testTenant, apiID, rtmID)
@@ -102,38 +102,38 @@ func TestPgRepository_GetOrDefault(t *testing.T) {
 
 	rtmID := "foo"
 	apiID := "bar"
-	rtmAuthID := "baz"
+	apiRtmAuthID := "baz"
 
-	stmt := `SELECT r.id AS runtime_id, r.tenant_id, ra.id, $2 AS api_def_id, COALESCE(ra.value, (SELECT default_auth FROM api_definitions WHERE api_definitions.id = $2)) AS value FROM (SELECT * FROM runtimes WHERE id = $3) AS r LEFT OUTER JOIN (SELECT * FROM runtime_auths WHERE api_def_id = $2 AND runtime_id = $3 AND tenant_id = $1) AS ra ON ra.runtime_id = r.id`
+	stmt := `SELECT r.id AS runtime_id, r.tenant_id, ara.id, $2 AS api_def_id, COALESCE(ara.value, (SELECT default_auth FROM api_definitions WHERE api_definitions.id = $2)) AS value FROM (SELECT * FROM runtimes WHERE id = $3) AS r LEFT OUTER JOIN (SELECT * FROM api_runtime_auths WHERE api_def_id = $2 AND runtime_id = $3 AND tenant_id = $1) AS ara ON ara.runtime_id = r.id`
 
-	modelRtmAuth := fixModelRuntimeAuth(&rtmAuthID, rtmID, apiID, fixModelAuth())
-	ent := fixEntity(&rtmAuthID, rtmID, apiID, true)
+	modelAPIRtmAuth := fixModelAPIRuntimeAuth(&apiRtmAuthID, rtmID, apiID, fixModelAuth())
+	ent := fixEntity(&apiRtmAuthID, rtmID, apiID, true)
 
 	t.Run("Success", func(t *testing.T) {
 		conv := &automock.Converter{}
-		conv.On("FromEntity", ent).Return(*modelRtmAuth, nil).Once()
+		conv.On("FromEntity", ent).Return(*modelAPIRtmAuth, nil).Once()
 
 		db, dbMock := testdb.MockDatabase(t)
-		rows := fixSQLRows([]sqlRow{{id: rtmAuthID, rtmID: rtmID, apiID: apiID}})
+		rows := fixSQLRows([]sqlRow{{id: apiRtmAuthID, rtmID: rtmID, apiID: apiID}})
 		dbMock.ExpectQuery(regexp.QuoteMeta(stmt)).WithArgs(testTenant, apiID, rtmID).WillReturnRows(rows)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		repo := runtime_auth.NewRepository(conv)
+		repo := apiruntimeauth.NewRepository(conv)
 
 		// WHEN
 		result, err := repo.GetOrDefault(ctx, testTenant, apiID, rtmID)
 
 		// THEN
 		require.NoError(t, err)
-		assert.Equal(t, modelRtmAuth, result)
+		assert.Equal(t, modelAPIRtmAuth, result)
 
 		conv.AssertExpectations(t)
 		dbMock.AssertExpectations(t)
 	})
 
 	t.Run("Error when extracting persistance from context", func(t *testing.T) {
-		repo := runtime_auth.NewRepository(nil)
+		repo := apiruntimeauth.NewRepository(nil)
 
 		// WHEN
 		result, err := repo.GetOrDefault(context.TODO(), testTenant, apiID, rtmID)
@@ -151,7 +151,7 @@ func TestPgRepository_GetOrDefault(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		repo := runtime_auth.NewRepository(nil)
+		repo := apiruntimeauth.NewRepository(nil)
 
 		// WHEN
 		result, err := repo.GetOrDefault(ctx, testTenant, apiID, rtmID)
@@ -164,17 +164,17 @@ func TestPgRepository_GetOrDefault(t *testing.T) {
 		dbMock.AssertExpectations(t)
 	})
 
-	t.Run("Error when converting runtime auth", func(t *testing.T) {
+	t.Run("Error when converting api runtime auth", func(t *testing.T) {
 		conv := &automock.Converter{}
-		conv.On("FromEntity", ent).Return(model.RuntimeAuth{}, testErr).Once()
+		conv.On("FromEntity", ent).Return(model.APIRuntimeAuth{}, testErr).Once()
 
 		db, dbMock := testdb.MockDatabase(t)
-		rows := fixSQLRows([]sqlRow{{id: rtmAuthID, rtmID: rtmID, apiID: apiID}})
+		rows := fixSQLRows([]sqlRow{{id: apiRtmAuthID, rtmID: rtmID, apiID: apiID}})
 		dbMock.ExpectQuery(regexp.QuoteMeta(stmt)).WithArgs(testTenant, apiID, rtmID).WillReturnRows(rows)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		repo := runtime_auth.NewRepository(conv)
+		repo := apiruntimeauth.NewRepository(conv)
 
 		// WHEN
 		result, err := repo.GetOrDefault(ctx, testTenant, apiID, rtmID)
@@ -195,50 +195,50 @@ func TestPgRepository_ListForAllRuntimes(t *testing.T) {
 
 	apiID := "bar"
 
-	stmt := `SELECT r.id AS runtime_id, r.tenant_id, ra.id, $2 AS api_def_id, coalesce(ra.value, (SELECT default_auth FROM api_definitions WHERE api_definitions.id = $2)) AS value FROM (SELECT * FROM runtime_auths WHERE api_def_id = $2 AND tenant_id = $1) AS ra RIGHT OUTER JOIN runtimes AS r ON ra.runtime_id = r.id WHERE r.tenant_id = $1`
+	stmt := `SELECT r.id AS runtime_id, r.tenant_id, ara.id, $2 AS api_def_id, coalesce(ara.value, (SELECT default_auth FROM api_definitions WHERE api_definitions.id = $2)) AS value FROM (SELECT * FROM api_runtime_auths WHERE api_def_id = $2 AND tenant_id = $1) AS ara RIGHT OUTER JOIN runtimes AS r ON ara.runtime_id = r.id WHERE r.tenant_id = $1`
 
-	modelRtmAuths := []model.RuntimeAuth{
-		*fixModelRuntimeAuth(strings.Ptr("ra1"), "r1", apiID, fixModelAuth()),
-		*fixModelRuntimeAuth(strings.Ptr("ra2"), "r2", apiID, fixModelAuth()),
-		*fixModelRuntimeAuth(strings.Ptr("ra3"), "r3", apiID, fixModelAuth()),
+	modelAPIRtmAuths := []model.APIRuntimeAuth{
+		*fixModelAPIRuntimeAuth(strings.Ptr("ara1"), "r1", apiID, fixModelAuth()),
+		*fixModelAPIRuntimeAuth(strings.Ptr("ara2"), "r2", apiID, fixModelAuth()),
+		*fixModelAPIRuntimeAuth(strings.Ptr("ara3"), "r3", apiID, fixModelAuth()),
 	}
-	ents := []runtime_auth.Entity{
-		fixEntity(strings.Ptr("ra1"), "r1", apiID, true),
-		fixEntity(strings.Ptr("ra2"), "r2", apiID, true),
-		fixEntity(strings.Ptr("ra3"), "r3", apiID, true),
+	ents := []apiruntimeauth.Entity{
+		fixEntity(strings.Ptr("ara1"), "r1", apiID, true),
+		fixEntity(strings.Ptr("ara2"), "r2", apiID, true),
+		fixEntity(strings.Ptr("ara3"), "r3", apiID, true),
 	}
 
 	t.Run("Success", func(t *testing.T) {
 		conv := &automock.Converter{}
-		conv.On("FromEntity", ents[0]).Return(modelRtmAuths[0], nil).Once()
-		conv.On("FromEntity", ents[1]).Return(modelRtmAuths[1], nil).Once()
-		conv.On("FromEntity", ents[2]).Return(modelRtmAuths[2], nil).Once()
+		conv.On("FromEntity", ents[0]).Return(modelAPIRtmAuths[0], nil).Once()
+		conv.On("FromEntity", ents[1]).Return(modelAPIRtmAuths[1], nil).Once()
+		conv.On("FromEntity", ents[2]).Return(modelAPIRtmAuths[2], nil).Once()
 
 		db, dbMock := testdb.MockDatabase(t)
 		rows := fixSQLRows([]sqlRow{
-			{id: "ra1", rtmID: "r1", apiID: apiID},
-			{id: "ra2", rtmID: "r2", apiID: apiID},
-			{id: "ra3", rtmID: "r3", apiID: apiID},
+			{id: "ara1", rtmID: "r1", apiID: apiID},
+			{id: "ara2", rtmID: "r2", apiID: apiID},
+			{id: "ara3", rtmID: "r3", apiID: apiID},
 		})
 		dbMock.ExpectQuery(regexp.QuoteMeta(stmt)).WithArgs(testTenant, apiID).WillReturnRows(rows)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		repo := runtime_auth.NewRepository(conv)
+		repo := apiruntimeauth.NewRepository(conv)
 
 		// WHEN
 		result, err := repo.ListForAllRuntimes(ctx, testTenant, apiID)
 
 		// THEN
 		require.NoError(t, err)
-		assert.ElementsMatch(t, modelRtmAuths, result)
+		assert.ElementsMatch(t, modelAPIRtmAuths, result)
 
 		conv.AssertExpectations(t)
 		dbMock.AssertExpectations(t)
 	})
 
 	t.Run("Error when extracting persistance from context", func(t *testing.T) {
-		repo := runtime_auth.NewRepository(nil)
+		repo := apiruntimeauth.NewRepository(nil)
 
 		// WHEN
 		result, err := repo.ListForAllRuntimes(context.TODO(), testTenant, apiID)
@@ -255,7 +255,7 @@ func TestPgRepository_ListForAllRuntimes(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		repo := runtime_auth.NewRepository(nil)
+		repo := apiruntimeauth.NewRepository(nil)
 
 		// WHEN
 		result, err := repo.ListForAllRuntimes(ctx, testTenant, apiID)
@@ -268,17 +268,17 @@ func TestPgRepository_ListForAllRuntimes(t *testing.T) {
 		dbMock.AssertExpectations(t)
 	})
 
-	t.Run("Error when converting runtime auth", func(t *testing.T) {
+	t.Run("Error when converting api runtime auth", func(t *testing.T) {
 		conv := &automock.Converter{}
-		conv.On("FromEntity", ents[0]).Return(model.RuntimeAuth{}, testErr).Once()
+		conv.On("FromEntity", ents[0]).Return(model.APIRuntimeAuth{}, testErr).Once()
 
 		db, dbMock := testdb.MockDatabase(t)
-		rows := fixSQLRows([]sqlRow{{id: "ra1", rtmID: "r1", apiID: apiID}})
+		rows := fixSQLRows([]sqlRow{{id: "ara1", rtmID: "r1", apiID: apiID}})
 		dbMock.ExpectQuery(regexp.QuoteMeta(stmt)).WithArgs(testTenant, apiID).WillReturnRows(rows)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		repo := runtime_auth.NewRepository(conv)
+		repo := apiruntimeauth.NewRepository(conv)
 
 		// WHEN
 		result, err := repo.ListForAllRuntimes(ctx, testTenant, apiID)
@@ -297,29 +297,29 @@ func TestPgRepository_Upsert(t *testing.T) {
 	// GIVEN
 	rtmID := "foo"
 	apiID := "bar"
-	rtmAuthID := "baz"
+	apiRtmAuthID := "baz"
 
-	stmt := `INSERT INTO public.runtime_auths ( id, tenant_id, runtime_id, api_def_id, value ) VALUES ( ?, ?, ?, ?, ? ) ON CONFLICT ( tenant_id, runtime_id, api_def_id ) DO UPDATE SET value=EXCLUDED.value`
+	stmt := `INSERT INTO public.api_runtime_auths ( id, tenant_id, runtime_id, api_def_id, value ) VALUES ( ?, ?, ?, ?, ? ) ON CONFLICT ( tenant_id, runtime_id, api_def_id ) DO UPDATE SET value=EXCLUDED.value`
 
-	modelRtmAuth := fixModelRuntimeAuth(&rtmAuthID, rtmID, apiID, fixModelAuth())
-	ent := fixEntity(&rtmAuthID, rtmID, apiID, true)
+	modelAPIRtmAuth := fixModelAPIRuntimeAuth(&apiRtmAuthID, rtmID, apiID, fixModelAuth())
+	ent := fixEntity(&apiRtmAuthID, rtmID, apiID, true)
 
 	testErr := errors.New("test error")
 
 	t.Run("Success", func(t *testing.T) {
 		conv := &automock.Converter{}
-		conv.On("ToEntity", *modelRtmAuth).Return(ent, nil).Once()
+		conv.On("ToEntity", *modelAPIRtmAuth).Return(ent, nil).Once()
 
 		db, dbMock := testdb.MockDatabase(t)
-		dbMock.ExpectExec(regexp.QuoteMeta(stmt)).WithArgs(modelRtmAuth.ID, modelRtmAuth.TenantID, modelRtmAuth.RuntimeID, modelRtmAuth.APIDefID, testMarshalledSchema).
+		dbMock.ExpectExec(regexp.QuoteMeta(stmt)).WithArgs(modelAPIRtmAuth.ID, modelAPIRtmAuth.TenantID, modelAPIRtmAuth.RuntimeID, modelAPIRtmAuth.APIDefID, testMarshalledSchema).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		repo := runtime_auth.NewRepository(conv)
+		repo := apiruntimeauth.NewRepository(conv)
 
 		// WHEN
-		err := repo.Upsert(ctx, *modelRtmAuth)
+		err := repo.Upsert(ctx, *modelAPIRtmAuth)
 
 		// THEN
 		require.NoError(t, err)
@@ -330,17 +330,17 @@ func TestPgRepository_Upsert(t *testing.T) {
 
 	t.Run("Error from DB", func(t *testing.T) {
 		conv := &automock.Converter{}
-		conv.On("ToEntity", *modelRtmAuth).Return(ent, nil).Once()
+		conv.On("ToEntity", *modelAPIRtmAuth).Return(ent, nil).Once()
 
 		db, dbMock := testdb.MockDatabase(t)
-		dbMock.ExpectExec(regexp.QuoteMeta(stmt)).WithArgs(modelRtmAuth.ID, modelRtmAuth.TenantID, modelRtmAuth.RuntimeID, modelRtmAuth.APIDefID, testMarshalledSchema).
+		dbMock.ExpectExec(regexp.QuoteMeta(stmt)).WithArgs(modelAPIRtmAuth.ID, modelAPIRtmAuth.TenantID, modelAPIRtmAuth.RuntimeID, modelAPIRtmAuth.APIDefID, testMarshalledSchema).
 			WillReturnError(testErr)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		repo := runtime_auth.NewRepository(conv)
+		repo := apiruntimeauth.NewRepository(conv)
 
 		// WHEN
-		err := repo.Upsert(ctx, *modelRtmAuth)
+		err := repo.Upsert(ctx, *modelAPIRtmAuth)
 
 		// THEN
 		require.Error(t, err)
@@ -350,15 +350,15 @@ func TestPgRepository_Upsert(t *testing.T) {
 		conv.AssertExpectations(t)
 	})
 
-	t.Run("Error when converting runtime auth", func(t *testing.T) {
+	t.Run("Error when converting api runtime auth", func(t *testing.T) {
 		testErr := errors.New("test error")
 		conv := &automock.Converter{}
-		conv.On("ToEntity", *modelRtmAuth).Return(runtime_auth.Entity{}, testErr).Once()
+		conv.On("ToEntity", *modelAPIRtmAuth).Return(apiruntimeauth.Entity{}, testErr).Once()
 
-		repo := runtime_auth.NewRepository(conv)
+		repo := apiruntimeauth.NewRepository(conv)
 
 		// WHEN
-		err := repo.Upsert(context.TODO(), *modelRtmAuth)
+		err := repo.Upsert(context.TODO(), *modelAPIRtmAuth)
 
 		// THEN
 		require.Error(t, err)
@@ -375,7 +375,7 @@ func TestPgRepository_Delete(t *testing.T) {
 
 	testErr := errors.New("test error")
 
-	stmt := `DELETE FROM public.runtime_auths WHERE tenant_id = $1 AND api_def_id = $2 AND runtime_id = $3`
+	stmt := `DELETE FROM public.api_runtime_auths WHERE tenant_id = $1 AND api_def_id = $2 AND runtime_id = $3`
 
 	t.Run("Success", func(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
@@ -384,7 +384,7 @@ func TestPgRepository_Delete(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		repo := runtime_auth.NewRepository(nil)
+		repo := apiruntimeauth.NewRepository(nil)
 
 		// WHEN
 		err := repo.Delete(ctx, testTenant, apiID, rtmID)
@@ -402,7 +402,7 @@ func TestPgRepository_Delete(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		repo := runtime_auth.NewRepository(nil)
+		repo := apiruntimeauth.NewRepository(nil)
 
 		// WHEN
 		err := repo.Delete(ctx, testTenant, apiID, rtmID)

@@ -31,17 +31,17 @@ func fixAPIDefinitionModel(id, appId, name, targetURL string) *model.APIDefiniti
 	}
 }
 
-func fixFullAPIDefinitionModelWithRuntimeAuth(placeholder string) *model.APIDefinition {
+func fixFullAPIDefinitionModelWithAPIRtmAuth(placeholder string) *model.APIDefinition {
 	apiModel := fixFullAPIDefinitionModel(placeholder)
 
-	runtimeAuth := model.RuntimeAuth{
+	apiRtmAuth := model.APIRuntimeAuth{
 		ID:        strings.Ptr("foo"),
 		TenantID:  "tnt",
 		RuntimeID: "1",
 		APIDefID:  "2",
 		Value:     apiModel.DefaultAuth,
 	}
-	apiModel.Auths = []*model.RuntimeAuth{&runtimeAuth, &runtimeAuth}
+	apiModel.Auths = []*model.APIRuntimeAuth{&apiRtmAuth, &apiRtmAuth}
 	return &apiModel
 }
 
@@ -273,8 +273,8 @@ func fixGQLAuth() *graphql.Auth {
 	}
 }
 
-func fixModelRuntimeAuth(id string, auth *model.Auth) *model.RuntimeAuth {
-	return &model.RuntimeAuth{
+func fixModelAPIRtmAuth(id string, auth *model.Auth) *model.APIRuntimeAuth {
+	return &model.APIRuntimeAuth{
 		ID:        strings.Ptr("foo"),
 		TenantID:  "tnt",
 		RuntimeID: id,
@@ -283,8 +283,8 @@ func fixModelRuntimeAuth(id string, auth *model.Auth) *model.RuntimeAuth {
 	}
 }
 
-func fixGQLRuntimeAuth(id string, auth *graphql.Auth) *graphql.RuntimeAuth {
-	return &graphql.RuntimeAuth{
+func fixGQLAPIRtmAuth(id string, auth *graphql.Auth) *graphql.APIRuntimeAuth {
+	return &graphql.APIRuntimeAuth{
 		RuntimeID: id,
 		Auth:      auth,
 	}

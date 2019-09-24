@@ -38,6 +38,11 @@ type APIDefinitionPage struct {
 
 func (APIDefinitionPage) IsPageable() {}
 
+type APIRuntimeAuth struct {
+	RuntimeID string `json:"runtimeID"`
+	Auth      *Auth  `json:"auth"`
+}
+
 type APISpecInput struct {
 	Data         *CLOB              `json:"data"`
 	Type         APISpecType        `json:"type"`
@@ -257,11 +262,6 @@ type PageInfo struct {
 	StartCursor PageCursor `json:"startCursor"`
 	EndCursor   PageCursor `json:"endCursor"`
 	HasNextPage bool       `json:"hasNextPage"`
-}
-
-type RuntimeAuth struct {
-	RuntimeID string `json:"runtimeID"`
-	Auth      *Auth  `json:"auth"`
 }
 
 type RuntimeInput struct {

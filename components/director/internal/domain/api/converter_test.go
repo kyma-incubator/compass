@@ -20,7 +20,7 @@ import (
 func TestConverter_ToGraphQL(t *testing.T) {
 	// given
 	placeholder := "test"
-	modelAPIDefinition := fixFullAPIDefinitionModelWithRuntimeAuth(placeholder)
+	modelAPIDefinition := fixFullAPIDefinitionModelWithAPIRtmAuth(placeholder)
 	gqlAPIDefinition := fixFullGQLAPIDefinition(placeholder)
 	emptyModelAPIDefinition := &model.APIDefinition{}
 	emptyGraphQLAPIDefinition := &graphql.APIDefinition{}
@@ -361,7 +361,7 @@ func TestApiSpecDataConversionNilStaysNil(t *testing.T) {
 func TestEntityConverter_ToEntity(t *testing.T) {
 	t.Run("success all nullable properties filled", func(t *testing.T) {
 		//GIVEN
-		apiModel := fixFullAPIDefinitionModelWithRuntimeAuth("foo")
+		apiModel := fixFullAPIDefinitionModelWithAPIRtmAuth("foo")
 		require.NotNil(t, apiModel)
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, nil, versionConv)

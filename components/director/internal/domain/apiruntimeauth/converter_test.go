@@ -1,10 +1,10 @@
-package runtime_auth_test
+package apiruntimeauth_test
 
 import (
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_auth"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_auth/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/apiruntimeauth"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/apiruntimeauth/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
@@ -16,18 +16,18 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	// GIVEN
 	rtmID := "foo"
 	apiID := "bar"
-	rtmAuthID := "baz"
+	apiRtmAuthID := "baz"
 
 	modelAuth := fixModelAuth()
 	gqlAuth := fixGQLAuth()
-	modelRtmAuth := fixModelRuntimeAuth(&rtmAuthID, rtmID, apiID, modelAuth)
-	gqlRtmAuth := fixGQLRuntimeAuth(rtmID, fixGQLAuth())
+	modelAPIRtmAuth := fixModelAPIRuntimeAuth(&apiRtmAuthID, rtmID, apiID, modelAuth)
+	gqlAPIRtmAuth := fixGQLAPIRuntimeAuth(rtmID, fixGQLAuth())
 
 	testCases := []struct {
 		Name           string
 		AuthConvFn     func() *automock.AuthConverter
-		Input          *model.RuntimeAuth
-		ExpectedOutput *graphql.RuntimeAuth
+		Input          *model.APIRuntimeAuth
+		ExpectedOutput *graphql.APIRuntimeAuth
 	}{
 		{
 			Name: "Success",
@@ -36,8 +36,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 				authConv.On("ToGraphQL", modelAuth).Return(gqlAuth).Once()
 				return authConv
 			},
-			Input:          modelRtmAuth,
-			ExpectedOutput: gqlRtmAuth,
+			Input:          modelAPIRtmAuth,
+			ExpectedOutput: gqlAPIRtmAuth,
 		},
 		{
 			Name: "Returns nil when input is nil",
@@ -53,7 +53,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			authConv := testCase.AuthConvFn()
-			conv := runtime_auth.NewConverter(authConv)
+			conv := apiruntimeauth.NewConverter(authConv)
 
 			// WHEN
 			result := conv.ToGraphQL(testCase.Input)
@@ -70,28 +70,28 @@ func TestConverter_ToEntity(t *testing.T) {
 	// GIVEN
 	rtmID := "foo"
 	apiID := "bar"
-	rtmAuthID := "baz"
+	apiRtmAuthID := "baz"
 
-	modelRtmAuth := *fixModelRuntimeAuth(&rtmAuthID, rtmID, apiID, fixModelAuth())
-	modelRtmAuthWithNils := *fixModelRuntimeAuth(nil, rtmID, apiID, nil)
-	ent := fixEntity(&rtmAuthID, rtmID, apiID, true)
+	modelAPIRtmAuth := *fixModelAPIRuntimeAuth(&apiRtmAuthID, rtmID, apiID, fixModelAuth())
+	modelAPIRtmAuthWithNils := *fixModelAPIRuntimeAuth(nil, rtmID, apiID, nil)
+	ent := fixEntity(&apiRtmAuthID, rtmID, apiID, true)
 	entWithNils := fixEntity(nil, rtmID, apiID, false)
 
 	testCases := []struct {
 		Name           string
-		Input          model.RuntimeAuth
-		ExpectedOutput runtime_auth.Entity
+		Input          model.APIRuntimeAuth
+		ExpectedOutput apiruntimeauth.Entity
 		ExpectedError  error
 	}{
 		{
 			Name:           "Success",
-			Input:          modelRtmAuth,
+			Input:          modelAPIRtmAuth,
 			ExpectedOutput: ent,
 			ExpectedError:  nil,
 		},
 		{
 			Name:           "Success when optional fields are nil",
-			Input:          modelRtmAuthWithNils,
+			Input:          modelAPIRtmAuthWithNils,
 			ExpectedOutput: entWithNils,
 			ExpectedError:  nil,
 		},
@@ -99,7 +99,7 @@ func TestConverter_ToEntity(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			conv := runtime_auth.NewConverter(nil)
+			conv := apiruntimeauth.NewConverter(nil)
 
 			// WHEN
 			result, err := conv.ToEntity(testCase.Input)
@@ -120,36 +120,36 @@ func TestConverter_FromEntity(t *testing.T) {
 	// GIVEN
 	rtmID := "foo"
 	apiID := "bar"
-	rtmAuthID := "baz"
+	apiRtmAuthID := "baz"
 
-	modelRtmAuth := *fixModelRuntimeAuth(&rtmAuthID, rtmID, apiID, fixModelAuth())
-	modelRtmAuthWithNils := *fixModelRuntimeAuth(nil, rtmID, apiID, nil)
-	ent := fixEntity(&rtmAuthID, rtmID, apiID, true)
+	modelAPIRtmAuth := *fixModelAPIRuntimeAuth(&apiRtmAuthID, rtmID, apiID, fixModelAuth())
+	modelAPIRtmAuthWithNils := *fixModelAPIRuntimeAuth(nil, rtmID, apiID, nil)
+	ent := fixEntity(&apiRtmAuthID, rtmID, apiID, true)
 	entWithNils := fixEntity(nil, rtmID, apiID, false)
 
 	testCases := []struct {
 		Name           string
-		Input          runtime_auth.Entity
-		ExpectedOutput model.RuntimeAuth
+		Input          apiruntimeauth.Entity
+		ExpectedOutput model.APIRuntimeAuth
 		ExpectedError  error
 	}{
 		{
 			Name:           "Success",
 			Input:          ent,
-			ExpectedOutput: modelRtmAuth,
+			ExpectedOutput: modelAPIRtmAuth,
 			ExpectedError:  nil,
 		},
 		{
 			Name:           "Success when optional fields are nil",
 			Input:          entWithNils,
-			ExpectedOutput: modelRtmAuthWithNils,
+			ExpectedOutput: modelAPIRtmAuthWithNils,
 			ExpectedError:  nil,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			conv := runtime_auth.NewConverter(nil)
+			conv := apiruntimeauth.NewConverter(nil)
 
 			// WHEN
 			result, err := conv.FromEntity(testCase.Input)

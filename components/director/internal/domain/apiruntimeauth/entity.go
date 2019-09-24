@@ -1,4 +1,4 @@
-package runtime_auth
+package apiruntimeauth
 
 import "database/sql"
 

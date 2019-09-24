@@ -1,4 +1,4 @@
-package runtime_auth
+package apiruntimeauth
 
 import (
 	"database/sql"
@@ -26,18 +26,18 @@ func NewConverter(authConverter AuthConverter) *converter {
 	}
 }
 
-func (c *converter) ToGraphQL(in *model.RuntimeAuth) *graphql.RuntimeAuth {
+func (c *converter) ToGraphQL(in *model.APIRuntimeAuth) *graphql.APIRuntimeAuth {
 	if in == nil {
 		return nil
 	}
 
-	return &graphql.RuntimeAuth{
+	return &graphql.APIRuntimeAuth{
 		RuntimeID: in.RuntimeID,
 		Auth:      c.authConverter.ToGraphQL(in.Value),
 	}
 }
 
-func (c *converter) ToEntity(in model.RuntimeAuth) (Entity, error) {
+func (c *converter) ToEntity(in model.APIRuntimeAuth) (Entity, error) {
 	value := sql.NullString{}
 	if in.Value != nil {
 		valueMarshalled, err := json.Marshal(in.Value)
@@ -57,8 +57,8 @@ func (c *converter) ToEntity(in model.RuntimeAuth) (Entity, error) {
 	}, nil
 }
 
-func (c *converter) FromEntity(in Entity) (model.RuntimeAuth, error) {
-	out := model.RuntimeAuth{
+func (c *converter) FromEntity(in Entity) (model.APIRuntimeAuth, error) {
+	out := model.APIRuntimeAuth{
 		TenantID:  in.TenantID,
 		RuntimeID: in.RuntimeID,
 		APIDefID:  in.APIDefID,
@@ -71,7 +71,7 @@ func (c *converter) FromEntity(in Entity) (model.RuntimeAuth, error) {
 		var auth model.Auth
 		err := json.Unmarshal([]byte(in.Value.String), &auth)
 		if err != nil {
-			return model.RuntimeAuth{}, err
+			return model.APIRuntimeAuth{}, err
 		}
 		out.Value = &auth
 	}

@@ -234,11 +234,11 @@ type APIDefinition {
 	"""
 	"If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified.
 	"""
-	auth(runtimeID: ID!): RuntimeAuth!
+	auth(runtimeID: ID!): APIRuntimeAuth!
 	"""
 	Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified.
 	"""
-	auths: [RuntimeAuth!]!
+	auths: [APIRuntimeAuth!]!
 	"""
 	If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly.
 	"""
@@ -250,6 +250,11 @@ type APIDefinitionPage implements Pageable {
 	data: [APIDefinition!]!
 	pageInfo: PageInfo!
 	totalCount: Int!
+}
+
+type APIRuntimeAuth {
+	runtimeID: ID!
+	auth: Auth
 }
 
 type APISpec {
@@ -433,11 +438,6 @@ type Runtime {
 	auths: [SystemAuth!]!
 }
 
-type RuntimeAuth {
-	runtimeID: ID!
-	auth: Auth
-}
-
 type RuntimePage implements Pageable {
 	data: [Runtime!]!
 	pageInfo: PageInfo!
@@ -517,8 +517,8 @@ type Mutation {
 	"""
 	Sets Auth for given Application and Runtime. To set default Auth for API, use updateAPI mutation
 	"""
-	setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput!): RuntimeAuth! @hasScopes(path: "mutation.setAPIAuth")
-	deleteAPIAuth(apiID: ID!, runtimeID: ID!): RuntimeAuth! @hasScopes(path: "mutation.deleteAPIAuth")
+	setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput!): APIRuntimeAuth! @hasScopes(path: "mutation.setAPIAuth")
+	deleteAPIAuth(apiID: ID!, runtimeID: ID!): APIRuntimeAuth! @hasScopes(path: "mutation.deleteAPIAuth")
 	addEventAPI(applicationID: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition! @hasScopes(path: "mutation.addEventAPI")
 	updateEventAPI(id: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition! @hasScopes(path: "mutation.updateEventAPI")
 	deleteEventAPI(id: ID!): EventAPIDefinition @hasScopes(path: "mutation.deleteEventAPI")

@@ -1,6 +1,6 @@
 package model
 
-type RuntimeAuth struct {
+type APIRuntimeAuth struct {
 	ID        *string
 	TenantID  string
 	RuntimeID string
