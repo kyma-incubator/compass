@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 	authenticationMocks "github.com/kyma-incubator/compass/components/connector/internal/authentication/mocks"
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
 	certificatesMocks "github.com/kyma-incubator/compass/components/connector/internal/certificates/mocks"
+	revocationMocks "github.com/kyma-incubator/compass/components/connector/internal/revocation/mocks"
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
 	tokensMocks "github.com/kyma-incubator/compass/components/connector/internal/tokens/mocks"
 	"github.com/stretchr/testify/assert"
@@ -18,7 +20,8 @@ import (
 )
 
 const (
-	clientId = "clientId"
+	clientId        = "clientId"
+	certificateHash = "somehash"
 )
 
 var (
@@ -52,13 +55,14 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 		}
 
 		tokenService := &tokensMocks.Service{}
+		revocationList := &revocationMocks.RevocationListRepository{}
 		authenticator := &authenticationMocks.Authenticator{}
 		authenticator.On("Authenticate", context.TODO()).Return(clientId, nil)
 
 		certService := &certificatesMocks.Service{}
 		certService.On("SignCSR", decodedCSR, subject).Return(encodedChain, nil)
 
-		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL)
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revocationList)
 
 		// when
 		certificationResult, err := certificateResolver.SignCertificateSigningRequest(context.TODO(), CSR)
@@ -84,13 +88,14 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 		}
 
 		tokenService := &tokensMocks.Service{}
+		revocationList := &revocationMocks.RevocationListRepository{}
 		authenticator := &authenticationMocks.Authenticator{}
 		authenticator.On("Authenticate", context.TODO()).Return("", fmt.Errorf("error"))
 
 		certService := &certificatesMocks.Service{}
 		certService.On("SignCSR", decodedCSR, subject).Return(encodedChain, nil)
 
-		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL)
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revocationList)
 
 		// when
 		_, err := certificateResolver.SignCertificateSigningRequest(context.TODO(), CSR)
@@ -113,13 +118,14 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 		}
 
 		tokenService := &tokensMocks.Service{}
+		revocationList := &revocationMocks.RevocationListRepository{}
 		authenticator := &authenticationMocks.Authenticator{}
 		authenticator.On("Authenticate", context.TODO()).Return(clientId, nil)
 
 		certService := &certificatesMocks.Service{}
 		certService.On("SignCSR", decodedCSR, subject).Return(encodedChain, nil)
 
-		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL)
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revocationList)
 
 		// when
 		_, err := certificateResolver.SignCertificateSigningRequest(context.TODO(), "not base 64 csr")
@@ -132,13 +138,14 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 	t.Run("should return error when failed to sign CSR", func(t *testing.T) {
 		// given
 		tokenService := &tokensMocks.Service{}
+		revocationList := &revocationMocks.RevocationListRepository{}
 		authenticator := &authenticationMocks.Authenticator{}
 		authenticator.On("Authenticate", context.TODO()).Return(clientId, nil)
 
 		certService := &certificatesMocks.Service{}
 		certService.On("SignCSR", decodedCSR, subject).Return(certificates.EncodedCertificateChain{}, apperrors.Internal("error"))
 
-		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL)
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revocationList)
 
 		// when
 		_, err := certificateResolver.SignCertificateSigningRequest(context.TODO(), CSR)
@@ -146,6 +153,60 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 		// then
 		require.Error(t, err)
 		mock.AssertExpectationsForObjects(t, tokenService, authenticator, certService)
+	})
+}
+
+func TestCertificateResolver_RevokeCertificate(t *testing.T) {
+
+	t.Run("should revoke certificate", func(t *testing.T) {
+		// given
+		authenticator := &authenticationMocks.Authenticator{}
+		authenticator.On("AuthenticateCertificate", context.Background()).Return(clientId, certificateHash, nil)
+		revocationList := &revocationMocks.RevocationListRepository{}
+		revocationList.On("Insert", certificateHash).Return(nil)
+
+		certificateResolver := NewCertificateResolver(authenticator, nil, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revocationList)
+
+		// when
+		revocationResult, err := certificateResolver.RevokeCertificate(context.Background())
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, true, revocationResult)
+	})
+
+	t.Run("should return error if failed to verify certificate", func(t *testing.T) {
+		// given
+		authenticator := &authenticationMocks.Authenticator{}
+		authenticator.On("AuthenticateCertificate", context.Background()).Return("", "", errors.Errorf("error"))
+		revocationList := &revocationMocks.RevocationListRepository{}
+		revocationList.On("Insert", certificateHash).Return(nil)
+
+		certificateResolver := NewCertificateResolver(authenticator, nil, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revocationList)
+
+		// when
+		revocationResult, err := certificateResolver.RevokeCertificate(context.Background())
+
+		// then
+		require.Error(t, err)
+		assert.Equal(t, false, revocationResult)
+	})
+
+	t.Run("should return error if failed to save cert to repository", func(t *testing.T) {
+		// given
+		authenticator := &authenticationMocks.Authenticator{}
+		authenticator.On("AuthenticateCertificate", context.Background()).Return(clientId, certificateHash, nil)
+		revocationList := &revocationMocks.RevocationListRepository{}
+		revocationList.On("Insert", certificateHash).Return(errors.Errorf("error"))
+
+		certificateResolver := NewCertificateResolver(authenticator, nil, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revocationList)
+
+		// when
+		revocationResult, err := certificateResolver.RevokeCertificate(context.Background())
+
+		// then
+		require.Error(t, err)
+		assert.Equal(t, false, revocationResult)
 	})
 }
 
@@ -157,8 +218,9 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 		authenticator.On("Authenticate", context.Background()).Return(clientId, nil)
 		tokenService := &tokensMocks.Service{}
 		tokenService.On("CreateToken", subject.CommonName, tokens.CSRToken).Return(token, nil)
+		revocationList := &revocationMocks.RevocationListRepository{}
 
-		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL)
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revocationList)
 
 		// when
 		configurationResult, err := certificateResolver.Configuration(context.Background())
@@ -179,8 +241,9 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 		authenticator.On("Authenticate", context.Background()).Return(clientId, nil)
 		tokenService := &tokensMocks.Service{}
 		tokenService.On("CreateToken", subject.CommonName, tokens.CSRToken).Return("", apperrors.Internal("error"))
+		revocationList := &revocationMocks.RevocationListRepository{}
 
-		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL)
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revocationList)
 
 		// when
 		configurationResult, err := certificateResolver.Configuration(context.Background())
@@ -196,8 +259,9 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 		authenticator := &authenticationMocks.Authenticator{}
 		authenticator.On("Authenticate", context.Background()).Return("", apperrors.Forbidden("Error"))
 		tokenService := &tokensMocks.Service{}
+		revocationList := &revocationMocks.RevocationListRepository{}
 
-		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL)
+		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revocationList)
 
 		// when
 		configurationResult, err := certificateResolver.Configuration(context.Background())
