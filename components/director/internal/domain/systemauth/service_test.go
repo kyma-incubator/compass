@@ -104,9 +104,9 @@ func TestService_Create(t *testing.T) {
 		{
 			Name: "Error creating System Auth",
 			sysAuthRepoFn: func() *automock.Repository {
-				rtmAuthRepo := &automock.Repository{}
-				rtmAuthRepo.On("Create", contextThatHasTenant(testTenant), *fixModelSystemAuth(sysAuthID, model.RuntimeReference, objID, modelAuth)).Return(testErr)
-				return rtmAuthRepo
+				sysAuthRepo := &automock.Repository{}
+				sysAuthRepo.On("Create", contextThatHasTenant(testTenant), *fixModelSystemAuth(sysAuthID, model.RuntimeReference, objID, modelAuth)).Return(testErr)
+				return sysAuthRepo
 			},
 			InputObjectType: model.RuntimeReference,
 			InputAuth:       &modelAuthInput,
@@ -117,9 +117,9 @@ func TestService_Create(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			rtmAuthRepo := testCase.sysAuthRepoFn()
+			sysAuthRepo := testCase.sysAuthRepoFn()
 			uidSvc := uidSvcFn()
-			svc := systemauth.NewService(rtmAuthRepo, uidSvc)
+			svc := systemauth.NewService(sysAuthRepo, uidSvc)
 
 			// WHEN
 			result, err := svc.Create(ctx, testCase.InputObjectType, objID, testCase.InputAuth)
@@ -133,7 +133,7 @@ func TestService_Create(t *testing.T) {
 			}
 			assert.Equal(t, testCase.ExpectedOutput, result)
 
-			rtmAuthRepo.AssertExpectations(t)
+			sysAuthRepo.AssertExpectations(t)
 			uidSvc.AssertExpectations(t)
 		})
 	}
@@ -256,8 +256,8 @@ func TestService_ListForObject(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			rtmAuthRepo := testCase.sysAuthRepoFn()
-			svc := systemauth.NewService(rtmAuthRepo, nil)
+			sysAuthRepo := testCase.sysAuthRepoFn()
+			svc := systemauth.NewService(sysAuthRepo, nil)
 
 			// WHEN
 			result, err := svc.ListForObject(ctx, testCase.InputObjectType, objID)
@@ -271,7 +271,7 @@ func TestService_ListForObject(t *testing.T) {
 			}
 			assert.Equal(t, testCase.ExpectedOutput, result)
 
-			rtmAuthRepo.AssertExpectations(t)
+			sysAuthRepo.AssertExpectations(t)
 		})
 	}
 
@@ -343,8 +343,8 @@ func TestService_Delete(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			rtmAuthRepo := testCase.sysAuthRepoFn()
-			svc := systemauth.NewService(rtmAuthRepo, nil)
+			sysAuthRepo := testCase.sysAuthRepoFn()
+			svc := systemauth.NewService(sysAuthRepo, nil)
 
 			// WHEN
 			err := svc.Delete(ctx, sysAuthID, testCase.InputObjectType)
@@ -357,7 +357,7 @@ func TestService_Delete(t *testing.T) {
 				assert.NoError(t, err)
 			}
 
-			rtmAuthRepo.AssertExpectations(t)
+			sysAuthRepo.AssertExpectations(t)
 		})
 	}
 

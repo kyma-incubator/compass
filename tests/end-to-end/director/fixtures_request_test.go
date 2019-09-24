@@ -107,7 +107,7 @@ func fixSetAPIAuthRequest(apiID string, rtmID string, authInStr string) *gcli.Re
 			result: setAPIAuth(apiID: "%s", runtimeID: "%s", in: %s) {
 					%s
 				}
-			}`, apiID, rtmID, authInStr, tc.gqlFieldsProvider.ForRuntimeAuth()))
+			}`, apiID, rtmID, authInStr, tc.gqlFieldsProvider.ForAPIRuntimeAuth()))
 }
 
 // QUERY
@@ -132,14 +132,14 @@ func fixRuntimeRequestWithPagination(after int, cursor string) *gcli.Request {
 			}`, after, cursor, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForRuntime())))
 }
 
-func fixRuntimeAuthRequest(applicationID string, runtimeID string) *gcli.Request {
+func fixAPIRuntimeAuthRequest(applicationID string, runtimeID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 							result: application(id: "%s") {
 								%s
 							}
 						}`, applicationID, tc.gqlFieldsProvider.ForApplication(fieldCtx{
-			"APIDefinition.auth": fmt.Sprintf(`auth(runtimeID: "%s") {%s}`, runtimeID, tc.gqlFieldsProvider.ForRuntimeAuth()),
+			"APIDefinition.auth": fmt.Sprintf(`auth(runtimeID: "%s") {%s}`, runtimeID, tc.gqlFieldsProvider.ForAPIRuntimeAuth()),
 		})))
 }
 
@@ -233,7 +233,7 @@ func fixDeleteAPIAuthRequest(apiID string, rtmID string) *gcli.Request {
 			result: deleteAPIAuth(apiID: "%s",runtimeID: "%s") {
 					%s
 				} 
-			}`, apiID, rtmID, tc.gqlFieldsProvider.ForRuntimeAuth()))
+			}`, apiID, rtmID, tc.gqlFieldsProvider.ForAPIRuntimeAuth()))
 }
 
 func removeDoubleQuotesFromJSONKeys(in string) string {
