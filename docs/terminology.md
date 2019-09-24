@@ -67,6 +67,9 @@ Abbr.: *Webhook API*
 
 ### Application Documentation
 
+## Integration System
+Any system that works in context of multiple tenants, managing multiple Applications or Runtimes.
+
 ## Runtime
 Any system that can configure itself according to the configuration provided by the *Management Plane*. Takes care about a customer workload.
 
