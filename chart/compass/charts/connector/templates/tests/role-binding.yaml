@@ -2,8 +2,8 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ template "fullname" . }}-tests
-  namespace: {{ .Values.global.namespace }}
+  name: {{ template "fullname" . }}-{{ .Values.global.connector.revocation.configmap.name }}-tests
+  namespace: {{ .Values.global.connector.revocation.configmap.namespace }}
   labels:
     app: {{ .Chart.Name }}-tests
     release: {{ .Chart.Name }}
@@ -11,14 +11,15 @@ metadata:
 rules:
 - apiGroups: ["*"]
   resources: ["configmaps"]
+  resourceNames: ["{{ .Values.global.connector.revocation.configmap.name }}"]
   verbs: ["get", "update"]
 
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ template "fullname" . }}-tests
-  namespace: {{ .Values.global.namespace }}
+  name: {{ template "fullname" . }}-{{ .Values.global.connector.revocation.configmap.name }}-tests
+  namespace: {{ .Values.global.connector.revocation.configmap.namespace }}
   labels:
     app: {{ .Chart.Name }}-tests
     release: {{ .Chart.Name }}
@@ -29,7 +30,7 @@ subjects:
   namespace: {{ .Release.Namespace }}
 roleRef:
   kind: Role
-  name: {{ template "fullname" . }}-tests
+  name: {{ template "fullname" . }}-{{ .Values.global.connector.revocation.configmap.name }}-tests
   apiGroup: rbac.authorization.k8s.io
 
 ---

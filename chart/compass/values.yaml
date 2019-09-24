@@ -54,6 +54,7 @@ global:
     certificateDataHeader: "Certificate-Data"
     revocation:
       configmap:
+        shouldCreate: true
         namespace: compass-system
         name: revocations-config
     # If key and certificate are not provided they will be generated
