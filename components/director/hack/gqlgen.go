@@ -17,8 +17,7 @@ func main() {
 	}
 
 	err = api.Generate(cfg,
-		api.AddPlugin(scopesdecorator.NewPlugin()),
-	)
+		api.AddPlugin(scopesdecorator.NewPlugin()))
 
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())

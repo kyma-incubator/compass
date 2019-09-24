@@ -25,16 +25,14 @@ func NewPlugin() *scopesDecoratorPlugin {
 	return &scopesDecoratorPlugin{}
 }
 
-type scopesDecoratorPlugin struct {
-	paths []string
-}
+type scopesDecoratorPlugin struct {}
 
 func (m *scopesDecoratorPlugin) Name() string {
 	return "scopes_decorator"
 }
 
 func (m *scopesDecoratorPlugin) MutateConfig(cfg *config.Config) error {
-	fmt.Printf("[%s] Mutate Configuration", m.Name())
+	fmt.Printf("[%s] Mutate Configuration\n", m.Name())
 	if err := cfg.Check(); err != nil {
 		return err
 	}
@@ -90,8 +88,4 @@ func (m *scopesDecoratorPlugin) getDirectiveArguments(opType GraphqlOperationTyp
 	path := fmt.Sprintf("%s.%s", opType, opName)
 	args = append(args, &ast.Argument{Name: directiveArg, Value: &ast.Value{Raw: path, Kind: ast.StringValue}})
 	return args
-}
-
-func (m *scopesDecoratorPlugin) registerDirectivePath(path string) {
-	m.paths = append(m.paths, path)
 }
