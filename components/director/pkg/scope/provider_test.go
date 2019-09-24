@@ -26,7 +26,7 @@ func TestScopeProviderLoad(t *testing.T) {
 		// WHEN
 		err := sut.Load()
 		// THEN
-		require.EqualError(t, err, "while converting YAML to JSON: yaml: found unexpected end of stream")
+		require.EqualError(t, err, "while unmarshalling YAML: error converting YAML to JSON: yaml: found unexpected end of stream")
 	})
 }
 

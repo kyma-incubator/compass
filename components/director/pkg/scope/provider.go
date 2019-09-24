@@ -1,7 +1,6 @@
 package scope
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 
@@ -26,17 +25,10 @@ func (p *provider) Load() error {
 	if err != nil {
 		return errors.Wrapf(err, "while reading file %s", p.fileName)
 	}
-	jsonRepresentation, err := yaml.YAMLToJSON([]byte(b))
-	if err != nil {
-		return errors.Wrap(err, "while converting YAML to JSON")
-	}
-
 	out := map[string]interface{}{}
-	err = json.Unmarshal(([]byte)(jsonRepresentation), &out)
-	if err != nil {
-		return errors.Wrap(err, "while unmarshalling JSON")
+	if err := yaml.Unmarshal([]byte(b),&out); err != nil {
+		return errors.Wrap(err, "while unmarshalling YAML")
 	}
-
 	p.cachedConfig = out
 
 	return nil

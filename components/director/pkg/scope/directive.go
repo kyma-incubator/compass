@@ -31,10 +31,10 @@ func (d *directive) Has(ctx context.Context, obj interface{}, next graphql.Resol
 		return nil, errors.Wrap(err, "while getting required scopes")
 	}
 
-	if d.matches(actualScopes, requiredScopes) {
-		return next(ctx)
+	if !d.matches(actualScopes, requiredScopes) {
+		return nil, InsufficientScopesError(requiredScopes, actualScopes)
 	}
-	return nil, InsufficientScopesError(requiredScopes,actualScopes)
+	return next(ctx)
 }
 
 func (d *directive) matches(actual []string, required []string) bool {

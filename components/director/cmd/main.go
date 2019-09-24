@@ -76,7 +76,7 @@ func main() {
 		err = provider.Load()
 		exitOnError(err, "Error on loading scopes config file")
 		ticker := scope.NewTicker(cfg.ScopesConfigurationFileReload)
-		reloader := scope.NewPeriodicReloader(provider, &infoLogger{}, ticker)
+		reloader := scope.NewPeriodicReloader(provider, log.StandardLogger(), ticker)
 		go func() {
 			err := reloader.Watch(context.Background())
 			exitOnError(err, "Error from Reloader watch")
@@ -117,11 +117,4 @@ func configureLogger() {
 		FullTimestamp: true,
 	})
 	log.SetReportCaller(true)
-}
-
-type infoLogger struct {
-}
-
-func (i *infoLogger) Infof(format string, args ...interface{}) {
-	log.Infof(format, args...)
 }
