@@ -174,7 +174,7 @@ type EventAPISpecInput struct {
 	FetchRequest  *FetchRequestInput `json:"fetchRequest"`
 }
 
-//  Compass performs fetch to validate if request is correct and stores a copy
+// Compass performs fetch to validate if request is correct and stores a copy
 type FetchRequest struct {
 	URL    string              `json:"url"`
 	Auth   *Auth               `json:"auth"`
