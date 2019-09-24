@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"k8s.io/apimachinery/pkg/types"
+
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connector/internal/api"
@@ -47,9 +49,8 @@ type config struct {
 	CASecretName                string        `envconfig:"default=kyma-integration/connector-service-app-ca"`
 	RootCACertificateSecretName string        `envconfig:"optional"`
 
-	CertificateDataHeader        string `envconfig:"default=Certificate-Data"`
-	RevocationConfigMapNamespace string `envconfig:"default=compass-system"`
-	RevocationConfigMapName      string `envconfig:"default=revocations-config"`
+	CertificateDataHeader   string `envconfig:"default=Certificate-Data"`
+	RevocationConfigMapName string `envconfig:"default=compass-system/revocations-config"`
 
 	Token struct {
 		Length                int           `envconfig:"default=64"`
@@ -68,7 +69,7 @@ func (c *config) String() string {
 		"CSRSubjectLocality: %s, CSRSubjectProvince: %s, "+
 		"CertificateValidityTime: %s, CASecretName: %s, RootCACertificateSecretName: %s, CertificateDataHeader: %s, "+
 		"CertificateSecuredConnectorURL: %s, "+
-		"RevocationConfigMapNamespace: %s, RevocationConfigMapName: %s, "+
+		"RevocationConfigMapName: %s, "+
 		"TokenLength: %d, TokenRuntimeExpiration: %s, TokenApplicationExpiration: %s, TokenCSRExpiration: %s, "+
 		"DirectorURL: %s",
 		c.Address, c.APIEndpoint, c.HydratorAddress,
@@ -76,7 +77,7 @@ func (c *config) String() string {
 		c.CSRSubject.Locality, c.CSRSubject.Province,
 		c.CertificateValidityTime, c.CASecretName, c.RootCACertificateSecretName, c.CertificateDataHeader,
 		c.CertificateSecuredConnectorURL,
-		c.RevocationConfigMapNamespace, c.RevocationConfigMapName,
+		c.RevocationConfigMapName,
 		c.Token.Length, c.Token.RuntimeExpiration.String(), c.Token.ApplicationExpiration.String(), c.Token.CSRExpiration.String(),
 		c.DirectorURL)
 }
@@ -93,7 +94,7 @@ func main() {
 	tokenService := tokens.NewTokenService(tokenCache, tokens.NewTokenGenerator(cfg.Token.Length))
 	coreClientSet, appErr := newCoreClientSet()
 	exitOnError(appErr, "Failed to initialize Kubernetes client.")
-	revokedCertsRepository := newRevokedCertsRepository(coreClientSet, cfg.RevocationConfigMapNamespace, cfg.RevocationConfigMapName)
+	revokedCertsRepository := newRevokedCertsRepository(coreClientSet, namespacedname.Parse(cfg.RevocationConfigMapName))
 
 	authenticator := authentication.NewAuthenticator()
 
@@ -226,8 +227,8 @@ func newSecretsRepository(coreClientSet *kubernetes.Clientset) secrets.Repositor
 	})
 }
 
-func newRevokedCertsRepository(coreClientSet *kubernetes.Clientset, namespace, revocationSecretName string) revocation.RevocationListRepository {
-	cmi := coreClientSet.CoreV1().ConfigMaps(namespace)
+func newRevokedCertsRepository(coreClientSet *kubernetes.Clientset, revocationSecret types.NamespacedName) revocation.RevocationListRepository {
+	cmi := coreClientSet.CoreV1().ConfigMaps(revocationSecret.Namespace)
 
-	return revocation.NewRepository(cmi, revocationSecretName)
+	return revocation.NewRepository(cmi, revocationSecret.Name)
 }
