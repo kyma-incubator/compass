@@ -1,0 +1,2 @@
+mutation:
+  createApplication: ["read_application","write_application"]
