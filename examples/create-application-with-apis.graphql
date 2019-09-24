@@ -386,5 +386,41 @@ mutation {
       }
       totalCount
     }
+    auths {
+      id
+      auth {
+        credential {
+          ... on BasicCredentialData {
+            username
+            password
+          }
+          ... on OAuthCredentialData {
+            clientId
+            clientSecret
+            url
+          }
+        }
+        additionalHeaders
+        additionalQueryParams
+        requestAuth {
+          csrf {
+            tokenEndpointURL
+            credential {
+              ... on BasicCredentialData {
+                username
+                password
+              }
+              ... on OAuthCredentialData {
+                clientId
+                clientSecret
+                url
+              }
+            }
+            additionalHeaders
+            additionalQueryParams
+          }
+        }
+      }
+    }
   }
 }

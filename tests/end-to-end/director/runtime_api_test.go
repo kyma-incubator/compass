@@ -634,29 +634,3 @@ func TestCreateRuntimeWithoutLabels(t *testing.T) {
 	require.Equal(t, runtime.ID, fetchedRuntime.ID)
 	assertRuntime(t, runtimeInput, *fetchedRuntime)
 }
-
-// TODO: Once create mutation for System Auths is implemented test System Auths with actual value
-func TestQueryRuntimeWithSystemAuths(t *testing.T) {
-	t.SkipNow() // TODO: Unskip this test after implementing `generateOneTimeTokenForRuntime`
-	// GIVEN
-	ctx := context.TODO()
-	tenantID := uuid.New().String()
-
-	numberOfTokens := 3
-
-	name := "test-query-rtm-sys-auths"
-	runtimeInput := graphql.RuntimeInput{Name: name}
-	runtime := createRuntimeFromInputWithinTenant(t, ctx, &runtimeInput, tenantID)
-	defer deleteRuntimeWithinTenant(t, runtime.ID, tenantID)
-
-	// TODO: generate {numberOfTokens} tokens here with `generateOneTimeTokenForRuntime` mutation
-
-	//WHEN
-	fetchedRuntime := getRuntimeWithinTenant(t, ctx, runtime.ID, tenantID)
-
-	//THEN
-	require.Equal(t, runtime.ID, fetchedRuntime.ID)
-	assertRuntime(t, runtimeInput, *fetchedRuntime)
-	assert.NotNil(t, fetchedRuntime.Auths)
-	assert.Len(t, fetchedRuntime.Auths, numberOfTokens)
-}
