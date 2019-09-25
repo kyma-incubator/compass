@@ -200,7 +200,7 @@ func TestFullConnectorFlow(t *testing.T) {
 
 	t.Log("Certificate generated. Creating secured client...")
 	certChain := testkit.DecodeCertChain(t, certificationResult.CertificateChain)
-	securedClient := connector.NewCertificateSecuredConnectorClient(config.SecuredConnectorURL, clientKey, certChain...)
+	securedClient := connector.NewCertificateSecuredConnectorClient(*configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL, clientKey, certChain...)
 
 	t.Log("Fetching configuration with certificate...")
 	configWithCert, err := securedClient.Configuration()
@@ -217,7 +217,7 @@ func TestFullConnectorFlow(t *testing.T) {
 
 	t.Log("Renewing certificate...")
 	renewedCertChain := testkit.DecodeCertChain(t, certificationResult.CertificateChain)
-	securedClientWithRenewedCert := connector.NewCertificateSecuredConnectorClient(config.SecuredConnectorURL, clientKey, renewedCertChain...)
+	securedClientWithRenewedCert := connector.NewCertificateSecuredConnectorClient(*configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL, clientKey, renewedCertChain...)
 
 	t.Log("Certificate renewed. Fetching configuration with renewed certificate...")
 	configWithRenewedCert, err := securedClientWithRenewedCert.Configuration()
@@ -275,8 +275,8 @@ func generateCertificateForToken(t *testing.T, token string, clientKey *rsa.Priv
 
 func assertConfiguration(t *testing.T, configuration gqlschema.Configuration) {
 	require.NotEmpty(t, configuration)
-	require.NotEmpty(t, configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL)
-	require.NotEmpty(t, configuration.ManagementPlaneInfo.DirectorURL)
+	require.NotNil(t, configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL)
+	require.NotNil(t, configuration.ManagementPlaneInfo.DirectorURL)
 
 	require.Equal(t, testkit.RSAKey, configuration.CertificateSigningRequestInfo.KeyAlgorithm)
 }
