@@ -92,12 +92,12 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 }
 
 func (h *Handler) setScopes(extraMap map[string]interface{}) {
-	extraMap["scope"] = []string{"application_read",
-		"application_write",
-		"runtime_read",
-		"runtime_write",
-		"label_definition_read",
-		"label_definition_write",
-		"health_checks_read"}
+	extraMap["scope"] = []string{"application:read",
+		"application:write",
+		"runtime:read",
+		"runtime:write",
+		"label_definition:read",
+		"label_definition:write",
+		"health_checks:read"}
 
 }
