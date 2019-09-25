@@ -1749,7 +1749,10 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var parsedSchema = gqlparser.MustLoadSchema(
-	&ast.Source{Name: "schema.graphql", Input: `directive @hasScopes(path: String!) on FIELD_DEFINITION
+	&ast.Source{Name: "schema.graphql", Input: `"""
+HasScopes directive is added automatically to every query and mutation by scopesdecorator plugin that is triggerred by gqlgen.sh script.
+"""
+directive @hasScopes(path: String!) on FIELD_DEFINITION
 scalar Any
 
 scalar CLOB
