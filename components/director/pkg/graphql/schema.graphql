@@ -1,3 +1,6 @@
+# Directives
+
+directive @hasScopes(path:String!) on FIELD_DEFINITION
 # Scalars
 
 scalar Any # -> interface{}
@@ -497,7 +500,7 @@ type Query {
 
 type Mutation {
     # Application
-    createApplication(in: ApplicationInput!): Application!
+    createApplication(in: ApplicationInput!): Application! @hasScopes(path: "mutation.createApplication")
     updateApplication(id: ID!, in: ApplicationInput!): Application!
     deleteApplication(id: ID!): Application
 

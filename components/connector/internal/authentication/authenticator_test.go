@@ -67,11 +67,12 @@ func TestAuthenticator_AuthenticateCertificate(t *testing.T) {
 		authenticator := NewAuthenticator()
 
 		// when
-		id, err := authenticator.AuthenticateCertificate(ctx)
+		id, hash, err := authenticator.AuthenticateCertificate(ctx)
 
 		// then
 		require.NoError(t, err)
 		assert.Equal(t, clientId, id)
+		assert.Equal(t, certHash, hash)
 	})
 
 	t.Run("should return error if client id is empty", func(t *testing.T) {
@@ -82,11 +83,12 @@ func TestAuthenticator_AuthenticateCertificate(t *testing.T) {
 		authenticator := NewAuthenticator()
 
 		// when
-		id, err := authenticator.AuthenticateCertificate(ctx)
+		id, hash, err := authenticator.AuthenticateCertificate(ctx)
 
 		// then
 		require.Error(t, err)
 		assert.Empty(t, id)
+		assert.Empty(t, hash)
 	})
 
 	t.Run("should return error if hash not in context", func(t *testing.T) {
@@ -96,11 +98,12 @@ func TestAuthenticator_AuthenticateCertificate(t *testing.T) {
 		authenticator := NewAuthenticator()
 
 		// when
-		id, err := authenticator.AuthenticateCertificate(ctx)
+		id, hash, err := authenticator.AuthenticateCertificate(ctx)
 
 		// then
 		require.Error(t, err)
 		assert.Empty(t, id)
+		assert.Empty(t, hash)
 	})
 
 	t.Run("should return error if client id not found in context", func(t *testing.T) {
@@ -110,11 +113,12 @@ func TestAuthenticator_AuthenticateCertificate(t *testing.T) {
 		authenticator := NewAuthenticator()
 
 		// when
-		id, err := authenticator.AuthenticateCertificate(ctx)
+		id, hash, err := authenticator.AuthenticateCertificate(ctx)
 
 		// then
 		require.Error(t, err)
 		assert.Empty(t, id)
+		assert.Empty(t, hash)
 	})
 
 }

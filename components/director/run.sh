@@ -83,4 +83,4 @@ if [[  ${SKIP_APP_START} ]]; then
 fi
 
 echo -e "${GREEN}Starting application${NC}"
-APP_DB_USER=${DB_USER} APP_DB_PASSWORD=${DB_PWD} APP_DB_NAME=${DB_NAME} go run ${ROOT_PATH}/cmd/main.go
+APP_DB_USER=${DB_USER} APP_DB_PASSWORD=${DB_PWD} APP_DB_NAME=${DB_NAME} APP_SCOPES_CONFIGURATION_FILE=${ROOT_PATH}/../../chart/compass/charts/director/scopes.yaml go run ${ROOT_PATH}/cmd/main.go

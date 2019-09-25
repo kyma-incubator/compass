@@ -20,7 +20,8 @@ func RespondWithError(w http.ResponseWriter, status int, err error) {
 	logrus.Error(err.Error())
 	w.Header().Add(HeaderContentType, ContentTypeApplicationJSON)
 	w.WriteHeader(status)
-	encodingErr := json.NewEncoder(w).Encode(err)
+	errorResponse := ErrorResponse{err}
+	encodingErr := json.NewEncoder(w).Encode(errorResponse)
 	if encodingErr != nil {
 		logrus.Error("Failed to encode error response")
 	}

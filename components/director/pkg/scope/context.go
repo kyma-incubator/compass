@@ -2,20 +2,17 @@ package scope
 
 import (
 	"context"
-	"errors"
 )
 
 type key int
 
 const ScopesContextKey key = iota
 
-var NoScopesError = errors.New("cannot read scopes from context")
-
 func LoadFromContext(ctx context.Context) ([]string, error) {
 	value := ctx.Value(ScopesContextKey)
 	scopes, ok := value.([]string)
 	if !ok {
-		return nil, NoScopesError
+		return nil, NoScopesInContextError
 	}
 	return scopes, nil
 }
