@@ -1,7 +1,7 @@
 # Authentication and Authorization
 
 ## Introduction
-Currently, communication between the Compass and both Runtimes and Applications is not secured. We need to provide some security possibilities.
+Currently, communication between the Compass and both [Runtimes](./../terminology.md#runtime) and [Applications](./../terminology.md#application) is not secured. We need to provide some security possibilities.
 We want to secure the Compass using ORY's Hydra and OathKeeper. There will be three ways of authentication:
  - OAuth 2.0 
  - Client Certificates (mTLS)
@@ -25,7 +25,7 @@ The `authorization_id` is equal to:
 - `username` in Basic authentication flow
 - Common Name (CN) in Certificates authentication flow
 
-While generating one-time token, `client_id`/`client_secret` pair or basic authentication details for Runtime/Application/Integration System (using proper GraphQL mutation on Director), an entry in `system_auths` table in Director database is created. The `system_auths` table is used for tenant mapping.
+While generating one-time token, `client_id`/`client_secret` pair or basic authentication details for Runtime/Application/[Integration System](./../terminology.md#integration-system) (using proper GraphQL mutation on Director), an entry in `system_auths` table in Director database is created. The `system_auths` table is used for tenant mapping.
 
 In certificates authentication flow, Tenant Mapping Handler puts fixed `scopes` into authentication session. The `scopes` are fixed in code, and they depends of type of the object (Application / Runtime / Integration System). In future we may introduce another database table for storing generic Application / Runtime / Integration System scopes.
 
