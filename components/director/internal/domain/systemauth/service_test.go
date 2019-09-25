@@ -38,7 +38,7 @@ func TestService_Create(t *testing.T) {
 		Name            string
 		sysAuthRepoFn   func() *automock.Repository
 		InputObjectType model.SystemAuthReferenceObjectType
-		InputAuth       model.AuthInput
+		InputAuth       *model.AuthInput
 		ExpectedOutput  string
 		ExpectedError   error
 	}{
@@ -50,7 +50,7 @@ func TestService_Create(t *testing.T) {
 				return sysAuthRepo
 			},
 			InputObjectType: model.RuntimeReference,
-			InputAuth:       modelAuthInput,
+			InputAuth:       &modelAuthInput,
 			ExpectedOutput:  sysAuthID,
 			ExpectedError:   nil,
 		},
@@ -62,7 +62,7 @@ func TestService_Create(t *testing.T) {
 				return sysAuthRepo
 			},
 			InputObjectType: model.ApplicationReference,
-			InputAuth:       modelAuthInput,
+			InputAuth:       &modelAuthInput,
 			ExpectedOutput:  sysAuthID,
 			ExpectedError:   nil,
 		},
@@ -74,7 +74,19 @@ func TestService_Create(t *testing.T) {
 				return sysAuthRepo
 			},
 			InputObjectType: model.IntegrationSystemReference,
-			InputAuth:       modelAuthInput,
+			InputAuth:       &modelAuthInput,
+			ExpectedOutput:  sysAuthID,
+			ExpectedError:   nil,
+		},
+		{
+			Name: "Success creating auth with nil value",
+			sysAuthRepoFn: func() *automock.Repository {
+				sysAuthRepo := &automock.Repository{}
+				sysAuthRepo.On("Create", contextThatHasTenant(testTenant), *fixModelSystemAuth(sysAuthID, model.RuntimeReference, objID, nil)).Return(nil)
+				return sysAuthRepo
+			},
+			InputObjectType: model.RuntimeReference,
+			InputAuth:       nil,
 			ExpectedOutput:  sysAuthID,
 			ExpectedError:   nil,
 		},
@@ -85,7 +97,7 @@ func TestService_Create(t *testing.T) {
 				return sysAuthRepo
 			},
 			InputObjectType: "unknown",
-			InputAuth:       modelAuthInput,
+			InputAuth:       &modelAuthInput,
 			ExpectedOutput:  "",
 			ExpectedError:   errors.New("unknown reference object type"),
 		},
@@ -97,7 +109,7 @@ func TestService_Create(t *testing.T) {
 				return rtmAuthRepo
 			},
 			InputObjectType: model.RuntimeReference,
-			InputAuth:       modelAuthInput,
+			InputAuth:       &modelAuthInput,
 			ExpectedOutput:  "",
 			ExpectedError:   testErr,
 		},
@@ -130,7 +142,7 @@ func TestService_Create(t *testing.T) {
 		svc := systemauth.NewService(nil, nil)
 
 		// WHEN
-		_, err := svc.Create(context.TODO(), "", "", model.AuthInput{})
+		_, err := svc.Create(context.TODO(), "", "", nil)
 
 		// THEN
 		require.Error(t, err)
