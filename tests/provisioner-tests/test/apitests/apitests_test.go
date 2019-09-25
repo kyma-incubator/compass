@@ -1,6 +1,7 @@
 package apitests
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -12,8 +13,8 @@ import (
 )
 
 const (
-	maxWaitTime = 60
-	interval    = 1
+	timeout  = 60
+	interval = 1
 )
 
 var provisionRuntimeInput = gqlschema.ProvisionRuntimeInput{
@@ -53,7 +54,7 @@ func TestFullProvisionerFlow(t *testing.T) {
 	require.NoError(t, e)
 
 	t.Logf("Waiting until runtime %s is provisioned", runtimeID)
-	waitUntilOperationIsFinished(e, client, provisionOperationID, t, runtimeID)
+	waitUntilOperationIsFinished(t, client, provisionOperationID)
 	t.Logf("Runtime %s provisioned succesfully", runtimeID)
 
 	t.Logf("Reconnecting runtime agent with runtime %s", runtimeID)
@@ -62,7 +63,7 @@ func TestFullProvisionerFlow(t *testing.T) {
 	require.NoError(t, e)
 
 	t.Logf("Waiting until runtime %s is provisioned", runtimeID)
-	waitUntilOperationIsFinished(e, client, reconnectOperationID, t, runtimeID)
+	waitUntilOperationIsFinished(t, client, reconnectOperationID)
 	t.Logf("Runtime agent for runtime %s reconnected succesfully", runtimeID)
 
 	t.Logf("Upgrading runtime %s", runtimeID)
@@ -72,7 +73,7 @@ func TestFullProvisionerFlow(t *testing.T) {
 	require.NoError(t, e)
 
 	t.Logf("Waiting until runtime %s is upgraded", runtimeID)
-	waitUntilOperationIsFinished(e, client, upgradeOperationID, t, runtimeID)
+	waitUntilOperationIsFinished(t, client, upgradeOperationID)
 	t.Logf("Runtime %s upgraded succesfully", runtimeID)
 
 	t.Logf("Checking current status of runtime %s", runtimeID)
@@ -89,25 +90,42 @@ func TestFullProvisionerFlow(t *testing.T) {
 	require.NoError(t, e)
 
 	t.Logf("Waiting until runtime %s is deprovisioned", runtimeID)
-	waitUntilOperationIsFinished(e, client, deprovisionOperationID, t, runtimeID)
+	waitUntilOperationIsFinished(t, client, deprovisionOperationID)
 	t.Logf("Runtime %s deprovisioned succesfully", runtimeID)
 }
 
-func waitUntilOperationIsFinished(e error, client testkit.ProvisionerClient, operationID string, t *testing.T, runtimeID string) {
-	var operationStatus gqlschema.OperationStatus
-	for i := 0; i <= maxWaitTime; i += interval {
-		operationStatus, e = client.RuntimeOperationStatus(operationID)
-		require.NoError(t, e)
+func waitUntilOperationIsFinished(t *testing.T, client testkit.ProvisionerClient, operationID string) {
+	err := waitForFunction(interval, timeout, func() bool {
+		operationStatus, e := client.RuntimeOperationStatus(operationID)
+		if e != nil {
+			return false
+		}
 
 		if operationStatus.State == gqlschema.OperationStateSucceeded {
-			break
+			return true
 		}
 
 		if operationStatus.State == gqlschema.OperationStateFailed {
-			t.Logf("Failed to provision runtime %s", runtimeID)
 			t.FailNow()
 		}
-		time.Sleep(interval * time.Second)
+		return false
+	})
+	require.NoError(t, err)
+}
+
+func waitForFunction(interval, timeout time.Duration, isDone func() bool) error {
+	done := time.After(timeout)
+
+	for {
+		if isDone() {
+			return nil
+		}
+
+		select {
+		case <-done:
+			return errors.New("timeout waiting for condition")
+		default:
+			time.Sleep(interval)
+		}
 	}
-	require.Equal(t, gqlschema.OperationStateSucceeded, operationStatus.State)
 }
