@@ -11,6 +11,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const ClientIdFromCertificateHeader = "Client-Id-From-Certificate"
+
 type Data struct {
 	Subject string      `json:"subject"`
 	Extra   interface{} `json:"extra"`
@@ -72,6 +74,9 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	extraMap["tenant"] = "9ac609e1-7487-4aa6-b600-0904b272b11f"
+	if request.Header.Get(ClientIdFromCertificateHeader) != "" {
+		h.setScopes(extraMap)
+	}
 	data.Extra = extraMap
 
 	logBuilder.WriteString(fmt.Sprintf("\nOutput: %+v\n", data))
@@ -84,4 +89,15 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, wrappedErr.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func (h *Handler) setScopes(extraMap map[string]interface{}) {
+	extraMap["scope"] = []string{"application_read",
+		"application_write",
+		"runtime_read",
+		"runtime_write",
+		"label_definition_read",
+		"label_definition_write",
+		"health_checks_read"}
+
 }
