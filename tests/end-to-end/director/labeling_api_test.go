@@ -484,7 +484,7 @@ func TestDeleteLabelDefinition(t *testing.T) {
 
 		t.Log("Create runtime")
 		rtm := createRuntime(t, ctx, "rtm")
-		defer deleteRuntimeInTenant(t, rtm.ID, defaultTenant)
+		defer deleteRuntimeWithinTenant(t, rtm.ID, defaultTenant)
 
 		t.Log("Set labels on application and runtime")
 		setApplicationLabel(t, ctx, app.ID, labelKey, map[string]interface{}{labelKey: "app"})

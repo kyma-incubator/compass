@@ -13,8 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const agentAuthStr = `{"Credential":{"Basic":{"Username":"foo","Password":"bar"},"Oauth":null},"AdditionalHeaders":null,"AdditionalQueryParams":null,"RequestAuth":null}`
-
 func TestEntity_EntityFromRuntimeModel_RuntimeWithDescription(t *testing.T) {
 	// given
 	description := "Description for Runtime XYZ"
@@ -30,14 +28,6 @@ func TestEntity_EntityFromRuntimeModel_RuntimeWithDescription(t *testing.T) {
 			Condition: model.RuntimeStatusConditionInitial,
 			Timestamp: time,
 		},
-		AgentAuth: &model.Auth{
-			Credential: model.CredentialData{
-				Basic: &model.BasicCredentialData{
-					Username: "foo",
-					Password: "bar",
-				},
-			},
-		},
 	}
 
 	// when
@@ -52,7 +42,6 @@ func TestEntity_EntityFromRuntimeModel_RuntimeWithDescription(t *testing.T) {
 	assert.Equal(t, *modelRuntime.Description, entityRuntime.Description.String)
 	assert.Equal(t, "INITIAL", entityRuntime.StatusCondition)
 	assert.Equal(t, modelRuntime.Status.Timestamp, entityRuntime.StatusTimestamp)
-	assert.Equal(t, agentAuthStr, entityRuntime.AgentAuth)
 }
 
 func TestEntity_EntityFromRuntimeModel_RuntimeWithoutDescription(t *testing.T) {
@@ -69,14 +58,6 @@ func TestEntity_EntityFromRuntimeModel_RuntimeWithoutDescription(t *testing.T) {
 			Condition: model.RuntimeStatusConditionInitial,
 			Timestamp: time,
 		},
-		AgentAuth: &model.Auth{
-			Credential: model.CredentialData{
-				Basic: &model.BasicCredentialData{
-					Username: "foo",
-					Password: "bar",
-				},
-			},
-		},
 	}
 
 	// when
@@ -90,7 +71,6 @@ func TestEntity_EntityFromRuntimeModel_RuntimeWithoutDescription(t *testing.T) {
 	assert.False(t, entityRuntime.Description.Valid)
 	assert.Equal(t, "INITIAL", entityRuntime.StatusCondition)
 	assert.Equal(t, modelRuntime.Status.Timestamp, entityRuntime.StatusTimestamp)
-	assert.Equal(t, agentAuthStr, entityRuntime.AgentAuth)
 }
 
 func TestEntity_RuntimeToModel_RuntimeWithDescription(t *testing.T) {
@@ -110,7 +90,6 @@ func TestEntity_RuntimeToModel_RuntimeWithDescription(t *testing.T) {
 		Description:     description,
 		StatusCondition: "INITIAL",
 		StatusTimestamp: time,
-		AgentAuth:       agentAuthStr,
 	}
 
 	// when
@@ -124,8 +103,6 @@ func TestEntity_RuntimeToModel_RuntimeWithDescription(t *testing.T) {
 	assert.Equal(t, "Description for runtime QWE", *modelRuntime.Description)
 	assert.Equal(t, entityRuntime.StatusCondition, string(modelRuntime.Status.Condition))
 	assert.Equal(t, entityRuntime.StatusTimestamp, modelRuntime.Status.Timestamp)
-	assert.Equal(t, "foo", modelRuntime.AgentAuth.Credential.Basic.Username)
-	assert.Equal(t, "bar", modelRuntime.AgentAuth.Credential.Basic.Password)
 }
 
 func TestEntity_RuntimeToModel_RuntimeWithoutDescription(t *testing.T) {
@@ -145,7 +122,6 @@ func TestEntity_RuntimeToModel_RuntimeWithoutDescription(t *testing.T) {
 		Description:     description,
 		StatusCondition: "INITIAL",
 		StatusTimestamp: time,
-		AgentAuth:       agentAuthStr,
 	}
 
 	// when
@@ -159,6 +135,4 @@ func TestEntity_RuntimeToModel_RuntimeWithoutDescription(t *testing.T) {
 	assert.Nil(t, modelRuntime.Description)
 	assert.Equal(t, entityRuntime.StatusCondition, string(modelRuntime.Status.Condition))
 	assert.Equal(t, entityRuntime.StatusTimestamp, modelRuntime.Status.Timestamp)
-	assert.Equal(t, "foo", modelRuntime.AgentAuth.Credential.Basic.Username)
-	assert.Equal(t, "bar", modelRuntime.AgentAuth.Credential.Basic.Password)
 }

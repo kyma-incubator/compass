@@ -5,7 +5,6 @@ type Runtime struct {
 	Name        string         `json:"name"`
 	Description *string        `json:"description"`
 	Status      *RuntimeStatus `json:"status"`
-	AgentAuth   *Auth          `json:"agentAuth"`
 }
 
 // Extended types used by external API

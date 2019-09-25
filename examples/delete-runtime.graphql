@@ -9,36 +9,39 @@ mutation {
       condition
       timestamp
     }
-    agentAuth {
-      credential {
-        ... on BasicCredentialData {
-          username
-          password
-        }
-        ... on OAuthCredentialData {
-          clientId
-          clientSecret
-          url
-        }
-      }
-      additionalHeaders
-      additionalQueryParams
-      requestAuth {
-        csrf {
-          tokenEndpointURL
-          credential {
-            ... on BasicCredentialData {
-              username
-              password
-            }
-            ... on OAuthCredentialData {
-              clientId
-              clientSecret
-              url
-            }
+    auths {
+      id
+      auth {
+        credential {
+          ... on BasicCredentialData {
+            username
+            password
           }
-          additionalHeaders
-          additionalQueryParams
+          ... on OAuthCredentialData {
+            clientId
+            clientSecret
+            url
+          }
+        }
+        additionalHeaders
+        additionalQueryParams
+        requestAuth {
+          csrf {
+            tokenEndpointURL
+            credential {
+              ... on BasicCredentialData {
+                username
+                password
+              }
+              ... on OAuthCredentialData {
+                clientId
+                clientSecret
+                url
+              }
+            }
+            additionalHeaders
+            additionalQueryParams
+          }
         }
       }
     }

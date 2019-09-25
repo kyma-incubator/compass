@@ -425,7 +425,6 @@ type Runtime {
 	Returns array of authentication details for Runtime. For now at most one element in array will be returned.
 	"""
 	auths: [SystemAuth!]!
-	agentAuth: Auth! @deprecated
 }
 
 type RuntimeAuth {

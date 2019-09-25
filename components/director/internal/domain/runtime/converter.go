@@ -5,17 +5,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-//go:generate mockery -name=AuthConverter -output=automock -outpkg=automock -case=underscore
-type AuthConverter interface {
-	ToGraphQL(in *model.Auth) *graphql.Auth
-}
+type converter struct{}
 
-type converter struct {
-	auth AuthConverter
-}
-
-func NewConverter(auth AuthConverter) *converter {
-	return &converter{auth: auth}
+func NewConverter() *converter {
+	return &converter{}
 }
 
 func (c *converter) ToGraphQL(in *model.Runtime) *graphql.Runtime {
@@ -28,7 +21,6 @@ func (c *converter) ToGraphQL(in *model.Runtime) *graphql.Runtime {
 		Status:      c.statusToGraphQL(in.Status),
 		Name:        in.Name,
 		Description: in.Description,
-		AgentAuth:   c.auth.ToGraphQL(in.AgentAuth),
 	}
 }
 

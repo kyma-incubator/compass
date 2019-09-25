@@ -257,7 +257,6 @@ type ComplexityRoot struct {
 	}
 
 	Runtime struct {
-		AgentAuth   func(childComplexity int) int
 		Auths       func(childComplexity int) int
 		Description func(childComplexity int) int
 		ID          func(childComplexity int) int
@@ -1503,13 +1502,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Runtimes(childComplexity, args["filter"].([]*LabelFilter), args["first"].(*int), args["after"].(*PageCursor)), true
 
-	case "Runtime.agentAuth":
-		if e.complexity.Runtime.AgentAuth == nil {
-			break
-		}
-
-		return e.complexity.Runtime.AgentAuth(childComplexity), true
-
 	case "Runtime.auths":
 		if e.complexity.Runtime.Auths == nil {
 			break
@@ -2205,7 +2197,6 @@ type Runtime {
 	Returns array of authentication details for Runtime. For now at most one element in array will be returned.
 	"""
 	auths: [SystemAuth!]!
-	agentAuth: Auth! @deprecated
 }
 
 type RuntimeAuth {
@@ -7145,33 +7136,6 @@ func (ec *executionContext) _Runtime_auths(ctx context.Context, field graphql.Co
 	return ec.marshalNSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Runtime_agentAuth(ctx context.Context, field graphql.CollectedField, obj *Runtime) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "Runtime",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.AgentAuth, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*Auth)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _RuntimeAuth_runtimeID(ctx context.Context, field graphql.CollectedField, obj *RuntimeAuth) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -10481,11 +10445,6 @@ func (ec *executionContext) _Runtime(ctx context.Context, sel ast.SelectionSet, 
 				}
 				return res
 			})
-		case "agentAuth":
-			out.Values[i] = ec._Runtime_agentAuth(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -11154,20 +11113,6 @@ func (ec *executionContext) unmarshalNApplicationWebhookType2githubᚗcomᚋkyma
 
 func (ec *executionContext) marshalNApplicationWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhookType(ctx context.Context, sel ast.SelectionSet, v ApplicationWebhookType) graphql.Marshaler {
 	return v
-}
-
-func (ec *executionContext) marshalNAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx context.Context, sel ast.SelectionSet, v Auth) graphql.Marshaler {
-	return ec._Auth(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx context.Context, sel ast.SelectionSet, v *Auth) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._Auth(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx context.Context, v interface{}) (AuthInput, error) {

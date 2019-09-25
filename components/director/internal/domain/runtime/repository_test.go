@@ -35,8 +35,8 @@ func TestPgRepository_GetByID_ShouldReturnRuntimeModelForRuntimeEntity(t *testin
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	defer sqlMock.AssertExpectations(t)
 
-	rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth"}).
-		AddRow(runtimeID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp, agentAuthStr)
+	rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp"}).
+		AddRow(runtimeID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp)
 
 	sqlMock.ExpectQuery(`^SELECT (.+) FROM public.runtimes WHERE tenant_id = \$1 AND id = \$2$`).
 		WithArgs(tenantID, runtimeID).
@@ -86,9 +86,9 @@ func TestPgRepository_List(t *testing.T) {
 			InputCursor:    "",
 			ExpectedOffset: 0,
 			ExpectedLimit:  limit,
-			Rows: sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth"}).
-				AddRow(runtime1ID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp, agentAuthStr).
-				AddRow(runtime2ID, tenantID, "Runtime XYZ", "Description for runtime XYZ", "INITIAL", timestamp, agentAuthStr),
+			Rows: sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp"}).
+				AddRow(runtime1ID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp).
+				AddRow(runtime2ID, tenantID, "Runtime XYZ", "Description for runtime XYZ", "INITIAL", timestamp),
 			TotalCount: 2,
 		},
 		{
@@ -97,9 +97,9 @@ func TestPgRepository_List(t *testing.T) {
 			InputCursor:    convertIntToBase64String(offset),
 			ExpectedOffset: offset,
 			ExpectedLimit:  limit,
-			Rows: sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth"}).
-				AddRow(runtime1ID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp, agentAuthStr).
-				AddRow(runtime2ID, tenantID, "Runtime XYZ", "Description for runtime XYZ", "INITIAL", timestamp, agentAuthStr),
+			Rows: sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp"}).
+				AddRow(runtime1ID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp).
+				AddRow(runtime2ID, tenantID, "Runtime XYZ", "Description for runtime XYZ", "INITIAL", timestamp),
 			TotalCount: 2,
 		}}
 	for _, testCase := range testCases {
@@ -164,9 +164,9 @@ func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntitie
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	defer sqlMock.AssertExpectations(t)
 
-	rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth"}).
-		AddRow(runtime1ID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp, agentAuthStr).
-		AddRow(runtime2ID, tenantID, "Runtime XYZ", "Description for runtime XYZ", "INITIAL", timestamp, agentAuthStr)
+	rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp"}).
+		AddRow(runtime1ID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp).
+		AddRow(runtime2ID, tenantID, "Runtime XYZ", "Description for runtime XYZ", "INITIAL", timestamp)
 
 	filterQuery := fmt.Sprintf(`  AND "id" IN 
 						\(SELECT "runtime_id" FROM public.labels 
@@ -229,21 +229,13 @@ func TestPgRepository_Create_ShouldCreateRuntimeEntityFromValidModel(t *testing.
 			Condition: model.RuntimeStatusConditionInitial,
 			Timestamp: timestamp,
 		},
-		AgentAuth: &model.Auth{
-			Credential: model.CredentialData{
-				Basic: &model.BasicCredentialData{
-					Username: "foo",
-					Password: "bar",
-				},
-			},
-		},
 	}
 
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	defer sqlMock.AssertExpectations(t)
 
 	sqlMock.ExpectExec(`^INSERT INTO public.runtimes \(.+\) VALUES \(.+\)$`).
-		WithArgs(modelRuntime.ID, modelRuntime.Tenant, modelRuntime.Name, modelRuntime.Description, modelRuntime.Status.Condition, modelRuntime.Status.Timestamp, agentAuthStr).
+		WithArgs(modelRuntime.ID, modelRuntime.Tenant, modelRuntime.Name, modelRuntime.Description, modelRuntime.Status.Condition, modelRuntime.Status.Timestamp).
 		WillReturnResult(sqlmock.NewResult(-1, 1))
 
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
@@ -273,14 +265,6 @@ func TestPgRepository_Update_ShouldUpdateRuntimeEntityFromValidModel(t *testing.
 		Status: &model.RuntimeStatus{
 			Condition: model.RuntimeStatusConditionInitial,
 			Timestamp: timestamp,
-		},
-		AgentAuth: &model.Auth{
-			Credential: model.CredentialData{
-				Basic: &model.BasicCredentialData{
-					Username: "foo",
-					Password: "bar",
-				},
-			},
 		},
 	}
 

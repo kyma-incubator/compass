@@ -29,7 +29,6 @@ func TestService_Create(t *testing.T) {
 
 	runtimeModel := mock.MatchedBy(func(rtm *model.Runtime) bool {
 		return rtm.Name == modelInput.Name && rtm.Description == modelInput.Description &&
-			rtm.AgentAuth != nil && rtm.AgentAuth.Credential.Basic != nil &&
 			rtm.Status.Condition == model.RuntimeStatusConditionInitial
 	})
 
