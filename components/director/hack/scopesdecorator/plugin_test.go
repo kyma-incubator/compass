@@ -1,7 +1,6 @@
 package scopesdecorator_test
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -16,7 +15,6 @@ func TestMutateConfig(t *testing.T) {
 	// GIVEN
 	cfg, err := config.LoadConfig("testdata/config.yaml")
 	require.NoError(t, err)
-	fmt.Println(cfg)
 	testOutputFile := "testdata/test_output.graphql"
 	sut := scopesdecorator.NewPlugin(testOutputFile)
 	err = sut.MutateConfig(cfg)
