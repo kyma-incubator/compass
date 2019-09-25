@@ -1,9 +1,26 @@
-// +build ignore
-
 package main
 
-import "github.com/99designs/gqlgen/cmd"
+import (
+	"fmt"
+	"os"
+
+	"github.com/99designs/gqlgen/api"
+	"github.com/99designs/gqlgen/codegen/config"
+	"github.com/kyma-incubator/compass/components/director/hack/scopesdecorator"
+)
 
 func main() {
-	cmd.Execute()
+	cfg, err := config.LoadConfig("config.yaml")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "failed to load config", err.Error())
+		os.Exit(2)
+	}
+
+	err = api.Generate(cfg,
+		api.AddPlugin(scopesdecorator.NewPlugin("schema.graphql")))
+
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(3)
+	}
 }

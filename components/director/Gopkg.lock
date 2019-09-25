@@ -2,11 +2,10 @@
 
 
 [[projects]]
-  digest = "1:36a35bcd0d31f5082578d975e0c23e5e14c98be262b3832fc2c30f35ca5fc776"
+  digest = "1:3916dcea45471b91f2d43bea2448552dc4ecf78a8434ae3204bda565a6bc416e"
   name = "github.com/99designs/gqlgen"
   packages = [
     "api",
-    "cmd",
     "codegen",
     "codegen/config",
     "codegen/templates",
@@ -19,7 +18,6 @@
     "plugin",
     "plugin/modelgen",
     "plugin/resolvergen",
-    "plugin/servergen",
   ]
   pruneopts = "UT"
   revision = "ea4652d223c441dc77b31882781ce08488763d67"
@@ -229,15 +227,8 @@
   version = "v1.3.0"
 
 [[projects]]
-  digest = "1:b24d38b282bacf9791408a080f606370efa3d364e4b5fd9ba0f7b87786d3b679"
-  name = "github.com/urfave/cli"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "cfb38830724cc34fedffe9a2a29fb54fa9169cd1"
-  version = "v1.20.0"
-
-[[projects]]
-  digest = "1:b4e8aaca88f799355f4ac560bce4293fb85ff21003dd0d5741ca503f7a788e91"
+  branch = "master"
+  digest = "1:49fde6a9aaf23e24cfae23bc7aa26ac94947c015c0314453e6f05c7310b44e59"
   name = "github.com/vektah/gqlparser"
   packages = [
     ".",
@@ -249,8 +240,7 @@
     "validator/rules",
   ]
   pruneopts = "UT"
-  revision = "05741cdb0871330d8bc980d4afd21ab34eceee83"
-  version = "v1.1.2"
+  revision = "96ed341bd01db83c4c3b6cda812302722fef82ac"
 
 [[projects]]
   digest = "1:1b8282c02f3cbf27de019d739246eaf8231f5dbcaaf9d0d7c7524184ee7b2d24"
@@ -414,10 +404,12 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/99designs/gqlgen/cmd",
+    "github.com/99designs/gqlgen/api",
+    "github.com/99designs/gqlgen/codegen/config",
     "github.com/99designs/gqlgen/graphql",
     "github.com/99designs/gqlgen/graphql/introspection",
     "github.com/99designs/gqlgen/handler",
+    "github.com/99designs/gqlgen/plugin",
     "github.com/DATA-DOG/go-sqlmock",
     "github.com/ghodss/yaml",
     "github.com/google/uuid",

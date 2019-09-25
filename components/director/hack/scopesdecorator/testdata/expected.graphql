@@ -1,0 +1,11 @@
+directive @hasScopes(path: String!) on FIELD_DEFINITION
+type Query {
+	alreadyHasScope: String! @hasScopes(path: "query.alreadyHasScope")
+	doesNotHaveScope: String! @hasScopes(path: "query.doesNotHaveScope")
+}
+
+type Mutation {
+	alreadyHasScope: String! @hasScopes(path: "mutation.alreadyHasScope")
+	doesNotHaveScope: String! @hasScopes(path: "mutation.doesNotHaveScope")
+}
+
