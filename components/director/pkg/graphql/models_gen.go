@@ -278,6 +278,11 @@ type RuntimeStatus struct {
 	Timestamp Timestamp              `json:"timestamp"`
 }
 
+type SystemAuth struct {
+	ID   string `json:"id"`
+	Auth *Auth  `json:"auth"`
+}
+
 type Version struct {
 	// for example 4.6
 	Value      string `json:"value"`

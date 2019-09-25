@@ -4,6 +4,12 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
+	"github.com/kyma-incubator/compass/components/director/internal/tenant"
+
+	"github.com/kyma-incubator/compass/components/director/internal/persistence/txtest"
+
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 
 	"github.com/stretchr/testify/mock"
@@ -144,7 +150,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, converter)
+			resolver := runtime.NewResolver(transact, svc, nil, converter, nil)
 
 			// when
 			result, err := resolver.CreateRuntime(context.TODO(), testCase.Input)
@@ -285,7 +291,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, converter)
+			resolver := runtime.NewResolver(transact, svc, nil, converter, nil)
 
 			// when
 			result, err := resolver.UpdateRuntime(context.TODO(), testCase.RuntimeID, testCase.Input)
@@ -409,7 +415,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, converter)
+			resolver := runtime.NewResolver(transact, svc, nil, converter, nil)
 
 			// when
 			result, err := resolver.DeleteRuntime(context.TODO(), testCase.InputID)
@@ -506,7 +512,7 @@ func TestResolver_Runtime(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, converter)
+			resolver := runtime.NewResolver(transact, svc, nil, converter, nil)
 
 			// when
 			result, err := resolver.Runtime(context.TODO(), testCase.InputID)
@@ -620,7 +626,7 @@ func TestResolver_Runtimes(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, converter)
+			resolver := runtime.NewResolver(transact, svc, nil, converter, nil)
 
 			// when
 			result, err := resolver.Runtimes(context.TODO(), testCase.InputLabelFilters, testCase.InputFirst, testCase.InputAfter)
@@ -730,7 +736,7 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, converter)
+			resolver := runtime.NewResolver(transact, svc, nil, converter, nil)
 
 			// when
 			result, err := resolver.SetRuntimeLabel(context.TODO(), testCase.InputRuntimeID, testCase.InputKey, testCase.InputValue)
@@ -865,7 +871,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, converter)
+			resolver := runtime.NewResolver(transact, svc, nil, converter, nil)
 
 			// when
 			result, err := resolver.DeleteRuntimeLabel(context.TODO(), testCase.InputRuntimeID, testCase.InputKey)
@@ -978,7 +984,7 @@ func TestResolver_Labels(t *testing.T) {
 			svc := testCase.ServiceFn()
 			transact := testCase.TransactionerFn(persistTx)
 
-			resolver := runtime.NewResolver(transact, svc, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil)
 
 			// when
 			result, err := resolver.Labels(context.TODO(), gqlRuntime, &testCase.InputKey)
@@ -992,4 +998,139 @@ func TestResolver_Labels(t *testing.T) {
 			persistTx.AssertExpectations(t)
 		})
 	}
+}
+
+func TestResolver_Auths(t *testing.T) {
+	// GIVEN
+	tnt := "tnt"
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt)
+
+	parentRuntime := fixGQLRuntime("foo", "bar", "baz")
+
+	modelSysAuths := []model.SystemAuth{
+		fixModelSystemAuth("bar", tnt, parentRuntime.ID, fixModelAuth()),
+		fixModelSystemAuth("baz", tnt, parentRuntime.ID, fixModelAuth()),
+		fixModelSystemAuth("faz", tnt, parentRuntime.ID, fixModelAuth()),
+	}
+
+	gqlSysAuths := []*graphql.SystemAuth{
+		fixGQLSystemAuth("bar", fixGQLAuth()),
+		fixGQLSystemAuth("baz", fixGQLAuth()),
+		fixGQLSystemAuth("faz", fixGQLAuth()),
+	}
+
+	testErr := errors.New("this is a test error")
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	testCases := []struct {
+		Name            string
+		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		SysAuthSvcFn    func() *automock.SystemAuthService
+		SysAuthConvFn   func() *automock.SystemAuthConverter
+		ExpectedOutput  []*graphql.SystemAuth
+		ExpectedError   error
+	}{
+		{
+			Name:            "Success",
+			TransactionerFn: txGen.ThatSucceeds,
+			SysAuthSvcFn: func() *automock.SystemAuthService {
+				sysAuthSvc := &automock.SystemAuthService{}
+				sysAuthSvc.On("ListForObject", txtest.CtxWithDBMatcher(), model.RuntimeReference, parentRuntime.ID).Return(modelSysAuths, nil).Once()
+				return sysAuthSvc
+			},
+			SysAuthConvFn: func() *automock.SystemAuthConverter {
+				sysAuthConv := &automock.SystemAuthConverter{}
+				sysAuthConv.On("ToGraphQL", &modelSysAuths[0]).Return(gqlSysAuths[0]).Once()
+				sysAuthConv.On("ToGraphQL", &modelSysAuths[1]).Return(gqlSysAuths[1]).Once()
+				sysAuthConv.On("ToGraphQL", &modelSysAuths[2]).Return(gqlSysAuths[2]).Once()
+				return sysAuthConv
+			},
+			ExpectedOutput: gqlSysAuths,
+			ExpectedError:  nil,
+		},
+		{
+			Name:            "Error when listing for object",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			SysAuthSvcFn: func() *automock.SystemAuthService {
+				sysAuthSvc := &automock.SystemAuthService{}
+				sysAuthSvc.On("ListForObject", txtest.CtxWithDBMatcher(), model.RuntimeReference, parentRuntime.ID).Return(nil, testErr).Once()
+				return sysAuthSvc
+			},
+			SysAuthConvFn: func() *automock.SystemAuthConverter {
+				sysAuthConv := &automock.SystemAuthConverter{}
+				return sysAuthConv
+			},
+			ExpectedOutput: nil,
+			ExpectedError:  testErr,
+		},
+		{
+			Name:            "Error when beginning transaction",
+			TransactionerFn: txGen.ThatFailsOnBegin,
+			SysAuthSvcFn: func() *automock.SystemAuthService {
+				sysAuthSvc := &automock.SystemAuthService{}
+				return sysAuthSvc
+			},
+			SysAuthConvFn: func() *automock.SystemAuthConverter {
+				sysAuthConv := &automock.SystemAuthConverter{}
+				return sysAuthConv
+			},
+			ExpectedOutput: nil,
+			ExpectedError:  testErr,
+		},
+		{
+			Name:            "Error when committing transaction",
+			TransactionerFn: txGen.ThatFailsOnCommit,
+			SysAuthSvcFn: func() *automock.SystemAuthService {
+				sysAuthSvc := &automock.SystemAuthService{}
+				sysAuthSvc.On("ListForObject", txtest.CtxWithDBMatcher(), model.RuntimeReference, parentRuntime.ID).Return(modelSysAuths, nil).Once()
+				return sysAuthSvc
+			},
+			SysAuthConvFn: func() *automock.SystemAuthConverter {
+				sysAuthConv := &automock.SystemAuthConverter{}
+				return sysAuthConv
+			},
+			ExpectedOutput: nil,
+			ExpectedError:  testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persist, transact := testCase.TransactionerFn()
+			sysAuthSvc := testCase.SysAuthSvcFn()
+			sysAuthConv := testCase.SysAuthConvFn()
+
+			resolver := runtime.NewResolver(transact, nil, sysAuthSvc, nil, sysAuthConv)
+
+			// WHEN
+			result, err := resolver.Auths(ctx, parentRuntime)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedOutput, result)
+
+			persist.AssertExpectations(t)
+			transact.AssertExpectations(t)
+			sysAuthSvc.AssertExpectations(t)
+			sysAuthConv.AssertExpectations(t)
+		})
+	}
+
+	t.Run("Error when parent object is nil", func(t *testing.T) {
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil)
+
+		// WHEN
+		result, err := resolver.Auths(context.TODO(), nil)
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Runtime cannot be empty")
+		assert.Nil(t, result)
+	})
 }

@@ -68,12 +68,14 @@ echo -e "${GREEN}Running Director...${NC}"
 
 docker run -d --name ${DIRECTOR_CONTAINER} --rm --network=${NETWORK} \
     -p ${APP_PORT}:${APP_PORT} \
+    -v "${COMPASS_PROJECT_PATH}/chart/compass/charts/director/scopes.yaml:/app/scopes.yaml" \
     -e APP_ADDRESS=0.0.0.0:${APP_PORT} \
     -e APP_DB_USER=${DB_USER} \
     -e APP_DB_PASSWORD=${DB_PWD} \
     -e APP_DB_HOST=${POSTGRES_CONTAINER} \
     -e APP_DB_PORT=${DB_PORT} \
     -e APP_DB_NAME=${DB_NAME} \
+    -e APP_SCOPES_CONFIGURATION_FILE=/app/scopes.yaml \
     ${DIRECTOR_IMG_NAME}
 
 cd "${SCRIPT_DIR}"

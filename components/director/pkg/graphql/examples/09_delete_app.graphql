@@ -1,5 +1,0 @@
-mutation {
-    deleteApplication(id:"123") {
-        id
-    }
-}
