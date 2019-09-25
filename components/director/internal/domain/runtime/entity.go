@@ -2,12 +2,9 @@ package runtime
 
 import (
 	"database/sql"
-	"encoding/json"
 	"time"
 
-	"github.com/pkg/errors"
-
-	model "github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
 type runtimeStatusCondition string
@@ -20,7 +17,6 @@ type Runtime struct {
 	Description     sql.NullString `db:"description"`
 	StatusCondition string         `db:"status_condition"`
 	StatusTimestamp time.Time      `db:"status_timestamp"`
-	AgentAuth       string         `db:"auth"`
 }
 
 // EntityFromRuntimeModel converts Runtime model to Runtime entity
@@ -33,11 +29,6 @@ func EntityFromRuntimeModel(model *model.Runtime) (*Runtime, error) {
 		}
 	}
 
-	agentAuthMarshalled, err := json.Marshal(model.AgentAuth)
-	if err != nil {
-		return nil, errors.Wrap(err, "while marshalling AgentAuth")
-	}
-
 	return &Runtime{
 		ID:              model.ID,
 		TenantID:        model.Tenant,
@@ -45,7 +36,6 @@ func EntityFromRuntimeModel(model *model.Runtime) (*Runtime, error) {
 		Description:     nullDescription,
 		StatusCondition: string(model.Status.Condition),
 		StatusTimestamp: model.Status.Timestamp,
-		AgentAuth:       string(agentAuthMarshalled),
 	}, nil
 }
 
@@ -57,12 +47,6 @@ func (e Runtime) ToModel() (*model.Runtime, error) {
 		*description = e.Description.String
 	}
 
-	var agentAuth model.Auth
-	err := json.Unmarshal([]byte(e.AgentAuth), &agentAuth)
-	if err != nil {
-		return nil, errors.Wrap(err, "while unmarshalling AgentAuth")
-	}
-
 	return &model.Runtime{
 		ID:          e.ID,
 		Tenant:      e.TenantID,
@@ -72,6 +56,5 @@ func (e Runtime) ToModel() (*model.Runtime, error) {
 			Condition: model.RuntimeStatusCondition(e.StatusCondition),
 			Timestamp: e.StatusTimestamp,
 		},
-		AgentAuth: &agentAuth,
 	}, nil
 }

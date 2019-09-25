@@ -43,7 +43,7 @@ type RootResolver struct {
 func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 	authConverter := auth.NewConverter()
 	runtimeAuthConverter := runtime_auth.NewConverter(authConverter)
-	runtimeConverter := runtime.NewConverter(authConverter)
+	runtimeConverter := runtime.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
 	docConverter := document.NewConverter(frConverter)

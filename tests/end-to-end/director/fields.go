@@ -97,6 +97,11 @@ func (fp *gqlFieldsProvider) ForRuntimeAuth() string {
 		auth {%s}`, fp.ForAuth())
 }
 
+func (fp *gqlFieldsProvider) ForSystemAuth() string {
+	return fmt.Sprintf(`id
+		auth {%s}`, fp.ForAuth())
+}
+
 func (fp *gqlFieldsProvider) ForVersion() string {
 	return `value
 		deprecated
@@ -191,7 +196,7 @@ func (fp *gqlFieldsProvider) ForRuntime() string {
 		description
 		labels 
 		status {condition timestamp}
-		agentAuth {%s}`, fp.ForAuth())
+		auths {%s}`, fp.ForSystemAuth())
 }
 
 func (fp *gqlFieldsProvider) ForApplicationLabel() string {

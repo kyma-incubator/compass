@@ -99,15 +99,6 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 	id := s.uidService.Generate()
 	rtm := in.ToRuntime(id, rtmTenant)
 
-	// TODO: Generate AgentAuth: https://github.com/kyma-incubator/compass/issues/91
-	rtm.AgentAuth = &model.Auth{
-		Credential: model.CredentialData{
-			Basic: &model.BasicCredentialData{
-				Username: "foo",
-				Password: "bar",
-			},
-		},
-	}
 	rtm.Status = &model.RuntimeStatus{
 		Condition: model.RuntimeStatusConditionInitial,
 		Timestamp: time.Now(),

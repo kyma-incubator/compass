@@ -16,7 +16,6 @@ type Runtime struct {
 	Description *string
 	Tenant      string
 	Status      *RuntimeStatus
-	AgentAuth   *Auth
 }
 
 type RuntimeStatus struct {
@@ -48,7 +47,6 @@ func (i *RuntimeInput) ToRuntime(id string, tenant string) *Runtime {
 		Name:        i.Name,
 		Description: i.Description,
 		Tenant:      tenant,
-		AgentAuth:   &Auth{},
 		Status:      &RuntimeStatus{},
 	}
 }

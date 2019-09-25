@@ -15,7 +15,7 @@ import (
 
 const runtimeTable string = `public.runtimes`
 
-var runtimeColumns = []string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "auth"}
+var runtimeColumns = []string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp"}
 
 type pgRepository struct {
 	*repo.ExistQuerier

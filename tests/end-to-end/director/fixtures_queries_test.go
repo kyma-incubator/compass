@@ -58,10 +58,15 @@ func createRuntime(t *testing.T, ctx context.Context, placeholder string) *graph
 }
 
 func createRuntimeFromInput(t *testing.T, ctx context.Context, input *graphql.RuntimeInput) *graphql.Runtime {
+	return createRuntimeFromInputWithinTenant(t, ctx, input, defaultTenant)
+}
+
+func createRuntimeFromInputWithinTenant(t *testing.T, ctx context.Context, input *graphql.RuntimeInput, tenant string) *graphql.Runtime {
 	inputGQL, err := tc.graphqlizer.RuntimeInputToGQL(*input)
 	require.NoError(t, err)
 
 	createRequest := fixCreateRuntimeRequest(inputGQL)
+	createRequest.Header["Tenant"] = []string{tenant}
 	var runtime graphql.Runtime
 
 	err = tc.RunQuery(ctx, createRequest, &runtime)
@@ -71,8 +76,13 @@ func createRuntimeFromInput(t *testing.T, ctx context.Context, input *graphql.Ru
 }
 
 func getRuntime(t *testing.T, ctx context.Context, runtimeID string) *graphql.RuntimeExt {
+	return getRuntimeWithinTenant(t, ctx, runtimeID, defaultTenant)
+}
+
+func getRuntimeWithinTenant(t *testing.T, ctx context.Context, runtimeID string, tenant string) *graphql.RuntimeExt {
 	var runtime graphql.RuntimeExt
 	runtimeQuery := fixRuntimeQuery(runtimeID)
+	runtimeQuery.Header["Tenant"] = []string{tenant}
 
 	err := tc.RunQuery(ctx, runtimeQuery, &runtime)
 	require.NoError(t, err)
@@ -90,10 +100,10 @@ func setRuntimeLabel(t *testing.T, ctx context.Context, runtimeID string, labelK
 }
 
 func deleteRuntime(t *testing.T, id string) {
-	deleteRuntimeInTenant(t, id, defaultTenant)
+	deleteRuntimeWithinTenant(t, id, defaultTenant)
 }
 
-func deleteRuntimeInTenant(t *testing.T, id string, tenantID string) {
+func deleteRuntimeWithinTenant(t *testing.T, id string, tenantID string) {
 	delReq := fixDeleteRuntime(id)
 
 	delReq.Header["Tenant"] = []string{tenantID}

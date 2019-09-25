@@ -41,7 +41,6 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, actualRuntime.ID)
 	assertRuntime(t, givenInput, actualRuntime)
-	assert.NotNil(t, actualRuntime.AgentAuth)
 
 	// add Label
 	actualLabel := graphql.Label{}
@@ -150,7 +149,6 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, givenInput.Name, actualRuntime.Name)
 	assert.Equal(t, *givenInput.Description, *actualRuntime.Description)
-	assert.NotNil(t, actualRuntime.AgentAuth)
 
 	// delete runtime
 
@@ -188,7 +186,6 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, firstRuntime.ID)
 	assertRuntime(t, givenInput, firstRuntime)
-	assert.NotNil(t, firstRuntime.AgentAuth)
 	defer deleteRuntime(t, firstRuntime.ID)
 
 	// try to create second runtime with first runtime name
@@ -239,7 +236,6 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, secondRuntime.ID)
 	assertRuntime(t, givenInput, secondRuntime)
-	assert.NotNil(t, secondRuntime.AgentAuth)
 	defer deleteRuntime(t, secondRuntime.ID)
 
 	//Update first runtime with second runtime name, failed
@@ -545,7 +541,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 	err = tc.RunQuery(ctx, createRuntimeRequest, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
-	defer deleteRuntimeInTenant(t, runtime.ID, tenantID)
+	defer deleteRuntimeWithinTenant(t, runtime.ID, tenantID)
 
 	//WHEN
 	request := fixApplicationForRuntimeRequest(runtime.ID)
@@ -638,4 +634,30 @@ func TestCreateRuntimeWithoutLabels(t *testing.T) {
 	//THEN
 	require.Equal(t, runtime.ID, fetchedRuntime.ID)
 	assertRuntime(t, runtimeInput, *fetchedRuntime)
+}
+
+// TODO: Once create mutation for System Auths is implemented test System Auths with actual value
+func TestQueryRuntimeWithSystemAuths(t *testing.T) {
+	t.SkipNow() // TODO: Unskip this test after implementing `generateOneTimeTokenForRuntime`
+	// GIVEN
+	ctx := context.TODO()
+	tenantID := uuid.New().String()
+
+	numberOfTokens := 3
+
+	name := "test-query-rtm-sys-auths"
+	runtimeInput := graphql.RuntimeInput{Name: name}
+	runtime := createRuntimeFromInputWithinTenant(t, ctx, &runtimeInput, tenantID)
+	defer deleteRuntimeWithinTenant(t, runtime.ID, tenantID)
+
+	// TODO: generate {numberOfTokens} tokens here with `generateOneTimeTokenForRuntime` mutation
+
+	//WHEN
+	fetchedRuntime := getRuntimeWithinTenant(t, ctx, runtime.ID, tenantID)
+
+	//THEN
+	require.Equal(t, runtime.ID, fetchedRuntime.ID)
+	assertRuntime(t, runtimeInput, *fetchedRuntime)
+	assert.NotNil(t, fetchedRuntime.Auths)
+	assert.Len(t, fetchedRuntime.Auths, numberOfTokens)
 }
