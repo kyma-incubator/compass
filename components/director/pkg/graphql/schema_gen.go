@@ -258,6 +258,7 @@ type ComplexityRoot struct {
 
 	Runtime struct {
 		AgentAuth   func(childComplexity int) int
+		Auths       func(childComplexity int) int
 		Description func(childComplexity int) int
 		ID          func(childComplexity int) int
 		Labels      func(childComplexity int, key *string) int
@@ -279,6 +280,11 @@ type ComplexityRoot struct {
 	RuntimeStatus struct {
 		Condition func(childComplexity int) int
 		Timestamp func(childComplexity int) int
+	}
+
+	SystemAuth struct {
+		Auth func(childComplexity int) int
+		ID   func(childComplexity int) int
 	}
 
 	Version struct {
@@ -361,6 +367,8 @@ type QueryResolver interface {
 }
 type RuntimeResolver interface {
 	Labels(ctx context.Context, obj *Runtime, key *string) (Labels, error)
+
+	Auths(ctx context.Context, obj *Runtime) ([]*SystemAuth, error)
 }
 
 type executableSchema struct {
@@ -1502,6 +1510,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Runtime.AgentAuth(childComplexity), true
 
+	case "Runtime.auths":
+		if e.complexity.Runtime.Auths == nil {
+			break
+		}
+
+		return e.complexity.Runtime.Auths(childComplexity), true
+
 	case "Runtime.description":
 		if e.complexity.Runtime.Description == nil {
 			break
@@ -1590,6 +1605,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.RuntimeStatus.Timestamp(childComplexity), true
+
+	case "SystemAuth.auth":
+		if e.complexity.SystemAuth.Auth == nil {
+			break
+		}
+
+		return e.complexity.SystemAuth.Auth(childComplexity), true
+
+	case "SystemAuth.id":
+		if e.complexity.SystemAuth.ID == nil {
+			break
+		}
+
+		return e.complexity.SystemAuth.ID(childComplexity), true
 
 	case "Version.deprecated":
 		if e.complexity.Version.Deprecated == nil {
@@ -2173,9 +2202,10 @@ type Runtime {
 	labels(key: String): Labels!
 	status: RuntimeStatus!
 	"""
-	TODO: directive for checking auth
+	Returns array of authentication details for Runtime. For now at most one element in array will be returned.
 	"""
-	agentAuth: Auth!
+	auths: [SystemAuth!]!
+	agentAuth: Auth! @deprecated
 }
 
 type RuntimeAuth {
@@ -2192,6 +2222,11 @@ type RuntimePage implements Pageable {
 type RuntimeStatus {
 	condition: RuntimeStatusCondition!
 	timestamp: Timestamp!
+}
+
+type SystemAuth {
+	id: ID!
+	auth: Auth
 }
 
 type Version {
@@ -7083,6 +7118,33 @@ func (ec *executionContext) _Runtime_status(ctx context.Context, field graphql.C
 	return ec.marshalNRuntimeStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeStatus(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Runtime_auths(ctx context.Context, field graphql.CollectedField, obj *Runtime) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Runtime",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Runtime().Auths(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*SystemAuth)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Runtime_agentAuth(ctx context.Context, field graphql.CollectedField, obj *Runtime) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -7294,6 +7356,57 @@ func (ec *executionContext) _RuntimeStatus_timestamp(ctx context.Context, field 
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SystemAuth_id(ctx context.Context, field graphql.CollectedField, obj *SystemAuth) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "SystemAuth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SystemAuth_auth(ctx context.Context, field graphql.CollectedField, obj *SystemAuth) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "SystemAuth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Auth, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Auth)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Version_value(ctx context.Context, field graphql.CollectedField, obj *Version) graphql.Marshaler {
@@ -10354,6 +10467,20 @@ func (ec *executionContext) _Runtime(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "auths":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Runtime_auths(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "agentAuth":
 			out.Values[i] = ec._Runtime_agentAuth(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -10457,6 +10584,35 @@ func (ec *executionContext) _RuntimeStatus(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var systemAuthImplementors = []string{"SystemAuth"}
+
+func (ec *executionContext) _SystemAuth(ctx context.Context, sel ast.SelectionSet, obj *SystemAuth) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, systemAuthImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SystemAuth")
+		case "id":
+			out.Values[i] = ec._SystemAuth_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "auth":
+			out.Values[i] = ec._SystemAuth_auth(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -11666,6 +11822,57 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNSystemAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx context.Context, sel ast.SelectionSet, v SystemAuth) graphql.Marshaler {
+	return ec._SystemAuth(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx context.Context, sel ast.SelectionSet, v []*SystemAuth) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx context.Context, sel ast.SelectionSet, v *SystemAuth) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._SystemAuth(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx context.Context, v interface{}) (Timestamp, error) {

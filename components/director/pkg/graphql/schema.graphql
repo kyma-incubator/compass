@@ -422,9 +422,10 @@ type Runtime {
 	labels(key: String): Labels!
 	status: RuntimeStatus!
 	"""
-	TODO: directive for checking auth
+	Returns array of authentication details for Runtime. For now at most one element in array will be returned.
 	"""
-	agentAuth: Auth!
+	auths: [SystemAuth!]!
+	agentAuth: Auth! @deprecated
 }
 
 type RuntimeAuth {
@@ -441,6 +442,11 @@ type RuntimePage implements Pageable {
 type RuntimeStatus {
 	condition: RuntimeStatusCondition!
 	timestamp: Timestamp!
+}
+
+type SystemAuth {
+	id: ID!
+	auth: Auth
 }
 
 type Version {
