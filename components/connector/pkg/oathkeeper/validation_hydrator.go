@@ -4,12 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/connector/internal/revocation"
 	"github.com/sirupsen/logrus"
-
 	"github.com/pkg/errors"
-
 	"github.com/kyma-incubator/compass/components/connector/internal/httputils"
-
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
 )
 
@@ -21,13 +19,15 @@ type ValidationHydrator interface {
 type validationHydrator struct {
 	tokenService     tokens.Service
 	certHeaderParser CertificateHeaderParser
+	revocationList   revocation.RevocationListRepository
 	log              *logrus.Entry
 }
 
-func NewValidationHydrator(tokenService tokens.Service, certHeaderParser CertificateHeaderParser) ValidationHydrator {
+func NewValidationHydrator(tokenService tokens.Service, certHeaderParser CertificateHeaderParser, revocationList revocation.RevocationListRepository) ValidationHydrator {
 	return &validationHydrator{
 		tokenService:     tokenService,
 		certHeaderParser: certHeaderParser,
+		revocationList:   revocationList,
 		log:              logrus.WithField("Handler", "ValidationHydrator"),
 	}
 }
@@ -85,6 +85,18 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 	commonName, hash, found := tvh.certHeaderParser.GetCertificateData(r)
 	if !found {
 		tvh.log.Info("No valid certificate header found")
+		respondWithAuthSession(w, authSession)
+		return
+	}
+
+	isCertificateRevoked, err := tvh.revocationList.Contains(hash)
+	if err != nil {
+		tvh.log.Infof("Failed to check if certificate is revoked: %s", err.Error())
+		respondWithAuthSession(w, authSession)
+		return
+	}
+	if isCertificateRevoked {
+		tvh.log.Info("Certificate is revoked.")
 		respondWithAuthSession(w, authSession)
 		return
 	}

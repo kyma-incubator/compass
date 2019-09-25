@@ -10,7 +10,7 @@ import (
 type Authenticator interface {
 	AuthenticateToken(context context.Context) (string, error)
 	Authenticate(context context.Context) (string, error)
-	AuthenticateCertificate(context context.Context) (string, error)
+	AuthenticateCertificate(context context.Context) (string, string, error)
 }
 
 func NewAuthenticator() Authenticator {
@@ -26,7 +26,7 @@ func (a *authenticator) Authenticate(context context.Context) (string, error) {
 		return clientId, nil
 	}
 
-	clientId, certAuthErr := a.AuthenticateCertificate(context)
+	clientId, _, certAuthErr := a.AuthenticateCertificate(context)
 	if certAuthErr != nil {
 		return "", errors.Errorf("Failed to authenticate request. Token authentication error: %s. Certificate authentication error: %s",
 			tokenAuthErr.Error(), certAuthErr.Error())
@@ -48,22 +48,20 @@ func (a *authenticator) AuthenticateToken(context context.Context) (string, erro
 	return clientId, nil
 }
 
-func (a *authenticator) AuthenticateCertificate(context context.Context) (string, error) {
+func (a *authenticator) AuthenticateCertificate(context context.Context) (string, string, error) {
 	clientId, err := GetStringFromContext(context, ClientIdFromCertificateKey)
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to authenticate with Certificate. Invalid subject.")
+		return "", "", errors.Wrap(err, "Failed to authenticate with Certificate. Invalid subject.")
 	}
 
 	if clientId == "" {
-		return "", errors.New("Failed to authenticate with Certificate. Invalid subject.")
+		return "", "", errors.New("Failed to authenticate with Certificate. Invalid subject.")
 	}
 
-	_, err = GetStringFromContext(context, ClientCertificateHashKey)
+	certificateHash, err := GetStringFromContext(context, ClientCertificateHashKey)
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to authenticate with Certificate. Invalid certificate hash.")
+		return "", "", errors.Wrap(err, "Failed to authenticate with Certificate. Invalid certificate hash.")
 	}
 
-	// TODO: here check if cert is revoked
-
-	return clientId, nil
+	return clientId, certificateHash, nil
 }

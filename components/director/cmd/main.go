@@ -3,8 +3,13 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"time"
+
+	"github.com/kyma-project/kyma/components/console-backend-service/pkg/executor"
 
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
@@ -33,9 +38,12 @@ type config struct {
 		Name     string `envconfig:"default=postgres,APP_DB_NAME"`
 		SSLMode  string `envconfig:"default=disable,APP_DB_SSL"`
 	}
-	APIEndpoint           string `envconfig:"default=/graphql"`
-	TenantMappingEndpoint string `envconfig:"default=/tenant-mapping"`
-	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
+	APIEndpoint                   string `envconfig:"default=/graphql"`
+	TenantMappingEndpoint         string `envconfig:"default=/tenant-mapping"`
+	PlaygroundAPIEndpoint         string `envconfig:"default=/graphql"`
+	ScopesConfigurationFile       string
+	ScopesConfigurationFileReload time.Duration `envconfig:"default=1m"`
+	EnableScopesValidation        bool          `envconfig:"default=false"`
 }
 
 func main() {
@@ -61,6 +69,22 @@ func main() {
 
 	gqlCfg := graphql.Config{
 		Resolvers: domain.NewRootResolver(transact),
+	}
+
+	stopCh := make(chan struct{})
+	if cfg.EnableScopesValidation {
+		log.Info("Scopes validation is enabled")
+		provider := scope.NewProvider(cfg.ScopesConfigurationFile)
+		err = provider.Load()
+		exitOnError(err, "Error on loading scopes config file")
+		executor.NewPeriodic(cfg.ScopesConfigurationFileReload, func(stopCh <-chan struct{}) {
+			if err := provider.Load(); err != nil {
+				exitOnError(err, "Error from Reloader watch")
+			}
+			log.Infof("Successfully reloaded scopes configuration")
+
+		}).Run(stopCh)
+		gqlCfg.Directives.HasScopes = scope.NewDirective(provider).VerifyScopes
 	}
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
 

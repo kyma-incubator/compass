@@ -8,12 +8,15 @@ import (
 	"sync"
 	"time"
 
+	"k8s.io/apimachinery/pkg/types"
+
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connector/internal/api"
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
 	"github.com/kyma-incubator/compass/components/connector/internal/namespacedname"
+	"github.com/kyma-incubator/compass/components/connector/internal/revocation"
 	"github.com/kyma-incubator/compass/components/connector/internal/secrets"
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
 	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
@@ -43,10 +46,11 @@ type config struct {
 		Province           string `envconfig:"default=State"`
 	}
 	CertificateValidityTime     time.Duration `envconfig:"default=2160h"`
-	CASecretName                string        `envconfig:"default=namespace/name"`
+	CASecretName                string        `envconfig:"default=kyma-integration/connector-service-app-ca"`
 	RootCACertificateSecretName string        `envconfig:"optional"`
 
-	CertificateDataHeader string `envconfig:"default=Certificate-Data"`
+	CertificateDataHeader   string `envconfig:"default=Certificate-Data"`
+	RevocationConfigMapName string `envconfig:"default=compass-system/revocations-config"`
 
 	Token struct {
 		Length                int           `envconfig:"default=64"`
@@ -65,6 +69,7 @@ func (c *config) String() string {
 		"CSRSubjectLocality: %s, CSRSubjectProvince: %s, "+
 		"CertificateValidityTime: %s, CASecretName: %s, RootCACertificateSecretName: %s, CertificateDataHeader: %s, "+
 		"CertificateSecuredConnectorURL: %s, "+
+		"RevocationConfigMapName: %s, "+
 		"TokenLength: %d, TokenRuntimeExpiration: %s, TokenApplicationExpiration: %s, TokenCSRExpiration: %s, "+
 		"DirectorURL: %s",
 		c.Address, c.APIEndpoint, c.HydratorAddress,
@@ -72,6 +77,7 @@ func (c *config) String() string {
 		c.CSRSubject.Locality, c.CSRSubject.Province,
 		c.CertificateValidityTime, c.CASecretName, c.RootCACertificateSecretName, c.CertificateDataHeader,
 		c.CertificateSecuredConnectorURL,
+		c.RevocationConfigMapName,
 		c.Token.Length, c.Token.RuntimeExpiration.String(), c.Token.ApplicationExpiration.String(), c.Token.CSRExpiration.String(),
 		c.DirectorURL)
 }
@@ -86,13 +92,14 @@ func main() {
 
 	tokenCache := tokens.NewTokenCache(cfg.Token.ApplicationExpiration, cfg.Token.RuntimeExpiration, cfg.Token.CSRExpiration)
 	tokenService := tokens.NewTokenService(tokenCache, tokens.NewTokenGenerator(cfg.Token.Length))
+	coreClientSet, appErr := newCoreClientSet()
+	exitOnError(appErr, "Failed to initialize Kubernetes client.")
+	revokedCertsRepository := newRevokedCertsRepository(coreClientSet, namespacedname.Parse(cfg.RevocationConfigMapName))
 
 	authenticator := authentication.NewAuthenticator()
 
 	tokenResolver := api.NewTokenResolver(tokenService)
 
-	coreClientSet, appErr := newCoreClientSet()
-	exitOnError(appErr, "Failed to initialize Kubernetes client.")
 	secretsRepository := newSecretsRepository(coreClientSet)
 	certificateUtility := certificates.NewCertificateUtility(cfg.CertificateValidityTime)
 	certificateService := certificates.NewCertificateService(
@@ -115,10 +122,11 @@ func main() {
 		certificateService,
 		csrSubjectConsts,
 		cfg.DirectorURL,
-		cfg.CertificateSecuredConnectorURL)
+		cfg.CertificateSecuredConnectorURL,
+		revokedCertsRepository)
 
 	server := prepareGraphQLServer(cfg, tokenResolver, certificateResolver)
-	hydratorServer := prepareHydratorServer(cfg, tokenService, csrSubjectConsts)
+	hydratorServer := prepareHydratorServer(cfg, tokenService, csrSubjectConsts, revokedCertsRepository)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
@@ -163,10 +171,10 @@ func prepareGraphQLServer(cfg config, tokenResolver api.TokenResolver, certResol
 	}
 }
 
-func prepareHydratorServer(cfg config, tokenService tokens.Service, subjectConsts certificates.CSRSubjectConsts) *http.Server {
+func prepareHydratorServer(cfg config, tokenService tokens.Service, subjectConsts certificates.CSRSubjectConsts, revokedCertsRepository revocation.RevocationListRepository) *http.Server {
 	certHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, subjectConsts)
 
-	validationHydrator := oathkeeper.NewValidationHydrator(tokenService, certHeaderParser)
+	validationHydrator := oathkeeper.NewValidationHydrator(tokenService, certHeaderParser, revokedCertsRepository)
 
 	router := mux.NewRouter()
 	router.Path("/health").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -217,4 +225,10 @@ func newSecretsRepository(coreClientSet *kubernetes.Clientset) secrets.Repositor
 	return secrets.NewRepository(func(namespace string) secrets.Manager {
 		return core.Secrets(namespace)
 	})
+}
+
+func newRevokedCertsRepository(coreClientSet *kubernetes.Clientset, revocationSecret types.NamespacedName) revocation.RevocationListRepository {
+	cmi := coreClientSet.CoreV1().ConfigMaps(revocationSecret.Namespace)
+
+	return revocation.NewRepository(cmi, revocationSecret.Name)
 }

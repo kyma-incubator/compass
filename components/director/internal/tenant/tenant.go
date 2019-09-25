@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 
 	log "github.com/sirupsen/logrus"
 
@@ -53,6 +56,12 @@ func RequireAndPassContext(next http.Handler) http.Handler {
 			}
 
 			ctx := SaveToContext(r.Context(), tenantValue)
+
+			// TODO only for testing
+			scopesH := r.Header.Get("fake_scopes")
+			scopes := strings.Split(scopesH, ",")
+			ctx = scope.SaveToContext(ctx, scopes)
+
 			r = r.WithContext(ctx)
 		}
 

@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit/connector"
-
 	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
-
 	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit"
+	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit/connector"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -191,11 +190,13 @@ func TestCertificateGeneration(t *testing.T) {
 }
 
 func TestFullConnectorFlow(t *testing.T) {
-	appID := "54f83a73-b340-418d-b653-d95b5e347d74"
+	appID := "54f83a73-b340-418d-b653-d95b5e347d76"
 
 	t.Log("Generating certificate...")
 	certificationResult, configuration := generateCertificate(t, appID, clientKey)
 	assertCertificate(t, configuration.CertificateSigningRequestInfo.Subject, certificationResult)
+
+	defer cleanup(t, certificationResult)
 
 	t.Log("Certificate generated. Creating secured client...")
 	certChain := testkit.DecodeCertChain(t, certificationResult.CertificateChain)
@@ -223,6 +224,18 @@ func TestFullConnectorFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, configuration.ManagementPlaneInfo, configWithRenewedCert.ManagementPlaneInfo)
 	require.Equal(t, configuration.CertificateSigningRequestInfo, configWithRenewedCert.CertificateSigningRequestInfo)
+
+	t.Logf("Revoking certificate...")
+	isRevoked, err := securedClientWithRenewedCert.RevokeCertificate()
+	require.NoError(t, err)
+	require.True(t, isRevoked)
+
+	t.Logf("Certificate revoked. Failing to fetch configuration with revoked certificate...")
+	configWithRevokedCert, err := securedClientWithRenewedCert.Configuration()
+	require.Error(t, err)
+	require.Nil(t, configWithRevokedCert.Token)
+	require.Nil(t, configWithRevokedCert.CertificateSigningRequestInfo)
+	require.Nil(t, configWithRevokedCert.ManagementPlaneInfo)
 }
 
 func getConfiguration(t *testing.T, appID string) gqlschema.Configuration {
@@ -292,4 +305,10 @@ func changeCommonName(subject, commonName string) string {
 
 func createCertDataHeader(subject, hash string) string {
 	return fmt.Sprintf(`By=spiffe://cluster.local/ns/kyma-system/sa/default;Hash=%s;Subject="%s";URI=`, hash, subject)
+}
+
+func cleanup(t *testing.T, certificationResult gqlschema.CertificationResult) {
+	hash := testkit.GetCertificateHash(t, certificationResult.ClientCertificate)
+	err := configmapCleaner.CleanRevocationList(hash)
+	assert.NoError(t, err)
 }

@@ -7,10 +7,10 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir: pr/
-      version: "PR-273"
+      version: "PR-247"
     director:
       dir: pr/
-      version: "PR-296"
+      version: "PR-317"
     gateway:
       dir: pr/
       version: "PR-251"
@@ -58,6 +58,11 @@ global:
         name: compass-connector-root-ca
         namespace: istio-system # For Ingress Gateway to work properly the namespace needs to be istio-system
     certificateDataHeader: "Certificate-Data"
+    revocation:
+      configmap:
+        shouldCreate: true
+        namespace: compass-system
+        name: revocations-config
     # If key and certificate are not provided they will be generated
     caKey: ""
     caCertificate: ""
