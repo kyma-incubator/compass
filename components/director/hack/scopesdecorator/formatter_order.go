@@ -9,49 +9,48 @@ import (
 const QueryTypeName = "Query"
 const MutationTypeName = "Mutation"
 
-type DefinitionList []ast.Definition
+type OrderedDefinitionList []ast.Definition
 
-func (d DefinitionList) Len() int {
+func (d OrderedDefinitionList) Len() int {
 	return len(d)
 }
 
-func (d DefinitionList) Swap(i, j int) {
+func (d OrderedDefinitionList) Swap(i, j int) {
 	tmp := d[i]
 	d[i] = d[j]
 	d[j] = tmp
 }
 
-func (d DefinitionList) Less(i, j int) bool {
-	id := d[i]
-	jd := d[j]
+func (d OrderedDefinitionList) Less(i, j int) bool {
+	first := d[i]
+	second := d[j]
 
-	if d.typeMapping(id.Kind) < d.typeMapping(jd.Kind) {
-
+	typeComparison := d.typeMapping(first.Kind) - d.typeMapping(second.Kind)
+	if typeComparison < 0 {
 		return true
-	}
-	if d.typeMapping(id.Kind) > d.typeMapping(jd.Kind) {
+	} else if typeComparison > 0 {
 		return false
-
 	}
 
-	if id.Kind == ast.Object {
-		if id.Name == MutationTypeName {
+	if first.Kind == ast.Object {
+		// query and mutations should be at the end of the file
+		if first.Name == MutationTypeName {
 			return false
 		}
-		if jd.Name == MutationTypeName {
+		if second.Name == MutationTypeName {
 			return true
 		}
-		if id.Name == QueryTypeName {
+		if first.Name == QueryTypeName {
 			return false
 		}
-		if jd.Name == QueryTypeName {
+		if second.Name == QueryTypeName {
 			return true
 		}
 	}
-	return strings.Compare(id.Name, jd.Name) < 0
+	return strings.Compare(first.Name, second.Name) < 0
 }
 
-func (d DefinitionList) typeMapping(kind ast.DefinitionKind) int {
+func (d OrderedDefinitionList) typeMapping(kind ast.DefinitionKind) int {
 	switch kind {
 	case ast.Scalar:
 		return 1

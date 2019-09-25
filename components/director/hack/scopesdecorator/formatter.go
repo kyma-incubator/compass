@@ -1,14 +1,3 @@
-package scopesdecorator
-
-import (
-	"fmt"
-	"io"
-	"sort"
-	"strings"
-
-	"github.com/vektah/gqlparser/ast"
-)
-
 /*
 Part of this file is copied from https://github.com/vektah/gqlparser/blob/master/formatter/formatter.go.
 Below you can find its licence.
@@ -33,6 +22,16 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+package scopesdecorator
+
+import (
+	"fmt"
+	"io"
+	"sort"
+	"strings"
+
+	"github.com/vektah/gqlparser/ast"
+)
 
 type Formatter interface {
 	FormatSchema(schema *ast.Schema)
@@ -183,7 +182,7 @@ func (f *formatter) FormatSchema(schema *ast.Schema) {
 		f.FormatDirectiveDefinition(schema.Directives[name])
 	}
 
-	var dl DefinitionList
+	var dl OrderedDefinitionList
 	for _, v := range schema.Types {
 		dl = append(dl, *v)
 	}
