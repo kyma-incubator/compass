@@ -25,7 +25,7 @@ func NewPlugin() *scopesDecoratorPlugin {
 	return &scopesDecoratorPlugin{}
 }
 
-type scopesDecoratorPlugin struct {}
+type scopesDecoratorPlugin struct{}
 
 func (m *scopesDecoratorPlugin) Name() string {
 	return "scopes_decorator"
