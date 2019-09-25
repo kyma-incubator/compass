@@ -41,7 +41,7 @@ Director component is mainly responsible for *Applications* and *Runtimes* regis
 ### MP Runtime Provisioner
 Abbr.: *Provisioner*\
 \
-Runtime Provisioner system manages *Runtimes*.
+Runtime Provisioner is an [Integration System](#integration-system), which manages *Runtimes*.
 
 ### MP Cockpit
 Abbr.: *Cockpit*\
@@ -66,6 +66,9 @@ Abbr.: *Event Definiton*
 Abbr.: *Webhook API*
 
 ### Application Documentation
+
+## Integration System
+Any system that works in context of multiple tenants, managing multiple Applications or Runtimes. It exists in global scope without tenant assignment.
 
 ## Runtime
 Any system that can configure itself according to the configuration provided by the *Management Plane*. Takes care about a customer workload.

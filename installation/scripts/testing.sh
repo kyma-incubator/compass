@@ -23,6 +23,8 @@ matchNames=$(cat <<-END
         namespace: compass-system
       - name: connector-tests
         namespace: compass-system
+      - name: provisioner-tests
+        namespace: compass-system
 END
 )
 

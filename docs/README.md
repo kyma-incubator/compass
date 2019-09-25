@@ -21,6 +21,7 @@ This folder contains documents that relate to the project.
 - [Director component](./architecture/director-component.md)
 - [Runtime Agent contract](./architecture/runtime-agent-contract.md)
 - [Database scheme](./architecture/db-scheme.md)
+- [Authentication and authorization](./architecture/authentication-and-authorization.md)
 
 ## Investigations
 
