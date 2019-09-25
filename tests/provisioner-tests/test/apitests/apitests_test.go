@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	timeout  = 60
-	interval = 1
+	timeout  = 60 * time.Second
+	interval = 1 * time.Second
 )
 
 var provisionRuntimeInput = gqlschema.ProvisionRuntimeInput{
