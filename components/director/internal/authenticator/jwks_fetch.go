@@ -12,7 +12,7 @@ import (
 )
 
 /**
-Copied from https://github.com/lestrrat-go/jwx
+Copied from github.com/lestrrat-go/jwx/jwk/jwk.go & modified loading files
 
 The MIT License (MIT)
 
@@ -42,21 +42,17 @@ SOFTWARE.
 func FetchJWK(urlstring string, options ...jwk.Option) (*jwk.Set, error) {
 	u, err := url.Parse(urlstring)
 	if err != nil {
-		return nil, errors.Wrap(err, `failed to parse url`)
+		return nil, errors.Wrap(err, "failed to parse url")
 	}
 
 	switch u.Scheme {
 	case "http", "https":
 		return jwk.FetchHTTP(urlstring, options...)
 	case "file":
-		pathPart := strings.Split(urlstring, "file://")
-		if len(pathPart) < 2 {
-			return nil, errors.New("Incorrect file path")
-		}
-
-		f, err := os.Open(pathPart[1])
+		filePath := strings.TrimPrefix(urlstring, "file://")
+		f, err := os.Open(filePath)
 		if err != nil {
-			return nil, errors.Wrap(err, `failed to open jwk file`)
+			return nil, errors.Wrap(err, "failed to open jwk file")
 		}
 		defer func() {
 			err := f.Close()
@@ -67,9 +63,9 @@ func FetchJWK(urlstring string, options ...jwk.Option) (*jwk.Set, error) {
 
 		buf, err := ioutil.ReadAll(f)
 		if err != nil {
-			return nil, errors.Wrap(err, `failed read content from jwk file`)
+			return nil, errors.Wrap(err, "failed read content from jwk file")
 		}
 		return jwk.ParseBytes(buf)
 	}
-	return nil, errors.Errorf(`invalid url scheme %s`, u.Scheme)
+	return nil, errors.Errorf("invalid url scheme %s", u.Scheme)
 }

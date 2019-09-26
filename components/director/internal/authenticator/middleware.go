@@ -98,9 +98,8 @@ func (a *Authenticator) getBearerToken(r *http.Request) (string, error) {
 	if reqToken == "" {
 		return "", errors.New("Invalid bearer token")
 	}
-	splitToken := strings.Split(reqToken, "Bearer ")
-	reqToken = splitToken[1]
 
+	reqToken = strings.TrimPrefix(reqToken, "Bearer ")
 	return reqToken, nil
 }
 
@@ -112,7 +111,7 @@ func (a *Authenticator) contextWithClaims(ctx context.Context, claims Claims) co
 
 func (a *Authenticator) getKeyFunc() func(token *jwt.Token) (interface{}, error) {
 	return func(token *jwt.Token) (interface{}, error) {
-		unsupportedErr := fmt.Errorf("Unexpected signing method: %v", token.Method.Alg())
+		unsupportedErr := fmt.Errorf("unexpected signing method: %v", token.Method.Alg())
 
 		switch token.Method.Alg() {
 		case jwt.SigningMethodRS256.Name:
@@ -123,7 +122,7 @@ func (a *Authenticator) getKeyFunc() func(token *jwt.Token) (interface{}, error)
 				}
 			}
 
-			return nil, fmt.Errorf("Unable to find key for algorithm %s", token.Method.Alg())
+			return nil, fmt.Errorf("unable to find key for algorithm %s", token.Method.Alg())
 		case jwt.SigningMethodNone.Alg():
 			if !a.allowJWTSigningNone {
 				return nil, unsupportedErr

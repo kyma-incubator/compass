@@ -11,8 +11,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/pkg/errors"
-
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 
 	"github.com/stretchr/testify/assert"
@@ -71,8 +69,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 		req.Header.Add("tenant", tnt)
 
-		token, err := createTokenWithSigningMethod(t, tnt, scopes, privateJWKS.Keys[0])
-		require.NoError(t, err)
+		token := createTokenWithSigningMethod(t, tnt, scopes, privateJWKS.Keys[0])
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -94,7 +91,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 		req.Header.Add("tenant", tnt)
 
-		token, err := createToken(tnt, scopes)
+		token := createNotSingedToken(t, tnt, scopes)
 		require.NoError(t, err)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
@@ -119,14 +116,13 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 		req.Header.Add("tenant", tnt)
 
-		token, err := createToken(tnt, scopes)
-		require.NoError(t, err)
+		token := createNotSingedToken(t, tnt, scopes)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		//when
 		middleware(handler).ServeHTTP(rr, req)
 		//then
-		assert.Equal(t, "while parsing token: Unexpected signing method: none\n", rr.Body.String())
+		assert.Equal(t, "while parsing token: unexpected signing method: none\n", rr.Body.String())
 		assert.Equal(t, http.StatusUnauthorized, rr.Code)
 
 	})
@@ -203,8 +199,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 		req.Header.Add("tenant", tnt)
 
-		token, err := createTokenWithSigningMethod(t, tnt, scopes, privateJWKS2.Keys[0])
-		require.NoError(t, err)
+		token := createTokenWithSigningMethod(t, tnt, scopes, privateJWKS2.Keys[0])
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		//when
@@ -214,7 +209,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 		assert.Equal(t, http.StatusUnauthorized, rr.Code)
 		assert.Equal(t, "while parsing token: crypto/rsa: verification error\n", rr.Body.String())
 	})
-
 }
 
 type jwtTokenClaims struct {
@@ -223,21 +217,19 @@ type jwtTokenClaims struct {
 	jwt.StandardClaims
 }
 
-func createToken(t string, scopes []string) (string, error) {
+func createNotSingedToken(t *testing.T, tenant string, scopes []string) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodNone, jwtTokenClaims{
-		Tenant: t,
+		Tenant: tenant,
 		Scopes: scopes,
 	})
 
 	signedToken, err := token.SignedString(jwt.UnsafeAllowNoneSignatureType)
-	if err != nil {
-		return "", errors.Wrap(err, "while signing token")
-	}
+	require.NoError(t, err)
 
-	return signedToken, nil
+	return signedToken
 }
 
-func createTokenWithSigningMethod(t *testing.T, tnt string, scopes []string, key jwk.Key) (string, error) {
+func createTokenWithSigningMethod(t *testing.T, tnt string, scopes []string, key jwk.Key) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwtTokenClaims{
 		Tenant: tnt,
 		Scopes: scopes,
@@ -246,18 +238,15 @@ func createTokenWithSigningMethod(t *testing.T, tnt string, scopes []string, key
 	materializedKey, err := key.Materialize()
 	require.NoError(t, err)
 	signedToken, err := token.SignedString(materializedKey)
-	if err != nil {
-		return "", errors.Wrap(err, "while signing token")
-	}
+	require.NoError(t, err)
 
-	return signedToken, nil
+	return signedToken
 }
 
 func createMiddleware(t *testing.T, allowJWTSigningNone bool) func(next http.Handler) http.Handler {
 	auth := authenticator.New(PublicJWKSURL, allowJWTSigningNone)
-	publicJWKS, err := authenticator.FetchJWK(PublicJWKSURL)
+	err := auth.SynchronizeJWKS()
 	require.NoError(t, err)
-	auth.Jwks = publicJWKS
 	return auth.Handler()
 }
 

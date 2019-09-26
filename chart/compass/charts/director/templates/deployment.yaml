@@ -36,8 +36,6 @@ spec:
               value: "/director/graphql"
             - name: APP_JWKS_ENDPOINT
               value: http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json
-            - name: APP_JWKS_SYNC_PERIOD
-              value: "5m"
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:

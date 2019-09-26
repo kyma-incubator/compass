@@ -47,7 +47,7 @@ type config struct {
 	ScopesConfigurationFileReload time.Duration `envconfig:"default=1m"`
 	EnableScopesValidation        bool          `envconfig:"default=false"`
 
-	JWKSEndpoint        string        `envconfig:"default=file://internal/authenticator/testdata/jwks-public.json"`
+	JWKSEndpoint        string        `envconfig:"default=file://hack/default-jwks.json"`
 	JWKSSyncPeriod      time.Duration `envconfig:"default=5m"`
 	AllowJWTSigningNone bool          `envconfig:"default=false"`
 }
@@ -97,12 +97,12 @@ func main() {
 	mainRouter := mux.NewRouter()
 
 	log.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
-	authenticator := authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone)
+	authMiddleware := authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone)
 
-	if cfg.JWKSSyncPeriod != 0*time.Second {
-		log.Infof("JWKS synchronization enabled. Sync period: %0.2f minutes", cfg.JWKSSyncPeriod.Minutes())
+	if cfg.JWKSSyncPeriod != 0 {
+		log.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
 		periodicExecutor := executor.NewPeriodic(cfg.JWKSSyncPeriod, func(stopCh <-chan struct{}) {
-			err := authenticator.SynchronizeJWKS()
+			err := authMiddleware.SynchronizeJWKS()
 			if err != nil {
 				log.Error(errors.Wrap(err, "while synchronizing JWKS"))
 			}
@@ -113,7 +113,7 @@ func main() {
 	mainRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 
 	gqlAPIRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
-	gqlAPIRouter.Use(authenticator.TempHandler()) //TODO: Enable in PR https://github.com/kyma-incubator/compass/pull/325
+	gqlAPIRouter.Use(authMiddleware.TempHandler()) //TODO: Enable in PR https://github.com/kyma-incubator/compass/pull/325
 	gqlAPIRouter.HandleFunc("", handler.GraphQL(executableSchema))
 
 	log.Infof("Registering Tenant Mapping endpoint on %s...", cfg.TenantMappingEndpoint)
