@@ -61,6 +61,14 @@
   version = "v3.2.0"
 
 [[projects]]
+  digest = "1:2cd7915ab26ede7d95b8749e6b1f933f1c6d5398030684e6505940a10f31cfda"
+  name = "github.com/ghodss/yaml"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "0ca9ea5df5451ffdf184b4428c902747c2c11cd7"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:582b704bebaa06b48c29b0cec224a6058a09c86883aaddabde889cd1a5f73e1b"
   name = "github.com/google/uuid"
   packages = ["."]
@@ -104,15 +112,16 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:a76b853e3d1b52e6243c5007b01760d40a1181d44608d7eea8a7d84d89dd0009"
+  digest = "1:ab1b9cbeacd0b9b78c1c9900b009f1299df56d237a16bcf77657814f3bdea422"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/pkg/graphql",
     "components/director/pkg/scalar",
+    "components/director/pkg/scope",
     "components/director/pkg/strings",
   ]
   pruneopts = "UT"
-  revision = "6753554723fc903e97d5d0124b2864fbe621e304"
+  revision = "b07b8ecdcff21294783a713089cd434a6eca1169"
 
 [[projects]]
   branch = "master"
@@ -121,6 +130,14 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "3a92531802258604bd12793465c2e28bc4b2fc85"
+
+[[projects]]
+  branch = "master"
+  digest = "1:4f971e961cc101712d18dbbd532813bbcd08c9984acceb55dff3fb86ed62ed5f"
+  name = "github.com/oliveagle/jsonpath"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "2e52cf6e685269ed8aefec6390f3cac3ef74e730"
 
 [[projects]]
   digest = "1:cf31692c14422fa27c83a05292eb5cbe0fb2775972e8f1f8446a71549bd8980b"
@@ -182,7 +199,7 @@
     "scrypt",
   ]
   pruneopts = "UT"
-  revision = "9ee001bba392397c76f100a2d5b13afc86f167f1"
+  revision = "fa1a291087948aa85c6e20c1b3749a02403ffc1b"
 
 [[projects]]
   branch = "master"
@@ -230,7 +247,7 @@
     "github.com/google/uuid",
     "github.com/kisielk/errcheck",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
-    "github.com/kyma-incubator/compass/components/director/pkg/strings",
+    "github.com/kyma-incubator/compass/components/director/pkg/scope",
     "github.com/machinebox/graphql",
     "github.com/pkg/errors",
     "github.com/stretchr/testify/assert",

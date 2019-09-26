@@ -2,9 +2,10 @@ package director
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 	"os"
 	"reflect"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 
 	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/jwtbuilder"
 	gcli "github.com/machinebox/graphql"
@@ -32,7 +33,7 @@ type scopeProvider interface {
 type testContext struct {
 	graphqlizer       graphqlizer
 	gqlFieldsProvider gqlFieldsProvider
-	scopeProvider           scopeProvider
+	scopeProvider     scopeProvider
 	currentScopes     []string
 	cli               *gcli.Client
 }
@@ -59,7 +60,7 @@ func newTestContext() (*testContext, error) {
 	return &testContext{
 		graphqlizer:       graphqlizer{},
 		gqlFieldsProvider: gqlFieldsProvider{},
-		scopeProvider: scopeProvider,
+		scopeProvider:     scopeProvider,
 		currentScopes:     currentScopes,
 		cli:               newAuthorizedGraphQLClient(bearerToken),
 	}, nil
