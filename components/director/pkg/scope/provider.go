@@ -2,6 +2,7 @@ package scope
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/strings"
 	"io/ioutil"
 
 	"github.com/ghodss/yaml"
@@ -67,4 +68,45 @@ func (p *provider) GetRequiredScopes(path string) ([]string, error) {
 
 	}
 	return scopes, nil
+}
+
+
+func (p *provider) GetAllScopes() ([]string, error) {
+	var scopes []string
+	for key, _ := range p.cachedConfig {
+		operations, ok := p.cachedConfig[key].(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("invalid type %T for %s; expected map[string]interface{}", p.cachedConfig[key], key)
+		}
+		for opKey, opScopes := range operations {
+			if opScopes == nil {
+				continue
+			}
+
+			values, ok := opScopes.([]interface{})
+			if !ok {
+				// try with string
+
+				value, ok := opScopes.(string)
+				if !ok {
+					return nil, fmt.Errorf("invalid type %T for %s values; expected map[string]interface{} or string", opScopes, opKey)
+				}
+
+				scopes = append(scopes, value)
+				continue
+			}
+
+			for _, val := range values {
+				strVal, ok := val.(string)
+				if !ok {
+					return nil, fmt.Errorf("invalid type %T for %s value; expected map[string]interface{}", val, opKey)
+				}
+				scopes = append(scopes, strVal)
+			}
+		}
+	}
+
+	uniqueScopes := strings.Unique(scopes)
+
+	return uniqueScopes, nil
 }

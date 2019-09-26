@@ -1,18 +1,19 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/kyma-project/kyma/components/console-backend-service/pkg/executor"
-
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
+	"github.com/kyma-project/kyma/components/console-backend-service/pkg/executor"
+	"github.com/kyma-project/kyma/components/console-backend-service/pkg/signal"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
-	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 
 	log "github.com/sirupsen/logrus"
 
@@ -38,12 +39,17 @@ type config struct {
 		Name     string `envconfig:"default=postgres,APP_DB_NAME"`
 		SSLMode  string `envconfig:"default=disable,APP_DB_SSL"`
 	}
-	APIEndpoint                   string `envconfig:"default=/graphql"`
-	TenantMappingEndpoint         string `envconfig:"default=/tenant-mapping"`
-	PlaygroundAPIEndpoint         string `envconfig:"default=/graphql"`
+	APIEndpoint           string `envconfig:"default=/graphql"`
+	TenantMappingEndpoint string `envconfig:"default=/tenant-mapping"`
+	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
+
 	ScopesConfigurationFile       string
 	ScopesConfigurationFileReload time.Duration `envconfig:"default=1m"`
 	EnableScopesValidation        bool          `envconfig:"default=false"`
+
+	JWKSEndpoint        string        `envconfig:"default=file://hack/default-jwks.json"`
+	JWKSSyncPeriod      time.Duration `envconfig:"default=5m"`
+	AllowJWTSigningNone bool          `envconfig:"default=false"`
 }
 
 func main() {
@@ -71,7 +77,7 @@ func main() {
 		Resolvers: domain.NewRootResolver(transact),
 	}
 
-	stopCh := make(chan struct{})
+	stopCh := signal.SetupChannel()
 	if cfg.EnableScopesValidation {
 		log.Info("Scopes validation is enabled")
 		provider := scope.NewProvider(cfg.ScopesConfigurationFile)
@@ -88,22 +94,44 @@ func main() {
 	}
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
 
-	router := mux.NewRouter()
+	mainRouter := mux.NewRouter()
 
 	log.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
-	router.Use(tenant.RequireAndPassContext)
-	router.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
-	router.HandleFunc(cfg.APIEndpoint, handler.GraphQL(executableSchema))
+	authMiddleware := authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone)
 
-	http.Handle("/", router)
+	if cfg.JWKSSyncPeriod != 0 {
+		log.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
+		periodicExecutor := executor.NewPeriodic(cfg.JWKSSyncPeriod, func(stopCh <-chan struct{}) {
+			err := authMiddleware.SynchronizeJWKS()
+			if err != nil {
+				log.Error(errors.Wrap(err, "while synchronizing JWKS"))
+			}
+		})
+		go periodicExecutor.Run(stopCh)
+	}
+
+	mainRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
+
+	gqlAPIRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
+	gqlAPIRouter.Use(authMiddleware.TempHandler()) //TODO: Enable in PR https://github.com/kyma-incubator/compass/pull/325
+	gqlAPIRouter.HandleFunc("", handler.GraphQL(executableSchema))
 
 	log.Infof("Registering Tenant Mapping endpoint on %s...", cfg.TenantMappingEndpoint)
 	tenantMappingHandler := tenantmapping.NewHandler()
-	http.Handle(cfg.TenantMappingEndpoint, tenantMappingHandler)
+	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandler.ServeHTTP)
 
+	srv := &http.Server{Addr: cfg.Address, Handler: mainRouter}
 	log.Infof("Listening on %s...", cfg.Address)
-	if err := http.ListenAndServe(cfg.Address, nil); err != nil {
-		panic(err)
+	go func() {
+		<-stopCh
+		// Interrupt signal received - shut down the server
+		if err := srv.Shutdown(context.Background()); err != nil {
+			log.Errorf("HTTP server Shutdown: %v", err)
+		}
+	}()
+
+	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+		log.Errorf("HTTP server ListenAndServe: %v", err)
 	}
 }
 

@@ -48,6 +48,14 @@
   version = "v1.1.1"
 
 [[projects]]
+  digest = "1:76dc72490af7174349349838f2fe118996381b31ea83243812a97e5a0fd5ed55"
+  name = "github.com/dgrijalva/jwt-go"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
+  version = "v3.2.0"
+
+[[projects]]
   digest = "1:2cd7915ab26ede7d95b8749e6b1f933f1c6d5398030684e6505940a10f31cfda"
   name = "github.com/ghodss/yaml"
   packages = ["."]
@@ -155,12 +163,28 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:bfb44f11a95913a4e8d954e432efc074c52db4bdcb183d9a6358db2dc55b9fb3"
+  digest = "1:ae6f5b200de028cbda56dac563997c1e907843fa49c3baa4a2011eb707a20bd2"
   name = "github.com/kyma-project/kyma"
-  packages = ["components/console-backend-service/pkg/executor"]
+  packages = [
+    "components/console-backend-service/pkg/executor",
+    "components/console-backend-service/pkg/signal",
+  ]
   pruneopts = "UT"
   revision = "69599d4a33a2d206a906bd87c95af3e615830216"
   version = "1.5.0"
+
+[[projects]]
+  digest = "1:aea1c53d4757225e70d19ddd87e7843a25897b3c4f3901a2ab07e04586a5b76a"
+  name = "github.com/lestrrat-go/jwx"
+  packages = [
+    "internal/base64",
+    "internal/option",
+    "jwa",
+    "jwk",
+  ]
+  pruneopts = "UT"
+  revision = "5d60d87d07ddea9874404944870bec81aabcf574"
+  version = "v0.9.0"
 
 [[projects]]
   digest = "1:12cb143f2148bf54bcd9fe622abac17325e85eeb1d84b8ec6caf1c80232108fd"
@@ -411,6 +435,7 @@
     "github.com/99designs/gqlgen/handler",
     "github.com/99designs/gqlgen/plugin",
     "github.com/DATA-DOG/go-sqlmock",
+    "github.com/dgrijalva/jwt-go",
     "github.com/ghodss/yaml",
     "github.com/google/uuid",
     "github.com/gorilla/mux",
@@ -418,6 +443,8 @@
     "github.com/jmoiron/sqlx",
     "github.com/kisielk/errcheck",
     "github.com/kyma-project/kyma/components/console-backend-service/pkg/executor",
+    "github.com/kyma-project/kyma/components/console-backend-service/pkg/signal",
+    "github.com/lestrrat-go/jwx/jwk",
     "github.com/lib/pq",
     "github.com/oliveagle/jsonpath",
     "github.com/pkg/errors",
