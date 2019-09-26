@@ -11,3 +11,29 @@ data:
   gateway.gateway.enabled: "true"
   global.istio.gateway.name: "compass-istio-gateway"
   global.istio.gateway.namespace: "compass-system"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: compass-overrides-dex
+  namespace: kyma-installer
+  labels:
+    installer: overrides
+    component: dex
+    kyma-project.io/installation: ""
+data:
+  global.istio.gateway.name: "compass-istio-gateway"
+  global.istio.gateway.namespace: "compass-system"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: compass-overrides-ory
+  namespace: kyma-installer
+  labels:
+    installer: overrides
+    component: ory
+    kyma-project.io/installation: ""
+data:
+  global.istio.gateway.name: "compass-istio-gateway"
+  global.istio.gateway.namespace: "compass-system"
