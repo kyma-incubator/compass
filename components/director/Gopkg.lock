@@ -200,6 +200,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:5d44d06262dd965f9db909ca181e6fabb0c1437c3e77cfe6aa52961f8cbc4f16"
+  name = "github.com/machinebox/graphql"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "3a92531802258604bd12793465c2e28bc4b2fc85"
+
+[[projects]]
+  branch = "master"
   digest = "1:4f971e961cc101712d18dbbd532813bbcd08c9984acceb55dff3fb86ed62ed5f"
   name = "github.com/oliveagle/jsonpath"
   packages = ["."]
@@ -447,6 +455,7 @@
     "github.com/lestrrat-go/jwx/jwk",
     "github.com/lib/pq",
     "github.com/oliveagle/jsonpath",
+    "github.com/machinebox/graphql",
     "github.com/pkg/errors",
     "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/assert",

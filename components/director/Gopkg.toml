@@ -25,6 +25,10 @@ required = [
   revision = "6a016cf16650f6be7151db7c3be6fc90a2c4d9b1"
 
 [[constraint]]
+  name = "github.com/machinebox/graphql"
+  branch = "master"
+
+[[constraint]]
   name = "github.com/dgrijalva/jwt-go"
   version = "3.2.0"
 

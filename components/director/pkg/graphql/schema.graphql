@@ -81,7 +81,7 @@ enum SpecFormat {
  Every query that implements pagination returns object that implements Pageable interface.
 To specify page details, query specify two parameters: `first` and `after`.
 `first` specify page size, `after` is a cursor for the next page. When requesting first page, set `after` to empty value.
-For requesting next page, set `after` to `pageInfo.endCursor` returned from previous query. 
+For requesting next page, set `after` to `pageInfo.endCursor` returned from previous query.
 """
 interface Pageable {
 	pageInfo: PageInfo!
@@ -228,7 +228,7 @@ type APIDefinition {
 	spec: APISpec
 	targetURL: String!
 	"""
-	group allows you to find the same API but in different version 
+	group allows you to find the same API but in different version
 	"""
 	group: String
 	"""
@@ -276,10 +276,11 @@ type Application {
 	"""
 	apis(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage!
 	"""
-	group allows to find different versions of the same event API 
+	group allows to find different versions of the same event API
 	"""
 	eventAPIs(group: String, first: Int = 100, after: PageCursor): EventAPIDefinitionPage!
 	documents(first: Int = 100, after: PageCursor): DocumentPage!
+	auths: [SystemAuth!]!
 }
 
 type ApplicationPage implements Pageable {
@@ -409,6 +410,11 @@ type OAuthCredentialData {
 	url: String!
 }
 
+type OneTimeToken {
+	token: String!
+	connectorURL: String!
+}
+
 type PageInfo {
 	startCursor: PageCursor!
 	endCursor: PageCursor!
@@ -506,6 +512,8 @@ type Mutation {
 	updateAPI(id: ID!, in: APIDefinitionInput!): APIDefinition! @hasScopes(path: "mutation.updateAPI")
 	deleteAPI(id: ID!): APIDefinition @hasScopes(path: "mutation.deleteAPI")
 	refetchAPISpec(apiID: ID!): APISpec @hasScopes(path: "mutation.refetchAPISpec")
+	generateOneTimeTokenForRuntime(id: ID!): OneTimeToken! @hasScopes(path: "mutation.generateOneTimeTokenForRuntime")
+	generateOneTimeTokenForApplication(id: ID!): OneTimeToken! @hasScopes(path: "mutation.generateOneTimeTokenForApplication")
 	"""
 	Sets Auth for given Application and Runtime. To set default Auth for API, use updateAPI mutation
 	"""

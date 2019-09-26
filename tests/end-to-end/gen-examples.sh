@@ -76,6 +76,8 @@ docker run -d --name ${DIRECTOR_CONTAINER} --rm --network=${NETWORK} \
     -e APP_DB_PORT=${DB_PORT} \
     -e APP_DB_NAME=${DB_NAME} \
     -e APP_SCOPES_CONFIGURATION_FILE=/app/scopes.yaml \
+    -e APP_ONE_TIME_TOKEN_URL=http://connector.not.configured.url/graphql \
+    -e APP_CONNECTOR_URL=http://connector.not.configured.url/graphql \
     ${DIRECTOR_IMG_NAME}
 
 cd "${SCRIPT_DIR}"

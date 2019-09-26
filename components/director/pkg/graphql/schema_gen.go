@@ -79,6 +79,7 @@ type ComplexityRoot struct {
 
 	Application struct {
 		Apis           func(childComplexity int, group *string, first *int, after *PageCursor) int
+		Auths          func(childComplexity int) int
 		Description    func(childComplexity int) int
 		Documents      func(childComplexity int, first *int, after *PageCursor) int
 		EventAPIs      func(childComplexity int, group *string, first *int, after *PageCursor) int
@@ -203,40 +204,47 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AddAPI                 func(childComplexity int, applicationID string, in APIDefinitionInput) int
-		AddDocument            func(childComplexity int, applicationID string, in DocumentInput) int
-		AddEventAPI            func(childComplexity int, applicationID string, in EventAPIDefinitionInput) int
-		AddWebhook             func(childComplexity int, applicationID string, in WebhookInput) int
-		CreateApplication      func(childComplexity int, in ApplicationInput) int
-		CreateLabelDefinition  func(childComplexity int, in LabelDefinitionInput) int
-		CreateRuntime          func(childComplexity int, in RuntimeInput) int
-		DeleteAPI              func(childComplexity int, id string) int
-		DeleteAPIAuth          func(childComplexity int, apiID string, runtimeID string) int
-		DeleteApplication      func(childComplexity int, id string) int
-		DeleteApplicationLabel func(childComplexity int, applicationID string, key string) int
-		DeleteDocument         func(childComplexity int, id string) int
-		DeleteEventAPI         func(childComplexity int, id string) int
-		DeleteLabelDefinition  func(childComplexity int, key string, deleteRelatedLabels *bool) int
-		DeleteRuntime          func(childComplexity int, id string) int
-		DeleteRuntimeLabel     func(childComplexity int, runtimeID string, key string) int
-		DeleteWebhook          func(childComplexity int, webhookID string) int
-		RefetchAPISpec         func(childComplexity int, apiID string) int
-		RefetchEventAPISpec    func(childComplexity int, eventID string) int
-		SetAPIAuth             func(childComplexity int, apiID string, runtimeID string, in AuthInput) int
-		SetApplicationLabel    func(childComplexity int, applicationID string, key string, value interface{}) int
-		SetRuntimeLabel        func(childComplexity int, runtimeID string, key string, value interface{}) int
-		UpdateAPI              func(childComplexity int, id string, in APIDefinitionInput) int
-		UpdateApplication      func(childComplexity int, id string, in ApplicationInput) int
-		UpdateEventAPI         func(childComplexity int, id string, in EventAPIDefinitionInput) int
-		UpdateLabelDefinition  func(childComplexity int, in LabelDefinitionInput) int
-		UpdateRuntime          func(childComplexity int, id string, in RuntimeInput) int
-		UpdateWebhook          func(childComplexity int, webhookID string, in WebhookInput) int
+		AddAPI                             func(childComplexity int, applicationID string, in APIDefinitionInput) int
+		AddDocument                        func(childComplexity int, applicationID string, in DocumentInput) int
+		AddEventAPI                        func(childComplexity int, applicationID string, in EventAPIDefinitionInput) int
+		AddWebhook                         func(childComplexity int, applicationID string, in WebhookInput) int
+		CreateApplication                  func(childComplexity int, in ApplicationInput) int
+		CreateLabelDefinition              func(childComplexity int, in LabelDefinitionInput) int
+		CreateRuntime                      func(childComplexity int, in RuntimeInput) int
+		DeleteAPI                          func(childComplexity int, id string) int
+		DeleteAPIAuth                      func(childComplexity int, apiID string, runtimeID string) int
+		DeleteApplication                  func(childComplexity int, id string) int
+		DeleteApplicationLabel             func(childComplexity int, applicationID string, key string) int
+		DeleteDocument                     func(childComplexity int, id string) int
+		DeleteEventAPI                     func(childComplexity int, id string) int
+		DeleteLabelDefinition              func(childComplexity int, key string, deleteRelatedLabels *bool) int
+		DeleteRuntime                      func(childComplexity int, id string) int
+		DeleteRuntimeLabel                 func(childComplexity int, runtimeID string, key string) int
+		DeleteWebhook                      func(childComplexity int, webhookID string) int
+		GenerateOneTimeTokenForApplication func(childComplexity int, id string) int
+		GenerateOneTimeTokenForRuntime     func(childComplexity int, id string) int
+		RefetchAPISpec                     func(childComplexity int, apiID string) int
+		RefetchEventAPISpec                func(childComplexity int, eventID string) int
+		SetAPIAuth                         func(childComplexity int, apiID string, runtimeID string, in AuthInput) int
+		SetApplicationLabel                func(childComplexity int, applicationID string, key string, value interface{}) int
+		SetRuntimeLabel                    func(childComplexity int, runtimeID string, key string, value interface{}) int
+		UpdateAPI                          func(childComplexity int, id string, in APIDefinitionInput) int
+		UpdateApplication                  func(childComplexity int, id string, in ApplicationInput) int
+		UpdateEventAPI                     func(childComplexity int, id string, in EventAPIDefinitionInput) int
+		UpdateLabelDefinition              func(childComplexity int, in LabelDefinitionInput) int
+		UpdateRuntime                      func(childComplexity int, id string, in RuntimeInput) int
+		UpdateWebhook                      func(childComplexity int, webhookID string, in WebhookInput) int
 	}
 
 	OAuthCredentialData struct {
 		ClientID     func(childComplexity int) int
 		ClientSecret func(childComplexity int) int
 		URL          func(childComplexity int) int
+	}
+
+	OneTimeToken struct {
+		ConnectorURL func(childComplexity int) int
+		Token        func(childComplexity int) int
 	}
 
 	PageInfo struct {
@@ -317,6 +325,7 @@ type ApplicationResolver interface {
 	Apis(ctx context.Context, obj *Application, group *string, first *int, after *PageCursor) (*APIDefinitionPage, error)
 	EventAPIs(ctx context.Context, obj *Application, group *string, first *int, after *PageCursor) (*EventAPIDefinitionPage, error)
 	Documents(ctx context.Context, obj *Application, first *int, after *PageCursor) (*DocumentPage, error)
+	Auths(ctx context.Context, obj *Application) ([]*SystemAuth, error)
 }
 type DocumentResolver interface {
 	FetchRequest(ctx context.Context, obj *Document) (*FetchRequest, error)
@@ -338,6 +347,8 @@ type MutationResolver interface {
 	UpdateAPI(ctx context.Context, id string, in APIDefinitionInput) (*APIDefinition, error)
 	DeleteAPI(ctx context.Context, id string) (*APIDefinition, error)
 	RefetchAPISpec(ctx context.Context, apiID string) (*APISpec, error)
+	GenerateOneTimeTokenForRuntime(ctx context.Context, id string) (*OneTimeToken, error)
+	GenerateOneTimeTokenForApplication(ctx context.Context, id string) (*OneTimeToken, error)
 	SetAPIAuth(ctx context.Context, apiID string, runtimeID string, in AuthInput) (*RuntimeAuth, error)
 	DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*RuntimeAuth, error)
 	AddEventAPI(ctx context.Context, applicationID string, in EventAPIDefinitionInput) (*EventAPIDefinition, error)
@@ -527,6 +538,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.Apis(childComplexity, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor)), true
+
+	case "Application.auths":
+		if e.complexity.Application.Auths == nil {
+			break
+		}
+
+		return e.complexity.Application.Auths(childComplexity), true
 
 	case "Application.description":
 		if e.complexity.Application.Description == nil {
@@ -1237,6 +1255,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteWebhook(childComplexity, args["webhookID"].(string)), true
 
+	case "Mutation.generateOneTimeTokenForApplication":
+		if e.complexity.Mutation.GenerateOneTimeTokenForApplication == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_generateOneTimeTokenForApplication_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.GenerateOneTimeTokenForApplication(childComplexity, args["id"].(string)), true
+
+	case "Mutation.generateOneTimeTokenForRuntime":
+		if e.complexity.Mutation.GenerateOneTimeTokenForRuntime == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_generateOneTimeTokenForRuntime_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.GenerateOneTimeTokenForRuntime(childComplexity, args["id"].(string)), true
+
 	case "Mutation.refetchAPISpec":
 		if e.complexity.Mutation.RefetchAPISpec == nil {
 			break
@@ -1389,6 +1431,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.OAuthCredentialData.URL(childComplexity), true
+
+	case "OneTimeToken.connectorURL":
+		if e.complexity.OneTimeToken.ConnectorURL == nil {
+			break
+		}
+
+		return e.complexity.OneTimeToken.ConnectorURL(childComplexity), true
+
+	case "OneTimeToken.token":
+		if e.complexity.OneTimeToken.Token == nil {
+			break
+		}
+
+		return e.complexity.OneTimeToken.Token(childComplexity), true
 
 	case "PageInfo.endCursor":
 		if e.complexity.PageInfo.EndCursor == nil {
@@ -1853,7 +1909,7 @@ enum SpecFormat {
  Every query that implements pagination returns object that implements Pageable interface.
 To specify page details, query specify two parameters: ` + "`" + `first` + "`" + ` and ` + "`" + `after` + "`" + `.
 ` + "`" + `first` + "`" + ` specify page size, ` + "`" + `after` + "`" + ` is a cursor for the next page. When requesting first page, set ` + "`" + `after` + "`" + ` to empty value.
-For requesting next page, set ` + "`" + `after` + "`" + ` to ` + "`" + `pageInfo.endCursor` + "`" + ` returned from previous query. 
+For requesting next page, set ` + "`" + `after` + "`" + ` to ` + "`" + `pageInfo.endCursor` + "`" + ` returned from previous query.
 """
 interface Pageable {
 	pageInfo: PageInfo!
@@ -2000,7 +2056,7 @@ type APIDefinition {
 	spec: APISpec
 	targetURL: String!
 	"""
-	group allows you to find the same API but in different version 
+	group allows you to find the same API but in different version
 	"""
 	group: String
 	"""
@@ -2048,10 +2104,11 @@ type Application {
 	"""
 	apis(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage!
 	"""
-	group allows to find different versions of the same event API 
+	group allows to find different versions of the same event API
 	"""
 	eventAPIs(group: String, first: Int = 100, after: PageCursor): EventAPIDefinitionPage!
 	documents(first: Int = 100, after: PageCursor): DocumentPage!
+	auths: [SystemAuth!]!
 }
 
 type ApplicationPage implements Pageable {
@@ -2181,6 +2238,11 @@ type OAuthCredentialData {
 	url: String!
 }
 
+type OneTimeToken {
+	token: String!
+	connectorURL: String!
+}
+
 type PageInfo {
 	startCursor: PageCursor!
 	endCursor: PageCursor!
@@ -2278,6 +2340,8 @@ type Mutation {
 	updateAPI(id: ID!, in: APIDefinitionInput!): APIDefinition! @hasScopes(path: "mutation.updateAPI")
 	deleteAPI(id: ID!): APIDefinition @hasScopes(path: "mutation.deleteAPI")
 	refetchAPISpec(apiID: ID!): APISpec @hasScopes(path: "mutation.refetchAPISpec")
+	generateOneTimeTokenForRuntime(id: ID!): OneTimeToken! @hasScopes(path: "mutation.generateOneTimeTokenForRuntime")
+	generateOneTimeTokenForApplication(id: ID!): OneTimeToken! @hasScopes(path: "mutation.generateOneTimeTokenForApplication")
 	"""
 	Sets Auth for given Application and Runtime. To set default Auth for API, use updateAPI mutation
 	"""
@@ -2740,6 +2804,34 @@ func (ec *executionContext) field_Mutation_deleteWebhook_args(ctx context.Contex
 		}
 	}
 	args["webhookID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_generateOneTimeTokenForApplication_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_generateOneTimeTokenForRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -3977,6 +4069,33 @@ func (ec *executionContext) _Application_documents(ctx context.Context, field gr
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNDocumentPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocumentPage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Application_auths(ctx context.Context, field graphql.CollectedField, obj *Application) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Application",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Application().Auths(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*SystemAuth)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ApplicationPage_data(ctx context.Context, field graphql.CollectedField, obj *ApplicationPage) graphql.Marshaler {
@@ -5996,6 +6115,74 @@ func (ec *executionContext) _Mutation_refetchAPISpec(ctx context.Context, field 
 	return ec.marshalOAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpec(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_generateOneTimeTokenForRuntime(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_generateOneTimeTokenForRuntime_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().GenerateOneTimeTokenForRuntime(rctx, args["id"].(string))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*OneTimeToken)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNOneTimeToken2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOneTimeToken(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_generateOneTimeTokenForApplication(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_generateOneTimeTokenForApplication_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().GenerateOneTimeTokenForApplication(rctx, args["id"].(string))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*OneTimeToken)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNOneTimeToken2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOneTimeToken(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_setAPIAuth(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -6565,6 +6752,60 @@ func (ec *executionContext) _OAuthCredentialData_url(ctx context.Context, field 
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.URL, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OneTimeToken_token(ctx context.Context, field graphql.CollectedField, obj *OneTimeToken) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "OneTimeToken",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Token, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OneTimeToken_connectorURL(ctx context.Context, field graphql.CollectedField, obj *OneTimeToken) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "OneTimeToken",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ConnectorURL, nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -9389,6 +9630,20 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 				}
 				return res
 			})
+		case "auths":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Application_auths(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -10105,6 +10360,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_deleteAPI(ctx, field)
 		case "refetchAPISpec":
 			out.Values[i] = ec._Mutation_refetchAPISpec(ctx, field)
+		case "generateOneTimeTokenForRuntime":
+			out.Values[i] = ec._Mutation_generateOneTimeTokenForRuntime(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "generateOneTimeTokenForApplication":
+			out.Values[i] = ec._Mutation_generateOneTimeTokenForApplication(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "setAPIAuth":
 			out.Values[i] = ec._Mutation_setAPIAuth(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -10205,6 +10470,38 @@ func (ec *executionContext) _OAuthCredentialData(ctx context.Context, sel ast.Se
 			}
 		case "url":
 			out.Values[i] = ec._OAuthCredentialData_url(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var oneTimeTokenImplementors = []string{"OneTimeToken"}
+
+func (ec *executionContext) _OneTimeToken(ctx context.Context, sel ast.SelectionSet, obj *OneTimeToken) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, oneTimeTokenImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OneTimeToken")
+		case "token":
+			out.Values[i] = ec._OneTimeToken_token(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "connectorURL":
+			out.Values[i] = ec._OneTimeToken_connectorURL(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -11578,6 +11875,20 @@ func (ec *executionContext) unmarshalNLabels2githubᚗcomᚋkymaᚑincubatorᚋc
 
 func (ec *executionContext) marshalNLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx context.Context, sel ast.SelectionSet, v Labels) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNOneTimeToken2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOneTimeToken(ctx context.Context, sel ast.SelectionSet, v OneTimeToken) graphql.Marshaler {
+	return ec._OneTimeToken(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNOneTimeToken2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOneTimeToken(ctx context.Context, sel ast.SelectionSet, v *OneTimeToken) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._OneTimeToken(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNPageCursor2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx context.Context, v interface{}) (PageCursor, error) {

@@ -3,6 +3,9 @@ package domain
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
+	"github.com/kyma-incubator/compass/components/director/internal/graphql_client"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_auth"
@@ -38,9 +41,10 @@ type RootResolver struct {
 	healthCheck *healthcheck.Resolver
 	webhook     *webhook.Resolver
 	labelDef    *labeldef.Resolver
+	token       *onetimetoken.Resolver
 }
 
-func NewRootResolver(transact persistence.Transactioner) *RootResolver {
+func NewRootResolver(transact persistence.Transactioner, cfg onetimetoken.ConnectorConfig) *RootResolver {
 	authConverter := auth.NewConverter()
 	runtimeAuthConverter := runtime_auth.NewConverter(authConverter)
 	runtimeConverter := runtime.NewConverter()
@@ -53,6 +57,7 @@ func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 	appConverter := application.NewConverter(webhookConverter, apiConverter, eventAPIConverter, docConverter)
 	labelDefConverter := labeldef.NewConverter()
 	labelConverter := label.NewConverter()
+	tokenConverter := onetimetoken.NewConverter()
 	systemAuthConverter := systemauth.NewConverter(authConverter)
 
 	healthcheckRepo := healthcheck.NewRepository()
@@ -68,6 +73,8 @@ func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 	runtimeAuthRepo := runtime_auth.NewRepository(runtimeAuthConverter)
 	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
 
+	connectorGCLI := graphql_client.NewGraphQLClient(cfg.OneTimeTokenURL)
+
 	uidSvc := uid.NewService()
 	runtimeAuthSvc := runtime_auth.NewService(runtimeAuthRepo, uidSvc)
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
@@ -81,9 +88,10 @@ func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, uidSvc)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
+	tokenService := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, cfg.ConnectorURL)
 
 	return &RootResolver{
-		app:         application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter),
+		app:         application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, systemAuthSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter),
 		api:         api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, runtimeAuthSvc, apiConverter, authConverter, frConverter, runtimeAuthConverter),
 		eventAPI:    eventapi.NewResolver(transact, eventAPISvc, appSvc, eventAPIConverter, frConverter),
 		doc:         document.NewResolver(transact, docSvc, appSvc, frConverter),
@@ -91,6 +99,7 @@ func NewRootResolver(transact persistence.Transactioner) *RootResolver {
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
 		webhook:     webhook.NewResolver(transact, webhookSvc, appSvc, webhookConverter),
 		labelDef:    labeldef.NewResolver(labelDefSvc, labelDefConverter, transact),
+		token:       onetimetoken.NewTokenResolver(transact, tokenService, tokenConverter),
 	}
 }
 
@@ -150,6 +159,14 @@ func (r *queryResolver) HealthChecks(ctx context.Context, types []graphql.Health
 
 type mutationResolver struct {
 	*RootResolver
+}
+
+func (r *mutationResolver) GenerateOneTimeTokenForApplication(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
+	return r.token.GenerateOneTimeTokenForApplication(ctx, id)
+}
+
+func (r *mutationResolver) GenerateOneTimeTokenForRuntime(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
+	return r.token.GenerateOneTimeTokenForRuntime(ctx, id)
 }
 
 func (r *mutationResolver) CreateApplication(ctx context.Context, in graphql.ApplicationInput) (*graphql.Application, error) {
@@ -239,6 +256,10 @@ func (r *mutationResolver) DeleteRuntimeLabel(ctx context.Context, runtimeID str
 
 type applicationResolver struct {
 	*RootResolver
+}
+
+func (r *applicationResolver) Auths(ctx context.Context, obj *graphql.Application) ([]*graphql.SystemAuth, error) {
+	return r.app.Auths(ctx, obj)
 }
 
 func (r *applicationResolver) Labels(ctx context.Context, obj *graphql.Application, key *string) (graphql.Labels, error) {
