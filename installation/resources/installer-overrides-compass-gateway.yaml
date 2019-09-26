@@ -5,7 +5,6 @@ metadata:
   namespace: kyma-installer
   labels:
     installer: overrides
-    component: compass
     kyma-project.io/installation: ""
 data:
   gateway.gateway.enabled: "true"
