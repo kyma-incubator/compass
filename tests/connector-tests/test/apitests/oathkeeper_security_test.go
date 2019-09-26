@@ -14,7 +14,7 @@ func TestOathkeeperSecurity(t *testing.T) {
 
 	certResult, configuration := generateCertificate(t, appID, clientKey)
 	certChain := testkit.DecodeCertChain(t, certResult.CertificateChain)
-	securedClient := connector.NewCertificateSecuredConnectorClient(config.SecuredConnectorURL, clientKey, certChain...)
+	securedClient := connector.NewCertificateSecuredConnectorClient(*configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL, clientKey, certChain...)
 
 	t.Run("client id headers should be stripped when calling token-secured api", func(t *testing.T) {
 		// given

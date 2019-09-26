@@ -34,7 +34,7 @@ global:
         version: "PR-323"
       connector:
         dir: pr/
-        version: "PR-247"
+        version: "PR-335"
       provisioner:
         dir: pr/
         version: "PR-334"
@@ -115,3 +115,9 @@ global:
 
   tenantMappingService:
     url: http://compass-director.compass-system.svc.cluster.local:3000/tenant-mapping
+
+  certificateResolverService:
+    url: http://compass-connector.compass-system.svc.cluster.local:8080/v1/certificate/data/resolve
+
+  tokenResolverService:
+    url: http://compass-connector.compass-system.svc.cluster.local:8080/v1/tokens/resolve
