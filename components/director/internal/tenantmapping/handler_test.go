@@ -14,9 +14,8 @@ import (
 )
 
 func TestHandler(t *testing.T) {
-	t.Run("for request with certificate", func(t *testing.T) {
+	t.Run("for request without scopes", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", strings.NewReader("{}"))
-		req.Header.Set(tenantmapping.ClientIdFromCertificateHeader, "something")
 		w := httptest.NewRecorder()
 
 		sut := tenantmapping.NewHandler()

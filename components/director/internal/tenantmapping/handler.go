@@ -74,9 +74,16 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	extraMap["tenant"] = "9ac609e1-7487-4aa6-b600-0904b272b11f"
-	if request.Header.Get(ClientIdFromCertificateHeader) != "" {
+
+	if extraMap["scope"] != nil {
+		scopesArray, ok := extraMap["scope"].([]interface{})
+		if !ok || len(scopesArray) == 0 {
+			h.setScopes(extraMap)
+		}
+	} else {
 		h.setScopes(extraMap)
 	}
+
 	data.Extra = extraMap
 
 	logBuilder.WriteString(fmt.Sprintf("\nOutput: %+v\n", data))
