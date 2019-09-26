@@ -10,9 +10,10 @@ COMPASS_HELM_RELEASE_NAME="compass"
 COMPASS_HELM_RELEASE_NAMESPACE="compass-system"
 
 INSTALLER_CR_PATH="${ROOT_PATH}"/installation/resources/installer-cr-kyma-diet.yaml
+OVERRIDES_COMPASS_GATEWAY="${ROOT_PATH}"/installation/resources/installer-overrides-compass-gateway.yaml
 
 kyma provision minikube
-kyma install -o $INSTALLER_CR_PATH --source "${KYMA_RELEASE}"
+kyma install -o $INSTALLER_CR_PATH  -o $OVERRIDES_COMPASS_GATEWAY --source "${KYMA_RELEASE}"
 
 #Get Tiller tls client certificates
 kubectl get -n kyma-installer secret helm-secret -o jsonpath="{.data['global\.helm\.ca\.crt']}" | base64 --decode > "$(helm home)/ca.pem"
