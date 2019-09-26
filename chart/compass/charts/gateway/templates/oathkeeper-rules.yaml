@@ -97,7 +97,6 @@ spec:
       config:
         api:
           url: {{ .Values.global.certificateResolverService.url }}
-
 ---
 apiVersion: oathkeeper.ory.sh/v1alpha1
 kind: Rule
