@@ -14,7 +14,7 @@ func TestScopesAuthorization(t *testing.T) {
 	// given
 	ctx := context.Background()
 	id := uuid.New().String()
-	requiredScopes, err := tc.scopeProvider.GetRequiredScopes("queries.applicationsForRuntime")
+	requiredScopes, err := tc.scopeProvider.GetRequiredScopes("query.applicationsForRuntime")
 	require.NoError(t, err)
 
 	testCases := []struct {

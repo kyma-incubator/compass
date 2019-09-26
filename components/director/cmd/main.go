@@ -46,7 +46,7 @@ type config struct {
 	PlaygroundAPIEndpoint         string `envconfig:"default=/graphql"`
 	ScopesConfigurationFile       string
 	ScopesConfigurationFileReload time.Duration `envconfig:"default=1m"`
-	EnableScopesValidation        bool          `envconfig:"default=false"`
+	EnableScopesValidation        bool          `envconfig:"default=true"`
 
 	JWKSEndpoint        string        `envconfig:"default=file://hack/default-jwks.json"`
 	JWKSSyncPeriod      time.Duration `envconfig:"default=5m"`
@@ -122,6 +122,13 @@ func main() {
 	log.Infof("Registering Tenant Mapping endpoint on %s...", cfg.TenantMappingEndpoint)
 	tenantMappingHandler := tenantmapping.NewHandler()
 	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandler.ServeHTTP)
+	mainRouter.HandleFunc("/healthz", func(writer http.ResponseWriter, request *http.Request) {
+		writer.WriteHeader(200)
+		_, err := writer.Write([]byte("ok"))
+		if err != nil {
+			log.Errorf(errors.Wrapf(err, "while writing to response body").Error())
+		}
+	})
 
 	srv := &http.Server{Addr: cfg.Address, Handler: mainRouter}
 	log.Infof("Listening on %s...", cfg.Address)

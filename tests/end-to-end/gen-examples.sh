@@ -16,7 +16,6 @@ DIRECTOR_CONTAINER="compass-dev-director"
 POSTGRES_VERSION="11"
 MIGRATOR_IMG_NAME="compass-schema-migrator"
 DIRECTOR_IMG_NAME="compass-director"
-COMPASS_PROJECT_PATH="${GOPATH}/src/github.com/kyma-incubator/compass"
 DB_USER="usr"
 DB_PWD="pwd"
 DB_NAME="compass"
@@ -25,6 +24,7 @@ DB_SSL_PARAM="disable"
 APP_PORT="3001"
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_PATH=${SCRIPT_DIR}/../..
 
 function cleanup() {
     echo -e "${GREEN}Cleaning up...${NC}"
@@ -66,9 +66,12 @@ cd "${SCRIPT_DIR}/../../components/director/" && make resolve build-image
 
 echo -e "${GREEN}Running Director...${NC}"
 
-docker run -d --name ${DIRECTOR_CONTAINER} --rm --network=${NETWORK} \
+SCOPES_CONFIGURATION_FILE_PATH="${ROOT_PATH}/chart/compass/charts/director/scopes.yaml"
+
+docker run --name ${DIRECTOR_CONTAINER} -d --rm --network=${NETWORK} \
     -p ${APP_PORT}:${APP_PORT} \
-    -v "${COMPASS_PROJECT_PATH}/chart/compass/charts/director/scopes.yaml:/app/scopes.yaml" \
+    -v "${SCOPES_CONFIGURATION_FILE_PATH}:/app/scopes.yaml" \
+    -v "${ROOT_PATH}/components/director/hack/default-jwks.json:/app/default-jwks.json" \
     -e APP_ADDRESS=0.0.0.0:${APP_PORT} \
     -e APP_DB_USER=${DB_USER} \
     -e APP_DB_PASSWORD=${DB_PWD} \
@@ -78,6 +81,8 @@ docker run -d --name ${DIRECTOR_CONTAINER} --rm --network=${NETWORK} \
     -e APP_SCOPES_CONFIGURATION_FILE=/app/scopes.yaml \
     -e APP_ONE_TIME_TOKEN_URL=http://connector.not.configured.url/graphql \
     -e APP_CONNECTOR_URL=http://connector.not.configured.url/graphql \
+    -e APP_ALLOW_JWT_SIGNING_NONE='true' \
+    -e APP_JWKS_ENDPOINT="file:///app/default-jwks.json" \
     ${DIRECTOR_IMG_NAME}
 
 cd "${SCRIPT_DIR}"
@@ -88,7 +93,7 @@ echo -e "${GREEN}Checking if Director is up...${NC}"
 directorIsUp=false
 set +e
 for i in {1..10}; do
-    curl --fail "http://localhost:${APP_PORT}/graphql" -H "Content-Type: application/json" -H 'tenant: any' --data-binary '{"query":"{\n  __schema {\n    queryType {\n      name\n    }\n  }\n}"}'
+    curl --fail "http://localhost:${APP_PORT}/healthz" -H 'tenant: 49b179ea-9839-4608-afbe-1e934908f38a'
     res=$?
 
     if [[ ${res} == 0 ]]; then
@@ -107,17 +112,17 @@ if [[ "$directorIsUp" == false ]]; then
 fi
 
 echo -e "${GREEN}Removing previous GraphQL examples...${NC}"
-rm -f "${COMPASS_PROJECT_PATH}/examples/"*
+rm -f "${ROOT_PATH}/examples/"*
 
 echo -e "${GREEN}Running Director tests with generating examples...${NC}"
 go test -c "${SCRIPT_DIR}/director/"
-DIRECTOR_GRAPHQL_API="http://localhost:${APP_PORT}/graphql" ./director.test
+DIRECTOR_GRAPHQL_API="http://localhost:${APP_PORT}/graphql" SCOPES_CONFIGURATION_FILE="${SCOPES_CONFIGURATION_FILE_PATH}" ./director.test
 
 echo -e "${GREEN}Prettifying GraphQL examples...${NC}"
 img="prettier:latest"
 docker build -t ${img} ./tools/prettier
-docker run -v "${COMPASS_PROJECT_PATH}/examples":/prettier/examples \
+docker run -v "${ROOT_PATH}/examples":/prettier/examples \
     ${img} prettier --write ./examples/*.graphql
 
 cd "${SCRIPT_DIR}/tools/example-index-generator/"
-EXAMPLES_DIRECTORY="${COMPASS_PROJECT_PATH}/examples" go run main.go
+EXAMPLES_DIRECTORY="${ROOT_PATH}/examples" go run main.go

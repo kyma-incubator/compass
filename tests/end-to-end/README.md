@@ -6,5 +6,5 @@ Director folder contains tests of GraphQL API for managing Applications and Runt
 ## Usage
 To run Director tests, execute:
 ```
-env DIRECTOR_GRAPHQL_API={URL} go test -v ./director/...
+./run.sh
 ```
