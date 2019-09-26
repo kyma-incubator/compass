@@ -38,7 +38,7 @@ type testContext struct {
 }
 
 func newTestContext() (*testContext, error) {
-	scopesCfgPath := os.Getenv("SCOPES_PATH")
+	scopesCfgPath := os.Getenv("SCOPES_CONFIGURATION_FILE")
 	scopeProvider := scope.NewProvider(scopesCfgPath)
 
 	err := scopeProvider.Load()

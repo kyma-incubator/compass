@@ -28,6 +28,11 @@ spec:
           command: ["/bin/sh"]
           args: ["-c", "sleep 10; /director.test -test.v; exit_code=$?; pkill -INT pilot-agent; sleep 4; exit $exit_code;"]
           env:
-          - name: "DIRECTOR_GRAPHQL_API"
+          - name: DIRECTOR_GRAPHQL_API
             value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.port }}/graphql"
+          - name: SCOPES_CONFIGURATION_FILE
+            value: /config/scopes.yaml
+          volumeMounts:
+            - mountPath: /config
+              name: scopes-config
       restartPolicy: Never
