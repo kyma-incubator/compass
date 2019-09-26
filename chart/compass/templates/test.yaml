@@ -35,4 +35,8 @@ spec:
           volumeMounts:
             - mountPath: /config
               name: scopes-config
-      restartPolicy: Never
+      volumes:
+        - name: scopes-config
+          configMap:
+            name: compass-director-scopes
+    restartPolicy: Never

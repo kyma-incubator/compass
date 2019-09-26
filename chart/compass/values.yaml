@@ -76,8 +76,6 @@ global:
     tls:
       host: compass-gateway
       secure:
-        jwt:
-          host: compass-gateway-auth-jwt
         oauth:
           host: compass-gateway-auth-oauth
     mtls:

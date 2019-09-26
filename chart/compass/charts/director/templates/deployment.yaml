@@ -73,7 +73,7 @@ spec:
             - name: APP_SCOPES_CONFIGURATION_FILE
               value: /config/scopes.yaml
             - name: APP_ALLOW_JWT_SIGNING_NONE
-              value: {{ .Values.allowJWTSigningNone }}
+              value: {{ .Values.deployment.allowJWTSigningNone | quote }}
           volumeMounts:
             - mountPath: /config
               name: scopes-config
