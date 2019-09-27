@@ -53,12 +53,12 @@ func (r *MockResolver) ReconnectRuntimeAgent(ctx context.Context, id string) (st
 func (r *MockResolver) startNewOperation(ctx context.Context, runtimeID string, operationType gqlschema.OperationType) (string, error) {
 	if operationType != gqlschema.OperationTypeProvision {
 		if !r.runtimeExists(runtimeID) {
-			return "", errors.Errorf("Runtime %s does not exist", runtimeID)
+			return "", errors.Errorf("runtime %s does not exist", runtimeID)
 		}
 	}
 	currentID, finished := r.checkIfLastOperationFinished(runtimeID)
 	if !finished {
-		return "", errors.Errorf("Cannot start new operation while previous one is not finished yet. Current operation: %s", currentID)
+		return "", errors.Errorf("cannot start new operation while previous one is not finished yet. Current operation: %s", currentID)
 	}
 
 	operationID := string(uuid.NewUUID())
@@ -79,7 +79,7 @@ func (r *MockResolver) RuntimeStatus(ctx context.Context, runtimeID string) (*gq
 	operation, exists := r.getLastOperationStatus(runtimeID)
 
 	if !exists {
-		return nil, errors.Errorf("Runtime %s does not exist", runtimeID)
+		return nil, errors.Errorf("runtime %s does not exist", runtimeID)
 	}
 
 	return &gqlschema.RuntimeStatus{
@@ -108,7 +108,7 @@ func (r *MockResolver) RuntimeOperationStatus(ctx context.Context, operationID s
 	operation, exists := r.load(operationID)
 
 	if !exists {
-		return nil, errors.Errorf("Operation: %s does not exist", operationID)
+		return nil, errors.Errorf("operation: %s does not exist", operationID)
 	}
 
 	if operation.succeeded {
