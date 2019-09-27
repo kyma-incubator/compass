@@ -38,24 +38,6 @@ func (a *Authenticator) SynchronizeJWKS() error {
 	return nil
 }
 
-// TODO: Remove after https://github.com/kyma-incubator/compass/pull/325
-func (a *Authenticator) TempHandler() func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			tenant := r.Header.Get(tenant.TenantHeaderName)
-			if tenant == "" {
-				http.Error(w, "No tenant header", http.StatusBadRequest)
-				return
-			}
-
-			ctx := a.contextWithClaims(r.Context(), Claims{
-				Tenant: tenant,
-			})
-			next.ServeHTTP(w, r.WithContext(ctx))
-		})
-	}
-}
-
 func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

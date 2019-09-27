@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 
 	gcli "github.com/machinebox/graphql"
 )
@@ -215,4 +216,9 @@ func fixDeleteAPIAuthRequest(apiID string, rtmID string) *gcli.Request {
 					%s
 				} 
 			}`, apiID, rtmID, tc.gqlFieldsProvider.ForRuntimeAuth()))
+}
+
+func removeDoubleQuotesFromJSONKeys(in string) string {
+	var validRegex = regexp.MustCompile(`"(\w+|\$\w+)"\s*:`)
+	return validRegex.ReplaceAllString(in, `$1:`)
 }

@@ -3,6 +3,8 @@ package director
 import (
 	"fmt"
 
+	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/ptr"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
@@ -46,16 +48,16 @@ func fixOAuthCredential() *graphql.CredentialDataInput {
 func fixDepracatedVersion1() *graphql.VersionInput {
 	return &graphql.VersionInput{
 		Value:           "v1",
-		Deprecated:      ptrBool(true),
-		ForRemoval:      ptrBool(true),
-		DeprecatedSince: ptrString("v5"),
+		Deprecated:      ptr.Bool(true),
+		ForRemoval:      ptr.Bool(true),
+		DeprecatedSince: ptr.String("v5"),
 	}
 }
 
 func fixRuntimeInput(placeholder string) graphql.RuntimeInput {
 	return graphql.RuntimeInput{
 		Name:        placeholder,
-		Description: ptrString(fmt.Sprintf("%s-description", placeholder)),
+		Description: ptr.String(fmt.Sprintf("%s-description", placeholder)),
 		Labels:      &graphql.Labels{"placeholder": []interface{}{"placeholder"}},
 	}
 }

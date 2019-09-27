@@ -12,7 +12,7 @@ import (
 func getApplication(t *testing.T, ctx context.Context, id string) graphql.ApplicationExt {
 	appRequest := fixApplicationRequest(id)
 	app := graphql.ApplicationExt{}
-	require.NoError(t, tc.RunQuery(ctx, appRequest, &app))
+	require.NoError(t, tc.RunOperation(ctx, appRequest, &app))
 	return app
 }
 
@@ -26,11 +26,10 @@ func createApplicationFromInputWithinTenant(t *testing.T, ctx context.Context, i
 	require.NoError(t, err)
 
 	createRequest := fixCreateApplicationRequest(appInputGQL)
-	createRequest.Header["Tenant"] = []string{tenantID}
 
 	app := graphql.ApplicationExt{}
 
-	require.NoError(t, tc.RunQuery(ctx, createRequest, &app))
+	require.NoError(t, tc.RunOperationWithCustomTenant(ctx, tenantID, createRequest, &app))
 	require.NotEmpty(t, app.ID)
 	return app
 }
@@ -38,14 +37,14 @@ func createApplicationFromInputWithinTenant(t *testing.T, ctx context.Context, i
 func deleteApplicationLabel(t *testing.T, ctx context.Context, applicationID, labelKey string) {
 	deleteRequest := fixDeleteApplicationLabel(applicationID, labelKey)
 
-	require.NoError(t, tc.RunQuery(ctx, deleteRequest, nil))
+	require.NoError(t, tc.RunOperation(ctx, deleteRequest, nil))
 }
 
 func setApplicationLabel(t *testing.T, ctx context.Context, applicationID string, labelKey string, labelValue interface{}) graphql.Label {
 	setLabelRequest := fixSetApplicationLabelRequest(applicationID, labelKey, labelValue)
 	label := graphql.Label{}
 
-	err := tc.RunQuery(ctx, setLabelRequest, &label)
+	err := tc.RunOperation(ctx, setLabelRequest, &label)
 	require.NoError(t, err)
 
 	return label
@@ -66,10 +65,9 @@ func createRuntimeFromInputWithinTenant(t *testing.T, ctx context.Context, input
 	require.NoError(t, err)
 
 	createRequest := fixCreateRuntimeRequest(inputGQL)
-	createRequest.Header["Tenant"] = []string{tenant}
 	var runtime graphql.Runtime
 
-	err = tc.RunQuery(ctx, createRequest, &runtime)
+	err = tc.RunOperationWithCustomTenant(ctx, tenant, createRequest, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 	return &runtime
@@ -82,9 +80,8 @@ func getRuntime(t *testing.T, ctx context.Context, runtimeID string) *graphql.Ru
 func getRuntimeWithinTenant(t *testing.T, ctx context.Context, runtimeID string, tenant string) *graphql.RuntimeExt {
 	var runtime graphql.RuntimeExt
 	runtimeQuery := fixRuntimeQuery(runtimeID)
-	runtimeQuery.Header["Tenant"] = []string{tenant}
 
-	err := tc.RunQuery(ctx, runtimeQuery, &runtime)
+	err := tc.RunOperationWithCustomTenant(ctx, tenant, runtimeQuery, &runtime)
 	require.NoError(t, err)
 	return &runtime
 }
@@ -93,7 +90,7 @@ func setRuntimeLabel(t *testing.T, ctx context.Context, runtimeID string, labelK
 	setLabelRequest := fixSetRuntimeLabelRequest(runtimeID, labelKey, labelValue)
 	label := graphql.Label{}
 
-	err := tc.RunQuery(ctx, setLabelRequest, &label)
+	err := tc.RunOperation(ctx, setLabelRequest, &label)
 	require.NoError(t, err)
 
 	return &label
@@ -106,8 +103,7 @@ func deleteRuntime(t *testing.T, id string) {
 func deleteRuntimeWithinTenant(t *testing.T, id string, tenantID string) {
 	delReq := fixDeleteRuntime(id)
 
-	delReq.Header["Tenant"] = []string{tenantID}
-	err := tc.RunQuery(context.Background(), delReq, nil)
+	err := tc.RunOperationWithCustomTenant(context.Background(), tenantID, delReq, nil)
 	require.NoError(t, err)
 }
 
@@ -124,10 +120,9 @@ func createLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, key st
 	}
 
 	createRequest := fixCreateLabelDefinitionRequest(in)
-	createRequest.Header["Tenant"] = []string{tenantID}
 
 	output := graphql.LabelDefinition{}
-	err = tc.RunQuery(ctx, createRequest, &output)
+	err = tc.RunOperationWithCustomTenant(ctx, tenantID, createRequest, &output)
 	require.NoError(t, err)
 
 	return &output
@@ -139,18 +134,16 @@ func deleteLabelDefinition(t *testing.T, ctx context.Context, labelDefinitionKey
 
 func deleteLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, labelDefinitionKey string, deleteRelatedResources bool, tenantID string) {
 	deleteRequest := fixDeleteLabelDefinition(labelDefinitionKey, deleteRelatedResources)
-	deleteRequest.Header["Tenant"] = []string{tenantID}
 
-	require.NoError(t, tc.RunQuery(ctx, deleteRequest, nil))
+	require.NoError(t, tc.RunOperationWithCustomTenant(ctx, tenantID, deleteRequest, nil))
 }
 
 func listLabelDefinitionsWithinTenant(t *testing.T, ctx context.Context, tenantID string) ([]*graphql.LabelDefinition, error) {
 	labelDefinitionsRequest := fixLabelDefinitionsRequest()
-	labelDefinitionsRequest.Header["Tenant"] = []string{tenantID}
 
 	var labelDefinitions []*graphql.LabelDefinition
 
-	err := tc.RunQuery(ctx, labelDefinitionsRequest, &labelDefinitions)
+	err := tc.RunOperationWithCustomTenant(ctx, tenantID, labelDefinitionsRequest, &labelDefinitions)
 	return labelDefinitions, err
 }
 
@@ -162,7 +155,7 @@ func setAPIAuth(t *testing.T, ctx context.Context, apiID string, rtmID string, a
 	var rtmAuth graphql.RuntimeAuth
 
 	request := fixSetAPIAuthRequest(apiID, rtmID, authInStr)
-	err = tc.RunQuery(ctx, request, &rtmAuth)
+	err = tc.RunOperation(ctx, request, &rtmAuth)
 	require.NoError(t, err)
 
 	return &rtmAuth
@@ -171,7 +164,7 @@ func setAPIAuth(t *testing.T, ctx context.Context, apiID string, rtmID string, a
 func deleteAPIAuth(t *testing.T, ctx context.Context, apiID string, rtmID string) {
 	request := fixDeleteAPIAuthRequest(apiID, rtmID)
 
-	err := tc.RunQuery(ctx, request, nil)
+	err := tc.RunOperation(ctx, request, nil)
 
 	require.NoError(t, err)
 }

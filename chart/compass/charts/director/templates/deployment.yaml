@@ -70,9 +70,10 @@ spec:
               value: "http://compass-connector.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connector.graphql.port }}/graphql"
             - name: APP_CONNECTOR_URL
               value: "http://compass-connector.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connector.graphql.port }}/graphql"
-
             - name: APP_SCOPES_CONFIGURATION_FILE
               value: /config/scopes.yaml
+            - name: APP_ALLOW_JWT_SIGNING_NONE
+              value: {{ .Values.deployment.allowJWTSigningNone | quote }}
           volumeMounts:
             - mountPath: /config
               name: scopes-config
