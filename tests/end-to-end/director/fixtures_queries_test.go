@@ -65,10 +65,9 @@ func createRuntimeFromInputWithinTenant(t *testing.T, ctx context.Context, input
 	require.NoError(t, err)
 
 	createRequest := fixCreateRuntimeRequest(inputGQL)
-	createRequest.Header["Tenant"] = []string{tenant}
 	var runtime graphql.Runtime
 
-	err = tc.RunOperation(ctx, createRequest, &runtime)
+	err = tc.RunOperationWithCustomTenant(ctx, tenant, createRequest, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 	return &runtime
@@ -81,9 +80,8 @@ func getRuntime(t *testing.T, ctx context.Context, runtimeID string) *graphql.Ru
 func getRuntimeWithinTenant(t *testing.T, ctx context.Context, runtimeID string, tenant string) *graphql.RuntimeExt {
 	var runtime graphql.RuntimeExt
 	runtimeQuery := fixRuntimeQuery(runtimeID)
-	runtimeQuery.Header["Tenant"] = []string{tenant}
 
-	err := tc.RunOperation(ctx, runtimeQuery, &runtime)
+	err := tc.RunOperationWithCustomTenant(ctx, tenant, runtimeQuery, &runtime)
 	require.NoError(t, err)
 	return &runtime
 }
