@@ -10,7 +10,7 @@ global:
       version: "PR-247"
     director:
       dir: pr/
-      version: "PR-342"
+      version: "PR-345"
     gateway:
       dir: pr/
       version: "PR-251"

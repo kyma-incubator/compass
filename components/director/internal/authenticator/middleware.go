@@ -41,7 +41,6 @@ func (a *Authenticator) SynchronizeJWKS() error {
 func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// TODO: Remove getting tenant from header after implementing https://github.com/kyma-incubator/compass/issues/288
 			bearerToken, err := a.getBearerToken(r)
 			if err != nil {
 				log.Error(errors.Wrap(err, "while getting token from header"))
@@ -64,6 +63,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 				return
 			}
 
+			// TODO: Remove getting tenant from header after implementing https://github.com/kyma-incubator/compass/issues/288
 			tenantHeader := r.Header.Get(tenant.TenantHeaderName)
 			if tenantHeader != "" {
 				claims.Tenant = tenantHeader
