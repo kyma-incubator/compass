@@ -114,7 +114,7 @@ echo -e "${GREEN}Removing previous GraphQL examples...${NC}"
 rm -f "${ROOT_PATH}/examples/"*
 
 echo -e "${GREEN}Running Director tests with generating examples...${NC}"
-go test -c "${SCRIPT_DIR}/director/"
+go test -c "${SCRIPT_DIR}/director/" -tags no_token_test
 DIRECTOR_GRAPHQL_API="http://localhost:${APP_PORT}/graphql" SCOPES_CONFIGURATION_FILE="${SCOPES_CONFIGURATION_FILE_PATH}" ./director.test
 
 echo -e "${GREEN}Prettifying GraphQL examples...${NC}"

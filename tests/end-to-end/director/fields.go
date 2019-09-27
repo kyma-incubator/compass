@@ -50,7 +50,8 @@ func (fp *gqlFieldsProvider) ForApplication(ctx ...fieldCtx) string {
 		apis {%s}
 		eventAPIs {%s}
 		documents {%s}
-	`, fp.ForWebhooks(), fp.Page(fp.ForAPIDefinition(ctx...)), fp.Page(fp.ForEventAPI()), fp.Page(fp.ForDocument()))
+		auths {%s}
+	`, fp.ForWebhooks(), fp.Page(fp.ForAPIDefinition(ctx...)), fp.Page(fp.ForEventAPI()), fp.Page(fp.ForDocument()), fp.ForSystemAuth())
 }
 
 func (fp *gqlFieldsProvider) ForWebhooks() string {
@@ -77,6 +78,12 @@ func (fp *gqlFieldsProvider) ForAPIDefinition(ctx ...fieldCtx) string {
 		ctx, []string{"APIDefinition.auth"})
 }
 
+func (fp *gqlFieldsProvider) ForSystemAuth() string {
+	return fmt.Sprintf(`
+		id
+		auth {%s}`, fp.ForAuth())
+}
+
 func (fp *gqlFieldsProvider) ForApiSpec() string {
 	return fmt.Sprintf(`data
 		format
@@ -94,11 +101,6 @@ func (fp *gqlFieldsProvider) ForFetchRequest() string {
 
 func (fp *gqlFieldsProvider) ForRuntimeAuth() string {
 	return fmt.Sprintf(`runtimeID
-		auth {%s}`, fp.ForAuth())
-}
-
-func (fp *gqlFieldsProvider) ForSystemAuth() string {
-	return fmt.Sprintf(`id
 		auth {%s}`, fp.ForAuth())
 }
 
@@ -209,4 +211,10 @@ func (fp *gqlFieldsProvider) ForLabelDefinition() string {
 	return `
 		key
 		schema`
+}
+
+func (fp *gqlFieldsProvider) ForOneTimeToken() string {
+	return `
+		token
+		connectorURL`
 }
