@@ -168,3 +168,21 @@ func deleteAPIAuth(t *testing.T, ctx context.Context, apiID string, rtmID string
 
 	require.NoError(t, err)
 }
+
+//OneTimeToken
+
+func generateOneTimeTokenForApplication(t *testing.T, ctx context.Context, id string) graphql.OneTimeToken {
+	tokenRequest := fixGenerateOneTimeTokenForApp(id)
+	token := graphql.OneTimeToken{}
+	err := tc.RunOperation(ctx, tokenRequest, &token)
+	require.NoError(t, err)
+	return token
+}
+
+func generateOneTimeTokenForRuntime(t *testing.T, ctx context.Context, id string) graphql.OneTimeToken {
+	tokenRequest := fixGenerateOneTimeTokenForRuntime(id)
+	token := graphql.OneTimeToken{}
+	err := tc.RunOperation(ctx, tokenRequest, &token)
+	require.NoError(t, err)
+	return token
+}

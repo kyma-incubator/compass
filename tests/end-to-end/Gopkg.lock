@@ -112,7 +112,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:ab1b9cbeacd0b9b78c1c9900b009f1299df56d237a16bcf77657814f3bdea422"
+  digest = "1:242b4bdb7a4d85cb68f9e79f016d4fe6bda482c6eb2380f0accee62b60c653a3"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/pkg/graphql",
@@ -121,7 +121,7 @@
     "components/director/pkg/strings",
   ]
   pruneopts = "UT"
-  revision = "b07b8ecdcff21294783a713089cd434a6eca1169"
+  revision = "de2d59e13bc9fc78b1e27893694de2821036e6be"
 
 [[projects]]
   branch = "master"
