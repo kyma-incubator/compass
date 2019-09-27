@@ -62,7 +62,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 	t.Run("Success - token with signing method", func(t *testing.T) {
 		//given
 		middleware := createMiddleware(t, false)
-		handler := testHandler(t, scopes)
+		handler := testHandler(t, tnt, scopes)
 		rr := httptest.NewRecorder()
 
 		req, err := http.NewRequest("GET", "/", nil)
@@ -84,7 +84,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 	t.Run("Success - token with no signing method when it's allowed", func(t *testing.T) {
 		//given
 		middleware := createMiddleware(t, true)
-		handler := testHandler(t, scopes)
+		handler := testHandler(t, tnt, scopes)
 		rr := httptest.NewRecorder()
 
 		req, err := http.NewRequest("GET", "/", nil)
@@ -108,7 +108,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 	t.Run("Error - token with no signing method when it's not allowed", func(t *testing.T) {
 		//given
 		middleware := createMiddleware(t, false)
-		handler := testHandler(t, scopes)
+		handler := testHandler(t, tnt, scopes)
 
 		rr := httptest.NewRecorder()
 
@@ -128,47 +128,33 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	})
 
-	t.Run("Error - tenant header is not provided", func(t *testing.T) {
+	t.Run("Success - Overwrite tenant header is not provided", func(t *testing.T) {
 		//given
+		expectedTenant := "3524eb44-d554-497f-a7a9-f195e537a023"
 		middleware := createMiddleware(t, false)
-		handler := testHandler(t, scopes)
+		handler := testHandler(t, expectedTenant, scopes)
 
 		rr := httptest.NewRecorder()
 
 		req, err := http.NewRequest("GET", "/", nil)
 		require.NoError(t, err)
 
-		//when
-		middleware(handler).ServeHTTP(rr, req)
-
-		//then
-		assert.Equal(t, rr.Code, 400)
-		assert.Equal(t, "No tenant header\n", rr.Body.String())
-	})
-
-	t.Run("Error - can't get token from header", func(t *testing.T) {
-		//given
-		middleware := createMiddleware(t, false)
-		handler := testHandler(t, scopes)
-		rr := httptest.NewRecorder()
-
-		req, err := http.NewRequest("GET", "/", nil)
-		require.NoError(t, err)
-
-		req.Header.Add("tenant", tnt)
+		token := createTokenWithSigningMethod(t, tnt, scopes, privateJWKS.Keys[0])
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+		req.Header.Set("Tenant", "3524eb44-d554-497f-a7a9-f195e537a023")
 
 		//when
 		middleware(handler).ServeHTTP(rr, req)
 
 		//then
-		assert.Equal(t, "Invalid bearer token\n", rr.Body.String())
-		assert.Equal(t, 400, rr.Code)
+		assert.Equal(t, 200, rr.Code)
+		assert.Equal(t, "OK", rr.Body.String())
 	})
 
 	t.Run("Error - can't parse token", func(t *testing.T) {
 		//given
 		middleware := createMiddleware(t, false)
-		handler := testHandler(t, scopes)
+		handler := testHandler(t, tnt, scopes)
 		rr := httptest.NewRecorder()
 
 		req, err := http.NewRequest("GET", "/", nil)
@@ -188,7 +174,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 	t.Run("Error - Token signed with different key", func(t *testing.T) {
 		//given
 		middleware := createMiddleware(t, false)
-		handler := testHandler(t, scopes)
+		handler := testHandler(t, tnt, scopes)
 
 		privateJWKS2, err := authenticator.FetchJWK(PrivateJWKS2URL)
 		require.NoError(t, err)
@@ -251,14 +237,14 @@ func createMiddleware(t *testing.T, allowJWTSigningNone bool) func(next http.Han
 	return auth.Handler()
 }
 
-func testHandler(t *testing.T, scopes string) http.HandlerFunc {
+func testHandler(t *testing.T, expectedTenant string, scopes string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tenantFromContext, err := tenant.LoadFromContext(r.Context())
 		require.NoError(t, err)
 		scopesFromContext, err := scope.LoadFromContext(r.Context())
 		require.NoError(t, err)
 
-		require.Equal(t, tnt, tenantFromContext)
+		require.Equal(t, expectedTenant, tenantFromContext)
 		scopesArray := strings.Split(scopes, " ")
 		require.ElementsMatch(t, scopesArray, scopesFromContext)
 
