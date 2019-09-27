@@ -11,7 +11,6 @@ data:
   gateway.gateway.enabled: "true"
   global.istio.gateway.name: "compass-istio-gateway"
   global.istio.gateway.namespace: "compass-system"
-  director.deployment.allowJWTSigningNone: "true"
 ---
 apiVersion: v1
 kind: ConfigMap

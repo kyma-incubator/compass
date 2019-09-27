@@ -81,7 +81,6 @@ docker run --name ${DIRECTOR_CONTAINER} -d --rm --network=${NETWORK} \
     -e APP_SCOPES_CONFIGURATION_FILE=/app/scopes.yaml \
     -e APP_ONE_TIME_TOKEN_URL=http://connector.not.configured.url/graphql \
     -e APP_CONNECTOR_URL=http://connector.not.configured.url/graphql \
-    -e APP_ALLOW_JWT_SIGNING_NONE='true' \
     -e APP_JWKS_ENDPOINT="file:///app/default-jwks.json" \
     ${DIRECTOR_IMG_NAME}
 

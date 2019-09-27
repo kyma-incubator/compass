@@ -90,5 +90,4 @@ APP_DB_NAME=${DB_NAME} \
 APP_SCOPES_CONFIGURATION_FILE=${ROOT_PATH}/../../chart/compass/charts/director/scopes.yaml \
 APP_ONE_TIME_TOKEN_URL="http://connector.not.configured.url/graphql" \
 APP_CONNECTOR_URL="http://connector.not.configured.url/graphql" \
-APP_ALLOW_JWT_SIGNING_NONE='true' \
 go run ${ROOT_PATH}/cmd/main.go

@@ -50,7 +50,7 @@ type config struct {
 
 	JWKSEndpoint        string        `envconfig:"default=file://hack/default-jwks.json"`
 	JWKSSyncPeriod      time.Duration `envconfig:"default=5m"`
-	AllowJWTSigningNone bool          `envconfig:"default=false"`
+	AllowJWTSigningNone bool          `envconfig:"default=true"`
 
 	ConnectorConfig onetimetoken.ConnectorConfig
 }

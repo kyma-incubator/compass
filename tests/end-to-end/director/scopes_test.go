@@ -14,8 +14,6 @@ func TestScopesAuthorization(t *testing.T) {
 	// given
 	ctx := context.Background()
 	id := uuid.New().String()
-	requiredScopes, err := tc.scopeProvider.GetRequiredScopes("query.applicationsForRuntime")
-	require.NoError(t, err)
 
 	testCases := []struct {
 		Name                 string
@@ -23,7 +21,6 @@ func TestScopesAuthorization(t *testing.T) {
 		Scopes               []string
 		ExpectedErrorMessage string
 	}{
-		{Name: "Required Scopes", Scopes: requiredScopes, ExpectedErrorMessage: "runtime does not exist"},
 		{Name: "Different Scopes", Scopes: []string{"foo", "bar"}, ExpectedErrorMessage: "insufficient scopes provided"},
 		{Name: "No scopes", Scopes: []string{}, ExpectedErrorMessage: "insufficient scopes provided"},
 	}

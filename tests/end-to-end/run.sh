@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# This script is responsible for running Director with PostgreSQL.
+# This script is responsible for running tests for Director.
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
