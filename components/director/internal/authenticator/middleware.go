@@ -55,6 +55,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			}
 
 			claims := Claims{}
+
 			token, err := jwt.ParseWithClaims(bearerToken, &claims, a.getKeyFunc())
 			if err != nil {
 				wrappedErr := errors.Wrap(err, "while parsing token")
@@ -87,7 +88,8 @@ func (a *Authenticator) getBearerToken(r *http.Request) (string, error) {
 
 func (a *Authenticator) contextWithClaims(ctx context.Context, claims Claims) context.Context {
 	ctxWithTenant := tenant.SaveToContext(ctx, claims.Tenant)
-	ctxWithScopes := scope.SaveToContext(ctxWithTenant, claims.Scopes)
+	scopesArray := strings.Split(claims.Scopes, " ")
+	ctxWithScopes := scope.SaveToContext(ctxWithTenant, scopesArray)
 	return ctxWithScopes
 }
 

@@ -33,12 +33,6 @@ func TestHandler(t *testing.T) {
 		extraMap, ok := d.Extra.(map[string]interface{})
 		require.True(t, ok)
 		assert.Equal(t, "9ac609e1-7487-4aa6-b600-0904b272b11f", extraMap["tenant"])
-		assert.Equal(t, []interface{}{
-			"application:read",
-			"application:write",
-			"runtime:read", "runtime:write",
-			"label_definition:read",
-			"label_definition:write",
-			"health_checks:read"}, extraMap["scope"])
+		assert.Equal(t, "application:read application:write runtime:read runtime:write label_definition:read label_definition:write health_checks:read", extraMap["scope"])
 	})
 }

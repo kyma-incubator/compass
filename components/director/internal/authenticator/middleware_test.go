@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/lestrrat-go/jwx/jwk"
@@ -53,7 +54,7 @@ func TestAuthenticator_SynchronizeJWKS(t *testing.T) {
 
 func TestAuthenticator_Handler(t *testing.T) {
 	//given
-	scopes := []string{"scope-a", "scope-b"}
+	scopes := "scope-a scope-b"
 
 	privateJWKS, err := authenticator.FetchJWK(PrivateJWKSURL)
 	require.NoError(t, err)
@@ -212,12 +213,12 @@ func TestAuthenticator_Handler(t *testing.T) {
 }
 
 type jwtTokenClaims struct {
-	Scopes []string `json:"scopes"`
-	Tenant string   `json:"tenant"`
+	Scopes string `json:"scopes"`
+	Tenant string `json:"tenant"`
 	jwt.StandardClaims
 }
 
-func createNotSingedToken(t *testing.T, tenant string, scopes []string) string {
+func createNotSingedToken(t *testing.T, tenant string, scopes string) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodNone, jwtTokenClaims{
 		Tenant: tenant,
 		Scopes: scopes,
@@ -229,7 +230,7 @@ func createNotSingedToken(t *testing.T, tenant string, scopes []string) string {
 	return signedToken
 }
 
-func createTokenWithSigningMethod(t *testing.T, tnt string, scopes []string, key jwk.Key) string {
+func createTokenWithSigningMethod(t *testing.T, tnt string, scopes string, key jwk.Key) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwtTokenClaims{
 		Tenant: tnt,
 		Scopes: scopes,
@@ -250,7 +251,7 @@ func createMiddleware(t *testing.T, allowJWTSigningNone bool) func(next http.Han
 	return auth.Handler()
 }
 
-func testHandler(t *testing.T, scopes []string) http.HandlerFunc {
+func testHandler(t *testing.T, scopes string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tenantFromContext, err := tenant.LoadFromContext(r.Context())
 		require.NoError(t, err)
@@ -258,7 +259,8 @@ func testHandler(t *testing.T, scopes []string) http.HandlerFunc {
 		require.NoError(t, err)
 
 		require.Equal(t, tnt, tenantFromContext)
-		require.Equal(t, scopes, scopesFromContext)
+		scopesArray := strings.Split(scopes, " ")
+		require.ElementsMatch(t, scopesArray, scopesFromContext)
 
 		_, err = w.Write([]byte("OK"))
 		require.NoError(t, err)
