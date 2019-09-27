@@ -50,7 +50,7 @@ func fixUpdateLabelDefinitionRequest(ldInputGQL string) *gcli.Request {
 				}`, ldInputGQL, tc.gqlFieldsProvider.ForLabelDefinition()))
 }
 
-func fixGeneratOneTimeRuntimeTokenForRuntime(id string) *gcli.Request {
+func fixGenerateOneTimeTokenForRuntime(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 				result: generateOneTimeTokenForRuntime(id: "%s") {
@@ -59,7 +59,7 @@ func fixGeneratOneTimeRuntimeTokenForRuntime(id string) *gcli.Request {
 				}`, id, tc.gqlFieldsProvider.ForOneTimeToken()))
 }
 
-func fixGeneratOneTimeRuntimeTokenForApp(id string) *gcli.Request {
+func fixGenerateOneTimeTokenForApp(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 				result: generateOneTimeTokenForApplication(id: "%s") {
