@@ -73,12 +73,8 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 
 	extraMap["tenant"] = "9ac609e1-7487-4aa6-b600-0904b272b11f"
 
-	if extraMap["scope"] != nil {
-		scopes, ok := extraMap["scope"].(string)
-		if !ok || scopes == "" {
-			h.setScopes(extraMap)
-		}
-	} else {
+	_, ok = extraMap["scope"]
+	if !ok {
 		h.setScopes(extraMap)
 	}
 
