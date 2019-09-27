@@ -97,7 +97,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 }
 
 func (h *Handler) setScopes(extraMap map[string]interface{}) {
-	extraMap["scope"] = []string{
+	scopes := []string{
 		"application:read",
 		"application:write",
 		"runtime:read",
@@ -106,4 +106,6 @@ func (h *Handler) setScopes(extraMap map[string]interface{}) {
 		"label_definition:write",
 		"health_checks:read",
 	}
+
+	extraMap["scope"] = strings.Join(scopes, " ")
 }
