@@ -9,6 +9,6 @@ include $(SCRIPTS_DIR)/go-dep.mk
 
 VERIFY_IGNORE := /vendor\|/automock\|/testdata\|/pkg
 
-ci-pr: resolve build test build-image push-image
-ci-master: resolve build test build-image push-image
-ci-release: resolve build test build-image push-image
+ci-pr: resolve build-local test-local build-image push-image
+ci-master: resolve build-local test-local build-image push-image
+ci-release: resolve build-local test-local build-image push-image

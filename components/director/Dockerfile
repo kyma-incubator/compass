@@ -10,13 +10,14 @@ WORKDIR ${BASE_APP_DIR}
 COPY ./internal/ ${BASE_APP_DIR}/internal/
 COPY ./pkg/ ${BASE_APP_DIR}/pkg/
 COPY ./vendor/ ${BASE_APP_DIR}/vendor/
-COPY ./main.go ${BASE_APP_DIR}/main.go
+COPY ./cmd/ ${BASE_APP_DIR}/cmd/
 COPY ./licenses ${BASE_APP_DIR}/licenses
 
 #
 # Build app
 #
-RUN CGO_ENABLED=0 GOOS=linux go build -v -o main .
+
+RUN go build -v -o main ./cmd/main.go
 RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
 
 FROM alpine:3.9
@@ -34,3 +35,4 @@ COPY --from=builder /app /app
 #
 
 CMD ["/app/main"]
+
