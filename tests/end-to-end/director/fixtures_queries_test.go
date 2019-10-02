@@ -148,17 +148,17 @@ func listLabelDefinitionsWithinTenant(t *testing.T, ctx context.Context, tenantI
 }
 
 // API Definition
-func setAPIAuth(t *testing.T, ctx context.Context, apiID string, rtmID string, auth graphql.AuthInput) *graphql.RuntimeAuth {
+func setAPIAuth(t *testing.T, ctx context.Context, apiID string, rtmID string, auth graphql.AuthInput) *graphql.APIRuntimeAuth {
 	authInStr, err := tc.graphqlizer.AuthInputToGQL(&auth)
 	require.NoError(t, err)
 
-	var rtmAuth graphql.RuntimeAuth
+	var apiRtmAuth graphql.APIRuntimeAuth
 
 	request := fixSetAPIAuthRequest(apiID, rtmID, authInStr)
-	err = tc.RunOperation(ctx, request, &rtmAuth)
+	err = tc.RunOperation(ctx, request, &apiRtmAuth)
 	require.NoError(t, err)
 
-	return &rtmAuth
+	return &apiRtmAuth
 }
 
 func deleteAPIAuth(t *testing.T, ctx context.Context, apiID string, rtmID string) {
