@@ -1,3 +1,5 @@
+scalar AdditionalProperties
+
 # To discuss: what is the list of supported providers?
 enum InfrastructureProvider {
     GKE
@@ -24,11 +26,31 @@ type RuntimeConfig {
 
 type ClusterConfig {
     name: String
-    size: String
+    nodeCount: String
     memory: String
     computeZone: String
     version: String
-    infrastructureProvider: InfrastructureProvider
+    providerConfig: ProviderConfig
+}
+
+union ProviderConfig = GardenerProviderConfig | GCPProviderConfig | AKSProviderConfig
+
+type GardenerProviderConfig {
+    targetProvider: String
+    targetSecret: String
+    autoScalerMin: Int
+    autoScalerMax: Int
+    maxSurge: Int
+    maxUnavailable: Int
+    additionalProperties: AdditionalProperties
+}
+
+type GCPProviderConfig {
+    additionalProperties: AdditionalProperties
+}
+
+type AKSProviderConfig {
+    additionalProperties: AdditionalProperties
 }
 
 type KymaConfig {
@@ -95,12 +117,40 @@ input ProvisionRuntimeInput {
 # Defines the desired cluster to provision, specifying its size, memory, Kubernetes version, etc.
 input ClusterConfigInput {
     name: String!
-    size: String
+    nodeCount: String
     memory: String
     computeZone: String!
     version: String
-    credentials: String! # Will this API support Bring your own licence model? If no we do not need this.
-    infrastructureProvider: InfrastructureProvider!
+    credentials: CredentialsInput!
+    providerConfig: ProviderConfigInput!
+}
+
+input CredentialsInput {
+    secretName: String!
+}
+
+input ProviderConfigInput {
+    gardenerProviderConfig: GardenerProviderConfigInput
+    gcpProviderConfig: GCPProviderConfigInput
+    aksProviderConfig: AKSProviderConfigInput
+}
+
+input GardenerProviderConfigInput {
+    targetProvider: String!
+    targetSecret: String!
+    autoScalerMin: Int
+    autoScalerMax: Int
+    maxSurge: Int
+    maxUnavailable: Int
+    additionalProperties: AdditionalProperties
+}
+
+input GCPProviderConfigInput {
+    additionalProperties: AdditionalProperties
+}
+
+input AKSProviderConfigInput {
+    additionalProperties: AdditionalProperties
 }
 
 input KymaConfigInput {
