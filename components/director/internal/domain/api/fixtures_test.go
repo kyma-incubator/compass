@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/strings"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 
@@ -35,7 +35,7 @@ func fixFullAPIDefinitionModelWithAPIRtmAuth(placeholder string) *model.APIDefin
 	apiModel := fixFullAPIDefinitionModel(placeholder)
 
 	apiRtmAuth := model.APIRuntimeAuth{
-		ID:        strings.Ptr("foo"),
+		ID:        str.Ptr("foo"),
 		TenantID:  "tnt",
 		RuntimeID: "1",
 		APIDefID:  "2",
@@ -47,7 +47,7 @@ func fixFullAPIDefinitionModelWithAPIRtmAuth(placeholder string) *model.APIDefin
 
 func fixFullAPIDefinitionModel(placeholder string) model.APIDefinition {
 	spec := &model.APISpec{
-		Data:   strings.Ptr("spec_data_" + placeholder),
+		Data:   str.Ptr("spec_data_" + placeholder),
 		Format: model.SpecFormatYaml,
 		Type:   model.APISpecTypeOpenAPI,
 	}
@@ -58,7 +58,7 @@ func fixFullAPIDefinitionModel(placeholder string) model.APIDefinition {
 	v := &model.Version{
 		Value:           "v1.1",
 		Deprecated:      &deprecated,
-		DeprecatedSince: strings.Ptr("v1.0"),
+		DeprecatedSince: str.Ptr("v1.0"),
 		ForRemoval:      &forRemoval,
 	}
 
@@ -71,10 +71,10 @@ func fixFullAPIDefinitionModel(placeholder string) model.APIDefinition {
 		ApplicationID: appID,
 		Tenant:        tenantID,
 		Name:          placeholder,
-		Description:   strings.Ptr("desc_" + placeholder),
+		Description:   str.Ptr("desc_" + placeholder),
 		Spec:          spec,
 		TargetURL:     fmt.Sprintf("https://%s.com", placeholder),
-		Group:         strings.Ptr("group_" + placeholder),
+		Group:         str.Ptr("group_" + placeholder),
 		DefaultAuth:   &auth,
 		Version:       v,
 	}
@@ -106,7 +106,7 @@ func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
 	v := &graphql.Version{
 		Value:           "v1.1",
 		Deprecated:      &deprecated,
-		DeprecatedSince: strings.Ptr("v1.0"),
+		DeprecatedSince: str.Ptr("v1.0"),
 		ForRemoval:      &forRemoval,
 	}
 
@@ -120,10 +120,10 @@ func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
 		ID:            apiDefID,
 		ApplicationID: appID,
 		Name:          placeholder,
-		Description:   strings.Ptr("desc_" + placeholder),
+		Description:   str.Ptr("desc_" + placeholder),
 		Spec:          spec,
 		TargetURL:     fmt.Sprintf("https://%s.com", placeholder),
-		Group:         strings.Ptr("group_" + placeholder),
+		Group:         str.Ptr("group_" + placeholder),
 		DefaultAuth:   &auth,
 		Version:       v,
 	}
@@ -275,7 +275,7 @@ func fixGQLAuth() *graphql.Auth {
 
 func fixModelAPIRtmAuth(id string, auth *model.Auth) *model.APIRuntimeAuth {
 	return &model.APIRuntimeAuth{
-		ID:        strings.Ptr("foo"),
+		ID:        str.Ptr("foo"),
 		TenantID:  "tnt",
 		RuntimeID: id,
 		APIDefID:  "api_id",
@@ -317,9 +317,9 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 		},
 		DefaultAuth: repo.NewValidNullableString(fixDefaultAuth()),
 		Version: version.Version{
-			VersionValue:           repo.NewNullableString(strings.Ptr("v1.1")),
+			VersionValue:           repo.NewNullableString(str.Ptr("v1.1")),
 			VersionDepracated:      repo.NewNullableBool(&boolPlaceholder),
-			VersionDepracatedSince: repo.NewNullableString(strings.Ptr("v1.0")),
+			VersionDepracatedSince: repo.NewNullableString(str.Ptr("v1.0")),
 			VersionForRemoval:      repo.NewNullableBool(&boolPlaceholder),
 		},
 	}

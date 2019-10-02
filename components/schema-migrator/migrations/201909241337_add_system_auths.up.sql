@@ -6,7 +6,6 @@ CREATE TABLE system_auths (
     runtime_id uuid,
     foreign key (tenant_id, runtime_id) references runtimes (tenant_id, id) ON DELETE CASCADE,
     integration_system_id uuid,
-    -- foreign key (integration_system_id) references integration_systems (id) ON DELETE CASCADE, -- TODO: Uncomment after implementing Integration Systems
     value jsonb,
     CONSTRAINT valid_refs CHECK (app_id IS NOT NULL OR runtime_id IS NOT NULL OR integration_system_id IS NOT NULL)
 );

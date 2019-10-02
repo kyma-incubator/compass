@@ -14,7 +14,10 @@ import (
 
 const applicationTable string = `public.applications`
 
-var applicationColumns = []string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url"}
+var (
+	applicationColumns = []string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url"}
+	tenantColumn       = "tenant_id"
+)
 
 //go:generate mockery -name=EntityConverter -output=automock -outpkg=automock -case=underscore
 type EntityConverter interface {
@@ -23,23 +26,23 @@ type EntityConverter interface {
 }
 
 type pgRepository struct {
-	*repo.ExistQuerier
-	*repo.SingleGetter
-	*repo.Deleter
-	*repo.PageableQuerier
-	*repo.Creator
-	*repo.Updater
+	repo.ExistQuerier
+	repo.SingleGetter
+	repo.Deleter
+	repo.PageableQuerier
+	repo.Creator
+	repo.Updater
 	conv EntityConverter
 }
 
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
-		ExistQuerier:    repo.NewExistQuerier(applicationTable, "tenant_id"),
-		SingleGetter:    repo.NewSingleGetter(applicationTable, "tenant_id", applicationColumns),
-		Deleter:         repo.NewDeleter(applicationTable, "tenant_id"),
-		PageableQuerier: repo.NewPageableQuerier(applicationTable, "tenant_id", applicationColumns),
+		ExistQuerier:    repo.NewExistQuerier(applicationTable, tenantColumn),
+		SingleGetter:    repo.NewSingleGetter(applicationTable, tenantColumn, applicationColumns),
+		Deleter:         repo.NewDeleter(applicationTable, tenantColumn),
+		PageableQuerier: repo.NewPageableQuerier(applicationTable, tenantColumn, applicationColumns),
 		Creator:         repo.NewCreator(applicationTable, applicationColumns),
-		Updater:         repo.NewUpdater(applicationTable, []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url"}, "tenant_id", []string{"id"}),
+		Updater:         repo.NewUpdater(applicationTable, []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url"}, tenantColumn, []string{"id"}),
 		conv:            conv,
 	}
 }
@@ -73,12 +76,12 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 	if err != nil {
 		return nil, errors.Wrap(err, "while building filter query")
 	}
-	var additionalConditions string
+	var additionalConditions []string
 	if filterSubquery != "" {
-		additionalConditions = fmt.Sprintf(`"id" IN (%s)`, filterSubquery)
+		additionalConditions = append(additionalConditions, fmt.Sprintf(`"id" IN (%s)`, filterSubquery))
 	}
 
-	page, totalCount, err := r.PageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &appsCollection, additionalConditions)
+	page, totalCount, err := r.PageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &appsCollection, additionalConditions...)
 
 	if err != nil {
 		return nil, err
@@ -111,12 +114,12 @@ func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, sc
 		return nil, errors.Wrap(err, "while creating scenarios filter query")
 	}
 
-	var additionalConditions string
+	var additionalConditions []string
 	if scenariosSubquery != "" {
-		additionalConditions = fmt.Sprintf(`"id" IN (%s)`, scenariosSubquery)
+		additionalConditions = append(additionalConditions, fmt.Sprintf(`"id" IN (%s)`, scenariosSubquery))
 	}
 
-	page, totalCount, err := r.PageableQuerier.List(ctx, tenant.String(), pageSize, cursor, "id", &appsCollection, additionalConditions)
+	page, totalCount, err := r.PageableQuerier.List(ctx, tenant.String(), pageSize, cursor, "id", &appsCollection, additionalConditions...)
 
 	if err != nil {
 		return nil, err

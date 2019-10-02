@@ -11,7 +11,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-	"github.com/kyma-incubator/compass/components/director/pkg/strings"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
@@ -198,14 +198,14 @@ func TestPgRepository_ListForAllRuntimes(t *testing.T) {
 	stmt := `SELECT r.id AS runtime_id, r.tenant_id, ara.id, $2 AS api_def_id, coalesce(ara.value, (SELECT default_auth FROM api_definitions WHERE api_definitions.id = $2)) AS value FROM (SELECT * FROM api_runtime_auths WHERE api_def_id = $2 AND tenant_id = $1) AS ara RIGHT OUTER JOIN runtimes AS r ON ara.runtime_id = r.id WHERE r.tenant_id = $1`
 
 	modelAPIRtmAuths := []model.APIRuntimeAuth{
-		*fixModelAPIRuntimeAuth(strings.Ptr("ara1"), "r1", apiID, fixModelAuth()),
-		*fixModelAPIRuntimeAuth(strings.Ptr("ara2"), "r2", apiID, fixModelAuth()),
-		*fixModelAPIRuntimeAuth(strings.Ptr("ara3"), "r3", apiID, fixModelAuth()),
+		*fixModelAPIRuntimeAuth(str.Ptr("ara1"), "r1", apiID, fixModelAuth()),
+		*fixModelAPIRuntimeAuth(str.Ptr("ara2"), "r2", apiID, fixModelAuth()),
+		*fixModelAPIRuntimeAuth(str.Ptr("ara3"), "r3", apiID, fixModelAuth()),
 	}
 	ents := []apiruntimeauth.Entity{
-		fixEntity(strings.Ptr("ara1"), "r1", apiID, true),
-		fixEntity(strings.Ptr("ara2"), "r2", apiID, true),
-		fixEntity(strings.Ptr("ara3"), "r3", apiID, true),
+		fixEntity(str.Ptr("ara1"), "r1", apiID, true),
+		fixEntity(str.Ptr("ara2"), "r2", apiID, true),
+		fixEntity(str.Ptr("ara3"), "r3", apiID, true),
 	}
 
 	t.Run("Success", func(t *testing.T) {

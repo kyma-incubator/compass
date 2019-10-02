@@ -1,10 +1,11 @@
-package strings_test
+package str_test
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/strings"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,7 +32,7 @@ func TestUnique(t *testing.T) {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 
 			// when
-			result := strings.Unique(testCase.Input)
+			result := str.Unique(testCase.Input)
 
 			// then
 			assert.ElementsMatch(t, testCase.Expected, result)
@@ -70,7 +71,7 @@ func TestSliceToMap(t *testing.T) {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 
 			// when
-			result := strings.SliceToMap(testCase.Input)
+			result := str.SliceToMap(testCase.Input)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)
@@ -109,7 +110,7 @@ func TestMapToSlice(t *testing.T) {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 
 			// when
-			result := strings.MapToSlice(testCase.Input)
+			result := str.MapToSlice(testCase.Input)
 
 			// then
 			assert.ElementsMatch(t, testCase.Expected, result)

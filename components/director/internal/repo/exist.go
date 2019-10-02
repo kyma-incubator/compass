@@ -4,32 +4,71 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/pkg/errors"
 )
 
-type ExistQuerier struct {
+type ExistQuerier interface {
+	Exists(ctx context.Context, tenant string, conditions Conditions) (bool, error)
+}
+
+type ExistQuerierGlobal interface {
+	ExistsGlobal(ctx context.Context, conditions Conditions) (bool, error)
+}
+
+type universalExistQuerier struct {
 	tableName    string
-	tenantColumn string
+	tenantColumn *string
 }
 
-func NewExistQuerier(tableName, tenantColumn string) *ExistQuerier {
-	return &ExistQuerier{tableName: tableName, tenantColumn: tenantColumn}
+func NewExistQuerier(tableName string, tenantColumn string) ExistQuerier {
+	return &universalExistQuerier{tableName: tableName, tenantColumn: &tenantColumn}
 }
 
-func (g *ExistQuerier) Exists(ctx context.Context, tenant string, conditions Conditions) (bool, error) {
+func NewExistQuerierGlobal(tableName string) ExistQuerierGlobal {
+	return &universalExistQuerier{tableName: tableName}
+}
+
+func (g *universalExistQuerier) Exists(ctx context.Context, tenant string, conditions Conditions) (bool, error) {
+	return g.unsafeExists(ctx, str.Ptr(tenant), conditions)
+}
+
+func (g *universalExistQuerier) ExistsGlobal(ctx context.Context, conditions Conditions) (bool, error) {
+	return g.unsafeExists(ctx, nil, conditions)
+}
+
+func (g *universalExistQuerier) unsafeExists(ctx context.Context, tenant *string, conditions Conditions) (bool, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return false, err
 	}
 
-	q := fmt.Sprintf("SELECT 1 FROM %s WHERE %s = $1", g.tableName, g.tenantColumn)
-	q = appendEnumeratedConditions(q, 2, conditions)
+	var stmtBuilder strings.Builder
+	startIdx := 1
 
+	stmtBuilder.WriteString(fmt.Sprintf("SELECT 1 FROM %s", g.tableName))
+	if tenant != nil || len(conditions) > 0 {
+		stmtBuilder.WriteString(" WHERE")
+	}
+	if tenant != nil {
+		stmtBuilder.WriteString(fmt.Sprintf(" %s = $1", *g.tenantColumn))
+		if len(conditions) > 0 {
+			stmtBuilder.WriteString(" AND")
+		}
+		startIdx = 2
+	}
+	err = writeEnumeratedConditions(&stmtBuilder, startIdx, conditions)
+	if err != nil {
+		return false, errors.Wrap(err, "while writing enumerated conditions")
+	}
 	allArgs := getAllArgs(tenant, conditions)
+
 	var count int
-	err = persist.Get(&count, q, allArgs...)
+	err = persist.Get(&count, stmtBuilder.String(), allArgs...)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return false, nil

@@ -15,25 +15,28 @@ import (
 
 const runtimeTable string = `public.runtimes`
 
-var runtimeColumns = []string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp"}
+var (
+	runtimeColumns = []string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp"}
+	tenantColumn   = "tenant_id"
+)
 
 type pgRepository struct {
-	*repo.ExistQuerier
-	*repo.SingleGetter
-	*repo.Deleter
-	*repo.PageableQuerier
-	*repo.Creator
-	*repo.Updater
+	repo.ExistQuerier
+	repo.SingleGetter
+	repo.Deleter
+	repo.PageableQuerier
+	repo.Creator
+	repo.Updater
 }
 
 func NewRepository() *pgRepository {
 	return &pgRepository{
-		ExistQuerier:    repo.NewExistQuerier(runtimeTable, "tenant_id"),
-		SingleGetter:    repo.NewSingleGetter(runtimeTable, "tenant_id", runtimeColumns),
-		Deleter:         repo.NewDeleter(runtimeTable, "tenant_id"),
-		PageableQuerier: repo.NewPageableQuerier(runtimeTable, "tenant_id", runtimeColumns),
+		ExistQuerier:    repo.NewExistQuerier(runtimeTable, tenantColumn),
+		SingleGetter:    repo.NewSingleGetter(runtimeTable, tenantColumn, runtimeColumns),
+		Deleter:         repo.NewDeleter(runtimeTable, tenantColumn),
+		PageableQuerier: repo.NewPageableQuerier(runtimeTable, tenantColumn, runtimeColumns),
 		Creator:         repo.NewCreator(runtimeTable, runtimeColumns),
-		Updater:         repo.NewUpdater(runtimeTable, []string{"name", "description", "status_condition", "status_timestamp"}, "tenant_id", []string{"id"}),
+		Updater:         repo.NewUpdater(runtimeTable, []string{"name", "description", "status_condition", "status_timestamp"}, tenantColumn, []string{"id"}),
 	}
 }
 
@@ -75,12 +78,12 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 	if err != nil {
 		return nil, errors.Wrap(err, "while building filter query")
 	}
-	var additionalConditions string
+	var additionalConditions []string
 	if filterSubquery != "" {
-		additionalConditions = fmt.Sprintf(`"id" IN (%s)`, filterSubquery)
+		additionalConditions = append(additionalConditions, fmt.Sprintf(`"id" IN (%s)`, filterSubquery))
 	}
 
-	page, totalCount, err := r.PageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &runtimesCollection, additionalConditions)
+	page, totalCount, err := r.PageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &runtimesCollection, additionalConditions...)
 
 	if err != nil {
 		return nil, err

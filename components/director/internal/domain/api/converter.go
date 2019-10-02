@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/strings"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 
@@ -179,8 +179,8 @@ func (c *converter) apiSpecToEntity(spec *model.APISpec) EntitySpec {
 	var apiSpecEnt EntitySpec
 	if spec != nil {
 		apiSpecEnt = EntitySpec{
-			SpecFormat: repo.NewNullableString(strings.Ptr(string(spec.Format))),
-			SpecType:   repo.NewNullableString(strings.Ptr(string(spec.Type))),
+			SpecFormat: repo.NewNullableString(str.Ptr(string(spec.Format))),
+			SpecType:   repo.NewNullableString(str.Ptr(string(spec.Type))),
 			SpecData:   repo.NewNullableString(spec.Data),
 		}
 	}
@@ -229,5 +229,5 @@ func marshallDefaultAuth(defaultAuth *model.Auth) (*string, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "while marshaling default auth")
 	}
-	return strings.Ptr(string(output)), nil
+	return str.Ptr(string(output)), nil
 }

@@ -1,4 +1,4 @@
-package strings
+package str
 
 func Unique(in []string) []string {
 	set := SliceToMap(in)

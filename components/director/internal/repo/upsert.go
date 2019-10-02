@@ -11,15 +11,19 @@ import (
 	"github.com/pkg/errors"
 )
 
-type Upserter struct {
+type Upserter interface {
+	Upsert(ctx context.Context, dbEntity interface{}) error
+}
+
+type universalUpserter struct {
 	tableName          string
 	insertColumns      []string
 	conflictingColumns []string
 	updateColumns      []string
 }
 
-func NewUpserter(tableName string, insertColumns []string, conflictingColumns []string, updateColumns []string) *Upserter {
-	return &Upserter{
+func NewUpserter(tableName string, insertColumns []string, conflictingColumns []string, updateColumns []string) Upserter {
+	return &universalUpserter{
 		tableName:          tableName,
 		insertColumns:      insertColumns,
 		conflictingColumns: conflictingColumns,
@@ -27,7 +31,7 @@ func NewUpserter(tableName string, insertColumns []string, conflictingColumns []
 	}
 }
 
-func (u *Upserter) Upsert(ctx context.Context, dbEntity interface{}) error {
+func (u *universalUpserter) Upsert(ctx context.Context, dbEntity interface{}) error {
 	if dbEntity == nil {
 		return errors.New("item cannot be nil")
 	}

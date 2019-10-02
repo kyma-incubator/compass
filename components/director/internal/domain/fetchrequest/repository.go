@@ -14,7 +14,10 @@ const documentIDColumn = "document_id"
 const apiDefIDColumn = "api_def_id"
 const eventAPIDefIDColumn = "event_api_def_id"
 
-var fetchRequestColumns = []string{"id", "tenant_id", apiDefIDColumn, eventAPIDefIDColumn, documentIDColumn, "url", "auth", "mode", "filter", "status_condition", "status_timestamp"}
+var (
+	fetchRequestColumns = []string{"id", "tenant_id", apiDefIDColumn, eventAPIDefIDColumn, documentIDColumn, "url", "auth", "mode", "filter", "status_condition", "status_timestamp"}
+	tenantColumn        = "tenant_id"
+)
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
@@ -23,17 +26,17 @@ type Converter interface {
 }
 
 type repository struct {
-	*repo.Creator
-	*repo.SingleGetter
-	*repo.Deleter
+	repo.Creator
+	repo.SingleGetter
+	repo.Deleter
 	conv Converter
 }
 
 func NewRepository(conv Converter) *repository {
 	return &repository{
 		Creator:      repo.NewCreator(fetchRequestTable, fetchRequestColumns),
-		SingleGetter: repo.NewSingleGetter(fetchRequestTable, "tenant_id", fetchRequestColumns),
-		Deleter:      repo.NewDeleter(fetchRequestTable, "tenant_id"),
+		SingleGetter: repo.NewSingleGetter(fetchRequestTable, tenantColumn, fetchRequestColumns),
+		Deleter:      repo.NewDeleter(fetchRequestTable, tenantColumn),
 		conv:         conv,
 	}
 }

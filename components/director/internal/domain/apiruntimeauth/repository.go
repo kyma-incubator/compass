@@ -12,7 +12,10 @@ import (
 
 const tableName string = `public.api_runtime_auths`
 
-var tableColumns = []string{"id", "tenant_id", "runtime_id", "api_def_id", "value"}
+var (
+	tableColumns = []string{"id", "tenant_id", "runtime_id", "api_def_id", "value"}
+	tenantColumn = "tenant_id"
+)
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
@@ -21,20 +24,20 @@ type Converter interface {
 }
 
 type pgRepository struct {
-	*repo.SingleGetter
-	*repo.Lister
-	*repo.Upserter
-	*repo.Deleter
+	repo.SingleGetter
+	repo.Lister
+	repo.Upserter
+	repo.Deleter
 
 	conv Converter
 }
 
 func NewRepository(conv Converter) *pgRepository {
 	return &pgRepository{
-		SingleGetter: repo.NewSingleGetter(tableName, "tenant_id", tableColumns),
-		Lister:       repo.NewLister(tableName, "tenant_id", tableColumns),
+		SingleGetter: repo.NewSingleGetter(tableName, tenantColumn, tableColumns),
+		Lister:       repo.NewLister(tableName, tenantColumn, tableColumns),
 		Upserter:     repo.NewUpserter(tableName, tableColumns, []string{"tenant_id", "runtime_id", "api_def_id"}, []string{"value"}),
-		Deleter:      repo.NewDeleter(tableName, "tenant_id"),
+		Deleter:      repo.NewDeleter(tableName, tenantColumn),
 		conv:         conv,
 	}
 }

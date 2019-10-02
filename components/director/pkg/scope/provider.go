@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/strings"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/ghodss/yaml"
 	"github.com/oliveagle/jsonpath"
@@ -106,7 +106,7 @@ func (p *provider) GetAllScopes() ([]string, error) {
 		}
 	}
 
-	uniqueScopes := strings.Unique(scopes)
+	uniqueScopes := str.Unique(scopes)
 
 	return uniqueScopes, nil
 }

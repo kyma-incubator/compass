@@ -15,8 +15,11 @@ const (
 	tableName = "public.webhooks"
 )
 
-var webhookColumns = []string{"id", "tenant_id", "app_id", "type", "url", "auth"}
-var missingInputModelError = errors.New("model has to be provided")
+var (
+	webhookColumns         = []string{"id", "tenant_id", "app_id", "type", "url", "auth"}
+	missingInputModelError = errors.New("model has to be provided")
+	tenantColumn           = "tenant_id"
+)
 
 //go:generate mockery -name=EntityConverter -output=automock -outpkg=automock -case=underscore
 type EntityConverter interface {
@@ -25,28 +28,28 @@ type EntityConverter interface {
 }
 
 type repository struct {
-	singleGetter *repo.SingleGetter
-	updater      *repo.Updater
-	creator      *repo.Creator
-	deleter      *repo.Deleter
-	lister       *repo.Lister
-	conv         EntityConverter
+	repo.SingleGetter
+	repo.Updater
+	repo.Creator
+	repo.Deleter
+	repo.Lister
+	conv EntityConverter
 }
 
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
-		singleGetter: repo.NewSingleGetter(tableName, "tenant_id", webhookColumns),
-		creator:      repo.NewCreator(tableName, webhookColumns),
-		updater:      repo.NewUpdater(tableName, []string{"type", "url", "auth"}, "tenant_id", []string{"id", "app_id"}),
-		deleter:      repo.NewDeleter(tableName, "tenant_id"),
-		lister:       repo.NewLister(tableName, "tenant_id", webhookColumns),
+		SingleGetter: repo.NewSingleGetter(tableName, tenantColumn, webhookColumns),
+		Creator:      repo.NewCreator(tableName, webhookColumns),
+		Updater:      repo.NewUpdater(tableName, []string{"type", "url", "auth"}, tenantColumn, []string{"id", "app_id"}),
+		Deleter:      repo.NewDeleter(tableName, tenantColumn),
+		Lister:       repo.NewLister(tableName, tenantColumn, webhookColumns),
 		conv:         conv,
 	}
 }
 
 func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.Webhook, error) {
 	var entity Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{{Field: "id", Val: id}}, &entity); err != nil {
+	if err := r.SingleGetter.Get(ctx, tenant, repo.Conditions{{Field: "id", Val: id}}, &entity); err != nil {
 		return nil, err
 	}
 	m, err := r.conv.FromEntity(entity)
@@ -58,7 +61,7 @@ func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.Web
 
 func (r *repository) ListByApplicationID(ctx context.Context, tenant, applicationID string) ([]*model.Webhook, error) {
 	var entities Collection
-	if err := r.lister.List(ctx, tenant, &entities, fmt.Sprintf("app_id = %s ", pq.QuoteLiteral(applicationID))); err != nil {
+	if err := r.Lister.List(ctx, tenant, &entities, fmt.Sprintf("app_id = %s ", pq.QuoteLiteral(applicationID))); err != nil {
 		return nil, err
 	}
 
@@ -83,7 +86,7 @@ func (r *repository) Create(ctx context.Context, item *model.Webhook) error {
 		return errors.Wrap(err, "while converting model to entity")
 	}
 
-	return r.creator.Create(ctx, entity)
+	return r.Creator.Create(ctx, entity)
 }
 
 func (r *repository) CreateMany(ctx context.Context, items []*model.Webhook) error {
@@ -103,13 +106,13 @@ func (r *repository) Update(ctx context.Context, item *model.Webhook) error {
 	if err != nil {
 		return errors.Wrap(err, "while converting model to entity")
 	}
-	return r.updater.UpdateSingle(ctx, entity)
+	return r.Updater.UpdateSingle(ctx, entity)
 }
 
 func (r *repository) Delete(ctx context.Context, tenant, id string) error {
-	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
+	return r.Deleter.DeleteOne(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
 }
 
 func (r *repository) DeleteAllByApplicationID(ctx context.Context, tenant, applicationID string) error {
-	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{{Field: "app_id", Val: applicationID}})
+	return r.Deleter.DeleteMany(ctx, tenant, repo.Conditions{{Field: "app_id", Val: applicationID}})
 }

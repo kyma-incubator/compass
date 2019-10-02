@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/strings"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/stretchr/testify/require"
 
@@ -179,8 +179,8 @@ func TestToEntity(t *testing.T) {
 
 	t.Run("all fields", func(t *testing.T) {
 		givenModel := modelWithRequiredFields
-		givenModel.Data = strings.Ptr("givenData")
-		givenModel.Kind = strings.Ptr("givenKind")
+		givenModel.Data = str.Ptr("givenData")
+		givenModel.Kind = str.Ptr("givenKind")
 		// WHEN
 		actual, err := sut.ToEntity(givenModel)
 		// THEN
@@ -236,7 +236,7 @@ func TestFromEntity(t *testing.T) {
 		actualModel, err := sut.FromEntity(givenEntity)
 		// THEN
 		require.NoError(t, err)
-		assert.Equal(t, strings.Ptr("givenData"), actualModel.Data)
-		assert.Equal(t, strings.Ptr("givenKind"), actualModel.Kind)
+		assert.Equal(t, str.Ptr("givenData"), actualModel.Data)
+		assert.Equal(t, str.Ptr("givenKind"), actualModel.Kind)
 	})
 }

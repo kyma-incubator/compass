@@ -13,7 +13,10 @@ import (
 
 const tableName string = `public.system_auths`
 
-var tableColumns = []string{"id", "tenant_id", "app_id", "runtime_id", "integration_system_id", "value"}
+var (
+	tableColumns = []string{"id", "tenant_id", "app_id", "runtime_id", "integration_system_id", "value"}
+	tenantColumn = "tenant_id"
+)
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
@@ -22,10 +25,10 @@ type Converter interface {
 }
 
 type repository struct {
-	*repo.Creator
-	*repo.SingleGetter
-	*repo.Lister
-	*repo.Deleter
+	repo.Creator
+	repo.SingleGetter
+	repo.Lister
+	repo.Deleter
 
 	conv Converter
 }
@@ -33,9 +36,9 @@ type repository struct {
 func NewRepository(conv Converter) *repository {
 	return &repository{
 		Creator:      repo.NewCreator(tableName, tableColumns),
-		SingleGetter: repo.NewSingleGetter(tableName, "tenant_id", tableColumns),
-		Lister:       repo.NewLister(tableName, "tenant_id", tableColumns),
-		Deleter:      repo.NewDeleter(tableName, "tenant_id"),
+		SingleGetter: repo.NewSingleGetter(tableName, tenantColumn, tableColumns),
+		Lister:       repo.NewLister(tableName, tenantColumn, tableColumns),
+		Deleter:      repo.NewDeleter(tableName, tenantColumn),
 		conv:         conv,
 	}
 }

@@ -5,7 +5,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/director/pkg/strings"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 )
 
 //go:generate mockery -name=VersionConverter -output=automock -outpkg=automock -case=underscore
@@ -147,8 +147,8 @@ func (c *converter) apiSpecToEntity(spec *model.EventAPISpec) EntitySpec {
 	var apiSpecEnt EntitySpec
 	if spec != nil {
 		apiSpecEnt = EntitySpec{
-			SpecFormat: repo.NewNullableString(strings.Ptr(string(spec.Format))),
-			SpecType:   repo.NewNullableString(strings.Ptr(string(spec.Type))),
+			SpecFormat: repo.NewNullableString(str.Ptr(string(spec.Format))),
+			SpecType:   repo.NewNullableString(str.Ptr(string(spec.Type))),
 			SpecData:   repo.NewNullableString(spec.Data),
 		}
 	}

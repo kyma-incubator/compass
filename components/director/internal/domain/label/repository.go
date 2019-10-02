@@ -24,7 +24,7 @@ type Converter interface {
 }
 
 type repository struct {
-	*repo.Upserter
+	repo.Upserter
 
 	conv Converter
 }

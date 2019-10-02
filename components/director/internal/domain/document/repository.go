@@ -15,7 +15,10 @@ import (
 
 const documentTable = "public.documents"
 
-var documentColumns = []string{"id", "tenant_id", "app_id", "title", "display_name", "description", "format", "kind", "data"}
+var (
+	documentColumns = []string{"id", "tenant_id", "app_id", "title", "display_name", "description", "format", "kind", "data"}
+	tenantColumn    = "tenant_id"
+)
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
@@ -24,21 +27,21 @@ type Converter interface {
 }
 
 type repository struct {
-	*repo.ExistQuerier
-	*repo.SingleGetter
-	*repo.Deleter
-	*repo.PageableQuerier
-	*repo.Creator
+	repo.ExistQuerier
+	repo.SingleGetter
+	repo.Deleter
+	repo.PageableQuerier
+	repo.Creator
 
 	conv Converter
 }
 
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		ExistQuerier:    repo.NewExistQuerier(documentTable, "tenant_id"),
-		SingleGetter:    repo.NewSingleGetter(documentTable, "tenant_id", documentColumns),
-		Deleter:         repo.NewDeleter(documentTable, "tenant_id"),
-		PageableQuerier: repo.NewPageableQuerier(documentTable, "tenant_id", documentColumns),
+		ExistQuerier:    repo.NewExistQuerier(documentTable, tenantColumn),
+		SingleGetter:    repo.NewSingleGetter(documentTable, tenantColumn, documentColumns),
+		Deleter:         repo.NewDeleter(documentTable, tenantColumn),
+		PageableQuerier: repo.NewPageableQuerier(documentTable, tenantColumn, documentColumns),
 		Creator:         repo.NewCreator(documentTable, documentColumns),
 
 		conv: conv,

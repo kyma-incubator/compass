@@ -12,16 +12,16 @@ import (
 )
 
 const eventAPIDefTable string = `"public"."event_api_definitions"`
-const tenantColumn string = `tenant_id`
 
-var apiDefColumns = []string{"id", "tenant_id", "app_id", "name", "description", "group_name", "spec_data",
-	"spec_format", "spec_type", "version_value", "version_deprecated", "version_deprecated_since",
-	"version_for_removal"}
-
-var idColumns = []string{"id"}
-
-var updatableColumns = []string{"name", "description", "group_name", "spec_data", "spec_format", "spec_type",
-	"version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
+var (
+	tenantColumn  string = `tenant_id`
+	apiDefColumns        = []string{"id", "tenant_id", "app_id", "name", "description", "group_name", "spec_data",
+		"spec_format", "spec_type", "version_value", "version_deprecated", "version_deprecated_since",
+		"version_for_removal"}
+	idColumns        = []string{"id"}
+	updatableColumns = []string{"name", "description", "group_name", "spec_data", "spec_format", "spec_type",
+		"version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
+)
 
 //go:generate mockery -name=EventAPIDefinitionConverter -output=automock -outpkg=automock -case=underscore
 type EventAPIDefinitionConverter interface {
@@ -30,12 +30,12 @@ type EventAPIDefinitionConverter interface {
 }
 
 type pgRepository struct {
-	*repo.SingleGetter
-	*repo.PageableQuerier
-	*repo.Creator
-	*repo.Updater
-	*repo.Deleter
-	*repo.ExistQuerier
+	repo.SingleGetter
+	repo.PageableQuerier
+	repo.Creator
+	repo.Updater
+	repo.Deleter
+	repo.ExistQuerier
 	conv EventAPIDefinitionConverter
 }
 

@@ -10,16 +10,16 @@ import (
 )
 
 const apiDefTable string = `"public"."api_definitions"`
-const tenantColumn string = `tenant_id`
 
-var apiDefColumns = []string{"id", "tenant_id", "app_id", "name", "description", "group_name", "target_url", "spec_data",
-	"spec_format", "spec_type", "default_auth",
-	"version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
-
-var idColumns = []string{"id"}
-
-var updatableColumns = []string{"name", "description", "group_name", "target_url", "spec_data", "spec_format", "spec_type",
-	"default_auth", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
+var (
+	tenantColumn  = "tenant_id"
+	apiDefColumns = []string{"id", "tenant_id", "app_id", "name", "description", "group_name", "target_url", "spec_data",
+		"spec_format", "spec_type", "default_auth",
+		"version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
+	idColumns        = []string{"id"}
+	updatableColumns = []string{"name", "description", "group_name", "target_url", "spec_data", "spec_format", "spec_type",
+		"default_auth", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
+)
 
 //go:generate mockery -name=APIDefinitionConverter -output=automock -outpkg=automock -case=underscore
 type APIDefinitionConverter interface {
@@ -28,12 +28,12 @@ type APIDefinitionConverter interface {
 }
 
 type pgRepository struct {
-	*repo.SingleGetter
-	*repo.PageableQuerier
-	*repo.Creator
-	*repo.Updater
-	*repo.Deleter
-	*repo.ExistQuerier
+	repo.Creator
+	repo.SingleGetter
+	repo.PageableQuerier
+	repo.Updater
+	repo.Deleter
+	repo.ExistQuerier
 	conv APIDefinitionConverter
 }
 
