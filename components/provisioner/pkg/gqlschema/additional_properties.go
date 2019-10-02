@@ -17,7 +17,7 @@ func (p *AdditionalProperties) UnmarshalGQL(v interface{}) error {
 
 	value, ok := v.(map[string]interface{})
 	if !ok {
-		return errors.Errorf("unexpected Labels type: %T, should be map[string]interface{}", v)
+		return errors.Errorf("unexpected AdditionalProperties type: %T, should be map[string]interface{}", v)
 	}
 
 	*p = value
