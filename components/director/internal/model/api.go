@@ -17,7 +17,7 @@ type APIDefinition struct {
 	//  group allows you to find the same API but in different version
 	Group *string
 	// Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified.
-	Auths []*RuntimeAuth
+	Auths []*APIRuntimeAuth
 	// If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly.
 	DefaultAuth *Auth
 	Version     *Version

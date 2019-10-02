@@ -1,12 +1,12 @@
-package runtime_auth_test
+package apiruntimeauth_test
 
 import (
 	"context"
 	"errors"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_auth"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_auth/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/apiruntimeauth"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/apiruntimeauth/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/strings"
@@ -25,32 +25,32 @@ func TestService_Get(t *testing.T) {
 	apiID := "foo"
 	rtmID := "bar"
 
-	modelRtmAuth := fixModelRuntimeAuth(strings.Ptr("foo"), rtmID, apiID, fixModelAuth())
+	modelAPIRtmAuth := fixModelAPIRuntimeAuth(strings.Ptr("foo"), rtmID, apiID, fixModelAuth())
 
 	testErr := errors.New("test error")
 
 	testCases := []struct {
-		Name           string
-		rtmAuthRepoFn  func() *automock.Repository
-		ExpectedOutput *model.RuntimeAuth
-		ExpectedError  error
+		Name             string
+		apiRtmAuthRepoFn func() *automock.Repository
+		ExpectedOutput   *model.APIRuntimeAuth
+		ExpectedError    error
 	}{
 		{
 			Name: "Success",
-			rtmAuthRepoFn: func() *automock.Repository {
-				rtmAuthRepo := &automock.Repository{}
-				rtmAuthRepo.On("Get", contextThatHasTenant(tnt), tnt, apiID, rtmID).Return(modelRtmAuth, nil).Once()
-				return rtmAuthRepo
+			apiRtmAuthRepoFn: func() *automock.Repository {
+				apiRtmAuthRepo := &automock.Repository{}
+				apiRtmAuthRepo.On("Get", contextThatHasTenant(tnt), tnt, apiID, rtmID).Return(modelAPIRtmAuth, nil).Once()
+				return apiRtmAuthRepo
 			},
-			ExpectedOutput: modelRtmAuth,
+			ExpectedOutput: modelAPIRtmAuth,
 			ExpectedError:  nil,
 		},
 		{
-			Name: "Error when getting runtime auth",
-			rtmAuthRepoFn: func() *automock.Repository {
-				rtmAuthRepo := &automock.Repository{}
-				rtmAuthRepo.On("Get", contextThatHasTenant(tnt), tnt, apiID, rtmID).Return(nil, testErr).Once()
-				return rtmAuthRepo
+			Name: "Error when getting api runtime auth",
+			apiRtmAuthRepoFn: func() *automock.Repository {
+				apiRtmAuthRepo := &automock.Repository{}
+				apiRtmAuthRepo.On("Get", contextThatHasTenant(tnt), tnt, apiID, rtmID).Return(nil, testErr).Once()
+				return apiRtmAuthRepo
 			},
 			ExpectedOutput: nil,
 			ExpectedError:  testErr,
@@ -59,9 +59,9 @@ func TestService_Get(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			rtmAuthRepo := testCase.rtmAuthRepoFn()
+			apiRtmAuthRepo := testCase.apiRtmAuthRepoFn()
 
-			svc := runtime_auth.NewService(rtmAuthRepo, nil)
+			svc := apiruntimeauth.NewService(apiRtmAuthRepo, nil)
 
 			// WHEN
 			result, err := svc.Get(ctx, apiID, rtmID)
@@ -75,12 +75,12 @@ func TestService_Get(t *testing.T) {
 			}
 			assert.Equal(t, testCase.ExpectedOutput, result)
 
-			rtmAuthRepo.AssertExpectations(t)
+			apiRtmAuthRepo.AssertExpectations(t)
 		})
 	}
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := runtime_auth.NewService(nil, nil)
+		svc := apiruntimeauth.NewService(nil, nil)
 
 		// WHEN
 		_, err := svc.Get(context.TODO(), "", "")
@@ -100,32 +100,32 @@ func TestService_GetOrDefault(t *testing.T) {
 	apiID := "foo"
 	rtmID := "bar"
 
-	modelRtmAuth := fixModelRuntimeAuth(strings.Ptr("foo"), rtmID, apiID, fixModelAuth())
+	modelAPIRtmAuth := fixModelAPIRuntimeAuth(strings.Ptr("foo"), rtmID, apiID, fixModelAuth())
 
 	testErr := errors.New("test error")
 
 	testCases := []struct {
-		Name           string
-		rtmAuthRepoFn  func() *automock.Repository
-		ExpectedOutput *model.RuntimeAuth
-		ExpectedError  error
+		Name             string
+		apiRtmAuthRepoFn func() *automock.Repository
+		ExpectedOutput   *model.APIRuntimeAuth
+		ExpectedError    error
 	}{
 		{
 			Name: "Success",
-			rtmAuthRepoFn: func() *automock.Repository {
-				rtmAuthRepo := &automock.Repository{}
-				rtmAuthRepo.On("GetOrDefault", contextThatHasTenant(tnt), tnt, apiID, rtmID).Return(modelRtmAuth, nil).Once()
-				return rtmAuthRepo
+			apiRtmAuthRepoFn: func() *automock.Repository {
+				apiRtmAuthRepo := &automock.Repository{}
+				apiRtmAuthRepo.On("GetOrDefault", contextThatHasTenant(tnt), tnt, apiID, rtmID).Return(modelAPIRtmAuth, nil).Once()
+				return apiRtmAuthRepo
 			},
-			ExpectedOutput: modelRtmAuth,
+			ExpectedOutput: modelAPIRtmAuth,
 			ExpectedError:  nil,
 		},
 		{
-			Name: "Error when getting runtime auth",
-			rtmAuthRepoFn: func() *automock.Repository {
-				rtmAuthRepo := &automock.Repository{}
-				rtmAuthRepo.On("GetOrDefault", contextThatHasTenant(tnt), tnt, apiID, rtmID).Return(nil, testErr).Once()
-				return rtmAuthRepo
+			Name: "Error when getting api runtime auth",
+			apiRtmAuthRepoFn: func() *automock.Repository {
+				apiRtmAuthRepo := &automock.Repository{}
+				apiRtmAuthRepo.On("GetOrDefault", contextThatHasTenant(tnt), tnt, apiID, rtmID).Return(nil, testErr).Once()
+				return apiRtmAuthRepo
 			},
 			ExpectedOutput: nil,
 			ExpectedError:  testErr,
@@ -134,9 +134,9 @@ func TestService_GetOrDefault(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			rtmAuthRepo := testCase.rtmAuthRepoFn()
+			apiRtmAuthRepo := testCase.apiRtmAuthRepoFn()
 
-			svc := runtime_auth.NewService(rtmAuthRepo, nil)
+			svc := apiruntimeauth.NewService(apiRtmAuthRepo, nil)
 
 			// WHEN
 			result, err := svc.GetOrDefault(ctx, apiID, rtmID)
@@ -150,12 +150,12 @@ func TestService_GetOrDefault(t *testing.T) {
 			}
 			assert.Equal(t, testCase.ExpectedOutput, result)
 
-			rtmAuthRepo.AssertExpectations(t)
+			apiRtmAuthRepo.AssertExpectations(t)
 		})
 	}
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := runtime_auth.NewService(nil, nil)
+		svc := apiruntimeauth.NewService(nil, nil)
 
 		// WHEN
 		_, err := svc.GetOrDefault(context.TODO(), "", "")
@@ -174,36 +174,36 @@ func TestService_ListForAllRuntimes(t *testing.T) {
 
 	apiID := "foo"
 
-	modelRtmAuths := []model.RuntimeAuth{
-		*fixModelRuntimeAuth(strings.Ptr("foo"), "1", apiID, fixModelAuth()),
-		*fixModelRuntimeAuth(strings.Ptr("bar"), "2", apiID, fixModelAuth()),
-		*fixModelRuntimeAuth(strings.Ptr("baz"), "3", apiID, fixModelAuth()),
+	modelAPIRtmAuths := []model.APIRuntimeAuth{
+		*fixModelAPIRuntimeAuth(strings.Ptr("foo"), "1", apiID, fixModelAuth()),
+		*fixModelAPIRuntimeAuth(strings.Ptr("bar"), "2", apiID, fixModelAuth()),
+		*fixModelAPIRuntimeAuth(strings.Ptr("baz"), "3", apiID, fixModelAuth()),
 	}
 
 	testErr := errors.New("test error")
 
 	testCases := []struct {
-		Name           string
-		rtmAuthRepoFn  func() *automock.Repository
-		ExpectedOutput []model.RuntimeAuth
-		ExpectedError  error
+		Name             string
+		apiRtmAuthRepoFn func() *automock.Repository
+		ExpectedOutput   []model.APIRuntimeAuth
+		ExpectedError    error
 	}{
 		{
 			Name: "Success",
-			rtmAuthRepoFn: func() *automock.Repository {
-				rtmAuthRepo := &automock.Repository{}
-				rtmAuthRepo.On("ListForAllRuntimes", contextThatHasTenant(tnt), tnt, apiID).Return(modelRtmAuths, nil).Once()
-				return rtmAuthRepo
+			apiRtmAuthRepoFn: func() *automock.Repository {
+				apiRtmAuthRepo := &automock.Repository{}
+				apiRtmAuthRepo.On("ListForAllRuntimes", contextThatHasTenant(tnt), tnt, apiID).Return(modelAPIRtmAuths, nil).Once()
+				return apiRtmAuthRepo
 			},
-			ExpectedOutput: modelRtmAuths,
+			ExpectedOutput: modelAPIRtmAuths,
 			ExpectedError:  nil,
 		},
 		{
-			Name: "Error when listing runtime auths",
-			rtmAuthRepoFn: func() *automock.Repository {
-				rtmAuthRepo := &automock.Repository{}
-				rtmAuthRepo.On("ListForAllRuntimes", contextThatHasTenant(tnt), tnt, apiID).Return(nil, testErr).Once()
-				return rtmAuthRepo
+			Name: "Error when listing api runtime auths",
+			apiRtmAuthRepoFn: func() *automock.Repository {
+				apiRtmAuthRepo := &automock.Repository{}
+				apiRtmAuthRepo.On("ListForAllRuntimes", contextThatHasTenant(tnt), tnt, apiID).Return(nil, testErr).Once()
+				return apiRtmAuthRepo
 			},
 			ExpectedOutput: nil,
 			ExpectedError:  testErr,
@@ -212,9 +212,9 @@ func TestService_ListForAllRuntimes(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			rtmAuthRepo := testCase.rtmAuthRepoFn()
+			apiRtmAuthRepo := testCase.apiRtmAuthRepoFn()
 
-			svc := runtime_auth.NewService(rtmAuthRepo, nil)
+			svc := apiruntimeauth.NewService(apiRtmAuthRepo, nil)
 
 			// WHEN
 			result, err := svc.ListForAllRuntimes(ctx, apiID)
@@ -228,12 +228,12 @@ func TestService_ListForAllRuntimes(t *testing.T) {
 			}
 			assert.Equal(t, testCase.ExpectedOutput, result)
 
-			rtmAuthRepo.AssertExpectations(t)
+			apiRtmAuthRepo.AssertExpectations(t)
 		})
 	}
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := runtime_auth.NewService(nil, nil)
+		svc := apiruntimeauth.NewService(nil, nil)
 
 		// WHEN
 		_, err := svc.ListForAllRuntimes(context.TODO(), apiID)
@@ -252,39 +252,39 @@ func TestService_Set(t *testing.T) {
 
 	apiID := "foo"
 	rtmID := "bar"
-	rtmAuthID := "baz"
+	apiRtmAuthID := "baz"
 
 	modelAuthInput := fixModelAuthInput()
-	modelRtmAuth := fixModelRuntimeAuth(&rtmAuthID, rtmID, apiID, fixModelAuth())
+	modelAPIRtmAuth := fixModelAPIRuntimeAuth(&apiRtmAuthID, rtmID, apiID, fixModelAuth())
 
 	testErr := errors.New("test error")
 
 	uidSvcFn := func() *automock.UIDService {
 		uidSvc := &automock.UIDService{}
-		uidSvc.On("Generate").Return(rtmAuthID).Once()
+		uidSvc.On("Generate").Return(apiRtmAuthID).Once()
 		return uidSvc
 	}
 
 	testCases := []struct {
-		Name          string
-		rtmAuthRepoFn func() *automock.Repository
-		ExpectedError error
+		Name             string
+		apiRtmAuthRepoFn func() *automock.Repository
+		ExpectedError    error
 	}{
 		{
 			Name: "Success",
-			rtmAuthRepoFn: func() *automock.Repository {
-				rtmAuthRepo := &automock.Repository{}
-				rtmAuthRepo.On("Upsert", contextThatHasTenant(tnt), *modelRtmAuth).Return(nil).Once()
-				return rtmAuthRepo
+			apiRtmAuthRepoFn: func() *automock.Repository {
+				apiRtmAuthRepo := &automock.Repository{}
+				apiRtmAuthRepo.On("Upsert", contextThatHasTenant(tnt), *modelAPIRtmAuth).Return(nil).Once()
+				return apiRtmAuthRepo
 			},
 			ExpectedError: nil,
 		},
 		{
-			Name: "Error when getting runtime auth",
-			rtmAuthRepoFn: func() *automock.Repository {
-				rtmAuthRepo := &automock.Repository{}
-				rtmAuthRepo.On("Upsert", contextThatHasTenant(tnt), *modelRtmAuth).Return(testErr).Once()
-				return rtmAuthRepo
+			Name: "Error when getting api runtime auth",
+			apiRtmAuthRepoFn: func() *automock.Repository {
+				apiRtmAuthRepo := &automock.Repository{}
+				apiRtmAuthRepo.On("Upsert", contextThatHasTenant(tnt), *modelAPIRtmAuth).Return(testErr).Once()
+				return apiRtmAuthRepo
 			},
 			ExpectedError: testErr,
 		},
@@ -292,10 +292,10 @@ func TestService_Set(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			rtmAuthRepo := testCase.rtmAuthRepoFn()
+			apiRtmAuthRepo := testCase.apiRtmAuthRepoFn()
 			uidSvc := uidSvcFn()
 
-			svc := runtime_auth.NewService(rtmAuthRepo, uidSvc)
+			svc := apiruntimeauth.NewService(apiRtmAuthRepo, uidSvc)
 
 			// WHEN
 			err := svc.Set(ctx, apiID, rtmID, modelAuthInput)
@@ -308,13 +308,13 @@ func TestService_Set(t *testing.T) {
 				assert.NoError(t, err)
 			}
 
-			rtmAuthRepo.AssertExpectations(t)
+			apiRtmAuthRepo.AssertExpectations(t)
 			uidSvc.AssertExpectations(t)
 		})
 	}
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := runtime_auth.NewService(nil, nil)
+		svc := apiruntimeauth.NewService(nil, nil)
 
 		// WHEN
 		err := svc.Set(context.TODO(), "", "", model.AuthInput{})
@@ -337,25 +337,25 @@ func TestService_Delete(t *testing.T) {
 	testErr := errors.New("test error")
 
 	testCases := []struct {
-		Name          string
-		rtmAuthRepoFn func() *automock.Repository
-		ExpectedError error
+		Name             string
+		apiRtmAuthRepoFn func() *automock.Repository
+		ExpectedError    error
 	}{
 		{
 			Name: "Success",
-			rtmAuthRepoFn: func() *automock.Repository {
-				rtmAuthRepo := &automock.Repository{}
-				rtmAuthRepo.On("Delete", contextThatHasTenant(tnt), tnt, apiID, rtmID).Return(nil).Once()
-				return rtmAuthRepo
+			apiRtmAuthRepoFn: func() *automock.Repository {
+				apiRtmAuthRepo := &automock.Repository{}
+				apiRtmAuthRepo.On("Delete", contextThatHasTenant(tnt), tnt, apiID, rtmID).Return(nil).Once()
+				return apiRtmAuthRepo
 			},
 			ExpectedError: nil,
 		},
 		{
-			Name: "Error when getting runtime auth",
-			rtmAuthRepoFn: func() *automock.Repository {
-				rtmAuthRepo := &automock.Repository{}
-				rtmAuthRepo.On("Delete", contextThatHasTenant(tnt), tnt, apiID, rtmID).Return(testErr).Once()
-				return rtmAuthRepo
+			Name: "Error when getting api runtime auth",
+			apiRtmAuthRepoFn: func() *automock.Repository {
+				apiRtmAuthRepo := &automock.Repository{}
+				apiRtmAuthRepo.On("Delete", contextThatHasTenant(tnt), tnt, apiID, rtmID).Return(testErr).Once()
+				return apiRtmAuthRepo
 			},
 			ExpectedError: testErr,
 		},
@@ -363,9 +363,9 @@ func TestService_Delete(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			rtmAuthRepo := testCase.rtmAuthRepoFn()
+			apiRtmAuthRepo := testCase.apiRtmAuthRepoFn()
 
-			svc := runtime_auth.NewService(rtmAuthRepo, nil)
+			svc := apiruntimeauth.NewService(apiRtmAuthRepo, nil)
 
 			// WHEN
 			err := svc.Delete(ctx, apiID, rtmID)
@@ -378,12 +378,12 @@ func TestService_Delete(t *testing.T) {
 				assert.NoError(t, err)
 			}
 
-			rtmAuthRepo.AssertExpectations(t)
+			apiRtmAuthRepo.AssertExpectations(t)
 		})
 	}
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := runtime_auth.NewService(nil, nil)
+		svc := apiruntimeauth.NewService(nil, nil)
 
 		// WHEN
 		err := svc.Delete(context.TODO(), "", "")

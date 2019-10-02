@@ -1,7 +1,7 @@
-package runtime_auth_test
+package apiruntimeauth_test
 
 import (
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_auth"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/apiruntimeauth"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
@@ -15,15 +15,15 @@ const (
 
 var testTableColumns = []string{"id", "tenant_id", "runtime_id", "api_def_id", "value"}
 
-func fixGQLRuntimeAuth(runtimeID string, auth *graphql.Auth) *graphql.RuntimeAuth {
-	return &graphql.RuntimeAuth{
+func fixGQLAPIRuntimeAuth(runtimeID string, auth *graphql.Auth) *graphql.APIRuntimeAuth {
+	return &graphql.APIRuntimeAuth{
 		RuntimeID: runtimeID,
 		Auth:      auth,
 	}
 }
 
-func fixModelRuntimeAuth(id *string, runtimeID string, apiID string, auth *model.Auth) *model.RuntimeAuth {
-	return &model.RuntimeAuth{
+func fixModelAPIRuntimeAuth(id *string, runtimeID string, apiID string, auth *model.Auth) *model.APIRuntimeAuth {
+	return &model.APIRuntimeAuth{
 		ID:        id,
 		TenantID:  testTenant,
 		RuntimeID: runtimeID,
@@ -106,8 +106,8 @@ func fixModelAuth() *model.Auth {
 	}
 }
 
-func fixEntity(id *string, rtmID string, apiID string, withAuth bool) runtime_auth.Entity {
-	out := runtime_auth.Entity{
+func fixEntity(id *string, rtmID string, apiID string, withAuth bool) apiruntimeauth.Entity {
+	out := apiruntimeauth.Entity{
 		TenantID:  testTenant,
 		RuntimeID: rtmID,
 		APIDefID:  apiID,

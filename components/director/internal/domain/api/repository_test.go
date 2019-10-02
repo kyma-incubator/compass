@@ -154,7 +154,7 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 
 func TestPgRepository_Create(t *testing.T) {
 	//GIVEN
-	apiDefModel := fixFullAPIDefinitionModelWithRuntimeAuth("placeholder")
+	apiDefModel := fixFullAPIDefinitionModelWithAPIRtmAuth("placeholder")
 	apiDefEntity := fixFullEntityAPIDefinition(apiDefID, "placeholder")
 	insertQuery := `^INSERT INTO "public"."api_definitions" \(.+\) VALUES \(.+\)$`
 
@@ -211,8 +211,8 @@ func TestPgRepository_CreateMany(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		items := []*model.APIDefinition{fixFullAPIDefinitionModelWithRuntimeAuth("first"),
-			fixFullAPIDefinitionModelWithRuntimeAuth("second"), fixFullAPIDefinitionModelWithRuntimeAuth("third")}
+		items := []*model.APIDefinition{fixFullAPIDefinitionModelWithAPIRtmAuth("first"),
+			fixFullAPIDefinitionModelWithAPIRtmAuth("second"), fixFullAPIDefinitionModelWithAPIRtmAuth("third")}
 
 		convMock := &automock.APIDefinitionConverter{}
 		for _, item := range items {
@@ -233,7 +233,7 @@ func TestPgRepository_CreateMany(t *testing.T) {
 	t.Run("returns error when conversion from model to entity failed", func(t *testing.T) {
 		sqlxDB, _ := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		apiModel := fixFullAPIDefinitionModelWithRuntimeAuth("api")
+		apiModel := fixFullAPIDefinitionModelWithAPIRtmAuth("api")
 		require.NotNil(t, apiModel)
 		items := []*model.APIDefinition{apiModel}
 
@@ -257,7 +257,7 @@ func TestPgRepository_Update(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		apiModel := fixFullAPIDefinitionModelWithRuntimeAuth("update")
+		apiModel := fixFullAPIDefinitionModelWithAPIRtmAuth("update")
 		entity := fixFullEntityAPIDefinition(apiDefID, "update")
 
 		convMock := &automock.APIDefinitionConverter{}

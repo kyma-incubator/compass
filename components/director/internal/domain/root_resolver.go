@@ -3,30 +3,24 @@ package domain
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
-	"github.com/kyma-incubator/compass/components/director/internal/graphql_client"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_auth"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
-
-	"github.com/kyma-incubator/compass/components/director/internal/persistence"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
-	"github.com/kyma-incubator/compass/components/director/internal/uid"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/apiruntimeauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventapi"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/healthcheck"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
+	"github.com/kyma-incubator/compass/components/director/internal/graphql_client"
+	"github.com/kyma-incubator/compass/components/director/internal/persistence"
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
@@ -46,7 +40,7 @@ type RootResolver struct {
 
 func NewRootResolver(transact persistence.Transactioner, cfg onetimetoken.ConnectorConfig) *RootResolver {
 	authConverter := auth.NewConverter()
-	runtimeAuthConverter := runtime_auth.NewConverter(authConverter)
+	apiRtmAuthConverter := apiruntimeauth.NewConverter(authConverter)
 	runtimeConverter := runtime.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
@@ -70,13 +64,13 @@ func NewRootResolver(transact persistence.Transactioner, cfg onetimetoken.Connec
 	eventAPIRepo := eventapi.NewRepository(eventAPIConverter)
 	docRepo := document.NewRepository(docConverter)
 	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
-	runtimeAuthRepo := runtime_auth.NewRepository(runtimeAuthConverter)
+	apiRtmAuthRepo := apiruntimeauth.NewRepository(apiRtmAuthConverter)
 	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
 
 	connectorGCLI := graphql_client.NewGraphQLClient(cfg.OneTimeTokenURL)
 
 	uidSvc := uid.NewService()
-	runtimeAuthSvc := runtime_auth.NewService(runtimeAuthRepo, uidSvc)
+	apiRtmAuthSvc := apiruntimeauth.NewService(apiRtmAuthRepo, uidSvc)
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc)
 	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo, runtimeRepo, labelRepo, fetchRequestRepo, labelUpsertSvc, scenariosSvc, uidSvc)
@@ -92,7 +86,7 @@ func NewRootResolver(transact persistence.Transactioner, cfg onetimetoken.Connec
 
 	return &RootResolver{
 		app:         application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, systemAuthSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter),
-		api:         api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, runtimeAuthSvc, apiConverter, authConverter, frConverter, runtimeAuthConverter),
+		api:         api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, apiRtmAuthSvc, apiConverter, authConverter, frConverter, apiRtmAuthConverter),
 		eventAPI:    eventapi.NewResolver(transact, eventAPISvc, appSvc, eventAPIConverter, frConverter),
 		doc:         document.NewResolver(transact, docSvc, appSvc, frConverter),
 		runtime:     runtime.NewResolver(transact, runtimeSvc, systemAuthSvc, runtimeConverter, systemAuthConverter),
@@ -199,10 +193,10 @@ func (r *mutationResolver) DeleteAPI(ctx context.Context, id string) (*graphql.A
 func (r *mutationResolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.APISpec, error) {
 	return r.api.RefetchAPISpec(ctx, apiID)
 }
-func (r *mutationResolver) SetAPIAuth(ctx context.Context, apiID string, runtimeID string, in graphql.AuthInput) (*graphql.RuntimeAuth, error) {
+func (r *mutationResolver) SetAPIAuth(ctx context.Context, apiID string, runtimeID string, in graphql.AuthInput) (*graphql.APIRuntimeAuth, error) {
 	return r.api.SetAPIAuth(ctx, apiID, runtimeID, in)
 }
-func (r *mutationResolver) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*graphql.RuntimeAuth, error) {
+func (r *mutationResolver) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*graphql.APIRuntimeAuth, error) {
 	return r.api.DeleteAPIAuth(ctx, apiID, runtimeID)
 }
 func (r *mutationResolver) AddEventAPI(ctx context.Context, applicationID string, in graphql.EventAPIDefinitionInput) (*graphql.EventAPIDefinition, error) {
@@ -294,10 +288,10 @@ type apiDefinitionResolver struct {
 	*RootResolver
 }
 
-func (r *apiDefinitionResolver) Auth(ctx context.Context, obj *graphql.APIDefinition, runtimeID string) (*graphql.RuntimeAuth, error) {
+func (r *apiDefinitionResolver) Auth(ctx context.Context, obj *graphql.APIDefinition, runtimeID string) (*graphql.APIRuntimeAuth, error) {
 	return r.api.Auth(ctx, obj, runtimeID)
 }
-func (r *apiDefinitionResolver) Auths(ctx context.Context, obj *graphql.APIDefinition) ([]*graphql.RuntimeAuth, error) {
+func (r *apiDefinitionResolver) Auths(ctx context.Context, obj *graphql.APIDefinition) ([]*graphql.APIRuntimeAuth, error) {
 	return r.api.Auths(ctx, obj)
 }
 

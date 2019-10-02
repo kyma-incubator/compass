@@ -26,15 +26,15 @@ func (_m *Repository) Delete(ctx context.Context, tenant string, apiID string, r
 }
 
 // Get provides a mock function with given fields: ctx, tenant, apiID, runtimeID
-func (_m *Repository) Get(ctx context.Context, tenant string, apiID string, runtimeID string) (*model.RuntimeAuth, error) {
+func (_m *Repository) Get(ctx context.Context, tenant string, apiID string, runtimeID string) (*model.APIRuntimeAuth, error) {
 	ret := _m.Called(ctx, tenant, apiID, runtimeID)
 
-	var r0 *model.RuntimeAuth
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.RuntimeAuth); ok {
+	var r0 *model.APIRuntimeAuth
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.APIRuntimeAuth); ok {
 		r0 = rf(ctx, tenant, apiID, runtimeID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.RuntimeAuth)
+			r0 = ret.Get(0).(*model.APIRuntimeAuth)
 		}
 	}
 
@@ -49,15 +49,15 @@ func (_m *Repository) Get(ctx context.Context, tenant string, apiID string, runt
 }
 
 // GetOrDefault provides a mock function with given fields: ctx, tenant, apiID, runtimeID
-func (_m *Repository) GetOrDefault(ctx context.Context, tenant string, apiID string, runtimeID string) (*model.RuntimeAuth, error) {
+func (_m *Repository) GetOrDefault(ctx context.Context, tenant string, apiID string, runtimeID string) (*model.APIRuntimeAuth, error) {
 	ret := _m.Called(ctx, tenant, apiID, runtimeID)
 
-	var r0 *model.RuntimeAuth
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.RuntimeAuth); ok {
+	var r0 *model.APIRuntimeAuth
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.APIRuntimeAuth); ok {
 		r0 = rf(ctx, tenant, apiID, runtimeID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.RuntimeAuth)
+			r0 = ret.Get(0).(*model.APIRuntimeAuth)
 		}
 	}
 
@@ -72,15 +72,15 @@ func (_m *Repository) GetOrDefault(ctx context.Context, tenant string, apiID str
 }
 
 // ListForAllRuntimes provides a mock function with given fields: ctx, tenant, apiID
-func (_m *Repository) ListForAllRuntimes(ctx context.Context, tenant string, apiID string) ([]model.RuntimeAuth, error) {
+func (_m *Repository) ListForAllRuntimes(ctx context.Context, tenant string, apiID string) ([]model.APIRuntimeAuth, error) {
 	ret := _m.Called(ctx, tenant, apiID)
 
-	var r0 []model.RuntimeAuth
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) []model.RuntimeAuth); ok {
+	var r0 []model.APIRuntimeAuth
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) []model.APIRuntimeAuth); ok {
 		r0 = rf(ctx, tenant, apiID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]model.RuntimeAuth)
+			r0 = ret.Get(0).([]model.APIRuntimeAuth)
 		}
 	}
 
@@ -95,11 +95,11 @@ func (_m *Repository) ListForAllRuntimes(ctx context.Context, tenant string, api
 }
 
 // Upsert provides a mock function with given fields: ctx, item
-func (_m *Repository) Upsert(ctx context.Context, item model.RuntimeAuth) error {
+func (_m *Repository) Upsert(ctx context.Context, item model.APIRuntimeAuth) error {
 	ret := _m.Called(ctx, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, model.RuntimeAuth) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, model.APIRuntimeAuth) error); ok {
 		r0 = rf(ctx, item)
 	} else {
 		r0 = ret.Error(0)
