@@ -3,7 +3,7 @@ package gqlschema
 import (
 	"io"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/scalar"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
