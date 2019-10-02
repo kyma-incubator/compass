@@ -22,6 +22,12 @@ var provisionRuntimeInput = gqlschema.ProvisionRuntimeInput{
 		Name:        "Test",
 		ComputeZone: "Zone",
 		Credentials: &gqlschema.CredentialsInput{SecretName: "secret"},
+		ProviderConfig: &gqlschema.ProviderConfigInput{
+			GardenerProviderConfig: &gqlschema.GardenerProviderConfigInput{
+				TargetProvider: "gcp",
+				TargetSecret:   "gardener-secret",
+			},
+		},
 	},
 	KymaConfig: &gqlschema.KymaConfigInput{
 		Version: "1.6",

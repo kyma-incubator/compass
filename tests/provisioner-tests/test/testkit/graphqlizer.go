@@ -50,10 +50,10 @@ func (g *graphqlizer) ClusterConfigToGraphQL(in gqlschema.ClusterConfigInput) (s
 		version: "{{.Version}}"
 		{{- end }}
 		{{- if .Credentials }}
-		credentials: "{{ CredentialsInputToGraphQL .Credentials }}"
+		credentials: {{ CredentialsInputToGraphQL .Credentials }}
 		{{- end }}
 		{{- if .ProviderConfig }}
-		providerConfig: "{{ ProviderConfigInputToGraphQL .ProviderConfig }}"
+		providerConfig: {{ ProviderConfigInputToGraphQL .ProviderConfig }}
 		{{- end }}
 	}`)
 }
@@ -67,25 +67,56 @@ func (g *graphqlizer) CredentialsInputToGraphQL(in gqlschema.CredentialsInput) (
 func (g *graphqlizer) ProviderConfigInputToGraphQL(in gqlschema.ProviderConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
         {{- if .GardenerProviderConfig }}
-        targetProvider: "{{ .GardenerProviderConfig.TargetProvider }}"
-        targetSecret: "{{ .GardenerProviderConfig.TargetSecret }}"
-        autoScalerMin: "{{ .GardenerProviderConfig.AutoScalerMin }}"
-        autoScalerMax: "{{ .GardenerProviderConfig.AutoScalerMax }}"
-        maxSurge: "{{ .GardenerProviderConfig.MaxSurge }}"
-        maxSurge: "{{ .GardenerProviderConfig.MaxSurge }}"
-        maxUnavailable: "{{ .GardenerProviderConfig.MaxUnavailable }}"
-        additionalProperties: "{{ AdditionalPropertiesToGQL .GardenerProviderConfig.AdditionalProperties }}"
+		gardenerProviderConfig: {{ GardenerProviderConfigInputToGraphQL .GardenerProviderConfig }}
         {{- end }}
-        {{- if .GCPProviderConfig }}
-        additionalProperties: "{{ AdditionalPropertiesToGQL .GCPProviderConfig.AdditionalProperties }}"
+		{{- if .GcpProviderConfig }}
+        gcpProviderConfig: {{ GCPProviderConfigInputToGraphQL .GcpProviderConfig }}
         {{- end }}
-        {{- if .AKSProviderConfig }}
-        additionalProperties: "{{ AdditionalPropertiesToGQL .AKSProviderConfig.AdditionalProperties }}"
+        {{- if .AksProviderConfig }}
+        aksProviderConfig: {{ AKSProviderConfigInputToGraphQL .AksProviderConfig }}
         {{- end }}
 	}`)
 }
 
-func (g *graphqlizer) AdditionalPropertiesToGQL(in gqlschema.AdditionalProperties) (string, error) {
+func (g *graphqlizer) GardenerProviderConfigInputToGraphQL(in gqlschema.GardenerProviderConfigInput) (string, error) {
+	return g.genericToGraphQL(in, `{
+        targetProvider: "{{ .TargetProvider }}"
+        targetSecret: "{{ .TargetSecret }}"
+		{{- if .AutoScalerMin }}
+        autoScalerMin: "{{ .AutoScalerMin }}"
+        {{- end }}
+		{{- if .AutoScalerMax }}
+        autoScalerMax: "{{ .AutoScalerMax }}"
+        {{- end }}
+		{{- if .MaxSurge }}
+        maxSurge: "{{ .MaxSurge }}"
+        {{- end }}
+		{{- if .MaxUnavailable }}
+        maxUnavailable: "{{ .MaxUnavailable }}"
+        {{- end }}
+        {{- if .AdditionalProperties }}
+        additionalProperties: {{ AdditionalPropertiesToGraphQL .AdditionalProperties }}
+        {{- end }}
+	}`)
+}
+
+func (g *graphqlizer) GCPProviderConfigInputToGraphQL(in gqlschema.GCPProviderConfig) (string, error) {
+	return g.genericToGraphQL(in, `{
+		{{- if .AdditionalProperties }}
+        additionalProperties: {{ AdditionalPropertiesToGraphQL .AdditionalProperties }}
+        {{- end }}
+	}`)
+}
+
+func (g *graphqlizer) AKSProviderConfigInputToGraphQL(in gqlschema.AKSProviderConfigInput) (string, error) {
+	return g.genericToGraphQL(in, `{
+		{{- if .AdditionalProperties }}
+        additionalProperties: {{ AdditionalPropertiesToGraphQL .AdditionalProperties }}
+        {{- end }}
+	}`)
+}
+
+func (g *graphqlizer) AdditionalPropertiesToGraphQL(in gqlschema.AdditionalProperties) (string, error) {
 	return g.genericToGraphQL(in, `{
 		{{- range $k,$v := . }}
 			{{$k}}: [
@@ -120,6 +151,12 @@ func (g *graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, er
 	fm["ClusterConfigToGraphQL"] = g.ClusterConfigToGraphQL
 	fm["KymaConfigToGraphQL"] = g.KymaConfigToGraphQL
 	fm["UpgradeClusterConfigToGraphQL"] = g.UpgradeClusterConfigToGraphQL
+	fm["CredentialsInputToGraphQL"] = g.CredentialsInputToGraphQL
+	fm["ProviderConfigInputToGraphQL"] = g.ProviderConfigInputToGraphQL
+	fm["AdditionalPropertiesToGraphQL"] = g.AdditionalPropertiesToGraphQL
+	fm["GardenerProviderConfigInputToGraphQL"] = g.GardenerProviderConfigInputToGraphQL
+	fm["GCPProviderConfigInputToGraphQL"] = g.GCPProviderConfigInputToGraphQL
+	fm["AKSProviderConfigInputToGraphQL"] = g.AKSProviderConfigInputToGraphQL
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)
 	if err != nil {
