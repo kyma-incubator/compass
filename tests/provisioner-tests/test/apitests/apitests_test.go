@@ -19,10 +19,9 @@ const (
 
 var provisionRuntimeInput = gqlschema.ProvisionRuntimeInput{
 	ClusterConfig: &gqlschema.ClusterConfigInput{
-		Name:                   "Test",
-		ComputeZone:            "Zone",
-		Credentials:            "Credentials",
-		InfrastructureProvider: gqlschema.InfrastructureProviderAks,
+		Name:        "Test",
+		ComputeZone: "Zone",
+		Credentials: &gqlschema.CredentialsInput{SecretName: "secret"},
 	},
 	KymaConfig: &gqlschema.KymaConfigInput{
 		Version: "1.6",

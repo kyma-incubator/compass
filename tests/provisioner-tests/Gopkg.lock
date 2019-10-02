@@ -88,12 +88,24 @@
   version = "v1.2.0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:2cf13de0660cd6f70ae24baa82883314a90778d2b7420b1382b6eac1a3feec54"
-  name = "github.com/kyma-incubator/compass"
-  packages = ["components/provisioner/pkg/gqlschema"]
+  digest = "1:31e761d97c76151dde79e9d28964a812c46efc5baee4085b86f68f0c654450de"
+  name = "github.com/konsorten/go-windows-terminal-sequences"
+  packages = ["."]
   pruneopts = "UT"
-  revision = "70d89bffbfed8e49188ea07086f4ef722f63c5c5"
+  revision = "f55edac94c9bbba5d6182a4be46d86a2c9b5b50e"
+  version = "v1.0.2"
+
+[[projects]]
+  branch = "api-update"
+  digest = "1:755c236d43153d66720ba8d27dcfa6a61251f29008358f38126a2781e52c161a"
+  name = "github.com/kyma-incubator/compass"
+  packages = [
+    "components/director/pkg/scalar",
+    "components/provisioner/pkg/gqlschema",
+  ]
+  pruneopts = "UT"
+  revision = "7ee54ce5f6ff2a2766b1ec87ad8532e35b1b3987"
+  source = "github.com/Szymongib/compass"
 
 [[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
@@ -118,6 +130,14 @@
   pruneopts = "UT"
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
+
+[[projects]]
+  digest = "1:04457f9f6f3ffc5fea48e71d62f2ca256637dee0a04d710288e27e05c8b41976"
+  name = "github.com/sirupsen/logrus"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "839c75faf7f98a33d445d181f3018b5c3409a45e"
+  version = "v1.4.2"
 
 [[projects]]
   digest = "1:99d32780e5238c2621fff621123997c3e3cca96db8be13179013aea77dfab551"
@@ -164,6 +184,14 @@
   ]
   pruneopts = "UT"
   revision = "227b76d455e791cb042b03e633e2f7fbcfdf74a5"
+
+[[projects]]
+  branch = "master"
+  digest = "1:84ed4fd3f7c52941feec4832e385f61377a01b4c98a0f868f16f10c2469fc0fe"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  pruneopts = "UT"
+  revision = "b397fe3ad8ed895c98fa54584f61835a88e65ff5"
 
 [[projects]]
   branch = "master"
