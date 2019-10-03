@@ -96,18 +96,6 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "api-update"
-  digest = "1:a8f0197cb04449ab25bcd8a1dc3998f8d29581efdb3e5ed747e09cc5c501e641"
-  name = "github.com/kyma-incubator/compass"
-  packages = [
-    "components/provisioner/pkg/gqlschema",
-    "components/provisioner/pkg/scalar",
-  ]
-  pruneopts = "UT"
-  revision = "98042cdb2b1ca7176ca9bd9740bae58e0b88fc98"
-  source = "github.com/Szymongib/compass"
-
-[[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
   name = "github.com/machinebox/graphql"
   packages = ["."]
