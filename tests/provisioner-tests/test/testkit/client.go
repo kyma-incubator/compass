@@ -54,7 +54,6 @@ func (c client) ProvisionRuntime(runtimeID string, config schema.ProvisionRuntim
 	var response AsyncOperationIDResult
 
 	err = c.graphQLClient.Run(context.Background(), req, &response)
-
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to provision runtime")
 	}
@@ -73,7 +72,6 @@ func (c client) UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInp
 	var response AsyncOperationIDResult
 
 	err = c.graphQLClient.Run(context.Background(), req, &response)
-
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to upgrade runtime")
 	}
@@ -87,7 +85,6 @@ func (c client) DeprovisionRuntime(runtimeID string) (string, error) {
 	var response AsyncOperationIDResult
 
 	err := c.graphQLClient.Run(context.Background(), req, &response)
-
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to deprovision runtime")
 	}
@@ -101,7 +98,6 @@ func (c client) ReconnectRuntimeAgent(runtimeID string) (string, error) {
 	var response AsyncOperationIDResult
 
 	err := c.graphQLClient.Run(context.Background(), req, &response)
-
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to reconnect runtime agent")
 	}
@@ -115,7 +111,6 @@ func (c client) RuntimeStatus(runtimeID string) (schema.RuntimeStatus, error) {
 	var response RuntimeStatusStatusResult
 
 	err := c.graphQLClient.Run(context.Background(), req, &response)
-
 	if err != nil {
 		return schema.RuntimeStatus{}, errors.Wrap(err, "Failed to get runtime status")
 	}
@@ -129,7 +124,6 @@ func (c client) RuntimeOperationStatus(operationID string) (schema.OperationStat
 	var response OperationStatus
 
 	err := c.graphQLClient.Run(context.Background(), req, &response)
-
 	if err != nil {
 		return schema.OperationStatus{}, errors.Wrap(err, "Failed to get runtime operation status")
 	}
