@@ -2,10 +2,12 @@ package persistence
 
 import (
 	"database/sql"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/satori/go.uuid"
-	"github.com/sirupsen/logrus"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+	"github.com/sirupsen/logrus"
+
+	"github.com/gofrs/uuid"
 )
 
 type RuntimeService interface {
@@ -58,8 +60,14 @@ func (r runtimeService) SetProvisioningStarted(runtimeID string, clusterConfig m
 		return model.Operation{}, err
 	}
 
+	uuid, err := uuid.NewV4()
+	if err != nil {
+		rollback(transaction, runtimeID)
+		return model.Operation{}, err
+	}
+
 	operation := model.Operation{
-		OperationID: uuid.NewV4().String(),
+		OperationID: uuid.String(),
 		Operation:   model.Provision,
 		Started:     started,
 		State:       model.InProgress,

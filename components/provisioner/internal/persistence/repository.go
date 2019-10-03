@@ -2,8 +2,9 @@ package persistence
 
 import (
 	"database/sql"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 )
 
 type Repository interface {
