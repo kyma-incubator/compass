@@ -40,8 +40,10 @@ func (g *graphqlizer) ClusterConfigToGraphQL(in gqlschema.ClusterConfigInput) (s
 		{{- if .NodeCount }}
 		nodeCount: "{{.NodeCount}}"
 		{{- end }}
-		{{- if .Memory }}
-		memory: "{{.Memory}}"
+		{{- if .DiskSize }}
+		diskSize: "{{.DiskSize}}"
+		{{- if .MachineType }}
+		machineType: "{{.MachineType}}"
 		{{- end }}
 		{{- if .ComputeZone }}
 		computeZone: "{{.ComputeZone}}"

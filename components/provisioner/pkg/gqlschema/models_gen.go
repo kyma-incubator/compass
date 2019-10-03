@@ -24,8 +24,9 @@ type AKSProviderConfigInput struct {
 
 type ClusterConfig struct {
 	Name           *string        `json:"name"`
-	NodeCount      *string        `json:"nodeCount"`
-	Memory         *string        `json:"memory"`
+	NodeCount      *int           `json:"nodeCount"`
+	DiskSize       *string        `json:"diskSize"`
+	MachineType    *string        `json:"machineType"`
 	ComputeZone    *string        `json:"computeZone"`
 	Version        *string        `json:"version"`
 	ProviderConfig ProviderConfig `json:"providerConfig"`
@@ -138,49 +139,6 @@ type UpgradeClusterInput struct {
 type UpgradeRuntimeInput struct {
 	ClusterConfig *UpgradeClusterInput `json:"clusterConfig"`
 	KymaConfig    *KymaConfigInput     `json:"kymaConfig"`
-}
-
-type InfrastructureProvider string
-
-const (
-	InfrastructureProviderGke      InfrastructureProvider = "GKE"
-	InfrastructureProviderAks      InfrastructureProvider = "AKS"
-	InfrastructureProviderGardener InfrastructureProvider = "Gardener"
-)
-
-var AllInfrastructureProvider = []InfrastructureProvider{
-	InfrastructureProviderGke,
-	InfrastructureProviderAks,
-	InfrastructureProviderGardener,
-}
-
-func (e InfrastructureProvider) IsValid() bool {
-	switch e {
-	case InfrastructureProviderGke, InfrastructureProviderAks, InfrastructureProviderGardener:
-		return true
-	}
-	return false
-}
-
-func (e InfrastructureProvider) String() string {
-	return string(e)
-}
-
-func (e *InfrastructureProvider) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = InfrastructureProvider(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid InfrastructureProvider", str)
-	}
-	return nil
-}
-
-func (e InfrastructureProvider) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 type KymaModule string

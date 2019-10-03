@@ -48,7 +48,8 @@ type ComplexityRoot struct {
 
 	ClusterConfig struct {
 		ComputeZone    func(childComplexity int) int
-		Memory         func(childComplexity int) int
+		DiskSize       func(childComplexity int) int
+		MachineType    func(childComplexity int) int
 		Name           func(childComplexity int) int
 		NodeCount      func(childComplexity int) int
 		ProviderConfig func(childComplexity int) int
@@ -160,12 +161,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ClusterConfig.ComputeZone(childComplexity), true
 
-	case "ClusterConfig.memory":
-		if e.complexity.ClusterConfig.Memory == nil {
+	case "ClusterConfig.diskSize":
+		if e.complexity.ClusterConfig.DiskSize == nil {
 			break
 		}
 
-		return e.complexity.ClusterConfig.Memory(childComplexity), true
+		return e.complexity.ClusterConfig.DiskSize(childComplexity), true
+
+	case "ClusterConfig.machineType":
+		if e.complexity.ClusterConfig.MachineType == nil {
+			break
+		}
+
+		return e.complexity.ClusterConfig.MachineType(childComplexity), true
 
 	case "ClusterConfig.name":
 		if e.complexity.ClusterConfig.Name == nil {
@@ -506,13 +514,6 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 var parsedSchema = gqlparser.MustLoadSchema(
 	&ast.Source{Name: "schema.graphql", Input: `scalar AdditionalProperties
 
-# To discuss: what is the list of supported providers?
-enum InfrastructureProvider {
-    GKE
-    AKS
-    Gardener
-}
-
 enum KymaModule {
     Backup
     BackupInit
@@ -532,8 +533,9 @@ type RuntimeConfig {
 
 type ClusterConfig {
     name: String
-    nodeCount: String
-    memory: String
+    nodeCount: Int
+    diskSize: String
+    machineType: String
     computeZone: String
     version: String
     providerConfig: ProviderConfig
@@ -943,13 +945,13 @@ func (ec *executionContext) _ClusterConfig_nodeCount(ctx context.Context, field 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*int)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ClusterConfig_memory(ctx context.Context, field graphql.CollectedField, obj *ClusterConfig) (ret graphql.Marshaler) {
+func (ec *executionContext) _ClusterConfig_diskSize(ctx context.Context, field graphql.CollectedField, obj *ClusterConfig) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -968,7 +970,41 @@ func (ec *executionContext) _ClusterConfig_memory(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Memory, nil
+		return obj.DiskSize, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ClusterConfig_machineType(ctx context.Context, field graphql.CollectedField, obj *ClusterConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "ClusterConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MachineType, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3787,8 +3823,10 @@ func (ec *executionContext) _ClusterConfig(ctx context.Context, sel ast.Selectio
 			out.Values[i] = ec._ClusterConfig_name(ctx, field, obj)
 		case "nodeCount":
 			out.Values[i] = ec._ClusterConfig_nodeCount(ctx, field, obj)
-		case "memory":
-			out.Values[i] = ec._ClusterConfig_memory(ctx, field, obj)
+		case "diskSize":
+			out.Values[i] = ec._ClusterConfig_diskSize(ctx, field, obj)
+		case "machineType":
+			out.Values[i] = ec._ClusterConfig_machineType(ctx, field, obj)
 		case "computeZone":
 			out.Values[i] = ec._ClusterConfig_computeZone(ctx, field, obj)
 		case "version":
@@ -4868,7 +4906,7 @@ func (ec *executionContext) marshalOError2ᚕᚖgithubᚗcomᚋkymaᚑincubator�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOError2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx, sel, v[i])
+			ret[i] = ec.marshalNError2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
