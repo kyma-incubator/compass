@@ -66,6 +66,26 @@ func TestResolver_CreateApplication(t *testing.T) {
 			ExpectedErr:         nil,
 		},
 		{
+			Name:            "Returns an error when the name is too long",
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				return svc
+			},
+			ConverterFn: func() *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				mockOutput := model.ApplicationInput{
+					Name:        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					Description: &desc,
+				}
+				conv.On("InputFromGraphQL", gqlInput).Return(mockOutput).Once()
+				return conv
+			},
+			Input:               gqlInput,
+			ExpectedApplication: nil,
+			ExpectedErr:         errors.New("Application name is too long, should be max 36 characters"),
+		},
+		{
 			Name:            "Returns error when transaction commit failed",
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.ApplicationService {
@@ -132,8 +152,11 @@ func TestResolver_CreateApplication(t *testing.T) {
 			result, err := resolver.CreateApplication(context.TODO(), testCase.Input)
 
 			// then
-			assert.Equal(t, testCase.ExpectedApplication, result)
-			assert.Equal(t, testCase.ExpectedErr, err)
+			if testCase.ExpectedErr != nil {
+				assert.Error(t, testCase.ExpectedErr, err)
+			} else {
+				assert.Equal(t, testCase.ExpectedApplication, result)
+			}
 
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)
@@ -191,6 +214,26 @@ func TestResolver_UpdateApplication(t *testing.T) {
 			Input:               gqlInput,
 			ExpectedApplication: gqlApplication,
 			ExpectedErr:         nil,
+		},
+		{
+			Name:            "Returns an error when the name is too long",
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				return svc
+			},
+			ConverterFn: func() *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				mockOutput := model.ApplicationInput{
+					Name:        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					Description: &desc,
+				}
+				conv.On("InputFromGraphQL", gqlInput).Return(mockOutput).Once()
+				return conv
+			},
+			Input:               gqlInput,
+			ExpectedApplication: nil,
+			ExpectedErr:         errors.New("Application name is too long, should be max 36 characters"),
 		},
 		{
 			Name:            "Returns error when commit transaction failed",
@@ -257,6 +300,7 @@ func TestResolver_UpdateApplication(t *testing.T) {
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
 				conv := &automock.ApplicationConverter{}
+				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
 				return conv
 			},
 			ApplicationID:       applicationID,
@@ -279,8 +323,11 @@ func TestResolver_UpdateApplication(t *testing.T) {
 			result, err := resolver.UpdateApplication(context.TODO(), testCase.ApplicationID, testCase.Input)
 
 			// then
-			assert.Equal(t, testCase.ExpectedApplication, result)
-			assert.Equal(t, testCase.ExpectedErr, err)
+			if testCase.ExpectedErr != nil {
+				assert.Error(t, testCase.ExpectedErr, err)
+			} else {
+				assert.Equal(t, testCase.ExpectedApplication, result)
+			}
 
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)

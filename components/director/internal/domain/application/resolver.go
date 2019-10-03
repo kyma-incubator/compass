@@ -14,6 +14,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const applicaionNameMaxLength = 36
+
 //go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
 type ApplicationService interface {
 	Create(ctx context.Context, in model.ApplicationInput) (string, error)
@@ -264,6 +266,10 @@ func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string,
 
 func (r *Resolver) CreateApplication(ctx context.Context, in graphql.ApplicationInput) (*graphql.Application, error) {
 	convertedIn := r.appConverter.InputFromGraphQL(in)
+	if len(convertedIn.Name) > applicaionNameMaxLength {
+		err := errors.New("Application name is too long, should be max 36 characters")
+		return nil, err
+	}
 
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -293,6 +299,12 @@ func (r *Resolver) CreateApplication(ctx context.Context, in graphql.Application
 	return gqlApp, nil
 }
 func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.ApplicationInput) (*graphql.Application, error) {
+	convertedIn := r.appConverter.InputFromGraphQL(in)
+	if len(convertedIn.Name) > applicaionNameMaxLength {
+		err := errors.New("Application name is too long, should be max 36 characters")
+		return nil, err
+	}
+
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -301,7 +313,6 @@ func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn := r.appConverter.InputFromGraphQL(in)
 	err = r.appSvc.Update(ctx, id, convertedIn)
 	if err != nil {
 		return nil, err
