@@ -625,8 +625,9 @@ input ProvisionRuntimeInput {
 # Defines the desired cluster to provision, specifying its size, memory, Kubernetes version, etc.
 input ClusterConfigInput {
     name: String!
-    nodeCount: String
-    memory: String
+    nodeCount: Int
+    diskSize: String
+    machineType: String
     computeZone: String!
     version: String
     credentials: CredentialsInput!
@@ -3505,13 +3506,19 @@ func (ec *executionContext) unmarshalInputClusterConfigInput(ctx context.Context
 			}
 		case "nodeCount":
 			var err error
-			it.NodeCount, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			it.NodeCount, err = ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "memory":
+		case "diskSize":
 			var err error
-			it.Memory, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			it.DiskSize, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "machineType":
+			var err error
+			it.MachineType, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4906,7 +4913,7 @@ func (ec *executionContext) marshalOError2ᚕᚖgithubᚗcomᚋkymaᚑincubator�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNError2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx, sel, v[i])
+			ret[i] = ec.marshalOError2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)

@@ -34,8 +34,9 @@ type ClusterConfig struct {
 
 type ClusterConfigInput struct {
 	Name           string               `json:"name"`
-	NodeCount      *string              `json:"nodeCount"`
-	Memory         *string              `json:"memory"`
+	NodeCount      *int                 `json:"nodeCount"`
+	DiskSize       *string              `json:"diskSize"`
+	MachineType    *string              `json:"machineType"`
 	ComputeZone    string               `json:"computeZone"`
 	Version        *string              `json:"version"`
 	Credentials    *CredentialsInput    `json:"credentials"`

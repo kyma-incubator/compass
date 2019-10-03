@@ -111,8 +111,9 @@ input ProvisionRuntimeInput {
 # Defines the desired cluster to provision, specifying its size, memory, Kubernetes version, etc.
 input ClusterConfigInput {
     name: String!
-    nodeCount: String
-    memory: String
+    nodeCount: Int
+    diskSize: String
+    machineType: String
     computeZone: String!
     version: String
     credentials: CredentialsInput!
