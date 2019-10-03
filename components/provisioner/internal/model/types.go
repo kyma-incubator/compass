@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 type InfrastructureProvider int
 
 const (
@@ -10,8 +12,9 @@ const (
 
 type ClusterConfig struct {
 	Name                   string
-	NodeCount              string // Should'n there be an Int in the schema?
-	Memory                 string
+	NodeCount              int
+	DiskSize               string
+	MachineType            string
 	ComputeZone            string
 	Version                string
 	InfrastructureProvider InfrastructureProvider
@@ -55,15 +58,13 @@ const (
 )
 
 type Operation struct {
-	Operation OperationType
-	State     OperationState
-	Message   string
-	RuntimeID string // ???
-	Errors    []string
-}
-
-type Error struct {
-	Message string
+	OperationID string
+	Operation   OperationType
+	Started     time.Time
+	Finished    time.Time
+	State       OperationState
+	Message     string
+	RuntimeID   string
 }
 
 type AdditionalProperties map[string]interface{}
@@ -76,6 +77,30 @@ type GardenerProviderConfig struct {
 	MaxSurge             int
 	MaxUnavailable       int
 	AdditionalProperties AdditionalProperties
+}
+
+type RuntimeAgentConnectionStatus int
+
+const (
+	RuntimeAgentConnectionStatusPending      RuntimeAgentConnectionStatus = iota
+	RuntimeAgentConnectionStatusConnected    RuntimeAgentConnectionStatus = iota
+	RuntimeAgentConnectionStatusDisconnected RuntimeAgentConnectionStatus = iota
+)
+
+type RuntimeConnectionConfig struct {
+	Kubeconfig string
+}
+
+type RuntimeConfig struct {
+	KymaConfig    KymaConfig
+	ClusterConfig ClusterConfig
+}
+
+type RuntimeStatus struct {
+	lastOperationStatus     Operation
+	runtimeConnectionStatus RuntimeAgentConnectionStatus
+	runtimeConnectionConfig RuntimeConnectionConfig
+	runtimeConfiguration    RuntimeConfig
 }
 
 type GCPProviderConfig struct {
