@@ -8,27 +8,79 @@ import (
 	"strconv"
 )
 
+type ProviderConfig interface {
+	IsProviderConfig()
+}
+
+type AKSProviderConfig struct {
+	AdditionalProperties *AdditionalProperties `json:"additionalProperties"`
+}
+
+func (AKSProviderConfig) IsProviderConfig() {}
+
+type AKSProviderConfigInput struct {
+	AdditionalProperties *AdditionalProperties `json:"additionalProperties"`
+}
+
 type ClusterConfig struct {
-	Name                   *string                 `json:"name"`
-	Size                   *string                 `json:"size"`
-	Memory                 *string                 `json:"memory"`
-	ComputeZone            *string                 `json:"computeZone"`
-	Version                *string                 `json:"version"`
-	InfrastructureProvider *InfrastructureProvider `json:"infrastructureProvider"`
+	Name           *string        `json:"name"`
+	NodeCount      *int           `json:"nodeCount"`
+	DiskSize       *string        `json:"diskSize"`
+	MachineType    *string        `json:"machineType"`
+	ComputeZone    *string        `json:"computeZone"`
+	Version        *string        `json:"version"`
+	ProviderConfig ProviderConfig `json:"providerConfig"`
 }
 
 type ClusterConfigInput struct {
-	Name                   string                 `json:"name"`
-	Size                   *string                `json:"size"`
-	Memory                 *string                `json:"memory"`
-	ComputeZone            string                 `json:"computeZone"`
-	Version                *string                `json:"version"`
-	Credentials            string                 `json:"credentials"`
-	InfrastructureProvider InfrastructureProvider `json:"infrastructureProvider"`
+	Name           string               `json:"name"`
+	NodeCount      *int                 `json:"nodeCount"`
+	DiskSize       *string              `json:"diskSize"`
+	MachineType    *string              `json:"machineType"`
+	ComputeZone    string               `json:"computeZone"`
+	Version        *string              `json:"version"`
+	Credentials    *CredentialsInput    `json:"credentials"`
+	ProviderConfig *ProviderConfigInput `json:"providerConfig"`
+}
+
+type CredentialsInput struct {
+	SecretName string `json:"secretName"`
 }
 
 type Error struct {
 	Message *string `json:"message"`
+}
+
+type GCPProviderConfig struct {
+	AdditionalProperties *AdditionalProperties `json:"additionalProperties"`
+}
+
+func (GCPProviderConfig) IsProviderConfig() {}
+
+type GCPProviderConfigInput struct {
+	AdditionalProperties *AdditionalProperties `json:"additionalProperties"`
+}
+
+type GardenerProviderConfig struct {
+	TargetProvider       *string               `json:"targetProvider"`
+	TargetSecret         *string               `json:"targetSecret"`
+	AutoScalerMin        *int                  `json:"autoScalerMin"`
+	AutoScalerMax        *int                  `json:"autoScalerMax"`
+	MaxSurge             *int                  `json:"maxSurge"`
+	MaxUnavailable       *int                  `json:"maxUnavailable"`
+	AdditionalProperties *AdditionalProperties `json:"additionalProperties"`
+}
+
+func (GardenerProviderConfig) IsProviderConfig() {}
+
+type GardenerProviderConfigInput struct {
+	TargetProvider       string                `json:"targetProvider"`
+	TargetSecret         string                `json:"targetSecret"`
+	AutoScalerMin        *int                  `json:"autoScalerMin"`
+	AutoScalerMax        *int                  `json:"autoScalerMax"`
+	MaxSurge             *int                  `json:"maxSurge"`
+	MaxUnavailable       *int                  `json:"maxUnavailable"`
+	AdditionalProperties *AdditionalProperties `json:"additionalProperties"`
 }
 
 type KymaConfig struct {
@@ -46,7 +98,12 @@ type OperationStatus struct {
 	State     OperationState `json:"state"`
 	Message   string         `json:"message"`
 	RuntimeID string         `json:"runtimeID"`
-	Errors    []*Error       `json:"errors"`
+}
+
+type ProviderConfigInput struct {
+	GardenerProviderConfig *GardenerProviderConfigInput `json:"gardenerProviderConfig"`
+	GcpProviderConfig      *GCPProviderConfigInput      `json:"gcpProviderConfig"`
+	AksProviderConfig      *AKSProviderConfigInput      `json:"aksProviderConfig"`
 }
 
 type ProvisionRuntimeInput struct {
@@ -82,49 +139,6 @@ type UpgradeClusterInput struct {
 type UpgradeRuntimeInput struct {
 	ClusterConfig *UpgradeClusterInput `json:"clusterConfig"`
 	KymaConfig    *KymaConfigInput     `json:"kymaConfig"`
-}
-
-type InfrastructureProvider string
-
-const (
-	InfrastructureProviderGke      InfrastructureProvider = "GKE"
-	InfrastructureProviderAks      InfrastructureProvider = "AKS"
-	InfrastructureProviderGardener InfrastructureProvider = "Gardener"
-)
-
-var AllInfrastructureProvider = []InfrastructureProvider{
-	InfrastructureProviderGke,
-	InfrastructureProviderAks,
-	InfrastructureProviderGardener,
-}
-
-func (e InfrastructureProvider) IsValid() bool {
-	switch e {
-	case InfrastructureProviderGke, InfrastructureProviderAks, InfrastructureProviderGardener:
-		return true
-	}
-	return false
-}
-
-func (e InfrastructureProvider) String() string {
-	return string(e)
-}
-
-func (e *InfrastructureProvider) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = InfrastructureProvider(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid InfrastructureProvider", str)
-	}
-	return nil
-}
-
-func (e InfrastructureProvider) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 type KymaModule string
