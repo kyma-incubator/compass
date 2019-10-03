@@ -387,10 +387,10 @@ func TestService_CreateWithInvalidNames(t *testing.T) {
 			ExpectedErrMessage: "a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character",
 		},
 		{
-			Name:               "Returns an error when application name is too long",
+			Name:               "Returns error when application name is too long",
 			InputID:            "foo",
-			Input:              model.ApplicationInput{Name: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
-			ExpectedErrMessage: "Application name is too long, should be max 36 characters",
+			Input:              model.ApplicationInput{Name: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+			ExpectedErrMessage: "application name is too long, must be maximum 36 characters long",
 		},
 	}
 
@@ -692,8 +692,8 @@ func TestService_UpdateWithInvalidNames(t *testing.T) {
 		{
 			Name:        "Returns error when application name is too long",
 			InputID:     "foo",
-			Input:       model.ApplicationInput{Name: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
-			ExpectedErr: errors.New("Application name is too long, should be max 36 characters"),
+			Input:       model.ApplicationInput{Name: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+			ExpectedErr: errors.New("application name is too long, must be maximum 36 characters long"),
 		},
 	}
 

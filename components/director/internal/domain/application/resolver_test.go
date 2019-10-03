@@ -132,11 +132,8 @@ func TestResolver_CreateApplication(t *testing.T) {
 			result, err := resolver.CreateApplication(context.TODO(), testCase.Input)
 
 			// then
-			if testCase.ExpectedErr != nil {
-				assert.Error(t, testCase.ExpectedErr, err)
-			} else {
-				assert.Equal(t, testCase.ExpectedApplication, result)
-			}
+			assert.Equal(t, testCase.ExpectedApplication, result)
+			assert.Equal(t, testCase.ExpectedErr, err)
 
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)
@@ -260,7 +257,6 @@ func TestResolver_UpdateApplication(t *testing.T) {
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
 				conv := &automock.ApplicationConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
 				return conv
 			},
 			ApplicationID:       applicationID,
@@ -283,11 +279,8 @@ func TestResolver_UpdateApplication(t *testing.T) {
 			result, err := resolver.UpdateApplication(context.TODO(), testCase.ApplicationID, testCase.Input)
 
 			// then
-			if testCase.ExpectedErr != nil {
-				assert.Error(t, testCase.ExpectedErr, err)
-			} else {
-				assert.Equal(t, testCase.ExpectedApplication, result)
-			}
+			assert.Equal(t, testCase.ExpectedApplication, result)
+			assert.Equal(t, testCase.ExpectedErr, err)
 
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)

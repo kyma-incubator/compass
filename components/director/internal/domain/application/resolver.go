@@ -264,6 +264,7 @@ func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string,
 
 func (r *Resolver) CreateApplication(ctx context.Context, in graphql.ApplicationInput) (*graphql.Application, error) {
 	convertedIn := r.appConverter.InputFromGraphQL(in)
+
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -292,7 +293,6 @@ func (r *Resolver) CreateApplication(ctx context.Context, in graphql.Application
 	return gqlApp, nil
 }
 func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.ApplicationInput) (*graphql.Application, error) {
-	convertedIn := r.appConverter.InputFromGraphQL(in)
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -301,6 +301,7 @@ func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	convertedIn := r.appConverter.InputFromGraphQL(in)
 	err = r.appSvc.Update(ctx, id, convertedIn)
 	if err != nil {
 		return nil, err

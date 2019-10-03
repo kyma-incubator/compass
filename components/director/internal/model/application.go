@@ -75,7 +75,7 @@ func (i *ApplicationInput) Validate() error {
 		return errors.Errorf("%v", errorMgs)
 	}
 	if len(i.Name) > applicationNameMaxLength {
-		err := errors.New("Application name is too long, should be max 36 characters")
+		err := errors.New("application name is too long, must be maximum 36 characters long")
 		return err
 	}
 	return nil
