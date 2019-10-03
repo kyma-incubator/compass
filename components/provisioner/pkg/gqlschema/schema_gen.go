@@ -87,7 +87,6 @@ type ComplexityRoot struct {
 	}
 
 	OperationStatus struct {
-		Errors    func(childComplexity int) int
 		Message   func(childComplexity int) int
 		Operation func(childComplexity int) int
 		RuntimeID func(childComplexity int) int
@@ -328,13 +327,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UpgradeRuntime(childComplexity, args["id"].(string), args["config"].(*UpgradeRuntimeInput)), true
 
-	case "OperationStatus.errors":
-		if e.complexity.OperationStatus.Errors == nil {
-			break
-		}
-
-		return e.complexity.OperationStatus.Errors(childComplexity), true
-
 	case "OperationStatus.message":
 		if e.complexity.OperationStatus.Message == nil {
 			break
@@ -571,7 +563,6 @@ type OperationStatus {
     state: OperationState!
     message: String!
     runtimeID: String!
-    errors: [Error]
 }
 
 enum OperationType {
@@ -1818,40 +1809,6 @@ func (ec *executionContext) _OperationStatus_runtimeID(ctx context.Context, fiel
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _OperationStatus_errors(ctx context.Context, field graphql.CollectedField, obj *OperationStatus) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "OperationStatus",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Errors, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*Error)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOError2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_runtimeStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4038,8 +3995,6 @@ func (ec *executionContext) _OperationStatus(ctx context.Context, sel ast.Select
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "errors":
-			out.Values[i] = ec._OperationStatus_errors(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4882,10 +4837,6 @@ func (ec *executionContext) marshalOClusterConfig2ᚖgithubᚗcomᚋkymaᚑincub
 	return ec._ClusterConfig(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOError2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx context.Context, sel ast.SelectionSet, v Error) graphql.Marshaler {
-	return ec._Error(ctx, sel, &v)
-}
-
 func (ec *executionContext) marshalOError2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx context.Context, sel ast.SelectionSet, v []*Error) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -4913,7 +4864,7 @@ func (ec *executionContext) marshalOError2ᚕᚖgithubᚗcomᚋkymaᚑincubator�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOError2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx, sel, v[i])
+			ret[i] = ec.marshalNError2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -4924,13 +4875,6 @@ func (ec *executionContext) marshalOError2ᚕᚖgithubᚗcomᚋkymaᚑincubator�
 	}
 	wg.Wait()
 	return ret
-}
-
-func (ec *executionContext) marshalOError2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx context.Context, sel ast.SelectionSet, v *Error) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._Error(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOGCPProviderConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGCPProviderConfigInput(ctx context.Context, v interface{}) (GCPProviderConfigInput, error) {

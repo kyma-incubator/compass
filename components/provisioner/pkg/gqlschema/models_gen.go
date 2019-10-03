@@ -98,7 +98,6 @@ type OperationStatus struct {
 	State     OperationState `json:"state"`
 	Message   string         `json:"message"`
 	RuntimeID string         `json:"runtimeID"`
-	Errors    []*Error       `json:"errors"`
 }
 
 type ProviderConfigInput struct {
