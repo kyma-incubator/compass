@@ -60,7 +60,8 @@ func clusterConfig() string {
 	return fmt.Sprintf(`
 		name 
 		nodeCount 
-		memory 
+		diskSize
+		machineType
 		computeZone 
 		version 
 		providerConfig {
