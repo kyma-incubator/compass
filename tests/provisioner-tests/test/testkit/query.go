@@ -45,13 +45,43 @@ func (qp queryProvider) runtimeOperationStatus(operationID string) string {
 }
 
 func runtimeStatusResult() string {
-	return `lastOperationStatus { operation state message }
+	return fmt.Sprintf(`lastOperationStatus { operation state message }
 			runtimeConnectionStatus { status }
 			runtimeConnectionConfig { kubeconfig }
 			runtimeConfiguration { 
-				clusterConfig { name size memory computeZone version infrastructureProvider } 
+				clusterConfig { 
+					%s
+				} 
 				kymaConfig { version modules } 
-			}`
+			}`, clusterConfig())
+}
+
+func clusterConfig() string {
+	return fmt.Sprintf(`
+		name 
+		nodeCount 
+		diskSize
+		machineType
+		computeZone 
+		version 
+		providerConfig {
+			... on GardenerProviderConfig {
+			  	targetProvider
+				targetSecret
+				autoScalerMin
+				autoScalerMax
+				maxSurge
+				maxUnavailable
+				additionalProperties
+			}
+			...  on GCPProviderConfig {
+				additionalProperties
+			}
+			...  on AKSProviderConfig {
+				additionalProperties
+			}
+		}
+`)
 }
 
 func operationStatusResult() string {

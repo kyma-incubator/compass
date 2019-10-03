@@ -22,7 +22,7 @@ global:
       version: "PR-328"
     provisioner:
       dir: pr/
-      version: "PR-305"
+      version: "PR-348"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -37,7 +37,7 @@ global:
         version: "PR-335"
       provisioner:
         dir: pr/
-        version: "PR-334"
+        version: "PR-348"
 
   isLocalEnv: false
 
