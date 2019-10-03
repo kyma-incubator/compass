@@ -25,18 +25,41 @@ func (_m *Repository) Create(ctx context.Context, item model.SystemAuth) error {
 	return r0
 }
 
-// Delete provides a mock function with given fields: ctx, tenant, id, objectType
-func (_m *Repository) Delete(ctx context.Context, tenant string, id string, objectType model.SystemAuthReferenceObjectType) error {
-	ret := _m.Called(ctx, tenant, id, objectType)
+// Delete provides a mock function with given fields: ctx, tenant, id
+func (_m *Repository) Delete(ctx context.Context, tenant string, id string) error {
+	ret := _m.Called(ctx, tenant, id)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.SystemAuthReferenceObjectType) error); ok {
-		r0 = rf(ctx, tenant, id, objectType)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, tenant, id)
 	} else {
 		r0 = ret.Error(0)
 	}
 
 	return r0
+}
+
+// GetByID provides a mock function with given fields: ctx, tenant, id
+func (_m *Repository) GetByID(ctx context.Context, tenant string, id string) (*model.SystemAuth, error) {
+	ret := _m.Called(ctx, tenant, id)
+
+	var r0 *model.SystemAuth
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.SystemAuth); ok {
+		r0 = rf(ctx, tenant, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.SystemAuth)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenant, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // ListForObject provides a mock function with given fields: ctx, tenant, objectType, objectID

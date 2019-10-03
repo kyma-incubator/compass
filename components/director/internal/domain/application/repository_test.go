@@ -391,7 +391,7 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 			ExpectedError: nil,
 		},
 		{
-			Name:                    "Return empty page when no application match",
+			Name: "Return empty page when no application match",
 			ExpectedApplicationRows: sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url"}),
 			TotalCount:              0,
 			ExpectedError:           nil,

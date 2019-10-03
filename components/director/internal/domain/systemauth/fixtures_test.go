@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	testTenant           = "tenant"
+	testTenant           = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 	testMarshalledSchema = "{\"Credential\":{\"Basic\":{\"Username\":\"foo\",\"Password\":\"bar\"},\"Oauth\":null},\"AdditionalHeaders\":{\"test\":[\"foo\",\"bar\"]},\"AdditionalQueryParams\":{\"test\":[\"foo\",\"bar\"]},\"RequestAuth\":{\"Csrf\":{\"TokenEndpointURL\":\"foo.url\",\"Credential\":{\"Basic\":{\"Username\":\"boo\",\"Password\":\"far\"},\"Oauth\":null},\"AdditionalHeaders\":{\"test\":[\"foo\",\"bar\"]},\"AdditionalQueryParams\":{\"test\":[\"foo\",\"bar\"]}}}}"
 	testErr              = errors.New("test error")
 )
@@ -29,7 +29,6 @@ func fixGQLSystemAuth(id string, auth *graphql.Auth) *graphql.SystemAuth {
 }
 
 func fixModelSystemAuth(id string, objectType model.SystemAuthReferenceObjectType, objectID string, auth *model.Auth) *model.SystemAuth {
-
 	systemAuth := model.SystemAuth{
 		ID:    id,
 		Value: auth,

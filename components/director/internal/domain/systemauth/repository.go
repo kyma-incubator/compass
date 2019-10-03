@@ -21,24 +21,26 @@ type Converter interface {
 	FromEntity(in Entity) (model.SystemAuth, error)
 }
 
-type pgRepository struct {
+type repository struct {
 	*repo.Creator
+	*repo.SingleGetter
 	*repo.Lister
 	*repo.Deleter
 
 	conv Converter
 }
 
-func NewRepository(conv Converter) *pgRepository {
-	return &pgRepository{
-		Creator: repo.NewCreator(tableName, tableColumns),
-		Lister:  repo.NewLister(tableName, "tenant_id", tableColumns),
-		Deleter: repo.NewDeleter(tableName, "tenant_id"),
-		conv:    conv,
+func NewRepository(conv Converter) *repository {
+	return &repository{
+		Creator:      repo.NewCreator(tableName, tableColumns),
+		SingleGetter: repo.NewSingleGetter(tableName, "tenant_id", tableColumns),
+		Lister:       repo.NewLister(tableName, "tenant_id", tableColumns),
+		Deleter:      repo.NewDeleter(tableName, "tenant_id"),
+		conv:         conv,
 	}
 }
 
-func (r *pgRepository) Create(ctx context.Context, item model.SystemAuth) error {
+func (r *repository) Create(ctx context.Context, item model.SystemAuth) error {
 	entity, err := r.conv.ToEntity(item)
 	if err != nil {
 		return errors.Wrap(err, "while converting model to entity")
@@ -47,14 +49,28 @@ func (r *pgRepository) Create(ctx context.Context, item model.SystemAuth) error 
 	return r.Creator.Create(ctx, entity)
 }
 
-func (r *pgRepository) ListForObject(ctx context.Context, tenant string, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error) {
-	objType, err := referenceObjectField(objectType)
+func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.SystemAuth, error) {
+	var entity Entity
+	if err := r.SingleGetter.Get(ctx, tenant, repo.Conditions{{Field: "id", Val: id}}, &entity); err != nil {
+		return nil, err
+	}
+
+	itemModel, err := r.conv.FromEntity(entity)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting SystemAuth entity to model")
+	}
+
+	return &itemModel, nil
+}
+
+func (r *repository) ListForObject(ctx context.Context, tenant string, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error) {
+	objTypeFieldName, err := referenceObjectField(objectType)
 	if err != nil {
 		return nil, err
 	}
 
 	var entities Collection
-	if err := r.Lister.List(ctx, tenant, &entities, fmt.Sprintf("%s = %s", objType, pq.QuoteLiteral(objectID))); err != nil {
+	if err := r.Lister.List(ctx, tenant, &entities, fmt.Sprintf("%s = %s", objTypeFieldName, pq.QuoteLiteral(objectID))); err != nil {
 		return nil, err
 	}
 
@@ -72,7 +88,16 @@ func (r *pgRepository) ListForObject(ctx context.Context, tenant string, objectT
 	return items, nil
 }
 
-func (r *pgRepository) Delete(ctx context.Context, tenant string, id string, objectType model.SystemAuthReferenceObjectType) error {
+func (r *repository) DeleteAllForObject(ctx context.Context, tenant string, objectType model.SystemAuthReferenceObjectType, objectID string) error {
+	objTypeFieldName, err := referenceObjectField(objectType)
+	if err != nil {
+		return err
+	}
+
+	return r.Deleter.DeleteMany(ctx, tenant, repo.Conditions{{Field: objTypeFieldName, Val: objectID}})
+}
+
+func (r *repository) Delete(ctx context.Context, tenant string, id string) error {
 	return r.Deleter.DeleteOne(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
 }
 

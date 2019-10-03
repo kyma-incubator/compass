@@ -3,6 +3,8 @@ package domain
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apiruntimeauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -36,9 +38,10 @@ type RootResolver struct {
 	webhook     *webhook.Resolver
 	labelDef    *labeldef.Resolver
 	token       *onetimetoken.Resolver
+	systemAuth  *systemauth.Resolver
 }
 
-func NewRootResolver(transact persistence.Transactioner, cfg onetimetoken.ConnectorConfig) *RootResolver {
+func NewRootResolver(transact persistence.Transactioner, cfg onetimetoken.Config) *RootResolver {
 	authConverter := auth.NewConverter()
 	apiRtmAuthConverter := apiruntimeauth.NewConverter(authConverter)
 	runtimeConverter := runtime.NewConverter()
@@ -94,6 +97,7 @@ func NewRootResolver(transact persistence.Transactioner, cfg onetimetoken.Connec
 		webhook:     webhook.NewResolver(transact, webhookSvc, appSvc, webhookConverter),
 		labelDef:    labeldef.NewResolver(labelDefSvc, labelDefConverter, transact),
 		token:       onetimetoken.NewTokenResolver(transact, tokenService, tokenConverter),
+		systemAuth:  systemauth.NewResolver(transact, systemAuthSvc, systemAuthConverter),
 	}
 }
 
@@ -153,14 +157,6 @@ func (r *queryResolver) HealthChecks(ctx context.Context, types []graphql.Health
 
 type mutationResolver struct {
 	*RootResolver
-}
-
-func (r *mutationResolver) GenerateOneTimeTokenForApplication(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
-	return r.token.GenerateOneTimeTokenForApplication(ctx, id)
-}
-
-func (r *mutationResolver) GenerateOneTimeTokenForRuntime(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
-	return r.token.GenerateOneTimeTokenForRuntime(ctx, id)
 }
 
 func (r *mutationResolver) CreateApplication(ctx context.Context, in graphql.ApplicationInput) (*graphql.Application, error) {
@@ -246,6 +242,24 @@ func (r *mutationResolver) SetRuntimeLabel(ctx context.Context, runtimeID string
 }
 func (r *mutationResolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string) (*graphql.Label, error) {
 	return r.runtime.DeleteRuntimeLabel(ctx, runtimeID, key)
+}
+func (r *mutationResolver) GenerateOneTimeTokenForApplication(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
+	return r.token.GenerateOneTimeTokenForApplication(ctx, id)
+}
+func (r *mutationResolver) GenerateOneTimeTokenForRuntime(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
+	return r.token.GenerateOneTimeTokenForRuntime(ctx, id)
+}
+func (r *mutationResolver) DeleteSystemAuthForRuntime(ctx context.Context, authID string) (*graphql.SystemAuth, error) {
+	fn := r.systemAuth.GenericDeleteSystemAuth(model.RuntimeReference)
+	return fn(ctx, authID)
+}
+func (r *mutationResolver) DeleteSystemAuthForApplication(ctx context.Context, authID string) (*graphql.SystemAuth, error) {
+	fn := r.systemAuth.GenericDeleteSystemAuth(model.ApplicationReference)
+	return fn(ctx, authID)
+}
+func (r *mutationResolver) DeleteSystemAuthForIntegrationSystem(ctx context.Context, authID string) (*graphql.SystemAuth, error) {
+	fn := r.systemAuth.GenericDeleteSystemAuth(model.IntegrationSystemReference)
+	return fn(ctx, authID)
 }
 
 type applicationResolver struct {
