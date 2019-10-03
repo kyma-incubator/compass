@@ -10,13 +10,15 @@ include $(SCRIPTS_DIR)/go-dep.mk
 VERIFY_IGNORE := /vendor\|/automock\|/testdata\|/pkg
 
 gqlgen:
+	@echo make gqlgen
 	exit $(./gqlgen.sh)
 
 gqlgen-check:
-	@if [ -n $(git status -s pkg/graphql) ]; then\
-		echo $(git status -s ./pkg/graphql);\
-		echo -e "${RED}✗ gqlgen.sh modified some files, schema and code are out-of-sync${NC}";\
-		exit 1;\
-	fi
+	@echo make gqlgen-check
+	@if [ -n "$$(git status -s pkg/graphql)" ]; then \
+		echo -e "${RED}✗ gqlgen.sh modified some files, schema and code are out-of-sync${NC}"; \
+		git status -s pkg/graphql; \
+		exit 1; \
+	fi; \
 
-verify:: gqlgen
+verify:: gqlgen gqlgen-check
