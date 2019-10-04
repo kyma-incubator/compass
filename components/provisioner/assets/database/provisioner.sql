@@ -1,91 +1,81 @@
 -- Cluster
 
-CREATE TABLE cluster
+CREATE TABLE "Cluster"
 (
-    ID uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     kubeconfig text,
-    terraform_state json,
+    terraform_state jsonb,
     creation_timestamp timestamp without time zone NOT NULL
 );
 
 
 -- Cluster Config
 
-CREATE TYPE infrastructure_provider AS ENUM (
-    'GARDENER',
-    'GCP',
-    'AKS'
-    );
-
-CREATE TABLE cluster_config
+CREATE TABLE "InfrastructureProvider"
 (
-    ID uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    name varchar(256) NOT NULL,
+    schema jsonb NOT NULL
+);
+
+CREATE TABLE "ClusterConfig"
+(
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     name varchar(256) NOT NULL,
     node_count integer NOT NULL,
     disk_size varchar(256) NOT NULL,
     machine_type varchar(256) NOT NULL,
     compute_zone varchar(256) NOT NULL,
     version varchar(256) NOT NULL,
-    infrastructure_provider infrastructure_provider NOT NULL,
-    runtime_id uuid NOT NULL,
-    foreign key (runtime_id) REFERENCES cluster (id) ON DELETE CASCADE
-);
-
-
--- Infrastructure Provider Config
-
-CREATE TABLE infrastructure_provider_config
-(
-    ID uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
-    key varchar(256) NOT NULL,
-    value varchar(256) NOT NULL,
-    cluster_config_id uuid NOT NULL,
-    foreign key (cluster_config_id) REFERENCES cluster_config (id) ON DELETE CASCADE
+    infrastructure_provider_id uuid NOT NULL,
+    foreign key (infrastructure_provider_id) REFERENCES "InfrastructureProvider" (id) ON DELETE CASCADE,
+    cluster_id uuid NOT NULL,
+    foreign key (cluster_id) REFERENCES "Cluster" (id) ON DELETE CASCADE
 );
 
 
 -- Operation
 
-CREATE TYPE operation_state AS ENUM (
+CREATE TYPE "OperationState" AS ENUM (
     'IN_PROGRESS',
     'SUCCEEDED',
     'FAILED'
     );
 
-CREATE TYPE operation_type AS ENUM (
+CREATE TYPE "OperationType" AS ENUM (
     'PROVISION',
     'UPGRADE',
     'DEPROVISION',
     'RECONNECT_RUNTIME'
     );
 
-CREATE TABLE operation
+CREATE TABLE "Operation"
 (
-    ID uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
-    type operation_type NOT NULL,
-    state operation_state NOT NULL,
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    type "OperationType" NOT NULL,
+    state "OperationState" NOT NULL,
     message text,
     start_timestamp timestamp without time zone NOT NULL,
     end_timestamp timestamp without time zone NOT NULL,
-    runtime_id uuid NOT NULL,
-    foreign key (runtime_id) REFERENCES cluster (id) ON DELETE CASCADE
+    cluster_id uuid NOT NULL,
+    foreign key (cluster_id) REFERENCES "Cluster" (id) ON DELETE CASCADE
 );
 
 
 -- Kyma Config
 
-CREATE TABLE kyma_config
+CREATE TABLE "KymaConfig"
 (
-    ID uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     version varchar(256) NOT NULL,
-    runtime_id uuid NOT NULL,
-    foreign key (runtime_id) REFERENCES cluster (id) ON DELETE CASCADE
+    cluster_id uuid NOT NULL,
+    foreign key (cluster_id) REFERENCES "Cluster" (id) ON DELETE CASCADE
 );
 
-CREATE TABLE kyma_config_module
+CREATE TABLE "KymaConfigModule"
 (
-    ID uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     module varchar(256) NOT NULL,
     kyma_config_id uuid NOT NULL,
-    foreign key (kyma_config_id) REFERENCES kyma_config (id) ON DELETE CASCADE
+    foreign key (kyma_config_id) REFERENCES "KymaConfig" (id) ON DELETE CASCADE
 );
