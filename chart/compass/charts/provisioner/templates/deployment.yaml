@@ -75,7 +75,7 @@ spec:
                     "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json"]
                 {{- with .Values.deployment.securityContext }}
           securityContext:
-                {{ toYaml . | indent 12 }}
+{{ toYaml . | indent 12 }}
                 {{- end }}
           volumeMounts:
             - name: cloudsql-instance-credentials
