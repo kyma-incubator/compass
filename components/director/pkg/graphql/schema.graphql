@@ -178,6 +178,11 @@ input FetchRequestInput {
 	filter: String
 }
 
+input IntegrationSystemInput {
+	name: String!
+	description: String
+}
+
 input LabelDefinitionInput {
 	key: String!
 	schema: JSONSchema
@@ -399,6 +404,19 @@ type HealthCheckPage implements Pageable {
 	totalCount: Int!
 }
 
+type IntegrationSystem {
+	id: ID!
+	name: String!
+	description: String
+	auths: [SystemAuth!]!
+}
+
+type IntegrationSystemPage implements Pageable {
+	data: [IntegrationSystem!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
+}
+
 type Label {
 	key: String!
 	value: Any!
@@ -499,6 +517,11 @@ type Query {
 	labelDefinitions: [LabelDefinition!]! @hasScopes(path: "graphql.query.labelDefinitions")
 	labelDefinition(key: String!): LabelDefinition @hasScopes(path: "graphql.query.labelDefinition")
 	healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: PageCursor): HealthCheckPage! @hasScopes(path: "graphql.query.healthChecks")
+	"""
+	Maximum `first` parameter value is 100
+	"""
+	integrationSystems(first: Int = 100, after: PageCursor): IntegrationSystemPage! @hasScopes(path: "graphql.query.integrationSystems")
+	integrationSystem(id: ID!): IntegrationSystem @hasScopes(path: "graphql.query.integrationSystem")
 }
 
 type Mutation {
@@ -508,6 +531,9 @@ type Mutation {
 	createRuntime(in: RuntimeInput!): Runtime! @hasScopes(path: "graphql.mutation.createRuntime")
 	updateRuntime(id: ID!, in: RuntimeInput!): Runtime! @hasScopes(path: "graphql.mutation.updateRuntime")
 	deleteRuntime(id: ID!): Runtime! @hasScopes(path: "graphql.mutation.deleteRuntime")
+	createIntegrationSystem(in: IntegrationSystemInput!): IntegrationSystem! @hasScopes(path: "graphql.mutation.createIntegrationSystem")
+	updateIntegrationSystem(id: ID!, in: IntegrationSystemInput!): IntegrationSystem! @hasScopes(path: "graphql.mutation.updateIntegrationSystem")
+	deleteIntegrationSystem(id: ID!): IntegrationSystem! @hasScopes(path: "graphql.mutation.deleteIntegrationSystem")
 	addWebhook(applicationID: ID!, in: WebhookInput!): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
 	updateWebhook(webhookID: ID!, in: WebhookInput!): Webhook! @hasScopes(path: "graphql.mutation.updateWebhook")
 	deleteWebhook(webhookID: ID!): Webhook! @hasScopes(path: "graphql.mutation.deleteWebhook")
