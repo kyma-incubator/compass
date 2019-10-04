@@ -1,29 +1,17 @@
-IMG_NAME = connector-tests
-IMG = $(DOCKER_PUSH_REPOSITORY)$(DOCKER_PUSH_DIRECTORY)/$(IMG_NAME)
-TAG = $(DOCKER_TAG)
+APP_NAME = connector-tests
+APP_PATH = tests/connector-tests
+BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20190913-65b55d1
+SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 
-.PHONY: ci-pr ci-master ci-release resolve build-and-test build-image push-image pull-licenses
+include $(SCRIPTS_DIR)/generic_make_go.mk
 
-ci-pr: resolve build-and-test build-image push-image
-ci-master: resolve build-and-test build-image push-image
-ci-release: resolve build-and-test build-image push-image
+VERIFY_IGNORE := /vendor\|/automock\|/testdata
 
-resolve:
-	dep ensure -v -vendor-only
-pull-licenses:
-ifdef LICENSE_PULLER_PATH
-	bash $(LICENSE_PULLER_PATH)
-else
-	mkdir -p licenses
-endif
-build-and-test:
-ifndef PROW_JOB_ID
-	./before-commit.sh
-else
-	./before-commit.sh ci
-endif
-build-image: pull-licenses
-	docker build -t $(IMG_NAME) .
-push-image:
-	docker tag $(IMG_NAME) $(IMG):$(TAG)
-	docker push $(IMG):$(TAG)
+verify:: vet
+
+#We have to override test-local, because
+test-local: ;
+
+.PHONY: ci-pr
+#Temporary
+ci-pr: release
