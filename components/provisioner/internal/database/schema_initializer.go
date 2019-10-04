@@ -58,7 +58,7 @@ func InitializeDatabase(dbName, connectionString, schemaFilePath string) (*sql.D
 func closeDBConnection(db *sql.DB) {
 	err := db.Close()
 	if err != nil {
-		logrus.Warn("Failed to close database connection: %s", err.Error())
+		logrus.Warnf("Failed to close database connection: %s", err.Error())
 	}
 }
 
