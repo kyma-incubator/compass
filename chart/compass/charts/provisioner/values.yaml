@@ -1,3 +1,7 @@
 deployment:
   image:
     pullPolicy: IfNotPresent
+
+  securityContext: # Set on container level
+    runAsUser: 2000
+    allowPrivilegeEscalation: false

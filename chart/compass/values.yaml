@@ -22,7 +22,7 @@ global:
       version: "PR-328"
     provisioner:
       dir: pr/
-      version: "PR-348"
+      version: "PR-352"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -99,14 +99,18 @@ global:
       namespace: compass-system
 
   database:
-    useEmbedded: true
+    embedded:
+      enabled: true
+      directorDBName: "postgres"
+      provisionerDBName: "provisioner"
     # Values for GCP managed PostgreSQL database
     managedGCP:
       serviceAccountKey: ""
       instanceConnectionName: ""
       dbUser: ""
       dbPassword: ""
-      dbName: ""
+      directorDBName: ""
+      provisionerDBName: ""
       host: "localhost"
       hostPort: "5432"
       sslMode: ""
