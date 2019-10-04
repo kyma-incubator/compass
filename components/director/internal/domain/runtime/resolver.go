@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -118,6 +119,9 @@ func (r *Resolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, er
 
 	runtime, err := r.svc.Get(ctx, id)
 	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, nil
+		}
 		return nil, err
 	}
 

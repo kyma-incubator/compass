@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
@@ -80,7 +81,7 @@ func (g *universalSingleGetter) unsafeGet(ctx context.Context, tenant *string, c
 	err = persist.Get(dest, stmtBuilder.String(), allArgs...)
 	switch {
 	case err == sql.ErrNoRows:
-		return &notFoundError{}
+		return apperrors.NewNotFoundError(conditions[0].Val)
 	case err != nil:
 		return errors.Wrap(err, "while getting object from DB")
 	}

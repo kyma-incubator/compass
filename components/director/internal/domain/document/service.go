@@ -3,8 +3,7 @@ package document
 import (
 	"context"
 	"fmt"
-
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
 
@@ -130,7 +129,7 @@ func (s *service) GetFetchRequest(ctx context.Context, documentID string) (*mode
 
 	fetchRequest, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.DocumentFetchRequestReference, documentID)
 	if err != nil {
-		if repo.IsNotFoundError(err) {
+		if apperrors.IsNotFoundError(err) {
 			return nil, nil
 		}
 		return nil, errors.Wrapf(err, "while getting FetchRequest by Document ID %s", documentID)

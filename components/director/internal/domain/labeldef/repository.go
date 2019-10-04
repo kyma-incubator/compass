@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -71,7 +72,7 @@ func (r *repo) GetByKey(ctx context.Context, tenant string, key string) (*model.
 	err = db.Get(&dest, q, tenant, key)
 	switch {
 	case err == sql.ErrNoRows:
-		return nil, nil
+		return nil, apperrors.NewNotFoundError(key)
 	case err != nil:
 		return nil, errors.Wrap(err, "while querying Label Definition")
 	}

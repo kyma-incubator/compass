@@ -3,8 +3,7 @@ package eventapi
 import (
 	"context"
 	"fmt"
-
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
@@ -180,7 +179,7 @@ func (s *service) GetFetchRequest(ctx context.Context, eventAPIDefID string) (*m
 
 	fetchRequest, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.EventAPIFetchRequestReference, eventAPIDefID)
 	if err != nil {
-		if repo.IsNotFoundError(err) {
+		if apperrors.IsNotFoundError(err) {
 			return nil, nil
 		}
 		return nil, errors.Wrapf(err, "while getting FetchRequest by Event API Definition ID %s", eventAPIDefID)

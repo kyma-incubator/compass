@@ -2,6 +2,7 @@ package repo_test
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"regexp"
 	"testing"
 
@@ -75,7 +76,7 @@ func TestUpdateSingle(t *testing.T) {
 		// WHEN
 		err := sut.UpdateSingle(ctx, givenUser)
 		// THEN
-		require.True(t, repo.IsNotUnique(err))
+		require.True(t, apperrors.IsNotUnique(err))
 	})
 
 	t.Run("returns error if modified more than one row", func(t *testing.T) {

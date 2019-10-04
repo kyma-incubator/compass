@@ -3,8 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
-
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
@@ -180,7 +179,7 @@ func (s *service) GetFetchRequest(ctx context.Context, apiDefID string) (*model.
 
 	fetchRequest, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.APIFetchRequestReference, apiDefID)
 	if err != nil {
-		if repo.IsNotFoundError(err) {
+		if apperrors.IsNotFoundError(err) {
 			return nil, nil
 		}
 		return nil, errors.Wrapf(err, "while getting FetchRequest by API Definition ID %s", apiDefID)

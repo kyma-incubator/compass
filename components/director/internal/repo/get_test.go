@@ -2,6 +2,7 @@ package repo_test
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"regexp"
 	"testing"
 
@@ -99,7 +100,7 @@ func TestGetSingle(t *testing.T) {
 		err := sut.Get(ctx, givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}}, &dest)
 		// THEN
 		require.NotNil(t, err)
-		assert.True(t, repo.IsNotFoundError(err))
+		assert.True(t, apperrors.IsNotFoundError(err))
 	})
 
 	t.Run("returns error if missing persistence context", func(t *testing.T) {

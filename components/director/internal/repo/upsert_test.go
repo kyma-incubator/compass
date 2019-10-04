@@ -2,6 +2,7 @@ package repo_test
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"regexp"
 	"testing"
 
@@ -69,7 +70,7 @@ func TestUpsert(t *testing.T) {
 		// WHEN
 		err := sut.Upsert(ctx, givenUser)
 		// THEN
-		require.True(t, repo.IsNotUnique(err))
+		require.True(t, apperrors.IsNotUnique(err))
 	})
 
 	t.Run("returns error if missing persistence context", func(t *testing.T) {

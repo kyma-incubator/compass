@@ -3,6 +3,7 @@ package api_test
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"testing"
 	"time"
 
@@ -14,7 +15,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	repopkg "github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -746,7 +746,7 @@ func TestService_GetFetchRequest(t *testing.T) {
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
 				repo := &automock.FetchRequestRepository{}
-				repo.On("GetByReferenceObjectID", ctx, tenantID, model.APIFetchRequestReference, refID).Return(nil, repopkg.NewNotFoundError()).Once()
+				repo.On("GetByReferenceObjectID", ctx, tenantID, model.APIFetchRequestReference, refID).Return(nil, apperrors.NewNotFoundError("")).Once()
 				return repo
 			},
 			InputAPIDefID:        refID,

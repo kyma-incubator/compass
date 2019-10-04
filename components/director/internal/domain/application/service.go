@@ -3,12 +3,12 @@ package application
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"strings"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -229,7 +229,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string
 
 	err = s.appRepo.Create(ctx, app)
 	if err != nil {
-		if repo.IsNotUnique(err) {
+		if apperrors.IsNotUnique(err) {
 			return "", errors.New("Application name is not unique within tenant")
 		}
 		return "", err
@@ -282,7 +282,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationInp
 
 	err = s.appRepo.Update(ctx, app)
 	if err != nil {
-		if repo.IsNotUnique(err) {
+		if apperrors.IsNotUnique(err) {
 			return errors.New("Application name is not unique within tenant")
 		}
 		return errors.Wrap(err, "while updating Application")
