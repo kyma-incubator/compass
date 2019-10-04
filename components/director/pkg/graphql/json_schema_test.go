@@ -3,9 +3,10 @@ package graphql
 import (
 	"bytes"
 	"errors"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestUnmarshalGQLJSON(t *testing.T) {
@@ -140,7 +141,7 @@ func TestJSON_UnmarshalSchema(t *testing.T) {
 	})
 }
 
-func interfacePtr(input interface{}) (*interface{}) {
+func interfacePtr(input interface{}) *interface{} {
 	var tmp interface{} = input
 	return &tmp
 }

@@ -7,7 +7,7 @@ SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 
 include $(SCRIPTS_DIR)/go-dep.mk
 
-VERIFY_IGNORE := /vendor\|/automock\|/testdata\|/pkg
+VERIFY_IGNORE := /vendor\|/automock\|/testdata
 
 gqlgen:
 	@echo make gqlgen

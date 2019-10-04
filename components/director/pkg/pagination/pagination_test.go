@@ -2,11 +2,12 @@ package pagination
 
 import (
 	"encoding/base64"
+	"strconv"
+	"testing"
+
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"strconv"
-	"testing"
 )
 
 func TestComputeOffset(t *testing.T) {

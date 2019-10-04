@@ -1,9 +1,10 @@
 package graphql
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestUnmarshalBasicAuth(t *testing.T) {
@@ -59,7 +60,6 @@ func TestUnmarshalOAuth(t *testing.T) {
 	assert.Equal(t, "client-id", oauth.ClientID)
 	assert.Equal(t, "client-secret", oauth.ClientSecret)
 }
-
 
 func TestUnmarshalCSRFBasicAuth(t *testing.T) {
 	// GIVEN

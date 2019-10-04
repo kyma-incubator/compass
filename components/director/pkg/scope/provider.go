@@ -2,8 +2,9 @@ package scope
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/strings"
 	"io/ioutil"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/strings"
 
 	"github.com/ghodss/yaml"
 	"github.com/oliveagle/jsonpath"
@@ -27,7 +28,7 @@ func (p *provider) Load() error {
 		return errors.Wrapf(err, "while reading file %s", p.fileName)
 	}
 	out := map[string]interface{}{}
-	if err := yaml.Unmarshal([]byte(b),&out); err != nil {
+	if err := yaml.Unmarshal([]byte(b), &out); err != nil {
 		return errors.Wrap(err, "while unmarshalling YAML")
 	}
 	p.cachedConfig = out
@@ -69,7 +70,6 @@ func (p *provider) GetRequiredScopes(path string) ([]string, error) {
 	}
 	return scopes, nil
 }
-
 
 func (p *provider) GetAllScopes() ([]string, error) {
 	var scopes []string
