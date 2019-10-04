@@ -5,8 +5,7 @@ required = [
 
 [[constraint]]
   name = "github.com/kyma-incubator/compass"
-  source = "github.com/Szymongib/compass"
-  branch = "api-update"
+  revision = "34a28c25f11e8f1ac28b69d53197e4f3ca976a81"
 
 [[constraint]]
   name = "github.com/Masterminds/sprig"

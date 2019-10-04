@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/database"
+
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
@@ -13,14 +15,32 @@ import (
 	"github.com/vrischmann/envconfig"
 )
 
+const connStringFormat string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
+
 type config struct {
 	Address               string `envconfig:"default=127.0.0.1:3050"`
 	APIEndpoint           string `envconfig:"default=/graphql"`
 	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
+
+	Database struct {
+		User     string `envconfig:"default=postgres"`
+		Password string `envconfig:"default=password"`
+		Host     string `envconfig:"default=localhost"`
+		Port     string `envconfig:"default=54320"`
+		Name     string `envconfig:"default=provisioner"`
+		SSLMode  string `envconfig:"default=disable"`
+
+		SchemaFilePath string `envconfig:"default=assets/database/provisioner.sql"`
+	}
 }
 
 func (c *config) String() string {
-	return fmt.Sprintf("Address: %s, APIEndpoint: %s", c.Address, c.APIEndpoint)
+	return fmt.Sprintf("Address: %s, APIEndpoint: %s, "+
+		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
+		"DatabaseName: %s, DatabaseSSLMode: %s, DatabaseSchemaFilePath: %s",
+		c.Address, c.APIEndpoint,
+		c.Database.User, c.Database.Host, c.Database.Port,
+		c.Database.Name, c.Database.SSLMode, c.Database.SchemaFilePath)
 }
 
 func main() {
@@ -31,8 +51,15 @@ func main() {
 	log.Println("Starting Provisioner")
 	log.Printf("Config: %s", cfg.String())
 
-	repository := make(map[string]api.RuntimeOperation)
+	connString := fmt.Sprintf(connStringFormat, cfg.Database.Host, cfg.Database.Port, cfg.Database.User,
+		cfg.Database.Password, cfg.Database.Name, cfg.Database.SSLMode)
 
+	err = database.InitializeDatabase(cfg.Database.Name, connString, cfg.Database.SchemaFilePath)
+	if err != nil {
+		log.Fatalf("Failed to initialize Database: %s", err.Error())
+	}
+
+	repository := make(map[string]api.RuntimeOperation)
 	resolver := api.NewMockResolver(repository)
 
 	gqlCfg := gqlschema.Config{
