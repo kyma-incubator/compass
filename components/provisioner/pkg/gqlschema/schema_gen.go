@@ -619,7 +619,7 @@ input ClusterConfigInput {
     nodeCount: Int
     diskSize: String
     machineType: String
-    computeZone: String!
+    region: String
     version: String
     credentials: CredentialsInput!
     providerConfig: ProviderConfigInput!
@@ -636,6 +636,8 @@ input ProviderConfigInput {
 }
 
 input GardenerProviderConfigInput {
+    projectName: String!
+    computeZone: String!
     targetProvider: String!
     targetSecret: String!
     autoScalerMin: Int
@@ -646,6 +648,8 @@ input GardenerProviderConfigInput {
 }
 
 input GCPProviderConfigInput {
+    projectName: String!
+    computeZone: String!
     additionalProperties: AdditionalProperties
 }
 
@@ -3479,9 +3483,9 @@ func (ec *executionContext) unmarshalInputClusterConfigInput(ctx context.Context
 			if err != nil {
 				return it, err
 			}
-		case "computeZone":
+		case "region":
 			var err error
-			it.ComputeZone, err = ec.unmarshalNString2string(ctx, v)
+			it.Region, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3533,6 +3537,18 @@ func (ec *executionContext) unmarshalInputGCPProviderConfigInput(ctx context.Con
 
 	for k, v := range asMap {
 		switch k {
+		case "projectName":
+			var err error
+			it.ProjectName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "computeZone":
+			var err error
+			it.ComputeZone, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "additionalProperties":
 			var err error
 			it.AdditionalProperties, err = ec.unmarshalOAdditionalProperties2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAdditionalProperties(ctx, v)
@@ -3551,6 +3567,18 @@ func (ec *executionContext) unmarshalInputGardenerProviderConfigInput(ctx contex
 
 	for k, v := range asMap {
 		switch k {
+		case "projectName":
+			var err error
+			it.ProjectName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "computeZone":
+			var err error
+			it.ComputeZone, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "targetProvider":
 			var err error
 			it.TargetProvider, err = ec.unmarshalNString2string(ctx, v)

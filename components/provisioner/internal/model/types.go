@@ -1,6 +1,9 @@
 package model
 
-import "time"
+import (
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"time"
+)
 
 type InfrastructureProvider int
 
@@ -15,8 +18,9 @@ type ClusterConfig struct {
 	NodeCount              int
 	DiskSize               string
 	MachineType            string
-	ComputeZone            string
+	Region                 string
 	Version                string
+	Credentials            string
 	InfrastructureProvider InfrastructureProvider
 	ProviderConfig         interface{}
 }
@@ -72,6 +76,7 @@ type AdditionalProperties map[string]interface{}
 type GardenerProviderConfig struct {
 	TargetProvider       string
 	TargetSecret         string
+	ComputeZone          string
 	AutoScalerMin        string
 	AutoScalerMax        string
 	MaxSurge             int
@@ -97,10 +102,10 @@ type RuntimeConfig struct {
 }
 
 type RuntimeStatus struct {
-	lastOperationStatus     Operation
-	runtimeConnectionStatus RuntimeAgentConnectionStatus
-	runtimeConnectionConfig RuntimeConnectionConfig
-	runtimeConfiguration    RuntimeConfig
+	LastOperationStatus     Operation
+	RuntimeConnectionStatus RuntimeAgentConnectionStatus
+	RuntimeConnectionConfig RuntimeConnectionConfig
+	RuntimeConfiguration    RuntimeConfig
 }
 
 type GCPProviderConfig struct {
@@ -109,4 +114,29 @@ type GCPProviderConfig struct {
 
 type AKSProviderConfig struct {
 	AdditionalProperties AdditionalProperties
+}
+
+func ClusterConfigFromInput(input gqlschema.ClusterConfigInput) ClusterConfig {
+	return ClusterConfig{
+		Name:           input.Name,
+		NodeCount:      *input.NodeCount,
+		DiskSize:       *input.DiskSize,
+		MachineType:    *input.MachineType,
+		Region:         *input.Region,
+		Version:        *input.Version,
+		Credentials:    input.Credentials.SecretName,
+		ProviderConfig: input.ProviderConfig,
+	}
+}
+
+func KymaConfigFromInput(input gqlschema.KymaConfigInput) KymaConfig {
+	var modules []KymaModule
+	for module := range input.Modules {
+		modules = append(modules, KymaModule(module))
+	}
+
+	return KymaConfig{
+		Version: input.Version,
+		Modules: modules,
+	}
 }

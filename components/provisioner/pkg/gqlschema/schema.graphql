@@ -113,7 +113,7 @@ input ClusterConfigInput {
     nodeCount: Int
     diskSize: String
     machineType: String
-    computeZone: String!
+    region: String
     version: String
     credentials: CredentialsInput!
     providerConfig: ProviderConfigInput!
@@ -130,6 +130,8 @@ input ProviderConfigInput {
 }
 
 input GardenerProviderConfigInput {
+    projectName: String!
+    computeZone: String!
     targetProvider: String!
     targetSecret: String!
     autoScalerMin: Int
@@ -140,6 +142,8 @@ input GardenerProviderConfigInput {
 }
 
 input GCPProviderConfigInput {
+    projectName: String!
+    computeZone: String!
     additionalProperties: AdditionalProperties
 }
 

@@ -37,7 +37,7 @@ type ClusterConfigInput struct {
 	NodeCount      *int                 `json:"nodeCount"`
 	DiskSize       *string              `json:"diskSize"`
 	MachineType    *string              `json:"machineType"`
-	ComputeZone    string               `json:"computeZone"`
+	Region         *string              `json:"region"`
 	Version        *string              `json:"version"`
 	Credentials    *CredentialsInput    `json:"credentials"`
 	ProviderConfig *ProviderConfigInput `json:"providerConfig"`
@@ -58,6 +58,8 @@ type GCPProviderConfig struct {
 func (GCPProviderConfig) IsProviderConfig() {}
 
 type GCPProviderConfigInput struct {
+	ProjectName          string                `json:"projectName"`
+	ComputeZone          string                `json:"computeZone"`
 	AdditionalProperties *AdditionalProperties `json:"additionalProperties"`
 }
 
@@ -74,6 +76,8 @@ type GardenerProviderConfig struct {
 func (GardenerProviderConfig) IsProviderConfig() {}
 
 type GardenerProviderConfigInput struct {
+	ProjectName          string                `json:"projectName"`
+	ComputeZone          string                `json:"computeZone"`
 	TargetProvider       string                `json:"targetProvider"`
 	TargetSecret         string                `json:"targetSecret"`
 	AutoScalerMin        *int                  `json:"autoScalerMin"`
