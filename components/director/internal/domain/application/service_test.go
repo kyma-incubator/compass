@@ -386,12 +386,6 @@ func TestService_CreateWithInvalidNames(t *testing.T) {
 			Input:              model.ApplicationInput{Name: ""},
 			ExpectedErrMessage: "a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character",
 		},
-		{
-			Name:               "Returns error when application name is too long",
-			InputID:            "foo",
-			Input:              model.ApplicationInput{Name: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
-			ExpectedErrMessage: "application name is too long, must be maximum 36 characters long",
-		},
 	}
 
 	for _, testCase := range testCases {
@@ -688,14 +682,7 @@ func TestService_UpdateWithInvalidNames(t *testing.T) {
 			InputID:     "foo",
 			Input:       model.ApplicationInput{Name: "upperCase"},
 			ExpectedErr: testError,
-		},
-		{
-			Name:        "Returns error when application name is too long",
-			InputID:     "foo",
-			Input:       model.ApplicationInput{Name: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
-			ExpectedErr: errors.New("application name is too long, must be maximum 36 characters long"),
-		},
-	}
+		}}
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {

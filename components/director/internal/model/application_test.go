@@ -94,6 +94,11 @@ func TestApplicationInput_ValidateInput(t *testing.T) {
 			Input:       model.ApplicationInput{Name: "not-correct-n@me.yeah"},
 			ExpectedErr: testError,
 		},
+		{
+			Name:        "Returns error when Application name is too long",
+			Input:       model.ApplicationInput{Name: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+			ExpectedErr: errors.New("application name is too long, must be maximum 36 characters long"),
+		},
 	}
 
 	for i, testCase := range testCases {
