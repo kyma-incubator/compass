@@ -33,6 +33,8 @@ const (
 	ApplicationStatusConditionFailed  ApplicationStatusCondition = "FAILED"
 )
 
+const applicationNameMaxLength = 36
+
 type ApplicationPage struct {
 	Data       []*Application
 	PageInfo   *pagination.Page
@@ -71,6 +73,10 @@ func (i *ApplicationInput) ToApplication(timestamp time.Time, condition Applicat
 func (i *ApplicationInput) Validate() error {
 	if errorMgs := validation.NameIsDNSSubdomain(i.Name, false); errorMgs != nil {
 		return errors.Errorf("%v", errorMgs)
+	}
+	if len(i.Name) > applicationNameMaxLength {
+		err := errors.New("application name is too long, must be maximum 36 characters long")
+		return err
 	}
 	return nil
 }
