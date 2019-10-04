@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -80,6 +81,9 @@ func (s *service) Get(ctx context.Context, id string) (*model.Runtime, error) {
 
 	runtime, err := s.repo.GetByID(ctx, rtmTenant, id)
 	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, nil
+		}
 		return nil, errors.Wrapf(err, "while getting Runtime with ID %s", id)
 	}
 

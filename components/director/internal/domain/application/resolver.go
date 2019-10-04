@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"strings"
 
 	"github.com/google/uuid"
@@ -201,9 +200,6 @@ func (r *Resolver) Application(ctx context.Context, id string) (*graphql.Applica
 
 	app, err := r.appSvc.Get(ctx, id)
 	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return nil, nil
-		}
 		return nil, err
 	}
 

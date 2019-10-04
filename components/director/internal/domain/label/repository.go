@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -61,11 +62,10 @@ func (r *repository) GetByKey(ctx context.Context, tenant string, objectType mod
 	var entity Entity
 	err = persist.Get(&entity, stmt, key, objectID, tenant)
 	if err != nil {
-		if err != sql.ErrNoRows {
-			return nil, errors.Wrap(err, "while getting Entity from DB")
+		if err == sql.ErrNoRows {
+			return nil, apperrors.NewNotFoundError(key)
 		}
-
-		return nil, fmt.Errorf("label '%s' not found", key) //TODO: Return own type for Not found error
+		return nil, errors.Wrap(err, "while getting Entity from DB")
 	}
 
 	labelModel, err := r.conv.FromEntity(entity)

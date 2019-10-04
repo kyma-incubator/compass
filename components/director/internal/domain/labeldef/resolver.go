@@ -3,8 +3,6 @@ package labeldef
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
@@ -128,13 +126,14 @@ func (r *Resolver) LabelDefinition(ctx context.Context, key string) (*graphql.La
 	def, err := r.srv.Get(ctx, tnt, key)
 
 	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return nil, nil
-		}
 		return nil, errors.Wrap(err, "while getting Label Definition")
 	}
 	if err := tx.Commit(); err != nil {
 		return nil, errors.Wrap(err, "while committing transaction")
+	}
+
+	if def == nil {
+		return nil, nil
 	}
 
 	c, err := r.conv.ToGraphQL(*def)

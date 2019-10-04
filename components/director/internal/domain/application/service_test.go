@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/sirupsen/logrus"
 	"testing"
 	"time"
 
@@ -945,8 +947,6 @@ func TestService_List(t *testing.T) {
 func TestService_ListByRuntimeID(t *testing.T) {
 	runtimeUUID := uuid.New()
 	testError := errors.New("test error")
-	labelNotFoundError := errors.New("label scenarios not found")
-
 	tenantUUID := uuid.New()
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantUUID.String())
@@ -1015,7 +1015,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				labelRepository := &automock.LabelRepository{}
 				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeUUID.String(), model.ScenariosKey).
-					Return(nil, labelNotFoundError).Once()
+					Return(nil, apperrors.NewNotFoundError("")).Once()
 				return labelRepository
 			},
 			AppRepositoryFn: func() *automock.ApplicationRepository {
@@ -1026,7 +1026,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			ExpectedResult: &emptyPage,
 		},
 		{
-			Name:  "Return error when checking of runtime existance failed",
+			Name:  "Return error when checking of runtime existence failed",
 			Input: runtimeUUID,
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
 				runtimeRepository := &automock.RuntimeRepository{}
@@ -1151,6 +1151,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
 			} else {
+				logrus.Info(err)
 				require.NoError(t, err)
 			}
 			assert.Equal(t, testCase.ExpectedResult, results)

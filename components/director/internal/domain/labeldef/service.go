@@ -3,6 +3,7 @@ package labeldef
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
 
@@ -66,6 +67,9 @@ func (s *service) Create(ctx context.Context, def model.LabelDefinition) (model.
 func (s *service) Get(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error) {
 	def, err := s.repo.GetByKey(ctx, tenant, key)
 	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, nil
+		}
 		return nil, errors.Wrap(err, "while fetching Label Definition")
 	}
 	return def, nil
