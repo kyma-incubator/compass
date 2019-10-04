@@ -35,3 +35,4 @@ COPY --from=builder /app /app
 #
 
 CMD ["/app/main"]
+
