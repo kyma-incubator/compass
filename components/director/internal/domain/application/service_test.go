@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/sirupsen/logrus"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/sirupsen/logrus"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"

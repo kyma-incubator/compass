@@ -3,9 +3,10 @@ package document_test
 import (
 	"context"
 	"errors"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document/automock"
