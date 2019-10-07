@@ -154,7 +154,7 @@ func TestRepository_GetByReferenceObjectID(t *testing.T) {
 		// WHEN
 		_, err := repo.GetByReferenceObjectID(ctx, givenTenant(), model.APIFetchRequestReference, givenID())
 		// THEN
-		require.EqualError(t, err, "while creating FetchRequest model from entity: some error")
+		require.EqualError(t, err, "while getting FetchRequest model from entity: some error")
 	})
 
 	t.Run("Error - DB", func(t *testing.T) {

@@ -2,10 +2,11 @@ package graphql
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"strconv"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
+	log "github.com/sirupsen/logrus"
 )
 
 type JSONSchema string
@@ -29,7 +30,7 @@ func (j JSONSchema) MarshalGQL(w io.Writer) {
 
 func (j *JSONSchema) Unmarshal() (*interface{}, error) {
 	if j == nil {
-		return nil, nil;
+		return nil, nil
 	}
 	var output interface{}
 	err := json.Unmarshal([]byte(*j), &output)

@@ -64,7 +64,7 @@ func (r *repository) GetByReferenceObjectID(ctx context.Context, tenant string, 
 
 	frModel, err := r.conv.FromEntity(entity)
 	if err != nil {
-		return nil, errors.Wrap(err, "while creating FetchRequest model from entity")
+		return nil, errors.Wrap(err, "while getting FetchRequest model from entity")
 	}
 
 	return &frModel, nil

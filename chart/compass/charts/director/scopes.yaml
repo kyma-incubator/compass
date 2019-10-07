@@ -39,3 +39,6 @@ mutation:
   deleteApplicationLabel: ["application:write"]
   setRuntimeLabel: ["runtime:write"]
   deleteRuntimeLabel: ["runtime:write"]
+  deleteSystemAuthForRuntime: ["runtime:write"]
+  deleteSystemAuthForApplication: ["application:write"]
+  deleteSystemAuthForIntegrationSystem: ["integration_system:write"]

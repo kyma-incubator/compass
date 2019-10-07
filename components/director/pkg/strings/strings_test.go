@@ -2,9 +2,10 @@ package strings_test
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/strings"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestUnique(t *testing.T) {
@@ -81,8 +82,8 @@ func TestMapToSlice(t *testing.T) {
 	// given
 	testCases := []struct {
 		Name     string
-		Input map[string]struct{}
-		Expected    []string
+		Input    map[string]struct{}
+		Expected []string
 	}{
 		{
 			Name: "Unique values",

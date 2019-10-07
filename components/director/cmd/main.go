@@ -52,7 +52,7 @@ type config struct {
 	JWKSSyncPeriod      time.Duration `envconfig:"default=5m"`
 	AllowJWTSigningNone bool          `envconfig:"default=true"`
 
-	ConnectorConfig onetimetoken.ConnectorConfig
+	OneTimeToken onetimetoken.Config
 }
 
 func main() {
@@ -77,7 +77,7 @@ func main() {
 	}()
 
 	gqlCfg := graphql.Config{
-		Resolvers: domain.NewRootResolver(transact, cfg.ConnectorConfig),
+		Resolvers: domain.NewRootResolver(transact, cfg.OneTimeToken),
 	}
 
 	stopCh := signal.SetupChannel()

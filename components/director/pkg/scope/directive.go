@@ -2,9 +2,11 @@ package scope
 
 import (
 	"context"
+
+	"github.com/99designs/gqlgen/graphql"
+
 	"github.com/pkg/errors"
 )
-import "github.com/99designs/gqlgen/graphql"
 
 //go:generate mockery -name=ScopesGetter -output=automock -outpkg=automock -case=underscore
 type ScopesGetter interface {

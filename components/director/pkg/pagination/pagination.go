@@ -3,9 +3,10 @@ package pagination
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/pkg/errors"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 const surprise = "DpKtJ4j9jDq"

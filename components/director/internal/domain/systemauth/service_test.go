@@ -287,7 +287,7 @@ func TestService_ListForObject(t *testing.T) {
 	})
 }
 
-func TestService_Delete(t *testing.T) {
+func TestService_DeleteByIDForObject(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testTenant)
 
@@ -303,7 +303,7 @@ func TestService_Delete(t *testing.T) {
 			Name: "Success deleting auth for Runtime",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("Delete", contextThatHasTenant(testTenant), testTenant, sysAuthID, model.RuntimeReference).Return(nil)
+				sysAuthRepo.On("Delete", contextThatHasTenant(testTenant), testTenant, sysAuthID).Return(nil)
 				return sysAuthRepo
 			},
 			InputObjectType: model.RuntimeReference,
@@ -313,7 +313,7 @@ func TestService_Delete(t *testing.T) {
 			Name: "Success deleting auth for Application",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("Delete", contextThatHasTenant(testTenant), testTenant, sysAuthID, model.ApplicationReference).Return(nil)
+				sysAuthRepo.On("Delete", contextThatHasTenant(testTenant), testTenant, sysAuthID).Return(nil)
 				return sysAuthRepo
 			},
 			InputObjectType: model.ApplicationReference,
@@ -323,7 +323,7 @@ func TestService_Delete(t *testing.T) {
 			Name: "Success deleting auth for Integration System",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("Delete", contextThatHasTenant(testTenant), model.IntegrationSystemTenant, sysAuthID, model.IntegrationSystemReference).Return(nil)
+				sysAuthRepo.On("Delete", contextThatHasTenant(testTenant), model.IntegrationSystemTenant, sysAuthID).Return(nil)
 				return sysAuthRepo
 			},
 			InputObjectType: model.IntegrationSystemReference,
@@ -333,7 +333,7 @@ func TestService_Delete(t *testing.T) {
 			Name: "Error deleting System Auths",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("Delete", contextThatHasTenant(testTenant), testTenant, sysAuthID, model.RuntimeReference).Return(testErr)
+				sysAuthRepo.On("Delete", contextThatHasTenant(testTenant), testTenant, sysAuthID).Return(testErr)
 				return sysAuthRepo
 			},
 			InputObjectType: model.RuntimeReference,
@@ -347,7 +347,7 @@ func TestService_Delete(t *testing.T) {
 			svc := systemauth.NewService(sysAuthRepo, nil)
 
 			// WHEN
-			err := svc.Delete(ctx, sysAuthID, testCase.InputObjectType)
+			err := svc.DeleteByIDForObject(ctx, testCase.InputObjectType, sysAuthID)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -365,7 +365,7 @@ func TestService_Delete(t *testing.T) {
 		svc := systemauth.NewService(nil, nil)
 
 		// WHEN
-		err := svc.Delete(context.TODO(), "", "")
+		err := svc.DeleteByIDForObject(context.TODO(), "", "")
 
 		// THEN
 		require.Error(t, err)

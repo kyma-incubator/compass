@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth/automock"
@@ -17,7 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPgRepository_Create(t *testing.T) {
+func TestRepository_Create(t *testing.T) {
 	//GIVEN
 	sysAuthID := "foo"
 	objID := "bar"
@@ -143,7 +144,83 @@ func TestPgRepository_Create(t *testing.T) {
 	})
 }
 
-func TestPgRepository_ListForObject(t *testing.T) {
+func TestRepository_GetByID(t *testing.T) {
+	saID := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	objectID := "cccccccc-cccc-cccc-cccc-cccccccccccc"
+
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		saModel := fixModelSystemAuth(saID, model.RuntimeReference, objectID, fixModelAuth())
+		saEntity := fixEntity(saID, model.RuntimeReference, objectID, true)
+
+		mockConverter := &automock.Converter{}
+		mockConverter.On("FromEntity", saEntity).Return(*saModel, nil).Once()
+		defer mockConverter.AssertExpectations(t)
+
+		repo := systemauth.NewRepository(mockConverter)
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		rows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "runtime_id", "integration_system_id", "value"}).
+			AddRow(saID, testTenant, saEntity.AppID, saEntity.RuntimeID, saEntity.IntegrationSystemID, saEntity.Value)
+
+		query := "SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE tenant_id = $1 AND id = $2"
+		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
+			WithArgs(testTenant, saID).WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		// WHEN
+		actual, err := repo.GetByID(ctx, testTenant, saID)
+		// THEN
+		require.NoError(t, err)
+		require.NotNil(t, actual)
+		assert.Equal(t, saModel, actual)
+
+	})
+
+	t.Run("Error - Converter", func(t *testing.T) {
+		// GIVEN
+		saEntity := fixEntity(saID, model.RuntimeReference, objectID, true)
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromEntity", saEntity).Return(model.SystemAuth{}, givenError())
+
+		repo := systemauth.NewRepository(mockConverter)
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		rows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "runtime_id", "integration_system_id", "value"}).
+			AddRow(saID, testTenant, saEntity.AppID, saEntity.RuntimeID, saEntity.IntegrationSystemID, saEntity.Value)
+
+		dbMock.ExpectQuery("SELECT .*").
+			WithArgs(testTenant, saID).WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		// WHEN
+		_, err := repo.GetByID(ctx, testTenant, saID)
+		// THEN
+		require.EqualError(t, err, "while converting SystemAuth entity to model: some error")
+	})
+
+	t.Run("Error - DB", func(t *testing.T) {
+		// GIVEN
+		repo := systemauth.NewRepository(nil)
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		dbMock.ExpectQuery("SELECT .*").
+			WithArgs(testTenant, saID).WillReturnError(givenError())
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		// WHEN
+		_, err := repo.GetByID(ctx, testTenant, saID)
+		// THEN
+		require.EqualError(t, err, "while getting object from DB: some error")
+	})
+}
+
+func TestRepository_ListForObject(t *testing.T) {
 	//GIVEN
 	objID := "bar"
 
@@ -376,7 +453,7 @@ func TestPgRepository_ListForObject(t *testing.T) {
 	})
 }
 
-func TestPgRepository_Delete(t *testing.T) {
+func TestRepository_DeleteForObject(t *testing.T) {
 	// GIVEN
 	sysAuthID := "foo"
 
@@ -384,14 +461,14 @@ func TestPgRepository_Delete(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND id = $2`
+		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND runtime_id = $2`
 		dbMock.ExpectExec(regexp.QuoteMeta(query)).
 			WithArgs(testTenant, sysAuthID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		repo := systemauth.NewRepository(nil)
 		// WHEN
-		err := repo.Delete(ctx, testTenant, sysAuthID, model.RuntimeReference)
+		err := repo.DeleteAllForObject(ctx, testTenant, model.RuntimeReference, sysAuthID)
 		// THEN
 		require.NoError(t, err)
 	})
@@ -400,14 +477,14 @@ func TestPgRepository_Delete(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND id = $2`
+		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND app_id = $2`
 		dbMock.ExpectExec(regexp.QuoteMeta(query)).
 			WithArgs(testTenant, sysAuthID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		repo := systemauth.NewRepository(nil)
 		// WHEN
-		err := repo.Delete(ctx, testTenant, sysAuthID, model.ApplicationReference)
+		err := repo.DeleteAllForObject(ctx, testTenant, model.ApplicationReference, sysAuthID)
 		// THEN
 		require.NoError(t, err)
 	})
@@ -416,19 +493,69 @@ func TestPgRepository_Delete(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND id = $2`
+		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND integration_system_id = $2`
 		dbMock.ExpectExec(regexp.QuoteMeta(query)).
 			WithArgs(model.IntegrationSystemTenant, sysAuthID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		repo := systemauth.NewRepository(nil)
 		// WHEN
-		err := repo.Delete(ctx, model.IntegrationSystemTenant, sysAuthID, model.IntegrationSystemReference)
+		err := repo.DeleteAllForObject(ctx, model.IntegrationSystemTenant, model.IntegrationSystemReference, sysAuthID)
 		// THEN
 		require.NoError(t, err)
 	})
 
 	t.Run("Error when deleting", func(t *testing.T) {
+		db, dbMock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND runtime_id = $2`
+		dbMock.ExpectExec(regexp.QuoteMeta(query)).
+			WithArgs(testTenant, sysAuthID).
+			WillReturnError(testErr)
+
+		repo := systemauth.NewRepository(nil)
+		// WHEN
+		err := repo.DeleteAllForObject(ctx, testTenant, model.RuntimeReference, sysAuthID)
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), testErr.Error())
+	})
+
+	t.Run("Error listing auths for unsupported reference object type", func(t *testing.T) {
+		pgRepository := systemauth.NewRepository(nil)
+		errorMsg := "unsupported reference object type"
+
+		//WHEN
+		err := pgRepository.DeleteAllForObject(context.TODO(), testTenant, "unsupported", "foo")
+
+		//THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), errorMsg)
+	})
+}
+
+func TestRepository_Delete(t *testing.T) {
+	// GIVEN
+	sysAuthID := "foo"
+
+	t.Run("Success", func(t *testing.T) {
+		db, dbMock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND id = $2`
+		dbMock.ExpectExec(regexp.QuoteMeta(query)).
+			WithArgs(testTenant, sysAuthID).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		repo := systemauth.NewRepository(nil)
+		// WHEN
+		err := repo.Delete(ctx, testTenant, sysAuthID)
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("Error", func(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
@@ -439,9 +566,13 @@ func TestPgRepository_Delete(t *testing.T) {
 
 		repo := systemauth.NewRepository(nil)
 		// WHEN
-		err := repo.Delete(ctx, testTenant, sysAuthID, model.RuntimeReference)
+		err := repo.Delete(ctx, testTenant, sysAuthID)
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
 	})
+}
+
+func givenError() error {
+	return errors.New("some error")
 }

@@ -12,8 +12,9 @@ import (
 //go:generate mockery -name=Repository -output=automock -outpkg=automock -case=underscore
 type Repository interface {
 	Create(ctx context.Context, item model.SystemAuth) error
+	GetByID(ctx context.Context, tenant, id string) (*model.SystemAuth, error)
 	ListForObject(ctx context.Context, tenant string, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
-	Delete(ctx context.Context, tenant string, id string, objectType model.SystemAuthReferenceObjectType) error
+	Delete(ctx context.Context, tenant string, id string) error
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -66,6 +67,20 @@ func (s *service) Create(ctx context.Context, objectType model.SystemAuthReferen
 	return systemAuth.ID, nil
 }
 
+func (s *service) Get(ctx context.Context, id string) (*model.SystemAuth, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	item, err := s.repo.GetByID(ctx, tnt, id)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting SystemAuth with ID %s", id)
+	}
+
+	return item, nil
+}
+
 func (s *service) ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -84,7 +99,7 @@ func (s *service) ListForObject(ctx context.Context, objectType model.SystemAuth
 	return systemAuths, nil
 }
 
-func (s *service) Delete(ctx context.Context, id string, objectType model.SystemAuthReferenceObjectType) error {
+func (s *service) DeleteByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
@@ -94,7 +109,10 @@ func (s *service) Delete(ctx context.Context, id string, objectType model.System
 		tnt = model.IntegrationSystemTenant
 	}
 
-	err = s.repo.Delete(ctx, tnt, id, objectType)
+	err = s.repo.Delete(ctx, tnt, authID)
+	if err != nil {
+		return errors.Wrapf(err, "while deleting System Auth with ID '%s' for %s", authID, objectType)
+	}
 
-	return errors.Wrapf(err, "while deleting System Auth with ID '%s' for %s", id, objectType)
+	return nil
 }
