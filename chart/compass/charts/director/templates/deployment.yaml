@@ -74,6 +74,10 @@ spec:
               value: /config/scopes.yaml
             - name: APP_ALLOW_JWT_SIGNING_NONE
               value: {{ .Values.deployment.allowJWTSigningNone | quote }}
+            - name: APP_OAUTH20_ACCESS_TOKEN_ENDPOINT
+              value: http://ory-hydra-admin.kyma-system.svc.cluster.local:4445/clients
+            - name: APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT
+              value: "https://oauth2.{{ .Values.global.ingress.domainName }}/oauth2/token"
           volumeMounts:
             - mountPath: /config
               name: scopes-config

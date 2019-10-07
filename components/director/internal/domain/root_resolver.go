@@ -88,8 +88,8 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, uidSvc)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
-	tokenService := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, oneTimeTokenCfg.ConnectorURL)
-	oAuth20Service := oauth20.NewService(scopeCfgProvider, oAuth20Cfg.ClientCredentialsRegistrationEndpoint)
+	tokenSvc := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, oneTimeTokenCfg.ConnectorURL)
+	oAuth20Svc := oauth20.NewService(scopeCfgProvider, uidSvc, oAuth20Cfg)
 
 	return &RootResolver{
 		app:         application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, systemAuthSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter),
@@ -100,9 +100,9 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
 		webhook:     webhook.NewResolver(transact, webhookSvc, appSvc, webhookConverter),
 		labelDef:    labeldef.NewResolver(transact, labelDefSvc, labelDefConverter),
-		token:       onetimetoken.NewTokenResolver(transact, tokenService, tokenConverter),
-		systemAuth:  systemauth.NewResolver(transact, systemAuthSvc, systemAuthConverter),
-		oAuth20:     oauth20.NewResolver(transact, oAuth20Service, systemAuthSvc),
+		token:       onetimetoken.NewTokenResolver(transact, tokenSvc, tokenConverter),
+		systemAuth:  systemauth.NewResolver(transact, systemAuthSvc, oAuth20Svc, systemAuthConverter),
+		oAuth20:     oauth20.NewResolver(transact, oAuth20Svc, systemAuthSvc),
 	}
 }
 

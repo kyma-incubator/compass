@@ -2,10 +2,11 @@ package oauth20
 
 import (
 	"context"
-	"errors"
+	"github.com/pkg/errors"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/sirupsen/logrus"
 )
 
 //go:generate mockery -name=SystemAuthService -output=automock -outpkg=automock -case=underscorez
@@ -21,8 +22,8 @@ type SystemAuthConverter interface {
 
 //go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
 type Service interface {
-	GenerateClientCredentials(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) (*model.OAuthCredentialDataInput, error)
-	RegisterClientCredentials(ctx context.Context, dataInput *model.OAuthCredentialDataInput, objectType model.SystemAuthReferenceObjectType) error
+	CreateClient(ctx context.Context, objectType model.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error)
+	DeleteClient(ctx context.Context, clientID string) error
 }
 
 type Resolver struct {
@@ -57,13 +58,20 @@ func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	clientCreds, err := r.svc.GenerateClientCredentials(ctx, objType, objID)
+	clientCreds, err := r.svc.CreateClient(ctx, objType)
 	if err != nil {
 		return nil, err
 	}
 
+	cleanupOnFail := func() {
+		err := r.svc.DeleteClient(ctx, clientCreds.ClientID)
+		if err != nil {
+			logrus.Error(errors.Wrap(err, "while deleting registered OAuth 2.0 Client on failure"))
+		}
+	}
+
 	if clientCreds == nil {
-		return nil, errors.New("client credenetials cannot be empty")
+		return nil, errors.New("client credentials cannot be empty")
 	}
 
 	authInput := &model.AuthInput{
@@ -74,21 +82,19 @@ func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.
 	id := clientCreds.ClientID
 	_, err = r.systemAuthSvc.CreateWithCustomID(ctx, id, objType, objID, authInput)
 	if err != nil {
+		cleanupOnFail()
 		return nil, err
 	}
 
 	sysAuth, err := r.systemAuthSvc.Get(ctx, id)
 	if err != nil {
-		return nil, err
-	}
-
-	err = r.svc.RegisterClientCredentials(ctx, clientCreds, objType)
-	if err != nil {
+		cleanupOnFail()
 		return nil, err
 	}
 
 	err = tx.Commit()
 	if err != nil {
+		cleanupOnFail()
 		return nil, err
 	}
 
