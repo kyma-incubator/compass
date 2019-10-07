@@ -155,7 +155,7 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, page
 
 	label, err := s.labelRepo.GetByKey(ctx, tenantID, model.RuntimeLabelableObject, runtimeID.String(), model.ScenariosKey)
 	if err != nil {
-		return nil, errors.Wrap(err, "while getting scenarios for runtime") // TODO: Check for specific error in https://github.com/kyma-incubator/compass/issues/66
+		return nil, errors.Wrap(err, "while getting scenarios for runtime")
 	}
 
 	scenarios, err := getScenariosValues(label.Value)
