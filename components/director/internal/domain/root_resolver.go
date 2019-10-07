@@ -95,7 +95,7 @@ func NewRootResolver(transact persistence.Transactioner, cfg onetimetoken.Config
 		runtime:     runtime.NewResolver(transact, runtimeSvc, systemAuthSvc, runtimeConverter, systemAuthConverter),
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
 		webhook:     webhook.NewResolver(transact, webhookSvc, appSvc, webhookConverter),
-		labelDef:    labeldef.NewResolver(labelDefSvc, labelDefConverter, transact),
+		labelDef:    labeldef.NewResolver(transact, labelDefSvc, labelDefConverter),
 		token:       onetimetoken.NewTokenResolver(transact, tokenService, tokenConverter),
 		systemAuth:  systemauth.NewResolver(transact, systemAuthSvc, systemAuthConverter),
 	}

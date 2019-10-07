@@ -48,7 +48,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 		}, nil)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt)
-		sut := labeldef.NewResolver(mockService, mockConverter, transact)
+		sut := labeldef.NewResolver(transact, mockService, mockConverter)
 		// WHEN
 		actual, err := sut.CreateLabelDefinition(ctx, labelDefInput)
 		// THEN
@@ -73,7 +73,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 		mockConverter.On("ToGraphQL", ldModel).Return(graphql.LabelDefinition{}, testErr)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt)
-		sut := labeldef.NewResolver(mockService, mockConverter, transact)
+		sut := labeldef.NewResolver(transact, mockService, mockConverter)
 		// WHEN
 		_, err := sut.CreateLabelDefinition(ctx, labelDefInput)
 		// THEN
@@ -99,7 +99,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 
 		mockConverter := &automock.ModelConverter{}
 		defer mockConverter.AssertExpectations(t)
-		sut := labeldef.NewResolver(nil, mockConverter, transact)
+		sut := labeldef.NewResolver(transact, nil, mockConverter)
 		// WHEN
 		_, err := sut.CreateLabelDefinition(ctx, graphql.LabelDefinitionInput{Key: "scenarios"})
 		// THEN
@@ -124,7 +124,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 		}, nil)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt)
-		sut := labeldef.NewResolver(mockService, mockConverter, transact)
+		sut := labeldef.NewResolver(transact, mockService, mockConverter)
 		// WHEN
 		_, err := sut.CreateLabelDefinition(ctx, labelDefInput)
 		// THEN
@@ -141,7 +141,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 		mockConverter.On("FromGraphQL", labelDefInput, tnt).Return(model.LabelDefinition{}, errors.New("json schema is not valid"))
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt)
-		sut := labeldef.NewResolver(nil, mockConverter, transact)
+		sut := labeldef.NewResolver(transact, nil, mockConverter)
 		// WHEN
 		_, err := sut.CreateLabelDefinition(ctx, labelDefInput)
 		// THEN
@@ -169,7 +169,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 		}, nil)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt)
-		sut := labeldef.NewResolver(mockService, mockConverter, transact)
+		sut := labeldef.NewResolver(transact, mockService, mockConverter)
 		// WHEN
 		_, err := sut.CreateLabelDefinition(ctx, labelDefInput)
 		// THEN
@@ -209,7 +209,7 @@ func TestQueryLabelDefinitions(t *testing.T) {
 			Key: "key2",
 		}, nil)
 
-		sut := labeldef.NewResolver(mockService, mockConverter, transact)
+		sut := labeldef.NewResolver(transact, mockService, mockConverter)
 		// WHEN
 		actual, err := sut.LabelDefinitions(ctx)
 		// THEN
@@ -238,7 +238,7 @@ func TestQueryLabelDefinitions(t *testing.T) {
 		mockConverter.On("ToGraphQL", givenModels[0]).Return(graphql.LabelDefinition{Key: "key1"}, nil)
 		mockConverter.On("ToGraphQL", givenModels[1]).Return(graphql.LabelDefinition{}, testErr)
 
-		sut := labeldef.NewResolver(mockService, mockConverter, transact)
+		sut := labeldef.NewResolver(transact, mockService, mockConverter)
 		// WHEN
 		_, err := sut.LabelDefinitions(ctx)
 		// THEN
@@ -258,7 +258,7 @@ func TestQueryLabelDefinitions(t *testing.T) {
 			contextThatHasTenant(tnt),
 			tnt).Return(nil, nil)
 
-		sut := labeldef.NewResolver(mockService, nil, transact)
+		sut := labeldef.NewResolver(transact, mockService, nil)
 		// WHEN
 		actual, err := sut.LabelDefinitions(ctx)
 		// THEN
@@ -281,7 +281,7 @@ func TestQueryLabelDefinitions(t *testing.T) {
 		// GIVEN
 		persist, transact := txGen.ThatFailsOnBegin()
 		ctx := tenant.SaveToContext(context.TODO(), "tenant")
-		sut := labeldef.NewResolver(nil, nil, transact)
+		sut := labeldef.NewResolver(transact, nil, nil)
 		// WHEN
 		_, err := sut.LabelDefinitions(ctx)
 		// THEN
@@ -300,7 +300,7 @@ func TestQueryLabelDefinitions(t *testing.T) {
 		mockService.On("List", contextThatHasTenant(tnt), tnt).
 			Return(nil, testErr)
 
-		sut := labeldef.NewResolver(mockService, nil, transact)
+		sut := labeldef.NewResolver(transact, mockService, nil)
 		// WHEN
 		_, err := sut.LabelDefinitions(ctx)
 		// THEN
@@ -318,7 +318,7 @@ func TestQueryLabelDefinitions(t *testing.T) {
 		defer mockService.AssertExpectations(t)
 		mockService.On("List", contextThatHasTenant(tnt), tnt).Return(nil, nil)
 
-		sut := labeldef.NewResolver(mockService, nil, transact)
+		sut := labeldef.NewResolver(transact, mockService, nil)
 		// WHEN
 		_, err := sut.LabelDefinitions(ctx)
 		// THEN
@@ -362,7 +362,7 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 			Key: "key",
 		}, nil)
 
-		sut := labeldef.NewResolver(mockService, mockConverter, mockTransactioner)
+		sut := labeldef.NewResolver(mockTransactioner, mockService, mockConverter)
 		// WHEN
 		actual, err := sut.LabelDefinition(ctx, "key")
 		// THEN
@@ -385,7 +385,7 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToGraphQL", *givenModel).Return(graphql.LabelDefinition{}, testErr)
 
-		sut := labeldef.NewResolver(mockService, mockConverter, transact)
+		sut := labeldef.NewResolver(transact, mockService, mockConverter)
 		// WHEN
 		_, err := sut.LabelDefinition(ctx, "key")
 		// THEN
@@ -413,7 +413,7 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 			contextThatHasTenant(tnt),
 			tnt, "key").Return(nil, apperrors.NewNotFoundError(""))
 
-		sut := labeldef.NewResolver(mockService, nil, mockTransactioner)
+		sut := labeldef.NewResolver(mockTransactioner, mockService, nil)
 		// WHEN
 		_, err := sut.LabelDefinition(ctx, "key")
 		// THEN
@@ -436,7 +436,7 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 		defer mockService.AssertExpectations(t)
 		mockService.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("error from service"))
 
-		sut := labeldef.NewResolver(mockService, nil, mockTransactioner)
+		sut := labeldef.NewResolver(mockTransactioner, mockService, nil)
 		// WHEN
 		_, err := sut.LabelDefinition(ctx, "key")
 		// THEN
@@ -457,7 +457,7 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 		mockTransactioner := getInvalidMockTransactioner()
 		defer mockTransactioner.AssertExpectations(t)
 		ctx := tenant.SaveToContext(context.TODO(), "tenant")
-		sut := labeldef.NewResolver(nil, nil, mockTransactioner)
+		sut := labeldef.NewResolver(mockTransactioner, nil, nil)
 		// WHEN
 		_, err := sut.LabelDefinition(ctx, "anything")
 		// THEN
@@ -483,7 +483,7 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 			contextThatHasTenant(tnt),
 			tnt, "key").Return(nil, nil)
 
-		sut := labeldef.NewResolver(mockService, nil, mockTransactioner)
+		sut := labeldef.NewResolver(mockTransactioner, mockService, nil)
 		// WHEN
 		_, err := sut.LabelDefinition(ctx, "key")
 		// THEN
@@ -521,7 +521,7 @@ func TestResolver_DeleteLabelDefinition(t *testing.T) {
 			Key: givenModel.Key,
 		}, nil)
 
-		sut := labeldef.NewResolver(mockService, mockConverter, transact)
+		sut := labeldef.NewResolver(transact, mockService, mockConverter)
 		// WHEN
 		actual, err := sut.DeleteLabelDefinition(ctx, givenModel.Key, &deleteRelatedLabels)
 		// THEN
@@ -555,7 +555,7 @@ func TestResolver_DeleteLabelDefinition(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToGraphQL", *givenModel).Return(graphql.LabelDefinition{}, testErr)
 
-		sut := labeldef.NewResolver(mockService, mockConverter, transact)
+		sut := labeldef.NewResolver(transact, mockService, mockConverter)
 		// WHEN
 		_, err := sut.DeleteLabelDefinition(ctx, givenModel.Key, &deleteRelatedLabels)
 		// THEN
@@ -591,7 +591,7 @@ func TestResolver_DeleteLabelDefinition(t *testing.T) {
 		mockConverter := &automock.ModelConverter{}
 		defer mockConverter.AssertExpectations(t)
 
-		sut := labeldef.NewResolver(mockService, mockConverter, mockTransactioner)
+		sut := labeldef.NewResolver(mockTransactioner, mockService, mockConverter)
 		// WHEN
 		_, err := sut.DeleteLabelDefinition(ctx, givenModel.Key, &deleteRelatedLabels)
 		// THEN
@@ -625,7 +625,7 @@ func TestResolver_DeleteLabelDefinition(t *testing.T) {
 		mockConverter := &automock.ModelConverter{}
 		defer mockConverter.AssertExpectations(t)
 
-		sut := labeldef.NewResolver(mockService, mockConverter, mockTransactioner)
+		sut := labeldef.NewResolver(mockTransactioner, mockService, mockConverter)
 		// WHEN
 		_, err := sut.DeleteLabelDefinition(ctx, givenModel.Key, &deleteRelatedLabels)
 		// THEN
@@ -658,7 +658,7 @@ func TestResolver_DeleteLabelDefinition(t *testing.T) {
 			tnt, givenModel.Key).Return(givenModel, nil)
 		mockService.On("Delete", contextThatHasTenant(tnt), tnt, givenModel.Key, deleteRelatedLabels).Return(errors.New("test")).Once()
 
-		sut := labeldef.NewResolver(mockService, nil, mockTransactioner)
+		sut := labeldef.NewResolver(mockTransactioner, mockService, nil)
 		// WHEN
 		_, err := sut.DeleteLabelDefinition(ctx, givenModel.Key, &deleteRelatedLabels)
 		// THEN
@@ -681,7 +681,7 @@ func TestResolver_DeleteLabelDefinition(t *testing.T) {
 		defer mockTransactioner.AssertExpectations(t)
 		ctx := tenant.SaveToContext(context.TODO(), "tenant")
 		deleteRelatedLabels := true
-		sut := labeldef.NewResolver(nil, nil, mockTransactioner)
+		sut := labeldef.NewResolver(mockTransactioner, nil, nil)
 		// WHEN
 		_, err := sut.DeleteLabelDefinition(ctx, "test", &deleteRelatedLabels)
 		// THEN
@@ -720,7 +720,7 @@ func TestResolver_DeleteLabelDefinition(t *testing.T) {
 			Key: givenModel.Key,
 		}, nil)
 
-		sut := labeldef.NewResolver(mockService, mockConverter, mockTransactioner)
+		sut := labeldef.NewResolver(mockTransactioner, mockService, mockConverter)
 		// WHEN
 		_, err := sut.DeleteLabelDefinition(ctx, givenModel.Key, &deleteRelatedLabels)
 		// THEN
@@ -769,7 +769,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), nil)
 		ctx = tenant.SaveToContext(ctx, tnt)
-		sut := labeldef.NewResolver(mockService, mockConverter, mockTransactioner)
+		sut := labeldef.NewResolver(mockTransactioner, mockService, mockConverter)
 		// WHEN
 		actual, err := sut.UpdateLabelDefinition(ctx, gqlLabelDefinitionInput)
 		// THEN
@@ -793,7 +793,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), nil)
 		ctx = tenant.SaveToContext(ctx, tnt)
-		sut := labeldef.NewResolver(mockService, mockConverter, transact)
+		sut := labeldef.NewResolver(transact, mockService, mockConverter)
 		// WHEN
 		_, err := sut.UpdateLabelDefinition(ctx, gqlLabelDefinitionInput)
 		// THEN
@@ -823,7 +823,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), nil)
 		ctx = tenant.SaveToContext(ctx, tnt)
-		sut := labeldef.NewResolver(nil, mockConverter, mockTransactioner)
+		sut := labeldef.NewResolver(mockTransactioner, nil, mockConverter)
 		// WHEN
 		_, err := sut.UpdateLabelDefinition(ctx, gqlLabelDefinitionInput)
 		// THEN
@@ -840,7 +840,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), nil)
 		ctx = tenant.SaveToContext(ctx, tnt)
-		sut := labeldef.NewResolver(nil, mockConverter, transact)
+		sut := labeldef.NewResolver(transact, nil, mockConverter)
 		// WHEN
 		_, err := sut.UpdateLabelDefinition(ctx, gqlLabelDefinitionInput)
 		// THEN
@@ -870,7 +870,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), nil)
 		ctx = tenant.SaveToContext(ctx, tnt)
-		sut := labeldef.NewResolver(mockService, mockConverter, mockTransactioner)
+		sut := labeldef.NewResolver(mockTransactioner, mockService, mockConverter)
 		// WHEN
 		_, err := sut.UpdateLabelDefinition(ctx, gqlLabelDefinitionInput)
 		// THEN
@@ -892,7 +892,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), nil)
 		ctx = tenant.SaveToContext(ctx, tnt)
-		sut := labeldef.NewResolver(mockService, mockConverter, transact)
+		sut := labeldef.NewResolver(transact, mockService, mockConverter)
 		// WHEN
 		_, err := sut.UpdateLabelDefinition(ctx, gqlLabelDefinitionInput)
 		// THEN
@@ -925,7 +925,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), nil)
 		ctx = tenant.SaveToContext(ctx, tnt)
-		sut := labeldef.NewResolver(mockService, mockConverter, mockTransactioner)
+		sut := labeldef.NewResolver(mockTransactioner, mockService, mockConverter)
 		// WHEN
 		_, err := sut.UpdateLabelDefinition(ctx, gqlLabelDefinitionInput)
 		// THEN

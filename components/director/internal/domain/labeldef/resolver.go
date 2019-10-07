@@ -19,7 +19,7 @@ type Resolver struct {
 	transactioner persistence.Transactioner
 }
 
-func NewResolver(srv Service, conv ModelConverter, transactioner persistence.Transactioner) *Resolver {
+func NewResolver(transactioner persistence.Transactioner, srv Service, conv ModelConverter) *Resolver {
 	return &Resolver{
 		conv:          conv,
 		srv:           srv,
