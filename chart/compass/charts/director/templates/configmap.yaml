@@ -8,3 +8,14 @@ metadata:
         release: {{ .Release.Name }}
 data:
   {{- (.Files.Glob "scopes.yaml" ).AsConfig | nindent 2 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: {{ template "fullname" . }}-client-creds-scopes
+    namespace: {{ .Release.Namespace }}
+    labels:
+        app: {{ .Chart.Name }}
+        release: {{ .Release.Name }}
+data:
+  {{- (.Files.Glob "client-creds-scopes.yaml" ).AsConfig | nindent 2 }}
