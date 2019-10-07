@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
+	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -43,7 +44,7 @@ type RootResolver struct {
 	oAuth20     *oauth20.Resolver
 }
 
-func NewRootResolver(transact persistence.Transactioner, cfg onetimetoken.Config) *RootResolver {
+func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope.Provider, oneTimeTokenCfg onetimetoken.Config, oAuth20Cfg oauth20.Config) *RootResolver {
 	authConverter := auth.NewConverter()
 	apiRtmAuthConverter := apiruntimeauth.NewConverter(authConverter)
 	runtimeConverter := runtime.NewConverter()
@@ -72,7 +73,7 @@ func NewRootResolver(transact persistence.Transactioner, cfg onetimetoken.Config
 	apiRtmAuthRepo := apiruntimeauth.NewRepository(apiRtmAuthConverter)
 	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
 
-	connectorGCLI := graphql_client.NewGraphQLClient(cfg.OneTimeTokenURL)
+	connectorGCLI := graphql_client.NewGraphQLClient(oneTimeTokenCfg.OneTimeTokenURL)
 
 	uidSvc := uid.NewService()
 	apiRtmAuthSvc := apiruntimeauth.NewService(apiRtmAuthRepo, uidSvc)
@@ -87,7 +88,8 @@ func NewRootResolver(transact persistence.Transactioner, cfg onetimetoken.Config
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, uidSvc)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
-	tokenService := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, cfg.ConnectorURL)
+	tokenService := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, oneTimeTokenCfg.ConnectorURL)
+	oAuth20Service := oauth20.NewService(scopeCfgProvider, oAuth20Cfg.ClientCredentialsRegistrationEndpoint)
 
 	return &RootResolver{
 		app:         application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, systemAuthSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter),
@@ -100,7 +102,7 @@ func NewRootResolver(transact persistence.Transactioner, cfg onetimetoken.Config
 		labelDef:    labeldef.NewResolver(transact, labelDefSvc, labelDefConverter),
 		token:       onetimetoken.NewTokenResolver(transact, tokenService, tokenConverter),
 		systemAuth:  systemauth.NewResolver(transact, systemAuthSvc, systemAuthConverter),
-		oAuth20:     oauth20.NewResolver(transact, systemAuthSvc),
+		oAuth20:     oauth20.NewResolver(transact, oAuth20Service, systemAuthSvc),
 	}
 }
 

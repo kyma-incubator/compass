@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 	"net/http"
 	"time"
 
@@ -53,6 +54,7 @@ type config struct {
 	AllowJWTSigningNone bool          `envconfig:"default=true"`
 
 	OneTimeToken onetimetoken.Config
+	OAuth20 oauth20.Config
 }
 
 func main() {
@@ -76,25 +78,18 @@ func main() {
 		}
 	}()
 
+	stopCh := signal.SetupChannel()
+	scopeCfgProvider := createAndRunScopeConfigProvider(stopCh, cfg)
+
 	gqlCfg := graphql.Config{
-		Resolvers: domain.NewRootResolver(transact, cfg.OneTimeToken),
+		Resolvers: domain.NewRootResolver(transact, scopeCfgProvider, cfg.OneTimeToken, cfg.OAuth20),
 	}
 
-	stopCh := signal.SetupChannel()
 	if cfg.EnableScopesValidation {
 		log.Info("Scopes validation is enabled")
-		provider := scope.NewProvider(cfg.ScopesConfigurationFile)
-		err = provider.Load()
-		exitOnError(err, "Error on loading scopes config file")
-		executor.NewPeriodic(cfg.ScopesConfigurationFileReload, func(stopCh <-chan struct{}) {
-			if err := provider.Load(); err != nil {
-				exitOnError(err, "Error from Reloader watch")
-			}
-			log.Infof("Successfully reloaded scopes configuration")
-
-		}).Run(stopCh)
-		gqlCfg.Directives.HasScopes = scope.NewDirective(provider).VerifyScopes
+		gqlCfg.Directives.HasScopes = scope.NewDirective(scopeCfgProvider).VerifyScopes
 	}
+
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
 
 	mainRouter := mux.NewRouter()
@@ -143,6 +138,21 @@ func main() {
 	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 		log.Errorf("HTTP server ListenAndServe: %v", err)
 	}
+}
+
+func createAndRunScopeConfigProvider(stopCh <-chan struct{}, cfg config) *scope.Provider  {
+	provider := scope.NewProvider(cfg.ScopesConfigurationFile)
+	err := provider.Load()
+	exitOnError(err, "Error on loading scopes config file")
+	executor.NewPeriodic(cfg.ScopesConfigurationFileReload, func(stopCh <-chan struct{}) {
+		if err := provider.Load(); err != nil {
+			exitOnError(err, "Error from Reloader watch")
+		}
+		log.Infof("Successfully reloaded scopes configuration")
+
+	}).Run(stopCh)
+
+	return provider
 }
 
 func exitOnError(err error, context string) {
