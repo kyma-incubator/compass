@@ -61,6 +61,8 @@ spec:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-sslMode
+            - name: APP_DATABASE_SCHEMA_FILE_PATH
+              value: {{ .Values.database.schemaFilePath }}
         {{- with .Values.deployment.securityContext }}
           securityContext:
 {{ toYaml . | indent 12 }}
