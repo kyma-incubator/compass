@@ -56,6 +56,7 @@ type GardenerConfig struct {
 	Region            *string `json:"region"`
 	TargetProvider    *string `json:"targetProvider"`
 	TargetSecret      *string `json:"targetSecret"`
+	DiskType          *string `json:"diskType"`
 	Zone              *string `json:"zone"`
 	Cidr              *string `json:"cidr"`
 	AutoScalerMin     *int    `json:"autoScalerMin"`
@@ -75,6 +76,7 @@ type GardenerConfigInput struct {
 	Region            string `json:"region"`
 	TargetProvider    string `json:"targetProvider"`
 	TargetSecret      string `json:"targetSecret"`
+	DiskType          string `json:"diskType"`
 	Zone              string `json:"zone"`
 	Cidr              string `json:"cidr"`
 	AutoScalerMin     int    `json:"autoScalerMin"`

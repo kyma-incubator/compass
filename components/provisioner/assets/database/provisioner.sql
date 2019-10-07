@@ -11,6 +11,7 @@ CREATE TABLE "GardenerConfig"
     region varchar(256) NOT NULL,
     targetProvider varchar(256) NOT NULL,
     targetSecret varchar(256) NOT NULL,
+    diskType varchar(256) NOT NULL,
     zone varchar(256) NOT NULL,
     cidr varchar(256) NOT NULL,
     autoScalerMin integer NOT NULL,

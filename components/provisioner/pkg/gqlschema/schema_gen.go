@@ -60,6 +60,7 @@ type ComplexityRoot struct {
 		AutoScalerMax     func(childComplexity int) int
 		AutoScalerMin     func(childComplexity int) int
 		Cidr              func(childComplexity int) int
+		DiskType          func(childComplexity int) int
 		KubernetesVersion func(childComplexity int) int
 		MachineType       func(childComplexity int) int
 		MaxSurge          func(childComplexity int) int
@@ -217,6 +218,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GardenerConfig.Cidr(childComplexity), true
+
+	case "GardenerConfig.diskType":
+		if e.complexity.GardenerConfig.DiskType == nil {
+			break
+		}
+
+		return e.complexity.GardenerConfig.DiskType(childComplexity), true
 
 	case "GardenerConfig.kubernetesVersion":
 		if e.complexity.GardenerConfig.KubernetesVersion == nil {
@@ -558,6 +566,7 @@ type GardenerConfig {
     region: String
     targetProvider: String
     targetSecret: String
+    diskType: String
     zone: String
     cidr: String
     autoScalerMin: Int
@@ -650,6 +659,7 @@ input GardenerConfigInput {
     region: String!
     targetProvider: String!
     targetSecret: String!
+    diskType: String!
     zone: String!
     cidr: String!
     autoScalerMin: Int!
@@ -1386,6 +1396,40 @@ func (ec *executionContext) _GardenerConfig_targetSecret(ctx context.Context, fi
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.TargetSecret, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GardenerConfig_diskType(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DiskType, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3729,6 +3773,12 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
+		case "diskType":
+			var err error
+			it.DiskType, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "zone":
 			var err error
 			it.Zone, err = ec.unmarshalNString2string(ctx, v)
@@ -3979,6 +4029,8 @@ func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._GardenerConfig_targetProvider(ctx, field, obj)
 		case "targetSecret":
 			out.Values[i] = ec._GardenerConfig_targetSecret(ctx, field, obj)
+		case "diskType":
+			out.Values[i] = ec._GardenerConfig_diskType(ctx, field, obj)
 		case "zone":
 			out.Values[i] = ec._GardenerConfig_zone(ctx, field, obj)
 		case "cidr":
