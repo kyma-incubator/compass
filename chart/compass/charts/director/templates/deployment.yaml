@@ -88,10 +88,6 @@ spec:
           securityContext:
 {{ toYaml . | indent 12 }}
           {{- end }}
-          volumeMounts:
-            - name: cloudsql-instance-credentials
-              mountPath: /secrets/cloudsql-instance-credentials
-              readOnly: true
           {{end}}
       volumes:
         {{if eq .Values.global.database.embedded.enabled false}}
