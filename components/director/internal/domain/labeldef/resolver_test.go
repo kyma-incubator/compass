@@ -2,6 +2,7 @@ package labeldef_test
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence/txtest"
@@ -397,7 +398,6 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 		// GIVEN
 		mockPersistanceCtx := &pautomock.PersistenceTxOp{}
 		defer mockPersistanceCtx.AssertExpectations(t)
-		mockPersistanceCtx.On("Commit").Return(nil)
 
 		mockTransactioner := &pautomock.Transactioner{}
 		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
@@ -410,7 +410,7 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 		defer mockService.AssertExpectations(t)
 		mockService.On("Get",
 			contextThatHasTenant(tnt),
-			tnt, "key").Return(nil, nil)
+			tnt, "key").Return(nil, apperrors.NewNotFoundError(""))
 
 		sut := labeldef.NewResolver(mockService, nil, mockTransactioner)
 		// WHEN

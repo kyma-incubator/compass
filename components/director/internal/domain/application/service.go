@@ -155,12 +155,6 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, page
 
 	label, err := s.labelRepo.GetByKey(ctx, tenantID, model.RuntimeLabelableObject, runtimeID.String(), model.ScenariosKey)
 	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return &model.ApplicationPage{
-				TotalCount: 0,
-				Data:       []*model.Application{},
-				PageInfo:   &pagination.Page{StartCursor: "", EndCursor: "", HasNextPage: false}}, nil
-		}
 		return nil, errors.Wrap(err, "while getting scenarios for runtime") // TODO: Check for specific error in https://github.com/kyma-incubator/compass/issues/66
 	}
 
@@ -191,9 +185,6 @@ func (s *service) Get(ctx context.Context, id string) (*model.Application, error
 
 	app, err := s.appRepo.GetByID(ctx, appTenant, id)
 	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return nil, nil
-		}
 		return nil, errors.Wrapf(err, "while getting Application with ID %s", id)
 	}
 
