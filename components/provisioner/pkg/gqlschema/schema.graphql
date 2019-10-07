@@ -1,4 +1,3 @@
-scalar AdditionalProperties
 
 enum KymaModule {
     Backup
@@ -14,37 +13,38 @@ enum KymaModule {
 # Configuration of Runtime. We can consider returning kubeconfig as a part of this type.
 type RuntimeConfig {
     clusterConfig: ClusterConfig
+    # TODO: should we also return credentials (secret name used for provisioning)
     kymaConfig: KymaConfig
+    kubeconfig: String
 }
 
-type ClusterConfig {
+union ClusterConfig = GardenerConfig | GCPConfig
+
+type GardenerConfig {
     name: String
+    kubernetesVersion: String
     nodeCount: Int
-    diskSize: String
+    volumeSize: String
     machineType: String
-    computeZone: String
-    version: String
-    providerConfig: ProviderConfig
-}
-
-union ProviderConfig = GardenerProviderConfig | GCPProviderConfig | AKSProviderConfig
-
-type GardenerProviderConfig {
+    region: String
     targetProvider: String
     targetSecret: String
+    zone: String
+    cidr: String
     autoScalerMin: Int
     autoScalerMax: Int
     maxSurge: Int
     maxUnavailable: Int
-    additionalProperties: AdditionalProperties
 }
 
-type GCPProviderConfig {
-    additionalProperties: AdditionalProperties
-}
-
-type AKSProviderConfig {
-    additionalProperties: AdditionalProperties
+type GCPConfig {
+    name: String
+    kubernetesVersion: String
+    numberOfNodes: Int
+    bootDiskSize: String
+    machineType: String
+    region: String
+    zone: String
 }
 
 type KymaConfig {
@@ -79,7 +79,6 @@ type RuntimeConnectionStatus {
 type RuntimeStatus {
     lastOperationStatus: OperationStatus
     runtimeConnectionStatus: RuntimeConnectionStatus
-    runtimeConnectionConfig: RuntimeConnectionConfig
     runtimeConfiguration: RuntimeConfig
 }
 
@@ -96,55 +95,48 @@ enum RuntimeAgentConnectionStatus {
     Disconnected
 }
 
-type RuntimeConnectionConfig {
-    kubeconfig: String!
-}
-
 # Inputs
 
 input ProvisionRuntimeInput {
     clusterConfig: ClusterConfigInput!
-    kymaConfig: KymaConfigInput!
-}
-
-# Defines the desired cluster to provision, specifying its size, memory, Kubernetes version, etc.
-input ClusterConfigInput {
-    name: String!
-    nodeCount: Int
-    diskSize: String
-    machineType: String
-    computeZone: String!
-    version: String
     credentials: CredentialsInput!
-    providerConfig: ProviderConfigInput!
+    kymaConfig: KymaConfigInput!
 }
 
 input CredentialsInput {
     secretName: String!
 }
 
-input ProviderConfigInput {
-    gardenerProviderConfig: GardenerProviderConfigInput
-    gcpProviderConfig: GCPProviderConfigInput
-    aksProviderConfig: AKSProviderConfigInput
+input ClusterConfigInput {
+    gardenerConfig: GardenerConfigInput
+    gcpConfig: GCPConfigInput
 }
 
-input GardenerProviderConfigInput {
+input GardenerConfigInput {
+    name: String!
+    kubernetesVersion: String!
+    nodeCount: Int!
+    volumeSize: String!
+    machineType: String!
+    region: String!
     targetProvider: String!
     targetSecret: String!
-    autoScalerMin: Int
-    autoScalerMax: Int
-    maxSurge: Int
-    maxUnavailable: Int
-    additionalProperties: AdditionalProperties
+    zone: String!
+    cidr: String!
+    autoScalerMin: Int!
+    autoScalerMax: Int!
+    maxSurge: Int!
+    maxUnavailable: Int!
 }
 
-input GCPProviderConfigInput {
-    additionalProperties: AdditionalProperties
-}
-
-input AKSProviderConfigInput {
-    additionalProperties: AdditionalProperties
+input GCPConfigInput {
+    name: String!
+    kubernetesVersion: String!
+    numberOfNodes: Int!
+    bootDiskSize: String!
+    machineType: String!
+    region: String! # TODO: later we may require either Region or Zone
+    zone: String
 }
 
 input KymaConfigInput {
