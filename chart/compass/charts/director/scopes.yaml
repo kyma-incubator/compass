@@ -45,3 +45,14 @@ mutation:
   deleteSystemAuthForRuntime: ["runtime:write"]
   deleteSystemAuthForApplication: ["application:write"]
   deleteSystemAuthForIntegrationSystem: ["integration_system:write"]
+
+clientCredentialsScopes:
+  runtime:
+    - "runtime:read"
+    - "runtime:write"
+  application:
+    - "application:read"
+    - "application:write"
+  integrationSystem:
+    - "application:read"
+    - "application:write"

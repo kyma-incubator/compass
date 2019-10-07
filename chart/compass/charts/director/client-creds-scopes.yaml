@@ -1,9 +1,0 @@
-runtime:
-  - "runtime:read"
-  - "runtime:write"
-application:
-  - "application:read"
-  - "application:write"
-integrationSystem:
-  - "application:read"
-  - "application:write"
