@@ -160,6 +160,7 @@ type Mutation {
     provisionRuntime(id: String!, config: ProvisionRuntimeInput): String!
     upgradeRuntime(id: String!, config: UpgradeRuntimeInput): String!
     deprovisionRuntime(id: String!): String!
+    cleanupRuntimeData(id: String!): String!
 
     # Compass Runtime Agent Connection Management
     reconnectRuntimeAgent(id: String!): String!

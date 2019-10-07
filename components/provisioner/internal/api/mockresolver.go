@@ -186,3 +186,7 @@ func (r *MockResolver) load(operationID string) (RuntimeOperation, bool) {
 	}
 	return RuntimeOperation{}, false
 }
+
+func (r *MockResolver) CleanupRuntimeData(ctx context.Context, id string) (string, error) {
+	return id, nil
+}

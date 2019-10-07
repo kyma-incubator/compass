@@ -97,14 +97,14 @@
 
 [[projects]]
   branch = "provisioner-databese-schema"
-  digest = "1:c861f6613acb55f118f78a9fa4097b68ee7b0d6cdf83119f308c8721052309d8"
+  digest = "1:f104430d32b1ab259b5d338fba1f22ed05dda1d786a8067f89aa2b248f583868"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/provisioner/pkg/gqlschema",
     "components/provisioner/pkg/scalar",
   ]
   pruneopts = "UT"
-  revision = "16be831d9200017d63822ee0509a3b9a9e82c8b8"
+  revision = "87ada81301403215160250af6a49ddb1d51d7906"
   source = "github.com/Szymongib/compass"
 
 [[projects]]

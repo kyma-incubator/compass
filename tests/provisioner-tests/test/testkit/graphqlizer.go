@@ -61,6 +61,7 @@ func (g *graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 		nodeCount: "{{.NodeCount}}"
 		volumeSize: "{{.VolumeSize}}"
 		machineType: "{{.MachineType}}"
+		diskType: "{{.DiskType}}"
 		region: "{{.Region}}"
 		zone: "{{.Zone}}"
 		targetProvider: "{{ .TargetProvider }}"

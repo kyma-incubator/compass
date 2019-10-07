@@ -80,6 +80,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
+		CleanupRuntimeData    func(childComplexity int, id string) int
 		DeprovisionRuntime    func(childComplexity int, id string) int
 		ProvisionRuntime      func(childComplexity int, id string, config *ProvisionRuntimeInput) int
 		ReconnectRuntimeAgent func(childComplexity int, id string) int
@@ -120,6 +121,7 @@ type MutationResolver interface {
 	ProvisionRuntime(ctx context.Context, id string, config *ProvisionRuntimeInput) (string, error)
 	UpgradeRuntime(ctx context.Context, id string, config *UpgradeRuntimeInput) (string, error)
 	DeprovisionRuntime(ctx context.Context, id string) (string, error)
+	CleanupRuntimeData(ctx context.Context, id string) (string, error)
 	ReconnectRuntimeAgent(ctx context.Context, id string) (string, error)
 }
 type QueryResolver interface {
@@ -316,6 +318,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.KymaConfig.Version(childComplexity), true
+
+	case "Mutation.cleanupRuntimeData":
+		if e.complexity.Mutation.CleanupRuntimeData == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_cleanupRuntimeData_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CleanupRuntimeData(childComplexity, args["id"].(string)), true
 
 	case "Mutation.deprovisionRuntime":
 		if e.complexity.Mutation.DeprovisionRuntime == nil {
@@ -697,6 +711,7 @@ type Mutation {
     provisionRuntime(id: String!, config: ProvisionRuntimeInput): String!
     upgradeRuntime(id: String!, config: UpgradeRuntimeInput): String!
     deprovisionRuntime(id: String!): String!
+    cleanupRuntimeData(id: String!): String!
 
     # Compass Runtime Agent Connection Management
     reconnectRuntimeAgent(id: String!): String!
@@ -715,6 +730,20 @@ type Query {
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_cleanupRuntimeData_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_deprovisionRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -1831,6 +1860,50 @@ func (ec *executionContext) _Mutation_deprovisionRuntime(ctx context.Context, fi
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().DeprovisionRuntime(rctx, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_cleanupRuntimeData(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_cleanupRuntimeData_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CleanupRuntimeData(rctx, args["id"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4107,6 +4180,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "deprovisionRuntime":
 			out.Values[i] = ec._Mutation_deprovisionRuntime(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cleanupRuntimeData":
+			out.Values[i] = ec._Mutation_cleanupRuntimeData(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
