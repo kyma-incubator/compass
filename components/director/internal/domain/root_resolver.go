@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -39,6 +40,7 @@ type RootResolver struct {
 	labelDef    *labeldef.Resolver
 	token       *onetimetoken.Resolver
 	systemAuth  *systemauth.Resolver
+	oAuth20     *oauth20.Resolver
 }
 
 func NewRootResolver(transact persistence.Transactioner, cfg onetimetoken.Config) *RootResolver {
@@ -98,6 +100,7 @@ func NewRootResolver(transact persistence.Transactioner, cfg onetimetoken.Config
 		labelDef:    labeldef.NewResolver(transact, labelDefSvc, labelDefConverter),
 		token:       onetimetoken.NewTokenResolver(transact, tokenService, tokenConverter),
 		systemAuth:  systemauth.NewResolver(transact, systemAuthSvc, systemAuthConverter),
+		oAuth20:     oauth20.NewResolver(transact, systemAuthSvc),
 	}
 }
 
@@ -248,6 +251,15 @@ func (r *mutationResolver) GenerateOneTimeTokenForApplication(ctx context.Contex
 }
 func (r *mutationResolver) GenerateOneTimeTokenForRuntime(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
 	return r.token.GenerateOneTimeTokenForRuntime(ctx, id)
+}
+func (r *mutationResolver) GenerateClientCredentialsForRuntime(ctx context.Context, id string) (*graphql.SystemAuth, error) {
+	return r.oAuth20.GenerateClientCredentialsForRuntime(ctx, id)
+}
+func (r *mutationResolver) GenerateClientCredentialsForApplication(ctx context.Context, id string) (*graphql.SystemAuth, error) {
+	return r.oAuth20.GenerateClientCredentialsForApplication(ctx, id)
+}
+func (r *mutationResolver) GenerateClientCredentialsForIntegrationSystem(ctx context.Context, id string) (*graphql.SystemAuth, error) {
+	return r.oAuth20.GenerateClientCredentialsForIntegrationSystem(ctx, id)
 }
 func (r *mutationResolver) DeleteSystemAuthForRuntime(ctx context.Context, authID string) (*graphql.SystemAuth, error) {
 	fn := r.systemAuth.GenericDeleteSystemAuth(model.RuntimeReference)

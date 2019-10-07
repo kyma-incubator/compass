@@ -209,39 +209,42 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AddAPI                               func(childComplexity int, applicationID string, in APIDefinitionInput) int
-		AddDocument                          func(childComplexity int, applicationID string, in DocumentInput) int
-		AddEventAPI                          func(childComplexity int, applicationID string, in EventAPIDefinitionInput) int
-		AddWebhook                           func(childComplexity int, applicationID string, in WebhookInput) int
-		CreateApplication                    func(childComplexity int, in ApplicationInput) int
-		CreateLabelDefinition                func(childComplexity int, in LabelDefinitionInput) int
-		CreateRuntime                        func(childComplexity int, in RuntimeInput) int
-		DeleteAPI                            func(childComplexity int, id string) int
-		DeleteAPIAuth                        func(childComplexity int, apiID string, runtimeID string) int
-		DeleteApplication                    func(childComplexity int, id string) int
-		DeleteApplicationLabel               func(childComplexity int, applicationID string, key string) int
-		DeleteDocument                       func(childComplexity int, id string) int
-		DeleteEventAPI                       func(childComplexity int, id string) int
-		DeleteLabelDefinition                func(childComplexity int, key string, deleteRelatedLabels *bool) int
-		DeleteRuntime                        func(childComplexity int, id string) int
-		DeleteRuntimeLabel                   func(childComplexity int, runtimeID string, key string) int
-		DeleteSystemAuthForApplication       func(childComplexity int, authID string) int
-		DeleteSystemAuthForIntegrationSystem func(childComplexity int, authID string) int
-		DeleteSystemAuthForRuntime           func(childComplexity int, authID string) int
-		DeleteWebhook                        func(childComplexity int, webhookID string) int
-		GenerateOneTimeTokenForApplication   func(childComplexity int, id string) int
-		GenerateOneTimeTokenForRuntime       func(childComplexity int, id string) int
-		RefetchAPISpec                       func(childComplexity int, apiID string) int
-		RefetchEventAPISpec                  func(childComplexity int, eventID string) int
-		SetAPIAuth                           func(childComplexity int, apiID string, runtimeID string, in AuthInput) int
-		SetApplicationLabel                  func(childComplexity int, applicationID string, key string, value interface{}) int
-		SetRuntimeLabel                      func(childComplexity int, runtimeID string, key string, value interface{}) int
-		UpdateAPI                            func(childComplexity int, id string, in APIDefinitionInput) int
-		UpdateApplication                    func(childComplexity int, id string, in ApplicationInput) int
-		UpdateEventAPI                       func(childComplexity int, id string, in EventAPIDefinitionInput) int
-		UpdateLabelDefinition                func(childComplexity int, in LabelDefinitionInput) int
-		UpdateRuntime                        func(childComplexity int, id string, in RuntimeInput) int
-		UpdateWebhook                        func(childComplexity int, webhookID string, in WebhookInput) int
+		AddAPI                                        func(childComplexity int, applicationID string, in APIDefinitionInput) int
+		AddDocument                                   func(childComplexity int, applicationID string, in DocumentInput) int
+		AddEventAPI                                   func(childComplexity int, applicationID string, in EventAPIDefinitionInput) int
+		AddWebhook                                    func(childComplexity int, applicationID string, in WebhookInput) int
+		CreateApplication                             func(childComplexity int, in ApplicationInput) int
+		CreateLabelDefinition                         func(childComplexity int, in LabelDefinitionInput) int
+		CreateRuntime                                 func(childComplexity int, in RuntimeInput) int
+		DeleteAPI                                     func(childComplexity int, id string) int
+		DeleteAPIAuth                                 func(childComplexity int, apiID string, runtimeID string) int
+		DeleteApplication                             func(childComplexity int, id string) int
+		DeleteApplicationLabel                        func(childComplexity int, applicationID string, key string) int
+		DeleteDocument                                func(childComplexity int, id string) int
+		DeleteEventAPI                                func(childComplexity int, id string) int
+		DeleteLabelDefinition                         func(childComplexity int, key string, deleteRelatedLabels *bool) int
+		DeleteRuntime                                 func(childComplexity int, id string) int
+		DeleteRuntimeLabel                            func(childComplexity int, runtimeID string, key string) int
+		DeleteSystemAuthForApplication                func(childComplexity int, authID string) int
+		DeleteSystemAuthForIntegrationSystem          func(childComplexity int, authID string) int
+		DeleteSystemAuthForRuntime                    func(childComplexity int, authID string) int
+		DeleteWebhook                                 func(childComplexity int, webhookID string) int
+		GenerateClientCredentialsForApplication       func(childComplexity int, id string) int
+		GenerateClientCredentialsForIntegrationSystem func(childComplexity int, id string) int
+		GenerateClientCredentialsForRuntime           func(childComplexity int, id string) int
+		GenerateOneTimeTokenForApplication            func(childComplexity int, id string) int
+		GenerateOneTimeTokenForRuntime                func(childComplexity int, id string) int
+		RefetchAPISpec                                func(childComplexity int, apiID string) int
+		RefetchEventAPISpec                           func(childComplexity int, eventID string) int
+		SetAPIAuth                                    func(childComplexity int, apiID string, runtimeID string, in AuthInput) int
+		SetApplicationLabel                           func(childComplexity int, applicationID string, key string, value interface{}) int
+		SetRuntimeLabel                               func(childComplexity int, runtimeID string, key string, value interface{}) int
+		UpdateAPI                                     func(childComplexity int, id string, in APIDefinitionInput) int
+		UpdateApplication                             func(childComplexity int, id string, in ApplicationInput) int
+		UpdateEventAPI                                func(childComplexity int, id string, in EventAPIDefinitionInput) int
+		UpdateLabelDefinition                         func(childComplexity int, in LabelDefinitionInput) int
+		UpdateRuntime                                 func(childComplexity int, id string, in RuntimeInput) int
+		UpdateWebhook                                 func(childComplexity int, webhookID string, in WebhookInput) int
 	}
 
 	OAuthCredentialData struct {
@@ -352,6 +355,9 @@ type MutationResolver interface {
 	RefetchAPISpec(ctx context.Context, apiID string) (*APISpec, error)
 	GenerateOneTimeTokenForRuntime(ctx context.Context, id string) (*OneTimeToken, error)
 	GenerateOneTimeTokenForApplication(ctx context.Context, id string) (*OneTimeToken, error)
+	GenerateClientCredentialsForRuntime(ctx context.Context, id string) (*SystemAuth, error)
+	GenerateClientCredentialsForApplication(ctx context.Context, id string) (*SystemAuth, error)
+	GenerateClientCredentialsForIntegrationSystem(ctx context.Context, id string) (*SystemAuth, error)
 	DeleteSystemAuthForRuntime(ctx context.Context, authID string) (*SystemAuth, error)
 	DeleteSystemAuthForApplication(ctx context.Context, authID string) (*SystemAuth, error)
 	DeleteSystemAuthForIntegrationSystem(ctx context.Context, authID string) (*SystemAuth, error)
@@ -1310,6 +1316,42 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteWebhook(childComplexity, args["webhookID"].(string)), true
+
+	case "Mutation.generateClientCredentialsForApplication":
+		if e.complexity.Mutation.GenerateClientCredentialsForApplication == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_generateClientCredentialsForApplication_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.GenerateClientCredentialsForApplication(childComplexity, args["id"].(string)), true
+
+	case "Mutation.generateClientCredentialsForIntegrationSystem":
+		if e.complexity.Mutation.GenerateClientCredentialsForIntegrationSystem == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_generateClientCredentialsForIntegrationSystem_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.GenerateClientCredentialsForIntegrationSystem(childComplexity, args["id"].(string)), true
+
+	case "Mutation.generateClientCredentialsForRuntime":
+		if e.complexity.Mutation.GenerateClientCredentialsForRuntime == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_generateClientCredentialsForRuntime_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.GenerateClientCredentialsForRuntime(childComplexity, args["id"].(string)), true
 
 	case "Mutation.generateOneTimeTokenForApplication":
 		if e.complexity.Mutation.GenerateOneTimeTokenForApplication == nil {
@@ -2384,6 +2426,9 @@ type Mutation {
 	refetchAPISpec(apiID: ID!): APISpec @hasScopes(path: "mutation.refetchAPISpec")
 	generateOneTimeTokenForRuntime(id: ID!): OneTimeToken! @hasScopes(path: "mutation.generateOneTimeTokenForRuntime")
 	generateOneTimeTokenForApplication(id: ID!): OneTimeToken! @hasScopes(path: "mutation.generateOneTimeTokenForApplication")
+	generateClientCredentialsForRuntime(id: ID!): SystemAuth! @hasScopes(path: "mutation.generateClientCredentialsForRuntime")
+	generateClientCredentialsForApplication(id: ID!): SystemAuth! @hasScopes(path: "mutation.generateClientCredentialsForApplication")
+	generateClientCredentialsForIntegrationSystem(id: ID!): SystemAuth! @hasScopes(path: "mutation.generateClientCredentialsForIntegrationSystem")
 	deleteSystemAuthForRuntime(authID: ID!): SystemAuth! @hasScopes(path: "mutation.deleteSystemAuthForRuntime")
 	deleteSystemAuthForApplication(authID: ID!): SystemAuth! @hasScopes(path: "mutation.deleteSystemAuthForApplication")
 	deleteSystemAuthForIntegrationSystem(authID: ID!): SystemAuth! @hasScopes(path: "mutation.deleteSystemAuthForIntegrationSystem")
@@ -2891,6 +2936,48 @@ func (ec *executionContext) field_Mutation_deleteWebhook_args(ctx context.Contex
 		}
 	}
 	args["webhookID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_generateClientCredentialsForApplication_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_generateClientCredentialsForIntegrationSystem_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_generateClientCredentialsForRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -6319,6 +6406,108 @@ func (ec *executionContext) _Mutation_generateOneTimeTokenForApplication(ctx con
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNOneTimeToken2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOneTimeToken(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_generateClientCredentialsForRuntime(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_generateClientCredentialsForRuntime_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().GenerateClientCredentialsForRuntime(rctx, args["id"].(string))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*SystemAuth)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_generateClientCredentialsForApplication(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_generateClientCredentialsForApplication_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().GenerateClientCredentialsForApplication(rctx, args["id"].(string))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*SystemAuth)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_generateClientCredentialsForIntegrationSystem(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_generateClientCredentialsForIntegrationSystem_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().GenerateClientCredentialsForIntegrationSystem(rctx, args["id"].(string))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*SystemAuth)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteSystemAuthForRuntime(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -10585,6 +10774,21 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "generateOneTimeTokenForApplication":
 			out.Values[i] = ec._Mutation_generateOneTimeTokenForApplication(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "generateClientCredentialsForRuntime":
+			out.Values[i] = ec._Mutation_generateClientCredentialsForRuntime(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "generateClientCredentialsForApplication":
+			out.Values[i] = ec._Mutation_generateClientCredentialsForApplication(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "generateClientCredentialsForIntegrationSystem":
+			out.Values[i] = ec._Mutation_generateClientCredentialsForIntegrationSystem(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
