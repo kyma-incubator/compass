@@ -170,5 +170,5 @@ func (s *service) doRequest(method string, endpoint string, body io.Reader) (*ht
 func (s *service) buildPath(objType model.SystemAuthReferenceObjectType) string {
 	lowerCaseType := strings.ToLower(string(objType))
 	transformedObjType := strings.ReplaceAll(lowerCaseType, " ", "_")
-	return fmt.Sprintf("%s/%s", clientCredentialScopesPrefix, transformedObjType)
+	return fmt.Sprintf("%s.%s", clientCredentialScopesPrefix, transformedObjType)
 }

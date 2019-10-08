@@ -2,10 +2,10 @@ package oauth20
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -13,6 +13,18 @@ import (
 type SystemAuthService interface {
 	CreateWithCustomID(ctx context.Context, id string, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error)
 	Get(ctx context.Context, id string) (*model.SystemAuth, error)
+}
+
+type ApplicationService interface{
+	Exist(ctx context.Context, id string) (bool, error)
+}
+
+type RuntimeService interface{
+	Exist(ctx context.Context, id string) (bool, error)
+}
+
+type IntegrationSystemService interface{
+	Exist(ctx context.Context, id string) (bool, error)
 }
 
 //go:generate mockery -name=SystemAuthConverter -output=automock -outpkg=automock -case=underscore
@@ -31,10 +43,13 @@ type Resolver struct {
 	svc            Service
 	systemAuthSvc  SystemAuthService
 	systemAuthConv SystemAuthConverter
+	//appSvc ApplicationService
+	//rtmSvc RuntimeService
+	//isSvc IntegrationSystemService
 }
 
-func NewResolver(transactioner persistence.Transactioner, svc Service, systemAuthSvc SystemAuthService) *Resolver {
-	return &Resolver{transact: transactioner, svc: svc, systemAuthSvc: systemAuthSvc}
+func NewResolver(transactioner persistence.Transactioner, svc Service, systemAuthSvc SystemAuthService, systemAuthConv SystemAuthConverter) *Resolver {
+	return &Resolver{transact: transactioner, svc: svc, systemAuthSvc: systemAuthSvc, systemAuthConv:systemAuthConv}
 }
 
 func (r *Resolver) GenerateClientCredentialsForRuntime(ctx context.Context, id string) (*graphql.SystemAuth, error) {
@@ -50,6 +65,7 @@ func (r *Resolver) GenerateClientCredentialsForIntegrationSystem(ctx context.Con
 }
 
 func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.SystemAuthReferenceObjectType, objID string) (*graphql.SystemAuth, error) {
+	var err error
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -58,9 +74,31 @@ func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	// TODO: Check if exists
+	//var exists bool
+	//switch objType {
+	//case model.RuntimeReference:
+	//	exists, err = r.rtmSvc.Exist(ctx, objID)
+	//case model.ApplicationReference:
+	//	exists, err = r.appSvc.Exist(ctx, objID)
+	//case model.IntegrationSystemReference:
+	//	exists, err = r.isSvc.Exist(ctx, objID)
+	//}
+	//
+	//if err != nil {
+	//	return nil, errors.Wrap(err, "while checking if runtime exists")
+	//}
+	//if !exists {
+	//	return nil, fmt.Errorf("%s with ID '%s' not found", objType, objID)
+	//}
+
 	clientCreds, err := r.svc.CreateClient(ctx, objType)
 	if err != nil {
 		return nil, err
+	}
+
+	if clientCreds == nil {
+		return nil, errors.New("client credentials cannot be empty")
 	}
 
 	cleanupOnFail := func() {
@@ -68,10 +106,6 @@ func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.
 		if err != nil {
 			logrus.Error(errors.Wrap(err, "while deleting registered OAuth 2.0 Client on failure"))
 		}
-	}
-
-	if clientCreds == nil {
-		return nil, errors.New("client credentials cannot be empty")
 	}
 
 	authInput := &model.AuthInput{

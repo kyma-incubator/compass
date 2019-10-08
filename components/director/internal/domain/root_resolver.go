@@ -102,7 +102,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 		labelDef:    labeldef.NewResolver(transact, labelDefSvc, labelDefConverter),
 		token:       onetimetoken.NewTokenResolver(transact, tokenSvc, tokenConverter),
 		systemAuth:  systemauth.NewResolver(transact, systemAuthSvc, oAuth20Svc, systemAuthConverter),
-		oAuth20:     oauth20.NewResolver(transact, oAuth20Svc, systemAuthSvc),
+		oAuth20:     oauth20.NewResolver(transact, oAuth20Svc, systemAuthSvc, systemAuthConverter),
 	}
 }
 
