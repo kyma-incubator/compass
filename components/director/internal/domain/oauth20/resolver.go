@@ -2,6 +2,7 @@ package oauth20
 
 import (
 	"context"
+	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -15,15 +16,18 @@ type SystemAuthService interface {
 	Get(ctx context.Context, id string) (*model.SystemAuth, error)
 }
 
-type ApplicationService interface{
+//go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
+type ApplicationService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
-type RuntimeService interface{
+//go:generate mockery -name=RuntimeService -output=automock -outpkg=automock -case=underscore
+type RuntimeService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
-type IntegrationSystemService interface{
+//go:generate mockery -name=IntegrationSystemService -output=automock -outpkg=automock -case=underscore
+type IntegrationSystemService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
@@ -43,13 +47,13 @@ type Resolver struct {
 	svc            Service
 	systemAuthSvc  SystemAuthService
 	systemAuthConv SystemAuthConverter
-	//appSvc ApplicationService
-	//rtmSvc RuntimeService
-	//isSvc IntegrationSystemService
+	appSvc         ApplicationService
+	rtmSvc         RuntimeService
+	isSvc          IntegrationSystemService
 }
 
-func NewResolver(transactioner persistence.Transactioner, svc Service, systemAuthSvc SystemAuthService, systemAuthConv SystemAuthConverter) *Resolver {
-	return &Resolver{transact: transactioner, svc: svc, systemAuthSvc: systemAuthSvc, systemAuthConv:systemAuthConv}
+func NewResolver(transactioner persistence.Transactioner, svc Service, appSvc ApplicationService, rtmSvc RuntimeService, isSvc IntegrationSystemService, systemAuthSvc SystemAuthService, systemAuthConv SystemAuthConverter) *Resolver {
+	return &Resolver{transact: transactioner, svc: svc, appSvc: appSvc, rtmSvc: rtmSvc, systemAuthSvc: systemAuthSvc, isSvc: isSvc, systemAuthConv: systemAuthConv}
 }
 
 func (r *Resolver) GenerateClientCredentialsForRuntime(ctx context.Context, id string) (*graphql.SystemAuth, error) {
@@ -74,23 +78,24 @@ func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	// TODO: Check if exists
-	//var exists bool
-	//switch objType {
-	//case model.RuntimeReference:
-	//	exists, err = r.rtmSvc.Exist(ctx, objID)
-	//case model.ApplicationReference:
-	//	exists, err = r.appSvc.Exist(ctx, objID)
-	//case model.IntegrationSystemReference:
-	//	exists, err = r.isSvc.Exist(ctx, objID)
-	//}
-	//
-	//if err != nil {
-	//	return nil, errors.Wrap(err, "while checking if runtime exists")
-	//}
-	//if !exists {
-	//	return nil, fmt.Errorf("%s with ID '%s' not found", objType, objID)
-	//}
+	var exists bool
+	switch objType {
+	case model.RuntimeReference:
+		exists, err = r.rtmSvc.Exist(ctx, objID)
+	case model.ApplicationReference:
+		exists, err = r.appSvc.Exist(ctx, objID)
+	case model.IntegrationSystemReference:
+		exists, err = r.isSvc.Exist(ctx, objID)
+	default:
+		err = fmt.Errorf("invalid object type %s", objType)
+	}
+
+	if err != nil {
+		return nil, errors.Wrap(err, "while checking if runtime exists")
+	}
+	if !exists {
+		return nil, fmt.Errorf("%s with ID '%s' not found", objType, objID)
+	}
 
 	clientCreds, err := r.svc.CreateClient(ctx, objType)
 	if err != nil {

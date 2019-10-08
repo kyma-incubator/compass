@@ -467,6 +467,79 @@ func TestService_Get(t *testing.T) {
 	}
 }
 
+func TestService_Exist(t *testing.T) {
+	tnt := "tenant"
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt)
+	testError := errors.New("Test error")
+
+	rtmID := "id"
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.RuntimeRepository
+		InputRuntimeID string
+		ExpectedValue      bool
+		ExpectedError      error
+	}{
+		{
+			Name: "Runtime exits",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("Exists", ctx, tnt, rtmID).Return(true, nil)
+				return repo
+			},
+			InputRuntimeID: rtmID,
+			ExpectedValue:      true,
+			ExpectedError:      nil,
+		},
+		{
+			Name: "Runtime not exits",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("Exists", ctx, tnt, rtmID).Return(false, nil)
+				return repo
+			},
+			InputRuntimeID: rtmID,
+			ExpectedValue:      false,
+			ExpectedError:      nil,
+		},
+		{
+			Name: "Returns error",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("Exists", ctx, tnt, rtmID).Return(false, testError)
+				return repo
+			},
+			InputRuntimeID: rtmID,
+			ExpectedValue:      false,
+			ExpectedError:      testError,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			rtmRepo := testCase.RepositoryFn()
+			svc := runtime.NewService(rtmRepo, nil, nil, nil, nil)
+
+			// WHEN
+			value, err := svc.Exist(ctx, testCase.InputRuntimeID)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				require.Nil(t, err)
+			}
+
+			assert.Equal(t, testCase.ExpectedValue, value)
+			rtmRepo.AssertExpectations(t)
+		})
+	}
+}
+
 func TestService_List(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
@@ -609,7 +682,7 @@ func TestService_GetLabel(t *testing.T) {
 		Name               string
 		RepositoryFn       func() *automock.RuntimeRepository
 		LabelRepositoryFn  func() *automock.LabelRepository
-		InputApplicationID string
+		InputRuntimeID string
 		InputLabel         *model.LabelInput
 		ExpectedLabel      *model.Label
 		ExpectedErrMessage string
@@ -626,7 +699,7 @@ func TestService_GetLabel(t *testing.T) {
 				repo.On("GetByKey", ctx, tnt, model.RuntimeLabelableObject, runtimeID, labelKey).Return(modelLabel, nil).Once()
 				return repo
 			},
-			InputApplicationID: runtimeID,
+			InputRuntimeID: runtimeID,
 			InputLabel:         label,
 			ExpectedLabel:      modelLabel,
 			ExpectedErrMessage: "",
@@ -644,7 +717,7 @@ func TestService_GetLabel(t *testing.T) {
 				repo.On("GetByKey", ctx, tnt, model.RuntimeLabelableObject, runtimeID, labelKey).Return(nil, testErr).Once()
 				return repo
 			},
-			InputApplicationID: runtimeID,
+			InputRuntimeID: runtimeID,
 			InputLabel:         label,
 			ExpectedLabel:      nil,
 			ExpectedErrMessage: testErr.Error(),
@@ -661,7 +734,7 @@ func TestService_GetLabel(t *testing.T) {
 				repo := &automock.LabelRepository{}
 				return repo
 			},
-			InputApplicationID: runtimeID,
+			InputRuntimeID: runtimeID,
 			InputLabel:         label,
 			ExpectedErrMessage: testErr.Error(),
 		},
@@ -674,7 +747,7 @@ func TestService_GetLabel(t *testing.T) {
 			svc := runtime.NewService(repo, labelRepo, nil, nil, nil)
 
 			// when
-			l, err := svc.GetLabel(ctx, testCase.InputApplicationID, testCase.InputLabel.Key)
+			l, err := svc.GetLabel(ctx, testCase.InputRuntimeID, testCase.InputLabel.Key)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -723,7 +796,7 @@ func TestService_ListLabel(t *testing.T) {
 		Name               string
 		RepositoryFn       func() *automock.RuntimeRepository
 		LabelRepositoryFn  func() *automock.LabelRepository
-		InputApplicationID string
+		InputRuntimeID string
 		InputLabel         *model.LabelInput
 		ExpectedOutput     map[string]*model.Label
 		ExpectedErrMessage string
@@ -740,7 +813,7 @@ func TestService_ListLabel(t *testing.T) {
 				repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeID).Return(labels, nil).Once()
 				return repo
 			},
-			InputApplicationID: runtimeID,
+			InputRuntimeID: runtimeID,
 			InputLabel:         label,
 			ExpectedOutput:     labels,
 			ExpectedErrMessage: "",
@@ -758,7 +831,7 @@ func TestService_ListLabel(t *testing.T) {
 				repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeID).Return(nil, testErr).Once()
 				return repo
 			},
-			InputApplicationID: runtimeID,
+			InputRuntimeID: runtimeID,
 			InputLabel:         label,
 			ExpectedOutput:     nil,
 			ExpectedErrMessage: testErr.Error(),
@@ -775,7 +848,7 @@ func TestService_ListLabel(t *testing.T) {
 				repo := &automock.LabelRepository{}
 				return repo
 			},
-			InputApplicationID: runtimeID,
+			InputRuntimeID: runtimeID,
 			InputLabel:         label,
 			ExpectedErrMessage: testErr.Error(),
 		},
@@ -788,7 +861,7 @@ func TestService_ListLabel(t *testing.T) {
 			svc := runtime.NewService(repo, labelRepo, nil, nil, nil)
 
 			// when
-			l, err := svc.ListLabels(ctx, testCase.InputApplicationID)
+			l, err := svc.ListLabels(ctx, testCase.InputRuntimeID)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {

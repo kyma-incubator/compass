@@ -91,6 +91,8 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	tokenSvc := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, oneTimeTokenCfg.ConnectorURL)
 	oAuth20Svc := oauth20.NewService(scopeCfgProvider, uidSvc, oAuth20Cfg)
 
+	var isSvc oauth20.IntegrationSystemService // TODO: Use Integration System service
+
 	return &RootResolver{
 		app:         application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, systemAuthSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter),
 		api:         api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, apiRtmAuthSvc, apiConverter, authConverter, frConverter, apiRtmAuthConverter),
@@ -102,7 +104,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 		labelDef:    labeldef.NewResolver(transact, labelDefSvc, labelDefConverter),
 		token:       onetimetoken.NewTokenResolver(transact, tokenSvc, tokenConverter),
 		systemAuth:  systemauth.NewResolver(transact, systemAuthSvc, oAuth20Svc, systemAuthConverter),
-		oAuth20:     oauth20.NewResolver(transact, oAuth20Svc, systemAuthSvc, systemAuthConverter),
+		oAuth20:     oauth20.NewResolver(transact, oAuth20Svc, appSvc, runtimeSvc, isSvc, systemAuthSvc, systemAuthConverter),
 	}
 }
 
