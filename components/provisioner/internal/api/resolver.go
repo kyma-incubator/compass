@@ -39,35 +39,40 @@ func NewResolver(operationService persistence.OperationService, runtimeService p
 }
 
 func (r *Resolver) ProvisionRuntime(ctx context.Context, id string, config *gqlschema.ProvisionRuntimeInput) (string, error) {
-	clusterConfig := model.ClusterConfigFromInput(*config.ClusterConfig)
-	kymaConfig := model.KymaConfigFromInput(*config.KymaConfig)
-	operation, err := r.runtimeService.SetProvisioningStarted(id, clusterConfig, kymaConfig)
+	// TODO: Adjust to the new schema
+	//clusterConfig := model.ClusterConfigFromInput(*config.ClusterConfig)
+	//kymaConfig := model.KymaConfigFromInput(*config.KymaConfig)
+	//operation, err := r.runtimeService.SetProvisioningStarted(id, clusterConfig, kymaConfig)
+	//
+	//if err != nil {
+	//	return "", err
+	//}
+	//
+	//go r.startProvisioning(operation.OperationID, clusterConfig)
+	//
+	//return operation.OperationID, nil
 
-	if err != nil {
-		return "", err
-	}
-
-	go r.startProvisioning(operation.OperationID, clusterConfig)
-
-	return operation.OperationID, nil
+	return "", nil
 }
 
 func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, error) {
-	runtimeStatus, err := r.runtimeService.GetStatus(id)
-
-	if err != nil {
-		return "", err
-	}
-
-	operation, err := r.runtimeService.SetDeprovisioningStarted(id)
-
-	if err != nil {
-		return "", err
-	}
-
-	go r.startDeprovisioning(operation.OperationID, runtimeStatus.RuntimeConfiguration.ClusterConfig)
-
-	return operation.OperationID, nil
+	// TODO: Adjust to the new schema
+	return "", nil
+	//runtimeStatus, err := r.runtimeService.GetStatus(id)
+	//
+	//if err != nil {
+	//	return "", err
+	//}
+	//
+	//operation, err := r.runtimeService.SetDeprovisioningStarted(id)
+	//
+	//if err != nil {
+	//	return "", err
+	//}
+	//
+	//go r.startDeprovisioning(operation.OperationID, runtimeStatus.RuntimeConfiguration.ClusterConfig)
+	//
+	//return operation.OperationID, nil
 }
 
 func (r *Resolver) UpgradeRuntime(ctx context.Context, id string, config *gqlschema.UpgradeRuntimeInput) (string, error) {
@@ -114,4 +119,8 @@ func (r *Resolver) startDeprovisioning(operationID string, config model.ClusterC
 	}
 
 	r.operationService.SetAsSucceeded(operationID)
+}
+
+func (r *Resolver) CleanupRuntimeData(ctx context.Context, id string) (string, error) {
+	return "", nil
 }

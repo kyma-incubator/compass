@@ -82,6 +82,8 @@ func (r *MockResolver) RuntimeStatus(ctx context.Context, runtimeID string) (*gq
 		return nil, errors.Errorf("runtime %s does not exist", runtimeID)
 	}
 
+	kubeconfig := "kubeconfig"
+
 	return &gqlschema.RuntimeStatus{
 		LastOperationStatus: &gqlschema.OperationStatus{
 			Operation: operation.operationType,
@@ -90,12 +92,10 @@ func (r *MockResolver) RuntimeStatus(ctx context.Context, runtimeID string) (*gq
 		RuntimeConnectionStatus: &gqlschema.RuntimeConnectionStatus{
 			Status: gqlschema.RuntimeAgentConnectionStatusConnected,
 		},
-		RuntimeConnectionConfig: &gqlschema.RuntimeConnectionConfig{
-			Kubeconfig: "kubeconfig",
-		},
 		RuntimeConfiguration: &gqlschema.RuntimeConfig{
-			ClusterConfig: &gqlschema.ClusterConfig{},
+			ClusterConfig: &gqlschema.GardenerConfig{},
 			KymaConfig:    &gqlschema.KymaConfig{},
+			Kubeconfig:    &kubeconfig,
 		},
 	}, nil
 }
@@ -185,4 +185,8 @@ func (r *MockResolver) load(operationID string) (RuntimeOperation, bool) {
 		return item, true
 	}
 	return RuntimeOperation{}, false
+}
+
+func (r *MockResolver) CleanupRuntimeData(ctx context.Context, id string) (string, error) {
+	return id, nil
 }

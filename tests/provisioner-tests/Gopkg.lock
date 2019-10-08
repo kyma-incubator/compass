@@ -96,16 +96,16 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "api-update"
-  digest = "1:f4a321d863b958ea3f1f073a60bace25838c171e64bd3e7f604cf3e6ebc1e571"
+  branch = "provisioning-clusters"
+  digest = "1:575d8305369185bd9d5c7f916aa111ac0d5e3b7d4238b4a053706f2443dfe5ae"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/provisioner/pkg/gqlschema",
     "components/provisioner/pkg/scalar",
   ]
   pruneopts = "UT"
-  revision = "5f62421b35bd3be2086cfd65ea0652ceca098211"
-  source = "github.com/Szymongib/compass"
+  revision = "a16f129c460817c7f313671198c62541bd40b8a9"
+  source = "github.com/akgalwas/compass"
 
 [[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
@@ -203,15 +203,15 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:84ed4fd3f7c52941feec4832e385f61377a01b4c98a0f868f16f10c2469fc0fe"
+  digest = "1:b019c2a549aa9885670e4eeb3fd88b7884c3b3be4b2a79afa75167009292bb35"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "b397fe3ad8ed895c98fa54584f61835a88e65ff5"
+  revision = "ef33b2fb2c414dca4bfcf6ca59cbd1d9ad00703d"
 
 [[projects]]
   branch = "master"
-  digest = "1:f219aaebf52fe9c90840cec4aa0864369fa59733724df2e700562acf15aaabd6"
+  digest = "1:ef4d8c35d3c083b4a4e5f6057d37145acda78d7d154937d519bfc6e0bb089d22"
   name = "golang.org/x/tools"
   packages = [
     "cmd/goimports",
@@ -228,7 +228,7 @@
     "internal/semver",
   ]
   pruneopts = "UT"
-  revision = "9ade4c73f2afdb56d278b4e3587f70b0c0f0cb9d"
+  revision = "c9f9432ec4b21a28c4d47f172513698febb68e9c"
 
 [[projects]]
   digest = "1:59f10c1537d2199d9115d946927fe31165959a95190849c82ff11e05803528b0"

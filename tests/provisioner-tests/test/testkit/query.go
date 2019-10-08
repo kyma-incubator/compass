@@ -47,8 +47,8 @@ func (qp queryProvider) runtimeOperationStatus(operationID string) string {
 func runtimeStatusResult() string {
 	return fmt.Sprintf(`lastOperationStatus { operation state message }
 			runtimeConnectionStatus { status }
-			runtimeConnectionConfig { kubeconfig }
 			runtimeConfiguration { 
+				kubeconfig
 				clusterConfig { 
 					%s
 				} 
@@ -58,28 +58,31 @@ func runtimeStatusResult() string {
 
 func clusterConfig() string {
 	return fmt.Sprintf(`
-		name 
-		nodeCount 
-		diskSize
-		machineType
-		computeZone 
-		version 
-		providerConfig {
-			... on GardenerProviderConfig {
-			  	targetProvider
-				targetSecret
-				autoScalerMin
-				autoScalerMax
-				maxSurge
-				maxUnavailable
-				additionalProperties
-			}
-			...  on GCPProviderConfig {
-				additionalProperties
-			}
-			...  on AKSProviderConfig {
-				additionalProperties
-			}
+		... on GardenerConfig {
+			name 
+			kubernetesVersion
+			nodeCount 
+			volumeSize
+			diskType
+			machineType
+			region
+		  	targetProvider
+			targetSecret
+			zone
+			cidr
+			autoScalerMin
+			autoScalerMax
+			maxSurge
+			maxUnavailable
+		}
+		...  on GCPConfig {
+			name 
+			kubernetesVersion
+			numberOfNodes 
+			bootDiskSize
+			machineType
+			region
+			zone
 		}
 `)
 }
