@@ -1,8 +1,20 @@
+-- Cluster
+
+CREATE TABLE "Cluster"
+(
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    kubeconfig text,
+    terraform_state jsonb,
+    creation_timestamp timestamp without time zone NOT NULL
+);
+
+
 -- Cluster Config
 
 CREATE TABLE "GardenerConfig"
 (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    cluster_id uuid NOT NULL,
     name varchar(256) NOT NULL,
     kubernetesVersion varchar(256) NOT NULL,
     nodeCount integer NOT NULL,
@@ -17,35 +29,24 @@ CREATE TABLE "GardenerConfig"
     autoScalerMin integer NOT NULL,
     autoScalerMax integer NOT NULL,
     maxSurge integer NOT NULL,
-    maxUnavailable integer NOT NULL
+    maxUnavailable integer NOT NULL,
+    UNIQUE(cluster_id),
+    foreign key (cluster_id) REFERENCES "Cluster" (id) ON DELETE CASCADE
 );
 
 CREATE TABLE "GCPConfig"
 (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    cluster_id uuid NOT NULL,
     name varchar(256) NOT NULL,
     kubernetesVersion varchar(256) NOT NULL,
     numberOfNodes integer NOT NULL,
     bootDiskSize varchar(256) NOT NULL,
     machineType varchar(256) NOT NULL,
     region varchar(256) NOT NULL,
-    zone varchar(256) NOT NULL
-);
-
-
--- Cluster
-
-CREATE TABLE "Cluster"
-(
-    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
-    kubeconfig text,
-    terraform_state jsonb,
-    creation_timestamp timestamp without time zone NOT NULL,
-    gardener_config_id uuid,
-    gcp_config_id uuid,
-    foreign key (gardener_config_id) REFERENCES "GardenerConfig" (id) ON DELETE CASCADE,
-    foreign key (gcp_config_id) REFERENCES "GCPConfig" (id) ON DELETE CASCADE,
-    CHECK ( (gardener_config_id IS NULL AND gcp_config_id NOTNULL) OR (gcp_config_id IS NULL AND gardener_config_id NOTNULL) )
+    zone varchar(256) NOT NULL,
+    UNIQUE(cluster_id),
+    foreign key (cluster_id) REFERENCES "Cluster" (id) ON DELETE CASCADE
 );
 
 
@@ -84,6 +85,7 @@ CREATE TABLE "KymaConfig"
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     version varchar(256) NOT NULL,
     cluster_id uuid NOT NULL,
+    UNIQUE(cluster_id),
     foreign key (cluster_id) REFERENCES "Cluster" (id) ON DELETE CASCADE
 );
 
