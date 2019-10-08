@@ -58,32 +58,31 @@ type Operation struct {
 	RuntimeID   string
 }
 
-
 type GardenerConfig struct {
-	Name string
+	Name              string
 	KubernetesVersion string
-	NodeCount int
-	VolumeSize string
-	MachineType string
-	TargetProvider       string
-	TargetSecret         string
-	Cidr string
-	Region string
-	Zone          string
-	AutoScalerMin        string
-	AutoScalerMax        string
-	MaxSurge             int
-	MaxUnavailable       int
+	NodeCount         int
+	VolumeSize        string
+	MachineType       string
+	TargetProvider    string
+	TargetSecret      string
+	Cidr              string
+	Region            string
+	Zone              string
+	AutoScalerMin     string
+	AutoScalerMax     string
+	MaxSurge          int
+	MaxUnavailable    int
 }
 
 type GCPConfig struct {
-	Name string
+	Name              string
 	KubernetesVersion string
-	NumberOfNodes int
-	BootDiskSize string
-	MachineType string
-	Region string
-	Zone string
+	NumberOfNodes     int
+	BootDiskSize      string
+	MachineType       string
+	Region            string
+	Zone              string
 }
 
 type RuntimeAgentConnectionStatus int
@@ -109,7 +108,7 @@ const (
 type RuntimeConfig struct {
 	KymaConfig    KymaConfig
 	ClusterConfig interface{}
-	Kubeconfig string
+	Kubeconfig    string
 }
 
 func (rc RuntimeConfig) GCPConfig() (GCPConfig, bool) {
