@@ -71,7 +71,8 @@ func checkIfDatabaseInitialized(db *sql.DB) (bool, error) {
 	var tableName string
 	err := row.Scan(&tableName)
 	if err != nil {
-		return false, errors.Wrap(err, "Failed to check if schema initialized")
+		logrus.Infof("Database not initialized: %s", err.Error())
+		return false, nil
 	}
 
 	return tableName == clusterTableName, nil
