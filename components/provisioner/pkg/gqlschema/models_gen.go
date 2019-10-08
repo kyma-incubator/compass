@@ -8,39 +8,13 @@ import (
 	"strconv"
 )
 
-type ProviderConfig interface {
-	IsProviderConfig()
-}
-
-type AKSProviderConfig struct {
-	AdditionalProperties *AdditionalProperties `json:"additionalProperties"`
-}
-
-func (AKSProviderConfig) IsProviderConfig() {}
-
-type AKSProviderConfigInput struct {
-	AdditionalProperties *AdditionalProperties `json:"additionalProperties"`
-}
-
-type ClusterConfig struct {
-	Name           *string        `json:"name"`
-	NodeCount      *int           `json:"nodeCount"`
-	DiskSize       *string        `json:"diskSize"`
-	MachineType    *string        `json:"machineType"`
-	ComputeZone    *string        `json:"computeZone"`
-	Version        *string        `json:"version"`
-	ProviderConfig ProviderConfig `json:"providerConfig"`
+type ClusterConfig interface {
+	IsClusterConfig()
 }
 
 type ClusterConfigInput struct {
-	Name           string               `json:"name"`
-	NodeCount      *int                 `json:"nodeCount"`
-	DiskSize       *string              `json:"diskSize"`
-	MachineType    *string              `json:"machineType"`
-	ComputeZone    string               `json:"computeZone"`
-	Version        *string              `json:"version"`
-	Credentials    *CredentialsInput    `json:"credentials"`
-	ProviderConfig *ProviderConfigInput `json:"providerConfig"`
+	GardenerConfig *GardenerConfigInput `json:"gardenerConfig"`
+	GcpConfig      *GCPConfigInput      `json:"gcpConfig"`
 }
 
 type CredentialsInput struct {
@@ -51,36 +25,64 @@ type Error struct {
 	Message *string `json:"message"`
 }
 
-type GCPProviderConfig struct {
-	AdditionalProperties *AdditionalProperties `json:"additionalProperties"`
+type GCPConfig struct {
+	Name              *string `json:"name"`
+	KubernetesVersion *string `json:"kubernetesVersion"`
+	NumberOfNodes     *int    `json:"numberOfNodes"`
+	BootDiskSize      *string `json:"bootDiskSize"`
+	MachineType       *string `json:"machineType"`
+	Region            *string `json:"region"`
+	Zone              *string `json:"zone"`
 }
 
-func (GCPProviderConfig) IsProviderConfig() {}
+func (GCPConfig) IsClusterConfig() {}
 
-type GCPProviderConfigInput struct {
-	AdditionalProperties *AdditionalProperties `json:"additionalProperties"`
+type GCPConfigInput struct {
+	Name              string  `json:"name"`
+	KubernetesVersion string  `json:"kubernetesVersion"`
+	NumberOfNodes     int     `json:"numberOfNodes"`
+	BootDiskSize      string  `json:"bootDiskSize"`
+	MachineType       string  `json:"machineType"`
+	Region            string  `json:"region"`
+	Zone              *string `json:"zone"`
 }
 
-type GardenerProviderConfig struct {
-	TargetProvider       *string               `json:"targetProvider"`
-	TargetSecret         *string               `json:"targetSecret"`
-	AutoScalerMin        *int                  `json:"autoScalerMin"`
-	AutoScalerMax        *int                  `json:"autoScalerMax"`
-	MaxSurge             *int                  `json:"maxSurge"`
-	MaxUnavailable       *int                  `json:"maxUnavailable"`
-	AdditionalProperties *AdditionalProperties `json:"additionalProperties"`
+type GardenerConfig struct {
+	Name              *string `json:"name"`
+	KubernetesVersion *string `json:"kubernetesVersion"`
+	NodeCount         *int    `json:"nodeCount"`
+	VolumeSize        *string `json:"volumeSize"`
+	MachineType       *string `json:"machineType"`
+	Region            *string `json:"region"`
+	TargetProvider    *string `json:"targetProvider"`
+	TargetSecret      *string `json:"targetSecret"`
+	DiskType          *string `json:"diskType"`
+	Zone              *string `json:"zone"`
+	Cidr              *string `json:"cidr"`
+	AutoScalerMin     *int    `json:"autoScalerMin"`
+	AutoScalerMax     *int    `json:"autoScalerMax"`
+	MaxSurge          *int    `json:"maxSurge"`
+	MaxUnavailable    *int    `json:"maxUnavailable"`
 }
 
-func (GardenerProviderConfig) IsProviderConfig() {}
+func (GardenerConfig) IsClusterConfig() {}
 
-type GardenerProviderConfigInput struct {
-	TargetProvider       string                `json:"targetProvider"`
-	TargetSecret         string                `json:"targetSecret"`
-	AutoScalerMin        *int                  `json:"autoScalerMin"`
-	AutoScalerMax        *int                  `json:"autoScalerMax"`
-	MaxSurge             *int                  `json:"maxSurge"`
-	MaxUnavailable       *int                  `json:"maxUnavailable"`
-	AdditionalProperties *AdditionalProperties `json:"additionalProperties"`
+type GardenerConfigInput struct {
+	Name              string `json:"name"`
+	KubernetesVersion string `json:"kubernetesVersion"`
+	NodeCount         int    `json:"nodeCount"`
+	VolumeSize        string `json:"volumeSize"`
+	MachineType       string `json:"machineType"`
+	Region            string `json:"region"`
+	TargetProvider    string `json:"targetProvider"`
+	TargetSecret      string `json:"targetSecret"`
+	DiskType          string `json:"diskType"`
+	Zone              string `json:"zone"`
+	Cidr              string `json:"cidr"`
+	AutoScalerMin     int    `json:"autoScalerMin"`
+	AutoScalerMax     int    `json:"autoScalerMax"`
+	MaxSurge          int    `json:"maxSurge"`
+	MaxUnavailable    int    `json:"maxUnavailable"`
 }
 
 type KymaConfig struct {
@@ -100,24 +102,16 @@ type OperationStatus struct {
 	RuntimeID string         `json:"runtimeID"`
 }
 
-type ProviderConfigInput struct {
-	GardenerProviderConfig *GardenerProviderConfigInput `json:"gardenerProviderConfig"`
-	GcpProviderConfig      *GCPProviderConfigInput      `json:"gcpProviderConfig"`
-	AksProviderConfig      *AKSProviderConfigInput      `json:"aksProviderConfig"`
-}
-
 type ProvisionRuntimeInput struct {
 	ClusterConfig *ClusterConfigInput `json:"clusterConfig"`
+	Credentials   *CredentialsInput   `json:"credentials"`
 	KymaConfig    *KymaConfigInput    `json:"kymaConfig"`
 }
 
 type RuntimeConfig struct {
-	ClusterConfig *ClusterConfig `json:"clusterConfig"`
-	KymaConfig    *KymaConfig    `json:"kymaConfig"`
-}
-
-type RuntimeConnectionConfig struct {
-	Kubeconfig string `json:"kubeconfig"`
+	ClusterConfig ClusterConfig `json:"clusterConfig"`
+	KymaConfig    *KymaConfig   `json:"kymaConfig"`
+	Kubeconfig    *string       `json:"kubeconfig"`
 }
 
 type RuntimeConnectionStatus struct {
@@ -128,7 +122,6 @@ type RuntimeConnectionStatus struct {
 type RuntimeStatus struct {
 	LastOperationStatus     *OperationStatus         `json:"lastOperationStatus"`
 	RuntimeConnectionStatus *RuntimeConnectionStatus `json:"runtimeConnectionStatus"`
-	RuntimeConnectionConfig *RuntimeConnectionConfig `json:"runtimeConnectionConfig"`
 	RuntimeConfiguration    *RuntimeConfig           `json:"runtimeConfiguration"`
 }
 

@@ -18,15 +18,23 @@ const (
 )
 
 var provisionRuntimeInput = gqlschema.ProvisionRuntimeInput{
+	Credentials: &gqlschema.CredentialsInput{SecretName: "secret"},
 	ClusterConfig: &gqlschema.ClusterConfigInput{
-		Name:        "Test",
-		ComputeZone: "Zone",
-		Credentials: &gqlschema.CredentialsInput{SecretName: "secret"},
-		ProviderConfig: &gqlschema.ProviderConfigInput{
-			GardenerProviderConfig: &gqlschema.GardenerProviderConfigInput{
-				TargetProvider: "gcp",
-				TargetSecret:   "gardener-secret",
-			},
+		GardenerConfig: &gqlschema.GardenerConfigInput{
+			Name:              "Test",
+			KubernetesVersion: "1.16",
+			NodeCount:         2,
+			VolumeSize:        "30GB",
+			MachineType:       "machine",
+			Region:            "Region",
+			TargetProvider:    "gcp",
+			TargetSecret:      "gardener-secret",
+			Zone:              "zone",
+			Cidr:              "cidr",
+			AutoScalerMin:     1,
+			AutoScalerMax:     2,
+			MaxSurge:          2,
+			MaxUnavailable:    1,
 		},
 	},
 	KymaConfig: &gqlschema.KymaConfigInput{

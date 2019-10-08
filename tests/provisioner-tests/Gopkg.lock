@@ -88,23 +88,12 @@
   version = "v1.2.0"
 
 [[projects]]
-  digest = "1:31e761d97c76151dde79e9d28964a812c46efc5baee4085b86f68f0c654450de"
-  name = "github.com/konsorten/go-windows-terminal-sequences"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "f55edac94c9bbba5d6182a4be46d86a2c9b5b50e"
-  version = "v1.0.2"
-
-[[projects]]
-  branch = "api-update"
-  digest = "1:f4a321d863b958ea3f1f073a60bace25838c171e64bd3e7f604cf3e6ebc1e571"
+  branch = "provisioner-databese-schema"
+  digest = "1:b785f5fb0206f9a385a92ae2d9151aa1e730422256fac3e915a092c93e3823f2"
   name = "github.com/kyma-incubator/compass"
-  packages = [
-    "components/provisioner/pkg/gqlschema",
-    "components/provisioner/pkg/scalar",
-  ]
+  packages = ["components/provisioner/pkg/gqlschema"]
   pruneopts = "UT"
-  revision = "5f62421b35bd3be2086cfd65ea0652ceca098211"
+  revision = "517a475caf10ce9fd277fc553f2ac4cf766ce32a"
   source = "github.com/Szymongib/compass"
 
 [[projects]]
@@ -146,14 +135,6 @@
   pruneopts = "UT"
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
-
-[[projects]]
-  digest = "1:04457f9f6f3ffc5fea48e71d62f2ca256637dee0a04d710288e27e05c8b41976"
-  name = "github.com/sirupsen/logrus"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "839c75faf7f98a33d445d181f3018b5c3409a45e"
-  version = "v1.4.2"
 
 [[projects]]
   digest = "1:99d32780e5238c2621fff621123997c3e3cca96db8be13179013aea77dfab551"
@@ -203,15 +184,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:84ed4fd3f7c52941feec4832e385f61377a01b4c98a0f868f16f10c2469fc0fe"
-  name = "golang.org/x/sys"
-  packages = ["unix"]
-  pruneopts = "UT"
-  revision = "b397fe3ad8ed895c98fa54584f61835a88e65ff5"
-
-[[projects]]
-  branch = "master"
-  digest = "1:f219aaebf52fe9c90840cec4aa0864369fa59733724df2e700562acf15aaabd6"
+  digest = "1:ef4d8c35d3c083b4a4e5f6057d37145acda78d7d154937d519bfc6e0bb089d22"
   name = "golang.org/x/tools"
   packages = [
     "cmd/goimports",
@@ -228,7 +201,7 @@
     "internal/semver",
   ]
   pruneopts = "UT"
-  revision = "9ade4c73f2afdb56d278b4e3587f70b0c0f0cb9d"
+  revision = "c9f9432ec4b21a28c4d47f172513698febb68e9c"
 
 [[projects]]
   digest = "1:59f10c1537d2199d9115d946927fe31165959a95190849c82ff11e05803528b0"
