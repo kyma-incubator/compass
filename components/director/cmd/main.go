@@ -6,12 +6,15 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
+	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
 
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
-	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 	"github.com/kyma-project/kyma/components/console-backend-service/pkg/executor"
 	"github.com/kyma-project/kyma/components/console-backend-service/pkg/signal"
 
@@ -53,6 +56,8 @@ type config struct {
 	JWKSSyncPeriod      time.Duration `envconfig:"default=5m"`
 	AllowJWTSigningNone bool          `envconfig:"default=true"`
 
+	StaticUsersSrc string `envconfig:"default=/data/static-users.yaml"`
+
 	OneTimeToken onetimetoken.Config
 	OAuth20      oauth20.Config
 }
@@ -67,15 +72,11 @@ func main() {
 	connString := fmt.Sprintf(connStringf, cfg.Database.Host, cfg.Database.Port, cfg.Database.User,
 		cfg.Database.Password, cfg.Database.Name, cfg.Database.SSLMode)
 	transact, closeFunc, err := persistence.Configure(log.StandardLogger(), connString)
-	if err != nil {
-		panic(err)
-	}
+	exitOnError(err, "Error while establishing the connection to the database")
 
 	defer func() {
 		err := closeFunc()
-		if err != nil {
-			panic(err)
-		}
+		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
 	stopCh := signal.SetupChannel()
@@ -113,8 +114,11 @@ func main() {
 	gqlAPIRouter.HandleFunc("", handler.GraphQL(executableSchema))
 
 	log.Infof("Registering Tenant Mapping endpoint on %s...", cfg.TenantMappingEndpoint)
-	tenantMappingHandler := tenantmapping.NewHandler()
-	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandler.ServeHTTP)
+	tenantMappingHandlerFunc, err := getTenantMappingHanderFunc(transact, cfg.StaticUsersSrc, scopeCfgProvider)
+	exitOnError(err, "Error while configuring tenant mapping handler")
+
+	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandlerFunc)
+
 	mainRouter.HandleFunc("/healthz", func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(200)
 		_, err := writer.Write([]byte("ok"))
@@ -165,4 +169,23 @@ func configureLogger() {
 		FullTimestamp: true,
 	})
 	log.SetReportCaller(true)
+}
+
+func getTenantMappingHanderFunc(transact persistence.Transactioner, staticUsersSrc string, scopeProvider *scope.Provider) (func(writer http.ResponseWriter, request *http.Request), error) {
+	uidSvc := uid.NewService()
+	authConverter := auth.NewConverter()
+	systemAuthConverter := systemauth.NewConverter(authConverter)
+	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
+	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
+	staticUsersRepo, err := tenantmapping.NewStaticUserRepository(staticUsersSrc)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating StaticUser repository instance")
+	}
+
+	mapperForUser := tenantmapping.NewMapperForUser(staticUsersRepo)
+	mapperForSystemAuth := tenantmapping.NewMapperForSystemAuth(systemAuthSvc, scopeProvider)
+
+	reqDataParser := tenantmapping.NewReqDataParser()
+
+	return tenantmapping.NewHandler(reqDataParser, transact, mapperForUser, mapperForSystemAuth).ServeHTTP, nil
 }

@@ -10,7 +10,7 @@ global:
       version: "PR-357"
     director:
       dir:
-      version: "PR-397"
+      version: "PR-364"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -31,7 +31,7 @@ global:
     tests:
       e2e:
         dir:
-        version: "PR-397"
+        version: "PR-364"
       connector:
         dir: pr/
         version: "PR-357"
@@ -43,6 +43,7 @@ global:
 
   director:
     port: 3000
+
 
   connector:
     graphql:
