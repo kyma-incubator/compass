@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/gateway/internal/tenant"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 	"github.com/pkg/errors"
 
@@ -29,7 +28,7 @@ func main() {
 	err = proxyRequestsForComponent(router, "/connector", cfg.ConnectorOrigin)
 	exitOnError(err, "Error while initializing proxy for Connector")
 
-	err = proxyRequestsForComponent(router, "/director", cfg.DirectorOrigin, tenant.RequireTenantHeader("GET"))
+	err = proxyRequestsForComponent(router, "/director", cfg.DirectorOrigin)
 	exitOnError(err, "Error while initializing proxy for Director")
 
 	router.HandleFunc("/healthz", func(writer http.ResponseWriter, request *http.Request) {
