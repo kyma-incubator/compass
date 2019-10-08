@@ -17,15 +17,11 @@ required = [
 
 [[constraint]]
   name = "k8s.io/apimachinery"
-  version = "kubernetes-1.15.2"
+  version = "kubernetes-1.14.7"
 
 [[override]]
   name = "k8s.io/kubernetes"
-  version = "kubernetes-1.15.2"
-
-[[override]]
-  name = "github.com/russross/blackfriday"
-  version = "1.5.2"
+  version = "kubernetes-1.14.7"
 
 [prune]
   go-tests = true

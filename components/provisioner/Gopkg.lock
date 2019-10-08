@@ -634,14 +634,6 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:d7496e35507027728e24459aef7a5b8db8cebff46b9e765cf0e9434eca921630"
-  name = "github.com/kubernetes/client-go"
-  packages = ["kubernetes/typed/core/v1"]
-  pruneopts = "UT"
-  revision = "78d2af792babf2dd937ba2e2a8d99c753a5eda89"
-  version = "v12.0.0"
-
-[[projects]]
   branch = "master"
   digest = "1:7e29b8bd35aabbeb6b8b44ca393081e086a90cf8f10397ff8c3abe4eb48760ea"
   name = "github.com/kyma-incubator/hydroform"
@@ -765,6 +757,14 @@
   pruneopts = "UT"
   revision = "4b7aa43c6742a2c18fdef89dd197aaae7dac7ccd"
   version = "1.0.1"
+
+[[projects]]
+  digest = "1:e5d0bd87abc2781d14e274807a470acd180f0499f8bf5bb18606e9ec22ad9de9"
+  name = "github.com/pborman/uuid"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "adf5a7427709b9deb95d29d3fa8a2bf9cfd388f1"
+  version = "v1.2"
 
 [[projects]]
   branch = "master"
@@ -1350,7 +1350,7 @@
   revision = "ee9c4073cffa1a3cce1aad02aa46d3d3e691923d"
 
 [[projects]]
-  digest = "1:19f8f05c340672ff8656614494ea130d6e7abaae6ae2ccdc43c969c7bdf5ce4c"
+  digest = "1:43ccb09c955b9186d4640decbb93dae1699026aa9cee30027d22cd7b1a3e9348"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/equality",
@@ -1359,6 +1359,7 @@
     "pkg/api/resource",
     "pkg/apis/meta/v1",
     "pkg/apis/meta/v1/unstructured",
+    "pkg/apis/meta/v1beta1",
     "pkg/conversion",
     "pkg/conversion/queryparams",
     "pkg/fields",
@@ -1392,8 +1393,8 @@
     "third_party/forked/golang/reflect",
   ]
   pruneopts = "UT"
-  revision = "1799e75a07195de9460b8ef7300883499f12127b"
-  version = "kubernetes-1.15.2"
+  revision = "a9f1d8a9c10182d101acf19b5145c3d4e9299adb"
+  version = "kubernetes-1.14.7"
 
 [[projects]]
   digest = "1:51fd9ac9f2be10d79f5af101a7a1d758ef283fdb028a0d11198754bd3d4a6020"
@@ -1485,7 +1486,6 @@
     "github.com/gofrs/uuid",
     "github.com/gorilla/mux",
     "github.com/kisielk/errcheck",
-    "github.com/kubernetes/client-go/kubernetes/typed/core/v1",
     "github.com/kyma-incubator/hydroform",
     "github.com/kyma-incubator/hydroform/types",
     "github.com/pkg/errors",
@@ -1498,6 +1498,7 @@
     "golang.org/x/tools/cmd/goimports",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/apimachinery/pkg/util/uuid",
+    "k8s.io/client-go/kubernetes/typed/core/v1",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
