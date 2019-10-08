@@ -2,8 +2,9 @@ package labeldef_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence/txtest"
 

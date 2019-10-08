@@ -2,8 +2,9 @@ package runtime
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/pkg/errors"
 
