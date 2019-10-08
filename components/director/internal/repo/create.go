@@ -10,19 +10,23 @@ import (
 	"github.com/pkg/errors"
 )
 
-type Creator struct {
+type Creator interface {
+	Create(ctx context.Context, dbEntity interface{}) error
+}
+
+type universalCreator struct {
 	tableName string
 	columns   []string
 }
 
-func NewCreator(tableName string, columns []string) *Creator {
-	return &Creator{
+func NewCreator(tableName string, columns []string) Creator {
+	return &universalCreator{
 		tableName: tableName,
 		columns:   columns,
 	}
 }
 
-func (c *Creator) Create(ctx context.Context, dbEntity interface{}) error {
+func (c *universalCreator) Create(ctx context.Context, dbEntity interface{}) error {
 	if dbEntity == nil {
 		return errors.New("item cannot be nil")
 	}

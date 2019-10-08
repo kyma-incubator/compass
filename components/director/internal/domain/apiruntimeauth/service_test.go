@@ -9,7 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apiruntimeauth/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
-	"github.com/kyma-incubator/compass/components/director/pkg/strings"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -25,7 +25,7 @@ func TestService_Get(t *testing.T) {
 	apiID := "foo"
 	rtmID := "bar"
 
-	modelAPIRtmAuth := fixModelAPIRuntimeAuth(strings.Ptr("foo"), rtmID, apiID, fixModelAuth())
+	modelAPIRtmAuth := fixModelAPIRuntimeAuth(str.Ptr("foo"), rtmID, apiID, fixModelAuth())
 
 	testErr := errors.New("test error")
 
@@ -100,7 +100,7 @@ func TestService_GetOrDefault(t *testing.T) {
 	apiID := "foo"
 	rtmID := "bar"
 
-	modelAPIRtmAuth := fixModelAPIRuntimeAuth(strings.Ptr("foo"), rtmID, apiID, fixModelAuth())
+	modelAPIRtmAuth := fixModelAPIRuntimeAuth(str.Ptr("foo"), rtmID, apiID, fixModelAuth())
 
 	testErr := errors.New("test error")
 
@@ -175,9 +175,9 @@ func TestService_ListForAllRuntimes(t *testing.T) {
 	apiID := "foo"
 
 	modelAPIRtmAuths := []model.APIRuntimeAuth{
-		*fixModelAPIRuntimeAuth(strings.Ptr("foo"), "1", apiID, fixModelAuth()),
-		*fixModelAPIRuntimeAuth(strings.Ptr("bar"), "2", apiID, fixModelAuth()),
-		*fixModelAPIRuntimeAuth(strings.Ptr("baz"), "3", apiID, fixModelAuth()),
+		*fixModelAPIRuntimeAuth(str.Ptr("foo"), "1", apiID, fixModelAuth()),
+		*fixModelAPIRuntimeAuth(str.Ptr("bar"), "2", apiID, fixModelAuth()),
+		*fixModelAPIRuntimeAuth(str.Ptr("baz"), "3", apiID, fixModelAuth()),
 	}
 
 	testErr := errors.New("test error")

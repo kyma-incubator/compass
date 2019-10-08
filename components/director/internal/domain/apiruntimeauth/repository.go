@@ -12,7 +12,10 @@ import (
 
 const tableName string = `public.api_runtime_auths`
 
-var tableColumns = []string{"id", "tenant_id", "runtime_id", "api_def_id", "value"}
+var (
+	tableColumns = []string{"id", "tenant_id", "runtime_id", "api_def_id", "value"}
+	tenantColumn = "tenant_id"
+)
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
@@ -21,27 +24,27 @@ type Converter interface {
 }
 
 type pgRepository struct {
-	*repo.SingleGetter
-	*repo.Lister
-	*repo.Upserter
-	*repo.Deleter
+	singleGetter repo.SingleGetter
+	lister       repo.Lister
+	upserter     repo.Upserter
+	deleter      repo.Deleter
 
 	conv Converter
 }
 
 func NewRepository(conv Converter) *pgRepository {
 	return &pgRepository{
-		SingleGetter: repo.NewSingleGetter(tableName, "tenant_id", tableColumns),
-		Lister:       repo.NewLister(tableName, "tenant_id", tableColumns),
-		Upserter:     repo.NewUpserter(tableName, tableColumns, []string{"tenant_id", "runtime_id", "api_def_id"}, []string{"value"}),
-		Deleter:      repo.NewDeleter(tableName, "tenant_id"),
+		singleGetter: repo.NewSingleGetter(tableName, tenantColumn, tableColumns),
+		lister:       repo.NewLister(tableName, tenantColumn, tableColumns),
+		upserter:     repo.NewUpserter(tableName, tableColumns, []string{"tenant_id", "runtime_id", "api_def_id"}, []string{"value"}),
+		deleter:      repo.NewDeleter(tableName, tenantColumn),
 		conv:         conv,
 	}
 }
 
 func (r *pgRepository) Get(ctx context.Context, tenant string, apiID string, runtimeID string) (*model.APIRuntimeAuth, error) {
 	var ent Entity
-	if err := r.SingleGetter.Get(ctx, tenant, repo.Conditions{{Field: "runtime_id", Val: runtimeID}, {Field: "api_def_id", Val: apiID}}, &ent); err != nil {
+	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{{Field: "runtime_id", Val: runtimeID}, {Field: "api_def_id", Val: apiID}}, &ent); err != nil {
 		return nil, err
 	}
 
@@ -125,9 +128,9 @@ func (r *pgRepository) Upsert(ctx context.Context, item model.APIRuntimeAuth) er
 		return errors.Wrap(err, "while creating api runtime auth entity from model")
 	}
 
-	return r.Upserter.Upsert(ctx, runtimeEnt)
+	return r.upserter.Upsert(ctx, runtimeEnt)
 }
 
 func (r *pgRepository) Delete(ctx context.Context, tenant string, apiID string, runtimeID string) error {
-	return r.Deleter.DeleteOne(ctx, tenant, repo.Conditions{{Field: "api_def_id", Val: apiID}, {Field: "runtime_id", Val: runtimeID}})
+	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{{Field: "api_def_id", Val: apiID}, {Field: "runtime_id", Val: runtimeID}})
 }

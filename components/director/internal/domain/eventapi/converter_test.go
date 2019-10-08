@@ -6,7 +6,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/strings"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -204,11 +204,11 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 	// given
 	gqlApi1 := fixGQLEventAPIDefinitionInput()
 	gqlApi2 := fixGQLEventAPIDefinitionInput()
-	gqlApi2.Group = strings.Ptr("group2")
+	gqlApi2.Group = str.Ptr("group2")
 
 	modelApi1 := fixModelEventAPIDefinitionInput()
 	modelApi2 := fixModelEventAPIDefinitionInput()
-	modelApi2.Group = strings.Ptr("group2")
+	modelApi2.Group = str.Ptr("group2")
 
 	gqlEventAPIDefinitionInputs := []*graphql.EventAPIDefinitionInput{gqlApi1, gqlApi2}
 	modelEventAPIDefinitionInputs := []*model.EventAPIDefinitionInput{modelApi1, modelApi2}

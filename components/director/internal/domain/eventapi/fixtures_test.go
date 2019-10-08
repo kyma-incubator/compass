@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/director/pkg/strings"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 )
 
 const (
@@ -33,7 +33,7 @@ func fixGQLEventAPIDefinition(id, placeholder string) *graphql.EventAPIDefinitio
 
 func fixFullModelEventAPIDefinition(id, placeholder string) model.EventAPIDefinition {
 	spec := &model.EventAPISpec{
-		Data:   strings.Ptr("data"),
+		Data:   str.Ptr("data"),
 		Format: model.SpecFormatJSON,
 		Type:   model.EventAPISpecTypeAsyncAPI,
 	}
@@ -44,8 +44,8 @@ func fixFullModelEventAPIDefinition(id, placeholder string) model.EventAPIDefini
 		ApplicationID: appID,
 		Tenant:        tenantID,
 		Name:          placeholder,
-		Description:   strings.Ptr("desc_" + placeholder),
-		Group:         strings.Ptr("group_" + placeholder),
+		Description:   str.Ptr("desc_" + placeholder),
+		Group:         str.Ptr("group_" + placeholder),
 		Spec:          spec,
 		Version:       &v,
 	}
@@ -68,7 +68,7 @@ func fixDetailedGQLEventAPIDefinition(id, placeholder string) *graphql.EventAPID
 	v := &graphql.Version{
 		Value:           "v1.1",
 		Deprecated:      &deprecated,
-		DeprecatedSince: strings.Ptr("v1.0"),
+		DeprecatedSince: str.Ptr("v1.0"),
 		ForRemoval:      &forRemoval,
 	}
 
@@ -76,9 +76,9 @@ func fixDetailedGQLEventAPIDefinition(id, placeholder string) *graphql.EventAPID
 		ID:            id,
 		ApplicationID: appID,
 		Name:          placeholder,
-		Description:   strings.Ptr("desc_" + placeholder),
+		Description:   str.Ptr("desc_" + placeholder),
 		Spec:          spec,
-		Group:         strings.Ptr("group_" + placeholder),
+		Group:         str.Ptr("group_" + placeholder),
 		Version:       v,
 	}
 }
@@ -100,14 +100,14 @@ func fixModelEventAPIDefinitionInput() *model.EventAPIDefinitionInput {
 	v := &model.VersionInput{
 		Value:           "v1.1",
 		Deprecated:      &deprecated,
-		DeprecatedSince: strings.Ptr("v1.0"),
+		DeprecatedSince: str.Ptr("v1.0"),
 		ForRemoval:      &forRemoval,
 	}
 
 	return &model.EventAPIDefinitionInput{
 		Name:        "name",
-		Description: strings.Ptr("description"),
-		Group:       strings.Ptr("group"),
+		Description: str.Ptr("description"),
+		Group:       str.Ptr("group"),
 		Spec:        spec,
 		Version:     v,
 	}
@@ -129,14 +129,14 @@ func fixGQLEventAPIDefinitionInput() *graphql.EventAPIDefinitionInput {
 	v := &graphql.VersionInput{
 		Value:           "v1.1",
 		Deprecated:      &deprecated,
-		DeprecatedSince: strings.Ptr("v1.0"),
+		DeprecatedSince: str.Ptr("v1.0"),
 		ForRemoval:      &forRemoval,
 	}
 
 	return &graphql.EventAPIDefinitionInput{
 		Name:        "name",
-		Description: strings.Ptr("description"),
-		Group:       strings.Ptr("group"),
+		Description: str.Ptr("description"),
+		Group:       str.Ptr("group"),
 		Spec:        spec,
 		Version:     v,
 	}
@@ -170,7 +170,7 @@ func fixVersionModel() model.Version {
 	return model.Version{
 		Value:           "v1.1",
 		Deprecated:      &deprecated,
-		DeprecatedSince: strings.Ptr("v1.0"),
+		DeprecatedSince: str.Ptr("v1.0"),
 		ForRemoval:      &forRemoval,
 	}
 }

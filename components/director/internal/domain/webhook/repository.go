@@ -15,8 +15,11 @@ const (
 	tableName = "public.webhooks"
 )
 
-var webhookColumns = []string{"id", "tenant_id", "app_id", "type", "url", "auth"}
-var missingInputModelError = errors.New("model has to be provided")
+var (
+	webhookColumns         = []string{"id", "tenant_id", "app_id", "type", "url", "auth"}
+	missingInputModelError = errors.New("model has to be provided")
+	tenantColumn           = "tenant_id"
+)
 
 //go:generate mockery -name=EntityConverter -output=automock -outpkg=automock -case=underscore
 type EntityConverter interface {
@@ -25,21 +28,21 @@ type EntityConverter interface {
 }
 
 type repository struct {
-	singleGetter *repo.SingleGetter
-	updater      *repo.Updater
-	creator      *repo.Creator
-	deleter      *repo.Deleter
-	lister       *repo.Lister
+	singleGetter repo.SingleGetter
+	updater      repo.Updater
+	creator      repo.Creator
+	deleter      repo.Deleter
+	lister       repo.Lister
 	conv         EntityConverter
 }
 
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
-		singleGetter: repo.NewSingleGetter(tableName, "tenant_id", webhookColumns),
+		singleGetter: repo.NewSingleGetter(tableName, tenantColumn, webhookColumns),
 		creator:      repo.NewCreator(tableName, webhookColumns),
-		updater:      repo.NewUpdater(tableName, []string{"type", "url", "auth"}, "tenant_id", []string{"id", "app_id"}),
-		deleter:      repo.NewDeleter(tableName, "tenant_id"),
-		lister:       repo.NewLister(tableName, "tenant_id", webhookColumns),
+		updater:      repo.NewUpdater(tableName, []string{"type", "url", "auth"}, tenantColumn, []string{"id", "app_id"}),
+		deleter:      repo.NewDeleter(tableName, tenantColumn),
+		lister:       repo.NewLister(tableName, tenantColumn, webhookColumns),
 		conv:         conv,
 	}
 }

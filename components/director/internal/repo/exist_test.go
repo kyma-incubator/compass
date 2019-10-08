@@ -42,11 +42,23 @@ func TestExist(t *testing.T) {
 		require.False(t, ex)
 	})
 
+	t.Run("success when no conditions", func(t *testing.T) {
+		// GIVEN
+		expectedQuery := regexp.QuoteMeta("SELECT 1 FROM users WHERE tenant_col = $1")
+		db, mock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		defer mock.AssertExpectations(t)
+		mock.ExpectQuery(expectedQuery).WithArgs(givenTenant).WillReturnRows(testdb.RowWhenObjectExist())
+		// WHEN
+		ex, err := sut.Exists(ctx, givenTenant, repo.Conditions{})
+		// THEN
+		require.NoError(t, err)
+		require.True(t, ex)
+	})
+
 	t.Run("success when more conditions", func(t *testing.T) {
 		// GIVEN
-		givenTenant := uuidB()
 		expectedQuery := regexp.QuoteMeta("SELECT 1 FROM users WHERE tenant_col = $1 AND first_name = $2 AND last_name = $3")
-		sut := repo.NewExistQuerier("users", "tenant_col")
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -73,6 +85,86 @@ func TestExist(t *testing.T) {
 	t.Run("returns error if missing persistence context", func(t *testing.T) {
 		ctx := context.TODO()
 		_, err := sut.Exists(ctx, givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}})
+		require.EqualError(t, err, "unable to fetch database from context")
+	})
+}
+
+func TestExistGlobal(t *testing.T) {
+	givenID := uuidA()
+	sut := repo.NewExistQuerierGlobal("users")
+
+	t.Run("success when exist", func(t *testing.T) {
+		// GIVEN
+		expectedQuery := regexp.QuoteMeta("SELECT 1 FROM users WHERE id_col = $1")
+		db, mock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		defer mock.AssertExpectations(t)
+		mock.ExpectQuery(expectedQuery).WithArgs(givenID).WillReturnRows(testdb.RowWhenObjectExist())
+		// WHEN
+		ex, err := sut.ExistsGlobal(ctx, repo.Conditions{{Field: "id_col", Val: givenID}})
+		// THEN
+		require.NoError(t, err)
+		require.True(t, ex)
+	})
+
+	t.Run("success when does not exist", func(t *testing.T) {
+		// GIVEN
+		expectedQuery := regexp.QuoteMeta("SELECT 1 FROM users WHERE id_col = $1")
+		db, mock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		defer mock.AssertExpectations(t)
+		mock.ExpectQuery(expectedQuery).WithArgs(givenID).WillReturnRows(testdb.RowWhenObjectDoesNotExist())
+		// WHEN
+		ex, err := sut.ExistsGlobal(ctx, repo.Conditions{{Field: "id_col", Val: givenID}})
+		// THEN
+		require.NoError(t, err)
+		require.False(t, ex)
+	})
+
+	t.Run("success when no conditions", func(t *testing.T) {
+		// GIVEN
+		expectedQuery := regexp.QuoteMeta("SELECT 1 FROM users")
+		db, mock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		defer mock.AssertExpectations(t)
+		mock.ExpectQuery(expectedQuery).WillReturnRows(testdb.RowWhenObjectExist())
+		// WHEN
+		ex, err := sut.ExistsGlobal(ctx, repo.Conditions{})
+		// THEN
+		require.NoError(t, err)
+		require.True(t, ex)
+	})
+
+	t.Run("success when more conditions", func(t *testing.T) {
+		// GIVEN
+		expectedQuery := regexp.QuoteMeta("SELECT 1 FROM users WHERE first_name = $1 AND last_name = $2")
+		db, mock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		defer mock.AssertExpectations(t)
+		mock.ExpectQuery(expectedQuery).WithArgs("john", "doe").WillReturnRows(testdb.RowWhenObjectDoesNotExist())
+		// WHEN
+		_, err := sut.ExistsGlobal(ctx, repo.Conditions{{Field: "first_name", Val: "john"}, {Field: "last_name", Val: "doe"}})
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("returns error when operation on db failed", func(t *testing.T) {
+		// GIVEN
+		expectedQuery := regexp.QuoteMeta("SELECT 1 FROM users WHERE id_col = $1")
+		db, mock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		defer mock.AssertExpectations(t)
+		mock.ExpectQuery(expectedQuery).WithArgs(givenID).WillReturnError(someError())
+		// WHEN
+		_, err := sut.ExistsGlobal(ctx, repo.Conditions{{Field: "id_col", Val: givenID}})
+		// THEN
+		require.EqualError(t, err, "while getting object from DB: some error")
+
+	})
+
+	t.Run("returns error if missing persistence context", func(t *testing.T) {
+		ctx := context.TODO()
+		_, err := sut.ExistsGlobal(ctx, repo.Conditions{{Field: "id_col", Val: givenID}})
 		require.EqualError(t, err, "unable to fetch database from context")
 	})
 }

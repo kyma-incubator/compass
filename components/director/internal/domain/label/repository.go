@@ -24,14 +24,14 @@ type Converter interface {
 }
 
 type repository struct {
-	*repo.Upserter
+	upserter repo.Upserter
 
 	conv Converter
 }
 
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		Upserter: repo.NewUpserter(tableName, tableColumns, []string{"tenant_id", "coalesce(app_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_id, '00000000-0000-0000-0000-000000000000')", "key"}, []string{"value"}),
+		upserter: repo.NewUpserter(tableName, tableColumns, []string{"tenant_id", "coalesce(app_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_id, '00000000-0000-0000-0000-000000000000')", "key"}, []string{"value"}),
 		conv:     conv,
 	}
 }
@@ -46,7 +46,7 @@ func (r *repository) Upsert(ctx context.Context, label *model.Label) error {
 		return errors.Wrap(err, "while creating label entity from model")
 	}
 
-	return r.Upserter.Upsert(ctx, labelEntity)
+	return r.upserter.Upsert(ctx, labelEntity)
 }
 
 func (r *repository) GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error) {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/strings"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/stretchr/testify/mock"
 
@@ -162,13 +162,13 @@ func TestService_ListForObject(t *testing.T) {
 		{
 			ID:        "foo",
 			TenantID:  testTenant,
-			RuntimeID: strings.Ptr("bar"),
+			RuntimeID: str.Ptr("bar"),
 			Value:     modelAuth,
 		},
 		{
 			ID:        "foo2",
 			TenantID:  testTenant,
-			RuntimeID: strings.Ptr("bar2"),
+			RuntimeID: str.Ptr("bar2"),
 			Value:     modelAuth,
 		},
 	}
@@ -176,13 +176,13 @@ func TestService_ListForObject(t *testing.T) {
 		{
 			ID:       "foo",
 			TenantID: testTenant,
-			AppID:    strings.Ptr("bar"),
+			AppID:    str.Ptr("bar"),
 			Value:    modelAuth,
 		},
 		{
 			ID:       "foo2",
 			TenantID: testTenant,
-			AppID:    strings.Ptr("bar2"),
+			AppID:    str.Ptr("bar2"),
 			Value:    modelAuth,
 		},
 	}
@@ -190,13 +190,13 @@ func TestService_ListForObject(t *testing.T) {
 		{
 			ID:                  "foo",
 			TenantID:            model.IntegrationSystemTenant,
-			IntegrationSystemID: strings.Ptr("bar"),
+			IntegrationSystemID: str.Ptr("bar"),
 			Value:               modelAuth,
 		},
 		{
 			ID:                  "foo2",
 			TenantID:            model.IntegrationSystemTenant,
-			IntegrationSystemID: strings.Ptr("bar2"),
+			IntegrationSystemID: str.Ptr("bar2"),
 			Value:               modelAuth,
 		},
 	}
