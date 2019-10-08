@@ -25,7 +25,7 @@ func NewHandler() *Handler {
 
 func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodPost {
-		http.Error(writer, "Bad request method. Got %s, expected POST", http.StatusBadRequest)
+		http.Error(writer, fmt.Sprintf("Bad request method. Got %s, expected POST", request.Method), http.StatusBadRequest)
 		return
 	}
 
