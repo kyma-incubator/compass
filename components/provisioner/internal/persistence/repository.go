@@ -1,9 +1,10 @@
 package persistence
 
 import (
+	"time"
+
 	"github.com/gocraft/dbr"
 	"github.com/gofrs/uuid"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 )
@@ -21,7 +22,9 @@ type Repository interface {
 	GetLastOperation(runtimeID string) (model.Operation, error)
 }
 
-const (GardenerConfigTable = "GardenerConfig")
+const (
+	GardenerConfigTable = "GardenerConfig"
+)
 
 type repository struct {
 	dbSession *dbr.Session
@@ -43,7 +46,7 @@ func (r repository) InsertCluster(runtimeID string, creationTimestamp time.Time,
 	return err
 }
 
-func (r repository) InsertGardenerConfig(config model.GardenerConfig) error{
+func (r repository) InsertGardenerConfig(config model.GardenerConfig) error {
 	id, err := uuid.NewV4()
 	if err != nil {
 		return err
@@ -70,7 +73,7 @@ func (r repository) InsertGardenerConfig(config model.GardenerConfig) error{
 	return err
 }
 
-func (r repository) InsertGCPConfig(config model.GCPConfig) error{
+func (r repository) InsertGCPConfig(config model.GCPConfig) error {
 	id, err := uuid.NewV4()
 	if err != nil {
 		return err
