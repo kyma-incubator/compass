@@ -233,6 +233,17 @@
   version = "0.29.2"
 
 [[projects]]
+  digest = "1:e43e924cdda2208737c20b6b1c8c03d3c7a2114273cd33bb6d00418c0f95ac1e"
+  name = "github.com/gocraft/dbr"
+  packages = [
+    ".",
+    "dialect",
+  ]
+  pruneopts = "UT"
+  revision = "8114670a83bd7b6dd19a2eb21c6ad88822c56414"
+  version = "v2.6.1"
+
+[[projects]]
   digest = "1:bed9d72d596f94e65fff37f4d6c01398074a6bb1c3f3ceff963516bd01db6ff5"
   name = "github.com/gofrs/uuid"
   packages = ["."]
@@ -1483,6 +1494,7 @@
     "github.com/99designs/gqlgen/graphql",
     "github.com/99designs/gqlgen/graphql/introspection",
     "github.com/99designs/gqlgen/handler",
+    "github.com/gocraft/dbr",
     "github.com/gofrs/uuid",
     "github.com/gorilla/mux",
     "github.com/kisielk/errcheck",

@@ -1,7 +1,6 @@
 package model
 
 import (
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"time"
 )
 
@@ -12,18 +11,6 @@ const (
 	AKS      InfrastructureProvider = iota
 	Gardener InfrastructureProvider = iota
 )
-
-type ClusterConfig struct {
-	Name                   string
-	NodeCount              int
-	DiskSize               string
-	MachineType            string
-	Region                 string
-	Version                string
-	Credentials            string
-	InfrastructureProvider InfrastructureProvider
-	ProviderConfig         interface{}
-}
 
 type KymaModule int
 
@@ -71,20 +58,47 @@ type Operation struct {
 	RuntimeID   string
 }
 
-type AdditionalProperties map[string]interface{}
 
-type GardenerProviderConfig struct {
+type GardenerConfig struct {
+	Name string
+	KubernetesVersion string
+	NodeCount int
+	VolumeSize string
+	MachineType string
 	TargetProvider       string
 	TargetSecret         string
-	ComputeZone          string
+	Cidr string
+	Region string
+	Zone          string
 	AutoScalerMin        string
 	AutoScalerMax        string
 	MaxSurge             int
 	MaxUnavailable       int
-	AdditionalProperties AdditionalProperties
+}
+
+type GCPConfig struct {
+	Name string
+	KubernetesVersion string
+	NumberOfNodes int
+	BootDiskSize string
+	MachineType string
+	Region string
+	Zone string
 }
 
 type RuntimeAgentConnectionStatus int
+
+type ClusterConfig struct {
+	Name                   string
+	NodeCount              int
+	DiskSize               string
+	MachineType            string
+	Region                 string
+	Version                string
+	Credentials            string
+	InfrastructureProvider InfrastructureProvider
+	ProviderConfig         interface{}
+}
 
 const (
 	RuntimeAgentConnectionStatusPending      RuntimeAgentConnectionStatus = iota
@@ -92,51 +106,26 @@ const (
 	RuntimeAgentConnectionStatusDisconnected RuntimeAgentConnectionStatus = iota
 )
 
-type RuntimeConnectionConfig struct {
+type RuntimeConfig struct {
+	KymaConfig    KymaConfig
+	ClusterConfig interface{}
 	Kubeconfig string
 }
 
-type RuntimeConfig struct {
-	KymaConfig    KymaConfig
-	ClusterConfig ClusterConfig
+func (rc RuntimeConfig) GCPConfig() (GCPConfig, bool) {
+	gcpConfig, ok := rc.ClusterConfig.(GCPConfig)
+
+	return gcpConfig, ok
+}
+
+func (rc RuntimeConfig) GardenerConfig() (GardenerConfig, bool) {
+	gardenerConfig, ok := rc.ClusterConfig.(GardenerConfig)
+
+	return gardenerConfig, ok
 }
 
 type RuntimeStatus struct {
 	LastOperationStatus     Operation
 	RuntimeConnectionStatus RuntimeAgentConnectionStatus
-	RuntimeConnectionConfig RuntimeConnectionConfig
 	RuntimeConfiguration    RuntimeConfig
-}
-
-type GCPProviderConfig struct {
-	AdditionalProperties AdditionalProperties
-}
-
-type AKSProviderConfig struct {
-	AdditionalProperties AdditionalProperties
-}
-
-func ClusterConfigFromInput(input gqlschema.ClusterConfigInput) ClusterConfig {
-	return ClusterConfig{
-		Name:           input.Name,
-		NodeCount:      *input.NodeCount,
-		DiskSize:       *input.DiskSize,
-		MachineType:    *input.MachineType,
-		Region:         *input.Region,
-		Version:        *input.Version,
-		Credentials:    input.Credentials.SecretName,
-		ProviderConfig: input.ProviderConfig,
-	}
-}
-
-func KymaConfigFromInput(input gqlschema.KymaConfigInput) KymaConfig {
-	var modules []KymaModule
-	for module := range input.Modules {
-		modules = append(modules, KymaModule(module))
-	}
-
-	return KymaConfig{
-		Version: input.Version,
-		Modules: modules,
-	}
 }
