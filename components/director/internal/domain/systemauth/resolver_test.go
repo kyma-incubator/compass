@@ -2,6 +2,7 @@ package systemauth_test
 
 import (
 	"context"
+	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
@@ -24,6 +25,15 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 	objectID := "bar"
 	objectType := model.RuntimeReference
 	modelSystemAuth := fixModelSystemAuth(id, objectType, objectID, fixModelAuth())
+	oauthModelSystemAuth := fixModelSystemAuth(id, objectType, objectID, &model.Auth{
+		Credential: model.CredentialData{
+			Oauth: &model.OAuthCredentialData{
+				ClientID:     "clientid",
+				ClientSecret: "clientsecret",
+				URL:          "foo.bar/token",
+			},
+		},
+	})
 	gqlSystemAuth := fixGQLSystemAuth(id, fixGQLAuth())
 
 	testCases := []struct {
@@ -31,12 +41,13 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 		PersistenceFn      func() *persistenceautomock.PersistenceTx
 		TransactionerFn    func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
 		ServiceFn          func() *automock.SystemAuthService
+		OAuthServiceFn     func() *automock.OAuth20Service
 		ConverterFn        func() *automock.SystemAuthConverter
 		ExpectedSystemAuth *graphql.SystemAuth
 		ExpectedErr        error
 	}{
 		{
-			Name: "Success",
+			Name: "Success - Basic Auth",
 			PersistenceFn: func() *persistenceautomock.PersistenceTx {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				persistTx.On("Commit").Return(nil).Once()
@@ -55,9 +66,46 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 				svc.On("DeleteByIDForObject", contextParam, objectType, id).Return(nil).Once()
 				return svc
 			},
+			OAuthServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				return svc
+			},
 			ConverterFn: func() *automock.SystemAuthConverter {
 				conv := &automock.SystemAuthConverter{}
 				conv.On("ToGraphQL", modelSystemAuth).Return(gqlSystemAuth).Once()
+				return conv
+			},
+			ExpectedSystemAuth: gqlSystemAuth,
+			ExpectedErr:        nil,
+		},
+		{
+			Name: "Success - OAuth",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+				return persistTx
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+
+				return transact
+			},
+			ServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("Get", contextParam, id).Return(oauthModelSystemAuth, nil).Once()
+				svc.On("DeleteByIDForObject", contextParam, objectType, id).Return(nil).Once()
+				return svc
+			},
+			OAuthServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteClient", contextParam, oauthModelSystemAuth.Value.Credential.Oauth.ClientID).Return(nil)
+				return svc
+			},
+			ConverterFn: func() *automock.SystemAuthConverter {
+				conv := &automock.SystemAuthConverter{}
+				conv.On("ToGraphQL", oauthModelSystemAuth).Return(gqlSystemAuth).Once()
 				return conv
 			},
 			ExpectedSystemAuth: gqlSystemAuth,
@@ -81,6 +129,10 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 				svc.On("Get", contextParam, id).Return(nil, testErr).Once()
 				return svc
 			},
+			OAuthServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				return svc
+			},
 			ConverterFn: func() *automock.SystemAuthConverter {
 				conv := &automock.SystemAuthConverter{}
 				return conv
@@ -89,7 +141,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 			ExpectedErr:        testErr,
 		},
 		{
-			Name: "Error - Delete",
+			Name: "Error - Delete DB",
 			PersistenceFn: func() *persistenceautomock.PersistenceTx {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				return persistTx
@@ -107,6 +159,10 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 				svc.On("DeleteByIDForObject", contextParam, objectType, id).Return(testErr).Once()
 				return svc
 			},
+			OAuthServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				return svc
+			},
 			ConverterFn: func() *automock.SystemAuthConverter {
 				conv := &automock.SystemAuthConverter{}
 				conv.On("ToGraphQL", modelSystemAuth).Return(gqlSystemAuth).Once()
@@ -115,6 +171,37 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 			ExpectedSystemAuth: nil,
 			ExpectedErr:        testErr,
 		},
+		{
+			Name: "Error - Delete Client",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				return persistTx
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+
+				return transact
+			},
+			ServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("Get", contextParam, id).Return(oauthModelSystemAuth, nil).Once()
+				return svc
+			},
+			OAuthServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteClient", contextParam, oauthModelSystemAuth.Value.Credential.Oauth.ClientID).Return(testErr)
+				return svc
+			},
+			ConverterFn: func() *automock.SystemAuthConverter {
+				conv := &automock.SystemAuthConverter{}
+				conv.On("ToGraphQL", oauthModelSystemAuth).Return(gqlSystemAuth).Once()
+				return conv
+			},
+			ExpectedSystemAuth: nil,
+			ExpectedErr:        errors.Wrap(testErr, "while deleting OAuth 2.0 client"),
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -122,9 +209,10 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 			persistTx := testCase.PersistenceFn()
 			transact := testCase.TransactionerFn(persistTx)
 			svc := testCase.ServiceFn()
+			oauthSvc := testCase.OAuthServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := systemauth.NewResolver(transact, svc, converter)
+			resolver := systemauth.NewResolver(transact, svc, oauthSvc, converter)
 
 			// when
 			fn := resolver.GenericDeleteSystemAuth(objectType)
@@ -132,11 +220,15 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 
 			// then
 			assert.Equal(t, testCase.ExpectedSystemAuth, result)
-			assert.Equal(t, testCase.ExpectedErr, err)
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				assert.Equal(t, testCase.ExpectedErr.Error(), err.Error())
+			}
 
 			persistTx.AssertExpectations(t)
 			transact.AssertExpectations(t)
 			svc.AssertExpectations(t)
+			oauthSvc.AssertExpectations(t)
 			converter.AssertExpectations(t)
 		})
 	}

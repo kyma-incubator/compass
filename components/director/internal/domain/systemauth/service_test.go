@@ -139,7 +139,9 @@ func TestService_Create(t *testing.T) {
 	}
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := systemauth.NewService(nil, nil)
+		uidSvc := uidSvcFn()
+		defer uidSvc.AssertExpectations(t)
+		svc := systemauth.NewService(nil, uidSvc)
 
 		// WHEN
 		_, err := svc.Create(context.TODO(), "", "", nil)
