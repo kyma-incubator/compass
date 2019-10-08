@@ -11,13 +11,13 @@ type Service struct {
 	mock.Mock
 }
 
-// CreateClientCredentials provides a mock function with given fields: ctx, objectType, objectID
-func (_m *Service) CreateClientCredentials(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) (*model.OAuthCredentialDataInput, error) {
-	ret := _m.Called(ctx, objectType, objectID)
+// CreateClient provides a mock function with given fields: ctx, objectType
+func (_m *Service) CreateClient(ctx context.Context, objectType model.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error) {
+	ret := _m.Called(ctx, objectType)
 
 	var r0 *model.OAuthCredentialDataInput
-	if rf, ok := ret.Get(0).(func(context.Context, model.SystemAuthReferenceObjectType, string) *model.OAuthCredentialDataInput); ok {
-		r0 = rf(ctx, objectType, objectID)
+	if rf, ok := ret.Get(0).(func(context.Context, model.SystemAuthReferenceObjectType) *model.OAuthCredentialDataInput); ok {
+		r0 = rf(ctx, objectType)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.OAuthCredentialDataInput)
@@ -25,11 +25,25 @@ func (_m *Service) CreateClientCredentials(ctx context.Context, objectType model
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, model.SystemAuthReferenceObjectType, string) error); ok {
-		r1 = rf(ctx, objectType, objectID)
+	if rf, ok := ret.Get(1).(func(context.Context, model.SystemAuthReferenceObjectType) error); ok {
+		r1 = rf(ctx, objectType)
 	} else {
 		r1 = ret.Error(1)
 	}
 
 	return r0, r1
+}
+
+// DeleteClient provides a mock function with given fields: ctx, clientID
+func (_m *Service) DeleteClient(ctx context.Context, clientID string) error {
+	ret := _m.Called(ctx, clientID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, clientID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }

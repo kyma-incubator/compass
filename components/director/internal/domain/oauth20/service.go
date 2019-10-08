@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"io"
 	"net/http"
 	"strings"
 )
@@ -28,8 +29,7 @@ type UIDService interface {
 }
 
 type service struct {
-	clientCreationEndpoint    string
-	clientDeletionEndpoint    string
+	clientEndpoint            string
 	publicAccessTokenEndpoint string
 	scopeCfgProvider          ScopeCfgProvider
 	httpCli                   *http.Client
@@ -39,8 +39,7 @@ type service struct {
 func NewService(scopeCfgProvider ScopeCfgProvider, uidService UIDService, cfg Config) *service {
 	return &service{
 		scopeCfgProvider:          scopeCfgProvider,
-		clientCreationEndpoint:    cfg.ClientCreationEndpoint,
-		clientDeletionEndpoint:    cfg.ClientDeletionEndpoint,
+		clientEndpoint:            cfg.ClientEndpoint,
 		publicAccessTokenEndpoint: cfg.PublicAccessTokenEndpoint,
 		httpCli:                   &http.Client{},
 		uidService:                uidService,
@@ -69,7 +68,7 @@ func (s *service) CreateClient(ctx context.Context, objectType model.SystemAuthR
 }
 
 func (s *service) DeleteClient(ctx context.Context, clientID string) error {
-	// TODO: DeleteClient
+	return s.unregisterClient(clientID)
 }
 
 func (s *service) getClientCredentialScopes(objType model.SystemAuthReferenceObjectType) ([]string, error) {
@@ -82,20 +81,20 @@ func (s *service) getClientCredentialScopes(objType model.SystemAuthReferenceObj
 }
 
 type clientCredentialsRegistrationBody struct {
-	GrantTypes   []string `json:"grant_types"`
-	ClientID     string   `json:"client_id"`
-	Scope        string   `json:"scope"`
+	GrantTypes []string `json:"grant_types"`
+	ClientID   string   `json:"client_id"`
+	Scope      string   `json:"scope"`
 }
 
 type clientCredentialsRegistrationResponse struct {
-	ClientSecret     string   `json:"client_secret"`
+	ClientSecret string `json:"client_secret"`
 }
 
 func (s *service) registerClient(clientID string, scopes []string) (string, error) {
 	reqBody := &clientCredentialsRegistrationBody{
-		GrantTypes:   defaultGrantTypes,
-		ClientID:     clientID,
-		Scope:        strings.Join(scopes, " "),
+		GrantTypes: defaultGrantTypes,
+		ClientID:   clientID,
+		Scope:      strings.Join(scopes, " "),
 	}
 
 	buffer := &bytes.Buffer{}
@@ -104,25 +103,12 @@ func (s *service) registerClient(clientID string, scopes []string) (string, erro
 		return "", errors.Wrap(err, "while encoding body")
 	}
 
-	req, err := http.NewRequest(http.MethodPost, s.clientCreationEndpoint, buffer)
+	resp, closeBody, err := s.doRequest(http.MethodPost, s.clientEndpoint, buffer)
 	if err != nil {
-		return "", errors.Wrap(err, "while creating new request")
+		return "", err
 	}
 
-	req.Header.Set("Content-Type", applicationJSONType)
-	req.Header.Set("Accept", applicationJSONType)
-
-	resp, err := s.httpCli.Do(req)
-	if err != nil {
-		return "", errors.Wrapf(err, "while doing request to %s", s.clientCreationEndpoint)
-	}
-
-	defer func() {
-		err := resp.Body.Close()
-		if err != nil {
-			logrus.Error(err)
-		}
-	}()
+	defer closeBody(resp.Body)
 
 	if resp.StatusCode != http.StatusCreated {
 		return "", fmt.Errorf("invalid HTTP status code: received: %d,  expected %d", resp.StatusCode, http.StatusCreated)
@@ -135,6 +121,50 @@ func (s *service) registerClient(clientID string, scopes []string) (string, erro
 	}
 
 	return registrationResp.ClientSecret, nil
+}
+
+func (s *service) unregisterClient(clientID string) error {
+	endpoint := fmt.Sprintf("%s/%s", s.clientEndpoint, clientID)
+
+	resp, closeBody, err := s.doRequest(http.MethodDelete, endpoint, nil)
+	if err != nil {
+		return err
+	}
+	defer closeBody(resp.Body)
+
+	if resp.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("invalid HTTP status code: received: %d,  expected %d", resp.StatusCode, http.StatusNoContent)
+	}
+
+	return nil
+}
+
+func (s *service) doRequest(method string, endpoint string, body io.Reader) (*http.Response, func(body io.ReadCloser), error) {
+	req, err := http.NewRequest(method, endpoint, body)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "while creating new request")
+	}
+
+	req.Header.Set("Accept", applicationJSONType)
+	req.Header.Set("Content-Type", applicationJSONType)
+
+	resp, err := s.httpCli.Do(req)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "while doing request to %s", s.clientEndpoint)
+	}
+
+	closeBodyFn := func(body io.ReadCloser) {
+		if body == nil {
+			return
+		}
+
+		err := body.Close()
+		if err != nil {
+			logrus.Error(err)
+		}
+	}
+
+	return resp, closeBodyFn, nil
 }
 
 func (s *service) buildPath(objType model.SystemAuthReferenceObjectType) string {

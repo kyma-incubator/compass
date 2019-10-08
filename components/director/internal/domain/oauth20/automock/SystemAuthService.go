@@ -11,20 +11,20 @@ type SystemAuthService struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: ctx, objectType, objectID, authInput
-func (_m *SystemAuthService) Create(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error) {
-	ret := _m.Called(ctx, objectType, objectID, authInput)
+// CreateWithCustomID provides a mock function with given fields: ctx, id, objectType, objectID, authInput
+func (_m *SystemAuthService) CreateWithCustomID(ctx context.Context, id string, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error) {
+	ret := _m.Called(ctx, id, objectType, objectID, authInput)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, model.SystemAuthReferenceObjectType, string, *model.AuthInput) string); ok {
-		r0 = rf(ctx, objectType, objectID, authInput)
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.SystemAuthReferenceObjectType, string, *model.AuthInput) string); ok {
+		r0 = rf(ctx, id, objectType, objectID, authInput)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, model.SystemAuthReferenceObjectType, string, *model.AuthInput) error); ok {
-		r1 = rf(ctx, objectType, objectID, authInput)
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.SystemAuthReferenceObjectType, string, *model.AuthInput) error); ok {
+		r1 = rf(ctx, id, objectType, objectID, authInput)
 	} else {
 		r1 = ret.Error(1)
 	}

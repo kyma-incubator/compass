@@ -1,7 +1,6 @@
 package oauth20
 
 type Config struct {
-	ClientCreationEndpoint string `envconfig:"default=/clients"` // TODO: Update it
-	ClientDeletionEndpoint string `envconfig:"default=/clients"` // TODO: Update it
+	ClientEndpoint string `envconfig:"default=https://oauth2-admin.kyma.local/clients"`
 	PublicAccessTokenEndpoint string `envconfig:"default=https://oauth2.kyma.local/oauth2/token"`
 }
