@@ -12,7 +12,14 @@ To run Director with PostgreSQL container on local machine with latest DB schema
 ./run.sh
 ```
 
-The GraphQL API playground is available at `localhost:3000`.
+The GraphQL API playground is available at `localhost:3000`. In order to call the API, send the following headers:
+```json
+{
+  "tenant":"380da7fb-767e-45cf-8fcc-829f97655d1b",
+  "authorization":"Bearer eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzY29wZXMiOiJhcHBsaWNhdGlvbjpyZWFkIGhlYWx0aF9jaGVja3M6cmVhZCBhcHBsaWNhdGlvbjp3cml0ZSBydW50aW1lOndyaXRlIGxhYmVsX2RlZmluaXRpb246d3JpdGUgbGFiZWxfZGVmaW5pdGlvbjpyZWFkIHJ1bnRpbWU6cmVhZCIsInRlbmFudCI6ImI4MmVhN2NkLTc0NjYtNGFkZS1iNmU5LTIwZmI3N2EwOGNlNiJ9."
+}
+```
+You can set `tenant` header as any UUID.
 
 ### Prerequisites
 
