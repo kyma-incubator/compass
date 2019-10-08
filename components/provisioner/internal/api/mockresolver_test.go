@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestResolver_ProvisionRuntime(t *testing.T) {
+func TestMockResolver_ProvisionRuntime(t *testing.T) {
 	repository := make(map[string]RuntimeOperation)
 
 	resolver := NewMockResolver(repository)
@@ -228,7 +228,7 @@ func TestResolver_UpgradeRuntime(t *testing.T) {
 	})
 }
 
-func TestResolver_DeprovisionRuntime(t *testing.T) {
+func TestMockResolver_DeprovisionRuntime(t *testing.T) {
 	repository := make(map[string]RuntimeOperation, 0)
 
 	resolver := NewMockResolver(repository)
