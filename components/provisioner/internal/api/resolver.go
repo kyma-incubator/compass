@@ -2,10 +2,12 @@ package api
 
 import (
 	"context"
-
+	"errors"
+	"fmt"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-incubator/hydroform/types"
 )
@@ -40,6 +42,16 @@ func NewResolver(operationService persistence.OperationService, runtimeService p
 }
 
 func (r *Resolver) ProvisionRuntime(ctx context.Context, id string, config *gqlschema.ProvisionRuntimeInput) (string, error) {
+	_, err := r.runtimeService.GetLastOperation(id)
+
+	if err == nil {
+		return "", errors.New(fmt.Sprintf("cannot provision runtime. Runtime %s already provisioned", id))
+	}
+
+	if err.Code() != dberrors.CodeNotFound {
+		return "", err
+	}
+
 	runtimeConfig := model.RuntimeConfigFromInput(*config)
 
 	operation, err := r.runtimeService.SetProvisioningStarted(id, runtimeConfig)
@@ -51,8 +63,6 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, id string, config *gqls
 	go r.startProvisioning(operation.OperationID, runtimeConfig, config.Credentials.SecretName)
 
 	return operation.OperationID, nil
-
-	return "", nil
 }
 
 func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, error) {
@@ -60,6 +70,10 @@ func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, e
 
 	if err != nil {
 		return "", err
+	}
+
+	if runtimeStatus.LastOperationStatus.State == model.InProgress {
+		return "", errors.New("cannot start new operation while previous one is in progress")
 	}
 
 	operation, err := r.runtimeService.SetDeprovisioningStarted(id)
@@ -93,9 +107,9 @@ func (r *Resolver) RuntimeOperationStatus(ctx context.Context, operationID strin
 		return &gqlschema.OperationStatus{}, err
 	}
 
-	_ = operation
+	status := model.OperationStatusToGQLOperationStatus(operation)
 
-	return nil, nil
+	return status, nil
 }
 
 func (r *Resolver) startProvisioning(operationID string, config model.RuntimeConfig, secretName string) {

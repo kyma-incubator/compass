@@ -195,3 +195,12 @@ type RuntimeStatus struct {
 	RuntimeConnectionStatus RuntimeAgentConnectionStatus
 	RuntimeConfiguration    RuntimeConfig
 }
+
+func OperationStatusToGQLOperationStatus(operation Operation) *gqlschema.OperationStatus {
+	return &gqlschema.OperationStatus{
+		Operation: gqlschema.OperationType(string(operation.Operation)),
+		State:     gqlschema.OperationState(string(operation.State)),
+		Message:   operation.Message,
+		RuntimeID: operation.RuntimeID,
+	}
+}
