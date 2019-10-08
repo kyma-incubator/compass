@@ -21,36 +21,36 @@ var (
 )
 
 type pgRepository struct {
-	repo.ExistQuerier
-	repo.SingleGetter
-	repo.Deleter
-	repo.PageableQuerier
-	repo.Creator
-	repo.Updater
+	existQuerier    repo.ExistQuerier
+	singleGetter    repo.SingleGetter
+	deleter         repo.Deleter
+	pageableQuerier repo.PageableQuerier
+	creator         repo.Creator
+	updater         repo.Updater
 }
 
 func NewRepository() *pgRepository {
 	return &pgRepository{
-		ExistQuerier:    repo.NewExistQuerier(runtimeTable, tenantColumn),
-		SingleGetter:    repo.NewSingleGetter(runtimeTable, tenantColumn, runtimeColumns),
-		Deleter:         repo.NewDeleter(runtimeTable, tenantColumn),
-		PageableQuerier: repo.NewPageableQuerier(runtimeTable, tenantColumn, runtimeColumns),
-		Creator:         repo.NewCreator(runtimeTable, runtimeColumns),
-		Updater:         repo.NewUpdater(runtimeTable, []string{"name", "description", "status_condition", "status_timestamp"}, tenantColumn, []string{"id"}),
+		existQuerier:    repo.NewExistQuerier(runtimeTable, tenantColumn),
+		singleGetter:    repo.NewSingleGetter(runtimeTable, tenantColumn, runtimeColumns),
+		deleter:         repo.NewDeleter(runtimeTable, tenantColumn),
+		pageableQuerier: repo.NewPageableQuerier(runtimeTable, tenantColumn, runtimeColumns),
+		creator:         repo.NewCreator(runtimeTable, runtimeColumns),
+		updater:         repo.NewUpdater(runtimeTable, []string{"name", "description", "status_condition", "status_timestamp"}, tenantColumn, []string{"id"}),
 	}
 }
 
 func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
-	return r.ExistQuerier.Exists(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
+	return r.existQuerier.Exists(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
 }
 
 func (r *pgRepository) Delete(ctx context.Context, tenant string, id string) error {
-	return r.Deleter.DeleteOne(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
+	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
 }
 
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error) {
 	var runtimeEnt Runtime
-	if err := r.SingleGetter.Get(ctx, tenant, repo.Conditions{{Field: "id", Val: id}}, &runtimeEnt); err != nil {
+	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{{Field: "id", Val: id}}, &runtimeEnt); err != nil {
 		return nil, err
 	}
 
@@ -83,7 +83,7 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 		additionalConditions = append(additionalConditions, fmt.Sprintf(`"id" IN (%s)`, filterSubquery))
 	}
 
-	page, totalCount, err := r.PageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &runtimesCollection, additionalConditions...)
+	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &runtimesCollection, additionalConditions...)
 
 	if err != nil {
 		return nil, err
@@ -115,7 +115,7 @@ func (r *pgRepository) Create(ctx context.Context, item *model.Runtime) error {
 		return errors.Wrap(err, "while creating runtime entity from model")
 	}
 
-	return r.Creator.Create(ctx, runtimeEnt)
+	return r.creator.Create(ctx, runtimeEnt)
 }
 
 func (r *pgRepository) Update(ctx context.Context, item *model.Runtime) error {
@@ -123,5 +123,5 @@ func (r *pgRepository) Update(ctx context.Context, item *model.Runtime) error {
 	if err != nil {
 		return errors.Wrap(err, "while creating runtime entity from model")
 	}
-	return r.Updater.UpdateSingle(ctx, runtimeEnt)
+	return r.updater.UpdateSingle(ctx, runtimeEnt)
 }

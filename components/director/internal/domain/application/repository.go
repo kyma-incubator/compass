@@ -26,38 +26,38 @@ type EntityConverter interface {
 }
 
 type pgRepository struct {
-	repo.ExistQuerier
-	repo.SingleGetter
-	repo.Deleter
-	repo.PageableQuerier
-	repo.Creator
-	repo.Updater
-	conv EntityConverter
+	existQuerier    repo.ExistQuerier
+	singleGetter    repo.SingleGetter
+	deleter         repo.Deleter
+	pageableQuerier repo.PageableQuerier
+	creator         repo.Creator
+	updater         repo.Updater
+	conv            EntityConverter
 }
 
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
-		ExistQuerier:    repo.NewExistQuerier(applicationTable, tenantColumn),
-		SingleGetter:    repo.NewSingleGetter(applicationTable, tenantColumn, applicationColumns),
-		Deleter:         repo.NewDeleter(applicationTable, tenantColumn),
-		PageableQuerier: repo.NewPageableQuerier(applicationTable, tenantColumn, applicationColumns),
-		Creator:         repo.NewCreator(applicationTable, applicationColumns),
-		Updater:         repo.NewUpdater(applicationTable, []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url"}, tenantColumn, []string{"id"}),
+		existQuerier:    repo.NewExistQuerier(applicationTable, tenantColumn),
+		singleGetter:    repo.NewSingleGetter(applicationTable, tenantColumn, applicationColumns),
+		deleter:         repo.NewDeleter(applicationTable, tenantColumn),
+		pageableQuerier: repo.NewPageableQuerier(applicationTable, tenantColumn, applicationColumns),
+		creator:         repo.NewCreator(applicationTable, applicationColumns),
+		updater:         repo.NewUpdater(applicationTable, []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url"}, tenantColumn, []string{"id"}),
 		conv:            conv,
 	}
 }
 
 func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
-	return r.ExistQuerier.Exists(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
+	return r.existQuerier.Exists(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
 }
 
 func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
-	return r.Deleter.DeleteOne(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
+	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
 }
 
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Application, error) {
 	var appEnt Entity
-	if err := r.SingleGetter.Get(ctx, tenant, repo.Conditions{{Field: "id", Val: id}}, &appEnt); err != nil {
+	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{{Field: "id", Val: id}}, &appEnt); err != nil {
 		return nil, err
 	}
 
@@ -81,7 +81,7 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 		additionalConditions = append(additionalConditions, fmt.Sprintf(`"id" IN (%s)`, filterSubquery))
 	}
 
-	page, totalCount, err := r.PageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &appsCollection, additionalConditions...)
+	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &appsCollection, additionalConditions...)
 
 	if err != nil {
 		return nil, err
@@ -119,7 +119,7 @@ func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, sc
 		additionalConditions = append(additionalConditions, fmt.Sprintf(`"id" IN (%s)`, scenariosSubquery))
 	}
 
-	page, totalCount, err := r.PageableQuerier.List(ctx, tenant.String(), pageSize, cursor, "id", &appsCollection, additionalConditions...)
+	page, totalCount, err := r.pageableQuerier.List(ctx, tenant.String(), pageSize, cursor, "id", &appsCollection, additionalConditions...)
 
 	if err != nil {
 		return nil, err
@@ -147,7 +147,7 @@ func (r *pgRepository) Create(ctx context.Context, model *model.Application) err
 		return errors.Wrap(err, "while converting to Application entity")
 	}
 
-	return r.Creator.Create(ctx, appEnt)
+	return r.creator.Create(ctx, appEnt)
 }
 
 func (r *pgRepository) Update(ctx context.Context, model *model.Application) error {
@@ -161,5 +161,5 @@ func (r *pgRepository) Update(ctx context.Context, model *model.Application) err
 		return errors.Wrap(err, "while converting to Application entity")
 	}
 
-	return r.Updater.UpdateSingle(ctx, appEnt)
+	return r.updater.UpdateSingle(ctx, appEnt)
 }

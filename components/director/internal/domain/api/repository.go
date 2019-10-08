@@ -28,23 +28,23 @@ type APIDefinitionConverter interface {
 }
 
 type pgRepository struct {
-	repo.Creator
-	repo.SingleGetter
-	repo.PageableQuerier
-	repo.Updater
-	repo.Deleter
-	repo.ExistQuerier
-	conv APIDefinitionConverter
+	creator         repo.Creator
+	singleGetter    repo.SingleGetter
+	pageableQuerier repo.PageableQuerier
+	updater         repo.Updater
+	deleter         repo.Deleter
+	existQuerier    repo.ExistQuerier
+	conv            APIDefinitionConverter
 }
 
 func NewRepository(conv APIDefinitionConverter) *pgRepository {
 	return &pgRepository{
-		SingleGetter:    repo.NewSingleGetter(apiDefTable, tenantColumn, apiDefColumns),
-		PageableQuerier: repo.NewPageableQuerier(apiDefTable, tenantColumn, apiDefColumns),
-		Creator:         repo.NewCreator(apiDefTable, apiDefColumns),
-		Updater:         repo.NewUpdater(apiDefTable, updatableColumns, tenantColumn, idColumns),
-		Deleter:         repo.NewDeleter(apiDefTable, tenantColumn),
-		ExistQuerier:    repo.NewExistQuerier(apiDefTable, tenantColumn),
+		singleGetter:    repo.NewSingleGetter(apiDefTable, tenantColumn, apiDefColumns),
+		pageableQuerier: repo.NewPageableQuerier(apiDefTable, tenantColumn, apiDefColumns),
+		creator:         repo.NewCreator(apiDefTable, apiDefColumns),
+		updater:         repo.NewUpdater(apiDefTable, updatableColumns, tenantColumn, idColumns),
+		deleter:         repo.NewDeleter(apiDefTable, tenantColumn),
+		existQuerier:    repo.NewExistQuerier(apiDefTable, tenantColumn),
 		conv:            conv,
 	}
 }
@@ -58,7 +58,7 @@ func (r APIDefCollection) Len() int {
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
 	appCond := fmt.Sprintf("%s = '%s'", "app_id", applicationID)
 	var apiDefCollection APIDefCollection
-	page, totalCount, err := r.PageableQuerier.List(ctx, tenantID, pageSize, cursor, "id", &apiDefCollection, appCond)
+	page, totalCount, err := r.pageableQuerier.List(ctx, tenantID, pageSize, cursor, "id", &apiDefCollection, appCond)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string,
 
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.APIDefinition, error) {
 	var apiDefEntity Entity
-	err := r.SingleGetter.Get(ctx, tenantID, repo.Conditions{{Field: "id", Val: id}}, &apiDefEntity)
+	err := r.singleGetter.Get(ctx, tenantID, repo.Conditions{{Field: "id", Val: id}}, &apiDefEntity)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting APIDefinition")
 	}
@@ -105,7 +105,7 @@ func (r *pgRepository) Create(ctx context.Context, item *model.APIDefinition) er
 		return errors.Wrap(err, "while creating APIDefinition model to entity")
 	}
 
-	err = r.Creator.Create(ctx, entity)
+	err = r.creator.Create(ctx, entity)
 	if err != nil {
 		return errors.Wrap(err, "while saving entity to db")
 	}
@@ -119,7 +119,7 @@ func (r *pgRepository) CreateMany(ctx context.Context, items []*model.APIDefinit
 		if err != nil {
 			return errors.Wrapf(err, "while creating %d item", index)
 		}
-		err = r.Creator.Create(ctx, entity)
+		err = r.creator.Create(ctx, entity)
 		if err != nil {
 			return errors.Wrapf(err, "while persisting %d item", index)
 		}
@@ -138,17 +138,17 @@ func (r *pgRepository) Update(ctx context.Context, item *model.APIDefinition) er
 		return errors.Wrap(err, "while converting model to entity")
 	}
 
-	return r.Updater.UpdateSingle(ctx, entity)
+	return r.updater.UpdateSingle(ctx, entity)
 }
 
 func (r *pgRepository) Exists(ctx context.Context, tenantID, id string) (bool, error) {
-	return r.ExistQuerier.Exists(ctx, tenantID, repo.Conditions{repo.Condition{Field: "id", Val: id}})
+	return r.existQuerier.Exists(ctx, tenantID, repo.Conditions{repo.Condition{Field: "id", Val: id}})
 }
 
 func (r *pgRepository) Delete(ctx context.Context, tenantID string, id string) error {
-	return r.DeleteOne(ctx, tenantID, repo.Conditions{repo.Condition{Field: "id", Val: id}})
+	return r.deleter.DeleteOne(ctx, tenantID, repo.Conditions{repo.Condition{Field: "id", Val: id}})
 }
 
 func (r *pgRepository) DeleteAllByApplicationID(ctx context.Context, tenantID string, appID string) error {
-	return r.DeleteMany(ctx, tenantID, repo.Conditions{repo.Condition{Field: "app_id", Val: appID}})
+	return r.deleter.DeleteMany(ctx, tenantID, repo.Conditions{repo.Condition{Field: "app_id", Val: appID}})
 }

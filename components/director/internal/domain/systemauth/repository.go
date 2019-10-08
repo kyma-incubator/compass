@@ -25,20 +25,20 @@ type Converter interface {
 }
 
 type repository struct {
-	repo.Creator
-	repo.SingleGetter
-	repo.Lister
-	repo.Deleter
+	creator      repo.Creator
+	singleGetter repo.SingleGetter
+	lister       repo.Lister
+	deleter      repo.Deleter
 
 	conv Converter
 }
 
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		Creator:      repo.NewCreator(tableName, tableColumns),
-		SingleGetter: repo.NewSingleGetter(tableName, tenantColumn, tableColumns),
-		Lister:       repo.NewLister(tableName, tenantColumn, tableColumns),
-		Deleter:      repo.NewDeleter(tableName, tenantColumn),
+		creator:      repo.NewCreator(tableName, tableColumns),
+		singleGetter: repo.NewSingleGetter(tableName, tenantColumn, tableColumns),
+		lister:       repo.NewLister(tableName, tenantColumn, tableColumns),
+		deleter:      repo.NewDeleter(tableName, tenantColumn),
 		conv:         conv,
 	}
 }
@@ -49,12 +49,12 @@ func (r *repository) Create(ctx context.Context, item model.SystemAuth) error {
 		return errors.Wrap(err, "while converting model to entity")
 	}
 
-	return r.Creator.Create(ctx, entity)
+	return r.creator.Create(ctx, entity)
 }
 
 func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.SystemAuth, error) {
 	var entity Entity
-	if err := r.SingleGetter.Get(ctx, tenant, repo.Conditions{{Field: "id", Val: id}}, &entity); err != nil {
+	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{{Field: "id", Val: id}}, &entity); err != nil {
 		return nil, err
 	}
 
@@ -73,7 +73,7 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 	}
 
 	var entities Collection
-	if err := r.Lister.List(ctx, tenant, &entities, fmt.Sprintf("%s = %s", objTypeFieldName, pq.QuoteLiteral(objectID))); err != nil {
+	if err := r.lister.List(ctx, tenant, &entities, fmt.Sprintf("%s = %s", objTypeFieldName, pq.QuoteLiteral(objectID))); err != nil {
 		return nil, err
 	}
 
@@ -97,11 +97,11 @@ func (r *repository) DeleteAllForObject(ctx context.Context, tenant string, obje
 		return err
 	}
 
-	return r.Deleter.DeleteMany(ctx, tenant, repo.Conditions{{Field: objTypeFieldName, Val: objectID}})
+	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{{Field: objTypeFieldName, Val: objectID}})
 }
 
 func (r *repository) Delete(ctx context.Context, tenant string, id string) error {
-	return r.Deleter.DeleteOne(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
+	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
 }
 
 func referenceObjectField(objectType model.SystemAuthReferenceObjectType) (string, error) {

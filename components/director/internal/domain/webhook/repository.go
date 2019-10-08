@@ -28,28 +28,28 @@ type EntityConverter interface {
 }
 
 type repository struct {
-	repo.SingleGetter
-	repo.Updater
-	repo.Creator
-	repo.Deleter
-	repo.Lister
-	conv EntityConverter
+	singleGetter repo.SingleGetter
+	updater      repo.Updater
+	creator      repo.Creator
+	deleter      repo.Deleter
+	lister       repo.Lister
+	conv         EntityConverter
 }
 
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
-		SingleGetter: repo.NewSingleGetter(tableName, tenantColumn, webhookColumns),
-		Creator:      repo.NewCreator(tableName, webhookColumns),
-		Updater:      repo.NewUpdater(tableName, []string{"type", "url", "auth"}, tenantColumn, []string{"id", "app_id"}),
-		Deleter:      repo.NewDeleter(tableName, tenantColumn),
-		Lister:       repo.NewLister(tableName, tenantColumn, webhookColumns),
+		singleGetter: repo.NewSingleGetter(tableName, tenantColumn, webhookColumns),
+		creator:      repo.NewCreator(tableName, webhookColumns),
+		updater:      repo.NewUpdater(tableName, []string{"type", "url", "auth"}, tenantColumn, []string{"id", "app_id"}),
+		deleter:      repo.NewDeleter(tableName, tenantColumn),
+		lister:       repo.NewLister(tableName, tenantColumn, webhookColumns),
 		conv:         conv,
 	}
 }
 
 func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.Webhook, error) {
 	var entity Entity
-	if err := r.SingleGetter.Get(ctx, tenant, repo.Conditions{{Field: "id", Val: id}}, &entity); err != nil {
+	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{{Field: "id", Val: id}}, &entity); err != nil {
 		return nil, err
 	}
 	m, err := r.conv.FromEntity(entity)
@@ -61,7 +61,7 @@ func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.Web
 
 func (r *repository) ListByApplicationID(ctx context.Context, tenant, applicationID string) ([]*model.Webhook, error) {
 	var entities Collection
-	if err := r.Lister.List(ctx, tenant, &entities, fmt.Sprintf("app_id = %s ", pq.QuoteLiteral(applicationID))); err != nil {
+	if err := r.lister.List(ctx, tenant, &entities, fmt.Sprintf("app_id = %s ", pq.QuoteLiteral(applicationID))); err != nil {
 		return nil, err
 	}
 
@@ -86,7 +86,7 @@ func (r *repository) Create(ctx context.Context, item *model.Webhook) error {
 		return errors.Wrap(err, "while converting model to entity")
 	}
 
-	return r.Creator.Create(ctx, entity)
+	return r.creator.Create(ctx, entity)
 }
 
 func (r *repository) CreateMany(ctx context.Context, items []*model.Webhook) error {
@@ -106,13 +106,13 @@ func (r *repository) Update(ctx context.Context, item *model.Webhook) error {
 	if err != nil {
 		return errors.Wrap(err, "while converting model to entity")
 	}
-	return r.Updater.UpdateSingle(ctx, entity)
+	return r.updater.UpdateSingle(ctx, entity)
 }
 
 func (r *repository) Delete(ctx context.Context, tenant, id string) error {
-	return r.Deleter.DeleteOne(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
+	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
 }
 
 func (r *repository) DeleteAllByApplicationID(ctx context.Context, tenant, applicationID string) error {
-	return r.Deleter.DeleteMany(ctx, tenant, repo.Conditions{{Field: "app_id", Val: applicationID}})
+	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{{Field: "app_id", Val: applicationID}})
 }

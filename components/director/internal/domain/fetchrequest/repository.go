@@ -26,17 +26,17 @@ type Converter interface {
 }
 
 type repository struct {
-	repo.Creator
-	repo.SingleGetter
-	repo.Deleter
-	conv Converter
+	creator      repo.Creator
+	singleGetter repo.SingleGetter
+	deleter      repo.Deleter
+	conv         Converter
 }
 
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		Creator:      repo.NewCreator(fetchRequestTable, fetchRequestColumns),
-		SingleGetter: repo.NewSingleGetter(fetchRequestTable, tenantColumn, fetchRequestColumns),
-		Deleter:      repo.NewDeleter(fetchRequestTable, tenantColumn),
+		creator:      repo.NewCreator(fetchRequestTable, fetchRequestColumns),
+		singleGetter: repo.NewSingleGetter(fetchRequestTable, tenantColumn, fetchRequestColumns),
+		deleter:      repo.NewDeleter(fetchRequestTable, tenantColumn),
 		conv:         conv,
 	}
 }
@@ -51,7 +51,7 @@ func (r *repository) Create(ctx context.Context, item *model.FetchRequest) error
 		return errors.Wrap(err, "while creating FetchRequest entity from model")
 	}
 
-	return r.Creator.Create(ctx, entity)
+	return r.creator.Create(ctx, entity)
 }
 
 func (r *repository) GetByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error) {
@@ -61,7 +61,7 @@ func (r *repository) GetByReferenceObjectID(ctx context.Context, tenant string, 
 	}
 
 	var entity Entity
-	if err := r.SingleGetter.Get(ctx, tenant, repo.Conditions{{Field: fieldName, Val: objectID}}, &entity); err != nil {
+	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{{Field: fieldName, Val: objectID}}, &entity); err != nil {
 		return nil, err
 	}
 
@@ -74,7 +74,7 @@ func (r *repository) GetByReferenceObjectID(ctx context.Context, tenant string, 
 }
 
 func (r *repository) Delete(ctx context.Context, tenant, id string) error {
-	return r.Deleter.DeleteOne(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
+	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
 }
 
 func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) error {
@@ -83,7 +83,7 @@ func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant strin
 		return err
 	}
 
-	return r.Deleter.DeleteMany(ctx, tenant, repo.Conditions{{Field: fieldName, Val: objectID}})
+	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{{Field: fieldName, Val: objectID}})
 }
 
 func (r *repository) referenceObjectFieldName(objectType model.FetchRequestReferenceObjectType) (string, error) {

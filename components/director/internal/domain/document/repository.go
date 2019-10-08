@@ -27,34 +27,34 @@ type Converter interface {
 }
 
 type repository struct {
-	repo.ExistQuerier
-	repo.SingleGetter
-	repo.Deleter
-	repo.PageableQuerier
-	repo.Creator
+	existQuerier    repo.ExistQuerier
+	singleGetter    repo.SingleGetter
+	deleter         repo.Deleter
+	pageableQuerier repo.PageableQuerier
+	creator         repo.Creator
 
 	conv Converter
 }
 
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		ExistQuerier:    repo.NewExistQuerier(documentTable, tenantColumn),
-		SingleGetter:    repo.NewSingleGetter(documentTable, tenantColumn, documentColumns),
-		Deleter:         repo.NewDeleter(documentTable, tenantColumn),
-		PageableQuerier: repo.NewPageableQuerier(documentTable, tenantColumn, documentColumns),
-		Creator:         repo.NewCreator(documentTable, documentColumns),
+		existQuerier:    repo.NewExistQuerier(documentTable, tenantColumn),
+		singleGetter:    repo.NewSingleGetter(documentTable, tenantColumn, documentColumns),
+		deleter:         repo.NewDeleter(documentTable, tenantColumn),
+		pageableQuerier: repo.NewPageableQuerier(documentTable, tenantColumn, documentColumns),
+		creator:         repo.NewCreator(documentTable, documentColumns),
 
 		conv: conv,
 	}
 }
 
 func (r *repository) Exists(ctx context.Context, tenant, id string) (bool, error) {
-	return r.ExistQuerier.Exists(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
+	return r.existQuerier.Exists(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
 }
 
 func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.Document, error) {
 	var entity Entity
-	if err := r.SingleGetter.Get(ctx, tenant, repo.Conditions{{Field: "id", Val: id}}, &entity); err != nil {
+	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{{Field: "id", Val: id}}, &entity); err != nil {
 		return nil, err
 	}
 
@@ -76,7 +76,7 @@ func (r *repository) Create(ctx context.Context, item *model.Document) error {
 		return errors.Wrap(err, "while creating Document entity from model")
 	}
 
-	return r.Creator.Create(ctx, entity)
+	return r.creator.Create(ctx, entity)
 }
 
 func (r *repository) CreateMany(ctx context.Context, items []*model.Document) error {
@@ -94,18 +94,18 @@ func (r *repository) CreateMany(ctx context.Context, items []*model.Document) er
 }
 
 func (r *repository) Delete(ctx context.Context, tenant, id string) error {
-	return r.Deleter.DeleteOne(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
+	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
 }
 
 func (r *repository) DeleteAllByApplicationID(ctx context.Context, tenant string, applicationID string) error {
-	return r.Deleter.DeleteMany(ctx, tenant, repo.Conditions{{Field: "app_id", Val: applicationID}})
+	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{{Field: "app_id", Val: applicationID}})
 }
 
 func (r *repository) ListByApplicationID(ctx context.Context, tenant string, applicationID string, pageSize int, cursor string) (*model.DocumentPage, error) {
 	appCondition := fmt.Sprintf("%s = %s", "app_id", pq.QuoteLiteral(applicationID))
 
 	var entityCollection Collection
-	page, totalCount, err := r.PageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &entityCollection, appCondition)
+	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &entityCollection, appCondition)
 	if err != nil {
 		return nil, err
 	}

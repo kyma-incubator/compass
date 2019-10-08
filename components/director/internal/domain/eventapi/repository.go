@@ -30,23 +30,23 @@ type EventAPIDefinitionConverter interface {
 }
 
 type pgRepository struct {
-	repo.SingleGetter
-	repo.PageableQuerier
-	repo.Creator
-	repo.Updater
-	repo.Deleter
-	repo.ExistQuerier
-	conv EventAPIDefinitionConverter
+	singleGetter    repo.SingleGetter
+	pageableQuerier repo.PageableQuerier
+	creator         repo.Creator
+	updater         repo.Updater
+	deleter         repo.Deleter
+	existQuerier    repo.ExistQuerier
+	conv            EventAPIDefinitionConverter
 }
 
 func NewRepository(conv EventAPIDefinitionConverter) *pgRepository {
 	return &pgRepository{
-		SingleGetter:    repo.NewSingleGetter(eventAPIDefTable, tenantColumn, apiDefColumns),
-		PageableQuerier: repo.NewPageableQuerier(eventAPIDefTable, tenantColumn, apiDefColumns),
-		Creator:         repo.NewCreator(eventAPIDefTable, apiDefColumns),
-		Updater:         repo.NewUpdater(eventAPIDefTable, updatableColumns, tenantColumn, idColumns),
-		Deleter:         repo.NewDeleter(eventAPIDefTable, tenantColumn),
-		ExistQuerier:    repo.NewExistQuerier(eventAPIDefTable, tenantColumn),
+		singleGetter:    repo.NewSingleGetter(eventAPIDefTable, tenantColumn, apiDefColumns),
+		pageableQuerier: repo.NewPageableQuerier(eventAPIDefTable, tenantColumn, apiDefColumns),
+		creator:         repo.NewCreator(eventAPIDefTable, apiDefColumns),
+		updater:         repo.NewUpdater(eventAPIDefTable, updatableColumns, tenantColumn, idColumns),
+		deleter:         repo.NewDeleter(eventAPIDefTable, tenantColumn),
+		existQuerier:    repo.NewExistQuerier(eventAPIDefTable, tenantColumn),
 		conv:            conv,
 	}
 }
@@ -59,7 +59,7 @@ func (r EventAPIDefCollection) Len() int {
 
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.EventAPIDefinition, error) {
 	var eventAPIDefEntity Entity
-	err := r.SingleGetter.Get(ctx, tenantID, repo.Conditions{{Field: "id", Val: id}}, &eventAPIDefEntity)
+	err := r.singleGetter.Get(ctx, tenantID, repo.Conditions{{Field: "id", Val: id}}, &eventAPIDefEntity)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting EventAPIDefinition")
 	}
@@ -75,7 +75,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) 
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventAPIDefinitionPage, error) {
 	appCond := fmt.Sprintf("app_id = %s ", pq.QuoteLiteral(applicationID))
 	var eventAPIDefCollection EventAPIDefCollection
-	page, totalCount, err := r.PageableQuerier.List(ctx, tenantID, pageSize, cursor, "id", &eventAPIDefCollection, appCond)
+	page, totalCount, err := r.pageableQuerier.List(ctx, tenantID, pageSize, cursor, "id", &eventAPIDefCollection, appCond)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func (r *pgRepository) Create(ctx context.Context, item *model.EventAPIDefinitio
 		return errors.Wrap(err, "while creating EventAPIDefinition model to entity")
 	}
 
-	err = r.Creator.Create(ctx, entity)
+	err = r.creator.Create(ctx, entity)
 	if err != nil {
 		return errors.Wrap(err, "while saving entity to db")
 	}
@@ -121,7 +121,7 @@ func (r *pgRepository) CreateMany(ctx context.Context, items []*model.EventAPIDe
 		if err != nil {
 			return errors.Wrapf(err, "while creating %d item", index)
 		}
-		err = r.Creator.Create(ctx, entity)
+		err = r.creator.Create(ctx, entity)
 		if err != nil {
 			return errors.Wrapf(err, "while persisting %d item", index)
 		}
@@ -140,17 +140,17 @@ func (r *pgRepository) Update(ctx context.Context, item *model.EventAPIDefinitio
 		return errors.Wrap(err, "while converting model to entity")
 	}
 
-	return r.Updater.UpdateSingle(ctx, entity)
+	return r.updater.UpdateSingle(ctx, entity)
 }
 
 func (r *pgRepository) Exists(ctx context.Context, tenantID, id string) (bool, error) {
-	return r.ExistQuerier.Exists(ctx, tenantID, repo.Conditions{repo.Condition{Field: "id", Val: id}})
+	return r.existQuerier.Exists(ctx, tenantID, repo.Conditions{repo.Condition{Field: "id", Val: id}})
 }
 
 func (r *pgRepository) Delete(ctx context.Context, tenantID string, id string) error {
-	return r.DeleteOne(ctx, tenantID, repo.Conditions{repo.Condition{Field: "id", Val: id}})
+	return r.deleter.DeleteOne(ctx, tenantID, repo.Conditions{repo.Condition{Field: "id", Val: id}})
 }
 
 func (r *pgRepository) DeleteAllByApplicationID(ctx context.Context, tenantID string, appID string) error {
-	return r.DeleteMany(ctx, tenantID, repo.Conditions{repo.Condition{Field: "app_id", Val: appID}})
+	return r.deleter.DeleteMany(ctx, tenantID, repo.Conditions{repo.Condition{Field: "app_id", Val: appID}})
 }
