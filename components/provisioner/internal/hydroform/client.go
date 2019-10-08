@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/typed/core/v1"
+	"strconv"
 )
 
 const (
@@ -16,8 +17,8 @@ const (
 )
 
 type Client interface {
-	ProvisionCluster(input model.ClusterConfig) (types.ClusterStatus, error)
-	DeprovisionCluster(input model.ClusterConfig) error
+	ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName string) (types.ClusterStatus, error)
+	DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretName string) error
 }
 
 type client struct {
@@ -28,8 +29,14 @@ func NewHydroformClient(secrets v1.SecretInterface) Client {
 	return &client{secrets: secrets}
 }
 
-func (c client) ProvisionCluster(input model.ClusterConfig) (types.ClusterStatus, error) {
-	cluster, provider, err := c.prepareConfig(input)
+func (c client) ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName string) (types.ClusterStatus, error) {
+	err := c.saveCredentialsToFile(secretName, credentialsFile)
+
+	if err != nil {
+		return types.ClusterStatus{}, err
+	}
+
+	cluster, provider, err := c.prepareConfig(runtimeConfig)
 
 	if err != nil {
 		return types.ClusterStatus{}, err
@@ -55,8 +62,8 @@ func (c client) ProvisionCluster(input model.ClusterConfig) (types.ClusterStatus
 	return *status, nil
 }
 
-func (c client) DeprovisionCluster(input model.ClusterConfig) error {
-	cluster, provider, err := c.prepareConfig(input)
+func (c client) DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretName string) error {
+	cluster, provider, err := c.prepareConfig(runtimeConfig)
 
 	if err != nil {
 		return err
@@ -81,54 +88,75 @@ func (c client) saveCredentialsToFile(secretName string, filename string) error 
 	return ioutil.WriteFile(filename, bytes, 0644)
 }
 
-func (c client) prepareConfig(input model.ClusterConfig) (*types.Cluster, *types.Provider, error) {
+func (c client) prepareConfig(input model.RuntimeConfig) (*types.Cluster, *types.Provider, error) {
+	gardenerConfig, ok := input.GardenerConfig()
+	if ok {
+		return buildConfigForGardener(gardenerConfig)
+	}
 
-	// TODO Adjust to the new data model
-	return nil, nil, nil
-	//diskSize, err := strconv.Atoi(input.DiskSize)
-	//
-	//if err != nil {
-	//	return &types.Cluster{}, &types.Provider{}, err
-	//}
-	//
-	//cluster := &types.Cluster{
-	//	KubernetesVersion: input.Version,
-	//	Name:              input.Name,
-	//	DiskSizeGB:        diskSize,
-	//	NodeCount:         input.NodeCount,
-	//	Location:          input.Region,
-	//	MachineType:       input.MachineType,
-	//}
-	//
-	//providerConfig, ok := input.ProviderConfig.(gqlschema.ProviderConfigInput)
-	//
-	//if !ok {
-	//	return &types.Cluster{}, &types.Provider{}, errors.New("ProviderConfig is not ProviderConfigInput type")
-	//}
-	//
-	//gardenerConfig := providerConfig.GardenerProviderConfig
-	//
-	//err = c.saveCredentialsToFile(input.Credentials, credentialsFile)
-	//
-	//if err != nil {
-	//	return &types.Cluster{}, &types.Provider{}, err
-	//}
-	//
-	//provider := &types.Provider{
-	//	Type:                types.Gardener,
-	//	ProjectName:         gardenerConfig.ProjectName,
-	//	CredentialsFilePath: credentialsFile,
-	//	CustomConfigurations: map[string]interface{}{
-	//		"target_provider": gardenerConfig.TargetProvider,
-	//		"target_secret":   gardenerConfig.TargetSecret,
-	//		"disk_type":       "pd-standard",
-	//		"zone":            gardenerConfig.ComputeZone,
-	//		"cidr":            "10.250.0.0/19",
-	//		"autoscaler_min":  gardenerConfig.AutoScalerMin,
-	//		"autoscaler_max":  gardenerConfig.AutoScalerMax,
-	//		"max_surge":       gardenerConfig.MaxSurge,
-	//		"max_unavailable": gardenerConfig.MaxUnavailable,
-	//	},
-	//}
-	//return cluster, provider, nil
+	gcpConfig, ok := input.GCPConfig()
+	if ok {
+		return buildConfigForGCP(gcpConfig)
+	}
+
+	return nil, nil, errors.New("configuration does not match any provider profiles")
+}
+
+func buildConfigForGCP(config model.GCPConfig) (*types.Cluster, *types.Provider, error) {
+	diskSize, err := strconv.Atoi(config.BootDiskSize)
+
+	if err != nil {
+		return &types.Cluster{}, &types.Provider{}, err
+	}
+
+	cluster := &types.Cluster{
+		KubernetesVersion: config.KubernetesVersion,
+		Name:              config.Name,
+		DiskSizeGB:        diskSize,
+		NodeCount:         config.NumberOfNodes,
+		Location:          config.Region,
+		MachineType:       config.MachineType,
+	}
+
+	provider := &types.Provider{
+		Type:                types.GCP,
+		ProjectName:         config.ProjectName,
+		CredentialsFilePath: credentialsFile,
+	}
+	return cluster, provider, nil
+}
+
+func buildConfigForGardener(config model.GardenerConfig) (*types.Cluster, *types.Provider, error) {
+	diskSize, err := strconv.Atoi(config.VolumeSize)
+
+	if err != nil {
+		return &types.Cluster{}, &types.Provider{}, err
+	}
+
+	cluster := &types.Cluster{
+		KubernetesVersion: config.KubernetesVersion,
+		Name:              config.Name,
+		DiskSizeGB:        diskSize,
+		NodeCount:         config.NodeCount,
+		Location:          config.Region,
+		MachineType:       config.MachineType,
+	}
+
+	provider := &types.Provider{
+		Type:                types.Gardener,
+		ProjectName:         config.ProjectName,
+		CredentialsFilePath: credentialsFile,
+		CustomConfigurations: map[string]interface{}{
+			"target_provider": config.TargetProvider,
+			"target_secret":   config.TargetSecret,
+			"disk_type":       "pd-standard",
+			"zone":            config.Zone,
+			"cidr":            config.Cidr,
+			"autoscaler_min":  config.AutoScalerMin,
+			"autoscaler_max":  config.AutoScalerMax,
+			"max_surge":       config.MaxSurge,
+			"max_unavailable": config.MaxUnavailable,
+		},
+	}
+	return cluster, provider, nil
 }

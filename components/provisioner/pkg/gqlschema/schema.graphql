@@ -115,6 +115,7 @@ input ClusterConfigInput {
 
 input GardenerConfigInput {
     name: String!
+    projectName: String!
     kubernetesVersion: String!
     nodeCount: Int!
     volumeSize: String!
@@ -133,6 +134,7 @@ input GardenerConfigInput {
 
 input GCPConfigInput {
     name: String!
+    projectName: String!
     kubernetesVersion: String!
     numberOfNodes: Int!
     bootDiskSize: String!

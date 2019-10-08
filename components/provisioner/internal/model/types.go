@@ -1,6 +1,7 @@
 package model
 
 import (
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"time"
 )
 
@@ -58,32 +59,33 @@ type Operation struct {
 	RuntimeID   string
 }
 
-
 type GardenerConfig struct {
-	Name string
+	Name              string
+	ProjectName       string
 	KubernetesVersion string
-	NodeCount int
-	VolumeSize string
-	MachineType string
-	TargetProvider       string
-	TargetSecret         string
-	Cidr string
-	Region string
-	Zone          string
-	AutoScalerMin        string
-	AutoScalerMax        string
-	MaxSurge             int
-	MaxUnavailable       int
+	NodeCount         int
+	VolumeSize        string
+	MachineType       string
+	TargetProvider    string
+	TargetSecret      string
+	Cidr              string
+	Region            string
+	Zone              string
+	AutoScalerMin     int
+	AutoScalerMax     int
+	MaxSurge          int
+	MaxUnavailable    int
 }
 
 type GCPConfig struct {
-	Name string
+	Name              string
+	ProjectName       string
 	KubernetesVersion string
-	NumberOfNodes int
-	BootDiskSize string
-	MachineType string
-	Region string
-	Zone string
+	NumberOfNodes     int
+	BootDiskSize      string
+	MachineType       string
+	Region            string
+	Zone              string
 }
 
 type RuntimeAgentConnectionStatus int
@@ -109,7 +111,7 @@ const (
 type RuntimeConfig struct {
 	KymaConfig    KymaConfig
 	ClusterConfig interface{}
-	Kubeconfig string
+	Kubeconfig    string
 }
 
 func (rc RuntimeConfig) GCPConfig() (GCPConfig, bool) {
@@ -122,6 +124,70 @@ func (rc RuntimeConfig) GardenerConfig() (GardenerConfig, bool) {
 	gardenerConfig, ok := rc.ClusterConfig.(GardenerConfig)
 
 	return gardenerConfig, ok
+}
+
+func RuntimeConfigFromInput(input gqlschema.ProvisionRuntimeInput) RuntimeConfig {
+	return RuntimeConfig{
+		KymaConfig:    kymaConfigFromInput(*input.KymaConfig),
+		ClusterConfig: clusterConfigFromInput(*input.ClusterConfig),
+	}
+}
+
+func clusterConfigFromInput(input gqlschema.ClusterConfigInput) interface{} {
+	if input.GardenerConfig != nil {
+		config := input.GardenerConfig
+		return gardenerConfigFromInput(*config)
+	}
+	if input.GcpConfig != nil {
+		config := input.GcpConfig
+		return gcpConfigFromInput(*config)
+	}
+	return nil
+}
+
+func gardenerConfigFromInput(input gqlschema.GardenerConfigInput) GardenerConfig {
+	return GardenerConfig{
+		Name:              input.Name,
+		ProjectName:       input.ProjectName,
+		KubernetesVersion: input.KubernetesVersion,
+		NodeCount:         input.NodeCount,
+		VolumeSize:        input.VolumeSize,
+		MachineType:       input.MachineType,
+		TargetProvider:    input.TargetProvider,
+		TargetSecret:      input.TargetSecret,
+		Cidr:              input.Cidr,
+		Region:            input.Region,
+		Zone:              input.Zone,
+		AutoScalerMin:     input.AutoScalerMin,
+		AutoScalerMax:     input.AutoScalerMax,
+		MaxSurge:          input.MaxSurge,
+		MaxUnavailable:    input.MaxUnavailable,
+	}
+}
+
+func gcpConfigFromInput(input gqlschema.GCPConfigInput) GCPConfig {
+	return GCPConfig{
+		Name:              input.Name,
+		ProjectName:       input.ProjectName,
+		KubernetesVersion: input.KubernetesVersion,
+		NumberOfNodes:     input.NumberOfNodes,
+		BootDiskSize:      input.BootDiskSize,
+		MachineType:       input.MachineType,
+		Region:            input.Region,
+		Zone:              *input.Zone,
+	}
+}
+
+func kymaConfigFromInput(input gqlschema.KymaConfigInput) KymaConfig {
+	var modules []KymaModule
+	for module := range input.Modules {
+		modules = append(modules, KymaModule(module))
+	}
+
+	return KymaConfig{
+		Version: input.Version,
+		Modules: modules,
+	}
 }
 
 type RuntimeStatus struct {

@@ -39,40 +39,38 @@ func NewResolver(operationService persistence.OperationService, runtimeService p
 }
 
 func (r *Resolver) ProvisionRuntime(ctx context.Context, id string, config *gqlschema.ProvisionRuntimeInput) (string, error) {
-	// TODO: Adjust to the new schema
-	//clusterConfig := model.ClusterConfigFromInput(*config.ClusterConfig)
-	//kymaConfig := model.KymaConfigFromInput(*config.KymaConfig)
-	//operation, err := r.runtimeService.SetProvisioningStarted(id, clusterConfig, kymaConfig)
-	//
-	//if err != nil {
-	//	return "", err
-	//}
-	//
-	//go r.startProvisioning(operation.OperationID, clusterConfig)
-	//
-	//return operation.OperationID, nil
+	runtimeConfig := model.RuntimeConfigFromInput(*config)
+
+	operation, err := r.runtimeService.SetProvisioningStarted(id, runtimeConfig)
+
+	if err != nil {
+		return "", err
+	}
+
+	go r.startProvisioning(operation.OperationID, runtimeConfig, config.Credentials.SecretName)
+
+	return operation.OperationID, nil
 
 	return "", nil
 }
 
 func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, error) {
-	// TODO: Adjust to the new schema
-	return "", nil
-	//runtimeStatus, err := r.runtimeService.GetStatus(id)
-	//
-	//if err != nil {
-	//	return "", err
-	//}
-	//
-	//operation, err := r.runtimeService.SetDeprovisioningStarted(id)
-	//
-	//if err != nil {
-	//	return "", err
-	//}
-	//
-	//go r.startDeprovisioning(operation.OperationID, runtimeStatus.RuntimeConfiguration.ClusterConfig)
-	//
-	//return operation.OperationID, nil
+	runtimeStatus, err := r.runtimeService.GetStatus(id)
+
+	if err != nil {
+		return "", err
+	}
+
+	operation, err := r.runtimeService.SetDeprovisioningStarted(id)
+
+	if err != nil {
+		return "", err
+	}
+
+	//TODO Decide how to pass credentials
+	go r.startDeprovisioning(operation.OperationID, runtimeStatus.RuntimeConfiguration, "")
+
+	return operation.OperationID, nil
 }
 
 func (r *Resolver) UpgradeRuntime(ctx context.Context, id string, config *gqlschema.UpgradeRuntimeInput) (string, error) {
@@ -99,8 +97,8 @@ func (r *Resolver) RuntimeOperationStatus(ctx context.Context, operationID strin
 	return nil, nil
 }
 
-func (r *Resolver) startProvisioning(operationID string, config model.ClusterConfig) {
-	status, err := r.hydroform.ProvisionCluster(config)
+func (r *Resolver) startProvisioning(operationID string, config model.RuntimeConfig, secretName string) {
+	status, err := r.hydroform.ProvisionCluster(config, secretName)
 
 	if err != nil || status.Phase != types.Provisioned {
 		r.operationService.SetAsFailed(operationID, err.Error())
@@ -110,8 +108,8 @@ func (r *Resolver) startProvisioning(operationID string, config model.ClusterCon
 	r.operationService.SetAsSucceeded(operationID)
 }
 
-func (r *Resolver) startDeprovisioning(operationID string, config model.ClusterConfig) {
-	err := r.hydroform.DeprovisionCluster(config)
+func (r *Resolver) startDeprovisioning(operationID string, config model.RuntimeConfig, secretName string) {
+	err := r.hydroform.DeprovisionCluster(config, secretName)
 
 	if err != nil {
 		r.operationService.SetAsFailed(operationID, err.Error())

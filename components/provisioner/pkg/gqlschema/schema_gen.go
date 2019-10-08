@@ -666,6 +666,7 @@ input ClusterConfigInput {
 
 input GardenerConfigInput {
     name: String!
+    projectName: String!
     kubernetesVersion: String!
     nodeCount: Int!
     volumeSize: String!
@@ -684,6 +685,7 @@ input GardenerConfigInput {
 
 input GCPConfigInput {
     name: String!
+    projectName: String!
     kubernetesVersion: String!
     numberOfNodes: Int!
     bootDiskSize: String!
@@ -3750,6 +3752,12 @@ func (ec *executionContext) unmarshalInputGCPConfigInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
+		case "projectName":
+			var err error
+			it.ProjectName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "kubernetesVersion":
 			var err error
 			it.KubernetesVersion, err = ec.unmarshalNString2string(ctx, v)
@@ -3801,6 +3809,12 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 		case "name":
 			var err error
 			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "projectName":
+			var err error
+			it.ProjectName, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
