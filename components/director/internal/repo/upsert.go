@@ -59,7 +59,7 @@ func (u *universalUpserter) Upsert(ctx context.Context, dbEntity interface{}) er
 	_, err = persist.NamedExec(stmtWithUpsert, dbEntity)
 	if pqerr, ok := err.(*pq.Error); ok {
 		if pqerr.Code == persistence.UniqueViolation {
-			return apperrors.NewNotUniqueError(pqerr.Error())
+			return apperrors.NewNotUniqueError("")
 		}
 	}
 

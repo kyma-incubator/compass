@@ -201,7 +201,7 @@ func TestGetSingleGlobal(t *testing.T) {
 		err := sut.GetGlobal(ctx, repo.Conditions{{Field: "id_col", Val: givenID}}, &dest)
 		// THEN
 		require.NotNil(t, err)
-		assert.True(t, repo.IsNotFoundError(err))
+		assert.True(t, apperrors.IsNotFoundError(err))
 	})
 
 	t.Run("returns error if missing persistence context", func(t *testing.T) {

@@ -82,7 +82,7 @@ func (g *universalSingleGetter) unsafeGet(ctx context.Context, tenant *string, c
 	err = persist.Get(dest, stmtBuilder.String(), allArgs...)
 	switch {
 	case err == sql.ErrNoRows:
-		return apperrors.NewNotFoundError(conditions[0].Val)
+		return apperrors.NewNotFoundError("")
 	case err != nil:
 		return errors.Wrap(err, "while getting object from DB")
 	}

@@ -90,7 +90,7 @@ func (u *universalUpdater) unsafeUpdateSingle(ctx context.Context, dbEntity inte
 	res, err := persist.NamedExec(stmtBuilder.String(), dbEntity)
 	if pqerr, ok := err.(*pq.Error); ok {
 		if pqerr.Code == persistence.UniqueViolation {
-			return apperrors.NewNotUniqueError(pqerr.Error())
+			return apperrors.NewNotUniqueError("")
 		}
 	}
 	if err != nil {

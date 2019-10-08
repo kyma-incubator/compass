@@ -184,7 +184,7 @@ func TestUpdateSingleGlobal(t *testing.T) {
 		// WHEN
 		err := sut.UpdateSingleGlobal(ctx, givenUser)
 		// THEN
-		require.True(t, repo.IsNotUnique(err))
+		require.True(t, apperrors.IsNotUnique(err))
 	})
 
 	t.Run("returns error if modified more than one row", func(t *testing.T) {
