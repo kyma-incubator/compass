@@ -54,7 +54,7 @@ func main() {
 	connString := fmt.Sprintf(connStringFormat, cfg.Database.Host, cfg.Database.Port, cfg.Database.User,
 		cfg.Database.Password, cfg.Database.Name, cfg.Database.SSLMode)
 
-	_, err = database.InitializeDatabase(cfg.Database.Name, connString, cfg.Database.SchemaFilePath)
+	_, err = database.InitializeDatabase(connString, cfg.Database.SchemaFilePath)
 	if err != nil {
 		log.Fatalf("Failed to initialize Database: %s", err.Error())
 	}

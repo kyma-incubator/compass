@@ -14,18 +14,19 @@ import (
 
 const (
 	retryCount       = 20
-	clusterTableName = "Cluster"
+	schemaName       = "public"
+	clusterTableName = `"Cluster"`
 )
 
 // InitializeDatabase opens database connection and initializes schema if it does not exist
 // This is temporary solution
-func InitializeDatabase(dbName, connectionString, schemaFilePath string) (*sql.DB, error) {
+func InitializeDatabase(connectionString, schemaFilePath string) (*sql.DB, error) {
 	sqlDatabase, err := waitForDatabaseAccess(connectionString, retryCount)
 	if err != nil {
 		return nil, err
 	}
 
-	initialized, err := checkIfDatabaseInitialized(sqlDatabase, dbName)
+	initialized, err := checkIfDatabaseInitialized(sqlDatabase)
 	if err != nil {
 		closeDBConnection(sqlDatabase)
 		return nil, errors.Wrap(err, "Failed to check if database is initialized")
@@ -62,24 +63,18 @@ func closeDBConnection(db *sql.DB) {
 	}
 }
 
-func checkIfDatabaseInitialized(db *sql.DB, dbName string) (bool, error) {
-
-	checkQuery := fmt.Sprintf(`SELECT EXISTS (
-   SELECT 1
-   FROM   information_schema.tables 
-   WHERE  table_schema = '%s'
-   AND    table_name = '%s'
-   );`, dbName, clusterTableName)
+func checkIfDatabaseInitialized(db *sql.DB) (bool, error) {
+	checkQuery := fmt.Sprintf(`SELECT '%s.%s'::regclass;`, schemaName, clusterTableName)
 
 	row := db.QueryRow(checkQuery)
 
-	var tableExists bool
-	err := row.Scan(&tableExists)
+	var tableName string
+	err := row.Scan(&tableName)
 	if err != nil {
 		return false, errors.Wrap(err, "Failed to check if schema initialized")
 	}
 
-	return tableExists, nil
+	return tableName == clusterTableName, nil
 }
 
 func waitForDatabaseAccess(connString string, retryCount int) (*sql.DB, error) {
