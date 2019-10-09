@@ -152,6 +152,31 @@ func TestService_Create(t *testing.T) {
 	})
 }
 
+// Just happy path, as it is the same as Create method
+func TestService_CreateWithCustomID(t *testing.T) {
+	// GIVEN
+	ctx := tenant.SaveToContext(context.TODO(), testTenant)
+
+	sysAuthID := "bla"
+	objID := "bar"
+
+	modelAuthInput := fixModelAuthInput()
+	modelAuth := fixModelAuth()
+
+	sysAuthRepo := &automock.Repository{}
+	sysAuthRepo.On("Create", contextThatHasTenant(testTenant), *fixModelSystemAuth(sysAuthID, model.RuntimeReference, objID, modelAuth)).Return(nil)
+	defer sysAuthRepo.AssertExpectations(t)
+
+	svc := systemauth.NewService(sysAuthRepo, nil)
+
+	// WHEN
+	result, err := svc.CreateWithCustomID(ctx, sysAuthID, model.RuntimeReference, objID, &modelAuthInput)
+
+	// THEN
+	assert.NoError(t, err)
+	assert.Equal(t, sysAuthID, result)
+}
+
 func TestService_ListForObject(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testTenant)
