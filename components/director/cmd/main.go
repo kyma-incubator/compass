@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 
@@ -54,7 +55,7 @@ type config struct {
 	AllowJWTSigningNone bool          `envconfig:"default=true"`
 
 	OneTimeToken onetimetoken.Config
-	OAuth20 oauth20.Config
+	OAuth20      oauth20.Config
 }
 
 func main() {
@@ -140,7 +141,7 @@ func main() {
 	}
 }
 
-func createAndRunScopeConfigProvider(stopCh <-chan struct{}, cfg config) *scope.Provider  {
+func createAndRunScopeConfigProvider(stopCh <-chan struct{}, cfg config) *scope.Provider {
 	provider := scope.NewProvider(cfg.ScopesConfigurationFile)
 	err := provider.Load()
 	exitOnError(err, "Error on loading scopes config file")

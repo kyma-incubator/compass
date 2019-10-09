@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 func TestService_CreateClient(t *testing.T) {
@@ -184,7 +185,7 @@ func TestService_DeleteClient(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		ExpectedError error
-		HTTPServerFn       func(t *testing.T) *httptest.Server
+		HTTPServerFn  func(t *testing.T) *httptest.Server
 		Config        oauth20.Config
 		Request       *http.Request
 		Response      *http.Response

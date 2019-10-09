@@ -5,12 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const clientCredentialScopesPrefix = "__clientCredentialsRegistrationScopes"

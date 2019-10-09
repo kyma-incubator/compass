@@ -2,6 +2,8 @@ package oauth20_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -11,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestResolver_CommonGenerateClientCredentialsSuccess(t *testing.T) {
@@ -157,16 +158,16 @@ func TestResolver_CommonGenerateClientCredentialsError(t *testing.T) {
 	authInput := &model.AuthInput{Credential: &model.CredentialDataInput{Oauth: credsData}}
 
 	testCases := []struct {
-		Name                  string
-		ExpectedError error
-		RuntimeServiceFn      func() *automock.RuntimeService
-		ServiceFn             func() *automock.Service
-		SystemAuthServiceFn   func() *automock.SystemAuthService
-		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		Name                string
+		ExpectedError       error
+		RuntimeServiceFn    func() *automock.RuntimeService
+		ServiceFn           func() *automock.Service
+		SystemAuthServiceFn func() *automock.SystemAuthService
+		TransactionerFn     func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 	}{
 		{
-			Name: "Error - Transaction Commit",
-			ExpectedError: testErr,
+			Name:            "Error - Transaction Commit",
+			ExpectedError:   testErr,
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				rtmSvc := &automock.RuntimeService{}
@@ -187,8 +188,8 @@ func TestResolver_CommonGenerateClientCredentialsError(t *testing.T) {
 			},
 		},
 		{
-			Name: "Error - Get System Auth",
-			ExpectedError: testErr,
+			Name:            "Error - Get System Auth",
+			ExpectedError:   testErr,
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				rtmSvc := &automock.RuntimeService{}
@@ -209,8 +210,8 @@ func TestResolver_CommonGenerateClientCredentialsError(t *testing.T) {
 			},
 		},
 		{
-			Name: "Error - Create System Auth",
-			ExpectedError: testErr,
+			Name:            "Error - Create System Auth",
+			ExpectedError:   testErr,
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				rtmSvc := &automock.RuntimeService{}
@@ -230,8 +231,8 @@ func TestResolver_CommonGenerateClientCredentialsError(t *testing.T) {
 			},
 		},
 		{
-			Name: "Error - Create Client",
-			ExpectedError: testErr,
+			Name:            "Error - Create Client",
+			ExpectedError:   testErr,
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				rtmSvc := &automock.RuntimeService{}
@@ -249,8 +250,8 @@ func TestResolver_CommonGenerateClientCredentialsError(t *testing.T) {
 			},
 		},
 		{
-			Name: "Error - Empty Credentials",
-			ExpectedError: errors.New("client credentials cannot be empty"),
+			Name:            "Error - Empty Credentials",
+			ExpectedError:   errors.New("client credentials cannot be empty"),
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				rtmSvc := &automock.RuntimeService{}
@@ -268,8 +269,8 @@ func TestResolver_CommonGenerateClientCredentialsError(t *testing.T) {
 			},
 		},
 		{
-			Name: "Error - Exists",
-			ExpectedError: testErr,
+			Name:            "Error - Exists",
+			ExpectedError:   testErr,
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				rtmSvc := &automock.RuntimeService{}
@@ -286,8 +287,8 @@ func TestResolver_CommonGenerateClientCredentialsError(t *testing.T) {
 			},
 		},
 		{
-			Name: "Error - Doesn't Exist",
-			ExpectedError: errors.New("Runtime with ID 'foo' not found"),
+			Name:            "Error - Doesn't Exist",
+			ExpectedError:   errors.New("Runtime with ID 'foo' not found"),
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				rtmSvc := &automock.RuntimeService{}
@@ -304,8 +305,8 @@ func TestResolver_CommonGenerateClientCredentialsError(t *testing.T) {
 			},
 		},
 		{
-			Name: "Error - Transaction Begin error",
-			ExpectedError: testErr,
+			Name:            "Error - Transaction Begin error",
+			ExpectedError:   testErr,
 			TransactionerFn: txGen.ThatFailsOnBegin,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				rtmSvc := &automock.RuntimeService{}
