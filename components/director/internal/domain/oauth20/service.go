@@ -28,11 +28,16 @@ type UIDService interface {
 	Generate() string
 }
 
+//go:generate mockery -name=HTTPClient -output=automock -outpkg=automock -case=underscore
+type HTTPClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
 type service struct {
 	clientEndpoint            string
 	publicAccessTokenEndpoint string
 	scopeCfgProvider          ScopeCfgProvider
-	httpCli                   *http.Client
+	httpCli                   HTTPClient
 	uidService                UIDService
 }
 
@@ -111,7 +116,7 @@ func (s *service) registerClient(clientID string, scopes []string) (string, erro
 	defer closeBody(resp.Body)
 
 	if resp.StatusCode != http.StatusCreated {
-		return "", fmt.Errorf("invalid HTTP status code: received: %d,  expected %d", resp.StatusCode, http.StatusCreated)
+		return "", fmt.Errorf("invalid HTTP status code: received: %d, expected %d", resp.StatusCode, http.StatusCreated)
 	}
 
 	var registrationResp clientCredentialsRegistrationResponse
@@ -133,7 +138,7 @@ func (s *service) unregisterClient(clientID string) error {
 	defer closeBody(resp.Body)
 
 	if resp.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("invalid HTTP status code: received: %d,  expected %d", resp.StatusCode, http.StatusNoContent)
+		return fmt.Errorf("invalid HTTP status code: received: %d, expected %d", resp.StatusCode, http.StatusNoContent)
 	}
 
 	return nil
