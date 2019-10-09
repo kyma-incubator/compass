@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -182,19 +181,10 @@ func TestService_CreateClient(t *testing.T) {
 func TestService_DeleteClient(t *testing.T) {
 	// when
 	id := "foo"
-	remoteURL := "foo.bar/clients"
-	cfg := oauth20.Config{ClientEndpoint: remoteURL}
-
-	givenURL := fmt.Sprintf("%s/%s", remoteURL, id)
-	req := fixClientDeleteRequest(t, givenURL)
-	successRes := &http.Response{StatusCode: http.StatusNoContent}
-	wrongStatusCodeRes := &http.Response{StatusCode: http.StatusInternalServerError}
-	testErr := errors.New("Test err")
-
 	testCases := []struct {
 		Name          string
 		ExpectedError error
-		HTTPClientFn  func() *automock.HTTPClient
+		HTTPServerFn       func(t *testing.T) *httptest.Server
 		Config        oauth20.Config
 		Request       *http.Request
 		Response      *http.Response
@@ -202,28 +192,37 @@ func TestService_DeleteClient(t *testing.T) {
 		{
 			Name:          "Success",
 			ExpectedError: nil,
-			HTTPClientFn: func() *automock.HTTPClient {
-				httpCli := &automock.HTTPClient{}
-				httpCli.On("Do", req).Return(successRes, nil).Once()
-				return httpCli
+			HTTPServerFn: func(t *testing.T) *httptest.Server {
+				tc := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					assert.Equal(t, "/foo", r.URL.Path)
+					defer func() {
+						err := r.Body.Close()
+						assert.NoError(t, err)
+					}()
+					assert.Equal(t, http.MethodDelete, r.Method)
+					assert.Equal(t, "application/json", r.Header.Get("Accept"))
+					w.WriteHeader(http.StatusNoContent)
+				}))
+				return tc
 			},
 		},
 		{
 			Name:          "Error - Response Status Code",
 			ExpectedError: errors.New("invalid HTTP status code: received: 500, expected 204"),
-			HTTPClientFn: func() *automock.HTTPClient {
-				httpCli := &automock.HTTPClient{}
-				httpCli.On("Do", req).Return(wrongStatusCodeRes, nil).Once()
-				return httpCli
+			HTTPServerFn: func(t *testing.T) *httptest.Server {
+				tc := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusInternalServerError)
+				}))
+				return tc
 			},
 		},
 		{
 			Name:          "Error - HTTP call error",
-			ExpectedError: errors.New("while doing request to foo.bar/clients: Test err"),
-			HTTPClientFn: func() *automock.HTTPClient {
-				httpCli := &automock.HTTPClient{}
-				httpCli.On("Do", req).Return(nil, testErr).Once()
-				return httpCli
+			ExpectedError: errors.New("connect: connection refused"),
+			HTTPServerFn: func(t *testing.T) *httptest.Server {
+				tc := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+				tc.Close()
+				return tc
 			},
 		},
 	}
@@ -231,11 +230,14 @@ func TestService_DeleteClient(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			ctx := context.TODO()
-			httpCli := testCase.HTTPClientFn()
-			defer httpCli.AssertExpectations(t)
+			httpServer := testCase.HTTPServerFn(t)
+			defer httpServer.Close()
 
-			svc := oauth20.NewService(nil, nil, cfg)
-			svc.SetHTTPClient(httpCli)
+			var url string
+			if httpServer != nil {
+				url = httpServer.URL
+			}
+			svc := oauth20.NewService(nil, nil, oauth20.Config{ClientEndpoint: url})
 
 			// when
 			err := svc.DeleteClient(ctx, id)
@@ -245,18 +247,11 @@ func TestService_DeleteClient(t *testing.T) {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
-				assert.Equal(t, testCase.ExpectedError.Error(), err.Error())
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
 			}
 
 		})
 	}
-}
-
-func fixClientDeleteRequest(t *testing.T, url string) *http.Request {
-	req, err := http.NewRequest(http.MethodDelete, url, nil)
-	require.NoError(t, err)
-	req.Header = http.Header{"Accept": []string{"application/json"}, "Content-Type": []string{"application/json"}}
-	return req
 }
 
 func fixSuccessCreateClientHTTPServer(expectedReqBody map[string]interface{}) func(t *testing.T) *httptest.Server {

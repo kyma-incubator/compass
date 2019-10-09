@@ -28,16 +28,11 @@ type UIDService interface {
 	Generate() string
 }
 
-//go:generate mockery -name=HTTPClient -output=automock -outpkg=automock -case=underscore
-type HTTPClient interface {
-	Do(req *http.Request) (*http.Response, error)
-}
-
 type service struct {
 	clientEndpoint            string
 	publicAccessTokenEndpoint string
 	scopeCfgProvider          ScopeCfgProvider
-	httpCli                   HTTPClient
+	httpCli                   *http.Client
 	uidService                UIDService
 }
 
