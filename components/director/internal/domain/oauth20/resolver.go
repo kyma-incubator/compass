@@ -69,7 +69,6 @@ func (r *Resolver) GenerateClientCredentialsForIntegrationSystem(ctx context.Con
 }
 
 func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.SystemAuthReferenceObjectType, objID string) (*graphql.SystemAuth, error) {
-	var err error
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -78,18 +77,7 @@ func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	var exists bool
-	switch objType {
-	case model.RuntimeReference:
-		exists, err = r.rtmSvc.Exist(ctx, objID)
-	case model.ApplicationReference:
-		exists, err = r.appSvc.Exist(ctx, objID)
-	case model.IntegrationSystemReference:
-		exists, err = r.isSvc.Exist(ctx, objID)
-	default:
-		err = fmt.Errorf("invalid object type %s", objType)
-	}
-
+	exists, err := r.checkObjectExist(ctx, objType, objID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while checking if runtime exists")
 	}
@@ -101,7 +89,6 @@ func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.
 	if err != nil {
 		return nil, err
 	}
-
 	if clientCreds == nil {
 		return nil, errors.New("client credentials cannot be empty")
 	}
@@ -113,13 +100,12 @@ func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.
 		}
 	}
 
-	authInput := &model.AuthInput{
+	id := clientCreds.ClientID
+	_, err = r.systemAuthSvc.CreateWithCustomID(ctx, id, objType, objID, &model.AuthInput{
 		Credential: &model.CredentialDataInput{
 			Oauth: clientCreds,
 		},
-	}
-	id := clientCreds.ClientID
-	_, err = r.systemAuthSvc.CreateWithCustomID(ctx, id, objType, objID, authInput)
+	})
 	if err != nil {
 		cleanupOnFail()
 		return nil, err
@@ -139,4 +125,17 @@ func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.
 
 	gqlSysAuth := r.systemAuthConv.ToGraphQL(sysAuth)
 	return gqlSysAuth, nil
+}
+
+func (r *Resolver) checkObjectExist(ctx context.Context, objType model.SystemAuthReferenceObjectType, objID string) (bool, error) {
+	switch objType {
+	case model.RuntimeReference:
+		return r.rtmSvc.Exist(ctx, objID)
+	case model.ApplicationReference:
+		return r.appSvc.Exist(ctx, objID)
+	case model.IntegrationSystemReference:
+		return r.isSvc.Exist(ctx, objID)
+	}
+
+	return false, fmt.Errorf("invalid object type %s", objType)
 }
