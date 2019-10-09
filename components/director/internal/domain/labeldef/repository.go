@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/pkg/errors"
@@ -73,7 +71,7 @@ func (r *repo) GetByKey(ctx context.Context, tenant string, key string) (*model.
 	err = db.Get(&dest, q, tenant, key)
 	switch {
 	case err == sql.ErrNoRows:
-		return nil, apperrors.NewNotFoundError(key)
+		return nil, nil
 	case err != nil:
 		return nil, errors.Wrap(err, "while querying Label Definition")
 	}
