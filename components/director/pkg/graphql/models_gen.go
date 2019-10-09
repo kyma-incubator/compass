@@ -242,7 +242,8 @@ type LabelFilter struct {
 type OAuthCredentialData struct {
 	ClientID     string `json:"clientId"`
 	ClientSecret string `json:"clientSecret"`
-	URL          string `json:"url"`
+	// URL for getting access token
+	URL string `json:"url"`
 }
 
 func (OAuthCredentialData) IsCredentialData() {}

@@ -2324,6 +2324,9 @@ type LabelDefinition {
 type OAuthCredentialData {
 	clientId: ID!
 	clientSecret: String!
+	"""
+	URL for getting access token
+	"""
 	url: String!
 }
 
