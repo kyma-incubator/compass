@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"github.com/lib/pq"
 	"io/ioutil"
 	"time"
 
@@ -70,7 +71,15 @@ func checkIfDatabaseInitialized(db *sql.DB) (bool, error) {
 
 	var tableName string
 	err := row.Scan(&tableName)
+
 	if err != nil {
+		psqlErr := err.(*pq.Error)
+
+		// TODO: confirm behaviour in case database schema was not applied
+		if psqlErr.Code == "42P01" {
+			return false, nil
+		}
+
 		return false, errors.Wrap(err, "Failed to check if schema initialized")
 	}
 

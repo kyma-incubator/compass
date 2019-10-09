@@ -14,18 +14,18 @@ const (
 	Gardener InfrastructureProvider = iota
 )
 
-type KymaModule int
+type KymaModule string
 
-const (
-	BackupModule             KymaModule = iota
-	BackupInitModule         KymaModule = iota
-	JaegerModule             KymaModule = iota
-	LoggingModule            KymaModule = iota
-	MonitoringModule         KymaModule = iota
-	PrometheusOperatorModule KymaModule = iota
-	KialiModule              KymaModule = iota
-	KnativeBuildModule       KymaModule = iota
-)
+//const (
+//	BackupModule             KymaModule = iota
+//	BackupInitModule         KymaModule = iota
+//	JaegerModule             KymaModule = iota
+//	LoggingModule            KymaModule = iota
+//	MonitoringModule         KymaModule = iota
+//	PrometheusOperatorModule KymaModule = iota
+//	KialiModule              KymaModule = iota
+//	KnativeBuildModule       KymaModule = iota
+//)
 
 type KymaConfig struct {
 	Version string
@@ -66,6 +66,7 @@ type GardenerConfig struct {
 	KubernetesVersion string
 	NodeCount         int
 	VolumeSize        string
+	DiskType          string
 	MachineType       string
 	TargetProvider    string
 	TargetSecret      string

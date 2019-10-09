@@ -1,6 +1,7 @@
 package persistence
 
 import (
+	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 	"time"
 
 	"github.com/gocraft/dbr"
@@ -10,50 +11,103 @@ import (
 )
 
 type Repository interface {
-	BeginTransaction() (*dbr.Tx, error)
-	InsertCluster(runtimeID string, creationTimestamp time.Time, terraformState string) error
-	InsertGardenerConfig(config model.GardenerConfig) error
-	InsertGCPConfig(config model.GCPConfig) error
-	InsertKymaConfig(runtimeID string, config model.KymaConfig) (string, error)
-	InsertKymaConfigModule(kymaConfigID string, kymaModule model.KymaModule) error
-	InsertOperation(operation model.Operation) error
-	DeleteCluster(runtimeID string) error
-	GetRuntimeStatus(runtimeID string) (model.RuntimeStatus, error)
-	GetLastOperation(runtimeID string) (model.Operation, error)
+	Transaction() Transaction
+	InsertCluster(runtimeID string, creationTimestamp time.Time, terraformState string) dberrors.Error
+	InsertGardenerConfig(runtimeID string, config model.GardenerConfig) dberrors.Error
+	InsertGCPConfig(runtimeID string, config model.GCPConfig) dberrors.Error
+	InsertKymaConfig(runtimeID string, version string) (string, dberrors.Error)
+	InsertKymaConfigModule(kymaConfigID string, module model.KymaModule) dberrors.Error
+	InsertOperation(operation model.Operation) dberrors.Error
+	DeleteCluster(runtimeID string) dberrors.Error
+	GetRuntimeStatus(runtimeID string) (model.RuntimeStatus, dberrors.Error)
+	GetLastOperation(runtimeID string) (model.Operation, dberrors.Error)
 }
-
-const (
-	GardenerConfigTable = "GardenerConfig"
-)
 
 type repository struct {
-	dbSession *dbr.Session
+	dbSession     *dbr.Session
+	dbTransaction *dbr.Tx
 }
 
-func NewRepository(dbSession *dbr.Session) Repository {
-	return repository{
-		dbSession: dbSession,
+type Transaction interface {
+	Commit() dberrors.Error
+	Rollback() dberrors.Error
+}
+
+type transaction struct {
+	dbTransaction *dbr.Tx
+}
+
+func (t transaction) Commit() dberrors.Error {
+	err := t.dbTransaction.Commit()
+
+	if err != nil {
+		return dberrors.Internal("Failed to commit transaction: %s", err)
+	}
+
+	return nil
+}
+
+func (t transaction) Rollback() dberrors.Error {
+	err := t.dbTransaction.Rollback()
+
+	if err != nil {
+		return dberrors.Internal("Failed to rollback transaction: %s", err)
+	}
+
+	return nil
+}
+
+type RepositoryFactory interface {
+	New() (Repository, dberrors.Error)
+}
+
+type repositoryFactory struct {
+	dbConnection *dbr.Connection
+}
+
+func NewRepositoryFactory(dbConnection *dbr.Connection) RepositoryFactory{
+	return repositoryFactory{
+		dbConnection: dbConnection,
 	}
 }
 
-func (r repository) InsertCluster(runtimeID string, creationTimestamp time.Time, terraformState string) error {
-	_, err := r.dbSession.InsertInto("Cluster").
+func (rf repositoryFactory) New() (Repository, dberrors.Error) {
+	dbSession := rf.dbConnection.NewSession(nil)
+	dbTransaction, err := dbSession.Begin()
+
+	if err != nil {
+		return nil, dberrors.Internal("Failed to start transaction: %s", err)
+	}
+
+	return repository{
+		dbSession:     dbSession,
+		dbTransaction: dbTransaction,
+	}, nil
+}
+
+func (r repository) InsertCluster(runtimeID string, creationTimestamp time.Time, terraformState string) dberrors.Error {
+	_, err := r.dbTransaction.InsertInto("Cluster").
 		Pair("id", runtimeID).
-		Pair("creation_timestamp", creationTimestamp).
-		Pair("terraform_state", terraformState).
+		Pair("creationTimestamp", creationTimestamp).
+		Pair("terraformState", terraformState).
 		Exec()
 
-	return err
-}
-
-func (r repository) InsertGardenerConfig(config model.GardenerConfig) error {
-	id, err := uuid.NewV4()
 	if err != nil {
-		return err
+		dberrors.Internal("Failed to insert record to Cluster table: %s", err)
 	}
 
-	_, err = r.dbSession.InsertInto(GardenerConfigTable).
+	return nil
+}
+
+func (r repository) InsertGardenerConfig(runtimeID string, config model.GardenerConfig) dberrors.Error {
+	id, err := uuid.NewV4()
+	if err != nil {
+		return dberrors.Internal("Failed to generate uuid: %s.", err)
+	}
+
+	_, err = r.dbTransaction.InsertInto("GardenerConfig").
 		Pair("id", id.String()).
+		Pair("clusterId", runtimeID).
 		Pair("name", config.Name).
 		Pair("kubernetesVersion", config.KubernetesVersion).
 		Pair("nodeCount", config.NodeCount).
@@ -63,6 +117,7 @@ func (r repository) InsertGardenerConfig(config model.GardenerConfig) error {
 		Pair("zone", config.Zone).
 		Pair("targetProvider", config.TargetProvider).
 		Pair("targetSecret", config.TargetSecret).
+		Pair("diskType", config.DiskType).
 		Pair("cidr", config.Cidr).
 		Pair("autoScalerMin", config.AutoScalerMin).
 		Pair("autoScalerMax", config.AutoScalerMax).
@@ -70,88 +125,138 @@ func (r repository) InsertGardenerConfig(config model.GardenerConfig) error {
 		Pair("maxUnavailable", config.MaxUnavailable).
 		Exec()
 
-	return err
-}
-
-func (r repository) InsertGCPConfig(config model.GCPConfig) error {
-	id, err := uuid.NewV4()
 	if err != nil {
-		return err
+		return dberrors.Internal("Failed to insert record to GardenerConfig table: %s", err)
 	}
 
-	_, err = r.dbSession.InsertInto("GCPConfig").
+	return nil
+}
+
+func (r repository) InsertGCPConfig(runtimeID string, config model.GCPConfig) dberrors.Error {
+	id, err := uuid.NewV4()
+	if err != nil {
+		return dberrors.Internal("Failed to generate uuid: %s.", err)
+	}
+
+	_, err = r.dbTransaction.InsertInto("GCPConfig").
 		Pair("id", id.String()).
+		Pair("clusterId", runtimeID).
 		Pair("name", config.Name).
 		Pair("kubernetesVersion", config.KubernetesVersion).
 		Pair("numberOfNodes", config.NumberOfNodes).
 		Pair("bootDiskSize", config.BootDiskSize).
 		Pair("machineType", config.MachineType).
+		Pair("zone", config.Zone).
 		Pair("region", config.Region).
 		Exec()
 
-	return err
-}
-
-func (r repository) InsertKymaConfig(runtimeID string, config model.KymaConfig) (string, error) {
-	id, err := uuid.NewV4()
 	if err != nil {
-		return "", err
+		return dberrors.Internal("Failed to insert record to GCPConfig table: %s", err)
 	}
-
-	_, err = r.dbSession.InsertInto("KymaConfig").
-		Pair("id", id.String()).
-		Pair("version", config.Version).
-		Pair("cluster_id", runtimeID).
-		Exec()
-
-	return id.String(), err
-}
-
-func (r repository) InsertKymaConfigModule(kymaConfigID string, kymaModule model.KymaModule) error {
-	id, err := uuid.NewV4()
-	if err != nil {
-		return err
-	}
-
-	_, err = r.dbSession.InsertInto("KymaConfigModule").
-		Pair("id", id.String()).
-		Pair("module", kymaModule).
-		Pair("kyma_config_id", kymaConfigID).
-		Exec()
-
-	return err
-}
-
-func (r repository) InsertOperation(operation model.Operation) error {
-	id, err := uuid.NewV4()
-	if err != nil {
-		return err
-	}
-
-	_, err = r.dbSession.InsertInto("KymaConfigModule").
-		Pair("id", id.String()).
-		Pair("type", operation.Operation).
-		Pair("state", operation.State).
-		Pair("message", "").
-		Pair("start_timestamp", operation.Started).
-		Pair("cluster_id", operation.RuntimeID).
-		Exec()
 
 	return nil
 }
 
-func (r repository) DeleteCluster(runtimeID string) error {
+func (r repository) InsertKymaConfig(runtimeID string, version string) (string, dberrors.Error) {
+	id, err := uuid.NewV4()
+	if err != nil {
+		return "", dberrors.Internal("Failed to generate uuid: %s.", err)
+	}
+
+	_, err = r.dbTransaction.InsertInto("KymaConfig").
+		Pair("id", id.String()).
+		Pair("version", version).
+		Pair("clusterId", runtimeID).
+		Exec()
+
+	if err != nil {
+		return "", dberrors.Internal("Failed to insert record to KymaConfig table: %s", err)
+	}
+
+	return id.String(), nil
+}
+
+func (r repository) InsertKymaConfigModule(kymaConfigID string, module model.KymaModule) dberrors.Error {
+	id, err := uuid.NewV4()
+	if err != nil {
+		return dberrors.Internal("Failed to generate uuid: %s", err)
+	}
+
+	_, err = r.dbTransaction.InsertInto("KymaConfigModule").
+		Pair("id", id.String()).
+		Pair("module", module).
+		Pair("kymaConfigId", kymaConfigID).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to insert record to KymaConfigModule table: %s", err)
+	}
+
 	return nil
 }
 
-func (r repository) GetRuntimeStatus(runtimeID string) (model.RuntimeStatus, error) {
+func (r repository) InsertOperation(operation model.Operation) dberrors.Error {
+	id, err := uuid.NewV4()
+	if err != nil {
+		return dberrors.Internal("Failed to generate uuid: %s.", err)
+	}
+
+	toOperationStateEnum := func(operationState model.OperationState) string {
+		switch operationState {
+		case model.InProgress:
+			return "IN_PROGRESS"
+		case model.Succeeded:
+			return "SUCCEEDED"
+		case model.Failed:
+			return "FAILED"
+		default:
+			return ""
+		}
+	}
+
+	toOperationTypeEnum := func(operationType model.OperationType) string {
+		switch operationType {
+		case model.Provision:
+			return "PROVISION"
+		case model.Deprovision:
+			return "DEPROVISION"
+		case model.Upgrade:
+			return "UPGRADE"
+		case model.ReconnectRuntime:
+			return "RECONNECT_RUNTIME"
+		default:
+			return ""
+		}
+	}
+
+	_, err = r.dbTransaction.InsertInto("Operation").
+		Pair("id", id.String()).
+		Pair("type", toOperationTypeEnum(operation.Operation)).
+		Pair("state", toOperationStateEnum(operation.State)).
+		Pair("message", operation.Message).
+		Pair("startTimestamp", operation.Started).
+		Pair("clusterId", operation.RuntimeID).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to insert record to Operation table: %s", err)
+	}
+
+	return nil
+}
+
+func (r repository) DeleteCluster(runtimeID string) dberrors.Error {
+	return nil
+}
+
+func (r repository) GetRuntimeStatus(runtimeID string) (model.RuntimeStatus, dberrors.Error) {
 	return model.RuntimeStatus{}, nil
 }
 
-func (r repository) BeginTransaction() (*dbr.Tx, error) {
-	return r.dbSession.Begin()
+func (r repository) GetLastOperation(runtimeID string) (model.Operation, dberrors.Error) {
+	return model.Operation{}, nil
 }
 
-func (r repository) GetLastOperation(runtimeID string) (model.Operation, error) {
-	return model.Operation{}, nil
+func (r repository) Transaction() Transaction {
+	return &transaction{ r.dbTransaction}
 }
