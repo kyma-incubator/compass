@@ -7,8 +7,6 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 
 	"github.com/stretchr/testify/assert"
@@ -264,7 +262,7 @@ func TestRepositoryGetByKey(t *testing.T) {
 		assert.Equal(t, "key", actual.Key)
 		assert.Equal(t, &someSchema, actual.Schema)
 	})
-	t.Run("returns notFoundError if LabelDefinition does not exist", func(t *testing.T) {
+	t.Run("returns nil if LabelDefinition does not exist", func(t *testing.T) {
 		// GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
@@ -278,7 +276,7 @@ func TestRepositoryGetByKey(t *testing.T) {
 		// WHEN
 		actual, err := sut.GetByKey(ctx, "anything", "anything")
 		// THEN
-		require.EqualError(t, err, apperrors.NewNotFoundError("anything").Error())
+		assert.Nil(t, err)
 		assert.Nil(t, actual)
 
 	})
