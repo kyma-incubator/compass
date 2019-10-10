@@ -15,9 +15,7 @@ spec:
     handler: allow
   mutators:
   - handler: hydrator
-    config:
-      api:
-        url: {{ .Values.global.tenantMappingService.url }}
+{{ toYaml .Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
   - handler: id_token
     config:
       claims: {{ .Values.oathkeeper.idTokenConfig.claims | quote }}
@@ -41,9 +39,7 @@ spec:
     handler: allow
   mutators:
   - handler: hydrator
-    config:
-      api:
-        url: {{ .Values.global.tenantMappingService.url }}
+{{ toYaml .Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
   - handler: id_token
     config:
       claims: {{ .Values.oathkeeper.idTokenConfig.claims | quote }}
@@ -65,13 +61,9 @@ spec:
     handler: allow
   mutators:
   - handler: hydrator
-    config:
-      api:
-        url: {{ .Values.global.certificateResolverService.url }}
+{{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
   - handler: hydrator
-    config:
-      api:
-        url: {{ .Values.global.tenantMappingService.url }}
+{{ toYaml .Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
   - handler: id_token
     config:
       claims: {{ .Values.oathkeeper.idTokenConfig.claims | quote }}
@@ -94,9 +86,7 @@ spec:
     handler: allow
   mutators:
     - handler: hydrator
-      config:
-        api:
-          url: {{ .Values.global.tokenResolverService.url }}
+{{ toYaml .Values.global.oathkeeper.mutators.tokenResolverService | indent 4 }}
 ---
 apiVersion: oathkeeper.ory.sh/v1alpha1
 kind: Rule
@@ -116,6 +106,4 @@ spec:
     handler: allow
   mutators:
     - handler: hydrator
-      config:
-        api:
-          url: {{ .Values.global.certificateResolverService.url }}
+{{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
