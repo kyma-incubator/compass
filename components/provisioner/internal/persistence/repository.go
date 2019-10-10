@@ -1,8 +1,9 @@
 package persistence
 
 import (
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 
 	"github.com/gocraft/dbr"
 	"github.com/gofrs/uuid"

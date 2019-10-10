@@ -1,10 +1,11 @@
 package persistence
 
 import (
-	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 	"log"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/sirupsen/logrus"
@@ -88,11 +89,11 @@ func (r runtimeService) SetProvisioningStarted(runtimeID string, runtimeConfig m
 
 	operation := model.Operation{
 		OperationID: id.String(),
-		Operation: model.Provision,
-		Started: timestamp,
-		State: model.InProgress,
-		Message: "Provisioning started",
-		RuntimeID: runtimeID,
+		Operation:   model.Provision,
+		Started:     timestamp,
+		State:       model.InProgress,
+		Message:     "Provisioning started",
+		RuntimeID:   runtimeID,
 	}
 
 	err = repository.InsertOperation(operation)
@@ -105,7 +106,6 @@ func (r runtimeService) SetProvisioningStarted(runtimeID string, runtimeConfig m
 	if err != nil {
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
-
 
 	return model.Operation{}, nil
 }

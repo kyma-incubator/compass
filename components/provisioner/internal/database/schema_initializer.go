@@ -3,9 +3,10 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"github.com/lib/pq"
 	"io/ioutil"
 	"time"
+
+	"github.com/lib/pq"
 
 	"github.com/pkg/errors"
 

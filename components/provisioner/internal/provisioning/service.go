@@ -3,8 +3,9 @@ package api
 import (
 	"errors"
 	"fmt"
-	"github.com/prometheus/common/log"
 	"time"
+
+	"github.com/prometheus/common/log"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"

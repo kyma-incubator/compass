@@ -1,6 +1,8 @@
 package api
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
@@ -10,10 +12,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
-func TestResolver_ProvisionRuntime(t *testing.T) {
+func TestService_ProvisionRuntime(t *testing.T) {
 	hydroformMock := mocks.Client{}
 	operationServiceMock := persistenceMocks.OperationService{}
 	runtimeServiceMock := persistenceMocks.RuntimeService{}
@@ -69,7 +70,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 	})
 }
 
-func TestResolver_DeprovisionRuntime(t *testing.T) {
+func TestService_DeprovisionRuntime(t *testing.T) {
 	operationServiceMock := persistenceMocks.OperationService{}
 	runtimeServiceMock := persistenceMocks.RuntimeService{}
 	hydroformMock := mocks.Client{}
