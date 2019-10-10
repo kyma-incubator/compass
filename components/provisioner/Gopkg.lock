@@ -81,6 +81,25 @@
   version = "v1.0.2"
 
 [[projects]]
+  branch = "master"
+  digest = "1:125f098c5294814b5d9ce2194f03a435c35a6208f029e61681bed9a893d68133"
+  name = "github.com/alecthomas/template"
+  packages = [
+    ".",
+    "parse",
+  ]
+  pruneopts = "UT"
+  revision = "fb15b899a75114aa79cc930e33c46b577cc664b1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:f780e2e814981de9dbdc2ca49d6c91d4aa4e2a1639ebc4106fafb0dc54fa5bd8"
+  name = "github.com/alecthomas/units"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "f65c72e2690dc4b403c8bd637baf4611cd4c069b"
+
+[[projects]]
   digest = "1:aef9339f69dda1ca77fdb2fd83cf64c3f5087c1f00f69719eaa14679f5321512"
   name = "github.com/apparentlymart/go-cidr"
   packages = ["cidr"]
@@ -846,6 +865,14 @@
   version = "v1.2.1"
 
 [[projects]]
+  digest = "1:c47550d71ea17823202a58abc3f635da0a341284342e64fb0d1a95a4cf790301"
+  name = "github.com/prometheus/common"
+  packages = ["log"]
+  pruneopts = "UT"
+  revision = "287d3e634a1e550c9e463dd7e5a75a422c614505"
+  version = "v0.7.0"
+
+[[projects]]
   digest = "1:b36a0ede02c4c2aef7df7f91cbbb7bb88a98b5d253509d4f997dda526e50c88c"
   name = "github.com/russross/blackfriday"
   packages = ["."]
@@ -1079,11 +1106,13 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:456406ce03ca17dfe57d9f3cae7eec35bc5101dce0adadf5bd636760b7d1e15c"
+  digest = "1:34ba8ff7e2bb7ed4acf4753242e3fd8d718c433d3b44ec32025b89a02cfb4762"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
+    "windows/registry",
+    "windows/svc/eventlog",
   ]
   pruneopts = "UT"
   revision = "c178f38b412c7b426e4e97be2e75d11ff7b8d4d4"
@@ -1290,6 +1319,14 @@
   pruneopts = "UT"
   revision = "f6d0f9ee430895e87ef1ceb5ac8f39725bafceef"
   version = "v1.24.0"
+
+[[projects]]
+  digest = "1:c06d9e11d955af78ac3bbb26bd02e01d2f61f689e1a3bce2ef6fb683ef8a7f2d"
+  name = "gopkg.in/alecthomas/kingpin.v2"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "947dcec5ba9c011838740e680966fd7087a71d0d"
+  version = "v2.2.6"
 
 [[projects]]
   digest = "1:2d1fbdc6777e5408cabeb02bf336305e724b925ff4546ded0fa8715a7267922a"
@@ -1517,12 +1554,14 @@
     "github.com/99designs/gqlgen/handler",
     "github.com/gocraft/dbr",
     "github.com/gofrs/uuid",
+    "github.com/google/uuid",
     "github.com/gorilla/mux",
     "github.com/kisielk/errcheck",
     "github.com/kyma-incubator/hydroform",
     "github.com/kyma-incubator/hydroform/types",
     "github.com/lib/pq",
     "github.com/pkg/errors",
+    "github.com/prometheus/common/log",
     "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/mock",
