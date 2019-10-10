@@ -146,6 +146,14 @@ type queryResolver struct {
 	*RootResolver
 }
 
+func (r *queryResolver) API(ctx context.Context, id string) (*graphql.APIDefinition, error) {
+	return r.api.API(ctx, id)
+}
+
+func (r *queryResolver) EventAPI(ctx context.Context, id string) (*graphql.EventAPIDefinition, error) {
+	panic("implement me")
+}
+
 func (r *queryResolver) Applications(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
 	return r.app.Applications(ctx, filter, first, after)
 }
