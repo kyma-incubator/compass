@@ -52,6 +52,7 @@ type ComplexityRoot struct {
 		MachineType       func(childComplexity int) int
 		Name              func(childComplexity int) int
 		NumberOfNodes     func(childComplexity int) int
+		ProjectName       func(childComplexity int) int
 		Region            func(childComplexity int) int
 		Zone              func(childComplexity int) int
 	}
@@ -67,6 +68,7 @@ type ComplexityRoot struct {
 		MaxUnavailable    func(childComplexity int) int
 		Name              func(childComplexity int) int
 		NodeCount         func(childComplexity int) int
+		ProjectName       func(childComplexity int) int
 		Region            func(childComplexity int) int
 		TargetProvider    func(childComplexity int) int
 		TargetSecret      func(childComplexity int) int
@@ -186,6 +188,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GCPConfig.NumberOfNodes(childComplexity), true
 
+	case "GCPConfig.projectName":
+		if e.complexity.GCPConfig.ProjectName == nil {
+			break
+		}
+
+		return e.complexity.GCPConfig.ProjectName(childComplexity), true
+
 	case "GCPConfig.region":
 		if e.complexity.GCPConfig.Region == nil {
 			break
@@ -269,6 +278,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GardenerConfig.NodeCount(childComplexity), true
+
+	case "GardenerConfig.projectName":
+		if e.complexity.GardenerConfig.ProjectName == nil {
+			break
+		}
+
+		return e.complexity.GardenerConfig.ProjectName(childComplexity), true
 
 	case "GardenerConfig.region":
 		if e.complexity.GardenerConfig.Region == nil {
@@ -573,6 +589,7 @@ union ClusterConfig = GardenerConfig | GCPConfig
 
 type GardenerConfig {
     name: String
+    projectName: String
     kubernetesVersion: String
     nodeCount: Int
     volumeSize: String
@@ -591,6 +608,7 @@ type GardenerConfig {
 
 type GCPConfig {
     name: String
+    projectName: String
     kubernetesVersion: String
     numberOfNodes: Int
     bootDiskSize: String
@@ -965,6 +983,40 @@ func (ec *executionContext) _GCPConfig_name(ctx context.Context, field graphql.C
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _GCPConfig_projectName(ctx context.Context, field graphql.CollectedField, obj *GCPConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GCPConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProjectName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _GCPConfig_kubernetesVersion(ctx context.Context, field graphql.CollectedField, obj *GCPConfig) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -1189,6 +1241,40 @@ func (ec *executionContext) _GardenerConfig_name(ctx context.Context, field grap
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GardenerConfig_projectName(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProjectName, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4066,6 +4152,8 @@ func (ec *executionContext) _GCPConfig(ctx context.Context, sel ast.SelectionSet
 			out.Values[i] = graphql.MarshalString("GCPConfig")
 		case "name":
 			out.Values[i] = ec._GCPConfig_name(ctx, field, obj)
+		case "projectName":
+			out.Values[i] = ec._GCPConfig_projectName(ctx, field, obj)
 		case "kubernetesVersion":
 			out.Values[i] = ec._GCPConfig_kubernetesVersion(ctx, field, obj)
 		case "numberOfNodes":
@@ -4102,6 +4190,8 @@ func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = graphql.MarshalString("GardenerConfig")
 		case "name":
 			out.Values[i] = ec._GardenerConfig_name(ctx, field, obj)
+		case "projectName":
+			out.Values[i] = ec._GardenerConfig_projectName(ctx, field, obj)
 		case "kubernetesVersion":
 			out.Values[i] = ec._GardenerConfig_kubernetesVersion(ctx, field, obj)
 		case "nodeCount":

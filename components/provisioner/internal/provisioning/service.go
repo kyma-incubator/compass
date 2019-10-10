@@ -55,7 +55,7 @@ func (r *service) ProvisionRuntime(id string, config *gqlschema.ProvisionRuntime
 		return "", err, nil
 	}
 
-	runtimeConfig := model.RuntimeConfigFromInput(*config)
+	runtimeConfig := model.RuntimeConfigFromInput(config)
 
 	operation, err := r.runtimeService.SetProvisioningStarted(id, runtimeConfig)
 
@@ -104,7 +104,15 @@ func (r *service) ReconnectRuntimeAgent(id string) (string, error) {
 }
 
 func (r *service) RuntimeStatus(runtimeID string) (*gqlschema.RuntimeStatus, error) {
-	return nil, nil
+	runtimeStatus, err := r.runtimeService.GetStatus(runtimeID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	status := model.RuntimeStatusToGraphQLStatus(runtimeStatus)
+
+	return status, nil
 }
 
 func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.OperationStatus, error) {

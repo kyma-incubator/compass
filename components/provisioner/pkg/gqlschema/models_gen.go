@@ -27,6 +27,7 @@ type Error struct {
 
 type GCPConfig struct {
 	Name              *string `json:"name"`
+	ProjectName       *string `json:"projectName"`
 	KubernetesVersion *string `json:"kubernetesVersion"`
 	NumberOfNodes     *int    `json:"numberOfNodes"`
 	BootDiskSize      *string `json:"bootDiskSize"`
@@ -50,6 +51,7 @@ type GCPConfigInput struct {
 
 type GardenerConfig struct {
 	Name              *string `json:"name"`
+	ProjectName       *string `json:"projectName"`
 	KubernetesVersion *string `json:"kubernetesVersion"`
 	NodeCount         *int    `json:"nodeCount"`
 	VolumeSize        *string `json:"volumeSize"`

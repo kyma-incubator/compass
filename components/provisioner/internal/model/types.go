@@ -104,6 +104,12 @@ type RuntimeConfig struct {
 	Kubeconfig    string
 }
 
+type RuntimeStatus struct {
+	LastOperationStatus     Operation
+	RuntimeConnectionStatus RuntimeAgentConnectionStatus
+	RuntimeConfiguration    RuntimeConfig
+}
+
 func (rc RuntimeConfig) GCPConfig() (GCPConfig, bool) {
 	gcpConfig, ok := rc.ClusterConfig.(GCPConfig)
 
@@ -116,10 +122,27 @@ func (rc RuntimeConfig) GardenerConfig() (GardenerConfig, bool) {
 	return gardenerConfig, ok
 }
 
-func RuntimeConfigFromInput(input gqlschema.ProvisionRuntimeInput) RuntimeConfig {
+func RuntimeConfigFromInput(input *gqlschema.ProvisionRuntimeInput) RuntimeConfig {
 	return RuntimeConfig{
 		KymaConfig:    kymaConfigFromInput(*input.KymaConfig),
 		ClusterConfig: clusterConfigFromInput(*input.ClusterConfig),
+	}
+}
+
+func RuntimeStatusToGraphQLStatus(status RuntimeStatus) *gqlschema.RuntimeStatus {
+	return &gqlschema.RuntimeStatus{
+		LastOperationStatus:     OperationStatusToGQLOperationStatus(status.LastOperationStatus),
+		RuntimeConnectionStatus: runtimeConnectionStatusToGraphQLStatus(status.RuntimeConnectionStatus),
+		RuntimeConfiguration:    runtimeConfigurationToGraphQLConfiguration(status.RuntimeConfiguration),
+	}
+}
+
+func OperationStatusToGQLOperationStatus(operation Operation) *gqlschema.OperationStatus {
+	return &gqlschema.OperationStatus{
+		Operation: operationTypeToGraphQLType(operation.Operation),
+		State:     operationStateToGraphQLState(operation.State),
+		Message:   operation.Message,
+		RuntimeID: operation.RuntimeID,
 	}
 }
 
@@ -170,7 +193,7 @@ func gcpConfigFromInput(input gqlschema.GCPConfigInput) GCPConfig {
 
 func kymaConfigFromInput(input gqlschema.KymaConfigInput) KymaConfig {
 	var modules []KymaModule
-	for module := range input.Modules {
+	for _, module := range input.Modules {
 		modules = append(modules, KymaModule(module))
 	}
 
@@ -180,22 +203,92 @@ func kymaConfigFromInput(input gqlschema.KymaConfigInput) KymaConfig {
 	}
 }
 
-type RuntimeStatus struct {
-	LastOperationStatus     Operation
-	RuntimeConnectionStatus RuntimeAgentConnectionStatus
-	RuntimeConfiguration    RuntimeConfig
+func runtimeConnectionStatusToGraphQLStatus(status RuntimeAgentConnectionStatus) *gqlschema.RuntimeConnectionStatus {
+	return &gqlschema.RuntimeConnectionStatus{Status: runtimeAgentConnectionStatusToGraphQLStatus(status)}
 }
 
-func OperationStatusToGQLOperationStatus(operation Operation) *gqlschema.OperationStatus {
-	return &gqlschema.OperationStatus{
-		Operation: OperationTypeToGraphQLType(operation.Operation),
-		State:     OperationStateToGraphQLState(operation.State),
-		Message:   operation.Message,
-		RuntimeID: operation.RuntimeID,
+func runtimeAgentConnectionStatusToGraphQLStatus(status RuntimeAgentConnectionStatus) gqlschema.RuntimeAgentConnectionStatus {
+	switch status {
+	case RuntimeAgentConnectionStatusConnected:
+		return gqlschema.RuntimeAgentConnectionStatusConnected
+	case RuntimeAgentConnectionStatusDisconnected:
+		return gqlschema.RuntimeAgentConnectionStatusDisconnected
+	case RuntimeAgentConnectionStatusPending:
+		return gqlschema.RuntimeAgentConnectionStatusPending
+	default:
+		return ""
 	}
 }
 
-func OperationTypeToGraphQLType(operationType OperationType) gqlschema.OperationType {
+func runtimeConfigurationToGraphQLConfiguration(config RuntimeConfig) *gqlschema.RuntimeConfig {
+	return &gqlschema.RuntimeConfig{
+		ClusterConfig: clusterConfigToGraphQLConfig(config.ClusterConfig),
+		KymaConfig:    kymaConfigToGraphQLConfig(config.KymaConfig),
+		Kubeconfig:    &config.Kubeconfig,
+	}
+}
+
+func clusterConfigToGraphQLConfig(config interface{}) gqlschema.ClusterConfig {
+	gardenerConfig, ok := config.(GardenerConfig)
+	if ok {
+		return gardenerConfigToGraphQLConfig(gardenerConfig)
+	}
+
+	gcpConfig, ok := config.(GCPConfig)
+	if ok {
+		return gcpConfigToGraphQLConfig(gcpConfig)
+	}
+	return nil
+}
+
+func gardenerConfigToGraphQLConfig(config GardenerConfig) gqlschema.ClusterConfig {
+	return gqlschema.GardenerConfig{
+		Name:              &config.Name,
+		ProjectName:       &config.ProjectName,
+		KubernetesVersion: &config.KubernetesVersion,
+		NodeCount:         &config.NodeCount,
+		DiskType:          &config.DiskType,
+		VolumeSize:        &config.VolumeSize,
+		MachineType:       &config.MachineType,
+		TargetProvider:    &config.TargetProvider,
+		TargetSecret:      &config.TargetSecret,
+		Cidr:              &config.Cidr,
+		Region:            &config.Region,
+		Zone:              &config.Zone,
+		AutoScalerMin:     &config.AutoScalerMin,
+		AutoScalerMax:     &config.AutoScalerMax,
+		MaxSurge:          &config.MaxSurge,
+		MaxUnavailable:    &config.MaxUnavailable,
+	}
+}
+
+func gcpConfigToGraphQLConfig(config GCPConfig) gqlschema.ClusterConfig {
+	return gqlschema.GCPConfig{
+		Name:              &config.Name,
+		ProjectName:       &config.ProjectName,
+		KubernetesVersion: &config.KubernetesVersion,
+		NumberOfNodes:     &config.NumberOfNodes,
+		BootDiskSize:      &config.BootDiskSize,
+		MachineType:       &config.MachineType,
+		Region:            &config.Region,
+		Zone:              &config.Zone,
+	}
+}
+
+func kymaConfigToGraphQLConfig(config KymaConfig) *gqlschema.KymaConfig {
+	var modules []*gqlschema.KymaModule
+	for _, module := range config.Modules {
+		kymaModule := gqlschema.KymaModule(module)
+		modules = append(modules, &kymaModule)
+	}
+
+	return &gqlschema.KymaConfig{
+		Version: &config.Version,
+		Modules: modules,
+	}
+}
+
+func operationTypeToGraphQLType(operationType OperationType) gqlschema.OperationType {
 	switch operationType {
 	case Provision:
 		return gqlschema.OperationTypeProvision
@@ -210,7 +303,7 @@ func OperationTypeToGraphQLType(operationType OperationType) gqlschema.Operation
 	}
 }
 
-func OperationStateToGraphQLState(state OperationState) gqlschema.OperationState {
+func operationStateToGraphQLState(state OperationState) gqlschema.OperationState {
 	switch state {
 	case InProgress:
 		return gqlschema.OperationStateInProgress
