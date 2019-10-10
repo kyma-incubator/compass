@@ -8,7 +8,7 @@ import (
 )
 
 type Resolver struct {
-	provisioning api.ProvisioningService
+	provisioning provisioning.ProvisioningService
 }
 
 func (r *Resolver) Mutation() gqlschema.MutationResolver {
@@ -22,7 +22,7 @@ func (r *Resolver) Query() gqlschema.QueryResolver {
 	}
 }
 
-func NewResolver(provisioningService api.ProvisioningService) *Resolver {
+func NewResolver(provisioningService provisioning.ProvisioningService) *Resolver {
 	return &Resolver{
 		provisioning: provisioningService,
 	}
