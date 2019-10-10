@@ -65,7 +65,7 @@ type repositoryFactory struct {
 	dbConnection *dbr.Connection
 }
 
-func NewRepositoryFactory(dbConnection *dbr.Connection) RepositoryFactory{
+func NewRepositoryFactory(dbConnection *dbr.Connection) RepositoryFactory {
 	return repositoryFactory{
 		dbConnection: dbConnection,
 	}
@@ -201,38 +201,10 @@ func (r repository) InsertOperation(operation model.Operation) dberrors.Error {
 		return dberrors.Internal("Failed to generate uuid: %s.", err)
 	}
 
-	toOperationStateEnum := func(operationState model.OperationState) string {
-		switch operationState {
-		case model.InProgress:
-			return "IN_PROGRESS"
-		case model.Succeeded:
-			return "SUCCEEDED"
-		case model.Failed:
-			return "FAILED"
-		default:
-			return ""
-		}
-	}
-
-	toOperationTypeEnum := func(operationType model.OperationType) string {
-		switch operationType {
-		case model.Provision:
-			return "PROVISION"
-		case model.Deprovision:
-			return "DEPROVISION"
-		case model.Upgrade:
-			return "UPGRADE"
-		case model.ReconnectRuntime:
-			return "RECONNECT_RUNTIME"
-		default:
-			return ""
-		}
-	}
-
 	_, err = r.dbTransaction.InsertInto("Operation").
 		Pair("id", id.String()).
-		Pair("type", toOperationTypeEnum(operation.Operation)).
-		Pair("state", toOperationStateEnum(operation.State)).
+		Pair("type", operation.Operation).
+		Pair("state", operation.State).
 		Pair("message", operation.Message).
 		Pair("startTimestamp", operation.Started).
 		Pair("clusterId", operation.RuntimeID).
@@ -246,10 +218,28 @@ func (r repository) InsertOperation(operation model.Operation) dberrors.Error {
 }
 
 func (r repository) DeleteCluster(runtimeID string) dberrors.Error {
+	_, err := r.dbTransaction.DeleteFrom("Cluster").
+		Where("clusterId", runtimeID).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to delete record in Cluster table: %s", err)
+	}
+
 	return nil
 }
 
 func (r repository) GetRuntimeStatus(runtimeID string) (model.RuntimeStatus, dberrors.Error) {
+
+	//res, err := r.dbSession.
+	//	Select("*").
+	//	From("Cluster").
+	//	Where("clusterId", runtimeID).
+	//	Join("KymaConfig", "Cluster.Id=KymaConfig.clusterId").
+	//	RightJoin("GCPConfig", "Cluster.Id=GCPConfig.clusterId").
+	//	RightJoin("GardenerConfig", "Cluster.Id=GardenerConfig.clusterId").LoadOne()
+	//
+
 	return model.RuntimeStatus{}, nil
 }
 
@@ -258,5 +248,5 @@ func (r repository) GetLastOperation(runtimeID string) (model.Operation, dberror
 }
 
 func (r repository) Transaction() Transaction {
-	return &transaction{ r.dbTransaction}
+	return &transaction{r.dbTransaction}
 }

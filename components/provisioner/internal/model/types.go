@@ -16,38 +16,26 @@ const (
 
 type KymaModule string
 
-//const (
-//	BackupModule             KymaModule = iota
-//	BackupInitModule         KymaModule = iota
-//	JaegerModule             KymaModule = iota
-//	LoggingModule            KymaModule = iota
-//	MonitoringModule         KymaModule = iota
-//	PrometheusOperatorModule KymaModule = iota
-//	KialiModule              KymaModule = iota
-//	KnativeBuildModule       KymaModule = iota
-//)
-
 type KymaConfig struct {
 	Version string
 	Modules []KymaModule
 }
 
-type OperationState int
+type OperationState string
 
 const (
-	Pending    OperationState = iota
-	InProgress OperationState = iota
-	Succeeded  OperationState = iota
-	Failed     OperationState = iota
+	InProgress OperationState = "IN_PROGRESS"
+	Succeeded  OperationState = "SUCCEEDED"
+	Failed     OperationState = "FAILED"
 )
 
-type OperationType int
+type OperationType string
 
 const (
-	Provision        OperationType = iota
-	Upgrade          OperationType = iota
-	Deprovision      OperationType = iota
-	ReconnectRuntime OperationType = iota
+	Provision        OperationType = "PROVISION"
+	Upgrade          OperationType = "UPGRADE"
+	Deprovision      OperationType = "DEPROVISION"
+	ReconnectRuntime OperationType = "RECONNECT_RUNTIME"
 )
 
 type Operation struct {
