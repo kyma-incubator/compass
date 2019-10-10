@@ -88,13 +88,23 @@
   version = "v1.2.0"
 
 [[projects]]
-  branch = "provisioner-databese-schema"
-  digest = "1:b785f5fb0206f9a385a92ae2d9151aa1e730422256fac3e915a092c93e3823f2"
-  name = "github.com/kyma-incubator/compass"
-  packages = ["components/provisioner/pkg/gqlschema"]
+  digest = "1:31e761d97c76151dde79e9d28964a812c46efc5baee4085b86f68f0c654450de"
+  name = "github.com/konsorten/go-windows-terminal-sequences"
+  packages = ["."]
   pruneopts = "UT"
-  revision = "517a475caf10ce9fd277fc553f2ac4cf766ce32a"
-  source = "github.com/Szymongib/compass"
+  revision = "f55edac94c9bbba5d6182a4be46d86a2c9b5b50e"
+  version = "v1.0.2"
+
+[[projects]]
+  digest = "1:cb033e7b6f074c39af1907894b3d593526b577f2dd8bb6ea6c5bf6202afb0592"
+  name = "github.com/kyma-incubator/compass"
+  packages = [
+    "components/director/pkg/graphql",
+    "components/director/pkg/scalar",
+    "components/provisioner/pkg/gqlschema",
+  ]
+  pruneopts = "UT"
+  revision = "6a37c1f7f5c459ebb6c076bbe379898445dbfd33"
 
 [[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
@@ -135,6 +145,14 @@
   pruneopts = "UT"
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
+
+[[projects]]
+  digest = "1:04457f9f6f3ffc5fea48e71d62f2ca256637dee0a04d710288e27e05c8b41976"
+  name = "github.com/sirupsen/logrus"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "839c75faf7f98a33d445d181f3018b5c3409a45e"
+  version = "v1.4.2"
 
 [[projects]]
   digest = "1:99d32780e5238c2621fff621123997c3e3cca96db8be13179013aea77dfab551"
@@ -184,6 +202,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:7c927f17d868be652a4cfe7de23e4292dea5b14d974a1d536e3b7cb7e79fd695"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  pruneopts = "UT"
+  revision = "06d7bd2c5f4f4a6cc6e910b611851044253bd7d1"
+
+[[projects]]
+  branch = "master"
   digest = "1:ef4d8c35d3c083b4a4e5f6057d37145acda78d7d154937d519bfc6e0bb089d22"
   name = "golang.org/x/tools"
   packages = [
@@ -218,9 +244,11 @@
     "github.com/Masterminds/sprig",
     "github.com/google/uuid",
     "github.com/kisielk/errcheck",
+    "github.com/kyma-incubator/compass/components/director/pkg/graphql",
     "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
     "github.com/machinebox/graphql",
     "github.com/pkg/errors",
+    "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/require",
     "github.com/vrischmann/envconfig",

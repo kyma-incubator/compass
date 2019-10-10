@@ -1,16 +1,14 @@
-package testkit
+package provisioner
 
 import (
-	"context"
-	"crypto/tls"
-	"net/http"
+	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql"
 
 	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
 
-type ProvisionerClient interface {
+type Client interface {
 	ProvisionRuntime(runtimeID string, config schema.ProvisionRuntimeInput) (string, error)
 	UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInput) (string, error)
 	DeprovisionRuntime(runtimeID string) (string, error)
@@ -20,23 +18,14 @@ type ProvisionerClient interface {
 }
 
 type client struct {
-	graphQLClient *gcli.Client
+	graphQLClient *graphql.Client
 	queryProvider queryProvider
 	graphqlizer   graphqlizer
 }
 
-func NewProvisionerClient(endpoint string) ProvisionerClient {
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-
-	graphQlClient := gcli.NewClient(endpoint, gcli.WithHTTPClient(httpClient))
+func NewProvisionerClient(endpoint string, queryLogging bool) Client {
 	return &client{
-		graphQLClient: graphQlClient,
+		graphQLClient: graphql.NewGraphQLClient(endpoint, true, queryLogging),
 		queryProvider: queryProvider{},
 		graphqlizer:   graphqlizer{},
 	}
@@ -51,13 +40,12 @@ func (c client) ProvisionRuntime(runtimeID string, config schema.ProvisionRuntim
 	query := c.queryProvider.provisionRuntime(runtimeID, provisionRuntimeIptGQL)
 	req := gcli.NewRequest(query)
 
-	var response AsyncOperationIDResult
-
-	err = c.graphQLClient.Run(context.Background(), req, &response)
+	var operationId string
+	err = c.graphQLClient.ExecuteRequest(req, &operationId, "")
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to provision runtime")
 	}
-	return response.Result, nil
+	return operationId, nil
 }
 
 func (c client) UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInput) (string, error) {
@@ -69,75 +57,58 @@ func (c client) UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInp
 	query := c.queryProvider.upgradeRuntime(runtimeID, upgradeRuntimeIptGQL)
 	req := gcli.NewRequest(query)
 
-	var response AsyncOperationIDResult
-
-	err = c.graphQLClient.Run(context.Background(), req, &response)
+	var operationId string
+	err = c.graphQLClient.ExecuteRequest(req, &operationId, "")
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to upgrade runtime")
 	}
-	return response.Result, nil
+	return operationId, nil
 }
 
 func (c client) DeprovisionRuntime(runtimeID string) (string, error) {
 	query := c.queryProvider.deprovisionRuntime(runtimeID)
 	req := gcli.NewRequest(query)
 
-	var response AsyncOperationIDResult
-
-	err := c.graphQLClient.Run(context.Background(), req, &response)
+	var operationId string
+	err := c.graphQLClient.ExecuteRequest(req, &operationId, "")
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to deprovision runtime")
 	}
-	return response.Result, nil
+	return operationId, nil
 }
 
 func (c client) ReconnectRuntimeAgent(runtimeID string) (string, error) {
 	query := c.queryProvider.reconnectRuntimeAgent(runtimeID)
 	req := gcli.NewRequest(query)
 
-	var response AsyncOperationIDResult
-
-	err := c.graphQLClient.Run(context.Background(), req, &response)
+	var operationId string
+	err := c.graphQLClient.ExecuteRequest(req, &operationId, "")
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to reconnect runtime agent")
 	}
-	return response.Result, nil
+	return operationId, nil
 }
 
 func (c client) RuntimeStatus(runtimeID string) (schema.RuntimeStatus, error) {
 	query := c.queryProvider.runtimeStatus(runtimeID)
 	req := gcli.NewRequest(query)
 
-	var response RuntimeStatusStatusResult
-
-	err := c.graphQLClient.Run(context.Background(), req, &response)
+	var response schema.RuntimeStatus
+	err := c.graphQLClient.ExecuteRequest(req, &response, &schema.RuntimeStatus{})
 	if err != nil {
 		return schema.RuntimeStatus{}, errors.Wrap(err, "Failed to get runtime status")
 	}
-	return response.Result, nil
+	return response, nil
 }
 
 func (c client) RuntimeOperationStatus(operationID string) (schema.OperationStatus, error) {
 	query := c.queryProvider.runtimeOperationStatus(operationID)
 	req := gcli.NewRequest(query)
 
-	var response OperationStatus
-
-	err := c.graphQLClient.Run(context.Background(), req, &response)
+	var response schema.OperationStatus
+	err := c.graphQLClient.ExecuteRequest(req, &response, &schema.OperationStatus{})
 	if err != nil {
 		return schema.OperationStatus{}, errors.Wrap(err, "Failed to get runtime operation status")
 	}
-	return response.Result, nil
-}
-
-type AsyncOperationIDResult struct {
-	Result string `json:"result"`
-}
-
-type RuntimeStatusStatusResult struct {
-	Result schema.RuntimeStatus `json:"result"`
-}
-
-type OperationStatus struct {
-	Result schema.OperationStatus `json:"result"`
+	return response, nil
 }

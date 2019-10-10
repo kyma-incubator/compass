@@ -1,4 +1,4 @@
-package testkit
+package provisioner
 
 import "fmt"
 

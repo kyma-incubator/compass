@@ -9,6 +9,8 @@ import (
 
 type TestConfig struct {
 	InternalProvisionerUrl string `envconfig:"default=http://localhost:3000/graphql"`
+
+	QueryLogging bool `envconfig:"default=false"`
 }
 
 func ReadConfig() (TestConfig, error) {

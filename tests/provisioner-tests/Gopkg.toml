@@ -5,8 +5,7 @@ required = [
 
 [[constraint]]
   name = "github.com/kyma-incubator/compass"
-  source = "github.com/Szymongib/compass"
-  branch = "provisioner-databese-schema"
+  revision = "6a37c1f7f5c459ebb6c076bbe379898445dbfd33"
 
 [[constraint]]
   name = "github.com/Masterminds/sprig"

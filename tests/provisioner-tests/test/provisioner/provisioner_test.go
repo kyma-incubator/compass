@@ -1,20 +1,23 @@
-package apitests
+package provisioner
 
 import (
 	"errors"
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/provisioner"
+
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 const (
-	timeout  = 60 * time.Second
-	interval = 1 * time.Second
+	provisioningTimeout   = 15 * time.Minute
+	deprovisioningTimeout = 10 * time.Minute
+
+	checkInterval = 1 * time.Second
 )
 
 var provisionRuntimeInput = gqlschema.ProvisionRuntimeInput{
@@ -54,10 +57,8 @@ var upgradeRuntimeInput = gqlschema.UpgradeRuntimeInput{
 }
 
 func TestFullProvisionerFlow(t *testing.T) {
-	config, e := testkit.ReadConfig()
-	require.NoError(t, e)
 
-	client := testkit.NewProvisionerClient(config.InternalProvisionerUrl)
+	client := provisioner.NewProvisionerClient(config.InternalProvisionerUrl)
 
 	runtimeID := uuid.New().String()
 
@@ -107,10 +108,10 @@ func TestFullProvisionerFlow(t *testing.T) {
 	t.Logf("Runtime %s deprovisioned succesfully", runtimeID)
 }
 
-func waitUntilOperationIsFinished(t *testing.T, client testkit.ProvisionerClient, operationID string) {
-	err := waitForFunction(interval, timeout, func() bool {
-		operationStatus, e := client.RuntimeOperationStatus(operationID)
-		if e != nil {
+func waitUntilOperationIsFinished(t *testing.T, client provisioner.Client, operationID string) {
+	err := waitForFunction(checkInterval, provisioningTimeout, func() bool {
+		operationStatus, err := client.RuntimeOperationStatus(operationID)
+		if err != nil {
 			return false
 		}
 
@@ -136,7 +137,7 @@ func waitForFunction(interval, timeout time.Duration, isDone func() bool) error 
 
 		select {
 		case <-done:
-			return errors.New("timeout waiting for condition")
+			return errors.New("provisioningTimeout waiting for condition")
 		default:
 			time.Sleep(interval)
 		}
