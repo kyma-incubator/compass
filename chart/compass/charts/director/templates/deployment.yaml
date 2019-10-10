@@ -80,7 +80,7 @@ spec:
               value: "https://oauth2.{{ .Values.global.ingress.domainName }}/oauth2/token"
           volumeMounts:
             - mountPath: /config
-              name: scopes-config
+              name: director-config
         {{if eq .Values.global.database.embedded.enabled false}}
             - name: cloudsql-instance-credentials
               mountPath: /secrets/cloudsql-instance-credentials
@@ -101,7 +101,7 @@ spec:
           secret:
             secretName: cloudsql-instance-credentials
         {{end}}
-        - name: scopes-config
+        - name: director-config
           configMap:
-            name: {{ template "fullname" . }}-scopes
+            name: {{ template "fullname" . }}-director
 

@@ -40,7 +40,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 
 	testCases := []struct {
 		Name               string
-		TransactionerFn     func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		TransactionerFn    func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn          func() *automock.SystemAuthService
 		OAuthServiceFn     func() *automock.OAuth20Service
 		ConverterFn        func() *automock.SystemAuthConverter
@@ -48,7 +48,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 		ExpectedErr        error
 	}{
 		{
-			Name: "Success - Basic Auth",
+			Name:            "Success - Basic Auth",
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
@@ -69,7 +69,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 			ExpectedErr:        nil,
 		},
 		{
-			Name: "Success - OAuth",
+			Name:            "Success - OAuth",
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
@@ -91,7 +91,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 			ExpectedErr:        nil,
 		},
 		{
-			Name: "Error - Get SystemAuth",
+			Name:            "Error - Get SystemAuth",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
@@ -110,7 +110,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 			ExpectedErr:        testErr,
 		},
 		{
-			Name: "Error - Delete from DB",
+			Name:            "Error - Delete from DB",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
@@ -131,7 +131,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 			ExpectedErr:        testErr,
 		},
 		{
-			Name: "Error - Delete Client",
+			Name:            "Error - Delete Client",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
@@ -155,7 +155,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			persist, transact  := testCase.TransactionerFn()
+			persist, transact := testCase.TransactionerFn()
 			defer persist.AssertExpectations(t)
 			defer transact.AssertExpectations(t)
 			svc := testCase.ServiceFn()

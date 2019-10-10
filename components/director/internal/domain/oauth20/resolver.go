@@ -3,6 +3,7 @@ package oauth20
 import (
 	"context"
 	"fmt"
+
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"

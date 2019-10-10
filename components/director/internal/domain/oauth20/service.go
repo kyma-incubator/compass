@@ -14,7 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const clientCredentialScopesPrefix = "__clientCredentialsRegistrationScopes"
+const clientCredentialScopesPrefix = "clientCredentialsRegistrationScopes"
 const applicationJSONType = "application/json"
 
 var defaultGrantTypes = []string{"client_credentials"}

@@ -485,20 +485,20 @@ type Query {
 	"""
 	Maximum `first` parameter value is 100
 	"""
-	applications(filter: [LabelFilter!], first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "query.applications")
-	application(id: ID!): Application @hasScopes(path: "query.application")
+	applications(filter: [LabelFilter!], first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applications")
+	application(id: ID!): Application @hasScopes(path: "graphql.query.application")
 	"""
 	Maximum `first` parameter value is 100
 	"""
-	applicationsForRuntime(runtimeID: ID!, first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "query.applicationsForRuntime")
+	applicationsForRuntime(runtimeID: ID!, first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applicationsForRuntime")
 	"""
 	Maximum `first` parameter value is 100
 	"""
-	runtimes(filter: [LabelFilter!], first: Int = 100, after: PageCursor): RuntimePage! @hasScopes(path: "query.runtimes")
-	runtime(id: ID!): Runtime @hasScopes(path: "query.runtime")
-	labelDefinitions: [LabelDefinition!]! @hasScopes(path: "query.labelDefinitions")
-	labelDefinition(key: String!): LabelDefinition @hasScopes(path: "query.labelDefinition")
-	healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: PageCursor): HealthCheckPage! @hasScopes(path: "query.healthChecks")
+	runtimes(filter: [LabelFilter!], first: Int = 100, after: PageCursor): RuntimePage! @hasScopes(path: "graphql.query.runtimes")
+	runtime(id: ID!): Runtime @hasScopes(path: "graphql.query.runtime")
+	labelDefinitions: [LabelDefinition!]! @hasScopes(path: "graphql.query.labelDefinitions")
+	labelDefinition(key: String!): LabelDefinition @hasScopes(path: "graphql.query.labelDefinition")
+	healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: PageCursor): HealthCheckPage! @hasScopes(path: "graphql.query.healthChecks")
 }
 
 type Mutation {
@@ -540,18 +540,18 @@ type Mutation {
 	"""
 	If a label with given key already exist, it will be replaced with provided value.
 	"""
-	setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "mutation.setApplicationLabel")
+	setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setApplicationLabel")
 	"""
 	If Application does not exist or the label key is not found, it returns an error.
 	"""
-	deleteApplicationLabel(applicationID: ID!, key: String!): Label! @hasScopes(path: "mutation.deleteApplicationLabel")
+	deleteApplicationLabel(applicationID: ID!, key: String!): Label! @hasScopes(path: "graphql.mutation.deleteApplicationLabel")
 	"""
 	If a label with given key already exist, it will be replaced with provided value.
 	"""
-	setRuntimeLabel(runtimeID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "mutation.setRuntimeLabel")
+	setRuntimeLabel(runtimeID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setRuntimeLabel")
 	"""
 	If Runtime does not exist or the label key is not found, it returns an error.
 	"""
-	deleteRuntimeLabel(runtimeID: ID!, key: String!): Label! @hasScopes(path: "mutation.deleteRuntimeLabel")
+	deleteRuntimeLabel(runtimeID: ID!, key: String!): Label! @hasScopes(path: "graphql.mutation.deleteRuntimeLabel")
 }
 
