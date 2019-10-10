@@ -63,6 +63,7 @@ docker run --rm --network=${NETWORK} \
 echo -e "${GREEN}Building Director image...${NC}"
 
 cd "${SCRIPT_DIR}/../../components/director/"
+
 mkdir -p ./licenses
 dep ensure --vendor-only -v
 docker build -t $DIRECTOR_IMG_NAME ./

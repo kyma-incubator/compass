@@ -8,7 +8,7 @@ COPY . ${BASE_TEST_DIR}
 
 RUN CGO_ENABLED=0 go test -c ./director
 
-FROM alpine:3.9
+FROM alpine:3.10
 
 LABEL source=git@github.com:kyma-incubator/compass.git
 

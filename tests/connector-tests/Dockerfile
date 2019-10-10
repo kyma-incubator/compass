@@ -7,7 +7,7 @@ COPY . $SRC_DIR
 
 RUN CGO_ENABLED=0 GOOS=linux go test -c ./test/apitests
 
-FROM alpine:3.9
+FROM alpine:3.10
 
 LABEL source=git@github.com:kyma-project/kyma.git
 
