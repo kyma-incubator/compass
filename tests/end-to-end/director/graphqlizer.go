@@ -291,6 +291,15 @@ func (g *graphqlizer) LabelFilterToGQL(in graphql.LabelFilter) (string, error) {
 	}`)
 }
 
+func (g *graphqlizer) IntegrationSystemInputToGQL(in graphql.IntegrationSystemInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{.Name}}",
+		{{- if .Description }}
+		description: "{{.Description}}",
+		{{- end }}
+	}`)
+}
+
 func (g *graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error) {
 	fm := sprig.TxtFuncMap()
 	fm["DocumentInputToGQL"] = g.DocumentInputToGQL
@@ -310,6 +319,7 @@ func (g *graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	fm["CredentialRequestAuthInputToGQL"] = g.CredentialRequestAuthInputToGQL
 	fm["LabelDefinitionInputToGQL"] = g.LabelDefinitionInputToGQL
 	fm["LabelFilterToGQL"] = g.LabelFilterToGQL
+	fm["IntegrationSystemToGQL"] = g.LabelFilterToGQL
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)
 	if err != nil {

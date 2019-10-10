@@ -50,22 +50,28 @@ func setApplicationLabel(t *testing.T, ctx context.Context, applicationID string
 	return label
 }
 
+func deleteSystemAuthForApplication(t *testing.T, ctx context.Context, id string) {
+	req := fixDeleteSystemAuthForApplication(id)
+	err := tc.RunOperation(ctx, req, nil)
+	require.NoError(t, err)
+}
+
 //Runtime
-func createRuntime(t *testing.T, ctx context.Context, placeholder string) *graphql.Runtime {
+func createRuntime(t *testing.T, ctx context.Context, placeholder string) *graphql.RuntimeExt {
 	input := fixRuntimeInput(placeholder)
 	return createRuntimeFromInput(t, ctx, &input)
 }
 
-func createRuntimeFromInput(t *testing.T, ctx context.Context, input *graphql.RuntimeInput) *graphql.Runtime {
+func createRuntimeFromInput(t *testing.T, ctx context.Context, input *graphql.RuntimeInput) *graphql.RuntimeExt {
 	return createRuntimeFromInputWithinTenant(t, ctx, input, defaultTenant)
 }
 
-func createRuntimeFromInputWithinTenant(t *testing.T, ctx context.Context, input *graphql.RuntimeInput, tenant string) *graphql.Runtime {
+func createRuntimeFromInputWithinTenant(t *testing.T, ctx context.Context, input *graphql.RuntimeInput, tenant string) *graphql.RuntimeExt {
 	inputGQL, err := tc.graphqlizer.RuntimeInputToGQL(*input)
 	require.NoError(t, err)
 
 	createRequest := fixCreateRuntimeRequest(inputGQL)
-	var runtime graphql.Runtime
+	var runtime graphql.RuntimeExt
 
 	err = tc.RunOperationWithCustomTenant(ctx, tenant, createRequest, &runtime)
 	require.NoError(t, err)
@@ -185,4 +191,47 @@ func generateOneTimeTokenForRuntime(t *testing.T, ctx context.Context, id string
 	err := tc.RunOperation(ctx, tokenRequest, &token)
 	require.NoError(t, err)
 	return token
+}
+
+// Integration System
+func getIntegrationSystem(t *testing.T, ctx context.Context, id string) *graphql.IntegrationSystemExt {
+	intSysRequest := fixIntegrationSystemRequest(id)
+	intSys := graphql.IntegrationSystemExt{}
+	require.NoError(t, tc.RunOperation(ctx, intSysRequest, &intSys))
+	return &intSys
+}
+
+func createIntegrationSystem(t *testing.T, ctx context.Context, name string) *graphql.IntegrationSystemExt {
+	input := graphql.IntegrationSystemInput{Name: name}
+	in, err := tc.graphqlizer.IntegrationSystemInputToGQL(input)
+	if err != nil {
+		return nil
+	}
+
+	req := fixCreateIntegrationSystemRequest(in)
+
+	out := &graphql.IntegrationSystemExt{}
+	err = tc.RunOperation(ctx, req, out)
+	require.NoError(t, err)
+	return out
+}
+
+func deleteIntegrationSystem(t *testing.T, ctx context.Context, id string) {
+	req := fixDeleteIntegrationSystem(id)
+	err := tc.RunOperation(ctx, req, nil)
+	require.NoError(t, err)
+}
+
+func generateClientCredentialsForIntegrationSystem(t *testing.T, ctx context.Context, id string) graphql.SystemAuth {
+	req := fixGenerateClientCredentialsForIntegrationSystem(id)
+	out := graphql.SystemAuth{}
+	err := tc.RunOperation(ctx, req, &out)
+	require.NoError(t, err)
+	return out
+}
+
+func deleteSystemAuthForIntegrationSystem(t *testing.T, ctx context.Context, id string) {
+	req := fixDeleteSystemAuthForIntegrationSystem(id)
+	err := tc.RunOperation(ctx, req, nil)
+	require.NoError(t, err)
 }
