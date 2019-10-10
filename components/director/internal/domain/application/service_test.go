@@ -1023,8 +1023,12 @@ func TestService_ListByRuntimeID(t *testing.T) {
 				appRepository := &automock.ApplicationRepository{}
 				return appRepository
 			},
-			ExpectedError:  apperrors.NewNotFoundError(""),
-			ExpectedResult: nil,
+			ExpectedError: nil,
+			ExpectedResult: &model.ApplicationPage{
+				Data:       []*model.Application{},
+				PageInfo:   &pagination.Page{},
+				TotalCount: 0,
+			},
 		},
 		{
 			Name:  "Return error when checking of runtime existence failed",

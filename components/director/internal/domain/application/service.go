@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -154,6 +156,13 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, page
 
 	label, err := s.labelRepo.GetByKey(ctx, tenantID, model.RuntimeLabelableObject, runtimeID.String(), model.ScenariosKey)
 	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return &model.ApplicationPage{
+				Data:       []*model.Application{},
+				PageInfo:   &pagination.Page{},
+				TotalCount: 0,
+			}, nil
+		}
 		return nil, errors.Wrap(err, "while getting scenarios for runtime")
 	}
 

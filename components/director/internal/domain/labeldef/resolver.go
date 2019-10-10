@@ -137,7 +137,9 @@ func (r *Resolver) LabelDefinition(ctx context.Context, key string) (*graphql.La
 	if err := tx.Commit(); err != nil {
 		return nil, errors.Wrap(err, "while committing transaction")
 	}
-
+	if def == nil {
+		return nil, apperrors.NewNotFoundError(key)
+	}
 	c, err := r.conv.ToGraphQL(*def)
 	if err != nil {
 		return nil, err

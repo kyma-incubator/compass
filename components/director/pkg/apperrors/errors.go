@@ -53,6 +53,9 @@ func NewNotUniqueError(identifier string) *notUniqueError {
 }
 
 func (e *notUniqueError) Error() string {
+	if e.identifier == "" {
+		return "Object is not unique"
+	}
 	return fmt.Sprintf("Object %s is not unique", e.identifier)
 }
 
