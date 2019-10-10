@@ -56,7 +56,7 @@ spec:
     methods: ["GET", "POST"]
     url: <http|https>://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}/director/graphql
   authenticators:
-    - handler: noop
+  - handler: noop
   authorizer:
     handler: allow
   mutators:
@@ -81,11 +81,11 @@ spec:
     methods: ["GET", "POST"]
     url: <http|https>://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}/connector/graphql
   authenticators:
-    - handler: noop
+  - handler: noop
   authorizer:
     handler: allow
   mutators:
-    - handler: hydrator
+  - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.tokenResolverService | indent 4 }}
 ---
 apiVersion: oathkeeper.ory.sh/v1alpha1
@@ -101,9 +101,9 @@ spec:
     methods: ["GET", "POST"]
     url: <http|https>://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}/connector/graphql
   authenticators:
-    - handler: noop
+  - handler: noop
   authorizer:
     handler: allow
   mutators:
-    - handler: hydrator
+  - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
