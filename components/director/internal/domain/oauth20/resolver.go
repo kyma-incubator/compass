@@ -3,12 +3,12 @@ package oauth20
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 //go:generate mockery -name=SystemAuthService -output=automock -outpkg=automock -case=underscore
@@ -93,12 +93,13 @@ func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.
 	if clientCreds == nil {
 		return nil, errors.New("client credentials cannot be empty")
 	}
-
-	cleanupOnFail := func() {
-		err := r.svc.DeleteClient(ctx, clientCreds.ClientID)
-		if err != nil {
-			logrus.Error(errors.Wrap(err, "while deleting registered OAuth 2.0 Client on failure"))
+	cleanupOnError := func(originalErr error) error {
+		cleanupErr := r.svc.DeleteClient(ctx, clientCreds.ClientID)
+		if cleanupErr != nil {
+			return multierror.Append(err, cleanupErr)
 		}
+
+		return originalErr
 	}
 
 	id := clientCreds.ClientID
@@ -108,20 +109,20 @@ func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.
 		},
 	})
 	if err != nil {
-		cleanupOnFail()
-		return nil, err
+		finalErr := cleanupOnError(err)
+		return nil, finalErr
 	}
 
 	sysAuth, err := r.systemAuthSvc.Get(ctx, id)
 	if err != nil {
-		cleanupOnFail()
-		return nil, err
+		finalErr := cleanupOnError(err)
+		return nil, finalErr
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		cleanupOnFail()
-		return nil, err
+		finalErr := cleanupOnError(err)
+		return nil, finalErr
 	}
 
 	gqlSysAuth := r.systemAuthConv.ToGraphQL(sysAuth)

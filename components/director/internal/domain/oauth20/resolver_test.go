@@ -16,6 +16,7 @@ import (
 )
 
 func TestResolver_CommonGenerateClientCredentialsSuccess(t *testing.T) {
+	// Given
 	id := "foo"
 	clientID := "clientid"
 	txGen := txtest.NewTransactionContextGenerator(nil)
@@ -135,8 +136,10 @@ func TestResolver_CommonGenerateClientCredentialsSuccess(t *testing.T) {
 
 			resolver := oauth20.NewResolver(transact, svc, appSvc, rtmSvc, isSvc, systemAuthSvc, systemAuthConv)
 
+			// When
 			result, err := testCase.Method(resolver, context.TODO(), id)
 
+			// Then
 			assert.Equal(t, expectedResult, result)
 			assert.Nil(t, err)
 		})
@@ -144,6 +147,7 @@ func TestResolver_CommonGenerateClientCredentialsSuccess(t *testing.T) {
 }
 
 func TestResolver_CommonGenerateClientCredentialsError(t *testing.T) {
+	// Given
 	id := "foo"
 	objType := model.RuntimeReference
 	clientID := "clientid"
@@ -222,6 +226,27 @@ func TestResolver_CommonGenerateClientCredentialsError(t *testing.T) {
 				svc := &automock.Service{}
 				svc.On("CreateClient", txtest.CtxWithDBMatcher(), objType).Return(credsData, nil).Once()
 				svc.On("DeleteClient", txtest.CtxWithDBMatcher(), clientID).Return(nil).Once()
+				return svc
+			},
+			SystemAuthServiceFn: func() *automock.SystemAuthService {
+				systemAuthSvc := &automock.SystemAuthService{}
+				systemAuthSvc.On("CreateWithCustomID", txtest.CtxWithDBMatcher(), clientID, objType, id, authInput).Return("", testErr).Once()
+				return systemAuthSvc
+			},
+		},
+		{
+			Name:            "Error - Multiple: Create System Auth and Delete Client",
+			ExpectedError:   errors.New("2 errors occurred:\n\t* test error\n\t* test error"),
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			RuntimeServiceFn: func() *automock.RuntimeService {
+				rtmSvc := &automock.RuntimeService{}
+				rtmSvc.On("Exist", txtest.CtxWithDBMatcher(), id).Return(true, nil).Once()
+				return rtmSvc
+			},
+			ServiceFn: func() *automock.Service {
+				svc := &automock.Service{}
+				svc.On("CreateClient", txtest.CtxWithDBMatcher(), objType).Return(credsData, nil).Once()
+				svc.On("DeleteClient", txtest.CtxWithDBMatcher(), clientID).Return(testErr).Once()
 				return svc
 			},
 			SystemAuthServiceFn: func() *automock.SystemAuthService {
@@ -340,8 +365,10 @@ func TestResolver_CommonGenerateClientCredentialsError(t *testing.T) {
 
 			resolver := oauth20.NewResolver(transact, svc, nil, rtmSvc, nil, systemAuthSvc, nil)
 
+			// When
 			_, err := resolver.GenerateClientCredentialsForRuntime(context.TODO(), id)
 
+			// Then
 			require.Error(t, err)
 			assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
 		})

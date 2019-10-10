@@ -21,6 +21,7 @@ var contextParam = txtest.CtxWithDBMatcher()
 func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
+	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	id := "foo"
 	objectID := "bar"
@@ -39,8 +40,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 
 	testCases := []struct {
 		Name               string
-		PersistenceFn      func() *persistenceautomock.PersistenceTx
-		TransactionerFn    func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		TransactionerFn     func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn          func() *automock.SystemAuthService
 		OAuthServiceFn     func() *automock.OAuth20Service
 		ConverterFn        func() *automock.SystemAuthConverter
@@ -49,18 +49,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 	}{
 		{
 			Name: "Success - Basic Auth",
-			PersistenceFn: func() *persistenceautomock.PersistenceTx {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
-				return persistTx
-			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
-
-				return transact
-			},
+			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
 				svc.On("Get", contextParam, id).Return(modelSystemAuth, nil).Once()
@@ -81,18 +70,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 		},
 		{
 			Name: "Success - OAuth",
-			PersistenceFn: func() *persistenceautomock.PersistenceTx {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
-				return persistTx
-			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
-
-				return transact
-			},
+			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
 				svc.On("Get", contextParam, id).Return(oauthModelSystemAuth, nil).Once()
@@ -114,17 +92,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 		},
 		{
 			Name: "Error - Get SystemAuth",
-			PersistenceFn: func() *persistenceautomock.PersistenceTx {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				return persistTx
-			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
-
-				return transact
-			},
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
 				svc.On("Get", contextParam, id).Return(nil, testErr).Once()
@@ -142,18 +110,8 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 			ExpectedErr:        testErr,
 		},
 		{
-			Name: "Error - Delete DB",
-			PersistenceFn: func() *persistenceautomock.PersistenceTx {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				return persistTx
-			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
-
-				return transact
-			},
+			Name: "Error - Delete from DB",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
 				svc.On("Get", contextParam, id).Return(modelSystemAuth, nil).Once()
@@ -174,17 +132,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 		},
 		{
 			Name: "Error - Delete Client",
-			PersistenceFn: func() *persistenceautomock.PersistenceTx {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				return persistTx
-			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
-
-				return transact
-			},
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
 				svc.On("Get", contextParam, id).Return(oauthModelSystemAuth, nil).Once()
@@ -207,11 +155,15 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			persistTx := testCase.PersistenceFn()
-			transact := testCase.TransactionerFn(persistTx)
+			persist, transact  := testCase.TransactionerFn()
+			defer persist.AssertExpectations(t)
+			defer transact.AssertExpectations(t)
 			svc := testCase.ServiceFn()
+			defer svc.AssertExpectations(t)
 			oauthSvc := testCase.OAuthServiceFn()
+			defer oauthSvc.AssertExpectations(t)
 			converter := testCase.ConverterFn()
+			defer converter.AssertExpectations(t)
 
 			resolver := systemauth.NewResolver(transact, svc, oauthSvc, converter)
 
@@ -225,12 +177,6 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 				require.Error(t, err)
 				assert.Equal(t, testCase.ExpectedErr.Error(), err.Error())
 			}
-
-			persistTx.AssertExpectations(t)
-			transact.AssertExpectations(t)
-			svc.AssertExpectations(t)
-			oauthSvc.AssertExpectations(t)
-			converter.AssertExpectations(t)
 		})
 	}
 }

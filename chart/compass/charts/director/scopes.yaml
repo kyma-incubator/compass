@@ -47,7 +47,7 @@ mutation:
   deleteSystemAuthForApplication: ["application:write"]
   deleteSystemAuthForIntegrationSystem: ["integration_system:write"]
 
-# Scopes assigned while generating and registering Client Credentials for given object type (Runtime / Application / Integration System)
+# Scopes assigned for every new Client Credentials by given object type (Runtime / Application / Integration System)
 __clientCredentialsRegistrationScopes:
   runtime:
     - "runtime:read"
@@ -58,4 +58,4 @@ __clientCredentialsRegistrationScopes:
   integration_system:
     - "application:read"
     - "application:write"
-    - "integration_sy stem:read"
+    - "integration_system:read"
