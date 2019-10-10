@@ -39,13 +39,13 @@ const (
 )
 
 type Operation struct {
-	OperationID string
-	Operation   OperationType
-	Started     time.Time
-	Finished    time.Time
-	State       OperationState
+	OperationID string         `db:"id"`
+	Operation   OperationType  `db:"type"`
+	Started     time.Time      `db:"start_timestamp"`
+	Finished    *time.Time     `db:"end_timestamp"`
+	State       OperationState `db:"state"`
 	Message     string
-	RuntimeID   string
+	RuntimeID   string `db:"cluster_id"`
 }
 
 type GardenerConfig struct {

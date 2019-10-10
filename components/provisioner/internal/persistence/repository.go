@@ -22,6 +22,8 @@ type Repository interface {
 	DeleteCluster(runtimeID string) dberrors.Error
 	GetRuntimeStatus(runtimeID string) (model.RuntimeStatus, dberrors.Error)
 	GetLastOperation(runtimeID string) (model.Operation, dberrors.Error)
+	GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error)
+	GetClusterConfig(runtimeID string) (interface{}, dberrors.Error)
 }
 
 type repository struct {
@@ -87,10 +89,10 @@ func (rf repositoryFactory) New() (Repository, dberrors.Error) {
 }
 
 func (r repository) InsertCluster(runtimeID string, creationTimestamp time.Time, terraformState string) dberrors.Error {
-	_, err := r.dbTransaction.InsertInto("Cluster").
+	_, err := r.dbTransaction.InsertInto("cluster").
 		Pair("id", runtimeID).
-		Pair("creationTimestamp", creationTimestamp).
-		Pair("terraformState", terraformState).
+		Pair("creation_timestamp", creationTimestamp).
+		Pair("terraform_state", terraformState).
 		Exec()
 
 	if err != nil {
@@ -106,24 +108,25 @@ func (r repository) InsertGardenerConfig(runtimeID string, config model.Gardener
 		return dberrors.Internal("Failed to generate uuid: %s.", err)
 	}
 
-	_, err = r.dbTransaction.InsertInto("GardenerConfig").
+	_, err = r.dbTransaction.InsertInto("gardener_config").
 		Pair("id", id.String()).
-		Pair("clusterId", runtimeID).
+		Pair("cluster_id", runtimeID).
+		Pair("project_name", config.ProjectName).
 		Pair("name", config.Name).
-		Pair("kubernetesVersion", config.KubernetesVersion).
-		Pair("nodeCount", config.NodeCount).
-		Pair("volumeSize", config.VolumeSize).
-		Pair("machineType", config.MachineType).
+		Pair("kubernetes_version", config.KubernetesVersion).
+		Pair("node_count", config.NodeCount).
+		Pair("volume_size", config.VolumeSize).
+		Pair("machine_type", config.MachineType).
 		Pair("region", config.Region).
 		Pair("zone", config.Zone).
-		Pair("targetProvider", config.TargetProvider).
-		Pair("targetSecret", config.TargetSecret).
-		Pair("diskType", config.DiskType).
+		Pair("target_provider", config.TargetProvider).
+		Pair("target_secret", config.TargetSecret).
+		Pair("disk_type", config.DiskType).
 		Pair("cidr", config.Cidr).
-		Pair("autoScalerMin", config.AutoScalerMin).
-		Pair("autoScalerMax", config.AutoScalerMax).
-		Pair("maxSurge", config.MaxSurge).
-		Pair("maxUnavailable", config.MaxUnavailable).
+		Pair("auto_scaler_min", config.AutoScalerMin).
+		Pair("auto_scaler_max", config.AutoScalerMax).
+		Pair("max_surge", config.MaxSurge).
+		Pair("max_unavailable", config.MaxUnavailable).
 		Exec()
 
 	if err != nil {
@@ -139,14 +142,14 @@ func (r repository) InsertGCPConfig(runtimeID string, config model.GCPConfig) db
 		return dberrors.Internal("Failed to generate uuid: %s.", err)
 	}
 
-	_, err = r.dbTransaction.InsertInto("GCPConfig").
+	_, err = r.dbTransaction.InsertInto("gcp_config").
 		Pair("id", id.String()).
-		Pair("clusterId", runtimeID).
-		Pair("name", config.Name).
-		Pair("kubernetesVersion", config.KubernetesVersion).
-		Pair("numberOfNodes", config.NumberOfNodes).
-		Pair("bootDiskSize", config.BootDiskSize).
-		Pair("machineType", config.MachineType).
+		Pair("cluster_id", runtimeID).
+		Pair("project_name", config.ProjectName).
+		Pair("kubernetes_version", config.KubernetesVersion).
+		Pair("number_of_nodes", config.NumberOfNodes).
+		Pair("boot_disk_size", config.BootDiskSize).
+		Pair("machine_type", config.MachineType).
 		Pair("zone", config.Zone).
 		Pair("region", config.Region).
 		Exec()
@@ -164,10 +167,10 @@ func (r repository) InsertKymaConfig(runtimeID string, version string) (string, 
 		return "", dberrors.Internal("Failed to generate uuid: %s.", err)
 	}
 
-	_, err = r.dbTransaction.InsertInto("KymaConfig").
+	_, err = r.dbTransaction.InsertInto("kyma_config").
 		Pair("id", id.String()).
 		Pair("version", version).
-		Pair("clusterId", runtimeID).
+		Pair("cluster_id", runtimeID).
 		Exec()
 
 	if err != nil {
@@ -183,10 +186,10 @@ func (r repository) InsertKymaConfigModule(kymaConfigID string, module model.Kym
 		return dberrors.Internal("Failed to generate uuid: %s", err)
 	}
 
-	_, err = r.dbTransaction.InsertInto("KymaConfigModule").
+	_, err = r.dbTransaction.InsertInto("kyma_config_module").
 		Pair("id", id.String()).
 		Pair("module", module).
-		Pair("kymaConfigId", kymaConfigID).
+		Pair("kyma_config_id", kymaConfigID).
 		Exec()
 
 	if err != nil {
@@ -202,13 +205,13 @@ func (r repository) InsertOperation(operation model.Operation) dberrors.Error {
 		return dberrors.Internal("Failed to generate uuid: %s.", err)
 	}
 
-	_, err = r.dbTransaction.InsertInto("Operation").
+	_, err = r.dbTransaction.InsertInto("operation").
 		Pair("id", id.String()).
 		Pair("type", operation.Operation).
 		Pair("state", operation.State).
 		Pair("message", operation.Message).
-		Pair("startTimestamp", operation.Started).
-		Pair("clusterId", operation.RuntimeID).
+		Pair("start_timestamp", operation.Started).
+		Pair("cluster_id", operation.RuntimeID).
 		Exec()
 
 	if err != nil {
@@ -219,8 +222,8 @@ func (r repository) InsertOperation(operation model.Operation) dberrors.Error {
 }
 
 func (r repository) DeleteCluster(runtimeID string) dberrors.Error {
-	_, err := r.dbTransaction.DeleteFrom("Cluster").
-		Where("clusterId", runtimeID).
+	_, err := r.dbTransaction.DeleteFrom("cluster").
+		Where(dbr.Eq("cluster_id", runtimeID)).
 		Exec()
 
 	if err != nil {
@@ -231,21 +234,124 @@ func (r repository) DeleteCluster(runtimeID string) dberrors.Error {
 }
 
 func (r repository) GetRuntimeStatus(runtimeID string) (model.RuntimeStatus, dberrors.Error) {
+	operation, err := r.GetLastOperation(runtimeID)
+	if err != nil {
+		return model.RuntimeStatus{}, err
+	}
 
-	//res, err := r.dbSession.
-	//	Select("*").
-	//	From("Cluster").
-	//	Where("clusterId", runtimeID).
-	//	Join("KymaConfig", "Cluster.Id=KymaConfig.clusterId").
-	//	RightJoin("GCPConfig", "Cluster.Id=GCPConfig.clusterId").
-	//	RightJoin("GardenerConfig", "Cluster.Id=GardenerConfig.clusterId").LoadOne()
-	//
+	clusterConfig, err := r.GetClusterConfig(runtimeID)
+	if err != nil {
+		return model.RuntimeStatus{}, err
+	}
 
-	return model.RuntimeStatus{}, nil
+	kymaConfig, err := r.GetKymaConfig(runtimeID)
+	if err != nil {
+		return model.RuntimeStatus{}, err
+	}
+
+	runtimeConfiguration := model.RuntimeConfig{
+		KymaConfig:    kymaConfig,
+		ClusterConfig: clusterConfig,
+	}
+
+	return model.RuntimeStatus{
+		LastOperationStatus:  operation,
+		RuntimeConfiguration: runtimeConfiguration,
+	}, nil
+}
+
+func (r repository) GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error) {
+	var kymaConfig []struct {
+		Version string
+		Module  string
+	}
+
+	rowsCount, err := r.dbSession.
+		Select("*").
+		From("cluster").
+		Join("kyma_config", "cluster.id=kyma_config.cluster_id").
+		Join("kyma_config_module", "kyma_config.id=kyma_config_module.kyma_config_id").
+		Where(dbr.Eq("cluster.id", runtimeID)).
+		Load(&kymaConfig)
+
+	if err != nil {
+		return model.KymaConfig{}, dberrors.Internal("Failed to get Kyma Config: %s", err)
+	}
+
+	if rowsCount == 0 {
+		return model.KymaConfig{}, dberrors.NotFound("Cannot find Kyma Config for runtimeID:'%s", runtimeID)
+	}
+
+	kymaModules := make([]model.KymaModule, 0)
+
+	for _, configModule := range kymaConfig {
+		kymaModules = append(kymaModules, model.KymaModule(configModule.Module))
+	}
+
+	return model.KymaConfig{
+		Version: kymaConfig[0].Version,
+		Modules: kymaModules,
+	}, nil
+}
+
+func (r repository) GetClusterConfig(runtimeID string) (interface{}, dberrors.Error) {
+	var gardenerConfig model.GardenerConfig
+
+	rowsCount, err := r.dbSession.
+		Select("*").
+		From("cluster").
+		LeftJoin("gardener_config", "cluster.id=gardener_config.cluster_id").
+		Where(dbr.Eq("cluster.id", runtimeID)).
+		Load(&gardenerConfig)
+
+	if err != nil {
+		return model.KymaConfig{}, dberrors.Internal("Failed to get Gardener Config: %s", err)
+	}
+
+	if rowsCount == 1 {
+		return gardenerConfig, nil
+	}
+
+	var gcpConfig model.GardenerConfig
+
+	err = r.dbSession.
+		Select("*").
+		From("cluster").
+		LeftJoin("gcp_config", "cluster.id=gcpConfig.cluster_id").
+		Where(dbr.Eq("cluster.id", runtimeID)).
+		LoadOne(&gcpConfig)
+
+	if err != nil {
+		return model.KymaConfig{}, dberrors.Internal("Failed to get Gardener Config: %s", err)
+	}
+
+	if rowsCount == 1 {
+		return gardenerConfig, nil
+	}
+
+	return model.GCPConfig{}, nil
 }
 
 func (r repository) GetLastOperation(runtimeID string) (model.Operation, dberrors.Error) {
-	return model.Operation{}, nil
+
+	lastOperationDateSelect := r.dbSession.
+		Select("MAX(start_timestamp)").
+		From("operation").
+		Where(dbr.Eq("cluster_id", runtimeID))
+
+	var operation model.Operation
+
+	err := r.dbSession.
+		Select("*").
+		From("operation").
+		Where(dbr.Eq("start_timestamp", lastOperationDateSelect)).
+		LoadOne(&operation)
+
+	if err != nil {
+		return model.Operation{}, dberrors.Internal("Failed to get last operation: %s", err)
+	}
+
+	return operation, nil
 }
 
 func (r repository) Transaction() Transaction {

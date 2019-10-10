@@ -17,7 +17,7 @@ import (
 const (
 	retryCount       = 20
 	schemaName       = "public"
-	clusterTableName = `"Cluster"`
+	clusterTableName = "cluster"
 )
 
 // InitializeDatabase opens database connection and initializes schema if it does not exist
