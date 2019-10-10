@@ -188,9 +188,37 @@ type RuntimeStatus struct {
 
 func OperationStatusToGQLOperationStatus(operation Operation) *gqlschema.OperationStatus {
 	return &gqlschema.OperationStatus{
-		Operation: gqlschema.OperationType(string(operation.Operation)),
-		State:     gqlschema.OperationState(string(operation.State)),
+		Operation: OperationTypeToGraphQLType(operation.Operation),
+		State:     OperationStateToGraphQLState(operation.State),
 		Message:   operation.Message,
 		RuntimeID: operation.RuntimeID,
+	}
+}
+
+func OperationTypeToGraphQLType(operationType OperationType) gqlschema.OperationType {
+	switch operationType {
+	case Provision:
+		return gqlschema.OperationTypeProvision
+	case Deprovision:
+		return gqlschema.OperationTypeDeprovision
+	case Upgrade:
+		return gqlschema.OperationTypeUpgrade
+	case ReconnectRuntime:
+		return gqlschema.OperationTypeReconnectRuntime
+	default:
+		return ""
+	}
+}
+
+func OperationStateToGraphQLState(state OperationState) gqlschema.OperationState {
+	switch state {
+	case InProgress:
+		return gqlschema.OperationStateInProgress
+	case Succeeded:
+		return gqlschema.OperationStateSucceeded
+	case Failed:
+		return gqlschema.OperationStateFailed
+	default:
+		return ""
 	}
 }

@@ -1,9 +1,6 @@
 package api
 
 import (
-	"context"
-	"testing"
-
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
@@ -13,13 +10,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 func TestResolver_ProvisionRuntime(t *testing.T) {
 	hydroformMock := mocks.Client{}
 	operationServiceMock := persistenceMocks.OperationService{}
 	runtimeServiceMock := persistenceMocks.RuntimeService{}
-	ctx := context.Background()
 
 	clusterConfig := &gqlschema.ClusterConfigInput{
 		GcpConfig: &gqlschema.GCPConfigInput{
@@ -45,13 +42,15 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		operationServiceMock.On("SetAsSucceeded", expOperationID).Return(nil)
 		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(types.ClusterStatus{Phase: types.Provisioned}, nil)
 
-		resolver := NewResolver(operationServiceMock, runtimeServiceMock, hydroformMock)
+		service := NewProvisioningService(operationServiceMock, runtimeServiceMock, hydroformMock)
 
 		//when
-		operationID, err := resolver.ProvisionRuntime(ctx, runtimeID, &gqlschema.ProvisionRuntimeInput{clusterConfig, &gqlschema.CredentialsInput{}, &gqlschema.KymaConfigInput{}})
+		operationID, err, finished := service.ProvisionRuntime(runtimeID, &gqlschema.ProvisionRuntimeInput{clusterConfig, &gqlschema.CredentialsInput{}, &gqlschema.KymaConfigInput{}})
+		require.NoError(t, err)
+
+		waitUntilFinished(finished)
 
 		//then
-		require.NoError(t, err)
 		assert.Equal(t, expOperationID, operationID)
 	})
 
@@ -60,10 +59,10 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		runtimeID := "0ad91f16-d553-413f-aa27-4eefd9e5f1c6"
 		runtimeServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{}, nil)
 
-		resolver := NewResolver(operationServiceMock, runtimeServiceMock, hydroformMock)
+		service := NewProvisioningService(operationServiceMock, runtimeServiceMock, hydroformMock)
 
 		//when
-		_, err := resolver.ProvisionRuntime(ctx, runtimeID, &gqlschema.ProvisionRuntimeInput{clusterConfig, &gqlschema.CredentialsInput{}, &gqlschema.KymaConfigInput{}})
+		_, err, _ := service.ProvisionRuntime(runtimeID, &gqlschema.ProvisionRuntimeInput{clusterConfig, &gqlschema.CredentialsInput{}, &gqlschema.KymaConfigInput{}})
 
 		//then
 		require.Error(t, err)
@@ -71,16 +70,18 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 }
 
 func TestResolver_DeprovisionRuntime(t *testing.T) {
-	hydroformMock := mocks.Client{}
 	operationServiceMock := persistenceMocks.OperationService{}
 	runtimeServiceMock := persistenceMocks.RuntimeService{}
+	hydroformMock := mocks.Client{}
 
-	ctx := context.Background()
+	runtimeConfig := model.RuntimeConfig{
+		ClusterConfig: model.GCPConfig{},
+	}
 
 	t.Run("Should start runtime deprovisioning and return operation ID", func(t *testing.T) {
 		//given
 		lastOperation := model.Operation{State: model.Succeeded}
-		runtimeStatus := model.RuntimeStatus{LastOperationStatus: lastOperation}
+		runtimeStatus := model.RuntimeStatus{LastOperationStatus: lastOperation, RuntimeConfiguration: runtimeConfig}
 
 		runtimeID := "92a1c394-639a-424e-8578-ba1ca7501dc1"
 		expOperationID := "c7241d2d-5ffd-434b-9a52-17ce9ee04578"
@@ -89,15 +90,76 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 		runtimeServiceMock.On("GetStatus", runtimeID).Return(runtimeStatus, nil)
 		runtimeServiceMock.On("SetDeprovisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
 		operationServiceMock.On("SetAsSucceeded", expOperationID).Return(nil)
-		hydroformMock.On("DeprovisionCluster", mock.Anything, mock.Anything).Return(types.ClusterStatus{}, nil)
+		hydroformMock.On("DeprovisionCluster", mock.Anything, mock.Anything).Return(nil)
 
-		resolver := NewResolver(operationServiceMock, runtimeServiceMock, hydroformMock)
+		resolver := NewProvisioningService(operationServiceMock, runtimeServiceMock, hydroformMock)
 
 		//when
-		opt, err := resolver.DeprovisionRuntime(ctx, runtimeID)
+		opt, err, finished := resolver.DeprovisionRuntime(runtimeID)
+		require.NoError(t, err)
+
+		waitUntilFinished(finished)
+
+		//then
+		assert.Equal(t, expOperationID, opt)
+	})
+
+	t.Run("Should not start deprovisioning when previous operation is in progress", func(t *testing.T) {
+		//given
+		runtimeID := "a24142da-1111-4ec2-93e3-e47ccaa6973f"
+		runtimeServiceMock := persistenceMocks.RuntimeService{}
+		lastOperation := model.Operation{State: model.InProgress}
+		runtimeStatus := model.RuntimeStatus{LastOperationStatus: lastOperation}
+
+		runtimeServiceMock.On("GetStatus", runtimeID).Return(runtimeStatus, nil)
+
+		resolver := NewProvisioningService(operationServiceMock, runtimeServiceMock, hydroformMock)
+
+		//when
+		_, err, _ := resolver.DeprovisionRuntime(runtimeID)
+
+		//then
+		require.Error(t, err)
+	})
+}
+
+func TestService_RuntimeOperationStatus(t *testing.T) {
+	operationServiceMock := persistenceMocks.OperationService{}
+	runtimeServiceMock := persistenceMocks.RuntimeService{}
+	hydroformMock := mocks.Client{}
+
+	t.Run("Should return operation status", func(t *testing.T) {
+		//given
+		operationID := "999f2260-8cae-4367-a38a-2355b71bf054"
+		runtimeID := "a24142da-1111-4ec2-93e3-e47ccaa6973f"
+
+		operation := model.Operation{
+			OperationID: operationID,
+			Operation:   model.Provision,
+			State:       model.InProgress,
+			RuntimeID:   runtimeID,
+			Message:     "some message",
+		}
+
+		operationServiceMock.On("Get", operationID).Return(operation, nil)
+		resolver := NewProvisioningService(operationServiceMock, runtimeServiceMock, hydroformMock)
+
+		//when
+		status, err := resolver.RuntimeOperationStatus(operationID)
 
 		//then
 		require.NoError(t, err)
-		assert.Equal(t, expOperationID, opt)
+		assert.Equal(t, gqlschema.OperationTypeProvision, status.Operation)
+		assert.Equal(t, gqlschema.OperationStateInProgress, status.State)
+		assert.Equal(t, operation.RuntimeID, status.RuntimeID)
 	})
+}
+
+func waitUntilFinished(finished chan interface{}) {
+	for {
+		_, ok := <-finished
+		if !ok {
+			break
+		}
+	}
 }
