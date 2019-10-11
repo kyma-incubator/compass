@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/persistence/txtest"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
@@ -393,11 +395,10 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 		persist.AssertExpectations(t)
 	})
 
-	t.Run("returns error if definition does not exist", func(t *testing.T) {
+	t.Run("returns nil if definition does not exist", func(t *testing.T) {
 		// GIVEN
 		mockPersistanceCtx := &pautomock.PersistenceTxOp{}
 		defer mockPersistanceCtx.AssertExpectations(t)
-		mockPersistanceCtx.On("Commit").Return(nil)
 
 		mockTransactioner := &pautomock.Transactioner{}
 		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
@@ -410,13 +411,13 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 		defer mockService.AssertExpectations(t)
 		mockService.On("Get",
 			contextThatHasTenant(tnt),
-			tnt, "key").Return(nil, nil)
+			tnt, "key").Return(nil, apperrors.NewNotFoundError(""))
 
 		sut := labeldef.NewResolver(mockService, nil, mockTransactioner)
 		// WHEN
 		_, err := sut.LabelDefinition(ctx, "key")
 		// THEN
-		require.EqualError(t, err, "label definition with key 'key' does not exist")
+		require.Nil(t, err)
 	})
 
 	t.Run("got error on getting label definition from service", func(t *testing.T) {

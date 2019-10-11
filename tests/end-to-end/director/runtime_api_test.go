@@ -211,7 +211,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "unique constraint violation")
+	assert.Contains(t, err.Error(), "not unique")
 
 	// create second runtime
 	//GIVEN
@@ -261,7 +261,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "unique constraint violation")
+	assert.Contains(t, err.Error(), "not unique")
 }
 
 func TestSetAndDeleteAPIAuth(t *testing.T) {

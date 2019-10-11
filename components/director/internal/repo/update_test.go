@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -75,7 +77,7 @@ func TestUpdateSingle(t *testing.T) {
 		// WHEN
 		err := sut.UpdateSingle(ctx, givenUser)
 		// THEN
-		require.True(t, repo.IsNotUnique(err))
+		require.True(t, apperrors.IsNotUnique(err))
 	})
 
 	t.Run("returns error if modified more than one row", func(t *testing.T) {
@@ -182,7 +184,7 @@ func TestUpdateSingleGlobal(t *testing.T) {
 		// WHEN
 		err := sut.UpdateSingleGlobal(ctx, givenUser)
 		// THEN
-		require.True(t, repo.IsNotUnique(err))
+		require.True(t, apperrors.IsNotUnique(err))
 	})
 
 	t.Run("returns error if modified more than one row", func(t *testing.T) {
