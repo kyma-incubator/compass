@@ -151,6 +151,45 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 			ExpectedSystemAuth: nil,
 			ExpectedErr:        errors.Wrap(testErr, "while deleting OAuth 2.0 client"),
 		},
+		{
+			Name:            "Error - Transaction Begin",
+			TransactionerFn: txGen.ThatFailsOnBegin,
+			ServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				return svc
+			},
+			OAuthServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				return svc
+			},
+			ConverterFn: func() *automock.SystemAuthConverter {
+				conv := &automock.SystemAuthConverter{}
+				return conv
+			},
+			ExpectedSystemAuth: nil,
+			ExpectedErr:        testErr,
+		},
+		{
+			Name:            "Error - Transaction Commit",
+			TransactionerFn: txGen.ThatFailsOnCommit,
+			ServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("Get", contextParam, id).Return(oauthModelSystemAuth, nil).Once()
+				svc.On("DeleteByIDForObject", contextParam, objectType, id).Return(nil).Once()
+				return svc
+			},
+			OAuthServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteClientCredentials", contextParam, oauthModelSystemAuth.Value.Credential.Oauth.ClientID).Return(nil)
+				return svc
+			},
+			ConverterFn: func() *automock.SystemAuthConverter {
+				conv := &automock.SystemAuthConverter{}
+				conv.On("ToGraphQL", oauthModelSystemAuth).Return(gqlSystemAuth).Once()
+				return conv
+			},
+			ExpectedErr: testErr,
+		},
 	}
 
 	for _, testCase := range testCases {
