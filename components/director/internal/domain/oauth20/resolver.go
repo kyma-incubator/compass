@@ -30,7 +30,7 @@ type RuntimeService interface {
 
 //go:generate mockery -name=IntegrationSystemService -output=automock -outpkg=automock -case=underscore
 type IntegrationSystemService interface {
-	Exist(ctx context.Context, id string) (bool, error)
+	Exists(ctx context.Context, id string) (bool, error)
 }
 
 //go:generate mockery -name=SystemAuthConverter -output=automock -outpkg=automock -case=underscore
@@ -137,7 +137,7 @@ func (r *Resolver) checkObjectExist(ctx context.Context, objType model.SystemAut
 	case model.ApplicationReference:
 		return r.appSvc.Exist(ctx, objID)
 	case model.IntegrationSystemReference:
-		return r.isSvc.Exist(ctx, objID)
+		return r.isSvc.Exists(ctx, objID)
 	}
 
 	return false, fmt.Errorf("invalid object type %s", objType)

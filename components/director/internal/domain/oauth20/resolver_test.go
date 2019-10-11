@@ -95,7 +95,7 @@ func TestResolver_CommonGenerateClientCredentialsSuccess(t *testing.T) {
 			},
 			IntegrationSystemServiceFn: func() *automock.IntegrationSystemService {
 				isSvc := &automock.IntegrationSystemService{}
-				isSvc.On("Exist", txtest.CtxWithDBMatcher(), id).Return(true, nil).Once()
+				isSvc.On("Exists", txtest.CtxWithDBMatcher(), id).Return(true, nil).Once()
 				return isSvc
 			},
 			Method: func(resolver *oauth20.Resolver, ctx context.Context, id string) (*graphql.SystemAuth, error) {
