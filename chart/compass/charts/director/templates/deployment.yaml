@@ -103,5 +103,5 @@ spec:
         {{end}}
         - name: director-config
           configMap:
-            name: {{ template "fullname" . }}-director
+            name: {{ template "fullname" . }}-config
 
