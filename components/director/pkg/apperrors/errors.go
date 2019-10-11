@@ -21,6 +21,9 @@ func NewNotFoundError(identifier string) *notFoundError {
 }
 
 func (e *notFoundError) Error() string {
+	if e.identifier == "" {
+		return "Object was not found"
+	}
 	return fmt.Sprintf("Object %s not found", e.identifier)
 }
 
