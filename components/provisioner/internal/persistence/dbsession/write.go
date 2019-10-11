@@ -1,6 +1,8 @@
 package dbsession
 
 import (
+	"database/sql"
+	"fmt"
 	"github.com/gocraft/dbr"
 	"github.com/gofrs/uuid"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
@@ -21,7 +23,7 @@ func (ws dbWriteSession) InsertCluster(runtimeID string, creationTimestamp time.
 		Exec()
 
 	if err != nil {
-		dberrors.Internal("Failed to insert record to Cluster table: %s", err)
+		return dberrors.Internal("Failed to insert record to Cluster table: %s", err)
 	}
 
 	return nil
@@ -158,6 +160,47 @@ func (ws dbWriteSession) DeleteCluster(runtimeID string) dberrors.Error {
 	return nil
 }
 
+func (ws dbWriteSession) UpdateOperationState(operationID string, message string, state model.OperationState) dberrors.Error {
+	res, err := ws.update("operation").
+		Where(dbr.Eq("id", operationID)).
+		Set("state", state).
+		Set("message", message).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to update operation %s state: %s", operationID, err)
+	}
+
+	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update operation %s state: %s", operationID, err))
+}
+
+func (ws dbWriteSession) UpdateCluster(runtimeID string, kubeconfig string, terraformState string) dberrors.Error {
+	res, err := ws.update("cluster").
+		Where(dbr.Eq("id", runtimeID)).
+		Set("kubeconfig", kubeconfig).
+		Set("terraform_state", terraformState).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to update cluster %s state: %s", runtimeID, err)
+	}
+
+	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update cluster %s data: %s", runtimeID, err))
+}
+
+func (ws dbWriteSession) updateSucceeded(result sql.Result, errorMsg string) dberrors.Error {
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return dberrors.Internal("Failed to get number of rows affected: %s", err)
+	}
+
+	if rowsAffected == 0 {
+		return dberrors.NotFound(errorMsg)
+	}
+
+	return nil
+}
+
 func (ws dbWriteSession) Commit() dberrors.Error {
 	err := ws.dbTransaction.Commit()
 	if err != nil {
@@ -190,4 +233,12 @@ func (ws dbWriteSession) deleteFrom(table string) *dbr.DeleteStmt {
 	}
 
 	return ws.dbSession.DeleteFrom(table)
+}
+
+func (ws dbWriteSession) update(table string) *dbr.UpdateStmt {
+	if ws.dbTransaction != nil {
+		return ws.dbTransaction.Update(table)
+	}
+
+	return ws.dbSession.Update(table)
 }

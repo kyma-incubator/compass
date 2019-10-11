@@ -27,6 +27,8 @@ type WriteSession interface {
 	InsertKymaConfig(runtimeID string, version string) (string, dberrors.Error)
 	InsertKymaConfigModule(kymaConfigID string, module model.KymaModule) dberrors.Error
 	InsertOperation(operation model.Operation) dberrors.Error
+	UpdateOperationState(operationID string, message string, state model.OperationState) dberrors.Error
+	UpdateCluster(runtimeID string, kubeconfig string, terraformState string) dberrors.Error
 	DeleteCluster(runtimeID string) dberrors.Error
 }
 

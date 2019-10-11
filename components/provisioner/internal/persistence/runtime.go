@@ -18,7 +18,7 @@ type RuntimeService interface {
 	SetDeprovisioningStarted(runtimeID string) (model.Operation, dberrors.Error)
 	SetUpgradeStarted(runtimeID string) (model.Operation, dberrors.Error)
 	GetLastOperation(runtimeID string) (model.Operation, dberrors.Error)
-	Update(runtimeID string, kubeconfig string, deprovisioningContext string) dberrors.Error
+	Update(runtimeID string, kubeconfig string, terraformState string) dberrors.Error
 }
 
 type runtimeService struct {
@@ -107,15 +107,52 @@ func (r runtimeService) SetProvisioningStarted(runtimeID string, runtimeConfig m
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
-	return model.Operation{}, nil
+	return operation, nil
 }
 
 func (r runtimeService) SetDeprovisioningStarted(runtimeID string) (model.Operation, dberrors.Error) {
-	return model.Operation{}, nil
+	return r.setOperationStarted(runtimeID, model.Deprovision, "Deprovisioning started.", "Deprovisioning failed: %s")
 }
 
 func (r runtimeService) SetUpgradeStarted(runtimeID string) (model.Operation, dberrors.Error) {
-	return model.Operation{}, nil
+	return r.setOperationStarted(runtimeID, model.Upgrade, "Upgrade started.", "Upgrade failed: %s")
+}
+
+func (r runtimeService) GetLastOperation(runtimeID string) (model.Operation, dberrors.Error) {
+	session := r.dbSessionFactory.NewReadSession()
+
+	return session.GetLastOperation(runtimeID)
+}
+
+func (r runtimeService) Update(runtimeID string, kubeconfig string, terraformState string) dberrors.Error {
+	session := r.dbSessionFactory.NewWriteSession()
+
+	return session.UpdateCluster(runtimeID, kubeconfig, terraformState)
+}
+
+func (r runtimeService) setOperationStarted(runtimeID string, operationType model.OperationType, message string, errorMessageFmt string) (model.Operation, dberrors.Error) {
+	dbSession := r.dbSessionFactory.NewWriteSession()
+
+	id, e := uuid.NewUUID()
+	if e != nil {
+		log.Println("Failed to create UUID")
+	}
+
+	operation := model.Operation{
+		OperationID: id.String(),
+		Operation:   model.Provision,
+		Started:     time.Now(),
+		State:       model.InProgress,
+		Message:     message,
+		RuntimeID:   runtimeID,
+	}
+
+	err := dbSession.InsertOperation(operation)
+	if err != nil {
+		return model.Operation{}, dberrors.Internal(errorMessageFmt, err)
+	}
+
+	return operation, nil
 }
 
 func rollback(transaction dbsession.Transaction, runtimeID string) {
@@ -123,12 +160,4 @@ func rollback(transaction dbsession.Transaction, runtimeID string) {
 	if err != nil {
 		logrus.Errorf("Failed to rollback transaction for runtime: '%s'.", runtimeID)
 	}
-}
-
-func (r runtimeService) GetLastOperation(runtimeID string) (model.Operation, dberrors.Error) {
-	return model.Operation{}, nil
-}
-
-func (r runtimeService) Update(runtimeID string, kubeconfig string, deprovisioningContext string) dberrors.Error {
-	return nil
 }

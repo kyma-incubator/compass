@@ -26,9 +26,13 @@ func (os operationService) Get(operationID string) (model.Operation, error) {
 }
 
 func (os operationService) SetAsFailed(operationID string, message string) error {
-	return nil
+	session := os.dbSessionFactory.NewWriteSession()
+
+	return session.UpdateOperationState(operationID, message, model.Failed)
 }
 
 func (os operationService) SetAsSucceeded(operationID string) error {
-	return nil
+	session := os.dbSessionFactory.NewWriteSession()
+
+	return session.UpdateOperationState(operationID, "Operation succeeded.", model.Failed)
 }
