@@ -2416,17 +2416,17 @@ type Query {
 type Mutation {
 	createApplication(in: ApplicationInput!): Application! @hasScopes(path: "graphql.mutation.createApplication")
 	updateApplication(id: ID!, in: ApplicationInput!): Application! @hasScopes(path: "graphql.mutation.updateApplication")
-	deleteApplication(id: ID!): Application @hasScopes(path: "graphql.mutation.deleteApplication")
+	deleteApplication(id: ID!): Application! @hasScopes(path: "graphql.mutation.deleteApplication")
 	createRuntime(in: RuntimeInput!): Runtime! @hasScopes(path: "graphql.mutation.createRuntime")
 	updateRuntime(id: ID!, in: RuntimeInput!): Runtime! @hasScopes(path: "graphql.mutation.updateRuntime")
-	deleteRuntime(id: ID!): Runtime @hasScopes(path: "graphql.mutation.deleteRuntime")
+	deleteRuntime(id: ID!): Runtime! @hasScopes(path: "graphql.mutation.deleteRuntime")
 	addWebhook(applicationID: ID!, in: WebhookInput!): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
 	updateWebhook(webhookID: ID!, in: WebhookInput!): Webhook! @hasScopes(path: "graphql.mutation.updateWebhook")
-	deleteWebhook(webhookID: ID!): Webhook @hasScopes(path: "graphql.mutation.deleteWebhook")
+	deleteWebhook(webhookID: ID!): Webhook! @hasScopes(path: "graphql.mutation.deleteWebhook")
 	addAPI(applicationID: ID!, in: APIDefinitionInput!): APIDefinition! @hasScopes(path: "graphql.mutation.addAPI")
 	updateAPI(id: ID!, in: APIDefinitionInput!): APIDefinition! @hasScopes(path: "graphql.mutation.updateAPI")
-	deleteAPI(id: ID!): APIDefinition @hasScopes(path: "graphql.mutation.deleteAPI")
-	refetchAPISpec(apiID: ID!): APISpec @hasScopes(path: "graphql.mutation.refetchAPISpec")
+	deleteAPI(id: ID!): APIDefinition! @hasScopes(path: "graphql.mutation.deleteAPI")
+	refetchAPISpec(apiID: ID!): APISpec! @hasScopes(path: "graphql.mutation.refetchAPISpec")
 	generateOneTimeTokenForRuntime(id: ID!): OneTimeToken! @hasScopes(path: "graphql.mutation.generateOneTimeTokenForRuntime")
 	generateOneTimeTokenForApplication(id: ID!): OneTimeToken! @hasScopes(path: "graphql.mutation.generateOneTimeTokenForApplication")
 	generateClientCredentialsForRuntime(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.generateClientCredentialsForRuntime")
@@ -2442,10 +2442,10 @@ type Mutation {
 	deleteAPIAuth(apiID: ID!, runtimeID: ID!): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.deleteAPIAuth")
 	addEventAPI(applicationID: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition! @hasScopes(path: "graphql.mutation.addEventAPI")
 	updateEventAPI(id: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition! @hasScopes(path: "graphql.mutation.updateEventAPI")
-	deleteEventAPI(id: ID!): EventAPIDefinition @hasScopes(path: "graphql.mutation.deleteEventAPI")
-	refetchEventAPISpec(eventID: ID!): EventAPISpec @hasScopes(path: "graphql.mutation.refetchEventAPISpec")
+	deleteEventAPI(id: ID!): EventAPIDefinition! @hasScopes(path: "graphql.mutation.deleteEventAPI")
+	refetchEventAPISpec(eventID: ID!): EventAPISpec! @hasScopes(path: "graphql.mutation.refetchEventAPISpec")
 	addDocument(applicationID: ID!, in: DocumentInput!): Document! @hasScopes(path: "graphql.mutation.addDocument")
-	deleteDocument(id: ID!): Document @hasScopes(path: "graphql.mutation.deleteDocument")
+	deleteDocument(id: ID!): Document! @hasScopes(path: "graphql.mutation.deleteDocument")
 	createLabelDefinition(in: LabelDefinitionInput!): LabelDefinition! @hasScopes(path: "graphql.mutation.createLabelDefinition")
 	updateLabelDefinition(in: LabelDefinitionInput!): LabelDefinition! @hasScopes(path: "graphql.mutation.updateLabelDefinition")
 	deleteLabelDefinition(key: String!, deleteRelatedLabels: Boolean = false): LabelDefinition! @hasScopes(path: "graphql.mutation.deleteLabelDefinition")
@@ -6007,12 +6007,15 @@ func (ec *executionContext) _Mutation_deleteApplication(ctx context.Context, fie
 		return ec.resolvers.Mutation().DeleteApplication(rctx, args["id"].(string))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*Application)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx, field.Selections, res)
+	return ec.marshalNApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_createRuntime(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -6106,12 +6109,15 @@ func (ec *executionContext) _Mutation_deleteRuntime(ctx context.Context, field g
 		return ec.resolvers.Mutation().DeleteRuntime(rctx, args["id"].(string))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*Runtime)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalORuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntime(ctx, field.Selections, res)
+	return ec.marshalNRuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_addWebhook(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -6205,12 +6211,15 @@ func (ec *executionContext) _Mutation_deleteWebhook(ctx context.Context, field g
 		return ec.resolvers.Mutation().DeleteWebhook(rctx, args["webhookID"].(string))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*Webhook)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx, field.Selections, res)
+	return ec.marshalNWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_addAPI(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -6304,12 +6313,15 @@ func (ec *executionContext) _Mutation_deleteAPI(ctx context.Context, field graph
 		return ec.resolvers.Mutation().DeleteAPI(rctx, args["id"].(string))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*APIDefinition)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinition(ctx, field.Selections, res)
+	return ec.marshalNAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_refetchAPISpec(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -6335,12 +6347,15 @@ func (ec *executionContext) _Mutation_refetchAPISpec(ctx context.Context, field 
 		return ec.resolvers.Mutation().RefetchAPISpec(rctx, args["apiID"].(string))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*APISpec)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpec(ctx, field.Selections, res)
+	return ec.marshalNAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpec(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_generateOneTimeTokenForRuntime(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -6774,12 +6789,15 @@ func (ec *executionContext) _Mutation_deleteEventAPI(ctx context.Context, field 
 		return ec.resolvers.Mutation().DeleteEventAPI(rctx, args["id"].(string))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*EventAPIDefinition)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOEventAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinition(ctx, field.Selections, res)
+	return ec.marshalNEventAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_refetchEventAPISpec(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -6805,12 +6823,15 @@ func (ec *executionContext) _Mutation_refetchEventAPISpec(ctx context.Context, f
 		return ec.resolvers.Mutation().RefetchEventAPISpec(rctx, args["eventID"].(string))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*EventAPISpec)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOEventAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPISpec(ctx, field.Selections, res)
+	return ec.marshalNEventAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPISpec(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_addDocument(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -6870,12 +6891,15 @@ func (ec *executionContext) _Mutation_deleteDocument(ctx context.Context, field 
 		return ec.resolvers.Mutation().DeleteDocument(rctx, args["id"].(string))
 	})
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*Document)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalODocument2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocument(ctx, field.Selections, res)
+	return ec.marshalNDocument2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocument(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_createLabelDefinition(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -10732,6 +10756,9 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "deleteApplication":
 			out.Values[i] = ec._Mutation_deleteApplication(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "createRuntime":
 			out.Values[i] = ec._Mutation_createRuntime(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -10744,6 +10771,9 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "deleteRuntime":
 			out.Values[i] = ec._Mutation_deleteRuntime(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "addWebhook":
 			out.Values[i] = ec._Mutation_addWebhook(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -10756,6 +10786,9 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "deleteWebhook":
 			out.Values[i] = ec._Mutation_deleteWebhook(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "addAPI":
 			out.Values[i] = ec._Mutation_addAPI(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -10768,8 +10801,14 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "deleteAPI":
 			out.Values[i] = ec._Mutation_deleteAPI(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "refetchAPISpec":
 			out.Values[i] = ec._Mutation_refetchAPISpec(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "generateOneTimeTokenForRuntime":
 			out.Values[i] = ec._Mutation_generateOneTimeTokenForRuntime(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -10832,8 +10871,14 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "deleteEventAPI":
 			out.Values[i] = ec._Mutation_deleteEventAPI(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "refetchEventAPISpec":
 			out.Values[i] = ec._Mutation_refetchEventAPISpec(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "addDocument":
 			out.Values[i] = ec._Mutation_addDocument(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -10841,6 +10886,9 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "deleteDocument":
 			out.Values[i] = ec._Mutation_deleteDocument(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "createLabelDefinition":
 			out.Values[i] = ec._Mutation_createLabelDefinition(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -11739,6 +11787,20 @@ func (ec *executionContext) marshalNAPIRuntimeAuth2ᚖgithubᚗcomᚋkymaᚑincu
 		return graphql.Null
 	}
 	return ec._APIRuntimeAuth(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNAPISpec2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpec(ctx context.Context, sel ast.SelectionSet, v APISpec) graphql.Marshaler {
+	return ec._APISpec(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpec(ctx context.Context, sel ast.SelectionSet, v *APISpec) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._APISpec(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNAPISpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpecType(ctx context.Context, v interface{}) (APISpecType, error) {
@@ -12840,17 +12902,6 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
-func (ec *executionContext) marshalOAPIDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinition(ctx context.Context, sel ast.SelectionSet, v APIDefinition) graphql.Marshaler {
-	return ec._APIDefinition(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinition(ctx context.Context, sel ast.SelectionSet, v *APIDefinition) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._APIDefinition(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalOAPIDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionInput(ctx context.Context, v interface{}) ([]*APIDefinitionInput, error) {
 	var vSlice []interface{}
 	if v != nil {
@@ -13033,17 +13084,6 @@ func (ec *executionContext) unmarshalOCredentialRequestAuthInput2ᚖgithubᚗcom
 	return &res, err
 }
 
-func (ec *executionContext) marshalODocument2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocument(ctx context.Context, sel ast.SelectionSet, v Document) graphql.Marshaler {
-	return ec._Document(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalODocument2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocument(ctx context.Context, sel ast.SelectionSet, v *Document) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._Document(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalODocumentInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocumentInput(ctx context.Context, v interface{}) ([]*DocumentInput, error) {
 	var vSlice []interface{}
 	if v != nil {
@@ -13064,17 +13104,6 @@ func (ec *executionContext) unmarshalODocumentInput2ᚕᚖgithubᚗcomᚋkymaᚑ
 	return res, nil
 }
 
-func (ec *executionContext) marshalOEventAPIDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinition(ctx context.Context, sel ast.SelectionSet, v EventAPIDefinition) graphql.Marshaler {
-	return ec._EventAPIDefinition(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOEventAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinition(ctx context.Context, sel ast.SelectionSet, v *EventAPIDefinition) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._EventAPIDefinition(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalOEventAPIDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinitionInput(ctx context.Context, v interface{}) ([]*EventAPIDefinitionInput, error) {
 	var vSlice []interface{}
 	if v != nil {
@@ -13093,17 +13122,6 @@ func (ec *executionContext) unmarshalOEventAPIDefinitionInput2ᚕᚖgithubᚗcom
 		}
 	}
 	return res, nil
-}
-
-func (ec *executionContext) marshalOEventAPISpec2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPISpec(ctx context.Context, sel ast.SelectionSet, v EventAPISpec) graphql.Marshaler {
-	return ec._EventAPISpec(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOEventAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPISpec(ctx context.Context, sel ast.SelectionSet, v *EventAPISpec) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._EventAPISpec(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOFetchMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchMode(ctx context.Context, v interface{}) (FetchMode, error) {
@@ -13477,17 +13495,6 @@ func (ec *executionContext) unmarshalOVersionInput2ᚖgithubᚗcomᚋkymaᚑincu
 	}
 	res, err := ec.unmarshalOVersionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐVersionInput(ctx, v)
 	return &res, err
-}
-
-func (ec *executionContext) marshalOWebhook2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx context.Context, sel ast.SelectionSet, v Webhook) graphql.Marshaler {
-	return ec._Webhook(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx context.Context, sel ast.SelectionSet, v *Webhook) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._Webhook(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOWebhookInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInput(ctx context.Context, v interface{}) ([]*WebhookInput, error) {
