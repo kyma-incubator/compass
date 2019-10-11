@@ -57,7 +57,7 @@ func TestService_CreateClient(t *testing.T) {
 			},
 			ScopeCfgProviderFn: func() *automock.ScopeCfgProvider {
 				scopeCfgProvider := &automock.ScopeCfgProvider{}
-				scopeCfgProvider.On("GetRequiredScopes", "__clientCredentialsRegistrationScopes.integration_system").Return(scopes, nil).Once()
+				scopeCfgProvider.On("GetRequiredScopes", "clientCredentialsRegistrationScopes.integration_system").Return(scopes, nil).Once()
 				return scopeCfgProvider
 			},
 			HTTPServerFn: fixSuccessCreateClientHTTPServer(expectedReqBody),
@@ -67,7 +67,7 @@ func TestService_CreateClient(t *testing.T) {
 			ExpectedError: errors.New("invalid HTTP status code: received: 500, expected 201"),
 			ScopeCfgProviderFn: func() *automock.ScopeCfgProvider {
 				scopeCfgProvider := &automock.ScopeCfgProvider{}
-				scopeCfgProvider.On("GetRequiredScopes", "__clientCredentialsRegistrationScopes.integration_system").Return(scopes, nil).Once()
+				scopeCfgProvider.On("GetRequiredScopes", "clientCredentialsRegistrationScopes.integration_system").Return(scopes, nil).Once()
 				return scopeCfgProvider
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -87,7 +87,7 @@ func TestService_CreateClient(t *testing.T) {
 			ExpectedError: errors.New("while decoding response body: invalid character 'D' looking for beginning of value"),
 			ScopeCfgProviderFn: func() *automock.ScopeCfgProvider {
 				scopeCfgProvider := &automock.ScopeCfgProvider{}
-				scopeCfgProvider.On("GetRequiredScopes", "__clientCredentialsRegistrationScopes.integration_system").Return(scopes, nil).Once()
+				scopeCfgProvider.On("GetRequiredScopes", "clientCredentialsRegistrationScopes.integration_system").Return(scopes, nil).Once()
 				return scopeCfgProvider
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -109,7 +109,7 @@ func TestService_CreateClient(t *testing.T) {
 			ExpectedError: errors.New("connect: connection refused"),
 			ScopeCfgProviderFn: func() *automock.ScopeCfgProvider {
 				scopeCfgProvider := &automock.ScopeCfgProvider{}
-				scopeCfgProvider.On("GetRequiredScopes", "__clientCredentialsRegistrationScopes.integration_system").Return(scopes, nil).Once()
+				scopeCfgProvider.On("GetRequiredScopes", "clientCredentialsRegistrationScopes.integration_system").Return(scopes, nil).Once()
 				return scopeCfgProvider
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -128,7 +128,7 @@ func TestService_CreateClient(t *testing.T) {
 			ExpectedError: errors.New("while getting scopes for registering Client Credentials: test err"),
 			ScopeCfgProviderFn: func() *automock.ScopeCfgProvider {
 				scopeCfgProvider := &automock.ScopeCfgProvider{}
-				scopeCfgProvider.On("GetRequiredScopes", "__clientCredentialsRegistrationScopes.integration_system").Return(nil, testErr).Once()
+				scopeCfgProvider.On("GetRequiredScopes", "clientCredentialsRegistrationScopes.integration_system").Return(nil, testErr).Once()
 				return scopeCfgProvider
 			},
 			UIDServiceFn: func() *automock.UIDService {
