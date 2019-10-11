@@ -34,5 +34,5 @@ func (os operationService) SetAsFailed(operationID string, message string) error
 func (os operationService) SetAsSucceeded(operationID string) error {
 	session := os.dbSessionFactory.NewWriteSession()
 
-	return session.UpdateOperationState(operationID, "Operation succeeded.", model.Failed)
+	return session.UpdateOperationState(operationID, "Operation succeeded.", model.Succeeded)
 }

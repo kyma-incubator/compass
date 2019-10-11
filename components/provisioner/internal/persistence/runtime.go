@@ -2,10 +2,8 @@ package persistence
 
 import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dbsession"
-	"log"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
@@ -19,6 +17,7 @@ type RuntimeService interface {
 	SetUpgradeStarted(runtimeID string) (model.Operation, dberrors.Error)
 	GetLastOperation(runtimeID string) (model.Operation, dberrors.Error)
 	Update(runtimeID string, kubeconfig string, terraformState string) dberrors.Error
+	CleanupData(runtimeID string) dberrors.Error
 }
 
 type runtimeService struct {
@@ -32,7 +31,9 @@ func NewRuntimeService(dbSessionFactory dbsession.DBSessionFactory) RuntimeServi
 }
 
 func (r runtimeService) GetStatus(runtimeID string) (model.RuntimeStatus, dberrors.Error) {
-	return model.RuntimeStatus{}, nil
+	session := r.dbSessionFactory.NewReadSession()
+
+	return session.GetRuntimeStatus(runtimeID)
 }
 
 func (r runtimeService) SetProvisioningStarted(runtimeID string, runtimeConfig model.RuntimeConfig) (model.Operation, dberrors.Error) {
@@ -82,25 +83,21 @@ func (r runtimeService) SetProvisioningStarted(runtimeID string, runtimeConfig m
 		}
 	}
 
-	id, e := uuid.NewUUID()
-	if e != nil {
-		log.Println("Failed to create UUID")
-	}
-
 	operation := model.Operation{
-		OperationID: id.String(),
-		Operation:   model.Provision,
-		Started:     timestamp,
-		State:       model.InProgress,
-		Message:     "Provisioning started",
-		RuntimeID:   runtimeID,
+		Operation: model.Provision,
+		Started:   timestamp,
+		State:     model.InProgress,
+		Message:   "Provisioning started",
+		RuntimeID: runtimeID,
 	}
 
-	err = dbSession.InsertOperation(operation)
+	operationID, err := dbSession.InsertOperation(operation)
 	if err != nil {
 		rollback(dbSession, runtimeID)
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
+
+	operation.OperationID = operationID
 
 	err = dbSession.Commit()
 	if err != nil {
@@ -130,27 +127,29 @@ func (r runtimeService) Update(runtimeID string, kubeconfig string, terraformSta
 	return session.UpdateCluster(runtimeID, kubeconfig, terraformState)
 }
 
+func (r runtimeService) CleanupData(runtimeID string) dberrors.Error {
+	session := r.dbSessionFactory.NewWriteSession()
+
+	return session.CleanupData(runtimeID)
+}
+
 func (r runtimeService) setOperationStarted(runtimeID string, operationType model.OperationType, message string, errorMessageFmt string) (model.Operation, dberrors.Error) {
 	dbSession := r.dbSessionFactory.NewWriteSession()
 
-	id, e := uuid.NewUUID()
-	if e != nil {
-		log.Println("Failed to create UUID")
-	}
-
 	operation := model.Operation{
-		OperationID: id.String(),
-		Operation:   model.Provision,
-		Started:     time.Now(),
-		State:       model.InProgress,
-		Message:     message,
-		RuntimeID:   runtimeID,
+		Operation: operationType,
+		Started:   time.Now(),
+		State:     model.InProgress,
+		Message:   message,
+		RuntimeID: runtimeID,
 	}
 
-	err := dbSession.InsertOperation(operation)
+	operationID, err := dbSession.InsertOperation(operation)
 	if err != nil {
 		return model.Operation{}, dberrors.Internal(errorMessageFmt, err)
 	}
+
+	operation.OperationID = operationID
 
 	return operation, nil
 }

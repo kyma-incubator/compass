@@ -126,10 +126,10 @@ func (ws dbWriteSession) InsertKymaConfigModule(kymaConfigID string, module mode
 	return nil
 }
 
-func (ws dbWriteSession) InsertOperation(operation model.Operation) dberrors.Error {
+func (ws dbWriteSession) InsertOperation(operation model.Operation) (string, dberrors.Error) {
 	id, err := uuid.NewV4()
 	if err != nil {
-		return dberrors.Internal("Failed to generate uuid: %s.", err)
+		return "", dberrors.Internal("Failed to generate uuid: %s.", err)
 	}
 
 	_, err = ws.insertInto("operation").
@@ -142,15 +142,15 @@ func (ws dbWriteSession) InsertOperation(operation model.Operation) dberrors.Err
 		Exec()
 
 	if err != nil {
-		return dberrors.Internal("Failed to insert record to Operation table: %s", err)
+		return "", dberrors.Internal("Failed to insert record to Operation table: %s", err)
 	}
 
-	return nil
+	return id.String(), nil
 }
 
-func (ws dbWriteSession) DeleteCluster(runtimeID string) dberrors.Error {
+func (ws dbWriteSession) CleanupData(runtimeID string) dberrors.Error {
 	_, err := ws.deleteFrom("cluster").
-		Where(dbr.Eq("cluster_id", runtimeID)).
+		Where(dbr.Eq("id", runtimeID)).
 		Exec()
 
 	if err != nil {
