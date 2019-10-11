@@ -4,8 +4,7 @@ import (
 	"context"
 	"os"
 	"reflect"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/scope"
+	"strings"
 
 	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/jwtbuilder"
 	gcli "github.com/machinebox/graphql"
@@ -39,18 +38,8 @@ type testContext struct {
 }
 
 func newTestContext() (*testContext, error) {
-	scopesCfgPath := os.Getenv("SCOPES_CONFIGURATION_FILE")
-	scopeProvider := scope.NewProvider(scopesCfgPath)
-
-	err := scopeProvider.Load()
-	if err != nil {
-		return nil, errors.Wrap(err, "while loading config for scopes")
-	}
-
-	currentScopes, err := scopeProvider.GetAllScopes()
-	if err != nil {
-		return nil, err
-	}
+	scopesStr := os.Getenv("ALL_SCOPES")
+	currentScopes := strings.Split(scopesStr, " ")
 
 	bearerToken, err := jwtbuilder.Do(defaultTenant, currentScopes)
 	if err != nil {
@@ -60,7 +49,6 @@ func newTestContext() (*testContext, error) {
 	return &testContext{
 		graphqlizer:       graphqlizer{},
 		gqlFieldsProvider: gqlFieldsProvider{},
-		scopeProvider:     scopeProvider,
 		currentScopes:     currentScopes,
 		cli:               newAuthorizedGraphQLClient(bearerToken),
 	}, nil

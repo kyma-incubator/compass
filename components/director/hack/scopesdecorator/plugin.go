@@ -12,10 +12,11 @@ import (
 type GraphqlOperationType string
 
 const (
-	Query         GraphqlOperationType = "query"
-	Mutation      GraphqlOperationType = "mutation"
-	directiveName                      = "hasScopes"
-	directiveArg                       = "path"
+	directiveArgumentPrefix                      = "graphql"
+	Query                   GraphqlOperationType = "query"
+	Mutation                GraphqlOperationType = "mutation"
+	directiveName                                = "hasScopes"
+	directiveArg                                 = "path"
 )
 
 var _ plugin.ConfigMutator = &scopesDecoratorPlugin{}
@@ -89,7 +90,7 @@ func (p *scopesDecoratorPlugin) getDirective(def *ast.FieldDefinition) *ast.Dire
 
 func (p *scopesDecoratorPlugin) getDirectiveArguments(opType GraphqlOperationType, opName string) ast.ArgumentList {
 	var args ast.ArgumentList
-	path := fmt.Sprintf("%s.%s", opType, opName)
+	path := fmt.Sprintf("%s.%s.%s", directiveArgumentPrefix, opType, opName)
 	args = append(args, &ast.Argument{Name: directiveArg, Value: &ast.Value{Raw: path, Kind: ast.StringValue}})
 	return args
 }

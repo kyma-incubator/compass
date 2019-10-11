@@ -30,13 +30,6 @@ spec:
           env:
           - name: DIRECTOR_GRAPHQL_API
             value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.port }}/graphql"
-          - name: SCOPES_CONFIGURATION_FILE
-            value: /config/scopes.yaml
-          volumeMounts:
-            - mountPath: /config
-              name: scopes-config
-      volumes:
-        - name: scopes-config
-          configMap:
-            name: compass-director-scopes
+          - name: ALL_SCOPES
+            value: "runtime:write application:write label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read"
     restartPolicy: Never

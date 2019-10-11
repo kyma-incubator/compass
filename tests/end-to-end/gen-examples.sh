@@ -70,11 +70,11 @@ docker build -t $DIRECTOR_IMG_NAME ./
 
 echo -e "${GREEN}Running Director...${NC}"
 
-SCOPES_CONFIGURATION_FILE_PATH="${ROOT_PATH}/chart/compass/charts/director/scopes.yaml"
+SCOPES_CONFIGURATION_FILE_PATH="${ROOT_PATH}/chart/compass/charts/director/config.yaml"
 
 docker run --name ${DIRECTOR_CONTAINER} -d --rm --network=${NETWORK} \
     -p ${APP_PORT}:${APP_PORT} \
-    -v "${SCOPES_CONFIGURATION_FILE_PATH}:/app/scopes.yaml" \
+    -v "${SCOPES_CONFIGURATION_FILE_PATH}:/app/config.yaml" \
     -v "${ROOT_PATH}/components/director/hack/default-jwks.json:/app/default-jwks.json" \
     -e APP_ADDRESS=0.0.0.0:${APP_PORT} \
     -e APP_DB_USER=${DB_USER} \
@@ -82,7 +82,9 @@ docker run --name ${DIRECTOR_CONTAINER} -d --rm --network=${NETWORK} \
     -e APP_DB_HOST=${POSTGRES_CONTAINER} \
     -e APP_DB_PORT=${DB_PORT} \
     -e APP_DB_NAME=${DB_NAME} \
-    -e APP_SCOPES_CONFIGURATION_FILE=/app/scopes.yaml \
+    -e APP_SCOPES_CONFIGURATION_FILE=/app/config.yaml \
+    -e APP_OAUTH20_CLIENT_ENDPOINT="https://oauth2-admin.kyma.local/clients" \
+    -e APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT="https://oauth2.kyma.local/oauth2/token" \
     -e APP_ONE_TIME_TOKEN_URL=http://connector.not.configured.url/graphql \
     -e APP_CONNECTOR_URL=http://connector.not.configured.url/graphql \
     -e APP_JWKS_ENDPOINT="file:///app/default-jwks.json" \
@@ -119,7 +121,9 @@ rm -f "${ROOT_PATH}/examples/"*
 
 echo -e "${GREEN}Running Director tests with generating examples...${NC}"
 go test -c "${SCRIPT_DIR}/director/" -tags no_token_test
-DIRECTOR_GRAPHQL_API="http://localhost:${APP_PORT}/graphql" SCOPES_CONFIGURATION_FILE="${SCOPES_CONFIGURATION_FILE_PATH}" ./director.test
+DIRECTOR_GRAPHQL_API="http://localhost:${APP_PORT}/graphql" \
+ALL_SCOPES="runtime:write application:write label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read" \
+./director.test
 
 echo -e "${GREEN}Prettifying GraphQL examples...${NC}"
 img="prettier:latest"

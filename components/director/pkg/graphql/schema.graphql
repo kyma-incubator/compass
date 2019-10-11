@@ -412,6 +412,9 @@ type LabelDefinition {
 type OAuthCredentialData {
 	clientId: ID!
 	clientSecret: String!
+	"""
+	URL for getting access token
+	"""
 	url: String!
 }
 
@@ -482,70 +485,73 @@ type Query {
 	"""
 	Maximum `first` parameter value is 100
 	"""
-	applications(filter: [LabelFilter!], first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "query.applications")
-	application(id: ID!): Application @hasScopes(path: "query.application")
+	applications(filter: [LabelFilter!], first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applications")
+	application(id: ID!): Application @hasScopes(path: "graphql.query.application")
 	"""
 	Maximum `first` parameter value is 100
 	"""
-	applicationsForRuntime(runtimeID: ID!, first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "query.applicationsForRuntime")
+	applicationsForRuntime(runtimeID: ID!, first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applicationsForRuntime")
 	"""
 	Maximum `first` parameter value is 100
 	"""
-	runtimes(filter: [LabelFilter!], first: Int = 100, after: PageCursor): RuntimePage! @hasScopes(path: "query.runtimes")
-	runtime(id: ID!): Runtime @hasScopes(path: "query.runtime")
-	labelDefinitions: [LabelDefinition!]! @hasScopes(path: "query.labelDefinitions")
-	labelDefinition(key: String!): LabelDefinition @hasScopes(path: "query.labelDefinition")
-	healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: PageCursor): HealthCheckPage! @hasScopes(path: "query.healthChecks")
+	runtimes(filter: [LabelFilter!], first: Int = 100, after: PageCursor): RuntimePage! @hasScopes(path: "graphql.query.runtimes")
+	runtime(id: ID!): Runtime @hasScopes(path: "graphql.query.runtime")
+	labelDefinitions: [LabelDefinition!]! @hasScopes(path: "graphql.query.labelDefinitions")
+	labelDefinition(key: String!): LabelDefinition @hasScopes(path: "graphql.query.labelDefinition")
+	healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: PageCursor): HealthCheckPage! @hasScopes(path: "graphql.query.healthChecks")
 }
 
 type Mutation {
-	createApplication(in: ApplicationInput!): Application! @hasScopes(path: "mutation.createApplication")
-	updateApplication(id: ID!, in: ApplicationInput!): Application! @hasScopes(path: "mutation.updateApplication")
-	deleteApplication(id: ID!): Application! @hasScopes(path: "mutation.deleteApplication")
-	createRuntime(in: RuntimeInput!): Runtime! @hasScopes(path: "mutation.createRuntime")
-	updateRuntime(id: ID!, in: RuntimeInput!): Runtime! @hasScopes(path: "mutation.updateRuntime")
-	deleteRuntime(id: ID!): Runtime! @hasScopes(path: "mutation.deleteRuntime")
-	addWebhook(applicationID: ID!, in: WebhookInput!): Webhook! @hasScopes(path: "mutation.addWebhook")
-	updateWebhook(webhookID: ID!, in: WebhookInput!): Webhook! @hasScopes(path: "mutation.updateWebhook")
-	deleteWebhook(webhookID: ID!): Webhook! @hasScopes(path: "mutation.deleteWebhook")
-	addAPI(applicationID: ID!, in: APIDefinitionInput!): APIDefinition! @hasScopes(path: "mutation.addAPI")
-	updateAPI(id: ID!, in: APIDefinitionInput!): APIDefinition! @hasScopes(path: "mutation.updateAPI")
-	deleteAPI(id: ID!): APIDefinition! @hasScopes(path: "mutation.deleteAPI")
-	refetchAPISpec(apiID: ID!): APISpec! @hasScopes(path: "mutation.refetchAPISpec")
-	generateOneTimeTokenForRuntime(id: ID!): OneTimeToken! @hasScopes(path: "mutation.generateOneTimeTokenForRuntime")
-	generateOneTimeTokenForApplication(id: ID!): OneTimeToken! @hasScopes(path: "mutation.generateOneTimeTokenForApplication")
-	deleteSystemAuthForRuntime(authID: ID!): SystemAuth! @hasScopes(path: "mutation.deleteSystemAuthForRuntime")
-	deleteSystemAuthForApplication(authID: ID!): SystemAuth! @hasScopes(path: "mutation.deleteSystemAuthForApplication")
-	deleteSystemAuthForIntegrationSystem(authID: ID!): SystemAuth! @hasScopes(path: "mutation.deleteSystemAuthForIntegrationSystem")
+	createApplication(in: ApplicationInput!): Application! @hasScopes(path: "graphql.mutation.createApplication")
+	updateApplication(id: ID!, in: ApplicationInput!): Application! @hasScopes(path: "graphql.mutation.updateApplication")
+	deleteApplication(id: ID!): Application! @hasScopes(path: "graphql.mutation.deleteApplication")
+	createRuntime(in: RuntimeInput!): Runtime! @hasScopes(path: "graphql.mutation.createRuntime")
+	updateRuntime(id: ID!, in: RuntimeInput!): Runtime! @hasScopes(path: "graphql.mutation.updateRuntime")
+	deleteRuntime(id: ID!): Runtime! @hasScopes(path: "graphql.mutation.deleteRuntime")
+	addWebhook(applicationID: ID!, in: WebhookInput!): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
+	updateWebhook(webhookID: ID!, in: WebhookInput!): Webhook! @hasScopes(path: "graphql.mutation.updateWebhook")
+	deleteWebhook(webhookID: ID!): Webhook! @hasScopes(path: "graphql.mutation.deleteWebhook")
+	addAPI(applicationID: ID!, in: APIDefinitionInput!): APIDefinition! @hasScopes(path: "graphql.mutation.addAPI")
+	updateAPI(id: ID!, in: APIDefinitionInput!): APIDefinition! @hasScopes(path: "graphql.mutation.updateAPI")
+	deleteAPI(id: ID!): APIDefinition! @hasScopes(path: "graphql.mutation.deleteAPI")
+	refetchAPISpec(apiID: ID!): APISpec! @hasScopes(path: "graphql.mutation.refetchAPISpec")
+	generateOneTimeTokenForRuntime(id: ID!): OneTimeToken! @hasScopes(path: "graphql.mutation.generateOneTimeTokenForRuntime")
+	generateOneTimeTokenForApplication(id: ID!): OneTimeToken! @hasScopes(path: "graphql.mutation.generateOneTimeTokenForApplication")
+	generateClientCredentialsForRuntime(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.generateClientCredentialsForRuntime")
+	generateClientCredentialsForApplication(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.generateClientCredentialsForApplication")
+	generateClientCredentialsForIntegrationSystem(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.generateClientCredentialsForIntegrationSystem")
+	deleteSystemAuthForRuntime(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForRuntime")
+	deleteSystemAuthForApplication(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForApplication")
+	deleteSystemAuthForIntegrationSystem(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForIntegrationSystem")
 	"""
 	Sets Auth for given Application and Runtime. To set default Auth for API, use updateAPI mutation
 	"""
-	setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput!): APIRuntimeAuth! @hasScopes(path: "mutation.setAPIAuth")
-	deleteAPIAuth(apiID: ID!, runtimeID: ID!): APIRuntimeAuth! @hasScopes(path: "mutation.deleteAPIAuth")
-	addEventAPI(applicationID: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition! @hasScopes(path: "mutation.addEventAPI")
-	updateEventAPI(id: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition! @hasScopes(path: "mutation.updateEventAPI")
-	deleteEventAPI(id: ID!): EventAPIDefinition! @hasScopes(path: "mutation.deleteEventAPI")
-	refetchEventAPISpec(eventID: ID!): EventAPISpec! @hasScopes(path: "mutation.refetchEventAPISpec")
-	addDocument(applicationID: ID!, in: DocumentInput!): Document! @hasScopes(path: "mutation.addDocument")
-	deleteDocument(id: ID!): Document! @hasScopes(path: "mutation.deleteDocument")
-	createLabelDefinition(in: LabelDefinitionInput!): LabelDefinition! @hasScopes(path: "mutation.createLabelDefinition")
-	updateLabelDefinition(in: LabelDefinitionInput!): LabelDefinition! @hasScopes(path: "mutation.updateLabelDefinition")
-	deleteLabelDefinition(key: String!, deleteRelatedLabels: Boolean = false): LabelDefinition! @hasScopes(path: "mutation.deleteLabelDefinition")
+	setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput!): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.setAPIAuth")
+	deleteAPIAuth(apiID: ID!, runtimeID: ID!): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.deleteAPIAuth")
+	addEventAPI(applicationID: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition! @hasScopes(path: "graphql.mutation.addEventAPI")
+	updateEventAPI(id: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition! @hasScopes(path: "graphql.mutation.updateEventAPI")
+	deleteEventAPI(id: ID!): EventAPIDefinition! @hasScopes(path: "graphql.mutation.deleteEventAPI")
+	refetchEventAPISpec(eventID: ID!): EventAPISpec! @hasScopes(path: "graphql.mutation.refetchEventAPISpec")
+	addDocument(applicationID: ID!, in: DocumentInput!): Document! @hasScopes(path: "graphql.mutation.addDocument")
+	deleteDocument(id: ID!): Document! @hasScopes(path: "graphql.mutation.deleteDocument")
+	createLabelDefinition(in: LabelDefinitionInput!): LabelDefinition! @hasScopes(path: "graphql.mutation.createLabelDefinition")
+	updateLabelDefinition(in: LabelDefinitionInput!): LabelDefinition! @hasScopes(path: "graphql.mutation.updateLabelDefinition")
+	deleteLabelDefinition(key: String!, deleteRelatedLabels: Boolean = false): LabelDefinition! @hasScopes(path: "graphql.mutation.deleteLabelDefinition")
 	"""
 	If a label with given key already exist, it will be replaced with provided value.
 	"""
-	setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "mutation.setApplicationLabel")
+	setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setApplicationLabel")
 	"""
 	If Application does not exist or the label key is not found, it returns an error.
 	"""
-	deleteApplicationLabel(applicationID: ID!, key: String!): Label! @hasScopes(path: "mutation.deleteApplicationLabel")
+	deleteApplicationLabel(applicationID: ID!, key: String!): Label! @hasScopes(path: "graphql.mutation.deleteApplicationLabel")
 	"""
 	If a label with given key already exist, it will be replaced with provided value.
 	"""
-	setRuntimeLabel(runtimeID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "mutation.setRuntimeLabel")
+	setRuntimeLabel(runtimeID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setRuntimeLabel")
 	"""
 	If Runtime does not exist or the label key is not found, it returns an error.
 	"""
-	deleteRuntimeLabel(runtimeID: ID!, key: String!): Label! @hasScopes(path: "mutation.deleteRuntimeLabel")
+	deleteRuntimeLabel(runtimeID: ID!, key: String!): Label! @hasScopes(path: "graphql.mutation.deleteRuntimeLabel")
 }
 
