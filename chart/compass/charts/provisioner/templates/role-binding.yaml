@@ -1,0 +1,30 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ template "fullname" . }}-role
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+rules:
+- apiGroups: ["*"]
+  resources: ["secrets"]
+  verbs: ["get"]
+
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ template "fullname" . }}-rolebinding
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+subjects:
+- kind: ServiceAccount
+  name: {{ template "fullname" . }}
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ template "fullname" . }}-role
+  apiGroup: rbac.authorization.k8s.io

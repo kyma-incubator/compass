@@ -31,6 +31,8 @@ spec:
               value: "0.0.0.0:{{ .Values.global.provisioner.graphql.port }}"
             - name: APP_API_ENDPOINT
               value: "/graphql"
+            - name: APP_NAMESPACE
+              value: {{ .Release.Namespace }}
             - name: APP_DATABASE_USER
               valueFrom:
                 secretKeyRef:

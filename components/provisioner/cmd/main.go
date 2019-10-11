@@ -2,10 +2,16 @@ package main
 
 import (
 	"fmt"
+	"github.com/kubernetes/client-go/kubernetes/typed/core/v1"
+
+	"github.com/sirupsen/logrus"
+	"k8s.io/client-go/kubernetes"
+	restclient "k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 	"log"
 	"net/http"
-
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
+	"path/filepath"
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
@@ -21,6 +27,7 @@ type config struct {
 	Address               string `envconfig:"default=127.0.0.1:3050"`
 	APIEndpoint           string `envconfig:"default=/graphql"`
 	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
+	Namespace             string `envconfig:"default=/compass-system"`
 
 	Database struct {
 		User     string `envconfig:"default=postgres"`
@@ -35,10 +42,10 @@ type config struct {
 }
 
 func (c *config) String() string {
-	return fmt.Sprintf("Address: %s, APIEndpoint: %s, "+
+	return fmt.Sprintf("Address: %s, APIEndpoint: %s, Namespace: %s "+
 		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
 		"DatabaseName: %s, DatabaseSSLMode: %s, DatabaseSchemaFilePath: %s",
-		c.Address, c.APIEndpoint,
+		c.Address, c.APIEndpoint, c.Namespace,
 		c.Database.User, c.Database.Host, c.Database.Port,
 		c.Database.Name, c.Database.SSLMode, c.Database.SchemaFilePath)
 }
@@ -54,13 +61,17 @@ func main() {
 	connString := fmt.Sprintf(connStringFormat, cfg.Database.Host, cfg.Database.Port, cfg.Database.User,
 		cfg.Database.Password, cfg.Database.Name, cfg.Database.SSLMode)
 
-	_, err = database.InitializeDatabase(connString, cfg.Database.SchemaFilePath)
-	if err != nil {
-		log.Fatalf("Failed to initialize Database: %s", err.Error())
-	}
+	runtimeService, operationService, err := initPersistence(connString, cfg.Database.SchemaFilePath)
 
-	repository := make(map[string]api.RuntimeOperation)
-	resolver := api.NewMockResolver(repository)
+	exitOnError(err, "Error while initializing persistence")
+
+	secretInterface, err := newSecretsInterface(cfg.Namespace)
+
+	exitOnError(err, "Cannot create secrets interface")
+
+	service := initProvisioningService(runtimeService, operationService, secretInterface)
+
+	resolver := api.NewResolver(service)
 
 	gqlCfg := gqlschema.Config{
 		Resolvers: resolver,
@@ -86,4 +97,25 @@ func exitOnError(err error, context string) {
 		wrappedError := errors.Wrap(err, context)
 		log.Fatal(wrappedError)
 	}
+}
+
+func newSecretsInterface(namespace string) (v1.SecretInterface, error) {
+	k8sConfig, err := restclient.InClusterConfig()
+	if err != nil {
+		logrus.Warnf("Failed to read in cluster config: %s", err.Error())
+		logrus.Info("Trying to initialize with local config")
+		home := homedir.HomeDir()
+		k8sConfPath := filepath.Join(home, ".kube", "config")
+		k8sConfig, err = clientcmd.BuildConfigFromFlags("", k8sConfPath)
+		if err != nil {
+			return nil, errors.Errorf("failed to read k8s in-cluster configuration, %s", err.Error())
+		}
+	}
+
+	coreClientset, err := kubernetes.NewForConfig(k8sConfig)
+	if err != nil {
+		return nil, errors.Errorf("failed to create k8s core client, %s", err.Error())
+	}
+
+	return coreClientset.CoreV1().Secrets(namespace), nil
 }
