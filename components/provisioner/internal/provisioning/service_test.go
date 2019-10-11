@@ -16,8 +16,8 @@ import (
 
 func TestService_ProvisionRuntime(t *testing.T) {
 	hydroformMock := mocks.Client{}
-	operationServiceMock := persistenceMocks.OperationService{}
-	runtimeServiceMock := persistenceMocks.RuntimeService{}
+	operationServiceMock := &persistenceMocks.OperationService{}
+	runtimeServiceMock := &persistenceMocks.RuntimeService{}
 
 	clusterConfig := &gqlschema.ClusterConfigInput{
 		GcpConfig: &gqlschema.GCPConfigInput{
@@ -71,8 +71,8 @@ func TestService_ProvisionRuntime(t *testing.T) {
 }
 
 func TestService_DeprovisionRuntime(t *testing.T) {
-	operationServiceMock := persistenceMocks.OperationService{}
-	runtimeServiceMock := persistenceMocks.RuntimeService{}
+	operationServiceMock := &persistenceMocks.OperationService{}
+	runtimeServiceMock := &persistenceMocks.RuntimeService{}
 	hydroformMock := mocks.Client{}
 
 	runtimeConfig := model.RuntimeConfig{
@@ -108,7 +108,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 	t.Run("Should not start deprovisioning when previous operation is in progress", func(t *testing.T) {
 		//given
 		runtimeID := "a24142da-1111-4ec2-93e3-e47ccaa6973f"
-		runtimeServiceMock := persistenceMocks.RuntimeService{}
+		runtimeServiceMock := &persistenceMocks.RuntimeService{}
 		lastOperation := model.Operation{State: model.InProgress}
 		runtimeStatus := model.RuntimeStatus{LastOperationStatus: lastOperation}
 
@@ -125,8 +125,8 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 }
 
 func TestService_RuntimeOperationStatus(t *testing.T) {
-	operationServiceMock := persistenceMocks.OperationService{}
-	runtimeServiceMock := persistenceMocks.RuntimeService{}
+	operationServiceMock := &persistenceMocks.OperationService{}
+	runtimeServiceMock := &persistenceMocks.RuntimeService{}
 	hydroformMock := mocks.Client{}
 
 	t.Run("Should return operation status", func(t *testing.T) {

@@ -101,6 +101,11 @@ func waitForDatabaseAccess(connString string, retryCount int) (*sql.DB, error) {
 			return sqlDB, nil
 		}
 
+		err = sqlDB.Close()
+		if err != nil {
+			logrus.Info("Failed to close database ...")
+		}
+
 		logrus.Info("Failed to access database, waiting 5 seconds to retry...")
 		time.Sleep(5 * time.Second)
 	}
