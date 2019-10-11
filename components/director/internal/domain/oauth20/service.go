@@ -159,6 +159,10 @@ func (s *service) doRequest(method string, endpoint string, body io.Reader) (*ht
 			return
 		}
 		_, err = io.Copy(ioutil.Discard, resp.Body)
+		if err != nil {
+			logrus.Error(err)
+		}
+
 		err := body.Close()
 		if err != nil {
 			logrus.Error(err)
