@@ -16,6 +16,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventapi"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/healthcheck"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/integrationsystem"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
@@ -43,6 +44,7 @@ type RootResolver struct {
 	token       *onetimetoken.Resolver
 	systemAuth  *systemauth.Resolver
 	oAuth20     *oauth20.Resolver
+	intSys      *integrationsystem.Resolver
 }
 
 func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope.Provider, oneTimeTokenCfg onetimetoken.Config, oAuth20Cfg oauth20.Config) *RootResolver {
@@ -60,6 +62,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	labelConverter := label.NewConverter()
 	tokenConverter := onetimetoken.NewConverter()
 	systemAuthConverter := systemauth.NewConverter(authConverter)
+	intSysConverter := integrationsystem.NewConverter()
 
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewRepository()
@@ -73,6 +76,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
 	apiRtmAuthRepo := apiruntimeauth.NewRepository(apiRtmAuthConverter)
 	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
+	intSysRepo := integrationsystem.NewRepository(intSysConverter)
 
 	connectorGCLI := graphql_client.NewGraphQLClient(oneTimeTokenCfg.OneTimeTokenURL)
 
@@ -91,8 +95,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 	tokenSvc := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, oneTimeTokenCfg.ConnectorURL)
 	oAuth20Svc := oauth20.NewService(scopeCfgProvider, uidSvc, oAuth20Cfg)
-
-	var isSvc oauth20.IntegrationSystemService // TODO: Use Integration System service. It will be fixed in https://github.com/kyma-incubator/compass/pull/358
+	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 
 	return &RootResolver{
 		app:         application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, systemAuthSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter),
@@ -105,7 +108,8 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 		labelDef:    labeldef.NewResolver(transact, labelDefSvc, labelDefConverter),
 		token:       onetimetoken.NewTokenResolver(transact, tokenSvc, tokenConverter),
 		systemAuth:  systemauth.NewResolver(transact, systemAuthSvc, oAuth20Svc, systemAuthConverter),
-		oAuth20:     oauth20.NewResolver(transact, oAuth20Svc, appSvc, runtimeSvc, isSvc, systemAuthSvc, systemAuthConverter),
+		oAuth20:     oauth20.NewResolver(transact, oAuth20Svc, appSvc, runtimeSvc, intSysSvc, systemAuthSvc, systemAuthConverter),
+		intSys:      integrationsystem.NewResolver(transact, intSysSvc, systemAuthSvc, intSysConverter, systemAuthConverter),
 	}
 }
 
@@ -132,6 +136,10 @@ func (r *RootResolver) Document() graphql.DocumentResolver {
 }
 func (r *RootResolver) EventAPISpec() graphql.EventAPISpecResolver {
 	return &eventAPISpecResolver{r}
+}
+
+func (r *RootResolver) IntegrationSystem() graphql.IntegrationSystemResolver {
+	return &integrationSystemResolver{r}
 }
 
 type queryResolver struct {
@@ -161,6 +169,12 @@ func (r *queryResolver) LabelDefinition(ctx context.Context, key string) (*graph
 }
 func (r *queryResolver) HealthChecks(ctx context.Context, types []graphql.HealthCheckType, origin *string, first *int, after *graphql.PageCursor) (*graphql.HealthCheckPage, error) {
 	return r.healthCheck.HealthChecks(ctx, types, origin, first, after)
+}
+func (r *queryResolver) IntegrationSystems(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.IntegrationSystemPage, error) {
+	return r.intSys.IntegrationSystems(ctx, first, after)
+}
+func (r *queryResolver) IntegrationSystem(ctx context.Context, id string) (*graphql.IntegrationSystem, error) {
+	return r.intSys.IntegrationSystem(ctx, id)
 }
 
 type mutationResolver struct {
@@ -278,6 +292,15 @@ func (r *mutationResolver) DeleteSystemAuthForIntegrationSystem(ctx context.Cont
 	fn := r.systemAuth.GenericDeleteSystemAuth(model.IntegrationSystemReference)
 	return fn(ctx, authID)
 }
+func (r *mutationResolver) CreateIntegrationSystem(ctx context.Context, in graphql.IntegrationSystemInput) (*graphql.IntegrationSystem, error) {
+	return r.intSys.CreateIntegrationSystem(ctx, in)
+}
+func (r *mutationResolver) UpdateIntegrationSystem(ctx context.Context, id string, in graphql.IntegrationSystemInput) (*graphql.IntegrationSystem, error) {
+	return r.intSys.UpdateIntegrationSystem(ctx, id, in)
+}
+func (r *mutationResolver) DeleteIntegrationSystem(ctx context.Context, id string) (*graphql.IntegrationSystem, error) {
+	return r.intSys.DeleteIntegrationSystem(ctx, id)
+}
 
 type applicationResolver struct {
 	*RootResolver
@@ -342,4 +365,10 @@ type eventAPISpecResolver struct{ *RootResolver }
 
 func (r *eventAPISpecResolver) FetchRequest(ctx context.Context, obj *graphql.EventAPISpec) (*graphql.FetchRequest, error) {
 	return r.eventAPI.FetchRequest(ctx, obj)
+}
+
+type integrationSystemResolver struct{ *RootResolver }
+
+func (r *integrationSystemResolver) Auths(ctx context.Context, obj *graphql.IntegrationSystem) ([]*graphql.SystemAuth, error) {
+	return r.intSys.Auths(ctx, obj)
 }

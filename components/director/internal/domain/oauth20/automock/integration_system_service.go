@@ -10,8 +10,8 @@ type IntegrationSystemService struct {
 	mock.Mock
 }
 
-// Exist provides a mock function with given fields: ctx, id
-func (_m *IntegrationSystemService) Exist(ctx context.Context, id string) (bool, error) {
+// Exists provides a mock function with given fields: ctx, id
+func (_m *IntegrationSystemService) Exists(ctx context.Context, id string) (bool, error) {
 	ret := _m.Called(ctx, id)
 
 	var r0 bool

@@ -163,10 +163,6 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if first == nil {
-		return nil, errors.New("missing required parameter 'first'")
-	}
-
 	appPage, err := r.appSvc.List(ctx, labelFilter, *first, cursor)
 	if err != nil {
 		return nil, err
