@@ -131,14 +131,11 @@ func (ws dbWriteSession) InsertOperation(operation model.Operation) (string, dbe
 	if err != nil {
 		return "", dberrors.Internal("Failed to generate uuid: %s.", err)
 	}
+	operation.OperationID = id.String()
 
 	_, err = ws.insertInto("operation").
-		Pair("id", id.String()).
-		Pair("type", operation.Operation).
-		Pair("state", operation.State).
-		Pair("message", operation.Message).
-		Pair("start_timestamp", operation.Started).
-		Pair("cluster_id", operation.RuntimeID).
+		Columns("id", "type", "state", "message", "start_timestamp", "cluster_id").
+		Record(operation).
 		Exec()
 
 	if err != nil {
