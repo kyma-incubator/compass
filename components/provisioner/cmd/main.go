@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/database"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"

@@ -1,8 +1,8 @@
 package database
 
 import (
-	"database/sql"
 	"fmt"
+	"github.com/gocraft/dbr"
 	"io/ioutil"
 	"time"
 
@@ -22,50 +22,50 @@ const (
 
 // InitializeDatabase opens database connection and initializes schema if it does not exist
 // This is temporary solution
-func InitializeDatabase(connectionString, schemaFilePath string) (*sql.DB, error) {
-	sqlDatabase, err := waitForDatabaseAccess(connectionString, retryCount)
+func InitializeDatabase(connectionString, schemaFilePath string) (*dbr.Connection, error) {
+	connection, err := waitForDatabaseAccess(connectionString, retryCount)
 	if err != nil {
 		return nil, err
 	}
 
-	initialized, err := checkIfDatabaseInitialized(sqlDatabase)
+	initialized, err := checkIfDatabaseInitialized(connection)
 	if err != nil {
-		closeDBConnection(sqlDatabase)
+		closeDBConnection(connection)
 		return nil, errors.Wrap(err, "Failed to check if database is initialized")
 	}
 
 	if initialized {
 		logrus.Info("Database already initialized")
-		return sqlDatabase, nil
+		return connection, nil
 	}
 
 	logrus.Info("Database not initialized. Setting up schema...")
 
 	content, err := ioutil.ReadFile(schemaFilePath)
 	if err != nil {
-		closeDBConnection(sqlDatabase)
+		closeDBConnection(connection)
 		return nil, errors.Wrap(err, "Failed to read schema file")
 	}
 
-	_, err = sqlDatabase.Exec(string(content))
+	_, err = connection.Exec(string(content))
 	if err != nil {
-		closeDBConnection(sqlDatabase)
+		closeDBConnection(connection)
 		return nil, errors.Wrap(err, "Failed to setup database schema")
 	}
 
 	logrus.Info("Database initialized successfully")
 
-	return sqlDatabase, nil
+	return connection, nil
 }
 
-func closeDBConnection(db *sql.DB) {
+func closeDBConnection(db *dbr.Connection) {
 	err := db.Close()
 	if err != nil {
 		logrus.Warnf("Failed to close database connection: %s", err.Error())
 	}
 }
 
-func checkIfDatabaseInitialized(db *sql.DB) (bool, error) {
+func checkIfDatabaseInitialized(db *dbr.Connection) (bool, error) {
 	checkQuery := fmt.Sprintf(`SELECT '%s.%s'::regclass;`, schemaName, clusterTableName)
 
 	row := db.QueryRow(checkQuery)
@@ -87,21 +87,21 @@ func checkIfDatabaseInitialized(db *sql.DB) (bool, error) {
 	return tableName == clusterTableName, nil
 }
 
-func waitForDatabaseAccess(connString string, retryCount int) (*sql.DB, error) {
-	var sqlDB *sql.DB
+func waitForDatabaseAccess(connString string, retryCount int) (*dbr.Connection, error) {
+	var connection *dbr.Connection
 	var err error
 	for ; retryCount > 0; retryCount-- {
-		sqlDB, err = sql.Open("postgres", connString)
+		connection, err = dbr.Open("postgres", connString, nil)
 		if err != nil {
 			return nil, errors.Wrap(err, "Invalid connection string")
 		}
 
-		err = sqlDB.Ping()
+		err = connection.Ping()
 		if err == nil {
-			return sqlDB, nil
+			return connection, nil
 		}
 
-		err = sqlDB.Close()
+		err = connection.Close()
 		if err != nil {
 			logrus.Info("Failed to close database ...")
 		}
