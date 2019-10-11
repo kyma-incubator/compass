@@ -1,6 +1,7 @@
 package persistence
 
 import (
+	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dbsession"
 	"log"
 	"time"
 
@@ -21,12 +22,12 @@ type RuntimeService interface {
 }
 
 type runtimeService struct {
-	repositoryFactory RepositoryFactory
+	dbSessionFactory dbsession.DBSessionFactory
 }
 
-func NewRuntimeService(repositoryFactory RepositoryFactory) RuntimeService {
+func NewRuntimeService(dbSessionFactory dbsession.DBSessionFactory) RuntimeService {
 	return runtimeService{
-		repositoryFactory: repositoryFactory,
+		dbSessionFactory: dbSessionFactory,
 	}
 }
 
@@ -36,48 +37,47 @@ func (r runtimeService) GetStatus(runtimeID string) (model.RuntimeStatus, dberro
 
 func (r runtimeService) SetProvisioningStarted(runtimeID string, runtimeConfig model.RuntimeConfig) (model.Operation, dberrors.Error) {
 
-	repository, err := r.repositoryFactory.New()
+	dbSession, err := r.dbSessionFactory.NewWriteSessionInTransaction()
 	if err != nil {
 		logrus.Errorf("Failed to create repository: %s", err)
 	}
 
 	timestamp := time.Now()
-	transaction := repository.Transaction()
 
-	err = repository.InsertCluster(runtimeID, timestamp, "{}")
+	err = dbSession.InsertCluster(runtimeID, timestamp, "{}")
 	if err != nil {
-		rollback(transaction, runtimeID)
+		rollback(dbSession, runtimeID)
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
 	gcpConfig, isGCP := runtimeConfig.GCPConfig()
 	if isGCP {
-		err = repository.InsertGCPConfig(runtimeID, gcpConfig)
+		err = dbSession.InsertGCPConfig(runtimeID, gcpConfig)
 		if err != nil {
-			rollback(transaction, runtimeID)
+			rollback(dbSession, runtimeID)
 			return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 		}
 	}
 
 	gardenerConfig, isGardener := runtimeConfig.GardenerConfig()
 	if isGardener {
-		err = repository.InsertGardenerConfig(runtimeID, gardenerConfig)
+		err = dbSession.InsertGardenerConfig(runtimeID, gardenerConfig)
 		if err != nil {
-			rollback(transaction, runtimeID)
+			rollback(dbSession, runtimeID)
 			return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 		}
 	}
 
-	kymaConfigID, err := repository.InsertKymaConfig(runtimeID, runtimeConfig.KymaConfig.Version)
+	kymaConfigID, err := dbSession.InsertKymaConfig(runtimeID, runtimeConfig.KymaConfig.Version)
 	if err != nil {
-		rollback(transaction, runtimeID)
+		rollback(dbSession, runtimeID)
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
 	for _, module := range runtimeConfig.KymaConfig.Modules {
-		err = repository.InsertKymaConfigModule(kymaConfigID, module)
+		err = dbSession.InsertKymaConfigModule(kymaConfigID, module)
 		if err != nil {
-			rollback(transaction, runtimeID)
+			rollback(dbSession, runtimeID)
 			return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 		}
 	}
@@ -96,13 +96,13 @@ func (r runtimeService) SetProvisioningStarted(runtimeID string, runtimeConfig m
 		RuntimeID:   runtimeID,
 	}
 
-	err = repository.InsertOperation(operation)
+	err = dbSession.InsertOperation(operation)
 	if err != nil {
-		rollback(transaction, runtimeID)
+		rollback(dbSession, runtimeID)
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
-	err = transaction.Commit()
+	err = dbSession.Commit()
 	if err != nil {
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
@@ -118,7 +118,7 @@ func (r runtimeService) SetUpgradeStarted(runtimeID string) (model.Operation, db
 	return model.Operation{}, nil
 }
 
-func rollback(transaction Transaction, runtimeID string) {
+func rollback(transaction dbsession.Transaction, runtimeID string) {
 	err := transaction.Rollback()
 	if err != nil {
 		logrus.Errorf("Failed to rollback transaction for runtime: '%s'.", runtimeID)

@@ -1,6 +1,9 @@
 package persistence
 
-import "github.com/kyma-incubator/compass/components/provisioner/internal/model"
+import (
+	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dbsession"
+)
 
 type OperationService interface {
 	Get(operationID string) (model.Operation, error)
@@ -9,12 +12,12 @@ type OperationService interface {
 }
 
 type operationService struct {
-	repository Repository
+	dbSessionFactory dbsession.DBSessionFactory
 }
 
-func NewOperationService(repository Repository) OperationService {
+func NewOperationService(dbSessionFactory dbsession.DBSessionFactory) OperationService {
 	return operationService{
-		repository: repository,
+		dbSessionFactory: dbSessionFactory,
 	}
 }
 
