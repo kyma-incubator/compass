@@ -96,7 +96,7 @@ func (r repository) InsertCluster(runtimeID string, creationTimestamp time.Time,
 		Exec()
 
 	if err != nil {
-		dberrors.Internal("Failed to insert record to Cluster table: %s", err)
+		return dberrors.Internal("Failed to insert record to Cluster table: %s", err)
 	}
 
 	return nil
