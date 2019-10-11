@@ -87,7 +87,9 @@ echo -e "${GREEN}Starting application${NC}"
 APP_DB_USER=${DB_USER} \
 APP_DB_PASSWORD=${DB_PWD} \
 APP_DB_NAME=${DB_NAME} \
-APP_SCOPES_CONFIGURATION_FILE=${ROOT_PATH}/../../chart/compass/charts/director/scopes.yaml \
+APP_SCOPES_CONFIGURATION_FILE=${ROOT_PATH}/../../chart/compass/charts/director/config.yaml \
+APP_OAUTH20_CLIENT_ENDPOINT="https://oauth2-admin.kyma.local/clients" \
+APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT="https://oauth2.kyma.local/oauth2/token" \
 APP_ONE_TIME_TOKEN_URL="http://connector.not.configured.url/graphql" \
 APP_CONNECTOR_URL="http://connector.not.configured.url/graphql" \
 go run ${ROOT_PATH}/cmd/main.go

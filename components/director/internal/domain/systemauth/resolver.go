@@ -17,7 +17,7 @@ type SystemAuthService interface {
 
 //go:generate mockery -name=OAuth20Service -output=automock -outpkg=automock -case=underscore
 type OAuth20Service interface {
-	DeleteClient(ctx context.Context, clientID string) error
+	DeleteClientCredentials(ctx context.Context, clientID string) error
 }
 
 //go:generate mockery -name=SystemAuthConverter -output=automock -outpkg=automock -case=underscore
@@ -54,7 +54,7 @@ func (r *Resolver) GenericDeleteSystemAuth(objectType model.SystemAuthReferenceO
 		deletedItem := r.conv.ToGraphQL(item)
 
 		if item.Value != nil && item.Value.Credential.Oauth != nil {
-			err := r.oAuth20Svc.DeleteClient(ctx, item.Value.Credential.Oauth.ClientID)
+			err := r.oAuth20Svc.DeleteClientCredentials(ctx, item.Value.Credential.Oauth.ClientID)
 			if err != nil {
 				return nil, errors.Wrap(err, "while deleting OAuth 2.0 client")
 			}

@@ -34,7 +34,7 @@ func TestResolver_CommonGenerateClientCredentialsSuccess(t *testing.T) {
 		Method                     func(resolver *oauth20.Resolver, ctx context.Context, id string) (*graphql.SystemAuth, error)
 		RtmID                      *string
 		AppID                      *string
-		IsID                       *string
+		IntSysID                   *string
 		RuntimeServiceFn           func() *automock.RuntimeService
 		ApplicationServiceFn       func() *automock.ApplicationService
 		IntegrationSystemServiceFn func() *automock.IntegrationSystemService
@@ -62,7 +62,7 @@ func TestResolver_CommonGenerateClientCredentialsSuccess(t *testing.T) {
 		},
 		{
 			Name:    "Application",
-			RtmID:   &id,
+			AppID:   &id,
 			ObjType: model.ApplicationReference,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				rtmSvc := &automock.RuntimeService{}
@@ -82,9 +82,9 @@ func TestResolver_CommonGenerateClientCredentialsSuccess(t *testing.T) {
 			},
 		},
 		{
-			Name:    "Integration System",
-			RtmID:   &id,
-			ObjType: model.IntegrationSystemReference,
+			Name:     "Integration System",
+			IntSysID: &id,
+			ObjType:  model.IntegrationSystemReference,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				rtmSvc := &automock.RuntimeService{}
 				return rtmSvc
@@ -106,14 +106,14 @@ func TestResolver_CommonGenerateClientCredentialsSuccess(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			modelSystemAuth := fixModelSystemAuth(clientID, testCase.RtmID, testCase.AppID, testCase.IsID)
+			modelSystemAuth := fixModelSystemAuth(clientID, testCase.RtmID, testCase.AppID, testCase.IntSysID)
 
 			persist, transact := txGen.ThatSucceeds()
 			defer persist.AssertExpectations(t)
 			defer transact.AssertExpectations(t)
 
 			svc := &automock.Service{}
-			svc.On("CreateClient", txtest.CtxWithDBMatcher(), testCase.ObjType).Return(credsData, nil).Once()
+			svc.On("CreateClientCredentials", txtest.CtxWithDBMatcher(), testCase.ObjType).Return(credsData, nil).Once()
 			defer svc.AssertExpectations(t)
 
 			rtmSvc := testCase.RuntimeServiceFn()
@@ -180,8 +180,8 @@ func TestResolver_CommonGenerateClientCredentialsError(t *testing.T) {
 			},
 			ServiceFn: func() *automock.Service {
 				svc := &automock.Service{}
-				svc.On("CreateClient", txtest.CtxWithDBMatcher(), objType).Return(credsData, nil).Once()
-				svc.On("DeleteClient", txtest.CtxWithDBMatcher(), clientID).Return(nil).Once()
+				svc.On("CreateClientCredentials", txtest.CtxWithDBMatcher(), objType).Return(credsData, nil).Once()
+				svc.On("DeleteClientCredentials", txtest.CtxWithDBMatcher(), clientID).Return(nil).Once()
 				return svc
 			},
 			SystemAuthServiceFn: func() *automock.SystemAuthService {
@@ -202,8 +202,8 @@ func TestResolver_CommonGenerateClientCredentialsError(t *testing.T) {
 			},
 			ServiceFn: func() *automock.Service {
 				svc := &automock.Service{}
-				svc.On("CreateClient", txtest.CtxWithDBMatcher(), objType).Return(credsData, nil).Once()
-				svc.On("DeleteClient", txtest.CtxWithDBMatcher(), clientID).Return(nil).Once()
+				svc.On("CreateClientCredentials", txtest.CtxWithDBMatcher(), objType).Return(credsData, nil).Once()
+				svc.On("DeleteClientCredentials", txtest.CtxWithDBMatcher(), clientID).Return(nil).Once()
 				return svc
 			},
 			SystemAuthServiceFn: func() *automock.SystemAuthService {
@@ -224,8 +224,8 @@ func TestResolver_CommonGenerateClientCredentialsError(t *testing.T) {
 			},
 			ServiceFn: func() *automock.Service {
 				svc := &automock.Service{}
-				svc.On("CreateClient", txtest.CtxWithDBMatcher(), objType).Return(credsData, nil).Once()
-				svc.On("DeleteClient", txtest.CtxWithDBMatcher(), clientID).Return(nil).Once()
+				svc.On("CreateClientCredentials", txtest.CtxWithDBMatcher(), objType).Return(credsData, nil).Once()
+				svc.On("DeleteClientCredentials", txtest.CtxWithDBMatcher(), clientID).Return(nil).Once()
 				return svc
 			},
 			SystemAuthServiceFn: func() *automock.SystemAuthService {
@@ -245,8 +245,8 @@ func TestResolver_CommonGenerateClientCredentialsError(t *testing.T) {
 			},
 			ServiceFn: func() *automock.Service {
 				svc := &automock.Service{}
-				svc.On("CreateClient", txtest.CtxWithDBMatcher(), objType).Return(credsData, nil).Once()
-				svc.On("DeleteClient", txtest.CtxWithDBMatcher(), clientID).Return(testErr).Once()
+				svc.On("CreateClientCredentials", txtest.CtxWithDBMatcher(), objType).Return(credsData, nil).Once()
+				svc.On("DeleteClientCredentials", txtest.CtxWithDBMatcher(), clientID).Return(testErr).Once()
 				return svc
 			},
 			SystemAuthServiceFn: func() *automock.SystemAuthService {
@@ -266,7 +266,7 @@ func TestResolver_CommonGenerateClientCredentialsError(t *testing.T) {
 			},
 			ServiceFn: func() *automock.Service {
 				svc := &automock.Service{}
-				svc.On("CreateClient", txtest.CtxWithDBMatcher(), objType).Return(nil, testErr).Once()
+				svc.On("CreateClientCredentials", txtest.CtxWithDBMatcher(), objType).Return(nil, testErr).Once()
 				return svc
 			},
 			SystemAuthServiceFn: func() *automock.SystemAuthService {
@@ -285,7 +285,7 @@ func TestResolver_CommonGenerateClientCredentialsError(t *testing.T) {
 			},
 			ServiceFn: func() *automock.Service {
 				svc := &automock.Service{}
-				svc.On("CreateClient", txtest.CtxWithDBMatcher(), objType).Return(nil, nil).Once()
+				svc.On("CreateClientCredentials", txtest.CtxWithDBMatcher(), objType).Return(nil, nil).Once()
 				return svc
 			},
 			SystemAuthServiceFn: func() *automock.SystemAuthService {

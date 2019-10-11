@@ -79,7 +79,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 			},
 			OAuthServiceFn: func() *automock.OAuth20Service {
 				svc := &automock.OAuth20Service{}
-				svc.On("DeleteClient", contextParam, oauthModelSystemAuth.Value.Credential.Oauth.ClientID).Return(nil)
+				svc.On("DeleteClientCredentials", contextParam, oauthModelSystemAuth.Value.Credential.Oauth.ClientID).Return(nil)
 				return svc
 			},
 			ConverterFn: func() *automock.SystemAuthConverter {
@@ -140,7 +140,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 			},
 			OAuthServiceFn: func() *automock.OAuth20Service {
 				svc := &automock.OAuth20Service{}
-				svc.On("DeleteClient", contextParam, oauthModelSystemAuth.Value.Credential.Oauth.ClientID).Return(testErr)
+				svc.On("DeleteClientCredentials", contextParam, oauthModelSystemAuth.Value.Credential.Oauth.ClientID).Return(testErr)
 				return svc
 			},
 			ConverterFn: func() *automock.SystemAuthConverter {

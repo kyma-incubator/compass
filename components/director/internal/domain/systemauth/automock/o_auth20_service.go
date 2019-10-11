@@ -10,8 +10,8 @@ type OAuth20Service struct {
 	mock.Mock
 }
 
-// DeleteClient provides a mock function with given fields: ctx, clientID
-func (_m *OAuth20Service) DeleteClient(ctx context.Context, clientID string) error {
+// DeleteClientCredentials provides a mock function with given fields: ctx, clientID
+func (_m *OAuth20Service) DeleteClientCredentials(ctx context.Context, clientID string) error {
 	ret := _m.Called(ctx, clientID)
 
 	var r0 error

@@ -1,6 +1,6 @@
 package oauth20
 
 type Config struct {
-	ClientEndpoint            string `envconfig:"default=https://oauth2-admin.kyma.local/clients"`
-	PublicAccessTokenEndpoint string `envconfig:"default=https://oauth2.kyma.local/oauth2/token"`
+	ClientEndpoint            string `envconfig:"APP_OAUTH20_CLIENT_ENDPOINT"`
+	PublicAccessTokenEndpoint string `envconfig:"APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT"`
 }

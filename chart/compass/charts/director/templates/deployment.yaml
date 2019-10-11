@@ -71,7 +71,7 @@ spec:
             - name: APP_CONNECTOR_URL
               value: "http://compass-connector.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connector.graphql.port }}/graphql"
             - name: APP_SCOPES_CONFIGURATION_FILE
-              value: /config/scopes.yaml
+              value: /config/config.yaml
             - name: APP_ALLOW_JWT_SIGNING_NONE
               value: {{ .Values.deployment.allowJWTSigningNone | quote }}
             - name: APP_OAUTH20_CLIENT_ENDPOINT

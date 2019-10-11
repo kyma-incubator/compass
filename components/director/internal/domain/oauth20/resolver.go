@@ -40,8 +40,8 @@ type SystemAuthConverter interface {
 
 //go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
 type Service interface {
-	CreateClient(ctx context.Context, objectType model.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error)
-	DeleteClient(ctx context.Context, clientID string) error
+	CreateClientCredentials(ctx context.Context, objectType model.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error)
+	DeleteClientCredentials(ctx context.Context, clientID string) error
 }
 
 type Resolver struct {
@@ -81,13 +81,13 @@ func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.
 
 	exists, err := r.checkObjectExist(ctx, objType, objID)
 	if err != nil {
-		return nil, errors.Wrap(err, "while checking if runtime exists")
+		return nil, errors.Wrapf(err, "while checking if %s with ID '%s' exists", objType, objID)
 	}
 	if !exists {
 		return nil, fmt.Errorf("%s with ID '%s' not found", objType, objID)
 	}
 
-	clientCreds, err := r.svc.CreateClient(ctx, objType)
+	clientCreds, err := r.svc.CreateClientCredentials(ctx, objType)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.
 		return nil, errors.New("client credentials cannot be empty")
 	}
 	cleanupOnError := func(originalErr error) error {
-		cleanupErr := r.svc.DeleteClient(ctx, clientCreds.ClientID)
+		cleanupErr := r.svc.DeleteClientCredentials(ctx, clientCreds.ClientID)
 		if cleanupErr != nil {
 			return multierror.Append(err, cleanupErr)
 		}

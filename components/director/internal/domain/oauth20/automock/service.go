@@ -11,8 +11,8 @@ type Service struct {
 	mock.Mock
 }
 
-// CreateClient provides a mock function with given fields: ctx, objectType
-func (_m *Service) CreateClient(ctx context.Context, objectType model.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error) {
+// CreateClientCredentials provides a mock function with given fields: ctx, objectType
+func (_m *Service) CreateClientCredentials(ctx context.Context, objectType model.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error) {
 	ret := _m.Called(ctx, objectType)
 
 	var r0 *model.OAuthCredentialDataInput
@@ -34,8 +34,8 @@ func (_m *Service) CreateClient(ctx context.Context, objectType model.SystemAuth
 	return r0, r1
 }
 
-// DeleteClient provides a mock function with given fields: ctx, clientID
-func (_m *Service) DeleteClient(ctx context.Context, clientID string) error {
+// DeleteClientCredentials provides a mock function with given fields: ctx, clientID
+func (_m *Service) DeleteClientCredentials(ctx context.Context, clientID string) error {
 	ret := _m.Called(ctx, clientID)
 
 	var r0 error

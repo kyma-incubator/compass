@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -47,7 +48,7 @@ func NewService(scopeCfgProvider ScopeCfgProvider, uidService UIDService, cfg Co
 	}
 }
 
-func (s *service) CreateClient(ctx context.Context, objectType model.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error) {
+func (s *service) CreateClientCredentials(ctx context.Context, objectType model.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error) {
 	scopes, err := s.getClientCredentialScopes(objectType)
 	if err != nil {
 		return nil, err
@@ -68,7 +69,7 @@ func (s *service) CreateClient(ctx context.Context, objectType model.SystemAuthR
 	return credentialData, nil
 }
 
-func (s *service) DeleteClient(ctx context.Context, clientID string) error {
+func (s *service) DeleteClientCredentials(ctx context.Context, clientID string) error {
 	return s.unregisterClient(clientID)
 }
 
@@ -108,7 +109,6 @@ func (s *service) registerClient(clientID string, scopes []string) (string, erro
 	if err != nil {
 		return "", err
 	}
-
 	defer closeBody(resp.Body)
 
 	if resp.StatusCode != http.StatusCreated {
@@ -158,7 +158,7 @@ func (s *service) doRequest(method string, endpoint string, body io.Reader) (*ht
 		if body == nil {
 			return
 		}
-
+		_, err = io.Copy(ioutil.Discard, resp.Body)
 		err := body.Close()
 		if err != nil {
 			logrus.Error(err)

@@ -16,8 +16,7 @@ import (
 )
 
 func TestService_CreateClient(t *testing.T) {
-	// when
-
+	// given
 	publicEndpoint := "accessTokenURL"
 	id := "foo"
 	objType := model.IntegrationSystemReference
@@ -164,7 +163,7 @@ func TestService_CreateClient(t *testing.T) {
 			svc := oauth20.NewService(scopeCfgProvider, uidService, oauth20.Config{ClientEndpoint: url, PublicAccessTokenEndpoint: publicEndpoint})
 
 			// when
-			oauthData, err := svc.CreateClient(ctx, objType)
+			oauthData, err := svc.CreateClientCredentials(ctx, objType)
 
 			// then
 			if testCase.ExpectedError == nil {
@@ -179,8 +178,8 @@ func TestService_CreateClient(t *testing.T) {
 
 }
 
-func TestService_DeleteClient(t *testing.T) {
-	// when
+func TestService_DeleteClientCredentials(t *testing.T) {
+	// given
 	id := "foo"
 	testCases := []struct {
 		Name          string
@@ -241,7 +240,7 @@ func TestService_DeleteClient(t *testing.T) {
 			svc := oauth20.NewService(nil, nil, oauth20.Config{ClientEndpoint: url})
 
 			// when
-			err := svc.DeleteClient(ctx, id)
+			err := svc.DeleteClientCredentials(ctx, id)
 
 			// then
 			if testCase.ExpectedError == nil {

@@ -48,7 +48,6 @@ type config struct {
 	PlaygroundAPIEndpoint         string `envconfig:"default=/graphql"`
 	ScopesConfigurationFile       string
 	ScopesConfigurationFileReload time.Duration `envconfig:"default=1m"`
-	EnableScopesValidation        bool          `envconfig:"default=true"`
 
 	JWKSEndpoint        string        `envconfig:"default=file://hack/default-jwks.json"`
 	JWKSSyncPeriod      time.Duration `envconfig:"default=5m"`
@@ -84,11 +83,9 @@ func main() {
 
 	gqlCfg := graphql.Config{
 		Resolvers: domain.NewRootResolver(transact, scopeCfgProvider, cfg.OneTimeToken, cfg.OAuth20),
-	}
-
-	if cfg.EnableScopesValidation {
-		log.Info("Scopes validation is enabled")
-		gqlCfg.Directives.HasScopes = scope.NewDirective(scopeCfgProvider).VerifyScopes
+		Directives: graphql.DirectiveRoot{
+			HasScopes: scope.NewDirective(scopeCfgProvider).VerifyScopes,
+		},
 	}
 
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)

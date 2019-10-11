@@ -92,7 +92,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	tokenSvc := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, oneTimeTokenCfg.ConnectorURL)
 	oAuth20Svc := oauth20.NewService(scopeCfgProvider, uidSvc, oAuth20Cfg)
 
-	var isSvc oauth20.IntegrationSystemService // TODO: Use Integration System service
+	var isSvc oauth20.IntegrationSystemService // TODO: Use Integration System service. It will be fixed in https://github.com/kyma-incubator/compass/pull/358
 
 	return &RootResolver{
 		app:         application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, systemAuthSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter),
