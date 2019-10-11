@@ -11,8 +11,8 @@ This folder contains documents that relate to the project.
 
 ## Architecture
 
-- [Components - High Level Architecture](./architecture/high-level-components.md)
-- [Components - Management Plane Components](./architecture/mp-components.md)
+- [Components](./architecture/components.md)
+- [Basic architecture](./architecture/basic-architecture.md)
 - [Application and Runtime Flows](./architecture/app-runtime-flows.md)
 - [Establishing a trusted connection](./architecture/establishing-trusted-connection.md)
 - [API Credentials Flow](./architecture/api-credentials-flows.md)

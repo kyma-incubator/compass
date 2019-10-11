@@ -6,22 +6,19 @@
 
 ## Overview
 
-Compass (also known as Management Plane Services) is a multi-tenant system which consists of components that provide a way to register, group, and manage your applications across multiple Kyma runtimes. Using Compass, you can control and monitor your application landscape in one central place.
+is a central, multi-tenant system that allows you to connect Applications and manage them across multiple [Kyma Runtimes](#architecture-components-kyma-runtime). Using Compass, you can control and monitor your Application landscape in one central place. As an integral part of Kyma, Compass uses a set of features that Kyma provides, such as Istio, Prometheus, Monitoring, and Tracing. It also includes Compass UI Cockpit that exposes Compass APIs to users.
+Compass allows you to:
+- Connect and manage Applications and Kyma Runtimes in one central place
+- Store Applications and Runtimes configurations
+- Group Applications and Runtimes to enable integration
+- Communicate the configuration changes to Applications and Runtimes
+- Establish a trusted connection between Applications and Runtimes using various authentication methods
 
-Compass allows for registering different types of applications and runtimes.
-These are the types of possible integration levels between an application and Compass:
-- basic - administrator manually provides API/Events Metadata to Compass. This type of integration is used mainly for simple use-case scenarios and doesn't support all features.
-- application - integration with Compass is built-in inside the application.
-- proxy - a highly application-specific proxy component provides the integration.
-- service -  a central service provides the integration for a class of applications. It manages multiple instances of these applications. You can integrate multiple services to support different types of applications.
-
-You can register any runtime, providing that it fulfills a contract with Compass and implements its flow. First, your runtime must get a trusted connection to Compass. It must also allow for fetching application definitions and using these applications in a given tenant. The example runtimes are Kyma (Kubernetes), CloudFoundry, Serverless, etc.
-
-Compass is a part of Kyma and it uses a set of Kyma features, such as Istio, Prometheus, Monitoring, or Tracing. This project also contains Compass UI Cockpit that exposes Compass APIs to users.
+Compass by design does not participate in direct communication between Applications and Runtimes. It only sets up the connection. In case the cluster with Compass is down, the Applications and Runtimes cooperation still works.
 
 For more information about the Compass architecture and technical details, read the [documentation](./docs).
 
-## Prerequisities
+## Prerequisites
 
 - [Docker](https://www.docker.com/get-started)
 - [Minikube](https://github.com/kubernetes/minikube) 1.0.1
