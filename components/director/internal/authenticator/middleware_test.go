@@ -25,7 +25,7 @@ const tnt = "2a1502ba-aded-11e9-a2a3-2a2ae2dbcce4"
 const PublicJWKSURL = "file://testdata/jwks-public.json"
 const PrivateJWKSURL = "file://testdata/jwks-private.json"
 const PrivateJWKS2URL = "file://testdata/jwks-private2.json"
-const fakeJWKSURL = "https://example.com"
+const fakeJWKSURL = "file://testdata/invalid.json"
 
 func TestAuthenticator_SynchronizeJWKS(t *testing.T) {
 
