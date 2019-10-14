@@ -1,3 +1,4 @@
-<xml>
-    <dummy />
-</xml> 
+<foo>
+    <bar />
+    <baz />
+</foo> 
