@@ -10,7 +10,7 @@ import (
 //
 // For a given JSON path $[*] ? (@ == "dd") it extracts the actual value - dd
 func ExtractValueFromJSONPath(jpq string) (*string, error) {
-	re := regexp.MustCompile(`@\s*==\s*"(?P<value>.+)"`)
+	re := regexp.MustCompile(`@\s*(=|!)=\s*"(?P<value>.+)"`)
 
 	res := re.FindAllStringSubmatch(jpq, -1)
 	if res == nil {
