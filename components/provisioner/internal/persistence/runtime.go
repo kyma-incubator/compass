@@ -21,10 +21,10 @@ type RuntimeService interface {
 }
 
 type runtimeService struct {
-	dbSessionFactory dbsession.DBSessionFactory
+	dbSessionFactory dbsession.Factory
 }
 
-func NewRuntimeService(dbSessionFactory dbsession.DBSessionFactory) RuntimeService {
+func NewRuntimeService(dbSessionFactory dbsession.Factory) RuntimeService {
 	return runtimeService{
 		dbSessionFactory: dbSessionFactory,
 	}
@@ -33,12 +33,34 @@ func NewRuntimeService(dbSessionFactory dbsession.DBSessionFactory) RuntimeServi
 func (r runtimeService) GetStatus(runtimeID string) (model.RuntimeStatus, dberrors.Error) {
 	session := r.dbSessionFactory.NewReadSession()
 
-	return session.GetRuntimeStatus(runtimeID)
+	operation, err := session.GetLastOperation(runtimeID)
+	if err != nil {
+		return model.RuntimeStatus{}, err
+	}
+
+	clusterConfig, err := session.GetClusterConfig(runtimeID)
+	if err != nil {
+		return model.RuntimeStatus{}, err
+	}
+
+	kymaConfig, err := session.GetKymaConfig(runtimeID)
+	if err != nil {
+		return model.RuntimeStatus{}, err
+	}
+
+	runtimeConfiguration := model.RuntimeConfig{
+		KymaConfig:    kymaConfig,
+		ClusterConfig: clusterConfig,
+	}
+
+	return model.RuntimeStatus{
+		LastOperationStatus:  operation,
+		RuntimeConfiguration: runtimeConfiguration,
+	}, nil
 }
 
 func (r runtimeService) SetProvisioningStarted(runtimeID string, runtimeConfig model.RuntimeConfig) (model.Operation, dberrors.Error) {
-
-	dbSession, err := r.dbSessionFactory.NewWriteSessionInTransaction()
+	dbSession, err := r.dbSessionFactory.NewSessionWithinTransaction()
 	if err != nil {
 		logrus.Errorf("Failed to create repository: %s", err)
 	}
@@ -92,6 +114,7 @@ func (r runtimeService) SetProvisioningStarted(runtimeID string, runtimeConfig m
 	}
 
 	operationID, err := dbSession.InsertOperation(operation)
+
 	if err != nil {
 		rollback(dbSession, runtimeID)
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
@@ -130,7 +153,7 @@ func (r runtimeService) Update(runtimeID string, kubeconfig string, terraformSta
 func (r runtimeService) CleanupData(runtimeID string) dberrors.Error {
 	session := r.dbSessionFactory.NewWriteSession()
 
-	return session.CleanupData(runtimeID)
+	return session.DeleteCluster(runtimeID)
 }
 
 func (r runtimeService) setOperationStarted(runtimeID string, operationType model.OperationType, message string, errorMessageFmt string) (model.Operation, dberrors.Error) {

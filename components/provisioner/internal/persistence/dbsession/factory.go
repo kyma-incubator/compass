@@ -7,14 +7,14 @@ import (
 	"time"
 )
 
-type DBSessionFactory interface {
+type Factory interface {
 	NewReadSession() ReadSession
 	NewWriteSession() WriteSession
-	NewWriteSessionInTransaction() (WriteSessionInTransaction, dberrors.Error)
+	NewSessionWithinTransaction() (WriteSessionWithinTransaction, dberrors.Error)
 }
 
 type ReadSession interface {
-	GetRuntimeStatus(runtimeID string) (model.RuntimeStatus, dberrors.Error)
+	GetOperation(operationID string) (model.Operation, dberrors.Error)
 	GetLastOperation(runtimeID string) (model.Operation, dberrors.Error)
 	GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error)
 	GetClusterConfig(runtimeID string) (interface{}, dberrors.Error)
@@ -29,7 +29,7 @@ type WriteSession interface {
 	InsertOperation(operation model.Operation) (string, dberrors.Error)
 	UpdateOperationState(operationID string, message string, state model.OperationState) dberrors.Error
 	UpdateCluster(runtimeID string, kubeconfig string, terraformState string) dberrors.Error
-	CleanupData(runtimeID string) dberrors.Error
+	DeleteCluster(runtimeID string) dberrors.Error
 }
 
 type Transaction interface {
@@ -37,34 +37,34 @@ type Transaction interface {
 	Rollback() dberrors.Error
 }
 
-type WriteSessionInTransaction interface {
+type WriteSessionWithinTransaction interface {
 	WriteSession
 	Transaction
 }
 
-type dbSessionFactory struct {
+type factory struct {
 	connection *dbr.Connection
 }
 
-func NewDBSessionFactory(connection *dbr.Connection) DBSessionFactory {
-	return &dbSessionFactory{
+func NewFactory(connection *dbr.Connection) Factory {
+	return &factory{
 		connection: connection,
 	}
 }
 
-func (sf *dbSessionFactory) NewReadSession() ReadSession {
-	return dbReadSession{
-		dbSession: sf.connection.NewSession(nil),
+func (sf *factory) NewReadSession() ReadSession {
+	return readSession{
+		session: sf.connection.NewSession(nil),
 	}
 }
 
-func (sf *dbSessionFactory) NewWriteSession() WriteSession {
-	return dbWriteSession{
-		dbSession: sf.connection.NewSession(nil),
+func (sf *factory) NewWriteSession() WriteSession {
+	return writeSession{
+		session: sf.connection.NewSession(nil),
 	}
 }
 
-func (sf *dbSessionFactory) NewWriteSessionInTransaction() (WriteSessionInTransaction, dberrors.Error) {
+func (sf *factory) NewSessionWithinTransaction() (WriteSessionWithinTransaction, dberrors.Error) {
 	dbSession := sf.connection.NewSession(nil)
 	dbTransaction, err := dbSession.Begin()
 
@@ -72,8 +72,8 @@ func (sf *dbSessionFactory) NewWriteSessionInTransaction() (WriteSessionInTransa
 		return nil, dberrors.Internal("Failed to start transaction: %s", err)
 	}
 
-	return dbWriteSession{
-		dbSession:     dbSession,
-		dbTransaction: dbTransaction,
+	return writeSession{
+		session:     dbSession,
+		transaction: dbTransaction,
 	}, nil
 }

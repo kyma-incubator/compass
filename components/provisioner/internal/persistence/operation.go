@@ -12,17 +12,19 @@ type OperationService interface {
 }
 
 type operationService struct {
-	dbSessionFactory dbsession.DBSessionFactory
+	dbSessionFactory dbsession.Factory
 }
 
-func NewOperationService(dbSessionFactory dbsession.DBSessionFactory) OperationService {
+func NewOperationService(dbSessionFactory dbsession.Factory) OperationService {
 	return operationService{
 		dbSessionFactory: dbSessionFactory,
 	}
 }
 
 func (os operationService) Get(operationID string) (model.Operation, error) {
-	return model.Operation{}, nil
+	session := os.dbSessionFactory.NewReadSession()
+
+	return session.GetOperation(operationID)
 }
 
 func (os operationService) SetAsFailed(operationID string, message string) error {

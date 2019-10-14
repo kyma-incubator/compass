@@ -6,44 +6,17 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 )
 
-type dbReadSession struct {
-	dbSession *dbr.Session
+type readSession struct {
+	session *dbr.Session
 }
 
-func (r dbReadSession) GetRuntimeStatus(runtimeID string) (model.RuntimeStatus, dberrors.Error) {
-	operation, err := r.GetLastOperation(runtimeID)
-	if err != nil {
-		return model.RuntimeStatus{}, err
-	}
-
-	clusterConfig, err := r.GetClusterConfig(runtimeID)
-	if err != nil {
-		return model.RuntimeStatus{}, err
-	}
-
-	kymaConfig, err := r.GetKymaConfig(runtimeID)
-	if err != nil {
-		return model.RuntimeStatus{}, err
-	}
-
-	runtimeConfiguration := model.RuntimeConfig{
-		KymaConfig:    kymaConfig,
-		ClusterConfig: clusterConfig,
-	}
-
-	return model.RuntimeStatus{
-		LastOperationStatus:  operation,
-		RuntimeConfiguration: runtimeConfiguration,
-	}, nil
-}
-
-func (r dbReadSession) GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error) {
+func (r readSession) GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error) {
 	var kymaConfig []struct {
 		Version string
 		Module  string
 	}
 
-	rowsCount, err := r.dbSession.
+	rowsCount, err := r.session.
 		Select("*").
 		From("cluster").
 		Join("kyma_config", "cluster.id=kyma_config.cluster_id").
@@ -71,60 +44,80 @@ func (r dbReadSession) GetKymaConfig(runtimeID string) (model.KymaConfig, dberro
 	}, nil
 }
 
-func (r dbReadSession) GetClusterConfig(runtimeID string) (interface{}, dberrors.Error) {
+func (r readSession) GetClusterConfig(runtimeID string) (interface{}, dberrors.Error) {
 	var gardenerConfig model.GardenerConfig
 
-	rowsCount, err := r.dbSession.
+	err := r.session.
 		Select("*").
 		From("cluster").
-		LeftJoin("gardener_config", "cluster.id=gardener_config.cluster_id").
+		Join("gardener_config", "cluster.id=gardener_config.cluster_id").
 		Where(dbr.Eq("cluster.id", runtimeID)).
-		Load(&gardenerConfig)
+		LoadOne(&gardenerConfig)
 
-	if err != nil {
-		return model.KymaConfig{}, dberrors.Internal("Failed to get Gardener Config: %s", err)
+	if err == nil {
+		return gardenerConfig, nil
 	}
 
-	if rowsCount == 1 {
-		return gardenerConfig, nil
+	if err != nil && err != dbr.ErrNotFound {
+		return model.KymaConfig{}, dberrors.Internal("Failed to get Gardener Config: %s", err)
 	}
 
 	var gcpConfig model.GardenerConfig
 
-	err = r.dbSession.
+	err = r.session.
 		Select("*").
 		From("cluster").
-		LeftJoin("gcp_config", "cluster.id=gcpConfig.cluster_id").
+		Join("gcp_config", "cluster.id=gcpConfig.cluster_id").
 		Where(dbr.Eq("cluster.id", runtimeID)).
 		LoadOne(&gcpConfig)
 
 	if err != nil {
+		if err == dbr.ErrNotFound {
+			return model.Operation{}, dberrors.NotFound("Operation not found for runtime: %s", runtimeID)
+		}
 		return model.KymaConfig{}, dberrors.Internal("Failed to get Gardener Config: %s", err)
 	}
 
-	if rowsCount == 1 {
-		return gardenerConfig, nil
-	}
-
-	return model.GCPConfig{}, nil
+	return gardenerConfig, nil
 }
 
-func (r dbReadSession) GetLastOperation(runtimeID string) (model.Operation, dberrors.Error) {
+func (r readSession) GetOperation(operationID string) (model.Operation, dberrors.Error) {
+	var operation model.Operation
 
-	lastOperationDateSelect := r.dbSession.
+	err := r.session.
+		Select("*").
+		From("operation").
+		Where(dbr.Eq("id", operationID)).
+		LoadOne(&operation)
+
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return model.Operation{}, dberrors.NotFound("Operation not found for id: %s", operationID)
+		}
+		return model.Operation{}, dberrors.Internal("Failed to get last operation: %s", err)
+	}
+
+	return operation, nil
+}
+
+func (r readSession) GetLastOperation(runtimeID string) (model.Operation, dberrors.Error) {
+	lastOperationDateSelect := r.session.
 		Select("MAX(start_timestamp)").
 		From("operation").
 		Where(dbr.Eq("cluster_id", runtimeID))
 
 	var operation model.Operation
 
-	err := r.dbSession.
+	err := r.session.
 		Select("*").
 		From("operation").
 		Where(dbr.Eq("start_timestamp", lastOperationDateSelect)).
 		LoadOne(&operation)
 
 	if err != nil {
+		if err == dbr.ErrNotFound {
+			return model.Operation{}, dberrors.NotFound("Last operation not found for runtime: %s", runtimeID)
+		}
 		return model.Operation{}, dberrors.Internal("Failed to get last operation: %s", err)
 	}
 

@@ -55,7 +55,7 @@ func (r *service) ProvisionRuntime(id string, config *gqlschema.ProvisionRuntime
 		return "", err, nil
 	}
 
-	runtimeConfig := model.RuntimeConfigFromInput(config)
+	runtimeConfig := runtimeConfigFromInput(config)
 
 	operation, err := r.runtimeService.SetProvisioningStarted(id, runtimeConfig)
 
@@ -110,7 +110,7 @@ func (r *service) RuntimeStatus(runtimeID string) (*gqlschema.RuntimeStatus, err
 		return nil, err
 	}
 
-	status := model.RuntimeStatusToGraphQLStatus(runtimeStatus)
+	status := runtimeStatusToGraphQLStatus(runtimeStatus)
 
 	return status, nil
 }
@@ -122,7 +122,7 @@ func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.Operati
 		return nil, err
 	}
 
-	status := model.OperationStatusToGQLOperationStatus(operation)
+	status := operationStatusToGQLOperationStatus(operation)
 
 	return status, nil
 }

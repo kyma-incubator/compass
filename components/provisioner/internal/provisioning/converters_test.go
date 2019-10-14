@@ -1,6 +1,7 @@
-package model
+package provisioning
 
 import (
+	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
@@ -10,10 +11,10 @@ import (
 func TestOperationStatusToGQLOperationStatus(t *testing.T) {
 	t.Run("Should create proper operation status struct", func(t *testing.T) {
 		//given
-		operation := Operation{
+		operation := model.Operation{
 			OperationID: "5f6e3ab6-d803-430a-8fac-29c9c9b4485a",
-			Operation:   Provision,
-			State:       Succeeded,
+			Operation:   model.Provision,
+			State:       model.Succeeded,
 			Message:     "Some message",
 			RuntimeID:   "6af76034-272a-42be-ac39-30e075f515a3",
 		}
@@ -26,7 +27,7 @@ func TestOperationStatusToGQLOperationStatus(t *testing.T) {
 		}
 
 		//when
-		status := OperationStatusToGQLOperationStatus(operation)
+		status := operationStatusToGQLOperationStatus(operation)
 
 		//then
 		assert.Equal(t, expectedOperationStatus, status)
@@ -59,8 +60,8 @@ func TestRuntimeConfigFromInput(t *testing.T) {
 			},
 		}
 
-		expectedRuntimeConfig := RuntimeConfig{
-			ClusterConfig: GCPConfig{
+		expectedRuntimeConfig := model.RuntimeConfig{
+			ClusterConfig: model.GCPConfig{
 				Name:              "Something",
 				ProjectName:       "Project",
 				NumberOfNodes:     3,
@@ -71,14 +72,14 @@ func TestRuntimeConfigFromInput(t *testing.T) {
 				KubernetesVersion: "version",
 			},
 			Kubeconfig: "",
-			KymaConfig: KymaConfig{
+			KymaConfig: model.KymaConfig{
 				Version: "1.5",
-				Modules: []KymaModule{"Backup", "BackupInit"},
+				Modules: []model.KymaModule{"Backup", "BackupInit"},
 			},
 		}
 
 		//when
-		runtimeConfig := RuntimeConfigFromInput(input)
+		runtimeConfig := runtimeConfigFromInput(input)
 
 		//then
 		assert.Equal(t, expectedRuntimeConfig, runtimeConfig)
@@ -109,17 +110,17 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		surge := 1
 		unavailable := 1
 
-		runtimeStatus := RuntimeStatus{
-			LastOperationStatus: Operation{
+		runtimeStatus := model.RuntimeStatus{
+			LastOperationStatus: model.Operation{
 				OperationID: "5f6e3ab6-d803-430a-8fac-29c9c9b4485a",
-				Operation:   Provision,
-				State:       Succeeded,
+				Operation:   model.Provision,
+				State:       model.Succeeded,
 				Message:     "Some message",
 				RuntimeID:   "6af76034-272a-42be-ac39-30e075f515a3",
 			},
-			RuntimeConnectionStatus: RuntimeAgentConnectionStatusConnected,
-			RuntimeConfiguration: RuntimeConfig{
-				ClusterConfig: GardenerConfig{
+			RuntimeConnectionStatus: model.RuntimeAgentConnectionStatusConnected,
+			RuntimeConfiguration: model.RuntimeConfig{
+				ClusterConfig: model.GardenerConfig{
 					Name:              name,
 					ProjectName:       project,
 					NodeCount:         nodes,
@@ -138,9 +139,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					MaxUnavailable:    unavailable,
 				},
 				Kubeconfig: kubeconfig,
-				KymaConfig: KymaConfig{
+				KymaConfig: model.KymaConfig{
 					Version: version,
-					Modules: []KymaModule{"Backup", "BackupInit"},
+					Modules: []model.KymaModule{"Backup", "BackupInit"},
 				},
 			},
 		}
@@ -183,7 +184,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		}
 
 		//when
-		gqlStatus := RuntimeStatusToGraphQLStatus(runtimeStatus)
+		gqlStatus := runtimeStatusToGraphQLStatus(runtimeStatus)
 
 		//then
 		assert.Equal(t, expectedRuntimeStatus, gqlStatus)

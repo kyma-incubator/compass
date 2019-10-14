@@ -10,12 +10,12 @@ import (
 	"time"
 )
 
-type dbWriteSession struct {
-	dbSession     *dbr.Session
-	dbTransaction *dbr.Tx
+type writeSession struct {
+	session     *dbr.Session
+	transaction *dbr.Tx
 }
 
-func (ws dbWriteSession) InsertCluster(runtimeID string, creationTimestamp time.Time, terraformState string) dberrors.Error {
+func (ws writeSession) InsertCluster(runtimeID string, creationTimestamp time.Time, terraformState string) dberrors.Error {
 	_, err := ws.insertInto("cluster").
 		Pair("id", runtimeID).
 		Pair("creation_timestamp", creationTimestamp).
@@ -29,7 +29,7 @@ func (ws dbWriteSession) InsertCluster(runtimeID string, creationTimestamp time.
 	return nil
 }
 
-func (ws dbWriteSession) InsertGardenerConfig(runtimeID string, config model.GardenerConfig) dberrors.Error {
+func (ws writeSession) InsertGardenerConfig(runtimeID string, config model.GardenerConfig) dberrors.Error {
 	id, err := uuid.NewV4()
 	if err != nil {
 		return dberrors.Internal("Failed to generate uuid: %s.", err)
@@ -63,7 +63,7 @@ func (ws dbWriteSession) InsertGardenerConfig(runtimeID string, config model.Gar
 	return nil
 }
 
-func (ws dbWriteSession) InsertGCPConfig(runtimeID string, config model.GCPConfig) dberrors.Error {
+func (ws writeSession) InsertGCPConfig(runtimeID string, config model.GCPConfig) dberrors.Error {
 	id, err := uuid.NewV4()
 	if err != nil {
 		return dberrors.Internal("Failed to generate uuid: %s.", err)
@@ -88,7 +88,7 @@ func (ws dbWriteSession) InsertGCPConfig(runtimeID string, config model.GCPConfi
 	return nil
 }
 
-func (ws dbWriteSession) InsertKymaConfig(runtimeID string, version string) (string, dberrors.Error) {
+func (ws writeSession) InsertKymaConfig(runtimeID string, version string) (string, dberrors.Error) {
 	id, err := uuid.NewV4()
 	if err != nil {
 		return "", dberrors.Internal("Failed to generate uuid: %s.", err)
@@ -107,7 +107,7 @@ func (ws dbWriteSession) InsertKymaConfig(runtimeID string, version string) (str
 	return id.String(), nil
 }
 
-func (ws dbWriteSession) InsertKymaConfigModule(kymaConfigID string, module model.KymaModule) dberrors.Error {
+func (ws writeSession) InsertKymaConfigModule(kymaConfigID string, module model.KymaModule) dberrors.Error {
 	id, err := uuid.NewV4()
 	if err != nil {
 		return dberrors.Internal("Failed to generate uuid: %s", err)
@@ -126,7 +126,7 @@ func (ws dbWriteSession) InsertKymaConfigModule(kymaConfigID string, module mode
 	return nil
 }
 
-func (ws dbWriteSession) InsertOperation(operation model.Operation) (string, dberrors.Error) {
+func (ws writeSession) InsertOperation(operation model.Operation) (string, dberrors.Error) {
 	id, err := uuid.NewV4()
 	if err != nil {
 		return "", dberrors.Internal("Failed to generate uuid: %s.", err)
@@ -145,7 +145,7 @@ func (ws dbWriteSession) InsertOperation(operation model.Operation) (string, dbe
 	return id.String(), nil
 }
 
-func (ws dbWriteSession) CleanupData(runtimeID string) dberrors.Error {
+func (ws writeSession) DeleteCluster(runtimeID string) dberrors.Error {
 	_, err := ws.deleteFrom("cluster").
 		Where(dbr.Eq("id", runtimeID)).
 		Exec()
@@ -157,7 +157,7 @@ func (ws dbWriteSession) CleanupData(runtimeID string) dberrors.Error {
 	return nil
 }
 
-func (ws dbWriteSession) UpdateOperationState(operationID string, message string, state model.OperationState) dberrors.Error {
+func (ws writeSession) UpdateOperationState(operationID string, message string, state model.OperationState) dberrors.Error {
 	res, err := ws.update("operation").
 		Where(dbr.Eq("id", operationID)).
 		Set("state", state).
@@ -171,7 +171,7 @@ func (ws dbWriteSession) UpdateOperationState(operationID string, message string
 	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update operation %s state: %s", operationID, err))
 }
 
-func (ws dbWriteSession) UpdateCluster(runtimeID string, kubeconfig string, terraformState string) dberrors.Error {
+func (ws writeSession) UpdateCluster(runtimeID string, kubeconfig string, terraformState string) dberrors.Error {
 	res, err := ws.update("cluster").
 		Where(dbr.Eq("id", runtimeID)).
 		Set("kubeconfig", kubeconfig).
@@ -185,7 +185,7 @@ func (ws dbWriteSession) UpdateCluster(runtimeID string, kubeconfig string, terr
 	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update cluster %s data: %s", runtimeID, err))
 }
 
-func (ws dbWriteSession) updateSucceeded(result sql.Result, errorMsg string) dberrors.Error {
+func (ws writeSession) updateSucceeded(result sql.Result, errorMsg string) dberrors.Error {
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return dberrors.Internal("Failed to get number of rows affected: %s", err)
@@ -198,8 +198,8 @@ func (ws dbWriteSession) updateSucceeded(result sql.Result, errorMsg string) dbe
 	return nil
 }
 
-func (ws dbWriteSession) Commit() dberrors.Error {
-	err := ws.dbTransaction.Commit()
+func (ws writeSession) Commit() dberrors.Error {
+	err := ws.transaction.Commit()
 	if err != nil {
 		return dberrors.Internal("Failed to commit transaction: %s", err)
 	}
@@ -207,8 +207,8 @@ func (ws dbWriteSession) Commit() dberrors.Error {
 	return nil
 }
 
-func (ws dbWriteSession) Rollback() dberrors.Error {
-	err := ws.dbTransaction.Rollback()
+func (ws writeSession) Rollback() dberrors.Error {
+	err := ws.transaction.Rollback()
 	if err != nil {
 		return dberrors.Internal("Failed to rollback transaction: %s", err)
 	}
@@ -216,26 +216,26 @@ func (ws dbWriteSession) Rollback() dberrors.Error {
 	return nil
 }
 
-func (ws dbWriteSession) insertInto(table string) *dbr.InsertStmt {
-	if ws.dbTransaction != nil {
-		return ws.dbTransaction.InsertInto(table)
+func (ws writeSession) insertInto(table string) *dbr.InsertStmt {
+	if ws.transaction != nil {
+		return ws.transaction.InsertInto(table)
 	}
 
-	return ws.dbSession.InsertInto(table)
+	return ws.session.InsertInto(table)
 }
 
-func (ws dbWriteSession) deleteFrom(table string) *dbr.DeleteStmt {
-	if ws.dbTransaction != nil {
-		return ws.dbTransaction.DeleteFrom(table)
+func (ws writeSession) deleteFrom(table string) *dbr.DeleteStmt {
+	if ws.transaction != nil {
+		return ws.transaction.DeleteFrom(table)
 	}
 
-	return ws.dbSession.DeleteFrom(table)
+	return ws.session.DeleteFrom(table)
 }
 
-func (ws dbWriteSession) update(table string) *dbr.UpdateStmt {
-	if ws.dbTransaction != nil {
-		return ws.dbTransaction.Update(table)
+func (ws writeSession) update(table string) *dbr.UpdateStmt {
+	if ws.transaction != nil {
+		return ws.transaction.Update(table)
 	}
 
-	return ws.dbSession.Update(table)
+	return ws.session.Update(table)
 }
