@@ -491,7 +491,7 @@
   version = "kubernetes-1.15.2"
 
 [[projects]]
-  digest = "1:948e95847a7039ef59bd27457da5a3a5c235e7ad9936921386e7322dbce6b0a6"
+  digest = "1:d6abe2dd8af28ebc4c25a7b075314cc5376c26088b2c964edcc330ef2e6a6880"
   name = "k8s.io/client-go"
   packages = [
     "discovery",

@@ -61,14 +61,6 @@
   version = "v3.2.0"
 
 [[projects]]
-  digest = "1:2cd7915ab26ede7d95b8749e6b1f933f1c6d5398030684e6505940a10f31cfda"
-  name = "github.com/ghodss/yaml"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "0ca9ea5df5451ffdf184b4428c902747c2c11cd7"
-  version = "v1.0.0"
-
-[[projects]]
   digest = "1:582b704bebaa06b48c29b0cec224a6058a09c86883aaddabde889cd1a5f73e1b"
   name = "github.com/google/uuid"
   packages = ["."]
@@ -112,13 +104,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:bf7cceb627b3f72f0211793921bec59ed67c642baac2bc2390a90392b5511256"
+  digest = "1:d3b9750a8d2d6e43ba6378d26c327fce2be695322ab8204a1efd5aa6062caccd"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/pkg/graphql",
     "components/director/pkg/scalar",
-    "components/director/pkg/scope",
-    "components/director/pkg/strings",
   ]
   pruneopts = "UT"
   revision = "5227fabe48bd981db923170282a97da83fa56a15"
@@ -130,14 +120,6 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "3a92531802258604bd12793465c2e28bc4b2fc85"
-
-[[projects]]
-  branch = "master"
-  digest = "1:4f971e961cc101712d18dbbd532813bbcd08c9984acceb55dff3fb86ed62ed5f"
-  name = "github.com/oliveagle/jsonpath"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "2e52cf6e685269ed8aefec6390f3cac3ef74e730"
 
 [[projects]]
   digest = "1:cf31692c14422fa27c83a05292eb5cbe0fb2775972e8f1f8446a71549bd8980b"
@@ -247,7 +229,6 @@
     "github.com/google/uuid",
     "github.com/kisielk/errcheck",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
-    "github.com/kyma-incubator/compass/components/director/pkg/scope",
     "github.com/machinebox/graphql",
     "github.com/pkg/errors",
     "github.com/stretchr/testify/assert",

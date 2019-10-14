@@ -475,7 +475,7 @@ func TestCreateUpdateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "Application name is not unique within tenant")
+	assert.Contains(t, err.Error(), "not unique")
 
 	//Create second application with unique name
 	//GIVEN
@@ -514,7 +514,7 @@ func TestCreateUpdateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "Application name is not unique within tenant")
+	assert.Contains(t, err.Error(), "not unique")
 }
 
 func TestDeleteApplication(t *testing.T) {

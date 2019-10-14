@@ -35,13 +35,21 @@ func NewService(repo Repository, uidService UIDService) *service {
 }
 
 func (s *service) Create(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error) {
+	return s.create(ctx, s.uidService.Generate(), objectType, objectID, authInput)
+}
+
+func (s *service) CreateWithCustomID(ctx context.Context, id string, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error) {
+	return s.create(ctx, id, objectType, objectID, authInput)
+}
+
+func (s *service) create(ctx context.Context, id string, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
 	}
 
 	systemAuth := model.SystemAuth{
-		ID:    s.uidService.Generate(),
+		ID:    id,
 		Value: authInput.ToAuth(),
 	}
 

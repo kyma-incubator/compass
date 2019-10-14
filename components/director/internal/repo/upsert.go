@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/lib/pq"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
@@ -57,7 +59,7 @@ func (u *universalUpserter) Upsert(ctx context.Context, dbEntity interface{}) er
 	_, err = persist.NamedExec(stmtWithUpsert, dbEntity)
 	if pqerr, ok := err.(*pq.Error); ok {
 		if pqerr.Code == persistence.UniqueViolation {
-			return &notUniqueError{}
+			return apperrors.NewNotUniqueError("")
 		}
 	}
 

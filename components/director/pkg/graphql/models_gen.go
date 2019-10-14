@@ -216,6 +216,19 @@ type HealthCheckPage struct {
 
 func (HealthCheckPage) IsPageable() {}
 
+type IntegrationSystemInput struct {
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+}
+
+type IntegrationSystemPage struct {
+	Data       []*IntegrationSystem `json:"data"`
+	PageInfo   *PageInfo            `json:"pageInfo"`
+	TotalCount int                  `json:"totalCount"`
+}
+
+func (IntegrationSystemPage) IsPageable() {}
+
 type Label struct {
 	Key   string      `json:"key"`
 	Value interface{} `json:"value"`
@@ -242,7 +255,8 @@ type LabelFilter struct {
 type OAuthCredentialData struct {
 	ClientID     string `json:"clientId"`
 	ClientSecret string `json:"clientSecret"`
-	URL          string `json:"url"`
+	// URL for getting access token
+	URL string `json:"url"`
 }
 
 func (OAuthCredentialData) IsCredentialData() {}

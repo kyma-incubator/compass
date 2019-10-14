@@ -7,6 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/sirupsen/logrus"
+
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application/automock"
@@ -945,8 +948,6 @@ func TestService_List(t *testing.T) {
 func TestService_ListByRuntimeID(t *testing.T) {
 	runtimeUUID := uuid.New()
 	testError := errors.New("test error")
-	labelNotFoundError := errors.New("label scenarios not found")
-
 	tenantUUID := uuid.New()
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantUUID.String())
@@ -1015,18 +1016,22 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				labelRepository := &automock.LabelRepository{}
 				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeUUID.String(), model.ScenariosKey).
-					Return(nil, labelNotFoundError).Once()
+					Return(nil, apperrors.NewNotFoundError("")).Once()
 				return labelRepository
 			},
 			AppRepositoryFn: func() *automock.ApplicationRepository {
 				appRepository := &automock.ApplicationRepository{}
 				return appRepository
 			},
-			ExpectedError:  nil,
-			ExpectedResult: &emptyPage,
+			ExpectedError: nil,
+			ExpectedResult: &model.ApplicationPage{
+				Data:       []*model.Application{},
+				PageInfo:   &pagination.Page{},
+				TotalCount: 0,
+			},
 		},
 		{
-			Name:  "Return error when checking of runtime existance failed",
+			Name:  "Return error when checking of runtime existence failed",
 			Input: runtimeUUID,
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
 				runtimeRepository := &automock.RuntimeRepository{}
@@ -1151,6 +1156,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
 			} else {
+				logrus.Info(err)
 				require.NoError(t, err)
 			}
 			assert.Equal(t, testCase.ExpectedResult, results)

@@ -3,6 +3,8 @@ package label
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
 	"github.com/pkg/errors"
@@ -56,7 +58,7 @@ func (s *labelUpsertService) UpsertLabel(ctx context.Context, tenant string, lab
 	var labelDef *model.LabelDefinition
 
 	labelDef, err := s.labelDefinitionRepo.GetByKey(ctx, tenant, labelInput.Key)
-	if err != nil {
+	if err != nil && !apperrors.IsNotFoundError(err) {
 		return errors.Wrapf(err, "while reading LabelDefinition for key '%s'", labelInput.Key)
 	}
 

@@ -6,6 +6,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/pkg/errors"
 )
 
 //go:generate mockery -name=SystemAuthService -output=automock -outpkg=automock -case=underscore
@@ -14,19 +15,25 @@ type SystemAuthService interface {
 	DeleteByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) error
 }
 
+//go:generate mockery -name=OAuth20Service -output=automock -outpkg=automock -case=underscore
+type OAuth20Service interface {
+	DeleteClientCredentials(ctx context.Context, clientID string) error
+}
+
 //go:generate mockery -name=SystemAuthConverter -output=automock -outpkg=automock -case=underscore
 type SystemAuthConverter interface {
 	ToGraphQL(model *model.SystemAuth) *graphql.SystemAuth
 }
 
 type Resolver struct {
-	transact persistence.Transactioner
-	svc      SystemAuthService
-	conv     SystemAuthConverter
+	transact   persistence.Transactioner
+	svc        SystemAuthService
+	oAuth20Svc OAuth20Service
+	conv       SystemAuthConverter
 }
 
-func NewResolver(transact persistence.Transactioner, svc SystemAuthService, conv SystemAuthConverter) *Resolver {
-	return &Resolver{transact: transact, svc: svc, conv: conv}
+func NewResolver(transact persistence.Transactioner, svc SystemAuthService, oAuth20Svc OAuth20Service, conv SystemAuthConverter) *Resolver {
+	return &Resolver{transact: transact, svc: svc, oAuth20Svc: oAuth20Svc, conv: conv}
 }
 
 func (r *Resolver) GenericDeleteSystemAuth(objectType model.SystemAuthReferenceObjectType) func(ctx context.Context, id string) (*graphql.SystemAuth, error) {
@@ -45,6 +52,13 @@ func (r *Resolver) GenericDeleteSystemAuth(objectType model.SystemAuthReferenceO
 		}
 
 		deletedItem := r.conv.ToGraphQL(item)
+
+		if item.Value != nil && item.Value.Credential.Oauth != nil {
+			err := r.oAuth20Svc.DeleteClientCredentials(ctx, item.Value.Credential.Oauth.ClientID)
+			if err != nil {
+				return nil, errors.Wrap(err, "while deleting OAuth 2.0 client")
+			}
+		}
 
 		err = r.svc.DeleteByIDForObject(ctx, objectType, id)
 		if err != nil {

@@ -1,11 +1,11 @@
 directive @hasScopes(path: String!) on FIELD_DEFINITION
 type Query {
-	alreadyHasScope: String! @hasScopes(path: "query.alreadyHasScope")
-	doesNotHaveScope: String! @hasScopes(path: "query.doesNotHaveScope")
+	alreadyHasScope: String! @hasScopes(path: "graphql.query.alreadyHasScope")
+	doesNotHaveScope: String! @hasScopes(path: "graphql.query.doesNotHaveScope")
 }
 
 type Mutation {
-	alreadyHasScope: String! @hasScopes(path: "mutation.alreadyHasScope")
-	doesNotHaveScope: String! @hasScopes(path: "mutation.doesNotHaveScope")
+	alreadyHasScope: String! @hasScopes(path: "graphql.mutation.alreadyHasScope")
+	doesNotHaveScope: String! @hasScopes(path: "graphql.mutation.doesNotHaveScope")
 }
 

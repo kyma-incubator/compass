@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
@@ -88,7 +90,7 @@ func (u *universalUpdater) unsafeUpdateSingle(ctx context.Context, dbEntity inte
 	res, err := persist.NamedExec(stmtBuilder.String(), dbEntity)
 	if pqerr, ok := err.(*pq.Error); ok {
 		if pqerr.Code == persistence.UniqueViolation {
-			return &notUniqueError{}
+			return apperrors.NewNotUniqueError("")
 		}
 	}
 	if err != nil {

@@ -72,6 +72,11 @@ models:
         resolver: true
       auths:
         resolver: true
+  IntegrationSystem:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.IntegrationSystem"
+    fields:
+      auths:
+        resolver: true
 
   APIDefinition:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.APIDefinition"
