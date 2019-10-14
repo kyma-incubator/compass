@@ -55,7 +55,7 @@ if [[ "$1" == "$CI_FLAG" ]]; then
 	buildEnv="env CGO_ENABLED=0 GOOS=linux GOARCH=amd64"
 fi
 
-${buildEnv} go build -o bin/provisioner ./cmd/main.go
+${buildEnv} go build -o bin/provisioner ./cmd/
 goBuildResult=$?
 rm bin/provisioner
 

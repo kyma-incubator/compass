@@ -9,11 +9,11 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
 	"github.com/pkg/errors"
 
-	"github.com/kubernetes/client-go/kubernetes/typed/core/v1"
 	"path/filepath"
 
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"

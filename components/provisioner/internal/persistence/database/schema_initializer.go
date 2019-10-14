@@ -2,9 +2,10 @@ package database
 
 import (
 	"fmt"
-	"github.com/gocraft/dbr"
 	"io/ioutil"
 	"time"
+
+	"github.com/gocraft/dbr"
 
 	"github.com/lib/pq"
 

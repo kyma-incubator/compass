@@ -1,13 +1,14 @@
 package persistence
 
 import (
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 	sessionMocks "github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dbsession/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"testing"
-	"time"
 )
 
 func TestSetProvisioning(t *testing.T) {

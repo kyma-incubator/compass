@@ -1,8 +1,9 @@
 package persistence
 
 import (
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dbsession"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dbsession"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 

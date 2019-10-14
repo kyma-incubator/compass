@@ -3,11 +3,12 @@ package dbsession
 import (
 	"database/sql"
 	"fmt"
+	"time"
+
 	"github.com/gocraft/dbr"
 	"github.com/gofrs/uuid"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
-	"time"
 )
 
 type writeSession struct {

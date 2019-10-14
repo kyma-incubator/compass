@@ -1,8 +1,9 @@
 package provisioning
 
 import (
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"

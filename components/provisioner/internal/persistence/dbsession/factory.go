@@ -1,10 +1,11 @@
 package dbsession
 
 import (
+	"time"
+
 	"github.com/gocraft/dbr"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
-	"time"
 )
 
 type Factory interface {

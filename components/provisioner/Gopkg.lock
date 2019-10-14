@@ -664,17 +664,6 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:7fa4f91554c2fe16b9e6df07d1d33f36e3e8b37aac960096b19c05704b0e0aad"
-  name = "github.com/kubernetes/client-go"
-  packages = [
-    "kubernetes/typed/core/v1",
-    "rest",
-  ]
-  pruneopts = "UT"
-  revision = "78d2af792babf2dd937ba2e2a8d99c753a5eda89"
-  version = "v12.0.0"
-
-[[projects]]
   branch = "master"
   digest = "1:7e29b8bd35aabbeb6b8b44ca393081e086a90cf8f10397ff8c3abe4eb48760ea"
   name = "github.com/kyma-incubator/hydroform"
@@ -1567,8 +1556,6 @@
     "github.com/gofrs/uuid",
     "github.com/gorilla/mux",
     "github.com/kisielk/errcheck",
-    "github.com/kubernetes/client-go/kubernetes/typed/core/v1",
-    "github.com/kubernetes/client-go/rest",
     "github.com/kyma-incubator/hydroform",
     "github.com/kyma-incubator/hydroform/types",
     "github.com/lib/pq",
@@ -1586,6 +1573,7 @@
     "k8s.io/apimachinery/pkg/util/uuid",
     "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/kubernetes/typed/core/v1",
+    "k8s.io/client-go/rest",
     "k8s.io/client-go/tools/clientcmd",
     "k8s.io/client-go/util/homedir",
   ]
