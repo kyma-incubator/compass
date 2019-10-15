@@ -141,10 +141,13 @@ fi
 #
 # GO VET
 #
-goVetResult=$(echo "${filesToCheck}" | xargs -L1 go vet)
-if [[ $(echo ${#goVetResult}) != 0 ]]
-	then
-    	echo -e "${RED}✗ go vet${NC}\n$goVetResult${NC}"
-    	exit 1;
-	else echo -e "${GREEN}√ go vet${NC}"
-fi
+packagesToVet=("./cmd/..." "./internal/...")
+
+for vPackage in "${packagesToVet[@]}"; do
+	vetResult=$(go vet ${vPackage})
+	if [ $(echo ${#vetResult}) != 0 ]; then
+		echo -e "${RED}✗ go vet ${vPackage} ${NC}\n$vetResult${NC}"
+		exit 1
+	else echo -e "${GREEN}√ go vet ${vPackage} ${NC}"
+	fi
+done
