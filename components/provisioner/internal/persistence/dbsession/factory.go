@@ -8,12 +8,14 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 )
 
+//go:generate mockery -name=Factory
 type Factory interface {
 	NewReadSession() ReadSession
 	NewWriteSession() WriteSession
 	NewSessionWithinTransaction() (WriteSessionWithinTransaction, dberrors.Error)
 }
 
+//go:generate mockery -name=ReadSession
 type ReadSession interface {
 	GetOperation(operationID string) (model.Operation, dberrors.Error)
 	GetLastOperation(runtimeID string) (model.Operation, dberrors.Error)
@@ -21,6 +23,7 @@ type ReadSession interface {
 	GetClusterConfig(runtimeID string) (interface{}, dberrors.Error)
 }
 
+//go:generate mockery -name=WriteSession
 type WriteSession interface {
 	InsertCluster(runtimeID string, creationTimestamp time.Time, terraformState string) dberrors.Error
 	InsertGardenerConfig(runtimeID string, config model.GardenerConfig) dberrors.Error

@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 
 	_ "github.com/lib/pq"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -36,11 +36,11 @@ func InitializeDatabase(connectionString, schemaFilePath string) (*dbr.Connectio
 	}
 
 	if initialized {
-		logrus.Info("Database already initialized")
+		log.Info("Database already initialized")
 		return connection, nil
 	}
 
-	logrus.Info("Database not initialized. Setting up schema...")
+	log.Info("Database not initialized. Setting up schema...")
 
 	content, err := ioutil.ReadFile(schemaFilePath)
 	if err != nil {
@@ -54,7 +54,7 @@ func InitializeDatabase(connectionString, schemaFilePath string) (*dbr.Connectio
 		return nil, errors.Wrap(err, "Failed to setup database schema")
 	}
 
-	logrus.Info("Database initialized successfully")
+	log.Info("Database initialized successfully")
 
 	return connection, nil
 }
@@ -62,7 +62,7 @@ func InitializeDatabase(connectionString, schemaFilePath string) (*dbr.Connectio
 func closeDBConnection(db *dbr.Connection) {
 	err := db.Close()
 	if err != nil {
-		logrus.Warnf("Failed to close database connection: %s", err.Error())
+		log.Warnf("Failed to close database connection: %s", err.Error())
 	}
 }
 
@@ -105,10 +105,10 @@ func waitForDatabaseAccess(connString string, retryCount int) (*dbr.Connection, 
 
 		err = connection.Close()
 		if err != nil {
-			logrus.Info("Failed to close database ...")
+			log.Info("Failed to close database ...")
 		}
 
-		logrus.Info("Failed to access database, waiting 5 seconds to retry...")
+		log.Info("Failed to access database, waiting 5 seconds to retry...")
 		time.Sleep(5 * time.Second)
 	}
 

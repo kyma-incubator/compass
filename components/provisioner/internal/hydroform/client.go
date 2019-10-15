@@ -18,6 +18,7 @@ const (
 	credentialsFile = "credentials.yaml"
 )
 
+//go:generate mockery -name=Client
 type Client interface {
 	ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName string) (types.ClusterStatus, error)
 	DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretName string) error

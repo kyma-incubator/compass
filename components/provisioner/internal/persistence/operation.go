@@ -5,6 +5,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dbsession"
 )
 
+//go:generate mockery -name=OperationService
 type OperationService interface {
 	Get(operationID string) (model.Operation, error)
 	SetAsFailed(operationID string, message string) error

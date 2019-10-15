@@ -14,7 +14,7 @@ type Client struct {
 }
 
 // DeprovisionCluster provides a mock function with given fields: runtimeConfig, secretName
-func (_m Client) DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretName string) error {
+func (_m *Client) DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretName string) error {
 	ret := _m.Called(runtimeConfig, secretName)
 
 	var r0 error
@@ -28,7 +28,7 @@ func (_m Client) DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretNam
 }
 
 // ProvisionCluster provides a mock function with given fields: runtimeConfig, secretName
-func (_m Client) ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName string) (types.ClusterStatus, error) {
+func (_m *Client) ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName string) (types.ClusterStatus, error) {
 	ret := _m.Called(runtimeConfig, secretName)
 
 	var r0 types.ClusterStatus

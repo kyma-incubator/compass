@@ -13,7 +13,7 @@ type OperationService struct {
 }
 
 // Get provides a mock function with given fields: operationID
-func (_m OperationService) Get(operationID string) (model.Operation, error) {
+func (_m *OperationService) Get(operationID string) (model.Operation, error) {
 	ret := _m.Called(operationID)
 
 	var r0 model.Operation
@@ -34,7 +34,7 @@ func (_m OperationService) Get(operationID string) (model.Operation, error) {
 }
 
 // SetAsFailed provides a mock function with given fields: operationID, message
-func (_m OperationService) SetAsFailed(operationID string, message string) error {
+func (_m *OperationService) SetAsFailed(operationID string, message string) error {
 	ret := _m.Called(operationID, message)
 
 	var r0 error
@@ -48,7 +48,7 @@ func (_m OperationService) SetAsFailed(operationID string, message string) error
 }
 
 // SetAsSucceeded provides a mock function with given fields: operationID
-func (_m OperationService) SetAsSucceeded(operationID string) error {
+func (_m *OperationService) SetAsSucceeded(operationID string) error {
 	ret := _m.Called(operationID)
 
 	var r0 error

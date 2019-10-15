@@ -11,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+//go:generate mockery -name=OperationService
 type RuntimeService interface {
 	GetStatus(runtimeID string) (model.RuntimeStatus, dberrors.Error)
 	SetProvisioningStarted(runtimeID string, runtimeConfig model.RuntimeConfig) (model.Operation, dberrors.Error)
