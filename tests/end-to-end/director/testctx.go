@@ -2,9 +2,13 @@ package director
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"reflect"
 	"strings"
+	"time"
+
+	"github.com/avast/retry-go"
 
 	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/jwtbuilder"
 	gcli "github.com/machinebox/graphql"
@@ -55,7 +59,14 @@ func (tc *testContext) RunOperation(ctx context.Context, req *gcli.Request, resp
 	}
 
 	m := resultMapperFor(&resp)
-	return tc.cli.Run(ctx, req, &m)
+
+	err := retry.Do(func() error {
+		return tc.cli.Run(ctx, req, &m)
+	}, retry.Attempts(10), retry.Delay(time.Second), retry.OnRetry(func(n uint, err error) {
+		fmt.Printf("Retrying attempted %d time, got error: %v\n", n, err)
+	}))
+
+	return err
 }
 
 func (tc *testContext) RunOperationWithCustomTenant(ctx context.Context, tenant string, req *gcli.Request, resp interface{}) error {
