@@ -1,10 +1,13 @@
-# GraphQL Partial Updates
+# GraphQL Complex Updates
 
 ## Overview
 
-This document describes and compares different approaches to designing partial updates in graphql schema. Most of the presented approaches have a link to an example they were based on. 
+This document describes and compares different approaches to updates of complex GraphQL types. 
+Term "complex GraphQL type" is used to describe a type with other object types or arrays of object types nested in it.
+Updating such types is currently problematic because it requires fetching a lot of data to change single value. 
+Most of the presented approaches have a link to an example they were based on.
 
-## Partial update mutation designs
+## Complex update mutation designs
 
 ### 1. Simple Patch
 
@@ -280,7 +283,7 @@ The "PUT Approach" requires additional work on the client side while limiting th
 
 ## Decision
 
-After reconsidering potential use cases and consulting with UI team, the team decided to simply remove problematic fields like `webhooks`, `documents` etc. and give up the functionality to remove all resources at once. This decision was motivated mainly by simplicity of the solution. It will still be possible to create an application with all sub resources in a single mutation thanks to separating "update" and "create" gql input types.  
+After reconsidering potential use cases and consulting with UI team, the team decided to go with simplified version of "PUT Approach" (remove problematic fields like `webhooks`, `documents` etc. and give up the functionality to remove all resources at once). This decision was motivated mainly by simplicity of the solution. It will still be possible to create an application with all sub resources in a single mutation thanks to separating "update" and "create" GraphQL input types.  
 
 ## Appendix
 
