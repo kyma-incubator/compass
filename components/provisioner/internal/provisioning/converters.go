@@ -49,6 +49,7 @@ func gardenerConfigFromInput(input gqlschema.GardenerConfigInput) model.Gardener
 		KubernetesVersion: input.KubernetesVersion,
 		NodeCount:         input.NodeCount,
 		VolumeSize:        input.VolumeSize,
+		DiskType:          input.DiskType,
 		MachineType:       input.MachineType,
 		TargetProvider:    input.TargetProvider,
 		TargetSecret:      input.TargetSecret,

@@ -1,7 +1,10 @@
 package hydroform
 
 import (
+	"fmt"
 	"io/ioutil"
+	"k8s.io/apimachinery/pkg/util/rand"
+	"os"
 
 	"strconv"
 
@@ -10,17 +13,16 @@ import (
 	"github.com/kyma-incubator/hydroform/types"
 	"github.com/pkg/errors"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 const (
-	kubeconfig      = "kubeconfig.yaml"
-	credentialsFile = "credentials.yaml"
+	credentialsFileFmt = "credentials-%s.yaml"
 )
 
 //go:generate mockery -name=Client
 type Client interface {
-	ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName string) (types.ClusterStatus, error)
+	ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName string) (types.ClusterStatus, string, error)
 	DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretName string) error
 }
 
@@ -32,41 +34,45 @@ func NewHydroformClient(secrets v1.SecretInterface) Client {
 	return &client{secrets: secrets}
 }
 
-func (c client) ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName string) (types.ClusterStatus, error) {
+func (c client) ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName string) (types.ClusterStatus, string, error) {
+	credentialsFile := generateRandomFileName()
+
 	err := c.saveCredentialsToFile(secretName, credentialsFile)
 
 	if err != nil {
-		return types.ClusterStatus{}, err
+		return types.ClusterStatus{}, "", err
 	}
 
-	cluster, provider, err := c.prepareConfig(runtimeConfig)
+	cluster, provider, err := c.prepareConfig(runtimeConfig, credentialsFile)
 
 	if err != nil {
-		return types.ClusterStatus{}, err
+		return types.ClusterStatus{}, "", err
 	}
 
 	cluster, err = hf.Provision(cluster, provider)
 	if err != nil {
-		return types.ClusterStatus{}, nil
+		return types.ClusterStatus{}, "", err
 	}
 
 	status, err := hf.Status(cluster, provider)
 	if err != nil {
-		return types.ClusterStatus{}, nil
+		return types.ClusterStatus{}, "", err
 	}
 
 	content, err := hf.Credentials(cluster, provider)
 	if err != nil {
-		return types.ClusterStatus{}, nil
+		return types.ClusterStatus{}, "", err
 	}
 
-	err = ioutil.WriteFile(kubeconfig, content, 0600)
-
-	return *status, nil
+	return *status, string(content), nil
 }
 
 func (c client) DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretName string) error {
-	cluster, provider, err := c.prepareConfig(runtimeConfig)
+	credentialsFile := generateRandomFileName()
+
+	c.saveCredentialsToFile(secretName, credentialsFile)
+
+	cluster, provider, err := c.prepareConfig(runtimeConfig, credentialsFile)
 
 	if err != nil {
 		return err
@@ -88,24 +94,30 @@ func (c client) saveCredentialsToFile(secretName string, filename string) error 
 		return errors.New("kubeconfig not found within the secret")
 	}
 
-	return ioutil.WriteFile(filename, bytes, 0644)
+	err = ioutil.WriteFile(filename, bytes, os.ModePerm)
+
+	if err != nil {
+		return err
+	}
+
+	return os.Chmod(filename, os.ModePerm)
 }
 
-func (c client) prepareConfig(input model.RuntimeConfig) (*types.Cluster, *types.Provider, error) {
+func (c client) prepareConfig(input model.RuntimeConfig, credentialsFile string) (*types.Cluster, *types.Provider, error) {
 	gardenerConfig, ok := input.GardenerConfig()
 	if ok {
-		return buildConfigForGardener(gardenerConfig)
+		return buildConfigForGardener(gardenerConfig, credentialsFile)
 	}
 
 	gcpConfig, ok := input.GCPConfig()
 	if ok {
-		return buildConfigForGCP(gcpConfig)
+		return buildConfigForGCP(gcpConfig, credentialsFile)
 	}
 
 	return nil, nil, errors.New("configuration does not match any provider profiles")
 }
 
-func buildConfigForGCP(config model.GCPConfig) (*types.Cluster, *types.Provider, error) {
+func buildConfigForGCP(config model.GCPConfig, credentialsFile string) (*types.Cluster, *types.Provider, error) {
 	diskSize, err := strconv.Atoi(config.BootDiskSize)
 
 	if err != nil {
@@ -129,7 +141,7 @@ func buildConfigForGCP(config model.GCPConfig) (*types.Cluster, *types.Provider,
 	return cluster, provider, nil
 }
 
-func buildConfigForGardener(config model.GardenerConfig) (*types.Cluster, *types.Provider, error) {
+func buildConfigForGardener(config model.GardenerConfig, credentialsFile string) (*types.Cluster, *types.Provider, error) {
 	diskSize, err := strconv.Atoi(config.VolumeSize)
 
 	if err != nil {
@@ -152,7 +164,7 @@ func buildConfigForGardener(config model.GardenerConfig) (*types.Cluster, *types
 		CustomConfigurations: map[string]interface{}{
 			"target_provider": config.TargetProvider,
 			"target_secret":   config.TargetSecret,
-			"disk_type":       "pd-standard",
+			"disk_type":       config.DiskType,
 			"zone":            config.Zone,
 			"cidr":            config.Cidr,
 			"autoscaler_min":  config.AutoScalerMin,
@@ -162,4 +174,8 @@ func buildConfigForGardener(config model.GardenerConfig) (*types.Cluster, *types
 		},
 	}
 	return cluster, provider, nil
+}
+
+func generateRandomFileName() string {
+	return fmt.Sprintf(credentialsFileFmt, rand.String(6))
 }

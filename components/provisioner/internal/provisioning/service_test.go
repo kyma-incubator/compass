@@ -41,7 +41,30 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		runtimeServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.NotFound("Not found"))
 		runtimeServiceMock.On("SetProvisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
 		operationServiceMock.On("SetAsSucceeded", expOperationID).Return(nil)
-		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(types.ClusterStatus{Phase: types.Provisioned}, nil)
+		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(types.ClusterStatus{Phase: types.Provisioned}, "", nil)
+
+		service := NewProvisioningService(operationServiceMock, runtimeServiceMock, hydroformMock)
+
+		//when
+		operationID, err, finished := service.ProvisionRuntime(runtimeID, &gqlschema.ProvisionRuntimeInput{clusterConfig, &gqlschema.CredentialsInput{}, &gqlschema.KymaConfigInput{}})
+		require.NoError(t, err)
+
+		waitUntilFinished(finished)
+
+		//then
+		assert.Equal(t, expOperationID, operationID)
+	})
+
+	t.Run("Should start runtime provisioning and return operation ID when previous provisioning failed", func(t *testing.T) {
+		//given
+		runtimeID := "184ccdf2-59e4-44b7-b553-6cb296af5ea0"
+		expOperationID := "223949ed-e6b6-4ab2-ab3e-8e19cd456dd40"
+		operation := model.Operation{ID: expOperationID}
+
+		runtimeServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{Type: model.Provision, State: model.Failed}, nil)
+		runtimeServiceMock.On("SetProvisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
+		operationServiceMock.On("SetAsSucceeded", expOperationID).Return(nil)
+		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(types.ClusterStatus{Phase: types.Provisioned}, "", nil)
 
 		service := NewProvisioningService(operationServiceMock, runtimeServiceMock, hydroformMock)
 

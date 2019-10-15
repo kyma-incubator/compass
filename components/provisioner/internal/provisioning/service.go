@@ -45,13 +45,13 @@ func NewProvisioningService(operationService persistence.OperationService, runti
 }
 
 func (r *service) ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeInput) (string, error, chan interface{}) {
-	_, err := r.runtimeService.GetLastOperation(id)
+	lastOperation, err := r.runtimeService.GetLastOperation(id)
 
-	if err == nil {
+	if err == nil && !lastProvisioningFailed(lastOperation) {
 		return "", errors.New(fmt.Sprintf("cannot provision runtime. Runtime %s already provisioned", id)), nil
 	}
 
-	if err.Code() != dberrors.CodeNotFound {
+	if err != nil && err.Code() != dberrors.CodeNotFound {
 		return "", err, nil
 	}
 
@@ -68,6 +68,10 @@ func (r *service) ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeI
 	go r.startProvisioning(operation.ID, runtimeConfig, config.Credentials.SecretName, finished)
 
 	return operation.ID, nil, finished
+}
+
+func lastProvisioningFailed(operation model.Operation) bool {
+	return operation.Type == model.Provision && operation.State == model.Failed
 }
 
 func (r *service) DeprovisionRuntime(id string, credentials gqlschema.CredentialsInput) (string, error, chan interface{}) {
@@ -132,7 +136,7 @@ func (r *service) CleanupRuntimeData(id string) (string, error) {
 }
 
 func (r *service) startProvisioning(operationID string, config model.RuntimeConfig, secretName string, finished chan interface{}) {
-	status, err := r.hydroform.ProvisionCluster(config, secretName)
+	status, _, err := r.hydroform.ProvisionCluster(config, secretName)
 
 	if err != nil || status.Phase != types.Provisioned {
 		updateOperationStatus(func() error {
