@@ -39,7 +39,6 @@ There is also a case to consider with default values. For example, for now, we h
 
 We have to remember that if we want to use `PATCH` updates, we'll have to specify additional inputs for each existing `PUT` input.
 
-
 #### Schema
 
 ```graphql
