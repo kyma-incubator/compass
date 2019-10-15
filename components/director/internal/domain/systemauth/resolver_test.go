@@ -52,7 +52,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("Get", contextParam, id).Return(modelSystemAuth, nil).Once()
+				svc.On("GetByIDForObject", contextParam, objectType, id).Return(modelSystemAuth, nil).Once()
 				svc.On("DeleteByIDForObject", contextParam, objectType, id).Return(nil).Once()
 				return svc
 			},
@@ -73,7 +73,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("Get", contextParam, id).Return(oauthModelSystemAuth, nil).Once()
+				svc.On("GetByIDForObject", contextParam, objectType, id).Return(oauthModelSystemAuth, nil).Once()
 				svc.On("DeleteByIDForObject", contextParam, objectType, id).Return(nil).Once()
 				return svc
 			},
@@ -91,11 +91,11 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 			ExpectedErr:        nil,
 		},
 		{
-			Name:            "Error - Get SystemAuth",
+			Name:            "Error - GetByIDForObject SystemAuth",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("Get", contextParam, id).Return(nil, testErr).Once()
+				svc.On("GetByIDForObject", contextParam, objectType, id).Return(nil, testErr).Once()
 				return svc
 			},
 			OAuthServiceFn: func() *automock.OAuth20Service {
@@ -114,7 +114,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("Get", contextParam, id).Return(modelSystemAuth, nil).Once()
+				svc.On("GetByIDForObject", contextParam, objectType, id).Return(modelSystemAuth, nil).Once()
 				svc.On("DeleteByIDForObject", contextParam, objectType, id).Return(testErr).Once()
 				return svc
 			},
@@ -135,7 +135,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("Get", contextParam, id).Return(oauthModelSystemAuth, nil).Once()
+				svc.On("GetByIDForObject", contextParam, objectType, id).Return(oauthModelSystemAuth, nil).Once()
 				return svc
 			},
 			OAuthServiceFn: func() *automock.OAuth20Service {
@@ -174,7 +174,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("Get", contextParam, id).Return(oauthModelSystemAuth, nil).Once()
+				svc.On("GetByIDForObject", contextParam, objectType, id).Return(oauthModelSystemAuth, nil).Once()
 				svc.On("DeleteByIDForObject", contextParam, objectType, id).Return(nil).Once()
 				return svc
 			},

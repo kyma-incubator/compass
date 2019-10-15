@@ -32,13 +32,13 @@ func (_m *SystemAuthService) CreateWithCustomID(ctx context.Context, id string, 
 	return r0, r1
 }
 
-// Get provides a mock function with given fields: ctx, id
-func (_m *SystemAuthService) Get(ctx context.Context, id string) (*model.SystemAuth, error) {
-	ret := _m.Called(ctx, id)
+// GetByIDForObject provides a mock function with given fields: ctx, objectType, authID
+func (_m *SystemAuthService) GetByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) (*model.SystemAuth, error) {
+	ret := _m.Called(ctx, objectType, authID)
 
 	var r0 *model.SystemAuth
-	if rf, ok := ret.Get(0).(func(context.Context, string) *model.SystemAuth); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, model.SystemAuthReferenceObjectType, string) *model.SystemAuth); ok {
+		r0 = rf(ctx, objectType, authID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.SystemAuth)
@@ -46,8 +46,8 @@ func (_m *SystemAuthService) Get(ctx context.Context, id string) (*model.SystemA
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, model.SystemAuthReferenceObjectType, string) error); ok {
+		r1 = rf(ctx, objectType, authID)
 	} else {
 		r1 = ret.Error(1)
 	}

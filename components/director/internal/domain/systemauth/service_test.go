@@ -314,6 +314,98 @@ func TestService_ListForObject(t *testing.T) {
 	})
 }
 
+func TestService_GetByIDForObject(t *testing.T) {
+	// GIVEN
+	ctx := tenant.SaveToContext(context.TODO(), testTenant)
+
+	sysAuthID := "foo"
+	modelSysAuth := fixModelSystemAuth(sysAuthID, model.RuntimeReference, "bar", nil)
+
+	testCases := []struct {
+		Name            string
+		sysAuthRepoFn   func() *automock.Repository
+		InputObjectType model.SystemAuthReferenceObjectType
+		ExpectedSysAuth *model.SystemAuth
+		ExpectedError   error
+	}{
+		{
+			Name: "Success getting auth for Runtime",
+			sysAuthRepoFn: func() *automock.Repository {
+				sysAuthRepo := &automock.Repository{}
+				sysAuthRepo.On("GetByID", contextThatHasTenant(testTenant), testTenant, sysAuthID).Return(modelSysAuth, nil)
+				return sysAuthRepo
+			},
+			InputObjectType: model.RuntimeReference,
+			ExpectedError:   nil,
+			ExpectedSysAuth: modelSysAuth,
+		},
+		{
+			Name: "Success getting auth for Application",
+			sysAuthRepoFn: func() *automock.Repository {
+				sysAuthRepo := &automock.Repository{}
+				sysAuthRepo.On("GetByID", contextThatHasTenant(testTenant), testTenant, sysAuthID).Return(modelSysAuth, nil)
+				return sysAuthRepo
+			},
+			InputObjectType: model.ApplicationReference,
+			ExpectedError:   nil,
+			ExpectedSysAuth: modelSysAuth,
+		},
+		{
+			Name: "Success getting auth for Integration System",
+			sysAuthRepoFn: func() *automock.Repository {
+				sysAuthRepo := &automock.Repository{}
+				sysAuthRepo.On("GetByID", contextThatHasTenant(testTenant), model.IntegrationSystemTenant, sysAuthID).Return(modelSysAuth, nil)
+				return sysAuthRepo
+			},
+			InputObjectType: model.IntegrationSystemReference,
+			ExpectedError:   nil,
+			ExpectedSysAuth: modelSysAuth,
+		},
+		{
+			Name: "Error getting System Auths",
+			sysAuthRepoFn: func() *automock.Repository {
+				sysAuthRepo := &automock.Repository{}
+				sysAuthRepo.On("GetByID", contextThatHasTenant(testTenant), testTenant, sysAuthID).Return(nil, testErr)
+				return sysAuthRepo
+			},
+			InputObjectType: model.RuntimeReference,
+			ExpectedError:   testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			sysAuthRepo := testCase.sysAuthRepoFn()
+			svc := systemauth.NewService(sysAuthRepo, nil)
+
+			// WHEN
+			sysAuth, err := svc.GetByIDForObject(ctx, testCase.InputObjectType, sysAuthID)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedSysAuth, sysAuth)
+			}
+
+			sysAuthRepo.AssertExpectations(t)
+		})
+	}
+
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := systemauth.NewService(nil, nil)
+
+		// WHEN
+		err := svc.DeleteByIDForObject(context.TODO(), "", "")
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+	})
+}
+
 func TestService_DeleteByIDForObject(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testTenant)
