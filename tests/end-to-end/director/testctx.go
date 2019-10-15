@@ -62,9 +62,9 @@ func (tc *testContext) RunOperation(ctx context.Context, req *gcli.Request, resp
 
 	err := retry.Do(func() error {
 		return tc.cli.Run(ctx, req, &m)
-	}, retry.Attempts(10), retry.Delay(time.Second), retry.OnRetry(func(n uint, err error) {
+	}, retry.Attempts(5), retry.Delay(time.Second), retry.OnRetry(func(n uint, err error) {
 		fmt.Printf("Retrying attempted %d time, got error: %v\n", n, err)
-	}))
+	}), retry.LastErrorOnly(true))
 
 	return err
 }
