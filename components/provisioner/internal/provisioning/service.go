@@ -128,7 +128,7 @@ func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.Operati
 }
 
 func (r *service) CleanupRuntimeData(id string) (string, error) {
-	return "", nil
+	return id, r.runtimeService.CleanupData(id)
 }
 
 func (r *service) startProvisioning(operationID string, config model.RuntimeConfig, secretName string, finished chan interface{}) {

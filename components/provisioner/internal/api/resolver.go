@@ -47,7 +47,7 @@ func (r *Resolver) ReconnectRuntimeAgent(ctx context.Context, id string) (string
 }
 
 func (r *Resolver) RuntimeStatus(ctx context.Context, runtimeID string) (*gqlschema.RuntimeStatus, error) {
-	return nil, nil
+	return r.provisioning.RuntimeStatus(runtimeID)
 }
 
 func (r *Resolver) RuntimeOperationStatus(ctx context.Context, operationID string) (*gqlschema.OperationStatus, error) {
@@ -55,5 +55,5 @@ func (r *Resolver) RuntimeOperationStatus(ctx context.Context, operationID strin
 }
 
 func (r *Resolver) CleanupRuntimeData(ctx context.Context, id string) (string, error) {
-	return "", nil
+	return r.provisioning.CleanupRuntimeData(id)
 }
