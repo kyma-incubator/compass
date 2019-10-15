@@ -21,6 +21,7 @@ func TestOperationStatusToGQLOperationStatus(t *testing.T) {
 		}
 
 		expectedOperationStatus := &gqlschema.OperationStatus{
+			ID:        "5f6e3ab6-d803-430a-8fac-29c9c9b4485a",
 			Operation: gqlschema.OperationTypeProvision,
 			State:     gqlschema.OperationStateSucceeded,
 			Message:   "Some message",
@@ -149,6 +150,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 
 		expectedRuntimeStatus := &gqlschema.RuntimeStatus{
 			LastOperationStatus: &gqlschema.OperationStatus{
+				ID:        "5f6e3ab6-d803-430a-8fac-29c9c9b4485a",
 				Operation: gqlschema.OperationTypeProvision,
 				State:     gqlschema.OperationStateSucceeded,
 				Message:   "Some message",
