@@ -64,7 +64,9 @@ func (tc *testContext) RunOperation(ctx context.Context, req *gcli.Request, resp
 		return tc.cli.Run(ctx, req, &m)
 	}, retry.Attempts(5), retry.Delay(time.Second), retry.OnRetry(func(n uint, err error) {
 		fmt.Printf("Retrying attempted %d time, got error: %v\n", n, err)
-	}), retry.LastErrorOnly(true))
+	}), retry.LastErrorOnly(true), retry.RetryIf(func(err error) bool {
+		return strings.Contains(err.Error(), "connection refused")
+	}))
 
 	return err
 }
