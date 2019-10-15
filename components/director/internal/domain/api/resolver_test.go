@@ -20,6 +20,85 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestResolver_API(t *testing.T) {
+	// given
+	id := "bar"
+	appId := "1"
+	modelAPI := fixAPIDefinitionModel(id, appId, "name", "bar")
+	gqlAPI := fixGQLAPIDefinition(id, appId, "name", "bar")
+	testErr := errors.New("Test error")
+
+	testCases := []struct {
+		Name            string
+		PersistenceFn   func() *persistenceautomock.PersistenceTx
+		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ServiceFn       func() *automock.APIService
+		ConverterFn     func() *automock.APIConverter
+		InputID         string
+		ExpectedAPI     *graphql.APIDefinition
+		ExpectedErr     error
+	}{
+		{
+			Name:            "Success",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ServiceFn: func() *automock.APIService {
+				svc := &automock.APIService{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), "foo").Return(modelAPI, nil).Once()
+
+				return svc
+			},
+			ConverterFn: func() *automock.APIConverter {
+				conv := &automock.APIConverter{}
+				conv.On("ToGraphQL", modelAPI).Return(gqlAPI).Once()
+				return conv
+			},
+			InputID:     "foo",
+			ExpectedAPI: gqlAPI,
+			ExpectedErr: nil,
+		},
+		{
+			Name:            "Returns error when application retrieval failed",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ServiceFn: func() *automock.APIService {
+				svc := &automock.APIService{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), "foo").Return(nil, testErr).Once()
+
+				return svc
+			},
+			ConverterFn: func() *automock.APIConverter {
+				conv := &automock.APIConverter{}
+				return conv
+			},
+			InputID:     "foo",
+			ExpectedAPI: nil,
+			ExpectedErr: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persistTx := testCase.PersistenceFn()
+			transact := testCase.TransactionerFn(persistTx)
+			svc := testCase.ServiceFn()
+			converter := testCase.ConverterFn()
+
+			resolver := api.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil)
+
+			// when
+			result, err := resolver.API(context.TODO(), testCase.InputID)
+
+			// then
+			assert.Equal(t, testCase.ExpectedAPI, result)
+			assert.Equal(t, testCase.ExpectedErr, err)
+
+			svc.AssertExpectations(t)
+			converter.AssertExpectations(t)
+		})
+	}
+}
+
 func TestResolver_AddAPI(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")

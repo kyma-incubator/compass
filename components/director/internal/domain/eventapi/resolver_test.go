@@ -22,6 +22,85 @@ import (
 
 var contextParam = txtest.CtxWithDBMatcher()
 
+func TestResolver_EventAPI(t *testing.T) {
+	// given
+	id := "bar"
+
+	modelAPI := fixMinModelEventAPIDefinition(id, "placeholder")
+	gqlAPI := fixGQLEventAPIDefinition(id, "placeholder")
+	testErr := errors.New("Test error")
+
+	testCases := []struct {
+		Name            string
+		PersistenceFn   func() *persistenceautomock.PersistenceTx
+		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ServiceFn       func() *automock.EventAPIService
+		ConverterFn     func() *automock.EventAPIConverter
+		InputID         string
+		ExpectedAPI     *graphql.EventAPIDefinition
+		ExpectedErr     error
+	}{
+		{
+			Name:            "Success",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ServiceFn: func() *automock.EventAPIService {
+				svc := &automock.EventAPIService{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), "foo").Return(modelAPI, nil).Once()
+
+				return svc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				conv.On("ToGraphQL", modelAPI).Return(gqlAPI).Once()
+				return conv
+			},
+			InputID:     "foo",
+			ExpectedAPI: gqlAPI,
+			ExpectedErr: nil,
+		},
+		{
+			Name:            "Returns error when application retrieval failed",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ServiceFn: func() *automock.EventAPIService {
+				svc := &automock.EventAPIService{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), "foo").Return(nil, testErr).Once()
+
+				return svc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				return conv
+			},
+			InputID:     "foo",
+			ExpectedAPI: nil,
+			ExpectedErr: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persistTx := testCase.PersistenceFn()
+			transact := testCase.TransactionerFn(persistTx)
+			svc := testCase.ServiceFn()
+			converter := testCase.ConverterFn()
+
+			resolver := eventapi.NewResolver(transact, svc, nil, converter, nil)
+
+			// when
+			result, err := resolver.EventAPI(context.TODO(), testCase.InputID)
+
+			// then
+			assert.Equal(t, testCase.ExpectedAPI, result)
+			assert.Equal(t, testCase.ExpectedErr, err)
+
+			svc.AssertExpectations(t)
+			converter.AssertExpectations(t)
+		})
+	}
+}
+
 func TestResolver_AddEventAPI(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
