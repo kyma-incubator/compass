@@ -12,6 +12,7 @@ Most of the presented approaches have a link to an example they were based on.
 ### 1. Simple Patch
 
 #### Schema
+
 ```graphql
 input ApplicationPatchInput {
     name: String
@@ -58,6 +59,7 @@ Because we use the `nil` value to determine whether to change current value or n
 Example: [link](https://medium.com/workflowgen/graphql-mutations-partial-updates-implementation-bff586bda989)
 
 ##### Handling nil values if we would need them (@kfurgol)
+
 If such a case occurred, we came up with several ideas:
 First, we thought about providing a wrapper type which would look like that:
 ```graphql
@@ -80,6 +82,7 @@ We have to remember that if we want to use `PATCH` updates, we'll have to specif
 ### 2. Simple Patch (single input)
 
 #### Schema
+
 ```graphql
 input ApplicationUpdateInput {
     id: ID!,
@@ -130,6 +133,7 @@ updateApplication(in: {
 ```
 
 #### Description
+
 This approach is very similar to the previous one, with one difference: there has to be only one, unique input object. In the example linked below, it is argued that it makes the client implementation easier.
 
 Patching logic is the same as in the previous approach.
@@ -139,6 +143,7 @@ Example: [link](https://blog.apollographql.com/designing-graphql-mutations-e09de
 ### 3. Commands & Actions
 
 #### Schema
+
 ```graphql
 input ApplicationUpdateActions {
     setName: SetApplicationName
@@ -225,6 +230,7 @@ Example: [link](https://techblog.commercetools.com/modeling-graphql-mutations-52
 ### 4. PUT Approach with additional mutations
 
 #### Schema
+
 ```graphql
 input ApplicationUpdateInput {
     name: String
@@ -269,7 +275,7 @@ This solution works like PUT operation, we always change the value but limit the
 
 To delete all subresources of application (e.g. webhooks) we have separate mutations, but we lose the ability to replace them with different ones.
 
-## Conclusion
+## Summary
 
 After taking everything into account I think the best solution would be to create additional "PATCH" update mutations for cases that require them and leave current "PUT" updates. In such case I'd use "Commands and Actions" approach with either unique setters or type based ones.
 
@@ -281,9 +287,9 @@ The "Commands & Actions" approach seems like a good idea when the ability to set
 
 The "PUT Approach" requires additional work on the client side while limiting the functionality of API, so I don't think that's a good solution.
 
-## Decision
+## Conclusion
 
-After reconsidering potential use cases and consulting with UI team, the team decided to go with simplified version of "PUT Approach" (remove problematic fields like `webhooks`, `documents` etc. and give up the functionality to remove all resources at once). This decision was motivated mainly by simplicity of the solution. It will still be possible to create an application with all sub resources in a single mutation thanks to separating "update" and "create" GraphQL input types.  
+After reconsidering potential use cases and consulting with UI team, the team decided to go with simplified version of "PUT Approach" (with removed problematic fields like `webhooks`, `documents` etc. and without the functionality to remove all resources at once). This decision was motivated mainly by simplicity of the solution. It will still be possible to create an application with all sub resources in a single mutation thanks to separating "update" and "create" GraphQL input types.  
 
 ## Appendix
 
