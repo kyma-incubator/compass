@@ -20,15 +20,16 @@ func TestQuerySpecificAPIDefinition(t *testing.T) {
 
 	APIInputGQL, err := tc.graphqlizer.APIDefinitionInputToGQL(in)
 	require.NoError(t, err)
-	applicationID := createApplication(t, context.TODO(), "test").ID
+	applicationID := createApplication(t, context.Background(), "test").ID
+	defer deleteApplication(t, applicationID)
 	actualAPI := graphql.APIDefinition{}
 	request := gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: addApi(applicationID: %s, in: %s) {
+			result: addAPI(applicationID: "%s", in: %s) {
 					%s
 				}
 			}`, applicationID, APIInputGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
-	err = tc.RunOperation(context.Background(), request, &actualAPI)
+	err = tc.RunOperation(context.TODO(), request, &actualAPI)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualAPI.ID)
 	createdID := actualAPI.ID
