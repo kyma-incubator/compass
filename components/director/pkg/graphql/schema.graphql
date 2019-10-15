@@ -512,17 +512,13 @@ type Query {
 	"""
 	Maximum `first` parameter value is 100
 	"""
-<<<<<<< HEAD
 	runtimes(filter: [LabelFilter!], first: Int = 100, after: PageCursor): RuntimePage! @hasScopes(path: "graphql.query.runtimes")
 	runtime(id: ID!): Runtime @hasScopes(path: "graphql.query.runtime")
 	labelDefinitions: [LabelDefinition!]! @hasScopes(path: "graphql.query.labelDefinitions")
 	labelDefinition(key: String!): LabelDefinition @hasScopes(path: "graphql.query.labelDefinition")
 	healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: PageCursor): HealthCheckPage! @hasScopes(path: "graphql.query.healthChecks")
-=======
-	applicationsForRuntime(runtimeID: ID!, first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "query.applicationsForRuntime")
-	API(id: ID!): APIDefinition @hasScopes(path: "query.API")
-	EventAPI(id: ID!): EventAPIDefinition @hasScopes(path: "query.EventAPI")
->>>>>>> 5550435... Add api definition resolver
+	API(id: ID!): APIDefinition @hasScopes(path: "graphql.query.API")
+	EventAPI(id: ID!): EventAPIDefinition @hasScopes(path: "graphql.query.EventAPI")
 	"""
 	Maximum `first` parameter value is 100
 	"""

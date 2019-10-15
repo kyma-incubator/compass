@@ -408,13 +408,13 @@ type QueryResolver interface {
 	Applications(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*ApplicationPage, error)
 	Application(ctx context.Context, id string) (*Application, error)
 	ApplicationsForRuntime(ctx context.Context, runtimeID string, first *int, after *PageCursor) (*ApplicationPage, error)
-	API(ctx context.Context, id string) (*APIDefinition, error)
-	EventAPI(ctx context.Context, id string) (*EventAPIDefinition, error)
 	Runtimes(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*RuntimePage, error)
 	Runtime(ctx context.Context, id string) (*Runtime, error)
 	LabelDefinitions(ctx context.Context) ([]*LabelDefinition, error)
 	LabelDefinition(ctx context.Context, key string) (*LabelDefinition, error)
 	HealthChecks(ctx context.Context, types []HealthCheckType, origin *string, first *int, after *PageCursor) (*HealthCheckPage, error)
+	API(ctx context.Context, id string) (*APIDefinition, error)
+	EventAPI(ctx context.Context, id string) (*EventAPIDefinition, error)
 	IntegrationSystems(ctx context.Context, first *int, after *PageCursor) (*IntegrationSystemPage, error)
 	IntegrationSystem(ctx context.Context, id string) (*IntegrationSystem, error)
 }
@@ -2584,13 +2584,7 @@ type Query {
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
 	"""
-<<<<<<< HEAD
 	applicationsForRuntime(runtimeID: ID!, first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applicationsForRuntime")
-=======
-	applicationsForRuntime(runtimeID: ID!, first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "query.applicationsForRuntime")
-	API(id: ID!): APIDefinition @hasScopes(path: "query.API")
-	EventAPI(id: ID!): EventAPIDefinition @hasScopes(path: "query.EventAPI")
->>>>>>> 5550435... Add api definition resolver
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
 	"""
@@ -2599,6 +2593,8 @@ type Query {
 	labelDefinitions: [LabelDefinition!]! @hasScopes(path: "graphql.query.labelDefinitions")
 	labelDefinition(key: String!): LabelDefinition @hasScopes(path: "graphql.query.labelDefinition")
 	healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: PageCursor): HealthCheckPage! @hasScopes(path: "graphql.query.healthChecks")
+	API(id: ID!): APIDefinition @hasScopes(path: "graphql.query.API")
+	EventAPI(id: ID!): EventAPIDefinition @hasScopes(path: "graphql.query.EventAPI")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
 	"""
@@ -2607,7 +2603,6 @@ type Query {
 }
 
 type Mutation {
-<<<<<<< HEAD
 	createApplication(in: ApplicationInput!): Application! @hasScopes(path: "graphql.mutation.createApplication")
 	updateApplication(id: ID!, in: ApplicationInput!): Application! @hasScopes(path: "graphql.mutation.updateApplication")
 	deleteApplication(id: ID!): Application! @hasScopes(path: "graphql.mutation.deleteApplication")
@@ -2646,40 +2641,6 @@ type Mutation {
 	createLabelDefinition(in: LabelDefinitionInput!): LabelDefinition! @hasScopes(path: "graphql.mutation.createLabelDefinition")
 	updateLabelDefinition(in: LabelDefinitionInput!): LabelDefinition! @hasScopes(path: "graphql.mutation.updateLabelDefinition")
 	deleteLabelDefinition(key: String!, deleteRelatedLabels: Boolean = false): LabelDefinition! @hasScopes(path: "graphql.mutation.deleteLabelDefinition")
-=======
-	createApplication(in: ApplicationInput!): Application! @hasScopes(path: "mutation.createApplication")
-	updateApplication(id: ID!, in: ApplicationInput!): Application! @hasScopes(path: "mutation.updateApplication")
-	deleteApplication(id: ID!): Application! @hasScopes(path: "mutation.deleteApplication")
-	createRuntime(in: RuntimeInput!): Runtime! @hasScopes(path: "mutation.createRuntime")
-	updateRuntime(id: ID!, in: RuntimeInput!): Runtime! @hasScopes(path: "mutation.updateRuntime")
-	deleteRuntime(id: ID!): Runtime! @hasScopes(path: "mutation.deleteRuntime")
-	addWebhook(applicationID: ID!, in: WebhookInput!): Webhook! @hasScopes(path: "mutation.addWebhook")
-	updateWebhook(webhookID: ID!, in: WebhookInput!): Webhook! @hasScopes(path: "mutation.updateWebhook")
-	deleteWebhook(webhookID: ID!): Webhook! @hasScopes(path: "mutation.deleteWebhook")
-	addAPI(applicationID: ID!, in: APIDefinitionInput!): APIDefinition! @hasScopes(path: "mutation.addAPI")
-	updateAPI(id: ID!, in: APIDefinitionInput!): APIDefinition! @hasScopes(path: "mutation.updateAPI")
-	deleteAPI(id: ID!): APIDefinition! @hasScopes(path: "mutation.deleteAPI")
-	refetchAPISpec(apiID: ID!): APISpec! @hasScopes(path: "mutation.refetchAPISpec")
-	generateOneTimeTokenForRuntime(id: ID!): OneTimeToken! @hasScopes(path: "mutation.generateOneTimeTokenForRuntime")
-	generateOneTimeTokenForApplication(id: ID!): OneTimeToken! @hasScopes(path: "mutation.generateOneTimeTokenForApplication")
-	deleteSystemAuthForRuntime(authID: ID!): SystemAuth! @hasScopes(path: "mutation.deleteSystemAuthForRuntime")
-	deleteSystemAuthForApplication(authID: ID!): SystemAuth! @hasScopes(path: "mutation.deleteSystemAuthForApplication")
-	deleteSystemAuthForIntegrationSystem(authID: ID!): SystemAuth! @hasScopes(path: "mutation.deleteSystemAuthForIntegrationSystem")
-	"""
-	Sets Auth for given Application and Runtime. To set default Auth for API, use updateAPI mutation
-	"""
-	setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput!): APIRuntimeAuth! @hasScopes(path: "mutation.setAPIAuth")
-	deleteAPIAuth(apiID: ID!, runtimeID: ID!): APIRuntimeAuth! @hasScopes(path: "mutation.deleteAPIAuth")
-	addEventAPI(applicationID: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition! @hasScopes(path: "mutation.addEventAPI")
-	updateEventAPI(id: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition! @hasScopes(path: "mutation.updateEventAPI")
-	deleteEventAPI(id: ID!): EventAPIDefinition! @hasScopes(path: "mutation.deleteEventAPI")
-	refetchEventAPISpec(eventID: ID!): EventAPISpec! @hasScopes(path: "mutation.refetchEventAPISpec")
-	addDocument(applicationID: ID!, in: DocumentInput!): Document! @hasScopes(path: "mutation.addDocument")
-	deleteDocument(id: ID!): Document! @hasScopes(path: "mutation.deleteDocument")
-	createLabelDefinition(in: LabelDefinitionInput!): LabelDefinition! @hasScopes(path: "mutation.createLabelDefinition")
-	updateLabelDefinition(in: LabelDefinitionInput!): LabelDefinition! @hasScopes(path: "mutation.updateLabelDefinition")
-	deleteLabelDefinition(key: String!, deleteRelatedLabels: Boolean = false): LabelDefinition! @hasScopes(path: "mutation.deleteLabelDefinition")
->>>>>>> 5550435... Add api definition resolver
 	"""
 	If a label with given key already exist, it will be replaced with provided value.
 	"""
@@ -8088,68 +8049,6 @@ func (ec *executionContext) _Query_applicationsForRuntime(ctx context.Context, f
 	return ec.marshalNApplicationPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationPage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_API(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_API_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().API(rctx, args["id"].(string))
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*APIDefinition)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinition(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_EventAPI(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_EventAPI_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().EventAPI(rctx, args["id"].(string))
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*EventAPIDefinition)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOEventAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinition(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Query_runtimes(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -8305,6 +8204,68 @@ func (ec *executionContext) _Query_healthChecks(ctx context.Context, field graph
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNHealthCheckPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHealthCheckPage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_API(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_API_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().API(rctx, args["id"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*APIDefinition)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinition(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_EventAPI(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_EventAPI_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().EventAPI(rctx, args["id"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*EventAPIDefinition)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOEventAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_integrationSystems(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -11983,28 +11944,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
-		case "API":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_API(ctx, field)
-				return res
-			})
-		case "EventAPI":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_EventAPI(ctx, field)
-				return res
-			})
 		case "runtimes":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -12067,6 +12006,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
+				return res
+			})
+		case "API":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_API(ctx, field)
+				return res
+			})
+		case "EventAPI":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_EventAPI(ctx, field)
 				return res
 			})
 		case "integrationSystems":
@@ -13906,6 +13867,17 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
+func (ec *executionContext) marshalOAPIDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinition(ctx context.Context, sel ast.SelectionSet, v APIDefinition) graphql.Marshaler {
+	return ec._APIDefinition(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinition(ctx context.Context, sel ast.SelectionSet, v *APIDefinition) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._APIDefinition(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalOAPIDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionInput(ctx context.Context, v interface{}) ([]*APIDefinitionInput, error) {
 	var vSlice []interface{}
 	if v != nil {
@@ -14106,6 +14078,17 @@ func (ec *executionContext) unmarshalODocumentInput2ᚕᚖgithubᚗcomᚋkymaᚑ
 		}
 	}
 	return res, nil
+}
+
+func (ec *executionContext) marshalOEventAPIDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinition(ctx context.Context, sel ast.SelectionSet, v EventAPIDefinition) graphql.Marshaler {
+	return ec._EventAPIDefinition(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOEventAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinition(ctx context.Context, sel ast.SelectionSet, v *EventAPIDefinition) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._EventAPIDefinition(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOEventAPIDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinitionInput(ctx context.Context, v interface{}) ([]*EventAPIDefinitionInput, error) {

@@ -11,6 +11,8 @@ graphql:
     healthChecks: ["health_checks:read"]
     integrationSystem: ["integration_system:read"]
     integrationSystems: ["integration_system:read"]
+    API: ["application:read"]
+    EventAPI: ["application:read"]
 
   mutation:
     createApplication: ["application:write"]
