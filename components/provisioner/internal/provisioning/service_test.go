@@ -36,7 +36,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		//given
 		runtimeID := "184ccdf2-59e4-44b7-b553-6cb296af5ea0"
 		expOperationID := "223949ed-e6b6-4ab2-ab3e-8e19cd456dd40"
-		operation := model.Operation{OperationID: expOperationID}
+		operation := model.Operation{ID: expOperationID}
 
 		runtimeServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.NotFound("Not found"))
 		runtimeServiceMock.On("SetProvisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
@@ -86,7 +86,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 
 		runtimeID := "92a1c394-639a-424e-8578-ba1ca7501dc1"
 		expOperationID := "c7241d2d-5ffd-434b-9a52-17ce9ee04578"
-		operation := model.Operation{OperationID: expOperationID}
+		operation := model.Operation{ID: expOperationID}
 
 		runtimeServiceMock.On("GetStatus", runtimeID).Return(runtimeStatus, nil)
 		runtimeServiceMock.On("SetDeprovisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
@@ -135,11 +135,11 @@ func TestService_RuntimeOperationStatus(t *testing.T) {
 		runtimeID := "a24142da-1111-4ec2-93e3-e47ccaa6973f"
 
 		operation := model.Operation{
-			OperationID: operationID,
-			Operation:   model.Provision,
-			State:       model.InProgress,
-			RuntimeID:   runtimeID,
-			Message:     "some message",
+			ID:        operationID,
+			Type:      model.Provision,
+			State:     model.InProgress,
+			ClusterID: runtimeID,
+			Message:   "some message",
 		}
 
 		operationServiceMock.On("Get", operationID).Return(operation, nil)
@@ -152,7 +152,7 @@ func TestService_RuntimeOperationStatus(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, gqlschema.OperationTypeProvision, status.Operation)
 		assert.Equal(t, gqlschema.OperationStateInProgress, status.State)
-		assert.Equal(t, operation.RuntimeID, status.RuntimeID)
+		assert.Equal(t, operation.ClusterID, status.RuntimeID)
 	})
 }
 

@@ -132,7 +132,7 @@ func (ws writeSession) InsertOperation(operation model.Operation) (string, dberr
 	if err != nil {
 		return "", dberrors.Internal("Failed to generate uuid: %s.", err)
 	}
-	operation.OperationID = id.String()
+	operation.ID = id.String()
 
 	_, err = ws.insertInto("operation").
 		Columns("id", "type", "state", "message", "start_timestamp", "cluster_id").
@@ -140,7 +140,7 @@ func (ws writeSession) InsertOperation(operation model.Operation) (string, dberr
 		Exec()
 
 	if err != nil {
-		return "", dberrors.Internal("Failed to insert record to Operation table: %s", err)
+		return "", dberrors.Internal("Failed to insert record to Type table: %s", err)
 	}
 
 	return id.String(), nil

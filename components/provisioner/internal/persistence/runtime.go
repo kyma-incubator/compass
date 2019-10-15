@@ -107,11 +107,11 @@ func (r runtimeService) SetProvisioningStarted(runtimeID string, runtimeConfig m
 	}
 
 	operation := model.Operation{
-		Operation: model.Provision,
-		Started:   timestamp,
-		State:     model.InProgress,
-		Message:   "Provisioning started",
-		RuntimeID: runtimeID,
+		Type:           model.Provision,
+		StartTimestamp: timestamp,
+		State:          model.InProgress,
+		Message:        "Provisioning started",
+		ClusterID:      runtimeID,
 	}
 
 	operationID, err := dbSession.InsertOperation(operation)
@@ -121,7 +121,7 @@ func (r runtimeService) SetProvisioningStarted(runtimeID string, runtimeConfig m
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
-	operation.OperationID = operationID
+	operation.ID = operationID
 
 	err = dbSession.Commit()
 	if err != nil {
@@ -161,11 +161,11 @@ func (r runtimeService) setOperationStarted(runtimeID string, operationType mode
 	dbSession := r.dbSessionFactory.NewWriteSession()
 
 	operation := model.Operation{
-		Operation: operationType,
-		Started:   time.Now(),
-		State:     model.InProgress,
-		Message:   message,
-		RuntimeID: runtimeID,
+		Type:           operationType,
+		StartTimestamp: time.Now(),
+		State:          model.InProgress,
+		Message:        message,
+		ClusterID:      runtimeID,
 	}
 
 	operationID, err := dbSession.InsertOperation(operation)
@@ -173,7 +173,7 @@ func (r runtimeService) setOperationStarted(runtimeID string, operationType mode
 		return model.Operation{}, dberrors.Internal(errorMessageFmt, err)
 	}
 
-	operation.OperationID = operationID
+	operation.ID = operationID
 
 	return operation, nil
 }

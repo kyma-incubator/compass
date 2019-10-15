@@ -63,11 +63,11 @@ func TestSetProvisioning(t *testing.T) {
 	timestamp := time.Now()
 
 	operation := model.Operation{
-		Operation: model.Provision,
-		Started:   timestamp,
-		State:     model.InProgress,
-		Message:   "Provisioning started",
-		RuntimeID: runtimeID,
+		Type:           model.Provision,
+		StartTimestamp: timestamp,
+		State:          model.InProgress,
+		Message:        "Provisioning started",
+		ClusterID:      runtimeID,
 	}
 
 	operationMatcher := getOperationMather(operation)
@@ -106,10 +106,10 @@ func TestSetProvisioning(t *testing.T) {
 
 			// then
 			assert.NoError(t, err)
-			assert.Equal(t, provisioningOperation.OperationID, "operationID")
-			assert.Equal(t, provisioningOperation.Operation, model.Provision)
+			assert.Equal(t, provisioningOperation.ID, "operationID")
+			assert.Equal(t, provisioningOperation.Type, model.Provision)
 			assert.Equal(t, provisioningOperation.State, model.InProgress)
-			assert.Equal(t, provisioningOperation.RuntimeID, runtimeID)
+			assert.Equal(t, provisioningOperation.ClusterID, runtimeID)
 			assert.NotEmpty(t, provisioningOperation.Message)
 
 			sessionFactoryMock.AssertExpectations(t)
@@ -228,7 +228,7 @@ func TestSetProvisioning(t *testing.T) {
 		})
 	}
 
-	t.Run("Should rollback transaction when failed to insert record to Operation table", func(t *testing.T) {
+	t.Run("Should rollback transaction when failed to insert record to Type table", func(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
@@ -262,11 +262,11 @@ func TestSetDeprovisioning(t *testing.T) {
 	runtimeID := "runtimeID"
 
 	operation := model.Operation{
-		Operation: model.Deprovision,
-		Started:   time.Now(),
-		State:     model.InProgress,
-		Message:   "Deprovisioning started.",
-		RuntimeID: runtimeID,
+		Type:           model.Deprovision,
+		StartTimestamp: time.Now(),
+		State:          model.InProgress,
+		Message:        "Deprovisioning started.",
+		ClusterID:      runtimeID,
 	}
 
 	operationMatcher := getOperationMather(operation)
@@ -287,10 +287,10 @@ func TestSetDeprovisioning(t *testing.T) {
 
 		// then
 		assert.NoError(t, err)
-		assert.Equal(t, provisioningOperation.OperationID, "operationID")
-		assert.Equal(t, provisioningOperation.Operation, model.Deprovision)
+		assert.Equal(t, provisioningOperation.ID, "operationID")
+		assert.Equal(t, provisioningOperation.Type, model.Deprovision)
 		assert.Equal(t, provisioningOperation.State, model.InProgress)
-		assert.Equal(t, provisioningOperation.RuntimeID, runtimeID)
+		assert.Equal(t, provisioningOperation.ClusterID, runtimeID)
 		assert.NotEmpty(t, provisioningOperation.Message)
 
 		sessionFactoryMock.AssertExpectations(t)
@@ -303,11 +303,11 @@ func TestSetUpgrade(t *testing.T) {
 	runtimeID := "runtimeID"
 
 	operation := model.Operation{
-		Operation: model.Upgrade,
-		Started:   time.Now(),
-		State:     model.InProgress,
-		Message:   "Upgrade started.",
-		RuntimeID: runtimeID,
+		Type:           model.Upgrade,
+		StartTimestamp: time.Now(),
+		State:          model.InProgress,
+		Message:        "Upgrade started.",
+		ClusterID:      runtimeID,
 	}
 
 	operationMatcher := getOperationMather(operation)
@@ -328,10 +328,10 @@ func TestSetUpgrade(t *testing.T) {
 
 		// then
 		assert.NoError(t, err)
-		assert.Equal(t, provisioningOperation.OperationID, "operationID")
-		assert.Equal(t, provisioningOperation.Operation, model.Upgrade)
+		assert.Equal(t, provisioningOperation.ID, "operationID")
+		assert.Equal(t, provisioningOperation.Type, model.Upgrade)
 		assert.Equal(t, provisioningOperation.State, model.InProgress)
-		assert.Equal(t, provisioningOperation.RuntimeID, runtimeID)
+		assert.Equal(t, provisioningOperation.ClusterID, runtimeID)
 		assert.NotEmpty(t, provisioningOperation.Message)
 
 		sessionFactoryMock.AssertExpectations(t)
@@ -343,11 +343,11 @@ func TestGetRuntimeStatus(t *testing.T) {
 
 	runtimeID := "runtimeID"
 	operation := model.Operation{
-		Operation: model.Provision,
-		Started:   time.Now(),
-		State:     model.InProgress,
-		Message:   "Provisioning started",
-		RuntimeID: runtimeID,
+		Type:           model.Provision,
+		StartTimestamp: time.Now(),
+		State:          model.InProgress,
+		Message:        "Provisioning started",
+		ClusterID:      runtimeID,
 	}
 
 	gcpConfig := model.GCPConfig{
@@ -443,8 +443,8 @@ func TestGetRuntimeStatus(t *testing.T) {
 
 func getOperationMather(expected model.Operation) func(model.Operation) bool {
 	return func(op model.Operation) bool {
-		return op.Operation == expected.Operation &&
-			op.Message == expected.Message && op.RuntimeID == expected.RuntimeID &&
-			op.State == expected.State && op.OperationID == expected.OperationID
+		return op.Type == expected.Type &&
+			op.Message == expected.Message && op.ClusterID == expected.ClusterID &&
+			op.State == expected.State && op.ID == expected.ID
 	}
 }

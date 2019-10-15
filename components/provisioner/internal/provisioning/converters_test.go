@@ -13,11 +13,11 @@ func TestOperationStatusToGQLOperationStatus(t *testing.T) {
 	t.Run("Should create proper operation status struct", func(t *testing.T) {
 		//given
 		operation := model.Operation{
-			OperationID: "5f6e3ab6-d803-430a-8fac-29c9c9b4485a",
-			Operation:   model.Provision,
-			State:       model.Succeeded,
-			Message:     "Some message",
-			RuntimeID:   "6af76034-272a-42be-ac39-30e075f515a3",
+			ID:        "5f6e3ab6-d803-430a-8fac-29c9c9b4485a",
+			Type:      model.Provision,
+			State:     model.Succeeded,
+			Message:   "Some message",
+			ClusterID: "6af76034-272a-42be-ac39-30e075f515a3",
 		}
 
 		expectedOperationStatus := &gqlschema.OperationStatus{
@@ -113,11 +113,11 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 
 		runtimeStatus := model.RuntimeStatus{
 			LastOperationStatus: model.Operation{
-				OperationID: "5f6e3ab6-d803-430a-8fac-29c9c9b4485a",
-				Operation:   model.Provision,
-				State:       model.Succeeded,
-				Message:     "Some message",
-				RuntimeID:   "6af76034-272a-42be-ac39-30e075f515a3",
+				ID:        "5f6e3ab6-d803-430a-8fac-29c9c9b4485a",
+				Type:      model.Provision,
+				State:     model.Succeeded,
+				Message:   "Some message",
+				ClusterID: "6af76034-272a-42be-ac39-30e075f515a3",
 			},
 			RuntimeConnectionStatus: model.RuntimeAgentConnectionStatusConnected,
 			RuntimeConfiguration: model.RuntimeConfig{

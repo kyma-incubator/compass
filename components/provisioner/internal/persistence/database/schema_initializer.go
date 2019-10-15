@@ -66,6 +66,8 @@ func closeDBConnection(db *dbr.Connection) {
 	}
 }
 
+const TableNotExistsError = "42P01"
+
 func checkIfDatabaseInitialized(db *dbr.Connection) (bool, error) {
 	checkQuery := fmt.Sprintf(`SELECT '%s.%s'::regclass;`, schemaName, clusterTableName)
 
@@ -75,10 +77,9 @@ func checkIfDatabaseInitialized(db *dbr.Connection) (bool, error) {
 	err := row.Scan(&tableName)
 
 	if err != nil {
-		psqlErr := err.(*pq.Error)
+		psqlErr, converted := err.(*pq.Error)
 
-		// TODO: confirm behaviour in case database schema was not applied
-		if psqlErr.Code == "42P01" {
+		if converted && psqlErr.Code == TableNotExistsError {
 			return false, nil
 		}
 

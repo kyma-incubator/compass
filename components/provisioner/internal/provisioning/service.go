@@ -65,9 +65,9 @@ func (r *service) ProvisionRuntime(id string, config *gqlschema.ProvisionRuntime
 
 	finished := make(chan interface{})
 
-	go r.startProvisioning(operation.OperationID, runtimeConfig, config.Credentials.SecretName, finished)
+	go r.startProvisioning(operation.ID, runtimeConfig, config.Credentials.SecretName, finished)
 
-	return operation.OperationID, nil, finished
+	return operation.ID, nil, finished
 }
 
 func (r *service) DeprovisionRuntime(id string) (string, error, chan interface{}) {
@@ -90,9 +90,9 @@ func (r *service) DeprovisionRuntime(id string) (string, error, chan interface{}
 	finished := make(chan interface{})
 
 	//TODO Decide how to pass credentials
-	go r.startDeprovisioning(operation.OperationID, runtimeStatus.RuntimeConfiguration, "", finished)
+	go r.startDeprovisioning(operation.ID, runtimeStatus.RuntimeConfiguration, "", finished)
 
-	return operation.OperationID, nil, finished
+	return operation.ID, nil, finished
 }
 
 func (r *service) UpgradeRuntime(id string, config *gqlschema.UpgradeRuntimeInput) (string, error) {
