@@ -46,7 +46,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		service := NewProvisioningService(operationServiceMock, runtimeServiceMock, hydroformMock)
 
 		//when
-		operationID, err, finished := service.ProvisionRuntime(runtimeID, &gqlschema.ProvisionRuntimeInput{clusterConfig, &gqlschema.CredentialsInput{}, &gqlschema.KymaConfigInput{}})
+		operationID, err, finished := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{clusterConfig, &gqlschema.CredentialsInput{}, &gqlschema.KymaConfigInput{}})
 		require.NoError(t, err)
 
 		waitUntilFinished(finished)

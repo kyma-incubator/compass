@@ -55,6 +55,12 @@ func (r *service) ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeI
 		return "", err, nil
 	}
 
+	if lastProvisioningFailed(lastOperation) {
+		if _, dbErr := r.CleanupRuntimeData(id); dbErr != nil {
+			return "", dbErr, nil
+		}
+	}
+
 	runtimeConfig := runtimeConfigFromInput(config)
 
 	operation, err := r.runtimeService.SetProvisioningStarted(id, runtimeConfig)
@@ -135,6 +141,7 @@ func (r *service) CleanupRuntimeData(id string) (string, error) {
 	return id, r.runtimeService.CleanupData(id)
 }
 
+//TODO add saving kubeconfig and cluster state
 func (r *service) startProvisioning(operationID string, config model.RuntimeConfig, secretName string, finished chan interface{}) {
 	status, _, err := r.hydroform.ProvisionCluster(config, secretName)
 
