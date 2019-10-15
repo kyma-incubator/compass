@@ -84,6 +84,7 @@ func waitForPersistance(logger *logrus.Logger, connString string, retryCount int
 	var sqlxDB *sqlx.DB
 	var err error
 	for ; retryCount > 0; retryCount-- {
+		logger.Info("Trying to connect to DB...")
 		sqlxDB, err = sqlx.Open("postgres", connString)
 		if err != nil {
 			return nil, nil, err

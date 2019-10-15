@@ -15,7 +15,7 @@ import (
 //go:generate mockery -name=SystemAuthService -output=automock -outpkg=automock -case=underscore
 type SystemAuthService interface {
 	CreateWithCustomID(ctx context.Context, id string, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error)
-	Get(ctx context.Context, id string) (*model.SystemAuth, error)
+	GetByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) (*model.SystemAuth, error)
 }
 
 //go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
@@ -114,7 +114,7 @@ func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.
 		return nil, finalErr
 	}
 
-	sysAuth, err := r.systemAuthSvc.Get(ctx, id)
+	sysAuth, err := r.systemAuthSvc.GetByIDForObject(ctx, objType, id)
 	if err != nil {
 		finalErr := cleanupOnError(err)
 		return nil, finalErr

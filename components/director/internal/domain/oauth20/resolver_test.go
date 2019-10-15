@@ -127,7 +127,7 @@ func TestResolver_CommonGenerateClientCredentialsSuccess(t *testing.T) {
 
 			systemAuthSvc := &automock.SystemAuthService{}
 			systemAuthSvc.On("CreateWithCustomID", txtest.CtxWithDBMatcher(), clientID, testCase.ObjType, id, authInput).Return(clientID, nil).Once()
-			systemAuthSvc.On("Get", txtest.CtxWithDBMatcher(), clientID).Return(modelSystemAuth, nil).Once()
+			systemAuthSvc.On("GetByIDForObject", txtest.CtxWithDBMatcher(), testCase.ObjType, clientID).Return(modelSystemAuth, nil).Once()
 			defer systemAuthSvc.AssertExpectations(t)
 
 			systemAuthConv := &automock.SystemAuthConverter{}
@@ -187,7 +187,7 @@ func TestResolver_CommonGenerateClientCredentialsError(t *testing.T) {
 			SystemAuthServiceFn: func() *automock.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
 				systemAuthSvc.On("CreateWithCustomID", txtest.CtxWithDBMatcher(), clientID, objType, id, authInput).Return(clientID, nil).Once()
-				systemAuthSvc.On("Get", txtest.CtxWithDBMatcher(), clientID).Return(modelSystemAuth, nil).Once()
+				systemAuthSvc.On("GetByIDForObject", txtest.CtxWithDBMatcher(), objType, clientID).Return(modelSystemAuth, nil).Once()
 				return systemAuthSvc
 			},
 		},
@@ -209,7 +209,7 @@ func TestResolver_CommonGenerateClientCredentialsError(t *testing.T) {
 			SystemAuthServiceFn: func() *automock.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
 				systemAuthSvc.On("CreateWithCustomID", txtest.CtxWithDBMatcher(), clientID, objType, id, authInput).Return(clientID, nil).Once()
-				systemAuthSvc.On("Get", txtest.CtxWithDBMatcher(), clientID).Return(nil, testErr).Once()
+				systemAuthSvc.On("GetByIDForObject", txtest.CtxWithDBMatcher(), objType, clientID).Return(nil, testErr).Once()
 				return systemAuthSvc
 			},
 		},
