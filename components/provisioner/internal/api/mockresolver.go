@@ -34,15 +34,15 @@ func NewMockResolver(repository map[string]RuntimeOperation) *MockResolver {
 	return &MockResolver{repository: repository}
 }
 
-func (r *MockResolver) ProvisionRuntime(ctx context.Context, id string, config *gqlschema.ProvisionRuntimeInput) (string, error) {
+func (r *MockResolver) ProvisionRuntime(ctx context.Context, id string, config gqlschema.ProvisionRuntimeInput) (string, error) {
 	return r.startNewOperation(ctx, id, gqlschema.OperationTypeProvision)
 }
 
-func (r *MockResolver) UpgradeRuntime(ctx context.Context, id string, config *gqlschema.UpgradeRuntimeInput) (string, error) {
+func (r *MockResolver) UpgradeRuntime(ctx context.Context, id string, config gqlschema.UpgradeRuntimeInput) (string, error) {
 	return r.startNewOperation(ctx, id, gqlschema.OperationTypeUpgrade)
 }
 
-func (r *MockResolver) DeprovisionRuntime(ctx context.Context, id string) (string, error) {
+func (r *MockResolver) DeprovisionRuntime(ctx context.Context, id string, credentials gqlschema.CredentialsInput) (string, error) {
 	return r.startNewOperation(ctx, id, gqlschema.OperationTypeDeprovision)
 }
 

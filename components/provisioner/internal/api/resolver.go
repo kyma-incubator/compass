@@ -28,17 +28,17 @@ func NewResolver(provisioningService provisioning.ProvisioningService) *Resolver
 	}
 }
 
-func (r *Resolver) ProvisionRuntime(ctx context.Context, id string, config *gqlschema.ProvisionRuntimeInput) (string, error) {
+func (r *Resolver) ProvisionRuntime(ctx context.Context, id string, config gqlschema.ProvisionRuntimeInput) (string, error) {
 	operationID, err, _ := r.provisioning.ProvisionRuntime(id, config)
 	return operationID, err
 }
 
-func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, error) {
-	operationID, err, _ := r.provisioning.DeprovisionRuntime(id)
+func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string, credentials gqlschema.CredentialsInput) (string, error) {
+	operationID, err, _ := r.provisioning.DeprovisionRuntime(id, credentials)
 	return operationID, err
 }
 
-func (r *Resolver) UpgradeRuntime(ctx context.Context, id string, config *gqlschema.UpgradeRuntimeInput) (string, error) {
+func (r *Resolver) UpgradeRuntime(ctx context.Context, id string, config gqlschema.UpgradeRuntimeInput) (string, error) {
 	return "", nil
 }
 

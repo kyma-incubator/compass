@@ -100,6 +100,7 @@ type KymaConfigInput struct {
 }
 
 type OperationStatus struct {
+	ID        string         `json:"id"`
 	Operation OperationType  `json:"operation"`
 	State     OperationState `json:"state"`
 	Message   string         `json:"message"`

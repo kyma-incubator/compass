@@ -117,6 +117,29 @@ func TestSetProvisioning(t *testing.T) {
 		})
 	}
 
+	t.Run("Should return erro when failed to rollback transaction", func(t *testing.T) {
+		// given
+		sessionFactoryMock := &sessionMocks.Factory{}
+		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
+
+		terraformState := "{}"
+		writeSessionWithinTransactionMock.On("InsertCluster", runtimeID, mock.AnythingOfType("Time"), terraformState).Return(dberrors.Internal("some error"))
+		writeSessionWithinTransactionMock.On("Rollback").Return(dberrors.Internal("some error"))
+
+		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
+
+		runtimeService := NewRuntimeService(sessionFactoryMock)
+
+		// when
+		_, err := runtimeService.SetProvisioningStarted(runtimeID, runtimeGCPConfig)
+
+		// then
+		assert.Error(t, err)
+
+		sessionFactoryMock.AssertExpectations(t)
+		writeSessionWithinTransactionMock.AssertExpectations(t)
+	})
+
 	t.Run("Should rollback transaction when failed to insert record to Cluster table", func(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
@@ -242,6 +265,35 @@ func TestSetProvisioning(t *testing.T) {
 		writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return("", dberrors.Internal("some error"))
 
 		writeSessionWithinTransactionMock.On("Rollback").Return(nil)
+
+		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
+
+		runtimeService := NewRuntimeService(sessionFactoryMock)
+
+		// when
+		_, err := runtimeService.SetProvisioningStarted(runtimeID, runtimeGCPConfig)
+
+		// then
+		assert.Error(t, err)
+
+		sessionFactoryMock.AssertExpectations(t)
+		writeSessionWithinTransactionMock.AssertExpectations(t)
+	})
+
+	t.Run("Should return error when failed to commit transaction", func(t *testing.T) {
+		// given
+		sessionFactoryMock := &sessionMocks.Factory{}
+		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
+
+		terraformState := "{}"
+		writeSessionWithinTransactionMock.On("InsertCluster", runtimeID, mock.AnythingOfType("Time"), terraformState).Return(nil)
+		writeSessionWithinTransactionMock.On("InsertGCPConfig", runtimeID, gcpConfig).Return(nil)
+		writeSessionWithinTransactionMock.On("InsertKymaConfig", runtimeID, kymaConfig.Version).Return("kymaID", nil)
+		writeSessionWithinTransactionMock.On("InsertKymaConfigModule", "kymaID", model.KymaModule("core")).Return(nil)
+		writeSessionWithinTransactionMock.On("InsertKymaConfigModule", "kymaID", model.KymaModule("monitoring")).Return(nil)
+		writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return("operationID", nil)
+
+		writeSessionWithinTransactionMock.On("Commit").Return(dberrors.Internal("some error"))
 
 		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 

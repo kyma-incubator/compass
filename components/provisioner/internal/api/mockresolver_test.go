@@ -19,7 +19,7 @@ func TestMockResolver_ProvisionRuntime(t *testing.T) {
 	t.Run("Should return OperationID when runtime provisioning starts", func(t *testing.T) {
 		//given
 		ctx := context.Background()
-		input := &gqlschema.ProvisionRuntimeInput{}
+		input := gqlschema.ProvisionRuntimeInput{}
 
 		//when
 		id, e := resolver.ProvisionRuntime(ctx, runtimeID, input)
@@ -35,7 +35,7 @@ func TestMockResolver_ProvisionRuntime(t *testing.T) {
 	t.Run("Should return error when another operation is in progress", func(t *testing.T) {
 		//given
 		ctx := context.Background()
-		input := &gqlschema.ProvisionRuntimeInput{}
+		input := gqlschema.ProvisionRuntimeInput{}
 
 		operation := RuntimeOperation{
 			operationType: gqlschema.OperationTypeDeprovision,
@@ -168,7 +168,7 @@ func TestResolver_UpgradeRuntime(t *testing.T) {
 	operationID := "51015a1a-3719-4e24-ba89-4971bc762ef9"
 	runtimeID := "1234"
 
-	input := &gqlschema.UpgradeRuntimeInput{}
+	input := gqlschema.UpgradeRuntimeInput{}
 
 	t.Run("Should return OperationID when runtime upgrade starts", func(t *testing.T) {
 		//given
@@ -250,8 +250,10 @@ func TestMockResolver_DeprovisionRuntime(t *testing.T) {
 
 		resolver.repository[provisionID] = provision
 
+		input := gqlschema.CredentialsInput{}
+
 		//when
-		id, e := resolver.DeprovisionRuntime(ctx, runtimeID)
+		id, e := resolver.DeprovisionRuntime(ctx, runtimeID, input)
 
 		//then
 		require.NoError(t, e)
@@ -281,8 +283,10 @@ func TestMockResolver_DeprovisionRuntime(t *testing.T) {
 		resolver.repository[provisionID] = provision
 		resolver.repository[operationID] = operation
 
+		input := gqlschema.CredentialsInput{}
+
 		//when
-		emptyID, e := resolver.DeprovisionRuntime(ctx, runtimeID)
+		emptyID, e := resolver.DeprovisionRuntime(ctx, runtimeID, input)
 
 		//then
 		require.Error(t, e)

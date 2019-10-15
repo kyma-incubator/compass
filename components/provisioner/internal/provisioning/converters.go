@@ -5,7 +5,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
-func runtimeConfigFromInput(input *gqlschema.ProvisionRuntimeInput) model.RuntimeConfig {
+func runtimeConfigFromInput(input gqlschema.ProvisionRuntimeInput) model.RuntimeConfig {
 	return model.RuntimeConfig{
 		KymaConfig:    kymaConfigFromInput(*input.KymaConfig),
 		ClusterConfig: clusterConfigFromInput(*input.ClusterConfig),
@@ -22,6 +22,7 @@ func runtimeStatusToGraphQLStatus(status model.RuntimeStatus) *gqlschema.Runtime
 
 func operationStatusToGQLOperationStatus(operation model.Operation) *gqlschema.OperationStatus {
 	return &gqlschema.OperationStatus{
+		ID:        operation.ID,
 		Operation: operationTypeToGraphQLType(operation.Type),
 		State:     operationStateToGraphQLState(operation.State),
 		Message:   operation.Message,

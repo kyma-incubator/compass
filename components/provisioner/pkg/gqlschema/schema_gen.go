@@ -83,13 +83,14 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		CleanupRuntimeData    func(childComplexity int, id string) int
-		DeprovisionRuntime    func(childComplexity int, id string) int
-		ProvisionRuntime      func(childComplexity int, id string, config *ProvisionRuntimeInput) int
+		DeprovisionRuntime    func(childComplexity int, id string, credentials CredentialsInput) int
+		ProvisionRuntime      func(childComplexity int, id string, config ProvisionRuntimeInput) int
 		ReconnectRuntimeAgent func(childComplexity int, id string) int
-		UpgradeRuntime        func(childComplexity int, id string, config *UpgradeRuntimeInput) int
+		UpgradeRuntime        func(childComplexity int, id string, config UpgradeRuntimeInput) int
 	}
 
 	OperationStatus struct {
+		ID        func(childComplexity int) int
 		Message   func(childComplexity int) int
 		Operation func(childComplexity int) int
 		RuntimeID func(childComplexity int) int
@@ -120,9 +121,9 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	ProvisionRuntime(ctx context.Context, id string, config *ProvisionRuntimeInput) (string, error)
-	UpgradeRuntime(ctx context.Context, id string, config *UpgradeRuntimeInput) (string, error)
-	DeprovisionRuntime(ctx context.Context, id string) (string, error)
+	ProvisionRuntime(ctx context.Context, id string, config ProvisionRuntimeInput) (string, error)
+	UpgradeRuntime(ctx context.Context, id string, config UpgradeRuntimeInput) (string, error)
+	DeprovisionRuntime(ctx context.Context, id string, credentials CredentialsInput) (string, error)
 	CleanupRuntimeData(ctx context.Context, id string) (string, error)
 	ReconnectRuntimeAgent(ctx context.Context, id string) (string, error)
 }
@@ -357,7 +358,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeprovisionRuntime(childComplexity, args["id"].(string)), true
+		return e.complexity.Mutation.DeprovisionRuntime(childComplexity, args["id"].(string), args["credentials"].(CredentialsInput)), true
 
 	case "Mutation.provisionRuntime":
 		if e.complexity.Mutation.ProvisionRuntime == nil {
@@ -369,7 +370,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.ProvisionRuntime(childComplexity, args["id"].(string), args["config"].(*ProvisionRuntimeInput)), true
+		return e.complexity.Mutation.ProvisionRuntime(childComplexity, args["id"].(string), args["config"].(ProvisionRuntimeInput)), true
 
 	case "Mutation.reconnectRuntimeAgent":
 		if e.complexity.Mutation.ReconnectRuntimeAgent == nil {
@@ -393,7 +394,14 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpgradeRuntime(childComplexity, args["id"].(string), args["config"].(*UpgradeRuntimeInput)), true
+		return e.complexity.Mutation.UpgradeRuntime(childComplexity, args["id"].(string), args["config"].(UpgradeRuntimeInput)), true
+
+	case "OperationStatus.id":
+		if e.complexity.OperationStatus.ID == nil {
+			break
+		}
+
+		return e.complexity.OperationStatus.ID(childComplexity), true
 
 	case "OperationStatus.message":
 		if e.complexity.OperationStatus.Message == nil {
@@ -580,7 +588,7 @@ enum KymaModule {
 # Configuration of Runtime. We can consider returning kubeconfig as a part of this type.
 type RuntimeConfig {
     clusterConfig: ClusterConfig
-    # TODO: should we also return credentials (secret name used for provisioning)
+    # TODO: should we also return credentials (secret name used for provisioning)?
     kymaConfig: KymaConfig
     kubeconfig: String
 }
@@ -623,6 +631,7 @@ type KymaConfig {
 }
 
 type OperationStatus {
+    id: String!
     operation: OperationType!
     state: OperationState!
     message: String!
@@ -728,9 +737,9 @@ input UpgradeClusterInput {
 
 type Mutation {
     # Runtime Management; only one asynchronous operation per RuntimeID can run at any given point in time
-    provisionRuntime(id: String!, config: ProvisionRuntimeInput): String!
-    upgradeRuntime(id: String!, config: UpgradeRuntimeInput): String!
-    deprovisionRuntime(id: String!): String!
+    provisionRuntime(id: String!, config: ProvisionRuntimeInput!): String!
+    upgradeRuntime(id: String!, config: UpgradeRuntimeInput!): String!
+    deprovisionRuntime(id: String!, credentials: CredentialsInput!): String!
     cleanupRuntimeData(id: String!): String!
 
     # Compass Runtime Agent Connection Management
@@ -776,6 +785,14 @@ func (ec *executionContext) field_Mutation_deprovisionRuntime_args(ctx context.C
 		}
 	}
 	args["id"] = arg0
+	var arg1 CredentialsInput
+	if tmp, ok := rawArgs["credentials"]; ok {
+		arg1, err = ec.unmarshalNCredentialsInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCredentialsInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["credentials"] = arg1
 	return args, nil
 }
 
@@ -790,9 +807,9 @@ func (ec *executionContext) field_Mutation_provisionRuntime_args(ctx context.Con
 		}
 	}
 	args["id"] = arg0
-	var arg1 *ProvisionRuntimeInput
+	var arg1 ProvisionRuntimeInput
 	if tmp, ok := rawArgs["config"]; ok {
-		arg1, err = ec.unmarshalOProvisionRuntimeInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProvisionRuntimeInput(ctx, tmp)
+		arg1, err = ec.unmarshalNProvisionRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProvisionRuntimeInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -826,9 +843,9 @@ func (ec *executionContext) field_Mutation_upgradeRuntime_args(ctx context.Conte
 		}
 	}
 	args["id"] = arg0
-	var arg1 *UpgradeRuntimeInput
+	var arg1 UpgradeRuntimeInput
 	if tmp, ok := rawArgs["config"]; ok {
-		arg1, err = ec.unmarshalOUpgradeRuntimeInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeRuntimeInput(ctx, tmp)
+		arg1, err = ec.unmarshalNUpgradeRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeRuntimeInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1859,7 +1876,7 @@ func (ec *executionContext) _Mutation_provisionRuntime(ctx context.Context, fiel
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().ProvisionRuntime(rctx, args["id"].(string), args["config"].(*ProvisionRuntimeInput))
+		return ec.resolvers.Mutation().ProvisionRuntime(rctx, args["id"].(string), args["config"].(ProvisionRuntimeInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1903,7 +1920,7 @@ func (ec *executionContext) _Mutation_upgradeRuntime(ctx context.Context, field 
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpgradeRuntime(rctx, args["id"].(string), args["config"].(*UpgradeRuntimeInput))
+		return ec.resolvers.Mutation().UpgradeRuntime(rctx, args["id"].(string), args["config"].(UpgradeRuntimeInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1947,7 +1964,7 @@ func (ec *executionContext) _Mutation_deprovisionRuntime(ctx context.Context, fi
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeprovisionRuntime(rctx, args["id"].(string))
+		return ec.resolvers.Mutation().DeprovisionRuntime(rctx, args["id"].(string), args["credentials"].(CredentialsInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2036,6 +2053,43 @@ func (ec *executionContext) _Mutation_reconnectRuntimeAgent(ctx context.Context,
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().ReconnectRuntimeAgent(rctx, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OperationStatus_id(ctx context.Context, field graphql.CollectedField, obj *OperationStatus) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OperationStatus",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4319,6 +4373,11 @@ func (ec *executionContext) _OperationStatus(ctx context.Context, sel ast.Select
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("OperationStatus")
+		case "id":
+			out.Values[i] = ec._OperationStatus_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "operation":
 			out.Values[i] = ec._OperationStatus_operation(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -4837,6 +4896,10 @@ func (ec *executionContext) marshalNOperationType2githubᚗcomᚋkymaᚑincubato
 	return v
 }
 
+func (ec *executionContext) unmarshalNProvisionRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProvisionRuntimeInput(ctx context.Context, v interface{}) (ProvisionRuntimeInput, error) {
+	return ec.unmarshalInputProvisionRuntimeInput(ctx, v)
+}
+
 func (ec *executionContext) unmarshalNRuntimeAgentConnectionStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeAgentConnectionStatus(ctx context.Context, v interface{}) (RuntimeAgentConnectionStatus, error) {
 	var res RuntimeAgentConnectionStatus
 	return res, res.UnmarshalGQL(v)
@@ -4858,6 +4921,10 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNUpgradeRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeRuntimeInput(ctx context.Context, v interface{}) (UpgradeRuntimeInput, error) {
+	return ec.unmarshalInputUpgradeRuntimeInput(ctx, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋvendorᚋgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -5378,18 +5445,6 @@ func (ec *executionContext) marshalOOperationStatus2ᚖgithubᚗcomᚋkymaᚑinc
 	return ec._OperationStatus(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOProvisionRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProvisionRuntimeInput(ctx context.Context, v interface{}) (ProvisionRuntimeInput, error) {
-	return ec.unmarshalInputProvisionRuntimeInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOProvisionRuntimeInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProvisionRuntimeInput(ctx context.Context, v interface{}) (*ProvisionRuntimeInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOProvisionRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProvisionRuntimeInput(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) marshalORuntimeConfig2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeConfig(ctx context.Context, sel ast.SelectionSet, v RuntimeConfig) graphql.Marshaler {
 	return ec._RuntimeConfig(ctx, sel, &v)
 }
@@ -5455,18 +5510,6 @@ func (ec *executionContext) unmarshalOUpgradeClusterInput2ᚖgithubᚗcomᚋkyma
 		return nil, nil
 	}
 	res, err := ec.unmarshalOUpgradeClusterInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeClusterInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) unmarshalOUpgradeRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeRuntimeInput(ctx context.Context, v interface{}) (UpgradeRuntimeInput, error) {
-	return ec.unmarshalInputUpgradeRuntimeInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOUpgradeRuntimeInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeRuntimeInput(ctx context.Context, v interface{}) (*UpgradeRuntimeInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOUpgradeRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeRuntimeInput(ctx, v)
 	return &res, err
 }
 

@@ -39,7 +39,7 @@ func TestRuntimeConfigFromInput(t *testing.T) {
 	t.Run("Should create proper runtime config struct with gcp input", func(t *testing.T) {
 		//given
 		zone := "zone"
-		input := &gqlschema.ProvisionRuntimeInput{
+		input := gqlschema.ProvisionRuntimeInput{
 			ClusterConfig: &gqlschema.ClusterConfigInput{
 				GcpConfig: &gqlschema.GCPConfigInput{
 					Name:              "Something",

@@ -21,9 +21,9 @@ const (
 )
 
 type ProvisioningService interface {
-	ProvisionRuntime(id string, config *gqlschema.ProvisionRuntimeInput) (string, error, chan interface{})
+	ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeInput) (string, error, chan interface{})
 	UpgradeRuntime(id string, config *gqlschema.UpgradeRuntimeInput) (string, error)
-	DeprovisionRuntime(id string) (string, error, chan interface{})
+	DeprovisionRuntime(id string, credentials gqlschema.CredentialsInput) (string, error, chan interface{})
 	CleanupRuntimeData(id string) (string, error)
 	ReconnectRuntimeAgent(id string) (string, error)
 	RuntimeStatus(id string) (*gqlschema.RuntimeStatus, error)
@@ -44,7 +44,7 @@ func NewProvisioningService(operationService persistence.OperationService, runti
 	}
 }
 
-func (r *service) ProvisionRuntime(id string, config *gqlschema.ProvisionRuntimeInput) (string, error, chan interface{}) {
+func (r *service) ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeInput) (string, error, chan interface{}) {
 	_, err := r.runtimeService.GetLastOperation(id)
 
 	if err == nil {
@@ -70,7 +70,7 @@ func (r *service) ProvisionRuntime(id string, config *gqlschema.ProvisionRuntime
 	return operation.ID, nil, finished
 }
 
-func (r *service) DeprovisionRuntime(id string) (string, error, chan interface{}) {
+func (r *service) DeprovisionRuntime(id string, credentials gqlschema.CredentialsInput) (string, error, chan interface{}) {
 	runtimeStatus, err := r.runtimeService.GetStatus(id)
 
 	if err != nil {
@@ -89,8 +89,8 @@ func (r *service) DeprovisionRuntime(id string) (string, error, chan interface{}
 
 	finished := make(chan interface{})
 
-	//TODO Decide how to pass credentials
-	go r.startDeprovisioning(operation.ID, runtimeStatus.RuntimeConfiguration, "", finished)
+	//TODO For now we pass secret name in parameters but we need to consider if it should be stored in the database
+	go r.startDeprovisioning(operation.ID, runtimeStatus.RuntimeConfiguration, credentials.SecretName, finished)
 
 	return operation.ID, nil, finished
 }
