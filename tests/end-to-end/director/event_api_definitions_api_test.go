@@ -40,7 +40,7 @@ func TestQuerySpecificEventAPIDefinition(t *testing.T) {
 	// WHEN
 	queryAppReq := gcli.NewRequest(
 		fmt.Sprintf(`query {
-			result: EventAPI(id: "%s") {
+			result: eventAPI(id: "%s") {
 					%s
 				}
 			}`, actualEventAPI.ID, tc.gqlFieldsProvider.ForEventAPI()))

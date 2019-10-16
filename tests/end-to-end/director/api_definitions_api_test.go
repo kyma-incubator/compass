@@ -38,7 +38,7 @@ func TestQuerySpecificAPIDefinition(t *testing.T) {
 	// WHEN
 	queryAppReq := gcli.NewRequest(
 		fmt.Sprintf(`query {
-			result: API(id: "%s") {
+			result: api(id: "%s") {
 					%s
 				}
 			}`, actualAPI.ID, tc.gqlFieldsProvider.ForAPIDefinition()))
