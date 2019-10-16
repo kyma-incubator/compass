@@ -9,7 +9,6 @@ VERIFY_IGNORE := /vendor\|/automock\|/testdata
 
 verify:: vet
 
-#We have to override test-local, because
 test-local: ;
 
 .PHONY: ci-pr

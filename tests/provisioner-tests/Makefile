@@ -7,8 +7,6 @@ include $(SCRIPTS_DIR)/generic_make_go.mk
 
 verify:: vet
 
-$(eval $(call test-local))
-
 test-local: ;
 
 .PHONY: ci-pr
