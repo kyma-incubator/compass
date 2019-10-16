@@ -50,9 +50,12 @@ type TestSuite struct {
 	secretsClient v1client.SecretInterface
 }
 
+// TODO - better structure of setup code
+
 func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 
 	// TODO - need some endpoint to check if sidecar is up
+	time.Sleep(10 * time.Second)
 
 	k8sConfig, err := getK8sConfig()
 	if err != nil {
@@ -64,10 +67,12 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 		return nil, err
 	}
 
+	logrus.Infof("Registering OAuth client...")
 	oauthCredentials, err := oauth.RegisterClient(config.HydraAdminURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to register OAuth client")
 	}
+	logrus.Infof("OAuth client registered with id: %s", oauthCredentials.ClientID)
 
 	oauthTokenClient := oauth.NewOauthTokensClient(config.HydraPublicURL, oauthCredentials)
 
@@ -89,6 +94,8 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 }
 
 func (ts *TestSuite) Setup() error {
+	logrus.Infof("Setting up environment")
+
 	err := ts.saveCredentialsToSecret(ts.config.GCPCredentials)
 	if err != nil {
 		return errors.WithMessagef(err, "Failed to save credentials to %s secret", ts.CredentialsSecretName)
@@ -98,6 +105,8 @@ func (ts *TestSuite) Setup() error {
 }
 
 func (ts *TestSuite) Cleanup() {
+	logrus.Infof("Starting cleanup...")
+
 	err := ts.removeCredentialsSecret()
 	if err != nil {
 		logrus.Warnf("Failed to remove credentials secret: %s", err.Error())
@@ -184,6 +193,8 @@ func (ts *TestSuite) KubernetesClientFromRawConfig(t *testing.T, rawConfig strin
 }
 
 func (ts *TestSuite) saveCredentialsToSecret(credentials string) error {
+	logrus.Infof("Creating credentials secret %s ...", ts.CredentialsSecretName)
+
 	_, err := ts.secretsClient.Create(&v1.Secret{
 		ObjectMeta: v1meta.ObjectMeta{Name: ts.CredentialsSecretName},
 		StringData: map[string]string{
@@ -198,6 +209,7 @@ func (ts *TestSuite) saveCredentialsToSecret(credentials string) error {
 }
 
 func (ts *TestSuite) removeCredentialsSecret() error {
+	logrus.Infof("Removing credentials secret %s ...", ts.CredentialsSecretName)
 	return ts.secretsClient.Delete(ts.CredentialsSecretName, &v1meta.DeleteOptions{})
 }
 
@@ -216,7 +228,7 @@ func getK8sConfig() (*restclient.Config, error) {
 	return k8sConfig, nil
 }
 
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789"
+const letterBytes = "abcdefghijklmnopqrstuvwxyz123456789"
 
 func randStringBytes(n int) string {
 	b := make([]byte, n)

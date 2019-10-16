@@ -51,6 +51,7 @@ func (c *Client) getOAuthToken() (AccessToken, error) {
 		return AccessToken{}, err
 	}
 	request.SetBasicAuth(c.credentials.ClientID, c.credentials.ClientSecret)
+	request.Header.Set(ContentTypeHeader, FormEncodedContentType)
 
 	response, err := c.httpClient.Do(request)
 	if err != nil {

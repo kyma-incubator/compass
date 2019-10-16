@@ -27,7 +27,8 @@ func TestMain(m *testing.M) {
 }
 
 func runTests(m *testing.M) int {
-	testSuite, err := NewTestSuite(config)
+	var err error
+	testSuite, err = NewTestSuite(config)
 	if err != nil {
 		logrus.Errorf("Failed to setup tests environment: %s", err.Error())
 		return 1
