@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence/txtest"
@@ -29,11 +31,12 @@ func TestResolver_EventAPI(t *testing.T) {
 	modelAPI := fixMinModelEventAPIDefinition(id, "placeholder")
 	gqlAPI := fixGQLEventAPIDefinition(id, "placeholder")
 	testErr := errors.New("Test error")
+	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	testCases := []struct {
 		Name            string
 		PersistenceFn   func() *persistenceautomock.PersistenceTx
-		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn       func() *automock.EventAPIService
 		ConverterFn     func() *automock.EventAPIConverter
 		InputID         string
@@ -43,7 +46,7 @@ func TestResolver_EventAPI(t *testing.T) {
 		{
 			Name:            "Success",
 			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
-			TransactionerFn: txtest.TransactionerThatSucceeds,
+			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
 				svc.On("Get", txtest.CtxWithDBMatcher(), "foo").Return(modelAPI, nil).Once()
@@ -62,7 +65,7 @@ func TestResolver_EventAPI(t *testing.T) {
 		{
 			Name:            "Returns error when application retrieval failed",
 			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
-			TransactionerFn: txtest.TransactionerThatSucceeds,
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
 				svc.On("Get", txtest.CtxWithDBMatcher(), "foo").Return(nil, testErr).Once()
@@ -77,12 +80,63 @@ func TestResolver_EventAPI(t *testing.T) {
 			ExpectedAPI: nil,
 			ExpectedErr: testErr,
 		},
+		{
+			Name:            "Returns null when application retrieval failed",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.EventAPIService {
+				svc := &automock.EventAPIService{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), "foo").Return(nil, apperrors.NewNotFoundError("")).Once()
+
+				return svc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				return conv
+			},
+			InputID:     "foo",
+			ExpectedAPI: nil,
+			ExpectedErr: nil,
+		},
+		{
+			Name:            "Returns error when commit begin error",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
+			TransactionerFn: txGen.ThatFailsOnBegin,
+			ServiceFn: func() *automock.EventAPIService {
+				svc := &automock.EventAPIService{}
+
+				return svc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				return conv
+			},
+			InputID:     "foo",
+			ExpectedAPI: nil,
+			ExpectedErr: testErr,
+		},
+		{
+			Name:            "Returns error when commit failed",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
+			TransactionerFn: txGen.ThatFailsOnCommit,
+			ServiceFn: func() *automock.EventAPIService {
+				svc := &automock.EventAPIService{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), "foo").Return(modelAPI, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				return conv
+			},
+			InputID:     "foo",
+			ExpectedAPI: nil,
+			ExpectedErr: testErr,
+		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			persistTx := testCase.PersistenceFn()
-			transact := testCase.TransactionerFn(persistTx)
+			_, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
