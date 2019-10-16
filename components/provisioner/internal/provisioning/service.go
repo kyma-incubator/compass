@@ -76,7 +76,7 @@ func (r *service) ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeI
 
 	finished := make(chan interface{})
 
-	go r.startProvisioning(operation.ID, runtimeConfig, config.Credentials.SecretName, finished)
+	go r.startProvisioning(operation.ID, id, runtimeConfig, config.Credentials.SecretName, finished)
 
 	return operation.ID, nil, finished
 }
@@ -105,7 +105,7 @@ func (r *service) DeprovisionRuntime(id string, credentials gqlschema.Credential
 	finished := make(chan interface{})
 
 	//TODO For now we pass secret name in parameters but we need to consider if it should be stored in the database
-	go r.startDeprovisioning(operation.ID, runtimeStatus.RuntimeConfiguration, credentials.SecretName, finished)
+	go r.startDeprovisioning(operation.ID, id, runtimeStatus.RuntimeConfiguration, credentials.SecretName, finished)
 
 	return operation.ID, nil, finished
 }
@@ -147,30 +147,42 @@ func (r *service) CleanupRuntimeData(id string) (string, error) {
 }
 
 //TODO add saving kubeconfig and cluster state
-func (r *service) startProvisioning(operationID string, config model.RuntimeConfig, secretName string, finished chan interface{}) {
-	status, _, err := r.hydroform.ProvisionCluster(config, secretName)
+func (r *service) startProvisioning(operationID, runtimeID string, config model.RuntimeConfig, secretName string, finished chan interface{}) {
+	log.Infof("Provisioning runtime %s is starting", runtimeID)
+	info, err := r.hydroform.ProvisionCluster(config, secretName)
 
-	if err != nil || status.Phase != types.Provisioned {
+	if err != nil || info.ClusterStatus != types.Provisioned {
 		updateOperationStatus(func() error {
+			log.Errorf("Provisioning runtime %s failed: %s", runtimeID, err.Error())
 			return r.operationService.SetAsFailed(operationID, err.Error())
 		})
 	} else {
 		updateOperationStatus(func() error {
+			err := r.runtimeService.Update(runtimeID, info.KubeConfig, info.State)
+			if err != nil {
+				log.Errorf("Provisioning runtime %s failed: %s", runtimeID, err.Error())
+				return r.operationService.SetAsFailed(operationID, err.Error())
+			}
+			log.Infof("Provisioning runtime %s finished successfully", runtimeID)
 			return r.operationService.SetAsSucceeded(operationID)
 		})
 	}
 	close(finished)
 }
 
-func (r *service) startDeprovisioning(operationID string, config model.RuntimeConfig, secretName string, finished chan interface{}) {
+func (r *service) startDeprovisioning(operationID, runtimeID string, config model.RuntimeConfig, secretName string, finished chan interface{}) {
+	log.Infof("Deprovisioning runtime %s is starting", runtimeID)
+
 	err := r.hydroform.DeprovisionCluster(config, secretName)
 
 	if err != nil {
 		updateOperationStatus(func() error {
+			log.Errorf("Deprovisioning runtime %s failed: %s", runtimeID, err.Error())
 			return r.operationService.SetAsFailed(operationID, err.Error())
 		})
 	} else {
 		updateOperationStatus(func() error {
+			log.Infof("Deprovisioning runtime %s finished successfully", runtimeID)
 			return r.operationService.SetAsSucceeded(operationID)
 		})
 	}
@@ -182,7 +194,7 @@ func updateOperationStatus(updateFunction func() error) {
 		return updateFunction()
 	})
 	if err != nil {
-		log.Errorf("failed to set operation status, %s", err.Error())
+		log.Errorf("Failed to set operation status, %s", err.Error())
 	}
 }
 

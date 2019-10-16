@@ -1,6 +1,7 @@
 package provisioning
 
 import (
+	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/mocks"
@@ -40,8 +41,9 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 		runtimeServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.NotFound("Not found"))
 		runtimeServiceMock.On("SetProvisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
+		runtimeServiceMock.On("Update", runtimeID, "", "").Return(nil)
 		operationServiceMock.On("SetAsSucceeded", expOperationID).Return(nil)
-		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(types.ClusterStatus{Phase: types.Provisioned}, "", nil)
+		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: "", State: ""}, nil)
 
 		service := NewProvisioningService(operationServiceMock, runtimeServiceMock, hydroformMock)
 
@@ -63,8 +65,9 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 		runtimeServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{Type: model.Provision, State: model.Failed}, nil)
 		runtimeServiceMock.On("SetProvisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
+		runtimeServiceMock.On("Update", runtimeID, "", "").Return(nil)
 		operationServiceMock.On("SetAsSucceeded", expOperationID).Return(nil)
-		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(types.ClusterStatus{Phase: types.Provisioned}, "", nil)
+		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: "", State: ""}, nil)
 
 		service := NewProvisioningService(operationServiceMock, runtimeServiceMock, hydroformMock)
 

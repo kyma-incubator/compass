@@ -1,7 +1,9 @@
 package hydroform
 
 import (
+	"encoding/json"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"os"
@@ -22,7 +24,7 @@ const (
 
 //go:generate mockery -name=Client
 type Client interface {
-	ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName string) (types.ClusterStatus, string, error)
+	ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName string) (ClusterInfo, error)
 	DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretName string) error
 }
 
@@ -34,37 +36,75 @@ func NewHydroformClient(secrets v1.SecretInterface) Client {
 	return &client{secrets: secrets}
 }
 
-func (c client) ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName string) (types.ClusterStatus, string, error) {
+type ClusterInfo struct {
+	ClusterStatus types.Phase
+	KubeConfig    string
+	State         string
+}
+
+func (c client) ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName string) (ClusterInfo, error) {
 	credentialsFile := generateRandomFileName()
 
+	log.Infof("Saving credentials to file %s", credentialsFile)
 	err := c.saveCredentialsToFile(secretName, credentialsFile)
 
 	if err != nil {
-		return types.ClusterStatus{}, "", err
+		log.Errorf("Failed to save credentials to file %s: %s", credentialsFile, err.Error())
+		return ClusterInfo{}, err
 	}
+
+	log.Info("Preparing config for runtime provisioning")
 
 	cluster, provider, err := c.prepareConfig(runtimeConfig, credentialsFile)
 
 	if err != nil {
-		return types.ClusterStatus{}, "", err
+		log.Errorf("Config preparation failed: %s", err.Error())
+		return ClusterInfo{}, err
 	}
+
+	log.Infof("Config prepared - cluster: %s, provider: %s. Starting cluster provisioning", cluster, provider)
 
 	cluster, err = hf.Provision(cluster, provider)
 	if err != nil {
-		return types.ClusterStatus{}, "", err
+		log.Errorf("Cluster provisioning failed: %s", err.Error())
+		return ClusterInfo{}, err
 	}
 
 	status, err := hf.Status(cluster, provider)
 	if err != nil {
-		return types.ClusterStatus{}, "", err
+		return ClusterInfo{}, err
 	}
 
-	content, err := hf.Credentials(cluster, provider)
+	log.Info("Retrieving kubeconfig")
+
+	kubeconfig, err := hf.Credentials(cluster, provider)
 	if err != nil {
-		return types.ClusterStatus{}, "", err
+		log.Errorf("Failed to get kubeconfig: %s", err.Error())
+		return ClusterInfo{}, err
 	}
 
-	return *status, string(content), nil
+	log.Info("Restrieving cluster state")
+
+	internalState, err := stateToJson(cluster.ClusterInfo.InternalState)
+
+	if err != nil {
+		log.Errorf("Failed to retrieve cluster state: %s", err.Error())
+		return ClusterInfo{}, err
+	}
+
+	return ClusterInfo{
+		ClusterStatus: status.Phase,
+		State:         internalState,
+		KubeConfig:    string(kubeconfig),
+	}, nil
+}
+
+func stateToJson(state *types.InternalState) (string, error) {
+	bytes, err := json.Marshal(state)
+	if err != nil {
+		return "", err
+	}
+	return string(bytes), nil
 }
 
 func (c client) DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretName string) error {
