@@ -68,7 +68,7 @@ func (tc *testContext) RunOperation(ctx context.Context, req *gcli.Request, resp
 
 func (tc *testContext) withRetryOnConnectionRefused(risky func() error) error {
 	return retry.Do(risky, retry.Attempts(7), retry.Delay(time.Second), retry.OnRetry(func(n uint, err error) {
-		logrus.Warnf("[testContext] OnRetry: attempts: %d, error: %v\n", n, err)
+		logrus.WithField("component","testContext").Warnf("OnRetry: attempts: %d, error: %v", n, err)
 
 	}), retry.LastErrorOnly(true), retry.RetryIf(func(err error) bool {
 		return strings.Contains(err.Error(), "connection refused")
