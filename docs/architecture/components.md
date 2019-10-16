@@ -1,9 +1,10 @@
 
 # Components
 
-These are the basic components related to Compass:
+These are the components related to Compass:
 
 ![Components](./assets/components.svg)
+
 
 ## Application
 
@@ -11,7 +12,11 @@ Application represents any external system that you want to register to Compass 
 - Manual integration - the Administrator manually provides API or Events metadata to Compass. Use this type of integration for simple use-case scenarios as it does not support all features.
 - Built-in integration - integration with Compass is built in the Application.
 - Proxy - a highly Application-specific proxy component provides the integration.
-- Integration System -  a central service provides integration for the dedicated group of Applications across multiple tenants. It manages multiple instances of the given Application type. You can integrate multiple Integration Systems to support different types of Applications.
+- [Integration System](#integration-system) -  a central service provides integration for the dedicated group of Applications across multiple tenants. It manages multiple instances of the given Application type. You can integrate multiple Integration Systems to support different types of Applications.
+
+## Management Plane
+
+Management Plan is the cluster on which Compass, Cockpit, and Runtime Provisioner components are deployed.
 
 ## Kyma Runtime
 
@@ -43,3 +48,7 @@ Director handles the process of managing Applications and Runtimes. It also requ
 ## Runtime Provisioner
 
 Runtime Provisioner handles the creation, modification, and deletion of Runtimes. This component is interchangeable.
+
+## Integration System
+
+Integration System is any system that provides integration for multiple tenants. It exists in a global scope without tenant assignment.

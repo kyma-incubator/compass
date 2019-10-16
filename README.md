@@ -16,7 +16,7 @@ Compass allows you to:
 
 Compass by design does not participate in direct communication between Applications and Runtimes. It only sets up the connection. In case the cluster with Compass is down, the Applications and Runtimes cooperation still works.
 
-For more information about the Compass architecture and technical details, read the [documentation](./docs).
+For more information about the Compass architecture and technical details, read the project [documentation](./docs).
 
 ## Prerequisites
 
@@ -27,6 +27,10 @@ For more information about the Compass architecture and technical details, read 
 - [Kyma CLI](https://github.com/kyma-project/cli) master
 
 ## Installation
+
+### Enable Compass in Kyma
+
+Read [this](https://kyma-project.io/docs/master/components/compass/#installation-installation) document to learn about different modes in which you can enable Compass in Kyma.
 
 ### Chart installation
 
@@ -46,11 +50,6 @@ You can also specify Kyma version, such as 1.2.2 or newer:
 ```bash
 ./installation/cmd/run.sh {version}
 ```
-
-### Kyma installation with the Compass module enabled
-
-To install Kyma with the experimental Compass module enabled, follow the instruction for [custom component installation](https://kyma-project.io/docs/root/kyma/#configuration-custom-component-installation) and enable the `compass` module.
-
 
 ### Testing
 
