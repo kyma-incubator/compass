@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func assertApplication(t *testing.T, in graphql.ApplicationInput, actualApp graphql.ApplicationExt) {
+func assertApplication(t *testing.T, in graphql.ApplicationCreateInput, actualApp graphql.ApplicationExt) {
 	require.NotEmpty(t, actualApp.ID)
 
 	assert.Equal(t, in.Name, actualApp.Name)

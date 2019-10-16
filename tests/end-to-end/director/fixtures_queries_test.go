@@ -17,12 +17,12 @@ func getApplication(t *testing.T, ctx context.Context, id string) graphql.Applic
 }
 
 func createApplication(t *testing.T, ctx context.Context, name string) graphql.ApplicationExt {
-	in := generateSampleApplicationInputWithName("first", name)
+	in := fixSampleApplicationCreateInputWithName("first", name)
 	return createApplicationFromInputWithinTenant(t, ctx, in, defaultTenant)
 }
 
-func createApplicationFromInputWithinTenant(t *testing.T, ctx context.Context, in graphql.ApplicationInput, tenantID string) graphql.ApplicationExt {
-	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
+func createApplicationFromInputWithinTenant(t *testing.T, ctx context.Context, in graphql.ApplicationCreateInput, tenantID string) graphql.ApplicationExt {
+	appInputGQL, err := tc.graphqlizer.ApplicationCreateInputToGQL(in)
 	require.NoError(t, err)
 
 	createRequest := fixCreateApplicationRequest(appInputGQL)
