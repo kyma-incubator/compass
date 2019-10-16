@@ -256,6 +256,7 @@
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
     "github.com/machinebox/graphql",
     "github.com/pkg/errors",
+    "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/require",
     "golang.org/x/tools/cmd/goimports",
