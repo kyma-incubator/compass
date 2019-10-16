@@ -2,11 +2,12 @@ package director
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/avast/retry-go"
 
@@ -60,15 +61,18 @@ func (tc *testContext) RunOperation(ctx context.Context, req *gcli.Request, resp
 
 	m := resultMapperFor(&resp)
 
-	err := retry.Do(func() error {
+	return tc.withRetryOnConnectionRefused(func() error {
 		return tc.cli.Run(ctx, req, &m)
-	}, retry.Attempts(5), retry.Delay(time.Second), retry.OnRetry(func(n uint, err error) {
-		fmt.Printf("Retrying attempted %d time, got error: %v\n", n, err)
+	})
+}
+
+func (tc *testContext) withRetryOnConnectionRefused(risky func() error) error {
+	return retry.Do(risky, retry.Attempts(7), retry.Delay(time.Second), retry.OnRetry(func(n uint, err error) {
+		logrus.Warnf("[testContext] OnRetry: attempts: %d, error: %v\n", n, err)
+
 	}), retry.LastErrorOnly(true), retry.RetryIf(func(err error) bool {
 		return strings.Contains(err.Error(), "connection refused")
 	}))
-
-	return err
 }
 
 func (tc *testContext) RunOperationWithCustomTenant(ctx context.Context, tenant string, req *gcli.Request, resp interface{}) error {
@@ -91,7 +95,7 @@ func (tc *testContext) runCustomOperation(ctx context.Context, tenant string, sc
 	}
 
 	cli := newAuthorizedGraphQLClient(token)
-	return cli.Run(ctx, req, &m)
+	return tc.withRetryOnConnectionRefused(func() error { return cli.Run(ctx, req, &m) })
 }
 
 // resultMapperFor returns generic object that can be passed to Run method for storing response.
