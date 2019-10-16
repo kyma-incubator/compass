@@ -47,7 +47,10 @@ func TestSetProvisioning(t *testing.T) {
 
 	kymaConfig := model.KymaConfig{
 		Version: "1.6",
-		Modules: []model.KymaModule{model.KymaModule("core"), model.KymaModule("monitoring")},
+		Modules: []model.KymaConfigModule{
+			{ID: "id1", Module: model.KymaModule("core")},
+			{ID: "id2", Module: model.KymaModule("monitoring")},
+		},
 	}
 
 	runtimeGCPConfig := model.RuntimeConfig{
@@ -409,7 +412,10 @@ func TestGetRuntimeStatus(t *testing.T) {
 
 	kymaConfig := model.KymaConfig{
 		Version: "1.6",
-		Modules: []model.KymaModule{model.KymaModule("core"), model.KymaModule("monitoring")},
+		Modules: []model.KymaConfigModule{
+			{ID: "id1", Module: model.KymaModule("core")},
+			{ID: "id2", Module: model.KymaModule("monitoring")},
+		},
 	}
 
 	t.Run("Should get runtime status", func(t *testing.T) {

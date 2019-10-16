@@ -1,15 +1,27 @@
 package provisioning
 
 import (
+	"github.com/gofrs/uuid"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
-func runtimeConfigFromInput(input gqlschema.ProvisionRuntimeInput) model.RuntimeConfig {
-	return model.RuntimeConfig{
-		KymaConfig:    kymaConfigFromInput(*input.KymaConfig),
-		ClusterConfig: clusterConfigFromInput(*input.ClusterConfig),
+func runtimeConfigFromInput(input gqlschema.ProvisionRuntimeInput) (model.RuntimeConfig, error) {
+	kymaConfig, err := kymaConfigFromInput(*input.KymaConfig)
+	if err != nil {
+		return model.RuntimeConfig{}, err
 	}
+
+	clusterConfig, err := clusterConfigFromInput(*input.ClusterConfig)
+	if err != nil {
+		return model.RuntimeConfig{}, err
+	}
+
+	return model.RuntimeConfig{
+		KymaConfig:    kymaConfig,
+		ClusterConfig: clusterConfig,
+	}, nil
 }
 
 func runtimeStatusToGraphQLStatus(status model.RuntimeStatus) *gqlschema.RuntimeStatus {
@@ -30,7 +42,7 @@ func operationStatusToGQLOperationStatus(operation model.Operation) *gqlschema.O
 	}
 }
 
-func clusterConfigFromInput(input gqlschema.ClusterConfigInput) interface{} {
+func clusterConfigFromInput(input gqlschema.ClusterConfigInput) (interface{}, error) {
 	if input.GardenerConfig != nil {
 		config := input.GardenerConfig
 		return gardenerConfigFromInput(*config)
@@ -39,11 +51,17 @@ func clusterConfigFromInput(input gqlschema.ClusterConfigInput) interface{} {
 		config := input.GcpConfig
 		return gcpConfigFromInput(*config)
 	}
-	return nil
+	return nil, nil
 }
 
-func gardenerConfigFromInput(input gqlschema.GardenerConfigInput) model.GardenerConfig {
+func gardenerConfigFromInput(input gqlschema.GardenerConfigInput) (model.GardenerConfig, error) {
+	id, err := uuid.NewV4()
+	if err != nil {
+		return model.GardenerConfig{}, dberrors.Internal("Failed to generate uuid for GardenerConfig: %s.", err)
+	}
+
 	return model.GardenerConfig{
+		ID:                id.String(),
 		Name:              input.Name,
 		ProjectName:       input.ProjectName,
 		KubernetesVersion: input.KubernetesVersion,
@@ -60,11 +78,17 @@ func gardenerConfigFromInput(input gqlschema.GardenerConfigInput) model.Gardener
 		AutoScalerMax:     input.AutoScalerMax,
 		MaxSurge:          input.MaxSurge,
 		MaxUnavailable:    input.MaxUnavailable,
-	}
+	}, nil
 }
 
-func gcpConfigFromInput(input gqlschema.GCPConfigInput) model.GCPConfig {
+func gcpConfigFromInput(input gqlschema.GCPConfigInput) (model.GCPConfig, error) {
+	id, err := uuid.NewV4()
+	if err != nil {
+		return model.GCPConfig{}, dberrors.Internal("Failed to generate uuid for GardenerConfig: %s.", err)
+	}
+
 	return model.GCPConfig{
+		ID:                id.String(),
 		Name:              input.Name,
 		ProjectName:       input.ProjectName,
 		KubernetesVersion: input.KubernetesVersion,
@@ -73,19 +97,29 @@ func gcpConfigFromInput(input gqlschema.GCPConfigInput) model.GCPConfig {
 		MachineType:       input.MachineType,
 		Region:            input.Region,
 		Zone:              *input.Zone,
-	}
+	}, nil
 }
 
-func kymaConfigFromInput(input gqlschema.KymaConfigInput) model.KymaConfig {
-	var modules []model.KymaModule
+func kymaConfigFromInput(input gqlschema.KymaConfigInput) (model.KymaConfig, error) {
+	var modules []model.KymaConfigModule
 	for _, module := range input.Modules {
-		modules = append(modules, model.KymaModule(module))
+		id, err := uuid.NewV4()
+		if err != nil {
+			return model.KymaConfig{}, dberrors.Internal("Failed to generate uuid for KymaConfigModule: %s.", err)
+		}
+
+		kymaConfigModule := model.KymaConfigModule{
+			ID:     id.String(),
+			Module: model.KymaModule(module.String()),
+		}
+
+		modules = append(modules, kymaConfigModule)
 	}
 
 	return model.KymaConfig{
 		Version: input.Version,
 		Modules: modules,
-	}
+	}, nil
 }
 
 func runtimeConnectionStatusToGraphQLStatus(status model.RuntimeAgentConnectionStatus) *gqlschema.RuntimeConnectionStatus {
@@ -127,6 +161,7 @@ func clusterConfigToGraphQLConfig(config interface{}) gqlschema.ClusterConfig {
 }
 
 func gardenerConfigToGraphQLConfig(config model.GardenerConfig) gqlschema.ClusterConfig {
+
 	return gqlschema.GardenerConfig{
 		Name:              &config.Name,
 		ProjectName:       &config.ProjectName,
@@ -163,7 +198,7 @@ func gcpConfigToGraphQLConfig(config model.GCPConfig) gqlschema.ClusterConfig {
 func kymaConfigToGraphQLConfig(config model.KymaConfig) *gqlschema.KymaConfig {
 	var modules []*gqlschema.KymaModule
 	for _, module := range config.Modules {
-		kymaModule := gqlschema.KymaModule(module)
+		kymaModule := gqlschema.KymaModule(module.Module)
 		modules = append(modules, &kymaModule)
 	}
 

@@ -76,14 +76,18 @@ func TestRuntimeConfigFromInput(t *testing.T) {
 			Kubeconfig: "",
 			KymaConfig: model.KymaConfig{
 				Version: "1.5",
-				Modules: []model.KymaModule{"Backup", "BackupInit"},
+				Modules: []model.KymaConfigModule{
+					{ID: "Id1", Module: model.KymaModule("Backup")},
+					{ID: "Id1", Module: model.KymaModule("BackupInit")},
+				},
 			},
 		}
 
 		//when
-		runtimeConfig := runtimeConfigFromInput(input)
+		runtimeConfig, err := runtimeConfigFromInput(input)
 
 		//then
+		assert.NoError(t, err)
 		assert.Equal(t, expectedRuntimeConfig, runtimeConfig)
 	})
 }
@@ -143,7 +147,10 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				Kubeconfig: kubeconfig,
 				KymaConfig: model.KymaConfig{
 					Version: version,
-					Modules: []model.KymaModule{"Backup", "BackupInit"},
+					Modules: []model.KymaConfigModule{
+						{ID: "Id1", Module: model.KymaModule("Backup")},
+						{ID: "Id1", Module: model.KymaModule("BackupInit")},
+					},
 				},
 			},
 		}

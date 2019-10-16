@@ -1,6 +1,7 @@
 package persistence
 
 import (
+	"github.com/gofrs/uuid"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dbsession"
@@ -69,7 +70,13 @@ func (r runtimeService) SetProvisioningStarted(runtimeID string, runtimeConfig m
 
 	timestamp := time.Now()
 
-	err = dbSession.InsertCluster(runtimeID, timestamp, "{}")
+	cluster := model.Cluster{
+		ID:                runtimeID,
+		CreationTimestamp: timestamp,
+		TerraformState:    "{}",
+	}
+
+	err = dbSession.InsertCluster(cluster)
 	if err != nil {
 		rollback(dbSession, runtimeID)
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
@@ -77,7 +84,8 @@ func (r runtimeService) SetProvisioningStarted(runtimeID string, runtimeConfig m
 
 	gcpConfig, isGCP := runtimeConfig.GCPConfig()
 	if isGCP {
-		err = dbSession.InsertGCPConfig(runtimeID, gcpConfig)
+
+		err = dbSession.InsertGCPConfig(gcpConfig)
 		if err != nil {
 			rollback(dbSession, runtimeID)
 			return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
@@ -86,43 +94,25 @@ func (r runtimeService) SetProvisioningStarted(runtimeID string, runtimeConfig m
 
 	gardenerConfig, isGardener := runtimeConfig.GardenerConfig()
 	if isGardener {
-		err = dbSession.InsertGardenerConfig(runtimeID, gardenerConfig)
+		err = dbSession.InsertGardenerConfig(gardenerConfig)
 		if err != nil {
 			rollback(dbSession, runtimeID)
 			return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 		}
 	}
 
-	kymaConfigID, err := dbSession.InsertKymaConfig(runtimeID, runtimeConfig.KymaConfig.Version)
+	err = dbSession.InsertKymaConfig(runtimeConfig.KymaConfig)
 	if err != nil {
 		rollback(dbSession, runtimeID)
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
-	for _, module := range runtimeConfig.KymaConfig.Modules {
-		err = dbSession.InsertKymaConfigModule(kymaConfigID, module)
-		if err != nil {
-			rollback(dbSession, runtimeID)
-			return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
-		}
-	}
-
-	operation := model.Operation{
-		Type:           model.Provision,
-		StartTimestamp: timestamp,
-		State:          model.InProgress,
-		Message:        "Provisioning started",
-		ClusterID:      runtimeID,
-	}
-
-	operationID, err := dbSession.InsertOperation(operation)
+	operation, err := r.setOperationStarted(runtimeID, model.Provision, timestamp, "Provisioning started", "Failed to set provisioning started: %s")
 
 	if err != nil {
 		rollback(dbSession, runtimeID)
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
-
-	operation.ID = operationID
 
 	err = dbSession.Commit()
 	if err != nil {
@@ -133,11 +123,11 @@ func (r runtimeService) SetProvisioningStarted(runtimeID string, runtimeConfig m
 }
 
 func (r runtimeService) SetDeprovisioningStarted(runtimeID string) (model.Operation, dberrors.Error) {
-	return r.setOperationStarted(runtimeID, model.Deprovision, "Deprovisioning started.", "Deprovisioning failed: %s")
+	return r.setOperationStarted(runtimeID, model.Deprovision, time.Now(), "Deprovisioning started.", "Deprovisioning failed: %s")
 }
 
 func (r runtimeService) SetUpgradeStarted(runtimeID string) (model.Operation, dberrors.Error) {
-	return r.setOperationStarted(runtimeID, model.Upgrade, "Upgrade started.", "Upgrade failed: %s")
+	return r.setOperationStarted(runtimeID, model.Upgrade, time.Now(), "Upgrade started.", "Upgrade failed: %s")
 }
 
 func (r runtimeService) GetLastOperation(runtimeID string) (model.Operation, dberrors.Error) {
@@ -158,23 +148,28 @@ func (r runtimeService) CleanupData(runtimeID string) dberrors.Error {
 	return session.DeleteCluster(runtimeID)
 }
 
-func (r runtimeService) setOperationStarted(runtimeID string, operationType model.OperationType, message string, errorMessageFmt string) (model.Operation, dberrors.Error) {
+func (r runtimeService) setOperationStarted(runtimeID string, operationType model.OperationType, timestamp time.Time, message string, errorMessageFmt string) (model.Operation, dberrors.Error) {
+
+	id, err := uuid.NewV4()
+	if err != nil {
+		return model.Operation{}, dberrors.Internal(errorMessageFmt, err)
+	}
+
 	dbSession := r.dbSessionFactory.NewWriteSession()
 
 	operation := model.Operation{
+		ID:             id.String(),
 		Type:           operationType,
-		StartTimestamp: time.Now(),
+		StartTimestamp: timestamp,
 		State:          model.InProgress,
 		Message:        message,
 		ClusterID:      runtimeID,
 	}
 
-	operationID, err := dbSession.InsertOperation(operation)
+	err = dbSession.InsertOperation(operation)
 	if err != nil {
 		return model.Operation{}, dberrors.Internal(errorMessageFmt, err)
 	}
-
-	operation.ID = operationID
 
 	return operation, nil
 }

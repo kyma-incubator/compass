@@ -1,8 +1,6 @@
 package dbsession
 
 import (
-	"time"
-
 	"github.com/gocraft/dbr"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
@@ -17,6 +15,7 @@ type Factory interface {
 
 //go:generate mockery -name=ReadSession
 type ReadSession interface {
+	GetCluster(runtimeID string) (model.Cluster, dberrors.Error)
 	GetOperation(operationID string) (model.Operation, dberrors.Error)
 	GetLastOperation(runtimeID string) (model.Operation, dberrors.Error)
 	GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error)
@@ -25,12 +24,11 @@ type ReadSession interface {
 
 //go:generate mockery -name=WriteSession
 type WriteSession interface {
-	InsertCluster(runtimeID string, creationTimestamp time.Time, terraformState string) dberrors.Error
-	InsertGardenerConfig(runtimeID string, config model.GardenerConfig) dberrors.Error
-	InsertGCPConfig(runtimeID string, config model.GCPConfig) dberrors.Error
-	InsertKymaConfig(runtimeID string, version string) (string, dberrors.Error)
-	InsertKymaConfigModule(kymaConfigID string, module model.KymaModule) dberrors.Error
-	InsertOperation(operation model.Operation) (string, dberrors.Error)
+	InsertCluster(cluster model.Cluster) dberrors.Error
+	InsertGardenerConfig(config model.GardenerConfig) dberrors.Error
+	InsertGCPConfig(config model.GCPConfig) dberrors.Error
+	InsertKymaConfig(kymaConfig model.KymaConfig) dberrors.Error
+	InsertOperation(operation model.Operation) dberrors.Error
 	UpdateOperationState(operationID string, message string, state model.OperationState) dberrors.Error
 	UpdateCluster(runtimeID string, kubeconfig string, terraformState string) dberrors.Error
 	DeleteCluster(runtimeID string) dberrors.Error

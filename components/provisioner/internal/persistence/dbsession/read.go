@@ -10,11 +10,28 @@ type readSession struct {
 	session *dbr.Session
 }
 
-func (r readSession) GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error) {
-	var kymaConfig []struct {
-		Version string
-		Module  string
+func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error) {
+	var cluster model.Cluster
+
+	err := r.session.
+		Select("*").
+		From("cluster").
+		Where(dbr.Eq("cluster.id", runtimeID)).
+		LoadOne(&cluster)
+
+	if err != nil {
+		if err != dbr.ErrNotFound {
+			return model.Cluster{}, dberrors.NotFound("Cannot find Cluster for runtimeID:'%s", runtimeID)
+		}
+
+		return model.Cluster{}, dberrors.Internal("Failed to get Cluster: %s", err)
 	}
+
+	return cluster, nil
+}
+
+func (r readSession) GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error) {
+	var kymaConfig model.KymaConfig
 
 	rowsCount, err := r.session.
 		Select("*").
@@ -32,16 +49,13 @@ func (r readSession) GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors
 		return model.KymaConfig{}, dberrors.NotFound("Cannot find Kyma Config for runtimeID:'%s", runtimeID)
 	}
 
-	kymaModules := make([]model.KymaModule, 0)
+	//kymaModules := make([]model.KymaModule, 0)
+	//
+	//for _, configModule := range kymaConfig {
+	//	kymaModules = append(kymaModules, model.KymaModule(configModule.Module))
+	//}
 
-	for _, configModule := range kymaConfig {
-		kymaModules = append(kymaModules, model.KymaModule(configModule.Module))
-	}
-
-	return model.KymaConfig{
-		Version: kymaConfig[0].Version,
-		Modules: kymaModules,
-	}, nil
+	return kymaConfig, nil
 }
 
 func (r readSession) GetClusterConfig(runtimeID string) (interface{}, dberrors.Error) {

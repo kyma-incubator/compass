@@ -3,10 +3,7 @@ package dbsession
 import (
 	"database/sql"
 	"fmt"
-	"time"
-
 	"github.com/gocraft/dbr"
-	"github.com/gofrs/uuid"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 )
@@ -16,11 +13,9 @@ type writeSession struct {
 	transaction *dbr.Tx
 }
 
-func (ws writeSession) InsertCluster(runtimeID string, creationTimestamp time.Time, terraformState string) dberrors.Error {
+func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 	_, err := ws.insertInto("cluster").
-		Pair("id", runtimeID).
-		Pair("creation_timestamp", creationTimestamp).
-		Pair("terraform_state", terraformState).
+		Columns("id", "creation_timestamp", "terraform_state").
 		Exec()
 
 	if err != nil {
@@ -30,31 +25,12 @@ func (ws writeSession) InsertCluster(runtimeID string, creationTimestamp time.Ti
 	return nil
 }
 
-func (ws writeSession) InsertGardenerConfig(runtimeID string, config model.GardenerConfig) dberrors.Error {
-	id, err := uuid.NewV4()
-	if err != nil {
-		return dberrors.Internal("Failed to generate uuid: %s.", err)
-	}
-
-	_, err = ws.insertInto("gardener_config").
-		Pair("id", id.String()).
-		Pair("cluster_id", runtimeID).
-		Pair("project_name", config.ProjectName).
-		Pair("name", config.Name).
-		Pair("kubernetes_version", config.KubernetesVersion).
-		Pair("node_count", config.NodeCount).
-		Pair("volume_size", config.VolumeSize).
-		Pair("machine_type", config.MachineType).
-		Pair("region", config.Region).
-		Pair("zone", config.Zone).
-		Pair("target_provider", config.TargetProvider).
-		Pair("target_secret", config.TargetSecret).
-		Pair("disk_type", config.DiskType).
-		Pair("cidr", config.Cidr).
-		Pair("auto_scaler_min", config.AutoScalerMin).
-		Pair("auto_scaler_max", config.AutoScalerMax).
-		Pair("max_surge", config.MaxSurge).
-		Pair("max_unavailable", config.MaxUnavailable).
+func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberrors.Error {
+	_, err := ws.insertInto("gardener_config").
+		Columns("id", "cluster_id", "project_name", "name", "kubernetes_version",
+			"node_count", "volume_size", "machine_type", "region", "zone", "target_provider",
+			"target_secret", "disk_type", "cidr", "auto_scaler_min", "auto_scaler_max", "max_surge", "max_unavailable").
+		Record(config).
 		Exec()
 
 	if err != nil {
@@ -64,22 +40,10 @@ func (ws writeSession) InsertGardenerConfig(runtimeID string, config model.Garde
 	return nil
 }
 
-func (ws writeSession) InsertGCPConfig(runtimeID string, config model.GCPConfig) dberrors.Error {
-	id, err := uuid.NewV4()
-	if err != nil {
-		return dberrors.Internal("Failed to generate uuid: %s.", err)
-	}
-
-	_, err = ws.insertInto("gcp_config").
-		Pair("id", id.String()).
-		Pair("cluster_id", runtimeID).
-		Pair("project_name", config.ProjectName).
-		Pair("kubernetes_version", config.KubernetesVersion).
-		Pair("number_of_nodes", config.NumberOfNodes).
-		Pair("boot_disk_size", config.BootDiskSize).
-		Pair("machine_type", config.MachineType).
-		Pair("zone", config.Zone).
-		Pair("region", config.Region).
+func (ws writeSession) InsertGCPConfig(config model.GCPConfig) dberrors.Error {
+	_, err := ws.insertInto("gcp_config").
+		Columns("id", "cluster_id", "project_name", "kubernetes_version", "number_of_nodes", "boot_disk_size",
+			"machine_type", "zone", "region").
 		Exec()
 
 	if err != nil {
@@ -89,35 +53,26 @@ func (ws writeSession) InsertGCPConfig(runtimeID string, config model.GCPConfig)
 	return nil
 }
 
-func (ws writeSession) InsertKymaConfig(runtimeID string, version string) (string, dberrors.Error) {
-	id, err := uuid.NewV4()
-	if err != nil {
-		return "", dberrors.Internal("Failed to generate uuid: %s.", err)
-	}
-
-	_, err = ws.insertInto("kyma_config").
-		Pair("id", id.String()).
-		Pair("version", version).
-		Pair("cluster_id", runtimeID).
+func (ws writeSession) InsertKymaConfig(kymaConfig model.KymaConfig) dberrors.Error {
+	_, err := ws.insertInto("kyma_config").
+		Columns("id", "version", "cluster_id").
+		Record(&kymaConfig).
 		Exec()
 
 	if err != nil {
-		return "", dberrors.Internal("Failed to insert record to KymaConfig table: %s", err)
+		return dberrors.Internal("Failed to insert record to KymaConfig table: %s", err)
 	}
 
-	return id.String(), nil
+	for _, kymaConfigModule := range kymaConfig.Modules {
+		ws.insertKymaConfigModule(kymaConfig.ID, kymaConfigModule)
+	}
+
+	return nil
 }
 
-func (ws writeSession) InsertKymaConfigModule(kymaConfigID string, module model.KymaModule) dberrors.Error {
-	id, err := uuid.NewV4()
-	if err != nil {
-		return dberrors.Internal("Failed to generate uuid: %s", err)
-	}
-
-	_, err = ws.insertInto("kyma_config_module").
-		Pair("id", id.String()).
-		Pair("module", module).
-		Pair("kyma_config_id", kymaConfigID).
+func (ws writeSession) insertKymaConfigModule(kymaConfigID string, kymaConfigModule model.KymaConfigModule) dberrors.Error {
+	_, err := ws.insertInto("kyma_config_module").
+		Columns("id", "module", "kyma_config_id").
 		Exec()
 
 	if err != nil {
@@ -127,23 +82,17 @@ func (ws writeSession) InsertKymaConfigModule(kymaConfigID string, module model.
 	return nil
 }
 
-func (ws writeSession) InsertOperation(operation model.Operation) (string, dberrors.Error) {
-	id, err := uuid.NewV4()
-	if err != nil {
-		return "", dberrors.Internal("Failed to generate uuid: %s.", err)
-	}
-	operation.ID = id.String()
-
-	_, err = ws.insertInto("operation").
+func (ws writeSession) InsertOperation(operation model.Operation) dberrors.Error {
+	_, err := ws.insertInto("operation").
 		Columns("id", "type", "state", "message", "start_timestamp", "cluster_id").
 		Record(operation).
 		Exec()
 
 	if err != nil {
-		return "", dberrors.Internal("Failed to insert record to Type table: %s", err)
+		return dberrors.Internal("Failed to insert record to Type table: %s", err)
 	}
 
-	return id.String(), nil
+	return nil
 }
 
 func (ws writeSession) DeleteCluster(runtimeID string) dberrors.Error {

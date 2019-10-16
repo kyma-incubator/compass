@@ -7,8 +7,15 @@ import (
 type KymaModule string
 
 type KymaConfig struct {
-	Version string
-	Modules []KymaModule
+	ID        string
+	Version   string
+	Modules   []KymaConfigModule
+	ClusterID string
+}
+
+type KymaConfigModule struct {
+	ID     string
+	Module KymaModule
 }
 
 type OperationState string
@@ -28,6 +35,13 @@ const (
 	ReconnectRuntime OperationType = "RECONNECT_RUNTIME"
 )
 
+type Cluster struct {
+	ID                string
+	Kubeconfig        string
+	TerraformState    string
+	CreationTimestamp time.Time
+}
+
 type Operation struct {
 	ID             string
 	Type           OperationType
@@ -39,6 +53,8 @@ type Operation struct {
 }
 
 type GardenerConfig struct {
+	ID                string
+	ClusterID         string
 	Name              string
 	ProjectName       string
 	KubernetesVersion string
@@ -58,6 +74,8 @@ type GardenerConfig struct {
 }
 
 type GCPConfig struct {
+	ID                string
+	ClusterID         string
 	Name              string
 	ProjectName       string
 	KubernetesVersion string
@@ -71,6 +89,8 @@ type GCPConfig struct {
 type RuntimeAgentConnectionStatus int
 
 type ClusterConfig struct {
+	ID             string
+	ClusterID      string
 	Name           string
 	NodeCount      int
 	DiskSize       string

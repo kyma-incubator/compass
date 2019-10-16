@@ -45,23 +45,28 @@ func NewProvisioningService(operationService persistence.OperationService, runti
 }
 
 func (r *service) ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeInput) (string, error, chan interface{}) {
-	lastOperation, err := r.runtimeService.GetLastOperation(id)
+	{
+		lastOperation, err := r.runtimeService.GetLastOperation(id)
 
-	if err == nil && !lastProvisioningFailed(lastOperation) {
-		return "", errors.New(fmt.Sprintf("cannot provision runtime. Runtime %s already provisioned", id)), nil
-	}
+		if err == nil && !lastProvisioningFailed(lastOperation) {
+			return "", errors.New(fmt.Sprintf("cannot provision runtime. Runtime %s already provisioned", id)), nil
+		}
 
-	if err != nil && err.Code() != dberrors.CodeNotFound {
-		return "", err, nil
-	}
+		if err != nil && err.Code() != dberrors.CodeNotFound {
+			return "", err, nil
+		}
 
-	if lastProvisioningFailed(lastOperation) {
-		if _, dbErr := r.CleanupRuntimeData(id); dbErr != nil {
-			return "", dbErr, nil
+		if lastProvisioningFailed(lastOperation) {
+			if _, dbErr := r.CleanupRuntimeData(id); dbErr != nil {
+				return "", dbErr, nil
+			}
 		}
 	}
 
-	runtimeConfig := runtimeConfigFromInput(config)
+	runtimeConfig, err := runtimeConfigFromInput(config)
+	if err == nil {
+		return "", err, nil
+	}
 
 	operation, err := r.runtimeService.SetProvisioningStarted(id, runtimeConfig)
 
