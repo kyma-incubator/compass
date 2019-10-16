@@ -53,6 +53,7 @@ type TestSuite struct {
 // TODO - better structure of setup code
 
 func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
+	rand.Seed(time.Now().UnixNano())
 
 	// TODO - need some endpoint to check if sidecar is up
 	time.Sleep(10 * time.Second)

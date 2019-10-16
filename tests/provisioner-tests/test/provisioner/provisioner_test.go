@@ -28,13 +28,19 @@ func Test_E2e(t *testing.T) {
 	t.Logf("Starting tests. Test id: %s", testSuite.TestId)
 
 	// Register runtime
-	t.Logf("Registering runtime... Test id: %s", testSuite.TestId)
+	t.Logf("Registering runtime...")
 	runtimeInput := graphql.RuntimeInput{
 		Name: "test-runtime-" + testSuite.TestId,
 	}
 
 	runtime, err := testSuite.DirectorClient.RegisterRuntime(runtimeInput)
 	require.NoError(t, err)
+	t.Logf("Runtime registered successfully id: %s.", runtime.ID)
+	defer func() {
+		// TODO - deleting runtime fails not sure why
+		_, err := testSuite.DirectorClient.DeleteRuntime(runtime.ID)
+		assert.NoError(t, err)
+	}()
 
 	// Provision runtime
 	zone := gcpZone
@@ -43,6 +49,7 @@ func Test_E2e(t *testing.T) {
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GcpConfig: &gqlschema.GCPConfigInput{
 				Name:              "tests-runtime-" + testSuite.TestId, // TODO - should be complient with cleaners
+				ProjectName:       "project",
 				KubernetesVersion: "1.14",
 				NumberOfNodes:     3,
 				BootDiskSize:      "30GB",
@@ -52,7 +59,7 @@ func Test_E2e(t *testing.T) {
 			},
 		},
 		Credentials: &gqlschema.CredentialsInput{SecretName: testSuite.CredentialsSecretName},
-		KymaConfig:  nil,
+		KymaConfig:  &gqlschema.KymaConfigInput{Version: "1.6", Modules: nil},
 	}
 
 	t.Logf("Provsisioning runtime on GCP...")
@@ -90,8 +97,8 @@ func Test_E2e(t *testing.T) {
 	require.NoError(t, err)
 
 	assertOperationSucceed(t, gqlschema.OperationTypeProvision, runtime.ID, provisioningOperationStatus)
+	t.Logf("Runtime provisioned successfully")
 
-	// Get Kubeconfig
 	t.Logf("Fetching runtime status...")
 	runtimeStatus, err := testSuite.ProvisionerClient.RuntimeStatus(runtime.ID)
 	require.NoError(t, err)
@@ -107,7 +114,7 @@ func Test_E2e(t *testing.T) {
 	// TODO - make sure it will work
 	assert.Equal(t, provisioningInput.ClusterConfig.GcpConfig.KubernetesVersion, version.Major)
 
-	// TODO- HERE - Run Compass Runtime Agent Tests (it may require passing AccessToken or Credentials for Director?) (Maybe pass credentials and tests will only generate Access Token?)
+	// TODO - Run Compass Runtime Agent Tests (it may require passing AccessToken or Credentials for Director?) (Maybe pass credentials and tests will only generate Access Token?)
 
 	t.Logf("Deprovisioning runtime...")
 	deprovisioningOperationId, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtime.ID)
@@ -117,6 +124,7 @@ func Test_E2e(t *testing.T) {
 	deprovisioningOperationStatus, err := testSuite.WaitUntilOperationIsFinished(ProvisioningTimeout, deprovisioningOperationId)
 	require.NoError(t, err)
 	assertOperationSucceed(t, gqlschema.OperationTypeDeprovision, runtime.ID, deprovisioningOperationStatus)
+	t.Logf("Runtime deprovisioned successfully")
 }
 
 func assertGCPRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionRuntimeInput, status gqlschema.RuntimeStatus) {
@@ -150,7 +158,7 @@ func assertOperationSucceed(t *testing.T, expectedType gqlschema.OperationType, 
 }
 
 func assertOperation(t *testing.T, expectedState gqlschema.OperationState, expectedType gqlschema.OperationType, expectedRuntimeId string, operation gqlschema.OperationStatus) {
-	t.Logf("Assering operation %s is in %s state.", "", expectedState) // TODO - pass operation ID here (modify the API)
+	t.Logf("Assering operation %s is in %s state.", operation.ID, expectedState)
 	t.Logf("Operation message: %s", operation.Message)
 	require.Equal(t, expectedState, operation.State)
 	assert.Equal(t, expectedRuntimeId, operation.RuntimeID)

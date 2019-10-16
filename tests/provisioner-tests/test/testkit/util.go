@@ -44,24 +44,24 @@ func RunParallelToMainFunction(timeout time.Duration, mainFunction func() error,
 
 	funcErrors := make([]error, 0, len(parallelFunctions))
 
-	select {
-	case err := <-errOut:
-		funcErrors = append(funcErrors, err)
-	case err := <-mainOut:
-		if err != nil {
-			return errors.Errorf("Main function failed: %s", err.Error())
-		}
+	for {
+		select {
+		case err := <-errOut:
+			funcErrors = append(funcErrors, err)
+		case err := <-mainOut:
+			if err != nil {
+				return errors.Errorf("Main function failed: %s", err.Error())
+			}
 
-		if len(funcErrors) < len(parallelFunctions) {
-			return errors.Errorf("Not all parallel functions finished. Functions finished %d. Errors: %v", len(funcErrors), processErrors(funcErrors))
-		}
+			if len(funcErrors) < len(parallelFunctions) {
+				return errors.Errorf("Not all parallel functions finished. Functions finished %d. Errors: %v", len(funcErrors), processErrors(funcErrors))
+			}
 
-		return processErrors(funcErrors)
-	case <-time.After(timeout):
-		return errors.Errorf("Timeout waiting for for parallel processes to finish. Functions finished %d. Errors: %v", len(funcErrors), processErrors(funcErrors))
+			return processErrors(funcErrors)
+		case <-time.After(timeout):
+			return errors.Errorf("Timeout waiting for for parallel processes to finish. Functions finished %d. Errors: %v", len(funcErrors), processErrors(funcErrors))
+		}
 	}
-
-	return errors.New("Unexpected behaviour: channels closed without returning.")
 }
 
 func processErrors(errorsArray []error) error {

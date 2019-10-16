@@ -1,9 +1,12 @@
 package director
 
 import (
+	"fmt"
+
 	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass"
 	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql"
 	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/oauth"
+	"github.com/sirupsen/logrus"
 
 	"github.com/pkg/errors"
 
@@ -78,9 +81,13 @@ func (c *Client) newRequest(query string) (*gcli.Request, error) {
 		return nil, errors.Wrap(err, "Error while getting Access Token")
 	}
 
+	logrus.Info("Access TOKEN: ", accessToken)
+
+	bearerToken := fmt.Sprintf("Bearer %s", accessToken.AccessToken)
+
 	req := gcli.NewRequest(query)
 	req.Header.Set(compass.TenantHeader, c.tenant)
-	req.Header.Set(compass.AuthorizationHeader, accessToken.AccessToken)
+	req.Header.Set(compass.AuthorizationHeader, bearerToken)
 
 	return req, nil
 }

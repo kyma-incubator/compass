@@ -157,7 +157,8 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:bb1ffaccfac0bae18bd6b9eb3c2d8048317054bd4804199163e90c1f2d314bf7"
+  branch = "provisioning-clusters"
+  digest = "1:a52b7694eeba5551ca9d1c4db485ee61a4114e36ffd28773b11b14833a90dd7c"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/pkg/graphql",
@@ -165,7 +166,8 @@
     "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
-  revision = "d3ca148995803d8c9bf5e6b79cd2374e6c2f4b2c"
+  revision = "a7c66572738d1c7486e8b7c0d17ebb9da2536f82"
+  source = "github.com/akgalwas/compass"
 
 [[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
