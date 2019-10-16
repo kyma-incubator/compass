@@ -1,145 +1,158 @@
 package provisioner
 
 import (
-	"errors"
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/provisioner"
+	"github.com/pkg/errors"
 
-	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit"
+
 	"github.com/stretchr/testify/assert"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/require"
 )
 
 const (
-	provisioningTimeout   = 15 * time.Minute
-	deprovisioningTimeout = 10 * time.Minute
-
-	checkInterval = 1 * time.Second
+	gcpMachineType = "n1-standard-4"
+	gcpRegion      = "europe-west4"
+	gcpZone        = "europe-west4-b"
 )
 
-var provisionRuntimeInput = gqlschema.ProvisionRuntimeInput{
-	Credentials: &gqlschema.CredentialsInput{SecretName: "secret"},
-	ClusterConfig: &gqlschema.ClusterConfigInput{
-		GardenerConfig: &gqlschema.GardenerConfigInput{
-			Name:              "Test",
-			KubernetesVersion: "1.16",
-			NodeCount:         2,
-			VolumeSize:        "30GB",
-			MachineType:       "machine",
-			Region:            "Region",
-			TargetProvider:    "gcp",
-			TargetSecret:      "gardener-secret",
-			Zone:              "zone",
-			Cidr:              "cidr",
-			AutoScalerMin:     1,
-			AutoScalerMax:     2,
-			MaxSurge:          2,
-			MaxUnavailable:    1,
-		},
-	},
-	KymaConfig: &gqlschema.KymaConfigInput{
-		Version: "1.6",
-		Modules: []gqlschema.KymaModule{},
-	},
-}
+// TODO - decide whether to use logrus or t.Log
 
-var upgradeRuntimeInput = gqlschema.UpgradeRuntimeInput{
-	ClusterConfig: &gqlschema.UpgradeClusterInput{
-		Version: "2.0",
-	},
-	KymaConfig: &gqlschema.KymaConfigInput{
-		Version: "1.7",
-		Modules: []gqlschema.KymaModule{},
-	},
-}
+func Test_E2e(t *testing.T) {
+	t.Logf("Starting tests. Test id: %s", testSuite.TestId)
 
-func TestFullProvisionerFlow(t *testing.T) {
-
-	client := provisioner.NewProvisionerClient(config.InternalProvisionerUrl)
-
-	runtimeID := uuid.New().String()
-
-	t.Logf("Provisioning runtime %s", runtimeID)
-	provisionOperationID, e := client.ProvisionRuntime(runtimeID, provisionRuntimeInput)
-
-	require.NoError(t, e)
-
-	t.Logf("Waiting until runtime %s is provisioned", runtimeID)
-	waitUntilOperationIsFinished(t, client, provisionOperationID)
-	t.Logf("Runtime %s provisioned succesfully", runtimeID)
-
-	t.Logf("Reconnecting runtime agent with runtime %s", runtimeID)
-	reconnectOperationID, e := client.ReconnectRuntimeAgent(runtimeID)
-
-	require.NoError(t, e)
-
-	t.Logf("Waiting until runtime %s is provisioned", runtimeID)
-	waitUntilOperationIsFinished(t, client, reconnectOperationID)
-	t.Logf("Runtime agent for runtime %s reconnected succesfully", runtimeID)
-
-	t.Logf("Upgrading runtime %s", runtimeID)
-
-	upgradeOperationID, e := client.UpgradeRuntime(runtimeID, upgradeRuntimeInput)
-
-	require.NoError(t, e)
-
-	t.Logf("Waiting until runtime %s is upgraded", runtimeID)
-	waitUntilOperationIsFinished(t, client, upgradeOperationID)
-	t.Logf("Runtime %s upgraded succesfully", runtimeID)
-
-	t.Logf("Checking current status of runtime %s", runtimeID)
-	status, e := client.RuntimeStatus(runtimeID)
-
-	require.NoError(t, e)
-
-	assert.Equal(t, gqlschema.OperationTypeUpgrade, status.LastOperationStatus.Operation)
-	assert.Equal(t, gqlschema.OperationStateSucceeded, status.LastOperationStatus.State)
-
-	t.Logf("Deprovisioning runtime %s", runtimeID)
-	deprovisionOperationID, e := client.DeprovisionRuntime(runtimeID)
-
-	require.NoError(t, e)
-
-	t.Logf("Waiting until runtime %s is deprovisioned", runtimeID)
-	waitUntilOperationIsFinished(t, client, deprovisionOperationID)
-	t.Logf("Runtime %s deprovisioned succesfully", runtimeID)
-}
-
-func waitUntilOperationIsFinished(t *testing.T, client provisioner.Client, operationID string) {
-	err := waitForFunction(checkInterval, provisioningTimeout, func() bool {
-		operationStatus, err := client.RuntimeOperationStatus(operationID)
-		if err != nil {
-			return false
-		}
-
-		if operationStatus.State == gqlschema.OperationStateSucceeded {
-			return true
-		}
-
-		if operationStatus.State == gqlschema.OperationStateFailed {
-			t.FailNow()
-		}
-		return false
-	})
-	require.NoError(t, err)
-}
-
-func waitForFunction(interval, timeout time.Duration, isDone func() bool) error {
-	done := time.After(timeout)
-
-	for {
-		if isDone() {
-			return nil
-		}
-
-		select {
-		case <-done:
-			return errors.New("provisioningTimeout waiting for condition")
-		default:
-			time.Sleep(interval)
-		}
+	// Register runtime
+	t.Logf("Registering runtime... Test id: %s", testSuite.TestId)
+	runtimeInput := graphql.RuntimeInput{
+		Name: "test-runtime-" + testSuite.TestId,
 	}
+
+	runtime, err := testSuite.DirectorClient.RegisterRuntime(runtimeInput)
+	require.NoError(t, err)
+
+	// Provision runtime
+	zone := gcpZone
+
+	provisioningInput := gqlschema.ProvisionRuntimeInput{
+		ClusterConfig: &gqlschema.ClusterConfigInput{
+			GcpConfig: &gqlschema.GCPConfigInput{
+				Name:              "tests-runtime-" + testSuite.TestId, // TODO - should be complient with cleaners
+				KubernetesVersion: "1.14",
+				NumberOfNodes:     3,
+				BootDiskSize:      "30GB",
+				MachineType:       gcpMachineType,
+				Region:            gcpRegion,
+				Zone:              &zone,
+			},
+		},
+		Credentials: &gqlschema.CredentialsInput{SecretName: testSuite.CredentialsSecretName},
+		KymaConfig:  nil,
+	}
+
+	t.Logf("Provsisioning runtime on GCP...")
+	provisioningOperationId, err := testSuite.ProvisionerClient.ProvisionRuntime(runtime.ID, provisioningInput)
+	require.NoError(t, err)
+	t.Logf("Provisioning operation id: %s", provisioningOperationId)
+
+	var provisioningOperationStatus gqlschema.OperationStatus
+	err = testkit.RunParallelToMainFunction(ProvisioningTimeout+5*time.Second,
+		func() error {
+			t.Log("Waiting for provisioning to finish...")
+			var waitErr error
+			provisioningOperationStatus, waitErr = testSuite.WaitUntilOperationIsFinished(ProvisioningTimeout, provisioningOperationId)
+			return waitErr
+		},
+		func() error {
+			t.Log("Checking if operation will fail while other in progress...")
+			operationStatus, err := testSuite.ProvisionerClient.RuntimeOperationStatus(provisioningOperationId)
+			if err != nil {
+				return errors.WithMessagef(err, "Failed to get %s operation status", provisioningOperationId)
+			}
+
+			if operationStatus.State != gqlschema.OperationStateInProgress {
+				return errors.New("Operation %s not in progress")
+			}
+
+			_, err = testSuite.ProvisionerClient.ProvisionRuntime(runtime.ID, provisioningInput)
+			if err == nil {
+				return errors.New("Operation scheduled successfully while other operation in progress")
+			}
+
+			return nil
+		},
+	)
+	require.NoError(t, err)
+
+	assertOperationSucceed(t, gqlschema.OperationTypeProvision, runtime.ID, provisioningOperationStatus)
+
+	// Get Kubeconfig
+	t.Logf("Fetching runtime status...")
+	runtimeStatus, err := testSuite.ProvisionerClient.RuntimeStatus(runtime.ID)
+	require.NoError(t, err)
+	assertGCPRuntimeConfiguration(t, provisioningInput, runtimeStatus)
+
+	t.Logf("Preparing K8s client...")
+	k8sClient := testSuite.KubernetesClientFromRawConfig(t, *runtimeStatus.RuntimeConfiguration.Kubeconfig)
+
+	t.Logf("Accessing API Server on provisioned cluster...")
+	version, err := k8sClient.ServerVersion()
+	require.NoError(t, err)
+
+	// TODO - make sure it will work
+	assert.Equal(t, provisioningInput.ClusterConfig.GcpConfig.KubernetesVersion, version.Major)
+
+	// TODO- HERE - Run Compass Runtime Agent Tests (it may require passing AccessToken or Credentials for Director?) (Maybe pass credentials and tests will only generate Access Token?)
+
+	t.Logf("Deprovisioning runtime...")
+	deprovisioningOperationId, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtime.ID)
+	require.NoError(t, err)
+	t.Logf("Deprovisioning operation id: %s", deprovisioningOperationId)
+
+	deprovisioningOperationStatus, err := testSuite.WaitUntilOperationIsFinished(ProvisioningTimeout, deprovisioningOperationId)
+	require.NoError(t, err)
+	assertOperationSucceed(t, gqlschema.OperationTypeDeprovision, runtime.ID, deprovisioningOperationStatus)
+}
+
+func assertGCPRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionRuntimeInput, status gqlschema.RuntimeStatus) {
+	require.NotNil(t, status.RuntimeConfiguration)
+	require.NotNil(t, status.RuntimeConfiguration.ClusterConfig)
+	require.NotNil(t, status.RuntimeConfiguration.Kubeconfig)
+	//require.NotNil(t, status.RuntimeConfiguration.KymaConfig) // TODO - uncomment when implemented
+
+	require.NotNil(t, status.LastOperationStatus)
+
+	//require.NotNil(t, status.RuntimeConnectionStatus) // TODO - uncomment when implemented
+
+	gcpClusterConfig, ok := status.RuntimeConfiguration.ClusterConfig.(*gqlschema.GCPConfig)
+	require.True(t, ok)
+
+	assert.Equal(t, input.ClusterConfig.GcpConfig.Name, gcpClusterConfig.Name)
+	assert.Equal(t, input.ClusterConfig.GcpConfig.Region, gcpClusterConfig.Region)
+	assert.Equal(t, input.ClusterConfig.GcpConfig.KubernetesVersion, gcpClusterConfig.KubernetesVersion)
+	assert.Equal(t, input.ClusterConfig.GcpConfig.BootDiskSize, gcpClusterConfig.BootDiskSize)
+	assert.Equal(t, input.ClusterConfig.GcpConfig.MachineType, gcpClusterConfig.MachineType)
+	assert.Equal(t, input.ClusterConfig.GcpConfig.NumberOfNodes, gcpClusterConfig.NumberOfNodes)
+	assert.Equal(t, input.ClusterConfig.GcpConfig.Zone, gcpClusterConfig.Zone)
+}
+
+func assertOperationFailed(t *testing.T, expectedType gqlschema.OperationType, expectedRuntimeId string, operation gqlschema.OperationStatus) {
+	assertOperation(t, gqlschema.OperationStateFailed, expectedType, expectedRuntimeId, operation)
+}
+
+func assertOperationSucceed(t *testing.T, expectedType gqlschema.OperationType, expectedRuntimeId string, operation gqlschema.OperationStatus) {
+	assertOperation(t, gqlschema.OperationStateSucceeded, expectedType, expectedRuntimeId, operation)
+}
+
+func assertOperation(t *testing.T, expectedState gqlschema.OperationState, expectedType gqlschema.OperationType, expectedRuntimeId string, operation gqlschema.OperationStatus) {
+	t.Logf("Assering operation %s is in %s state.", "", expectedState) // TODO - pass operation ID here (modify the API)
+	t.Logf("Operation message: %s", operation.Message)
+	require.Equal(t, expectedState, operation.State)
+	assert.Equal(t, expectedRuntimeId, operation.RuntimeID)
+	assert.Equal(t, expectedType, operation.Operation)
 }

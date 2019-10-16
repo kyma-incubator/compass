@@ -22,9 +22,23 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	testSuite, err = NewTestSuite(conf)
-
-	code := m.Run()
-
+	code := runTests(m)
 	os.Exit(code)
+}
+
+func runTests(m *testing.M) int {
+	//testSuite, err := NewTestSuite(config)
+	//if err != nil {
+	//	logrus.Errorf("Failed to setup tests environment: %s", err.Error())
+	//	return 1
+	//}
+	//
+	//err = testSuite.Setup()
+	//if err != nil {
+	//	logrus.Errorf("Failed to setup tests environment: %s", err.Error())
+	//	return 1
+	//}
+	//defer testSuite.Cleanup()
+
+	return m.Run()
 }

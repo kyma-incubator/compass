@@ -8,7 +8,15 @@ import (
 )
 
 type TestConfig struct {
-	InternalProvisionerUrl string `envconfig:"default=http://localhost:3000/graphql"`
+	InternalProvisionerURL string `envconfig:"default=http://localhost:3000/graphql"`
+	DirectorURL            string `envconfig:"default=https://gateway.kyma.local/director/graphql"`
+	CredentialsNamespace   string `envconfig:"default=compass-system"`
+
+	GCPCredentials string
+	Tenant         string
+
+	HydraPublicURL string `envconfig:"default=http://ory-hydra-public.kyma-system:4444"`
+	HydraAdminURL  string `envconfig:"default=http://ory-hydra-admin.kyma-system:4445"`
 
 	QueryLogging bool `envconfig:"default=false"`
 }
