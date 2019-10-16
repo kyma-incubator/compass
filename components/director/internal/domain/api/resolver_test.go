@@ -33,7 +33,6 @@ func TestResolver_API(t *testing.T) {
 
 	testCases := []struct {
 		Name            string
-		PersistenceFn   func() *persistenceautomock.PersistenceTx
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn       func() *automock.APIService
 		ConverterFn     func() *automock.APIConverter
@@ -43,7 +42,6 @@ func TestResolver_API(t *testing.T) {
 	}{
 		{
 			Name:            "Success",
-			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
@@ -62,7 +60,6 @@ func TestResolver_API(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when application retrieval failed",
-			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
@@ -80,7 +77,6 @@ func TestResolver_API(t *testing.T) {
 		},
 		{
 			Name:            "Returns null when application retrieval failed",
-			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
@@ -98,7 +94,6 @@ func TestResolver_API(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when commit begin error",
-			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
 			TransactionerFn: txGen.ThatFailsOnBegin,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
@@ -115,7 +110,6 @@ func TestResolver_API(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when commit failed",
-			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
@@ -134,7 +128,7 @@ func TestResolver_API(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			_, transact := testCase.TransactionerFn()
+			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
@@ -148,6 +142,8 @@ func TestResolver_API(t *testing.T) {
 			assert.Equal(t, testCase.ExpectedErr, err)
 
 			svc.AssertExpectations(t)
+			persist.AssertExpectations(t)
+			transact.AssertExpectations(t)
 			converter.AssertExpectations(t)
 		})
 	}
