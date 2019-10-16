@@ -1,7 +1,7 @@
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
-  name: {{ .Chart.Name }}-tests
+  name: {{ template "fullname" . }}-tests
   labels:
     app: {{ .Chart.Name }}-tests
     app.kubernetes.io/name: {{ .Chart.Name }}-tests
@@ -12,6 +12,7 @@ spec:
   disableConcurrency: true
   template:
     spec:
+      serviceAccountName: {{ template "fullname" . }}-tests
       shareProcessNamespace: true
       containers:
       - name: tests
@@ -20,6 +21,20 @@ spec:
         env:
         - name: APP_INTERNAL_PROVISIONER_URL
           value: 'http://{{ template "fullname" . }}:{{ .Values.global.provisioner.graphql.port }}/graphql'
+        - name: APP_DIRECTOR_URL
+          value: 'https://{{ .Values.global.gateway.tls.secure.oauth.host }}/director/graphql'
+        - name: APP_CREDENTIALS_NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: APP_GCP_CREDENTIALS
+          value: {{ .Values.tests.gcp.credentials }}
+        - name: APP_TENANT
+          value: "{{ .Values.global.defaultTenant }}"
+        - name: APP_HYDRA_PUBLIC_URL
+          value: "{{ .Values.tests.hydraPublicUrl }}"
+        - name: APP_HYDRA_ADMIN_URL
+          value: "{{ .Values.tests.hydraAdminUrl }}"
+        - name: APP_QUERY_LOGGING
+          value: "{{ .Values.tests.queryLogging }}"
         command:
         - "/bin/sh"
         args:
