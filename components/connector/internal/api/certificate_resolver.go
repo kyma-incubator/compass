@@ -9,15 +9,15 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
 	"github.com/kyma-incubator/compass/components/connector/internal/revocation"
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
-	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
+	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
 type CertificateResolver interface {
-	SignCertificateSigningRequest(ctx context.Context, csr string) (*gqlschema.CertificationResult, error)
+	SignCertificateSigningRequest(ctx context.Context, csr string) (*externalschema.CertificationResult, error)
 	RevokeCertificate(ctx context.Context) (bool, error)
-	Configuration(ctx context.Context) (*gqlschema.Configuration, error)
+	Configuration(ctx context.Context) (*externalschema.Configuration, error)
 }
 
 type certificateResolver struct {
@@ -51,7 +51,7 @@ func NewCertificateResolver(
 	}
 }
 
-func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context, csr string) (*gqlschema.CertificationResult, error) {
+func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context, csr string) (*externalschema.CertificationResult, error) {
 	clientId, err := r.authenticator.Authenticate(ctx)
 	if err != nil {
 		r.log.Errorf(err.Error())
@@ -102,7 +102,7 @@ func (r *certificateResolver) RevokeCertificate(ctx context.Context) (bool, erro
 	return true, nil
 }
 
-func (r *certificateResolver) Configuration(ctx context.Context) (*gqlschema.Configuration, error) {
+func (r *certificateResolver) Configuration(ctx context.Context) (*externalschema.Configuration, error) {
 	clientId, err := r.authenticator.Authenticate(ctx)
 	if err != nil {
 		r.log.Errorf(err.Error())
@@ -117,15 +117,15 @@ func (r *certificateResolver) Configuration(ctx context.Context) (*gqlschema.Con
 		return nil, err
 	}
 
-	csrInfo := &gqlschema.CertificateSigningRequestInfo{
+	csrInfo := &externalschema.CertificateSigningRequestInfo{
 		Subject:      r.csrSubjectConsts.ToString(clientId),
 		KeyAlgorithm: "rsa2048",
 	}
 
-	return &gqlschema.Configuration{
-		Token:                         &gqlschema.Token{Token: token},
+	return &externalschema.Configuration{
+		Token:                         &externalschema.Token{Token: token},
 		CertificateSigningRequestInfo: csrInfo,
-		ManagementPlaneInfo: &gqlschema.ManagementPlaneInfo{
+		ManagementPlaneInfo: &externalschema.ManagementPlaneInfo{
 			DirectorURL:                    &r.directorURL,
 			CertificateSecuredConnectorURL: &r.certificateSecuredConnectorURL,
 		},

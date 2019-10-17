@@ -19,7 +19,8 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/internal/revocation"
 	"github.com/kyma-incubator/compass/components/connector/internal/secrets"
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
-	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
+	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
+	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/internalschema"
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -32,7 +33,8 @@ import (
 )
 
 type config struct {
-	Address               string `envconfig:"default=127.0.0.1:3000"`
+	ExternalAddress       string `envconfig:"default=127.0.0.1:3000"`
+	InternalAddress       string `envconfig:"default=127.0.0.1:3001"`
 	APIEndpoint           string `envconfig:"default=/graphql"`
 	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
 
@@ -64,7 +66,7 @@ type config struct {
 }
 
 func (c *config) String() string {
-	return fmt.Sprintf("Address: %s, APIEndpoint: %s, HydratorAddress: %s, "+
+	return fmt.Sprintf("ExternalAddress: %s, InternalAddress: %s, APIEndpoint: %s, HydratorAddress: %s, "+
 		"CSRSubjectCountry: %s, CSRSubjectOrganization: %s, CSRSubjectOrganizationalUnit: %s, "+
 		"CSRSubjectLocality: %s, CSRSubjectProvince: %s, "+
 		"CertificateValidityTime: %s, CASecretName: %s, RootCACertificateSecretName: %s, CertificateDataHeader: %s, "+
@@ -72,7 +74,7 @@ func (c *config) String() string {
 		"RevocationConfigMapName: %s, "+
 		"TokenLength: %d, TokenRuntimeExpiration: %s, TokenApplicationExpiration: %s, TokenCSRExpiration: %s, "+
 		"DirectorURL: %s",
-		c.Address, c.APIEndpoint, c.HydratorAddress,
+		c.ExternalAddress, c.InternalAddress, c.APIEndpoint, c.HydratorAddress,
 		c.CSRSubject.Country, c.CSRSubject.Organization, c.CSRSubject.OrganizationalUnit,
 		c.CSRSubject.Locality, c.CSRSubject.Province,
 		c.CertificateValidityTime, c.CASecretName, c.RootCACertificateSecretName, c.CertificateDataHeader,
@@ -125,15 +127,23 @@ func main() {
 		cfg.CertificateSecuredConnectorURL,
 		revokedCertsRepository)
 
-	server := prepareGraphQLServer(cfg, tokenResolver, certificateResolver)
+	externalGqlServer := prepareExternalGraphQLServer(cfg, certificateResolver)
+	internalGqlServer := prepareInternalGraphQLServer(cfg, tokenResolver)
 	hydratorServer := prepareHydratorServer(cfg, tokenService, csrSubjectConsts, revokedCertsRepository)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 
 	go func() {
-		log.Printf("GraphQL API listening on %s...", cfg.Address)
-		if err := server.ListenAndServe(); err != nil {
+		log.Printf("External GraphQL API listening on %s...", cfg.ExternalAddress)
+		if err := externalGqlServer.ListenAndServe(); err != nil {
+			panic(err)
+		}
+	}()
+
+	go func() {
+		log.Printf("Internal GraphQL API listening on %s...", cfg.InternalAddress)
+		if err := internalGqlServer.ListenAndServe(); err != nil {
 			panic(err)
 		}
 	}()
@@ -148,14 +158,14 @@ func main() {
 	wg.Wait()
 }
 
-func prepareGraphQLServer(cfg config, tokenResolver api.TokenResolver, certResolver api.CertificateResolver) *http.Server {
-	externalResolver := api.Resolver{CertificateResolver: certResolver, TokenResolver: tokenResolver}
+func prepareExternalGraphQLServer(cfg config, certResolver api.CertificateResolver) *http.Server {
+	externalResolver := api.ExternalResolver{CertificateResolver: certResolver}
 
-	gqlInternalCfg := gqlschema.Config{
+	gqlInternalCfg := externalschema.Config{
 		Resolvers: &externalResolver,
 	}
 
-	externalExecutableSchema := gqlschema.NewExecutableSchema(gqlInternalCfg)
+	externalExecutableSchema := externalschema.NewExecutableSchema(gqlInternalCfg)
 
 	externalRouter := mux.NewRouter()
 	externalRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
@@ -166,8 +176,31 @@ func prepareGraphQLServer(cfg config, tokenResolver api.TokenResolver, certResol
 	externalRouter.Use(authContextMiddleware.PropagateAuthentication)
 
 	return &http.Server{
-		Addr:    cfg.Address,
+		Addr:    cfg.ExternalAddress,
 		Handler: externalRouter,
+	}
+}
+
+func prepareInternalGraphQLServer(cfg config, tokenResolver api.TokenResolver) *http.Server {
+	internalResolver := api.InternalResolver{TokenResolver: tokenResolver}
+
+	gqlInternalCfg := internalschema.Config{
+		Resolvers: &internalResolver,
+	}
+
+	internalExecutableSchema := internalschema.NewExecutableSchema(gqlInternalCfg)
+
+	internalRouter := mux.NewRouter()
+	internalRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
+	internalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(internalExecutableSchema))
+
+	authContextMiddleware := authentication.NewAuthenticationContextMiddleware()
+
+	internalRouter.Use(authContextMiddleware.PropagateAuthentication)
+
+	return &http.Server{
+		Addr:    cfg.InternalAddress,
+		Handler: internalRouter,
 	}
 }
 
