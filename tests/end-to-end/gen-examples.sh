@@ -97,14 +97,14 @@ docker run --name ${DIRECTOR_CONTAINER} -d --rm --network=${NETWORK} \
 
 cd "${SCRIPT_DIR}"
 
-env DIRECTOR_URL="http://localhost:${APP_PORT}" ./wait-for-director.sh
+export DIRECTOR_URL="http://${DIRECTOR_URL}:${APP_PORT}"
+./wait-for-director.sh
 
 echo -e "${GREEN}Removing previous GraphQL examples...${NC}"
 rm -f "${LOCAL_ROOT_PATH}/examples/"*
 
 echo -e "${GREEN}Running Director tests with generating examples...${NC}"
 go test -c "${SCRIPT_DIR}/director/" -tags no_token_test
-DIRECTOR_GRAPHQL_API="http://${DIRECTOR_URL}:${APP_PORT}/graphql" \
 ALL_SCOPES="runtime:write application:write label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read" \
 ./director.test
 

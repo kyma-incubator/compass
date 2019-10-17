@@ -1,11 +1,10 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 # wait for Director to be up and running
 
 echo -e "Checking if Director is up..."
 
-if [ -z "$DIRECTOR_URL" ]
-then
+if [[ -z "$DIRECTOR_URL" ]]; then
       echo "\$DIRECTOR_URL is empty"
       exit 1
 fi
