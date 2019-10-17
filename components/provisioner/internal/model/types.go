@@ -14,8 +14,9 @@ type KymaConfig struct {
 }
 
 type KymaConfigModule struct {
-	ID     string
-	Module KymaModule
+	ID           string
+	Module       KymaModule
+	KymaConfigID string
 }
 
 type OperationState string

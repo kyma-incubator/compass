@@ -7,13 +7,13 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
-func runtimeConfigFromInput(input gqlschema.ProvisionRuntimeInput) (model.RuntimeConfig, error) {
-	kymaConfig, err := kymaConfigFromInput(*input.KymaConfig)
+func RuntimeConfigFromInput(runtimeID string, input gqlschema.ProvisionRuntimeInput) (model.RuntimeConfig, error) {
+	kymaConfig, err := kymaConfigFromInput(runtimeID, *input.KymaConfig)
 	if err != nil {
 		return model.RuntimeConfig{}, err
 	}
 
-	clusterConfig, err := clusterConfigFromInput(*input.ClusterConfig)
+	clusterConfig, err := clusterConfigFromInput(runtimeID, *input.ClusterConfig)
 	if err != nil {
 		return model.RuntimeConfig{}, err
 	}
@@ -42,19 +42,19 @@ func operationStatusToGQLOperationStatus(operation model.Operation) *gqlschema.O
 	}
 }
 
-func clusterConfigFromInput(input gqlschema.ClusterConfigInput) (interface{}, error) {
+func clusterConfigFromInput(runtimeID string, input gqlschema.ClusterConfigInput) (interface{}, error) {
 	if input.GardenerConfig != nil {
 		config := input.GardenerConfig
-		return gardenerConfigFromInput(*config)
+		return gardenerConfigFromInput(runtimeID, *config)
 	}
 	if input.GcpConfig != nil {
 		config := input.GcpConfig
-		return gcpConfigFromInput(*config)
+		return gcpConfigFromInput(runtimeID, *config)
 	}
 	return nil, nil
 }
 
-func gardenerConfigFromInput(input gqlschema.GardenerConfigInput) (model.GardenerConfig, error) {
+func gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput) (model.GardenerConfig, error) {
 	id, err := uuid.NewV4()
 	if err != nil {
 		return model.GardenerConfig{}, dberrors.Internal("Failed to generate uuid for GardenerConfig: %s.", err)
@@ -78,10 +78,11 @@ func gardenerConfigFromInput(input gqlschema.GardenerConfigInput) (model.Gardene
 		AutoScalerMax:     input.AutoScalerMax,
 		MaxSurge:          input.MaxSurge,
 		MaxUnavailable:    input.MaxUnavailable,
+		ClusterID:         runtimeID,
 	}, nil
 }
 
-func gcpConfigFromInput(input gqlschema.GCPConfigInput) (model.GCPConfig, error) {
+func gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfigInput) (model.GCPConfig, error) {
 	id, err := uuid.NewV4()
 	if err != nil {
 		return model.GCPConfig{}, dberrors.Internal("Failed to generate uuid for GardenerConfig: %s.", err)
@@ -97,11 +98,17 @@ func gcpConfigFromInput(input gqlschema.GCPConfigInput) (model.GCPConfig, error)
 		MachineType:       input.MachineType,
 		Region:            input.Region,
 		Zone:              *input.Zone,
+		ClusterID:         runtimeID,
 	}, nil
 }
 
-func kymaConfigFromInput(input gqlschema.KymaConfigInput) (model.KymaConfig, error) {
+func kymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, error) {
 	var modules []model.KymaConfigModule
+	kymaConfigID, err := uuid.NewV4()
+	if err != nil {
+		return model.KymaConfig{}, dberrors.Internal("Failed to generate uuid for KymaConfig: %s.", err)
+	}
+
 	for _, module := range input.Modules {
 		id, err := uuid.NewV4()
 		if err != nil {
@@ -109,16 +116,19 @@ func kymaConfigFromInput(input gqlschema.KymaConfigInput) (model.KymaConfig, err
 		}
 
 		kymaConfigModule := model.KymaConfigModule{
-			ID:     id.String(),
-			Module: model.KymaModule(module.String()),
+			ID:           id.String(),
+			Module:       model.KymaModule(module.String()),
+			KymaConfigID: kymaConfigID.String(),
 		}
 
 		modules = append(modules, kymaConfigModule)
 	}
 
 	return model.KymaConfig{
-		Version: input.Version,
-		Modules: modules,
+		ID:        kymaConfigID.String(),
+		Version:   input.Version,
+		Modules:   modules,
+		ClusterID: runtimeID,
 	}, nil
 }
 

@@ -63,8 +63,8 @@ func (r *service) ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeI
 		}
 	}
 
-	runtimeConfig, err := runtimeConfigFromInput(config)
-	if err == nil {
+	runtimeConfig, err := RuntimeConfigFromInput(id, config)
+	if err != nil {
 		return "", err, nil
 	}
 

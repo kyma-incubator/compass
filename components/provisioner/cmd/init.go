@@ -26,7 +26,8 @@ func newPersistenceService(connectionString, schemaPath string) (persistence.Run
 	}
 
 	dbSessionFactory := dbsession.NewFactory(connection)
-	runtimeService := persistence.NewRuntimeService(dbSessionFactory)
+	uuidGenerator := persistence.NewUUIDGenerator()
+	runtimeService := persistence.NewRuntimeService(dbSessionFactory, uuidGenerator)
 	operationService := persistence.NewOperationService(dbSessionFactory)
 
 	return runtimeService, operationService, nil

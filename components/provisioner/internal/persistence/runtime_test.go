@@ -7,6 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 	sessionMocks "github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dbsession/mocks"
+	persistenceMocks "github.com/kyma-incubator/compass/components/provisioner/internal/persistence/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -65,7 +66,10 @@ func TestSetProvisioning(t *testing.T) {
 
 	timestamp := time.Now()
 
+	operationID := "OperationID"
+
 	operation := model.Operation{
+		ID:             operationID,
 		Type:           model.Provision,
 		StartTimestamp: timestamp,
 		State:          model.InProgress,
@@ -85,31 +89,39 @@ func TestSetProvisioning(t *testing.T) {
 		{config: runtimeGCPConfig, insertClusterConfigMethodName: "InsertGCPConfig", description: "Should set provisioning on GCP started"},
 	}
 
+	cluster := model.Cluster{
+		ID:                runtimeID,
+		TerraformState:    "{}",
+		CreationTimestamp: timestamp,
+	}
+
+	clusterMatcher := getClusterMatcher(cluster)
+
 	for _, cfg := range runtimeConfigurations {
 		t.Run(cfg.description, func(t *testing.T) {
 			// given
 			sessionFactoryMock := &sessionMocks.Factory{}
 			writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
+			uuidGenerator := &persistenceMocks.UUIDGenerator{}
 
-			terraformState := "{}"
-			writeSessionWithinTransactionMock.On("InsertCluster", runtimeID, mock.AnythingOfType("Time"), terraformState).Return(nil)
-			writeSessionWithinTransactionMock.On(cfg.insertClusterConfigMethodName, runtimeID, cfg.config.ClusterConfig).Return(nil)
-			writeSessionWithinTransactionMock.On("InsertKymaConfig", runtimeID, kymaConfig.Version).Return("kymaID", nil)
-			writeSessionWithinTransactionMock.On("InsertKymaConfigModule", "kymaID", model.KymaModule("core")).Return(nil)
-			writeSessionWithinTransactionMock.On("InsertKymaConfigModule", "kymaID", model.KymaModule("monitoring")).Return(nil)
-			writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return("operationID", nil)
+			uuidGenerator.On("New").Return(operationID, nil)
+
+			writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(nil)
+			writeSessionWithinTransactionMock.On(cfg.insertClusterConfigMethodName, cfg.config.ClusterConfig).Return(nil)
+			writeSessionWithinTransactionMock.On("InsertKymaConfig", kymaConfig).Return(nil)
+			writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 			writeSessionWithinTransactionMock.On("Commit").Return(nil)
 
 			sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 
-			runtimeService := NewRuntimeService(sessionFactoryMock)
+			runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
 
 			// when
 			provisioningOperation, err := runtimeService.SetProvisioningStarted(runtimeID, cfg.config)
 
 			// then
 			assert.NoError(t, err)
-			assert.Equal(t, provisioningOperation.ID, "operationID")
+			assert.Equal(t, provisioningOperation.ID, operationID)
 			assert.Equal(t, provisioningOperation.Type, model.Provision)
 			assert.Equal(t, provisioningOperation.State, model.InProgress)
 			assert.Equal(t, provisioningOperation.ClusterID, runtimeID)
@@ -117,44 +129,22 @@ func TestSetProvisioning(t *testing.T) {
 
 			sessionFactoryMock.AssertExpectations(t)
 			writeSessionWithinTransactionMock.AssertExpectations(t)
+			uuidGenerator.AssertExpectations(t)
 		})
 	}
-
-	t.Run("Should return erro when failed to rollback transaction", func(t *testing.T) {
-		// given
-		sessionFactoryMock := &sessionMocks.Factory{}
-		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
-
-		terraformState := "{}"
-		writeSessionWithinTransactionMock.On("InsertCluster", runtimeID, mock.AnythingOfType("Time"), terraformState).Return(dberrors.Internal("some error"))
-		writeSessionWithinTransactionMock.On("Rollback").Return(dberrors.Internal("some error"))
-
-		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
-
-		runtimeService := NewRuntimeService(sessionFactoryMock)
-
-		// when
-		_, err := runtimeService.SetProvisioningStarted(runtimeID, runtimeGCPConfig)
-
-		// then
-		assert.Error(t, err)
-
-		sessionFactoryMock.AssertExpectations(t)
-		writeSessionWithinTransactionMock.AssertExpectations(t)
-	})
 
 	t.Run("Should rollback transaction when failed to insert record to Cluster table", func(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
+		uuidGenerator := &persistenceMocks.UUIDGenerator{}
 
-		terraformState := "{}"
-		writeSessionWithinTransactionMock.On("InsertCluster", runtimeID, mock.AnythingOfType("Time"), terraformState).Return(dberrors.Internal("some error"))
+		writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(dberrors.Internal("some error"))
 		writeSessionWithinTransactionMock.On("Rollback").Return(nil)
 
 		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 
-		runtimeService := NewRuntimeService(sessionFactoryMock)
+		runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
 
 		// when
 		_, err := runtimeService.SetProvisioningStarted(runtimeID, runtimeGCPConfig)
@@ -164,22 +154,22 @@ func TestSetProvisioning(t *testing.T) {
 
 		sessionFactoryMock.AssertExpectations(t)
 		writeSessionWithinTransactionMock.AssertExpectations(t)
+		uuidGenerator.AssertExpectations(t)
 	})
 
-	t.Run("Should rollback transaction when failed to insert record to KymaConfig table", func(t *testing.T) {
+	t.Run("Should return error when failed to rollback transaction", func(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
 
-		terraformState := "{}"
-		writeSessionWithinTransactionMock.On("InsertCluster", runtimeID, mock.AnythingOfType("Time"), terraformState).Return(nil)
-		writeSessionWithinTransactionMock.On("InsertGCPConfig", runtimeID, gcpConfig).Return(nil)
-		writeSessionWithinTransactionMock.On("InsertKymaConfig", runtimeID, kymaConfig.Version).Return("", dberrors.Internal("some error"))
-		writeSessionWithinTransactionMock.On("Rollback").Return(nil)
+		writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(dberrors.Internal("some error"))
+		writeSessionWithinTransactionMock.On("Rollback").Return(dberrors.Internal("some error"))
+
+		uuidGenerator := &persistenceMocks.UUIDGenerator{}
 
 		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 
-		runtimeService := NewRuntimeService(sessionFactoryMock)
+		runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
 
 		// when
 		_, err := runtimeService.SetProvisioningStarted(runtimeID, runtimeGCPConfig)
@@ -189,24 +179,23 @@ func TestSetProvisioning(t *testing.T) {
 
 		sessionFactoryMock.AssertExpectations(t)
 		writeSessionWithinTransactionMock.AssertExpectations(t)
+		uuidGenerator.AssertExpectations(t)
 	})
 
-	t.Run("Should rollback transaction when failed to insert record to KymaConfigModule table", func(t *testing.T) {
+	t.Run("Should rollback transaction when failed to insert record to KymaConfig or KymaConfigModule table", func(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
+		uuidGenerator := &persistenceMocks.UUIDGenerator{}
 
-		terraformState := "{}"
-		writeSessionWithinTransactionMock.On("InsertCluster", runtimeID, mock.AnythingOfType("Time"), terraformState).Return(nil)
-		writeSessionWithinTransactionMock.On("InsertGCPConfig", runtimeID, gcpConfig).Return(nil)
-		writeSessionWithinTransactionMock.On("InsertKymaConfig", runtimeID, kymaConfig.Version).Return("kymaID", nil)
-		writeSessionWithinTransactionMock.On("InsertKymaConfigModule", "kymaID", model.KymaModule("core")).Return(nil)
-		writeSessionWithinTransactionMock.On("InsertKymaConfigModule", "kymaID", model.KymaModule("monitoring")).Return(dberrors.Internal("some error"))
+		writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(nil)
+		writeSessionWithinTransactionMock.On("InsertGCPConfig", gcpConfig).Return(nil)
+		writeSessionWithinTransactionMock.On("InsertKymaConfig", kymaConfig).Return(dberrors.Internal("some error"))
 		writeSessionWithinTransactionMock.On("Rollback").Return(nil)
 
 		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 
-		runtimeService := NewRuntimeService(sessionFactoryMock)
+		runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
 
 		// when
 		_, err := runtimeService.SetProvisioningStarted(runtimeID, runtimeGCPConfig)
@@ -216,6 +205,7 @@ func TestSetProvisioning(t *testing.T) {
 
 		sessionFactoryMock.AssertExpectations(t)
 		writeSessionWithinTransactionMock.AssertExpectations(t)
+		uuidGenerator.AssertExpectations(t)
 	})
 
 	clusterConfigurations := []struct {
@@ -233,15 +223,15 @@ func TestSetProvisioning(t *testing.T) {
 			// given
 			sessionFactoryMock := &sessionMocks.Factory{}
 			writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
+			uuidGenerator := &persistenceMocks.UUIDGenerator{}
 
-			terraformState := "{}"
-			writeSessionWithinTransactionMock.On("InsertCluster", runtimeID, mock.AnythingOfType("Time"), terraformState).Return(nil)
-			writeSessionWithinTransactionMock.On(cfg.insertClusterConfigMethodName, runtimeID, cfg.config.ClusterConfig).Return(dberrors.Internal("some error"))
+			writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(nil)
+			writeSessionWithinTransactionMock.On(cfg.insertClusterConfigMethodName, cfg.config.ClusterConfig).Return(dberrors.Internal("some error"))
 			writeSessionWithinTransactionMock.On("Rollback").Return(nil)
 
 			sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 
-			runtimeService := NewRuntimeService(sessionFactoryMock)
+			runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
 
 			// when
 			_, err := runtimeService.SetProvisioningStarted(runtimeID, cfg.config)
@@ -251,6 +241,7 @@ func TestSetProvisioning(t *testing.T) {
 
 			sessionFactoryMock.AssertExpectations(t)
 			writeSessionWithinTransactionMock.AssertExpectations(t)
+			uuidGenerator.AssertExpectations(t)
 		})
 	}
 
@@ -259,19 +250,20 @@ func TestSetProvisioning(t *testing.T) {
 		sessionFactoryMock := &sessionMocks.Factory{}
 		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
 
-		terraformState := "{}"
-		writeSessionWithinTransactionMock.On("InsertCluster", runtimeID, mock.AnythingOfType("Time"), terraformState).Return(nil)
-		writeSessionWithinTransactionMock.On("InsertGCPConfig", runtimeID, gcpConfig).Return(nil)
-		writeSessionWithinTransactionMock.On("InsertKymaConfig", runtimeID, kymaConfig.Version).Return("kymaID", nil)
-		writeSessionWithinTransactionMock.On("InsertKymaConfigModule", "kymaID", model.KymaModule("core")).Return(nil)
-		writeSessionWithinTransactionMock.On("InsertKymaConfigModule", "kymaID", model.KymaModule("monitoring")).Return(nil)
-		writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return("", dberrors.Internal("some error"))
+		uuidGenerator := &persistenceMocks.UUIDGenerator{}
+
+		uuidGenerator.On("New").Return(operationID, nil)
+
+		writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(nil)
+		writeSessionWithinTransactionMock.On("InsertGCPConfig", gcpConfig).Return(nil)
+		writeSessionWithinTransactionMock.On("InsertKymaConfig", kymaConfig).Return(nil)
+		writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(dberrors.Internal("some error"))
 
 		writeSessionWithinTransactionMock.On("Rollback").Return(nil)
 
 		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 
-		runtimeService := NewRuntimeService(sessionFactoryMock)
+		runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
 
 		// when
 		_, err := runtimeService.SetProvisioningStarted(runtimeID, runtimeGCPConfig)
@@ -281,6 +273,7 @@ func TestSetProvisioning(t *testing.T) {
 
 		sessionFactoryMock.AssertExpectations(t)
 		writeSessionWithinTransactionMock.AssertExpectations(t)
+		uuidGenerator.AssertExpectations(t)
 	})
 
 	t.Run("Should return error when failed to commit transaction", func(t *testing.T) {
@@ -288,19 +281,20 @@ func TestSetProvisioning(t *testing.T) {
 		sessionFactoryMock := &sessionMocks.Factory{}
 		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
 
-		terraformState := "{}"
-		writeSessionWithinTransactionMock.On("InsertCluster", runtimeID, mock.AnythingOfType("Time"), terraformState).Return(nil)
-		writeSessionWithinTransactionMock.On("InsertGCPConfig", runtimeID, gcpConfig).Return(nil)
-		writeSessionWithinTransactionMock.On("InsertKymaConfig", runtimeID, kymaConfig.Version).Return("kymaID", nil)
-		writeSessionWithinTransactionMock.On("InsertKymaConfigModule", "kymaID", model.KymaModule("core")).Return(nil)
-		writeSessionWithinTransactionMock.On("InsertKymaConfigModule", "kymaID", model.KymaModule("monitoring")).Return(nil)
-		writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return("operationID", nil)
+		uuidGenerator := &persistenceMocks.UUIDGenerator{}
+
+		uuidGenerator.On("New").Return(operationID, nil)
+
+		writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(nil)
+		writeSessionWithinTransactionMock.On("InsertGCPConfig", gcpConfig).Return(nil)
+		writeSessionWithinTransactionMock.On("InsertKymaConfig", kymaConfig).Return(nil)
+		writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 
 		writeSessionWithinTransactionMock.On("Commit").Return(dberrors.Internal("some error"))
 
 		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 
-		runtimeService := NewRuntimeService(sessionFactoryMock)
+		runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
 
 		// when
 		_, err := runtimeService.SetProvisioningStarted(runtimeID, runtimeGCPConfig)
@@ -310,13 +304,16 @@ func TestSetProvisioning(t *testing.T) {
 
 		sessionFactoryMock.AssertExpectations(t)
 		writeSessionWithinTransactionMock.AssertExpectations(t)
+		uuidGenerator.AssertExpectations(t)
 	})
 }
 
 func TestSetDeprovisioning(t *testing.T) {
 	runtimeID := "runtimeID"
+	operationID := "operationID"
 
 	operation := model.Operation{
+		ID:             operationID,
 		Type:           model.Deprovision,
 		StartTimestamp: time.Now(),
 		State:          model.InProgress,
@@ -330,12 +327,15 @@ func TestSetDeprovisioning(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
+		uuidGenerator := &persistenceMocks.UUIDGenerator{}
 
-		writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return("operationID", nil)
+		uuidGenerator.On("New").Return(operationID, nil)
+
+		writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 
 		sessionFactoryMock.On("NewWriteSession").Return(writeSessionWithinTransactionMock, nil)
 
-		runtimeService := NewRuntimeService(sessionFactoryMock)
+		runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
 
 		// when
 		provisioningOperation, err := runtimeService.SetDeprovisioningStarted(runtimeID)
@@ -350,14 +350,17 @@ func TestSetDeprovisioning(t *testing.T) {
 
 		sessionFactoryMock.AssertExpectations(t)
 		writeSessionWithinTransactionMock.AssertExpectations(t)
+		uuidGenerator.AssertExpectations(t)
 	})
 }
 
 func TestSetUpgrade(t *testing.T) {
 
 	runtimeID := "runtimeID"
+	operationID := "operationID"
 
 	operation := model.Operation{
+		ID:             operationID,
 		Type:           model.Upgrade,
 		StartTimestamp: time.Now(),
 		State:          model.InProgress,
@@ -371,19 +374,22 @@ func TestSetUpgrade(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
+		uuidGenerator := &persistenceMocks.UUIDGenerator{}
 
-		writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return("operationID", nil)
+		uuidGenerator.On("New").Return(operationID, nil)
+
+		writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 
 		sessionFactoryMock.On("NewWriteSession").Return(writeSessionWithinTransactionMock, nil)
 
-		runtimeService := NewRuntimeService(sessionFactoryMock)
+		runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
 
 		// when
 		provisioningOperation, err := runtimeService.SetUpgradeStarted(runtimeID)
 
 		// then
 		assert.NoError(t, err)
-		assert.Equal(t, provisioningOperation.ID, "operationID")
+		assert.Equal(t, provisioningOperation.ID, operationID)
 		assert.Equal(t, provisioningOperation.Type, model.Upgrade)
 		assert.Equal(t, provisioningOperation.State, model.InProgress)
 		assert.Equal(t, provisioningOperation.ClusterID, runtimeID)
@@ -418,14 +424,22 @@ func TestGetRuntimeStatus(t *testing.T) {
 		},
 	}
 
+	cluster := model.Cluster{
+		ID:             runtimeID,
+		Kubeconfig:     "",
+		TerraformState: "{}",
+	}
+
 	t.Run("Should get runtime status", func(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		readSessionMock := &sessionMocks.ReadSession{}
+		uuidGenerator := &persistenceMocks.UUIDGenerator{}
 
 		readSessionMock.On("GetLastOperation", runtimeID).Return(operation, nil)
 		readSessionMock.On("GetClusterConfig", runtimeID).Return(gcpConfig, nil)
 		readSessionMock.On("GetKymaConfig", runtimeID).Return(kymaConfig, nil)
+		readSessionMock.On("GetCluster", runtimeID).Return(cluster, nil)
 
 		sessionFactoryMock.On("NewReadSession").Return(readSessionMock, nil)
 
@@ -438,7 +452,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 		}
 
 		// when
-		runtimeService := NewRuntimeService(sessionFactoryMock)
+		runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
 		runtimeStatus, err := runtimeService.GetStatus(runtimeID)
 
 		// then
@@ -450,12 +464,13 @@ func TestGetRuntimeStatus(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		readSessionMock := &sessionMocks.ReadSession{}
+		uuidGenerator := &persistenceMocks.UUIDGenerator{}
 
 		readSessionMock.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.Internal("some error"))
 		sessionFactoryMock.On("NewReadSession").Return(readSessionMock, nil)
 
 		// when
-		runtimeService := NewRuntimeService(sessionFactoryMock)
+		runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
 		_, err := runtimeService.GetStatus(runtimeID)
 
 		// then
@@ -466,13 +481,14 @@ func TestGetRuntimeStatus(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		readSessionMock := &sessionMocks.ReadSession{}
+		uuidGenerator := &persistenceMocks.UUIDGenerator{}
 
 		readSessionMock.On("GetLastOperation", runtimeID).Return(operation, nil)
 		readSessionMock.On("GetClusterConfig", runtimeID).Return(model.GCPConfig{}, dberrors.Internal("some error"))
 		sessionFactoryMock.On("NewReadSession").Return(readSessionMock, nil)
 
 		// when
-		runtimeService := NewRuntimeService(sessionFactoryMock)
+		runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
 		_, err := runtimeService.GetStatus(runtimeID)
 
 		// then
@@ -483,6 +499,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		readSessionMock := &sessionMocks.ReadSession{}
+		uuidGenerator := &persistenceMocks.UUIDGenerator{}
 
 		readSessionMock.On("GetLastOperation", runtimeID).Return(operation, nil)
 		readSessionMock.On("GetClusterConfig", runtimeID).Return(gcpConfig, nil)
@@ -491,7 +508,28 @@ func TestGetRuntimeStatus(t *testing.T) {
 		sessionFactoryMock.On("NewReadSession").Return(readSessionMock, nil)
 
 		// when
-		runtimeService := NewRuntimeService(sessionFactoryMock)
+		runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
+		_, err := runtimeService.GetStatus(runtimeID)
+
+		// then
+		assert.Error(t, err)
+	})
+
+	t.Run("Should fail to get runtime status when getting cluster data failed", func(t *testing.T) {
+		// given
+		sessionFactoryMock := &sessionMocks.Factory{}
+		readSessionMock := &sessionMocks.ReadSession{}
+		uuidGenerator := &persistenceMocks.UUIDGenerator{}
+
+		readSessionMock.On("GetLastOperation", runtimeID).Return(operation, nil)
+		readSessionMock.On("GetClusterConfig", runtimeID).Return(gcpConfig, nil)
+		readSessionMock.On("GetKymaConfig", runtimeID).Return(kymaConfig, nil)
+		readSessionMock.On("GetCluster", runtimeID).Return(model.Cluster{}, dberrors.Internal("some error"))
+
+		sessionFactoryMock.On("NewReadSession").Return(readSessionMock, nil)
+
+		// when
+		runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
 		_, err := runtimeService.GetStatus(runtimeID)
 
 		// then
@@ -504,5 +542,12 @@ func getOperationMather(expected model.Operation) func(model.Operation) bool {
 		return op.Type == expected.Type &&
 			op.Message == expected.Message && op.ClusterID == expected.ClusterID &&
 			op.State == expected.State && op.ID == expected.ID
+	}
+}
+
+func getClusterMatcher(expected model.Cluster) func(model.Cluster) bool {
+	return func(cluster model.Cluster) bool {
+		return cluster.ID == expected.ID &&
+			cluster.TerraformState == expected.TerraformState && cluster.Kubeconfig == expected.Kubeconfig
 	}
 }

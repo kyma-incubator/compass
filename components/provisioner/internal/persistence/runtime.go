@@ -1,7 +1,6 @@
 package persistence
 
 import (
-	"github.com/gofrs/uuid"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dbsession"
@@ -12,7 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//go:generate mockery -name=OperationService
+//go:generate mockery -name=RuntimeService
 type RuntimeService interface {
 	GetStatus(runtimeID string) (model.RuntimeStatus, dberrors.Error)
 	SetProvisioningStarted(runtimeID string, runtimeConfig model.RuntimeConfig) (model.Operation, dberrors.Error)
@@ -25,11 +24,13 @@ type RuntimeService interface {
 
 type runtimeService struct {
 	dbSessionFactory dbsession.Factory
+	uuidGenerator    UUIDGenerator
 }
 
-func NewRuntimeService(dbSessionFactory dbsession.Factory) RuntimeService {
+func NewRuntimeService(dbSessionFactory dbsession.Factory, uuidGenerator UUIDGenerator) RuntimeService {
 	return runtimeService{
 		dbSessionFactory: dbSessionFactory,
+		uuidGenerator:    uuidGenerator,
 	}
 }
 
@@ -51,9 +52,15 @@ func (r runtimeService) GetStatus(runtimeID string) (model.RuntimeStatus, dberro
 		return model.RuntimeStatus{}, err
 	}
 
+	cluster, err := session.GetCluster(runtimeID)
+	if err != nil {
+		return model.RuntimeStatus{}, err
+	}
+
 	runtimeConfiguration := model.RuntimeConfig{
 		KymaConfig:    kymaConfig,
 		ClusterConfig: clusterConfig,
+		Kubeconfig:    cluster.Kubeconfig,
 	}
 
 	return model.RuntimeStatus{
@@ -107,7 +114,7 @@ func (r runtimeService) SetProvisioningStarted(runtimeID string, runtimeConfig m
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
-	operation, err := r.setOperationStarted(runtimeID, model.Provision, timestamp, "Provisioning started", "Failed to set provisioning started: %s")
+	operation, err := r.setOperationStarted(dbSession, runtimeID, model.Provision, timestamp, "Provisioning started", "Failed to set provisioning started: %s")
 
 	if err != nil {
 		rollback(dbSession, runtimeID)
@@ -123,11 +130,11 @@ func (r runtimeService) SetProvisioningStarted(runtimeID string, runtimeConfig m
 }
 
 func (r runtimeService) SetDeprovisioningStarted(runtimeID string) (model.Operation, dberrors.Error) {
-	return r.setOperationStarted(runtimeID, model.Deprovision, time.Now(), "Deprovisioning started.", "Deprovisioning failed: %s")
+	return r.setOperationStarted(r.dbSessionFactory.NewWriteSession(), runtimeID, model.Deprovision, time.Now(), "Deprovisioning started.", "Deprovisioning failed: %s")
 }
 
 func (r runtimeService) SetUpgradeStarted(runtimeID string) (model.Operation, dberrors.Error) {
-	return r.setOperationStarted(runtimeID, model.Upgrade, time.Now(), "Upgrade started.", "Upgrade failed: %s")
+	return r.setOperationStarted(r.dbSessionFactory.NewWriteSession(), runtimeID, model.Upgrade, time.Now(), "Upgrade started.", "Upgrade failed: %s")
 }
 
 func (r runtimeService) GetLastOperation(runtimeID string) (model.Operation, dberrors.Error) {
@@ -148,17 +155,15 @@ func (r runtimeService) CleanupData(runtimeID string) dberrors.Error {
 	return session.DeleteCluster(runtimeID)
 }
 
-func (r runtimeService) setOperationStarted(runtimeID string, operationType model.OperationType, timestamp time.Time, message string, errorMessageFmt string) (model.Operation, dberrors.Error) {
+func (r runtimeService) setOperationStarted(dbSession dbsession.WriteSession, runtimeID string, operationType model.OperationType, timestamp time.Time, message string, errorMessageFmt string) (model.Operation, dberrors.Error) {
 
-	id, err := uuid.NewV4()
+	id, err := r.uuidGenerator.New()
 	if err != nil {
 		return model.Operation{}, dberrors.Internal(errorMessageFmt, err)
 	}
 
-	dbSession := r.dbSessionFactory.NewWriteSession()
-
 	operation := model.Operation{
-		ID:             id.String(),
+		ID:             id,
 		Type:           operationType,
 		StartTimestamp: timestamp,
 		State:          model.InProgress,

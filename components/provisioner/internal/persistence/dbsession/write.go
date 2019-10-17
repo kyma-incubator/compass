@@ -15,7 +15,9 @@ type writeSession struct {
 
 func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 	_, err := ws.insertInto("cluster").
-		Columns("id", "creation_timestamp", "terraform_state").
+		Pair("id", cluster.ID).
+		Pair("terraform_state", cluster.TerraformState).
+		Pair("creation_timestamp", cluster.CreationTimestamp).
 		Exec()
 
 	if err != nil {
@@ -42,8 +44,9 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 
 func (ws writeSession) InsertGCPConfig(config model.GCPConfig) dberrors.Error {
 	_, err := ws.insertInto("gcp_config").
-		Columns("id", "cluster_id", "project_name", "kubernetes_version", "number_of_nodes", "boot_disk_size",
+		Columns("id", "cluster_id", "name", "project_name", "kubernetes_version", "number_of_nodes", "boot_disk_size",
 			"machine_type", "zone", "region").
+		Record(config).
 		Exec()
 
 	if err != nil {
@@ -64,7 +67,10 @@ func (ws writeSession) InsertKymaConfig(kymaConfig model.KymaConfig) dberrors.Er
 	}
 
 	for _, kymaConfigModule := range kymaConfig.Modules {
-		ws.insertKymaConfigModule(kymaConfig.ID, kymaConfigModule)
+		err = ws.insertKymaConfigModule(kymaConfig.ID, kymaConfigModule)
+		if err != nil {
+			return dberrors.Internal("Failed to insert record to KymaConfigModule table: %s", err)
+		}
 	}
 
 	return nil
@@ -73,6 +79,7 @@ func (ws writeSession) InsertKymaConfig(kymaConfig model.KymaConfig) dberrors.Er
 func (ws writeSession) insertKymaConfigModule(kymaConfigID string, kymaConfigModule model.KymaConfigModule) dberrors.Error {
 	_, err := ws.insertInto("kyma_config_module").
 		Columns("id", "module", "kyma_config_id").
+		Record(kymaConfigModule).
 		Exec()
 
 	if err != nil {
