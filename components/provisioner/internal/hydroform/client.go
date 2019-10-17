@@ -3,10 +3,11 @@ package hydroform
 import (
 	"encoding/json"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
-	"k8s.io/apimachinery/pkg/util/rand"
 	"os"
+
+	log "github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/util/rand"
 
 	"strconv"
 
@@ -62,7 +63,7 @@ func (c client) ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName s
 		return ClusterInfo{}, err
 	}
 
-	log.Infof("Config prepared - cluster: %s, provider: %s. Starting cluster provisioning", cluster, provider)
+	log.Infof("Config prepared - cluster: %+v, provider: %+v. Starting cluster provisioning", cluster, provider)
 
 	cluster, err = hf.Provision(cluster, provider)
 	if err != nil {
@@ -110,7 +111,11 @@ func stateToJson(state *types.InternalState) (string, error) {
 func (c client) DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretName string) error {
 	credentialsFile := generateRandomFileName()
 
-	c.saveCredentialsToFile(secretName, credentialsFile)
+	err := c.saveCredentialsToFile(secretName, credentialsFile)
+
+	if err != nil {
+		return err
+	}
 
 	cluster, provider, err := c.prepareConfig(runtimeConfig, credentialsFile)
 
