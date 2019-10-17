@@ -111,6 +111,7 @@ func TestSetProvisioning(t *testing.T) {
 			writeSessionWithinTransactionMock.On("InsertKymaConfig", kymaConfig).Return(nil)
 			writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 			writeSessionWithinTransactionMock.On("Commit").Return(nil)
+			writeSessionWithinTransactionMock.On("RollbackUnlessCommitted").Return()
 
 			sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 
@@ -140,32 +141,7 @@ func TestSetProvisioning(t *testing.T) {
 		uuidGenerator := &persistenceMocks.UUIDGenerator{}
 
 		writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(dberrors.Internal("some error"))
-		writeSessionWithinTransactionMock.On("Rollback").Return(nil)
-
-		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
-
-		runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
-
-		// when
-		_, err := runtimeService.SetProvisioningStarted(runtimeID, runtimeGCPConfig)
-
-		// then
-		assert.Error(t, err)
-
-		sessionFactoryMock.AssertExpectations(t)
-		writeSessionWithinTransactionMock.AssertExpectations(t)
-		uuidGenerator.AssertExpectations(t)
-	})
-
-	t.Run("Should return error when failed to rollback transaction", func(t *testing.T) {
-		// given
-		sessionFactoryMock := &sessionMocks.Factory{}
-		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
-
-		writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(dberrors.Internal("some error"))
-		writeSessionWithinTransactionMock.On("Rollback").Return(dberrors.Internal("some error"))
-
-		uuidGenerator := &persistenceMocks.UUIDGenerator{}
+		writeSessionWithinTransactionMock.On("RollbackUnlessCommitted").Return()
 
 		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 
@@ -191,7 +167,7 @@ func TestSetProvisioning(t *testing.T) {
 		writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(nil)
 		writeSessionWithinTransactionMock.On("InsertGCPConfig", gcpConfig).Return(nil)
 		writeSessionWithinTransactionMock.On("InsertKymaConfig", kymaConfig).Return(dberrors.Internal("some error"))
-		writeSessionWithinTransactionMock.On("Rollback").Return(nil)
+		writeSessionWithinTransactionMock.On("RollbackUnlessCommitted").Return()
 
 		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 
@@ -227,7 +203,7 @@ func TestSetProvisioning(t *testing.T) {
 
 			writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(nil)
 			writeSessionWithinTransactionMock.On(cfg.insertClusterConfigMethodName, cfg.config.ClusterConfig).Return(dberrors.Internal("some error"))
-			writeSessionWithinTransactionMock.On("Rollback").Return(nil)
+			writeSessionWithinTransactionMock.On("RollbackUnlessCommitted").Return()
 
 			sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 
@@ -259,7 +235,7 @@ func TestSetProvisioning(t *testing.T) {
 		writeSessionWithinTransactionMock.On("InsertKymaConfig", kymaConfig).Return(nil)
 		writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(dberrors.Internal("some error"))
 
-		writeSessionWithinTransactionMock.On("Rollback").Return(nil)
+		writeSessionWithinTransactionMock.On("RollbackUnlessCommitted").Return()
 
 		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 
@@ -291,6 +267,7 @@ func TestSetProvisioning(t *testing.T) {
 		writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 
 		writeSessionWithinTransactionMock.On("Commit").Return(dberrors.Internal("some error"))
+		writeSessionWithinTransactionMock.On("RollbackUnlessCommitted").Return()
 
 		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 

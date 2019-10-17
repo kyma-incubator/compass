@@ -164,13 +164,8 @@ func (ws writeSession) Commit() dberrors.Error {
 	return nil
 }
 
-func (ws writeSession) Rollback() dberrors.Error {
-	err := ws.transaction.Rollback()
-	if err != nil {
-		return dberrors.Internal("Failed to rollback transaction: %s", err)
-	}
-
-	return nil
+func (ws writeSession) RollbackUnlessCommitted() {
+	ws.transaction.RollbackUnlessCommitted()
 }
 
 func (ws writeSession) insertInto(table string) *dbr.InsertStmt {
