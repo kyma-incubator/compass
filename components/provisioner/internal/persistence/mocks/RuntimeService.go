@@ -11,8 +11,8 @@ type RuntimeService struct {
 	mock.Mock
 }
 
-// CleanupData provides a mock function with given fields: runtimeID
-func (_m *RuntimeService) CleanupData(runtimeID string) dberrors.Error {
+// CleanupClusterData provides a mock function with given fields: runtimeID
+func (_m *RuntimeService) CleanupClusterData(runtimeID string) dberrors.Error {
 	ret := _m.Called(runtimeID)
 
 	var r0 dberrors.Error
@@ -25,6 +25,29 @@ func (_m *RuntimeService) CleanupData(runtimeID string) dberrors.Error {
 	}
 
 	return r0
+}
+
+// GetClusterData provides a mock function with given fields: runtimeID
+func (_m *RuntimeService) GetClusterData(runtimeID string) (model.Cluster, dberrors.Error) {
+	ret := _m.Called(runtimeID)
+
+	var r0 model.Cluster
+	if rf, ok := ret.Get(0).(func(string) model.Cluster); ok {
+		r0 = rf(runtimeID)
+	} else {
+		r0 = ret.Get(0).(model.Cluster)
+	}
+
+	var r1 dberrors.Error
+	if rf, ok := ret.Get(1).(func(string) dberrors.Error); ok {
+		r1 = rf(runtimeID)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(dberrors.Error)
+		}
+	}
+
+	return r0, r1
 }
 
 // GetLastOperation provides a mock function with given fields: runtimeID

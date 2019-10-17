@@ -143,7 +143,7 @@ func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.Operati
 }
 
 func (r *service) CleanupRuntimeData(id string) (string, error) {
-	return id, r.runtimeService.CleanupData(id)
+	return id, r.runtimeService.CleanupClusterData(id)
 }
 
 //TODO add saving kubeconfig and cluster state

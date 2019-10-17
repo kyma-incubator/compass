@@ -19,7 +19,8 @@ type RuntimeService interface {
 	SetUpgradeStarted(runtimeID string) (model.Operation, dberrors.Error)
 	GetLastOperation(runtimeID string) (model.Operation, dberrors.Error)
 	Update(runtimeID string, kubeconfig string, terraformState string) dberrors.Error
-	CleanupData(runtimeID string) dberrors.Error
+	CleanupClusterData(runtimeID string) dberrors.Error
+	GetClusterData(runtimeID string) (model.Cluster, dberrors.Error)
 }
 
 type runtimeService struct {
@@ -149,7 +150,7 @@ func (r runtimeService) Update(runtimeID string, kubeconfig string, terraformSta
 	return session.UpdateCluster(runtimeID, kubeconfig, terraformState)
 }
 
-func (r runtimeService) CleanupData(runtimeID string) dberrors.Error {
+func (r runtimeService) CleanupClusterData(runtimeID string) dberrors.Error {
 	session := r.dbSessionFactory.NewWriteSession()
 
 	return session.DeleteCluster(runtimeID)
@@ -184,4 +185,10 @@ func rollback(transaction dbsession.Transaction, runtimeID string) {
 	if err != nil {
 		logrus.Errorf("Failed to rollback transaction for runtime: '%s'.", runtimeID)
 	}
+}
+
+func (r runtimeService) GetClusterData(runtimeID string) (model.Cluster, dberrors.Error) {
+	session := r.dbSessionFactory.NewReadSession()
+
+	return session.GetCluster(runtimeID)
 }
