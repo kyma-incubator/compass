@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/connector/internal/revocation"
-	"github.com/sirupsen/logrus"
-	"github.com/pkg/errors"
 	"github.com/kyma-incubator/compass/components/connector/internal/httputils"
+	"github.com/kyma-incubator/compass/components/connector/internal/revocation"
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 type ValidationHydrator interface {

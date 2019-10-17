@@ -3,15 +3,16 @@ package oathkeeper
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/pkg/errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/pkg/errors"
+
 	"github.com/stretchr/testify/mock"
 
-	mocks2 "github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper/mocks"
 	revocationMocks "github.com/kyma-incubator/compass/components/connector/internal/revocation/mocks"
+	mocks2 "github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper/mocks"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 

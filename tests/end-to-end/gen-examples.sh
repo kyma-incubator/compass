@@ -24,19 +24,25 @@ DB_SSL_PARAM="disable"
 APP_PORT="3001"
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_PATH=${SCRIPT_DIR}/../..
+DIRECTOR_URL="compass-dev-director"
+LOCAL_ROOT_PATH=${SCRIPT_DIR}/../..
+
+if [ -z ${HOST_ROOT_PATH+x} ];
+then
+    # create network, because we are run locally
+    HOST_ROOT_PATH=${SCRIPT_DIR}/../..
+    DIRECTOR_URL="localhost"
+    echo -e "${GREEN}Creating network...${NC}"
+    docker network create --driver bridge ${NETWORK}
+fi;
 
 function cleanup() {
     echo -e "${GREEN}Cleaning up...${NC}"
     docker rm --force ${POSTGRES_CONTAINER} || true
     docker rm --force ${DIRECTOR_CONTAINER} || true
-    docker network rm ${NETWORK} || true
 }
 
 trap cleanup EXIT
-
-echo -e "${GREEN}Creating network...${NC}"
-docker network create --driver bridge ${NETWORK}
 
 echo -e "${GREEN}Running database container...${NC}"
 docker run -d --name ${POSTGRES_CONTAINER} \
@@ -47,7 +53,7 @@ docker run -d --name ${POSTGRES_CONTAINER} \
     postgres:${POSTGRES_VERSION}
 
 echo -e "${GREEN}Building migration image...${NC}"
-cd "${SCRIPT_DIR}/../../components/schema-migrator/" && make build-image
+cd "${SCRIPT_DIR}/../../components/schema-migrator/" && docker build -t $MIGRATOR_IMG_NAME ./
 
 echo -e "${GREEN}Running migration...${NC}"
 docker run --rm --network=${NETWORK} \
@@ -63,19 +69,18 @@ docker run --rm --network=${NETWORK} \
 echo -e "${GREEN}Building Director image...${NC}"
 
 cd "${SCRIPT_DIR}/../../components/director/"
-
 mkdir -p ./licenses
 dep ensure --vendor-only -v
 docker build -t $DIRECTOR_IMG_NAME ./
 
 echo -e "${GREEN}Running Director...${NC}"
 
-SCOPES_CONFIGURATION_FILE_PATH="${ROOT_PATH}/chart/compass/charts/director/config.yaml"
+SCOPES_CONFIGURATION_FILE_PATH="${HOST_ROOT_PATH}/chart/compass/charts/director/config.yaml"
 
 docker run --name ${DIRECTOR_CONTAINER} -d --rm --network=${NETWORK} \
     -p ${APP_PORT}:${APP_PORT} \
     -v "${SCOPES_CONFIGURATION_FILE_PATH}:/app/config.yaml" \
-    -v "${ROOT_PATH}/components/director/hack/default-jwks.json:/app/default-jwks.json" \
+    -v "${HOST_ROOT_PATH}/components/director/hack/default-jwks.json:/app/default-jwks.json" \
     -e APP_ADDRESS=0.0.0.0:${APP_PORT} \
     -e APP_DB_USER=${DB_USER} \
     -e APP_DB_PASSWORD=${DB_PWD} \
@@ -98,7 +103,7 @@ echo -e "${GREEN}Checking if Director is up...${NC}"
 directorIsUp=false
 set +e
 for i in {1..10}; do
-    curl --fail "http://localhost:${APP_PORT}/healthz" -H 'tenant: 49b179ea-9839-4608-afbe-1e934908f38a'
+    curl --fail "http://${DIRECTOR_URL}:${APP_PORT}/healthz" -H 'tenant: 49b179ea-9839-4608-afbe-1e934908f38a'
     res=$?
 
     if [[ ${res} == 0 ]]; then
@@ -117,19 +122,19 @@ if [[ "$directorIsUp" == false ]]; then
 fi
 
 echo -e "${GREEN}Removing previous GraphQL examples...${NC}"
-rm -f "${ROOT_PATH}/examples/"*
+rm -f "${LOCAL_ROOT_PATH}/examples/"*
 
 echo -e "${GREEN}Running Director tests with generating examples...${NC}"
 go test -c "${SCRIPT_DIR}/director/" -tags no_token_test
-DIRECTOR_GRAPHQL_API="http://localhost:${APP_PORT}/graphql" \
+DIRECTOR_GRAPHQL_API="http://${DIRECTOR_URL}:${APP_PORT}/graphql" \
 ALL_SCOPES="runtime:write application:write label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read" \
 ./director.test
 
 echo -e "${GREEN}Prettifying GraphQL examples...${NC}"
 img="prettier:latest"
 docker build -t ${img} ./tools/prettier
-docker run -v "${ROOT_PATH}/examples":/prettier/examples \
+docker run -v "${HOST_ROOT_PATH}/examples":/prettier/examples \
     ${img} prettier --write ./examples/*.graphql
 
 cd "${SCRIPT_DIR}/tools/example-index-generator/"
-EXAMPLES_DIRECTORY="${ROOT_PATH}/examples" go run main.go
+EXAMPLES_DIRECTORY="${LOCAL_ROOT_PATH}/examples" go run main.go

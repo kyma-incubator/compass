@@ -23,16 +23,10 @@ func init() {
 	}
 }
 
-type scopeProvider interface {
-	GetRequiredScopes(path string) ([]string, error)
-	GetAllScopes() ([]string, error)
-}
-
 // testContext contains dependencies that help executing tests
 type testContext struct {
 	graphqlizer       graphqlizer
 	gqlFieldsProvider gqlFieldsProvider
-	scopeProvider     scopeProvider
 	currentScopes     []string
 	cli               *gcli.Client
 }
