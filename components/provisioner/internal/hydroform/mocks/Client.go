@@ -14,13 +14,13 @@ type Client struct {
 	mock.Mock
 }
 
-// DeprovisionCluster provides a mock function with given fields: runtimeConfig, secretName
-func (_m *Client) DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretName string) error {
-	ret := _m.Called(runtimeConfig, secretName)
+// DeprovisionCluster provides a mock function with given fields: runtimeConfig, secretName, terraformState
+func (_m *Client) DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretName string, terraformState string) error {
+	ret := _m.Called(runtimeConfig, secretName, terraformState)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(model.RuntimeConfig, string) error); ok {
-		r0 = rf(runtimeConfig, secretName)
+	if rf, ok := ret.Get(0).(func(model.RuntimeConfig, string, string) error); ok {
+		r0 = rf(runtimeConfig, secretName, terraformState)
 	} else {
 		r0 = ret.Error(0)
 	}

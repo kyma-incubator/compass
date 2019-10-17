@@ -26,7 +26,7 @@ const (
 //go:generate mockery -name=Client
 type Client interface {
 	ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName string) (ClusterInfo, error)
-	DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretName string) error
+	DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretName string, terraformState string) error
 }
 
 type client struct {
@@ -93,11 +93,57 @@ func (c client) ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName s
 		return ClusterInfo{}, err
 	}
 
+	log.Infof("Cluster state: %+v", internalState)
+
 	return ClusterInfo{
 		ClusterStatus: status.Phase,
 		State:         internalState,
 		KubeConfig:    string(kubeconfig),
 	}, nil
+}
+
+func (c client) DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretName string, terraformState string) error {
+	credentialsFile := generateRandomFileName()
+
+	log.Infof("Saving credentials to file %s", credentialsFile)
+	err := c.saveCredentialsToFile(secretName, credentialsFile)
+
+	if err != nil {
+		log.Errorf("Failed to save credentials to file %s: %s", credentialsFile, err.Error())
+		return err
+	}
+
+	log.Info("Preparing config for runtime deprovisioning")
+	cluster, provider, err := c.prepareConfig(runtimeConfig, credentialsFile)
+
+	if err != nil {
+		log.Errorf("Config preparation failed: %s", err.Error())
+		return err
+	}
+
+	state, err := jsonToState(terraformState)
+
+	if err != nil {
+		log.Errorf("Config preparation failed: %s", err.Error())
+		return err
+	}
+
+	cluster.ClusterInfo = &types.ClusterInfo{InternalState: state}
+
+	log.Infof("Config prepared - cluster: %+v, provider: %+v. Starting cluster deprovisioning", cluster, provider)
+	return hf.Deprovision(cluster, provider)
+}
+
+func jsonToState(state string) (*types.InternalState, error) {
+	var terraformState types.InternalState
+
+	err := json.Unmarshal([]byte(state), &terraformState)
+
+	if err != nil {
+		return &types.InternalState{}, err
+	}
+
+	return &terraformState, nil
 }
 
 func stateToJson(state *types.InternalState) (string, error) {
@@ -106,24 +152,6 @@ func stateToJson(state *types.InternalState) (string, error) {
 		return "", err
 	}
 	return string(bytes), nil
-}
-
-func (c client) DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretName string) error {
-	credentialsFile := generateRandomFileName()
-
-	err := c.saveCredentialsToFile(secretName, credentialsFile)
-
-	if err != nil {
-		return err
-	}
-
-	cluster, provider, err := c.prepareConfig(runtimeConfig, credentialsFile)
-
-	if err != nil {
-		return err
-	}
-
-	return hf.Deprovision(cluster, provider)
 }
 
 func (c client) saveCredentialsToFile(secretName string, filename string) error {

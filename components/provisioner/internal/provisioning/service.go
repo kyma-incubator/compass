@@ -146,7 +146,6 @@ func (r *service) CleanupRuntimeData(id string) (string, error) {
 	return id, r.runtimeService.CleanupClusterData(id)
 }
 
-//TODO add saving kubeconfig and cluster state
 func (r *service) startProvisioning(operationID, runtimeID string, config model.RuntimeConfig, secretName string, finished chan interface{}) {
 	log.Infof("Provisioning runtime %s is starting", runtimeID)
 	info, err := r.hydroform.ProvisionCluster(config, secretName)
@@ -173,7 +172,16 @@ func (r *service) startProvisioning(operationID, runtimeID string, config model.
 func (r *service) startDeprovisioning(operationID, runtimeID string, config model.RuntimeConfig, secretName string, finished chan interface{}) {
 	log.Infof("Deprovisioning runtime %s is starting", runtimeID)
 
-	err := r.hydroform.DeprovisionCluster(config, secretName)
+	cluster, dberr := r.runtimeService.GetClusterData(runtimeID)
+
+	if dberr != nil {
+		updateOperationStatus(func() error {
+			log.Errorf("Deprovisioning runtime %s failed: %s", runtimeID, dberr.Error())
+			return r.operationService.SetAsFailed(operationID, dberr.Error())
+		})
+	}
+
+	err := r.hydroform.DeprovisionCluster(config, secretName, cluster.TerraformState)
 
 	if err != nil {
 		updateOperationStatus(func() error {

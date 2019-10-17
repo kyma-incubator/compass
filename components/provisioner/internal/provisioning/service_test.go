@@ -49,7 +49,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		service := NewProvisioningService(operationServiceMock, runtimeServiceMock, hydroformMock)
 
 		//when
-		operationID, err, finished := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{clusterConfig, &gqlschema.CredentialsInput{}, &gqlschema.KymaConfigInput{}})
+		operationID, err, finished := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: &gqlschema.CredentialsInput{}, KymaConfig: &gqlschema.KymaConfigInput{}})
 		require.NoError(t, err)
 
 		waitUntilFinished(finished)
@@ -117,8 +117,9 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 
 		runtimeServiceMock.On("GetStatus", runtimeID).Return(runtimeStatus, nil)
 		runtimeServiceMock.On("SetDeprovisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
+		runtimeServiceMock.On("GetClusterData", runtimeID).Return(model.Cluster{TerraformState: "{}"}, nil)
 		operationServiceMock.On("SetAsSucceeded", expOperationID).Return(nil)
-		hydroformMock.On("DeprovisionCluster", mock.Anything, mock.Anything).Return(nil)
+		hydroformMock.On("DeprovisionCluster", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		resolver := NewProvisioningService(operationServiceMock, runtimeServiceMock, hydroformMock)
 
