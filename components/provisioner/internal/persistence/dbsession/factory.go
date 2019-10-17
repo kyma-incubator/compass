@@ -36,7 +36,7 @@ type WriteSession interface {
 
 type Transaction interface {
 	Commit() dberrors.Error
-	Rollback() dberrors.Error
+	RollbackUnlessCommitted()
 }
 
 //go:generate mockery -name=WriteSessionWithinTransaction

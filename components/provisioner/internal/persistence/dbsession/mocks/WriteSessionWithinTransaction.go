@@ -124,20 +124,9 @@ func (_m *WriteSessionWithinTransaction) InsertOperation(operation model.Operati
 	return r0
 }
 
-// Rollback provides a mock function with given fields:
-func (_m *WriteSessionWithinTransaction) Rollback() dberrors.Error {
-	ret := _m.Called()
-
-	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func() dberrors.Error); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(dberrors.Error)
-		}
-	}
-
-	return r0
+// RollbackUnlessCommitted provides a mock function with given fields:
+func (_m *WriteSessionWithinTransaction) RollbackUnlessCommitted() {
+	_m.Called()
 }
 
 // UpdateCluster provides a mock function with given fields: runtimeID, kubeconfig, terraformState

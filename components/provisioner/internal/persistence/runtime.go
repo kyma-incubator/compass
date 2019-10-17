@@ -19,7 +19,8 @@ type RuntimeService interface {
 	SetUpgradeStarted(runtimeID string) (model.Operation, dberrors.Error)
 	GetLastOperation(runtimeID string) (model.Operation, dberrors.Error)
 	Update(runtimeID string, kubeconfig string, terraformState string) dberrors.Error
-	CleanupData(runtimeID string) dberrors.Error
+	CleanupClusterData(runtimeID string) dberrors.Error
+	GetClusterData(runtimeID string) (model.Cluster, dberrors.Error)
 }
 
 type runtimeService struct {
@@ -75,6 +76,8 @@ func (r runtimeService) SetProvisioningStarted(runtimeID string, runtimeConfig m
 		logrus.Errorf("Failed to create repository: %s", err)
 	}
 
+	defer dbSession.RollbackUnlessCommitted()
+
 	timestamp := time.Now()
 
 	cluster := model.Cluster{
@@ -85,7 +88,6 @@ func (r runtimeService) SetProvisioningStarted(runtimeID string, runtimeConfig m
 
 	err = dbSession.InsertCluster(cluster)
 	if err != nil {
-		rollback(dbSession, runtimeID)
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
@@ -94,7 +96,6 @@ func (r runtimeService) SetProvisioningStarted(runtimeID string, runtimeConfig m
 
 		err = dbSession.InsertGCPConfig(gcpConfig)
 		if err != nil {
-			rollback(dbSession, runtimeID)
 			return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 		}
 	}
@@ -103,21 +104,18 @@ func (r runtimeService) SetProvisioningStarted(runtimeID string, runtimeConfig m
 	if isGardener {
 		err = dbSession.InsertGardenerConfig(gardenerConfig)
 		if err != nil {
-			rollback(dbSession, runtimeID)
 			return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 		}
 	}
 
 	err = dbSession.InsertKymaConfig(runtimeConfig.KymaConfig)
 	if err != nil {
-		rollback(dbSession, runtimeID)
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
 	operation, err := r.setOperationStarted(dbSession, runtimeID, model.Provision, timestamp, "Provisioning started", "Failed to set provisioning started: %s")
 
 	if err != nil {
-		rollback(dbSession, runtimeID)
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
@@ -149,7 +147,7 @@ func (r runtimeService) Update(runtimeID string, kubeconfig string, terraformSta
 	return session.UpdateCluster(runtimeID, kubeconfig, terraformState)
 }
 
-func (r runtimeService) CleanupData(runtimeID string) dberrors.Error {
+func (r runtimeService) CleanupClusterData(runtimeID string) dberrors.Error {
 	session := r.dbSessionFactory.NewWriteSession()
 
 	return session.DeleteCluster(runtimeID)
@@ -179,9 +177,8 @@ func (r runtimeService) setOperationStarted(dbSession dbsession.WriteSession, ru
 	return operation, nil
 }
 
-func rollback(transaction dbsession.Transaction, runtimeID string) {
-	err := transaction.Rollback()
-	if err != nil {
-		logrus.Errorf("Failed to rollback transaction for runtime: '%s'.", runtimeID)
-	}
+func (r runtimeService) GetClusterData(runtimeID string) (model.Cluster, dberrors.Error) {
+	session := r.dbSessionFactory.NewReadSession()
+
+	return session.GetCluster(runtimeID)
 }
