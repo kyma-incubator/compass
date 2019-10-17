@@ -46,7 +46,10 @@ global:
 
   connector:
     graphql:
-      port: 3000
+      external:
+        port: 3000
+      internal:
+        port: 3001
     validator:
       port: 8080
     # If secrets do not exist they will be created
