@@ -35,9 +35,10 @@ func Test_E2e(t *testing.T) {
 
 	runtime, err := testSuite.DirectorClient.RegisterRuntime(runtimeInput)
 	require.NoError(t, err)
-	t.Logf("Runtime registered successfully id: %s.", runtime.ID)
+	t.Logf("Runtime registered successfully id: %s", runtime.ID)
 	defer func() {
 		// TODO - deleting runtime fails not sure why
+		t.Logf("Removing %s runtime...", runtime.ID)
 		_, err := testSuite.DirectorClient.DeleteRuntime(runtime.ID)
 		assert.NoError(t, err)
 	}()
