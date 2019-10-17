@@ -125,7 +125,7 @@ func TestResolver_CreateApplication(t *testing.T) {
 			persistTx, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
-			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -272,7 +272,7 @@ func TestResolver_UpdateApplication(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -295,7 +295,7 @@ func TestResolver_DeleteApplication(t *testing.T) {
 	modelApplication := fixModelApplication("foo", "tenant-foo", "Foo", "Bar")
 	gqlApplication := fixGQLApplication("foo", "Foo", "Bar")
 	testErr := errors.New("Test error")
-
+	testAuth := fixOauth()
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	testCases := []struct {
@@ -303,6 +303,8 @@ func TestResolver_DeleteApplication(t *testing.T) {
 		TransactionerFn     func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn           func() *automock.ApplicationService
 		ConverterFn         func() *automock.ApplicationConverter
+		SysAuthServiceFn    func() *automock.SystemAuthService
+		Oauth20ServiceFn    func() *automock.Oauth20Service
 		InputID             string
 		ExpectedApplication *graphql.Application
 		ExpectedErr         error
@@ -321,6 +323,15 @@ func TestResolver_DeleteApplication(t *testing.T) {
 				conv.On("ToGraphQL", modelApplication).Return(gqlApplication).Once()
 				return conv
 			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", contextParam, model.ApplicationReference, modelApplication.ID).Return(nil, nil)
+				return svc
+			},
+			Oauth20ServiceFn: func() *automock.Oauth20Service {
+				svc := &automock.Oauth20Service{}
+				return svc
+			},
 			InputID:             "foo",
 			ExpectedApplication: gqlApplication,
 			ExpectedErr:         nil,
@@ -337,6 +348,15 @@ func TestResolver_DeleteApplication(t *testing.T) {
 			ConverterFn: func() *automock.ApplicationConverter {
 				conv := &automock.ApplicationConverter{}
 				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", contextParam, model.ApplicationReference, modelApplication.ID).Return(nil, nil)
+				return svc
+			},
+			Oauth20ServiceFn: func() *automock.Oauth20Service {
+				svc := &automock.Oauth20Service{}
+				return svc
 			},
 			InputID:             "foo",
 			ExpectedApplication: nil,
@@ -355,6 +375,15 @@ func TestResolver_DeleteApplication(t *testing.T) {
 				conv := &automock.ApplicationConverter{}
 				return conv
 			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", contextParam, model.ApplicationReference, modelApplication.ID).Return(nil, nil)
+				return svc
+			},
+			Oauth20ServiceFn: func() *automock.Oauth20Service {
+				svc := &automock.Oauth20Service{}
+				return svc
+			},
 			InputID:             "foo",
 			ExpectedApplication: nil,
 			ExpectedErr:         testErr,
@@ -371,6 +400,14 @@ func TestResolver_DeleteApplication(t *testing.T) {
 				conv := &automock.ApplicationConverter{}
 				return conv
 			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				return svc
+			},
+			Oauth20ServiceFn: func() *automock.Oauth20Service {
+				svc := &automock.Oauth20Service{}
+				return svc
+			},
 			InputID:             "foo",
 			ExpectedApplication: nil,
 			ExpectedErr:         testErr,
@@ -386,9 +423,68 @@ func TestResolver_DeleteApplication(t *testing.T) {
 				conv := &automock.ApplicationConverter{}
 				return conv
 			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				return svc
+			},
+			Oauth20ServiceFn: func() *automock.Oauth20Service {
+				svc := &automock.Oauth20Service{}
+				return svc
+			},
 			InputID:             "foo",
 			ExpectedApplication: nil,
 			ExpectedErr:         testErr,
+		},
+		{
+			Name:            "Return error when listing all auths failed commit failed",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("Get", contextParam, "foo").Return(modelApplication, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", contextParam, model.ApplicationReference, modelApplication.ID).Return(nil, testErr)
+				return svc
+			},
+			Oauth20ServiceFn: func() *automock.Oauth20Service {
+				svc := &automock.Oauth20Service{}
+				return svc
+			},
+			InputID:             "foo",
+			ExpectedApplication: nil,
+			ExpectedErr:         testErr,
+		},
+		{
+			Name:            "Return error when removing oauth from hydra",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("Get", contextParam, "foo").Return(modelApplication, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", contextParam, model.ApplicationReference, modelApplication.ID).Return([]model.SystemAuth{testAuth}, nil)
+				return svc
+			},
+			Oauth20ServiceFn: func() *automock.Oauth20Service {
+				svc := &automock.Oauth20Service{}
+				svc.On("DeleteClientCredentials", contextParam, testAuth.Value.Credential.Oauth.ClientID).Return(testErr)
+				return svc
+			},
+			InputID:             "foo",
+			ExpectedApplication: nil,
+			ExpectedErr:         errors.Wrap(testErr, "while deleting OAuth 2.0 client"),
 		},
 	}
 
@@ -397,8 +493,9 @@ func TestResolver_DeleteApplication(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 			persistTx, transact := testCase.TransactionerFn()
-
-			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			sysAuthSvc := testCase.SysAuthServiceFn()
+			oauth20Svc := testCase.Oauth20ServiceFn()
+			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, sysAuthSvc, oauth20Svc, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -406,12 +503,17 @@ func TestResolver_DeleteApplication(t *testing.T) {
 
 			// then
 			assert.Equal(t, testCase.ExpectedApplication, result)
-			assert.Equal(t, testCase.ExpectedErr, err)
-
+			if err != nil {
+				assert.EqualError(t, testCase.ExpectedErr, err.Error())
+			} else {
+				assert.Equal(t, testCase.ExpectedErr, err)
+			}
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)
 			persistTx.AssertExpectations(t)
 			transact.AssertExpectations(t)
+			sysAuthSvc.AssertExpectations(t)
+			oauth20Svc.AssertExpectations(t)
 		})
 	}
 }
@@ -478,7 +580,7 @@ func TestResolver_Application(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -572,7 +674,7 @@ func TestResolver_Applications(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -706,7 +808,7 @@ func TestResolver_ApplicationsForRuntime(t *testing.T) {
 			applicationConverter := testCase.AppConverterFn()
 			persistTx, transact := testCase.TransactionerFn()
 
-			resolver := application.NewResolver(transact, applicationSvc, nil, nil, nil, nil, nil, applicationConverter, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(transact, applicationSvc, nil, nil, nil, nil, nil, nil, applicationConverter, nil, nil, nil, nil, nil)
 
 			//WHEN
 			result, err := resolver.ApplicationsForRuntime(context.TODO(), testCase.InputRuntimeID, &first, &gqlAfter)
@@ -802,7 +904,7 @@ func TestResolver_SetApplicationLabel(t *testing.T) {
 			persistTx := testCase.PersistenceFn()
 			transactioner := testCase.TransactionerFn(persistTx)
 
-			resolver := application.NewResolver(transactioner, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(transactioner, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -917,7 +1019,7 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 			persistTx := testCase.PersistenceFn()
 			transactioner := testCase.TransactionerFn(persistTx)
 
-			resolver := application.NewResolver(transactioner, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(transactioner, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -1004,7 +1106,7 @@ func TestResolver_Documents(t *testing.T) {
 			persistTx := testCase.PersistenceFn()
 			transact := testCase.TransactionerFn(persistTx)
 
-			resolver := application.NewResolver(transact, nil, nil, nil, svc, nil, nil, nil, converter, nil, nil, nil, nil)
+			resolver := application.NewResolver(transact, nil, nil, nil, svc, nil, nil, nil, nil, converter, nil, nil, nil, nil)
 
 			// when
 			result, err := resolver.Documents(context.TODO(), app, &first, &gqlAfter)
@@ -1120,7 +1222,7 @@ func TestResolver_Webhooks(t *testing.T) {
 			mockPersistence := testCase.PersistenceFn()
 			mockTransactioner := testCase.TransactionerFn(mockPersistence)
 
-			resolver := application.NewResolver(mockTransactioner, nil, nil, nil, nil, svc, nil, nil, nil, converter, nil, nil, nil)
+			resolver := application.NewResolver(mockTransactioner, nil, nil, nil, nil, svc, nil, nil, nil, nil, converter, nil, nil, nil)
 
 			// when
 			result, err := resolver.Webhooks(context.TODO(), app)
@@ -1238,7 +1340,7 @@ func TestResolver_Apis(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(transact, nil, svc, nil, nil, nil, nil, nil, nil, nil, converter, nil, nil)
+			resolver := application.NewResolver(transact, nil, svc, nil, nil, nil, nil, nil, nil, nil, nil, converter, nil, nil)
 			// when
 			result, err := resolver.Apis(context.TODO(), app, &group, &first, &gqlAfter)
 
@@ -1332,7 +1434,7 @@ func TestResolver_EventAPIs(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(transact, nil, nil, svc, nil, nil, nil, nil, nil, nil, nil, converter, nil)
+			resolver := application.NewResolver(transact, nil, nil, svc, nil, nil, nil, nil, nil, nil, nil, nil, converter, nil)
 			// when
 			result, err := resolver.EventAPIs(context.TODO(), app, &group, testCase.InputFirst, testCase.InputAfter)
 
@@ -1428,7 +1530,7 @@ func TestResolver_Labels(t *testing.T) {
 			persistTx := testCase.PersistenceFn()
 			transact := testCase.TransactionerFn(persistTx)
 
-			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// when
 			result, err := resolver.Labels(context.TODO(), gqlApp, &testCase.InputKey)
@@ -1536,7 +1638,7 @@ func TestResolver_Auths(t *testing.T) {
 			persist, transact := testCase.TransactionerFn()
 			conv := testCase.SysAuthConvFn()
 
-			resolver := application.NewResolver(transact, nil, nil, nil, nil, nil, svc, nil, nil, nil, nil, nil, conv)
+			resolver := application.NewResolver(transact, nil, nil, nil, nil, nil, svc, nil, nil, nil, nil, nil, nil, conv)
 
 			// when
 			result, err := resolver.Auths(context.TODO(), testCase.InputApp)
@@ -1553,11 +1655,28 @@ func TestResolver_Auths(t *testing.T) {
 	}
 
 	t.Run("Returns error when application is nil", func(t *testing.T) {
-		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		//WHEN
 		_, err := resolver.Auths(context.TODO(), nil)
 		//THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, "Application cannot be empty")
 	})
+}
+
+func fixOauth() model.SystemAuth {
+	return model.SystemAuth{
+		ID:       "foo",
+		TenantID: "foo",
+		Value: &model.Auth{
+			Credential: model.CredentialData{
+				Basic: nil,
+				Oauth: &model.OAuthCredentialData{
+					ClientID:     "foo",
+					ClientSecret: "foo",
+					URL:          "foo",
+				},
+			},
+		},
+	}
 }

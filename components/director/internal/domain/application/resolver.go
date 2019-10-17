@@ -107,6 +107,11 @@ type SystemAuthConverter interface {
 	ToGraphQL(in *model.SystemAuth) *graphql.SystemAuth
 }
 
+//go:generate mockery -name=Oauth20Service -output=automock -outpkg=automock -case=underscore
+type Oauth20Service interface {
+	DeleteClientCredentials(ctx context.Context, clientID string) error
+}
+
 type Resolver struct {
 	transact persistence.Transactioner
 
@@ -118,6 +123,7 @@ type Resolver struct {
 	webhookSvc  WebhookService
 	documentSvc DocumentService
 	sysAuthSvc  SystemAuthService
+	oauth20Svc  Oauth20Service
 
 	documentConverter DocumentConverter
 	webhookConverter  WebhookConverter
@@ -126,7 +132,7 @@ type Resolver struct {
 	sysAuthConv       SystemAuthConverter
 }
 
-func NewResolver(transact persistence.Transactioner, svc ApplicationService, apiSvc APIService, eventAPISvc EventAPIService, documentSvc DocumentService, webhookSvc WebhookService, sysAuthSvc SystemAuthService, appConverter ApplicationConverter, documentConverter DocumentConverter, webhookConverter WebhookConverter, apiConverter APIConverter, eventAPIConverter EventAPIConverter, sysAuthConv SystemAuthConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc ApplicationService, apiSvc APIService, eventAPISvc EventAPIService, documentSvc DocumentService, webhookSvc WebhookService, sysAuthSvc SystemAuthService, oauth20Svc Oauth20Service, appConverter ApplicationConverter, documentConverter DocumentConverter, webhookConverter WebhookConverter, apiConverter APIConverter, eventAPIConverter EventAPIConverter, sysAuthConv SystemAuthConverter) *Resolver {
 	return &Resolver{
 		transact:          transact,
 		appSvc:            svc,
@@ -135,6 +141,7 @@ func NewResolver(transact persistence.Transactioner, svc ApplicationService, api
 		documentSvc:       documentSvc,
 		webhookSvc:        webhookSvc,
 		sysAuthSvc:        sysAuthSvc,
+		oauth20Svc:        oauth20Svc,
 		appConverter:      appConverter,
 		documentConverter: documentConverter,
 		webhookConverter:  webhookConverter,
@@ -334,6 +341,20 @@ func (r *Resolver) DeleteApplication(ctx context.Context, id string) (*graphql.A
 	app, err := r.appSvc.Get(ctx, id)
 	if err != nil {
 		return nil, err
+	}
+
+	auths, err := r.sysAuthSvc.ListForObject(ctx, model.ApplicationReference, app.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, auth := range auths {
+		if auth.Value.Credential.Oauth != nil {
+			err := r.oauth20Svc.DeleteClientCredentials(ctx, auth.Value.Credential.Oauth.ClientID)
+			if err != nil {
+				return nil, errors.Wrap(err, "while deleting OAuth 2.0 client")
+			}
+		}
 	}
 
 	err = r.appSvc.Delete(ctx, id)
