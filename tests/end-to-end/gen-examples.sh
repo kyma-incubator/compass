@@ -97,36 +97,14 @@ docker run --name ${DIRECTOR_CONTAINER} -d --rm --network=${NETWORK} \
 
 cd "${SCRIPT_DIR}"
 
-# wait for Director to be up and running
-
-echo -e "${GREEN}Checking if Director is up...${NC}"
-directorIsUp=false
-set +e
-for i in {1..10}; do
-    curl --fail "http://${DIRECTOR_URL}:${APP_PORT}/healthz" -H 'tenant: 49b179ea-9839-4608-afbe-1e934908f38a'
-    res=$?
-
-    if [[ ${res} == 0 ]]; then
-        directorIsUp=true
-        break
-    fi
-    sleep 1
-done
-set -e
-
-echo ""
-
-if [[ "$directorIsUp" == false ]]; then
-    echo -e "${RED}Cannot access Director API${NC}"
-    exit 1
-fi
+export DIRECTOR_URL="http://${DIRECTOR_URL}:${APP_PORT}"
+./wait-for-director.sh
 
 echo -e "${GREEN}Removing previous GraphQL examples...${NC}"
 rm -f "${LOCAL_ROOT_PATH}/examples/"*
 
 echo -e "${GREEN}Running Director tests with generating examples...${NC}"
 go test -c "${SCRIPT_DIR}/director/" -tags no_token_test
-DIRECTOR_GRAPHQL_API="http://${DIRECTOR_URL}:${APP_PORT}/graphql" \
 ALL_SCOPES="runtime:write application:write label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read" \
 ./director.test
 

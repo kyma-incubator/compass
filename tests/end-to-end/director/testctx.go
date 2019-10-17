@@ -5,6 +5,11 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"time"
+
+	"github.com/sirupsen/logrus"
+
+	"github.com/avast/retry-go"
 
 	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/jwtbuilder"
 	gcli "github.com/machinebox/graphql"
@@ -55,7 +60,20 @@ func (tc *testContext) RunOperation(ctx context.Context, req *gcli.Request, resp
 	}
 
 	m := resultMapperFor(&resp)
-	return tc.cli.Run(ctx, req, &m)
+
+	return tc.withRetryOnTemporaryConnectionProblems(func() error {
+		return tc.cli.Run(ctx, req, &m)
+	})
+}
+
+func (tc *testContext) withRetryOnTemporaryConnectionProblems(risky func() error) error {
+	return retry.Do(risky, retry.Attempts(7), retry.Delay(time.Second), retry.OnRetry(func(n uint, err error) {
+		logrus.WithField("component", "testContext").Warnf("OnRetry: attempts: %d, error: %v", n, err)
+
+	}), retry.LastErrorOnly(true), retry.RetryIf(func(err error) bool {
+		return strings.Contains(err.Error(), "connection refused") ||
+			strings.Contains(err.Error(), "connection reset by peer")
+	}))
 }
 
 func (tc *testContext) RunOperationWithCustomTenant(ctx context.Context, tenant string, req *gcli.Request, resp interface{}) error {
@@ -78,7 +96,7 @@ func (tc *testContext) runCustomOperation(ctx context.Context, tenant string, sc
 	}
 
 	cli := newAuthorizedGraphQLClient(token)
-	return cli.Run(ctx, req, &m)
+	return tc.withRetryOnTemporaryConnectionProblems(func() error { return cli.Run(ctx, req, &m) })
 }
 
 // resultMapperFor returns generic object that can be passed to Run method for storing response.
