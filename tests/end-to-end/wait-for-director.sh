@@ -23,3 +23,8 @@ for i in {1..10}; do
     sleep 1
 done
 set -e
+
+if [[ "$directorIsUp" == false ]]; then
+    echo -e "Cannot access Director API"
+    exit 1
+fi

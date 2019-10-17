@@ -61,17 +61,18 @@ func (tc *testContext) RunOperation(ctx context.Context, req *gcli.Request, resp
 
 	m := resultMapperFor(&resp)
 
-	return tc.withRetryOnConnectionRefused(func() error {
+	return tc.withRetryOnTemporaryConnectionProblems(func() error {
 		return tc.cli.Run(ctx, req, &m)
 	})
 }
 
-func (tc *testContext) withRetryOnConnectionRefused(risky func() error) error {
+func (tc *testContext) withRetryOnTemporaryConnectionProblems(risky func() error) error {
 	return retry.Do(risky, retry.Attempts(7), retry.Delay(time.Second), retry.OnRetry(func(n uint, err error) {
 		logrus.WithField("component", "testContext").Warnf("OnRetry: attempts: %d, error: %v", n, err)
 
 	}), retry.LastErrorOnly(true), retry.RetryIf(func(err error) bool {
-		return strings.Contains(err.Error(), "connection refused")
+		return strings.Contains(err.Error(), "connection refused") ||
+			strings.Contains(err.Error(), "connection reset by peer")
 	}))
 }
 
@@ -95,7 +96,7 @@ func (tc *testContext) runCustomOperation(ctx context.Context, tenant string, sc
 	}
 
 	cli := newAuthorizedGraphQLClient(token)
-	return tc.withRetryOnConnectionRefused(func() error { return cli.Run(ctx, req, &m) })
+	return tc.withRetryOnTemporaryConnectionProblems(func() error { return cli.Run(ctx, req, &m) })
 }
 
 // resultMapperFor returns generic object that can be passed to Run method for storing response.

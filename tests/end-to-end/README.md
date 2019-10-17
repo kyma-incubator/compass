@@ -10,7 +10,7 @@ The E2E binary allows to override some configuration parameters. You can specify
 | ENV                         | Default                         | Description                                       |
 |-----------------------------|---------------------------------|---------------------------------------------------|
 | ALL_SCOPES                  | ""                              | string with all scopes (permissions) separated by semicolon, which will be used in requests |
-| DIRECTOR_GRAPHQL_API        | "http://127.0.0.1:3000/graphql" | director graphql API URL                          |
+| DIRECTOR_URL                | 127.0.0.1:3000                  | The address and port for the Director                           |
 
 To run Director tests with running director and connector, execute:
 ```
