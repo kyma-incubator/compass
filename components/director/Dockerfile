@@ -11,6 +11,7 @@ COPY ./internal/ ${BASE_APP_DIR}/internal/
 COPY ./pkg/ ${BASE_APP_DIR}/pkg/
 COPY ./vendor/ ${BASE_APP_DIR}/vendor/
 COPY ./cmd/ ${BASE_APP_DIR}/cmd/
+COPY ./hack/ ${BASE_APP_DIR}/hack/
 COPY ./licenses ${BASE_APP_DIR}/licenses
 
 #
@@ -20,7 +21,7 @@ COPY ./licenses ${BASE_APP_DIR}/licenses
 RUN go build -v -o main ./cmd/main.go
 RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
 
-FROM alpine:3.9
+FROM alpine:3.10
 LABEL source = git@github.com:kyma-incubator/compass.git
 WORKDIR /app
 
@@ -35,4 +36,3 @@ COPY --from=builder /app /app
 #
 
 CMD ["/app/main"]
-

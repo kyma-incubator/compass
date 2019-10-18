@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
@@ -118,6 +120,9 @@ func (r *Resolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, er
 
 	runtime, err := r.svc.Get(ctx, id)
 	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, nil
+		}
 		return nil, err
 	}
 

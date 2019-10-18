@@ -7,22 +7,22 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir: pr/
-      version: "PR-247"
+      version: "PR-357"
     director:
       dir:
-      version: "PR-350"
+      version: "PR-357"
     gateway:
       dir: pr/
-      version: "PR-363"
+      version: "PR-357"
     healthchecker:
       dir: pr/
-      version: "PR-99"
+      version: "PR-357"
     schema_migrator:
       dir: pr/
-      version: "PR-350"
+      version: "PR-357"
     provisioner:
       dir: pr/
-      version: "PR-352"
+      version: "PR-357"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -31,13 +31,13 @@ global:
     tests:
       e2e:
         dir: pr/
-        version: "PR-329"
+        version: "PR-384"
       connector:
         dir: pr/
-        version: "PR-335"
+        version: "PR-357"
       provisioner:
         dir: pr/
-        version: "PR-352"
+        version: "PR-357"
 
   isLocalEnv: false
 
@@ -115,11 +115,26 @@ global:
       hostPort: "5432"
       sslMode: ""
 
-  tenantMappingService:
-    url: http://compass-director.compass-system.svc.cluster.local:3000/tenant-mapping
-
-  certificateResolverService:
-    url: http://compass-connector.compass-system.svc.cluster.local:8080/v1/certificate/data/resolve
-
-  tokenResolverService:
-    url: http://compass-connector.compass-system.svc.cluster.local:8080/v1/tokens/resolve
+  oathkeeper:
+    mutators:
+      tenantMappingService:
+        config:
+          api:
+            url: http://compass-director.compass-system.svc.cluster.local:3000/tenant-mapping
+            retry:
+              number: 3
+              delayInMilliseconds: 2000
+      certificateResolverService:
+        config:
+          api:
+            url: http://compass-connector.compass-system.svc.cluster.local:8080/v1/certificate/data/resolve
+            retry:
+              number: 3
+              delayInMilliseconds: 2000
+      tokenResolverService:
+        config:
+          api:
+            url: http://compass-connector.compass-system.svc.cluster.local:8080/v1/tokens/resolve
+            retry:
+              number: 3
+              delayInMilliseconds: 2000

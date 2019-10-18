@@ -6,10 +6,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	repopkg "github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/stretchr/testify/assert"
@@ -390,7 +391,7 @@ func TestService_GetFetchRequest(t *testing.T) {
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
 				repo := &automock.FetchRequestRepository{}
-				repo.On("GetByReferenceObjectID", ctx, tnt, model.DocumentFetchRequestReference, refID).Return(nil, repopkg.NewNotFoundError()).Once()
+				repo.On("GetByReferenceObjectID", ctx, tnt, model.DocumentFetchRequestReference, refID).Return(nil, apperrors.NewNotFoundError("")).Once()
 				return repo
 			},
 			ExpectedFetchRequest: nil,

@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/google/uuid"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
@@ -161,10 +163,6 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if first == nil {
-		return nil, errors.New("missing required parameter 'first'")
-	}
-
 	appPage, err := r.appSvc.List(ctx, labelFilter, *first, cursor)
 	if err != nil {
 		return nil, err
@@ -200,6 +198,9 @@ func (r *Resolver) Application(ctx context.Context, id string) (*graphql.Applica
 
 	app, err := r.appSvc.Get(ctx, id)
 	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, nil
+		}
 		return nil, err
 	}
 

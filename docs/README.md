@@ -32,3 +32,4 @@ This folder contains documents that relate to the project.
 - [Storage - PostgreSQL Evaluation](./investigations/storage/postgres/postgres.md)
 - [Storage - SQL Toolbox](./investigations/storage/sql-toolbox/sql-toolbox.md)
 - [GraphQL - File Upload](./investigations/graphql-file-upload/file-upload-with-graphql.md)
+- [GraphQL - Mutation for updating complex types](./investigations/graphql-complex-updates/graphql-complex-updates.md)

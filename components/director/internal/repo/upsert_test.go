@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/lib/pq"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -69,7 +71,7 @@ func TestUpsert(t *testing.T) {
 		// WHEN
 		err := sut.Upsert(ctx, givenUser)
 		// THEN
-		require.True(t, repo.IsNotUnique(err))
+		require.True(t, apperrors.IsNotUnique(err))
 	})
 
 	t.Run("returns error if missing persistence context", func(t *testing.T) {

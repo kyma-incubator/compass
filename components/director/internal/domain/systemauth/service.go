@@ -35,13 +35,21 @@ func NewService(repo Repository, uidService UIDService) *service {
 }
 
 func (s *service) Create(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error) {
+	return s.create(ctx, s.uidService.Generate(), objectType, objectID, authInput)
+}
+
+func (s *service) CreateWithCustomID(ctx context.Context, id string, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error) {
+	return s.create(ctx, id, objectType, objectID, authInput)
+}
+
+func (s *service) create(ctx context.Context, id string, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
 	}
 
 	systemAuth := model.SystemAuth{
-		ID:    s.uidService.Generate(),
+		ID:    id,
 		Value: authInput.ToAuth(),
 	}
 
@@ -67,15 +75,19 @@ func (s *service) Create(ctx context.Context, objectType model.SystemAuthReferen
 	return systemAuth.ID, nil
 }
 
-func (s *service) Get(ctx context.Context, id string) (*model.SystemAuth, error) {
+func (s *service) GetByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) (*model.SystemAuth, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	item, err := s.repo.GetByID(ctx, tnt, id)
+	if objectType == model.IntegrationSystemReference {
+		tnt = model.IntegrationSystemTenant
+	}
+
+	item, err := s.repo.GetByID(ctx, tnt, authID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting SystemAuth with ID %s", id)
+		return nil, errors.Wrapf(err, "while getting SystemAuth with ID %s", authID)
 	}
 
 	return item, nil

@@ -1,19 +1,30 @@
-package repo
+package apperrors
 
-import "github.com/pkg/errors"
+import (
+	"fmt"
+
+	"github.com/pkg/errors"
+)
 
 type NotFound interface {
 	IsNotFound() bool
 }
 
-type notFoundError struct{}
+type notFoundError struct {
+	identifier string
+}
 
-func NewNotFoundError() *notFoundError {
-	return &notFoundError{}
+func NewNotFoundError(identifier string) *notFoundError {
+	return &notFoundError{
+		identifier: identifier,
+	}
 }
 
 func (e *notFoundError) Error() string {
-	return "object not found in DB"
+	if e.identifier == "" {
+		return "Object was not found"
+	}
+	return fmt.Sprintf("Object %s not found", e.identifier)
 }
 
 func (e *notFoundError) IsNotFound() bool {
@@ -34,10 +45,21 @@ type NotUnique interface {
 	IsNotUnique()
 }
 
-type notUniqueError struct{}
+type notUniqueError struct {
+	identifier string
+}
+
+func NewNotUniqueError(identifier string) *notUniqueError {
+	return &notUniqueError{
+		identifier: identifier,
+	}
+}
 
 func (e *notUniqueError) Error() string {
-	return "unique constraint violation"
+	if e.identifier == "" {
+		return "Object is not unique"
+	}
+	return fmt.Sprintf("Object %s is not unique", e.identifier)
 }
 
 func (notUniqueError) IsNotUnique() {}

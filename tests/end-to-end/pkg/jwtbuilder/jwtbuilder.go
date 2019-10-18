@@ -1,9 +1,10 @@
 package jwtbuilder
 
 import (
+	"strings"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
-	"strings"
 )
 
 type jwtTokenClaims struct {

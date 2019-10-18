@@ -505,7 +505,7 @@ func TestDeleteLabelDefinition(t *testing.T) {
 		t.Log("Assert Label definition was deleted")
 		ldRequest := fixLabelDefinitionRequest(labelKey)
 		errMsg := fmt.Sprintf("graphql: label definition with key '%s' does not exist", labelKey)
-		require.Error(t, tc.RunOperation(ctx, ldRequest, nil), errMsg)
+		require.Nil(t, tc.RunOperation(ctx, ldRequest, nil), errMsg)
 	})
 
 	t.Run("Delete Label from application, then delete the Label Definition - should succeed", func(t *testing.T) {

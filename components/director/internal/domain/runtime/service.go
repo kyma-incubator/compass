@@ -86,6 +86,20 @@ func (s *service) Get(ctx context.Context, id string) (*model.Runtime, error) {
 	return runtime, nil
 }
 
+func (s *service) Exist(ctx context.Context, id string) (bool, error) {
+	rtmTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return false, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	exist, err := s.repo.Exists(ctx, rtmTenant, id)
+	if err != nil {
+		return false, errors.Wrapf(err, "while getting Runtime with ID %s", id)
+	}
+
+	return exist, nil
+}
+
 func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, error) {
 	err := in.Validate()
 	if err != nil {

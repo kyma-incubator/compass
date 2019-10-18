@@ -11,18 +11,18 @@ import (
 	"github.com/pkg/errors"
 )
 
-func NewProvider(fileName string) *provider {
-	return &provider{
+func NewProvider(fileName string) *Provider {
+	return &Provider{
 		fileName: fileName,
 	}
 }
 
-type provider struct {
+type Provider struct {
 	fileName     string
 	cachedConfig map[string]interface{}
 }
 
-func (p *provider) Load() error {
+func (p *Provider) Load() error {
 	b, err := ioutil.ReadFile(p.fileName)
 	if err != nil {
 		return errors.Wrapf(err, "while reading file %s", p.fileName)
@@ -37,7 +37,7 @@ func (p *provider) Load() error {
 
 }
 
-func (p *provider) GetRequiredScopes(path string) ([]string, error) {
+func (p *Provider) GetRequiredScopes(path string) ([]string, error) {
 	if p.cachedConfig == nil {
 		return nil, errors.New("required scopes configuration not loaded")
 	}
@@ -71,7 +71,7 @@ func (p *provider) GetRequiredScopes(path string) ([]string, error) {
 	return scopes, nil
 }
 
-func (p *provider) GetAllScopes() ([]string, error) {
+func (p *Provider) GetAllScopes() ([]string, error) {
 	var scopes []string
 	for key, _ := range p.cachedConfig {
 		operations, ok := p.cachedConfig[key].(map[string]interface{})

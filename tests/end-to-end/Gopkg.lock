@@ -29,12 +29,12 @@
   version = "v3.0.1"
 
 [[projects]]
-  digest = "1:8eeb8f0485a4be0e346d5ef0dd5662b7ac4f693b132c889db696c4ee77a816f4"
+  digest = "1:b565deb585c50ab8e94fe5d6c9903f1495970b97814803e4ab0e70c0a9c87a30"
   name = "github.com/Masterminds/sprig"
   packages = ["."]
   pruneopts = "UT"
-  revision = "2691a9cba2adee8d9a60100a1bc49e770f97b7db"
-  version = "v2.21.0"
+  revision = "e4c0945838d570720d876a6ad9b4568ed32317b4"
+  version = "v2.22.0"
 
 [[projects]]
   digest = "1:786e862ec180708b60ee670723e3edd969fd4309e7b1c315cd7de058ac62a011"
@@ -43,6 +43,14 @@
   pruneopts = "UT"
   revision = "51b298ff305e72cfd29166dccc3f9878e82f9fdc"
   version = "v1.0.2"
+
+[[projects]]
+  digest = "1:7c51a593e7593dbbaec61e209bdd04095995362834e4399aaa5a9227c25bb403"
+  name = "github.com/avast/retry-go"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "101acd3290b786bf437607d874596e3996484d8d"
+  version = "v2.4.1"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -61,14 +69,6 @@
   version = "v3.2.0"
 
 [[projects]]
-  digest = "1:2cd7915ab26ede7d95b8749e6b1f933f1c6d5398030684e6505940a10f31cfda"
-  name = "github.com/ghodss/yaml"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "0ca9ea5df5451ffdf184b4428c902747c2c11cd7"
-  version = "v1.0.0"
-
-[[projects]]
   digest = "1:582b704bebaa06b48c29b0cec224a6058a09c86883aaddabde889cd1a5f73e1b"
   name = "github.com/google/uuid"
   packages = ["."]
@@ -85,12 +85,12 @@
   version = "v1.2.0"
 
 [[projects]]
-  digest = "1:a0cefd27d12712af4b5018dc7046f245e1e3b5760e2e848c30b171b570708f9b"
+  digest = "1:78d28d5b84a26159c67ea51996a230da4bc07cac648adaae1dfb5fc0ec8e40d3"
   name = "github.com/imdario/mergo"
   packages = ["."]
   pruneopts = "UT"
-  revision = "7c29201646fa3de8506f701213473dd407f19646"
-  version = "v0.3.7"
+  revision = "1afb36080aec31e0d1528973ebe6721b191b0369"
+  version = "v0.3.8"
 
 [[projects]]
   digest = "1:b472339040c571f1085e429ad08d94218bc3fc7a635c99fd95e3f80382413317"
@@ -112,16 +112,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:bf7cceb627b3f72f0211793921bec59ed67c642baac2bc2390a90392b5511256"
+  digest = "1:37131347ddd44b29e143039c083ca80515285445f32de281d745d71cf745c182"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/pkg/graphql",
     "components/director/pkg/scalar",
-    "components/director/pkg/scope",
-    "components/director/pkg/strings",
   ]
   pruneopts = "UT"
-  revision = "5227fabe48bd981db923170282a97da83fa56a15"
+  revision = "7c59b0b52bc924b238c82e163cd02284c2043fac"
 
 [[projects]]
   branch = "master"
@@ -132,12 +130,20 @@
   revision = "3a92531802258604bd12793465c2e28bc4b2fc85"
 
 [[projects]]
-  branch = "master"
-  digest = "1:4f971e961cc101712d18dbbd532813bbcd08c9984acceb55dff3fb86ed62ed5f"
-  name = "github.com/oliveagle/jsonpath"
+  digest = "1:09ca328575f38b80969ccf857f6d7302f2ce09d53778ea7aaba526cfd2cec739"
+  name = "github.com/mitchellh/copystructure"
   packages = ["."]
   pruneopts = "UT"
-  revision = "2e52cf6e685269ed8aefec6390f3cac3ef74e730"
+  revision = "9a1b6f44e8da0e0e374624fb0a825a231b00c537"
+  version = "v1.0.0"
+
+[[projects]]
+  digest = "1:2a7e6f8bebdca6bd8bc359c37f01ae1c4ea4f8481eaabf93b1ae4863f15b72c7"
+  name = "github.com/mitchellh/reflectwalk"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "3e2c75dfad4fbf904b58782a80fd595c760ad185"
+  version = "v1.0.1"
 
 [[projects]]
   digest = "1:cf31692c14422fa27c83a05292eb5cbe0fb2775972e8f1f8446a71549bd8980b"
@@ -199,19 +205,19 @@
     "scrypt",
   ]
   pruneopts = "UT"
-  revision = "fa1a291087948aa85c6e20c1b3749a02403ffc1b"
+  revision = "34f69633bfdcf9db92f698f8487115767eebef81"
 
 [[projects]]
   branch = "master"
-  digest = "1:1b90e63244513e8514749f45da58e89350d35cb3e12416ce6ed95f41c2a1f177"
+  digest = "1:b019c2a549aa9885670e4eeb3fd88b7884c3b3be4b2a79afa75167009292bb35"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "2837fb4f24fee082b8c39b1a6dc9e0ed9f3fbd4f"
+  revision = "ef33b2fb2c414dca4bfcf6ca59cbd1d9ad00703d"
 
 [[projects]]
   branch = "master"
-  digest = "1:a5a274657f09a884d261a8c411b468bb0214de791fb9f1d5419b91514eeed03d"
+  digest = "1:ef4d8c35d3c083b4a4e5f6057d37145acda78d7d154937d519bfc6e0bb089d22"
   name = "golang.org/x/tools"
   packages = [
     "cmd/goimports",
@@ -228,28 +234,29 @@
     "internal/semver",
   ]
   pruneopts = "UT"
-  revision = "ea99b82c7b93d10d6b83cfbb3543a570b10dd0ac"
+  revision = "6536af71d98a5bb8f2cbd2f5e62afc2f6cc93dbb"
 
 [[projects]]
-  digest = "1:4d2e5a73dc1500038e504a8d78b986630e3626dc027bc030ba5c75da257cdb96"
+  digest = "1:59f10c1537d2199d9115d946927fe31165959a95190849c82ff11e05803528b0"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   pruneopts = "UT"
-  revision = "51d6538a90f86fe93ac480b35f37b2be17fef232"
-  version = "v2.2.2"
+  revision = "f221b8435cfb71e54062f6c6e99e9ade30b124d5"
+  version = "v2.2.4"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
     "github.com/Masterminds/sprig",
+    "github.com/avast/retry-go",
     "github.com/dgrijalva/jwt-go",
     "github.com/google/uuid",
     "github.com/kisielk/errcheck",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
-    "github.com/kyma-incubator/compass/components/director/pkg/scope",
     "github.com/machinebox/graphql",
     "github.com/pkg/errors",
+    "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/require",
     "golang.org/x/tools/cmd/goimports",
