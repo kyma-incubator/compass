@@ -35,7 +35,7 @@ func (m *mapperForSystemAuth) GetTenantAndScopes(ctx context.Context, reqData Re
 		return "", "", errors.Wrap(err, "while getting reference object type")
 	}
 
-	var tenantAndScopesFunc func(sysAuth *model.SystemAuth, reqData ReqData, authFlow AuthFlow) (string, string, error)
+	var tenantAndScopesFunc func(sysAuth *model.SystemAuth, refObjType model.SystemAuthReferenceObjectType, reqData ReqData, authFlow AuthFlow) (string, string, error)
 	switch refObjType {
 	case model.IntegrationSystemReference:
 		tenantAndScopesFunc = m.getTenantAndScopesForIntegrationSystem
@@ -45,10 +45,10 @@ func (m *mapperForSystemAuth) GetTenantAndScopes(ctx context.Context, reqData Re
 		break
 	}
 
-	return tenantAndScopesFunc(sysAuth, reqData, authFlow)
+	return tenantAndScopesFunc(sysAuth, refObjType, reqData, authFlow)
 }
 
-func (m *mapperForSystemAuth) getTenantAndScopesForIntegrationSystem(sysAuth *model.SystemAuth, reqData ReqData, authFlow AuthFlow) (string, string, error) {
+func (m *mapperForSystemAuth) getTenantAndScopesForIntegrationSystem(sysAuth *model.SystemAuth, refObjType model.SystemAuthReferenceObjectType, reqData ReqData, authFlow AuthFlow) (string, string, error) {
 	var tenant, scopes string
 
 	tenant, err := reqData.GetTenantID()
@@ -64,7 +64,7 @@ func (m *mapperForSystemAuth) getTenantAndScopesForIntegrationSystem(sysAuth *mo
 	return tenant, scopes, nil
 }
 
-func (m *mapperForSystemAuth) getTenantAndScopesForApplicationOrRuntime(sysAuth *model.SystemAuth, reqData ReqData, authFlow AuthFlow) (string, string, error) {
+func (m *mapperForSystemAuth) getTenantAndScopesForApplicationOrRuntime(sysAuth *model.SystemAuth, refObjType model.SystemAuthReferenceObjectType, reqData ReqData, authFlow AuthFlow) (string, string, error) {
 	var tenant, scopes string
 	hasTenant := true
 
@@ -91,11 +91,6 @@ func (m *mapperForSystemAuth) getTenantAndScopesForApplicationOrRuntime(sysAuth 
 	}
 
 	if authFlow.IsCertFlow() {
-		refObjType, err := sysAuth.GetReferenceObjectType()
-		if err != nil {
-			return "", "", errors.Wrap(err, "while getting reference object type")
-		}
-
 		declaredScopes, err := m.scopesGetter.GetRequiredScopes(buildPath(refObjType))
 		if err != nil {
 			return "", "", errors.Wrap(err, "while fetching scopes")

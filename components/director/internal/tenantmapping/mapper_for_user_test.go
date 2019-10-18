@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetTenantAndScopes(t *testing.T) {
+func TestMapperForUserGetTenantAndScopes(t *testing.T) {
 	t.Run("GetTenantAndScopes returns tenant and scopes that are defined in the Extra map of ReqData", func(t *testing.T) {
 		expectedTenantID := uuid.New()
 		expectedScopes := "application:read"

@@ -17,27 +17,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// import (
-// 	"bytes"
-// 	"io/ioutil"
-// 	"net/http"
-// 	"net/http/httptest"
-// 	"strings"
-// 	"testing"
-
-// 	"github.com/google/uuid"
-// 	"github.com/kyma-incubator/compass/components/director/internal/model"
-// 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
-// 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping/automock"
-// 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-// 	"github.com/pkg/errors"
-// 	"github.com/stretchr/testify/mock"
-// 	"github.com/stretchr/testify/require"
-
-// 	systemauthmock "github.com/kyma-incubator/compass/components/director/internal/domain/systemauth/automock"
-//
-// )
-
 func TestHandler(t *testing.T) {
 	tenantID := uuid.New()
 	systemAuthID := uuid.New()
@@ -244,29 +223,3 @@ func getTransactMock() *persistencemock.Transactioner {
 
 	return transact
 }
-
-// func getSystemAuthSvcMock() *systemauthmock.SystemAuthService {
-// 	svc := &systemauthmock.SystemAuthService{}
-// 	return svc
-// }
-
-// func getSystemAuthApplicationInstanceMock(id, tenantID string) *model.SystemAuth {
-// 	return &model.SystemAuth{
-// 		ID:       id,
-// 		TenantID: tenantID,
-// 		AppID:    str.Ptr("554cd88b-8ef5-4fb7-a87a-89e2310c5994"),
-// 	}
-// }
-
-// func getSystemAuthIntegrationSystemInstanceMock(id string) *model.SystemAuth {
-// 	return &model.SystemAuth{
-// 		ID:                  id,
-// 		TenantID:            "",
-// 		IntegrationSystemID: str.Ptr("554cd88b-8ef5-4fb7-a87a-89e2310c5994"),
-// 	}
-// }
-
-// func getScopesGetterMock() *automock.ScopesGetter {
-// 	scopesGetter := &automock.ScopesGetter{}
-// 	return scopesGetter
-// }

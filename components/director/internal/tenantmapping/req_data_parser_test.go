@@ -15,7 +15,7 @@ func TestParse(t *testing.T) {
 	t.Run("return error when request body is empty", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", bytes.NewReader(nil))
 
-		parser := reqDataParser{}
+		parser := NewReqDataParser()
 
 		_, err := parser.Parse(req)
 
@@ -25,7 +25,7 @@ func TestParse(t *testing.T) {
 	t.Run("return error when request body is empty", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", bytes.NewReader([]byte{1, 2, 3}))
 
-		parser := reqDataParser{}
+		parser := NewReqDataParser()
 
 		_, err := parser.Parse(req)
 
@@ -38,7 +38,7 @@ func TestParse(t *testing.T) {
 		reqPayload := `{"Extra": {"client_id": "` + systemAuthID.String() + `", "name": "` + username + `"}, "Header": {"Client-Id-From-Certificate": ["` + systemAuthID.String() + `"]}}`
 		req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", strings.NewReader(reqPayload))
 
-		parser := reqDataParser{}
+		parser := NewReqDataParser()
 
 		reqData, err := parser.Parse(req)
 
@@ -52,7 +52,7 @@ func TestParse(t *testing.T) {
 		reqPayload := `{}`
 		req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", strings.NewReader(reqPayload))
 
-		parser := reqDataParser{}
+		parser := NewReqDataParser()
 
 		reqData, err := parser.Parse(req)
 
