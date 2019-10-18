@@ -34,7 +34,7 @@ func TestGenerateClientCredentialsToIntegrationSystem(t *testing.T) {
 	//THEN
 	t.Log("Check if client credentials were generated")
 	assert.NotEmpty(t, intSysAuth.Auth.Credential)
-	oauthCredentialData, ok := intSysAuth.Auth.Credential.(graphql.OAuthCredentialData)
+	oauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
 	assert.NotEmpty(t, oauthCredentialData.ClientID)
 	assert.NotEmpty(t, oauthCredentialData.ClientSecret)
@@ -67,7 +67,7 @@ func TestGenerateClientCredentialsToApplication(t *testing.T) {
 
 	t.Log("Check if client credentials were generated")
 	assert.NotEmpty(t, app.Auths[0].Auth.Credential)
-	oauthCredentialData, ok := app.Auths[0].Auth.Credential.(graphql.OAuthCredentialData)
+	oauthCredentialData, ok := app.Auths[0].Auth.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
 	assert.NotEmpty(t, oauthCredentialData.ClientID)
 	assert.NotEmpty(t, oauthCredentialData.ClientSecret)
@@ -99,7 +99,7 @@ func TestGenerateClientCredentialsToRuntime(t *testing.T) {
 
 	t.Log("Check if client credentials were generated")
 	assert.NotEmpty(t, rtm.Auths[0].Auth)
-	oauthCredentialData, ok := rtm.Auths[0].Auth.Credential.(graphql.OAuthCredentialData)
+	oauthCredentialData, ok := rtm.Auths[0].Auth.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
 	assert.NotEmpty(t, oauthCredentialData.ClientID)
 	assert.NotEmpty(t, oauthCredentialData.ClientSecret)
