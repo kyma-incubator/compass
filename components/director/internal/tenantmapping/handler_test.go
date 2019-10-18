@@ -21,86 +21,6 @@ func TestHandler(t *testing.T) {
 	tenantID := uuid.New()
 	systemAuthID := uuid.New()
 
-	t.Run("error when sending different HTTP verb than POST", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "http://example.com/foo", strings.NewReader(""))
-		w := httptest.NewRecorder()
-
-		handler := tenantmapping.NewHandler(nil, nil, nil, nil)
-		handler.ServeHTTP(w, req)
-
-		resp := w.Result()
-		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
-		body, err := ioutil.ReadAll(resp.Body)
-		require.NoError(t, err)
-
-		require.Equal(t, "Bad request method. Got GET, expected POST", strings.TrimSpace(string(body)))
-	})
-
-	t.Run("error when body parser returns error", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", strings.NewReader(""))
-		w := httptest.NewRecorder()
-
-		reqDataParserMock := &automock.ReqDataParser{}
-		reqDataParserMock.On("Parse", mock.Anything).Return(tenantmapping.ReqData{}, errors.New("some error")).Once()
-
-		handler := tenantmapping.NewHandler(reqDataParserMock, nil, nil, nil)
-		handler.ServeHTTP(w, req)
-
-		resp := w.Result()
-		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
-		body, err := ioutil.ReadAll(resp.Body)
-		require.NoError(t, err)
-
-		require.Equal(t, "while parsing the request: some error", strings.TrimSpace(string(body)))
-
-		mock.AssertExpectationsForObjects(t, reqDataParserMock)
-	})
-
-	t.Run("error when transaction begin fails", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", strings.NewReader("{}"))
-		w := httptest.NewRecorder()
-
-		reqDataParserMock := &automock.ReqDataParser{}
-		reqDataParserMock.On("Parse", mock.Anything).Return(tenantmapping.ReqData{}, nil).Once()
-
-		transactMock := &persistencemock.Transactioner{}
-		transactMock.On("Begin").Return(nil, errors.New("some error")).Once()
-
-		handler := tenantmapping.NewHandler(reqDataParserMock, transactMock, nil, nil)
-		handler.ServeHTTP(w, req)
-
-		resp := w.Result()
-		require.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-		body, err := ioutil.ReadAll(resp.Body)
-		require.NoError(t, err)
-
-		require.Equal(t, "while opening the db transaction: some error", strings.TrimSpace(string(body)))
-
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, transactMock)
-	})
-
-	t.Run("error when GetAuthID returns error when looking for Auth ID", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", strings.NewReader(""))
-		w := httptest.NewRecorder()
-
-		reqDataParserMock := &automock.ReqDataParser{}
-		reqDataParserMock.On("Parse", mock.Anything).Return(tenantmapping.ReqData{}, nil).Once()
-
-		transactMock := getTransactMock()
-
-		handler := tenantmapping.NewHandler(reqDataParserMock, transactMock, nil, nil)
-		handler.ServeHTTP(w, req)
-
-		resp := w.Result()
-		require.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-		body, err := ioutil.ReadAll(resp.Body)
-		require.NoError(t, err)
-
-		require.Equal(t, "while looking for tenant and scopes data: while determining the auth ID from the request: unable to find valid auth ID", strings.TrimSpace(string(body)))
-
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, transactMock)
-	})
-
 	t.Run("success for the request parsed as JWT flow", func(t *testing.T) {
 		username := "admin"
 		scopes := "application:read"
@@ -200,6 +120,86 @@ func TestHandler(t *testing.T) {
 		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
 
 		mock.AssertExpectationsForObjects(t, reqDataParserMock, transactMock, mapperForSystemAuthMock)
+	})
+
+	t.Run("error when sending different HTTP verb than POST", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "http://example.com/foo", strings.NewReader(""))
+		w := httptest.NewRecorder()
+
+		handler := tenantmapping.NewHandler(nil, nil, nil, nil)
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		require.Equal(t, "Bad request method. Got GET, expected POST", strings.TrimSpace(string(body)))
+	})
+
+	t.Run("error when body parser returns error", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", strings.NewReader(""))
+		w := httptest.NewRecorder()
+
+		reqDataParserMock := &automock.ReqDataParser{}
+		reqDataParserMock.On("Parse", mock.Anything).Return(tenantmapping.ReqData{}, errors.New("some error")).Once()
+
+		handler := tenantmapping.NewHandler(reqDataParserMock, nil, nil, nil)
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		require.Equal(t, "while parsing the request: some error", strings.TrimSpace(string(body)))
+
+		mock.AssertExpectationsForObjects(t, reqDataParserMock)
+	})
+
+	t.Run("error when transaction begin fails", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", strings.NewReader("{}"))
+		w := httptest.NewRecorder()
+
+		reqDataParserMock := &automock.ReqDataParser{}
+		reqDataParserMock.On("Parse", mock.Anything).Return(tenantmapping.ReqData{}, nil).Once()
+
+		transactMock := &persistencemock.Transactioner{}
+		transactMock.On("Begin").Return(nil, errors.New("some error")).Once()
+
+		handler := tenantmapping.NewHandler(reqDataParserMock, transactMock, nil, nil)
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		require.Equal(t, "while opening the db transaction: some error", strings.TrimSpace(string(body)))
+
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, transactMock)
+	})
+
+	t.Run("error when GetAuthID returns error when looking for Auth ID", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", strings.NewReader(""))
+		w := httptest.NewRecorder()
+
+		reqDataParserMock := &automock.ReqDataParser{}
+		reqDataParserMock.On("Parse", mock.Anything).Return(tenantmapping.ReqData{}, nil).Once()
+
+		transactMock := getTransactMock()
+
+		handler := tenantmapping.NewHandler(reqDataParserMock, transactMock, nil, nil)
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		require.Equal(t, "while looking for tenant and scopes data: while determining the auth ID from the request: unable to find valid auth ID", strings.TrimSpace(string(body)))
+
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, transactMock)
 	})
 }
 

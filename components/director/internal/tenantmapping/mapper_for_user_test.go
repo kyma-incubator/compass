@@ -15,7 +15,7 @@ import (
 )
 
 func TestMapperForUserGetTenantAndScopes(t *testing.T) {
-	t.Run("GetTenantAndScopes returns tenant and scopes that are defined in the Extra map of ReqData", func(t *testing.T) {
+	t.Run("returns tenant and scopes that are defined in the Extra map of ReqData", func(t *testing.T) {
 		expectedTenantID := uuid.New()
 		expectedScopes := "application:read"
 		reqData := tenantmapping.ReqData{
@@ -32,7 +32,7 @@ func TestMapperForUserGetTenantAndScopes(t *testing.T) {
 		require.Equal(t, expectedScopes, scopes)
 	})
 
-	t.Run("GetTenantAndScopes returns tenant and scopes that are defined in the Header map of ReqData", func(t *testing.T) {
+	t.Run("returns tenant and scopes that are defined in the Header map of ReqData", func(t *testing.T) {
 		expectedTenantID := uuid.New()
 		expectedScopes := "application:read"
 		reqData := tenantmapping.ReqData{
@@ -49,7 +49,7 @@ func TestMapperForUserGetTenantAndScopes(t *testing.T) {
 		require.Equal(t, expectedScopes, scopes)
 	})
 
-	t.Run("GetTenantAndScopes returns tenant which is defined in the Extra map and scopes which is defined in the Header map of ReqData", func(t *testing.T) {
+	t.Run("returns tenant which is defined in the Extra map and scopes which is defined in the Header map of ReqData", func(t *testing.T) {
 		expectedTenantID := uuid.New()
 		expectedScopes := "application:read"
 		reqData := tenantmapping.ReqData{
@@ -68,7 +68,7 @@ func TestMapperForUserGetTenantAndScopes(t *testing.T) {
 		require.Equal(t, expectedScopes, scopes)
 	})
 
-	t.Run("GetTenantAndScopes returns tenant which is defined in the Header map and scopes which is defined in the Extra map of ReqData", func(t *testing.T) {
+	t.Run("returns tenant which is defined in the Header map and scopes which is defined in the Extra map of ReqData", func(t *testing.T) {
 		expectedTenantID := uuid.New()
 		expectedScopes := "application:read"
 		reqData := tenantmapping.ReqData{
@@ -87,47 +87,36 @@ func TestMapperForUserGetTenantAndScopes(t *testing.T) {
 		require.Equal(t, expectedScopes, scopes)
 	})
 
-	t.Run("GetTenantAndScopes returns error when tenant is specified in Extra map in a non-string format", func(t *testing.T) {
+	t.Run("returns scopes defined on the StaticUser and tenant from the request", func(t *testing.T) {
+		username := "some-user"
+		expectedTenantID := uuid.New()
+		expectedScopes := []string{"application:read"}
 		reqData := tenantmapping.ReqData{
 			Extra: map[string]interface{}{
-				tenantmapping.TenantKey: []byte{1, 2, 3},
+				tenantmapping.TenantKey: expectedTenantID.String(),
 			},
 		}
-		mapper := tenantmapping.NewMapperForUser(nil)
-		_, _, err := mapper.GetTenantAndScopes(reqData, "admin")
-
-		require.EqualError(t, err, "while fetching tenant: while parsing the value for tenant: unable to cast the value to a string type")
-	})
-
-	t.Run("GetTenantAndScopes returns error when scopes is specified in Extra map in a non-string format", func(t *testing.T) {
-		reqData := tenantmapping.ReqData{
-			Extra: map[string]interface{}{
-				tenantmapping.ScopesKey: []byte{1, 2, 3},
-			},
+		staticUser := tenantmapping.StaticUser{
+			Username: username,
+			Tenant:   uuid.New(),
+			Scopes:   expectedScopes,
 		}
-		mapper := tenantmapping.NewMapperForUser(nil)
-		_, _, err := mapper.GetTenantAndScopes(reqData, "admin")
-
-		require.EqualError(t, err, "while fetching scopes: while parsing the value for scope: unable to cast the value to a string type")
-	})
-
-	t.Run("GetTenantAndScopes returns error when no tenant and scopes are defined in the request and user repo returns error", func(t *testing.T) {
-		reqData := tenantmapping.ReqData{}
-		username := "non-existing"
 
 		staticUserRepoMock := getStaticUserRepoMock()
-		staticUserRepoMock.On("Get", username).Return(tenantmapping.StaticUser{}, errors.New("some-error")).Once()
+		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
 
 		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock)
 
-		_, _, err := mapper.GetTenantAndScopes(reqData, username)
+		tenant, scopes, err := mapper.GetTenantAndScopes(reqData, username)
 
-		require.EqualError(t, err, "while searching for a static user with username non-existing: some-error")
+		require.NoError(t, err)
+		require.Equal(t, expectedTenantID.String(), tenant)
+		require.Equal(t, strings.Join(expectedScopes, " "), scopes)
 
 		mock.AssertExpectationsForObjects(t, staticUserRepoMock)
 	})
 
-	t.Run("GetTenantAndScopes returns tenant and scopes defined on the StaticUser when both are not defined in the request", func(t *testing.T) {
+	t.Run("returns tenant and scopes defined on the StaticUser when both are not defined in the request", func(t *testing.T) {
 		reqData := tenantmapping.ReqData{}
 		username := "some-user"
 		expectedTenantID := uuid.New()
@@ -152,7 +141,7 @@ func TestMapperForUserGetTenantAndScopes(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, staticUserRepoMock)
 	})
 
-	t.Run("GetTenantAndScopes returns tenant defined on the StaticUser and scopes from the request", func(t *testing.T) {
+	t.Run("returns tenant defined on the StaticUser and scopes from the request", func(t *testing.T) {
 		username := "some-user"
 		expectedTenantID := uuid.New()
 		expectedScopes := []string{"runtime:read"}
@@ -181,31 +170,42 @@ func TestMapperForUserGetTenantAndScopes(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, staticUserRepoMock)
 	})
 
-	t.Run("GetTenantAndScopes returns scopes defined on the StaticUser and tenant from the request", func(t *testing.T) {
-		username := "some-user"
-		expectedTenantID := uuid.New()
-		expectedScopes := []string{"application:read"}
+	t.Run("returns error when tenant is specified in Extra map in a non-string format", func(t *testing.T) {
 		reqData := tenantmapping.ReqData{
 			Extra: map[string]interface{}{
-				tenantmapping.TenantKey: expectedTenantID.String(),
+				tenantmapping.TenantKey: []byte{1, 2, 3},
 			},
 		}
-		staticUser := tenantmapping.StaticUser{
-			Username: username,
-			Tenant:   uuid.New(),
-			Scopes:   expectedScopes,
+		mapper := tenantmapping.NewMapperForUser(nil)
+		_, _, err := mapper.GetTenantAndScopes(reqData, "admin")
+
+		require.EqualError(t, err, "while fetching tenant: while parsing the value for tenant: unable to cast the value to a string type")
+	})
+
+	t.Run("returns error when scopes is specified in Extra map in a non-string format", func(t *testing.T) {
+		reqData := tenantmapping.ReqData{
+			Extra: map[string]interface{}{
+				tenantmapping.ScopesKey: []byte{1, 2, 3},
+			},
 		}
+		mapper := tenantmapping.NewMapperForUser(nil)
+		_, _, err := mapper.GetTenantAndScopes(reqData, "admin")
+
+		require.EqualError(t, err, "while fetching scopes: while parsing the value for scope: unable to cast the value to a string type")
+	})
+
+	t.Run("returns error when no tenant and scopes are defined in the request and user repo returns error", func(t *testing.T) {
+		reqData := tenantmapping.ReqData{}
+		username := "non-existing"
 
 		staticUserRepoMock := getStaticUserRepoMock()
-		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
+		staticUserRepoMock.On("Get", username).Return(tenantmapping.StaticUser{}, errors.New("some-error")).Once()
 
 		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock)
 
-		tenant, scopes, err := mapper.GetTenantAndScopes(reqData, username)
+		_, _, err := mapper.GetTenantAndScopes(reqData, username)
 
-		require.NoError(t, err)
-		require.Equal(t, expectedTenantID.String(), tenant)
-		require.Equal(t, strings.Join(expectedScopes, " "), scopes)
+		require.EqualError(t, err, "while searching for a static user with username non-existing: some-error")
 
 		mock.AssertExpectationsForObjects(t, staticUserRepoMock)
 	})

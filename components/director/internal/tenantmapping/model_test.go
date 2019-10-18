@@ -37,7 +37,7 @@ func TestAuthFlow(t *testing.T) {
 }
 
 func TestReqData_GetAuthID(t *testing.T) {
-	t.Run("GetAuthID returns ID string and JWTAuthFlow when a name is specified in the Extra map", func(t *testing.T) {
+	t.Run("returns ID string and JWTAuthFlow when a name is specified in the Extra map", func(t *testing.T) {
 		username := "some-username"
 		reqData := ReqData{
 			Extra: map[string]interface{}{
@@ -52,7 +52,7 @@ func TestReqData_GetAuthID(t *testing.T) {
 		require.Equal(t, authID, username)
 	})
 
-	t.Run("GetAuthID returns ID string and OAuth2Flow when a client_id is specified in the Extra map", func(t *testing.T) {
+	t.Run("returns ID string and OAuth2Flow when a client_id is specified in the Extra map", func(t *testing.T) {
 		clientID := "de766a55-3abb-4480-8d4a-6d255990b159"
 		reqData := ReqData{
 			Extra: map[string]interface{}{
@@ -67,7 +67,7 @@ func TestReqData_GetAuthID(t *testing.T) {
 		require.Equal(t, clientID, authID)
 	})
 
-	t.Run("GetAuthID returns ID string and CertificateFlow when a client-id-from-certificate is specified in the Header map", func(t *testing.T) {
+	t.Run("returns ID string and CertificateFlow when a client-id-from-certificate is specified in the Header map", func(t *testing.T) {
 		clientID := "de766a55-3abb-4480-8d4a-6d255990b159"
 		reqData := ReqData{
 			Header: http.Header{
@@ -82,7 +82,7 @@ func TestReqData_GetAuthID(t *testing.T) {
 		require.Equal(t, clientID, authID)
 	})
 
-	t.Run("GetAuthID returns error when no ID string is specified in one of known fields", func(t *testing.T) {
+	t.Run("returns error when no ID string is specified in one of known fields", func(t *testing.T) {
 		reqData := ReqData{}
 
 		_, _, err := reqData.GetAuthID()
@@ -90,7 +90,7 @@ func TestReqData_GetAuthID(t *testing.T) {
 		require.EqualError(t, err, "unable to find valid auth ID")
 	})
 
-	t.Run("GetAuthID returns error when client_id is specified in Extra map in a non-string format", func(t *testing.T) {
+	t.Run("returns error when client_id is specified in Extra map in a non-string format", func(t *testing.T) {
 		reqData := ReqData{
 			Extra: map[string]interface{}{
 				ClientIDKey: []byte{1, 2, 3},
@@ -102,7 +102,7 @@ func TestReqData_GetAuthID(t *testing.T) {
 		require.EqualError(t, err, "while parsing the value for client_id: unable to cast the value to a string type")
 	})
 
-	t.Run("GetAuthID returns error when a name is specified in Extra map in a non-string format", func(t *testing.T) {
+	t.Run("returns error when a name is specified in Extra map in a non-string format", func(t *testing.T) {
 		reqData := ReqData{
 			Extra: map[string]interface{}{
 				UsernameKey: []byte{1, 2, 3},
@@ -115,8 +115,8 @@ func TestReqData_GetAuthID(t *testing.T) {
 	})
 }
 
-func TestGetTenantID(t *testing.T) {
-	t.Run("GetTenantID returns tenant ID when it is specified in the Header map", func(t *testing.T) {
+func TestReqData_GetTenantID(t *testing.T) {
+	t.Run("returns tenant ID when it is specified in the Header map", func(t *testing.T) {
 		expectedTenant := "f640a8e6-2ce4-450c-bd1c-cba9397f9d79"
 		reqData := ReqData{
 			Header: http.Header{
@@ -130,7 +130,7 @@ func TestGetTenantID(t *testing.T) {
 		require.Equal(t, expectedTenant, tenant)
 	})
 
-	t.Run("GetTenantID returns tenant ID when it is specified in the Extra map", func(t *testing.T) {
+	t.Run("returns tenant ID when it is specified in the Extra map", func(t *testing.T) {
 		expectedTenant := "f640a8e6-2ce4-450c-bd1c-cba9397f9d79"
 		reqData := ReqData{
 			Extra: map[string]interface{}{
@@ -144,7 +144,7 @@ func TestGetTenantID(t *testing.T) {
 		require.Equal(t, expectedTenant, tenant)
 	})
 
-	t.Run("GetTenantID returns error when tenant ID is specified in Extra map in a non-string format", func(t *testing.T) {
+	t.Run("returns error when tenant ID is specified in Extra map in a non-string format", func(t *testing.T) {
 		reqData := ReqData{
 			Extra: map[string]interface{}{
 				TenantKey: []byte{1, 2, 3},
@@ -156,7 +156,7 @@ func TestGetTenantID(t *testing.T) {
 		require.EqualError(t, err, "while parsing the value for tenant: unable to cast the value to a string type")
 	})
 
-	t.Run("GetTenantID returns error when tenant ID is not specified", func(t *testing.T) {
+	t.Run("returns error when tenant ID is not specified", func(t *testing.T) {
 		reqData := ReqData{}
 
 		_, err := reqData.GetTenantID()
@@ -167,8 +167,8 @@ func TestGetTenantID(t *testing.T) {
 	})
 }
 
-func TestGetScopes(t *testing.T) {
-	t.Run("GetScopes returns scopes string when it is specified in the Header map", func(t *testing.T) {
+func TestReqData_GetScopes(t *testing.T) {
+	t.Run("returns scopes string when it is specified in the Header map", func(t *testing.T) {
 		expectedScopes := "applications:write runtimes:write"
 		reqData := ReqData{
 			Header: http.Header{
@@ -182,7 +182,7 @@ func TestGetScopes(t *testing.T) {
 		require.Equal(t, expectedScopes, scopes)
 	})
 
-	t.Run("GetScopes returns scopes string when it is specified in the Extra map", func(t *testing.T) {
+	t.Run("returns scopes string when it is specified in the Extra map", func(t *testing.T) {
 		expectedScopes := "applications:write runtimes:write"
 		reqData := ReqData{
 			Extra: map[string]interface{}{
@@ -196,7 +196,7 @@ func TestGetScopes(t *testing.T) {
 		require.Equal(t, expectedScopes, scopes)
 	})
 
-	t.Run("GetScopes returns error when scopes value is specified in Extra map in a non-string format", func(t *testing.T) {
+	t.Run("returns error when scopes value is specified in Extra map in a non-string format", func(t *testing.T) {
 		reqData := ReqData{
 			Extra: map[string]interface{}{
 				ScopesKey: []byte{1, 2, 3},
@@ -208,7 +208,7 @@ func TestGetScopes(t *testing.T) {
 		require.EqualError(t, err, "while parsing the value for scope: unable to cast the value to a string type")
 	})
 
-	t.Run("GetScopes returns error when scopes value is not specified", func(t *testing.T) {
+	t.Run("returns error when scopes value is not specified", func(t *testing.T) {
 		reqData := ReqData{}
 
 		_, err := reqData.GetScopes()
