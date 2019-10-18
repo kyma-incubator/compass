@@ -21,7 +21,6 @@ Below you can find a list of mock GraphQL queries and mutations:
 - [delete integration system](./delete-integration-system.graphql)
 - [delete label definition](./delete-label-definition.graphql)
 - [delete runtime](./delete-runtime.graphql)
-- [get integration system](./get-integration-system.graphql)
 - [get many integration systems](./get-many-integration-systems.graphql)
 - [query api runtime auths](./query-api-runtime-auths.graphql)
 - [query api](./query-api.graphql)

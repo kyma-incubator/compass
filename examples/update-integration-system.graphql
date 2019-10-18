@@ -2,7 +2,7 @@
 mutation {
   result: updateIntegrationSystem(
     id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-    in: { name: "new-int-system" }
+    in: { name: "new-int-system", description: "new description" }
   ) {
     id
     name
