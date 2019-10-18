@@ -58,12 +58,12 @@ func TestGenerateClientCredentialsToApplication(t *testing.T) {
 	t.Log("Generate client credentials for application")
 	err := tc.RunOperation(ctx, generateApplicationClientCredentialsRequest, &appAuth)
 	require.NoError(t, err)
-	defer deleteSystemAuthForApplication(t, ctx, app.ID)
 
 	//THEN
 	t.Log("Get updated application")
 	app = getApplication(t, ctx, app.ID)
 	require.NotEmpty(t, app.Auths)
+	defer deleteSystemAuthForApplication(t, ctx, app.Auths[0].ID)
 
 	t.Log("Check if client credentials were generated")
 	assert.NotEmpty(t, app.Auths[0].Auth.Credential)
@@ -91,11 +91,12 @@ func TestGenerateClientCredentialsToRuntime(t *testing.T) {
 	t.Log("Generate client credentials for runtime")
 	err := tc.RunOperation(ctx, generateRuntimeClientCredentialsRequest, &rtmAuth)
 	require.NoError(t, err)
-	defer deleteSystemAuthForApplication(t, ctx, rtm.ID)
 
 	//THEN
 	t.Log("Get updated runtime")
 	rtm = getRuntime(t, ctx, rtm.ID)
+	require.NotEmpty(t, rtm.Auths)
+	defer deleteSystemAuthForRuntime(t, ctx, rtm.Auths[0].ID)
 
 	t.Log("Check if client credentials were generated")
 	assert.NotEmpty(t, rtm.Auths[0].Auth)

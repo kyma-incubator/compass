@@ -113,6 +113,12 @@ func deleteRuntimeWithinTenant(t *testing.T, id string, tenantID string) {
 	require.NoError(t, err)
 }
 
+func deleteSystemAuthForRuntime(t *testing.T, ctx context.Context, id string) {
+	req := fixDeleteSystemAuthForRuntime(id)
+	err := tc.RunOperation(ctx, req, nil)
+	require.NoError(t, err)
+}
+
 // Label Definitions
 func createLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, key string, schema interface{}, tenantID string) *graphql.LabelDefinition {
 	input := graphql.LabelDefinitionInput{
