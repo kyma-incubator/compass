@@ -47,19 +47,26 @@ type SystemAuthConverter interface {
 	ToGraphQL(in *model.SystemAuth) *graphql.SystemAuth
 }
 
+//go:generate mockery -name=Oauth20Service -output=automock -outpkg=automock -case=underscore
+type Oauth20Service interface {
+	DeleteClientCredentials(ctx context.Context, clientID string) error
+}
+
 type Resolver struct {
 	transact    persistence.Transactioner
 	svc         RuntimeService
 	sysAuthSvc  SystemAuthService
 	converter   RuntimeConverter
 	sysAuthConv SystemAuthConverter
+	oauth20Svc  Oauth20Service
 }
 
-func NewResolver(transact persistence.Transactioner, svc RuntimeService, sysAuthSvc SystemAuthService, conv RuntimeConverter, sysAuthConv SystemAuthConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc RuntimeService, sysAuthSvc SystemAuthService, oauthSvc Oauth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter) *Resolver {
 	return &Resolver{
 		transact:    transact,
 		svc:         svc,
 		sysAuthSvc:  sysAuthSvc,
+		oauth20Svc:  oauthSvc,
 		converter:   conv,
 		sysAuthConv: sysAuthConv,
 	}
@@ -207,6 +214,20 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 	runtime, err := r.svc.Get(ctx, id)
 	if err != nil {
 		return nil, err
+	}
+
+	auths, err := r.sysAuthSvc.ListForObject(ctx, model.RuntimeReference, runtime.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, auth := range auths {
+		if auth.Value.Credential.Oauth != nil {
+			err := r.oauth20Svc.DeleteClientCredentials(ctx, auth.Value.Credential.Oauth.ClientID)
+			if err != nil {
+				return nil, errors.Wrap(err, "while deleting OAuth 2.0 client")
+			}
+		}
 	}
 
 	deletedRuntime := r.converter.ToGraphQL(runtime)
