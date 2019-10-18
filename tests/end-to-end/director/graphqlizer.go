@@ -317,9 +317,6 @@ func (g *graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	fm["CredentialDataInputToGQL"] = g.CredentialDataInputToGQL
 	fm["CSRFTokenCredentialRequestAuthInputToGQL"] = g.CSRFTokenCredentialRequestAuthInputToGQL
 	fm["CredentialRequestAuthInputToGQL"] = g.CredentialRequestAuthInputToGQL
-	fm["LabelDefinitionInputToGQL"] = g.LabelDefinitionInputToGQL
-	fm["LabelFilterToGQL"] = g.LabelFilterToGQL
-	fm["IntegrationSystemToGQL"] = g.IntegrationSystemInputToGQL
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)
 	if err != nil {

@@ -58,10 +58,13 @@ func TestGenerateClientCredentialsToApplication(t *testing.T) {
 	t.Log("Generate client credentials for application")
 	err := tc.RunOperation(ctx, generateApplicationClientCredentialsRequest, &appAuth)
 	require.NoError(t, err)
-	require.NotEmpty(t, app.Auths)
 	defer deleteSystemAuthForApplication(t, ctx, app.ID)
 
 	//THEN
+	t.Log("Get updated application")
+	app = getApplication(t, ctx, app.ID)
+	require.NotEmpty(t, app.Auths)
+
 	t.Log("Check if client credentials were generated")
 	assert.NotEmpty(t, app.Auths[0].Auth.Credential)
 	oauthCredentialData, ok := app.Auths[0].Auth.Credential.(graphql.OAuthCredentialData)
@@ -88,12 +91,14 @@ func TestGenerateClientCredentialsToRuntime(t *testing.T) {
 	t.Log("Generate client credentials for runtime")
 	err := tc.RunOperation(ctx, generateRuntimeClientCredentialsRequest, &rtmAuth)
 	require.NoError(t, err)
-	require.NotEmpty(t, rtm.Auths[0].Auth.Credential)
 	defer deleteSystemAuthForApplication(t, ctx, rtm.ID)
 
 	//THEN
+	t.Log("Get updated runtime")
+	rtm = getRuntime(t, ctx, rtm.ID)
+
 	t.Log("Check if client credentials were generated")
-	assert.NotEmpty(t, rtm.Auths[0].Auth.Credential)
+	assert.NotEmpty(t, rtm.Auths[0].Auth)
 	oauthCredentialData, ok := rtm.Auths[0].Auth.Credential.(graphql.OAuthCredentialData)
 	require.True(t, ok)
 	assert.NotEmpty(t, oauthCredentialData.ClientID)
