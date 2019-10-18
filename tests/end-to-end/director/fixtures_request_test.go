@@ -317,7 +317,7 @@ func fixDeleteSystemAuthForApplication(authID string) *gcli.Request {
 			result: deleteSystemAuthForApplication(authID: "%s") {
 					%s
 				}
-			}`, authID, tc.gqlFieldsProvider.ForApplication()))
+			}`, authID, tc.gqlFieldsProvider.ForSystemAuth()))
 }
 
 func fixDeleteSystemAuthForRuntime(authID string) *gcli.Request {
@@ -326,7 +326,7 @@ func fixDeleteSystemAuthForRuntime(authID string) *gcli.Request {
 			result: deleteSystemAuthForRuntime(authID: "%s") {
 					%s
 				}
-			}`, authID, tc.gqlFieldsProvider.ForRuntime()))
+			}`, authID, tc.gqlFieldsProvider.ForSystemAuth()))
 }
 
 func fixDeleteSystemAuthForIntegrationSystem(authID string) *gcli.Request {
@@ -335,7 +335,7 @@ func fixDeleteSystemAuthForIntegrationSystem(authID string) *gcli.Request {
 			result: deleteSystemAuthForIntegrationSystem(authID: "%s") {
 					%s
 				}
-			}`, authID, tc.gqlFieldsProvider.ForIntegrationSystem()))
+			}`, authID, tc.gqlFieldsProvider.ForSystemAuth()))
 }
 
 func removeDoubleQuotesFromJSONKeys(in string) string {
