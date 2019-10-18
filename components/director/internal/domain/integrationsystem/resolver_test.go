@@ -509,7 +509,7 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 
 	modelIntSys := fixModelIntegrationSystem(testID, testName)
 	gqlIntSys := fixGQLIntegrationSystem(testID, testName)
-	testAuth := fixOauth()
+	testAuth := fixOAuth()
 
 	testCases := []struct {
 		Name           string
@@ -845,7 +845,7 @@ func TestResolver_Auths(t *testing.T) {
 	})
 }
 
-func fixOauth() model.SystemAuth {
+func fixOAuth() model.SystemAuth {
 	return model.SystemAuth{
 		ID:       "foo",
 		TenantID: "foo",

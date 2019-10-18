@@ -295,7 +295,7 @@ func TestResolver_DeleteApplication(t *testing.T) {
 	modelApplication := fixModelApplication("foo", "tenant-foo", "Foo", "Bar")
 	gqlApplication := fixGQLApplication("foo", "Foo", "Bar")
 	testErr := errors.New("Test error")
-	testAuth := fixOauth()
+	testAuth := fixOAuth()
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	testCases := []struct {
@@ -304,7 +304,7 @@ func TestResolver_DeleteApplication(t *testing.T) {
 		ServiceFn           func() *automock.ApplicationService
 		ConverterFn         func() *automock.ApplicationConverter
 		SysAuthServiceFn    func() *automock.SystemAuthService
-		Oauth20ServiceFn    func() *automock.Oauth20Service
+		OAuth20ServiceFn    func() *automock.Oauth20Service
 		InputID             string
 		ExpectedApplication *graphql.Application
 		ExpectedErr         error
@@ -328,7 +328,7 @@ func TestResolver_DeleteApplication(t *testing.T) {
 				svc.On("ListForObject", contextParam, model.ApplicationReference, modelApplication.ID).Return(nil, nil)
 				return svc
 			},
-			Oauth20ServiceFn: func() *automock.Oauth20Service {
+			OAuth20ServiceFn: func() *automock.Oauth20Service {
 				svc := &automock.Oauth20Service{}
 				return svc
 			},
@@ -354,7 +354,7 @@ func TestResolver_DeleteApplication(t *testing.T) {
 				svc.On("ListForObject", contextParam, model.ApplicationReference, modelApplication.ID).Return(nil, nil)
 				return svc
 			},
-			Oauth20ServiceFn: func() *automock.Oauth20Service {
+			OAuth20ServiceFn: func() *automock.Oauth20Service {
 				svc := &automock.Oauth20Service{}
 				return svc
 			},
@@ -380,7 +380,7 @@ func TestResolver_DeleteApplication(t *testing.T) {
 				svc.On("ListForObject", contextParam, model.ApplicationReference, modelApplication.ID).Return(nil, nil)
 				return svc
 			},
-			Oauth20ServiceFn: func() *automock.Oauth20Service {
+			OAuth20ServiceFn: func() *automock.Oauth20Service {
 				svc := &automock.Oauth20Service{}
 				return svc
 			},
@@ -404,7 +404,7 @@ func TestResolver_DeleteApplication(t *testing.T) {
 				svc := &automock.SystemAuthService{}
 				return svc
 			},
-			Oauth20ServiceFn: func() *automock.Oauth20Service {
+			OAuth20ServiceFn: func() *automock.Oauth20Service {
 				svc := &automock.Oauth20Service{}
 				return svc
 			},
@@ -427,7 +427,7 @@ func TestResolver_DeleteApplication(t *testing.T) {
 				svc := &automock.SystemAuthService{}
 				return svc
 			},
-			Oauth20ServiceFn: func() *automock.Oauth20Service {
+			OAuth20ServiceFn: func() *automock.Oauth20Service {
 				svc := &automock.Oauth20Service{}
 				return svc
 			},
@@ -452,7 +452,7 @@ func TestResolver_DeleteApplication(t *testing.T) {
 				svc.On("ListForObject", contextParam, model.ApplicationReference, modelApplication.ID).Return(nil, testErr)
 				return svc
 			},
-			Oauth20ServiceFn: func() *automock.Oauth20Service {
+			OAuth20ServiceFn: func() *automock.Oauth20Service {
 				svc := &automock.Oauth20Service{}
 				return svc
 			},
@@ -477,7 +477,7 @@ func TestResolver_DeleteApplication(t *testing.T) {
 				svc.On("ListForObject", contextParam, model.ApplicationReference, modelApplication.ID).Return([]model.SystemAuth{testAuth}, nil)
 				return svc
 			},
-			Oauth20ServiceFn: func() *automock.Oauth20Service {
+			OAuth20ServiceFn: func() *automock.Oauth20Service {
 				svc := &automock.Oauth20Service{}
 				svc.On("DeleteClientCredentials", contextParam, testAuth.Value.Credential.Oauth.ClientID).Return(testErr)
 				return svc
@@ -494,8 +494,8 @@ func TestResolver_DeleteApplication(t *testing.T) {
 			converter := testCase.ConverterFn()
 			persistTx, transact := testCase.TransactionerFn()
 			sysAuthSvc := testCase.SysAuthServiceFn()
-			oauth20Svc := testCase.Oauth20ServiceFn()
-			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, sysAuthSvc, oauth20Svc, nil, nil, nil, nil, nil, nil)
+			oAuth20Svc := testCase.OAuth20ServiceFn()
+			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, sysAuthSvc, oAuth20Svc, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -513,7 +513,7 @@ func TestResolver_DeleteApplication(t *testing.T) {
 			persistTx.AssertExpectations(t)
 			transact.AssertExpectations(t)
 			sysAuthSvc.AssertExpectations(t)
-			oauth20Svc.AssertExpectations(t)
+			oAuth20Svc.AssertExpectations(t)
 		})
 	}
 }
@@ -1664,7 +1664,7 @@ func TestResolver_Auths(t *testing.T) {
 	})
 }
 
-func fixOauth() model.SystemAuth {
+func fixOAuth() model.SystemAuth {
 	return model.SystemAuth{
 		ID:       "foo",
 		TenantID: "foo",

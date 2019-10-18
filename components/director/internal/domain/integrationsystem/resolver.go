@@ -38,8 +38,8 @@ type SystemAuthConverter interface {
 	ToGraphQL(in *model.SystemAuth) *graphql.SystemAuth
 }
 
-//go:generate mockery -name=Oauth20Service -output=automock -outpkg=automock -case=underscore
-type Oauth20Service interface {
+//go:generate mockery -name=OAuth20Service -output=automock -outpkg=automock -case=underscore
+type OAuth20Service interface {
 	DeleteClientCredentials(ctx context.Context, clientID string) error
 }
 
@@ -48,17 +48,17 @@ type Resolver struct {
 
 	intSysSvc        IntegrationSystemService
 	sysAuthSvc       SystemAuthService
-	oauth20Svc       Oauth20Service
+	oAuth20Svc       OAuth20Service
 	intSysConverter  IntegrationSystemConverter
 	sysAuthConverter SystemAuthConverter
 }
 
-func NewResolver(transact persistence.Transactioner, intSysSvc IntegrationSystemService, sysAuthSvc SystemAuthService, oauth20Svc Oauth20Service, intSysConverter IntegrationSystemConverter, sysAuthConverter SystemAuthConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, intSysSvc IntegrationSystemService, sysAuthSvc SystemAuthService, oAuth20Svc OAuth20Service, intSysConverter IntegrationSystemConverter, sysAuthConverter SystemAuthConverter) *Resolver {
 	return &Resolver{
 		transact:         transact,
 		intSysSvc:        intSysSvc,
 		sysAuthSvc:       sysAuthSvc,
-		oauth20Svc:       oauth20Svc,
+		oAuth20Svc:       oAuth20Svc,
 		intSysConverter:  intSysConverter,
 		sysAuthConverter: sysAuthConverter,
 	}
@@ -211,7 +211,7 @@ func (r *Resolver) DeleteIntegrationSystem(ctx context.Context, id string) (*gra
 
 	for _, auth := range auths {
 		if auth.Value.Credential.Oauth != nil {
-			err := r.oauth20Svc.DeleteClientCredentials(ctx, auth.Value.Credential.Oauth.ClientID)
+			err := r.oAuth20Svc.DeleteClientCredentials(ctx, auth.Value.Credential.Oauth.ClientID)
 			if err != nil {
 				return nil, errors.Wrap(err, "while deleting OAuth 2.0 client")
 			}
