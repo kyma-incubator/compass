@@ -88,6 +88,12 @@ func gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfigInput) (model
 		return model.GCPConfig{}, dberrors.Internal("Failed to generate uuid for GardenerConfig: %s.", err)
 	}
 
+	// TODO - Add unit test for this
+	zone := ""
+	if input.Zone != nil {
+		zone = *input.Zone
+	}
+
 	return model.GCPConfig{
 		ID:                id.String(),
 		Name:              input.Name,
@@ -97,7 +103,7 @@ func gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfigInput) (model
 		BootDiskSize:      input.BootDiskSize,
 		MachineType:       input.MachineType,
 		Region:            input.Region,
-		Zone:              *input.Zone,
+		Zone:              zone,
 		ClusterID:         runtimeID,
 	}, nil
 }
