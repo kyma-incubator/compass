@@ -21,3 +21,21 @@ spec:
   selector:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "fullname" . }}-internal
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.global.connector.graphql.internal.port }}
+      protocol: TCP
+      name: http-gql-int
+  selector:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
