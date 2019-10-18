@@ -46,14 +46,14 @@ func (r *pgRepository) Create(ctx context.Context, item model.IntegrationSystem)
 
 func (r *pgRepository) Get(ctx context.Context, id string) (*model.IntegrationSystem, error) {
 	var entity Entity
-	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{{Field: "id", Val: id}}, &entity); err != nil {
+	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, &entity); err != nil {
 		return nil, err
 	}
 	return r.conv.FromEntity(&entity), nil
 }
 
 func (r *pgRepository) Exists(ctx context.Context, id string) (bool, error) {
-	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{{Field: "id", Val: id}})
+	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 func (r *pgRepository) List(ctx context.Context, pageSize int, cursor string) (model.IntegrationSystemPage, error) {
@@ -81,5 +81,5 @@ func (r *pgRepository) Update(ctx context.Context, model model.IntegrationSystem
 }
 
 func (r *pgRepository) Delete(ctx context.Context, id string) error {
-	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{{Field: "id", Val: id}})
+	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
 }

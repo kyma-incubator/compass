@@ -6,10 +6,34 @@ import (
 	"strings"
 )
 
+type ConditionOp string
+
+const (
+	EqualOp    ConditionOp = "="
+	NotEqualOp ConditionOp = "!="
+)
+
 type Conditions []Condition
 type Condition struct {
 	Field string
+	Op    ConditionOp
 	Val   string
+}
+
+func NewEqualCondition(field, val string) Condition {
+	return Condition{
+		Field: field,
+		Val:   val,
+		Op:    EqualOp,
+	}
+}
+
+func NewNotEqualCondition(field, val string) Condition {
+	return Condition{
+		Field: field,
+		Val:   val,
+		Op:    NotEqualOp,
+	}
 }
 
 func getAllArgs(tenant *string, conditions Conditions) []interface{} {
@@ -30,7 +54,7 @@ func writeEnumeratedConditions(builder *strings.Builder, startIdx int, condition
 
 	var conditionsToJoin []string
 	for idx, idAndVal := range conditions {
-		conditionsToJoin = append(conditionsToJoin, fmt.Sprintf("%s = $%d", idAndVal.Field, idx+startIdx))
+		conditionsToJoin = append(conditionsToJoin, fmt.Sprintf("%s %s $%d", idAndVal.Field, idAndVal.Op, idx+startIdx))
 	}
 	builder.WriteString(fmt.Sprintf(" %s", strings.Join(conditionsToJoin, " AND ")))
 

@@ -23,7 +23,7 @@ func TestExist(t *testing.T) {
 		defer mock.AssertExpectations(t)
 		mock.ExpectQuery(defaultExpectedExistQuery()).WithArgs(givenTenant, givenID).WillReturnRows(testdb.RowWhenObjectExist())
 		// WHEN
-		ex, err := sut.Exists(ctx, givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}})
+		ex, err := sut.Exists(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 		// THEN
 		require.NoError(t, err)
 		require.True(t, ex)
@@ -36,7 +36,7 @@ func TestExist(t *testing.T) {
 		defer mock.AssertExpectations(t)
 		mock.ExpectQuery(defaultExpectedExistQuery()).WithArgs(givenTenant, givenID).WillReturnRows(testdb.RowWhenObjectDoesNotExist())
 		// WHEN
-		ex, err := sut.Exists(ctx, givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}})
+		ex, err := sut.Exists(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 		// THEN
 		require.NoError(t, err)
 		require.False(t, ex)
@@ -64,7 +64,7 @@ func TestExist(t *testing.T) {
 		defer mock.AssertExpectations(t)
 		mock.ExpectQuery(expectedQuery).WithArgs(givenTenant, "john", "doe").WillReturnRows(testdb.RowWhenObjectDoesNotExist())
 		// WHEN
-		_, err := sut.Exists(ctx, givenTenant, repo.Conditions{{Field: "first_name", Val: "john"}, {Field: "last_name", Val: "doe"}})
+		_, err := sut.Exists(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("first_name", "john"), repo.NewEqualCondition("last_name", "doe")})
 		// THEN
 		require.NoError(t, err)
 	})
@@ -76,7 +76,7 @@ func TestExist(t *testing.T) {
 		defer mock.AssertExpectations(t)
 		mock.ExpectQuery(defaultExpectedExistQuery()).WithArgs(givenTenant, givenID).WillReturnError(someError())
 		// WHEN
-		_, err := sut.Exists(ctx, givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}})
+		_, err := sut.Exists(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 		// THEN
 		require.EqualError(t, err, "while getting object from DB: some error")
 
@@ -84,7 +84,7 @@ func TestExist(t *testing.T) {
 
 	t.Run("returns error if missing persistence context", func(t *testing.T) {
 		ctx := context.TODO()
-		_, err := sut.Exists(ctx, givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}})
+		_, err := sut.Exists(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 		require.EqualError(t, err, "unable to fetch database from context")
 	})
 }
@@ -101,7 +101,7 @@ func TestExistGlobal(t *testing.T) {
 		defer mock.AssertExpectations(t)
 		mock.ExpectQuery(expectedQuery).WithArgs(givenID).WillReturnRows(testdb.RowWhenObjectExist())
 		// WHEN
-		ex, err := sut.ExistsGlobal(ctx, repo.Conditions{{Field: "id_col", Val: givenID}})
+		ex, err := sut.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 		// THEN
 		require.NoError(t, err)
 		require.True(t, ex)
@@ -115,7 +115,7 @@ func TestExistGlobal(t *testing.T) {
 		defer mock.AssertExpectations(t)
 		mock.ExpectQuery(expectedQuery).WithArgs(givenID).WillReturnRows(testdb.RowWhenObjectDoesNotExist())
 		// WHEN
-		ex, err := sut.ExistsGlobal(ctx, repo.Conditions{{Field: "id_col", Val: givenID}})
+		ex, err := sut.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 		// THEN
 		require.NoError(t, err)
 		require.False(t, ex)
@@ -143,7 +143,7 @@ func TestExistGlobal(t *testing.T) {
 		defer mock.AssertExpectations(t)
 		mock.ExpectQuery(expectedQuery).WithArgs("john", "doe").WillReturnRows(testdb.RowWhenObjectDoesNotExist())
 		// WHEN
-		_, err := sut.ExistsGlobal(ctx, repo.Conditions{{Field: "first_name", Val: "john"}, {Field: "last_name", Val: "doe"}})
+		_, err := sut.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("first_name", "john"), repo.NewEqualCondition("last_name", "doe")})
 		// THEN
 		require.NoError(t, err)
 	})
@@ -156,7 +156,7 @@ func TestExistGlobal(t *testing.T) {
 		defer mock.AssertExpectations(t)
 		mock.ExpectQuery(expectedQuery).WithArgs(givenID).WillReturnError(someError())
 		// WHEN
-		_, err := sut.ExistsGlobal(ctx, repo.Conditions{{Field: "id_col", Val: givenID}})
+		_, err := sut.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 		// THEN
 		require.EqualError(t, err, "while getting object from DB: some error")
 
@@ -164,7 +164,7 @@ func TestExistGlobal(t *testing.T) {
 
 	t.Run("returns error if missing persistence context", func(t *testing.T) {
 		ctx := context.TODO()
-		_, err := sut.ExistsGlobal(ctx, repo.Conditions{{Field: "id_col", Val: givenID}})
+		_, err := sut.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 		require.EqualError(t, err, "unable to fetch database from context")
 	})
 }

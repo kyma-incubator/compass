@@ -39,6 +39,20 @@ func (_m *Repository) Delete(ctx context.Context, tenant string, id string) erro
 	return r0
 }
 
+// DeleteByIDForObject provides a mock function with given fields: ctx, tenant, id, objType
+func (_m *Repository) DeleteByIDForObject(ctx context.Context, tenant string, id string, objType model.SystemAuthReferenceObjectType) error {
+	ret := _m.Called(ctx, tenant, id, objType)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.SystemAuthReferenceObjectType) error); ok {
+		r0 = rf(ctx, tenant, id, objType)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetByID provides a mock function with given fields: ctx, tenant, id
 func (_m *Repository) GetByID(ctx context.Context, tenant string, id string) (*model.SystemAuth, error) {
 	ret := _m.Called(ctx, tenant, id)
