@@ -711,6 +711,8 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 			transact.AssertExpectations(t)
 			intSysSvc.AssertExpectations(t)
 			intSysConv.AssertExpectations(t)
+			sysAuthSvc.AssertExpectations(t)
+			OAuth20Svc.AssertExpectations(t)
 		})
 	}
 }
