@@ -1,6 +1,7 @@
 package provisioner
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -34,7 +35,7 @@ func Test_E2e(t *testing.T) {
 	}
 
 	runtime, err := testSuite.DirectorClient.RegisterRuntime(runtimeInput)
-	require.NoError(t, err)
+	requireNoError(t, err)
 	t.Logf("Runtime registered successfully id: %s", runtime.ID)
 	defer func() {
 		// TODO - deleting runtime fails not sure why
@@ -53,7 +54,7 @@ func Test_E2e(t *testing.T) {
 				ProjectName:       "project",
 				KubernetesVersion: "1.14",
 				NumberOfNodes:     3,
-				BootDiskSize:      "30GB",
+				BootDiskSize:      "30",
 				MachineType:       gcpMachineType,
 				Region:            gcpRegion,
 				Zone:              &zone,
@@ -65,8 +66,12 @@ func Test_E2e(t *testing.T) {
 
 	t.Logf("Provsisioning runtime on GCP...")
 	provisioningOperationId, err := testSuite.ProvisionerClient.ProvisionRuntime(runtime.ID, provisioningInput)
-	require.NoError(t, err)
+	requireNoError(t, err)
 	t.Logf("Provisioning operation id: %s", provisioningOperationId)
+	defer func() {
+		// TODO - try to deprovision?
+		// TODO - force delete runtime data?
+	}()
 
 	var provisioningOperationStatus gqlschema.OperationStatus
 	err = testkit.RunParallelToMainFunction(ProvisioningTimeout+5*time.Second,
@@ -95,7 +100,7 @@ func Test_E2e(t *testing.T) {
 			return nil
 		},
 	)
-	require.NoError(t, err)
+	requireNoError(t, err, "Provisioning operation status: ", provisioningOperationStatus.State)
 
 	assertOperationSucceed(t, gqlschema.OperationTypeProvision, runtime.ID, provisioningOperationStatus)
 	t.Logf("Runtime provisioned successfully")
@@ -164,4 +169,13 @@ func assertOperation(t *testing.T, expectedState gqlschema.OperationState, expec
 	require.Equal(t, expectedState, operation.State)
 	assert.Equal(t, expectedRuntimeId, operation.RuntimeID)
 	assert.Equal(t, expectedType, operation.Operation)
+}
+
+// Standard require.NoError print only the top wrapper of error
+func requireNoError(t *testing.T, err error, msgAndArgs ...interface{}) {
+	if assert.NoError(t, err) {
+		return
+	}
+	fullError := fmt.Sprintf("Received unexpected error: %s", err.Error())
+	t.Fatal(fullError, msgAndArgs)
 }

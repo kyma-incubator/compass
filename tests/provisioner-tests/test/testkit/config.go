@@ -1,6 +1,7 @@
 package testkit
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/pkg/errors"
@@ -21,6 +22,13 @@ type TestConfig struct {
 	QueryLogging bool `envconfig:"default=false"`
 }
 
+func (c TestConfig) String() string {
+	return fmt.Sprintf("InternalProvisionerURL=%s, DirectorURL=%s, CredentialsNamespace=%s, "+
+		"Tenant=%s, HydraPublicURL=%s, HydraAdminURL=%s, QueryLogging=%v",
+		c.InternalProvisionerURL, c.DirectorURL, c.CredentialsNamespace,
+		c.Tenant, c.HydraPublicURL, c.HydraAdminURL, c.QueryLogging)
+}
+
 func ReadConfig() (TestConfig, error) {
 	cfg := TestConfig{}
 
@@ -29,6 +37,6 @@ func ReadConfig() (TestConfig, error) {
 		return TestConfig{}, errors.Wrap(err, "Error while loading app config")
 	}
 
-	log.Printf("Read configuration: %+v", cfg)
+	log.Printf("Read configuration: %s", cfg.String())
 	return cfg, nil
 }

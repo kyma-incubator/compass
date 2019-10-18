@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	provisionerCredentialsSecretKey = "credentials.json"
+	provisionerCredentialsSecretKey = "kubeconfig"
 
 	ProvisioningTimeout   = 25 * time.Minute
 	DeprovisioningTimeout = 15 * time.Minute
