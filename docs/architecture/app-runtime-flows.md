@@ -1,6 +1,6 @@
 # Application and Runtime flows
 
-The following diagrams shows interactions between Application, [Management Plane](./components.md#management-plane) and Runtime.
+The following diagrams show interactions between Application, Management Plane and Runtime.
 
 ## Application connection
 

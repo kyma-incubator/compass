@@ -6,7 +6,7 @@
 
 ## Overview
 
-is a central, multi-tenant system that allows you to connect Applications and manage them across multiple [Kyma Runtimes](#architecture-components-kyma-runtime). Using Compass, you can control and monitor your Application landscape in one central place. As an integral part of Kyma, Compass uses a set of features that Kyma provides, such as Istio, Prometheus, Monitoring, and Tracing. It also includes Compass UI Cockpit that exposes Compass APIs to users.
+Compass is a central, multi-tenant system that allows you to connect Applications and manage them across multiple [Kyma Runtimes](#architecture-components-kyma-runtime). Using Compass, you can control and monitor your Application landscape in one central place. As an integral part of Kyma, Compass uses a set of features that Kyma provides, such as Istio, Prometheus, Monitoring, and Tracing. It also includes Compass UI Cockpit that exposes Compass APIs to users.
 Compass allows you to:
 - Connect and manage Applications and Kyma Runtimes in one central place
 - Store Applications and Runtimes configurations
@@ -34,7 +34,7 @@ Read [this](https://kyma-project.io/docs/master/components/compass/#installation
 
 ### Chart installation
 
-If you already have a running Kyma 1.1.0 instance with created Secrets and Tiller client certificates, you can install the Compass Helm chart using this command:
+If you already have a running Kyma instance in at least 1.1.0 version, with created Secrets and Tiller client certificates, you can install the Compass Helm chart using this command:
 ```bash
 helm install --name "compass" ./chart/compass --tls
 ```
