@@ -172,7 +172,7 @@ func (c client) saveCredentialsToFile(secretName string) (string, error) {
 func removeFile(fileName string) {
 	err := os.Remove(fileName)
 	if err != nil {
-		log.Error("Error while removing temporary credentials file %s: %s", fileName, err.Error())
+		log.Errorf("Error while removing temporary credentials file %s: %s", fileName, err.Error())
 	}
 }
 
