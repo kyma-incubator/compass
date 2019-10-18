@@ -41,7 +41,7 @@ func TestCreateIntegrationSystem(t *testing.T) {
 	err = tc.RunOperation(ctx, getIntegrationSystemRequest, &intSysOutput)
 
 	require.NotEmpty(t, intSysOutput)
-	assert.Equal(t, name, intSysOutput.Name)
+	assertIntegrationSystem(t, intSysInput, intSysOutput)
 	saveQueryInExamples(t, getIntegrationSystemRequest.Query(), "query integration system")
 }
 
@@ -50,12 +50,11 @@ func TestUpdateIntegrationSystem(t *testing.T) {
 	ctx := context.Background()
 	name := "int-system"
 	newName := "new-int-system"
-
+	newDescription := "new description"
 	t.Log("Create integration system")
 	intSys := createIntegrationSystem(t, ctx, name)
-	require.NotEmpty(t, intSys)
 
-	intSysInput := graphql.IntegrationSystemInput{Name: newName}
+	intSysInput := graphql.IntegrationSystemInput{Name: newName, Description: &newDescription}
 	intSysGQL, err := tc.graphqlizer.IntegrationSystemInputToGQL(intSysInput)
 	updateIntegrationSystemRequest := fixUpdateIntegrationSystemRequest(intSys.ID, intSysGQL)
 	updateOutput := graphql.IntegrationSystemExt{}
@@ -69,7 +68,7 @@ func TestUpdateIntegrationSystem(t *testing.T) {
 
 	//THEN
 	t.Log("Check if Integration System was updated")
-	assert.Equal(t, newName, updateOutput.Name)
+	assertIntegrationSystem(t, intSysInput, updateOutput)
 	saveQueryInExamples(t, updateIntegrationSystemRequest.Query(), "update integration system")
 }
 
@@ -80,7 +79,6 @@ func TestDeleteIntegrationSystem(t *testing.T) {
 
 	t.Log("Create integration system")
 	intSys := createIntegrationSystem(t, ctx, name)
-	require.NotEmpty(t, intSys)
 
 	deleteIntegrationSystemRequest := fixDeleteIntegrationSystem(intSys.ID)
 	deleteOutput := graphql.IntegrationSystemExt{}
@@ -106,7 +104,6 @@ func TestQueryIntegrationSystem(t *testing.T) {
 
 	t.Log("Create integration system")
 	intSys := createIntegrationSystem(t, ctx, name)
-	require.NotEmpty(t, intSys)
 
 	getIntegrationSystemRequest := fixIntegrationSystemRequest(intSys.ID)
 	output := graphql.IntegrationSystemExt{}
@@ -121,7 +118,6 @@ func TestQueryIntegrationSystem(t *testing.T) {
 	//THEN
 	t.Log("Check if Integration System was received")
 	assert.Equal(t, name, output.Name)
-	saveQueryInExamples(t, getIntegrationSystemRequest.Query(), "get integration system")
 }
 
 func TestQueryIntegrationSystems(t *testing.T) {

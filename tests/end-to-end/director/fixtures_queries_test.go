@@ -212,6 +212,7 @@ func createIntegrationSystem(t *testing.T, ctx context.Context, name string) *gr
 
 	out := &graphql.IntegrationSystemExt{}
 	err = tc.RunOperation(ctx, req, out)
+	require.NotEmpty(t, out)
 	require.NoError(t, err)
 	return out
 }
