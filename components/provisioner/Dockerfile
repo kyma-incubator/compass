@@ -15,6 +15,12 @@ COPY ./cmd/ ${BASE_APP_DIR}/cmd
 COPY ./licenses ${BASE_APP_DIR}/licenses
 
 #
+# Add ca-certificates
+#
+
+RUN apk add ca-certificates && update-ca-certificates
+
+#
 # Build app
 #
 
