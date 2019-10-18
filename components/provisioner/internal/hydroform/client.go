@@ -16,7 +16,7 @@ import (
 	"github.com/kyma-incubator/hydroform/types"
 	"github.com/pkg/errors"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/typed/core/v1"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 const (
