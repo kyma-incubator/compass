@@ -456,7 +456,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			ExpectedErr:     testErr,
 		},
 		{
-			Name:            "Return error when listing all auths failed commit failed",
+			Name:            "Return error when listing all auths failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}

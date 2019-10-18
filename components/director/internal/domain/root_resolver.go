@@ -109,7 +109,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 		token:       onetimetoken.NewTokenResolver(transact, tokenSvc, tokenConverter),
 		systemAuth:  systemauth.NewResolver(transact, systemAuthSvc, oAuth20Svc, systemAuthConverter),
 		oAuth20:     oauth20.NewResolver(transact, oAuth20Svc, appSvc, runtimeSvc, intSysSvc, systemAuthSvc, systemAuthConverter),
-		intSys:      integrationsystem.NewResolver(transact, intSysSvc, systemAuthSvc, intSysConverter, systemAuthConverter),
+		intSys:      integrationsystem.NewResolver(transact, intSysSvc, systemAuthSvc, oAuth20Svc, intSysConverter, systemAuthConverter),
 	}
 }
 

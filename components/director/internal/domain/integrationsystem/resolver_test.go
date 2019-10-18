@@ -114,7 +114,7 @@ func TestResolver_IntegrationSystem(t *testing.T) {
 			intSysSvc := testCase.IntSysSvcFn()
 			intSysConv := testCase.IntSysConvFn()
 
-			resolver := integrationsystem.NewResolver(transact, intSysSvc, nil, intSysConv, nil)
+			resolver := integrationsystem.NewResolver(transact, intSysSvc, nil, nil, intSysConv, nil)
 
 			// WHEN
 			result, err := resolver.IntegrationSystem(ctx, testID)
@@ -226,7 +226,7 @@ func TestResolver_IntegrationSystems(t *testing.T) {
 			intSysSvc := testCase.IntSysSvcFn()
 			intSysConv := testCase.IntSysConvFn()
 
-			resolver := integrationsystem.NewResolver(transact, intSysSvc, nil, intSysConv, nil)
+			resolver := integrationsystem.NewResolver(transact, intSysSvc, nil, nil, intSysConv, nil)
 
 			// WHEN
 			result, err := resolver.IntegrationSystems(ctx, &first, &gqlAfter)
@@ -353,7 +353,7 @@ func TestResolver_CreateIntegrationSystem(t *testing.T) {
 			intSysSvc := testCase.IntSysSvcFn()
 			intSysConv := testCase.IntSysConvFn()
 
-			resolver := integrationsystem.NewResolver(transact, intSysSvc, nil, intSysConv, nil)
+			resolver := integrationsystem.NewResolver(transact, intSysSvc, nil, nil, intSysConv, nil)
 
 			// WHEN
 			result, err := resolver.CreateIntegrationSystem(ctx, gqlIntSysInput)
@@ -479,7 +479,7 @@ func TestResolver_UpdateIntegrationSystem(t *testing.T) {
 			intSysSvc := testCase.IntSysSvcFn()
 			intSysConv := testCase.IntSysConvFn()
 
-			resolver := integrationsystem.NewResolver(transact, intSysSvc, nil, intSysConv, nil)
+			resolver := integrationsystem.NewResolver(transact, intSysSvc, nil, nil, intSysConv, nil)
 
 			// WHEN
 			result, err := resolver.UpdateIntegrationSystem(ctx, testID, gqlIntSysInput)
@@ -509,12 +509,15 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 
 	modelIntSys := fixModelIntegrationSystem(testID, testName)
 	gqlIntSys := fixGQLIntegrationSystem(testID, testName)
+	testAuth := fixOauth()
 
 	testCases := []struct {
 		Name           string
 		TxFn           func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		IntSysSvcFn    func() *automock.IntegrationSystemService
 		IntSysConvFn   func() *automock.IntegrationSystemConverter
+		SysAuthSvcFn   func() *automock.SystemAuthService
+		OAuth20SvcFn   func() *automock.Oauth20Service
 		ExpectedOutput *graphql.IntegrationSystem
 		ExpectedError  error
 	}{
@@ -532,6 +535,15 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 				intSysConv.On("ToGraphQL", modelIntSys).Return(gqlIntSys).Once()
 				return intSysConv
 			},
+			SysAuthSvcFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.IntegrationSystemReference, modelIntSys.ID).Return(nil, nil)
+				return svc
+			},
+			OAuth20SvcFn: func() *automock.Oauth20Service {
+				svc := &automock.Oauth20Service{}
+				return svc
+			},
 			ExpectedOutput: gqlIntSys,
 		},
 		{
@@ -545,6 +557,14 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 			IntSysConvFn: func() *automock.IntegrationSystemConverter {
 				intSysConv := &automock.IntegrationSystemConverter{}
 				return intSysConv
+			},
+			SysAuthSvcFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				return svc
+			},
+			OAuth20SvcFn: func() *automock.Oauth20Service {
+				svc := &automock.Oauth20Service{}
+				return svc
 			},
 			ExpectedError: testError,
 		},
@@ -561,6 +581,15 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 				intSysConv := &automock.IntegrationSystemConverter{}
 				return intSysConv
 			},
+			SysAuthSvcFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.IntegrationSystemReference, modelIntSys.ID).Return(nil, nil)
+				return svc
+			},
+			OAuth20SvcFn: func() *automock.Oauth20Service {
+				svc := &automock.Oauth20Service{}
+				return svc
+			},
 			ExpectedError: testError,
 		},
 		{
@@ -573,6 +602,14 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 			IntSysConvFn: func() *automock.IntegrationSystemConverter {
 				intSysConv := &automock.IntegrationSystemConverter{}
 				return intSysConv
+			},
+			SysAuthSvcFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				return svc
+			},
+			OAuth20SvcFn: func() *automock.Oauth20Service {
+				svc := &automock.Oauth20Service{}
+				return svc
 			},
 			ExpectedError: testError,
 		},
@@ -589,6 +626,62 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 				intSysConv := &automock.IntegrationSystemConverter{}
 				return intSysConv
 			},
+			SysAuthSvcFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.IntegrationSystemReference, modelIntSys.ID).Return(nil, nil)
+				return svc
+			},
+			OAuth20SvcFn: func() *automock.Oauth20Service {
+				svc := &automock.Oauth20Service{}
+				return svc
+			},
+			ExpectedError: testError,
+		},
+		{
+			Name: "Return error when listing all auths failed",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			IntSysSvcFn: func() *automock.IntegrationSystemService {
+				svc := &automock.IntegrationSystemService{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), "foo").Return(modelIntSys, nil).Once()
+				return svc
+			},
+			IntSysConvFn: func() *automock.IntegrationSystemConverter {
+				conv := &automock.IntegrationSystemConverter{}
+				return conv
+			},
+			SysAuthSvcFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.IntegrationSystemReference, modelIntSys.ID).Return(nil, testError)
+				return svc
+			},
+			OAuth20SvcFn: func() *automock.Oauth20Service {
+				svc := &automock.Oauth20Service{}
+				return svc
+			},
+			ExpectedError: testError,
+		},
+		{
+			Name: "Return error when li failed ",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			IntSysSvcFn: func() *automock.IntegrationSystemService {
+				svc := &automock.IntegrationSystemService{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), "foo").Return(modelIntSys, nil).Once()
+				return svc
+			},
+			IntSysConvFn: func() *automock.IntegrationSystemConverter {
+				conv := &automock.IntegrationSystemConverter{}
+				return conv
+			},
+			SysAuthSvcFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.IntegrationSystemReference, modelIntSys.ID).Return([]model.SystemAuth{testAuth}, nil)
+				return svc
+			},
+			OAuth20SvcFn: func() *automock.Oauth20Service {
+				svc := &automock.Oauth20Service{}
+				svc.On("DeleteClientCredentials", txtest.CtxWithDBMatcher(), testAuth.Value.Credential.Oauth.ClientID).Return(testError)
+				return svc
+			},
 			ExpectedError: testError,
 		},
 	}
@@ -598,8 +691,9 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 			persist, transact := testCase.TxFn()
 			intSysSvc := testCase.IntSysSvcFn()
 			intSysConv := testCase.IntSysConvFn()
-
-			resolver := integrationsystem.NewResolver(transact, intSysSvc, nil, intSysConv, nil)
+			sysAuthSvc := testCase.SysAuthSvcFn()
+			OAuth20Svc := testCase.OAuth20SvcFn()
+			resolver := integrationsystem.NewResolver(transact, intSysSvc, sysAuthSvc, OAuth20Svc, intSysConv, nil)
 
 			// WHEN
 			result, err := resolver.DeleteIntegrationSystem(ctx, testID)
@@ -715,7 +809,7 @@ func TestResolver_Auths(t *testing.T) {
 			sysAuthSvc := testCase.SysAuthSvcFn()
 			sysAuthConv := testCase.SysAuthConvFn()
 
-			resolver := integrationsystem.NewResolver(transact, nil, sysAuthSvc, nil, sysAuthConv)
+			resolver := integrationsystem.NewResolver(transact, nil, sysAuthSvc, nil, nil, sysAuthConv)
 
 			// WHEN
 			result, err := resolver.Auths(ctx, parentIntegrationSystem)
@@ -737,7 +831,7 @@ func TestResolver_Auths(t *testing.T) {
 	}
 
 	t.Run("Error when parent object is nil", func(t *testing.T) {
-		resolver := integrationsystem.NewResolver(nil, nil, nil, nil, nil)
+		resolver := integrationsystem.NewResolver(nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		result, err := resolver.Auths(context.TODO(), nil)
@@ -747,4 +841,21 @@ func TestResolver_Auths(t *testing.T) {
 		assert.Contains(t, err.Error(), "Integration System cannot be empty")
 		assert.Nil(t, result)
 	})
+}
+
+func fixOauth() model.SystemAuth {
+	return model.SystemAuth{
+		ID:       "foo",
+		TenantID: "foo",
+		Value: &model.Auth{
+			Credential: model.CredentialData{
+				Basic: nil,
+				Oauth: &model.OAuthCredentialData{
+					ClientID:     "foo",
+					ClientSecret: "foo",
+					URL:          "foo",
+				},
+			},
+		},
+	}
 }
