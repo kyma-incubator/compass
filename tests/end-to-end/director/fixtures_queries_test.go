@@ -50,6 +50,14 @@ func setApplicationLabel(t *testing.T, ctx context.Context, applicationID string
 	return label
 }
 
+func generateClientCredentialsForApplication(t *testing.T, ctx context.Context, id string) graphql.SystemAuth {
+	req := fixGenerateClientCredentialsForApplication(id)
+	out := graphql.SystemAuth{}
+	err := tc.RunOperation(ctx, req, &out)
+	require.NoError(t, err)
+	return out
+}
+
 func deleteSystemAuthForApplication(t *testing.T, ctx context.Context, id string) {
 	req := fixDeleteSystemAuthForApplication(id)
 	err := tc.RunOperation(ctx, req, nil)
@@ -111,6 +119,14 @@ func deleteRuntimeWithinTenant(t *testing.T, id string, tenantID string) {
 
 	err := tc.RunOperationWithCustomTenant(context.Background(), tenantID, delReq, nil)
 	require.NoError(t, err)
+}
+
+func generateClientCredentialsForRuntime(t *testing.T, ctx context.Context, id string) graphql.SystemAuth {
+	req := fixGenerateClientCredentialsForRuntime(id)
+	out := graphql.SystemAuth{}
+	err := tc.RunOperation(ctx, req, &out)
+	require.NoError(t, err)
+	return out
 }
 
 func deleteSystemAuthForRuntime(t *testing.T, ctx context.Context, id string) {

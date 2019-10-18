@@ -11,36 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGenerateClientCredentialsToIntegrationSystem(t *testing.T) {
-	// GIVEN
-	ctx := context.Background()
-	name := "int-system"
-
-	t.Log("Create integration system")
-	intSys := createIntegrationSystem(t, ctx, name)
-	require.NotEmpty(t, intSys)
-	defer deleteIntegrationSystem(t, ctx, intSys.ID)
-
-	generateIntSysAuthRequest := fixGenerateClientCredentialsForIntegrationSystem(intSys.ID)
-	intSysAuth := graphql.SystemAuth{}
-
-	// WHEN
-	t.Log("Generate client credentials for integration system")
-	err := tc.RunOperation(ctx, generateIntSysAuthRequest, &intSysAuth)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSysAuth.Auth)
-	defer deleteSystemAuthForIntegrationSystem(t, ctx, intSysAuth.ID)
-
-	//THEN
-	t.Log("Check if client credentials were generated")
-	assert.NotEmpty(t, intSysAuth.Auth.Credential)
-	oauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
-	require.True(t, ok)
-	assert.NotEmpty(t, oauthCredentialData.ClientID)
-	assert.NotEmpty(t, oauthCredentialData.ClientSecret)
-	assert.Equal(t, intSysAuth.ID, oauthCredentialData.ClientID)
-}
-
 func TestGenerateClientCredentialsToApplication(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -107,6 +77,36 @@ func TestGenerateClientCredentialsToRuntime(t *testing.T) {
 	assert.Equal(t, rtmAuth.ID, oauthCredentialData.ClientID)
 }
 
+func TestGenerateClientCredentialsToIntegrationSystem(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	name := "int-system"
+
+	t.Log("Create integration system")
+	intSys := createIntegrationSystem(t, ctx, name)
+	require.NotEmpty(t, intSys)
+	defer deleteIntegrationSystem(t, ctx, intSys.ID)
+
+	generateIntSysAuthRequest := fixGenerateClientCredentialsForIntegrationSystem(intSys.ID)
+	intSysAuth := graphql.SystemAuth{}
+
+	// WHEN
+	t.Log("Generate client credentials for integration system")
+	err := tc.RunOperation(ctx, generateIntSysAuthRequest, &intSysAuth)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSysAuth.Auth)
+	defer deleteSystemAuthForIntegrationSystem(t, ctx, intSysAuth.ID)
+
+	//THEN
+	t.Log("Check if client credentials were generated")
+	assert.NotEmpty(t, intSysAuth.Auth.Credential)
+	oauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+	assert.NotEmpty(t, oauthCredentialData.ClientID)
+	assert.NotEmpty(t, oauthCredentialData.ClientSecret)
+	assert.Equal(t, intSysAuth.ID, oauthCredentialData.ClientID)
+}
+
 func TestDeleteSystemAuthFromApplication(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -117,10 +117,10 @@ func TestDeleteSystemAuthFromApplication(t *testing.T) {
 	require.NotEmpty(t, app)
 	defer deleteApplication(t, app.ID)
 
-	appAuth := fixGenerateClientCredentialsForApplication(app.ID)
+	appAuth := generateClientCredentialsForApplication(t, ctx, app.ID)
 	require.NotEmpty(t, appAuth)
 
-	deleteSystemAuthForApplicationRequest := fixDeleteSystemAuthForApplication(app.ID)
+	deleteSystemAuthForApplicationRequest := fixDeleteSystemAuthForApplication(appAuth.ID)
 	deleteOutput := graphql.SystemAuth{}
 
 	// WHEN
@@ -145,10 +145,10 @@ func TestDeleteSystemAuthFromRuntime(t *testing.T) {
 	require.NotEmpty(t, rtm)
 	defer deleteRuntime(t, rtm.ID)
 
-	rtmAuth := fixGenerateClientCredentialsForRuntime(rtm.ID)
+	rtmAuth := generateClientCredentialsForRuntime(t, ctx, rtm.ID)
 	require.NotEmpty(t, rtmAuth)
 
-	deleteSystemAuthForRuntimeRequest := fixDeleteSystemAuthForRuntime(rtm.ID)
+	deleteSystemAuthForRuntimeRequest := fixDeleteSystemAuthForRuntime(rtmAuth.ID)
 	deleteOutput := graphql.SystemAuth{}
 
 	// WHEN
