@@ -44,20 +44,14 @@ type ClusterInfo struct {
 }
 
 func (c client) ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName string) (ClusterInfo, error) {
-	credentialsFile := generateRandomFileName()
-
-	log.Infof("Saving credentials to file %s", credentialsFile)
-	err := c.saveCredentialsToFile(secretName, credentialsFile)
-
+	credentialsFileName, err := c.saveCredentialsToFile(secretName)
 	if err != nil {
-		log.Errorf("Failed to save credentials to file %s: %s", credentialsFile, err.Error())
 		return ClusterInfo{}, err
 	}
+	defer removeFile(credentialsFileName)
 
 	log.Info("Preparing config for runtime provisioning")
-
-	cluster, provider, err := c.prepareConfig(runtimeConfig, credentialsFile)
-
+	cluster, provider, err := c.prepareConfig(runtimeConfig, credentialsFileName)
 	if err != nil {
 		log.Errorf("Config preparation failed: %s", err.Error())
 		return ClusterInfo{}, err
@@ -103,18 +97,14 @@ func (c client) ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName s
 }
 
 func (c client) DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretName string, terraformState string) error {
-	credentialsFile := generateRandomFileName()
-
-	log.Infof("Saving credentials to file %s", credentialsFile)
-	err := c.saveCredentialsToFile(secretName, credentialsFile)
-
+	credentialsFileName, err := c.saveCredentialsToFile(secretName)
 	if err != nil {
-		log.Errorf("Failed to save credentials to file %s: %s", credentialsFile, err.Error())
 		return err
 	}
+	defer removeFile(credentialsFileName)
 
 	log.Info("Preparing config for runtime deprovisioning")
-	cluster, provider, err := c.prepareConfig(runtimeConfig, credentialsFile)
+	cluster, provider, err := c.prepareConfig(runtimeConfig, credentialsFileName)
 
 	if err != nil {
 		log.Errorf("Config preparation failed: %s", err.Error())
@@ -154,26 +144,36 @@ func stateToJson(state *types.InternalState) (string, error) {
 	return string(bytes), nil
 }
 
-func (c client) saveCredentialsToFile(secretName string, filename string) error {
+func (c client) saveCredentialsToFile(secretName string) (string, error) {
 	secret, err := c.secrets.Get(secretName, meta.GetOptions{})
-
 	if err != nil {
-		return err
+		return "", errors.WithMessagef(err, "Failed to get credentials from %s secret", secretName)
 	}
 
 	bytes, ok := secret.Data["kubeconfig"]
 
 	if !ok {
-		return errors.New("kubeconfig not found within the secret")
+		return "", errors.New("kubeconfig not found within the secret")
 	}
 
-	err = ioutil.WriteFile(filename, bytes, os.ModePerm)
-
+	tempFile, err := ioutil.TempFile("", secretName)
 	if err != nil {
-		return err
+		return "", errors.Wrap(err, "Failed to create credentials file")
 	}
 
-	return os.Chmod(filename, os.ModePerm)
+	_, err = tempFile.Write(bytes)
+	if err != nil {
+		return "", errors.WithMessagef(err, "Failed to save credentials to %s file", tempFile.Name())
+	}
+
+	return tempFile.Name(), nil
+}
+
+func removeFile(fileName string) {
+	err := os.Remove(fileName)
+	if err != nil {
+		log.Error("Error while removing temporary credentials file %s: %s", fileName, err.Error())
+	}
 }
 
 func (c client) prepareConfig(input model.RuntimeConfig, credentialsFile string) (*types.Cluster, *types.Provider, error) {
