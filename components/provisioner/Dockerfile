@@ -18,7 +18,7 @@ COPY ./licenses ${BASE_APP_DIR}/licenses
 # Add ca-certificates
 #
 
-RUN apk add ca-certificates && update-ca-certificates
+RUN apk add -U --no-cache ca-certificates && update-ca-certificates
 
 #
 # Build app
@@ -37,6 +37,7 @@ WORKDIR /app
 
 COPY --from=builder /assets /assets
 COPY --from=builder /app /app
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 #
 # Run app
