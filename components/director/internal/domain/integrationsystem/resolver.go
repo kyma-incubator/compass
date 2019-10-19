@@ -210,10 +210,12 @@ func (r *Resolver) DeleteIntegrationSystem(ctx context.Context, id string) (*gra
 	}
 
 	for _, auth := range auths {
-		if auth.Value.Credential.Oauth != nil {
-			err := r.oAuth20Svc.DeleteClientCredentials(ctx, auth.Value.Credential.Oauth.ClientID)
-			if err != nil {
-				return nil, errors.Wrap(err, "while deleting OAuth 2.0 client")
+		if auth.Value != nil {
+			if auth.Value.Credential.Oauth != nil {
+				err := r.oAuth20Svc.DeleteClientCredentials(ctx, auth.Value.Credential.Oauth.ClientID)
+				if err != nil {
+					return nil, errors.Wrap(err, "while deleting OAuth 2.0 client")
+				}
 			}
 		}
 	}
