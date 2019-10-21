@@ -2,13 +2,10 @@ package hydroform
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"os"
 
 	log "github.com/sirupsen/logrus"
-	"k8s.io/apimachinery/pkg/util/rand"
-
 	"strconv"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
@@ -16,11 +13,7 @@ import (
 	"github.com/kyma-incubator/hydroform/types"
 	"github.com/pkg/errors"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
-)
-
-const (
-	credentialsFileFmt = "credentials-%s.yaml"
+	"k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 //go:generate mockery -name=Service
@@ -247,8 +240,4 @@ func buildConfigForGardener(config model.GardenerConfig, credentialsFile string)
 		},
 	}
 	return cluster, provider, nil
-}
-
-func generateRandomFileName() string {
-	return fmt.Sprintf(credentialsFileFmt, rand.String(6))
 }
