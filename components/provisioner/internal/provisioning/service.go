@@ -33,10 +33,10 @@ type ProvisioningService interface {
 type service struct {
 	operationService persistence.OperationService
 	runtimeService   persistence.RuntimeService
-	hydroform        hydroform.Client
+	hydroform        hydroform.Service
 }
 
-func NewProvisioningService(operationService persistence.OperationService, runtimeService persistence.RuntimeService, hydroform hydroform.Client) ProvisioningService {
+func NewProvisioningService(operationService persistence.OperationService, runtimeService persistence.RuntimeService, hydroform hydroform.Service) ProvisioningService {
 	return &service{
 		operationService: operationService,
 		runtimeService:   runtimeService,

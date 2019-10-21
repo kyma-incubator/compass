@@ -17,7 +17,7 @@ import (
 )
 
 func TestService_ProvisionRuntime(t *testing.T) {
-	hydroformMock := &mocks.Client{}
+	hydroformMock := &mocks.Service{}
 	operationServiceMock := &persistenceMocks.OperationService{}
 	runtimeServiceMock := &persistenceMocks.RuntimeService{}
 
@@ -100,7 +100,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 func TestService_DeprovisionRuntime(t *testing.T) {
 	operationServiceMock := &persistenceMocks.OperationService{}
 	runtimeServiceMock := &persistenceMocks.RuntimeService{}
-	hydroformMock := &mocks.Client{}
+	hydroformMock := &mocks.Service{}
 
 	runtimeConfig := model.RuntimeConfig{
 		ClusterConfig: model.GCPConfig{},
@@ -155,7 +155,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 func TestService_RuntimeOperationStatus(t *testing.T) {
 	operationServiceMock := &persistenceMocks.OperationService{}
 	runtimeServiceMock := &persistenceMocks.RuntimeService{}
-	hydroformMock := &mocks.Client{}
+	hydroformMock := &mocks.Service{}
 
 	t.Run("Should return operation status", func(t *testing.T) {
 		//given

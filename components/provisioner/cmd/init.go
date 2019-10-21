@@ -60,16 +60,16 @@ func newSecretsInterface(namespace string) (v1.SecretInterface, error) {
 	return coreClientset.CoreV1().Secrets(namespace), nil
 }
 
-func newResolver(connectionString string, schemaFilePath string, namespace string) *api.Resolver {
+func newResolver(connectionString string, schemaFilePath string, namespace string) (*api.Resolver, error) {
 	runtimeService, operationService, err := newPersistenceService(connectionString, schemaFilePath)
-
-	exitOnError(err, "Error while initializing persistence")
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to initialize persistence")
+	}
 
 	secretInterface, err := newSecretsInterface(namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to create secrets interface")
+	}
 
-	exitOnError(err, "Cannot create secrets interface")
-
-	service := newProvisioningService(runtimeService, operationService, secretInterface)
-
-	return api.NewResolver(service)
+	return api.NewResolver(newProvisioningService(runtimeService, operationService, secretInterface)), nil
 }

@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
@@ -30,11 +31,19 @@ func NewResolver(provisioningService provisioning.ProvisioningService) *Resolver
 
 func (r *Resolver) ProvisionRuntime(ctx context.Context, id string, config gqlschema.ProvisionRuntimeInput) (string, error) {
 	operationID, err, _ := r.provisioning.ProvisionRuntime(id, config)
+	if err != nil {
+		log.Errorf("Failed to provision runtime: %s", err)
+	}
+
 	return operationID, err
 }
 
 func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string, credentials gqlschema.CredentialsInput) (string, error) {
 	operationID, err, _ := r.provisioning.DeprovisionRuntime(id, credentials)
+	if err != nil {
+		log.Errorf("Failed to deprovision runtime: %s", err)
+	}
+
 	return operationID, err
 }
 
@@ -47,13 +56,28 @@ func (r *Resolver) ReconnectRuntimeAgent(ctx context.Context, id string) (string
 }
 
 func (r *Resolver) RuntimeStatus(ctx context.Context, runtimeID string) (*gqlschema.RuntimeStatus, error) {
-	return r.provisioning.RuntimeStatus(runtimeID)
+	status, err := r.provisioning.RuntimeStatus(runtimeID)
+	if err != nil {
+		log.Errorf("Failed to get runtime status: %s", err)
+	}
+
+	return status, err
 }
 
 func (r *Resolver) RuntimeOperationStatus(ctx context.Context, operationID string) (*gqlschema.OperationStatus, error) {
-	return r.provisioning.RuntimeOperationStatus(operationID)
+	status, err := r.provisioning.RuntimeOperationStatus(operationID)
+	if err != nil {
+		log.Errorf("Failed to get runtime operation status: %s", err)
+	}
+
+	return status, err
 }
 
 func (r *Resolver) CleanupRuntimeData(ctx context.Context, id string) (string, error) {
-	return r.provisioning.CleanupRuntimeData(id)
+	res, err := r.provisioning.CleanupRuntimeData(id)
+	if err != nil {
+		log.Errorf("Failed to cleanup runtime data: %s", err)
+	}
+
+	return res, err
 }

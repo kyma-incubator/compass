@@ -23,8 +23,8 @@ const (
 	credentialsFileFmt = "credentials-%s.yaml"
 )
 
-//go:generate mockery -name=Client
-type Client interface {
+//go:generate mockery -name=Service
+type Service interface {
 	ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName string) (ClusterInfo, error)
 	DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretName string, terraformState string) error
 }
@@ -33,7 +33,7 @@ type client struct {
 	secrets v1.SecretInterface
 }
 
-func NewHydroformClient(secrets v1.SecretInterface) Client {
+func NewHydroformClient(secrets v1.SecretInterface) Service {
 	return &client{secrets: secrets}
 }
 
@@ -78,7 +78,7 @@ func (c client) ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName s
 		return ClusterInfo{}, err
 	}
 
-	log.Info("Restrieving cluster state")
+	log.Info("Retrieving cluster state")
 
 	internalState, err := stateToJson(cluster.ClusterInfo.InternalState)
 

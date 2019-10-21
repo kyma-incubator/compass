@@ -19,7 +19,7 @@ type config struct {
 	Address               string `envconfig:"default=127.0.0.1:3050"`
 	APIEndpoint           string `envconfig:"default=/graphql"`
 	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
-	Namespace             string `envconfig:"default=/compass-system"`
+	CredentialsNamespace  string `envconfig:"default=/compass-system"`
 
 	Database struct {
 		User     string `envconfig:"default=postgres"`
@@ -34,10 +34,10 @@ type config struct {
 }
 
 func (c *config) String() string {
-	return fmt.Sprintf("Address: %s, APIEndpoint: %s, Namespace: %s "+
+	return fmt.Sprintf("Address: %s, APIEndpoint: %s, CredentialsNamespace: %s "+
 		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
 		"DatabaseName: %s, DatabaseSSLMode: %s, DatabaseSchemaFilePath: %s",
-		c.Address, c.APIEndpoint, c.Namespace,
+		c.Address, c.APIEndpoint, c.CredentialsNamespace,
 		c.Database.User, c.Database.Host, c.Database.Port,
 		c.Database.Name, c.Database.SSLMode, c.Database.SchemaFilePath)
 }
@@ -45,7 +45,7 @@ func (c *config) String() string {
 func main() {
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
-	exitOnError(err, "Error while loading app config")
+	exitOnError(err, "Failed to load application config")
 
 	log.Println("Starting Provisioner")
 	log.Printf("Config: %s", cfg.String())
@@ -53,7 +53,8 @@ func main() {
 	connString := fmt.Sprintf(connStringFormat, cfg.Database.Host, cfg.Database.Port, cfg.Database.User,
 		cfg.Database.Password, cfg.Database.Name, cfg.Database.SSLMode)
 
-	resolver := newResolver(connString, cfg.Database.SchemaFilePath, cfg.Namespace)
+	resolver, err := newResolver(connString, cfg.Database.SchemaFilePath, cfg.CredentialsNamespace)
+	exitOnError(err, "Failed to initialize GraphQL resolver ")
 
 	gqlCfg := gqlschema.Config{
 		Resolvers: resolver,
