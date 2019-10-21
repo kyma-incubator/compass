@@ -11,8 +11,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//go:generate mockery -name=RuntimeService
-type RuntimeService interface {
+//go:generate mockery -name=Service
+type Service interface {
 	GetStatus(runtimeID string) (model.RuntimeStatus, dberrors.Error)
 	SetProvisioningStarted(runtimeID string, runtimeConfig model.RuntimeConfig) (model.Operation, dberrors.Error)
 	SetDeprovisioningStarted(runtimeID string) (model.Operation, dberrors.Error)
@@ -21,6 +21,9 @@ type RuntimeService interface {
 	Update(runtimeID string, kubeconfig string, terraformState string) dberrors.Error
 	CleanupClusterData(runtimeID string) dberrors.Error
 	GetClusterData(runtimeID string) (model.Cluster, dberrors.Error)
+	Get(operationID string) (model.Operation, error)
+	SetAsFailed(operationID string, message string) error
+	SetAsSucceeded(operationID string) error
 }
 
 type runtimeService struct {
@@ -28,7 +31,7 @@ type runtimeService struct {
 	uuidGenerator    UUIDGenerator
 }
 
-func NewRuntimeService(dbSessionFactory dbsession.Factory, uuidGenerator UUIDGenerator) RuntimeService {
+func NewRuntimeService(dbSessionFactory dbsession.Factory, uuidGenerator UUIDGenerator) Service {
 	return runtimeService{
 		dbSessionFactory: dbSessionFactory,
 		uuidGenerator:    uuidGenerator,
@@ -181,4 +184,22 @@ func (r runtimeService) GetClusterData(runtimeID string) (model.Cluster, dberror
 	session := r.dbSessionFactory.NewReadSession()
 
 	return session.GetCluster(runtimeID)
+}
+
+func (r runtimeService) Get(operationID string) (model.Operation, error) {
+	session := r.dbSessionFactory.NewReadSession()
+
+	return session.GetOperation(operationID)
+}
+
+func (r runtimeService) SetAsFailed(operationID string, message string) error {
+	session := r.dbSessionFactory.NewWriteSession()
+
+	return session.UpdateOperationState(operationID, message, model.Failed)
+}
+
+func (r runtimeService) SetAsSucceeded(operationID string) error {
+	session := r.dbSessionFactory.NewWriteSession()
+
+	return session.UpdateOperationState(operationID, "Operation succeeded.", model.Succeeded)
 }

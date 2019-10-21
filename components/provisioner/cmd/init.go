@@ -19,24 +19,22 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-func newPersistenceService(connectionString, schemaPath string) (persistence.RuntimeService, persistence.OperationService, error) {
+func newPersistenceService(connectionString, schemaPath string) (persistence.Service, error) {
 	connection, err := database.InitializeDatabase(connectionString, schemaPath)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	dbSessionFactory := dbsession.NewFactory(connection)
 	uuidGenerator := persistence.NewUUIDGenerator()
-	runtimeService := persistence.NewRuntimeService(dbSessionFactory, uuidGenerator)
-	operationService := persistence.NewOperationService(dbSessionFactory)
 
-	return runtimeService, operationService, nil
+	return persistence.NewRuntimeService(dbSessionFactory, uuidGenerator), nil
 }
 
-func newProvisioningService(runtimeService persistence.RuntimeService, operationService persistence.OperationService, secrets v1.SecretInterface) provisioning.ProvisioningService {
+func newProvisioningService(persistenceService persistence.Service, secrets v1.SecretInterface) provisioning.ProvisioningService {
 	hydroformClient := hydroform.NewHydroformClient(secrets)
 
-	return provisioning.NewProvisioningService(operationService, runtimeService, hydroformClient)
+	return provisioning.NewProvisioningService(persistenceService, hydroformClient)
 }
 
 func newSecretsInterface(namespace string) (v1.SecretInterface, error) {
@@ -61,7 +59,7 @@ func newSecretsInterface(namespace string) (v1.SecretInterface, error) {
 }
 
 func newResolver(connectionString string, schemaFilePath string, namespace string) (*api.Resolver, error) {
-	runtimeService, operationService, err := newPersistenceService(connectionString, schemaFilePath)
+	persistenceService, err := newPersistenceService(connectionString, schemaFilePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to initialize persistence")
 	}
@@ -71,5 +69,5 @@ func newResolver(connectionString string, schemaFilePath string, namespace strin
 		return nil, errors.Wrap(err, "Failed to create secrets interface")
 	}
 
-	return api.NewResolver(newProvisioningService(runtimeService, operationService, secretInterface)), nil
+	return api.NewResolver(newProvisioningService(persistenceService, secretInterface)), nil
 }

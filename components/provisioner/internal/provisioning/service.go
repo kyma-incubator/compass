@@ -31,22 +31,20 @@ type ProvisioningService interface {
 }
 
 type service struct {
-	operationService persistence.OperationService
-	runtimeService   persistence.RuntimeService
-	hydroform        hydroform.Service
+	persistenceService persistence.Service
+	hydroform          hydroform.Service
 }
 
-func NewProvisioningService(operationService persistence.OperationService, runtimeService persistence.RuntimeService, hydroform hydroform.Service) ProvisioningService {
+func NewProvisioningService(persistenceService persistence.Service, hydroform hydroform.Service) ProvisioningService {
 	return &service{
-		operationService: operationService,
-		runtimeService:   runtimeService,
-		hydroform:        hydroform,
+		persistenceService: persistenceService,
+		hydroform:          hydroform,
 	}
 }
 
 func (r *service) ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeInput) (string, error, chan interface{}) {
 	{
-		lastOperation, err := r.runtimeService.GetLastOperation(id)
+		lastOperation, err := r.persistenceService.GetLastOperation(id)
 
 		if err == nil && !lastProvisioningFailed(lastOperation) {
 			return "", errors.New(fmt.Sprintf("cannot provision runtime. Runtime %s already provisioned", id)), nil
@@ -68,7 +66,7 @@ func (r *service) ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeI
 		return "", err, nil
 	}
 
-	operation, err := r.runtimeService.SetProvisioningStarted(id, runtimeConfig)
+	operation, err := r.persistenceService.SetProvisioningStarted(id, runtimeConfig)
 
 	if err != nil {
 		return "", err, nil
@@ -86,7 +84,7 @@ func lastProvisioningFailed(operation model.Operation) bool {
 }
 
 func (r *service) DeprovisionRuntime(id string, credentials gqlschema.CredentialsInput) (string, error, chan interface{}) {
-	runtimeStatus, err := r.runtimeService.GetStatus(id)
+	runtimeStatus, err := r.persistenceService.GetStatus(id)
 
 	if err != nil {
 		return "", err, nil
@@ -96,7 +94,7 @@ func (r *service) DeprovisionRuntime(id string, credentials gqlschema.Credential
 		return "", errors.New("cannot start new operation while previous one is in progress"), nil
 	}
 
-	operation, err := r.runtimeService.SetDeprovisioningStarted(id)
+	operation, err := r.persistenceService.SetDeprovisioningStarted(id)
 
 	if err != nil {
 		return "", err, nil
@@ -119,7 +117,7 @@ func (r *service) ReconnectRuntimeAgent(id string) (string, error) {
 }
 
 func (r *service) RuntimeStatus(runtimeID string) (*gqlschema.RuntimeStatus, error) {
-	runtimeStatus, err := r.runtimeService.GetStatus(runtimeID)
+	runtimeStatus, err := r.persistenceService.GetStatus(runtimeID)
 
 	if err != nil {
 		return nil, err
@@ -131,7 +129,7 @@ func (r *service) RuntimeStatus(runtimeID string) (*gqlschema.RuntimeStatus, err
 }
 
 func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.OperationStatus, error) {
-	operation, err := r.operationService.Get(operationID)
+	operation, err := r.persistenceService.Get(operationID)
 
 	if err != nil {
 		return nil, err
@@ -143,7 +141,7 @@ func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.Operati
 }
 
 func (r *service) CleanupRuntimeData(id string) (string, error) {
-	return id, r.runtimeService.CleanupClusterData(id)
+	return id, r.persistenceService.CleanupClusterData(id)
 }
 
 func (r *service) startProvisioning(operationID, runtimeID string, config model.RuntimeConfig, secretName string, finished chan interface{}) {
@@ -153,17 +151,17 @@ func (r *service) startProvisioning(operationID, runtimeID string, config model.
 	if err != nil || info.ClusterStatus != types.Provisioned {
 		updateOperationStatus(func() error {
 			log.Errorf("Provisioning runtime %s failed: %s", runtimeID, err.Error())
-			return r.operationService.SetAsFailed(operationID, err.Error())
+			return r.persistenceService.SetAsFailed(operationID, err.Error())
 		})
 	} else {
 		updateOperationStatus(func() error {
-			err := r.runtimeService.Update(runtimeID, info.KubeConfig, info.State)
+			err := r.persistenceService.Update(runtimeID, info.KubeConfig, info.State)
 			if err != nil {
 				log.Errorf("Provisioning runtime %s failed: %s", runtimeID, err.Error())
-				return r.operationService.SetAsFailed(operationID, err.Error())
+				return r.persistenceService.SetAsFailed(operationID, err.Error())
 			}
 			log.Infof("Provisioning runtime %s finished successfully", runtimeID)
-			return r.operationService.SetAsSucceeded(operationID)
+			return r.persistenceService.SetAsSucceeded(operationID)
 		})
 	}
 	close(finished)
@@ -172,12 +170,12 @@ func (r *service) startProvisioning(operationID, runtimeID string, config model.
 func (r *service) startDeprovisioning(operationID, runtimeID string, config model.RuntimeConfig, secretName string, finished chan interface{}) {
 	log.Infof("Deprovisioning runtime %s is starting", runtimeID)
 
-	cluster, dberr := r.runtimeService.GetClusterData(runtimeID)
+	cluster, dberr := r.persistenceService.GetClusterData(runtimeID)
 
 	if dberr != nil {
 		updateOperationStatus(func() error {
 			log.Errorf("Deprovisioning runtime %s failed: %s", runtimeID, dberr.Error())
-			return r.operationService.SetAsFailed(operationID, dberr.Error())
+			return r.persistenceService.SetAsFailed(operationID, dberr.Error())
 		})
 	}
 
@@ -186,12 +184,12 @@ func (r *service) startDeprovisioning(operationID, runtimeID string, config mode
 	if err != nil {
 		updateOperationStatus(func() error {
 			log.Errorf("Deprovisioning runtime %s failed: %s", runtimeID, err.Error())
-			return r.operationService.SetAsFailed(operationID, err.Error())
+			return r.persistenceService.SetAsFailed(operationID, err.Error())
 		})
 	} else {
 		updateOperationStatus(func() error {
 			log.Infof("Deprovisioning runtime %s finished successfully", runtimeID)
-			return r.operationService.SetAsSucceeded(operationID)
+			return r.persistenceService.SetAsSucceeded(operationID)
 		})
 	}
 	close(finished)

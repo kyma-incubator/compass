@@ -18,8 +18,7 @@ import (
 
 func TestService_ProvisionRuntime(t *testing.T) {
 	hydroformMock := &mocks.Service{}
-	operationServiceMock := &persistenceMocks.OperationService{}
-	runtimeServiceMock := &persistenceMocks.RuntimeService{}
+	persistenceServiceMock := &persistenceMocks.Service{}
 
 	clusterConfig := &gqlschema.ClusterConfigInput{
 		GcpConfig: &gqlschema.GCPConfigInput{
@@ -40,13 +39,13 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		expOperationID := "223949ed-e6b6-4ab2-ab3e-8e19cd456dd40"
 		operation := model.Operation{ID: expOperationID}
 
-		runtimeServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.NotFound("Not found"))
-		runtimeServiceMock.On("SetProvisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
-		runtimeServiceMock.On("Update", runtimeID, "", "").Return(nil)
-		operationServiceMock.On("SetAsSucceeded", expOperationID).Return(nil)
+		persistenceServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.NotFound("Not found"))
+		persistenceServiceMock.On("SetProvisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
+		persistenceServiceMock.On("Update", runtimeID, "", "").Return(nil)
+		persistenceServiceMock.On("SetAsSucceeded", expOperationID).Return(nil)
 		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: "", State: ""}, nil)
 
-		service := NewProvisioningService(operationServiceMock, runtimeServiceMock, hydroformMock)
+		service := NewProvisioningService(persistenceServiceMock, hydroformMock)
 
 		//when
 		operationID, err, finished := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: &gqlschema.CredentialsInput{}, KymaConfig: &gqlschema.KymaConfigInput{}})
@@ -64,13 +63,13 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		expOperationID := "223949ed-e6b6-4ab2-ab3e-8e19cd456dd40"
 		operation := model.Operation{ID: expOperationID}
 
-		runtimeServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{Type: model.Provision, State: model.Failed}, nil)
-		runtimeServiceMock.On("SetProvisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
-		runtimeServiceMock.On("Update", runtimeID, "", "").Return(nil)
-		operationServiceMock.On("SetAsSucceeded", expOperationID).Return(nil)
+		persistenceServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{Type: model.Provision, State: model.Failed}, nil)
+		persistenceServiceMock.On("SetProvisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
+		persistenceServiceMock.On("Update", runtimeID, "", "").Return(nil)
+		persistenceServiceMock.On("SetAsSucceeded", expOperationID).Return(nil)
 		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: "", State: ""}, nil)
 
-		service := NewProvisioningService(operationServiceMock, runtimeServiceMock, hydroformMock)
+		service := NewProvisioningService(persistenceServiceMock, hydroformMock)
 
 		//when
 		operationID, err, finished := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: &gqlschema.CredentialsInput{}, KymaConfig: &gqlschema.KymaConfigInput{}})
@@ -85,9 +84,9 @@ func TestService_ProvisionRuntime(t *testing.T) {
 	t.Run("Should return error when cluster is already provisioned", func(t *testing.T) {
 		//given
 		runtimeID := "0ad91f16-d553-413f-aa27-4eefd9e5f1c6"
-		runtimeServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{}, nil)
+		persistenceServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{}, nil)
 
-		service := NewProvisioningService(operationServiceMock, runtimeServiceMock, hydroformMock)
+		service := NewProvisioningService(persistenceServiceMock, hydroformMock)
 
 		//when
 		_, err, _ := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: &gqlschema.CredentialsInput{}, KymaConfig: &gqlschema.KymaConfigInput{}})
@@ -98,8 +97,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 }
 
 func TestService_DeprovisionRuntime(t *testing.T) {
-	operationServiceMock := &persistenceMocks.OperationService{}
-	runtimeServiceMock := &persistenceMocks.RuntimeService{}
+	persistenceServiceMock := &persistenceMocks.Service{}
 	hydroformMock := &mocks.Service{}
 
 	runtimeConfig := model.RuntimeConfig{
@@ -115,13 +113,13 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		expOperationID := "c7241d2d-5ffd-434b-9a52-17ce9ee04578"
 		operation := model.Operation{ID: expOperationID}
 
-		runtimeServiceMock.On("GetStatus", runtimeID).Return(runtimeStatus, nil)
-		runtimeServiceMock.On("SetDeprovisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
-		runtimeServiceMock.On("GetClusterData", runtimeID).Return(model.Cluster{TerraformState: "{}"}, nil)
-		operationServiceMock.On("SetAsSucceeded", expOperationID).Return(nil)
+		persistenceServiceMock.On("GetStatus", runtimeID).Return(runtimeStatus, nil)
+		persistenceServiceMock.On("SetDeprovisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
+		persistenceServiceMock.On("GetClusterData", runtimeID).Return(model.Cluster{TerraformState: "{}"}, nil)
+		persistenceServiceMock.On("SetAsSucceeded", expOperationID).Return(nil)
 		hydroformMock.On("DeprovisionCluster", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-		resolver := NewProvisioningService(operationServiceMock, runtimeServiceMock, hydroformMock)
+		resolver := NewProvisioningService(persistenceServiceMock, hydroformMock)
 
 		//when
 		opt, err, finished := resolver.DeprovisionRuntime(runtimeID, gqlschema.CredentialsInput{})
@@ -136,13 +134,13 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 	t.Run("Should not start deprovisioning when previous operation is in progress", func(t *testing.T) {
 		//given
 		runtimeID := "a24142da-1111-4ec2-93e3-e47ccaa6973f"
-		runtimeServiceMock := &persistenceMocks.RuntimeService{}
+		persistenceServiceMock := &persistenceMocks.Service{}
 		lastOperation := model.Operation{State: model.InProgress}
 		runtimeStatus := model.RuntimeStatus{LastOperationStatus: lastOperation}
 
-		runtimeServiceMock.On("GetStatus", runtimeID).Return(runtimeStatus, nil)
+		persistenceServiceMock.On("GetStatus", runtimeID).Return(runtimeStatus, nil)
 
-		resolver := NewProvisioningService(operationServiceMock, runtimeServiceMock, hydroformMock)
+		resolver := NewProvisioningService(persistenceServiceMock, hydroformMock)
 
 		//when
 		_, err, _ := resolver.DeprovisionRuntime(runtimeID, gqlschema.CredentialsInput{})
@@ -153,8 +151,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 }
 
 func TestService_RuntimeOperationStatus(t *testing.T) {
-	operationServiceMock := &persistenceMocks.OperationService{}
-	runtimeServiceMock := &persistenceMocks.RuntimeService{}
+	persistenceServiceMock := &persistenceMocks.Service{}
 	hydroformMock := &mocks.Service{}
 
 	t.Run("Should return operation status", func(t *testing.T) {
@@ -170,8 +167,8 @@ func TestService_RuntimeOperationStatus(t *testing.T) {
 			Message:   "some message",
 		}
 
-		operationServiceMock.On("Get", operationID).Return(operation, nil)
-		resolver := NewProvisioningService(operationServiceMock, runtimeServiceMock, hydroformMock)
+		persistenceServiceMock.On("Get", operationID).Return(operation, nil)
+		resolver := NewProvisioningService(persistenceServiceMock, hydroformMock)
 
 		//when
 		status, err := resolver.RuntimeOperationStatus(operationID)
