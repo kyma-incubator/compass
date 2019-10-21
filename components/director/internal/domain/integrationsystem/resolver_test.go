@@ -517,7 +517,7 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 		IntSysSvcFn    func() *automock.IntegrationSystemService
 		IntSysConvFn   func() *automock.IntegrationSystemConverter
 		SysAuthSvcFn   func() *automock.SystemAuthService
-		OAuth20SvcFn   func() *automock.Oauth20Service
+		OAuth20SvcFn   func() *automock.OAuth20Service
 		ExpectedOutput *graphql.IntegrationSystem
 		ExpectedError  error
 	}{
@@ -537,11 +537,12 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 			},
 			SysAuthSvcFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.IntegrationSystemReference, modelIntSys.ID).Return(nil, nil)
+				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.IntegrationSystemReference, modelIntSys.ID).Return(testAuths, nil)
 				return svc
 			},
-			OAuth20SvcFn: func() *automock.Oauth20Service {
-				svc := &automock.Oauth20Service{}
+			OAuth20SvcFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteMultipleClientCredentials", txtest.CtxWithDBMatcher(), testAuths).Return(nil)
 				return svc
 			},
 			ExpectedOutput: gqlIntSys,
@@ -562,8 +563,8 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 				svc := &automock.SystemAuthService{}
 				return svc
 			},
-			OAuth20SvcFn: func() *automock.Oauth20Service {
-				svc := &automock.Oauth20Service{}
+			OAuth20SvcFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
 				return svc
 			},
 			ExpectedError: testError,
@@ -583,11 +584,12 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 			},
 			SysAuthSvcFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.IntegrationSystemReference, modelIntSys.ID).Return(nil, nil)
+				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.IntegrationSystemReference, modelIntSys.ID).Return(testAuths, nil)
 				return svc
 			},
-			OAuth20SvcFn: func() *automock.Oauth20Service {
-				svc := &automock.Oauth20Service{}
+			OAuth20SvcFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteMultipleClientCredentials", txtest.CtxWithDBMatcher(), testAuths).Return(nil)
 				return svc
 			},
 			ExpectedError: testError,
@@ -607,8 +609,8 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 				svc := &automock.SystemAuthService{}
 				return svc
 			},
-			OAuth20SvcFn: func() *automock.Oauth20Service {
-				svc := &automock.Oauth20Service{}
+			OAuth20SvcFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
 				return svc
 			},
 			ExpectedError: testError,
@@ -628,11 +630,12 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 			},
 			SysAuthSvcFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.IntegrationSystemReference, modelIntSys.ID).Return(nil, nil)
+				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.IntegrationSystemReference, modelIntSys.ID).Return(testAuths, nil)
 				return svc
 			},
-			OAuth20SvcFn: func() *automock.Oauth20Service {
-				svc := &automock.Oauth20Service{}
+			OAuth20SvcFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteMultipleClientCredentials", txtest.CtxWithDBMatcher(), testAuths).Return(nil)
 				return svc
 			},
 			ExpectedError: testError,
@@ -654,8 +657,8 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.IntegrationSystemReference, modelIntSys.ID).Return(nil, testError)
 				return svc
 			},
-			OAuth20SvcFn: func() *automock.Oauth20Service {
-				svc := &automock.Oauth20Service{}
+			OAuth20SvcFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
 				return svc
 			},
 			ExpectedError: testError,
@@ -677,39 +680,12 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.IntegrationSystemReference, modelIntSys.ID).Return(testAuths, nil)
 				return svc
 			},
-			OAuth20SvcFn: func() *automock.Oauth20Service {
-				svc := &automock.Oauth20Service{}
-				svc.On("DeleteClientCredentials", txtest.CtxWithDBMatcher(), testAuths[0].Value.Credential.Oauth.ClientID).Return(testError)
+			OAuth20SvcFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteMultipleClientCredentials", txtest.CtxWithDBMatcher(), testAuths).Return(testError)
 				return svc
 			},
 			ExpectedError: testError,
-		},
-		{
-			Name: "Success when deleting oauth",
-			TxFn: txGen.ThatSucceeds,
-			IntSysSvcFn: func() *automock.IntegrationSystemService {
-				svc := &automock.IntegrationSystemService{}
-				svc.On("Get", txtest.CtxWithDBMatcher(), "foo").Return(modelIntSys, nil).Once()
-				svc.On("Delete", txtest.CtxWithDBMatcher(), testID).Return(nil).Once()
-				return svc
-			},
-			IntSysConvFn: func() *automock.IntegrationSystemConverter {
-				conv := &automock.IntegrationSystemConverter{}
-				conv.On("ToGraphQL", modelIntSys).Return(gqlIntSys).Once()
-
-				return conv
-			},
-			SysAuthSvcFn: func() *automock.SystemAuthService {
-				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.IntegrationSystemReference, modelIntSys.ID).Return(testAuths, nil)
-				return svc
-			},
-			OAuth20SvcFn: func() *automock.Oauth20Service {
-				svc := &automock.Oauth20Service{}
-				svc.On("DeleteClientCredentials", txtest.CtxWithDBMatcher(), testAuths[0].Value.Credential.Oauth.ClientID).Return(nil)
-				return svc
-			},
-			ExpectedOutput: gqlIntSys,
 		},
 	}
 

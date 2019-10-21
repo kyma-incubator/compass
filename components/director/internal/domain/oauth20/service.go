@@ -73,6 +73,22 @@ func (s *service) DeleteClientCredentials(ctx context.Context, clientID string) 
 	return s.unregisterClient(clientID)
 }
 
+func (s *service) DeleteMultipleClientCredentials(ctx context.Context, auths []model.SystemAuth) error {
+	for _, auth := range auths {
+		if auth.Value == nil {
+			continue
+		}
+		if auth.Value.Credential.Oauth == nil {
+			continue
+		}
+		err := s.DeleteClientCredentials(ctx, auth.Value.Credential.Oauth.ClientID)
+		if err != nil {
+			return errors.Wrap(err, "while deleting OAuth 2.0 client")
+		}
+	}
+	return nil
+}
+
 func (s *service) getClientCredentialScopes(objType model.SystemAuthReferenceObjectType) ([]string, error) {
 	scopes, err := s.scopeCfgProvider.GetRequiredScopes(s.buildPath(objType))
 	if err != nil {

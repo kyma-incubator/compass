@@ -321,7 +321,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 		TransactionerFn  func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn        func() *automock.RuntimeService
 		SysAuthServiceFn func() *automock.SystemAuthService
-		OAuth20ServiceFn func() *automock.Oauth20Service
+		OAuth20ServiceFn func() *automock.OAuth20Service
 		ConverterFn      func() *automock.RuntimeConverter
 		InputID          string
 		ExpectedRuntime  *graphql.Runtime
@@ -343,11 +343,13 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(nil, nil)
+				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
-			OAuth20ServiceFn: func() *automock.Oauth20Service {
-				svc := &automock.Oauth20Service{}
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
+
 				return svc
 			},
 			InputID:         "foo",
@@ -370,11 +372,13 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(nil, nil)
+				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
-			OAuth20ServiceFn: func() *automock.Oauth20Service {
-				svc := &automock.Oauth20Service{}
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
+
 				return svc
 			},
 			InputID:         "foo",
@@ -397,8 +401,8 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.SystemAuthService{}
 				return svc
 			},
-			OAuth20ServiceFn: func() *automock.Oauth20Service {
-				svc := &automock.Oauth20Service{}
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
 				return svc
 			},
 			InputID:         "foo",
@@ -420,8 +424,8 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.SystemAuthService{}
 				return svc
 			},
-			OAuth20ServiceFn: func() *automock.Oauth20Service {
-				svc := &automock.Oauth20Service{}
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
 				return svc
 			},
 			InputID:         "foo",
@@ -444,11 +448,12 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(nil, nil)
+				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
-			OAuth20ServiceFn: func() *automock.Oauth20Service {
-				svc := &automock.Oauth20Service{}
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
 				return svc
 			},
 			InputID:         "foo",
@@ -472,8 +477,8 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(nil, testErr)
 				return svc
 			},
-			OAuth20ServiceFn: func() *automock.Oauth20Service {
-				svc := &automock.Oauth20Service{}
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
 				return svc
 			},
 			InputID:         "foo",
@@ -498,44 +503,14 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
-			OAuth20ServiceFn: func() *automock.Oauth20Service {
-				svc := &automock.Oauth20Service{}
-				svc.On("DeleteClientCredentials", contextParam, testAuths[0].Value.Credential.Oauth.ClientID).Return(testErr)
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(testErr)
 				return svc
 			},
 			InputID:         "foo",
 			ExpectedRuntime: nil,
-			ExpectedErr:     errors.Wrap(testErr, "while deleting OAuth 2.0 client"),
-		},
-		{
-			Name:            "Success when deleting oauth",
-			TransactionerFn: txGen.ThatSucceeds,
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
-				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
-				svc.On("Delete", txtest.CtxWithDBMatcher(), modelRuntime.ID).Return(nil).Once()
-
-				return svc
-			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
-				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
-
-				return conv
-			},
-			SysAuthServiceFn: func() *automock.SystemAuthService {
-				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
-				return svc
-			},
-			OAuth20ServiceFn: func() *automock.Oauth20Service {
-				svc := &automock.Oauth20Service{}
-				svc.On("DeleteClientCredentials", contextParam, testAuths[0].Value.Credential.Oauth.ClientID).Return(nil)
-				return svc
-			},
-			InputID:         "foo",
-			ExpectedRuntime: gqlRuntime,
-			ExpectedErr:     nil,
+			ExpectedErr:     testErr,
 		},
 	}
 

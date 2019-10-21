@@ -40,7 +40,7 @@ type SystemAuthConverter interface {
 
 //go:generate mockery -name=OAuth20Service -output=automock -outpkg=automock -case=underscore
 type OAuth20Service interface {
-	DeleteClientCredentials(ctx context.Context, clientID string) error
+	DeleteMultipleClientCredentials(ctx context.Context, auths []model.SystemAuth) error
 }
 
 type Resolver struct {
@@ -209,16 +209,11 @@ func (r *Resolver) DeleteIntegrationSystem(ctx context.Context, id string) (*gra
 		return nil, err
 	}
 
-	for _, auth := range auths {
-		if auth.Value != nil {
-			if auth.Value.Credential.Oauth != nil {
-				err := r.oAuth20Svc.DeleteClientCredentials(ctx, auth.Value.Credential.Oauth.ClientID)
-				if err != nil {
-					return nil, errors.Wrap(err, "while deleting OAuth 2.0 client")
-				}
-			}
-		}
+	err = r.oAuth20Svc.DeleteMultipleClientCredentials(ctx, auths)
+	if err != nil {
+		return nil, err
 	}
+
 	err = r.intSysSvc.Delete(ctx, id)
 	if err != nil {
 		return nil, err
