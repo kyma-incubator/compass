@@ -7,7 +7,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir: pr/
-      version: "PR-357"
+      version: "PR-395"
     director:
       dir:
       version: "PR-372"
@@ -31,11 +31,7 @@ global:
     tests:
       e2e:
         dir: pr/
-<<<<<<< HEAD
         version: "PR-372"
-=======
-        version: "PR-384"
->>>>>>> Fix OAuth casing and e2e tests image version
       connector:
         dir: pr/
         version: "PR-357"
