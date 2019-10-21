@@ -128,11 +128,9 @@ func TestQueryIntegrationSystems(t *testing.T) {
 
 	t.Log("Create integration systems")
 	intSys1 := createIntegrationSystem(t, ctx, name1)
-	require.NotEmpty(t, intSys1)
 	defer deleteIntegrationSystem(t, ctx, intSys1.ID)
 
 	intSys2 := createIntegrationSystem(t, ctx, name2)
-	require.NotEmpty(t, intSys2)
 	defer deleteIntegrationSystem(t, ctx, intSys2.ID)
 
 	first := 2
