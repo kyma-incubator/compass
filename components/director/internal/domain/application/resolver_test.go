@@ -508,10 +508,10 @@ func TestResolver_DeleteApplication(t *testing.T) {
 
 			// then
 			assert.Equal(t, testCase.ExpectedApplication, result)
-			if err != nil {
+			if testCase.ExpectedErr != nil {
 				assert.EqualError(t, testCase.ExpectedErr, err.Error())
 			} else {
-				assert.Equal(t, testCase.ExpectedErr, err)
+				assert.NoError(t, err)
 			}
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)

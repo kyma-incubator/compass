@@ -695,8 +695,8 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 			intSysSvc := testCase.IntSysSvcFn()
 			intSysConv := testCase.IntSysConvFn()
 			sysAuthSvc := testCase.SysAuthSvcFn()
-			OAuth20Svc := testCase.OAuth20SvcFn()
-			resolver := integrationsystem.NewResolver(transact, intSysSvc, sysAuthSvc, OAuth20Svc, intSysConv, nil)
+			oAuth20Svc := testCase.OAuth20SvcFn()
+			resolver := integrationsystem.NewResolver(transact, intSysSvc, sysAuthSvc, oAuth20Svc, intSysConv, nil)
 
 			// WHEN
 			result, err := resolver.DeleteIntegrationSystem(ctx, testID)
@@ -715,7 +715,7 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 			intSysSvc.AssertExpectations(t)
 			intSysConv.AssertExpectations(t)
 			sysAuthSvc.AssertExpectations(t)
-			OAuth20Svc.AssertExpectations(t)
+			oAuth20Svc.AssertExpectations(t)
 		})
 	}
 }

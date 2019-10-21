@@ -529,10 +529,10 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 
 			// then
 			assert.Equal(t, testCase.ExpectedRuntime, result)
-			if err != nil {
+			if testCase.ExpectedErr != nil {
 				assert.EqualError(t, testCase.ExpectedErr, err.Error())
 			} else {
-				assert.Equal(t, testCase.ExpectedErr, err)
+				assert.NoError(t, err)
 			}
 
 			svc.AssertExpectations(t)

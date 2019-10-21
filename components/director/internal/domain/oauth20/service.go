@@ -83,7 +83,7 @@ func (s *service) DeleteMultipleClientCredentials(ctx context.Context, auths []m
 		}
 		err := s.DeleteClientCredentials(ctx, auth.Value.Credential.Oauth.ClientID)
 		if err != nil {
-			return errors.Wrap(err, "while deleting OAuth 2.0 client")
+			return errors.Wrap(err, "while deleting OAuth 2.0 credentials")
 		}
 	}
 	return nil
