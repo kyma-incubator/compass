@@ -314,7 +314,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 	gqlRuntime := fixGQLRuntime("foo", "Foo", "Bar")
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
-	testAuth := fixOAuth()
+	testAuths := fixOAuths()
 
 	testCases := []struct {
 		Name             string
@@ -486,6 +486,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
+
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -494,17 +495,47 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return([]model.SystemAuth{testAuth}, nil)
+				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.Oauth20Service {
 				svc := &automock.Oauth20Service{}
-				svc.On("DeleteClientCredentials", contextParam, testAuth.Value.Credential.Oauth.ClientID).Return(testErr)
+				svc.On("DeleteClientCredentials", contextParam, testAuths[0].Value.Credential.Oauth.ClientID).Return(testErr)
 				return svc
 			},
 			InputID:         "foo",
 			ExpectedRuntime: nil,
 			ExpectedErr:     errors.Wrap(testErr, "while deleting OAuth 2.0 client"),
+		},
+		{
+			Name:            "Success when deleting oauth",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
+				svc.On("Delete", txtest.CtxWithDBMatcher(), modelRuntime.ID).Return(nil).Once()
+
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
+
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				return svc
+			},
+			OAuth20ServiceFn: func() *automock.Oauth20Service {
+				svc := &automock.Oauth20Service{}
+				svc.On("DeleteClientCredentials", contextParam, testAuths[0].Value.Credential.Oauth.ClientID).Return(nil)
+				return svc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: gqlRuntime,
+			ExpectedErr:     nil,
 		},
 	}
 
@@ -1243,17 +1274,37 @@ func TestResolver_Auths(t *testing.T) {
 	})
 }
 
-func fixOAuth() model.SystemAuth {
-	return model.SystemAuth{
-		ID:       "foo",
-		TenantID: "foo",
-		Value: &model.Auth{
-			Credential: model.CredentialData{
-				Basic: nil,
-				Oauth: &model.OAuthCredentialData{
-					ClientID:     "foo",
-					ClientSecret: "foo",
-					URL:          "foo",
+func fixOAuths() []model.SystemAuth {
+	return []model.SystemAuth{
+		{
+			ID:       "foo",
+			TenantID: "foo",
+			Value: &model.Auth{
+				Credential: model.CredentialData{
+					Basic: nil,
+					Oauth: &model.OAuthCredentialData{
+						ClientID:     "foo",
+						ClientSecret: "foo",
+						URL:          "foo",
+					},
+				},
+			},
+		},
+		{
+			ID:       "bar",
+			TenantID: "bar",
+			Value:    nil,
+		},
+		{
+			ID:       "test",
+			TenantID: "test",
+			Value: &model.Auth{
+				Credential: model.CredentialData{
+					Basic: &model.BasicCredentialData{
+						Username: "test",
+						Password: "test",
+					},
+					Oauth: nil,
 				},
 			},
 		},

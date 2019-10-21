@@ -509,7 +509,7 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 
 	modelIntSys := fixModelIntegrationSystem(testID, testName)
 	gqlIntSys := fixGQLIntegrationSystem(testID, testName)
-	testAuth := fixOAuth()
+	testAuths := fixOAuths()
 
 	testCases := []struct {
 		Name           string
@@ -661,7 +661,7 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 			ExpectedError: testError,
 		},
 		{
-			Name: "Return error when li failed ",
+			Name: "Return error when deleting oauth credential failed ",
 			TxFn: txGen.ThatDoesntExpectCommit,
 			IntSysSvcFn: func() *automock.IntegrationSystemService {
 				svc := &automock.IntegrationSystemService{}
@@ -674,15 +674,42 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 			},
 			SysAuthSvcFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.IntegrationSystemReference, modelIntSys.ID).Return([]model.SystemAuth{testAuth}, nil)
+				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.IntegrationSystemReference, modelIntSys.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20SvcFn: func() *automock.Oauth20Service {
 				svc := &automock.Oauth20Service{}
-				svc.On("DeleteClientCredentials", txtest.CtxWithDBMatcher(), testAuth.Value.Credential.Oauth.ClientID).Return(testError)
+				svc.On("DeleteClientCredentials", txtest.CtxWithDBMatcher(), testAuths[0].Value.Credential.Oauth.ClientID).Return(testError)
 				return svc
 			},
 			ExpectedError: testError,
+		},
+		{
+			Name: "Success when deleting oauth",
+			TxFn: txGen.ThatSucceeds,
+			IntSysSvcFn: func() *automock.IntegrationSystemService {
+				svc := &automock.IntegrationSystemService{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), "foo").Return(modelIntSys, nil).Once()
+				svc.On("Delete", txtest.CtxWithDBMatcher(), testID).Return(nil).Once()
+				return svc
+			},
+			IntSysConvFn: func() *automock.IntegrationSystemConverter {
+				conv := &automock.IntegrationSystemConverter{}
+				conv.On("ToGraphQL", modelIntSys).Return(gqlIntSys).Once()
+
+				return conv
+			},
+			SysAuthSvcFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.IntegrationSystemReference, modelIntSys.ID).Return(testAuths, nil)
+				return svc
+			},
+			OAuth20SvcFn: func() *automock.Oauth20Service {
+				svc := &automock.Oauth20Service{}
+				svc.On("DeleteClientCredentials", txtest.CtxWithDBMatcher(), testAuths[0].Value.Credential.Oauth.ClientID).Return(nil)
+				return svc
+			},
+			ExpectedOutput: gqlIntSys,
 		},
 	}
 
@@ -845,17 +872,37 @@ func TestResolver_Auths(t *testing.T) {
 	})
 }
 
-func fixOAuth() model.SystemAuth {
-	return model.SystemAuth{
-		ID:       "foo",
-		TenantID: "foo",
-		Value: &model.Auth{
-			Credential: model.CredentialData{
-				Basic: nil,
-				Oauth: &model.OAuthCredentialData{
-					ClientID:     "foo",
-					ClientSecret: "foo",
-					URL:          "foo",
+func fixOAuths() []model.SystemAuth {
+	return []model.SystemAuth{
+		{
+			ID:       "foo",
+			TenantID: "foo",
+			Value: &model.Auth{
+				Credential: model.CredentialData{
+					Basic: nil,
+					Oauth: &model.OAuthCredentialData{
+						ClientID:     "foo",
+						ClientSecret: "foo",
+						URL:          "foo",
+					},
+				},
+			},
+		},
+		{
+			ID:       "bar",
+			TenantID: "bar",
+			Value:    nil,
+		},
+		{
+			ID:       "test",
+			TenantID: "test",
+			Value: &model.Auth{
+				Credential: model.CredentialData{
+					Basic: &model.BasicCredentialData{
+						Username: "test",
+						Password: "test",
+					},
+					Oauth: nil,
 				},
 			},
 		},
