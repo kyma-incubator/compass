@@ -1,10 +1,10 @@
 # Application and Runtime flows
 
-The following diagrams shows interactions between [Application](./../terminology.md#application), [Management Plane](./../terminology.md#management-plane) and [Runtime](./../terminology.md#runtime).
+The following diagrams show interactions between Application, Management Plane and Runtime.
 
 ## Application connection
 
-Application connection consists of two phases: Application pairing and API registration. In the process of connecting new Application, two Management Plane's components are involved: [Director](./../terminology.md#mp-director) and [Connector](./../terminology.md#mp-connector).
+Application connection consists of two phases: Application pairing and API registration. In the process of connecting new Application, two Management Plane's components are involved: Director and Connector.
 
 ### Application pairing phase
 
@@ -24,11 +24,11 @@ API registration phase is a process of registering new API and Event API definit
 
 ## Runtime creation
 
-To create a new Runtime, Administrator sends proper request to the [Runtime Provisioner](./../terminology.md#mp-runtime-provisioner). Runtime Provisioner requests Runtime configuration from Director, and one-time token from Connector. Runtime Provisioner provisions Runtime, and then injects the configuration with one-time token. [Runtime Agent](./../terminology.md#runtime-agent) uses this token to set-up trusted connection between Management Plane and Runtime Agent.
+To create a new Runtime, Administrator sends proper request to the Runtime Provisioner. Runtime Provisioner requests Runtime configuration from Director, and one-time token from Connector. Runtime Provisioner provisions Runtime, and then injects the configuration with one-time token. Runtime Agent uses this token to set-up trusted connection between Management Plane and Runtime Agent.
 
 ![](./assets/runtime-creation.svg)
 
-When Runtime is ready, Runtime Agent notifies Director about its status. When the Director receives notification that a Runtime is ready, it passes the notification for every Application in group assigned to the Runtime via [Application Webhook API](./../terminology.md#application-webhook-api). See the [Application configuration update diagram](#application-configuration-update) for Runtime ready notification example.
+When Runtime is ready, Runtime Agent notifies Director about its status. When the Director receives notification that a Runtime is ready, it passes the notification for every Application in group assigned to the Runtime via Application Webhook API. See the [Application configuration update diagram](#application-configuration-update) for Runtime ready notification example.
 
 ## Configuration change
 
@@ -36,7 +36,7 @@ The following section describes configuration update flows for Application and R
 
 ### Application configuration update
 
-Application can choose between two options of updating configuration: periodically fetching configuration or exposing [Application Webhook API](./../terminology.md#application-webhook-api) for configuration update notifications.
+Application can choose between two options of updating configuration: periodically fetching configuration or exposing Application Webhook API for configuration update notifications.
 
 In the first case, Application periodically pulls configuration details for connected Runtimes, such as `eventURL`.
 

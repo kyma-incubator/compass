@@ -4,15 +4,15 @@
 
 This folder contains documents that relate to the project.
 
-## General
-
-- [Terminology](./terminology.md)
-- [Examples](./../examples/README.md)
-
 ## Architecture
 
-- [Components - High Level Architecture](./architecture/high-level-components.md)
-- [Components - Management Plane Components](./architecture/mp-components.md)
+Read these documents to learn the basics of the Compass architecture:
+
+- [Components](./architecture/components.md)
+- [Basic architecture](./architecture/basic-architecture.md)
+
+These documents provide you with more architectural details:
+
 - [Application and Runtime Flows](./architecture/app-runtime-flows.md)
 - [Establishing a trusted connection](./architecture/establishing-trusted-connection.md)
 - [API Credentials Flow](./architecture/api-credentials-flows.md)
@@ -23,7 +23,15 @@ This folder contains documents that relate to the project.
 - [Database scheme](./architecture/db-scheme.md)
 - [Authentication and authorization](./architecture/authentication-and-authorization.md)
 
+## Examples
+
+Here you can find mock GraphQL queries and mutations:
+
+- [Examples](./../examples/README.md)
+
 ## Investigations
+
+Here you can read about conducted investigations and proposed solutions:
 
 - [Storage - Requirements](./investigations/storage/requirements.md)
 - [Storage - S3](./investigations/storage/s3/README.md)
