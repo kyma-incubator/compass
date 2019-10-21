@@ -200,3 +200,8 @@ func assertRuntime(t *testing.T, in graphql.RuntimeInput, actualRuntime graphql.
 		assert.Empty(t, actualRuntime.Labels)
 	}
 }
+
+func assertIntegrationSystem(t *testing.T, in graphql.IntegrationSystemInput, actualIntegrationSystem graphql.IntegrationSystemExt) {
+	assert.Equal(t, in.Name, actualIntegrationSystem.Name)
+	assert.Equal(t, in.Description, actualIntegrationSystem.Description)
+}

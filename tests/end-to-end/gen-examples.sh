@@ -104,7 +104,7 @@ echo -e "${GREEN}Removing previous GraphQL examples...${NC}"
 rm -f "${LOCAL_ROOT_PATH}/examples/"*
 
 echo -e "${GREEN}Running Director tests with generating examples...${NC}"
-go test -c "${SCRIPT_DIR}/director/" -tags no_token_test
+go test -c "${SCRIPT_DIR}/director/" -tags ignore_external_dependencies
 ALL_SCOPES="runtime:write application:write label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read" \
 ./director.test
 

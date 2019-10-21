@@ -218,3 +218,11 @@ func (fp *gqlFieldsProvider) ForOneTimeToken() string {
 		token
 		connectorURL`
 }
+
+func (fp *gqlFieldsProvider) ForIntegrationSystem() string {
+	return fmt.Sprintf(`
+		id
+		name
+		description
+		auths {%s}`, fp.ForSystemAuth())
+}

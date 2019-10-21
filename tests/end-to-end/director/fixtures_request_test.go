@@ -40,6 +40,16 @@ func fixCreateLabelDefinitionRequest(labelDefinitionInputGQL string) *gcli.Reque
 			labelDefinitionInputGQL, tc.gqlFieldsProvider.ForLabelDefinition()))
 }
 
+func fixCreateIntegrationSystemRequest(integrationSystemInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: createIntegrationSystem(in: %s) {
+					%s
+				}
+			}`,
+			integrationSystemInGQL, tc.gqlFieldsProvider.ForIntegrationSystem()))
+}
+
 //UPDATE
 func fixUpdateLabelDefinitionRequest(ldInputGQL string) *gcli.Request {
 	return gcli.NewRequest(
@@ -66,6 +76,42 @@ func fixGenerateOneTimeTokenForApp(id string) *gcli.Request {
 						%s
 					}
 				}`, id, tc.gqlFieldsProvider.ForOneTimeToken()))
+}
+
+func fixUpdateIntegrationSystemRequest(id, integrationSystemInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+  				result: updateIntegrationSystem(id: "%s", in: %s) {
+    					%s
+					}
+				}`, id, integrationSystemInGQL, tc.gqlFieldsProvider.ForIntegrationSystem()))
+}
+
+func fixGenerateClientCredentialsForApplication(id string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+				result: generateClientCredentialsForApplication(id: "%s") {
+						%s
+					}
+				}`, id, tc.gqlFieldsProvider.ForSystemAuth()))
+}
+
+func fixGenerateClientCredentialsForRuntime(id string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+				result: generateClientCredentialsForRuntime(id: "%s") {
+						%s
+					}
+				}`, id, tc.gqlFieldsProvider.ForSystemAuth()))
+}
+
+func fixGenerateClientCredentialsForIntegrationSystem(id string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+				result: generateClientCredentialsForIntegrationSystem(id: "%s") {
+						%s
+					}
+				}`, id, tc.gqlFieldsProvider.ForSystemAuth()))
 }
 
 // SET
@@ -208,6 +254,26 @@ func fixRuntimes(labelFilterInGQL string, first int, after string) *gcli.Request
 			labelFilterInGQL, first, after, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForRuntime())))
 }
 
+func fixIntegrationSystemsRequest(first int, after string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: integrationSystems(first: %d, after: "%s") {
+						%s
+					}
+				}`,
+			first, after, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForIntegrationSystem())))
+}
+
+func fixIntegrationSystemRequest(intSysID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: integrationSystem(id: "%s") {
+						%s
+					}
+				}`,
+			intSysID, tc.gqlFieldsProvider.ForIntegrationSystem()))
+}
+
 // DELETE
 func fixDeleteLabelDefinition(labelDefinitionKey string, deleteRelatedLabels bool) *gcli.Request {
 	return gcli.NewRequest(
@@ -234,6 +300,42 @@ func fixDeleteAPIAuthRequest(apiID string, rtmID string) *gcli.Request {
 					%s
 				} 
 			}`, apiID, rtmID, tc.gqlFieldsProvider.ForAPIRuntimeAuth()))
+}
+
+func fixDeleteIntegrationSystem(intSysID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: deleteIntegrationSystem(id: "%s") {
+					%s
+				}
+			}`, intSysID, tc.gqlFieldsProvider.ForIntegrationSystem()))
+}
+
+func fixDeleteSystemAuthForApplication(authID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: deleteSystemAuthForApplication(authID: "%s") {
+					%s
+				}
+			}`, authID, tc.gqlFieldsProvider.ForSystemAuth()))
+}
+
+func fixDeleteSystemAuthForRuntime(authID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: deleteSystemAuthForRuntime(authID: "%s") {
+					%s
+				}
+			}`, authID, tc.gqlFieldsProvider.ForSystemAuth()))
+}
+
+func fixDeleteSystemAuthForIntegrationSystem(authID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: deleteSystemAuthForIntegrationSystem(authID: "%s") {
+					%s
+				}
+			}`, authID, tc.gqlFieldsProvider.ForSystemAuth()))
 }
 
 func removeDoubleQuotesFromJSONKeys(in string) string {
