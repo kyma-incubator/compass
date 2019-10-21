@@ -34,9 +34,14 @@ Read [this](https://kyma-project.io/docs/master/components/compass/#installation
 
 ### Chart installation
 
-If you already have a running Kyma instance in at least 1.1.0 version, with created Secrets and Tiller client certificates, you can install the Compass Helm chart using this command:
+If you already have a running Kyma instance in at least 1.6 version, with created Secrets and Tiller client certificates, you can install the Compass Helm chart using this command:
 ```bash
 helm install --name "compass" ./chart/compass --tls
+```
+
+For local installation, specify additional parameters:
+```bash
+helm install --set=global.isLocalEnv=true --set=global.minikubeIP=$(eval minikube ip) --name "compass" ./chart/compass --tls
 ```
 
 ### Local installation with Kyma
@@ -46,7 +51,7 @@ To install Compass along with the minimal Kyma installation from the `master` br
 ./installation/cmd/run.sh
 ```
 
-You can also specify Kyma version, such as 1.2.2 or newer:
+You can also specify Kyma version, such as 1.6 or newer:
 ```bash
 ./installation/cmd/run.sh {version}
 ```
@@ -63,7 +68,10 @@ Read [this](https://kyma-project.io/docs/root/kyma#details-testing-kyma) documen
 
 ## Usage
 
-Go to these URLs to see the documentation, GraphQL schemas, and to test some API operations:
+Currently, the Compass Gateway is accessible under three different hosts secured with different authentication methods:
 
-- `https://compass-gateway.{domain}/director`
-- `https://compass-gateway.{domain}/connector`
+- `https://compass-gateway.{domain}` - secured with JWT token issued by Identity Service, such as Dex
+- `https://compass-gateway-mtls.{domain}` - secured with client certificates (mTLS)
+- `https://compass-gateway-auth-oauth.{domain}` - secured with OAuth 2.0 access token issued by [Hydra](https://kyma-project.io/docs/components/security/#details-o-auth2-and-open-id-connect-server)
+
+You can access Director GraphQL API under the `/director/graphql` endpoint, and Connector GraphQL API under `/connector/graphql`.
