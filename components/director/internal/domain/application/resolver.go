@@ -107,6 +107,11 @@ type SystemAuthConverter interface {
 	ToGraphQL(in *model.SystemAuth) *graphql.SystemAuth
 }
 
+//go:generate mockery -name=OAuth20Service -output=automock -outpkg=automock -case=underscore
+type OAuth20Service interface {
+	DeleteMultipleClientCredentials(ctx context.Context, auths []model.SystemAuth) error
+}
+
 type Resolver struct {
 	transact persistence.Transactioner
 
@@ -118,6 +123,7 @@ type Resolver struct {
 	webhookSvc  WebhookService
 	documentSvc DocumentService
 	sysAuthSvc  SystemAuthService
+	oAuth20Svc  OAuth20Service
 
 	documentConverter DocumentConverter
 	webhookConverter  WebhookConverter
@@ -126,7 +132,7 @@ type Resolver struct {
 	sysAuthConv       SystemAuthConverter
 }
 
-func NewResolver(transact persistence.Transactioner, svc ApplicationService, apiSvc APIService, eventAPISvc EventAPIService, documentSvc DocumentService, webhookSvc WebhookService, sysAuthSvc SystemAuthService, appConverter ApplicationConverter, documentConverter DocumentConverter, webhookConverter WebhookConverter, apiConverter APIConverter, eventAPIConverter EventAPIConverter, sysAuthConv SystemAuthConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc ApplicationService, apiSvc APIService, eventAPISvc EventAPIService, documentSvc DocumentService, webhookSvc WebhookService, sysAuthSvc SystemAuthService, oAuth20Svc OAuth20Service, appConverter ApplicationConverter, documentConverter DocumentConverter, webhookConverter WebhookConverter, apiConverter APIConverter, eventAPIConverter EventAPIConverter, sysAuthConv SystemAuthConverter) *Resolver {
 	return &Resolver{
 		transact:          transact,
 		appSvc:            svc,
@@ -135,6 +141,7 @@ func NewResolver(transact persistence.Transactioner, svc ApplicationService, api
 		documentSvc:       documentSvc,
 		webhookSvc:        webhookSvc,
 		sysAuthSvc:        sysAuthSvc,
+		oAuth20Svc:        oAuth20Svc,
 		appConverter:      appConverter,
 		documentConverter: documentConverter,
 		webhookConverter:  webhookConverter,
@@ -336,6 +343,15 @@ func (r *Resolver) DeleteApplication(ctx context.Context, id string) (*graphql.A
 		return nil, err
 	}
 
+	auths, err := r.sysAuthSvc.ListForObject(ctx, model.ApplicationReference, app.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.oAuth20Svc.DeleteMultipleClientCredentials(ctx, auths)
+	if err != nil {
+		return nil, err
+	}
 	err = r.appSvc.Delete(ctx, id)
 	if err != nil {
 		return nil, err
