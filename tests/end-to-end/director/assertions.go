@@ -203,5 +203,5 @@ func assertRuntime(t *testing.T, in graphql.RuntimeInput, actualRuntime graphql.
 
 func assertIntegrationSystem(t *testing.T, in graphql.IntegrationSystemInput, actualIntegrationSystem graphql.IntegrationSystemExt) {
 	assert.Equal(t, in.Name, actualIntegrationSystem.Name)
-	assert.EqualValues(t, in.Description, actualIntegrationSystem.Description)
+	assert.Equal(t, in.Description, actualIntegrationSystem.Description)
 }
