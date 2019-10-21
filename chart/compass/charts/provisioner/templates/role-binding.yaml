@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ template "fullname" . }}-role
+  name: {{ template "fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Chart.Name }}
@@ -15,7 +15,7 @@ rules:
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ template "fullname" . }}-rolebinding
+  name: {{ template "fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Chart.Name }}
@@ -26,5 +26,5 @@ subjects:
   namespace: {{ .Release.Namespace }}
 roleRef:
   kind: Role
-  name: {{ template "fullname" . }}-role
+  name: {{ template "fullname" . }}
   apiGroup: rbac.authorization.k8s.io

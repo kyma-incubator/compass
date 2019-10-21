@@ -117,7 +117,7 @@ func (r readSession) GetOperation(operationID string) (model.Operation, dberrors
 		if err == dbr.ErrNotFound {
 			return model.Operation{}, dberrors.NotFound("Operation not found for id: %s", operationID)
 		}
-		return model.Operation{}, dberrors.Internal("Failed to get last operation: %s", err)
+		return model.Operation{}, dberrors.Internal("Failed to get %s operation: %s", operationID, err)
 	}
 
 	return operation, nil
