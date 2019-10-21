@@ -78,7 +78,7 @@ func (m *mapperForSystemAuth) getTenantAndScopesForApplicationOrRuntime(sysAuth 
 	}
 
 	if hasTenant && tenant != sysAuth.TenantID {
-		return "", "", fmt.Errorf("tenant missmatch")
+		return "", "", errors.New("tenant missmatch")
 	}
 
 	tenant = sysAuth.TenantID

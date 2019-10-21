@@ -14,11 +14,13 @@ var validFileContent string = `
 - username: "admin"
   scopes:
   - "application:write"
-  tenant: "3f2d9157-a0ba-4ff3-9d50-f5d6f9730eed"
+  tenants: 
+  - "3f2d9157-a0ba-4ff3-9d50-f5d6f9730eed"
 - username: "developer"
   sopes:
   - "application:read"
-  tenant: "555d9157-a1bf-4aa2-9a22-f5d6f9730aaf"
+  tenants: 
+  - "555d9157-a1bf-4aa2-9a22-f5d6f9730aaf"
 `
 
 func TestStaticUserRepository(t *testing.T) {
@@ -60,13 +62,13 @@ func TestStaticUserRepository(t *testing.T) {
 	})
 
 	t.Run("returns StaticUser instance when exists", func(t *testing.T) {
-		tenantID := uuid.New()
+		tenantIDs := []uuid.UUID{uuid.New()}
 		repo := staticUserRepository{
 			data: map[string]StaticUser{
 				"admin@domain.local": StaticUser{
 					Username: "admin@domain.local",
 					Scopes:   []string{"application:read"},
-					Tenant:   tenantID,
+					Tenants:  tenantIDs,
 				},
 			},
 		}
@@ -75,7 +77,7 @@ func TestStaticUserRepository(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, "admin@domain.local", staticUser.Username)
-		require.Equal(t, tenantID, staticUser.Tenant)
+		require.Equal(t, tenantIDs, staticUser.Tenants)
 		require.Equal(t, []string{"application:read"}, staticUser.Scopes)
 	})
 
