@@ -35,20 +35,17 @@ func (m *mapperForSystemAuth) GetTenantAndScopes(ctx context.Context, reqData Re
 		return "", "", errors.Wrap(err, "while getting reference object type")
 	}
 
-	var tenantAndScopesFunc func(sysAuth *model.SystemAuth, refObjType model.SystemAuthReferenceObjectType, reqData ReqData, authFlow AuthFlow) (string, string, error)
 	switch refObjType {
 	case model.IntegrationSystemReference:
-		tenantAndScopesFunc = m.getTenantAndScopesForIntegrationSystem
-		break
+		return m.getTenantAndScopesForIntegrationSystem(reqData)
 	case model.RuntimeReference, model.ApplicationReference:
-		tenantAndScopesFunc = m.getTenantAndScopesForApplicationOrRuntime
-		break
+		return m.getTenantAndScopesForApplicationOrRuntime(sysAuth, refObjType, reqData, authFlow)
 	}
 
-	return tenantAndScopesFunc(sysAuth, refObjType, reqData, authFlow)
+	return "", "", errors.Errorf("unsupported reference object type (%s)", refObjType)
 }
 
-func (m *mapperForSystemAuth) getTenantAndScopesForIntegrationSystem(sysAuth *model.SystemAuth, refObjType model.SystemAuthReferenceObjectType, reqData ReqData, authFlow AuthFlow) (string, string, error) {
+func (m *mapperForSystemAuth) getTenantAndScopesForIntegrationSystem(reqData ReqData) (string, string, error) {
 	var tenant, scopes string
 
 	tenant, err := reqData.GetTenantID()
