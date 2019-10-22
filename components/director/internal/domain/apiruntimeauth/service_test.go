@@ -87,7 +87,7 @@ func TestService_Get(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 
@@ -162,7 +162,7 @@ func TestService_GetOrDefault(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 
@@ -240,7 +240,7 @@ func TestService_ListForAllRuntimes(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 
@@ -321,7 +321,7 @@ func TestService_Set(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 
@@ -390,7 +390,7 @@ func TestService_Delete(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 
