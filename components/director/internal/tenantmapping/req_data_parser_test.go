@@ -23,9 +23,9 @@ func TestParse(t *testing.T) {
 		reqData, err := parser.Parse(req)
 
 		require.NoError(t, err)
-		require.Equal(t, systemAuthID.String(), reqData.Header.Get(ClientIDCertKey))
-		require.Equal(t, systemAuthID.String(), reqData.Extra[ClientIDKey])
-		require.Equal(t, username, reqData.Extra[UsernameKey])
+		require.Equal(t, systemAuthID.String(), reqData.Body.Header.Get(ClientIDCertKey))
+		require.Equal(t, systemAuthID.String(), reqData.Body.Extra[ClientIDKey])
+		require.Equal(t, username, reqData.Body.Extra[UsernameKey])
 	})
 
 	t.Run("when request JSON does not contain Extra property the returned ReqData should have Extra property initialized", func(t *testing.T) {
@@ -37,7 +37,7 @@ func TestParse(t *testing.T) {
 		reqData, err := parser.Parse(req)
 
 		require.NoError(t, err)
-		require.NotNil(t, reqData.Extra)
+		require.NotNil(t, reqData.Body.Extra)
 	})
 
 	t.Run("returns error when request body is empty", func(t *testing.T) {

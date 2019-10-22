@@ -38,16 +38,33 @@ const (
 	clientCredentialScopesPrefix = "clientCredentialsRegistrationScopes"
 )
 
-// ReqData represents parsed request input to the handler
-type ReqData struct {
+// ReqBody represents parsed request input to the handler
+type ReqBody struct {
 	Subject string                 `json:"subject"`
 	Extra   map[string]interface{} `json:"extra"`
 	Header  http.Header            `json:"header"`
 }
 
+// ReqData represents incomming request with parsed body and its header
+type ReqData struct {
+	Body   ReqBody
+	Header http.Header
+}
+
+func NewReqData(reqBody ReqBody, reqHeader http.Header) ReqData {
+	if reqBody.Extra == nil {
+		reqBody.Extra = make(map[string]interface{})
+	}
+
+	return ReqData{
+		Body:   reqBody,
+		Header: reqHeader,
+	}
+}
+
 // GetAuthID looks for auth ID and identifies auth flow in the parsed request input represented by the ReqData struct
 func (d *ReqData) GetAuthID() (string, AuthFlow, error) {
-	if idVal, ok := d.Extra[ClientIDKey]; ok {
+	if idVal, ok := d.Body.Extra[ClientIDKey]; ok {
 		authID, err := str.Cast(idVal)
 		if err != nil {
 			return "", "", errors.Wrapf(err, "while parsing the value for %s", ClientIDKey)
@@ -56,11 +73,11 @@ func (d *ReqData) GetAuthID() (string, AuthFlow, error) {
 		return authID, OAuth2Flow, nil
 	}
 
-	if idVal := d.Header.Get(ClientIDCertKey); idVal != "" {
+	if idVal := d.Body.Header.Get(ClientIDCertKey); idVal != "" {
 		return idVal, CertificateFlow, nil
 	}
 
-	if usernameVal, ok := d.Extra[UsernameKey]; ok {
+	if usernameVal, ok := d.Body.Extra[UsernameKey]; ok {
 		username, err := str.Cast(usernameVal)
 		if err != nil {
 			return "", "", errors.Wrapf(err, "while parsing the value for %s", UsernameKey)
@@ -73,11 +90,11 @@ func (d *ReqData) GetAuthID() (string, AuthFlow, error) {
 
 // GetTenantID returns tenant ID from the parsed request input if it is defined
 func (d *ReqData) GetTenantID() (string, error) {
-	if tenantVal := d.Header.Get(TenantKey); tenantVal != "" {
+	if tenantVal := d.Body.Header.Get(TenantKey); tenantVal != "" {
 		return tenantVal, nil
 	}
 
-	if tenantVal, ok := d.Extra[TenantKey]; ok {
+	if tenantVal, ok := d.Body.Extra[TenantKey]; ok {
 		tenant, err := str.Cast(tenantVal)
 		if err != nil {
 			return "", errors.Wrapf(err, "while parsing the value for %s", TenantKey)
@@ -86,22 +103,30 @@ func (d *ReqData) GetTenantID() (string, error) {
 		return tenant, nil
 	}
 
+	if tenantVal := d.Header.Get(TenantKey); tenantVal != "" {
+		return tenantVal, nil
+	}
+
 	return "", apperrors.NewKeyDoesNotExistError(TenantKey)
 }
 
 // GetScopes returns scopes from the parsed request input if defined
 func (d *ReqData) GetScopes() (string, error) {
-	if scopesVal := d.Header.Get(ScopesKey); scopesVal != "" {
+	if scopesVal := d.Body.Header.Get(ScopesKey); scopesVal != "" {
 		return scopesVal, nil
 	}
 
-	if scopesVal, ok := d.Extra[ScopesKey]; ok {
+	if scopesVal, ok := d.Body.Extra[ScopesKey]; ok {
 		scopes, err := str.Cast(scopesVal)
 		if err != nil {
 			return "", errors.Wrapf(err, "while parsing the value for %s", ScopesKey)
 		}
 
 		return scopes, nil
+	}
+
+	if scopesVal := d.Header.Get(ScopesKey); scopesVal != "" {
+		return scopesVal, nil
 	}
 
 	return "", apperrors.NewKeyDoesNotExistError(ScopesKey)

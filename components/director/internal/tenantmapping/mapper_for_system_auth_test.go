@@ -59,9 +59,11 @@ func TestMapperForSystemAuthGetTenantAndScopes(t *testing.T) {
 		}
 
 		reqData := tenantmapping.ReqData{
-			Extra: map[string]interface{}{
-				tenantmapping.TenantKey: expectedTenantID.String(),
-				tenantmapping.ScopesKey: expectedScopes,
+			Body: tenantmapping.ReqBody{
+				Extra: map[string]interface{}{
+					tenantmapping.TenantKey: expectedTenantID.String(),
+					tenantmapping.ScopesKey: expectedScopes,
+				},
 			},
 		}
 
@@ -90,8 +92,10 @@ func TestMapperForSystemAuthGetTenantAndScopes(t *testing.T) {
 			AppID:    str.Ptr(refObjID.String()),
 		}
 		reqData := tenantmapping.ReqData{
-			Extra: map[string]interface{}{
-				tenantmapping.ScopesKey: expectedScopes,
+			Body: tenantmapping.ReqBody{
+				Extra: map[string]interface{}{
+					tenantmapping.ScopesKey: expectedScopes,
+				},
 			},
 		}
 
@@ -176,8 +180,10 @@ func TestMapperForSystemAuthGetTenantAndScopes(t *testing.T) {
 		}
 
 		reqData := tenantmapping.ReqData{
-			Extra: map[string]interface{}{
-				tenantmapping.TenantKey: tenantID.String(),
+			Body: tenantmapping.ReqBody{
+				Extra: map[string]interface{}{
+					tenantmapping.TenantKey: tenantID.String(),
+				},
 			},
 		}
 
@@ -201,8 +207,10 @@ func TestMapperForSystemAuthGetTenantAndScopes(t *testing.T) {
 			AppID: str.Ptr(refObjID.String()),
 		}
 		reqData := tenantmapping.ReqData{
-			Extra: map[string]interface{}{
-				tenantmapping.TenantKey: []byte{1, 2, 3},
+			Body: tenantmapping.ReqBody{
+				Extra: map[string]interface{}{
+					tenantmapping.TenantKey: []byte{1, 2, 3},
+				},
 			},
 		}
 
@@ -229,8 +237,10 @@ func TestMapperForSystemAuthGetTenantAndScopes(t *testing.T) {
 			AppID:    str.Ptr(refObjID.String()),
 		}
 		reqData := tenantmapping.ReqData{
-			Extra: map[string]interface{}{
-				tenantmapping.TenantKey: tenant2ID.String(),
+			Body: tenantmapping.ReqBody{
+				Extra: map[string]interface{}{
+					tenantmapping.TenantKey: tenant2ID.String(),
+				},
 			},
 		}
 

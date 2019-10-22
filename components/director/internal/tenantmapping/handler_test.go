@@ -25,8 +25,10 @@ func TestHandler(t *testing.T) {
 		username := "admin"
 		scopes := "application:read"
 		reqDataMock := tenantmapping.ReqData{
-			Extra: map[string]interface{}{
-				tenantmapping.UsernameKey: username,
+			Body: tenantmapping.ReqBody{
+				Extra: map[string]interface{}{
+					tenantmapping.UsernameKey: username,
+				},
 			},
 		}
 		expectedRespPayload := `{"subject":"","extra":{"name":"` + username + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
@@ -58,8 +60,10 @@ func TestHandler(t *testing.T) {
 	t.Run("success for the request parsed as OAuth2 flow", func(t *testing.T) {
 		scopes := "application:read"
 		reqDataMock := tenantmapping.ReqData{
-			Extra: map[string]interface{}{
-				tenantmapping.ClientIDKey: systemAuthID.String(),
+			Body: tenantmapping.ReqBody{
+				Extra: map[string]interface{}{
+					tenantmapping.ClientIDKey: systemAuthID.String(),
+				},
 			},
 		}
 		expectedRespPayload := `{"subject":"","extra":{"client_id":"` + systemAuthID.String() + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
@@ -91,9 +95,11 @@ func TestHandler(t *testing.T) {
 	t.Run("success for the request parsed as Certificate flow", func(t *testing.T) {
 		scopes := "application:read"
 		reqDataMock := tenantmapping.ReqData{
-			Extra: make(map[string]interface{}),
-			Header: http.Header{
-				textproto.CanonicalMIMEHeaderKey(tenantmapping.ClientIDCertKey): []string{systemAuthID.String()},
+			Body: tenantmapping.ReqBody{
+				Extra: make(map[string]interface{}),
+				Header: http.Header{
+					textproto.CanonicalMIMEHeaderKey(tenantmapping.ClientIDCertKey): []string{systemAuthID.String()},
+				},
 			},
 		}
 		expectedRespPayload := `{"subject":"","extra":{"scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":{"Client-Id-From-Certificate":["` + systemAuthID.String() + `"]}}`

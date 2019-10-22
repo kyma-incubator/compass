@@ -37,11 +37,13 @@ func TestAuthFlow(t *testing.T) {
 }
 
 func TestReqData_GetAuthID(t *testing.T) {
-	t.Run("returns ID string and JWTAuthFlow when a name is specified in the Extra map", func(t *testing.T) {
+	t.Run("returns ID string and JWTAuthFlow when a name is specified in the Extra map of request body", func(t *testing.T) {
 		username := "some-username"
 		reqData := ReqData{
-			Extra: map[string]interface{}{
-				UsernameKey: username,
+			Body: ReqBody{
+				Extra: map[string]interface{}{
+					UsernameKey: username,
+				},
 			},
 		}
 
@@ -52,11 +54,13 @@ func TestReqData_GetAuthID(t *testing.T) {
 		require.Equal(t, authID, username)
 	})
 
-	t.Run("returns ID string and OAuth2Flow when a client_id is specified in the Extra map", func(t *testing.T) {
+	t.Run("returns ID string and OAuth2Flow when a client_id is specified in the Extra map of request body", func(t *testing.T) {
 		clientID := "de766a55-3abb-4480-8d4a-6d255990b159"
 		reqData := ReqData{
-			Extra: map[string]interface{}{
-				ClientIDKey: clientID,
+			Body: ReqBody{
+				Extra: map[string]interface{}{
+					ClientIDKey: clientID,
+				},
 			},
 		}
 
@@ -67,11 +71,13 @@ func TestReqData_GetAuthID(t *testing.T) {
 		require.Equal(t, clientID, authID)
 	})
 
-	t.Run("returns ID string and CertificateFlow when a client-id-from-certificate is specified in the Header map", func(t *testing.T) {
+	t.Run("returns ID string and CertificateFlow when a client-id-from-certificate is specified in the Header map of request body", func(t *testing.T) {
 		clientID := "de766a55-3abb-4480-8d4a-6d255990b159"
 		reqData := ReqData{
-			Header: http.Header{
-				textproto.CanonicalMIMEHeaderKey(ClientIDCertKey): []string{clientID},
+			Body: ReqBody{
+				Header: http.Header{
+					textproto.CanonicalMIMEHeaderKey(ClientIDCertKey): []string{clientID},
+				},
 			},
 		}
 
@@ -92,8 +98,10 @@ func TestReqData_GetAuthID(t *testing.T) {
 
 	t.Run("returns error when client_id is specified in Extra map in a non-string format", func(t *testing.T) {
 		reqData := ReqData{
-			Extra: map[string]interface{}{
-				ClientIDKey: []byte{1, 2, 3},
+			Body: ReqBody{
+				Extra: map[string]interface{}{
+					ClientIDKey: []byte{1, 2, 3},
+				},
 			},
 		}
 
@@ -104,8 +112,10 @@ func TestReqData_GetAuthID(t *testing.T) {
 
 	t.Run("returns error when a name is specified in Extra map in a non-string format", func(t *testing.T) {
 		reqData := ReqData{
-			Extra: map[string]interface{}{
-				UsernameKey: []byte{1, 2, 3},
+			Body: ReqBody{
+				Extra: map[string]interface{}{
+					UsernameKey: []byte{1, 2, 3},
+				},
 			},
 		}
 
@@ -130,11 +140,29 @@ func TestReqData_GetTenantID(t *testing.T) {
 		require.Equal(t, expectedTenant, tenant)
 	})
 
+	t.Run("returns tenant ID when it is specified in the Header map of Body", func(t *testing.T) {
+		expectedTenant := "f640a8e6-2ce4-450c-bd1c-cba9397f9d79"
+		reqData := ReqData{
+			Body: ReqBody{
+				Header: http.Header{
+					textproto.CanonicalMIMEHeaderKey(TenantKey): []string{expectedTenant},
+				},
+			},
+		}
+
+		tenant, err := reqData.GetTenantID()
+
+		require.NoError(t, err)
+		require.Equal(t, expectedTenant, tenant)
+	})
+
 	t.Run("returns tenant ID when it is specified in the Extra map", func(t *testing.T) {
 		expectedTenant := "f640a8e6-2ce4-450c-bd1c-cba9397f9d79"
 		reqData := ReqData{
-			Extra: map[string]interface{}{
-				TenantKey: expectedTenant,
+			Body: ReqBody{
+				Extra: map[string]interface{}{
+					TenantKey: expectedTenant,
+				},
 			},
 		}
 
@@ -146,8 +174,10 @@ func TestReqData_GetTenantID(t *testing.T) {
 
 	t.Run("returns error when tenant ID is specified in Extra map in a non-string format", func(t *testing.T) {
 		reqData := ReqData{
-			Extra: map[string]interface{}{
-				TenantKey: []byte{1, 2, 3},
+			Body: ReqBody{
+				Extra: map[string]interface{}{
+					TenantKey: []byte{1, 2, 3},
+				},
 			},
 		}
 
@@ -182,11 +212,29 @@ func TestReqData_GetScopes(t *testing.T) {
 		require.Equal(t, expectedScopes, scopes)
 	})
 
+	t.Run("returns scopes string when it is specified in the Header map of Body", func(t *testing.T) {
+		expectedScopes := "applications:write runtimes:write"
+		reqData := ReqData{
+			Body: ReqBody{
+				Header: http.Header{
+					textproto.CanonicalMIMEHeaderKey(ScopesKey): []string{expectedScopes},
+				},
+			},
+		}
+
+		scopes, err := reqData.GetScopes()
+
+		require.NoError(t, err)
+		require.Equal(t, expectedScopes, scopes)
+	})
+
 	t.Run("returns scopes string when it is specified in the Extra map", func(t *testing.T) {
 		expectedScopes := "applications:write runtimes:write"
 		reqData := ReqData{
-			Extra: map[string]interface{}{
-				ScopesKey: expectedScopes,
+			Body: ReqBody{
+				Extra: map[string]interface{}{
+					ScopesKey: expectedScopes,
+				},
 			},
 		}
 
@@ -198,8 +246,10 @@ func TestReqData_GetScopes(t *testing.T) {
 
 	t.Run("returns error when scopes value is specified in Extra map in a non-string format", func(t *testing.T) {
 		reqData := ReqData{
-			Extra: map[string]interface{}{
-				ScopesKey: []byte{1, 2, 3},
+			Body: ReqBody{
+				Extra: map[string]interface{}{
+					ScopesKey: []byte{1, 2, 3},
+				},
 			},
 		}
 

@@ -78,11 +78,11 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	reqData.Extra["tenant"] = tenantID
-	reqData.Extra["scope"] = scopes
+	reqData.Body.Extra["tenant"] = tenantID
+	reqData.Body.Extra["scope"] = scopes
 
 	writer.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(writer).Encode(reqData)
+	err = json.NewEncoder(writer).Encode(reqData.Body)
 	if err != nil {
 		respondWithError(writer, http.StatusInternalServerError, err, "while encoding data")
 		return

@@ -15,9 +15,10 @@ func NewReqDataParser() *reqDataParser {
 
 type reqDataParser struct{}
 
+// Parse returns parsed incomming request as ReqData with body as ReqBody struct and original headers collection
 func (p *reqDataParser) Parse(req *http.Request) (ReqData, error) {
-	var data ReqData
-	err := json.NewDecoder(req.Body).Decode(&data)
+	var reqBody ReqBody
+	err := json.NewDecoder(req.Body).Decode(&reqBody)
 	if err != nil {
 		if err == io.EOF {
 			return ReqData{}, errors.New("request body is empty")
@@ -33,9 +34,5 @@ func (p *reqDataParser) Parse(req *http.Request) (ReqData, error) {
 		}
 	}()
 
-	if data.Extra == nil {
-		data.Extra = make(map[string]interface{})
-	}
-
-	return data, nil
+	return NewReqData(reqBody, req.Header), nil
 }

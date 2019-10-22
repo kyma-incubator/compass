@@ -21,9 +21,11 @@ func TestMapperForUserGetTenantAndScopes(t *testing.T) {
 
 	t.Run("returns tenant and scopes that are defined in the Extra map of ReqData", func(t *testing.T) {
 		reqData := tenantmapping.ReqData{
-			Extra: map[string]interface{}{
-				tenantmapping.TenantKey: expectedTenantID.String(),
-				tenantmapping.ScopesKey: strings.Join(expectedScopes, " "),
+			Body: tenantmapping.ReqBody{
+				Extra: map[string]interface{}{
+					tenantmapping.TenantKey: expectedTenantID.String(),
+					tenantmapping.ScopesKey: strings.Join(expectedScopes, " "),
+				},
 			},
 		}
 		staticUser := tenantmapping.StaticUser{
@@ -47,9 +49,11 @@ func TestMapperForUserGetTenantAndScopes(t *testing.T) {
 
 	t.Run("returns tenant and scopes that are defined in the Header map of ReqData", func(t *testing.T) {
 		reqData := tenantmapping.ReqData{
-			Header: http.Header{
-				textproto.CanonicalMIMEHeaderKey(tenantmapping.TenantKey): []string{expectedTenantID.String()},
-				textproto.CanonicalMIMEHeaderKey(tenantmapping.ScopesKey): []string{strings.Join(expectedScopes, " ")},
+			Body: tenantmapping.ReqBody{
+				Header: http.Header{
+					textproto.CanonicalMIMEHeaderKey(tenantmapping.TenantKey): []string{expectedTenantID.String()},
+					textproto.CanonicalMIMEHeaderKey(tenantmapping.ScopesKey): []string{strings.Join(expectedScopes, " ")},
+				},
 			},
 		}
 		staticUser := tenantmapping.StaticUser{
@@ -73,11 +77,13 @@ func TestMapperForUserGetTenantAndScopes(t *testing.T) {
 
 	t.Run("returns tenant which is defined in the Extra map and scopes which is defined in the Header map of ReqData", func(t *testing.T) {
 		reqData := tenantmapping.ReqData{
-			Extra: map[string]interface{}{
-				tenantmapping.TenantKey: expectedTenantID.String(),
-			},
-			Header: http.Header{
-				textproto.CanonicalMIMEHeaderKey(tenantmapping.ScopesKey): []string{strings.Join(expectedScopes, " ")},
+			Body: tenantmapping.ReqBody{
+				Extra: map[string]interface{}{
+					tenantmapping.TenantKey: expectedTenantID.String(),
+				},
+				Header: http.Header{
+					textproto.CanonicalMIMEHeaderKey(tenantmapping.ScopesKey): []string{strings.Join(expectedScopes, " ")},
+				},
 			},
 		}
 		staticUser := tenantmapping.StaticUser{
@@ -101,11 +107,13 @@ func TestMapperForUserGetTenantAndScopes(t *testing.T) {
 
 	t.Run("returns tenant which is defined in the Header map and scopes which is defined in the Extra map of ReqData", func(t *testing.T) {
 		reqData := tenantmapping.ReqData{
-			Extra: map[string]interface{}{
-				tenantmapping.ScopesKey: strings.Join(expectedScopes, " "),
-			},
-			Header: http.Header{
-				textproto.CanonicalMIMEHeaderKey(tenantmapping.TenantKey): []string{expectedTenantID.String()},
+			Body: tenantmapping.ReqBody{
+				Extra: map[string]interface{}{
+					tenantmapping.ScopesKey: strings.Join(expectedScopes, " "),
+				},
+				Header: http.Header{
+					textproto.CanonicalMIMEHeaderKey(tenantmapping.TenantKey): []string{expectedTenantID.String()},
+				},
 			},
 		}
 		staticUser := tenantmapping.StaticUser{
@@ -129,8 +137,10 @@ func TestMapperForUserGetTenantAndScopes(t *testing.T) {
 
 	t.Run("returns scopes defined on the StaticUser and tenant from the request", func(t *testing.T) {
 		reqData := tenantmapping.ReqData{
-			Extra: map[string]interface{}{
-				tenantmapping.TenantKey: expectedTenantID.String(),
+			Body: tenantmapping.ReqBody{
+				Extra: map[string]interface{}{
+					tenantmapping.TenantKey: expectedTenantID.String(),
+				},
 			},
 		}
 		staticUser := tenantmapping.StaticUser{
@@ -175,8 +185,10 @@ func TestMapperForUserGetTenantAndScopes(t *testing.T) {
 
 	t.Run("returns error when tenant from the request does not match any tenants assigned to the static user", func(t *testing.T) {
 		reqData := tenantmapping.ReqData{
-			Extra: map[string]interface{}{
-				tenantmapping.TenantKey: uuid.New().String(),
+			Body: tenantmapping.ReqBody{
+				Extra: map[string]interface{}{
+					tenantmapping.TenantKey: uuid.New().String(),
+				},
 			},
 		}
 		staticUser := tenantmapping.StaticUser{
@@ -199,8 +211,10 @@ func TestMapperForUserGetTenantAndScopes(t *testing.T) {
 
 	t.Run("returns error when tenant is specified in Extra map in a non-string format", func(t *testing.T) {
 		reqData := tenantmapping.ReqData{
-			Extra: map[string]interface{}{
-				tenantmapping.TenantKey: []byte{1, 2, 3},
+			Body: tenantmapping.ReqBody{
+				Extra: map[string]interface{}{
+					tenantmapping.TenantKey: []byte{1, 2, 3},
+				},
 			},
 		}
 		staticUser := tenantmapping.StaticUser{
@@ -222,8 +236,10 @@ func TestMapperForUserGetTenantAndScopes(t *testing.T) {
 
 	t.Run("returns error when scopes is specified in Extra map in a non-string format", func(t *testing.T) {
 		reqData := tenantmapping.ReqData{
-			Extra: map[string]interface{}{
-				tenantmapping.ScopesKey: []byte{1, 2, 3},
+			Body: tenantmapping.ReqBody{
+				Extra: map[string]interface{}{
+					tenantmapping.ScopesKey: []byte{1, 2, 3},
+				},
 			},
 		}
 		staticUser := tenantmapping.StaticUser{
