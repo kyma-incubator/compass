@@ -4,9 +4,11 @@ package director
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -135,6 +137,32 @@ func TestDeleteSystemAuthFromApplication(t *testing.T) {
 	require.Empty(t, appAfterDelete.Auths)
 }
 
+func TestDeleteSystemAuthFromApplicationUsingRuntimeMutation(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	name := "app"
+
+	t.Log("Create application")
+	app := createApplication(t, ctx, name)
+	require.NotEmpty(t, app)
+	defer deleteApplication(t, app.ID)
+
+	appAuth := generateClientCredentialsForApplication(t, ctx, app.ID)
+	require.NotEmpty(t, appAuth)
+	defer deleteClientCredentialsForApplication(t, appAuth.ID)
+
+	deleteSystemAuthForRuntimeRequest := fixDeleteSystemAuthForRuntime(appAuth.ID)
+	deleteOutput := graphql.SystemAuth{}
+
+	// WHEN
+	t.Log("Delete system auth for application using runtime mutation")
+	err := tc.RunOperation(ctx, deleteSystemAuthForRuntimeRequest, &deleteOutput)
+
+	// THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, deleteOutput)
+}
+
 func TestDeleteSystemAuthFromRuntime(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -189,4 +217,14 @@ func TestDeleteSystemAuthFromIntegrationSystem(t *testing.T) {
 	t.Log("Check if system auth was deleted")
 	intSysAfterDelete := getIntegrationSystem(t, ctx, intSys.ID)
 	require.Empty(t, intSysAfterDelete.Auths)
+}
+
+func deleteClientCredentialsForApplication(t *testing.T, authID string) {
+	req := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			deleteSystemAuthForApplication(authID: "%s") {
+			id
+		}	
+	}`, authID))
+	require.NoError(t, tc.RunOperation(context.Background(), req, nil))
 }
