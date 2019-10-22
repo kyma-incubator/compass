@@ -26,20 +26,20 @@ type Service interface {
 	SetAsSucceeded(operationID string) error
 }
 
-type runtimeService struct {
+type persistenceService struct {
 	dbSessionFactory dbsession.Factory
 	uuidGenerator    UUIDGenerator
 }
 
 func NewRuntimeService(dbSessionFactory dbsession.Factory, uuidGenerator UUIDGenerator) Service {
-	return runtimeService{
+	return persistenceService{
 		dbSessionFactory: dbSessionFactory,
 		uuidGenerator:    uuidGenerator,
 	}
 }
 
-func (r runtimeService) GetStatus(runtimeID string) (model.RuntimeStatus, dberrors.Error) {
-	session := r.dbSessionFactory.NewReadSession()
+func (ps persistenceService) GetStatus(runtimeID string) (model.RuntimeStatus, dberrors.Error) {
+	session := ps.dbSessionFactory.NewReadSession()
 
 	operation, err := session.GetLastOperation(runtimeID)
 	if err != nil {
@@ -73,8 +73,8 @@ func (r runtimeService) GetStatus(runtimeID string) (model.RuntimeStatus, dberro
 	}, nil
 }
 
-func (r runtimeService) SetProvisioningStarted(runtimeID string, runtimeConfig model.RuntimeConfig) (model.Operation, dberrors.Error) {
-	dbSession, err := r.dbSessionFactory.NewSessionWithinTransaction()
+func (ps persistenceService) SetProvisioningStarted(runtimeID string, runtimeConfig model.RuntimeConfig) (model.Operation, dberrors.Error) {
+	dbSession, err := ps.dbSessionFactory.NewSessionWithinTransaction()
 	if err != nil {
 		logrus.Errorf("Failed to create repository: %s", err)
 	}
@@ -116,7 +116,7 @@ func (r runtimeService) SetProvisioningStarted(runtimeID string, runtimeConfig m
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
-	operation, err := r.setOperationStarted(dbSession, runtimeID, model.Provision, timestamp, "Provisioning started", "Failed to set provisioning started: %s")
+	operation, err := ps.setOperationStarted(dbSession, runtimeID, model.Provision, timestamp, "Provisioning started", "Failed to set provisioning started: %s")
 
 	if err != nil {
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
@@ -130,35 +130,35 @@ func (r runtimeService) SetProvisioningStarted(runtimeID string, runtimeConfig m
 	return operation, nil
 }
 
-func (r runtimeService) SetDeprovisioningStarted(runtimeID string) (model.Operation, dberrors.Error) {
-	return r.setOperationStarted(r.dbSessionFactory.NewWriteSession(), runtimeID, model.Deprovision, time.Now(), "Deprovisioning started.", "Deprovisioning failed: %s")
+func (ps persistenceService) SetDeprovisioningStarted(runtimeID string) (model.Operation, dberrors.Error) {
+	return ps.setOperationStarted(ps.dbSessionFactory.NewWriteSession(), runtimeID, model.Deprovision, time.Now(), "Deprovisioning started.", "Deprovisioning failed: %s")
 }
 
-func (r runtimeService) SetUpgradeStarted(runtimeID string) (model.Operation, dberrors.Error) {
-	return r.setOperationStarted(r.dbSessionFactory.NewWriteSession(), runtimeID, model.Upgrade, time.Now(), "Upgrade started.", "Upgrade failed: %s")
+func (ps persistenceService) SetUpgradeStarted(runtimeID string) (model.Operation, dberrors.Error) {
+	return ps.setOperationStarted(ps.dbSessionFactory.NewWriteSession(), runtimeID, model.Upgrade, time.Now(), "Upgrade started.", "Upgrade failed: %s")
 }
 
-func (r runtimeService) GetLastOperation(runtimeID string) (model.Operation, dberrors.Error) {
-	session := r.dbSessionFactory.NewReadSession()
+func (ps persistenceService) GetLastOperation(runtimeID string) (model.Operation, dberrors.Error) {
+	session := ps.dbSessionFactory.NewReadSession()
 
 	return session.GetLastOperation(runtimeID)
 }
 
-func (r runtimeService) Update(runtimeID string, kubeconfig string, terraformState string) dberrors.Error {
-	session := r.dbSessionFactory.NewWriteSession()
+func (ps persistenceService) Update(runtimeID string, kubeconfig string, terraformState string) dberrors.Error {
+	session := ps.dbSessionFactory.NewWriteSession()
 
 	return session.UpdateCluster(runtimeID, kubeconfig, terraformState)
 }
 
-func (r runtimeService) CleanupClusterData(runtimeID string) dberrors.Error {
-	session := r.dbSessionFactory.NewWriteSession()
+func (ps persistenceService) CleanupClusterData(runtimeID string) dberrors.Error {
+	session := ps.dbSessionFactory.NewWriteSession()
 
 	return session.DeleteCluster(runtimeID)
 }
 
-func (r runtimeService) setOperationStarted(dbSession dbsession.WriteSession, runtimeID string, operationType model.OperationType, timestamp time.Time, message string, errorMessageFmt string) (model.Operation, dberrors.Error) {
+func (ps persistenceService) setOperationStarted(dbSession dbsession.WriteSession, runtimeID string, operationType model.OperationType, timestamp time.Time, message string, errorMessageFmt string) (model.Operation, dberrors.Error) {
 
-	id, err := r.uuidGenerator.New()
+	id, err := ps.uuidGenerator.New()
 	if err != nil {
 		return model.Operation{}, dberrors.Internal(errorMessageFmt, err)
 	}
@@ -180,26 +180,26 @@ func (r runtimeService) setOperationStarted(dbSession dbsession.WriteSession, ru
 	return operation, nil
 }
 
-func (r runtimeService) GetClusterData(runtimeID string) (model.Cluster, dberrors.Error) {
-	session := r.dbSessionFactory.NewReadSession()
+func (ps persistenceService) GetClusterData(runtimeID string) (model.Cluster, dberrors.Error) {
+	session := ps.dbSessionFactory.NewReadSession()
 
 	return session.GetCluster(runtimeID)
 }
 
-func (r runtimeService) Get(operationID string) (model.Operation, error) {
-	session := r.dbSessionFactory.NewReadSession()
+func (ps persistenceService) Get(operationID string) (model.Operation, error) {
+	session := ps.dbSessionFactory.NewReadSession()
 
 	return session.GetOperation(operationID)
 }
 
-func (r runtimeService) SetAsFailed(operationID string, message string) error {
-	session := r.dbSessionFactory.NewWriteSession()
+func (ps persistenceService) SetAsFailed(operationID string, message string) error {
+	session := ps.dbSessionFactory.NewWriteSession()
 
 	return session.UpdateOperationState(operationID, message, model.Failed)
 }
 
-func (r runtimeService) SetAsSucceeded(operationID string) error {
-	session := r.dbSessionFactory.NewWriteSession()
+func (ps persistenceService) SetAsSucceeded(operationID string) error {
+	session := ps.dbSessionFactory.NewWriteSession()
 
 	return session.UpdateOperationState(operationID, "Operation succeeded.", model.Succeeded)
 }

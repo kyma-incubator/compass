@@ -1,19 +1,19 @@
 package provisioning
 
 import (
-	"github.com/gofrs/uuid"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
-func RuntimeConfigFromInput(runtimeID string, input gqlschema.ProvisionRuntimeInput) (model.RuntimeConfig, error) {
-	kymaConfig, err := kymaConfigFromInput(runtimeID, *input.KymaConfig)
+func runtimeConfigFromInput(runtimeID string, input gqlschema.ProvisionRuntimeInput, uuidGenerator persistence.UUIDGenerator) (model.RuntimeConfig, error) {
+	kymaConfig, err := kymaConfigFromInput(runtimeID, *input.KymaConfig, uuidGenerator)
 	if err != nil {
 		return model.RuntimeConfig{}, err
 	}
 
-	clusterConfig, err := clusterConfigFromInput(runtimeID, *input.ClusterConfig)
+	clusterConfig, err := clusterConfigFromInput(runtimeID, *input.ClusterConfig, uuidGenerator)
 	if err != nil {
 		return model.RuntimeConfig{}, err
 	}
@@ -42,26 +42,26 @@ func operationStatusToGQLOperationStatus(operation model.Operation) *gqlschema.O
 	}
 }
 
-func clusterConfigFromInput(runtimeID string, input gqlschema.ClusterConfigInput) (interface{}, error) {
+func clusterConfigFromInput(runtimeID string, input gqlschema.ClusterConfigInput, uuidGenerator persistence.UUIDGenerator) (interface{}, error) {
 	if input.GardenerConfig != nil {
 		config := input.GardenerConfig
-		return gardenerConfigFromInput(runtimeID, *config)
+		return gardenerConfigFromInput(runtimeID, *config, uuidGenerator)
 	}
 	if input.GcpConfig != nil {
 		config := input.GcpConfig
-		return gcpConfigFromInput(runtimeID, *config)
+		return gcpConfigFromInput(runtimeID, *config, uuidGenerator)
 	}
 	return nil, nil
 }
 
-func gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput) (model.GardenerConfig, error) {
-	id, err := uuid.NewV4()
+func gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput, uuidGenerator persistence.UUIDGenerator) (model.GardenerConfig, error) {
+	id, err := uuidGenerator.New()
 	if err != nil {
 		return model.GardenerConfig{}, dberrors.Internal("Failed to generate uuid for GardenerConfig: %s.", err)
 	}
 
 	return model.GardenerConfig{
-		ID:                id.String(),
+		ID:                id,
 		Name:              input.Name,
 		ProjectName:       input.ProjectName,
 		KubernetesVersion: input.KubernetesVersion,
@@ -82,20 +82,19 @@ func gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInp
 	}, nil
 }
 
-func gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfigInput) (model.GCPConfig, error) {
-	id, err := uuid.NewV4()
+func gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfigInput, uuidGenerator persistence.UUIDGenerator) (model.GCPConfig, error) {
+	id, err := uuidGenerator.New()
 	if err != nil {
 		return model.GCPConfig{}, dberrors.Internal("Failed to generate uuid for GardenerConfig: %s.", err)
 	}
 
-	// TODO - Add unit test for this
 	zone := ""
 	if input.Zone != nil {
 		zone = *input.Zone
 	}
 
 	return model.GCPConfig{
-		ID:                id.String(),
+		ID:                id,
 		Name:              input.Name,
 		ProjectName:       input.ProjectName,
 		KubernetesVersion: input.KubernetesVersion,
@@ -108,30 +107,30 @@ func gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfigInput) (model
 	}, nil
 }
 
-func kymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, error) {
+func kymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput, uuidGenerator persistence.UUIDGenerator) (model.KymaConfig, error) {
 	var modules []model.KymaConfigModule
-	kymaConfigID, err := uuid.NewV4()
+	kymaConfigID, err := uuidGenerator.New()
 	if err != nil {
 		return model.KymaConfig{}, dberrors.Internal("Failed to generate uuid for KymaConfig: %s.", err)
 	}
 
 	for _, module := range input.Modules {
-		id, err := uuid.NewV4()
+		id, err := uuidGenerator.New()
 		if err != nil {
 			return model.KymaConfig{}, dberrors.Internal("Failed to generate uuid for KymaConfigModule: %s.", err)
 		}
 
 		kymaConfigModule := model.KymaConfigModule{
-			ID:           id.String(),
+			ID:           id,
 			Module:       model.KymaModule(module.String()),
-			KymaConfigID: kymaConfigID.String(),
+			KymaConfigID: kymaConfigID,
 		}
 
 		modules = append(modules, kymaConfigModule)
 	}
 
 	return model.KymaConfig{
-		ID:        kymaConfigID.String(),
+		ID:        kymaConfigID,
 		Version:   input.Version,
 		Modules:   modules,
 		ClusterID: runtimeID,

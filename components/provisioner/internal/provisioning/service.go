@@ -33,12 +33,14 @@ type ProvisioningService interface {
 type service struct {
 	persistenceService persistence.Service
 	hydroform          hydroform.Service
+	uuidGenerator      persistence.UUIDGenerator
 }
 
-func NewProvisioningService(persistenceService persistence.Service, hydroform hydroform.Service) ProvisioningService {
+func NewProvisioningService(persistenceService persistence.Service, uuidGenerator persistence.UUIDGenerator, hydroform hydroform.Service) ProvisioningService {
 	return &service{
 		persistenceService: persistenceService,
 		hydroform:          hydroform,
+		uuidGenerator:      uuidGenerator,
 	}
 }
 
@@ -61,7 +63,7 @@ func (r *service) ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeI
 		}
 	}
 
-	runtimeConfig, err := RuntimeConfigFromInput(id, config)
+	runtimeConfig, err := runtimeConfigFromInput(id, config, r.uuidGenerator)
 	if err != nil {
 		return "", err, nil
 	}
