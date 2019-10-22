@@ -187,10 +187,10 @@ type mutationResolver struct {
 	*RootResolver
 }
 
-func (r *mutationResolver) CreateApplication(ctx context.Context, in graphql.ApplicationInput) (*graphql.Application, error) {
+func (r *mutationResolver) CreateApplication(ctx context.Context, in graphql.ApplicationCreateInput) (*graphql.Application, error) {
 	return r.app.CreateApplication(ctx, in)
 }
-func (r *mutationResolver) UpdateApplication(ctx context.Context, id string, in graphql.ApplicationInput) (*graphql.Application, error) {
+func (r *mutationResolver) UpdateApplication(ctx context.Context, id string, in graphql.ApplicationUpdateInput) (*graphql.Application, error) {
 	return r.app.UpdateApplication(ctx, id, in)
 }
 func (r *mutationResolver) DeleteApplication(ctx context.Context, id string) (*graphql.Application, error) {

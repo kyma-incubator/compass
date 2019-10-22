@@ -78,15 +78,15 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	assert.Equal(t, expected, res)
 }
 
-func TestConverter_InputFromGraphQL(t *testing.T) {
-	allPropsInput := fixGQLApplicationInput("foo", "Lorem ipsum")
-	allPropsExpected := fixModelApplicationInput("foo", "Lorem ipsum")
+func TestConverter_CreateInputFromGraphQL(t *testing.T) {
+	allPropsInput := fixGQLApplicationCreateInput("foo", "Lorem ipsum")
+	allPropsExpected := fixModelApplicationCreateInput("foo", "Lorem ipsum")
 
 	// given
 	testCases := []struct {
 		Name                string
-		Input               graphql.ApplicationInput
-		Expected            model.ApplicationInput
+		Input               graphql.ApplicationCreateInput
+		Expected            model.ApplicationCreateInput
 		WebhookConverterFn  func() *automock.WebhookConverter
 		DocumentConverterFn func() *automock.DocumentConverter
 		APIConverterFn      func() *automock.APIConverter
@@ -119,8 +119,8 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 		},
 		{
 			Name:     "Empty",
-			Input:    graphql.ApplicationInput{},
-			Expected: model.ApplicationInput{},
+			Input:    graphql.ApplicationCreateInput{},
+			Expected: model.ApplicationCreateInput{},
 			WebhookConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
 				conv.On("MultipleInputFromGraphQL", []*graphql.WebhookInput(nil)).Return(nil)
@@ -153,7 +153,41 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 				testCase.EventAPIConverterFn(),
 				testCase.DocumentConverterFn(),
 			)
-			res := converter.InputFromGraphQL(testCase.Input)
+			res := converter.CreateInputFromGraphQL(testCase.Input)
+
+			// then
+			assert.Equal(t, testCase.Expected, res)
+		})
+	}
+}
+
+func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
+	allPropsInput := fixGQLApplicationUpdateInput("foo", "Lorem ipsum", testURL)
+	allPropsExpected := fixModelApplicationUpdateInput("foo", "Lorem ipsum", testURL)
+
+	// given
+	testCases := []struct {
+		Name     string
+		Input    graphql.ApplicationUpdateInput
+		Expected model.ApplicationUpdateInput
+	}{
+		{
+			Name:     "All properties given",
+			Input:    allPropsInput,
+			Expected: allPropsExpected,
+		},
+		{
+			Name:     "Empty",
+			Input:    graphql.ApplicationUpdateInput{},
+			Expected: model.ApplicationUpdateInput{},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// when
+			converter := application.NewConverter(nil, nil, nil, nil)
+			res := converter.UpdateInputFromGraphQL(testCase.Input)
 
 			// then
 			assert.Equal(t, testCase.Expected, res)
