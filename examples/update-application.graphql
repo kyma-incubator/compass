@@ -2,18 +2,7 @@
 mutation {
   result: updateApplication(
     id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-    in: {
-      name: "after"
-      labels: { after: ["after"] }
-      webhooks: [{ type: CONFIGURATION_CHANGED, url: "after" }]
-      apis: [{ name: "after", targetURL: "after" }]
-      eventAPIs: [
-        { name: "after", spec: { eventSpecType: ASYNC_API, format: YAML } }
-      ]
-      documents: [
-        { title: "after", displayName: "", description: "", format: MARKDOWN }
-      ]
-    }
+    in: { name: "after", description: "after", healthCheckURL: "after" }
   ) {
     id
     name

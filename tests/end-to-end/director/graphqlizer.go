@@ -12,7 +12,7 @@ import (
 // graphqlizer is responsible for converting Go objects to input arguments in graphql format
 type graphqlizer struct{}
 
-func (g *graphqlizer) ApplicationInputToGQL(in graphql.ApplicationInput) (string, error) {
+func (g *graphqlizer) ApplicationCreateInputToGQL(in graphql.ApplicationCreateInput) (string, error) {
 	return g.genericToGQL(in, `{
 		name: "{{.Name}}",
 		{{- if .Description }}
@@ -47,6 +47,18 @@ func (g *graphqlizer) ApplicationInputToGQL(in graphql.ApplicationInput) (string
 			{{- range $i, $e := .Documents }} 
 				{{- if $i}}, {{- end}} {{- DocumentInputToGQL $e }}
 			{{- end }} ]
+		{{- end }}
+	}`)
+}
+
+func (g *graphqlizer) ApplicationUpdateInputToGQL(in graphql.ApplicationUpdateInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{.Name}}",
+		{{- if .Description }}
+		description: "{{.Description}}",
+		{{- end }}
+		{{- if .HealthCheckURL }}
+		healthCheckURL: "{{ .HealthCheckURL }}"
 		{{- end }}
 	}`)
 }
