@@ -14,6 +14,7 @@ type TestConfig struct {
 	CredentialsNamespace   string `envconfig:"default=compass-system"`
 
 	GCPCredentials string
+	GCPProjectName string
 	Tenant         string
 
 	HydraPublicURL string `envconfig:"default=http://ory-hydra-public.kyma-system:4444"`

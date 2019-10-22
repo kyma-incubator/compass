@@ -16,10 +16,10 @@ func (qp queryProvider) upgradeRuntime(runtimeID string, config string) string {
 }`, runtimeID, config)
 }
 
-func (qp queryProvider) deprovisionRuntime(runtimeID string) string {
+func (qp queryProvider) deprovisionRuntime(runtimeID, credentialsInput string) string {
 	return fmt.Sprintf(`mutation {
-	result: deprovisionRuntime(id: "%s")
-}`, runtimeID)
+	result: deprovisionRuntime(id: "%s", credentials: "%s")
+}`, runtimeID, credentialsInput)
 }
 
 func (qp queryProvider) reconnectRuntimeAgent(runtimeID string) string {
@@ -93,5 +93,6 @@ func operationStatusData() string {
 	return `id
 			operation 
 			state
-			message`
+			message
+			runtimeID`
 }

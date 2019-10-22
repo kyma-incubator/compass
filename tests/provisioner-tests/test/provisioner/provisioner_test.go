@@ -19,7 +19,7 @@ import (
 
 const (
 	gcpMachineType = "n1-standard-4"
-	gcpRegion      = "europe-west4"
+	gcpRegion      = "europe-west4-b"
 	gcpZone        = "europe-west4-b"
 )
 
@@ -45,22 +45,21 @@ func Test_E2e(t *testing.T) {
 	}()
 
 	// Provision runtime
-	zone := gcpZone
+	credentialsInput := gqlschema.CredentialsInput{SecretName: testSuite.CredentialsSecretName}
 
 	provisioningInput := gqlschema.ProvisionRuntimeInput{
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GcpConfig: &gqlschema.GCPConfigInput{
 				Name:              "tests-runtime-" + testSuite.TestId, // TODO - should be complient with cleaners
-				ProjectName:       "project",
+				ProjectName:       config.GCPProjectName,
 				KubernetesVersion: "1.14",
 				NumberOfNodes:     3,
 				BootDiskSize:      "30",
 				MachineType:       gcpMachineType,
 				Region:            gcpRegion,
-				Zone:              &zone,
 			},
 		},
-		Credentials: &gqlschema.CredentialsInput{SecretName: testSuite.CredentialsSecretName},
+		Credentials: &credentialsInput,
 		KymaConfig:  &gqlschema.KymaConfigInput{Version: "1.6", Modules: nil},
 	}
 
@@ -69,7 +68,21 @@ func Test_E2e(t *testing.T) {
 	requireNoError(t, err)
 	t.Logf("Provisioning operation id: %s", provisioningOperationId)
 	defer func() {
-		// TODO - try to deprovision?
+		t.Logf("Ensuring the cluster is deprovisioned...")
+		deprovisioningOperationId, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtime.ID, credentialsInput)
+		if err != nil {
+			t.Logf("Error while ensuring the cluster is deprovisioned (cluster might have been deprovisioned already): %s", err.Error())
+			return
+		}
+
+		t.Logf("Deprovisioning operation id: %s", deprovisioningOperationId)
+		deprovisioningOperationStatus, err := testSuite.WaitUntilOperationIsFinished(ProvisioningTimeout, deprovisioningOperationId)
+		if err != nil {
+			t.Logf("Error while waiting for deprovisioning operation to finish: %s", err.Error())
+			return
+		}
+
+		assertOperationSucceed(t, gqlschema.OperationTypeDeprovision, runtime.ID, deprovisioningOperationStatus)
 		// TODO - force delete runtime data?
 	}()
 
@@ -123,7 +136,7 @@ func Test_E2e(t *testing.T) {
 	// TODO - Run Compass Runtime Agent Tests (it may require passing AccessToken or Credentials for Director?) (Maybe pass credentials and tests will only generate Access Token?)
 
 	t.Logf("Deprovisioning runtime...")
-	deprovisioningOperationId, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtime.ID)
+	deprovisioningOperationId, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtime.ID, credentialsInput)
 	require.NoError(t, err)
 	t.Logf("Deprovisioning operation id: %s", deprovisioningOperationId)
 

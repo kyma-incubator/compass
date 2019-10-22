@@ -11,7 +11,7 @@ import (
 type Client interface {
 	ProvisionRuntime(runtimeID string, config schema.ProvisionRuntimeInput) (string, error)
 	UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInput) (string, error)
-	DeprovisionRuntime(runtimeID string) (string, error)
+	DeprovisionRuntime(runtimeID string, input schema.CredentialsInput) (string, error)
 	ReconnectRuntimeAgent(runtimeID string) (string, error)
 	RuntimeStatus(runtimeID string) (schema.RuntimeStatus, error)
 	RuntimeOperationStatus(operationID string) (schema.OperationStatus, error)
@@ -43,7 +43,7 @@ func (c client) ProvisionRuntime(runtimeID string, config schema.ProvisionRuntim
 	var operationId string
 	err = c.graphQLClient.ExecuteRequest(req, &operationId, "")
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to provision runtime")
+		return "", errors.Wrap(err, "Failed to provision Runtime")
 	}
 	return operationId, nil
 }
@@ -60,19 +60,24 @@ func (c client) UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInp
 	var operationId string
 	err = c.graphQLClient.ExecuteRequest(req, &operationId, "")
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to upgrade runtime")
+		return "", errors.Wrap(err, "Failed to upgrade Runtime")
 	}
 	return operationId, nil
 }
 
-func (c client) DeprovisionRuntime(runtimeID string) (string, error) {
-	query := c.queryProvider.deprovisionRuntime(runtimeID)
+func (c client) DeprovisionRuntime(runtimeID string, input schema.CredentialsInput) (string, error) {
+	credentialsInput, err := c.graphqlizer.CredentialsInputToGraphQL(input)
+	if err != nil {
+		return "", errors.Wrap(err, "Failed to deprovision Runtime: Failed to convert Credentials Input to query")
+	}
+
+	query := c.queryProvider.deprovisionRuntime(runtimeID, credentialsInput)
 	req := gcli.NewRequest(query)
 
 	var operationId string
-	err := c.graphQLClient.ExecuteRequest(req, &operationId, "")
+	err = c.graphQLClient.ExecuteRequest(req, &operationId, "")
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to deprovision runtime")
+		return "", errors.Wrap(err, "Failed to deprovision Runtime")
 	}
 	return operationId, nil
 }
@@ -84,7 +89,7 @@ func (c client) ReconnectRuntimeAgent(runtimeID string) (string, error) {
 	var operationId string
 	err := c.graphQLClient.ExecuteRequest(req, &operationId, "")
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to reconnect runtime agent")
+		return "", errors.Wrap(err, "Failed to reconnect Runtime agent")
 	}
 	return operationId, nil
 }
@@ -96,7 +101,7 @@ func (c client) RuntimeStatus(runtimeID string) (schema.RuntimeStatus, error) {
 	var response schema.RuntimeStatus
 	err := c.graphQLClient.ExecuteRequest(req, &response, &schema.RuntimeStatus{})
 	if err != nil {
-		return schema.RuntimeStatus{}, errors.Wrap(err, "Failed to get runtime status")
+		return schema.RuntimeStatus{}, errors.Wrap(err, "Failed to get Runtime status")
 	}
 	return response, nil
 }
@@ -108,7 +113,7 @@ func (c client) RuntimeOperationStatus(operationID string) (schema.OperationStat
 	var response schema.OperationStatus
 	err := c.graphQLClient.ExecuteRequest(req, &response, &schema.OperationStatus{})
 	if err != nil {
-		return schema.OperationStatus{}, errors.Wrap(err, "Failed to get runtime operation status")
+		return schema.OperationStatus{}, errors.Wrap(err, "Failed to get Runtime operation status")
 	}
 	return response, nil
 }
