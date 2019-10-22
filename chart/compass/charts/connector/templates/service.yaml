@@ -12,9 +12,6 @@ spec:
     - port: {{ .Values.global.connector.graphql.external.port }}
       protocol: TCP
       name: http-gql-ext
-    - port: {{ .Values.global.connector.graphql.internal.port }}
-      protocol: TCP
-      name: http-gql-int
     - port: {{ .Values.global.connector.validator.port }}
       protocol: TCP
       name: http-validator
