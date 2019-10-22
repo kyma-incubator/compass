@@ -198,36 +198,6 @@ func TestReqData_GetTenantID(t *testing.T) {
 }
 
 func TestReqData_GetScopes(t *testing.T) {
-	t.Run("returns scopes string when it is specified in the Header map", func(t *testing.T) {
-		expectedScopes := "applications:write runtimes:write"
-		reqData := ReqData{
-			Header: http.Header{
-				textproto.CanonicalMIMEHeaderKey(ScopesKey): []string{expectedScopes},
-			},
-		}
-
-		scopes, err := reqData.GetScopes()
-
-		require.NoError(t, err)
-		require.Equal(t, expectedScopes, scopes)
-	})
-
-	t.Run("returns scopes string when it is specified in the Header map of Body", func(t *testing.T) {
-		expectedScopes := "applications:write runtimes:write"
-		reqData := ReqData{
-			Body: ReqBody{
-				Header: http.Header{
-					textproto.CanonicalMIMEHeaderKey(ScopesKey): []string{expectedScopes},
-				},
-			},
-		}
-
-		scopes, err := reqData.GetScopes()
-
-		require.NoError(t, err)
-		require.Equal(t, expectedScopes, scopes)
-	})
-
 	t.Run("returns scopes string when it is specified in the Extra map", func(t *testing.T) {
 		expectedScopes := "applications:write runtimes:write"
 		reqData := ReqData{
