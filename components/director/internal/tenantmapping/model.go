@@ -112,10 +112,6 @@ func (d *ReqData) GetTenantID() (string, error) {
 
 // GetScopes returns scopes from the parsed request input if defined
 func (d *ReqData) GetScopes() (string, error) {
-	if scopesVal := d.Body.Header.Get(ScopesKey); scopesVal != "" {
-		return scopesVal, nil
-	}
-
 	if scopesVal, ok := d.Body.Extra[ScopesKey]; ok {
 		scopes, err := str.Cast(scopesVal)
 		if err != nil {
@@ -123,10 +119,6 @@ func (d *ReqData) GetScopes() (string, error) {
 		}
 
 		return scopes, nil
-	}
-
-	if scopesVal := d.Header.Get(ScopesKey); scopesVal != "" {
-		return scopesVal, nil
 	}
 
 	return "", apperrors.NewKeyDoesNotExistError(ScopesKey)
