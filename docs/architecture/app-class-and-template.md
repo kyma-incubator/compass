@@ -32,16 +32,44 @@ In this example, Integration System is required and then it configures Applicati
 1. Register Integration System
 ```graphql
 mutation {
-    createIntegrationSystem(in: {name: "simpleIntegrationSystem", description:""} ) {
+    createIntegrationSystem(in: {name: "simpleIntegrationSystem"} ) {
       id
       name
-      description
     }
 }
 
 ```
 2. Create Application with provided `integrationSystemName`
-3. Compass add labels with integrationSystemID for created Application
+```graphql
+mutation {
+    createApplication(in:{name:"simpleApplication", integrationSystemName:"simpleIntegrationSystem"}) {
+        id
+        name
+        integrationSystemName
+        labels
+    }
+}
+```
+Compass add labels with integrationSystemName for just created Application, so output of the previous mutation is the following:
+```
+{
+  "data": {
+    "createApplication": {
+      "id": "d046590f-934f-411f-91e2-d446b404a2a2",
+      "name": "simpleApplication",
+      "integrationSystemName": "simpleIntegrationSystem",
+      "labels": {
+        "scenarios":["DEFULT"],
+        "integrationSystemName":"simpleIntegrationSystem",
+      },
+      
+    }
+  }
+}
+```
+
+Thanks to that, no store
+
 4. IntegrationSystem query for all related Applications by specifying label `integrationSystemName` and reconciles 
 their state.
 
