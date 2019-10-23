@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	interval = 10 * time.Second
-	timeout  = 100 * time.Second
+	interval   = 2 * time.Second
+	retryCount = 5
 )
 
 type ProvisioningService interface {
@@ -198,7 +198,7 @@ func (r *service) startDeprovisioning(operationID, runtimeID string, config mode
 }
 
 func updateOperationStatus(updateFunction func() error) {
-	err := waitForFunction(interval, timeout, func() error {
+	err := retry(interval, retryCount, func() error {
 		return updateFunction()
 	})
 	if err != nil {
@@ -206,20 +206,15 @@ func updateOperationStatus(updateFunction func() error) {
 	}
 }
 
-func waitForFunction(interval, timeout time.Duration, isDone func() error) error {
-	done := time.After(timeout)
-
-	for {
-		err := isDone()
-		if err == nil {
+func retry(interval time.Duration, count int, operation func() error) error {
+	var err error
+	for i := 0; i < count; i++ {
+		err = operation()
+		if err != nil {
 			return nil
 		}
-
-		select {
-		case <-done:
-			return err
-		default:
-			time.Sleep(interval)
-		}
+		time.Sleep(interval)
 	}
+
+	return err
 }
