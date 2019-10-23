@@ -46,8 +46,11 @@ type TestSuite struct {
 
 	CredentialsSecretName string
 
-	config        testkit.TestConfig
-	secretsClient v1client.SecretInterface
+	oauthClientManager oauth.ClientManager
+
+	clientCredentials oauth.Credentials
+	config            testkit.TestConfig
+	secretsClient     v1client.SecretInterface
 }
 
 // TODO - better structure of setup code
@@ -69,7 +72,9 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 	}
 
 	logrus.Infof("Registering OAuth client...")
-	oauthCredentials, err := oauth.RegisterClient(config.HydraAdminURL)
+	oauthClientManager := oauth.NewClientManager(config.HydraAdminURL)
+
+	oauthCredentials, err := oauthClientManager.RegisterClient()
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to register OAuth client")
 	}
@@ -87,8 +92,9 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 		ProvisionerClient: provisionerClient,
 		DirectorClient:    directorClient,
 
-		config: config,
-
+		oauthClientManager:    oauthClientManager,
+		config:                config,
+		clientCredentials:     oauthCredentials,
 		secretsClient:         k8sClient.CoreV1().Secrets(config.CredentialsNamespace),
 		CredentialsSecretName: fmt.Sprintf("tests-cred-%s", testId),
 	}, nil
@@ -108,9 +114,16 @@ func (ts *TestSuite) Setup() error {
 func (ts *TestSuite) Cleanup() {
 	logrus.Infof("Starting cleanup...")
 
+	logrus.Infof("Removing credentials secret %s ...", ts.CredentialsSecretName)
 	err := ts.removeCredentialsSecret()
 	if err != nil {
 		logrus.Warnf("Failed to remove credentials secret: %s", err.Error())
+	}
+
+	logrus.Infof("Removing %s OAuth client...", ts.clientCredentials.ClientID)
+	err = ts.oauthClientManager.RemoveClient(ts.clientCredentials.ClientID)
+	if err != nil {
+		logrus.Warnf("Failed to unregister OAuth client: %s", err.Error())
 	}
 }
 
@@ -210,7 +223,6 @@ func (ts *TestSuite) saveCredentialsToSecret(credentials string) error {
 }
 
 func (ts *TestSuite) removeCredentialsSecret() error {
-	logrus.Infof("Removing credentials secret %s ...", ts.CredentialsSecretName)
 	return ts.secretsClient.Delete(ts.CredentialsSecretName, &v1meta.DeleteOptions{})
 }
 

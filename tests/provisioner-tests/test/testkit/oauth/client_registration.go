@@ -24,8 +24,20 @@ type oauthClient struct {
 	Owner         string   `json:"owner"`
 }
 
-func RegisterClient(oauthAdminURL string) (Credentials, error) {
-	clientCredentials, err := registerOAuth2Client(fmt.Sprintf("%s/clients", oauthAdminURL))
+type ClientManager struct {
+	hydraClientsURL string
+	httpClient      *http.Client
+}
+
+func NewClientManager(hydraAdminURL string) ClientManager {
+	return ClientManager{
+		hydraClientsURL: hydraAdminURL + "/clients",
+		httpClient:      &http.Client{},
+	}
+}
+
+func (c ClientManager) RegisterClient() (Credentials, error) {
+	clientCredentials, err := c.registerOAuth2Client()
 	if err != nil {
 		return Credentials{}, errors.Wrap(err, "Failed to register Oauth2 client")
 	}
@@ -33,7 +45,7 @@ func RegisterClient(oauthAdminURL string) (Credentials, error) {
 	return clientCredentials, nil
 }
 
-func registerOAuth2Client(oauthClientsURL string) (Credentials, error) {
+func (c ClientManager) registerOAuth2Client() (Credentials, error) {
 	oauthClient := oauthClient{
 		GrantTypes: []string{CredentialsGrantType},
 		Scope:      Scopes,
@@ -44,12 +56,12 @@ func registerOAuth2Client(oauthClientsURL string) (Credentials, error) {
 		return Credentials{}, err
 	}
 
-	request, err := http.NewRequest(http.MethodPost, oauthClientsURL, bytes.NewBuffer(registerClientBody))
+	request, err := http.NewRequest(http.MethodPost, c.hydraClientsURL, bytes.NewBuffer(registerClientBody))
 	if err != nil {
 		return Credentials{}, err
 	}
 
-	response, err := http.DefaultClient.Do(request)
+	response, err := c.httpClient.Do(request)
 	if err != nil {
 		return Credentials{}, err
 	}
@@ -68,4 +80,25 @@ func registerOAuth2Client(oauthClientsURL string) (Credentials, error) {
 		ClientID:     oauthClient.ClientID,
 		ClientSecret: oauthClient.Secret,
 	}, nil
+}
+
+func (c ClientManager) RemoveClient(clientId string) error {
+	url := fmt.Sprintf("%s/%s", c.hydraClientsURL, clientId)
+
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	if err != nil {
+		return errors.WithMessagef(err, "Failed to delete %s OAuth client", clientId)
+	}
+
+	response, err := c.httpClient.Do(req)
+	if err != nil {
+		return errors.WithMessagef(err, "Failed to delete %s OAuth client", clientId)
+	}
+	defer testkit.CloseReader(response.Body)
+
+	if response.StatusCode != http.StatusNoContent {
+		return errors.Errorf("Failed to delete %s OAuth client, service responded with unexpected status %s", clientId, response.Status)
+	}
+
+	return nil
 }

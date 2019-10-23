@@ -66,12 +66,12 @@ func (c *Client) DeleteRuntime(runtimeId string) (string, error) {
 	}
 
 	var idResponse IdResponse
-	err = c.graphQLClient.ExecuteRequest(req, &idResponse, &idResponse)
+	err = c.graphQLClient.ExecuteRequest(req, &idResponse, &IdResponse{})
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to delete Runtime")
 	}
 
-	return idResponse.Result.Id, nil
+	return idResponse.Id, nil
 }
 
 // TODO - modify this part to not to repeat it
@@ -94,7 +94,5 @@ func (c *Client) newRequest(query string) (*gcli.Request, error) {
 }
 
 type IdResponse struct {
-	Result struct {
-		Id string `json:"id"`
-	} `json:"result"`
+	Id string `json:"id"`
 }

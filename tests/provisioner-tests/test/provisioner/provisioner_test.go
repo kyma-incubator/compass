@@ -133,7 +133,7 @@ func Test_E2e(t *testing.T) {
 	// TODO - make sure it will work
 	assert.Equal(t, provisioningInput.ClusterConfig.GcpConfig.KubernetesVersion, version.Major)
 
-	// TODO - Run Compass Runtime Agent Tests (it may require passing AccessToken or Credentials for Director?) (Maybe pass credentials and tests will only generate Access Token?)
+	// TODO - Run Compass Runtime Agent Tests - it may require passing Credentials for MP
 
 	t.Logf("Deprovisioning runtime...")
 	deprovisioningOperationId, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtime.ID, credentialsInput)
