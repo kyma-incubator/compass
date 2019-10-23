@@ -9,10 +9,8 @@ import (
 type ConditionOp string
 
 const (
-	EqualOp    ConditionOp = "="
-	NotEqualOp ConditionOp = "!="
-	IsNull     ConditionOp = "IS NULL"
-	IsNotNull  ConditionOp = "IS NOT NULL"
+	EqualOp     ConditionOp = "="
+	IsNotNullOp ConditionOp = "IS NOT NULL"
 )
 
 type Conditions []Condition
@@ -30,30 +28,15 @@ func NewEqualCondition(field, val string) Condition {
 	}
 }
 
-func NewNotEqualCondition(field, val string) Condition {
-	return Condition{
-		Field: field,
-		Val:   val,
-		Op:    NotEqualOp,
-	}
-}
-
-func NewNullCondition(field string) Condition {
-	return Condition{
-		Field: field,
-		Op:    IsNull,
-	}
-}
-
 func NewNotNullCondition(field string) Condition {
 	return Condition{
 		Field: field,
-		Op:    IsNotNull,
+		Op:    IsNotNullOp,
 	}
 }
 
 func isNoArgCondition(cond Condition) bool {
-	return cond.Op == IsNull || cond.Op == IsNotNull
+	return cond.Op == IsNotNullOp
 }
 
 func getAllArgs(tenant *string, conditions Conditions) []interface{} {
