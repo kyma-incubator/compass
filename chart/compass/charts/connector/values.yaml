@@ -30,3 +30,4 @@ istio:
     connectorInternalApi:
       subjects:
         - user: cluster.local/ns/compass-system/sa/compass-director
+        - user: cluster.local/ns/compass-system/sa/compass-connector-tests
