@@ -18,7 +18,7 @@ func (qp queryProvider) upgradeRuntime(runtimeID string, config string) string {
 
 func (qp queryProvider) deprovisionRuntime(runtimeID, credentialsInput string) string {
 	return fmt.Sprintf(`mutation {
-	result: deprovisionRuntime(id: "%s", credentials: "%s")
+	result: deprovisionRuntime(id: "%s", credentials: %s)
 }`, runtimeID, credentialsInput)
 }
 

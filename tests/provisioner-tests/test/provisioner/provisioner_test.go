@@ -41,7 +41,7 @@ func Test_E2e(t *testing.T) {
 		// TODO - deleting runtime fails not sure why
 		t.Logf("Removing %s runtime...", runtime.ID)
 		_, err := testSuite.DirectorClient.DeleteRuntime(runtime.ID)
-		assert.NoError(t, err)
+		assertNoError(t, err)
 	}()
 
 	// Provision runtime
@@ -120,7 +120,7 @@ func Test_E2e(t *testing.T) {
 
 	t.Logf("Fetching runtime status...")
 	runtimeStatus, err := testSuite.ProvisionerClient.RuntimeStatus(runtime.ID)
-	require.NoError(t, err)
+	requireNoError(t, err)
 	assertGCPRuntimeConfiguration(t, provisioningInput, runtimeStatus)
 
 	t.Logf("Preparing K8s client...")
@@ -128,7 +128,7 @@ func Test_E2e(t *testing.T) {
 
 	t.Logf("Accessing API Server on provisioned cluster...")
 	version, err := k8sClient.ServerVersion()
-	require.NoError(t, err)
+	requireNoError(t, err)
 
 	// TODO - make sure it will work
 	assert.Equal(t, provisioningInput.ClusterConfig.GcpConfig.KubernetesVersion, version.Major)
@@ -137,11 +137,11 @@ func Test_E2e(t *testing.T) {
 
 	t.Logf("Deprovisioning runtime...")
 	deprovisioningOperationId, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtime.ID, credentialsInput)
-	require.NoError(t, err)
+	requireNoError(t, err)
 	t.Logf("Deprovisioning operation id: %s", deprovisioningOperationId)
 
 	deprovisioningOperationStatus, err := testSuite.WaitUntilOperationIsFinished(ProvisioningTimeout, deprovisioningOperationId)
-	require.NoError(t, err)
+	requireNoError(t, err)
 	assertOperationSucceed(t, gqlschema.OperationTypeDeprovision, runtime.ID, deprovisioningOperationStatus)
 	t.Logf("Runtime deprovisioned successfully")
 }
@@ -191,4 +191,13 @@ func requireNoError(t *testing.T, err error, msgAndArgs ...interface{}) {
 	}
 	fullError := fmt.Sprintf("Received unexpected error: %s", err.Error())
 	t.Fatal(fullError, msgAndArgs)
+}
+
+// Standard require.NoError print only the top wrapper of error
+func assertNoError(t *testing.T, err error, msgAndArgs ...interface{}) {
+	if assert.NoError(t, err) {
+		return
+	}
+	fullError := fmt.Sprintf("Received unexpected error: %s", err.Error())
+	t.Error(fullError, msgAndArgs)
 }

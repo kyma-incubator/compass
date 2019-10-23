@@ -28,7 +28,7 @@ func NewGraphQLClient(endpoint string, skipTLSVerify, queryLogging bool) *Client
 	graphQlClient := gcli.NewClient(endpoint, gcli.WithHTTPClient(httpClient))
 
 	if queryLogging {
-		logger := logrus.WithField("Client", "Provisioner")
+		logger := logrus.WithField("Client", "GraphQL")
 		graphQlClient.Log = func(s string) {
 			logger.Info(s)
 		}

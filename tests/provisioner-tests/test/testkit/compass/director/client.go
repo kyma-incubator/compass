@@ -71,7 +71,7 @@ func (c *Client) DeleteRuntime(runtimeId string) (string, error) {
 		return "", errors.Wrap(err, "Failed to delete Runtime")
 	}
 
-	return idResponse.Id, nil
+	return idResponse.Result.Id, nil
 }
 
 // TODO - modify this part to not to repeat it
@@ -81,6 +81,7 @@ func (c *Client) newRequest(query string) (*gcli.Request, error) {
 		return nil, errors.Wrap(err, "Error while getting Access Token")
 	}
 
+	// TODO - remove
 	logrus.Info("Access TOKEN: ", accessToken)
 
 	bearerToken := fmt.Sprintf("Bearer %s", accessToken.AccessToken)
@@ -93,5 +94,7 @@ func (c *Client) newRequest(query string) (*gcli.Request, error) {
 }
 
 type IdResponse struct {
-	Id string `json:"id"`
+	Result struct {
+		Id string `json:"id"`
+	} `json:"result"`
 }
