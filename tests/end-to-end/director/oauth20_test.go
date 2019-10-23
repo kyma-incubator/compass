@@ -137,7 +137,7 @@ func TestDeleteSystemAuthFromApplication(t *testing.T) {
 	require.Empty(t, appAfterDelete.Auths)
 }
 
-func TestDeleteSystemAuthFromApplicationUsingRuntimeMutation(t *testing.T) {
+func TestDeleteSystemAuthFromApplicationUsingRuntimeMutationShouldReportError(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	name := "app"
@@ -162,7 +162,7 @@ func TestDeleteSystemAuthFromApplicationUsingRuntimeMutation(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestDeleteSystemAuthFromApplicationUsingIntegrationSystemMutation(t *testing.T) {
+func TestDeleteSystemAuthFromApplicationUsingIntegrationSystemMutationShouldReportError(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	name := "app"
@@ -215,7 +215,7 @@ func TestDeleteSystemAuthFromRuntime(t *testing.T) {
 	require.Empty(t, rtmAfterDelete.Auths)
 }
 
-func TestDeleteSystemAuthFromRuntimeUsingApplicationMutation(t *testing.T) {
+func TestDeleteSystemAuthFromRuntimeUsingApplicationMutationShouldReportError(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	name := "rtm"
@@ -240,7 +240,7 @@ func TestDeleteSystemAuthFromRuntimeUsingApplicationMutation(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestDeleteSystemAuthFromRuntimeUsingIntegrationSystemMutation(t *testing.T) {
+func TestDeleteSystemAuthFromRuntimeUsingIntegrationSystemMutationShouldReportError(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	name := "rtm"
@@ -293,7 +293,7 @@ func TestDeleteSystemAuthFromIntegrationSystem(t *testing.T) {
 	require.Empty(t, intSysAfterDelete.Auths)
 }
 
-func TestDeleteSystemAuthFromIntegrationSystemUsingApplicationMutation(t *testing.T) {
+func TestDeleteSystemAuthFromIntegrationSystemUsingApplicationMutationShouldReportError(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	name := "int-system"
@@ -318,7 +318,7 @@ func TestDeleteSystemAuthFromIntegrationSystemUsingApplicationMutation(t *testin
 	require.Error(t, err)
 }
 
-func TestDeleteSystemAuthFromIntegrationSystemUsingRuntimeMutation(t *testing.T) {
+func TestDeleteSystemAuthFromIntegrationSystemUsingRuntimeMutationShouldReportError(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	name := "int-system"

@@ -14,7 +14,6 @@ type Repository interface {
 	Create(ctx context.Context, item model.SystemAuth) error
 	GetByID(ctx context.Context, tenant, id string) (*model.SystemAuth, error)
 	ListForObject(ctx context.Context, tenant string, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
-	Delete(ctx context.Context, tenant string, id string) error
 	DeleteByIDForObject(ctx context.Context, tenant string, id string, objType model.SystemAuthReferenceObjectType) error
 }
 

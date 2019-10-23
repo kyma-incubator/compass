@@ -535,44 +535,6 @@ func TestRepository_DeleteAllForObject(t *testing.T) {
 	})
 }
 
-func TestRepository_Delete(t *testing.T) {
-	// GIVEN
-	sysAuthID := "foo"
-
-	t.Run("Success", func(t *testing.T) {
-		db, dbMock := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), db)
-
-		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND id = $2`
-		dbMock.ExpectExec(regexp.QuoteMeta(query)).
-			WithArgs(testTenant, sysAuthID).
-			WillReturnResult(sqlmock.NewResult(-1, 1))
-
-		repo := systemauth.NewRepository(nil)
-		// WHEN
-		err := repo.Delete(ctx, testTenant, sysAuthID)
-		// THEN
-		require.NoError(t, err)
-	})
-
-	t.Run("Error", func(t *testing.T) {
-		db, dbMock := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), db)
-
-		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND id = $2`
-		dbMock.ExpectExec(regexp.QuoteMeta(query)).
-			WithArgs(testTenant, sysAuthID).
-			WillReturnError(testErr)
-
-		repo := systemauth.NewRepository(nil)
-		// WHEN
-		err := repo.Delete(ctx, testTenant, sysAuthID)
-		// THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), testErr.Error())
-	})
-}
-
 func TestRepository_DeleteByIDForObject(t *testing.T) {
 	// GIVEN
 	sysAuthID := "foo"

@@ -100,10 +100,6 @@ func (r *repository) DeleteAllForObject(ctx context.Context, tenant string, obje
 	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition(objTypeFieldName, objectID)})
 }
 
-func (r *repository) Delete(ctx context.Context, tenant string, id string) error {
-	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
-}
-
 func (r *repository) DeleteByIDForObject(ctx context.Context, tenant string, id string, objType model.SystemAuthReferenceObjectType) error {
 	var objTypeCond repo.Condition
 	switch objType {
