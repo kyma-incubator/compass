@@ -76,10 +76,12 @@ docker build -t $DIRECTOR_IMG_NAME ./
 echo -e "${GREEN}Running Director...${NC}"
 
 SCOPES_CONFIGURATION_FILE_PATH="${HOST_ROOT_PATH}/chart/compass/charts/director/config.yaml"
+STATIC_USERS_PATH="${HOST_ROOT_PATH}/components/director/assets/static-users-local.yaml"
 
 docker run --name ${DIRECTOR_CONTAINER} -d --rm --network=${NETWORK} \
     -p ${APP_PORT}:${APP_PORT} \
     -v "${SCOPES_CONFIGURATION_FILE_PATH}:/app/config.yaml" \
+    -v "${STATIC_USERS_PATH}:/data/static-users.yaml" \
     -v "${HOST_ROOT_PATH}/components/director/hack/default-jwks.json:/app/default-jwks.json" \
     -e APP_ADDRESS=0.0.0.0:${APP_PORT} \
     -e APP_DB_USER=${DB_USER} \
@@ -88,6 +90,7 @@ docker run --name ${DIRECTOR_CONTAINER} -d --rm --network=${NETWORK} \
     -e APP_DB_PORT=${DB_PORT} \
     -e APP_DB_NAME=${DB_NAME} \
     -e APP_SCOPES_CONFIGURATION_FILE=/app/config.yaml \
+    -e APP_STATIC_USERS_FILE=/data/static-users.yaml \
     -e APP_OAUTH20_CLIENT_ENDPOINT="https://oauth2-admin.kyma.local/clients" \
     -e APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT="https://oauth2.kyma.local/oauth2/token" \
     -e APP_ONE_TIME_TOKEN_URL=http://connector.not.configured.url/graphql \
