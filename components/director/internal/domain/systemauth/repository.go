@@ -108,11 +108,11 @@ func (r *repository) DeleteByIDForObject(ctx context.Context, tenant string, id 
 	var objTypeCond repo.Condition
 	switch objType {
 	case model.ApplicationReference:
-		objTypeCond = repo.NewNotEqualCondition("app_id", "null")
+		objTypeCond = repo.NewNotNullCondition("app_id")
 	case model.RuntimeReference:
-		objTypeCond = repo.NewNotEqualCondition("runtime_id", "null")
+		objTypeCond = repo.NewNotNullCondition("runtime_id")
 	case model.IntegrationSystemReference:
-		objTypeCond = repo.NewNotEqualCondition("integration_system_id", "null")
+		objTypeCond = repo.NewNotNullCondition("integration_system_id")
 	default:
 		return fmt.Errorf("unsupported object type (%s)", objType)
 	}

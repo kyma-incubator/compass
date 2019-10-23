@@ -581,9 +581,9 @@ func TestRepository_DeleteByIDForObject(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND id = $2 AND app_id != $3`
+		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND id = $2 AND app_id IS NOT NULL`
 		dbMock.ExpectExec(regexp.QuoteMeta(query)).
-			WithArgs(testTenant, sysAuthID, "null").
+			WithArgs(testTenant, sysAuthID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		repo := systemauth.NewRepository(nil)
@@ -597,9 +597,9 @@ func TestRepository_DeleteByIDForObject(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND id = $2 AND runtime_id != $3`
+		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND id = $2 AND runtime_id IS NOT NULL`
 		dbMock.ExpectExec(regexp.QuoteMeta(query)).
-			WithArgs(testTenant, sysAuthID, "null").
+			WithArgs(testTenant, sysAuthID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		repo := systemauth.NewRepository(nil)
@@ -613,9 +613,9 @@ func TestRepository_DeleteByIDForObject(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND id = $2 AND integration_system_id != $3`
+		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND id = $2 AND integration_system_id IS NOT NULL`
 		dbMock.ExpectExec(regexp.QuoteMeta(query)).
-			WithArgs(testTenant, sysAuthID, "null").
+			WithArgs(testTenant, sysAuthID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		repo := systemauth.NewRepository(nil)
@@ -629,9 +629,9 @@ func TestRepository_DeleteByIDForObject(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND id = $2 AND app_id != $3`
+		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND id = $2 AND app_id IS NOT NULL`
 		dbMock.ExpectExec(regexp.QuoteMeta(query)).
-			WithArgs(testTenant, sysAuthID, "null").
+			WithArgs(testTenant, sysAuthID).
 			WillReturnError(testErr)
 
 		repo := systemauth.NewRepository(nil)

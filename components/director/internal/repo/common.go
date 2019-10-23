@@ -11,6 +11,8 @@ type ConditionOp string
 const (
 	EqualOp    ConditionOp = "="
 	NotEqualOp ConditionOp = "!="
+	IsNull     ConditionOp = "IS NULL"
+	IsNotNull  ConditionOp = "IS NOT NULL"
 )
 
 type Conditions []Condition
@@ -36,12 +38,33 @@ func NewNotEqualCondition(field, val string) Condition {
 	}
 }
 
+func NewNullCondition(field string) Condition {
+	return Condition{
+		Field: field,
+		Op:    IsNull,
+	}
+}
+
+func NewNotNullCondition(field string) Condition {
+	return Condition{
+		Field: field,
+		Op:    IsNotNull,
+	}
+}
+
+func isNoArgCondition(cond Condition) bool {
+	return cond.Op == IsNull || cond.Op == IsNotNull
+}
+
 func getAllArgs(tenant *string, conditions Conditions) []interface{} {
 	allArgs := []interface{}{}
 	if tenant != nil {
 		allArgs = append(allArgs, tenant)
 	}
 	for _, idAndVal := range conditions {
+		if isNoArgCondition(idAndVal) {
+			continue
+		}
 		allArgs = append(allArgs, idAndVal.Val)
 	}
 	return allArgs
@@ -54,8 +77,13 @@ func writeEnumeratedConditions(builder *strings.Builder, startIdx int, condition
 
 	var conditionsToJoin []string
 	for idx, idAndVal := range conditions {
-		conditionsToJoin = append(conditionsToJoin, fmt.Sprintf("%s %s $%d", idAndVal.Field, idAndVal.Op, idx+startIdx))
+		if isNoArgCondition(idAndVal) {
+			conditionsToJoin = append(conditionsToJoin, fmt.Sprintf("%s %s", idAndVal.Field, idAndVal.Op))
+		} else {
+			conditionsToJoin = append(conditionsToJoin, fmt.Sprintf("%s %s $%d", idAndVal.Field, idAndVal.Op, idx+startIdx))
+		}
 	}
+
 	builder.WriteString(fmt.Sprintf(" %s", strings.Join(conditionsToJoin, " AND ")))
 
 	return nil
