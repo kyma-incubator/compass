@@ -137,7 +137,6 @@ input ApplicationCreateInput {
     eventAPIs: [EventAPIDefinitionInput!]
     documents: [DocumentInput!]
     integrationSystemID: ID #optional
-    labe
 
 }
 

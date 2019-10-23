@@ -28,7 +28,7 @@ input ApplicationCreateInput {
 ```
 IntegrationSystemID is an optional. 
 ### Example
-In this example, Integration System is required and then it configures Application. 
+In this example, Integration System is registered and then it configures newly added Application. 
 1. Register Integration System
 ```graphql
 mutation {
@@ -68,18 +68,33 @@ Compass add labels with integrationSystemName for just created Application, so o
 }
 ```
 
-Thanks to that, no store
-
-4. IntegrationSystem query for all related Applications by specifying label `integrationSystemName` and reconciles 
-their state.
+Thanks to that,  Integration System can easily fetch all Applications managed by given Integration System by querying by label.
+Then, Integration System is responsible for updating Application details, like registerting API and events.
 
 ## Integration System supporting many Application types
-In the previous example, Integration System was limited to support only one type of Application.
-In case it supports many types of Application Types, information about which Application to provision should be
-included in the Application Labels. To standaradize whole process, Application Template can be used.
+In the previous example, there was an assumption that every Application managed by the Integration System represents the same type
+of the Application.  
+In case IntegrationSystem supports many types of Applications, information about which Application type should be stored in the Application labels.
+Let assume that IntegrationSystem supports two types of Applications `ecommerce` and `marketing` and such information 
+is stored in label `simpleIntegrationSystem/applicationType`.
+To create an Application of type `ecommerce`, create following mutation:
+```graphql
+mutation {
+    createApplication(in:{name:"ecommerceApp", integrationSystemName:"simpleIntegrationSystem", labels:[{key:"simpleIntegrationSystem/applicationType",value:"ecommerce"}]}) {
+        id
+        name
+        integrationSystemName
+        labels
+    }
+}
+```
+Label name (`simpleIntegrationSystem/applicationType`) and supported values(`ecommerce`,`marketing`) are arbitrary 
+defined by a IntegrationSystem and has to be documented.
+IntegrationSystem can use ApplicationTemplates to explicitly define supported types.
 
+## Managing ApplicationTemplates
+ApplicationTemplate defines ApplicationInput used to create Application. ApplicationInput can contains variable part - placeholders.
 
-Managing ApplicationTemplates:
 ```graphql
 input ApplicationTemplateInput {
     name: String!
@@ -99,6 +114,8 @@ type Mutation {
     createApplicationTemplate(in: ApplicationTemplateInput!): ApplicationTemplate!
     updateApplicationTemplate(id: ID!, in: ApplicationTemplateInput!): ApplicationTemplate!
     deleteApplicationTemplate(id: ID!): ApplicationTemplate!
+    
+    createApplicationFromTemplate(templateName: String!, values: [TemplateValueInput]): Application!
 
 }
 type Query {
@@ -107,63 +124,15 @@ type Query {
 } 
 ```
 
-ApplicationTemplate defined ApplicationInput used to create Application. ApplicationInput can contains variable part - placeholders.
-Placeholders are defined in `placeholders` fields. Thanks to that, clear definition what required input parameters is defined.
-
-
-To create Application from template, `createApplicationFromTemplate` mutation is used:
-
-```graphql
-
-createApplicationFromTemplate(templateName: String!, values: [TemplateValueInput]): Application!
-
-```
-
-## Examples
-
-### Create simple Application not managed by Integration System
-
-In this case creating Application the same as before introducing Application Templates.
+### Example
+1. Integration System creates Application Template that represents `ecommerce` Application type.
 ```graphql
 mutation {
-    createApplication(in: {name: "simpleApplication"}) {
-        id 
-        name
-    }
-}
-```
-
-### Create Application managed by Integration System
-```graphql
-mutation {
-    createApplication(in: {name: "simpleApplication", integrationSystemName: "integrationSystem"}) {
-        id
-        name
-        labels
-    }
-}
-```
-
-### Create simple Application from Application Template
-1. Create an Application Template
-```graphql
-mutation  {
-
-}
-
-```
-2. Create an Application From Template
-```graphql
-mutation  {
-
+    createAppl
 }
 
 ```
 
-### Create Application managed by Integration System from Application Template
-1. Create an Application Templates by Integration System
-
-2. Create an Appliction from Application Template
 
     
  
