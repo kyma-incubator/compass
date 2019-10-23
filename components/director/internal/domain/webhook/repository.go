@@ -49,7 +49,7 @@ func NewRepository(conv EntityConverter) *repository {
 
 func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.Webhook, error) {
 	var entity Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{{Field: "id", Val: id}}, &entity); err != nil {
+	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, &entity); err != nil {
 		return nil, err
 	}
 	m, err := r.conv.FromEntity(entity)
@@ -110,9 +110,9 @@ func (r *repository) Update(ctx context.Context, item *model.Webhook) error {
 }
 
 func (r *repository) Delete(ctx context.Context, tenant, id string) error {
-	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
+	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 func (r *repository) DeleteAllByApplicationID(ctx context.Context, tenant, applicationID string) error {
-	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{{Field: "app_id", Val: applicationID}})
+	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition("app_id", applicationID)})
 }

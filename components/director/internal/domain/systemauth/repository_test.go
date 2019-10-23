@@ -453,7 +453,7 @@ func TestRepository_ListForObject(t *testing.T) {
 	})
 }
 
-func TestRepository_DeleteForObject(t *testing.T) {
+func TestRepository_DeleteAllForObject(t *testing.T) {
 	// GIVEN
 	sysAuthID := "foo"
 
@@ -535,38 +535,70 @@ func TestRepository_DeleteForObject(t *testing.T) {
 	})
 }
 
-func TestRepository_Delete(t *testing.T) {
+func TestRepository_DeleteByIDForObject(t *testing.T) {
 	// GIVEN
 	sysAuthID := "foo"
 
-	t.Run("Success", func(t *testing.T) {
+	t.Run("Success when deleting by application", func(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND id = $2`
+		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND id = $2 AND app_id IS NOT NULL`
 		dbMock.ExpectExec(regexp.QuoteMeta(query)).
 			WithArgs(testTenant, sysAuthID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		repo := systemauth.NewRepository(nil)
 		// WHEN
-		err := repo.Delete(ctx, testTenant, sysAuthID)
+		err := repo.DeleteByIDForObject(ctx, testTenant, sysAuthID, model.ApplicationReference)
 		// THEN
 		require.NoError(t, err)
 	})
 
-	t.Run("Error", func(t *testing.T) {
+	t.Run("Success when deleting by runtime", func(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND id = $2`
+		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND id = $2 AND runtime_id IS NOT NULL`
+		dbMock.ExpectExec(regexp.QuoteMeta(query)).
+			WithArgs(testTenant, sysAuthID).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		repo := systemauth.NewRepository(nil)
+		// WHEN
+		err := repo.DeleteByIDForObject(ctx, testTenant, sysAuthID, model.RuntimeReference)
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("Success when deleting by integration system", func(t *testing.T) {
+		db, dbMock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND id = $2 AND integration_system_id IS NOT NULL`
+		dbMock.ExpectExec(regexp.QuoteMeta(query)).
+			WithArgs(testTenant, sysAuthID).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		repo := systemauth.NewRepository(nil)
+		// WHEN
+		err := repo.DeleteByIDForObject(ctx, testTenant, sysAuthID, model.IntegrationSystemReference)
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("Error when deleting application", func(t *testing.T) {
+		db, dbMock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		query := `DELETE FROM public.system_auths WHERE tenant_id = $1 AND id = $2 AND app_id IS NOT NULL`
 		dbMock.ExpectExec(regexp.QuoteMeta(query)).
 			WithArgs(testTenant, sysAuthID).
 			WillReturnError(testErr)
 
 		repo := systemauth.NewRepository(nil)
 		// WHEN
-		err := repo.Delete(ctx, testTenant, sysAuthID)
+		err := repo.DeleteByIDForObject(ctx, testTenant, sysAuthID, model.ApplicationReference)
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())

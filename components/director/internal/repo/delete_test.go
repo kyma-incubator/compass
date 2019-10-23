@@ -33,7 +33,7 @@ func TestDelete(t *testing.T) {
 			defer mock.AssertExpectations(t)
 			mock.ExpectExec(defaultExpectedDeleteQuery()).WithArgs(givenTenant, givenID).WillReturnResult(sqlmock.NewResult(-1, 1))
 			// WHEN
-			err := testedMethod(ctx, givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}})
+			err := testedMethod(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 			// THEN
 			require.NoError(t, err)
 		})
@@ -59,7 +59,7 @@ func TestDelete(t *testing.T) {
 			defer mock.AssertExpectations(t)
 			mock.ExpectExec(expectedQuery).WithArgs(givenTenant, "john", "doe").WillReturnResult(sqlmock.NewResult(-1, 1))
 			// WHEN
-			err := testedMethod(ctx, givenTenant, repo.Conditions{{Field: "first_name", Val: "john"}, {Field: "last_name", Val: "doe"}})
+			err := testedMethod(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("first_name", "john"), repo.NewEqualCondition("last_name", "doe")})
 			// THEN
 			require.NoError(t, err)
 		})
@@ -71,14 +71,14 @@ func TestDelete(t *testing.T) {
 			defer mock.AssertExpectations(t)
 			mock.ExpectExec(defaultExpectedDeleteQuery()).WithArgs(givenTenant, givenID).WillReturnError(someError())
 			// WHEN
-			err := testedMethod(ctx, givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}})
+			err := testedMethod(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 			// THEN
 			require.EqualError(t, err, "while deleting from database: some error")
 		})
 
 		t.Run(fmt.Sprintf("[%s] returns error if missing persistence context", tn), func(t *testing.T) {
 			ctx := context.TODO()
-			err := testedMethod(ctx, givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}})
+			err := testedMethod(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 			require.EqualError(t, err, "unable to fetch database from context")
 		})
 	}
@@ -101,7 +101,7 @@ func TestDeleteGlobal(t *testing.T) {
 			defer mock.AssertExpectations(t)
 			mock.ExpectExec(expectedQuery).WithArgs(givenID).WillReturnResult(sqlmock.NewResult(-1, 1))
 			// WHEN
-			err := testedMethod(ctx, repo.Conditions{{Field: "id_col", Val: givenID}})
+			err := testedMethod(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 			// THEN
 			require.NoError(t, err)
 		})
@@ -127,7 +127,7 @@ func TestDeleteGlobal(t *testing.T) {
 			defer mock.AssertExpectations(t)
 			mock.ExpectExec(expectedQuery).WithArgs("john", "doe").WillReturnResult(sqlmock.NewResult(-1, 1))
 			// WHEN
-			err := testedMethod(ctx, repo.Conditions{{Field: "first_name", Val: "john"}, {Field: "last_name", Val: "doe"}})
+			err := testedMethod(ctx, repo.Conditions{repo.NewEqualCondition("first_name", "john"), repo.NewEqualCondition("last_name", "doe")})
 			// THEN
 			require.NoError(t, err)
 		})
@@ -140,14 +140,14 @@ func TestDeleteGlobal(t *testing.T) {
 			defer mock.AssertExpectations(t)
 			mock.ExpectExec(expectedQuery).WithArgs(givenID).WillReturnError(someError())
 			// WHEN
-			err := testedMethod(ctx, repo.Conditions{{Field: "id_col", Val: givenID}})
+			err := testedMethod(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 			// THEN
 			require.EqualError(t, err, "while deleting from database: some error")
 		})
 
 		t.Run(fmt.Sprintf("[%s] returns error if missing persistence context", tn), func(t *testing.T) {
 			ctx := context.TODO()
-			err := testedMethod(ctx, repo.Conditions{{Field: "id_col", Val: givenID}})
+			err := testedMethod(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 			require.EqualError(t, err, "unable to fetch database from context")
 		})
 	}
@@ -193,7 +193,7 @@ func TestDeleteReactsOnNumberOfRemovedObjects(t *testing.T) {
 			defer mock.AssertExpectations(t)
 			mock.ExpectExec(defaultExpectedDeleteQuery()).WithArgs(givenTenant, givenID).WillReturnResult(sqlmock.NewResult(0, tc.givenRowsAffected))
 			// WHEN
-			err := tc.methodToTest(ctx, givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}})
+			err := tc.methodToTest(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 			// THEN
 			if tc.expectedErrString != "" {
 				require.EqualError(t, err, tc.expectedErrString)
@@ -242,7 +242,7 @@ func TestDeleteGlobalReactsOnNumberOfRemovedObjects(t *testing.T) {
 			defer mock.AssertExpectations(t)
 			mock.ExpectExec(expectedQuery).WithArgs(givenID).WillReturnResult(sqlmock.NewResult(0, tc.givenRowsAffected))
 			// WHEN
-			err := tc.methodToTest(ctx, repo.Conditions{{Field: "id_col", Val: givenID}})
+			err := tc.methodToTest(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 			// THEN
 			if tc.expectedErrString != "" {
 				require.EqualError(t, err, tc.expectedErrString)

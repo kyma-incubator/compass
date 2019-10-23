@@ -4,9 +4,11 @@ package director
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -135,6 +137,56 @@ func TestDeleteSystemAuthFromApplication(t *testing.T) {
 	require.Empty(t, appAfterDelete.Auths)
 }
 
+func TestDeleteSystemAuthFromApplicationUsingRuntimeMutationShouldReportError(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	name := "app"
+
+	t.Log("Create application")
+	app := createApplication(t, ctx, name)
+	require.NotEmpty(t, app)
+	defer deleteApplication(t, app.ID)
+
+	appAuth := generateClientCredentialsForApplication(t, ctx, app.ID)
+	require.NotEmpty(t, appAuth)
+	defer deleteClientCredentialsForApplication(t, appAuth.ID)
+
+	deleteSystemAuthForRuntimeRequest := fixDeleteSystemAuthForRuntime(appAuth.ID)
+	deleteOutput := graphql.SystemAuth{}
+
+	// WHEN
+	t.Log("Delete system auth for application using runtime mutation")
+	err := tc.RunOperation(ctx, deleteSystemAuthForRuntimeRequest, &deleteOutput)
+
+	// THEN
+	require.Error(t, err)
+}
+
+func TestDeleteSystemAuthFromApplicationUsingIntegrationSystemMutationShouldReportError(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	name := "app"
+
+	t.Log("Create application")
+	app := createApplication(t, ctx, name)
+	require.NotEmpty(t, app)
+	defer deleteApplication(t, app.ID)
+
+	appAuth := generateClientCredentialsForApplication(t, ctx, app.ID)
+	require.NotEmpty(t, appAuth)
+	defer deleteClientCredentialsForApplication(t, appAuth.ID)
+
+	deleteSystemAuthForIntegrationSystemRequest := fixDeleteSystemAuthForIntegrationSystem(appAuth.ID)
+	deleteOutput := graphql.SystemAuth{}
+
+	// WHEN
+	t.Log("Delete system auth for application using runtime mutation")
+	err := tc.RunOperation(ctx, deleteSystemAuthForIntegrationSystemRequest, &deleteOutput)
+
+	// THEN
+	require.Error(t, err)
+}
+
 func TestDeleteSystemAuthFromRuntime(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -163,6 +215,56 @@ func TestDeleteSystemAuthFromRuntime(t *testing.T) {
 	require.Empty(t, rtmAfterDelete.Auths)
 }
 
+func TestDeleteSystemAuthFromRuntimeUsingApplicationMutationShouldReportError(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	name := "rtm"
+
+	t.Log("Create runtime")
+	rtm := createRuntime(t, ctx, name)
+	require.NotEmpty(t, rtm)
+	defer deleteRuntime(t, rtm.ID)
+
+	rtmAuth := generateClientCredentialsForRuntime(t, ctx, rtm.ID)
+	require.NotEmpty(t, rtmAuth)
+	defer deleteClientCredentialsForRuntime(t, rtmAuth.ID)
+
+	deleteSystemAuthForApplicationRequest := fixDeleteSystemAuthForApplication(rtmAuth.ID)
+	deleteOutput := graphql.SystemAuth{}
+
+	// WHEN
+	t.Log("Delete system auth for runtime using application mutation")
+	err := tc.RunOperation(ctx, deleteSystemAuthForApplicationRequest, &deleteOutput)
+
+	//THEN
+	require.Error(t, err)
+}
+
+func TestDeleteSystemAuthFromRuntimeUsingIntegrationSystemMutationShouldReportError(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	name := "rtm"
+
+	t.Log("Create runtime")
+	rtm := createRuntime(t, ctx, name)
+	require.NotEmpty(t, rtm)
+	defer deleteRuntime(t, rtm.ID)
+
+	rtmAuth := generateClientCredentialsForRuntime(t, ctx, rtm.ID)
+	require.NotEmpty(t, rtmAuth)
+	defer deleteClientCredentialsForRuntime(t, rtmAuth.ID)
+
+	deleteSystemAuthForIntegrationSystemRequest := fixDeleteSystemAuthForIntegrationSystem(rtmAuth.ID)
+	deleteOutput := graphql.SystemAuth{}
+
+	// WHEN
+	t.Log("Delete system auth for runtime using integration system mutation")
+	err := tc.RunOperation(ctx, deleteSystemAuthForIntegrationSystemRequest, &deleteOutput)
+
+	//THEN
+	require.Error(t, err)
+}
+
 func TestDeleteSystemAuthFromIntegrationSystem(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -189,4 +291,84 @@ func TestDeleteSystemAuthFromIntegrationSystem(t *testing.T) {
 	t.Log("Check if system auth was deleted")
 	intSysAfterDelete := getIntegrationSystem(t, ctx, intSys.ID)
 	require.Empty(t, intSysAfterDelete.Auths)
+}
+
+func TestDeleteSystemAuthFromIntegrationSystemUsingApplicationMutationShouldReportError(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	name := "int-system"
+
+	t.Log("Create integration system")
+	intSys := createIntegrationSystem(t, ctx, name)
+	require.NotEmpty(t, intSys)
+	defer deleteIntegrationSystem(t, ctx, intSys.ID)
+
+	intSysAuth := generateClientCredentialsForIntegrationSystem(t, ctx, intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer deleteClientCredentialsForIntegrationSystem(t, intSysAuth.ID)
+
+	deleteSystemAuthForApplicationRequest := fixDeleteSystemAuthForApplication(intSysAuth.ID)
+	deleteOutput := graphql.SystemAuth{}
+
+	// WHEN
+	t.Log("Delete system auth for integration system using application mutation")
+	err := tc.RunOperation(ctx, deleteSystemAuthForApplicationRequest, &deleteOutput)
+
+	//THEN
+	require.Error(t, err)
+}
+
+func TestDeleteSystemAuthFromIntegrationSystemUsingRuntimeMutationShouldReportError(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	name := "int-system"
+
+	t.Log("Create integration system")
+	intSys := createIntegrationSystem(t, ctx, name)
+	require.NotEmpty(t, intSys)
+	defer deleteIntegrationSystem(t, ctx, intSys.ID)
+
+	intSysAuth := generateClientCredentialsForIntegrationSystem(t, ctx, intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer deleteClientCredentialsForIntegrationSystem(t, intSysAuth.ID)
+
+	deleteSystemAuthForRuntimeRequest := fixDeleteSystemAuthForRuntime(intSysAuth.ID)
+	deleteOutput := graphql.SystemAuth{}
+
+	// WHEN
+	t.Log("Delete system auth for integration system using runtime mutation")
+	err := tc.RunOperation(ctx, deleteSystemAuthForRuntimeRequest, &deleteOutput)
+
+	//THEN
+	require.Error(t, err)
+}
+
+func deleteClientCredentialsForApplication(t *testing.T, authID string) {
+	req := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			deleteSystemAuthForApplication(authID: "%s") {
+			id
+		}	
+	}`, authID))
+	require.NoError(t, tc.RunOperation(context.Background(), req, nil))
+}
+
+func deleteClientCredentialsForRuntime(t *testing.T, authID string) {
+	req := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			deleteSystemAuthForRuntime(authID: "%s") {
+			id
+		}	
+	}`, authID))
+	require.NoError(t, tc.RunOperation(context.Background(), req, nil))
+}
+
+func deleteClientCredentialsForIntegrationSystem(t *testing.T, authID string) {
+	req := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			deleteSystemAuthForIntegrationSystem(authID: "%s") {
+			id
+		}	
+	}`, authID))
+	require.NoError(t, tc.RunOperation(context.Background(), req, nil))
 }

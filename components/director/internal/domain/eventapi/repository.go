@@ -59,7 +59,7 @@ func (r EventAPIDefCollection) Len() int {
 
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.EventAPIDefinition, error) {
 	var eventAPIDefEntity Entity
-	err := r.singleGetter.Get(ctx, tenantID, repo.Conditions{{Field: "id", Val: id}}, &eventAPIDefEntity)
+	err := r.singleGetter.Get(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, &eventAPIDefEntity)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting EventAPIDefinition")
 	}
@@ -144,13 +144,13 @@ func (r *pgRepository) Update(ctx context.Context, item *model.EventAPIDefinitio
 }
 
 func (r *pgRepository) Exists(ctx context.Context, tenantID, id string) (bool, error) {
-	return r.existQuerier.Exists(ctx, tenantID, repo.Conditions{repo.Condition{Field: "id", Val: id}})
+	return r.existQuerier.Exists(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 func (r *pgRepository) Delete(ctx context.Context, tenantID string, id string) error {
-	return r.deleter.DeleteOne(ctx, tenantID, repo.Conditions{repo.Condition{Field: "id", Val: id}})
+	return r.deleter.DeleteOne(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 func (r *pgRepository) DeleteAllByApplicationID(ctx context.Context, tenantID string, appID string) error {
-	return r.deleter.DeleteMany(ctx, tenantID, repo.Conditions{repo.Condition{Field: "app_id", Val: appID}})
+	return r.deleter.DeleteMany(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("app_id", appID)})
 }
