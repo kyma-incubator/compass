@@ -1,160 +1,151 @@
 # ApplicationClass and ApplicationTemplate
 
 Managing [Applications](./../terminology.md#Application) can be passed on some external system, to remove the burden of integration with Compass from Applications.
-Because of that [IntegrationSystem](./../terminology.md#Integration-System) and ApplicationClass types were introduced.
+Because of that [IntegrationSystems](./../terminology.md#Integration-System) were introduced.
 
-To increase the reusability of the application configuration, we introduce ApplicationTemplate.
-The diagram below describes when to use ApplicationClass or ApplicationTemplate.
+To simplify creation of Applications, Director API is extended with Application Template. 
+An ApplicationTemplate is reusable input for creating Applications that can be customized with placeholders provided 
+during Application creation.
 
-![](./assets/app-vs-template-vs-class.svg)
+## Manage Application by Integration System
+Managing Integrations System is described in [a separate document](./integration-systems.md).
+Integration System can be uniquely identified by it's name. To create an Application that is managed by a Integration System,
+specify `integrationSystemName` in the ApplicationCreateInput. 
 
-## Terminology
-
-- **ApplicationClass** represents an object for creating Applications. When you create an application from it, the IntegrationSystem
-dynamically updates Application definition, such us APIs, EventAPIs etc.
-   
-- **ApplicationTemplate** represents an object for creating Applications from the static definition.
-
-## GraphQL API Changes
-   
-1. Managing Application Class
-
-    ```graphql
-    input ApplicationClassInput {
-        name: String!
-        description: String
-        global: Boolean! = true
-        documents: [Document!]
-        integrationSystemID: ID!
-        previewApiSpecs: [ApiSpecInput!]
-        previewEventApiSpecs: [EventApiSpecInput!]
+```graphql
+input ApplicationCreateInput {
+    name: String!
+    description: String
+    labels: Labels
+    webhooks: [WebhookInput!]
+    healthCheckURL: String
+    apis: [APIDefinitionInput!]
+    eventAPIs: [EventAPIDefinitionInput!]
+    documents: [DocumentInput!]
+    integrationSystemName: String #optional
+    labels: [LabelInput!]
+}
+```
+IntegrationSystemID is an optional. 
+### Example
+In this example, Integration System is required and then it configures Application. 
+1. Register Integration System
+```graphql
+mutation {
+    createIntegrationSystem(in: {name: "simpleIntegrationSystem", description:""} ) {
+      id
+      name
+      description
     }
-    
-    input ApplicationInput {
-        ...
-        applicationClassName: String
-        ...
+}
+
+```
+2. Create Application with provided `integrationSystemName`
+3. Compass add labels with integrationSystemID for created Application
+4. IntegrationSystem query for all related Applications by specifying label `integrationSystemName` and reconciles 
+their state.
+
+## Integration System supporting many Application types
+In the previous example, Integration System was limited to support only one type of Application.
+In case it supports many types of Application Types, information about which Application to provision should be
+included in the Application Labels. To standaradize whole process, Application Template can be used.
+
+
+Managing ApplicationTemplates:
+```graphql
+input ApplicationTemplateInput {
+    name: String!
+    description: String
+
+    applicationInput: ApplicationCreateInput!
+    placeholders:       [PlaceholderDefinitionInput!]
+
+}
+
+input PlaceholderDefinitionInput {
+    Name            String!
+    Description     String
+}
+
+type Mutation {
+    createApplicationTemplate(in: ApplicationTemplateInput!): ApplicationTemplate!
+    updateApplicationTemplate(id: ID!, in: ApplicationTemplateInput!): ApplicationTemplate!
+    deleteApplicationTemplate(id: ID!): ApplicationTemplate!
+
+}
+type Query {
+    applicationTemplates(first: Int = 100, after: PageCursor): ApplicationTemplatePage!
+    applicationTemplate(id: ID!): ApplicationTemplate
+} 
+```
+
+ApplicationTemplate defined ApplicationInput used to create Application. ApplicationInput can contains variable part - placeholders.
+Placeholders are defined in `placeholders` fields. Thanks to that, clear definition what required input parameters is defined.
+
+
+To create Application from template, `createApplicationFromTemplate` mutation is used:
+
+```graphql
+
+createApplicationFromTemplate(templateName: String!, values: [TemplateValueInput]): Application!
+
+```
+
+## Examples
+
+### Create simple Application not managed by Integration System
+
+In this case creating Application the same as before introducing Application Templates.
+```graphql
+mutation {
+    createApplication(in: {name: "simpleApplication"}) {
+        id 
+        name
     }
-    
-    
-    type Mutation {
-        createApplicationClass(in: ApplicationClassInput!): ApplicationClass!
-        updateApplicationClass(id: ID!, in: ApplicationClassInput): ApplicationClass!
-        deleteApplicationClass(id: ID!): ApplicationCLass!
+}
+```
+
+### Create Application managed by Integration System
+```graphql
+mutation {
+    createApplication(in: {name: "simpleApplication", integrationSystemName: "integrationSystem"}) {
+        id
+        name
+        labels
     }
-    
-    type Query {
-        applicationClasses(first: Int = 100, after: PageCursor): ApplicationClassPage!
-        applicationClass(id: ID): ApplicationClass!
-    }
-    
-    ```
-`ApplicationClass.documents` is a place for documenting any manual steps required for managing Application of given class by 
-a Integration System defined by `integrationSystemID`. For example, it can contain information on how to register a given application
-in the integration system if it is not performed by the Integration System automatically. 
+}
+```
 
-`previewApiSpecs` and `previewEventApiSpecs` are optional fields that document what kind of API a user can expect after creating 
-Application originated from the ApplicationClass. The final API can differ from those presented in preview fields, for example, some API can be missing
-because the user lacks privileges to access them. 
-
-In the first iteration, ApplicationClass can be registered only globally (`ApplicationClass.global`), so it will be available for every tenant. 
-To create the Application of given class, the user set field `applicationClassName` in `ApplicationInput`. This field is optional.
-In case `applicationClassName` is provided, Compass adds two labels to the Application:
-- `applicationClass`
-- `integrationSystemID`
-
-Thanks to that, the Integration System can query for all Application managed by the given Integration System or query for 
-Application with the given ApplicationClass.
-`deleteApplicationClass` is possible only if there are no classes originated from this ApplicationClass. 
-
-Extending API with ApplicationClass introduces new requirements for Integration Systems.
-Integration System can be removed only when:
-- there is no Application Class from this Integration System
-- there is no Application managed by the Integration System 
-
-2. Managing Application Template 
-
-    ```graphql
-    input ApplicationTemplateInput {
-        name:               String!
-        description:        String
-        applicationInput:   ApplicationInput!
-        placeholders:       [PlaceholderDefinitionInput]
-    }
-     
-    input PlaceholderDefinitionInput {
-        Name            String!
-        Description     String
-    }
-    
-    input TemplateValueInput {
-        Placeholder     String!
-        Value           String!
-    }
-    
-    type Mutation {
-        createApplicationTemplate(in: ApplicationTemplateInput!): ApplicationTemplate!
-        updateApplicationTemplate(id: ID!, in: ApplicationTemplateInput!): ApplicationTemplate!
-        deleteApplicationTemplate(id: ID!): ApplicationTemplate!
-        
-        createApplicationFromTemplate(templateName: String!, values: [TemplateValueInput]): Application!
-    
-    }
-    
-    type Query {
-        applicationTemplates(first: Int = 100, after: PageCursor): ApplicationTemplatePage!
-        applicationTemplate(id: ID!): ApplicationTemplate
-    }
-    
-    ```
-ApplicationTemplate can be treated as a prepopulated ApplicationInput with additional placeholders that have to be replaced by the user who creates Application from a template. 
-When defining ApplicationTemplate, all placeholders have to be documented in 
-`placeholders` field. To create an application from the template, a new mutation `createApplicationFromTemplate` is used.
-
-   
-## Workflows
-### Create Application Class and Application
-![](./assets/app-class.svg)
-
-1. Integration System fetches access token from Hydra public API and then register Application Class using mutation
- 
-    ```graphql
-    createApplicationClass(in:{name: "ClassX",integrationSystemID:"{ID}" })
-    ```
-
-2. User request for creating an application using Application Class with the following mutation:
-    ```graphql
-    createApplication(in:{name:"my app", applicationClassName:"ClassX"})
-    ```
-The integration system can define additional steps (also manual) to be performed after creating a given application. 
-This kind of information is stored in the `ApplicationClass.document`.
-
-### Create Application Template and Application
+### Create simple Application from Application Template
 1. Create an Application Template
-    ```graphql
-    createApplicationTemplate(
-        in:{
-            name:"Y-Template", 
-            applicationInput:{
-                  Name:"{{APPLICATION_NAME}}",
-                  apis: [
-                    {
-                      name: "comments/v1"
-                      description: "api for adding comments"
-                      targetURL: "http://mywordpress.com/comments"                 
-                    }]
-             },
-             placeholders:[
-             {
-                Name:"APPLICATION_NAME",
-                Description:"Name of the application"
-             }],
-        })
-    
-    ```
+```graphql
+mutation  {
 
-2. Create Application from template
-    ```graphql
-    createApplicationFromTemplate(templateName: "Y-Template", values: [{Placeholder:"APPLICATION_NAME", Value:"MyApplication"}]): 
+}
+
+```
+2. Create an Application From Template
+```graphql
+mutation  {
+
+}
+
+```
+
+### Create Application managed by Integration System from Application Template
+1. Create an Application Templates by Integration System
+
+2. Create an Appliction from Application Template
+
     
-    ```
+ 
+## Later
+- everything is labelled, including integration system
+- application input can define icon
+- versioning of application class
+
+
+describe UI:
+- 2 links: create Application and create Application from Template
+
+- security
