@@ -5,15 +5,16 @@ import (
 	"io/ioutil"
 	"os"
 
-	log "github.com/sirupsen/logrus"
 	"strconv"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	hf "github.com/kyma-incubator/hydroform"
 	"github.com/kyma-incubator/hydroform/types"
 	"github.com/pkg/errors"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/typed/core/v1"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 //go:generate mockery -name=Service
@@ -46,16 +47,14 @@ func (c client) ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName s
 	log.Info("Preparing config for runtime provisioning")
 	cluster, provider, err := c.prepareConfig(runtimeConfig, credentialsFileName)
 	if err != nil {
-		log.Errorf("Config preparation failed: %s", err.Error())
-		return ClusterInfo{}, err
+		return ClusterInfo{}, errors.Wrap(err, "Config preparation failed")
 	}
 
 	log.Infof("Config prepared - cluster: %+v, provider: %+v. Starting cluster provisioning", cluster, provider)
 
 	cluster, err = hf.Provision(cluster, provider)
 	if err != nil {
-		log.Errorf("Cluster provisioning failed: %s", err.Error())
-		return ClusterInfo{}, err
+		return ClusterInfo{}, errors.Wrap(err, "Cluster provisioning failed")
 	}
 
 	status, err := hf.Status(cluster, provider)
@@ -67,8 +66,7 @@ func (c client) ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName s
 
 	kubeconfig, err := hf.Credentials(cluster, provider)
 	if err != nil {
-		log.Errorf("Failed to get kubeconfig: %s", err.Error())
-		return ClusterInfo{}, err
+		return ClusterInfo{}, errors.Wrap(err, "Failed to get kubeconfig")
 	}
 
 	log.Info("Retrieving cluster state")
@@ -76,8 +74,7 @@ func (c client) ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName s
 	internalState, err := stateToJson(cluster.ClusterInfo.InternalState)
 
 	if err != nil {
-		log.Errorf("Failed to retrieve cluster state: %s", err.Error())
-		return ClusterInfo{}, err
+		return ClusterInfo{}, errors.Wrap(err, "Failed to retrieve cluster state")
 	}
 
 	log.Infof("Cluster state: %+v", internalState)
@@ -100,15 +97,13 @@ func (c client) DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretName
 	cluster, provider, err := c.prepareConfig(runtimeConfig, credentialsFileName)
 
 	if err != nil {
-		log.Errorf("Config preparation failed: %s", err.Error())
-		return err
+		return errors.Wrap(err, "Config preparation failed")
 	}
 
 	state, err := jsonToState(terraformState)
 
 	if err != nil {
-		log.Errorf("Config preparation failed: %s", err.Error())
-		return err
+		return errors.Wrap(err, "Config preparation failed")
 	}
 
 	cluster.ClusterInfo = &types.ClusterInfo{InternalState: state}

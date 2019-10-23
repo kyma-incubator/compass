@@ -1,7 +1,6 @@
 package provisioning
 
 import (
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
@@ -183,7 +182,7 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 		t.Run("Should create proper runtime config struct with GCP input", func(t *testing.T) {
 			//given
 			uuidGeneratorMock := &persistenceMocks.UUIDGenerator{}
-			uuidGeneratorMock.On("New").Return("id", nil).Times(4)
+			uuidGeneratorMock.On("New").Return("id").Times(4)
 
 			//when
 			runtimeConfig, err := runtimeConfigFromInput("runtimeID", config.input, uuidGeneratorMock)
@@ -194,45 +193,6 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 			uuidGeneratorMock.AssertExpectations(t)
 		})
 	}
-
-	t.Run("Should fail when failed to generate uuid for Kyma config", func(t *testing.T) {
-		// given
-		uuidGeneratorMock := &persistenceMocks.UUIDGenerator{}
-		uuidGeneratorMock.On("New").Return("", dberrors.Internal("some error"))
-		input := gqlschema.KymaConfigInput{}
-
-		// when
-		_, err := kymaConfigFromInput("runtimeID", input, uuidGeneratorMock)
-
-		// then
-		assert.Error(t, err)
-	})
-
-	t.Run("Should fail when failed to generate uuid for GCP config", func(t *testing.T) {
-		// given
-		uuidGeneratorMock := &persistenceMocks.UUIDGenerator{}
-		uuidGeneratorMock.On("New").Return("", dberrors.Internal("some error"))
-		input := gqlschema.GCPConfigInput{}
-
-		// when
-		_, err := gcpConfigFromInput("runtimeID", input, uuidGeneratorMock)
-
-		// then
-		assert.Error(t, err)
-	})
-
-	t.Run("Should fail when failed to generate uuid for Gardener config", func(t *testing.T) {
-		// given
-		uuidGeneratorMock := &persistenceMocks.UUIDGenerator{}
-		uuidGeneratorMock.On("New").Return("", dberrors.Internal("some error"))
-		input := gqlschema.GardenerConfigInput{}
-
-		// when
-		_, err := gardenerConfigFromInput("runtimeID", input, uuidGeneratorMock)
-
-		// then
-		assert.Error(t, err)
-	})
 }
 
 func TestRuntimeStatusToGraphQLStatus(t *testing.T) {

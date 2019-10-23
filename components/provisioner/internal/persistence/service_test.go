@@ -115,7 +115,7 @@ func TestSetProvisioning(t *testing.T) {
 
 			sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 
-			runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
+			runtimeService := NewService(sessionFactoryMock, uuidGenerator)
 
 			// when
 			provisioningOperation, err := runtimeService.SetProvisioningStarted(runtimeID, cfg.config)
@@ -145,7 +145,7 @@ func TestSetProvisioning(t *testing.T) {
 
 		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 
-		runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
+		runtimeService := NewService(sessionFactoryMock, uuidGenerator)
 
 		// when
 		_, err := runtimeService.SetProvisioningStarted(runtimeID, runtimeGCPConfig)
@@ -171,7 +171,7 @@ func TestSetProvisioning(t *testing.T) {
 
 		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 
-		runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
+		runtimeService := NewService(sessionFactoryMock, uuidGenerator)
 
 		// when
 		_, err := runtimeService.SetProvisioningStarted(runtimeID, runtimeGCPConfig)
@@ -207,7 +207,7 @@ func TestSetProvisioning(t *testing.T) {
 
 			sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 
-			runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
+			runtimeService := NewService(sessionFactoryMock, uuidGenerator)
 
 			// when
 			_, err := runtimeService.SetProvisioningStarted(runtimeID, cfg.config)
@@ -239,7 +239,7 @@ func TestSetProvisioning(t *testing.T) {
 
 		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 
-		runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
+		runtimeService := NewService(sessionFactoryMock, uuidGenerator)
 
 		// when
 		_, err := runtimeService.SetProvisioningStarted(runtimeID, runtimeGCPConfig)
@@ -271,7 +271,7 @@ func TestSetProvisioning(t *testing.T) {
 
 		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 
-		runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
+		runtimeService := NewService(sessionFactoryMock, uuidGenerator)
 
 		// when
 		_, err := runtimeService.SetProvisioningStarted(runtimeID, runtimeGCPConfig)
@@ -312,7 +312,7 @@ func TestSetDeprovisioning(t *testing.T) {
 
 		sessionFactoryMock.On("NewWriteSession").Return(writeSessionWithinTransactionMock, nil)
 
-		runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
+		runtimeService := NewService(sessionFactoryMock, uuidGenerator)
 
 		// when
 		provisioningOperation, err := runtimeService.SetDeprovisioningStarted(runtimeID)
@@ -359,7 +359,7 @@ func TestSetUpgrade(t *testing.T) {
 
 		sessionFactoryMock.On("NewWriteSession").Return(writeSessionWithinTransactionMock, nil)
 
-		runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
+		runtimeService := NewService(sessionFactoryMock, uuidGenerator)
 
 		// when
 		provisioningOperation, err := runtimeService.SetUpgradeStarted(runtimeID)
@@ -429,7 +429,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 		}
 
 		// when
-		runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
+		runtimeService := NewService(sessionFactoryMock, uuidGenerator)
 		runtimeStatus, err := runtimeService.GetStatus(runtimeID)
 
 		// then
@@ -447,7 +447,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 		sessionFactoryMock.On("NewReadSession").Return(readSessionMock, nil)
 
 		// when
-		runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
+		runtimeService := NewService(sessionFactoryMock, uuidGenerator)
 		_, err := runtimeService.GetStatus(runtimeID)
 
 		// then
@@ -465,7 +465,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 		sessionFactoryMock.On("NewReadSession").Return(readSessionMock, nil)
 
 		// when
-		runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
+		runtimeService := NewService(sessionFactoryMock, uuidGenerator)
 		_, err := runtimeService.GetStatus(runtimeID)
 
 		// then
@@ -485,7 +485,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 		sessionFactoryMock.On("NewReadSession").Return(readSessionMock, nil)
 
 		// when
-		runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
+		runtimeService := NewService(sessionFactoryMock, uuidGenerator)
 		_, err := runtimeService.GetStatus(runtimeID)
 
 		// then
@@ -506,7 +506,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 		sessionFactoryMock.On("NewReadSession").Return(readSessionMock, nil)
 
 		// when
-		runtimeService := NewRuntimeService(sessionFactoryMock, uuidGenerator)
+		runtimeService := NewService(sessionFactoryMock, uuidGenerator)
 		_, err := runtimeService.GetStatus(runtimeID)
 
 		// then

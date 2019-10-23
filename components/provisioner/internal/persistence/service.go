@@ -31,7 +31,7 @@ type persistenceService struct {
 	uuidGenerator    UUIDGenerator
 }
 
-func NewRuntimeService(dbSessionFactory dbsession.Factory, uuidGenerator UUIDGenerator) Service {
+func NewService(dbSessionFactory dbsession.Factory, uuidGenerator UUIDGenerator) Service {
 	return persistenceService{
 		dbSessionFactory: dbSessionFactory,
 		uuidGenerator:    uuidGenerator,
@@ -158,10 +158,7 @@ func (ps persistenceService) CleanupClusterData(runtimeID string) dberrors.Error
 
 func (ps persistenceService) setOperationStarted(dbSession dbsession.WriteSession, runtimeID string, operationType model.OperationType, timestamp time.Time, message string, errorMessageFmt string) (model.Operation, dberrors.Error) {
 
-	id, err := ps.uuidGenerator.New()
-	if err != nil {
-		return model.Operation{}, dberrors.Internal(errorMessageFmt, err)
-	}
+	id := ps.uuidGenerator.New()
 
 	operation := model.Operation{
 		ID:             id,
@@ -172,7 +169,7 @@ func (ps persistenceService) setOperationStarted(dbSession dbsession.WriteSessio
 		ClusterID:      runtimeID,
 	}
 
-	err = dbSession.InsertOperation(operation)
+	err := dbSession.InsertOperation(operation)
 	if err != nil {
 		return model.Operation{}, dberrors.Internal(errorMessageFmt, err)
 	}

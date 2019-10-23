@@ -3,7 +3,6 @@ package provisioning
 import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
@@ -55,10 +54,7 @@ func clusterConfigFromInput(runtimeID string, input gqlschema.ClusterConfigInput
 }
 
 func gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput, uuidGenerator persistence.UUIDGenerator) (model.GardenerConfig, error) {
-	id, err := uuidGenerator.New()
-	if err != nil {
-		return model.GardenerConfig{}, dberrors.Internal("Failed to generate uuid for GardenerConfig: %s.", err)
-	}
+	id := uuidGenerator.New()
 
 	return model.GardenerConfig{
 		ID:                id,
@@ -83,10 +79,7 @@ func gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInp
 }
 
 func gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfigInput, uuidGenerator persistence.UUIDGenerator) (model.GCPConfig, error) {
-	id, err := uuidGenerator.New()
-	if err != nil {
-		return model.GCPConfig{}, dberrors.Internal("Failed to generate uuid for GardenerConfig: %s.", err)
-	}
+	id := uuidGenerator.New()
 
 	zone := ""
 	if input.Zone != nil {
@@ -109,16 +102,10 @@ func gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfigInput, uuidGe
 
 func kymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput, uuidGenerator persistence.UUIDGenerator) (model.KymaConfig, error) {
 	var modules []model.KymaConfigModule
-	kymaConfigID, err := uuidGenerator.New()
-	if err != nil {
-		return model.KymaConfig{}, dberrors.Internal("Failed to generate uuid for KymaConfig: %s.", err)
-	}
+	kymaConfigID := uuidGenerator.New()
 
 	for _, module := range input.Modules {
-		id, err := uuidGenerator.New()
-		if err != nil {
-			return model.KymaConfig{}, dberrors.Internal("Failed to generate uuid for KymaConfigModule: %s.", err)
-		}
+		id := uuidGenerator.New()
 
 		kymaConfigModule := model.KymaConfigModule{
 			ID:           id,

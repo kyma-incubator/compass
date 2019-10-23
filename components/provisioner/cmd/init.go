@@ -28,7 +28,7 @@ func newPersistenceService(connectionString, schemaPath string) (persistence.Ser
 	dbSessionFactory := dbsession.NewFactory(connection)
 	uuidGenerator := persistence.NewUUIDGenerator()
 
-	return persistence.NewRuntimeService(dbSessionFactory, uuidGenerator), nil
+	return persistence.NewService(dbSessionFactory, uuidGenerator), nil
 }
 
 func newProvisioningService(persistenceService persistence.Service, secrets v1.SecretInterface) provisioning.ProvisioningService {
