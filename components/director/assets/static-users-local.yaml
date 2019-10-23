@@ -1,0 +1,22 @@
+- username: "admin"
+  tenants: 
+  - "dcfc43da-9215-46ab-b377-7177b9c94a48"
+  - "776639af-839e-4f95-b969-1cab91789188"
+  scopes:
+  - "application:read"
+  - "application:write"
+  - "integration_system:read"
+  - "integration_system:write"
+  - "runtime:read"
+  - "runtime:write"
+  - "label_definition:read"
+  - "label_definition:write"
+- username: "reader"
+  tenants: 
+  - "dcfc43da-9215-46ab-b377-7177b9c94a48"
+  - "776639af-839e-4f95-b969-1cab91789188"
+  scopes:
+  - "application:read"
+  - "integration_system:read"
+  - "runtime:read"
+  - "label_definition:read"

@@ -7,4 +7,4 @@ metadata:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
 data: 
-  {{- ((.Files.Glob "static-users.yaml").AsConfig) | nindent 2 }}
+  {{- tpl ((.Files.Glob "static-users.yaml").AsConfig) . | nindent 2 }}
