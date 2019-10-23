@@ -79,7 +79,7 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 				KubernetesVersion: "version",
 				ClusterID:         "runtimeID",
 			},
-			Kubeconfig: "",
+			Kubeconfig: nil,
 			KymaConfig: model.KymaConfig{
 				ID:      "id",
 				Version: "1.5",
@@ -143,7 +143,7 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 			MaxUnavailable:    2,
 			ClusterID:         "runtimeID",
 		},
-		Kubeconfig: "",
+		Kubeconfig: nil,
 		KymaConfig: model.KymaConfig{
 			ID:      "id",
 			Version: "1.5",
@@ -272,7 +272,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					KubernetesVersion: "kubeversion",
 					ClusterID:         "runtimeID",
 				},
-				Kubeconfig: "kubeconfig",
+				Kubeconfig: &kubeconfig,
 				KymaConfig: model.KymaConfig{
 					ID:      "id",
 					Version: "1.5",
@@ -373,7 +373,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					MaxSurge:          surge,
 					MaxUnavailable:    unavailable,
 				},
-				Kubeconfig: kubeconfig,
+				Kubeconfig: &kubeconfig,
 				KymaConfig: model.KymaConfig{
 					Version: version,
 					Modules: []model.KymaConfigModule{

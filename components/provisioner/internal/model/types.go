@@ -38,7 +38,7 @@ const (
 
 type Cluster struct {
 	ID                string
-	Kubeconfig        string
+	Kubeconfig        *string
 	TerraformState    string
 	CreationTimestamp time.Time
 }
@@ -111,7 +111,7 @@ const (
 type RuntimeConfig struct {
 	KymaConfig    KymaConfig
 	ClusterConfig interface{}
-	Kubeconfig    string
+	Kubeconfig    *string
 }
 
 type RuntimeStatus struct {

@@ -403,7 +403,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 
 	cluster := model.Cluster{
 		ID:             runtimeID,
-		Kubeconfig:     "",
+		Kubeconfig:     nil,
 		TerraformState: "{}",
 	}
 

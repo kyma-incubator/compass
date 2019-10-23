@@ -158,7 +158,7 @@ func runtimeConfigurationToGraphQLConfiguration(config model.RuntimeConfig) *gql
 	return &gqlschema.RuntimeConfig{
 		ClusterConfig: clusterConfigToGraphQLConfig(config.ClusterConfig),
 		KymaConfig:    kymaConfigToGraphQLConfig(config.KymaConfig),
-		Kubeconfig:    &config.Kubeconfig,
+		Kubeconfig:    config.Kubeconfig,
 	}
 }
 

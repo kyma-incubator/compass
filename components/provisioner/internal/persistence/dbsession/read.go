@@ -32,12 +32,15 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 
 func (r readSession) GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error) {
 	var kymaConfig []struct {
-		Version string
-		Module  string
+		ID           string
+		KymaConfigID string
+		Version      string
+		Module       string
+		ClusterID    string
 	}
 
 	rowsCount, err := r.session.
-		Select("kyma_config.version", "kyma_config_module.module").
+		Select("kyma_config_module.id", "kyma_config_id", "kyma_config.version", "kyma_config_module.module", "cluster_id").
 		From("cluster").
 		Join("kyma_config", "cluster.id=kyma_config.cluster_id").
 		Join("kyma_config_module", "kyma_config.id=kyma_config_module.kyma_config_id").
@@ -56,12 +59,14 @@ func (r readSession) GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors
 
 	for _, configModule := range kymaConfig {
 		kymaConfigModule := model.KymaConfigModule{
+			ID:     configModule.ID,
 			Module: model.KymaModule(configModule.Module),
 		}
 		kymaModules = append(kymaModules, kymaConfigModule)
 	}
 
 	return model.KymaConfig{
+		ID:      kymaConfig[0].KymaConfigID,
 		Version: kymaConfig[0].Version,
 		Modules: kymaModules,
 	}, nil
@@ -71,7 +76,7 @@ func (r readSession) GetClusterConfig(runtimeID string) (interface{}, dberrors.E
 	var gardenerConfig model.GardenerConfig
 
 	err := r.session.
-		Select("id", "cluster_id", "name", "project_name", "kubernetes_version",
+		Select("gardener_config.id", "cluster_id", "gardener_config.name", "project_name", "kubernetes_version",
 			"node_count", "volume_size", "disk_type", "machine_type", "target_provider",
 			"target_secret", "cidr", "region", "zone", "auto_scaler_min", "auto_scaler_max",
 			"max_surge", "max_unavailable").
@@ -85,13 +90,13 @@ func (r readSession) GetClusterConfig(runtimeID string) (interface{}, dberrors.E
 	}
 
 	if err != dbr.ErrNotFound {
-		return model.KymaConfig{}, dberrors.Internal("Failed to get Gardener Config: %s", err)
+		return model.GardenerConfig{}, dberrors.Internal("Failed to get Gardener Config: %s", err)
 	}
 
 	var gcpConfig model.GCPConfig
 
 	err = r.session.
-		Select("id", "cluster_id", "name", "project_name", "kubernetes_version",
+		Select("gcp_config.id", "cluster_id", "name", "project_name", "kubernetes_version",
 			"number_of_nodes", "boot_disk_size", "machine_type", "region", "zone").
 		From("cluster").
 		Join("gcp_config", "cluster.id=gcp_config.cluster_id").
@@ -102,10 +107,10 @@ func (r readSession) GetClusterConfig(runtimeID string) (interface{}, dberrors.E
 		if err == dbr.ErrNotFound {
 			return model.GCPConfig{}, dberrors.NotFound("Cluster configuration not found for runtime: %s", runtimeID)
 		}
-		return model.GardenerConfig{}, dberrors.Internal("Failed to get GCP Config: %s", err)
+		return model.GCPConfig{}, dberrors.Internal("Failed to get GCP Config: %s", err)
 	}
 
-	return gardenerConfig, nil
+	return gcpConfig, nil
 }
 
 func (r readSession) GetOperation(operationID string) (model.Operation, dberrors.Error) {
