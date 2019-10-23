@@ -159,8 +159,32 @@ func TestDeleteSystemAuthFromApplicationUsingRuntimeMutation(t *testing.T) {
 	err := tc.RunOperation(ctx, deleteSystemAuthForRuntimeRequest, &deleteOutput)
 
 	// THEN
-	require.NoError(t, err)
-	require.NotEmpty(t, deleteOutput)
+	require.Error(t, err)
+}
+
+func TestDeleteSystemAuthFromApplicationUsingIntegrationSystemMutation(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	name := "app"
+
+	t.Log("Create application")
+	app := createApplication(t, ctx, name)
+	require.NotEmpty(t, app)
+	defer deleteApplication(t, app.ID)
+
+	appAuth := generateClientCredentialsForApplication(t, ctx, app.ID)
+	require.NotEmpty(t, appAuth)
+	defer deleteClientCredentialsForApplication(t, appAuth.ID)
+
+	deleteSystemAuthForRuntimeRequest := fixDeleteSystemAuthForIntegrationSystem(appAuth.ID)
+	deleteOutput := graphql.SystemAuth{}
+
+	// WHEN
+	t.Log("Delete system auth for application using runtime mutation")
+	err := tc.RunOperation(ctx, deleteSystemAuthForRuntimeRequest, &deleteOutput)
+
+	// THEN
+	require.Error(t, err)
 }
 
 func TestDeleteSystemAuthFromRuntime(t *testing.T) {
