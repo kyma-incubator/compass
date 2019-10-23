@@ -34,6 +34,11 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		},
 	}
 
+	kymaConfig := &gqlschema.KymaConfigInput{
+		Version: "1.5",
+		Modules: gqlschema.AllKymaModule,
+	}
+
 	t.Run("Should start runtime provisioning and return operation ID", func(t *testing.T) {
 		//given
 		runtimeID := "184ccdf2-59e4-44b7-b553-6cb296af5ea0"
@@ -51,7 +56,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		service := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock)
 
 		//when
-		operationID, err, finished := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: &gqlschema.CredentialsInput{}, KymaConfig: &gqlschema.KymaConfigInput{}})
+		operationID, err, finished := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: &gqlschema.CredentialsInput{}, KymaConfig: kymaConfig})
 		require.NoError(t, err)
 
 		waitUntilFinished(finished)
@@ -78,7 +83,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		service := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock)
 
 		//when
-		operationID, err, finished := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: &gqlschema.CredentialsInput{}, KymaConfig: &gqlschema.KymaConfigInput{}})
+		operationID, err, finished := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: &gqlschema.CredentialsInput{}, KymaConfig: kymaConfig})
 		require.NoError(t, err)
 
 		waitUntilFinished(finished)
@@ -99,7 +104,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		service := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock)
 
 		//when
-		_, err, _ := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: &gqlschema.CredentialsInput{}, KymaConfig: &gqlschema.KymaConfigInput{}})
+		_, err, _ := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: &gqlschema.CredentialsInput{}, KymaConfig: kymaConfig})
 
 		//then
 		require.Error(t, err)
@@ -197,14 +202,14 @@ func TestService_RuntimeOperationStatus(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, gqlschema.OperationTypeProvision, status.Operation)
 		assert.Equal(t, gqlschema.OperationStateInProgress, status.State)
-		assert.Equal(t, operation.ClusterID, status.RuntimeID)
+		assert.Equal(t, operation.ClusterID, *status.RuntimeID)
 		hydroformMock.AssertExpectations(t)
 		persistenceServiceMock.AssertExpectations(t)
 		uuidGenerator.AssertExpectations(t)
 	})
 }
 
-func waitUntilFinished(finished chan interface{}) {
+func waitUntilFinished(finished <-chan struct{}) {
 	for {
 		_, ok := <-finished
 		if !ok {

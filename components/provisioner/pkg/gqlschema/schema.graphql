@@ -56,11 +56,11 @@ type KymaConfig {
 }
 
 type OperationStatus {
-    id: String!
+    id: String
     operation: OperationType!
     state: OperationState!
-    message: String!
-    runtimeID: String!
+    message: String
+    runtimeID: String
 }
 
 enum OperationType {

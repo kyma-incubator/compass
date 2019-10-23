@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 
 	log "github.com/sirupsen/logrus"
 
@@ -31,12 +32,26 @@ func NewResolver(provisioningService provisioning.ProvisioningService) *Resolver
 }
 
 func (r *Resolver) ProvisionRuntime(ctx context.Context, id string, config gqlschema.ProvisionRuntimeInput) (string, error) {
+	err := validateInput(config)
+	if err != nil {
+		log.Errorf("Failed to provision runtime: %s", err)
+		return "", err
+	}
+
 	operationID, err, _ := r.provisioning.ProvisionRuntime(id, config)
 	if err != nil {
 		log.Errorf("Failed to provision runtime: %s", err)
 	}
 
 	return operationID, err
+}
+
+func validateInput(config gqlschema.ProvisionRuntimeInput) error {
+	if len(config.KymaConfig.Modules) == 0 {
+		return errors.New("cannot provision runtime since Kyma modules list is empty")
+	}
+
+	return nil
 }
 
 func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string, credentials gqlschema.CredentialsInput) (string, error) {

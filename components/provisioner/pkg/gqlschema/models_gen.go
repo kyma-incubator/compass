@@ -100,11 +100,11 @@ type KymaConfigInput struct {
 }
 
 type OperationStatus struct {
-	ID        string         `json:"id"`
+	ID        *string        `json:"id"`
 	Operation OperationType  `json:"operation"`
 	State     OperationState `json:"state"`
-	Message   string         `json:"message"`
-	RuntimeID string         `json:"runtimeID"`
+	Message   *string        `json:"message"`
+	RuntimeID *string        `json:"runtimeID"`
 }
 
 type ProvisionRuntimeInput struct {

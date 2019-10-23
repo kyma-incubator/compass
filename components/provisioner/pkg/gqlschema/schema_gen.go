@@ -631,11 +631,11 @@ type KymaConfig {
 }
 
 type OperationStatus {
-    id: String!
+    id: String
     operation: OperationType!
     state: OperationState!
-    message: String!
-    runtimeID: String!
+    message: String
+    runtimeID: String
 }
 
 enum OperationType {
@@ -2096,15 +2096,12 @@ func (ec *executionContext) _OperationStatus_id(ctx context.Context, field graph
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OperationStatus_operation(ctx context.Context, field graphql.CollectedField, obj *OperationStatus) (ret graphql.Marshaler) {
@@ -2207,15 +2204,12 @@ func (ec *executionContext) _OperationStatus_message(ctx context.Context, field 
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OperationStatus_runtimeID(ctx context.Context, field graphql.CollectedField, obj *OperationStatus) (ret graphql.Marshaler) {
@@ -2244,15 +2238,12 @@ func (ec *executionContext) _OperationStatus_runtimeID(ctx context.Context, fiel
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_runtimeStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4375,9 +4366,6 @@ func (ec *executionContext) _OperationStatus(ctx context.Context, sel ast.Select
 			out.Values[i] = graphql.MarshalString("OperationStatus")
 		case "id":
 			out.Values[i] = ec._OperationStatus_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "operation":
 			out.Values[i] = ec._OperationStatus_operation(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -4390,14 +4378,8 @@ func (ec *executionContext) _OperationStatus(ctx context.Context, sel ast.Select
 			}
 		case "message":
 			out.Values[i] = ec._OperationStatus_message(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "runtimeID":
 			out.Values[i] = ec._OperationStatus_runtimeID(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

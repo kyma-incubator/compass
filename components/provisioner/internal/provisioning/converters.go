@@ -33,11 +33,11 @@ func runtimeStatusToGraphQLStatus(status model.RuntimeStatus) *gqlschema.Runtime
 
 func operationStatusToGQLOperationStatus(operation model.Operation) *gqlschema.OperationStatus {
 	return &gqlschema.OperationStatus{
-		ID:        operation.ID,
+		ID:        &operation.ID,
 		Operation: operationTypeToGraphQLType(operation.Type),
 		State:     operationStateToGraphQLState(operation.State),
-		Message:   operation.Message,
-		RuntimeID: operation.ClusterID,
+		Message:   &operation.Message,
+		RuntimeID: &operation.ClusterID,
 	}
 }
 

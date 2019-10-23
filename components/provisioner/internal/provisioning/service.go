@@ -21,9 +21,9 @@ const (
 )
 
 type ProvisioningService interface {
-	ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeInput) (string, error, chan interface{})
+	ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeInput) (string, error, <-chan struct{})
 	UpgradeRuntime(id string, config *gqlschema.UpgradeRuntimeInput) (string, error)
-	DeprovisionRuntime(id string, credentials gqlschema.CredentialsInput) (string, error, chan interface{})
+	DeprovisionRuntime(id string, credentials gqlschema.CredentialsInput) (string, error, <-chan struct{})
 	CleanupRuntimeData(id string) (string, error)
 	ReconnectRuntimeAgent(id string) (string, error)
 	RuntimeStatus(id string) (*gqlschema.RuntimeStatus, error)
@@ -44,23 +44,10 @@ func NewProvisioningService(persistenceService persistence.Service, uuidGenerato
 	}
 }
 
-func (r *service) ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeInput) (string, error, chan interface{}) {
-	{
-		lastOperation, err := r.persistenceService.GetLastOperation(id)
-
-		if err == nil && !lastProvisioningFailed(lastOperation) {
-			return "", errors.New(fmt.Sprintf("cannot provision runtime. Runtime %s already provisioned", id)), nil
-		}
-
-		if err != nil && err.Code() != dberrors.CodeNotFound {
-			return "", err, nil
-		}
-
-		if lastProvisioningFailed(lastOperation) {
-			if _, dbErr := r.CleanupRuntimeData(id); dbErr != nil {
-				return "", dbErr, nil
-			}
-		}
+func (r *service) ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeInput) (string, error, <-chan struct{}) {
+	err := r.checkProvisioningRuntimeConditions(id)
+	if err != nil {
+		return "", err, nil
 	}
 
 	runtimeConfig, err := runtimeConfigFromInput(id, config, r.uuidGenerator)
@@ -74,18 +61,38 @@ func (r *service) ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeI
 		return "", err, nil
 	}
 
-	finished := make(chan interface{})
+	finished := make(chan struct{})
 
 	go r.startProvisioning(operation.ID, id, runtimeConfig, config.Credentials.SecretName, finished)
 
 	return operation.ID, nil, finished
 }
 
+func (r *service) checkProvisioningRuntimeConditions(id string) error {
+	lastOperation, err := r.persistenceService.GetLastOperation(id)
+
+	if err == nil && !lastProvisioningFailed(lastOperation) {
+		return errors.New(fmt.Sprintf("cannot provision runtime. Runtime %s already provisioned", id))
+	}
+
+	if err != nil && err.Code() != dberrors.CodeNotFound {
+		return err
+	}
+
+	if lastProvisioningFailed(lastOperation) {
+		if _, dbErr := r.CleanupRuntimeData(id); dbErr != nil {
+			return dbErr
+		}
+	}
+
+	return nil
+}
+
 func lastProvisioningFailed(operation model.Operation) bool {
 	return operation.Type == model.Provision && operation.State == model.Failed
 }
 
-func (r *service) DeprovisionRuntime(id string, credentials gqlschema.CredentialsInput) (string, error, chan interface{}) {
+func (r *service) DeprovisionRuntime(id string, credentials gqlschema.CredentialsInput) (string, error, <-chan struct{}) {
 	runtimeStatus, err := r.persistenceService.GetStatus(id)
 
 	if err != nil {
@@ -102,7 +109,7 @@ func (r *service) DeprovisionRuntime(id string, credentials gqlschema.Credential
 		return "", err, nil
 	}
 
-	finished := make(chan interface{})
+	finished := make(chan struct{})
 
 	//TODO For now we pass secret name in parameters but we need to consider if it should be stored in the database
 	go r.startDeprovisioning(operation.ID, id, runtimeStatus.RuntimeConfiguration, credentials.SecretName, finished)
@@ -146,7 +153,7 @@ func (r *service) CleanupRuntimeData(id string) (string, error) {
 	return id, r.persistenceService.CleanupClusterData(id)
 }
 
-func (r *service) startProvisioning(operationID, runtimeID string, config model.RuntimeConfig, secretName string, finished chan interface{}) {
+func (r *service) startProvisioning(operationID, runtimeID string, config model.RuntimeConfig, secretName string, finished chan<- struct{}) {
 	log.Infof("Provisioning runtime %s is starting", runtimeID)
 	info, err := r.hydroform.ProvisionCluster(config, secretName)
 
@@ -169,7 +176,7 @@ func (r *service) startProvisioning(operationID, runtimeID string, config model.
 	close(finished)
 }
 
-func (r *service) startDeprovisioning(operationID, runtimeID string, config model.RuntimeConfig, secretName string, finished chan interface{}) {
+func (r *service) startDeprovisioning(operationID, runtimeID string, config model.RuntimeConfig, secretName string, finished chan<- struct{}) {
 	log.Infof("Deprovisioning runtime %s is starting", runtimeID)
 
 	cluster, dberr := r.persistenceService.GetClusterData(runtimeID)

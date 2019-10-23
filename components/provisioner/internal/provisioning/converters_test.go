@@ -22,12 +22,16 @@ func TestOperationStatusToGQLOperationStatus(t *testing.T) {
 			ClusterID: "6af76034-272a-42be-ac39-30e075f515a3",
 		}
 
+		operationID := "5f6e3ab6-d803-430a-8fac-29c9c9b4485a"
+		message := "Some message"
+		runtimeID := "6af76034-272a-42be-ac39-30e075f515a3"
+
 		expectedOperationStatus := &gqlschema.OperationStatus{
-			ID:        "5f6e3ab6-d803-430a-8fac-29c9c9b4485a",
+			ID:        &operationID,
 			Operation: gqlschema.OperationTypeUpgrade,
 			State:     gqlschema.OperationStateInProgress,
-			Message:   "Some message",
-			RuntimeID: "6af76034-272a-42be-ac39-30e075f515a3",
+			Message:   &message,
+			RuntimeID: &runtimeID,
 		}
 
 		//when
@@ -245,13 +249,17 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 			},
 		}
 
+		operationID := "5f6e3ab6-d803-430a-8fac-29c9c9b4485a"
+		message := "Some message"
+		runtimeID := "6af76034-272a-42be-ac39-30e075f515a3"
+
 		expectedRuntimeStatus := &gqlschema.RuntimeStatus{
 			LastOperationStatus: &gqlschema.OperationStatus{
-				ID:        "5f6e3ab6-d803-430a-8fac-29c9c9b4485a",
+				ID:        &operationID,
 				Operation: gqlschema.OperationTypeProvision,
 				State:     gqlschema.OperationStateSucceeded,
-				Message:   "Some message",
-				RuntimeID: "6af76034-272a-42be-ac39-30e075f515a3",
+				Message:   &message,
+				RuntimeID: &runtimeID,
 			},
 			RuntimeConnectionStatus: &gqlschema.RuntimeConnectionStatus{
 				Status: gqlschema.RuntimeAgentConnectionStatusConnected,
@@ -344,13 +352,17 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 			},
 		}
 
+		operationID := "5f6e3ab6-d803-430a-8fac-29c9c9b4485a"
+		message := "Some message"
+		runtimeID := "6af76034-272a-42be-ac39-30e075f515a3"
+
 		expectedRuntimeStatus := &gqlschema.RuntimeStatus{
 			LastOperationStatus: &gqlschema.OperationStatus{
-				ID:        "5f6e3ab6-d803-430a-8fac-29c9c9b4485a",
+				ID:        &operationID,
 				Operation: gqlschema.OperationTypeDeprovision,
 				State:     gqlschema.OperationStateFailed,
-				Message:   "Some message",
-				RuntimeID: "6af76034-272a-42be-ac39-30e075f515a3",
+				Message:   &message,
+				RuntimeID: &runtimeID,
 			},
 			RuntimeConnectionStatus: &gqlschema.RuntimeConnectionStatus{
 				Status: gqlschema.RuntimeAgentConnectionStatusDisconnected,
