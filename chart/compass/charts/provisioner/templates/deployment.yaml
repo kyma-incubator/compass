@@ -70,7 +70,6 @@ spec:
 {{ toYaml . | indent 12 }}
         {{- end }}
 
-          # TODO: configure and test with remote DB
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.11
