@@ -23,7 +23,7 @@ These documents provide you with more architectural details:
 - [Database scheme](./architecture/db-scheme.md)
 - [Authentication and authorization](./architecture/authentication-and-authorization.md)
 - [Integration Systems](./architecture/integration-systems.md)
-- [Proposal: ApplicationClass and ApplicationTemplate](./architecture/app-class-and-template.md)
+- [Proposal: Automatic Application Management](./architecture/app-management.md)
 
 ## Examples
 

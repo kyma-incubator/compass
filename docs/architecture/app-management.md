@@ -26,7 +26,7 @@ input ApplicationCreateInput {
     labels: [LabelInput!]
 }
 ```
-IntegrationSystemID is an optional. 
+IntegrationSystemID is an optional. It means that you can still create Application that is not managed by IntegrationSystem.
 
 ### Example
 In this example, Integration System is registered and then it configures newly added Application. 
@@ -51,7 +51,7 @@ mutation {
     }
 }
 ```
-Compass add label with name `integrationSystemName` for just created Application, so output of the previous mutation is the following:
+Compass adds label with name `integrationSystemName` for just created Application, so output of the previous mutation is the following:
 ```
 {
   "data": {
@@ -69,7 +69,7 @@ Compass add label with name `integrationSystemName` for just created Application
 }
 ```
 
-Thanks to that,  Integration System can easily fetch all dependant Applications by querying by label.
+Thanks to that,  Integration System can easily fetch all dependant Applications by querying them by label.
 Then, Integration System is responsible for updating Application details, like registering API and events.
 
 ## Integration System supporting many Application types
@@ -91,10 +91,11 @@ mutation {
 ```
 Drawback of this approach is that label name (`simpleIntegrationSystem/applicationType`) and supported values(`ecommerce`,`marketing`) are arbitrary 
 defined by a IntegrationSystem and has to be documented. 
-IntegrationSystem can simplify this process by defining ApplicationTemplates to explicitly specify supported types.
+Luckily, IntegrationSystem can simplify this process by defining ApplicationTemplates to explicitly specify supported types.
 
 ## Managing ApplicationTemplates
 ApplicationTemplate defines ApplicationInput used to create Application. ApplicationInput can contains variable part - placeholders.
+In the first iteration, ApplicationTemplate will be registered globally and will be visible for all tenants (notice `accessLevel` field).
 
 ```graphql
 input ApplicationTemplateInput {
@@ -103,8 +104,15 @@ input ApplicationTemplateInput {
 
     applicationInput: ApplicationCreateInput!
     placeholders:       [PlaceholderDefinitionInput!]
+    
+    accessLevel: ApplicationTemplateAccessLevel!
 
 }
+
+enum ApplicationTemplateAccessLevel {
+    GLOBAL
+}
+
 
 input PlaceholderDefinitionInput {
     name            String!
@@ -180,7 +188,7 @@ with two labels:
 ## Use placeholders in ApplicationTemplate
 In the previous example, ApplicationTemplate was created with hardcoded Application name `ecommerce-app`. 
 Because Application name has to be unique in given tenant, only one Application from given template can be created.
-Fortunately, ApplicationTemplate can define placeholders, that exact values has to provided when adding an Application.
+Fortunately, ApplicationTemplate can define placeholders, that values has to provided when adding an Application.
 
 ### Example
 In this example we modify previously created ApplicationTemplate and make name configurable. 
@@ -209,7 +217,7 @@ mutation {
 
 As you can see, `APPLICATION_NAME` placeholder is defined. In ApplicationInput, we refer to the placeholder in the following form: `{{APPLICATION_NAME}}`.
 2. Create Application from Template
-When user creates Application from Template that defines placeholders, curreent value for all placeholders has to be specified.
+When user creates Application from Template that defines placeholders, current value for all placeholders has to be specified.
 
 ```graphql
 mutation {
@@ -223,7 +231,7 @@ mutation {
 ## Use placeholders for providing Input Parameters
 
 Placeholders can be used also for providing input parameters required for configuring external Applications by Integration System.
-Let assume, that for enabling some Application, user has to provide some credentials that will be used by Integration System
+Let assume, that for enabling some Application, user has to provide credentials that will be used by Integration System
 to configure external solution. Such credentials can be stored in the labels.
 Because labels can store credentials, Compass has to ensure that given label can be read only by specific Integration System.
 
@@ -262,24 +270,38 @@ mutation {
     }
  }
 ```
- 
+
+2. Create Application
+ ```graphql
+ mutation {
+     createApplicationFromTemplate(templateName:"ecommerce-template", values: [
+     {Placeholder:"APPLICATION_NAME", Value:"MyApplication"},
+     {Placeholder:"USERNAME", Value:"john@doe.com"},
+     {Placeholder:"PASSWORD", Value:"perch"}
+     ]) {
+         id
+         name
+         labels
+ }
+ ```
 
 ## Reasoning
 Compass API follows Larry Wall advice:
 > Easy things should be easy, and hard things should be possible.
 
-1. User still can create an Application without any IntegrationSystem or ApplicationTemplate.
-2. If user creates manually many similar Applications, he can define Application Template to simplify it.
+1. User still can create an Application without defining any IntegrationSystem or ApplicationTemplate.
+2. ApplicationTemplate can be defined not only by Integration System, but also by users. 
+If user creates manually many similar Applications, he can define Application Template to simplify it.
 3. IntegrationSystem can define ApplicationTemplate, but it is not required. If given IntegrationSystem supports
 only one Application type, creating Application template an be an overkill. 
 
-From UI perspective, user has also simple view when creating application:
+From UI perspective, user has also simple view when creating application with two possible options:
 - create manually Application
 - create Application from Template
 
 # Future plans
 1. For every Compass top-level type, it should be possible to define label. Currently, we can add label for Application and Runtime, but in
 the future we plan to add possibility to label IntegrationSystem or ApplicationTemplate.
-2. To improve customer experience, there should be a possibilty to define icon for Application, Runtime and Integration System.
+2. To improve customer experience, there should be a possibility to define icon for Application, Runtime and Integration System.
 3. Add versioning for ApplicationTemplates. For now, an user can use template name to store information about version.
 

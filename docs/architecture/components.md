@@ -56,13 +56,8 @@ See [Integration Systems document](./integration-systems.md)
 for more details.
 
 
-## ApplicationClass 
-Represents an object for creating Applications. When you create an application from it, the IntegrationSystem
-dynamically populates definition. See [The Application Class and Application Template document](./app-class-and-template.md)
-for more details.
-   
 ## ApplicationTemplate
-Represents an object for creating Applications from the static definition.
-See [The Application Class and Application Template document](./app-class-and-template.md)
+Represents an object for creating Applications from predefined static definition.
+See [Automatic Application Management document](./app-management.md)
 for more details.
   
