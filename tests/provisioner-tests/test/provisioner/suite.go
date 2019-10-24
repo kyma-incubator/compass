@@ -53,8 +53,6 @@ type TestSuite struct {
 	secretsClient     v1client.SecretInterface
 }
 
-// TODO - better structure of setup code
-
 func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 	rand.Seed(time.Now().UnixNano())
 
@@ -70,10 +68,10 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 	if err != nil {
 		return nil, err
 	}
+	secretClient := k8sClient.CoreV1().Secrets(config.CredentialsNamespace)
 
 	logrus.Infof("Registering OAuth client...")
 	oauthClientManager := oauth.NewClientManager(config.HydraAdminURL)
-
 	oauthCredentials, err := oauthClientManager.RegisterClient()
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to register OAuth client")
@@ -87,6 +85,14 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 
 	testId := randStringBytes(8)
 
+	credentialsSecretName := fmt.Sprintf("tests-cred-%s", testId)
+	logrus.Infof("Setting up %s credentials secret...", credentialsSecretName)
+	err = saveCredentialsToSecret(secretClient, credentialsSecretName, config.GCPCredentials)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "Failed to save credentials to %s secret", credentialsSecretName)
+	}
+	logrus.Infof("Credentials saved to %s secret", credentialsSecretName)
+
 	return &TestSuite{
 		TestId:            testId,
 		ProvisionerClient: provisionerClient,
@@ -95,20 +101,9 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 		oauthClientManager:    oauthClientManager,
 		config:                config,
 		clientCredentials:     oauthCredentials,
-		secretsClient:         k8sClient.CoreV1().Secrets(config.CredentialsNamespace),
-		CredentialsSecretName: fmt.Sprintf("tests-cred-%s", testId),
+		secretsClient:         secretClient,
+		CredentialsSecretName: credentialsSecretName,
 	}, nil
-}
-
-func (ts *TestSuite) Setup() error {
-	logrus.Infof("Setting up environment")
-
-	err := ts.saveCredentialsToSecret(ts.config.GCPCredentials)
-	if err != nil {
-		return errors.WithMessagef(err, "Failed to save credentials to %s secret", ts.CredentialsSecretName)
-	}
-
-	return nil
 }
 
 func (ts *TestSuite) Cleanup() {
@@ -125,42 +120,6 @@ func (ts *TestSuite) Cleanup() {
 	if err != nil {
 		logrus.Warnf("Failed to unregister OAuth client: %s", err.Error())
 	}
-}
-
-func (ts *TestSuite) ProvisionRuntime(t *testing.T, runtimeId string, input gqlschema.ProvisionRuntimeInput) gqlschema.OperationStatus {
-	operationId, err := ts.ProvisionerClient.ProvisionRuntime(runtimeId, input)
-	require.NoError(t, err)
-
-	var provisioningOperationStatus gqlschema.OperationStatus
-	err = testkit.RunParallelToMainFunction(ProvisioningTimeout+5*time.Second,
-		func() error {
-			t.Log("Waiting for provisioning to finish...")
-			var waitErr error
-			provisioningOperationStatus, waitErr = ts.WaitUntilOperationIsFinished(ProvisioningTimeout, operationId)
-			return waitErr
-		},
-		func() error {
-			t.Log("Should fail to schedule operation while other in progress.")
-			operationStatus, err := ts.ProvisionerClient.RuntimeOperationStatus(operationId)
-			if err != nil {
-				return errors.WithMessagef(err, "Failed to get %s operation status", operationId)
-			}
-
-			if operationStatus.State != gqlschema.OperationStateInProgress {
-				return errors.New("Operation %s not in progress")
-			}
-
-			_, err = ts.ProvisionerClient.ProvisionRuntime(runtimeId, input)
-			if err == nil {
-				return errors.New("Operation scheduled successfully while other operation in progress")
-			}
-
-			return nil
-		},
-	)
-	require.NoError(t, err)
-
-	return provisioningOperationStatus
 }
 
 func (ts *TestSuite) WaitUntilOperationIsFinished(timeout time.Duration, operationID string) (gqlschema.OperationStatus, error) {
@@ -186,7 +145,7 @@ func (ts *TestSuite) WaitUntilOperationIsFinished(timeout time.Duration, operati
 }
 
 func (ts *TestSuite) KubernetesClientFromRawConfig(t *testing.T, rawConfig string) *kubernetes.Clientset {
-	tempKubeconfigFile, err := ioutil.TempFile("tmp", "kubeconfig")
+	tempKubeconfigFile, err := ioutil.TempFile("", "kubeconfig")
 	require.NoError(t, err)
 	defer func() {
 		err := os.RemoveAll(tempKubeconfigFile.Name())
@@ -206,11 +165,11 @@ func (ts *TestSuite) KubernetesClientFromRawConfig(t *testing.T, rawConfig strin
 	return k8sClient
 }
 
-func (ts *TestSuite) saveCredentialsToSecret(credentials string) error {
-	logrus.Infof("Creating credentials secret %s ...", ts.CredentialsSecretName)
+func saveCredentialsToSecret(client v1client.SecretInterface, secretName, credentials string) error {
+	logrus.Infof("Creating credentials secret %s ...", secretName)
 
-	_, err := ts.secretsClient.Create(&v1.Secret{
-		ObjectMeta: v1meta.ObjectMeta{Name: ts.CredentialsSecretName},
+	_, err := client.Create(&v1.Secret{
+		ObjectMeta: v1meta.ObjectMeta{Name: secretName},
 		StringData: map[string]string{
 			provisionerCredentialsSecretKey: credentials,
 		},

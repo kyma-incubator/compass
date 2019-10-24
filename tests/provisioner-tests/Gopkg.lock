@@ -158,7 +158,7 @@
 
 [[projects]]
   branch = "provisioning-clusters"
-  digest = "1:dc110aff95a85dbc4ffde35c19d74ba3ce00186290569b99647f5c614520d907"
+  digest = "1:081ff41a546f67f5743902f7bb50a75131702785e93adc869a2b6d0de5467bc7"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/pkg/graphql",
@@ -166,7 +166,7 @@
     "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "NUT"
-  revision = "427233de01d975f0d4405539dedef09d1d553c33"
+  revision = "c127658373fa23767adc574fb68eb6ea582bbce3"
   source = "github.com/akgalwas/compass"
 
 [[projects]]
@@ -381,7 +381,7 @@
     "internal/span",
   ]
   pruneopts = "NUT"
-  revision = "be03d4f470ed7887405ab93f751a8591aef9b6f9"
+  revision = "7defa796fec08ff4180eae3379da47019ad16019"
 
 [[projects]]
   digest = "1:c381a96ea5276e8c5e98b2fa4fab83be71a959ff37dc51117555dc5059390c18"
@@ -618,6 +618,7 @@
     "golang.org/x/tools/cmd/goimports",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
+    "k8s.io/apimachinery/pkg/util/json",
     "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/kubernetes/typed/core/v1",
     "k8s.io/client-go/plugin/pkg/client/auth/gcp",

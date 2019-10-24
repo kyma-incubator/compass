@@ -104,7 +104,10 @@ func (g *graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string,
 		version: "{{.Version}}"
 		{{- end }}
 		{{- if .Modules }}
-		modules: "{{ .Modules }}"
+		modules: [
+			{{- range $i, $e := .Modules }}
+			{{- if $i}}, {{- end}} {{ $e }}
+			{{- end }}]
 		{{- end }}
 	}`)
 }
