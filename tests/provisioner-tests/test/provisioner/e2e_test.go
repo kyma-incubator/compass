@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/assertions"
 
 	"github.com/pkg/errors"
@@ -15,8 +17,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/require"
@@ -30,19 +30,7 @@ const (
 func Test_E2e(t *testing.T) {
 	logrus.Infof("Starting tests. Test id: %s", testSuite.TestId)
 
-	logrus.Infof("Registering runtime...")
-	runtimeInput := graphql.RuntimeInput{
-		Name: "test-runtime-" + testSuite.TestId,
-	}
-
-	runtime, err := testSuite.DirectorClient.RegisterRuntime(runtimeInput)
-	assertions.RequireNoError(t, err)
-	logrus.Infof("Runtime registered successfully id: %s", runtime.ID)
-	defer func() {
-		logrus.Infof("Removing %s runtime...", runtime.ID)
-		_, err := testSuite.DirectorClient.DeleteRuntime(runtime.ID)
-		assertions.AssertNoError(t, err)
-	}()
+	runtimeId := uuid.New().String()
 
 	// Provision runtime
 	credentialsInput := gqlschema.CredentialsInput{SecretName: testSuite.CredentialsSecretName}
@@ -64,10 +52,10 @@ func Test_E2e(t *testing.T) {
 	}
 
 	logrus.Infof("Provisioning runtime on GCP...")
-	provisioningOperationId, err := testSuite.ProvisionerClient.ProvisionRuntime(runtime.ID, provisioningInput)
+	provisioningOperationId, err := testSuite.ProvisionerClient.ProvisionRuntime(runtimeId, provisioningInput)
 	assertions.RequireNoError(t, err)
 	logrus.Infof("Provisioning operation id: %s", provisioningOperationId)
-	defer ensureClusterIsDeprovisioner(runtime.ID, credentialsInput)
+	defer ensureClusterIsDeprovisioner(runtimeId, credentialsInput)
 
 	var provisioningOperationStatus gqlschema.OperationStatus
 	err = testkit.RunParallelToMainFunction(ProvisioningTimeout+5*time.Second,
@@ -88,7 +76,7 @@ func Test_E2e(t *testing.T) {
 				return errors.New("Operation %s not in progress")
 			}
 
-			_, err = testSuite.ProvisionerClient.ProvisionRuntime(runtime.ID, provisioningInput)
+			_, err = testSuite.ProvisionerClient.ProvisionRuntime(runtimeId, provisioningInput)
 			if err == nil {
 				return errors.New("Operation scheduled successfully while other operation in progress")
 			}
@@ -98,11 +86,11 @@ func Test_E2e(t *testing.T) {
 	)
 	assertions.RequireNoError(t, err, "Provisioning operation status: ", provisioningOperationStatus.State)
 
-	assertions.AssertOperationSucceed(t, gqlschema.OperationTypeProvision, runtime.ID, provisioningOperationStatus)
+	assertions.AssertOperationSucceed(t, gqlschema.OperationTypeProvision, runtimeId, provisioningOperationStatus)
 	logrus.Infof("Runtime provisioned successfully")
 
 	logrus.Infof("Fetching runtime status...")
-	runtimeStatus, err := testSuite.ProvisionerClient.GCPRuntimeStatus(runtime.ID)
+	runtimeStatus, err := testSuite.ProvisionerClient.GCPRuntimeStatus(runtimeId)
 	assertions.RequireNoError(t, err)
 
 	assertGCPRuntimeConfiguration(t, provisioningInput, runtimeStatus)
@@ -118,13 +106,13 @@ func Test_E2e(t *testing.T) {
 	// TODO - Run Compass Runtime Agent Tests - it may require passing Credentials for MP
 
 	logrus.Infof("Deprovisioning runtime...")
-	deprovisioningOperationId, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtime.ID, credentialsInput)
+	deprovisioningOperationId, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtimeId, credentialsInput)
 	assertions.RequireNoError(t, err)
 	logrus.Infof("Deprovisioning operation id: %s", deprovisioningOperationId)
 
 	deprovisioningOperationStatus, err := testSuite.WaitUntilOperationIsFinished(DeprovisioningTimeout, deprovisioningOperationId)
 	assertions.RequireNoError(t, err)
-	assertions.AssertOperationSucceed(t, gqlschema.OperationTypeDeprovision, runtime.ID, deprovisioningOperationStatus)
+	assertions.AssertOperationSucceed(t, gqlschema.OperationTypeDeprovision, runtimeId, deprovisioningOperationStatus)
 	logrus.Infof("Runtime deprovisioned successfully")
 }
 

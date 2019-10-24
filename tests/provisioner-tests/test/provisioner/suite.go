@@ -17,9 +17,7 @@ import (
 	v1client "k8s.io/client-go/kubernetes/typed/core/v1"
 
 	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit"
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/director"
 	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/provisioner"
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/oauth"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
@@ -42,22 +40,18 @@ const (
 type TestSuite struct {
 	TestId            string
 	ProvisionerClient provisioner.Client
-	DirectorClient    *director.Client
 
 	CredentialsSecretName string
 
-	oauthClientManager oauth.ClientManager
-
-	clientCredentials oauth.Credentials
-	config            testkit.TestConfig
-	secretsClient     v1client.SecretInterface
+	config        testkit.TestConfig
+	secretsClient v1client.SecretInterface
 }
 
 func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 	rand.Seed(time.Now().UnixNano())
 
-	// TODO - need some endpoint to check if sidecar is up
-	time.Sleep(10 * time.Second)
+	// TODO: Sleep ensures that the Istio Sidecar is up before running the tests. We can consider adding some health endpoint in the service to avoid hardcoded sleep.
+	time.Sleep(15 * time.Second)
 
 	k8sConfig, err := getK8sConfig()
 	if err != nil {
@@ -68,42 +62,30 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 	if err != nil {
 		return nil, err
 	}
-	secretClient := k8sClient.CoreV1().Secrets(config.CredentialsNamespace)
-
-	logrus.Infof("Registering OAuth client...")
-	oauthClientManager := oauth.NewClientManager(config.HydraAdminURL)
-	oauthCredentials, err := oauthClientManager.RegisterClient()
-	if err != nil {
-		return nil, errors.Wrap(err, "Failed to register OAuth client")
-	}
-	logrus.Infof("OAuth client registered with id: %s", oauthCredentials.ClientID)
-
-	oauthTokenClient := oauth.NewOauthTokensClient(config.HydraPublicURL, oauthCredentials)
 
 	provisionerClient := provisioner.NewProvisionerClient(config.InternalProvisionerURL, config.QueryLogging)
-	directorClient := director.NewDirectorClient(config.DirectorURL, config.Tenant, oauthTokenClient, config.QueryLogging)
 
 	testId := randStringBytes(8)
-
-	credentialsSecretName := fmt.Sprintf("tests-cred-%s", testId)
-	logrus.Infof("Setting up %s credentials secret...", credentialsSecretName)
-	err = saveCredentialsToSecret(secretClient, credentialsSecretName, config.GCPCredentials)
-	if err != nil {
-		return nil, errors.WithMessagef(err, "Failed to save credentials to %s secret", credentialsSecretName)
-	}
-	logrus.Infof("Credentials saved to %s secret", credentialsSecretName)
 
 	return &TestSuite{
 		TestId:            testId,
 		ProvisionerClient: provisionerClient,
-		DirectorClient:    directorClient,
 
-		oauthClientManager:    oauthClientManager,
 		config:                config,
-		clientCredentials:     oauthCredentials,
-		secretsClient:         secretClient,
-		CredentialsSecretName: credentialsSecretName,
+		secretsClient:         k8sClient.CoreV1().Secrets(config.CredentialsNamespace),
+		CredentialsSecretName: fmt.Sprintf("tests-cred-%s", testId),
 	}, nil
+}
+
+func (ts *TestSuite) Setup() error {
+	logrus.Infof("Setting up environment")
+
+	err := ts.saveCredentialsToSecret(ts.config.GCPCredentials)
+	if err != nil {
+		return errors.WithMessagef(err, "Failed to save credentials to %s secret", ts.CredentialsSecretName)
+	}
+
+	return nil
 }
 
 func (ts *TestSuite) Cleanup() {
@@ -113,12 +95,6 @@ func (ts *TestSuite) Cleanup() {
 	err := ts.removeCredentialsSecret()
 	if err != nil {
 		logrus.Warnf("Failed to remove credentials secret: %s", err.Error())
-	}
-
-	logrus.Infof("Removing %s OAuth client...", ts.clientCredentials.ClientID)
-	err = ts.oauthClientManager.RemoveClient(ts.clientCredentials.ClientID)
-	if err != nil {
-		logrus.Warnf("Failed to unregister OAuth client: %s", err.Error())
 	}
 }
 
@@ -165,11 +141,10 @@ func (ts *TestSuite) KubernetesClientFromRawConfig(t *testing.T, rawConfig strin
 	return k8sClient
 }
 
-func saveCredentialsToSecret(client v1client.SecretInterface, secretName, credentials string) error {
-	logrus.Infof("Creating credentials secret %s ...", secretName)
-
-	_, err := client.Create(&v1.Secret{
-		ObjectMeta: v1meta.ObjectMeta{Name: secretName},
+func (ts *TestSuite) saveCredentialsToSecret(credentials string) error {
+	logrus.Infof("Creating credentials secret %s ...", ts.CredentialsSecretName)
+	_, err := ts.secretsClient.Create(&v1.Secret{
+		ObjectMeta: v1meta.ObjectMeta{Name: ts.CredentialsSecretName},
 		StringData: map[string]string{
 			provisionerCredentialsSecretKey: credentials,
 		},

@@ -35,5 +35,10 @@ func runTests(m *testing.M) int {
 	}
 	defer testSuite.Cleanup()
 
+	if err = testSuite.Setup(); err != nil {
+		logrus.Errorf("Failed to setup tests environment: %s", err.Error())
+		return 1
+	}
+
 	return m.Run()
 }
