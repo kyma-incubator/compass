@@ -158,13 +158,9 @@
 
 [[projects]]
   branch = "provisioning-clusters"
-  digest = "1:081ff41a546f67f5743902f7bb50a75131702785e93adc869a2b6d0de5467bc7"
+  digest = "1:73a57dead20b0fbfb4f3a98bca47dd92fcd0a113f96f3f2edf1ff216e879dd06"
   name = "github.com/kyma-incubator/compass"
-  packages = [
-    "components/director/pkg/graphql",
-    "components/director/pkg/scalar",
-    "components/provisioner/pkg/gqlschema",
-  ]
+  packages = ["components/provisioner/pkg/gqlschema"]
   pruneopts = "NUT"
   revision = "c127658373fa23767adc574fb68eb6ea582bbce3"
   source = "github.com/akgalwas/compass"
@@ -606,8 +602,8 @@
   analyzer-version = 1
   input-imports = [
     "github.com/Masterminds/sprig",
+    "github.com/google/uuid",
     "github.com/kisielk/errcheck",
-    "github.com/kyma-incubator/compass/components/director/pkg/graphql",
     "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
     "github.com/machinebox/graphql",
     "github.com/pkg/errors",
