@@ -5,11 +5,11 @@ Purpose:
 
 Secure auth fields to show values only for the right caller.
 
-# First Scenario resolver with ID parameter
-RuntimeAgent want `api` with field `auth`.
+# First Scenario - resolver with ID parameter
+RuntimeAgent wants `api` with field `auth`.
 The `auth` field has custom resolver with 1 parameter `runtime_id`.
 Before executing this resolver, the directive is executed.
-When runtime with ID `ABCD` want to get `auth` for runtime ID `DCBA`.
+When runtime with ID `ABCD` wants to get `auth` for runtime ID `DCBA`.
 It's should be forbidden.
 We have 2 options:
 - return error
@@ -17,46 +17,46 @@ We have 2 options:
 
 For me more suitable is to return error such as `Access Denied`.
 
-## Second scenario resolver without ID parameter
-RuntimeAgent want `api` with field `auths`.
+## Second scenario - resolver without ID parameter
+RuntimeAgent wants `api` with field `auths`.
 
-Field `Auths` contains all `auths` for all runtime.
-We want to return `auths` connected with runtime which ask for this field. 
+Field `Auths` contains all `auths` for all runtimes.
+We want to return `auths` connected with the runtime which asks for this field. 
 
 ## Proposed Flow
 ### First step (tenant mapping service):
 
-Tenant Mapping service add 2 items to header
-1. Object Type, service is able to differ who called the API, if it was App, Runtime or IntegrationSystem
+Tenant Mapping service adds 2 items to the header
+1. Object Type, service is able to determine who calls the API, whether it is Application, Runtime or IntegrationSystem
 2. Object ID
 
-The request is send to compass.
+The enriched request is sent to the compass.
 
-### Second step for resolver without parameters
+### Second step (for resolver without parameters)
 Compass has such directive:
 
 `limitScope(For: objectType)`
 
 In this directive, we retrieve Object Type and Object ID.
-If object type match type from header, then we put it into context such pairs:
+If object type matches the type from the header, then we put it into the context following pairs:
 
 - key: column_name/property, depends on object type
 - value: object ID
 
 We can name it as a list of restrictions.
 
-### Second step for resolver with parameters
+### Second step (for resolver with parameters)
 Compass has such directive:
 
 `restrict(For: objectType)`
 
 In this directive, we retrieve Object Type and Object ID.
-If object type match type from header, then we compare the ids.
+If object type matches type from the header, then we compare the ids.
 If don't match we return error for this resolver with message `Access Denied`
 
 ### Third step
 In our repository we have compliant column name (if column refer to application it has name `app_id`. 
-Repository helper `Get` and `List` retrieve the value from context and construct the conditions, which are later added to conditons list.
+Repository helper `Get` and `List` retrieve the value from the context and constructs the conditions, which are later added to the conditions list.
 
 ## Summary
 Those directives can be used to restrict other resolvers.
