@@ -14,7 +14,6 @@ type Client interface {
 	DeprovisionRuntime(runtimeID string, input schema.CredentialsInput) (string, error)
 	ReconnectRuntimeAgent(runtimeID string) (string, error)
 	GCPRuntimeStatus(runtimeID string) (GCPRuntimeStatus, error)
-	//GardenerRuntimeStatus(runtimeID string) (schema.RuntimeStatus, error)
 	RuntimeOperationStatus(operationID string) (schema.OperationStatus, error)
 }
 

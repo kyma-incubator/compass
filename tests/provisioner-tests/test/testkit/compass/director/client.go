@@ -3,11 +3,8 @@ package director
 import (
 	"fmt"
 
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass"
 	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql"
 	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/oauth"
-	"github.com/sirupsen/logrus"
-
 	"github.com/pkg/errors"
 
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -17,6 +14,11 @@ import (
 
 // TODO - align - either use interfaces or Structs
 
+const (
+	AuthorizationHeader = "Authorization"
+	TenantHeader        = "Tenant"
+)
+
 type Client struct {
 	tenant        string
 	graphQLClient *graphql.Client
@@ -24,8 +26,6 @@ type Client struct {
 	queryProvider queryProvider
 	graphqlizer   graphqlizer
 }
-
-// TODO - add some shared client to handle tokens (some abstraction for Compass in general)
 
 func NewDirectorClient(endpoint, tenant string, oauthClient *oauth.Client, queryLogging bool) *Client {
 	return &Client{
@@ -81,14 +81,11 @@ func (c *Client) newRequest(query string) (*gcli.Request, error) {
 		return nil, errors.Wrap(err, "Error while getting Access Token")
 	}
 
-	// TODO - remove
-	logrus.Info("Access TOKEN: ", accessToken)
-
 	bearerToken := fmt.Sprintf("Bearer %s", accessToken.AccessToken)
 
 	req := gcli.NewRequest(query)
-	req.Header.Set(compass.TenantHeader, c.tenant)
-	req.Header.Set(compass.AuthorizationHeader, bearerToken)
+	req.Header.Set(TenantHeader, c.tenant)
+	req.Header.Set(AuthorizationHeader, bearerToken)
 
 	return req, nil
 }
