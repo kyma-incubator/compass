@@ -23,7 +23,7 @@ var validFileContent string = `
   - "555d9157-a1bf-4aa2-9a22-f5d6f9730aaf"
 `
 
-var invalidFileContent string = `
+var unknownFieldsFileContent string = `
 - username: "admin"
   scope:
   - "application:write"
@@ -69,9 +69,9 @@ func TestStaticUserRepository(t *testing.T) {
 		require.Equal(t, "while unmarshalling static users YAML: error unmarshaling JSON: while decoding JSON: json: cannot unmarshal string into Go value of type []tenantmapping.StaticUser", err.Error())
 	})
 
-	t.Run("NewStaticUserRepository should fail when file content is not valid", func(t *testing.T) {
+	t.Run("NewStaticUserRepository should fail when file content contains unknown fields", func(t *testing.T) {
 		filePath := "static-users.tmp.json"
-		err := ioutil.WriteFile(filePath, []byte(invalidFileContent), 0644)
+		err := ioutil.WriteFile(filePath, []byte(unknownFieldsFileContent), 0644)
 		require.NoError(t, err)
 		defer func(t *testing.T) {
 			err := os.Remove(filePath)
