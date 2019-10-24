@@ -11,7 +11,3 @@ validate:
 	./validate.sh
 
 verify:: validate
-
-.PHONY: ci-pr
-#Temporary
-ci-pr: release
