@@ -75,8 +75,8 @@ docker build -t $DIRECTOR_IMG_NAME ./
 
 echo -e "${GREEN}Running Director...${NC}"
 
-SCOPES_CONFIGURATION_FILE_PATH="${HOST_ROOT_PATH}/chart/compass/charts/director/config.yaml"
-STATIC_USERS_PATH="${HOST_ROOT_PATH}/components/director/assets/static-users-local.yaml"
+SCOPES_CONFIGURATION_FILE_PATH="${HOST_ROOT_PATH}/components/director/hack/config-local.yaml"
+STATIC_USERS_PATH="${HOST_ROOT_PATH}/components/director/hack/static-users-local.yaml"
 
 docker run --name ${DIRECTOR_CONTAINER} -d --rm --network=${NETWORK} \
     -p ${APP_PORT}:${APP_PORT} \

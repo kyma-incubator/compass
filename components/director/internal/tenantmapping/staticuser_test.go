@@ -17,10 +17,18 @@ var validFileContent string = `
   tenants: 
   - "3f2d9157-a0ba-4ff3-9d50-f5d6f9730eed"
 - username: "developer"
-  sopes:
+  scopes:
   - "application:read"
   tenants: 
   - "555d9157-a1bf-4aa2-9a22-f5d6f9730aaf"
+`
+
+var invalidFileContent string = `
+- username: "admin"
+  scope:
+  - "application:write"
+  tenants: 
+  - "3f2d9157-a0ba-4ff3-9d50-f5d6f9730eed"
 `
 
 func TestStaticUserRepository(t *testing.T) {
@@ -58,7 +66,21 @@ func TestStaticUserRepository(t *testing.T) {
 
 		_, err = NewStaticUserRepository(filePath)
 
-		require.Equal(t, "while unmarshalling static users YAML: error unmarshaling JSON: json: cannot unmarshal string into Go value of type []tenantmapping.StaticUser", err.Error())
+		require.Equal(t, "while unmarshalling static users YAML: error unmarshaling JSON: while decoding JSON: json: cannot unmarshal string into Go value of type []tenantmapping.StaticUser", err.Error())
+	})
+
+	t.Run("NewStaticUserRepository should fail when file content is not valid", func(t *testing.T) {
+		filePath := "static-users.tmp.json"
+		err := ioutil.WriteFile(filePath, []byte(invalidFileContent), 0644)
+		require.NoError(t, err)
+		defer func(t *testing.T) {
+			err := os.Remove(filePath)
+			require.NoError(t, err)
+		}(t)
+
+		_, err = NewStaticUserRepository(filePath)
+
+		require.Equal(t, "while unmarshalling static users YAML: error unmarshaling JSON: while decoding JSON: json: unknown field \"scope\"", err.Error())
 	})
 
 	t.Run("returns StaticUser instance when exists", func(t *testing.T) {

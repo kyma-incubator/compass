@@ -87,8 +87,8 @@ echo -e "${GREEN}Starting application${NC}"
 APP_DB_USER=${DB_USER} \
 APP_DB_PASSWORD=${DB_PWD} \
 APP_DB_NAME=${DB_NAME} \
-APP_SCOPES_CONFIGURATION_FILE=${ROOT_PATH}/../../chart/compass/charts/director/config.yaml \
-APP_STATIC_USERS_SRC=${ROOT_PATH}/assets/static-users-local.yaml \
+APP_SCOPES_CONFIGURATION_FILE=${ROOT_PATH}/hack/config-local.yaml \
+APP_STATIC_USERS_SRC=${ROOT_PATH}/hack/static-users-local.yaml \
 APP_OAUTH20_CLIENT_ENDPOINT="https://oauth2-admin.kyma.local/clients" \
 APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT="https://oauth2.kyma.local/oauth2/token" \
 APP_ONE_TIME_TOKEN_URL="http://connector.not.configured.url/graphql" \

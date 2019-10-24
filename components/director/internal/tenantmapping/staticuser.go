@@ -33,7 +33,7 @@ func NewStaticUserRepository(srcPath string) (*staticUserRepository, error) {
 	}
 
 	var staticUsers []StaticUser
-	if err := yaml.Unmarshal(staticUsersBytes, &staticUsers); err != nil {
+	if err := yaml.UnmarshalStrict(staticUsersBytes, &staticUsers, yaml.DisallowUnknownFields); err != nil {
 		return nil, errors.Wrap(err, "while unmarshalling static users YAML")
 	}
 
