@@ -1,5 +1,9 @@
 package str
 
+import (
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+)
+
 func Unique(in []string) []string {
 	set := SliceToMap(in)
 	return MapToSlice(set)
@@ -25,4 +29,12 @@ func MapToSlice(set map[string]struct{}) []string {
 
 func Ptr(s string) *string {
 	return &s
+}
+
+func Cast(i interface{}) (string, error) {
+	if s, ok := i.(string); ok {
+		return s, nil
+	}
+
+	return "", apperrors.NewInvalidStringCastError()
 }

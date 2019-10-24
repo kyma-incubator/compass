@@ -88,7 +88,7 @@ func TestService_Get(t *testing.T) {
 		_, err := svc.Get(context.TODO(), "")
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 
@@ -202,7 +202,7 @@ func TestService_List(t *testing.T) {
 		_, err := svc.List(context.TODO(), "", 5, "")
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 
@@ -344,7 +344,7 @@ func TestService_Create(t *testing.T) {
 		_, err := svc.Create(context.TODO(), "", model.EventAPIDefinitionInput{})
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 
@@ -490,7 +490,7 @@ func TestService_Update(t *testing.T) {
 		err := svc.Update(context.TODO(), "", model.EventAPIDefinitionInput{})
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 
@@ -558,7 +558,7 @@ func TestService_Delete(t *testing.T) {
 		err := svc.Delete(context.TODO(), "")
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 
@@ -631,7 +631,7 @@ func TestService_RefetchAPISpec(t *testing.T) {
 		_, err := svc.RefetchAPISpec(context.TODO(), "")
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 

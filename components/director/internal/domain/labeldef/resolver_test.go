@@ -89,7 +89,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 		// WHEN
 		_, err := sut.CreateLabelDefinition(context.TODO(), graphql.LabelDefinitionInput{})
 		// THEN
-		require.EqualError(t, err, "Cannot read tenant from context")
+		require.EqualError(t, err, "cannot read tenant from context")
 	})
 
 	t.Run("got error on starting transaction", func(t *testing.T) {
@@ -274,7 +274,7 @@ func TestQueryLabelDefinitions(t *testing.T) {
 		// WHEN
 		_, err := sut.LabelDefinitions(context.TODO())
 		// THEN
-		require.EqualError(t, err, "Cannot read tenant from context")
+		require.EqualError(t, err, "cannot read tenant from context")
 	})
 
 	t.Run("got error on starting transaction", func(t *testing.T) {
@@ -449,7 +449,7 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 		// WHEN
 		_, err := sut.LabelDefinition(context.TODO(), "anything")
 		// THEN
-		require.EqualError(t, err, "Cannot read tenant from context")
+		require.EqualError(t, err, "cannot read tenant from context")
 	})
 
 	t.Run("got error on starting transaction", func(t *testing.T) {
@@ -672,7 +672,7 @@ func TestResolver_DeleteLabelDefinition(t *testing.T) {
 		// WHEN
 		_, err := sut.DeleteLabelDefinition(context.TODO(), "test", &deleteRelatedLabels)
 		// THEN
-		require.EqualError(t, err, "Cannot read tenant from context")
+		require.EqualError(t, err, "cannot read tenant from context")
 	})
 
 	t.Run("got error on starting transaction", func(t *testing.T) {
@@ -809,7 +809,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 		// WHEN
 		_, err := sut.UpdateLabelDefinition(context.TODO(), graphql.LabelDefinitionInput{})
 		// THEN
-		require.EqualError(t, err, "Cannot read tenant from context")
+		require.EqualError(t, err, "cannot read tenant from context")
 	})
 
 	t.Run("got error on starting transaction", func(t *testing.T) {

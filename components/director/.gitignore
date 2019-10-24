@@ -3,3 +3,4 @@
 vendor
 /licenses
 *.log
+coverage.out

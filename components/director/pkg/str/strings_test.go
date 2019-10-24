@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/stretchr/testify/assert"
@@ -116,4 +118,19 @@ func TestMapToSlice(t *testing.T) {
 			assert.ElementsMatch(t, testCase.Expected, result)
 		})
 	}
+}
+
+func TestCast(t *testing.T) {
+	t.Run("errors when casting non-string data", func(t *testing.T) {
+		_, err := str.Cast([]byte{1, 2})
+
+		require.EqualError(t, err, "unable to cast the value to a string type")
+	})
+
+	t.Run("returns valid string", func(t *testing.T) {
+		s, err := str.Cast("abc")
+
+		require.NoError(t, err)
+		require.Equal(t, "abc", s)
+	})
 }

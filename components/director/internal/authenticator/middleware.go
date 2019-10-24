@@ -63,12 +63,6 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 				return
 			}
 
-			// TODO: Remove getting tenant from header after implementing https://github.com/kyma-incubator/compass/issues/288
-			tenantHeader := r.Header.Get(tenant.TenantHeaderName)
-			if tenantHeader != "" {
-				claims.Tenant = tenantHeader
-			}
-
 			ctx := a.contextWithClaims(r.Context(), claims)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
@@ -79,7 +73,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 func (a *Authenticator) getBearerToken(r *http.Request) (string, error) {
 	reqToken := r.Header.Get(AuthorizationHeaderKey)
 	if reqToken == "" {
-		return "", errors.New("Invalid bearer token")
+		return "", errors.New("invalid bearer token")
 	}
 
 	reqToken = strings.TrimPrefix(reqToken, "Bearer ")

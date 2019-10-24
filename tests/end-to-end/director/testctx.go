@@ -54,11 +54,6 @@ func newTestContext() (*testContext, error) {
 }
 
 func (tc *testContext) RunOperation(ctx context.Context, req *gcli.Request, resp interface{}) error {
-	// TODO: Remove tenant header after implementing https://github.com/kyma-incubator/compass/issues/288
-	if req.Header["Tenant"] == nil {
-		req.Header["Tenant"] = []string{defaultTenant}
-	}
-
 	m := resultMapperFor(&resp)
 
 	return tc.withRetryOnTemporaryConnectionProblems(func() error {
@@ -86,9 +81,6 @@ func (tc *testContext) RunOperationWithCustomScopes(ctx context.Context, scopes 
 
 func (tc *testContext) runCustomOperation(ctx context.Context, tenant string, scopes []string, req *gcli.Request, resp interface{}) error {
 	m := resultMapperFor(&resp)
-
-	// TODO: Remove tenant header after implementing https://github.com/kyma-incubator/compass/issues/288
-	req.Header["Tenant"] = []string{tenant}
 
 	token, err := jwtbuilder.Do(tenant, scopes)
 	if err != nil {

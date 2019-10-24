@@ -220,6 +220,82 @@ func TestRepository_GetByID(t *testing.T) {
 	})
 }
 
+func TestRepository_GetByIDGlobal(t *testing.T) {
+	saID := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	objectID := "cccccccc-cccc-cccc-cccc-cccccccccccc"
+
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		saModel := fixModelSystemAuth(saID, model.RuntimeReference, objectID, fixModelAuth())
+		saEntity := fixEntity(saID, model.RuntimeReference, objectID, true)
+
+		mockConverter := &automock.Converter{}
+		mockConverter.On("FromEntity", saEntity).Return(*saModel, nil).Once()
+		defer mockConverter.AssertExpectations(t)
+
+		repo := systemauth.NewRepository(mockConverter)
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		rows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "runtime_id", "integration_system_id", "value"}).
+			AddRow(saID, testTenant, saEntity.AppID, saEntity.RuntimeID, saEntity.IntegrationSystemID, saEntity.Value)
+
+		query := "SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE id = $1"
+		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
+			WithArgs(saID).WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		// WHEN
+		actual, err := repo.GetByIDGlobal(ctx, saID)
+		// THEN
+		require.NoError(t, err)
+		require.NotNil(t, actual)
+		assert.Equal(t, saModel, actual)
+
+	})
+
+	t.Run("Error - Converter", func(t *testing.T) {
+		// GIVEN
+		saEntity := fixEntity(saID, model.RuntimeReference, objectID, true)
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromEntity", saEntity).Return(model.SystemAuth{}, givenError())
+
+		repo := systemauth.NewRepository(mockConverter)
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		rows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "runtime_id", "integration_system_id", "value"}).
+			AddRow(saID, testTenant, saEntity.AppID, saEntity.RuntimeID, saEntity.IntegrationSystemID, saEntity.Value)
+
+		dbMock.ExpectQuery("SELECT .*").
+			WithArgs(saID).WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		// WHEN
+		_, err := repo.GetByIDGlobal(ctx, saID)
+		// THEN
+		require.EqualError(t, err, "while converting SystemAuth entity to model: some error")
+	})
+
+	t.Run("Error - DB", func(t *testing.T) {
+		// GIVEN
+		repo := systemauth.NewRepository(nil)
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		dbMock.ExpectQuery("SELECT .*").
+			WithArgs(saID).WillReturnError(givenError())
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		// WHEN
+		_, err := repo.GetByIDGlobal(ctx, saID)
+		// THEN
+		require.EqualError(t, err, "while getting object from DB: some error")
+	})
+}
+
 func TestRepository_ListForObject(t *testing.T) {
 	//GIVEN
 	objID := "bar"
