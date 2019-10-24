@@ -1,3 +1,4 @@
+{{ if .Values.tests.enabled }}
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
@@ -21,18 +22,12 @@ spec:
         env:
         - name: APP_INTERNAL_PROVISIONER_URL
           value: 'http://{{ template "fullname" . }}:{{ .Values.global.provisioner.graphql.port }}/graphql'
-        - name: APP_DIRECTOR_URL
-          value: 'https://{{ .Values.global.gateway.tls.secure.oauth.host }}/director/graphql'
         - name: APP_CREDENTIALS_NAMESPACE
           value: {{ .Release.Namespace }}
         - name: APP_GCP_CREDENTIALS
           value: {{ .Values.tests.gcp.credentials }}
-        - name: APP_TENANT
-          value: "{{ .Values.global.defaultTenant }}"
-        - name: APP_HYDRA_PUBLIC_URL
-          value: "{{ .Values.tests.hydraPublicUrl }}"
-        - name: APP_HYDRA_ADMIN_URL
-          value: "{{ .Values.tests.hydraAdminUrl }}"
+        - name: APP_GCP_PROJECT_NAME
+          value: {{ .Values.tests.gcp.projectName }}
         - name: APP_QUERY_LOGGING
           value: "{{ .Values.tests.queryLogging }}"
         command:
@@ -41,3 +36,4 @@ spec:
         - "-c"
         - "echo 'TESTING start'; sleep 10; ./entrypoint.sh; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; pkill -INT pilot-agent; sleep 4; exit $exit_code;"
       restartPolicy: Never
+{{ end }}

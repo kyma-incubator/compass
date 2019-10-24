@@ -10,8 +10,8 @@ database:
   schemaFilePath: "/assets/database/provisioner.sql"
 
 tests:
+  enabled: false
   gcp:
     credentials: ""
-  hydraPublicUrl: http://ory-hydra-public.kyma-system:4444
-  hydraAdminUrl: http://ory-hydra-admin.kyma-system:4445
+    projectName: ""
   queryLogging: false

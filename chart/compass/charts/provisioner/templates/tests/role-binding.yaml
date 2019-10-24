@@ -1,3 +1,4 @@
+{{ if .Values.tests.enabled }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -31,3 +32,4 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 
 ---
+{{ end }}
