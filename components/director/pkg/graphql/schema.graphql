@@ -31,9 +31,6 @@ enum ApplicationStatusCondition {
     READY
     FAILED
 }
-enum ApplicationTemplateAccessLevel {
-    GLOBAL
-}
 
 enum ApplicationWebhookType {
     CONFIGURATION_CHANGED
@@ -93,26 +90,6 @@ interface Pageable {
 
 union CredentialData = BasicCredentialData | OAuthCredentialData
 
-input ApplicationTemplateInput {
-    name: String!
-    description: String
-
-    applicationInput: ApplicationCreateInput!
-    placeholders:       [PlaceholderDefinitionInput!]
-
-}
-
-input PlaceholderDefinitionInput {
-    Name            String!
-    Description     String
-}
-
-input TemplateValueInput {
-    Placeholder     String!
-    Value           String!
-}
-
-
 input APIDefinitionInput {
     name: String!
     description: String
@@ -139,8 +116,6 @@ input ApplicationCreateInput {
     apis: [APIDefinitionInput!]
     eventAPIs: [EventAPIDefinitionInput!]
     documents: [DocumentInput!]
-    integrationSystemID: ID #optional
-
 }
 
 input ApplicationUpdateInput {
@@ -306,7 +281,6 @@ type APISpec {
 type Application {
     id: ID!
     name: String!
-    applicationsDelegateID: ID #optional
     description: String
     labels(key: String): Labels!
     status: ApplicationStatus!
@@ -454,11 +428,6 @@ type Label {
     value: Any!
 }
 
-input LabelInput {
-    key: String!
-    value: Any!
-}
-
 type LabelDefinition {
     key: String!
     schema: JSONSchema
@@ -565,7 +534,6 @@ type Query {
 
 type Mutation {
     createApplication(in: ApplicationCreateInput!): Application! @hasScopes(path: "graphql.mutation.createApplication")
-    createApplicationFromTemplate(templateName: String!, values: [TemplateValueInput]): Application!
     updateApplication(id: ID!, in: ApplicationUpdateInput!): Application! @hasScopes(path: "graphql.mutation.updateApplication")
     deleteApplication(id: ID!): Application! @hasScopes(path: "graphql.mutation.deleteApplication")
     createRuntime(in: RuntimeInput!): Runtime! @hasScopes(path: "graphql.mutation.createRuntime")
@@ -620,4 +588,3 @@ type Mutation {
     """
     deleteRuntimeLabel(runtimeID: ID!, key: String!): Label! @hasScopes(path: "graphql.mutation.deleteRuntimeLabel")
 }
-
