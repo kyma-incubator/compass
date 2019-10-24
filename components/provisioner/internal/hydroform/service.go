@@ -17,6 +17,8 @@ import (
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
+const credentialsKey = "credentials"
+
 //go:generate mockery -name=Service
 type Service interface {
 	ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName string) (ClusterInfo, error)
@@ -50,7 +52,7 @@ func (c client) ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName s
 		return ClusterInfo{}, errors.Wrap(err, "Config preparation failed")
 	}
 
-	log.Infof("Config prepared - cluster: %+v, provider: %+v. Starting cluster provisioning", cluster, provider)
+	log.Infof("Starting cluster provisioning")
 
 	cluster, err = hf.Provision(cluster, provider)
 	if err != nil {
@@ -108,7 +110,7 @@ func (c client) DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretName
 
 	cluster.ClusterInfo = &types.ClusterInfo{InternalState: state}
 
-	log.Infof("Config prepared - cluster: %+v, provider: %+v. Starting cluster deprovisioning", cluster, provider)
+	log.Infof("Starting cluster deprovisioning")
 	return hf.Deprovision(cluster, provider)
 }
 
@@ -138,10 +140,10 @@ func (c client) saveCredentialsToFile(secretName string) (string, error) {
 		return "", errors.WithMessagef(err, "Failed to get credentials from %s secret", secretName)
 	}
 
-	bytes, ok := secret.Data["kubeconfig"]
+	bytes, ok := secret.Data[credentialsKey]
 
 	if !ok {
-		return "", errors.New("kubeconfig not found within the secret")
+		return "", errors.New("Credentials not found within the secret")
 	}
 
 	tempFile, err := ioutil.TempFile("", secretName)

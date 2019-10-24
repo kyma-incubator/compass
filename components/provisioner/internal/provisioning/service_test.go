@@ -56,7 +56,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		service := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock)
 
 		//when
-		operationID, err, finished := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: &gqlschema.CredentialsInput{}, KymaConfig: kymaConfig})
+		operationID, finished, err := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: &gqlschema.CredentialsInput{}, KymaConfig: kymaConfig})
 		require.NoError(t, err)
 
 		waitUntilFinished(finished)
@@ -83,7 +83,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		service := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock)
 
 		//when
-		operationID, err, finished := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: &gqlschema.CredentialsInput{}, KymaConfig: kymaConfig})
+		operationID, finished, err := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: &gqlschema.CredentialsInput{}, KymaConfig: kymaConfig})
 		require.NoError(t, err)
 
 		waitUntilFinished(finished)
@@ -104,7 +104,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		service := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock)
 
 		//when
-		_, err, _ := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: &gqlschema.CredentialsInput{}, KymaConfig: kymaConfig})
+		_, _, err := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: &gqlschema.CredentialsInput{}, KymaConfig: kymaConfig})
 
 		//then
 		require.Error(t, err)
@@ -140,7 +140,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		resolver := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock)
 
 		//when
-		opt, err, finished := resolver.DeprovisionRuntime(runtimeID, gqlschema.CredentialsInput{})
+		opt, finished, err := resolver.DeprovisionRuntime(runtimeID, gqlschema.CredentialsInput{})
 		require.NoError(t, err)
 
 		waitUntilFinished(finished)
@@ -164,7 +164,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		resolver := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock)
 
 		//when
-		_, err, _ := resolver.DeprovisionRuntime(runtimeID, gqlschema.CredentialsInput{})
+		_, _, err := resolver.DeprovisionRuntime(runtimeID, gqlschema.CredentialsInput{})
 
 		//then
 		require.Error(t, err)

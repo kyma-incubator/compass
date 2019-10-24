@@ -6,21 +6,15 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
-func runtimeConfigFromInput(runtimeID string, input gqlschema.ProvisionRuntimeInput, uuidGenerator persistence.UUIDGenerator) (model.RuntimeConfig, error) {
-	kymaConfig, err := kymaConfigFromInput(runtimeID, *input.KymaConfig, uuidGenerator)
-	if err != nil {
-		return model.RuntimeConfig{}, err
-	}
+func runtimeConfigFromInput(runtimeID string, input gqlschema.ProvisionRuntimeInput, uuidGenerator persistence.UUIDGenerator) model.RuntimeConfig {
+	kymaConfig := kymaConfigFromInput(runtimeID, *input.KymaConfig, uuidGenerator)
 
-	clusterConfig, err := clusterConfigFromInput(runtimeID, *input.ClusterConfig, uuidGenerator)
-	if err != nil {
-		return model.RuntimeConfig{}, err
-	}
+	clusterConfig := clusterConfigFromInput(runtimeID, *input.ClusterConfig, uuidGenerator)
 
 	return model.RuntimeConfig{
 		KymaConfig:    kymaConfig,
 		ClusterConfig: clusterConfig,
-	}, nil
+	}
 }
 
 func runtimeStatusToGraphQLStatus(status model.RuntimeStatus) *gqlschema.RuntimeStatus {
@@ -41,7 +35,7 @@ func operationStatusToGQLOperationStatus(operation model.Operation) *gqlschema.O
 	}
 }
 
-func clusterConfigFromInput(runtimeID string, input gqlschema.ClusterConfigInput, uuidGenerator persistence.UUIDGenerator) (interface{}, error) {
+func clusterConfigFromInput(runtimeID string, input gqlschema.ClusterConfigInput, uuidGenerator persistence.UUIDGenerator) interface{} {
 	if input.GardenerConfig != nil {
 		config := input.GardenerConfig
 		return gardenerConfigFromInput(runtimeID, *config, uuidGenerator)
@@ -50,10 +44,10 @@ func clusterConfigFromInput(runtimeID string, input gqlschema.ClusterConfigInput
 		config := input.GcpConfig
 		return gcpConfigFromInput(runtimeID, *config, uuidGenerator)
 	}
-	return nil, nil
+	return nil
 }
 
-func gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput, uuidGenerator persistence.UUIDGenerator) (model.GardenerConfig, error) {
+func gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput, uuidGenerator persistence.UUIDGenerator) model.GardenerConfig {
 	id := uuidGenerator.New()
 
 	return model.GardenerConfig{
@@ -75,10 +69,10 @@ func gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInp
 		MaxSurge:          input.MaxSurge,
 		MaxUnavailable:    input.MaxUnavailable,
 		ClusterID:         runtimeID,
-	}, nil
+	}
 }
 
-func gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfigInput, uuidGenerator persistence.UUIDGenerator) (model.GCPConfig, error) {
+func gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfigInput, uuidGenerator persistence.UUIDGenerator) model.GCPConfig {
 	id := uuidGenerator.New()
 
 	zone := ""
@@ -97,10 +91,10 @@ func gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfigInput, uuidGe
 		Region:            input.Region,
 		Zone:              zone,
 		ClusterID:         runtimeID,
-	}, nil
+	}
 }
 
-func kymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput, uuidGenerator persistence.UUIDGenerator) (model.KymaConfig, error) {
+func kymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput, uuidGenerator persistence.UUIDGenerator) model.KymaConfig {
 	var modules []model.KymaConfigModule
 	kymaConfigID := uuidGenerator.New()
 
@@ -121,7 +115,7 @@ func kymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput, uuid
 		Version:   input.Version,
 		Modules:   modules,
 		ClusterID: runtimeID,
-	}, nil
+	}
 }
 
 func runtimeConnectionStatusToGraphQLStatus(status model.RuntimeAgentConnectionStatus) *gqlschema.RuntimeConnectionStatus {

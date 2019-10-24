@@ -8,7 +8,6 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/sirupsen/logrus"
 )
 
 //go:generate mockery -name=Service
@@ -76,7 +75,7 @@ func (ps persistenceService) GetStatus(runtimeID string) (model.RuntimeStatus, d
 func (ps persistenceService) SetProvisioningStarted(runtimeID string, runtimeConfig model.RuntimeConfig) (model.Operation, dberrors.Error) {
 	dbSession, err := ps.dbSessionFactory.NewSessionWithinTransaction()
 	if err != nil {
-		logrus.Errorf("Failed to create repository: %s", err)
+		return model.Operation{}, dberrors.Internal("Failed to create repository: %s", err)
 	}
 
 	defer dbSession.RollbackUnlessCommitted()

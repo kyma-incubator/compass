@@ -31,7 +31,7 @@ func newPersistenceService(connectionString, schemaPath string) (persistence.Ser
 	return persistence.NewService(dbSessionFactory, uuidGenerator), nil
 }
 
-func newProvisioningService(persistenceService persistence.Service, secrets v1.SecretInterface) provisioning.ProvisioningService {
+func newProvisioningService(persistenceService persistence.Service, secrets v1.SecretInterface) provisioning.Service {
 	hydroformClient := hydroform.NewHydroformClient(secrets)
 	uuidGenerator := persistence.NewUUIDGenerator()
 

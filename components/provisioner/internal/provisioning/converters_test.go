@@ -189,10 +189,9 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 			uuidGeneratorMock.On("New").Return("id").Times(4)
 
 			//when
-			runtimeConfig, err := runtimeConfigFromInput("runtimeID", config.input, uuidGeneratorMock)
+			runtimeConfig := runtimeConfigFromInput("runtimeID", config.input, uuidGeneratorMock)
 
 			//then
-			assert.NoError(t, err)
 			assert.Equal(t, config.expected, runtimeConfig)
 			uuidGeneratorMock.AssertExpectations(t)
 		})

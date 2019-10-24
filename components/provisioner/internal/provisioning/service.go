@@ -20,10 +20,11 @@ const (
 	retryCount = 5
 )
 
-type ProvisioningService interface {
-	ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeInput) (string, error, <-chan struct{})
+//go:generate mockery -name=Service
+type Service interface {
+	ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeInput) (string, <-chan struct{}, error)
 	UpgradeRuntime(id string, config *gqlschema.UpgradeRuntimeInput) (string, error)
-	DeprovisionRuntime(id string, credentials gqlschema.CredentialsInput) (string, error, <-chan struct{})
+	DeprovisionRuntime(id string, credentials gqlschema.CredentialsInput) (string, <-chan struct{}, error)
 	CleanupRuntimeData(id string) (string, error)
 	ReconnectRuntimeAgent(id string) (string, error)
 	RuntimeStatus(id string) (*gqlschema.RuntimeStatus, error)
@@ -36,7 +37,7 @@ type service struct {
 	uuidGenerator      persistence.UUIDGenerator
 }
 
-func NewProvisioningService(persistenceService persistence.Service, uuidGenerator persistence.UUIDGenerator, hydroform hydroform.Service) ProvisioningService {
+func NewProvisioningService(persistenceService persistence.Service, uuidGenerator persistence.UUIDGenerator, hydroform hydroform.Service) Service {
 	return &service{
 		persistenceService: persistenceService,
 		hydroform:          hydroform,
@@ -44,28 +45,25 @@ func NewProvisioningService(persistenceService persistence.Service, uuidGenerato
 	}
 }
 
-func (r *service) ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeInput) (string, error, <-chan struct{}) {
+func (r *service) ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeInput) (string, <-chan struct{}, error) {
 	err := r.checkProvisioningRuntimeConditions(id)
 	if err != nil {
-		return "", err, nil
+		return "", nil, err
 	}
 
-	runtimeConfig, err := runtimeConfigFromInput(id, config, r.uuidGenerator)
-	if err != nil {
-		return "", err, nil
-	}
+	runtimeConfig := runtimeConfigFromInput(id, config, r.uuidGenerator)
 
 	operation, err := r.persistenceService.SetProvisioningStarted(id, runtimeConfig)
 
 	if err != nil {
-		return "", err, nil
+		return "", nil, err
 	}
 
 	finished := make(chan struct{})
 
 	go r.startProvisioning(operation.ID, id, runtimeConfig, config.Credentials.SecretName, finished)
 
-	return operation.ID, nil, finished
+	return operation.ID, finished, err
 }
 
 func (r *service) checkProvisioningRuntimeConditions(id string) error {
@@ -92,29 +90,35 @@ func lastProvisioningFailed(operation model.Operation) bool {
 	return operation.Type == model.Provision && operation.State == model.Failed
 }
 
-func (r *service) DeprovisionRuntime(id string, credentials gqlschema.CredentialsInput) (string, error, <-chan struct{}) {
+func (r *service) DeprovisionRuntime(id string, credentials gqlschema.CredentialsInput) (string, <-chan struct{}, error) {
 	runtimeStatus, err := r.persistenceService.GetStatus(id)
 
 	if err != nil {
-		return "", err, nil
+		return "", nil, err
 	}
 
 	if runtimeStatus.LastOperationStatus.State == model.InProgress {
-		return "", errors.New("cannot start new operation while previous one is in progress"), nil
+		return "", nil, errors.New("cannot start new operation while previous one is in progress")
 	}
 
 	operation, err := r.persistenceService.SetDeprovisioningStarted(id)
 
 	if err != nil {
-		return "", err, nil
+		return "", nil, err
 	}
 
 	finished := make(chan struct{})
 
-	//TODO For now we pass secret name in parameters but we need to consider if it should be stored in the database
-	go r.startDeprovisioning(operation.ID, id, runtimeStatus.RuntimeConfiguration, credentials.SecretName, finished)
+	cluster, dberr := r.persistenceService.GetClusterData(id)
 
-	return operation.ID, nil, finished
+	if dberr != nil {
+		return "", nil, dberr
+	}
+
+	//TODO For now we pass secret name in parameters but we need to consider if it should be stored in the database
+	go r.startDeprovisioning(operation.ID, id, runtimeStatus.RuntimeConfiguration, credentials.SecretName, cluster, finished)
+
+	return operation.ID, finished, nil
 }
 
 func (r *service) UpgradeRuntime(id string, config *gqlschema.UpgradeRuntimeInput) (string, error) {
@@ -154,6 +158,7 @@ func (r *service) CleanupRuntimeData(id string) (string, error) {
 }
 
 func (r *service) startProvisioning(operationID, runtimeID string, config model.RuntimeConfig, secretName string, finished chan<- struct{}) {
+	defer close(finished)
 	log.Infof("Provisioning runtime %s is starting", runtimeID)
 	info, err := r.hydroform.ProvisionCluster(config, secretName)
 
@@ -173,21 +178,11 @@ func (r *service) startProvisioning(operationID, runtimeID string, config model.
 			return r.persistenceService.SetAsSucceeded(operationID)
 		})
 	}
-	close(finished)
 }
 
-func (r *service) startDeprovisioning(operationID, runtimeID string, config model.RuntimeConfig, secretName string, finished chan<- struct{}) {
+func (r *service) startDeprovisioning(operationID, runtimeID string, config model.RuntimeConfig, secretName string, cluster model.Cluster, finished chan<- struct{}) {
+	defer close(finished)
 	log.Infof("Deprovisioning runtime %s is starting", runtimeID)
-
-	cluster, dberr := r.persistenceService.GetClusterData(runtimeID)
-
-	if dberr != nil {
-		updateOperationStatus(func() error {
-			log.Errorf("Deprovisioning runtime %s failed: %s", runtimeID, dberr.Error())
-			return r.persistenceService.SetAsFailed(operationID, dberr.Error())
-		})
-	}
-
 	err := r.hydroform.DeprovisionCluster(config, secretName, cluster.TerraformState)
 
 	if err != nil {
@@ -201,13 +196,10 @@ func (r *service) startDeprovisioning(operationID, runtimeID string, config mode
 			return r.persistenceService.SetAsSucceeded(operationID)
 		})
 	}
-	close(finished)
 }
 
 func updateOperationStatus(updateFunction func() error) {
-	err := retry(interval, retryCount, func() error {
-		return updateFunction()
-	})
+	err := retry(interval, retryCount,updateFunction)
 	if err != nil {
 		log.Errorf("Failed to set operation status, %s", err.Error())
 	}
@@ -220,6 +212,7 @@ func retry(interval time.Duration, count int, operation func() error) error {
 		if err == nil {
 			return nil
 		}
+		log.Errorf("Error during updating operation status: %s", err.Error())
 		time.Sleep(interval)
 	}
 
