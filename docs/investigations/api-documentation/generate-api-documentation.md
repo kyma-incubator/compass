@@ -28,18 +28,20 @@ Cons
 
 ### 2. Using a 3rd party tool to generate static html
 [Dociql](https://github.com/wayfair/dociql) is a tool that generates html files with the documented schema.
-It uses the introspection query to fetch the API schema and a .yaml file to configure the output. Unfortunately we have to
-describe every query and mutation in the config file if we want them to be sorted properly. Maintaining the config file would be
+It uses the introspection query to fetch the API schema and a .yaml file to configure the output.
+ 
+ Unfortunately we have todescribe every query and mutation in the config file if we want them to be sorted properly. Maintaining the config file would be
 a chore so we would have to write a tool that generates the config file with the descriptions and examples. Sample config file can be found [here](https://github.com/wayfair/dociql/blob/master/config.yml)
+
 Apart from that we would have to solve the authentication since our endpoints are secured and dociql doesn't support authentication
 out of the box. It also supports the 'try it now' feature which too has to be configured to work on the domain that compass
-is hosted right now.
+is hosted at the moment.
 
 Work that has to be done
 * handling the authentication
 * generating the config file
 * creating a prow pipeline
-* configure the try it now feature
+* configuring the 'try it now' feature
 
 Pros
 * looks much better (example [here](https://wayfair.github.io/dociql/))
