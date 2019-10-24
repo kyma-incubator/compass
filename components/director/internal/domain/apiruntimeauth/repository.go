@@ -44,7 +44,11 @@ func NewRepository(conv Converter) *pgRepository {
 
 func (r *pgRepository) Get(ctx context.Context, tenant string, apiID string, runtimeID string) (*model.APIRuntimeAuth, error) {
 	var ent Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{{Field: "runtime_id", Val: runtimeID}, {Field: "api_def_id", Val: apiID}}, &ent); err != nil {
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("runtime_id", runtimeID),
+		repo.NewEqualCondition("api_def_id", apiID),
+	}
+	if err := r.singleGetter.Get(ctx, tenant, conditions, &ent); err != nil {
 		return nil, err
 	}
 
@@ -132,5 +136,9 @@ func (r *pgRepository) Upsert(ctx context.Context, item model.APIRuntimeAuth) er
 }
 
 func (r *pgRepository) Delete(ctx context.Context, tenant string, apiID string, runtimeID string) error {
-	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{{Field: "api_def_id", Val: apiID}, {Field: "runtime_id", Val: runtimeID}})
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("api_def_id", apiID),
+		repo.NewEqualCondition("runtime_id", runtimeID),
+	}
+	return r.deleter.DeleteOne(ctx, tenant, conditions)
 }

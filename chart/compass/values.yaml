@@ -7,22 +7,22 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir: pr/
-      version: "PR-369"
+      version: "PR-357"
     director:
       dir:
-      version: "PR-358"
+      version: "PR-364"
     gateway:
       dir: pr/
-      version: "PR-369"
+      version: "PR-357"
     healthchecker:
       dir: pr/
-      version: "PR-369"
+      version: "PR-357"
     schema_migrator:
       dir: pr/
-      version: "PR-358"
+      version: "PR-357"
     provisioner:
       dir: pr/
-      version: "PR-369"
+      version: "PR-357"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -30,19 +30,20 @@ global:
       version: "PR-5318"
     tests:
       e2e:
-        dir: pr/
-        version: "PR-365"
+        dir:
+        version: "PR-364"
       connector:
         dir: pr/
-        version: "PR-369"
+        version: "PR-357"
       provisioner:
         dir: pr/
-        version: "PR-369"
+        version: "PR-357"
 
   isLocalEnv: false
 
   director:
     port: 3000
+
 
   connector:
     graphql:
@@ -122,19 +123,19 @@ global:
           api:
             url: http://compass-director.compass-system.svc.cluster.local:3000/tenant-mapping
             retry:
-              number_of_retries: 5
-              delay_in_milliseconds: 5000
+              number: 3
+              delayInMilliseconds: 2000
       certificateResolverService:
         config:
           api:
             url: http://compass-connector.compass-system.svc.cluster.local:8080/v1/certificate/data/resolve
             retry:
-              number_of_retries: 5
-              delay_in_milliseconds: 5000
+              number: 3
+              delayInMilliseconds: 2000
       tokenResolverService:
         config:
           api:
             url: http://compass-connector.compass-system.svc.cluster.local:8080/v1/tokens/resolve
             retry:
-              number_of_retries: 5
-              delay_in_milliseconds: 5000
+              number: 3
+              delayInMilliseconds: 2000

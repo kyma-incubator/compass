@@ -11,7 +11,8 @@ import (
 
 //go:generate mockery -name=SystemAuthService -output=automock -outpkg=automock -case=underscore
 type SystemAuthService interface {
-	Get(ctx context.Context, id string) (*model.SystemAuth, error)
+	GetByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) (*model.SystemAuth, error)
+	GetGlobal(ctx context.Context, id string) (*model.SystemAuth, error)
 	DeleteByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) error
 }
 
@@ -46,7 +47,7 @@ func (r *Resolver) GenericDeleteSystemAuth(objectType model.SystemAuthReferenceO
 
 		ctx = persistence.SaveToContext(ctx, tx)
 
-		item, err := r.svc.Get(ctx, id)
+		item, err := r.svc.GetByIDForObject(ctx, objectType, id)
 		if err != nil {
 			return nil, err
 		}

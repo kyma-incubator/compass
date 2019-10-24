@@ -6,22 +6,19 @@
 
 ## Overview
 
-Compass (also known as Management Plane Services) is a multi-tenant system which consists of components that provide a way to register, group, and manage your applications across multiple Kyma runtimes. Using Compass, you can control and monitor your application landscape in one central place.
+Compass is a central, multi-tenant system that allows you to connect Applications and manage them across multiple [Kyma Runtimes](#architecture-components-kyma-runtime). Using Compass, you can control and monitor your Application landscape in one central place. As an integral part of Kyma, Compass uses a set of features that Kyma provides, such as Istio, Prometheus, Monitoring, and Tracing. It also includes Compass UI Cockpit that exposes Compass APIs to users.
+Compass allows you to:
+- Connect and manage Applications and Kyma Runtimes in one central place
+- Store Applications and Runtimes configurations
+- Group Applications and Runtimes to enable integration
+- Communicate the configuration changes to Applications and Runtimes
+- Establish a trusted connection between Applications and Runtimes using various authentication methods
 
-Compass allows for registering different types of applications and runtimes.
-These are the types of possible integration levels between an application and Compass:
-- basic - administrator manually provides API/Events Metadata to Compass. This type of integration is used mainly for simple use-case scenarios and doesn't support all features.
-- application - integration with Compass is built-in inside the application.
-- proxy - a highly application-specific proxy component provides the integration.
-- service -  a central service provides the integration for a class of applications. It manages multiple instances of these applications. You can integrate multiple services to support different types of applications.
+Compass by design does not participate in direct communication between Applications and Runtimes. It only sets up the connection. In case the cluster with Compass is down, the Applications and Runtimes cooperation still works.
 
-You can register any runtime, providing that it fulfills a contract with Compass and implements its flow. First, your runtime must get a trusted connection to Compass. It must also allow for fetching application definitions and using these applications in a given tenant. The example runtimes are Kyma (Kubernetes), CloudFoundry, Serverless, etc.
+For more information about the Compass architecture and technical details, read the project [documentation](./docs).
 
-Compass is a part of Kyma and it uses a set of Kyma features, such as Istio, Prometheus, Monitoring, or Tracing. This project also contains Compass UI Cockpit that exposes Compass APIs to users.
-
-For more information about the Compass architecture and technical details, read the [documentation](./docs).
-
-## Prerequisities
+## Prerequisites
 
 - [Docker](https://www.docker.com/get-started)
 - [Minikube](https://github.com/kubernetes/minikube) 1.0.1
@@ -31,11 +28,20 @@ For more information about the Compass architecture and technical details, read 
 
 ## Installation
 
+### Enable Compass in Kyma
+
+Read [this](https://kyma-project.io/docs/master/components/compass/#installation-installation) document to learn about different modes in which you can enable Compass in Kyma.
+
 ### Chart installation
 
-If you already have a running Kyma 1.1.0 instance with created Secrets and Tiller client certificates, you can install the Compass Helm chart using this command:
+If you already have a running Kyma instance in at least 1.6 version, with created Secrets and Tiller client certificates, you can install the Compass Helm chart using this command:
 ```bash
 helm install --name "compass" ./chart/compass --tls
+```
+
+For local installation, specify additional parameters:
+```bash
+helm install --set=global.isLocalEnv=true --set=global.minikubeIP=$(eval minikube ip) --name "compass" ./chart/compass --tls
 ```
 
 ### Local installation with Kyma
@@ -45,15 +51,10 @@ To install Compass along with the minimal Kyma installation from the `master` br
 ./installation/cmd/run.sh
 ```
 
-You can also specify Kyma version, such as 1.2.2 or newer:
+You can also specify Kyma version, such as 1.6 or newer:
 ```bash
 ./installation/cmd/run.sh {version}
 ```
-
-### Kyma installation with the Compass module enabled
-
-To install Kyma with the experimental Compass module enabled, follow the instruction for [custom component installation](https://kyma-project.io/docs/root/kyma/#configuration-custom-component-installation) and enable the `compass` module.
-
 
 ### Testing
 
@@ -67,7 +68,10 @@ Read [this](https://kyma-project.io/docs/root/kyma#details-testing-kyma) documen
 
 ## Usage
 
-Go to these URLs to see the documentation, GraphQL schemas, and to test some API operations:
+Currently, the Compass Gateway is accessible under three different hosts secured with different authentication methods:
 
-- `https://compass-gateway.{domain}/director`
-- `https://compass-gateway.{domain}/connector`
+- `https://compass-gateway.{domain}` - secured with JWT token issued by Identity Service, such as Dex
+- `https://compass-gateway-mtls.{domain}` - secured with client certificates (mTLS)
+- `https://compass-gateway-auth-oauth.{domain}` - secured with OAuth 2.0 access token issued by [Hydra](https://kyma-project.io/docs/components/security/#details-o-auth2-and-open-id-connect-server)
+
+You can access Director GraphQL API under the `/director/graphql` endpoint, and Connector GraphQL API under `/connector/graphql`.

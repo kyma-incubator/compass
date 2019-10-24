@@ -239,8 +239,8 @@ func TestPgRepository_Update(t *testing.T) {
 		mockConverter.On("ToEntity", intSysModel).Return(intSysEntity).Once()
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.integration_systems SET name = ? WHERE id = ?`)).
-			WithArgs(testName, testID).
+		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.integration_systems SET name = ?, description = ? WHERE id = ?`)).
+			WithArgs(testName, testDescription, testID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -263,8 +263,8 @@ func TestPgRepository_Update(t *testing.T) {
 		mockConverter.On("ToEntity", intSysModel).Return(intSysEntity).Once()
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.integration_systems SET name = ? WHERE id = ?`)).
-			WithArgs(testName, testID).
+		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.integration_systems SET name = ?, description = ? WHERE id = ?`)).
+			WithArgs(testName, testDescription, testID).
 			WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)

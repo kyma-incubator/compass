@@ -13,8 +13,9 @@ import (
 type Repository interface {
 	Create(ctx context.Context, item model.SystemAuth) error
 	GetByID(ctx context.Context, tenant, id string) (*model.SystemAuth, error)
+	GetByIDGlobal(ctx context.Context, id string) (*model.SystemAuth, error)
 	ListForObject(ctx context.Context, tenant string, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
-	Delete(ctx context.Context, tenant string, id string) error
+	DeleteByIDForObject(ctx context.Context, tenant string, id string, objType model.SystemAuthReferenceObjectType) error
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -75,13 +76,26 @@ func (s *service) create(ctx context.Context, id string, objectType model.System
 	return systemAuth.ID, nil
 }
 
-func (s *service) Get(ctx context.Context, id string) (*model.SystemAuth, error) {
+func (s *service) GetByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) (*model.SystemAuth, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	item, err := s.repo.GetByID(ctx, tnt, id)
+	if objectType == model.IntegrationSystemReference {
+		tnt = model.IntegrationSystemTenant
+	}
+
+	item, err := s.repo.GetByID(ctx, tnt, authID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting SystemAuth with ID %s", authID)
+	}
+
+	return item, nil
+}
+
+func (s *service) GetGlobal(ctx context.Context, id string) (*model.SystemAuth, error) {
+	item, err := s.repo.GetByIDGlobal(ctx, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting SystemAuth with ID %s", id)
 	}
@@ -117,7 +131,7 @@ func (s *service) DeleteByIDForObject(ctx context.Context, objectType model.Syst
 		tnt = model.IntegrationSystemTenant
 	}
 
-	err = s.repo.Delete(ctx, tnt, authID)
+	err = s.repo.DeleteByIDForObject(ctx, tnt, authID, objectType)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting System Auth with ID '%s' for %s", authID, objectType)
 	}

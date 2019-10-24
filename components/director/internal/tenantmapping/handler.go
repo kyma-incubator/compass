@@ -1,107 +1,113 @@
 package tenantmapping
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
-type Data struct {
-	Subject string      `json:"subject"`
-	Extra   interface{} `json:"extra"`
-	Header  interface{} `json:"header"`
+//go:generate mockery -name=ScopesGetter -output=automock -outpkg=automock -case=underscore
+type ScopesGetter interface {
+	GetRequiredScopes(scopesDefinition string) ([]string, error)
 }
 
-type Handler struct{}
-
-func NewHandler() *Handler {
-	return &Handler{}
+//go:generate mockery -name=ReqDataParser -output=automock -outpkg=automock -case=underscore
+type ReqDataParser interface {
+	Parse(req *http.Request) (ReqData, error)
 }
 
-func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	if request.Method != http.MethodPost {
-		http.Error(writer, fmt.Sprintf("Bad request method. Got %s, expected POST", request.Method), http.StatusBadRequest)
+//go:generate mockery -name=TenantAndScopesForUserProvider -output=automock -outpkg=automock -case=underscore
+type TenantAndScopesForUserProvider interface {
+	GetTenantAndScopes(reqData ReqData, authID string) (string, string, error)
+}
+
+//go:generate mockery -name=TenantAndScopesForSystemAuthProvider -output=automock -outpkg=automock -case=underscore
+type TenantAndScopesForSystemAuthProvider interface {
+	GetTenantAndScopes(ctx context.Context, reqData ReqData, authID string, authFlow AuthFlow) (string, string, error)
+}
+
+type Handler struct {
+	reqDataParser       ReqDataParser
+	transact            persistence.Transactioner
+	mapperForUser       TenantAndScopesForUserProvider
+	mapperForSystemAuth TenantAndScopesForSystemAuthProvider
+}
+
+func NewHandler(
+	reqDataParser ReqDataParser,
+	transact persistence.Transactioner,
+	mapperForUser TenantAndScopesForUserProvider,
+	mapperForSystemAuth TenantAndScopesForSystemAuthProvider) *Handler {
+	return &Handler{
+		reqDataParser:       reqDataParser,
+		transact:            transact,
+		mapperForUser:       mapperForUser,
+		mapperForSystemAuth: mapperForSystemAuth,
+	}
+}
+
+func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodPost {
+		http.Error(writer, fmt.Sprintf("Bad request method. Got %s, expected POST", req.Method), http.StatusBadRequest)
 		return
 	}
 
-	logBuilder := strings.Builder{}
-	logBuilder.WriteString(fmt.Sprintf("\nHeaders: %+v", request.Header))
+	reqData, err := h.reqDataParser.Parse(req)
+	if err != nil {
+		respondWithError(writer, http.StatusBadRequest, err, "while parsing the request")
+		return
+	}
+
+	tx, err := h.transact.Begin()
+	if err != nil {
+		respondWithError(writer, http.StatusInternalServerError, err, "while opening the db transaction")
+		return
+	}
+	defer h.transact.RollbackUnlessCommited(tx)
+
+	ctx := persistence.SaveToContext(req.Context(), tx)
+
+	tenantID, scopes, err := h.lookupForTenantAndScopes(ctx, reqData)
+	if err != nil {
+		respondWithError(writer, http.StatusInternalServerError, err, "while looking for tenant and scopes data")
+		return
+	}
+
+	reqData.Body.Extra["tenant"] = tenantID
+	reqData.Body.Extra["scope"] = scopes
 
 	writer.Header().Set("Content-Type", "application/json")
-
-	var data Data
-	err := json.NewDecoder(request.Body).Decode(&data)
+	err = json.NewEncoder(writer).Encode(reqData.Body)
 	if err != nil {
-		if err == io.EOF {
-			http.Error(writer, "Request body is empty", http.StatusBadRequest)
-			return
-		}
-
-		wrappedErr := errors.Wrap(err, "while decoding request body")
-		http.Error(writer, wrappedErr.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	defer func() {
-		err := request.Body.Close()
-		if err != nil {
-			wrappedErr := errors.Wrap(err, "while decoding request body")
-			log.Error(wrappedErr)
-			http.Error(writer, wrappedErr.Error(), http.StatusInternalServerError)
-		}
-	}()
-
-	logBuilder.WriteString(fmt.Sprintf("\nInput: %+v", data))
-
-	if data.Extra == nil {
-		data.Extra = make(map[string]interface{})
-	}
-
-	extraMap, ok := data.Extra.(map[string]interface{})
-	if !ok {
-		err := fmt.Errorf("Incorrect type %T; expected map[string]interface{}\n", data.Extra)
-		log.Info(logBuilder.String())
-		log.Error(err)
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	extraMap["tenant"] = "9ac609e1-7487-4aa6-b600-0904b272b11f"
-
-	_, ok = extraMap["scope"]
-	if !ok {
-		h.setScopes(extraMap)
-	}
-
-	data.Extra = extraMap
-
-	logBuilder.WriteString(fmt.Sprintf("\nOutput: %+v\n", data))
-	log.Info(logBuilder.String())
-
-	err = json.NewEncoder(writer).Encode(data)
-	if err != nil {
-		wrappedErr := errors.Wrap(err, "while encoding data")
-		log.Error(wrappedErr)
-		http.Error(writer, wrappedErr.Error(), http.StatusInternalServerError)
+		respondWithError(writer, http.StatusInternalServerError, err, "while encoding data")
 		return
 	}
 }
 
-func (h *Handler) setScopes(extraMap map[string]interface{}) {
-	scopes := []string{
-		"application:read",
-		"application:write",
-		"runtime:read",
-		"runtime:write",
-		"label_definition:read",
-		"label_definition:write",
-		"health_checks:read",
+func (h *Handler) lookupForTenantAndScopes(ctx context.Context, reqData ReqData) (string, string, error) {
+	authID, authFlow, err := reqData.GetAuthID()
+	if err != nil {
+		return "", "", errors.Wrap(err, "while determining the auth ID from the request")
 	}
 
-	extraMap["scope"] = strings.Join(scopes, " ")
+	switch authFlow {
+	case JWTAuthFlow:
+		return h.mapperForUser.GetTenantAndScopes(reqData, authID)
+	case OAuth2Flow, CertificateFlow:
+		return h.mapperForSystemAuth.GetTenantAndScopes(ctx, reqData, authID, authFlow)
+	}
+
+	return "", "", fmt.Errorf("unknown authentication flow (%s)", authFlow)
+}
+
+func respondWithError(writer http.ResponseWriter, httpErrorCode int, err error, wrapperStr string) {
+	wrappedErr := errors.Wrap(err, wrapperStr)
+	log.Error(wrappedErr)
+
+	http.Error(writer, wrappedErr.Error(), httpErrorCode)
 }

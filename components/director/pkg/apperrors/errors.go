@@ -73,3 +73,57 @@ func IsNotUnique(err error) bool {
 	}
 	return false
 }
+
+type InvalidCast interface {
+	InvalidCast()
+}
+
+type invalidStringCastError struct{}
+
+func NewInvalidStringCastError() *invalidStringCastError {
+	return &invalidStringCastError{}
+}
+
+func (e *invalidStringCastError) Error() string {
+	return "unable to cast the value to a string type"
+}
+
+func (invalidStringCastError) InvalidCast() {}
+
+func IsInvalidCast(err error) bool {
+	if cause := errors.Cause(err); cause != nil {
+		err = cause
+	}
+
+	_, ok := err.(InvalidCast)
+	return ok
+}
+
+type KeyDoesNotExist interface {
+	KeyDoesNotExist()
+}
+
+type keyDoesNotExistError struct {
+	key string
+}
+
+func NewKeyDoesNotExistError(key string) *keyDoesNotExistError {
+	return &keyDoesNotExistError{
+		key: key,
+	}
+}
+
+func (e *keyDoesNotExistError) Error() string {
+	return fmt.Sprintf("the key (%s) does not exist in source object", e.key)
+}
+
+func (keyDoesNotExistError) KeyDoesNotExist() {}
+
+func IsKeyDoesNotExist(err error) bool {
+	if cause := errors.Cause(err); cause != nil {
+		err = cause
+	}
+
+	_, ok := err.(KeyDoesNotExist)
+	return ok
+}

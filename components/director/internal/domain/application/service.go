@@ -213,7 +213,7 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	return exist, nil
 }
 
-func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string, error) {
+func (s *service) Create(ctx context.Context, in model.ApplicationCreateInput) (string, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
@@ -257,13 +257,8 @@ func (s *service) Create(ctx context.Context, in model.ApplicationInput) (string
 	return id, nil
 }
 
-func (s *service) Update(ctx context.Context, id string, in model.ApplicationInput) error {
-	appTenant, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return err
-	}
-
-	err = in.Validate()
+func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error {
+	err := in.Validate()
 	if err != nil {
 		return err
 	}
@@ -273,33 +268,13 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationInp
 		return errors.Wrap(err, "while getting Application")
 	}
 
-	currentStatuts := app.Status
-
-	app = in.ToApplication(currentStatuts.Timestamp, currentStatuts.Condition, app.ID, app.Tenant)
+	app.Name = in.Name
+	app.Description = in.Description
+	app.HealthCheckURL = in.HealthCheckURL
 
 	err = s.appRepo.Update(ctx, app)
 	if err != nil {
 		return errors.Wrap(err, "while updating Application")
-	}
-
-	err = s.deleteRelatedResources(ctx, app.Tenant, id)
-	if err != nil {
-		return errors.Wrap(err, "while deleting related Application resources")
-	}
-
-	err = s.labelRepo.DeleteAll(ctx, appTenant, model.ApplicationLabelableObject, id)
-	if err != nil {
-		return errors.Wrapf(err, "while deleting all labels for Application")
-	}
-
-	err = s.createRelatedResources(ctx, in, app.Tenant, app.ID)
-	if err != nil {
-		return errors.Wrap(err, "while creating related Application resources")
-	}
-
-	err = s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
-	if err != nil {
-		return errors.Wrapf(err, "while creating multiple labels for Application")
 	}
 
 	return nil
@@ -413,7 +388,7 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 	return nil
 }
 
-func (s *service) createRelatedResources(ctx context.Context, in model.ApplicationInput, tenant string, applicationID string) error {
+func (s *service) createRelatedResources(ctx context.Context, in model.ApplicationCreateInput, tenant string, applicationID string) error {
 	var err error
 	var webhooks []*model.Webhook
 	for _, item := range in.Webhooks {

@@ -107,7 +107,7 @@ input APISpecInput {
 	fetchRequest: FetchRequestInput
 }
 
-input ApplicationInput {
+input ApplicationCreateInput {
 	name: String!
 	description: String
 	labels: Labels
@@ -116,6 +116,12 @@ input ApplicationInput {
 	apis: [APIDefinitionInput!]
 	eventAPIs: [EventAPIDefinitionInput!]
 	documents: [DocumentInput!]
+}
+
+input ApplicationUpdateInput {
+	name: String!
+	description: String
+	healthCheckURL: String
 }
 
 input AuthInput {
@@ -517,6 +523,8 @@ type Query {
 	labelDefinitions: [LabelDefinition!]! @hasScopes(path: "graphql.query.labelDefinitions")
 	labelDefinition(key: String!): LabelDefinition @hasScopes(path: "graphql.query.labelDefinition")
 	healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: PageCursor): HealthCheckPage! @hasScopes(path: "graphql.query.healthChecks")
+	api(id: ID!): APIDefinition @hasScopes(path: "graphql.query.api")
+	eventAPI(id: ID!): EventAPIDefinition @hasScopes(path: "graphql.query.eventAPI")
 	"""
 	Maximum `first` parameter value is 100
 	"""
@@ -525,8 +533,8 @@ type Query {
 }
 
 type Mutation {
-	createApplication(in: ApplicationInput!): Application! @hasScopes(path: "graphql.mutation.createApplication")
-	updateApplication(id: ID!, in: ApplicationInput!): Application! @hasScopes(path: "graphql.mutation.updateApplication")
+	createApplication(in: ApplicationCreateInput!): Application! @hasScopes(path: "graphql.mutation.createApplication")
+	updateApplication(id: ID!, in: ApplicationUpdateInput!): Application! @hasScopes(path: "graphql.mutation.updateApplication")
 	deleteApplication(id: ID!): Application! @hasScopes(path: "graphql.mutation.deleteApplication")
 	createRuntime(in: RuntimeInput!): Runtime! @hasScopes(path: "graphql.mutation.createRuntime")
 	updateRuntime(id: ID!, in: RuntimeInput!): Runtime! @hasScopes(path: "graphql.mutation.updateRuntime")

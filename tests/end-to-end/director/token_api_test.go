@@ -1,4 +1,4 @@
-//+build !no_token_test
+//+build !ignore_external_dependencies
 
 package director
 
@@ -11,7 +11,7 @@ import (
 
 //This test also test runtime/application auths custom resolver
 //TODO: Currently we don't save OneTimeToken mutations in examples, because those tests are turn off in gen_examples.sh,
-// because we need connector up and running, whic requires k8s cluster running.
+// because we need connector up and running, which requires k8s cluster running.
 func TestTokenGeneration(t *testing.T) {
 	t.Run("Generate one time token for Runtime", func(t *testing.T) {
 		//GIVEN

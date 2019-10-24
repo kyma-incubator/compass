@@ -12,13 +12,15 @@ import (
 
 func newAuthorizedGraphQLClient(bearerToken string) *gcli.Client {
 	authorizedClient := newAuthorizedHTTPClient(bearerToken)
-	return gcli.NewClient(getDirectorURL(), gcli.WithHTTPClient(authorizedClient))
+	return gcli.NewClient(getDirectorGraphqlURL(), gcli.WithHTTPClient(authorizedClient))
 }
 
-func getDirectorURL() string {
-	url := os.Getenv("DIRECTOR_GRAPHQL_API")
+func getDirectorGraphqlURL() string {
+	url := os.Getenv("DIRECTOR_URL")
 	if url == "" {
 		url = "http://127.0.0.1:3000/graphql"
+	} else {
+		url = url + "/graphql"
 	}
 	return url
 }

@@ -1,11 +1,12 @@
 package proxy
 
 import (
-	"github.com/pkg/errors"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 type Proxy struct {

@@ -1,9 +1,9 @@
 # Authentication and Authorization
 
 ## Introduction
-Currently, communication between the Compass and both [Runtimes](./../terminology.md#runtime) and [Applications](./../terminology.md#application) is not secured. We need to provide some security possibilities.
+Currently, communication between the Compass and both Runtimes and Applications is not secured. We need to provide some security possibilities.
 We want to secure the Compass using ORY's Hydra and OathKeeper. There will be three ways of authentication:
- - OAuth 2.0 
+ - OAuth 2.0
  - Client Certificates (mTLS)
  - JWT token issued by identity service
 
@@ -21,11 +21,11 @@ It is an OathKeeper [hydrator](https://github.com/ory/docs/blob/525608c656945393
 
 To unify the approach for mapping, we introduce `authorization_id`, widely used by multiple authentication flows.
 The `authorization_id` is equal to:
-- `client_id` in OAuth 2.0 authentication flow 
+- `client_id` in OAuth 2.0 authentication flow
 - `username` in Basic authentication flow
 - Common Name (CN) in Certificates authentication flow
 
-While generating one-time token, `client_id`/`client_secret` pair or basic authentication details for Runtime/Application/[Integration System](./../terminology.md#integration-system) (using proper GraphQL mutation on Director), an entry in `system_auths` table in Director database is created. The `system_auths` table is used for tenant mapping.
+While generating one-time token, `client_id`/`client_secret` pair or basic authentication details for Runtime/Application/Integration System (using proper GraphQL mutation on Director), an entry in `system_auths` table in Director database is created. The `system_auths` table is used for tenant mapping.
 
 In certificates authentication flow, Tenant Mapping Handler puts fixed `scopes` into authentication session. The `scopes` are fixed in code, and they depends of type of the object (Application / Runtime / Integration System). In future we may introduce another database table for storing generic Application / Runtime / Integration System scopes.
 
@@ -47,14 +47,14 @@ The Gateway passes request along with JWT token to Compass GraphQL services, suc
 
 #### HTTP middleware
 
-In GraphQL servers, such as Director or Connector, there is a HTTP authentication middleware set up, which validates and decodes JWT token. It puts user scopes and tenant in request context 
+In GraphQL servers, such as Director or Connector, there is a HTTP authentication middleware set up, which validates and decodes JWT token. It puts user scopes and tenant in request context
 (`context.Context`).
 
 ![](./assets/graphql-security.svg)
 
 #### GraphQL Directives
 
-When GraphQL operation is processed, an authorization directive is triggered, before actual GraphQL resolver. It checks if the client has required scopes to do the requested operation. To avoid defining permissions statically in GraphQL schema, a YAML file is loaded with needed requests. In fact, it is a ConfigMap injected to Director/Connector. 
+When GraphQL operation is processed, an authorization directive is triggered, before actual GraphQL resolver. It checks if the client has required scopes to do the requested operation. To avoid defining permissions statically in GraphQL schema, a YAML file is loaded with needed requests. In fact, it is a ConfigMap injected to Director/Connector.
 
 The following example illustrates how we can implement dynamic comparison between required scopes and request scopes for example mutations, queries and type fields:
 
@@ -73,7 +73,7 @@ type Query {
 }
 
 type Application {
-    id: ID! 
+    id: ID!
     name: String!
     description: String
     labels(key: String): Labels!
@@ -138,11 +138,11 @@ There are two ways of creating a `client_id` and `client_secret` pair in the Hyd
 **Request flow:**
 
 1. Authenticator calls Hydra for introspection of the token.
-1. If the token is valid, OathKeeper sends the request to Hydrator. 
+1. If the token is valid, OathKeeper sends the request to Hydrator.
 1. Hydrator calls Tenant Mapping Handler hosted by `Director` to get `tenant` based on a `client_id` (`client_id` is the ID of `SystemAuth` entry related to given Runtime/Application/IntegrationSystem) .
 1. Hydrator passes response to ID_Token mutator which constructs a JWT token with scopes and `tenant` in the payload.
 1. The request is then forwarded to the desired component (such as `Director` or `Connector`) through the `Gateway` component.
- 
+
 ![Auth](./assets/oauth2-security-diagram.svg)
 
 **Scopes**
@@ -157,7 +157,7 @@ In this authentication flow, scopes are read from OAuth 2.0 access token and wri
 
 **Obtaining token:**
 
-User logs in to Compass UI 
+User logs in to Compass UI
 
 **Request flow:**
 
@@ -166,7 +166,7 @@ User logs in to Compass UI
 1. Hydrator calls Tenant Mapping Handler hosted by `Director`, which, in production environment, returns **the same** authentication session (as the `tenant` is already in place). For local development, user `tenant` and `scopes` are loaded from ConfigMap, where static `user - tenant and scopes` mapping is done.
 1. Hydrator passes response to ID_Token mutator which constructs a JWT token with scopes and `tenant` in the payload.
 1. The request is then forwarded to the desired component (such as `Director` or `Connector`) through the `Gateway` component.
- 
+
 ![Auth](./assets/dex-security-diagram.svg)
 
 **Scopes**
@@ -194,24 +194,24 @@ foo@bar.com:
 
 **Compass Connector flow:**
 
-1. Runtime/Application makes a call to the Connector to the certificate-secured subdomain. 
-2. Istio verifies the client certificate. If the certificate is invalid, Istio rejects the request. 
+1. Runtime/Application makes a call to the Connector to the certificate-secured subdomain.
+2. Istio verifies the client certificate. If the certificate is invalid, Istio rejects the request.
 3. The certificate info (subject and certificate hash) is added to the `Certificate-Data` header.
-4. The OathKeeper uses the Certificate Resolver as a mutator, which turns the `Certificate-Data` header into the `Client-Certificate-Hash` header and the `Client-Id-From-Certificate` header. If the certificate has been revoked, the two headers are empty. 
+4. The OathKeeper uses the Certificate Resolver as a mutator, which turns the `Certificate-Data` header into the `Client-Certificate-Hash` header and the `Client-Id-From-Certificate` header. If the certificate has been revoked, the two headers are empty.
 5. The request is forwarded to the Connector through the Compass Gateway.
 
 ![Auth](./assets/certificate-security-diagram-connector.svg)
 
 **Compass Director Flow:**
 
-1. Runtime/Application makes a call to the Director to the certificate-secured subdomain. 
-2. Istio verifies the client certificate. If the certificate is invalid, Istio rejects the request. 
+1. Runtime/Application makes a call to the Director to the certificate-secured subdomain.
+2. Istio verifies the client certificate. If the certificate is invalid, Istio rejects the request.
 3. The certificate info (subject and certificate hash) is added to the `Certificate-Data` header.
-4. The OathKeeper uses the Certificate Resolver as a mutator, which turns the `Certificate-Data` header into the `Client-Certificate-Hash` header and the `Client-Id-From-Certificate` header. If the certificate has been revoked, the two headers are empty. 
-5. The call is then proxied to the Tenant mapping handler, where the `client_id` is mapped onto the `tenant` and returned to the OathKeeper. If the Common Name is invalid, the `tenant` will be empty. 
+4. The OathKeeper uses the Certificate Resolver as a mutator, which turns the `Certificate-Data` header into the `Client-Certificate-Hash` header and the `Client-Id-From-Certificate` header. If the certificate has been revoked, the two headers are empty.
+5. The call is then proxied to the Tenant mapping handler, where the `client_id` is mapped onto the `tenant` and returned to the OathKeeper. If the Common Name is invalid, the `tenant` will be empty.
 6. Hydrator passes the response to ID_Token mutator which constructs a JWT token with scopes and tenant in the payload.
 7. The OathKeeper proxies the request further to the Compass Gateway.
-8. The request is forwarded to the Director. 
+8. The request is forwarded to the Director.
 
 ![Auth](./assets/certificate-security-diagram-director.svg)
 

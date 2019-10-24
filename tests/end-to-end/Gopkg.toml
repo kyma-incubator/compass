@@ -16,12 +16,16 @@ required = [
   branch = "master"
 
 [[constraint]]
-  name = "github.com/google/uuid"
-  version = "1.1.1"
-
-[[constraint]]
   name = "github.com/stretchr/testify"
   version = "v1.4.0"
+
+[[constraint]]
+  name = "github.com/Masterminds/sprig"
+  version = "v2.22.0"
+
+[[override]]
+  name = "github.com/mitchellh/copystructure"
+  version = "v1.0.0"
 
 [prune]
   go-tests = true
