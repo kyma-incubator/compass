@@ -36,11 +36,13 @@ Read [this](https://kyma-project.io/docs/master/components/compass/#installation
 
 If you already have a running Kyma instance in at least 1.6 version, with created Secrets and Tiller client certificates, you can install the Compass Helm chart using this command:
 ```bash
+kubectl create namespace compass-system
 helm install --name "compass" ./chart/compass --tls
 ```
 
 For local installation, specify additional parameters:
 ```bash
+kubectl create namespace compass-system
 helm install --set=global.isLocalEnv=true --set=global.minikubeIP=$(eval minikube ip) --name "compass" ./chart/compass --tls
 ```
 
