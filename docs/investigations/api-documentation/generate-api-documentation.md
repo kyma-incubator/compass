@@ -50,3 +50,10 @@ Cons
 * requires much more work
 * has to be maintained
 
+## Decision
+
+The decision made by the team is that we will implement the first option, and maybe in the future we will add more features to it.
+Right now it will still improve the newcomer experience.
+
+The second option was rejected due to the high effort to customize the tools to our needs.
+
