@@ -38,7 +38,7 @@ func Test_E2e(t *testing.T) {
 	provisioningInput := gqlschema.ProvisionRuntimeInput{
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GcpConfig: &gqlschema.GCPConfigInput{
-				Name:              "tests-runtime-" + testSuite.TestId, // TODO - should be complient with cleaners
+				Name:              "gke-provisioner-test-" + testSuite.TestId,
 				ProjectName:       config.GCPProjectName,
 				KubernetesVersion: "1.14",
 				NumberOfNodes:     3,
