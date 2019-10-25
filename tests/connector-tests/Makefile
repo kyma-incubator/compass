@@ -10,7 +10,3 @@ VERIFY_IGNORE := /vendor\|/automock\|/testdata
 verify:: vet
 
 test-local: ;
-
-.PHONY: ci-pr
-#Temporary
-ci-pr: release

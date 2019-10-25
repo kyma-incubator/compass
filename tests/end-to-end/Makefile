@@ -39,7 +39,3 @@ test-e2e:
 
 clean-up:
 	@docker network rm gen-examples-network
-
-.PHONY: ci-pr
-#Temporary
-ci-pr: release

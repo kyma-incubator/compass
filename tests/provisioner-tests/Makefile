@@ -8,8 +8,3 @@ include $(SCRIPTS_DIR)/generic_make_go.mk
 verify:: vet
 
 test-local: ;
-
-.PHONY: ci-pr
-#Temporary
-ci-pr: release
-

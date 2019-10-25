@@ -7,7 +7,3 @@ SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 include $(SCRIPTS_DIR)/generic_make_go.mk
 
 verify:: gqlgen check-gqlgen
-
-.PHONY: ci-pr
-#Temporary
-ci-pr: release
