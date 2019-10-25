@@ -163,18 +163,17 @@ func (r *service) startProvisioning(operationID, runtimeID string, config model.
 	info, err := r.hydroform.ProvisionCluster(config, secretName)
 
 	if err != nil || info.ClusterStatus != types.Provisioned {
+		log.Errorf("Provisioning runtime %s failed: %s", runtimeID, err.Error())
 		updateOperationStatus(func() error {
-			log.Errorf("Provisioning runtime %s failed: %s", runtimeID, err.Error())
 			return r.persistenceService.SetAsFailed(operationID, err.Error())
 		})
 	} else {
+		log.Infof("Provisioning runtime %s finished successfully", runtimeID)
 		updateOperationStatus(func() error {
 			err := r.persistenceService.Update(runtimeID, info.KubeConfig, info.State)
 			if err != nil {
-				log.Errorf("Provisioning runtime %s failed: %s", runtimeID, err.Error())
 				return r.persistenceService.SetAsFailed(operationID, err.Error())
 			}
-			log.Infof("Provisioning runtime %s finished successfully", runtimeID)
 			return r.persistenceService.SetAsSucceeded(operationID)
 		})
 	}
@@ -186,13 +185,13 @@ func (r *service) startDeprovisioning(operationID, runtimeID string, config mode
 	err := r.hydroform.DeprovisionCluster(config, secretName, cluster.TerraformState)
 
 	if err != nil {
+		log.Errorf("Deprovisioning runtime %s failed: %s", runtimeID, err.Error())
 		updateOperationStatus(func() error {
-			log.Errorf("Deprovisioning runtime %s failed: %s", runtimeID, err.Error())
 			return r.persistenceService.SetAsFailed(operationID, err.Error())
 		})
 	} else {
+		log.Infof("Deprovisioning runtime %s finished successfully", runtimeID)
 		updateOperationStatus(func() error {
-			log.Infof("Deprovisioning runtime %s finished successfully", runtimeID)
 			return r.persistenceService.SetAsSucceeded(operationID)
 		})
 	}
