@@ -1,6 +1,7 @@
 package provisioner
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -142,11 +143,16 @@ func (ts *TestSuite) KubernetesClientFromRawConfig(t *testing.T, rawConfig strin
 }
 
 func (ts *TestSuite) saveCredentialsToSecret(credentials string) error {
+	decodedCredentials, err := base64.StdEncoding.DecodeString(ts.config.GCPCredentials)
+	if err != nil {
+		return errors.Errorf("Failed to decode credentials from base64: %s", err.Error())
+	}
+
 	logrus.Infof("Creating credentials secret %s ...", ts.CredentialsSecretName)
-	_, err := ts.secretsClient.Create(&v1.Secret{
+	_, err = ts.secretsClient.Create(&v1.Secret{
 		ObjectMeta: v1meta.ObjectMeta{Name: ts.CredentialsSecretName},
-		StringData: map[string]string{
-			provisionerCredentialsSecretKey: credentials,
+		Data: map[string][]byte{
+			provisionerCredentialsSecretKey: decodedCredentials,
 		},
 	})
 	if err != nil {

@@ -12,6 +12,7 @@ type TestConfig struct {
 	InternalProvisionerURL string `envconfig:"default=http://localhost:3000/graphql"`
 	CredentialsNamespace   string `envconfig:"default=compass-system"`
 
+	// GCPCredentials is base64 encoded service account key
 	GCPCredentials string
 	GCPProjectName string
 
