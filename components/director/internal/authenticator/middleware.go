@@ -16,7 +16,10 @@ import (
 	"github.com/lestrrat-go/jwx/jwk"
 )
 
-const AuthorizationHeaderKey = "Authorization"
+const (
+	AuthorizationHeaderKey = "Authorization"
+	Bearer                 = "Bearer"
+)
 
 type Authenticator struct {
 	jwksEndpoint        string
@@ -71,13 +74,19 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 }
 
 func (a *Authenticator) getBearerToken(r *http.Request) (string, error) {
-	reqToken := r.Header.Get(AuthorizationHeaderKey)
-	if reqToken == "" {
-		return "", errors.New("invalid bearer token")
+	authHeader := r.Header.Get(AuthorizationHeaderKey)
+	if authHeader == "" {
+		return "", fmt.Errorf("no token header provided")
 	}
 
-	reqToken = strings.TrimPrefix(reqToken, "Bearer ")
-	return reqToken, nil
+	splittedAuthHeader := strings.SplitN(authHeader, " ", 2)
+	if len(splittedAuthHeader) != 2 || splittedAuthHeader[0] != Bearer {
+		return "", fmt.Errorf("invalid token header structure")
+	}
+
+	token := splittedAuthHeader[1]
+
+	return token, nil
 }
 
 func (a *Authenticator) contextWithClaims(ctx context.Context, claims Claims) context.Context {
