@@ -162,7 +162,7 @@
   name = "github.com/kyma-incubator/compass"
   packages = ["components/provisioner/pkg/gqlschema"]
   pruneopts = "NUT"
-  revision = "c127658373fa23767adc574fb68eb6ea582bbce3"
+  revision = "6e6d642146a93255bf1108c5e2d2d27c81ec5a29"
   source = "github.com/akgalwas/compass"
 
 [[projects]]
@@ -315,14 +315,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:4564e73a91c36a91aee34845c938a24b166df8026ceb847174383acf4a1c4bce"
+  digest = "1:2af814e5671fd6f7768085c7701a67b9484bf83aedaf9d6f4b78d9faa756f210"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "NUT"
-  revision = "e66fe6eb8e0cbfacade8b490cf55cd2494f4db62"
+  revision = "6c3a3bfe00aeca2b8685f04a482824367e7d2135"
 
 [[projects]]
   digest = "1:8d8faad6b12a3a4c819a3f9618cb6ee1fa1cfc33253abeeea8b55336721e3405"
@@ -359,7 +359,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:6fbd212251e2ae973e65950527c28fc39f0030e795a75875e3dccfd463ab59aa"
+  digest = "1:5a7c8d010cd7ab179cdf8ba957159c16924812558eb4d11656e561c4f423ba6c"
   name = "golang.org/x/tools"
   packages = [
     "cmd/goimports",
@@ -377,7 +377,7 @@
     "internal/span",
   ]
   pruneopts = "NUT"
-  revision = "7defa796fec08ff4180eae3379da47019ad16019"
+  revision = "2077df36852e9a22c3b78f535833d3e54e9fcc8a"
 
 [[projects]]
   digest = "1:c381a96ea5276e8c5e98b2fa4fab83be71a959ff37dc51117555dc5059390c18"
