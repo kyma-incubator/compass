@@ -34,6 +34,8 @@ ifneq (,$(shell go version 2>/dev/null))
 DOCKER_CREATE_OPTS := -v $(shell go env GOCACHE):$(IMG_GOCACHE):delegated -v $(shell go env GOPATH)/pkg/dep:$(IMG_GOPATH)/pkg/dep:delegated $(DOCKER_CREATE_OPTS)
 endif
 
+.DEFAULT_GOAL := verify
+
 # Check if running with TTY
 ifeq (1, $(shell [ -t 0 ] && echo 1))
 DOCKER_INTERACTIVE := -i
@@ -61,14 +63,14 @@ $(1):
 	@docker start $(DOCKER_INTERACTIVE_START) $(DOCKER_INTERACTIVE) $$(container)
 endef
 
-.PHONY: verify format release
+.PHONY: verify format release check-gqlgen
 
 # You may add additional targets/commands to be run on format and verify. Declare the target again in your makefile,
 # using two double colons. For example to run errcheck on verify add this to your makefile:
 #
 #   verify:: errcheck
 #
-verify:: test check-imports check-fmt
+verify:: test check-imports check-fmt errcheck
 format:: imports fmt
 
 release: resolve dep-status verify build-image push-image
@@ -83,7 +85,7 @@ docker-create-opts:
 	@echo $(DOCKER_CREATE_OPTS)
 
 # Targets mounting sources to buildpack
-MOUNT_TARGETS = build resolve ensure dep-status check-imports imports check-fmt fmt errcheck vet generate pull-licenses
+MOUNT_TARGETS = build resolve ensure dep-status check-imports imports check-fmt fmt errcheck vet generate pull-licenses gqlgen
 $(foreach t,$(MOUNT_TARGETS),$(eval $(call buildpack-mount,$(t))))
 
 build-local:
@@ -100,25 +102,44 @@ dep-status-local:
 	dep status -v
 
 check-imports-local:
-	exit $(shell goimports -l $$($(FILES_TO_CHECK)) | wc -l | xargs)
+	@if [ -n "$$(goimports -l $$($(FILES_TO_CHECK)))" ]; then \
+		echo "✗ some files contain not propery formatted imports. To repair run make imports-local"; \
+		goimports -l $$($(FILES_TO_CHECK)); \
+		exit 1; \
+	fi;
 
 imports-local:
 	goimports -w -l $$($(FILES_TO_CHECK))
 
 check-fmt-local:
-	exit $(shell gofmt -l $$($(FILES_TO_CHECK)) | wc -l | xargs)
+	@if [ -n "$$(gofmt -l $$($(FILES_TO_CHECK)))" ]; then \
+		gofmt -l $$($(FILES_TO_CHECK)); \
+		echo "✗ some files contain not propery formatted imports. To repair run make imports-local"; \
+		exit 1; \
+	fi;
 
 fmt-local:
 	go fmt $$($(DIRS_TO_CHECK))
 
 errcheck-local:
-	errcheck -blank -asserts -ignorepkg '$$($(DIRS_TO_IGNORE) | tr '\n' ',')' -ignoregenerated ./...
+	errcheck -blank -asserts -ignorepkg '$$($(DIRS_TO_CHECK) | tr '\n' ',')' -ignoregenerated ./...
 
 vet-local:
 	go vet $$($(DIRS_TO_CHECK))
 
 generate-local:
 	go genrate ./...
+
+gqlgen-local:
+	./gqlgen.sh
+
+check-gqlgen:
+	@echo make gqlgen-check
+	@if [ -n "$$(git status -s pkg/graphql)" ]; then \
+		echo -e "${RED}✗ gqlgen.sh modified some files, schema and code are out-of-sync${NC}"; \
+		git status -s pkg/graphql; \
+		exit 1; \
+	fi;
 
 pull-licenses-local:
 ifdef LICENSE_PULLER_PATH

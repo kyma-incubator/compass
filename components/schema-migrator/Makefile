@@ -1,19 +1,13 @@
-IMG_NAME = compass-schema-migrator
-IMG = $(DOCKER_PUSH_REPOSITORY)$(DOCKER_PUSH_DIRECTORY)/$(IMG_NAME)
-TAG = $(DOCKER_TAG)
+APP_NAME = compass-schema-migrator
+APP_PATH = components/schema-migrator
+BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20190913-65b55d1
+SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 
-.PHONY: ci-pr ci-master ci-release build-image push-image
+include $(SCRIPTS_DIR)/generic_make_go.mk
 
-ci-pr: validate push-image
-ci-master: validate push-image
-ci-release: validate push-image
+.PHONY: validate
 
-build-image:
-	docker build -t $(IMG_NAME) .
-
-validate: build-image
+validate:
 	./validate.sh
 
-push-image:
-	docker tag $(IMG_NAME) $(IMG):$(TAG)
-	docker push $(IMG):$(TAG)
+verify:: validate

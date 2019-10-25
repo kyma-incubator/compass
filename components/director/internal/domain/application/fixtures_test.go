@@ -13,6 +13,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	testURL = "https://foo.bar"
+)
+
 func fixApplicationPage(applications []*model.Application) *model.ApplicationPage {
 	return &model.ApplicationPage{
 		Data: applications,
@@ -49,6 +53,19 @@ func fixModelApplication(id, tenant, name, description string) *model.Applicatio
 	}
 }
 
+func fixModelApplicationWithAllUpdatableFields(id, tenant, name, description, url string) *model.Application {
+	return &model.Application{
+		ID:     id,
+		Tenant: tenant,
+		Status: &model.ApplicationStatus{
+			Condition: model.ApplicationStatusConditionInitial,
+		},
+		Name:           name,
+		Description:    &description,
+		HealthCheckURL: &url,
+	}
+}
+
 func fixGQLApplication(id, name, description string) *graphql.Application {
 	return &graphql.Application{
 		ID: id,
@@ -64,7 +81,6 @@ func fixDetailedModelApplication(t *testing.T, id, tenant, name, description str
 	time, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
 
-	url := "https://foo.bar"
 	return &model.Application{
 		ID: id,
 		Status: &model.ApplicationStatus{
@@ -74,14 +90,13 @@ func fixDetailedModelApplication(t *testing.T, id, tenant, name, description str
 		Name:           name,
 		Description:    &description,
 		Tenant:         tenant,
-		HealthCheckURL: &url,
+		HealthCheckURL: &testURL,
 	}
 }
 
 func fixDetailedGQLApplication(t *testing.T, id, name, description string) *graphql.Application {
 	time, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
-	url := "https://foo.bar"
 
 	return &graphql.Application{
 		ID: id,
@@ -91,14 +106,13 @@ func fixDetailedGQLApplication(t *testing.T, id, name, description string) *grap
 		},
 		Name:           name,
 		Description:    &description,
-		HealthCheckURL: &url,
+		HealthCheckURL: &testURL,
 	}
 }
 
 func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description string) *application.Entity {
 	ts, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
-	url := "https://foo.bar"
 
 	return &application.Entity{
 		ID:              id,
@@ -107,22 +121,20 @@ func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description st
 		Description:     repo.NewValidNullableString(description),
 		StatusCondition: string(model.ApplicationStatusConditionInitial),
 		StatusTimestamp: ts,
-		HealthCheckURL:  repo.NewValidNullableString(url),
+		HealthCheckURL:  repo.NewValidNullableString(testURL),
 	}
 }
 
-func fixModelApplicationInput(name, description string) model.ApplicationInput {
-	url := "https://foo.bar"
-
+func fixModelApplicationCreateInput(name, description string) model.ApplicationCreateInput {
 	desc := "Sample"
 	kind := "test"
-	return model.ApplicationInput{
+	return model.ApplicationCreateInput{
 		Name:        name,
 		Description: &description,
 		Labels: map[string]interface{}{
 			"test": []string{"val", "val2"},
 		},
-		HealthCheckURL: &url,
+		HealthCheckURL: &testURL,
 		Webhooks: []*model.WebhookInput{
 			{URL: "webhook1.foo.bar"},
 			{URL: "webhook2.foo.bar"},
@@ -142,18 +154,25 @@ func fixModelApplicationInput(name, description string) model.ApplicationInput {
 	}
 }
 
-func fixGQLApplicationInput(name, description string) graphql.ApplicationInput {
+func fixModelApplicationUpdateInput(name, description, url string) model.ApplicationUpdateInput {
+	return model.ApplicationUpdateInput{
+		Name:           name,
+		Description:    &description,
+		HealthCheckURL: &url,
+	}
+}
+
+func fixGQLApplicationCreateInput(name, description string) graphql.ApplicationCreateInput {
 	labels := graphql.Labels{
 		"test": []string{"val", "val2"},
 	}
-	url := "https://foo.bar"
 	kind := "test"
 	desc := "Sample"
-	return graphql.ApplicationInput{
+	return graphql.ApplicationCreateInput{
 		Name:           name,
 		Description:    &description,
 		Labels:         &labels,
-		HealthCheckURL: &url,
+		HealthCheckURL: &testURL,
 		Webhooks: []*graphql.WebhookInput{
 			{URL: "webhook1.foo.bar"},
 			{URL: "webhook2.foo.bar"},
@@ -170,6 +189,14 @@ func fixGQLApplicationInput(name, description string) graphql.ApplicationInput {
 			{DisplayName: "doc1", Kind: &kind},
 			{DisplayName: "doc2", Kind: &kind},
 		},
+	}
+}
+
+func fixGQLApplicationUpdateInput(name, description, url string) graphql.ApplicationUpdateInput {
+	return graphql.ApplicationUpdateInput{
+		Name:           name,
+		Description:    &description,
+		HealthCheckURL: &url,
 	}
 }
 

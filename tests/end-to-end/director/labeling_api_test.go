@@ -813,10 +813,12 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 
 	createLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, tenantID)
 
-	appInput := graphql.ApplicationInput{Name: name,
+	appInput := graphql.ApplicationCreateInput{
+		Name: name,
 		Labels: &graphql.Labels{
 			scenariosLabel: []string{"Christmas", "New Year"},
-		}}
+		},
+	}
 
 	application := createApplicationFromInputWithinTenant(t, ctx, appInput, tenantID)
 	require.NotEmpty(t, application.ID)

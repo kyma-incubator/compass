@@ -1,30 +1,41 @@
-IMG_NAME = compass-end-to-end-test
-IMG = $(DOCKER_PUSH_REPOSITORY)$(DOCKER_PUSH_DIRECTORY)/$(IMG_NAME)
-TAG = $(DOCKER_TAG)
+APP_NAME = compass-end-to-end-test
+APP_PATH = tests/end-to-end
+BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20190913-65b55d1
+SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
+DIRECTOR_GRAPHQL_API = "http://compass-dev-director:3000"
+export DIRECTOR_GRAPHQL_API
 
+include $(SCRIPTS_DIR)/generic_make_go.mk
 
-.PHONY: ci-pr ci-master ci-release resolve build-and-test build-image push-image pull-licenses
+.PHONY: gen-examples test-e2e clean-up
 
-ci-pr: resolve build-and-test build-image push-image
-ci-master: resolve build-and-test build-image push-image
-ci-release: resolve build-and-test build-image push-image
+VERIFY_IGNORE := /vendor\|/automock\|/testdata
 
-resolve:
-	dep ensure -v -vendor-only
-pull-licenses:
-ifdef LICENSE_PULLER_PATH
-	bash $(LICENSE_PULLER_PATH)
-else
-	mkdir -p licenses
-endif
-build-and-test:
-ifndef PROW_JOB_ID
-	./before-commit.sh
-else
-	./before-commit.sh ci
-endif
-build-image: pull-licenses
-	docker build -t $(IMG_NAME) .
-push-image:
-	docker tag $(IMG_NAME) $(IMG):$(TAG)
-	docker push $(IMG):$(TAG)
+verify:: test-e2e
+
+$(eval $(call test-local))
+
+# We have to override test-local, because we need to run director with database as docker containers and connected with custom network
+# and the container itsefl has to be connected to the network
+test-local: ;
+
+test-e2e:
+	@echo make test-e2e
+	@docker network create --driver bridge gen-examples-network
+	@docker run $(DOCKER_INTERACTIVE) \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v $(COMPONENT_DIR)/../../:$(WORKSPACE_COMPONENT_DIR)/../../ \
+		-v $(COMPONENT_DIR)/../../components/director:$(WORKSPACE_COMPONENT_DIR)/../../components/director:delegated \
+		-e HOST_ROOT_PATH=$(COMPONENT_DIR)/../.. \
+		--network=gen-examples-network \
+		-v $(COMPONENT_DIR):$(WORKSPACE_COMPONENT_DIR):delegated \
+		$(DOCKER_CREATE_OPTS) 	./gen-examples.sh
+	@docker network rm gen-examples-network
+	@if [ -n "$$(git status -s ../../examples )" ]; then \
+		echo -e "✗ Code and examples are out-of-sync" \
+		git status -s ; \
+		exit 1; \
+	fi;
+
+clean-up:
+	@docker network rm gen-examples-network

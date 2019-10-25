@@ -148,7 +148,7 @@ func TestService_Create(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 
@@ -310,7 +310,7 @@ func TestService_ListForObject(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 
@@ -402,7 +402,7 @@ func TestService_GetByIDForObject(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 
@@ -422,7 +422,7 @@ func TestService_DeleteByIDForObject(t *testing.T) {
 			Name: "Success deleting auth for Runtime",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("Delete", contextThatHasTenant(testTenant), testTenant, sysAuthID).Return(nil)
+				sysAuthRepo.On("DeleteByIDForObject", contextThatHasTenant(testTenant), testTenant, sysAuthID, model.RuntimeReference).Return(nil)
 				return sysAuthRepo
 			},
 			InputObjectType: model.RuntimeReference,
@@ -432,7 +432,7 @@ func TestService_DeleteByIDForObject(t *testing.T) {
 			Name: "Success deleting auth for Application",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("Delete", contextThatHasTenant(testTenant), testTenant, sysAuthID).Return(nil)
+				sysAuthRepo.On("DeleteByIDForObject", contextThatHasTenant(testTenant), testTenant, sysAuthID, model.ApplicationReference).Return(nil)
 				return sysAuthRepo
 			},
 			InputObjectType: model.ApplicationReference,
@@ -442,7 +442,7 @@ func TestService_DeleteByIDForObject(t *testing.T) {
 			Name: "Success deleting auth for Integration System",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("Delete", contextThatHasTenant(testTenant), model.IntegrationSystemTenant, sysAuthID).Return(nil)
+				sysAuthRepo.On("DeleteByIDForObject", contextThatHasTenant(testTenant), model.IntegrationSystemTenant, sysAuthID, model.IntegrationSystemReference).Return(nil)
 				return sysAuthRepo
 			},
 			InputObjectType: model.IntegrationSystemReference,
@@ -452,7 +452,7 @@ func TestService_DeleteByIDForObject(t *testing.T) {
 			Name: "Error deleting System Auths",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("Delete", contextThatHasTenant(testTenant), testTenant, sysAuthID).Return(testErr)
+				sysAuthRepo.On("DeleteByIDForObject", contextThatHasTenant(testTenant), testTenant, sysAuthID, model.RuntimeReference).Return(testErr)
 				return sysAuthRepo
 			},
 			InputObjectType: model.RuntimeReference,
@@ -488,7 +488,7 @@ func TestService_DeleteByIDForObject(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 

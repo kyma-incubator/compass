@@ -89,9 +89,12 @@
 
 [[projects]]
   branch = "provisioner-databese-schema"
-  digest = "1:b785f5fb0206f9a385a92ae2d9151aa1e730422256fac3e915a092c93e3823f2"
+  digest = "1:3e4bc65877b26d42e30fd7f4717ec8c04ecaf47909c5f86bd29e106aa624719d"
   name = "github.com/kyma-incubator/compass"
-  packages = ["components/provisioner/pkg/gqlschema"]
+  packages = [
+    "components/provisioner/pkg/gqlschema",
+    "tests/provisioner-tests/test/testkit",
+  ]
   pruneopts = "UT"
   revision = "517a475caf10ce9fd277fc553f2ac4cf766ce32a"
   source = "github.com/Szymongib/compass"
@@ -219,6 +222,7 @@
     "github.com/google/uuid",
     "github.com/kisielk/errcheck",
     "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
+    "github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit",
     "github.com/machinebox/graphql",
     "github.com/pkg/errors",
     "github.com/stretchr/testify/assert",

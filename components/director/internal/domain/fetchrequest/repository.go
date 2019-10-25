@@ -61,7 +61,7 @@ func (r *repository) GetByReferenceObjectID(ctx context.Context, tenant string, 
 	}
 
 	var entity Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{{Field: fieldName, Val: objectID}}, &entity); err != nil {
+	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition(fieldName, objectID)}, &entity); err != nil {
 		return nil, err
 	}
 
@@ -74,7 +74,7 @@ func (r *repository) GetByReferenceObjectID(ctx context.Context, tenant string, 
 }
 
 func (r *repository) Delete(ctx context.Context, tenant, id string) error {
-	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
+	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) error {
@@ -83,7 +83,7 @@ func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant strin
 		return err
 	}
 
-	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{{Field: fieldName, Val: objectID}})
+	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition(fieldName, objectID)})
 }
 
 func (r *repository) referenceObjectFieldName(objectType model.FetchRequestReferenceObjectType) (string, error) {

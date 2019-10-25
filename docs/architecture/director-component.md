@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes [Director](../terminology.md)'s architecture.
+This document describes the Director's architecture.
 
 ## Architecture
 

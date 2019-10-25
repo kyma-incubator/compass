@@ -43,3 +43,7 @@ required = [
 [[constraint]]
   name = "github.com/hashicorp/go-multierror"
   version = "1.0.0"
+
+[[constraint]]
+  name = "github.com/ghodss/yaml"
+  branch = "master"

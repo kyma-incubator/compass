@@ -2,33 +2,33 @@ package proxy
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRequestURL(t *testing.T) {
-	testCases := []struct{
-		requestPath string
-		proxyPath string
+	testCases := []struct {
+		requestPath    string
+		proxyPath      string
 		expectedResult string
 	}{
 		{
-			requestPath: "/foo/bar/graphql",
-			proxyPath: "/foo",
+			requestPath:    "/foo/bar/graphql",
+			proxyPath:      "/foo",
 			expectedResult: "/bar/graphql",
 		},
 		{
-			requestPath: "/foo/bar/graphql",
-			proxyPath: "/",
+			requestPath:    "/foo/bar/graphql",
+			proxyPath:      "/",
 			expectedResult: "/foo/bar/graphql",
 		},
 		{
-			requestPath: "/foo/bar/graphql",
-			proxyPath: "/foo/bar/graphql",
+			requestPath:    "/foo/bar/graphql",
+			proxyPath:      "/foo/bar/graphql",
 			expectedResult: "/",
 		},
 	}
-
 
 	for tN, tC := range testCases {
 		t.Run(fmt.Sprintf("%d: Request path %s, when server is proxied on %s", tN, tC.requestPath, tC.proxyPath), func(t *testing.T) {

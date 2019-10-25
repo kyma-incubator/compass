@@ -38,20 +38,27 @@ type SystemAuthConverter interface {
 	ToGraphQL(in *model.SystemAuth) *graphql.SystemAuth
 }
 
+//go:generate mockery -name=OAuth20Service -output=automock -outpkg=automock -case=underscore
+type OAuth20Service interface {
+	DeleteMultipleClientCredentials(ctx context.Context, auths []model.SystemAuth) error
+}
+
 type Resolver struct {
 	transact persistence.Transactioner
 
 	intSysSvc        IntegrationSystemService
 	sysAuthSvc       SystemAuthService
+	oAuth20Svc       OAuth20Service
 	intSysConverter  IntegrationSystemConverter
 	sysAuthConverter SystemAuthConverter
 }
 
-func NewResolver(transact persistence.Transactioner, intSysSvc IntegrationSystemService, sysAuthSvc SystemAuthService, intSysConverter IntegrationSystemConverter, sysAuthConverter SystemAuthConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, intSysSvc IntegrationSystemService, sysAuthSvc SystemAuthService, oAuth20Svc OAuth20Service, intSysConverter IntegrationSystemConverter, sysAuthConverter SystemAuthConverter) *Resolver {
 	return &Resolver{
 		transact:         transact,
 		intSysSvc:        intSysSvc,
 		sysAuthSvc:       sysAuthSvc,
+		oAuth20Svc:       oAuth20Svc,
 		intSysConverter:  intSysConverter,
 		sysAuthConverter: sysAuthConverter,
 	}
@@ -194,6 +201,15 @@ func (r *Resolver) DeleteIntegrationSystem(ctx context.Context, id string) (*gra
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	intSys, err := r.intSysSvc.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	auths, err := r.sysAuthSvc.ListForObject(ctx, model.IntegrationSystemReference, intSys.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.oAuth20Svc.DeleteMultipleClientCredentials(ctx, auths)
 	if err != nil {
 		return nil, err
 	}

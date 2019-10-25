@@ -29,7 +29,7 @@ func TestGetSingle(t *testing.T) {
 		mock.ExpectQuery(defaultExpectedGetSingleQuery()).WithArgs(givenTenant, givenID).WillReturnRows(rows)
 		dest := User{}
 		// WHEN
-		err := sut.Get(ctx, givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}}, &dest)
+		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, &dest)
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, givenID, dest.ID)
@@ -71,7 +71,7 @@ func TestGetSingle(t *testing.T) {
 		mock.ExpectQuery(expectedQuery).WithArgs(givenTenant, "john", "doe").WillReturnRows(rows)
 		// WHEN
 		dest := User{}
-		err := sut.Get(ctx, givenTenant, repo.Conditions{{Field: "first_name", Val: "john"}, {Field: "last_name", Val: "doe"}}, &dest)
+		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("first_name", "john"), repo.NewEqualCondition("last_name", "doe")}, &dest)
 		// THEN
 		require.NoError(t, err)
 	})
@@ -84,7 +84,7 @@ func TestGetSingle(t *testing.T) {
 		mock.ExpectQuery(defaultExpectedGetSingleQuery()).WillReturnError(someError())
 		dest := User{}
 		// WHEN
-		err := sut.Get(ctx, givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}}, &dest)
+		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, &dest)
 		// THEN
 		require.EqualError(t, err, "while getting object from DB: some error")
 	})
@@ -98,7 +98,7 @@ func TestGetSingle(t *testing.T) {
 		mock.ExpectQuery(defaultExpectedGetSingleQuery()).WillReturnRows(noRows)
 		dest := User{}
 		// WHEN
-		err := sut.Get(ctx, givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}}, &dest)
+		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, &dest)
 		// THEN
 		require.NotNil(t, err)
 		assert.True(t, apperrors.IsNotFoundError(err))
@@ -106,7 +106,7 @@ func TestGetSingle(t *testing.T) {
 
 	t.Run("returns error if missing persistence context", func(t *testing.T) {
 		ctx := context.TODO()
-		err := sut.Get(ctx, givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}}, &User{})
+		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, &User{})
 		require.EqualError(t, err, "unable to fetch database from context")
 	})
 
@@ -130,7 +130,7 @@ func TestGetSingleGlobal(t *testing.T) {
 		mock.ExpectQuery(expectedQuery).WithArgs(givenID).WillReturnRows(rows)
 		dest := User{}
 		// WHEN
-		err := sut.GetGlobal(ctx, repo.Conditions{{Field: "id_col", Val: givenID}}, &dest)
+		err := sut.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, &dest)
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, givenID, dest.ID)
@@ -149,7 +149,7 @@ func TestGetSingleGlobal(t *testing.T) {
 		mock.ExpectQuery(expectedQuery).WillReturnRows(rows)
 		dest := User{}
 		// WHEN
-		err := sut.GetGlobal(ctx, repo.Conditions{{Field: "id_col", Val: givenID}}, &dest)
+		err := sut.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, &dest)
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, givenID, dest.ID)
@@ -169,7 +169,7 @@ func TestGetSingleGlobal(t *testing.T) {
 		mock.ExpectQuery(expectedQuery).WithArgs("john", "doe").WillReturnRows(rows)
 		// WHEN
 		dest := User{}
-		err := sut.GetGlobal(ctx, repo.Conditions{{Field: "first_name", Val: "john"}, {Field: "last_name", Val: "doe"}}, &dest)
+		err := sut.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("first_name", "john"), repo.NewEqualCondition("last_name", "doe")}, &dest)
 		// THEN
 		require.NoError(t, err)
 	})
@@ -183,7 +183,7 @@ func TestGetSingleGlobal(t *testing.T) {
 		mock.ExpectQuery(expectedQuery).WillReturnError(someError())
 		dest := User{}
 		// WHEN
-		err := sut.GetGlobal(ctx, repo.Conditions{{Field: "id_col", Val: givenID}}, &dest)
+		err := sut.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, &dest)
 		// THEN
 		require.EqualError(t, err, "while getting object from DB: some error")
 	})
@@ -198,7 +198,7 @@ func TestGetSingleGlobal(t *testing.T) {
 		mock.ExpectQuery(expectedQuery).WillReturnRows(noRows)
 		dest := User{}
 		// WHEN
-		err := sut.GetGlobal(ctx, repo.Conditions{{Field: "id_col", Val: givenID}}, &dest)
+		err := sut.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, &dest)
 		// THEN
 		require.NotNil(t, err)
 		assert.True(t, apperrors.IsNotFoundError(err))
@@ -206,12 +206,12 @@ func TestGetSingleGlobal(t *testing.T) {
 
 	t.Run("returns error if missing persistence context", func(t *testing.T) {
 		ctx := context.TODO()
-		err := sut.GetGlobal(ctx, repo.Conditions{{Field: "id_col", Val: givenID}}, &User{})
+		err := sut.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, &User{})
 		require.EqualError(t, err, "unable to fetch database from context")
 	})
 
 	t.Run("returns error if destination is nil", func(t *testing.T) {
-		err := sut.GetGlobal(context.TODO(), repo.Conditions{{Field: "id_col", Val: givenID}}, nil)
+		err := sut.GetGlobal(context.TODO(), repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, nil)
 		require.EqualError(t, err, "item cannot be nil")
 	})
 }

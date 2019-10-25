@@ -25,21 +25,23 @@ type Converter interface {
 }
 
 type repository struct {
-	creator      repo.Creator
-	singleGetter repo.SingleGetter
-	lister       repo.Lister
-	deleter      repo.Deleter
+	creator            repo.Creator
+	singleGetter       repo.SingleGetter
+	singleGetterGlobal repo.SingleGetterGlobal
+	lister             repo.Lister
+	deleter            repo.Deleter
 
 	conv Converter
 }
 
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		creator:      repo.NewCreator(tableName, tableColumns),
-		singleGetter: repo.NewSingleGetter(tableName, tenantColumn, tableColumns),
-		lister:       repo.NewLister(tableName, tenantColumn, tableColumns),
-		deleter:      repo.NewDeleter(tableName, tenantColumn),
-		conv:         conv,
+		creator:            repo.NewCreator(tableName, tableColumns),
+		singleGetter:       repo.NewSingleGetter(tableName, tenantColumn, tableColumns),
+		singleGetterGlobal: repo.NewSingleGetterGlobal(tableName, tableColumns),
+		lister:             repo.NewLister(tableName, tenantColumn, tableColumns),
+		deleter:            repo.NewDeleter(tableName, tenantColumn),
+		conv:               conv,
 	}
 }
 
@@ -54,7 +56,21 @@ func (r *repository) Create(ctx context.Context, item model.SystemAuth) error {
 
 func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.SystemAuth, error) {
 	var entity Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{{Field: "id", Val: id}}, &entity); err != nil {
+	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, &entity); err != nil {
+		return nil, err
+	}
+
+	itemModel, err := r.conv.FromEntity(entity)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting SystemAuth entity to model")
+	}
+
+	return &itemModel, nil
+}
+
+func (r *repository) GetByIDGlobal(ctx context.Context, id string) (*model.SystemAuth, error) {
+	var entity Entity
+	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, &entity); err != nil {
 		return nil, err
 	}
 
@@ -97,11 +113,23 @@ func (r *repository) DeleteAllForObject(ctx context.Context, tenant string, obje
 		return err
 	}
 
-	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{{Field: objTypeFieldName, Val: objectID}})
+	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition(objTypeFieldName, objectID)})
 }
 
-func (r *repository) Delete(ctx context.Context, tenant string, id string) error {
-	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{{Field: "id", Val: id}})
+func (r *repository) DeleteByIDForObject(ctx context.Context, tenant string, id string, objType model.SystemAuthReferenceObjectType) error {
+	var objTypeCond repo.Condition
+	switch objType {
+	case model.ApplicationReference:
+		objTypeCond = repo.NewNotNullCondition("app_id")
+	case model.RuntimeReference:
+		objTypeCond = repo.NewNotNullCondition("runtime_id")
+	case model.IntegrationSystemReference:
+		objTypeCond = repo.NewNotNullCondition("integration_system_id")
+	default:
+		return fmt.Errorf("unsupported object type (%s)", objType)
+	}
+
+	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id), objTypeCond})
 }
 
 func referenceObjectField(objectType model.SystemAuthReferenceObjectType) (string, error) {

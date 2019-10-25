@@ -16,7 +16,7 @@ import (
 func TestCreateApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	in := graphql.ApplicationInput{
+	in := graphql.ApplicationCreateInput{
 		Name:           "wordpress",
 		Description:    ptr.String("my first wordpress application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
@@ -26,7 +26,7 @@ func TestCreateApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 		},
 	}
 
-	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
+	appInputGQL, err := tc.graphqlizer.ApplicationCreateInputToGQL(in)
 	require.NoError(t, err)
 
 	actualApp := graphql.ApplicationExt{}
@@ -52,7 +52,7 @@ func TestCreateApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 func TestCreateApplicationWithWebhooks(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	in := graphql.ApplicationInput{
+	in := graphql.ApplicationCreateInput{
 		Name: "wordpress",
 		Webhooks: []*graphql.WebhookInput{
 			{
@@ -66,7 +66,7 @@ func TestCreateApplicationWithWebhooks(t *testing.T) {
 		},
 	}
 
-	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
+	appInputGQL, err := tc.graphqlizer.ApplicationCreateInputToGQL(in)
 	require.NoError(t, err)
 	actualApp := graphql.ApplicationExt{}
 
@@ -94,7 +94,7 @@ func TestCreateApplicationWithWebhooks(t *testing.T) {
 func TestCreateApplicationWithAPIs(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	in := graphql.ApplicationInput{
+	in := graphql.ApplicationCreateInput{
 		Name: "wordpress",
 		Apis: []*graphql.APIDefinitionInput{
 			{
@@ -148,7 +148,7 @@ func TestCreateApplicationWithAPIs(t *testing.T) {
 		},
 	}
 
-	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
+	appInputGQL, err := tc.graphqlizer.ApplicationCreateInputToGQL(in)
 	require.NoError(t, err)
 	actualApp := graphql.ApplicationExt{}
 
@@ -177,7 +177,7 @@ func TestCreateApplicationWithAPIs(t *testing.T) {
 func TestCreateApplicationWithEventAPIs(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	in := graphql.ApplicationInput{
+	in := graphql.ApplicationCreateInput{
 		Name: "create-application-with-event-apis",
 		EventAPIs: []*graphql.EventAPIDefinitionInput{
 			{
@@ -211,7 +211,7 @@ func TestCreateApplicationWithEventAPIs(t *testing.T) {
 		},
 	}
 
-	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
+	appInputGQL, err := tc.graphqlizer.ApplicationCreateInputToGQL(in)
 	require.NoError(t, err)
 
 	actualApp := graphql.ApplicationExt{}
@@ -240,7 +240,7 @@ func TestCreateApplicationWithEventAPIs(t *testing.T) {
 func TestCreateApplicationWithDocuments(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	in := graphql.ApplicationInput{
+	in := graphql.ApplicationCreateInput{
 		Name: "create-application-with-documents",
 		Documents: []*graphql.DocumentInput{
 			{
@@ -266,7 +266,7 @@ func TestCreateApplicationWithDocuments(t *testing.T) {
 			"scenarios": []interface{}{"DEFAULT"},
 		},
 	}
-	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
+	appInputGQL, err := tc.graphqlizer.ApplicationCreateInputToGQL(in)
 	require.NoError(t, err)
 	actualApp := graphql.ApplicationExt{}
 
@@ -392,41 +392,19 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 func TestUpdateApplication(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	in := generateSampleApplicationInput("before")
-	in.Description = ptr.String("before")
 
-	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
+	actualApp := createApplication(t, ctx, "before")
+	defer deleteApplication(t, actualApp.ID)
+
+	expectedApp := actualApp
+	expectedApp.Name = "after"
+	expectedApp.Description = ptr.String("after")
+	expectedApp.HealthCheckURL = ptr.String("after")
+
+	updateInput := fixSampleApplicationUpdateInput("after")
+	updateInputGQL, err := tc.graphqlizer.ApplicationUpdateInputToGQL(updateInput)
 	require.NoError(t, err)
-
-	actualApp := graphql.ApplicationExt{}
-
-	// WHEN
-	request := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-				result: createApplication(in: %s) {
-    					id
-					}
-				}`, appInputGQL))
-	err = tc.RunOperation(ctx, request, &actualApp)
-
-	//THEN
-	require.NoError(t, err)
-	id := actualApp.ID
-	require.NotEmpty(t, id)
-	defer deleteApplication(t, id)
-
-	//GIVEN
-	in = generateSampleApplicationInput("after")
-	appInputGQL, err = tc.graphqlizer.ApplicationInputToGQL(in)
-	require.NoError(t, err)
-	request = gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-  				result: updateApplication(id: "%s", in: %s) {
-    					%s
-					}
-				}`, id, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
-	saveQueryInExamples(t, request.Query(), "update application")
-
+	request := fixUpdateApplicationRequest(actualApp.ID, updateInputGQL)
 	updatedApp := graphql.ApplicationExt{}
 
 	//WHEN
@@ -434,95 +412,57 @@ func TestUpdateApplication(t *testing.T) {
 
 	//THEN
 	require.NoError(t, err)
-	assertApplication(t, in, updatedApp)
+	assert.Equal(t, expectedApp, updatedApp)
+	saveQueryInExamples(t, request.Query(), "update application")
 }
 
 func TestCreateUpdateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	in := generateSampleApplicationInput("first")
-	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
-	require.NoError(t, err)
-	createReq := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-  				result: createApplication(in: %s) {
-    					%s
-					}
-				}`, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
-	firstApp := graphql.Application{}
 
-	//WHEN
-	err = tc.RunOperation(ctx, createReq, &firstApp)
+	appName := "samename"
 
-	//THEN
-	require.NoError(t, err)
-	require.NotEmpty(t, firstApp.ID)
-	defer deleteApplication(t, firstApp.ID)
+	actualApp := createApplication(t, ctx, appName)
+	defer deleteApplication(t, actualApp.ID)
 
-	//Create second application with first application name
-	//GIVEN
-	appInputGQL, err = tc.graphqlizer.ApplicationInputToGQL(in)
-	require.NoError(t, err)
-	createReq = gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-  				result: createApplication(in: %s) {
-    					%s
-					}
-				}`, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
+	t.Run("Error when creating second Application with same name", func(t *testing.T) {
+		in := fixSampleApplicationCreateInputWithName("first", appName)
+		appInputGQL, err := tc.graphqlizer.ApplicationCreateInputToGQL(in)
+		require.NoError(t, err)
+		request := fixCreateApplicationRequest(appInputGQL)
 
-	//WHEN
-	err = tc.RunOperation(ctx, createReq, nil)
+		// WHEN
+		err = tc.RunOperation(ctx, request, nil)
 
-	//THEN
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "not unique")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "not unique")
+	})
 
-	//Create second application with unique name
-	//GIVEN
-	in.Name = "second"
-	appInputGQL, err = tc.graphqlizer.ApplicationInputToGQL(in)
-	require.NoError(t, err)
-	createReq = gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-  				result: createApplication(in: %s) {
-    					%s
-					}
-				}`, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
-	secondApp := graphql.Application{}
-	//WHEN
-	err = tc.RunOperation(ctx, createReq, &secondApp)
+	t.Run("Error when updating Application with name that exists", func(t *testing.T) {
+		actualApp := createApplication(t, ctx, "differentname")
+		defer deleteApplication(t, actualApp.ID)
 
-	//THEN
-	require.NoError(t, err)
-	require.NotEmpty(t, secondApp.ID)
-	defer deleteApplication(t, secondApp.ID)
+		updateInput := fixSampleApplicationUpdateInput(appName)
+		updateInputGQL, err := tc.graphqlizer.ApplicationUpdateInputToGQL(updateInput)
+		require.NoError(t, err)
+		request := fixUpdateApplicationRequest(actualApp.ID, updateInputGQL)
 
-	// Try to update second app with name from first app
-	//GIVEN
-	in.Name = firstApp.Name
-	appInputGQL, err = tc.graphqlizer.ApplicationInputToGQL(in)
-	require.NoError(t, err)
-	updateRequest := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-  				result: updateApplication(id: "%s", in: %s) {
-    					%s
-					}
-				}`, secondApp.ID, appInputGQL, tc.gqlFieldsProvider.ForApplication()))
+		// WHEN
+		err = tc.RunOperation(ctx, request, nil)
 
-	//WHEN
-	err = tc.RunOperation(ctx, updateRequest, nil)
-
-	//THEN
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "not unique")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "not unique")
+	})
 }
 
 func TestDeleteApplication(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	in := generateSampleApplicationInput("app")
+	in := fixSampleApplicationCreateInput("app")
 
-	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
+	appInputGQL, err := tc.graphqlizer.ApplicationCreateInputToGQL(in)
 	require.NoError(t, err)
 	createReq := gcli.NewRequest(
 		fmt.Sprintf(`mutation {
@@ -553,9 +493,9 @@ func TestDeleteApplication(t *testing.T) {
 func TestUpdateApplicationParts(t *testing.T) {
 	ctx := context.Background()
 	placeholder := "app"
-	in := generateSampleApplicationInput(placeholder)
+	in := fixSampleApplicationCreateInput(placeholder)
 
-	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
+	appInputGQL, err := tc.graphqlizer.ApplicationCreateInputToGQL(in)
 	require.NoError(t, err)
 	createReq := gcli.NewRequest(
 		fmt.Sprintf(`mutation {
@@ -903,11 +843,11 @@ func TestQueryApplications(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	for i := 0; i < 3; i++ {
-		in := graphql.ApplicationInput{
+		in := graphql.ApplicationCreateInput{
 			Name: fmt.Sprintf("app-%d", i),
 		}
 
-		appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
+		appInputGQL, err := tc.graphqlizer.ApplicationCreateInputToGQL(in)
 		require.NoError(t, err)
 		actualApp := graphql.Application{}
 		request := gcli.NewRequest(
@@ -941,11 +881,11 @@ func TestQueryApplications(t *testing.T) {
 
 func TestQuerySpecificApplication(t *testing.T) {
 	// GIVEN
-	in := graphql.ApplicationInput{
+	in := graphql.ApplicationCreateInput{
 		Name: fmt.Sprintf("app"),
 	}
 
-	appInputGQL, err := tc.graphqlizer.ApplicationInputToGQL(in)
+	appInputGQL, err := tc.graphqlizer.ApplicationCreateInputToGQL(in)
 	require.NoError(t, err)
 
 	actualApp := graphql.Application{}
@@ -978,8 +918,8 @@ func TestQuerySpecificApplication(t *testing.T) {
 
 func TestTenantSeparation(t *testing.T) {
 	// GIVEN
-	appIn := generateSampleApplicationInput("adidas")
-	inStr, err := tc.graphqlizer.ApplicationInputToGQL(appIn)
+	appIn := fixSampleApplicationCreateInput("adidas")
+	inStr, err := tc.graphqlizer.ApplicationCreateInputToGQL(appIn)
 	require.NoError(t, err)
 	createReq := gcli.NewRequest(
 		fmt.Sprintf(`mutation {
@@ -1056,7 +996,7 @@ func TestQueryAPIRuntimeAuths(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			appInput := graphql.ApplicationInput{
+			appInput := graphql.ApplicationCreateInput{
 				Name: "test-app",
 				Apis: testCase.Apis,
 				Labels: &graphql.Labels{
@@ -1148,8 +1088,8 @@ func getApp(ctx context.Context, t *testing.T, id string) graphql.ApplicationExt
 
 }
 
-func generateSampleApplicationInput(placeholder string) graphql.ApplicationInput {
-	return graphql.ApplicationInput{
+func fixSampleApplicationCreateInput(placeholder string) graphql.ApplicationCreateInput {
+	return graphql.ApplicationCreateInput{
 		Name: placeholder,
 		Documents: []*graphql.DocumentInput{{
 			Title:  placeholder,
@@ -1171,26 +1111,17 @@ func generateSampleApplicationInput(placeholder string) graphql.ApplicationInput
 	}
 }
 
-func generateSampleApplicationInputWithName(placeholder, name string) graphql.ApplicationInput {
-	return graphql.ApplicationInput{
-		Name: name,
-		Documents: []*graphql.DocumentInput{{
-			Title:  placeholder,
-			Format: graphql.DocumentFormatMarkdown}},
-		Apis: []*graphql.APIDefinitionInput{{
-			Name:      placeholder,
-			TargetURL: placeholder}},
-		EventAPIs: []*graphql.EventAPIDefinitionInput{{
-			Name: placeholder,
-			Spec: &graphql.EventAPISpecInput{
-				EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
-				Format:        graphql.SpecFormatYaml,
-			}}},
-		Webhooks: []*graphql.WebhookInput{{
-			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
-			URL:  placeholder},
-		},
-		Labels: &graphql.Labels{placeholder: []interface{}{placeholder}},
+func fixSampleApplicationCreateInputWithName(placeholder, name string) graphql.ApplicationCreateInput {
+	sampleInput := fixSampleApplicationCreateInput(placeholder)
+	sampleInput.Name = name
+	return sampleInput
+}
+
+func fixSampleApplicationUpdateInput(placeholder string) graphql.ApplicationUpdateInput {
+	return graphql.ApplicationUpdateInput{
+		Name:           placeholder,
+		Description:    &placeholder,
+		HealthCheckURL: &placeholder,
 	}
 }
 

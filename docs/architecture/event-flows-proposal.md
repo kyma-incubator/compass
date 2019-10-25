@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document is a proposal for eventing flows we want to support with use of the [Management Plane](./terminology.md#management-plane)
+This document is a proposal for eventing flows we want to support with use of the Management Plane.
 
 ## Eventing with Kyma internal Event Bus
 
