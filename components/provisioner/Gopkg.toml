@@ -17,11 +17,15 @@ required = [
 
 [[constraint]]
   name = "k8s.io/apimachinery"
-  version = "kubernetes-1.15.2"
+  version = "kubernetes-1.14.7"
+
+[[constraint]]
+  name = "github.com/gocraft/dbr"
+  version = "2.6"
 
 [[override]]
   name = "k8s.io/kubernetes"
-  version = "kubernetes-1.15.2"
+  version = "kubernetes-1.14.7"
 
 [prune]
   go-tests = true

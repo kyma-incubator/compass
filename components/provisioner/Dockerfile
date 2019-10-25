@@ -11,14 +11,20 @@ COPY ./assets/ /assets/
 COPY ./internal/ ${BASE_APP_DIR}/internal/
 COPY ./pkg/ ${BASE_APP_DIR}/pkg/
 COPY ./vendor/ ${BASE_APP_DIR}/vendor/
-COPY ./cmd/main.go ${BASE_APP_DIR}/
+COPY ./cmd/ ${BASE_APP_DIR}/cmd
 COPY ./licenses ${BASE_APP_DIR}/licenses
+
+#
+# Add ca-certificates
+#
+
+RUN apk add -U --no-cache ca-certificates && update-ca-certificates
 
 #
 # Build app
 #
 
-RUN go build -v -o main .
+RUN go build -v -o main ./cmd/
 RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
 
 FROM alpine:3.10
@@ -31,6 +37,7 @@ WORKDIR /app
 
 COPY --from=builder /assets /assets
 COPY --from=builder /app /app
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 #
 # Run app

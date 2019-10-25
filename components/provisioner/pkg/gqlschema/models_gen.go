@@ -27,6 +27,7 @@ type Error struct {
 
 type GCPConfig struct {
 	Name              *string `json:"name"`
+	ProjectName       *string `json:"projectName"`
 	KubernetesVersion *string `json:"kubernetesVersion"`
 	NumberOfNodes     *int    `json:"numberOfNodes"`
 	BootDiskSize      *string `json:"bootDiskSize"`
@@ -39,6 +40,7 @@ func (GCPConfig) IsClusterConfig() {}
 
 type GCPConfigInput struct {
 	Name              string  `json:"name"`
+	ProjectName       string  `json:"projectName"`
 	KubernetesVersion string  `json:"kubernetesVersion"`
 	NumberOfNodes     int     `json:"numberOfNodes"`
 	BootDiskSize      string  `json:"bootDiskSize"`
@@ -49,6 +51,7 @@ type GCPConfigInput struct {
 
 type GardenerConfig struct {
 	Name              *string `json:"name"`
+	ProjectName       *string `json:"projectName"`
 	KubernetesVersion *string `json:"kubernetesVersion"`
 	NodeCount         *int    `json:"nodeCount"`
 	VolumeSize        *string `json:"volumeSize"`
@@ -69,6 +72,7 @@ func (GardenerConfig) IsClusterConfig() {}
 
 type GardenerConfigInput struct {
 	Name              string `json:"name"`
+	ProjectName       string `json:"projectName"`
 	KubernetesVersion string `json:"kubernetesVersion"`
 	NodeCount         int    `json:"nodeCount"`
 	VolumeSize        string `json:"volumeSize"`
@@ -96,10 +100,11 @@ type KymaConfigInput struct {
 }
 
 type OperationStatus struct {
+	ID        *string        `json:"id"`
 	Operation OperationType  `json:"operation"`
 	State     OperationState `json:"state"`
-	Message   string         `json:"message"`
-	RuntimeID string         `json:"runtimeID"`
+	Message   *string        `json:"message"`
+	RuntimeID *string        `json:"runtimeID"`
 }
 
 type ProvisionRuntimeInput struct {
