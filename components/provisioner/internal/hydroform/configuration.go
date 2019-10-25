@@ -2,9 +2,10 @@ package hydroform
 
 import (
 	"errors"
+	"strconv"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/hydroform/types"
-	"strconv"
 )
 
 func prepareConfig(input model.RuntimeConfig, credentialsFile string) (*types.Cluster, *types.Provider, error) {

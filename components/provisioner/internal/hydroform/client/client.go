@@ -4,6 +4,7 @@ import (
 	"github.com/kyma-incubator/hydroform"
 	"github.com/kyma-incubator/hydroform/types"
 )
+
 //go:generate mockery -name=Client
 type Client interface {
 	Provision(cluster *types.Cluster, provider *types.Provider) (*types.Cluster, error)

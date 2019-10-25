@@ -1,17 +1,18 @@
 package hydroform
 
 import (
+	"testing"
+
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/client/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/hydroform/types"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 	core "k8s.io/client-go/kubernetes/typed/core/v1"
-	"testing"
 )
 
 const (

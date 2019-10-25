@@ -2,12 +2,13 @@ package api
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestResolver_ProvisionRuntime(t *testing.T) {
@@ -154,7 +155,7 @@ func TestResolver_RuntimeStatus(t *testing.T) {
 				RuntimeID: &runtimeID,
 				Message:   &message,
 			},
-			RuntimeConfiguration: &gqlschema.RuntimeConfig{},
+			RuntimeConfiguration:    &gqlschema.RuntimeConfig{},
 			RuntimeConnectionStatus: &gqlschema.RuntimeConnectionStatus{},
 		}
 
@@ -167,7 +168,7 @@ func TestResolver_RuntimeStatus(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, status, runtimeStatus)
 	})
-	
+
 	t.Run("Should return error when runtime status fails", func(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}

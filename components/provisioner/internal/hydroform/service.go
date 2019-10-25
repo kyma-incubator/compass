@@ -2,9 +2,10 @@ package hydroform
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/client"
 	"io/ioutil"
 	"os"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/client"
 
 	log "github.com/sirupsen/logrus"
 
@@ -12,7 +13,7 @@ import (
 	"github.com/kyma-incubator/hydroform/types"
 	"github.com/pkg/errors"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/typed/core/v1"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 const credentialsKey = "credentials"

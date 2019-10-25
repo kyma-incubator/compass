@@ -199,7 +199,7 @@ func (r *service) startDeprovisioning(operationID, runtimeID string, config mode
 }
 
 func updateOperationStatus(updateFunction func() error) {
-	err := retry(interval, retryCount,updateFunction)
+	err := retry(interval, retryCount, updateFunction)
 	if err != nil {
 		log.Errorf("Failed to set operation status, %s", err.Error())
 	}
