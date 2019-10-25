@@ -38,10 +38,13 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, id string, config gqlsc
 		return "", err
 	}
 
+	log.Infof("Requested provisioning of %s runtime.", id)
+
 	operationID, _, err := r.provisioning.ProvisionRuntime(id, config)
 	if err != nil {
 		log.Errorf("Failed to provision runtime %s: %s", id, err)
 	}
+	log.Infof("Provisioning stared for %s runtime. Operation id %s", id, operationID)
 
 	return operationID, err
 }
@@ -55,10 +58,13 @@ func validateInput(config gqlschema.ProvisionRuntimeInput) error {
 }
 
 func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string, credentials gqlschema.CredentialsInput) (string, error) {
+	log.Infof("Requested deprovisioning of %s runtime.", id)
+
 	operationID, _, err := r.provisioning.DeprovisionRuntime(id, credentials)
 	if err != nil {
 		log.Errorf("Failed to provision runtime %s: %s", id, err)
 	}
+	log.Infof("Derovisioning stared for %s runtime. Operation id %s", id, operationID)
 
 	return operationID, err
 }
