@@ -51,7 +51,7 @@ func Test_E2e(t *testing.T) {
 		KymaConfig:  &gqlschema.KymaConfigInput{Version: "1.6", Modules: gqlschema.AllKymaModule},
 	}
 
-	logrus.Infof("Provisioning runtime on GCP...")
+	logrus.Infof("Provisioning %s runtime on GCP...", runtimeId)
 	provisioningOperationId, err := testSuite.ProvisionerClient.ProvisionRuntime(runtimeId, provisioningInput)
 	assertions.RequireNoError(t, err)
 	logrus.Infof("Provisioning operation id: %s", provisioningOperationId)
