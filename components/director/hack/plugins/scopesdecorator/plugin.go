@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/kyma-incubator/compass/components/director/hack/plugins"
+
 	"github.com/99designs/gqlgen/codegen/config"
 	"github.com/99designs/gqlgen/plugin"
 	"github.com/vektah/gqlparser/ast"
@@ -21,7 +23,7 @@ const (
 
 var _ plugin.ConfigMutator = &scopesDecoratorPlugin{}
 
-func NewPlugin(schemaFileName string) *scopesDecoratorPlugin {
+func NewScopesDecoratorPlugin(schemaFileName string) *scopesDecoratorPlugin {
 	return &scopesDecoratorPlugin{schemaFileName: schemaFileName}
 }
 
@@ -61,7 +63,7 @@ func (p *scopesDecoratorPlugin) MutateConfig(cfg *config.Config) error {
 		return err
 	}
 
-	f := NewFormatter(schemaFile)
+	f := plugins.NewFormatter(schemaFile)
 	f.FormatSchema(schema)
 	return schemaFile.Close()
 }

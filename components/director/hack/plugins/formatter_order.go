@@ -1,4 +1,4 @@
-package scopesdecorator
+package plugins
 
 import (
 	"strings"
