@@ -18,6 +18,8 @@ As of right now, there is no static page with our API documentation, so if any p
 The GraphQL playground that we use on our endpoints generates documentation with comments from the schema.
 We could create a gqlgen plugin that would add a relative example link to every query and mutation. The example files would be stored inside the Director images and available on a GET request to `/director/examples/{file-name}.graphql`. That way the user would be able to check how the request looks right away.
 
+POC can be found [here](https://github.com/kyma-incubator/compass/pull/417)
+
 **Work that has to be done**
 * create the gqlgen plugin
 * host and serve the examples on the director
