@@ -17,7 +17,7 @@ func TestMutateConfig(t *testing.T) {
 	cfg, err := config.LoadConfig("testdata/config.yaml")
 	require.NoError(t, err)
 	testOutputFile := "testdata/test_output.graphql"
-	sut := scopesdecorator.NewScopesDecoratorPlugin(testOutputFile)
+	sut := scopesdecorator.NewPlugin(testOutputFile)
 	err = sut.MutateConfig(cfg)
 	require.NoError(t, err)
 

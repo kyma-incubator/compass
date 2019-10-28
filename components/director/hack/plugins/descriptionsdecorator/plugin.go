@@ -2,7 +2,10 @@ package descriptionsdecorator
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
+	"path"
 	"strings"
 	"unicode"
 
@@ -16,13 +19,15 @@ import (
 type GraphqlOperationType string
 
 const (
-	Query    GraphqlOperationType = "query"
-	Mutation GraphqlOperationType = "mutation"
+	Query             GraphqlOperationType = "query"
+	Mutation          GraphqlOperationType = "mutation"
+	ExamplesDirectory                      = "../../examples"
+	UnsanitizedAPI                         = "A-P-I"
 )
 
 var _ plugin.ConfigMutator = &descriptionsDecoratorPlugin{}
 
-func NewSDescriptionsDecoratorPlugin(schemaFileName string) *descriptionsDecoratorPlugin {
+func NewPlugin(schemaFileName string) *descriptionsDecoratorPlugin {
 	return &descriptionsDecoratorPlugin{schemaFileName: schemaFileName}
 }
 
@@ -34,12 +39,9 @@ func (p *descriptionsDecoratorPlugin) Name() string {
 	return "descriptions_decorator"
 }
 
-func (p *descriptionsDecoratorPlugin) ensureDescription(f *ast.FieldDefinition, opType GraphqlOperationType) {
-	f.Description = addExample(f.Description, f.Name, opType)
-}
-
 func (p *descriptionsDecoratorPlugin) MutateConfig(cfg *config.Config) error {
 	fmt.Printf("[%s] Mutate Configuration\n", p.Name())
+
 	if err := cfg.Check(); err != nil {
 		return err
 	}
@@ -71,7 +73,33 @@ func (p *descriptionsDecoratorPlugin) MutateConfig(cfg *config.Config) error {
 	return schemaFile.Close()
 }
 
-func addExample(description string, name string, opType GraphqlOperationType) string {
+func (p *descriptionsDecoratorPlugin) ensureDescription(f *ast.FieldDefinition, opType GraphqlOperationType) {
+
+	dirs, err := ioutil.ReadDir(ExamplesDirectory)
+	if err != nil {
+		log.Printf("While reading the examples directory: %s", err.Error())
+		return
+	}
+	for _, dir := range dirs {
+		if !dir.IsDir() {
+			continue
+		}
+		if sanitizeName(f.Name, opType) != dir.Name() {
+			continue
+		}
+		files, err := ioutil.ReadDir(path.Join(ExamplesDirectory, dir.Name()))
+		if err != nil {
+			log.Printf("While reading the examples subdirectory %s : %s", dir.Name(), err.Error())
+			return
+		}
+		for _, file := range files {
+			f.Description = addExample(f.Description, dir.Name(), file.Name())
+		}
+
+	}
+}
+
+func sanitizeName(name string, opType GraphqlOperationType) string {
 	counter := 0
 	for index, letter := range name {
 		if unicode.IsUpper(letter) {
@@ -79,13 +107,17 @@ func addExample(description string, name string, opType GraphqlOperationType) st
 			counter++
 		}
 	}
-	if strings.Contains(name, "A-P-I") {
-		name = strings.ReplaceAll(name, "A-P-I", "api")
+	if strings.Contains(name, UnsanitizedAPI) {
+		name = strings.ReplaceAll(name, UnsanitizedAPI, "api")
 	}
 
 	if opType == Query {
-		return strings.ToLower(fmt.Sprintf("%s see example [here](query-%s.graphql)", description, name))
-
+		return strings.ToLower(fmt.Sprintf("query-%s", name))
 	}
-	return strings.ToLower(fmt.Sprintf("%s see example [here](%s.graphql)", description, name))
+	return strings.ToLower(name)
+
+}
+
+func addExample(description string, dirName string, name string) string {
+	return strings.ToLower(fmt.Sprintf("%s \n see example [here](examples/%s/%s)", description, dirName, name))
 }

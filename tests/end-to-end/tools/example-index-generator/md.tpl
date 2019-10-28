@@ -4,5 +4,5 @@
 Below you can find a list of mock GraphQL queries and mutations:
 
 {{- range  $value := . }}
-- [{{$value.Description}}](./{{$value.FileName}})
+- [{{$value.Description}}](./{{$value.Category}}/{{$value.FileName}})
 {{- end}}

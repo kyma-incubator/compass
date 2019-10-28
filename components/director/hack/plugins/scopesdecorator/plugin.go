@@ -23,7 +23,7 @@ const (
 
 var _ plugin.ConfigMutator = &scopesDecoratorPlugin{}
 
-func NewScopesDecoratorPlugin(schemaFileName string) *scopesDecoratorPlugin {
+func NewPlugin(schemaFileName string) *scopesDecoratorPlugin {
 	return &scopesDecoratorPlugin{schemaFileName: schemaFileName}
 }
 

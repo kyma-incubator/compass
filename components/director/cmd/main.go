@@ -127,6 +127,9 @@ func main() {
 		}
 	})
 
+	examplesServer := http.FileServer(http.Dir("./examples/"))
+	mainRouter.PathPrefix("/examples/").Handler(http.StripPrefix("/examples/", examplesServer))
+
 	srv := &http.Server{Addr: cfg.Address, Handler: mainRouter}
 	log.Infof("Listening on %s...", cfg.Address)
 	go func() {

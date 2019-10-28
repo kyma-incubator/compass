@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"strings"
 	"text/template"
 )
@@ -14,21 +15,32 @@ func main() {
 		panic("Missing `EXAMPLES_DIRECTORY` environment variable")
 	}
 
-	files, err := ioutil.ReadDir(dir)
+	subdirs, err := ioutil.ReadDir(dir)
 	if err != nil {
 		panic(err)
 	}
 
 	data := make([]Data, 0)
-	for _, f := range files {
-		if !strings.HasSuffix(f.Name(), ".graphql") {
+	for _, subdir := range subdirs {
+
+		if !subdir.IsDir() {
 			continue
 		}
-		withoutExt := strings.Replace(f.Name(), ".graphql", "", -1)
-		withoutDash := strings.Replace(withoutExt, "-", " ", -1)
-		data = append(data, Data{Description: withoutDash, FileName: f.Name()})
-	}
 
+		files, err := ioutil.ReadDir(path.Join(dir, subdir.Name()))
+		if err != nil {
+			panic(err)
+		}
+
+		for _, f := range files {
+			if !strings.HasSuffix(f.Name(), ".graphql") {
+				continue
+			}
+			withoutExt := strings.Replace(f.Name(), ".graphql", "", -1)
+			withoutDash := strings.Replace(withoutExt, "-", " ", -1)
+			data = append(data, Data{Description: withoutDash, FileName: f.Name(), Category: subdir.Name()})
+		}
+	}
 	t, err := template.ParseFiles("./md.tpl")
 	if err != nil {
 		panic(err)
@@ -53,4 +65,5 @@ func main() {
 type Data struct {
 	FileName    string
 	Description string
+	Category    string
 }

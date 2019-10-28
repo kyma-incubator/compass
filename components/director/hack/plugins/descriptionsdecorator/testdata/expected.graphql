@@ -1,21 +1,21 @@
 type Query {
 	"""
-	test description see example [here](query-already-has-description.graphql)
+	test description see example [here](examples/query-already-has-description.graphql)
 	"""
 	alreadyHasDescription: String!
 	"""
-	 see example [here](query-does-not-have-description.graphql)
+	 see example [here](examples/query-does-not-have-description.graphql)
 	"""
 	doesNotHaveDescription: String!
 }
 
 type Mutation {
 	"""
-	test description see example [here](already-has-description.graphql)
+	test description see example [here](examples/already-has-description.graphql)
 	"""
 	alreadyHasDescription: String!
 	"""
-	 see example [here](does-not-have-description.graphql)
+	 see example [here](examples/does-not-have-description.graphql)
 	"""
 	doesNotHaveDescription: String!
 }
