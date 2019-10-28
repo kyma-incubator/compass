@@ -55,7 +55,7 @@ func Test_E2e(t *testing.T) {
 	provisioningOperationId, err := testSuite.ProvisionerClient.ProvisionRuntime(runtimeId, provisioningInput)
 	assertions.RequireNoError(t, err)
 	logrus.Infof("Provisioning operation id: %s", provisioningOperationId)
-	defer ensureClusterIsDeprovisioner(runtimeId, credentialsInput)
+	defer ensureClusterIsDeprovisioned(runtimeId, credentialsInput)
 
 	var provisioningOperationStatus gqlschema.OperationStatus
 	err = testkit.RunParallelToMainFunction(ProvisioningTimeout+5*time.Second,
@@ -116,7 +116,7 @@ func Test_E2e(t *testing.T) {
 	logrus.Infof("Runtime deprovisioned successfully")
 }
 
-func ensureClusterIsDeprovisioner(runtimeId string, credentialsInput gqlschema.CredentialsInput) {
+func ensureClusterIsDeprovisioned(runtimeId string, credentialsInput gqlschema.CredentialsInput) {
 	logrus.Infof("Ensuring the cluster is deprovisioned...")
 	deprovisioningOperationId, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtimeId, credentialsInput)
 	if err != nil {

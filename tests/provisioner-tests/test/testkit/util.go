@@ -2,14 +2,9 @@ package testkit
 
 import (
 	"fmt"
-	"io"
-	"net/http"
-	"net/http/httputil"
 	"time"
 
 	"github.com/pkg/errors"
-
-	"github.com/sirupsen/logrus"
 )
 
 func WaitForFunction(interval, timeout time.Duration, isDone func() bool) error {
@@ -78,20 +73,4 @@ func processErrors(errorsArray []error) error {
 	}
 
 	return nil
-}
-
-func CloseReader(reader io.ReadCloser) {
-	err := reader.Close()
-	if err != nil {
-		logrus.Warnf("Error while closing reader: %s", err.Error())
-	}
-}
-
-func DumpErrorResponse(response *http.Response) string {
-	content, err := httputil.DumpResponse(response, true)
-	if err != nil {
-		return fmt.Sprintf("Service responded with error. Failed to dump error response: %s", err.Error())
-	}
-
-	return string(content)
 }
