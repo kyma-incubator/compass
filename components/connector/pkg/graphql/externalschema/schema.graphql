@@ -37,10 +37,6 @@ type Query {
 }
 
 type Mutation {
-    # Tokens
-    generateApplicationToken(appID: ID!): Token!
-    generateRuntimeToken(runtimeID: ID!): Token!
-
     # Client-Certificates
     signCertificateSigningRequest(csr: String!): CertificationResult!
 

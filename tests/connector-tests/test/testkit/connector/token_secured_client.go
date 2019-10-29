@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"net/http"
 
-	schema "github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
+	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
@@ -36,7 +36,7 @@ func NewConnectorClient(endpoint string) *TokenSecuredClient {
 	}
 }
 
-func (c *TokenSecuredClient) Configuration(token string, headers ...http.Header) (schema.Configuration, error) {
+func (c *TokenSecuredClient) Configuration(token string, headers ...http.Header) (externalschema.Configuration, error) {
 	query := c.queryProvider.configuration()
 	req := gcli.NewRequest(query)
 	req.Header.Add(TokenHeader, token)
@@ -45,12 +45,12 @@ func (c *TokenSecuredClient) Configuration(token string, headers ...http.Header)
 
 	err := c.graphQlClient.Run(context.Background(), req, &response)
 	if err != nil {
-		return schema.Configuration{}, errors.Wrap(err, "Failed to get configuration")
+		return externalschema.Configuration{}, errors.Wrap(err, "Failed to get configuration")
 	}
 	return response.Result, nil
 }
 
-func (c *TokenSecuredClient) SignCSR(csr string, token string, headers ...http.Header) (schema.CertificationResult, error) {
+func (c *TokenSecuredClient) SignCSR(csr string, token string, headers ...http.Header) (externalschema.CertificationResult, error) {
 	query := c.queryProvider.signCSR(csr)
 	req := gcli.NewRequest(query)
 	req.Header.Add(TokenHeader, token)
@@ -59,17 +59,17 @@ func (c *TokenSecuredClient) SignCSR(csr string, token string, headers ...http.H
 
 	err := c.graphQlClient.Run(context.Background(), req, &response)
 	if err != nil {
-		return schema.CertificationResult{}, errors.Wrap(err, "Failed to generate certificate")
+		return externalschema.CertificationResult{}, errors.Wrap(err, "Failed to generate certificate")
 	}
 	return response.Result, nil
 }
 
 type ConfigurationResponse struct {
-	Result schema.Configuration `json:"result"`
+	Result externalschema.Configuration `json:"result"`
 }
 
 type CertificationResponse struct {
-	Result schema.CertificationResult `json:"result"`
+	Result externalschema.CertificationResult `json:"result"`
 }
 
 type RevokeResult struct {

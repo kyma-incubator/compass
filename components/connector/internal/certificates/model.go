@@ -3,7 +3,7 @@ package certificates
 import (
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
+	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 )
 
 type CSRSubject struct {
@@ -29,8 +29,8 @@ type EncodedCertificateChain struct {
 	CaCertificate     string
 }
 
-func ToCertificationResult(encodedChain EncodedCertificateChain) gqlschema.CertificationResult {
-	return gqlschema.CertificationResult{
+func ToCertificationResult(encodedChain EncodedCertificateChain) externalschema.CertificationResult {
+	return externalschema.CertificationResult{
 		CertificateChain:  encodedChain.CertificateChain,
 		ClientCertificate: encodedChain.ClientCertificate,
 		CaCertificate:     encodedChain.CaCertificate,

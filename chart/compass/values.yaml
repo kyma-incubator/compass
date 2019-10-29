@@ -7,7 +7,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir: pr/
-      version: "PR-357"
+      version: "PR-391"
     director:
       dir:
       version: "PR-364"
@@ -34,7 +34,7 @@ global:
         version: "PR-364"
       connector:
         dir: pr/
-        version: "PR-357"
+        version: "PR-391"
       provisioner:
         dir:
         version: "PR-418"
@@ -47,7 +47,10 @@ global:
 
   connector:
     graphql:
-      port: 3000
+      external:
+        port: 3000
+      internal:
+        port: 3001
     validator:
       port: 8080
     # If secrets do not exist they will be created

@@ -7,7 +7,7 @@ import (
 	"crypto/x509"
 	"net/http"
 
-	schema "github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
+	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
@@ -48,7 +48,7 @@ func NewCertificateSecuredConnectorClient(endpoint string, key *rsa.PrivateKey, 
 	}
 }
 
-func (c CertificateSecuredClient) Configuration(headers ...http.Header) (schema.Configuration, error) {
+func (c CertificateSecuredClient) Configuration(headers ...http.Header) (externalschema.Configuration, error) {
 	query := c.queryProvider.configuration()
 	req := gcli.NewRequest(query)
 
@@ -56,12 +56,12 @@ func (c CertificateSecuredClient) Configuration(headers ...http.Header) (schema.
 
 	err := c.graphQlClient.Run(context.Background(), req, &response)
 	if err != nil {
-		return schema.Configuration{}, errors.Wrap(err, "Failed to get configuration")
+		return externalschema.Configuration{}, errors.Wrap(err, "Failed to get configuration")
 	}
 	return response.Result, nil
 }
 
-func (c CertificateSecuredClient) SignCSR(csr string, headers ...http.Header) (schema.CertificationResult, error) {
+func (c CertificateSecuredClient) SignCSR(csr string, headers ...http.Header) (externalschema.CertificationResult, error) {
 	query := c.queryProvider.signCSR(csr)
 	req := gcli.NewRequest(query)
 
@@ -69,7 +69,7 @@ func (c CertificateSecuredClient) SignCSR(csr string, headers ...http.Header) (s
 
 	err := c.graphQlClient.Run(context.Background(), req, &response)
 	if err != nil {
-		return schema.CertificationResult{}, errors.Wrap(err, "Failed to generate certificate")
+		return externalschema.CertificationResult{}, errors.Wrap(err, "Failed to generate certificate")
 	}
 	return response.Result, nil
 }
