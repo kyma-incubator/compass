@@ -1,4 +1,4 @@
-package testkit
+package provisioner
 
 import (
 	"bytes"
@@ -56,8 +56,9 @@ func (g *graphqlizer) CredentialsInputToGraphQL(in gqlschema.CredentialsInput) (
 
 func (g *graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
-		name: "{{.Name}}",
-		kubernetesVersion: "{{.KubernetesVersion}}",
+		name: "{{.Name}}"
+		kubernetesVersion: "{{.KubernetesVersion}}"
+        projectName: "{{.ProjectName}}"
 		nodeCount: {{.NodeCount}}
 		volumeSize: "{{.VolumeSize}}"
 		machineType: "{{.MachineType}}"
@@ -76,8 +77,9 @@ func (g *graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 
 func (g *graphqlizer) GCPConfigInputToGraphQL(in gqlschema.GCPConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
-		name: "{{.Name}}",
-		kubernetesVersion: "{{.KubernetesVersion}}",
+		name: "{{.Name}}"
+		kubernetesVersion: "{{.KubernetesVersion}}"
+        projectName: "{{.ProjectName}}"
 		numberOfNodes: {{.NumberOfNodes}}
 		bootDiskSize: "{{.BootDiskSize}}"
 		machineType: "{{.MachineType}}"
@@ -102,7 +104,10 @@ func (g *graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string,
 		version: "{{.Version}}"
 		{{- end }}
 		{{- if .Modules }}
-		modules: "{{ .Modules }}"
+		modules: [
+			{{- range $i, $e := .Modules }}
+			{{- if $i}}, {{- end}} {{ $e }}
+			{{- end }}]
 		{{- end }}
 	}`)
 }

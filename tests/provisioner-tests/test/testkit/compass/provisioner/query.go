@@ -1,4 +1,4 @@
-package testkit
+package provisioner
 
 import "fmt"
 
@@ -16,10 +16,10 @@ func (qp queryProvider) upgradeRuntime(runtimeID string, config string) string {
 }`, runtimeID, config)
 }
 
-func (qp queryProvider) deprovisionRuntime(runtimeID string) string {
+func (qp queryProvider) deprovisionRuntime(runtimeID, credentialsInput string) string {
 	return fmt.Sprintf(`mutation {
-	result: deprovisionRuntime(id: "%s")
-}`, runtimeID)
+	result: deprovisionRuntime(id: "%s", credentials: %s)
+}`, runtimeID, credentialsInput)
 }
 
 func (qp queryProvider) reconnectRuntimeAgent(runtimeID string) string {
@@ -33,7 +33,7 @@ func (qp queryProvider) runtimeStatus(operationID string) string {
 	result: runtimeStatus(id: "%s") {
 	%s
 	}
-}`, operationID, runtimeStatusResult())
+}`, operationID, runtimeStatusData())
 }
 
 func (qp queryProvider) runtimeOperationStatus(operationID string) string {
@@ -41,10 +41,10 @@ func (qp queryProvider) runtimeOperationStatus(operationID string) string {
 	result: runtimeOperationStatus(id: "%s") {
 	%s
 	}
-}`, operationID, operationStatusResult())
+}`, operationID, operationStatusData())
 }
 
-func runtimeStatusResult() string {
+func runtimeStatusData() string {
 	return fmt.Sprintf(`lastOperationStatus { operation state message }
 			runtimeConnectionStatus { status }
 			runtimeConfiguration { 
@@ -61,6 +61,7 @@ func clusterConfig() string {
 		... on GardenerConfig {
 			name 
 			kubernetesVersion
+			projectName
 			nodeCount 
 			volumeSize
 			diskType
@@ -78,6 +79,7 @@ func clusterConfig() string {
 		...  on GCPConfig {
 			name 
 			kubernetesVersion
+			projectName
 			numberOfNodes 
 			bootDiskSize
 			machineType
@@ -87,8 +89,10 @@ func clusterConfig() string {
 `)
 }
 
-func operationStatusResult() string {
-	return `operation 
+func operationStatusData() string {
+	return `id
+			operation 
 			state
-			message`
+			message
+			runtimeID`
 }
