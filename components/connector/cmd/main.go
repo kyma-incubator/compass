@@ -194,10 +194,6 @@ func prepareInternalGraphQLServer(cfg config, tokenResolver api.TokenResolver) *
 	internalRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 	internalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(internalExecutableSchema))
 
-	authContextMiddleware := authentication.NewAuthenticationContextMiddleware()
-
-	internalRouter.Use(authContextMiddleware.PropagateAuthentication)
-
 	return &http.Server{
 		Addr:    cfg.InternalAddress,
 		Handler: internalRouter,
