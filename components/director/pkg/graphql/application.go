@@ -21,6 +21,8 @@ type ApplicationExt struct {
 	Webhooks  []Webhook                 `json:"webhooks"`
 	Apis      APIDefinitionPageExt      `json:"apis"`
 	EventAPIs EventAPIDefinitionPageExt `json:"eventAPIs"`
+	Api       APIDefinition             `json:"api"`
+	EventAPI  EventAPIDefinition        `json:"eventAPI"`
 	Documents DocumentPageExt           `json:"documents"`
 	Auths     []*SystemAuth             `json:"auths"`
 }
