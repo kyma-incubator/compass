@@ -22,6 +22,8 @@ These documents provide you with more architectural details:
 - [Runtime Agent contract](./architecture/runtime-agent-contract.md)
 - [Database scheme](./architecture/db-scheme.md)
 - [Authentication and authorization](./architecture/authentication-and-authorization.md)
+- [Input validation](./architecture/input-validation.md)
+  - [Proposal: API specifications support](./architecture/api-specs-support.md)
 
 ## Examples
 
