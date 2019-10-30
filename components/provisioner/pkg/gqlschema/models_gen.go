@@ -12,6 +12,36 @@ type ClusterConfig interface {
 	IsClusterConfig()
 }
 
+type ProviderSpecificConfig interface {
+	IsProviderSpecificConfig()
+}
+
+type AWSProviderConfig struct {
+	Zone          *string `json:"zone"`
+	Vpccidr       *string `json:"vpccidr"`
+	Publicscidr   *string `json:"publicscidr"`
+	Internalscidr *string `json:"internalscidr"`
+}
+
+func (AWSProviderConfig) IsProviderSpecificConfig() {}
+
+type AWSProviderConfigInput struct {
+	Zone          string `json:"zone"`
+	Vpccidr       string `json:"vpccidr"`
+	Publicscidr   string `json:"publicscidr"`
+	Internalscidr string `json:"internalscidr"`
+}
+
+type AzureProviderConfig struct {
+	Vnetcidr *string `json:"vnetcidr"`
+}
+
+func (AzureProviderConfig) IsProviderSpecificConfig() {}
+
+type AzureProviderConfigInput struct {
+	Vnetcidr string `json:"vnetcidr"`
+}
+
 type ClusterConfigInput struct {
 	GardenerConfig *GardenerConfigInput `json:"gardenerConfig"`
 	GcpConfig      *GCPConfigInput      `json:"gcpConfig"`
@@ -49,44 +79,54 @@ type GCPConfigInput struct {
 	Zone              *string `json:"zone"`
 }
 
+type GCPProviderConfig struct {
+	Zone *string `json:"zone"`
+}
+
+func (GCPProviderConfig) IsProviderSpecificConfig() {}
+
+type GCPProviderConfigInput struct {
+	Zone string `json:"zone"`
+}
+
 type GardenerConfig struct {
-	Name              *string `json:"name"`
-	ProjectName       *string `json:"projectName"`
-	KubernetesVersion *string `json:"kubernetesVersion"`
-	NodeCount         *int    `json:"nodeCount"`
-	VolumeSize        *string `json:"volumeSize"`
-	MachineType       *string `json:"machineType"`
-	Region            *string `json:"region"`
-	TargetProvider    *string `json:"targetProvider"`
-	TargetSecret      *string `json:"targetSecret"`
-	DiskType          *string `json:"diskType"`
-	Zone              *string `json:"zone"`
-	Cidr              *string `json:"cidr"`
-	AutoScalerMin     *int    `json:"autoScalerMin"`
-	AutoScalerMax     *int    `json:"autoScalerMax"`
-	MaxSurge          *int    `json:"maxSurge"`
-	MaxUnavailable    *int    `json:"maxUnavailable"`
+	Name                   *string                `json:"name"`
+	ProjectName            *string                `json:"projectName"`
+	KubernetesVersion      *string                `json:"kubernetesVersion"`
+	NodeCount              *int                   `json:"nodeCount"`
+	VolumeSize             *string                `json:"volumeSize"`
+	MachineType            *string                `json:"machineType"`
+	Region                 *string                `json:"region"`
+	TargetProvider         *string                `json:"targetProvider"`
+	TargetSecret           *string                `json:"targetSecret"`
+	DiskType               *string                `json:"diskType"`
+	Workercidr             *string                `json:"workercidr"`
+	AutoScalerMin          *int                   `json:"autoScalerMin"`
+	AutoScalerMax          *int                   `json:"autoScalerMax"`
+	MaxSurge               *int                   `json:"maxSurge"`
+	MaxUnavailable         *int                   `json:"maxUnavailable"`
+	ProviderSpecificConfig ProviderSpecificConfig `json:"providerSpecificConfig"`
 }
 
 func (GardenerConfig) IsClusterConfig() {}
 
 type GardenerConfigInput struct {
-	Name              string `json:"name"`
-	ProjectName       string `json:"projectName"`
-	KubernetesVersion string `json:"kubernetesVersion"`
-	NodeCount         int    `json:"nodeCount"`
-	VolumeSize        string `json:"volumeSize"`
-	MachineType       string `json:"machineType"`
-	Region            string `json:"region"`
-	TargetProvider    string `json:"targetProvider"`
-	TargetSecret      string `json:"targetSecret"`
-	DiskType          string `json:"diskType"`
-	Zone              string `json:"zone"`
-	Cidr              string `json:"cidr"`
-	AutoScalerMin     int    `json:"autoScalerMin"`
-	AutoScalerMax     int    `json:"autoScalerMax"`
-	MaxSurge          int    `json:"maxSurge"`
-	MaxUnavailable    int    `json:"maxUnavailable"`
+	Name                   string                 `json:"name"`
+	ProjectName            string                 `json:"projectName"`
+	KubernetesVersion      string                 `json:"kubernetesVersion"`
+	NodeCount              int                    `json:"nodeCount"`
+	VolumeSize             string                 `json:"volumeSize"`
+	MachineType            string                 `json:"machineType"`
+	Region                 string                 `json:"region"`
+	TargetProvider         string                 `json:"targetProvider"`
+	TargetSecret           string                 `json:"targetSecret"`
+	DiskType               string                 `json:"diskType"`
+	Workercidr             string                 `json:"workercidr"`
+	AutoScalerMin          int                    `json:"autoScalerMin"`
+	AutoScalerMax          int                    `json:"autoScalerMax"`
+	MaxSurge               int                    `json:"maxSurge"`
+	MaxUnavailable         int                    `json:"maxUnavailable"`
+	ProviderSpecificConfig *ProviderSpecificInput `json:"providerSpecificConfig"`
 }
 
 type KymaConfig struct {
@@ -105,6 +145,12 @@ type OperationStatus struct {
 	State     OperationState `json:"state"`
 	Message   *string        `json:"message"`
 	RuntimeID *string        `json:"runtimeID"`
+}
+
+type ProviderSpecificInput struct {
+	GcpConfig   *GCPProviderConfigInput   `json:"gcpConfig"`
+	AzureConfig *AzureProviderConfigInput `json:"azureConfig"`
+	AwsConfig   *AWSProviderConfigInput   `json:"awsConfig"`
 }
 
 type ProvisionRuntimeInput struct {

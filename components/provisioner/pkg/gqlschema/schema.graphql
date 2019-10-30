@@ -31,12 +31,29 @@ type GardenerConfig {
     targetProvider: String
     targetSecret: String
     diskType: String
-    zone: String
-    cidr: String
+    workercidr: String
     autoScalerMin: Int
     autoScalerMax: Int
     maxSurge: Int
     maxUnavailable: Int
+    providerSpecificConfig: ProviderSpecificConfig
+}
+
+union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig
+
+type GCPProviderConfig {
+    zone: String
+}
+
+type AzureProviderConfig {
+    vnetcidr: String
+}
+
+type AWSProviderConfig {
+    zone: String
+    vpccidr: String
+    publicscidr: String
+    internalscidr: String
 }
 
 type GCPConfig {
@@ -127,12 +144,33 @@ input GardenerConfigInput {
     targetProvider: String!
     targetSecret: String!
     diskType: String!
-    zone: String!
-    cidr: String!
+    workercidr: String!
     autoScalerMin: Int!
     autoScalerMax: Int!
     maxSurge: Int!
     maxUnavailable: Int!
+    providerSpecificConfig: ProviderSpecificInput!
+}
+
+input ProviderSpecificInput {
+    gcpConfig: GCPProviderConfigInput
+    azureConfig: AzureProviderConfigInput
+    awsConfig: AWSProviderConfigInput
+}
+
+input GCPProviderConfigInput {
+    zone: String!
+}
+
+input AzureProviderConfigInput {
+    vnetcidr: String!
+}
+
+input AWSProviderConfigInput {
+    zone: String!
+    vpccidr: String!
+    publicscidr: String!
+    internalscidr: String!
 }
 
 input GCPConfigInput {

@@ -42,6 +42,17 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	AWSProviderConfig struct {
+		Internalscidr func(childComplexity int) int
+		Publicscidr   func(childComplexity int) int
+		Vpccidr       func(childComplexity int) int
+		Zone          func(childComplexity int) int
+	}
+
+	AzureProviderConfig struct {
+		Vnetcidr func(childComplexity int) int
+	}
+
 	Error struct {
 		Message func(childComplexity int) int
 	}
@@ -57,23 +68,27 @@ type ComplexityRoot struct {
 		Zone              func(childComplexity int) int
 	}
 
+	GCPProviderConfig struct {
+		Zone func(childComplexity int) int
+	}
+
 	GardenerConfig struct {
-		AutoScalerMax     func(childComplexity int) int
-		AutoScalerMin     func(childComplexity int) int
-		Cidr              func(childComplexity int) int
-		DiskType          func(childComplexity int) int
-		KubernetesVersion func(childComplexity int) int
-		MachineType       func(childComplexity int) int
-		MaxSurge          func(childComplexity int) int
-		MaxUnavailable    func(childComplexity int) int
-		Name              func(childComplexity int) int
-		NodeCount         func(childComplexity int) int
-		ProjectName       func(childComplexity int) int
-		Region            func(childComplexity int) int
-		TargetProvider    func(childComplexity int) int
-		TargetSecret      func(childComplexity int) int
-		VolumeSize        func(childComplexity int) int
-		Zone              func(childComplexity int) int
+		AutoScalerMax          func(childComplexity int) int
+		AutoScalerMin          func(childComplexity int) int
+		DiskType               func(childComplexity int) int
+		KubernetesVersion      func(childComplexity int) int
+		MachineType            func(childComplexity int) int
+		MaxSurge               func(childComplexity int) int
+		MaxUnavailable         func(childComplexity int) int
+		Name                   func(childComplexity int) int
+		NodeCount              func(childComplexity int) int
+		ProjectName            func(childComplexity int) int
+		ProviderSpecificConfig func(childComplexity int) int
+		Region                 func(childComplexity int) int
+		TargetProvider         func(childComplexity int) int
+		TargetSecret           func(childComplexity int) int
+		VolumeSize             func(childComplexity int) int
+		Workercidr             func(childComplexity int) int
 	}
 
 	KymaConfig struct {
@@ -148,6 +163,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
+	case "AWSProviderConfig.internalscidr":
+		if e.complexity.AWSProviderConfig.Internalscidr == nil {
+			break
+		}
+
+		return e.complexity.AWSProviderConfig.Internalscidr(childComplexity), true
+
+	case "AWSProviderConfig.publicscidr":
+		if e.complexity.AWSProviderConfig.Publicscidr == nil {
+			break
+		}
+
+		return e.complexity.AWSProviderConfig.Publicscidr(childComplexity), true
+
+	case "AWSProviderConfig.vpccidr":
+		if e.complexity.AWSProviderConfig.Vpccidr == nil {
+			break
+		}
+
+		return e.complexity.AWSProviderConfig.Vpccidr(childComplexity), true
+
+	case "AWSProviderConfig.zone":
+		if e.complexity.AWSProviderConfig.Zone == nil {
+			break
+		}
+
+		return e.complexity.AWSProviderConfig.Zone(childComplexity), true
+
+	case "AzureProviderConfig.vnetcidr":
+		if e.complexity.AzureProviderConfig.Vnetcidr == nil {
+			break
+		}
+
+		return e.complexity.AzureProviderConfig.Vnetcidr(childComplexity), true
+
 	case "Error.message":
 		if e.complexity.Error.Message == nil {
 			break
@@ -211,6 +261,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GCPConfig.Zone(childComplexity), true
 
+	case "GCPProviderConfig.zone":
+		if e.complexity.GCPProviderConfig.Zone == nil {
+			break
+		}
+
+		return e.complexity.GCPProviderConfig.Zone(childComplexity), true
+
 	case "GardenerConfig.autoScalerMax":
 		if e.complexity.GardenerConfig.AutoScalerMax == nil {
 			break
@@ -224,13 +281,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GardenerConfig.AutoScalerMin(childComplexity), true
-
-	case "GardenerConfig.cidr":
-		if e.complexity.GardenerConfig.Cidr == nil {
-			break
-		}
-
-		return e.complexity.GardenerConfig.Cidr(childComplexity), true
 
 	case "GardenerConfig.diskType":
 		if e.complexity.GardenerConfig.DiskType == nil {
@@ -288,6 +338,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GardenerConfig.ProjectName(childComplexity), true
 
+	case "GardenerConfig.providerSpecificConfig":
+		if e.complexity.GardenerConfig.ProviderSpecificConfig == nil {
+			break
+		}
+
+		return e.complexity.GardenerConfig.ProviderSpecificConfig(childComplexity), true
+
 	case "GardenerConfig.region":
 		if e.complexity.GardenerConfig.Region == nil {
 			break
@@ -316,12 +373,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GardenerConfig.VolumeSize(childComplexity), true
 
-	case "GardenerConfig.zone":
-		if e.complexity.GardenerConfig.Zone == nil {
+	case "GardenerConfig.workercidr":
+		if e.complexity.GardenerConfig.Workercidr == nil {
 			break
 		}
 
-		return e.complexity.GardenerConfig.Zone(childComplexity), true
+		return e.complexity.GardenerConfig.Workercidr(childComplexity), true
 
 	case "KymaConfig.modules":
 		if e.complexity.KymaConfig.Modules == nil {
@@ -614,12 +671,29 @@ type GardenerConfig {
     targetProvider: String
     targetSecret: String
     diskType: String
-    zone: String
-    cidr: String
+    workercidr: String
     autoScalerMin: Int
     autoScalerMax: Int
     maxSurge: Int
     maxUnavailable: Int
+    providerSpecificConfig: ProviderSpecificConfig
+}
+
+union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig
+
+type GCPProviderConfig {
+    zone: String
+}
+
+type AzureProviderConfig {
+    vnetcidr: String
+}
+
+type AWSProviderConfig {
+    zone: String
+    vpccidr: String
+    publicscidr: String
+    internalscidr: String
 }
 
 type GCPConfig {
@@ -710,12 +784,33 @@ input GardenerConfigInput {
     targetProvider: String!
     targetSecret: String!
     diskType: String!
-    zone: String!
-    cidr: String!
+    workercidr: String!
     autoScalerMin: Int!
     autoScalerMax: Int!
     maxSurge: Int!
     maxUnavailable: Int!
+    providerSpecificConfig: ProviderSpecificInput!
+}
+
+input ProviderSpecificInput {
+    gcpConfig: GCPProviderConfigInput
+    azureConfig: AzureProviderConfigInput
+    awsConfig: AWSProviderConfigInput
+}
+
+input GCPProviderConfigInput {
+    zone: String!
+}
+
+input AzureProviderConfigInput {
+    vnetcidr: String!
+}
+
+input AWSProviderConfigInput {
+    zone: String!
+    vpccidr: String!
+    publicscidr: String!
+    internalscidr: String!
 }
 
 input GCPConfigInput {
@@ -931,6 +1026,176 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _AWSProviderConfig_zone(ctx context.Context, field graphql.CollectedField, obj *AWSProviderConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "AWSProviderConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Zone, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AWSProviderConfig_vpccidr(ctx context.Context, field graphql.CollectedField, obj *AWSProviderConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "AWSProviderConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Vpccidr, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AWSProviderConfig_publicscidr(ctx context.Context, field graphql.CollectedField, obj *AWSProviderConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "AWSProviderConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Publicscidr, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AWSProviderConfig_internalscidr(ctx context.Context, field graphql.CollectedField, obj *AWSProviderConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "AWSProviderConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Internalscidr, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AzureProviderConfig_vnetcidr(ctx context.Context, field graphql.CollectedField, obj *AzureProviderConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "AzureProviderConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Vnetcidr, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
 
 func (ec *executionContext) _Error_message(ctx context.Context, field graphql.CollectedField, obj *Error) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
@@ -1215,6 +1480,40 @@ func (ec *executionContext) _GCPConfig_zone(ctx context.Context, field graphql.C
 	}()
 	rctx := &graphql.ResolverContext{
 		Object:   "GCPConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Zone, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GCPProviderConfig_zone(ctx context.Context, field graphql.CollectedField, obj *GCPProviderConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GCPProviderConfig",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -1578,7 +1877,7 @@ func (ec *executionContext) _GardenerConfig_diskType(ctx context.Context, field 
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _GardenerConfig_zone(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+func (ec *executionContext) _GardenerConfig_workercidr(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -1597,41 +1896,7 @@ func (ec *executionContext) _GardenerConfig_zone(ctx context.Context, field grap
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Zone, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _GardenerConfig_cidr(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "GardenerConfig",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Cidr, nil
+		return obj.Workercidr, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1780,6 +2045,40 @@ func (ec *executionContext) _GardenerConfig_maxUnavailable(ctx context.Context, 
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GardenerConfig_providerSpecificConfig(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProviderSpecificConfig, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(ProviderSpecificConfig)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOProviderSpecificConfig2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificConfig(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _KymaConfig_version(ctx context.Context, field graphql.CollectedField, obj *KymaConfig) (ret graphql.Marshaler) {
@@ -3863,6 +4162,60 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputAWSProviderConfigInput(ctx context.Context, obj interface{}) (AWSProviderConfigInput, error) {
+	var it AWSProviderConfigInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "zone":
+			var err error
+			it.Zone, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "vpccidr":
+			var err error
+			it.Vpccidr, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "publicscidr":
+			var err error
+			it.Publicscidr, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "internalscidr":
+			var err error
+			it.Internalscidr, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputAzureProviderConfigInput(ctx context.Context, obj interface{}) (AzureProviderConfigInput, error) {
+	var it AzureProviderConfigInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "vnetcidr":
+			var err error
+			it.Vnetcidr, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputClusterConfigInput(ctx context.Context, obj interface{}) (ClusterConfigInput, error) {
 	var it ClusterConfigInput
 	var asMap = obj.(map[string]interface{})
@@ -3965,6 +4318,24 @@ func (ec *executionContext) unmarshalInputGCPConfigInput(ctx context.Context, ob
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputGCPProviderConfigInput(ctx context.Context, obj interface{}) (GCPProviderConfigInput, error) {
+	var it GCPProviderConfigInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "zone":
+			var err error
+			it.Zone, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Context, obj interface{}) (GardenerConfigInput, error) {
 	var it GardenerConfigInput
 	var asMap = obj.(map[string]interface{})
@@ -4031,15 +4402,9 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
-		case "zone":
+		case "workercidr":
 			var err error
-			it.Zone, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "cidr":
-			var err error
-			it.Cidr, err = ec.unmarshalNString2string(ctx, v)
+			it.Workercidr, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4067,6 +4432,12 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
+		case "providerSpecificConfig":
+			var err error
+			it.ProviderSpecificConfig, err = ec.unmarshalNProviderSpecificInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -4088,6 +4459,36 @@ func (ec *executionContext) unmarshalInputKymaConfigInput(ctx context.Context, o
 		case "modules":
 			var err error
 			it.Modules, err = ec.unmarshalOKymaModule2ᚕgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaModule(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputProviderSpecificInput(ctx context.Context, obj interface{}) (ProviderSpecificInput, error) {
+	var it ProviderSpecificInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "gcpConfig":
+			var err error
+			it.GcpConfig, err = ec.unmarshalOGCPProviderConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGCPProviderConfigInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "azureConfig":
+			var err error
+			it.AzureConfig, err = ec.unmarshalOAzureProviderConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureProviderConfigInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "awsConfig":
+			var err error
+			it.AwsConfig, err = ec.unmarshalOAWSProviderConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAWSProviderConfigInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4190,9 +4591,84 @@ func (ec *executionContext) _ClusterConfig(ctx context.Context, sel ast.Selectio
 	}
 }
 
+func (ec *executionContext) _ProviderSpecificConfig(ctx context.Context, sel ast.SelectionSet, obj *ProviderSpecificConfig) graphql.Marshaler {
+	switch obj := (*obj).(type) {
+	case nil:
+		return graphql.Null
+	case GCPProviderConfig:
+		return ec._GCPProviderConfig(ctx, sel, &obj)
+	case *GCPProviderConfig:
+		return ec._GCPProviderConfig(ctx, sel, obj)
+	case AzureProviderConfig:
+		return ec._AzureProviderConfig(ctx, sel, &obj)
+	case *AzureProviderConfig:
+		return ec._AzureProviderConfig(ctx, sel, obj)
+	case AWSProviderConfig:
+		return ec._AWSProviderConfig(ctx, sel, &obj)
+	case *AWSProviderConfig:
+		return ec._AWSProviderConfig(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
+
+var aWSProviderConfigImplementors = []string{"AWSProviderConfig", "ProviderSpecificConfig"}
+
+func (ec *executionContext) _AWSProviderConfig(ctx context.Context, sel ast.SelectionSet, obj *AWSProviderConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, aWSProviderConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AWSProviderConfig")
+		case "zone":
+			out.Values[i] = ec._AWSProviderConfig_zone(ctx, field, obj)
+		case "vpccidr":
+			out.Values[i] = ec._AWSProviderConfig_vpccidr(ctx, field, obj)
+		case "publicscidr":
+			out.Values[i] = ec._AWSProviderConfig_publicscidr(ctx, field, obj)
+		case "internalscidr":
+			out.Values[i] = ec._AWSProviderConfig_internalscidr(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var azureProviderConfigImplementors = []string{"AzureProviderConfig", "ProviderSpecificConfig"}
+
+func (ec *executionContext) _AzureProviderConfig(ctx context.Context, sel ast.SelectionSet, obj *AzureProviderConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, azureProviderConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AzureProviderConfig")
+		case "vnetcidr":
+			out.Values[i] = ec._AzureProviderConfig_vnetcidr(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
 
 var errorImplementors = []string{"Error"}
 
@@ -4256,6 +4732,30 @@ func (ec *executionContext) _GCPConfig(ctx context.Context, sel ast.SelectionSet
 	return out
 }
 
+var gCPProviderConfigImplementors = []string{"GCPProviderConfig", "ProviderSpecificConfig"}
+
+func (ec *executionContext) _GCPProviderConfig(ctx context.Context, sel ast.SelectionSet, obj *GCPProviderConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, gCPProviderConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GCPProviderConfig")
+		case "zone":
+			out.Values[i] = ec._GCPProviderConfig_zone(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var gardenerConfigImplementors = []string{"GardenerConfig", "ClusterConfig"}
 
 func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.SelectionSet, obj *GardenerConfig) graphql.Marshaler {
@@ -4287,10 +4787,8 @@ func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._GardenerConfig_targetSecret(ctx, field, obj)
 		case "diskType":
 			out.Values[i] = ec._GardenerConfig_diskType(ctx, field, obj)
-		case "zone":
-			out.Values[i] = ec._GardenerConfig_zone(ctx, field, obj)
-		case "cidr":
-			out.Values[i] = ec._GardenerConfig_cidr(ctx, field, obj)
+		case "workercidr":
+			out.Values[i] = ec._GardenerConfig_workercidr(ctx, field, obj)
 		case "autoScalerMin":
 			out.Values[i] = ec._GardenerConfig_autoScalerMin(ctx, field, obj)
 		case "autoScalerMax":
@@ -4299,6 +4797,8 @@ func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._GardenerConfig_maxSurge(ctx, field, obj)
 		case "maxUnavailable":
 			out.Values[i] = ec._GardenerConfig_maxUnavailable(ctx, field, obj)
+		case "providerSpecificConfig":
+			out.Values[i] = ec._GardenerConfig_providerSpecificConfig(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4914,6 +5414,18 @@ func (ec *executionContext) marshalNOperationType2githubᚗcomᚋkymaᚑincubato
 	return v
 }
 
+func (ec *executionContext) unmarshalNProviderSpecificInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx context.Context, v interface{}) (ProviderSpecificInput, error) {
+	return ec.unmarshalInputProviderSpecificInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNProviderSpecificInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx context.Context, v interface{}) (*ProviderSpecificInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNProviderSpecificInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) unmarshalNProvisionRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProvisionRuntimeInput(ctx context.Context, v interface{}) (ProvisionRuntimeInput, error) {
 	return ec.unmarshalInputProvisionRuntimeInput(ctx, v)
 }
@@ -5171,6 +5683,30 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
+func (ec *executionContext) unmarshalOAWSProviderConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAWSProviderConfigInput(ctx context.Context, v interface{}) (AWSProviderConfigInput, error) {
+	return ec.unmarshalInputAWSProviderConfigInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOAWSProviderConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAWSProviderConfigInput(ctx context.Context, v interface{}) (*AWSProviderConfigInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOAWSProviderConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAWSProviderConfigInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalOAzureProviderConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureProviderConfigInput(ctx context.Context, v interface{}) (AzureProviderConfigInput, error) {
+	return ec.unmarshalInputAzureProviderConfigInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOAzureProviderConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureProviderConfigInput(ctx context.Context, v interface{}) (*AzureProviderConfigInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOAzureProviderConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureProviderConfigInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	return graphql.UnmarshalBoolean(v)
 }
@@ -5247,6 +5783,18 @@ func (ec *executionContext) unmarshalOGCPConfigInput2ᚖgithubᚗcomᚋkymaᚑin
 		return nil, nil
 	}
 	res, err := ec.unmarshalOGCPConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGCPConfigInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalOGCPProviderConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGCPProviderConfigInput(ctx context.Context, v interface{}) (GCPProviderConfigInput, error) {
+	return ec.unmarshalInputGCPProviderConfigInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOGCPProviderConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGCPProviderConfigInput(ctx context.Context, v interface{}) (*GCPProviderConfigInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOGCPProviderConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGCPProviderConfigInput(ctx, v)
 	return &res, err
 }
 
@@ -5461,6 +6009,10 @@ func (ec *executionContext) marshalOOperationStatus2ᚖgithubᚗcomᚋkymaᚑinc
 		return graphql.Null
 	}
 	return ec._OperationStatus(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOProviderSpecificConfig2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificConfig(ctx context.Context, sel ast.SelectionSet, v ProviderSpecificConfig) graphql.Marshaler {
+	return ec._ProviderSpecificConfig(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalORuntimeConfig2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeConfig(ctx context.Context, sel ast.SelectionSet, v RuntimeConfig) graphql.Marshaler {
