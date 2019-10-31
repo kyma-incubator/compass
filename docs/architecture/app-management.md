@@ -3,14 +3,14 @@
 Managing [Applications](./../terminology.md#Application) can be passed on some external system, to remove from Applications the burden of integration with Compass.
 Because of that [IntegrationSystems](./components.md#Integration-System) were introduced.
 
-To simplify creation of Applications, Director API is extended with Application Template. 
+To simplify creation of Applications, Director API is extended with ApplicationTemplate. 
 An ApplicationTemplate is reusable input for creating Applications that can be customized with placeholders provided 
 during Application creation.
 
 ## Manage Applications by Integration System
 Managing Integrations System is described in [a separate document](./integration-systems.md).
-Integration System can be uniquely identified by it's name. To create an Application that is managed by a Integration System,
-specify `integrationSystemName` in the ApplicationCreateInput. 
+Integration System is uniquely identified by its ID. To create an Application that is managed by an Integration System,
+specify `integrationSystemID` in the ApplicationCreateInput. 
 
 ```graphql
 input ApplicationCreateInput {
@@ -22,11 +22,11 @@ input ApplicationCreateInput {
     apis: [APIDefinitionInput!]
     eventAPIs: [EventAPIDefinitionInput!]
     documents: [DocumentInput!]
-    integrationSystemName: String #optional
+    integrationSystemID: ID
     labels: [LabelInput!]
 }
 ```
-IntegrationSystemID is an optional. It means that you can still create Application that is not managed by IntegrationSystem.
+IntegrationSystemID is an optional property. It means that you can still create Application that is not managed by IntegrationSystem.
 
 ### Example
 In this example, Integration System is registered and then it configures newly added Application. 
@@ -40,30 +40,29 @@ mutation {
 }
 
 ```
-2. Create Application with specified `integrationSystemName`
+2. Create Application with specified `integrationSystemID`
 ```graphql
 mutation {
-    createApplication(in:{name:"simpleApplication", integrationSystemName:"simpleIntegrationSystem"}) {
+    createApplication(in:{name:"simpleApplication", integrationSystemID:"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"}) {
         id
         name
-        integrationSystemName
+        integrationSystemID
         labels
     }
 }
 ```
-Compass adds label with name `integrationSystemName` for just created Application, so output of the previous mutation is the following:
-```
+Compass adds protected label with name `integrationSystemID` for just created Application, so output of the previous mutation is the following:
+```json
 {
   "data": {
     "createApplication": {
       "id": "d046590f-934f-411f-91e2-d446b404a2a2",
       "name": "simpleApplication",
-      "integrationSystemName": "simpleIntegrationSystem",
+      "integrationSystemID": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
       "labels": {
         "scenarios":["DEFULT"],
-        "integrationSystemName":"simpleIntegrationSystem",
-      },
-      
+        "integrationSystemID":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      }
     }
   }
 }
@@ -71,20 +70,22 @@ Compass adds label with name `integrationSystemName` for just created Applicatio
 
 Thanks to that,  Integration System can easily fetch all dependant Applications by querying them by label.
 Then, Integration System is responsible for updating Application details, like registering API and events.
+Given Integration System has privileges for modifying only Applications with matching `integrationSystemID`, so it cannot
+modify Applications managed manually or managed by other Integration System.
 
 ## Integration System supporting many Application types
 In the previous example, there was an assumption that every Application managed by given Integration System represents the same type
-of the Application.  
-In case IntegrationSystem supports many types of Applications, information about Application type should be stored in the Application labels.
+of the Application that provides similar API and event definitions.  
+In case IntegrationSystem supporting many types of Applications, information about Application type should be stored in the Application labels.
 Let assume that IntegrationSystem supports two types of Applications: `ecommerce` and `marketing` and such information 
-is stored in label `simpleIntegrationSystem/applicationType`.
+is stored in label `{integration-system-name}/applicationType`.
 To create an Application of type `ecommerce`, use following mutation:
 ```graphql
 mutation {
-    createApplication(in:{name:"ecommerceApp", integrationSystemName:"simpleIntegrationSystem", labels:[{key:"simpleIntegrationSystem/applicationType",value:"ecommerce"}]}) {
+    createApplication(in:{name:"ecommerceApp", integrationSystemID:"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", labels:[{key:"simpleIntegrationSystem/applicationType",value:"ecommerce"}]}) {
         id
         name
-        integrationSystemName
+        integrationSystemID
         labels
     }
 }
@@ -95,7 +96,10 @@ Luckily, IntegrationSystem can simplify this process by defining ApplicationTemp
 
 ## Managing ApplicationTemplates
 ApplicationTemplate defines ApplicationInput used to create Application. ApplicationInput can contains variable part - placeholders.
-In the first iteration, ApplicationTemplate will be registered globally and will be visible for all tenants (notice `accessLevel` field).
+Placeholders are represented in template in the following form:
+```{{PLACEHOLDER_NAME}}```
+Every placeholder is required. Compass blocks creating Application from template if any placeholder has missing actual value.
+In the first iteration ApplicationTemplate will be registered globally and will be visible for all tenants (notice `accessLevel` field)
 
 ```graphql
 input ApplicationTemplateInput {
@@ -120,8 +124,8 @@ input PlaceholderDefinitionInput {
 }
 
 input TemplateValueInput {
-    Placeholder     String!
-    Value           String!
+    placeholder     String!
+    value           String!
 }
 
 type Mutation {
@@ -146,9 +150,8 @@ mutation {
         name:"ecommerce-template", 
         applicationInput:{
             name: "ecommerce-app",
-            integrationSystemName: "simpleIntegrationSystem",
+            integrationSystemID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
             labels:[{key:"simpleIntegrationSystem/applicationType",value:"ecommerce"}]
-    
         }
         }) {
            name
@@ -179,11 +182,15 @@ mutation {
 }
 ```
 
-This mutation creates Application with name `ecommecre-app`, integrationSystemName is set to `simpleIntegrationSystem` and 
+This mutation creates Application with name `ecommerce-app`, integrationSystemID is set to `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa` and 
 with two labels:
-- `integrationSystemName` with value `simpleIntegrationSystem`
+- `integrationSystemID` with value `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa`
 - `simpleIntegrationSystem/applicationType` with value `ecommerce`
 
+When Integration System noticed, that new Application was created, it starts configuring it according to information 
+stored in the `applicationType` label.
+
+In this example, IntegrationSystem registers ApplicationTemplate, but users can also define their own ApplicationTemplates.
 
 ## Use placeholders in ApplicationTemplate
 In the previous example, ApplicationTemplate was created with hardcoded Application name `ecommerce-app`. 
@@ -200,14 +207,14 @@ mutation {
         name:"ecommerce-template", 
         applicationInput:{
             name: "{{APPLICATION_NAME}}",
-            integrationSystemName: "simpleIntegrationSystem",
+            integrationSystemID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
             labels:[{key:"simpleIntegrationSystem/applicationType",value:"ecommerce"}]
     
         },
         placeholders: [
         {
-            Name:"APPLICATION_NAME",
-            Description:"Name of the application"
+            name:"APPLICATION_NAME",
+            description:"Name of the application"
         }],
         }) {
            name
@@ -216,12 +223,13 @@ mutation {
 ```
 
 As you can see, `APPLICATION_NAME` placeholder is defined. In ApplicationInput, we refer to the placeholder in the following form: `{{APPLICATION_NAME}}`.
+
 2. Create Application from Template
 When user creates Application from Template that defines placeholders, current value for all placeholders has to be specified.
 
 ```graphql
 mutation {
-    createApplicationFromTemplate(templateName:"ecommerce-template", values: [{Placeholder:"APPLICATION_NAME", Value:"MyApplication"}]) {
+    createApplicationFromTemplate(templateName:"ecommerce-template", values: [{placeholder:"APPLICATION_NAME", value:"MyApplication"}]) {
         id
         name
         labels
@@ -243,7 +251,7 @@ mutation {
         name:"ecommerce-template", 
         applicationInput:{
             name: "{{APPLICATION_NAME}}",
-            integrationSystemName: "simpleIntegrationSystem",
+            integrationSystemID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
             labels:[{key:"simpleIntegrationSystem/applicationType",value:"ecommerce"},
                     {key:"simpleIntegrationSystem/inputParam/username", value:"{{USERNAME}}"},
                      {key:"simpleIntegrationSystem/inputParam/password", value:"{{PASSWORD}}"},
@@ -252,16 +260,16 @@ mutation {
         },
         placeholders: [
         {
-            Name:"APPLICATION_NAME",
-            Description:"Name of the application"
+            name:"APPLICATION_NAME",
+            description:"Name of the application"
         },
         {
-            Name:"USERNAME",
-            Description:"User name"
+            name:"USERNAME",
+            description:"User name"
         },
         {
-            Name:"PASSWORD",
-            Description:"Password"
+            name:"PASSWORD",
+            description:"Password"
         },
         
         ],
@@ -275,9 +283,9 @@ mutation {
  ```graphql
  mutation {
      createApplicationFromTemplate(templateName:"ecommerce-template", values: [
-     {Placeholder:"APPLICATION_NAME", Value:"MyApplication"},
-     {Placeholder:"USERNAME", Value:"john@doe.com"},
-     {Placeholder:"PASSWORD", Value:"perch"}
+     {placeholder:"APPLICATION_NAME", value:"MyApplication"},
+     {placeholder:"USERNAME", value:"john@doe.com"},
+     {placeholder:"PASSWORD", value:"perch"}
      ]) {
          id
          name
@@ -293,9 +301,9 @@ Compass API follows Larry Wall advice:
 2. ApplicationTemplate can be defined not only by Integration System, but also by users. 
 If user creates manually many similar Applications, he can define Application Template to simplify it.
 3. IntegrationSystem can define ApplicationTemplate, but it is not required. If given IntegrationSystem supports
-only one Application type, creating Application template an be an overkill. 
+only one Application type, creating Application template can be an overkill. 
 
-From UI perspective, user has also simple view when creating application with two possible options:
+From UI perspective, user has also simple view for creating application with two possible options:
 - create manually Application
 - create Application from Template
 
