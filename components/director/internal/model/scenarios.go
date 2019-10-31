@@ -41,7 +41,8 @@ var (
 					"enum": map[string]interface{}{
 						"type": "array",
 						"items": map[string]interface{}{
-							"type": "string",
+							"type":    "string",
+							"pattern": "^[A-Za-z0-9]([-A-Za-z0-9\\s]*[A-Za-z0-9])$",
 						},
 						"contains": map[string]interface{}{
 							"const": "DEFAULT",

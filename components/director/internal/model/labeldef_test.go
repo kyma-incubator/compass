@@ -48,19 +48,7 @@ func TestValidateLabelDef(t *testing.T) {
 		require.EqualError(t, err, "missing Tenant field")
 	})
 
-	t.Run("invalid schema", func(t *testing.T) {
-		// TODO
-		t.SkipNow()
-		// GIVEN
-		var sch interface{} = "anything"
-		in := model.LabelDefinition{ID: "id", Key: "key", Tenant: "tenant", Schema: &sch}
-		// WHEN
-		err := in.Validate()
-		// THEN
-		require.EqualError(t, err, "xxx")
-	})
-
-	t.Run("valid scenarios definition update", func(t *testing.T) {
+	t.Run("valid scenarios definition", func(t *testing.T) {
 		// GIVEN
 		var schema interface{} = model.ScenariosSchema
 		in := model.LabelDefinition{ID: "id", Key: model.ScenariosKey, Tenant: "tenant", Schema: &schema}
@@ -70,7 +58,7 @@ func TestValidateLabelDef(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("invalid scenarios definition update", func(t *testing.T) {
+	t.Run("invalid scenarios definition", func(t *testing.T) {
 		// GIVEN
 		var sch interface{} = map[string]interface{}{"test": "test"}
 		in := model.LabelDefinition{ID: "id", Key: model.ScenariosKey, Tenant: "tenant", Schema: &sch}
@@ -80,13 +68,52 @@ func TestValidateLabelDef(t *testing.T) {
 		require.Error(t, err)
 	})
 
-	t.Run("scenarios definition update when schema is nil", func(t *testing.T) {
+	t.Run("scenarios definition with enum value which does not meet the regex", func(t *testing.T) {
+		// GIVEN
+		var sch interface{} = map[string]interface{}{
+			"type":        "array",
+			"minItems":    1,
+			"uniqueItems": true,
+			"items": map[string]interface{}{
+				"type": "string",
+				"enum": []string{"DEFAULT", "Abc&Cde"},
+			},
+		}
+		in := model.LabelDefinition{ID: "id", Key: model.ScenariosKey, Tenant: "tenant", Schema: &sch}
+		// WHEN
+		err := in.Validate()
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "while validating schema for key scenarios")
+	})
+
+	t.Run("scenarios definition without DEFAULT enum value", func(t *testing.T) {
+		// GIVEN
+		var sch interface{} = map[string]interface{}{
+			"type":        "array",
+			"minItems":    1,
+			"uniqueItems": true,
+			"items": map[string]interface{}{
+				"type": "string",
+				"enum": []string{"Abc"},
+			},
+		}
+		in := model.LabelDefinition{ID: "id", Key: model.ScenariosKey, Tenant: "tenant", Schema: &sch}
+		// WHEN
+		err := in.Validate()
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "while validating schema for key scenarios")
+	})
+
+	t.Run("scenarios definition when schema is nil", func(t *testing.T) {
 		// GIVEN
 		in := model.LabelDefinition{ID: "id", Key: model.ScenariosKey, Tenant: "tenant", Schema: nil}
 		// WHEN
 		err := in.Validate()
 		// THEN
 		require.Error(t, err)
+		require.Contains(t, err.Error(), "while validating schema for key scenarios")
 	})
 
 }
@@ -125,18 +152,6 @@ func TestValidateForUpdateLabelDef(t *testing.T) {
 		require.EqualError(t, err, "missing Tenant field")
 	})
 
-	t.Run("invalid schema", func(t *testing.T) {
-		// TODO
-		t.SkipNow()
-		// GIVEN
-		var sch interface{} = "anything"
-		in := model.LabelDefinition{Key: "key", Tenant: "tenant", Schema: &sch}
-		// WHEN
-		err := in.ValidateForUpdate()
-		// THEN
-		require.EqualError(t, err, "xxx")
-	})
-
 	t.Run("valid scenarios definition update", func(t *testing.T) {
 		// GIVEN
 		var schema interface{} = model.ScenariosSchema
@@ -164,6 +179,44 @@ func TestValidateForUpdateLabelDef(t *testing.T) {
 		err := in.ValidateForUpdate()
 		// THEN
 		require.Error(t, err)
+	})
+
+	t.Run("scenarios definition with enum value which does not meet the regex", func(t *testing.T) {
+		// GIVEN
+		var sch interface{} = map[string]interface{}{
+			"type":        "array",
+			"minItems":    1,
+			"uniqueItems": true,
+			"items": map[string]interface{}{
+				"type": "string",
+				"enum": []string{"DEFAULT", "Abc&Cde"},
+			},
+		}
+		in := model.LabelDefinition{ID: "id", Key: model.ScenariosKey, Tenant: "tenant", Schema: &sch}
+		// WHEN
+		err := in.ValidateForUpdate()
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "while validating schema for key scenarios")
+	})
+
+	t.Run("scenarios definition without DEFAULT enum value", func(t *testing.T) {
+		// GIVEN
+		var sch interface{} = map[string]interface{}{
+			"type":        "array",
+			"minItems":    1,
+			"uniqueItems": true,
+			"items": map[string]interface{}{
+				"type": "string",
+				"enum": []string{"Abc"},
+			},
+		}
+		in := model.LabelDefinition{ID: "id", Key: model.ScenariosKey, Tenant: "tenant", Schema: &sch}
+		// WHEN
+		err := in.ValidateForUpdate()
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "while validating schema for key scenarios")
 	})
 
 }
