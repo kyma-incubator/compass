@@ -11,9 +11,10 @@ var (
 		"minItems":    1,
 		"uniqueItems": true,
 		"items": map[string]interface{}{
-			"type":    "string",
-			"pattern": "^[A-Za-z0-9]([-A-Za-z0-9\\s]*[A-Za-z0-9])$",
-			"enum":    []string{"DEFAULT"},
+			"type":      "string",
+			"pattern":   "^[A-Za-z0-9]([-_A-Za-z0-9\\s]*[A-Za-z0-9])$",
+			"enum":      []string{"DEFAULT"},
+			"maxLength": 128,
 		},
 	}
 	// This schema is used to validate ScenariosSchema (allows only modifications to enum field)
@@ -40,13 +41,17 @@ var (
 						"const": "string",
 					},
 					"pattern": map[string]interface{}{
-						"const": "^[A-Za-z0-9]([-A-Za-z0-9\\s]*[A-Za-z0-9])$",
+						"const": "^[A-Za-z0-9]([-_A-Za-z0-9\\s]*[A-Za-z0-9])$",
+					},
+					"maxLength": map[string]interface{}{
+						"const": 128,
 					},
 					"enum": map[string]interface{}{
 						"type": "array",
 						"items": map[string]interface{}{
-							"type":    "string",
-							"pattern": "^[A-Za-z0-9]([-A-Za-z0-9\\s]*[A-Za-z0-9])$",
+							"type":      "string",
+							"pattern":   "^[A-Za-z0-9]([-_A-Za-z0-9\\s]*[A-Za-z0-9])$",
+							"maxLength": 128,
 						},
 						"contains": map[string]interface{}{
 							"const": "DEFAULT",
