@@ -95,6 +95,25 @@ func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) 
 	return &apiDefModel, nil
 }
 
+func (r *pgRepository) GetOrDefault(ctx context.Context, tenant string, id string, applicationID string) (*model.APIDefinition, error) {
+	var ent Entity
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("id", id),
+		repo.NewEqualCondition("app_id", applicationID),
+	}
+	if err := r.singleGetter.Get(ctx, tenant, conditions, &ent); err != nil {
+		return nil, err
+	}
+
+	apiDefModel, err := r.conv.FromEntity(ent)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating api definition model from entity")
+	}
+
+	return &apiDefModel, nil
+}
+
 func (r *pgRepository) Create(ctx context.Context, item *model.APIDefinition) error {
 	if item == nil {
 		return errors.New("item cannot be nil")

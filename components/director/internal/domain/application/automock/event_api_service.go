@@ -72,6 +72,29 @@ func (_m *EventAPIService) Get(ctx context.Context, id string) (*model.EventAPID
 	return r0, r1
 }
 
+// GetOrDefault provides a mock function with given fields: ctx, id, applicationID
+func (_m *EventAPIService) GetOrDefault(ctx context.Context, id string, applicationID string) (*model.EventAPIDefinition, error) {
+	ret := _m.Called(ctx, id, applicationID)
+
+	var r0 *model.EventAPIDefinition
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.EventAPIDefinition); ok {
+		r0 = rf(ctx, id, applicationID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.EventAPIDefinition)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, id, applicationID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // List provides a mock function with given fields: ctx, applicationID, pageSize, cursor
 func (_m *EventAPIService) List(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.EventAPIDefinitionPage, error) {
 	ret := _m.Called(ctx, applicationID, pageSize, cursor)

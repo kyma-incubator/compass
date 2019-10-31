@@ -146,12 +146,6 @@ type queryResolver struct {
 	*RootResolver
 }
 
-func (r *queryResolver) API(ctx context.Context, id string) (*graphql.APIDefinition, error) {
-	return r.app.API(ctx, id)
-}
-func (r *queryResolver) EventAPI(ctx context.Context, id string) (*graphql.EventAPIDefinition, error) {
-	return r.app.EventAPI(ctx, id)
-}
 func (r *queryResolver) Applications(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
 	return r.app.Applications(ctx, filter, first, after)
 }
@@ -329,10 +323,10 @@ func (r *applicationResolver) EventAPIs(ctx context.Context, obj *graphql.Applic
 	return r.app.EventAPIs(ctx, obj, group, first, after)
 }
 func (r *applicationResolver) API(ctx context.Context, obj *graphql.Application, id string) (*graphql.APIDefinition, error) {
-	return r.app.API(ctx, id)
+	return r.app.API(ctx, id, obj.ID)
 }
 func (r *applicationResolver) EventAPI(ctx context.Context, obj *graphql.Application, id string) (*graphql.EventAPIDefinition, error) {
-	return r.app.EventAPI(ctx, id)
+	return r.app.EventAPI(ctx, id, obj.ID)
 }
 func (r *applicationResolver) Documents(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {
 	return r.app.Documents(ctx, obj, first, after)

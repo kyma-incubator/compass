@@ -45,6 +45,7 @@ type APIService interface {
 	Update(ctx context.Context, id string, in model.APIDefinitionInput) error
 	Delete(ctx context.Context, id string) error
 	Get(ctx context.Context, id string) (*model.APIDefinition, error)
+	GetOrDefault(ctx context.Context, id string, applicationID string) (*model.APIDefinition, error)
 }
 
 //go:generate mockery -name=APIConverter -output=automock -outpkg=automock -case=underscore
@@ -58,6 +59,7 @@ type APIConverter interface {
 //go:generate mockery -name=EventAPIService -output=automock -outpkg=automock -case=underscore
 type EventAPIService interface {
 	Get(ctx context.Context, id string) (*model.EventAPIDefinition, error)
+	GetOrDefault(ctx context.Context, id string, applicationID string) (*model.EventAPIDefinition, error)
 	List(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.EventAPIDefinitionPage, error)
 	Create(ctx context.Context, applicationID string, in model.EventAPIDefinitionInput) (string, error)
 	Update(ctx context.Context, id string, in model.EventAPIDefinitionInput) error
@@ -510,7 +512,7 @@ func (r *Resolver) EventAPIs(ctx context.Context, obj *graphql.Application, grou
 	}, nil
 }
 
-func (r *Resolver) API(ctx context.Context, id string) (*graphql.APIDefinition, error) {
+func (r *Resolver) API(ctx context.Context, id string, applicationID string) (*graphql.APIDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -519,7 +521,7 @@ func (r *Resolver) API(ctx context.Context, id string) (*graphql.APIDefinition, 
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	api, err := r.apiSvc.Get(ctx, id)
+	api, err := r.apiSvc.GetOrDefault(ctx, id, applicationID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, nil
@@ -535,7 +537,7 @@ func (r *Resolver) API(ctx context.Context, id string) (*graphql.APIDefinition, 
 	return r.apiConverter.ToGraphQL(api), nil
 }
 
-func (r *Resolver) EventAPI(ctx context.Context, id string) (*graphql.EventAPIDefinition, error) {
+func (r *Resolver) EventAPI(ctx context.Context, id string, applicationID string) (*graphql.EventAPIDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -544,7 +546,7 @@ func (r *Resolver) EventAPI(ctx context.Context, id string) (*graphql.EventAPIDe
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	api, err := r.eventAPISvc.Get(ctx, id)
+	eventAPI, err := r.eventAPISvc.GetOrDefault(ctx, id, applicationID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, nil
@@ -557,7 +559,7 @@ func (r *Resolver) EventAPI(ctx context.Context, id string) (*graphql.EventAPIDe
 		return nil, err
 	}
 
-	return r.eventApiConverter.ToGraphQL(api), nil
+	return r.eventApiConverter.ToGraphQL(eventAPI), nil
 }
 
 // TODO: Proper error handling

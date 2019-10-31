@@ -72,6 +72,25 @@ func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) 
 	return &eventAPIDefModel, nil
 }
 
+func (r *pgRepository) GetOrDefault(ctx context.Context, tenant string, id string, applicationID string) (*model.EventAPIDefinition, error) {
+	var ent Entity
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("id", id),
+		repo.NewEqualCondition("app_id", applicationID),
+	}
+	if err := r.singleGetter.Get(ctx, tenant, conditions, &ent); err != nil {
+		return nil, err
+	}
+
+	eventAPIModel, err := r.conv.FromEntity(ent)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating event api definition model from entity")
+	}
+
+	return &eventAPIModel, nil
+}
+
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventAPIDefinitionPage, error) {
 	appCond := fmt.Sprintf("app_id = %s ", pq.QuoteLiteral(applicationID))
 	var eventAPIDefCollection EventAPIDefCollection
