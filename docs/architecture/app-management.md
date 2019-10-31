@@ -60,7 +60,7 @@ Compass adds protected label with name `integrationSystemID` for just created Ap
       "name": "simpleApplication",
       "integrationSystemID": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
       "labels": {
-        "scenarios":["DEFULT"],
+        "scenarios":["DEFAULT"],
         "integrationSystemID":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
       }
     }
