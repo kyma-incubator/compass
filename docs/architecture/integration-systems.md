@@ -9,7 +9,7 @@ integration between Application and Compass is managed by the Integration System
 
 GraphQL API is extended with mutations for managing Integration System, as well as 
 managing its Client Credentials.
-```
+```graphql
 type IntegrationSystem {
     id: ID!
     name: String!
@@ -42,7 +42,7 @@ The diagram below represents registering IntegrationSystem and pairing it with D
 ![](./assets/integration-system-registration.svg)
 
 1. An Integration System Administrator executes mutation  `createIntegrationSystem` with the following input:
-```
+```graphql
 createIntegrationSystem(in:{name: "IntegrationSystemFromBigProvider"})
 ```
 
