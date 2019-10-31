@@ -15,7 +15,7 @@ import (
 //go:generate mockery -name=APIRepository -output=automock -outpkg=automock -case=underscore
 type APIRepository interface {
 	GetByID(ctx context.Context, tenantID, id string) (*model.APIDefinition, error)
-	GetOrDefault(ctx context.Context, tenant string, id string, applicationID string) (*model.APIDefinition, error)
+	GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.APIDefinition, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	ListByApplicationID(ctx context.Context, tenantID, applicationID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
 	CreateMany(ctx context.Context, item []*model.APIDefinition) error
@@ -79,13 +79,13 @@ func (s *service) Get(ctx context.Context, id string) (*model.APIDefinition, err
 	return api, nil
 }
 
-func (s *service) GetOrDefault(ctx context.Context, id string, applicationID string) (*model.APIDefinition, error) {
+func (s *service) GetForApplication(ctx context.Context, id string, applicationID string) (*model.APIDefinition, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	apiDefinition, err := s.repo.GetOrDefault(ctx, tnt, id, applicationID)
+	apiDefinition, err := s.repo.GetForApplication(ctx, tnt, id, applicationID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting API definition")
 	}

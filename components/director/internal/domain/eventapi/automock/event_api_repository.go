@@ -115,8 +115,8 @@ func (_m *EventAPIRepository) GetByID(ctx context.Context, tenantID string, id s
 	return r0, r1
 }
 
-// GetOrDefault provides a mock function with given fields: ctx, tenant, id, applicationID
-func (_m *EventAPIRepository) GetOrDefault(ctx context.Context, tenant string, id string, applicationID string) (*model.EventAPIDefinition, error) {
+// GetForApplication provides a mock function with given fields: ctx, tenant, id, applicationID
+func (_m *EventAPIRepository) GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.EventAPIDefinition, error) {
 	ret := _m.Called(ctx, tenant, id, applicationID)
 
 	var r0 *model.EventAPIDefinition

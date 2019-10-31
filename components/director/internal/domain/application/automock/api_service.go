@@ -72,8 +72,8 @@ func (_m *APIService) Get(ctx context.Context, id string) (*model.APIDefinition,
 	return r0, r1
 }
 
-// GetOrDefault provides a mock function with given fields: ctx, id, applicationID
-func (_m *APIService) GetOrDefault(ctx context.Context, id string, applicationID string) (*model.APIDefinition, error) {
+// GetForApplication provides a mock function with given fields: ctx, id, applicationID
+func (_m *APIService) GetForApplication(ctx context.Context, id string, applicationID string) (*model.APIDefinition, error) {
 	ret := _m.Called(ctx, id, applicationID)
 
 	var r0 *model.APIDefinition

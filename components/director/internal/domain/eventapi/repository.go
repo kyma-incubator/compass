@@ -72,7 +72,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) 
 	return &eventAPIDefModel, nil
 }
 
-func (r *pgRepository) GetOrDefault(ctx context.Context, tenant string, id string, applicationID string) (*model.EventAPIDefinition, error) {
+func (r *pgRepository) GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.EventAPIDefinition, error) {
 	var ent Entity
 
 	conditions := repo.Conditions{

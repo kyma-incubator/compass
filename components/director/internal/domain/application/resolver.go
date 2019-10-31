@@ -45,7 +45,7 @@ type APIService interface {
 	Update(ctx context.Context, id string, in model.APIDefinitionInput) error
 	Delete(ctx context.Context, id string) error
 	Get(ctx context.Context, id string) (*model.APIDefinition, error)
-	GetOrDefault(ctx context.Context, id string, applicationID string) (*model.APIDefinition, error)
+	GetForApplication(ctx context.Context, id string, applicationID string) (*model.APIDefinition, error)
 }
 
 //go:generate mockery -name=APIConverter -output=automock -outpkg=automock -case=underscore
@@ -59,7 +59,7 @@ type APIConverter interface {
 //go:generate mockery -name=EventAPIService -output=automock -outpkg=automock -case=underscore
 type EventAPIService interface {
 	Get(ctx context.Context, id string) (*model.EventAPIDefinition, error)
-	GetOrDefault(ctx context.Context, id string, applicationID string) (*model.EventAPIDefinition, error)
+	GetForApplication(ctx context.Context, id string, applicationID string) (*model.EventAPIDefinition, error)
 	List(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.EventAPIDefinitionPage, error)
 	Create(ctx context.Context, applicationID string, in model.EventAPIDefinitionInput) (string, error)
 	Update(ctx context.Context, id string, in model.EventAPIDefinitionInput) error
@@ -521,7 +521,7 @@ func (r *Resolver) API(ctx context.Context, id string, applicationID string) (*g
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	api, err := r.apiSvc.GetOrDefault(ctx, id, applicationID)
+	api, err := r.apiSvc.GetForApplication(ctx, id, applicationID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, nil
@@ -546,7 +546,7 @@ func (r *Resolver) EventAPI(ctx context.Context, id string, applicationID string
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	eventAPI, err := r.eventAPISvc.GetOrDefault(ctx, id, applicationID)
+	eventAPI, err := r.eventAPISvc.GetForApplication(ctx, id, applicationID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, nil

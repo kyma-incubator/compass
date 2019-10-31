@@ -1481,7 +1481,7 @@ func TestResolver_EventAPI(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
-				svc.On("GetOrDefault", txtest.CtxWithDBMatcher(), "foo", "foo").Return(modelAPI, nil).Once()
+				svc.On("GetForApplication", txtest.CtxWithDBMatcher(), "foo", "foo").Return(modelAPI, nil).Once()
 
 				return svc
 			},
@@ -1500,7 +1500,7 @@ func TestResolver_EventAPI(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
-				svc.On("GetOrDefault", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, testErr).Once()
+				svc.On("GetForApplication", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, testErr).Once()
 
 				return svc
 			},
@@ -1518,7 +1518,7 @@ func TestResolver_EventAPI(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
-				svc.On("GetOrDefault", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, apperrors.NewNotFoundError("")).Once()
+				svc.On("GetForApplication", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, apperrors.NewNotFoundError("")).Once()
 
 				return svc
 			},
@@ -1553,7 +1553,7 @@ func TestResolver_EventAPI(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.EventAPIService {
 				svc := &automock.EventAPIService{}
-				svc.On("GetOrDefault", txtest.CtxWithDBMatcher(), "foo", "foo").Return(modelAPI, nil).Once()
+				svc.On("GetForApplication", txtest.CtxWithDBMatcher(), "foo", "foo").Return(modelAPI, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.EventAPIConverter {
@@ -1614,7 +1614,7 @@ func TestResolver_API(t *testing.T) {
 				TransactionerFn: txGen.ThatSucceeds,
 				ServiceFn: func() *automock.APIService {
 					svc := &automock.APIService{}
-					svc.On("GetOrDefault", txtest.CtxWithDBMatcher(), "foo", "foo").Return(modelAPI, nil).Once()
+					svc.On("GetForApplication", txtest.CtxWithDBMatcher(), "foo", "foo").Return(modelAPI, nil).Once()
 
 					return svc
 				},
@@ -1633,7 +1633,7 @@ func TestResolver_API(t *testing.T) {
 				TransactionerFn: txGen.ThatDoesntExpectCommit,
 				ServiceFn: func() *automock.APIService {
 					svc := &automock.APIService{}
-					svc.On("GetOrDefault", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, testErr).Once()
+					svc.On("GetForApplication", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, testErr).Once()
 
 					return svc
 				},
@@ -1651,7 +1651,7 @@ func TestResolver_API(t *testing.T) {
 				TransactionerFn: txGen.ThatDoesntExpectCommit,
 				ServiceFn: func() *automock.APIService {
 					svc := &automock.APIService{}
-					svc.On("GetOrDefault", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, apperrors.NewNotFoundError("")).Once()
+					svc.On("GetForApplication", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, apperrors.NewNotFoundError("")).Once()
 
 					return svc
 				},
@@ -1686,7 +1686,7 @@ func TestResolver_API(t *testing.T) {
 				TransactionerFn: txGen.ThatFailsOnCommit,
 				ServiceFn: func() *automock.APIService {
 					svc := &automock.APIService{}
-					svc.On("GetOrDefault", txtest.CtxWithDBMatcher(), "foo", "foo").Return(modelAPI, nil).Once()
+					svc.On("GetForApplication", txtest.CtxWithDBMatcher(), "foo", "foo").Return(modelAPI, nil).Once()
 					return svc
 				},
 				ConverterFn: func() *automock.APIConverter {

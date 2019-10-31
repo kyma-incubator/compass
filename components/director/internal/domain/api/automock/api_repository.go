@@ -114,8 +114,8 @@ func (_m *APIRepository) GetByID(ctx context.Context, tenantID string, id string
 	return r0, r1
 }
 
-// GetOrDefault provides a mock function with given fields: ctx, tenant, id, applicationID
-func (_m *APIRepository) GetOrDefault(ctx context.Context, tenant string, id string, applicationID string) (*model.APIDefinition, error) {
+// GetForApplication provides a mock function with given fields: ctx, tenant, id, applicationID
+func (_m *APIRepository) GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.APIDefinition, error) {
 	ret := _m.Called(ctx, tenant, id, applicationID)
 
 	var r0 *model.APIDefinition
