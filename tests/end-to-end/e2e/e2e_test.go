@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/common"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/idtokenprovider"
@@ -20,8 +22,6 @@ func init() {
 
 func TestCompassAuth(t *testing.T) {
 	ctx := context.Background()
-	//client := &http.Client{}
-
 	t.Log("Get Dex id token")
 	config, err := idtokenprovider.LoadConfig()
 	require.NoError(t, err)
@@ -29,9 +29,11 @@ func TestCompassAuth(t *testing.T) {
 	dexToken, err := idtokenprovider.Authenticate(config.IdProviderConfig)
 	require.NoError(t, err)
 
+	tc.cli = common.NewAuthorizedGraphQLClient(dexToken)
 	t.Log("tokkenn", dexToken)
 
 	t.Log("Create Integration System with Dex id token")
+
 	//intSys :=
 	createIntegrationSystem(t, ctx, "int-sys")
 

@@ -37,20 +37,20 @@
   version = "v2.22.0"
 
 [[projects]]
-  digest = "1:786e862ec180708b60ee670723e3edd969fd4309e7b1c315cd7de058ac62a011"
+  digest = "1:35a3c0cb74b67330a1593e1ca2bca87d914c372eb60ebccc0902743d8466e3d6"
   name = "github.com/agnivade/levenshtein"
   packages = ["."]
   pruneopts = "UT"
-  revision = "51b298ff305e72cfd29166dccc3f9878e82f9fdc"
-  version = "v1.0.2"
+  revision = "5f1ee18e3efadffd18ef076ac4181cc92d87188c"
+  version = "v1.0.3"
 
 [[projects]]
-  digest = "1:7c51a593e7593dbbaec61e209bdd04095995362834e4399aaa5a9227c25bb403"
+  digest = "1:6c7e9c6eaab0e5579b85151932e4e11347cd2869a97b2a098b80a872abe561d6"
   name = "github.com/avast/retry-go"
   packages = ["."]
   pruneopts = "UT"
-  revision = "101acd3290b786bf437607d874596e3996484d8d"
-  version = "v2.4.1"
+  revision = "a322e24d96313ab405dec28ad5711f036c6d25a3"
+  version = "v2.4.2"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -119,7 +119,7 @@
     "components/director/pkg/scalar",
   ]
   pruneopts = "UT"
-  revision = "b83580e50cc847f3a14a34d9c5c25ad23cbc4696"
+  revision = "5e243b3cc16e7ca2fa3719f089ee60759c98ece3"
 
 [[projects]]
   branch = "master"
@@ -197,6 +197,14 @@
   version = "v1.1.2"
 
 [[projects]]
+  digest = "1:bb32a7e267540d9f2d26753426d5e360c5bd858b9b78e26b9f0c99219024d8f5"
+  name = "github.com/vrischmann/envconfig"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "cf601e2565a0a7c7418ed014d28a507be6cb1e45"
+  version = "v1.2.0"
+
+[[projects]]
   branch = "master"
   digest = "1:39628c44b67004cdd7ff753f6490588b87defe2569413378719d7e4f92df352d"
   name = "golang.org/x/crypto"
@@ -205,19 +213,30 @@
     "scrypt",
   ]
   pruneopts = "UT"
-  revision = "87dc89f01550277dc22b74ffcf4cd89fa2f40f4c"
+  revision = "8986dd9e96cf0a6f74da406c005ba3df38527c04"
 
 [[projects]]
   branch = "master"
-  digest = "1:70b2bf25c4ed23c61dae668e4151d87a7edc5965bc3ccfecd1b9fe5f1752092a"
+  digest = "1:0be3fc4126c5a734c67e77fb3befd681f9efe0d0774efd31bae8f5826238ca36"
+  name = "golang.org/x/net"
+  packages = [
+    "html",
+    "html/atom",
+  ]
+  pruneopts = "UT"
+  revision = "fe3aa8a4527195a6057b3fad46619d7d090e99b5"
+
+[[projects]]
+  branch = "master"
+  digest = "1:999c8e6b10ddb08bc4ea3a56d4e838194c4884eac6ecf90a9aa98ed8475fdf37"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "3e7259c5e7c2076bb2728047a3df75adb1bad8e5"
+  revision = "195ce5e7f934b923d8fc432cf5a2561f2b334da9"
 
 [[projects]]
   branch = "master"
-  digest = "1:4a21d6d41ed21f6461f9eee7b2072af459cbf74d1fb9beed92fff71ea4e3de5a"
+  digest = "1:2b53ea4b03221eb338f1d2c6ad664d94b8851211b651e7f46fbe3ba2dca0f00f"
   name = "golang.org/x/tools"
   packages = [
     "cmd/goimports",
@@ -235,7 +254,7 @@
     "internal/span",
   ]
   pruneopts = "UT"
-  revision = "7178990c25039b756510e51a36380458e3a96487"
+  revision = "9cc4af7d6b2c2a2e47f9cfaa500cd669b42e449b"
 
 [[projects]]
   digest = "1:59f10c1537d2199d9115d946927fe31165959a95190849c82ff11e05803528b0"
@@ -260,6 +279,8 @@
     "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/require",
+    "github.com/vrischmann/envconfig",
+    "golang.org/x/net/html",
     "golang.org/x/tools/cmd/goimports",
   ]
   solver-name = "gps-cdcl"
