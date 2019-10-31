@@ -114,9 +114,10 @@ type ProvisionRuntimeInput struct {
 }
 
 type RuntimeConfig struct {
-	ClusterConfig ClusterConfig `json:"clusterConfig"`
-	KymaConfig    *KymaConfig   `json:"kymaConfig"`
-	Kubeconfig    *string       `json:"kubeconfig"`
+	ClusterConfig         ClusterConfig `json:"clusterConfig"`
+	CredentialsSecretName *string       `json:"credentialsSecretName"`
+	KymaConfig            *KymaConfig   `json:"kymaConfig"`
+	Kubeconfig            *string       `json:"kubeconfig"`
 }
 
 type RuntimeConnectionStatus struct {

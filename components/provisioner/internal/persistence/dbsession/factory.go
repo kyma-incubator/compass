@@ -16,6 +16,7 @@ type Factory interface {
 //go:generate mockery -name=ReadSession
 type ReadSession interface {
 	GetCluster(runtimeID string) (model.Cluster, dberrors.Error)
+	GetCredentialsSecretName(runtimeID string) (string, dberrors.Error)
 	GetOperation(operationID string) (model.Operation, dberrors.Error)
 	GetLastOperation(runtimeID string) (model.Operation, dberrors.Error)
 	GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error)

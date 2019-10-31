@@ -17,6 +17,7 @@ type Service interface {
 	SetDeprovisioningStarted(runtimeID string) (model.Operation, dberrors.Error)
 	SetUpgradeStarted(runtimeID string) (model.Operation, dberrors.Error)
 	GetLastOperation(runtimeID string) (model.Operation, dberrors.Error)
+	GetCredentialsSecretName(runtimeID string) (string, dberrors.Error)
 	Update(runtimeID string, kubeconfig string, terraformState string) dberrors.Error
 	CleanupClusterData(runtimeID string) dberrors.Error
 	GetClusterData(runtimeID string) (model.Cluster, dberrors.Error)
@@ -141,6 +142,12 @@ func (ps persistenceService) GetLastOperation(runtimeID string) (model.Operation
 	session := ps.dbSessionFactory.NewReadSession()
 
 	return session.GetLastOperation(runtimeID)
+}
+
+func (ps persistenceService) GetCredentialsSecretName(runtimeID string) (string, dberrors.Error) {
+	session := ps.dbSessionFactory.NewReadSession()
+
+	return session.GetCredentialsSecretName(runtimeID)
 }
 
 func (ps persistenceService) Update(runtimeID string, kubeconfig string, terraformState string) dberrors.Error {

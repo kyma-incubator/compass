@@ -24,7 +24,7 @@ const (
 type Service interface {
 	ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeInput) (string, <-chan struct{}, error)
 	UpgradeRuntime(id string, config *gqlschema.UpgradeRuntimeInput) (string, error)
-	DeprovisionRuntime(id string, credentials gqlschema.CredentialsInput) (string, <-chan struct{}, error)
+	DeprovisionRuntime(id string) (string, <-chan struct{}, error)
 	CleanupRuntimeData(id string) (string, error)
 	ReconnectRuntimeAgent(id string) (string, error)
 	RuntimeStatus(id string) (*gqlschema.RuntimeStatus, error)
@@ -90,7 +90,7 @@ func lastProvisioningFailed(operation model.Operation) bool {
 	return operation.Type == model.Provision && operation.State == model.Failed
 }
 
-func (r *service) DeprovisionRuntime(id string, credentials gqlschema.CredentialsInput) (string, <-chan struct{}, error) {
+func (r *service) DeprovisionRuntime(id string) (string, <-chan struct{}, error) {
 	runtimeStatus, err := r.persistenceService.GetStatus(id)
 
 	if err != nil {
@@ -115,8 +115,9 @@ func (r *service) DeprovisionRuntime(id string, credentials gqlschema.Credential
 		return "", nil, dberr
 	}
 
-	//TODO For now we pass secret name in parameters but we need to consider if it should be stored in the database
-	go r.startDeprovisioning(operation.ID, id, runtimeStatus.RuntimeConfiguration, credentials.SecretName, cluster, finished)
+	credentials, dberr := r.persistenceService.GetCredentialsSecretName(id)
+
+	go r.startDeprovisioning(operation.ID, id, runtimeStatus.RuntimeConfiguration, credentials, cluster, finished)
 
 	return operation.ID, finished, nil
 }
