@@ -77,7 +77,7 @@ func (r readSession) GetClusterConfig(runtimeID string) (interface{}, dberrors.E
 	err := r.session.
 		Select("gardener_config.id", "cluster_id", "gardener_config.name", "project_name", "kubernetes_version",
 			"node_count", "volume_size", "disk_type", "machine_type", "target_provider",
-			"target_secret", "cidr", "region", "zone", "auto_scaler_min", "auto_scaler_max",
+			"target_secret", "workercidr", "region", "auto_scaler_min", "auto_scaler_max",
 			"max_surge", "max_unavailable").
 		From("cluster").
 		Join("gardener_config", "cluster.id=gardener_config.cluster_id").

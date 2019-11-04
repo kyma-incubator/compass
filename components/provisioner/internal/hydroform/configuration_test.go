@@ -51,27 +51,31 @@ func TestConfiguration(t *testing.T) {
 		assert.Equal(t, expectedProvider, provider)
 	})
 
-	t.Run("Should return correct gardener configuration", func(t *testing.T) {
+	t.Run("Should return correct gardener gcp configuration", func(t *testing.T) {
 		//given
+		gcpProviderConfig := model.GCPProviderConfig{
+			Zone: "zone",
+		}
+
 		config := model.RuntimeConfig{ClusterConfig: model.GardenerConfig{
-			ID:                "id",
-			Name:              "Something",
-			ProjectName:       "Project",
-			MachineType:       "n1-standard-1",
-			Region:            "region",
-			Zone:              "zone",
-			KubernetesVersion: "version",
-			NodeCount:         3,
-			VolumeSize:        "256",
-			DiskType:          "ssd",
-			TargetProvider:    "GCP",
-			TargetSecret:      "secret",
-			Cidr:              "cidr",
-			AutoScalerMin:     1,
-			AutoScalerMax:     5,
-			MaxSurge:          1,
-			MaxUnavailable:    2,
-			ClusterID:         "runtimeID",
+			ID:                     "id",
+			Name:                   "Something",
+			ProjectName:            "Project",
+			MachineType:            "n1-standard-1",
+			Region:                 "region",
+			KubernetesVersion:      "version",
+			NodeCount:              3,
+			VolumeSize:             "256",
+			DiskType:               "ssd",
+			TargetProvider:         "GCP",
+			TargetSecret:           "secret",
+			WorkerCidr:             "cidr",
+			AutoScalerMin:          1,
+			AutoScalerMax:          5,
+			MaxSurge:               1,
+			MaxUnavailable:         2,
+			ClusterID:              "runtimeID",
+			ProviderSpecificConfig: gcpProviderConfig,
 		}}
 
 		credentials := "credentials.yaml"
@@ -83,7 +87,7 @@ func TestConfiguration(t *testing.T) {
 			CustomConfigurations: map[string]interface{}{
 				"autoscaler_max":  5,
 				"autoscaler_min":  1,
-				"cidr":            "cidr",
+				"workercidr":      "cidr",
 				"disk_type":       "ssd",
 				"max_surge":       1,
 				"max_unavailable": 2,

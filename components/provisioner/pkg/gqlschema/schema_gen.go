@@ -43,14 +43,14 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	AWSProviderConfig struct {
-		Internalscidr func(childComplexity int) int
-		Publicscidr   func(childComplexity int) int
-		Vpccidr       func(childComplexity int) int
-		Zone          func(childComplexity int) int
+		InternalCidr func(childComplexity int) int
+		PublicCidr   func(childComplexity int) int
+		VpcCidr      func(childComplexity int) int
+		Zone         func(childComplexity int) int
 	}
 
 	AzureProviderConfig struct {
-		Vnetcidr func(childComplexity int) int
+		VnetCidr func(childComplexity int) int
 	}
 
 	Error struct {
@@ -163,26 +163,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
-	case "AWSProviderConfig.internalscidr":
-		if e.complexity.AWSProviderConfig.Internalscidr == nil {
+	case "AWSProviderConfig.internalCidr":
+		if e.complexity.AWSProviderConfig.InternalCidr == nil {
 			break
 		}
 
-		return e.complexity.AWSProviderConfig.Internalscidr(childComplexity), true
+		return e.complexity.AWSProviderConfig.InternalCidr(childComplexity), true
 
-	case "AWSProviderConfig.publicscidr":
-		if e.complexity.AWSProviderConfig.Publicscidr == nil {
+	case "AWSProviderConfig.publicCidr":
+		if e.complexity.AWSProviderConfig.PublicCidr == nil {
 			break
 		}
 
-		return e.complexity.AWSProviderConfig.Publicscidr(childComplexity), true
+		return e.complexity.AWSProviderConfig.PublicCidr(childComplexity), true
 
-	case "AWSProviderConfig.vpccidr":
-		if e.complexity.AWSProviderConfig.Vpccidr == nil {
+	case "AWSProviderConfig.vpcCidr":
+		if e.complexity.AWSProviderConfig.VpcCidr == nil {
 			break
 		}
 
-		return e.complexity.AWSProviderConfig.Vpccidr(childComplexity), true
+		return e.complexity.AWSProviderConfig.VpcCidr(childComplexity), true
 
 	case "AWSProviderConfig.zone":
 		if e.complexity.AWSProviderConfig.Zone == nil {
@@ -191,12 +191,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.AWSProviderConfig.Zone(childComplexity), true
 
-	case "AzureProviderConfig.vnetcidr":
-		if e.complexity.AzureProviderConfig.Vnetcidr == nil {
+	case "AzureProviderConfig.vnetCidr":
+		if e.complexity.AzureProviderConfig.VnetCidr == nil {
 			break
 		}
 
-		return e.complexity.AzureProviderConfig.Vnetcidr(childComplexity), true
+		return e.complexity.AzureProviderConfig.VnetCidr(childComplexity), true
 
 	case "Error.message":
 		if e.complexity.Error.Message == nil {
@@ -686,14 +686,14 @@ type GCPProviderConfig {
 }
 
 type AzureProviderConfig {
-    vnetcidr: String
+    vnetCidr: String
 }
 
 type AWSProviderConfig {
     zone: String
-    vpccidr: String
-    publicscidr: String
-    internalscidr: String
+    vpcCidr: String
+    publicCidr: String
+    internalCidr: String
 }
 
 type GCPConfig {
@@ -803,14 +803,14 @@ input GCPProviderConfigInput {
 }
 
 input AzureProviderConfigInput {
-    vnetcidr: String!
+    vnetCidr: String!
 }
 
 input AWSProviderConfigInput {
     zone: String!
-    vpccidr: String!
-    publicscidr: String!
-    internalscidr: String!
+    vpcCidr: String!
+    publicCidr: String!
+    internalCidr: String!
 }
 
 input GCPConfigInput {
@@ -1061,7 +1061,7 @@ func (ec *executionContext) _AWSProviderConfig_zone(ctx context.Context, field g
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _AWSProviderConfig_vpccidr(ctx context.Context, field graphql.CollectedField, obj *AWSProviderConfig) (ret graphql.Marshaler) {
+func (ec *executionContext) _AWSProviderConfig_vpcCidr(ctx context.Context, field graphql.CollectedField, obj *AWSProviderConfig) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -1080,7 +1080,7 @@ func (ec *executionContext) _AWSProviderConfig_vpccidr(ctx context.Context, fiel
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Vpccidr, nil
+		return obj.VpcCidr, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1095,7 +1095,7 @@ func (ec *executionContext) _AWSProviderConfig_vpccidr(ctx context.Context, fiel
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _AWSProviderConfig_publicscidr(ctx context.Context, field graphql.CollectedField, obj *AWSProviderConfig) (ret graphql.Marshaler) {
+func (ec *executionContext) _AWSProviderConfig_publicCidr(ctx context.Context, field graphql.CollectedField, obj *AWSProviderConfig) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -1114,7 +1114,7 @@ func (ec *executionContext) _AWSProviderConfig_publicscidr(ctx context.Context, 
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Publicscidr, nil
+		return obj.PublicCidr, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1129,7 +1129,7 @@ func (ec *executionContext) _AWSProviderConfig_publicscidr(ctx context.Context, 
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _AWSProviderConfig_internalscidr(ctx context.Context, field graphql.CollectedField, obj *AWSProviderConfig) (ret graphql.Marshaler) {
+func (ec *executionContext) _AWSProviderConfig_internalCidr(ctx context.Context, field graphql.CollectedField, obj *AWSProviderConfig) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -1148,7 +1148,7 @@ func (ec *executionContext) _AWSProviderConfig_internalscidr(ctx context.Context
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Internalscidr, nil
+		return obj.InternalCidr, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1163,7 +1163,7 @@ func (ec *executionContext) _AWSProviderConfig_internalscidr(ctx context.Context
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _AzureProviderConfig_vnetcidr(ctx context.Context, field graphql.CollectedField, obj *AzureProviderConfig) (ret graphql.Marshaler) {
+func (ec *executionContext) _AzureProviderConfig_vnetCidr(ctx context.Context, field graphql.CollectedField, obj *AzureProviderConfig) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -1182,7 +1182,7 @@ func (ec *executionContext) _AzureProviderConfig_vnetcidr(ctx context.Context, f
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Vnetcidr, nil
+		return obj.VnetCidr, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4174,21 +4174,21 @@ func (ec *executionContext) unmarshalInputAWSProviderConfigInput(ctx context.Con
 			if err != nil {
 				return it, err
 			}
-		case "vpccidr":
+		case "vpcCidr":
 			var err error
-			it.Vpccidr, err = ec.unmarshalNString2string(ctx, v)
+			it.VpcCidr, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "publicscidr":
+		case "publicCidr":
 			var err error
-			it.Publicscidr, err = ec.unmarshalNString2string(ctx, v)
+			it.PublicCidr, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "internalscidr":
+		case "internalCidr":
 			var err error
-			it.Internalscidr, err = ec.unmarshalNString2string(ctx, v)
+			it.InternalCidr, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4204,9 +4204,9 @@ func (ec *executionContext) unmarshalInputAzureProviderConfigInput(ctx context.C
 
 	for k, v := range asMap {
 		switch k {
-		case "vnetcidr":
+		case "vnetCidr":
 			var err error
-			it.Vnetcidr, err = ec.unmarshalNString2string(ctx, v)
+			it.VnetCidr, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4629,12 +4629,12 @@ func (ec *executionContext) _AWSProviderConfig(ctx context.Context, sel ast.Sele
 			out.Values[i] = graphql.MarshalString("AWSProviderConfig")
 		case "zone":
 			out.Values[i] = ec._AWSProviderConfig_zone(ctx, field, obj)
-		case "vpccidr":
-			out.Values[i] = ec._AWSProviderConfig_vpccidr(ctx, field, obj)
-		case "publicscidr":
-			out.Values[i] = ec._AWSProviderConfig_publicscidr(ctx, field, obj)
-		case "internalscidr":
-			out.Values[i] = ec._AWSProviderConfig_internalscidr(ctx, field, obj)
+		case "vpcCidr":
+			out.Values[i] = ec._AWSProviderConfig_vpcCidr(ctx, field, obj)
+		case "publicCidr":
+			out.Values[i] = ec._AWSProviderConfig_publicCidr(ctx, field, obj)
+		case "internalCidr":
+			out.Values[i] = ec._AWSProviderConfig_internalCidr(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4657,8 +4657,8 @@ func (ec *executionContext) _AzureProviderConfig(ctx context.Context, sel ast.Se
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("AzureProviderConfig")
-		case "vnetcidr":
-			out.Values[i] = ec._AzureProviderConfig_vnetcidr(ctx, field, obj)
+		case "vnetCidr":
+			out.Values[i] = ec._AzureProviderConfig_vnetCidr(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

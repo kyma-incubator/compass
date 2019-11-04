@@ -46,14 +46,14 @@ type GCPProviderConfig {
 }
 
 type AzureProviderConfig {
-    vnetcidr: String
+    vnetCidr: String
 }
 
 type AWSProviderConfig {
     zone: String
-    vpccidr: String
-    publicscidr: String
-    internalscidr: String
+    vpcCidr: String
+    publicCidr: String
+    internalCidr: String
 }
 
 type GCPConfig {
@@ -163,14 +163,14 @@ input GCPProviderConfigInput {
 }
 
 input AzureProviderConfigInput {
-    vnetcidr: String!
+    vnetCidr: String!
 }
 
 input AWSProviderConfigInput {
     zone: String!
-    vpccidr: String!
-    publicscidr: String!
-    internalscidr: String!
+    vpcCidr: String!
+    publicCidr: String!
+    internalCidr: String!
 }
 
 input GCPConfigInput {

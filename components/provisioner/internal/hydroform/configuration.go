@@ -19,7 +19,7 @@ func prepareConfig(input model.RuntimeConfig, credentialsFile string) (*types.Cl
 		return buildConfigForGCP(gcpConfig, credentialsFile)
 	}
 
-	return nil, nil, errors.New("configuration does not match any provider profiles")
+	return nil, nil, errors.New("configuration does not match any provider profile")
 }
 
 func buildConfigForGCP(config model.GCPConfig, credentialsFile string) (*types.Cluster, *types.Provider, error) {
@@ -62,21 +62,53 @@ func buildConfigForGardener(config model.GardenerConfig, credentialsFile string)
 		MachineType:       config.MachineType,
 	}
 
+	customConfiguration := map[string]interface{}{
+		"target_provider": config.TargetProvider,
+		"target_secret":   config.TargetSecret,
+		"disk_type":       config.DiskType,
+		"workercidr":      config.WorkerCidr,
+		"autoscaler_min":  config.AutoScalerMin,
+		"autoscaler_max":  config.AutoScalerMax,
+		"max_surge":       config.MaxSurge,
+		"max_unavailable": config.MaxUnavailable,
+	}
+
+	customConfiguration, err = addProviderSpecificConfig(customConfiguration, config.ProviderSpecificConfig)
+
+	if err != nil {
+		return &types.Cluster{}, &types.Provider{}, err
+	}
+
 	provider := &types.Provider{
-		Type:                types.Gardener,
-		ProjectName:         config.ProjectName,
-		CredentialsFilePath: credentialsFile,
-		CustomConfigurations: map[string]interface{}{
-			"target_provider": config.TargetProvider,
-			"target_secret":   config.TargetSecret,
-			"disk_type":       config.DiskType,
-			"zone":            config.Zone,
-			"cidr":            config.Cidr,
-			"autoscaler_min":  config.AutoScalerMin,
-			"autoscaler_max":  config.AutoScalerMax,
-			"max_surge":       config.MaxSurge,
-			"max_unavailable": config.MaxUnavailable,
-		},
+		Type:                 types.Gardener,
+		ProjectName:          config.ProjectName,
+		CredentialsFilePath:  credentialsFile,
+		CustomConfigurations: customConfiguration,
 	}
 	return cluster, provider, nil
+}
+
+func addProviderSpecificConfig(customConfiguration map[string]interface{}, providerSpecificConfig interface{}) (map[string]interface{}, error) {
+	gcpProviderConfig, ok := providerSpecificConfig.(model.GCPProviderConfig)
+	if ok {
+		customConfiguration["zone"] = gcpProviderConfig.Zone
+		return customConfiguration, nil
+	}
+
+	azureProviderConfig, ok := providerSpecificConfig.(model.AzureProviderConfig)
+	if ok {
+		customConfiguration["vnetcidr"] = azureProviderConfig.VnetCidr
+		return customConfiguration, nil
+	}
+
+	awsProviderConfig, ok := providerSpecificConfig.(model.AWSProviderConfig)
+	if ok {
+		customConfiguration["zone"] = awsProviderConfig.Zone
+		customConfiguration["internalscidr"] = awsProviderConfig.InternalCidr
+		customConfiguration["vpccidr"] = awsProviderConfig.VpcCidr
+		customConfiguration["publicscidr"] = awsProviderConfig.PublicCidr
+		return customConfiguration, nil
+	}
+
+	return nil, errors.New("provider specific configuration does not match any provider profile")
 }

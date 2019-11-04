@@ -51,26 +51,49 @@ func clusterConfigFromInput(runtimeID string, input gqlschema.ClusterConfigInput
 func gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput, uuidGenerator persistence.UUIDGenerator) model.GardenerConfig {
 	id := uuidGenerator.New()
 
+	providerSpecificConfig := providerSpecificConfigFromInput(input.ProviderSpecificConfig)
+
 	return model.GardenerConfig{
-		ID:                id,
-		Name:              input.Name,
-		ProjectName:       input.ProjectName,
-		KubernetesVersion: input.KubernetesVersion,
-		NodeCount:         input.NodeCount,
-		VolumeSize:        input.VolumeSize,
-		DiskType:          input.DiskType,
-		MachineType:       input.MachineType,
-		TargetProvider:    input.TargetProvider,
-		TargetSecret:      input.TargetSecret,
-		Cidr:              input.Cidr,
-		Region:            input.Region,
-		Zone:              input.Zone,
-		AutoScalerMin:     input.AutoScalerMin,
-		AutoScalerMax:     input.AutoScalerMax,
-		MaxSurge:          input.MaxSurge,
-		MaxUnavailable:    input.MaxUnavailable,
-		ClusterID:         runtimeID,
+		ID:                     id,
+		Name:                   input.Name,
+		ProjectName:            input.ProjectName,
+		KubernetesVersion:      input.KubernetesVersion,
+		NodeCount:              input.NodeCount,
+		VolumeSize:             input.VolumeSize,
+		DiskType:               input.DiskType,
+		MachineType:            input.MachineType,
+		TargetProvider:         input.TargetProvider,
+		TargetSecret:           input.TargetSecret,
+		WorkerCidr:             input.Workercidr,
+		Region:                 input.Region,
+		AutoScalerMin:          input.AutoScalerMin,
+		AutoScalerMax:          input.AutoScalerMax,
+		MaxSurge:               input.MaxSurge,
+		MaxUnavailable:         input.MaxUnavailable,
+		ClusterID:              runtimeID,
+		ProviderSpecificConfig: providerSpecificConfig,
 	}
+}
+func providerSpecificConfigFromInput(input *gqlschema.ProviderSpecificInput) interface{} {
+	if input.GcpConfig != nil {
+		return model.GCPProviderConfig{
+			Zone: input.GcpConfig.Zone,
+		}
+	}
+	if input.AzureConfig != nil {
+		return model.AzureProviderConfig{
+			VnetCidr: input.AzureConfig.VnetCidr,
+		}
+	}
+	if input.AwsConfig != nil {
+		return model.AWSProviderConfig{
+			Zone:         input.AwsConfig.Zone,
+			VpcCidr:      input.AwsConfig.VpcCidr,
+			PublicCidr:   input.AwsConfig.PublicCidr,
+			InternalCidr: input.AwsConfig.InternalCidr,
+		}
+	}
+	return nil
 }
 
 func gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfigInput, uuidGenerator persistence.UUIDGenerator) model.GCPConfig {
@@ -159,24 +182,52 @@ func clusterConfigToGraphQLConfig(config interface{}) gqlschema.ClusterConfig {
 
 func gardenerConfigToGraphQLConfig(config model.GardenerConfig) gqlschema.ClusterConfig {
 
+	providerSpecificConfig := providerSpecificConfigToGQLConfig(config.ProviderSpecificConfig)
+
 	return gqlschema.GardenerConfig{
-		Name:              &config.Name,
-		ProjectName:       &config.ProjectName,
-		KubernetesVersion: &config.KubernetesVersion,
-		NodeCount:         &config.NodeCount,
-		DiskType:          &config.DiskType,
-		VolumeSize:        &config.VolumeSize,
-		MachineType:       &config.MachineType,
-		TargetProvider:    &config.TargetProvider,
-		TargetSecret:      &config.TargetSecret,
-		Cidr:              &config.Cidr,
-		Region:            &config.Region,
-		Zone:              &config.Zone,
-		AutoScalerMin:     &config.AutoScalerMin,
-		AutoScalerMax:     &config.AutoScalerMax,
-		MaxSurge:          &config.MaxSurge,
-		MaxUnavailable:    &config.MaxUnavailable,
+		Name:                   &config.Name,
+		ProjectName:            &config.ProjectName,
+		KubernetesVersion:      &config.KubernetesVersion,
+		NodeCount:              &config.NodeCount,
+		DiskType:               &config.DiskType,
+		VolumeSize:             &config.VolumeSize,
+		MachineType:            &config.MachineType,
+		TargetProvider:         &config.TargetProvider,
+		TargetSecret:           &config.TargetSecret,
+		Workercidr:             &config.WorkerCidr,
+		Region:                 &config.Region,
+		AutoScalerMin:          &config.AutoScalerMin,
+		AutoScalerMax:          &config.AutoScalerMax,
+		MaxSurge:               &config.MaxSurge,
+		MaxUnavailable:         &config.MaxUnavailable,
+		ProviderSpecificConfig: providerSpecificConfig,
 	}
+}
+func providerSpecificConfigToGQLConfig(config interface{}) gqlschema.ProviderSpecificConfig {
+	gcpProviderConfig, ok := config.(model.GCPProviderConfig)
+	if ok {
+		return gqlschema.GCPProviderConfig{
+			Zone: &gcpProviderConfig.Zone,
+		}
+	}
+
+	azureProviderConfig, ok := config.(model.AzureProviderConfig)
+	if ok {
+		return gqlschema.AzureProviderConfig{
+			VnetCidr: &azureProviderConfig.VnetCidr,
+		}
+	}
+
+	awsProviderConfig, ok := config.(model.AWSProviderConfig)
+	if ok {
+		return gqlschema.AWSProviderConfig{
+			Zone:         &awsProviderConfig.Zone,
+			VpcCidr:      &awsProviderConfig.VpcCidr,
+			PublicCidr:   &awsProviderConfig.PublicCidr,
+			InternalCidr: &awsProviderConfig.InternalCidr,
+		}
+	}
+	return nil
 }
 
 func gcpConfigToGraphQLConfig(config model.GCPConfig) gqlschema.ClusterConfig {

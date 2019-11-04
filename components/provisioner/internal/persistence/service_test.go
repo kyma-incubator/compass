@@ -37,13 +37,15 @@ func TestSetProvisioning(t *testing.T) {
 		MachineType:       "big_one",
 		TargetProvider:    "GCP",
 		TargetSecret:      "secret",
-		Cidr:              "cidr",
+		WorkerCidr:        "cidr",
 		Region:            "region",
-		Zone:              "zone",
 		AutoScalerMin:     1,
 		AutoScalerMax:     10,
 		MaxSurge:          2,
 		MaxUnavailable:    2,
+		ProviderSpecificConfig: model.GCPProviderConfig{
+			Zone: "zone",
+		},
 	}
 
 	kymaConfig := model.KymaConfig{
