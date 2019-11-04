@@ -86,7 +86,7 @@ The same mechanism could be used to updated existing cluster thanks to such func
 
 ### Example
 
-The example mutation shows how to configure Minio with Azure Blob Storage Gateway mode, using the overrides mechanism:
+The example mutation shows how to configure Minio with Azure Blob Storage Gateway mode, using the proposed mechanism:
 
 ```
 mutation {
