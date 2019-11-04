@@ -6,7 +6,7 @@ Every object should be able to read information only about itself.
 We should restrict access to other objects of the same type, for example: runtime musn't read other runtime configuraion.
 We have two kinds of such resolvers:
 * `runtime(ID)` runtime should be able to only read about itself
-* `runtimes` - this data is limited for `RuntimeAgents` with `hasScopes` directive, so it's not our case.
+* `runtimes` - this data is limited for `RuntimeAgents` with `hasScopes` directive, which restricts access to the resolver to the certain scopes.
 
 ### Case 2:
 
@@ -45,11 +45,14 @@ Object Types:
 * Application
 * Integration System
 
-resourceOwner(Owner: []objectType, Id_Field: string) - can be used for query.
+```graphql
+directive @resourceOwner(Owner: objectType, IDField: String) #can be used for query.
+```
+
 Currently we cannot use this directive on query param ( https://github.com/99designs/gqlgen/issues/760).
 The directive does following things:
 * get object type and ID from request header
-* check if object type exist in `Owner` argument
+* check if object is the same type as`Owner` argument
 * if yes, then the directive compare the ID field. If the ID mismatches, the following error is returned `Access Denied`.
 
 ## Example flow for ApplicationForRuntime with resourceOwner directive
@@ -57,7 +60,7 @@ The directive does following things:
 ```graphql
 applicationsForRuntime(runtimeID: ID!, first: Int = 100, after: PageCursor): ApplicationPage! 
 @hasScopes(path: "graphql.query.applicationsForRuntime")
-@resourceOwner(Owner: [RUNTIME], Id_Field: "runtimeID")  
+@resourceOwner(Owner: RUNTIME, Id_Field: "runtimeID")  
 ```
 
 When Runtime Agent with ID `ABCD` executes query `applicationsForRuntime` with param `runtimeID` equals to `DCBA`, 
