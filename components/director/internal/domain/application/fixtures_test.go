@@ -14,7 +14,8 @@ import (
 )
 
 var (
-	testURL = "https://foo.bar"
+	testURL  = "https://foo.bar"
+	intSysID = "int-sys"
 )
 
 func fixApplicationPage(applications []*model.Application) *model.ApplicationPage {
@@ -60,9 +61,10 @@ func fixModelApplicationWithAllUpdatableFields(id, tenant, name, description, ur
 		Status: &model.ApplicationStatus{
 			Condition: model.ApplicationStatusConditionInitial,
 		},
-		Name:           name,
-		Description:    &description,
-		HealthCheckURL: &url,
+		IntegrationSystemID: &intSysID,
+		Name:                name,
+		Description:         &description,
+		HealthCheckURL:      &url,
 	}
 }
 
@@ -91,6 +93,7 @@ func fixDetailedModelApplication(t *testing.T, id, tenant, name, description str
 		Description:    &description,
 		Tenant:         tenant,
 		HealthCheckURL: &testURL,
+		IntegrationSystemID: &intSysID,
 	}
 }
 
@@ -107,6 +110,7 @@ func fixDetailedGQLApplication(t *testing.T, id, name, description string) *grap
 		Name:           name,
 		Description:    &description,
 		HealthCheckURL: &testURL,
+		IntegrationSystemID: &intSysID,
 	}
 }
 
@@ -122,6 +126,7 @@ func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description st
 		StatusCondition: string(model.ApplicationStatusConditionInitial),
 		StatusTimestamp: ts,
 		HealthCheckURL:  repo.NewValidNullableString(testURL),
+		IntegrationSystemID: repo.NewNullableString(&intSysID),
 	}
 }
 
@@ -135,6 +140,7 @@ func fixModelApplicationCreateInput(name, description string) model.ApplicationC
 			"test": []string{"val", "val2"},
 		},
 		HealthCheckURL: &testURL,
+		IntegrationSystemID: &intSysID,
 		Webhooks: []*model.WebhookInput{
 			{URL: "webhook1.foo.bar"},
 			{URL: "webhook2.foo.bar"},
@@ -159,6 +165,7 @@ func fixModelApplicationUpdateInput(name, description, url string) model.Applica
 		Name:           name,
 		Description:    &description,
 		HealthCheckURL: &url,
+		IntegrationSystemID: &intSysID,
 	}
 }
 
@@ -173,6 +180,7 @@ func fixGQLApplicationCreateInput(name, description string) graphql.ApplicationC
 		Description:    &description,
 		Labels:         &labels,
 		HealthCheckURL: &testURL,
+		IntegrationSystemID: &intSysID,
 		Webhooks: []*graphql.WebhookInput{
 			{URL: "webhook1.foo.bar"},
 			{URL: "webhook2.foo.bar"},
@@ -197,6 +205,7 @@ func fixGQLApplicationUpdateInput(name, description, url string) graphql.Applica
 		Name:           name,
 		Description:    &description,
 		HealthCheckURL: &url,
+		IntegrationSystemID: &intSysID,
 	}
 }
 

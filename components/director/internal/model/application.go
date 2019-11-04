@@ -17,6 +17,7 @@ type Application struct {
 	Description    *string
 	Status         *ApplicationStatus
 	HealthCheckURL *string
+	IntegrationSystemID *string
 }
 
 type ApplicationStatus struct {
@@ -50,6 +51,7 @@ type ApplicationCreateInput struct {
 	Apis           []*APIDefinitionInput
 	EventAPIs      []*EventAPIDefinitionInput
 	Documents      []*DocumentInput
+	IntegrationSystemID *string
 }
 
 func (i *ApplicationCreateInput) ToApplication(timestamp time.Time, condition ApplicationStatusCondition, id, tenant string) *Application {
@@ -63,6 +65,7 @@ func (i *ApplicationCreateInput) ToApplication(timestamp time.Time, condition Ap
 		Description:    i.Description,
 		Tenant:         tenant,
 		HealthCheckURL: i.HealthCheckURL,
+		IntegrationSystemID:  i.IntegrationSystemID,
 		Status: &ApplicationStatus{
 			Condition: condition,
 			Timestamp: timestamp,
@@ -78,6 +81,7 @@ type ApplicationUpdateInput struct {
 	Name           string
 	Description    *string
 	HealthCheckURL *string
+	IntegrationSystemID *string
 }
 
 func (i *ApplicationUpdateInput) Validate() error {

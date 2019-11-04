@@ -13,6 +13,7 @@ type Entity struct {
 	StatusCondition string         `db:"status_condition"`
 	StatusTimestamp time.Time      `db:"status_timestamp"`
 	HealthCheckURL  sql.NullString `db:"healthcheck_url"`
+	IntegrationSystemID sql.NullString `db:"integration_system_id"`
 }
 
 type EntityCollection []Entity
