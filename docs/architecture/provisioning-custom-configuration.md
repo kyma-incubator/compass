@@ -41,9 +41,10 @@ type ComponentOverride {
 }
 
 input ComponentOverrideInput {
+    name: String!
     # If not specified will be used for all components
     component: String 
-    overrides: Overrides
+    overrides: Overrides!
 }
 ```
 
@@ -62,7 +63,7 @@ Every `ComponentOverrideInput` defines a single Kubernetes resource which stores
 The resource can be either a ConfigMap or a Secret.
 
 Overrides configured as the `configOverrides` in `InstallationOverridesInput` are created as a ConfigMap on a created Cluster and stored in the database.
-Overrides configured as the `secretOverrides` are mapped to the Secret and either encrypted before storing in database or not stored at all.
+Overrides configured as the `secretOverrides` are mapped to the Secret and encrypted before storing in database. The examples of such sensitive data could be: certificate's private keys, Minio Gateway credentials or Dex configuration containing some secrets.
 
 
 ### Possible extension
