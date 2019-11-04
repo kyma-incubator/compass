@@ -2,9 +2,9 @@
 
 ### Case 1:
 
-Every object should has access to read information only about itself.
+Every object should be able to read information only about itself.
 We should restrict access to other objects of the same type, for example: runtime musn't read other runtime configuraion.
-We have two kind of such resolvers:
+We have two kinds of such resolvers:
 * `runtime(ID)` runtime should be able to only read about itself
 * `runtimes` - this data is limited for `RuntimeAgents` with `hasScopes` directive, so it's not our case.
 
@@ -16,16 +16,16 @@ In case of different ID, we should return  error such as `Access Denied`.
 
 ### Case 3:
 
-RuntimeAgent want to read all Applications.
+RuntimeAgent wants to read all Applications.
 The application has field `auths`.
-The RuntimeAgent should't has access to reading `auths`.
+The RuntimeAgent shouldn't have access to reading `auths`.
 We can restrict the access by current `hasScopes` directive.
 
 ### Case 4:
 
-RuntimeAgent want to read all Application with their Apis. 
+RuntimeAgent wants to read all Applications with their APIs. 
 `Apis` contain field `auths` which contains `APIRuntimeAuth` and field `auth` with `runtimeID` param.
-The RuntimeAgent should't has access to reading `auths`.
+The RuntimeAgent shouldn't have access to reading `auths`.
 We can restrict the access by `hasScopes` directive.
 
 RuntimeAgent should be allowed to read field `auth` with owned RuntimeID parameter.
@@ -49,7 +49,7 @@ resourceOwner(Owner: []objectType, Id_Field: string) - can be used for query.
 Currently we cannot use this directive on query param ( https://github.com/99designs/gqlgen/issues/760).
 The directive does following things:
 * get object type and ID from request header
-* check if object type exist in `For` argument
+* check if object type exist in `Owner` argument
 * if yes, then the directive compare the ID field. If the ID mismatches, the following error is returned `Access Denied`.
 
 ## Example flow for ApplicationForRuntime with resourceOwner directive
@@ -57,14 +57,14 @@ The directive does following things:
 ```graphql
 applicationsForRuntime(runtimeID: ID!, first: Int = 100, after: PageCursor): ApplicationPage! 
 @hasScopes(path: "graphql.query.applicationsForRuntime")
-@resourceOwner(For: [RUNTIME], Id_Field: "runtimeID")  
+@resourceOwner(Owner: [RUNTIME], Id_Field: "runtimeID")  
 ```
 
-When runtimeAgent with ID `ABCD` execute query `applicationsForRuntime` with param `runtimeID` equal to `DCBA`, 
-the runtime agent will get error `Access Denied`.
+When Runtime Agent with ID `ABCD` executes query `applicationsForRuntime` with param `runtimeID` equals to `DCBA`, 
+the Runtime Agent will get an error `Access Denied`.
 
-When IntegrationSystem with ID `ABCD` execute query `applicationsForRuntime` with param `runtimeID` equal to `DCBA`, 
-The directive dont' check anything, because it's only turn on for `RUNTIME`.
+When IntegrationSystem with ID `ABCD` executes query `applicationsForRuntime` with param `runtimeID` equals to `DCBA`, 
+The directive doesn't check anything, because it's only turn on for the `RUNTIME`.
 
 ### Resources to secure
 
