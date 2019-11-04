@@ -140,7 +140,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		resolver := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock)
 
 		//when
-		opt, finished, err := resolver.DeprovisionRuntime(runtimeID, gqlschema.CredentialsInput{})
+		opt, finished, err := resolver.DeprovisionRuntime(runtimeID)
 		require.NoError(t, err)
 
 		waitUntilFinished(finished)
@@ -164,7 +164,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		resolver := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock)
 
 		//when
-		_, _, err := resolver.DeprovisionRuntime(runtimeID, gqlschema.CredentialsInput{})
+		_, _, err := resolver.DeprovisionRuntime(runtimeID)
 
 		//then
 		require.Error(t, err)
