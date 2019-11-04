@@ -28,6 +28,7 @@ input KymaConfigInput {
 
 type InstallationOverrides {
     configOverrides: [ComponentOverride]
+    secretOverrides: [ComponentOverride]
 }
 
 input InstallationOverridesInput {
@@ -82,3 +83,57 @@ The same mechanism could be used to updated existing cluster thanks to such func
 ### Cons
 - No ability to extend with custom modules outside of Kyma
 
+
+### Example
+
+The example mutation shows how to configure Minio with Azure Blob Storage Gateway mode, using the overrides mechanism:
+
+```
+mutation {
+    result: provisionRuntime(id: "39e201ed-ec5b-4a2e-87cf-2395ebb0e9e7", config: {
+      clusterConfig: {
+          gcpConfig: {
+            name: "test"
+            projectName: "test"
+            kubernetesVersion: "1.15"
+            numberOfNodes: 2
+            bootDiskSize: "30GB"
+            machineType: "ns"
+            region: "mordor"
+          }
+      }
+      credentials: {
+        secretName: "test"
+      }
+      kymaConfig: {
+        version: "1.6"
+        modules: [Backup]
+        installationOverrides: {
+          configOverrides: [
+            {
+              name: "asset-store-minio-gateway"
+              component: "assetstore",
+              overrides: """{
+                minio.persistence.enabled: "false",
+                minio.azuregateway.enabled: "true",
+                minio.DeploymentUpdate.type: "RollingUpdate",
+                minio.DeploymentUpdate.maxSurge: "0",
+                minio.DeploymentUpdate.maxUnavailable: "50%"
+              }"""
+            }
+          ]
+          secretOverrides: [
+            {
+              name: "asset-store-minio-gateway"
+              component: "assetstore",
+              overrides: """{
+                minio.accessKey:"azure-account",
+                minio.secretKey:"secret-key"
+              }"""
+            }
+          ]
+        }
+      }
+    })
+}
+``` 
