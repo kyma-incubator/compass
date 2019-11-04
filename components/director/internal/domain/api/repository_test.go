@@ -71,6 +71,60 @@ func TestPgRepository_GetByID(t *testing.T) {
 	})
 }
 
+func TestPgRepository_GetForApplication(t *testing.T) {
+	// given
+	apiDefEntity := fixFullEntityAPIDefinition(apiDefID, "placeholder")
+
+	selectQuery := `^SELECT (.+) FROM "public"."api_definitions" WHERE tenant_id = \$1 AND id = \$2 AND app_id = \$3`
+
+	t.Run("success", func(t *testing.T) {
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		rows := sqlmock.NewRows(fixAPIDefinitionColumns()).
+			AddRow(fixAPIDefinitionRow(apiDefID, "placeholder")...)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID, apiDefID, appID).
+			WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.APIDefinitionConverter{}
+		convMock.On("FromEntity", apiDefEntity).Return(model.APIDefinition{ID: apiDefID, Tenant: tenantID, ApplicationID: appID}, nil).Once()
+		pgRepository := api.NewRepository(convMock)
+		// WHEN
+		modelApiDef, err := pgRepository.GetForApplication(ctx, tenantID, apiDefID, appID)
+		//THEN
+		require.NoError(t, err)
+		assert.Equal(t, apiDefID, modelApiDef.ID)
+		assert.Equal(t, tenantID, modelApiDef.Tenant)
+		assert.Equal(t, appID, modelApiDef.ApplicationID)
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+
+	t.Run("returns error when conversion failed", func(t *testing.T) {
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		testError := errors.New("test error")
+		rows := sqlmock.NewRows(fixAPIDefinitionColumns()).
+			AddRow(fixAPIDefinitionRow(apiDefID, "placeholder")...)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID, apiDefID, appID).
+			WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.APIDefinitionConverter{}
+		convMock.On("FromEntity", apiDefEntity).Return(model.APIDefinition{}, testError).Once()
+		pgRepository := api.NewRepository(convMock)
+		// WHEN
+		_, err := pgRepository.GetForApplication(ctx, tenantID, apiDefID, appID)
+		//THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), testError.Error())
+		sqlMock.AssertExpectations(t)
+		convMock.AssertExpectations(t)
+	})
+}
+
 func TestPgRepository_ListByApplicationID(t *testing.T) {
 	// GIVEN
 	ExpectedLimit := 3
