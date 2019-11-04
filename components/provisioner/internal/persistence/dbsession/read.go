@@ -30,26 +30,6 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 	return cluster, nil
 }
 
-func (r readSession) GetCredentialsSecretName(runtimeID string) (string, dberrors.Error) {
-
-	var credentialsSecretName string
-
-	err := r.session.
-		Select("id", "credentials_secret_name", "creation_timestamp").
-		From("cluster").
-		Where(dbr.Eq("cluster.id", runtimeID)).
-		LoadOne(&credentialsSecretName)
-
-	if err != nil {
-		if err == dbr.ErrNotFound {
-			return "", dberrors.NotFound("Credentials secret name not found for runtime: %s", runtimeID)
-		}
-		return "", dberrors.Internal("Failed to get credentials secret name: %s", err)
-	}
-
-	return credentialsSecretName, nil
-}
-
 func (r readSession) GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error) {
 	var kymaConfig []struct {
 		ID           string

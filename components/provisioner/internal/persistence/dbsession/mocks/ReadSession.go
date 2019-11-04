@@ -60,29 +60,6 @@ func (_m *ReadSession) GetClusterConfig(runtimeID string) (interface{}, dberrors
 	return r0, r1
 }
 
-// GetCredentialsSecretName provides a mock function with given fields: runtimeID
-func (_m *ReadSession) GetCredentialsSecretName(runtimeID string) (string, dberrors.Error) {
-	ret := _m.Called(runtimeID)
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(runtimeID)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	var r1 dberrors.Error
-	if rf, ok := ret.Get(1).(func(string) dberrors.Error); ok {
-		r1 = rf(runtimeID)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(dberrors.Error)
-		}
-	}
-
-	return r0, r1
-}
-
 // GetKymaConfig provides a mock function with given fields: runtimeID
 func (_m *ReadSession) GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error) {
 	ret := _m.Called(runtimeID)

@@ -115,9 +115,7 @@ func (r *service) DeprovisionRuntime(id string) (string, <-chan struct{}, error)
 		return "", nil, dberr
 	}
 
-	credentials, dberr := r.persistenceService.GetCredentialsSecretName(id)
-
-	go r.startDeprovisioning(operation.ID, id, runtimeStatus.RuntimeConfiguration, credentials, cluster, finished)
+	go r.startDeprovisioning(operation.ID, id, runtimeStatus.RuntimeConfiguration, cluster, finished)
 
 	return operation.ID, finished, nil
 }
@@ -180,10 +178,10 @@ func (r *service) startProvisioning(operationID, runtimeID string, config model.
 	}
 }
 
-func (r *service) startDeprovisioning(operationID, runtimeID string, config model.RuntimeConfig, secretName string, cluster model.Cluster, finished chan<- struct{}) {
+func (r *service) startDeprovisioning(operationID, runtimeID string, config model.RuntimeConfig, cluster model.Cluster, finished chan<- struct{}) {
 	defer close(finished)
 	log.Infof("Deprovisioning runtime %s is starting", runtimeID)
-	err := r.hydroform.DeprovisionCluster(config, secretName, cluster.TerraformState)
+	err := r.hydroform.DeprovisionCluster(config, cluster.CredentialsSecretName, cluster.TerraformState)
 
 	if err != nil {
 		log.Errorf("Deprovisioning runtime %s failed: %s", runtimeID, err.Error())
