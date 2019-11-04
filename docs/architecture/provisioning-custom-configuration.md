@@ -12,7 +12,7 @@ The proposed solution is to provide ability to configure the Installer overrides
 
 Changes to the GraphQL schema:
 ```graphql
-scalar Overrides # map[string]string
+scalar Overrides # string containing overrides in JSON format
 
 type KymaConfig {
     version: String
