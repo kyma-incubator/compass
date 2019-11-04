@@ -114,11 +114,11 @@ mutation {
               name: "asset-store-minio-gateway"
               component: "assetstore",
               overrides: """{
-                minio.persistence.enabled: "false",
-                minio.azuregateway.enabled: "true",
-                minio.DeploymentUpdate.type: "RollingUpdate",
-                minio.DeploymentUpdate.maxSurge: "0",
-                minio.DeploymentUpdate.maxUnavailable: "50%"
+                "minio.persistence.enabled": "false",
+                "minio.azuregateway.enabled": "true",
+                "minio.DeploymentUpdate.type": "RollingUpdate",
+                "minio.DeploymentUpdate.maxSurge": "0",
+                "minio.DeploymentUpdate.maxUnavailable": "50%"
               }"""
             }
           ]
@@ -127,8 +127,8 @@ mutation {
               name: "asset-store-minio-gateway"
               component: "assetstore",
               overrides: """{
-                minio.accessKey:"azure-account",
-                minio.secretKey:"secret-key"
+                "minio.accessKey":"azure-account",
+                "minio.secretKey":"secret-key"
               }"""
             }
           ]
