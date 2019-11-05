@@ -13,6 +13,7 @@ import (
 type Repository interface {
 	Create(ctx context.Context, item model.SystemAuth) error
 	GetByID(ctx context.Context, tenant, id string) (*model.SystemAuth, error)
+	GetByIDGlobal(ctx context.Context, id string) (*model.SystemAuth, error)
 	ListForObject(ctx context.Context, tenant string, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
 	DeleteByIDForObject(ctx context.Context, tenant string, id string, objType model.SystemAuthReferenceObjectType) error
 }
@@ -88,6 +89,15 @@ func (s *service) GetByIDForObject(ctx context.Context, objectType model.SystemA
 	item, err := s.repo.GetByID(ctx, tnt, authID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting SystemAuth with ID %s", authID)
+	}
+
+	return item, nil
+}
+
+func (s *service) GetGlobal(ctx context.Context, id string) (*model.SystemAuth, error) {
+	item, err := s.repo.GetByIDGlobal(ctx, id)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting SystemAuth with ID %s", id)
 	}
 
 	return item, nil

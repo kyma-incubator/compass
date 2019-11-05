@@ -68,8 +68,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 		req, err := http.NewRequest("GET", "/", nil)
 		require.NoError(t, err)
 
-		req.Header.Add("tenant", tnt)
-
 		token := createTokenWithSigningMethod(t, tnt, scopes, privateJWKS.Keys[0])
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
@@ -89,8 +87,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 		req, err := http.NewRequest("GET", "/", nil)
 		require.NoError(t, err)
-
-		req.Header.Add("tenant", tnt)
 
 		token := createNotSingedToken(t, tnt, scopes)
 		require.NoError(t, err)
@@ -115,8 +111,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 		req, err := http.NewRequest("GET", "/", nil)
 		require.NoError(t, err)
 
-		req.Header.Add("tenant", tnt)
-
 		token := createNotSingedToken(t, tnt, scopes)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
@@ -128,29 +122,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	})
 
-	t.Run("Success - Overwrite tenant header is not provided", func(t *testing.T) {
-		//given
-		expectedTenant := "3524eb44-d554-497f-a7a9-f195e537a023"
-		middleware := createMiddleware(t, false)
-		handler := testHandler(t, expectedTenant, scopes)
-
-		rr := httptest.NewRecorder()
-
-		req, err := http.NewRequest("GET", "/", nil)
-		require.NoError(t, err)
-
-		token := createTokenWithSigningMethod(t, tnt, scopes, privateJWKS.Keys[0])
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
-		req.Header.Set("Tenant", "3524eb44-d554-497f-a7a9-f195e537a023")
-
-		//when
-		middleware(handler).ServeHTTP(rr, req)
-
-		//then
-		assert.Equal(t, 200, rr.Code)
-		assert.Equal(t, "OK", rr.Body.String())
-	})
-
 	t.Run("Error - can't parse token", func(t *testing.T) {
 		//given
 		middleware := createMiddleware(t, false)
@@ -160,7 +131,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 		req, err := http.NewRequest("GET", "/", nil)
 		require.NoError(t, err)
 
-		req.Header.Add("tenant", tnt)
 		req.Header.Add("Authorization", "Bearer fake-token")
 
 		//when
@@ -183,8 +153,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 		req, err := http.NewRequest("GET", "/", nil)
 		require.NoError(t, err)
-
-		req.Header.Add("tenant", tnt)
 
 		token := createTokenWithSigningMethod(t, tnt, scopes, privateJWKS2.Keys[0])
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))

@@ -8,7 +8,3 @@ include $(SCRIPTS_DIR)/generic_make_go.mk
 VERIFY_IGNORE := /vendor\|/automock\|/mocks
 
 verify:: gqlgen check-gqlgen
-
-.PHONY: ci-pr
-#Temporary
-ci-pr: release

@@ -16,6 +16,7 @@ import (
 //go:generate mockery -name=EventAPIRepository -output=automock -outpkg=automock -case=underscore
 type EventAPIRepository interface {
 	GetByID(ctx context.Context, tenantID string, id string) (*model.EventAPIDefinition, error)
+	GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.EventAPIDefinition, error)
 	Exists(ctx context.Context, tenantID, id string) (bool, error)
 	ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventAPIDefinitionPage, error)
 	Create(ctx context.Context, item *model.EventAPIDefinition) error
@@ -74,6 +75,20 @@ func (s *service) Get(ctx context.Context, id string) (*model.EventAPIDefinition
 	eventAPI, err := s.eventAPIRepo.GetByID(ctx, tnt, id)
 	if err != nil {
 		return nil, err
+	}
+
+	return eventAPI, nil
+}
+
+func (s *service) GetForApplication(ctx context.Context, id string, applicationID string) (*model.EventAPIDefinition, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	eventAPI, err := s.eventAPIRepo.GetForApplication(ctx, tnt, id, applicationID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting API definition")
 	}
 
 	return eventAPI, nil

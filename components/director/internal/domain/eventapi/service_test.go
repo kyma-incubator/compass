@@ -88,7 +88,82 @@ func TestService_Get(t *testing.T) {
 		_, err := svc.Get(context.TODO(), "")
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
+func TestService_GetForApplication(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+	id := "foo"
+	appID := "test"
+	eventAPIDefinition := fixMinModelEventAPIDefinition(id, "placeholder")
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID)
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.EventAPIRepository
+		Input              model.EventAPIDefinitionInput
+		InputID            string
+		ApplicationID      string
+		ExpectedDocument   *model.EventAPIDefinition
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				repo.On("GetForApplication", ctx, tenantID, id, appID).Return(eventAPIDefinition, nil).Once()
+				return repo
+			},
+			InputID:            id,
+			ApplicationID:      appID,
+			ExpectedDocument:   eventAPIDefinition,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when EventAPI retrieval failed",
+			RepositoryFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				repo.On("GetForApplication", ctx, tenantID, id, appID).Return(nil, testErr).Once()
+				return repo
+			},
+			InputID:            id,
+			ApplicationID:      appID,
+			ExpectedDocument:   eventAPIDefinition,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := eventapi.NewService(repo, nil, nil)
+
+			// when
+			eventAPIDefinition, err := svc.GetForApplication(ctx, testCase.InputID, testCase.ApplicationID)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedDocument, eventAPIDefinition)
+			} else {
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := eventapi.NewService(nil, nil, nil)
+		// WHEN
+		_, err := svc.GetForApplication(context.TODO(), "", "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 
@@ -202,7 +277,7 @@ func TestService_List(t *testing.T) {
 		_, err := svc.List(context.TODO(), "", 5, "")
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 
@@ -344,7 +419,7 @@ func TestService_Create(t *testing.T) {
 		_, err := svc.Create(context.TODO(), "", model.EventAPIDefinitionInput{})
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 
@@ -490,7 +565,7 @@ func TestService_Update(t *testing.T) {
 		err := svc.Update(context.TODO(), "", model.EventAPIDefinitionInput{})
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 
@@ -558,7 +633,7 @@ func TestService_Delete(t *testing.T) {
 		err := svc.Delete(context.TODO(), "")
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 
@@ -631,7 +706,7 @@ func TestService_RefetchAPISpec(t *testing.T) {
 		_, err := svc.RefetchAPISpec(context.TODO(), "")
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Cannot read tenant from context")
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 

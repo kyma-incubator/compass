@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
+	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit"
 	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit/connector"
 	"github.com/stretchr/testify/assert"
@@ -238,7 +238,7 @@ func TestFullConnectorFlow(t *testing.T) {
 	require.Nil(t, configWithRevokedCert.ManagementPlaneInfo)
 }
 
-func getConfiguration(t *testing.T, appID string) gqlschema.Configuration {
+func getConfiguration(t *testing.T, appID string) externalschema.Configuration {
 	token, err := internalClient.GenerateApplicationToken(appID)
 	require.NoError(t, err)
 
@@ -249,14 +249,14 @@ func getConfiguration(t *testing.T, appID string) gqlschema.Configuration {
 	return configuration
 }
 
-func generateCertificate(t *testing.T, appID string, clientKey *rsa.PrivateKey) (gqlschema.CertificationResult, gqlschema.Configuration) {
+func generateCertificate(t *testing.T, appID string, clientKey *rsa.PrivateKey) (externalschema.CertificationResult, externalschema.Configuration) {
 	token, err := internalClient.GenerateApplicationToken(appID)
 	require.NoError(t, err)
 
 	return generateCertificateForToken(t, token.Token, clientKey)
 }
 
-func generateCertificateForToken(t *testing.T, token string, clientKey *rsa.PrivateKey) (gqlschema.CertificationResult, gqlschema.Configuration) {
+func generateCertificateForToken(t *testing.T, token string, clientKey *rsa.PrivateKey) (externalschema.CertificationResult, externalschema.Configuration) {
 	configuration, err := connectorClient.Configuration(token)
 	require.NoError(t, err)
 	assertConfiguration(t, configuration)
@@ -273,7 +273,7 @@ func generateCertificateForToken(t *testing.T, token string, clientKey *rsa.Priv
 	return result, configuration
 }
 
-func assertConfiguration(t *testing.T, configuration gqlschema.Configuration) {
+func assertConfiguration(t *testing.T, configuration externalschema.Configuration) {
 	require.NotEmpty(t, configuration)
 	require.NotNil(t, configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL)
 	require.NotNil(t, configuration.ManagementPlaneInfo.DirectorURL)
@@ -281,7 +281,7 @@ func assertConfiguration(t *testing.T, configuration gqlschema.Configuration) {
 	require.Equal(t, testkit.RSAKey, configuration.CertificateSigningRequestInfo.KeyAlgorithm)
 }
 
-func assertCertificate(t *testing.T, expectedSubject string, certificationResult gqlschema.CertificationResult) {
+func assertCertificate(t *testing.T, expectedSubject string, certificationResult externalschema.CertificationResult) {
 	clientCert := certificationResult.ClientCertificate
 	certChain := certificationResult.CertificateChain
 	caCert := certificationResult.CaCertificate
@@ -307,7 +307,7 @@ func createCertDataHeader(subject, hash string) string {
 	return fmt.Sprintf(`By=spiffe://cluster.local/ns/kyma-system/sa/default;Hash=%s;Subject="%s";URI=`, hash, subject)
 }
 
-func cleanup(t *testing.T, certificationResult gqlschema.CertificationResult) {
+func cleanup(t *testing.T, certificationResult externalschema.CertificationResult) {
 	hash := testkit.GetCertificateHash(t, certificationResult.ClientCertificate)
 	err := configmapCleaner.CleanRevocationList(hash)
 	assert.NoError(t, err)

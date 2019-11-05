@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/connector/pkg/gqlschema"
+	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,7 +20,7 @@ func TestHydrators(t *testing.T) {
 	for _, testCase := range []struct {
 		clientType           string
 		clientId             string
-		tokenGenerationFunc  func(id string) (gqlschema.Token, error)
+		tokenGenerationFunc  func(id string) (externalschema.Token, error)
 		expectedTokenHeaders http.Header
 		expectedCertsHeaders http.Header
 	}{

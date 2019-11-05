@@ -86,3 +86,83 @@ func TestIsNotUnique(t *testing.T) {
 		})
 	}
 }
+
+func TestKeyDoesNotExistError(t *testing.T) {
+	keyDoesNotExistError := &keyDoesNotExistError{}
+	wrappedKeyDoesNotExistError := errors.Wrap(keyDoesNotExistError, "wrapped text")
+	multiWrappedKeyDoesNotExistError := errors.Wrap(wrappedKeyDoesNotExistError, "multi wrapped")
+	testErr := errors.New("test")
+
+	testCases := []struct {
+		Name           string
+		Error          error
+		expectedResult bool
+	}{
+		{
+			Name:           "Unwrapped KeyDoesNotExist error",
+			Error:          keyDoesNotExistError,
+			expectedResult: true,
+		},
+		{
+			Name:           "Wrapped KeyDoesNotExist error",
+			Error:          wrappedKeyDoesNotExistError,
+			expectedResult: true,
+		},
+		{
+			Name:           "Multi wrapped KeyDoesNotExist error",
+			Error:          multiWrappedKeyDoesNotExistError,
+			expectedResult: true,
+		},
+		{
+			Name:           "Different error",
+			Error:          testErr,
+			expectedResult: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			assert.Equal(t, testCase.expectedResult, IsKeyDoesNotExist(testCase.Error))
+		})
+	}
+}
+
+func TestInvalidStringCastError(t *testing.T) {
+	invalidStringCastError := &invalidStringCastError{}
+	wrappedInvalidStringCastError := errors.Wrap(invalidStringCastError, "wrapped text")
+	multiWrappedInvalidStringCastError := errors.Wrap(wrappedInvalidStringCastError, "multi wrapped")
+	testErr := errors.New("test")
+
+	testCases := []struct {
+		Name           string
+		Error          error
+		expectedResult bool
+	}{
+		{
+			Name:           "Unwrapped InvalidStringCast error",
+			Error:          invalidStringCastError,
+			expectedResult: true,
+		},
+		{
+			Name:           "Wrapped InvalidStringCast error",
+			Error:          wrappedInvalidStringCastError,
+			expectedResult: true,
+		},
+		{
+			Name:           "Multi wrapped InvalidStringCast error",
+			Error:          multiWrappedInvalidStringCastError,
+			expectedResult: true,
+		},
+		{
+			Name:           "Different error",
+			Error:          testErr,
+			expectedResult: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			assert.Equal(t, testCase.expectedResult, IsInvalidCast(testCase.Error))
+		})
+	}
+}

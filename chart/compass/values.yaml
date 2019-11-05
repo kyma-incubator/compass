@@ -7,10 +7,10 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir: pr/
-      version: "PR-357"
+      version: "PR-391"
     director:
       dir:
-      version: "PR-397"
+      version: "PR-426"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -21,8 +21,8 @@ global:
       dir: pr/
       version: "PR-357"
     provisioner:
-      dir: pr/
-      version: "PR-357"
+      dir:
+      version: "dfdd3057"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -31,22 +31,26 @@ global:
     tests:
       e2e:
         dir:
-        version: "PR-397"
+        version: "PR-426"
       connector:
         dir: pr/
-        version: "PR-357"
+        version: "PR-391"
       provisioner:
-        dir: pr/
-        version: "PR-357"
+        dir:
+        version: "PR-418"
 
   isLocalEnv: false
 
   director:
     port: 3000
 
+
   connector:
     graphql:
-      port: 3000
+      external:
+        port: 3000
+      internal:
+        port: 3001
     validator:
       port: 8080
     # If secrets do not exist they will be created

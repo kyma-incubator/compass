@@ -4,7 +4,8 @@ required = [
 
 [[constraint]]
   name = "github.com/kyma-incubator/compass"
-  revision = "1adfa459f90d6c2f50df54d06b22031d212a5dce"
+  revision = "ed26afa1728808f0d9d5b7cf37bf02b3e48b4cd8"
+
 
 [prune]
   go-tests = true

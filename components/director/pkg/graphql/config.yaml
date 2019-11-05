@@ -44,6 +44,10 @@ models:
         resolver: true
       apis:
         resolver: true
+      api:
+        resolver: true
+      eventAPI:
+        resolver: true
       webhooks:
         resolver: true
       labels:

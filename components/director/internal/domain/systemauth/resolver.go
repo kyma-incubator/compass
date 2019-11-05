@@ -12,6 +12,7 @@ import (
 //go:generate mockery -name=SystemAuthService -output=automock -outpkg=automock -case=underscore
 type SystemAuthService interface {
 	GetByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) (*model.SystemAuth, error)
+	GetGlobal(ctx context.Context, id string) (*model.SystemAuth, error)
 	DeleteByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) error
 }
 
