@@ -21,7 +21,7 @@ global:
       dir:
       version: "PR-448"
     provisioner:
-      dir: pr/
+      dir: 
       version: "PR-432"
     certs_setup_job:
       containerRegistry:
