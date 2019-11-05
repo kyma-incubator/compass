@@ -104,7 +104,7 @@ export DIRECTOR_URL="http://${DIRECTOR_URL}:${APP_PORT}"
 ./wait-for-director.sh
 
 echo -e "${GREEN}Removing previous GraphQL examples...${NC}"
-rm -r "${LOCAL_ROOT_PATH}/components/director/examples/"*
+rm -r "${LOCAL_ROOT_PATH}/components/director/examples/"
 
 echo -e "${GREEN}Running Director tests with generating examples...${NC}"
 go test -c "${SCRIPT_DIR}/director/" -tags ignore_external_dependencies

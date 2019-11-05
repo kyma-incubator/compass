@@ -29,6 +29,8 @@ const (
 	addDocumentCategory            = "add document"
 	queryApplicationsCategory      = "query applications"
 	queryApplicationCategory       = "query application"
+	queryAPICategory               = "query api"
+	queryEventAPICategory          = "query event api"
 )
 
 func TestCreateApplicationWithAllSimpleFieldsProvided(t *testing.T) {
@@ -1127,7 +1129,7 @@ func TestQuerySpecificAPIDefinition(t *testing.T) {
 				}
 			}`, applicationID, actualAPI.ID, tc.gqlFieldsProvider.ForAPIDefinition()))
 	err = tc.RunOperation(context.Background(), queryAppReq, &actualAPI)
-	saveQueryInExamples(t, queryAppReq.Query(), "query api")
+	saveQueryInExamples(t, queryAppReq.Query(), queryAPICategory, "query api")
 
 	//THEN
 	require.NoError(t, err)
@@ -1170,7 +1172,7 @@ func TestQuerySpecificEventAPIDefinition(t *testing.T) {
 				}
 			}`, applicationID, actualEventAPI.ID, tc.gqlFieldsProvider.ForEventAPI()))
 	err = tc.RunOperation(context.Background(), queryAppReq, &actualEventAPI)
-	saveQueryInExamples(t, queryAppReq.Query(), "query event api")
+	saveQueryInExamples(t, queryAppReq.Query(), queryEventAPICategory, "query event api")
 
 	//THEN
 	require.NoError(t, err)
