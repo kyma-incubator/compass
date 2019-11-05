@@ -8,45 +8,44 @@ For now only option is to configure Runtime manually after provisioning is finis
 
 ## Solution
 
-The proposed solution is to provide ability to configure the Installer overrides as a part of provisioning API.
+The proposed solution is to provide ability to provide the configuration for components, which then will be used as Installer overrides.
 
 Changes to the GraphQL schema:
 ```graphql
-scalar Overrides # string containing overrides in JSON format
+type Configuration {
+    key: String!
+    value: String!
+    secret: Boolean
+} 
+
+input ConfigurationInput {
+    key: String!
+    value: String!
+    secret: Boolean
+}
+
+type ComponentConfiguration {
+    component: KymaComponent
+    configuration: [Configuration]
+}
+
+input ComponentConfigurationInput {
+    component: KymaComponent!
+    configuration: [ConfigurationInput]
+}
 
 type KymaConfig {
     version: String
-    modules: [KymaModule]
-    installationOverrides: InstallationOverrides
+    components: [ComponentConfiguration]
+    configuration: [Configuration]
 }
 
 input KymaConfigInput {
     version: String!
-    modules: [KymaModule!]
-    installationOverrides: [InstallationOverridesInput]
+    components: [ComponentConfigurationInput]!
+    configuration: [ConfigurationInput] 
 }
 
-type InstallationOverrides {
-    configOverrides: [ComponentOverride]
-    secretOverrides: [ComponentOverride]
-}
-
-input InstallationOverridesInput {
-    configOverrides: [ComponentOverrideInput]
-    secretOverrides: [ComponentOverrideInput]
-}
-
-type ComponentOverride {
-    component: String 
-    overrides: Overrides
-}
-
-input ComponentOverrideInput {
-    name: String!
-    # If not specified will be used for all components
-    component: String 
-    overrides: Overrides!
-}
 ```
 
 ### Assumption
@@ -58,30 +57,26 @@ The Provisioner API is accessed by the administrator or other intermediary Servi
 The proposed solution leverages the mechanism of Installer.
 More information on how the overrides work can be found [here](https://kyma-project.io/docs/#configuration-helm-overrides-for-kyma-installation)
 
-### Overrides configuration
+### Components configuration
 
-Every `ComponentOverrideInput` defines a single Kubernetes resource which stores the provided values.
-The resource can be either a ConfigMap or a Secret.
+The configuration can be provided for every Kyma component as a list of key-value pairs in `ComponentConfigurationInput`.
+The additional `secret` flag specifies if the value is confidential.
+The `configuration` in `KymaConfigInput` is a configuration not specific for any component.
 
-Overrides configured as the `configOverrides` in `InstallationOverridesInput` are created as a ConfigMap on a created Cluster and stored in the database.
-Overrides configured as the `secretOverrides` are mapped to the Secret and encrypted before storing in database. The examples of such sensitive data could be: certificate's private keys, Minio Gateway credentials or Dex configuration containing some secrets.
-
-
-### Possible extension
-
-In a presented format the Provisioner API provides ability to configure Kyma during the cluster provisioning.
-The same mechanism could be used to updated existing cluster thanks to such functionality in the Installer component. 
+All configurations for component not marked as a `secret` are then saved to the ConfigMap on a created Cluster and marked as Installation overrides. They are also stored in the database.
+The confidential configuration is stored in Secret on a created cluster and encrypted before storing in database. The examples of such sensitive data could be: certificate's private keys, Minio Gateway credentials or Dex configuration containing some secrets. 
 
 
 ### Pros
 - The solution is simple from API and Installation standpoint
 - It leverages the well established mechanism of Installer
-- Together with Module definition it gives ability to configure Kyma (open source stuff) in pretty much any way possible.
+- Together with component definition it gives ability to configure Kyma (open source stuff) in pretty much any way possible.
 - Does not uses anything external of Kyma (like Helm etc.)
 - All current use cases can be covered with the following approach
 
 ### Cons
 - No ability to extend with custom modules outside of Kyma
+- One ConfigMap and Secret per component
 
 
 ### Example
@@ -107,32 +102,46 @@ mutation {
       }
       kymaConfig: {
         version: "1.6"
-        modules: [Backup]
-        installationOverrides: {
-          configOverrides: [
+        components: [
             {
-              name: "asset-store-minio-gateway"
-              component: "assetstore",
-              overrides: """{
-                "minio.persistence.enabled": "false",
-                "minio.azuregateway.enabled": "true",
-                "minio.DeploymentUpdate.type": "RollingUpdate",
-                "minio.DeploymentUpdate.maxSurge": "0",
-                "minio.DeploymentUpdate.maxUnavailable": "50%"
-              }"""
+                component: "assetstore"
+                configuration: [
+                   {
+                       key: "minio.persistence.enabled"
+                       value: "false"
+                   }
+                   {
+                       key: "minio.azuregateway.enabled"
+                       value: "true"
+                   }
+                   {
+                       key: "minio.DeploymentUpdate.type"
+                       value: "RollingUpdate"
+                   }
+                   {
+                       key: "minio.DeploymentUpdate.maxSurge"
+                       value: "0"
+                   }
+                   {
+                        key: "minio.DeploymentUpdate.maxUnavailable"
+                        value: "50%"
+                   }
+                   {
+                        key: "minio.accessKey"
+                        value: "azure-account"
+                        secret: true
+                   }
+                   {
+                        key: "minio.secretKey"
+                        value: "secret-key"
+                        secret: true
+                   }
+                ]
             }
-          ]
-          secretOverrides: [
             {
-              name: "asset-store-minio-gateway"
-              component: "assetstore",
-              overrides: """{
-                "minio.accessKey":"azure-account",
-                "minio.secretKey":"secret-key"
-              }"""
+                component: "core"
             }
-          ]
-        }
+        ]
       }
     })
 }
