@@ -570,7 +570,8 @@ type Query {
 	labelDefinition(key: String!): LabelDefinition @hasScopes(path: "graphql.query.labelDefinition")
 	healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: PageCursor): HealthCheckPage! @hasScopes(path: "graphql.query.healthChecks")
 	"""
-	maximum `first` parameter value is 100 see example [here](query-integration-systems.graphql)
+	maximum `first` parameter value is 100 
+	 see example [here](examples/query-integration-systems/query-integration-systems.graphql)
 	"""
 	integrationSystems(first: Int = 100, after: PageCursor): IntegrationSystemPage! @hasScopes(path: "graphql.query.integrationSystems")
 	"""
