@@ -115,6 +115,27 @@ func TestPgRepository_GetForApplication(t *testing.T) {
 		sqlMock.AssertExpectations(t)
 	})
 
+	t.Run("DB Error", func(t *testing.T) {
+		// given
+		repo := eventapi.NewRepository(nil)
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		testError := errors.New("test error")
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID, eventAPIID, appID).
+			WillReturnError(testError)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+
+		// when
+		eventApiDef, err := repo.GetForApplication(ctx, tenantID, eventAPIID, appID)
+		// then
+
+		sqlMock.AssertExpectations(t)
+		assert.Nil(t, eventApiDef)
+		require.EqualError(t, err, fmt.Sprintf("while getting object from DB: %s", testError.Error()))
+	})
+
 	t.Run("returns error when conversion failed", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		rows := sqlmock.NewRows(fixEventAPIDefinitionColumns()).

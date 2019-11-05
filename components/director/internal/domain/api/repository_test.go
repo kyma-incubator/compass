@@ -101,6 +101,27 @@ func TestPgRepository_GetForApplication(t *testing.T) {
 		sqlMock.AssertExpectations(t)
 	})
 
+	t.Run("DB Error", func(t *testing.T) {
+		// given
+		repo := api.NewRepository(nil)
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		testError := errors.New("test error")
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID, apiDefID, appID).
+			WillReturnError(testError)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+
+		// when
+		modelApiDef, err := repo.GetForApplication(ctx, tenantID, apiDefID, appID)
+		// then
+
+		sqlMock.AssertExpectations(t)
+		assert.Nil(t, modelApiDef)
+		require.EqualError(t, err, fmt.Sprintf("while getting object from DB: %s", testError.Error()))
+	})
+
 	t.Run("returns error when conversion failed", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		testError := errors.New("test error")
