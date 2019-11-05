@@ -118,7 +118,7 @@ func fetchHydraAccessToken(t *testing.T, domain string, encodedCredentials strin
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer httpRequestBodyCloser(t, resp)
 
 	token, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
@@ -129,4 +129,9 @@ func fetchHydraAccessToken(t *testing.T, domain string, encodedCredentials strin
 	require.Equal(t, expectedStatusCode, resp.StatusCode)
 
 	return &hydraToken
+}
+
+func httpRequestBodyCloser(t *testing.T, resp *http.Response) {
+	err := resp.Body.Close()
+	require.NoError(t, err)
 }
