@@ -15,6 +15,11 @@ func NewAuthorizedGraphQLClient(bearerToken string) *gcli.Client {
 	return gcli.NewClient(getDirectorGraphqlURL(), gcli.WithHTTPClient(authorizedClient))
 }
 
+func NewAuthorizedGraphQLClientWithCustomURL(bearerToken, url string) *gcli.Client {
+	authorizedClient := newAuthorizedHTTPClient(bearerToken)
+	return gcli.NewClient(url, gcli.WithHTTPClient(authorizedClient))
+}
+
 func getDirectorGraphqlURL() string {
 	url := os.Getenv("DIRECTOR_URL")
 	if url == "" {

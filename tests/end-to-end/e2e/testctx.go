@@ -40,6 +40,7 @@ type TestContext struct {
 
 func NewTestContext() (*TestContext, error) {
 	scopesStr := os.Getenv("ALL_SCOPES")
+
 	currentScopes := strings.Split(scopesStr, " ")
 
 	bearerToken, err := jwtbuilder.Do(defaultTenant, currentScopes)
@@ -58,7 +59,10 @@ func NewTestContext() (*TestContext, error) {
 func (tc *TestContext) RunOperation(ctx context.Context, req *gcli.Request, resp interface{}) error {
 	// TODO: Remove tenant header after implementing https://github.com/kyma-incubator/compass/issues/288
 	if req.Header["Tenant"] == nil {
-		req.Header["Tenant"] = []string{defaultTenant}
+		tnt := os.Getenv("DEFAULT_TENANT")
+		if tnt != "" {
+			req.Header["Tenant"] = []string{tnt}
+		}
 	}
 
 	m := resultMapperFor(&resp)

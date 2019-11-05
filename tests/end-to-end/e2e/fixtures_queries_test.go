@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -9,27 +10,17 @@ import (
 )
 
 //Application
-func getApplication(t *testing.T, ctx context.Context, id string) graphql.ApplicationExt {
-	appRequest := fixApplicationRequest(id)
-	app := graphql.ApplicationExt{}
-	require.NoError(t, tc.RunOperation(ctx, appRequest, &app))
-	return app
-}
-
-func createApplication(t *testing.T, ctx context.Context, name string) graphql.ApplicationExt {
-	in := generateSampleApplicationInputWithName("first", name)
-	return createApplicationFromInputWithinTenant(t, ctx, in, defaultTenant)
-}
-
-func createApplicationFromInputWithinTenant(t *testing.T, ctx context.Context, in graphql.ApplicationInput, tenantID string) graphql.ApplicationExt {
-	appInputGQL, err := tc.Graphqlizer.ApplicationInputToGQL(in)
+func createApplicationFromInputWithinTenant(t *testing.T, ctx context.Context, in graphql.ApplicationCreateInput, tc TestContext) graphql.ApplicationExt {
+	appInputGQL, err := tc.Graphqlizer.ApplicationCreateInputToGQL(in)
 	require.NoError(t, err)
 
 	createRequest := fixCreateApplicationRequest(appInputGQL)
-
+	createRequest.Header = http.Header{"Tenant": {"3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"}}
 	app := graphql.ApplicationExt{}
+	m := resultMapperFor(&app)
 
-	require.NoError(t, tc.RunOperationWithCustomTenant(ctx, tenantID, createRequest, &app))
+	err = tc.withRetryOnTemporaryConnectionProblems(func() error { return tc.cli.Run(ctx, createRequest, &m) })
+	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
 	return app
 }
@@ -49,22 +40,18 @@ func addApi(t *testing.T, ctx context.Context, in graphql.APIDefinitionInput, ap
 	require.NoError(t, err)
 
 	addApiRequest := fixAddApiRequest(applicationID, apiInputGQL)
+	addApiRequest.Header = http.Header{"Tenant": {"3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"}}
 
 	api := graphql.APIDefinitionExt{}
+	m := resultMapperFor(&api)
 
-	require.NoError(t, tc.RunOperation(ctx, addApiRequest, &api))
+	err = tc.withRetryOnTemporaryConnectionProblems(func() error { return tc.cli.Run(ctx, addApiRequest, &m) })
+	require.NoError(t, err)
 	require.NotEmpty(t, api.ID)
 	return &api
 }
 
 // Integration System
-func getIntegrationSystem(t *testing.T, ctx context.Context, id string) *graphql.IntegrationSystemExt {
-	intSysRequest := fixIntegrationSystemRequest(id)
-	intSys := graphql.IntegrationSystemExt{}
-	require.NoError(t, tc.RunOperation(ctx, intSysRequest, &intSys))
-	return &intSys
-}
-
 func createIntegrationSystem(t *testing.T, ctx context.Context, name string) *graphql.IntegrationSystemExt {
 	input := graphql.IntegrationSystemInput{Name: name}
 	in, err := tc.Graphqlizer.IntegrationSystemInputToGQL(input)
@@ -72,12 +59,12 @@ func createIntegrationSystem(t *testing.T, ctx context.Context, name string) *gr
 		return nil
 	}
 
-	req := FixCreateIntegrationSystemRequest(in)
+	req := fixCreateIntegrationSystemRequest(in)
 
 	out := &graphql.IntegrationSystemExt{}
 	err = tc.RunOperation(ctx, req, out)
-	require.NotEmpty(t, out)
 	require.NoError(t, err)
+	require.NotEmpty(t, out)
 	return out
 }
 
@@ -95,14 +82,8 @@ func generateClientCredentialsForIntegrationSystem(t *testing.T, ctx context.Con
 	return out
 }
 
-func deleteSystemAuthForIntegrationSystem(t *testing.T, ctx context.Context, id string) {
-	req := fixDeleteSystemAuthForIntegrationSystem(id)
-	err := tc.RunOperation(ctx, req, nil)
-	require.NoError(t, err)
-}
-
-func generateSampleApplicationInputWithName(placeholder, name string) graphql.ApplicationInput {
-	return graphql.ApplicationInput{
+func generateSampleApplicationInputWithName(placeholder, name string) graphql.ApplicationCreateInput {
+	return graphql.ApplicationCreateInput{
 		Name: name,
 		Documents: []*graphql.DocumentInput{{
 			Title:  placeholder,

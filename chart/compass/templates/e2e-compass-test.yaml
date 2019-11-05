@@ -26,7 +26,7 @@ spec:
         image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.e2e.dir }}compass-end-to-end-test:{{ .Values.global.images.tests.e2e.version }}
         imagePullPolicy: IfNotPresent
         command: ["/bin/sh"]
-        args: ["-c", "./wait-for-director.sh; /director.test -test.v; exit_code=$?; pkill -INT pilot-agent; sleep 4; exit $exit_code;"]
+        args: ["-c", "./wait-for-director.sh; /e2e.test -test.v; exit_code=$?; pkill -INT pilot-agent; sleep 4; exit $exit_code;"]
         env:
           - name: DIRECTOR_URL
             value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.port }}"
@@ -42,4 +42,6 @@ spec:
               secretKeyRef:
                 name: admin-user
                 key: password
+          - name: DEFAULT_TENANT
+            value: "{{.Values.global.defaultTenant}}"
     restartPolicy: Never
