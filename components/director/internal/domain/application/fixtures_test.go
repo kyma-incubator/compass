@@ -363,7 +363,10 @@ func fixModelEventAPIDefinition(id, appId, name, description string, group strin
 		Group:         &group,
 	}
 }
-
+func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventAPIDefinition {
+	return &model.EventAPIDefinition{ID: id, Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
+		ApplicationID: "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", Name: placeholder}
+}
 func fixGQLEventAPIDefinition(id, appId, name, description string, group string) *graphql.EventAPIDefinition {
 	return &graphql.EventAPIDefinition{
 		ID:            id,

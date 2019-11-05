@@ -1075,6 +1075,90 @@ func TestQueryAPIRuntimeAuths(t *testing.T) {
 	}
 }
 
+func TestQuerySpecificAPIDefinition(t *testing.T) {
+	// GIVEN
+	in := graphql.APIDefinitionInput{
+		Name:      "test",
+		TargetURL: "test",
+	}
+
+	APIInputGQL, err := tc.graphqlizer.APIDefinitionInputToGQL(in)
+	require.NoError(t, err)
+	applicationID := createApplication(t, context.Background(), "test").ID
+	defer deleteApplication(t, applicationID)
+	actualAPI := graphql.APIDefinition{}
+	request := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: addAPI(applicationID: "%s", in: %s) {
+					%s
+				}
+			}`, applicationID, APIInputGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
+	err = tc.RunOperation(context.TODO(), request, &actualAPI)
+	require.NoError(t, err)
+	require.NotEmpty(t, actualAPI.ID)
+	createdID := actualAPI.ID
+	defer deleteAPI(t, createdID)
+
+	// WHEN
+	queryAppReq := gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+					api(id: "%s"){
+						%s
+					}
+				}
+			}`, applicationID, actualAPI.ID, tc.gqlFieldsProvider.ForAPIDefinition()))
+	err = tc.RunOperation(context.Background(), queryAppReq, &actualAPI)
+	saveQueryInExamples(t, queryAppReq.Query(), "query api")
+
+	//THEN
+	require.NoError(t, err)
+	assert.Equal(t, createdID, actualAPI.ID)
+}
+
+func TestQuerySpecificEventAPIDefinition(t *testing.T) {
+	// GIVEN
+	in := graphql.EventAPIDefinitionInput{
+		Name: "test",
+		Spec: &graphql.EventAPISpecInput{
+			EventSpecType: "ASYNC_API",
+			Format:        "YAML",
+		},
+	}
+	EventAPIInputGQL, err := tc.graphqlizer.EventAPIDefinitionInputToGQL(in)
+	require.NoError(t, err)
+	applicationID := createApplication(t, context.Background(), "test").ID
+	defer deleteApplication(t, applicationID)
+	actualEventAPI := graphql.EventAPIDefinition{}
+	request := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: addEventAPI(applicationID: "%s", in: %s) {
+					%s
+				}
+			}`, applicationID, EventAPIInputGQL, tc.gqlFieldsProvider.ForEventAPI()))
+	err = tc.RunOperation(context.TODO(), request, &actualEventAPI)
+	require.NoError(t, err)
+	require.NotEmpty(t, actualEventAPI.ID)
+	createdID := actualEventAPI.ID
+	defer deleteEventAPI(t, createdID)
+
+	// WHEN
+	queryAppReq := gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+					eventAPI(id: "%s"){
+						%s
+					}
+				}
+			}`, applicationID, actualEventAPI.ID, tc.gqlFieldsProvider.ForEventAPI()))
+	err = tc.RunOperation(context.Background(), queryAppReq, &actualEventAPI)
+	saveQueryInExamples(t, queryAppReq.Query(), "query event api")
+
+	//THEN
+	require.NoError(t, err)
+	assert.Equal(t, createdID, actualEventAPI.ID)
+}
+
 func getApp(ctx context.Context, t *testing.T, id string) graphql.ApplicationExt {
 	q := gcli.NewRequest(
 		fmt.Sprintf(`query {
@@ -1139,6 +1223,26 @@ func deleteApplication(t *testing.T, id string) {
 	req := gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 		deleteApplication(id: "%s") {
+			id
+		}	
+	}`, id))
+	require.NoError(t, tc.RunOperation(context.Background(), req, nil))
+}
+
+func deleteAPI(t *testing.T, id string) {
+	req := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		deleteAPI(id: "%s") {
+			id
+		}	
+	}`, id))
+	require.NoError(t, tc.RunOperation(context.Background(), req, nil))
+}
+
+func deleteEventAPI(t *testing.T, id string) {
+	req := gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		deleteEventAPI(id: "%s") {
 			id
 		}	
 	}`, id))

@@ -44,6 +44,8 @@ type APIService interface {
 	Create(ctx context.Context, applicationID string, in model.APIDefinitionInput) (string, error)
 	Update(ctx context.Context, id string, in model.APIDefinitionInput) error
 	Delete(ctx context.Context, id string) error
+	Get(ctx context.Context, id string) (*model.APIDefinition, error)
+	GetForApplication(ctx context.Context, id string, applicationID string) (*model.APIDefinition, error)
 }
 
 //go:generate mockery -name=APIConverter -output=automock -outpkg=automock -case=underscore
@@ -56,6 +58,8 @@ type APIConverter interface {
 
 //go:generate mockery -name=EventAPIService -output=automock -outpkg=automock -case=underscore
 type EventAPIService interface {
+	Get(ctx context.Context, id string) (*model.EventAPIDefinition, error)
+	GetForApplication(ctx context.Context, id string, applicationID string) (*model.EventAPIDefinition, error)
 	List(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.EventAPIDefinitionPage, error)
 	Create(ctx context.Context, applicationID string, in model.EventAPIDefinitionInput) (string, error)
 	Update(ctx context.Context, id string, in model.EventAPIDefinitionInput) error
@@ -506,6 +510,56 @@ func (r *Resolver) EventAPIs(ctx context.Context, obj *graphql.Application, grou
 			HasNextPage: eventAPIPage.PageInfo.HasNextPage,
 		},
 	}, nil
+}
+
+func (r *Resolver) API(ctx context.Context, id string, application *graphql.Application) (*graphql.APIDefinition, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	api, err := r.apiSvc.GetForApplication(ctx, id, application.ID)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.apiConverter.ToGraphQL(api), nil
+}
+
+func (r *Resolver) EventAPI(ctx context.Context, id string, application *graphql.Application) (*graphql.EventAPIDefinition, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	eventAPI, err := r.eventAPISvc.GetForApplication(ctx, id, application.ID)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.eventApiConverter.ToGraphQL(eventAPI), nil
 }
 
 // TODO: Proper error handling

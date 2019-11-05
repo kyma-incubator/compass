@@ -295,6 +295,8 @@ type Application {
 	group allows to find different versions of the same event API
 	"""
 	eventAPIs(group: String, first: Int = 100, after: PageCursor): EventAPIDefinitionPage!
+	api(id: ID!): APIDefinition
+	eventAPI(id: ID!): EventAPIDefinition
 	documents(first: Int = 100, after: PageCursor): DocumentPage!
 	auths: [SystemAuth!]!
 }
@@ -523,8 +525,6 @@ type Query {
 	labelDefinitions: [LabelDefinition!]! @hasScopes(path: "graphql.query.labelDefinitions")
 	labelDefinition(key: String!): LabelDefinition @hasScopes(path: "graphql.query.labelDefinition")
 	healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: PageCursor): HealthCheckPage! @hasScopes(path: "graphql.query.healthChecks")
-	api(id: ID!): APIDefinition @hasScopes(path: "graphql.query.api")
-	eventAPI(id: ID!): EventAPIDefinition @hasScopes(path: "graphql.query.eventAPI")
 	"""
 	Maximum `first` parameter value is 100
 	"""

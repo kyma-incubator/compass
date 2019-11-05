@@ -10,7 +10,7 @@ global:
       version: "PR-391"
     director:
       dir:
-      version: "PR-427"
+      version: "PR-426"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -31,7 +31,7 @@ global:
     tests:
       e2e:
         dir:
-        version: "PR-364"
+        version: "PR-426"
       connector:
         dir: pr/
         version: "PR-391"
