@@ -57,12 +57,9 @@ func NewTestContext() (*TestContext, error) {
 }
 
 func (tc *TestContext) RunOperation(ctx context.Context, req *gcli.Request, resp interface{}) error {
-	// TODO: Remove tenant header after implementing https://github.com/kyma-incubator/compass/issues/288
-	if req.Header["Tenant"] == nil {
-		tnt := os.Getenv("DEFAULT_TENANT")
-		if tnt != "" {
-			req.Header["Tenant"] = []string{tnt}
-		}
+	tnt := os.Getenv("DEFAULT_TENANT")
+	if tnt != "" {
+		req.Header["Tenant"] = []string{tnt}
 	}
 
 	m := resultMapperFor(&resp)

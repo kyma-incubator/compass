@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 
@@ -36,7 +37,11 @@ type hydraToken struct {
 	TokenType   string `json:"token_type"`
 }
 
+var domain string
+
 func TestCompassAuth(t *testing.T) {
+	domain = os.Getenv("DOMAIN")
+	require.NotEmpty(t, domain)
 	ctx := context.Background()
 
 	t.Log("Get Dex id token")
@@ -48,7 +53,7 @@ func TestCompassAuth(t *testing.T) {
 
 	t.Log("Create Integration System with Dex id token")
 	tc.cli = common.NewAuthorizedGraphQLClient(dexToken)
-	intSys := createIntegrationSystem(t, ctx, "int-sys")
+	intSys := createIntegrationSystem(t, ctx, "integration-system")
 
 	t.Log("Generate Client Credentials for Integration System")
 	intSysAuth := generateClientCredentialsForIntegrationSystem(t, ctx, intSys.ID)
@@ -60,10 +65,10 @@ func TestCompassAuth(t *testing.T) {
 	t.Log("Issue a Hydra token with Client Credentials")
 	oauthCredentials := fmt.Sprintf("%s:%s", intSysOauthCredentialData.ClientID, intSysOauthCredentialData.ClientSecret)
 	encodedCredentials := base64.StdEncoding.EncodeToString([]byte(oauthCredentials))
-	hydraToken := fetchHydraAccessToken(t, "kyma.local", encodedCredentials, http.StatusOK)
+	hydraToken := fetchHydraAccessToken(t, domain, encodedCredentials, http.StatusOK)
 
 	t.Log("Create an application as Integration System")
-	tc.cli = common.NewAuthorizedGraphQLClientWithCustomURL(hydraToken.AccessToken, "https://compass-gateway-auth-oauth.kyma.local/director/graphql")
+	tc.cli = common.NewAuthorizedGraphQLClientWithCustomURL(hydraToken.AccessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", domain))
 	appInput := graphql.ApplicationCreateInput{
 		Name: "app-created-by-integration-system",
 	}
@@ -101,7 +106,7 @@ func TestCompassAuth(t *testing.T) {
 	require.Empty(t, app.ID)
 
 	t.Log("Check if token can not be fetched with old client credentials")
-	fetchHydraAccessToken(t, "kyma.local", encodedCredentials, http.StatusUnauthorized)
+	fetchHydraAccessToken(t, domain, encodedCredentials, http.StatusUnauthorized)
 }
 
 func fetchHydraAccessToken(t *testing.T, domain string, encodedCredentials string, expectedStatusCode int) *hydraToken {

@@ -44,4 +44,6 @@ spec:
                 key: password
           - name: DEFAULT_TENANT
             value: "{{.Values.global.defaultTenant}}"
+          - name: DOMAIN
+            value: "{{ .Values.global.ingress.domainName }}"
     restartPolicy: Never
