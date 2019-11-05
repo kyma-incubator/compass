@@ -8,7 +8,7 @@ For now only option is to configure Runtime manually after provisioning is finis
 
 ## Solution
 
-The proposed solution is to provide ability to provide the configuration for components, which then will be used as Installer overrides.
+The proposed solution is to provide ability to provide the configuration for modules, which then will be used as Installer overrides.
 
 Changes to the GraphQL schema:
 ```graphql
@@ -24,25 +24,25 @@ input ConfigurationInput {
     secret: Boolean
 }
 
-type ComponentConfiguration {
-    component: KymaComponent
+type ModuleConfiguration {
+    module: KymaModule
     configuration: [Configuration]
 }
 
-input ComponentConfigurationInput {
-    component: KymaComponent!
+input ModuleConfigurationInput {
+    module: KymaModule!
     configuration: [ConfigurationInput]
 }
 
 type KymaConfig {
     version: String
-    components: [ComponentConfiguration]
+    modules: [ModuleConfiguration]
     configuration: [Configuration]
 }
 
 input KymaConfigInput {
     version: String!
-    components: [ComponentConfigurationInput]!
+    modules: [ModuleConfigurationInput]!
     configuration: [ConfigurationInput] 
 }
 
@@ -59,24 +59,24 @@ More information on how the overrides work can be found [here](https://kyma-proj
 
 ### Components configuration
 
-The configuration can be provided for every Kyma component as a list of key-value pairs in `ComponentConfigurationInput`.
+The configuration can be provided for every Kyma module as a list of key-value pairs in `ModuleConfigurationInput`.
 The additional `secret` flag specifies if the value is confidential.
-The `configuration` in `KymaConfigInput` is a configuration not specific for any component.
+The `configuration` in `KymaConfigInput` is a configuration not specific for any module.
 
-All configurations for component not marked as a `secret` are then saved to the ConfigMap on a created Cluster and marked as Installation overrides. They are also stored in the database.
+All configurations for module not marked as a `secret` are then saved to the ConfigMap on a created Cluster and marked as Installation overrides. They are also stored in the database.
 The confidential configuration is stored in Secret on a created cluster and encrypted before storing in database. The examples of such sensitive data could be: certificate's private keys, Minio Gateway credentials or Dex configuration containing some secrets. 
 
 
 ### Pros
 - The solution is simple from API and Installation standpoint
 - It leverages the well established mechanism of Installer
-- Together with component definition it gives ability to configure Kyma (open source stuff) in pretty much any way possible.
+- Together with module definition it gives ability to configure Kyma (open source stuff) in pretty much any way possible.
 - Does not uses anything external of Kyma (like Helm etc.)
 - All current use cases can be covered with the following approach
 
 ### Cons
 - No ability to extend with custom modules outside of Kyma
-- One ConfigMap and Secret per component
+- One ConfigMap and Secret per module
 
 
 ### Example
@@ -102,9 +102,9 @@ mutation {
       }
       kymaConfig: {
         version: "1.6"
-        components: [
+        modules: [
             {
-                component: "assetstore"
+                module: "assetstore"
                 configuration: [
                    {
                        key: "minio.persistence.enabled"
@@ -139,7 +139,7 @@ mutation {
                 ]
             }
             {
-                component: "core"
+                module: "core"
             }
         ]
       }
