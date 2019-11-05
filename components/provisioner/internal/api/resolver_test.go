@@ -20,7 +20,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			Name:              "Something",
 			ProjectName:       "Project",
 			NumberOfNodes:     3,
-			BootDiskSize:      "256",
+			BootDiskSizeGb:    256,
 			MachineType:       "machine",
 			Region:            "region",
 			Zone:              new(string),

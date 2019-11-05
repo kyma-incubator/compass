@@ -26,7 +26,7 @@ var config = model.RuntimeConfig{ClusterConfig: model.GCPConfig{
 	Name:              "Something",
 	ProjectName:       "Project",
 	NumberOfNodes:     3,
-	BootDiskSize:      "256",
+	BootDiskSizeGB:    256,
 	MachineType:       "n1-standard-1",
 	Region:            "region",
 	KubernetesVersion: "version",

@@ -60,7 +60,7 @@ type GCPConfig struct {
 	ProjectName       *string `json:"projectName"`
 	KubernetesVersion *string `json:"kubernetesVersion"`
 	NumberOfNodes     *int    `json:"numberOfNodes"`
-	BootDiskSize      *string `json:"bootDiskSize"`
+	BootDiskSizeGb    *int    `json:"bootDiskSizeGB"`
 	MachineType       *string `json:"machineType"`
 	Region            *string `json:"region"`
 	Zone              *string `json:"zone"`
@@ -73,7 +73,7 @@ type GCPConfigInput struct {
 	ProjectName       string  `json:"projectName"`
 	KubernetesVersion string  `json:"kubernetesVersion"`
 	NumberOfNodes     int     `json:"numberOfNodes"`
-	BootDiskSize      string  `json:"bootDiskSize"`
+	BootDiskSizeGb    int     `json:"bootDiskSizeGB"`
 	MachineType       string  `json:"machineType"`
 	Region            string  `json:"region"`
 	Zone              *string `json:"zone"`
@@ -94,10 +94,10 @@ type GardenerConfig struct {
 	ProjectName            *string                `json:"projectName"`
 	KubernetesVersion      *string                `json:"kubernetesVersion"`
 	NodeCount              *int                   `json:"nodeCount"`
-	VolumeSize             *string                `json:"volumeSize"`
+	VolumeSizeGb           *int                   `json:"volumeSizeGB"`
 	MachineType            *string                `json:"machineType"`
 	Region                 *string                `json:"region"`
-	TargetProvider         *string                `json:"targetProvider"`
+	Provider               *string                `json:"provider"`
 	TargetSecret           *string                `json:"targetSecret"`
 	DiskType               *string                `json:"diskType"`
 	WorkerCidr             *string                `json:"workerCidr"`
@@ -115,10 +115,10 @@ type GardenerConfigInput struct {
 	ProjectName            string                 `json:"projectName"`
 	KubernetesVersion      string                 `json:"kubernetesVersion"`
 	NodeCount              int                    `json:"nodeCount"`
-	VolumeSize             string                 `json:"volumeSize"`
+	VolumeSizeGb           int                    `json:"volumeSizeGB"`
 	MachineType            string                 `json:"machineType"`
 	Region                 string                 `json:"region"`
-	TargetProvider         string                 `json:"targetProvider"`
+	Provider               string                 `json:"provider"`
 	TargetSecret           string                 `json:"targetSecret"`
 	DiskType               string                 `json:"diskType"`
 	WorkerCidr             string                 `json:"workerCidr"`

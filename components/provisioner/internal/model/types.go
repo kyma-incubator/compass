@@ -61,10 +61,10 @@ type GardenerConfig struct {
 	ProjectName            string
 	KubernetesVersion      string
 	NodeCount              int
-	VolumeSize             string
+	VolumeSizeGB           int
 	DiskType               string
 	MachineType            string
-	TargetProvider         string
+	Provider               string
 	TargetSecret           string
 	Region                 string
 	WorkerCidr             string
@@ -97,7 +97,7 @@ type GCPConfig struct {
 	ProjectName       string
 	KubernetesVersion string
 	NumberOfNodes     int
-	BootDiskSize      string
+	BootDiskSizeGB    int
 	MachineType       string
 	Region            string
 	Zone              string

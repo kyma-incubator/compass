@@ -25,10 +25,10 @@ type GardenerConfig {
     projectName: String
     kubernetesVersion: String
     nodeCount: Int
-    volumeSize: String
+    volumeSizeGB: Int
     machineType: String
     region: String
-    targetProvider: String
+    provider: String
     targetSecret: String
     diskType: String
     workerCidr: String
@@ -61,7 +61,7 @@ type GCPConfig {
     projectName: String
     kubernetesVersion: String
     numberOfNodes: Int
-    bootDiskSize: String
+    bootDiskSizeGB: Int
     machineType: String
     region: String
     zone: String
@@ -138,10 +138,10 @@ input GardenerConfigInput {
     projectName: String!
     kubernetesVersion: String!
     nodeCount: Int!
-    volumeSize: String!
+    volumeSizeGB: Int!
     machineType: String!
     region: String!
-    targetProvider: String!
+    provider: String!
     targetSecret: String!
     diskType: String!
     workerCidr: String!
@@ -178,7 +178,7 @@ input GCPConfigInput {
     projectName: String!
     kubernetesVersion: String!
     numberOfNodes: Int!
-    bootDiskSize: String!
+    bootDiskSizeGB: Int!
     machineType: String!
     region: String! # TODO: later we may require either Region or Zone
     zone: String

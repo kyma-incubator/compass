@@ -52,7 +52,7 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 					Name:              "Something",
 					ProjectName:       "Project",
 					NumberOfNodes:     3,
-					BootDiskSize:      "256",
+					BootDiskSizeGb:    256,
 					MachineType:       "n1-standard-1",
 					Region:            "region",
 					Zone:              zone,
@@ -76,7 +76,7 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 				Name:              "Something",
 				ProjectName:       "Project",
 				NumberOfNodes:     3,
-				BootDiskSize:      "256",
+				BootDiskSizeGB:    256,
 				MachineType:       "n1-standard-1",
 				Region:            "region",
 				Zone:              zone,
@@ -104,10 +104,10 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 				ProjectName:       "Project",
 				KubernetesVersion: "version",
 				NodeCount:         3,
-				VolumeSize:        "1TB",
+				VolumeSizeGb:      1024,
 				MachineType:       "n1-standard-1",
 				Region:            "region",
-				TargetProvider:    "GCP",
+				Provider:          "GCP",
 				TargetSecret:      "secret",
 				DiskType:          "ssd",
 				WorkerCidr:        "cidr",
@@ -140,9 +140,9 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 			Region:                 "region",
 			KubernetesVersion:      "version",
 			NodeCount:              3,
-			VolumeSize:             "1TB",
+			VolumeSizeGB:           1024,
 			DiskType:               "ssd",
-			TargetProvider:         "GCP",
+			Provider:               "GCP",
 			TargetSecret:           "secret",
 			WorkerCidr:             "cidr",
 			AutoScalerMin:          1,
@@ -211,7 +211,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		name := "Something"
 		project := "Project"
 		numberOfNodes := 3
-		bootDiskSize := "256"
+		bootDiskSize := 256
 		machine := "machine"
 		region := "region"
 		zone := "zone"
@@ -236,7 +236,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					Name:              "Something",
 					ProjectName:       "Project",
 					NumberOfNodes:     3,
-					BootDiskSize:      "256",
+					BootDiskSizeGB:    256,
 					MachineType:       "machine",
 					Region:            "region",
 					Zone:              "zone",
@@ -279,7 +279,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					Region:            &region,
 					Zone:              &zone,
 					NumberOfNodes:     &numberOfNodes,
-					BootDiskSize:      &bootDiskSize,
+					BootDiskSizeGb:    &bootDiskSize,
 					KubernetesVersion: &kubeversion,
 				},
 				KymaConfig: &gqlschema.KymaConfig{
@@ -302,11 +302,11 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		name := "Something"
 		project := "Project"
 		nodes := 3
-		disk := "256"
+		disk := "standard"
 		machine := "machine"
 		region := "region"
 		zone := "zone"
-		volume := "volume"
+		volume := 256
 		kubeversion := "kubeversion"
 		version := "1.5"
 		backup := gqlschema.KymaModuleBackup
@@ -337,9 +337,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					DiskType:               disk,
 					MachineType:            machine,
 					Region:                 region,
-					VolumeSize:             volume,
+					VolumeSizeGB:           volume,
 					KubernetesVersion:      kubeversion,
-					TargetProvider:         provider,
+					Provider:               provider,
 					TargetSecret:           secret,
 					WorkerCidr:             cidr,
 					AutoScalerMax:          autoScMax,
@@ -382,9 +382,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					DiskType:          &disk,
 					MachineType:       &machine,
 					Region:            &region,
-					VolumeSize:        &volume,
+					VolumeSizeGb:      &volume,
 					KubernetesVersion: &kubeversion,
-					TargetProvider:    &provider,
+					Provider:          &provider,
 					TargetSecret:      &secret,
 					WorkerCidr:        &cidr,
 					AutoScalerMax:     &autoScMax,

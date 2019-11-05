@@ -2,8 +2,6 @@ package hydroform
 
 import (
 	"errors"
-	"strconv"
-
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
@@ -25,16 +23,10 @@ func prepareConfig(input model.RuntimeConfig, credentialsFile string) (*types.Cl
 }
 
 func buildConfigForGCP(config model.GCPConfig, credentialsFile string) (*types.Cluster, *types.Provider, error) {
-	diskSize, err := strconv.Atoi(config.BootDiskSize)
-
-	if err != nil {
-		return &types.Cluster{}, &types.Provider{}, err
-	}
-
 	cluster := &types.Cluster{
 		KubernetesVersion: config.KubernetesVersion,
 		Name:              config.Name,
-		DiskSizeGB:        diskSize,
+		DiskSizeGB:        config.BootDiskSizeGB,
 		NodeCount:         config.NumberOfNodes,
 		Location:          config.Region,
 		MachineType:       config.MachineType,
@@ -49,23 +41,18 @@ func buildConfigForGCP(config model.GCPConfig, credentialsFile string) (*types.C
 }
 
 func buildConfigForGardener(config model.GardenerConfig, credentialsFile string) (*types.Cluster, *types.Provider, error) {
-	diskSize, err := strconv.Atoi(config.VolumeSize)
-
-	if err != nil {
-		return &types.Cluster{}, &types.Provider{}, err
-	}
 
 	cluster := &types.Cluster{
 		KubernetesVersion: config.KubernetesVersion,
 		Name:              config.Name,
-		DiskSizeGB:        diskSize,
+		DiskSizeGB:        config.VolumeSizeGB,
 		NodeCount:         config.NodeCount,
 		Location:          config.Region,
 		MachineType:       config.MachineType,
 	}
 
 	customConfiguration := map[string]interface{}{
-		"target_provider": config.TargetProvider,
+		"target_provider": config.Provider,
 		"target_secret":   config.TargetSecret,
 		"disk_type":       config.DiskType,
 		"workercidr":      config.WorkerCidr,
@@ -75,7 +62,7 @@ func buildConfigForGardener(config model.GardenerConfig, credentialsFile string)
 		"max_unavailable": config.MaxUnavailable,
 	}
 
-	customConfiguration, err = addProviderSpecificConfig(customConfiguration, config.ProviderSpecificConfig)
+	customConfiguration, err := addProviderSpecificConfig(customConfiguration, config.ProviderSpecificConfig)
 
 	if err != nil {
 		return &types.Cluster{}, &types.Provider{}, err

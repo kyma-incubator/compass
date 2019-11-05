@@ -58,7 +58,7 @@ type ComplexityRoot struct {
 	}
 
 	GCPConfig struct {
-		BootDiskSize      func(childComplexity int) int
+		BootDiskSizeGb    func(childComplexity int) int
 		KubernetesVersion func(childComplexity int) int
 		MachineType       func(childComplexity int) int
 		Name              func(childComplexity int) int
@@ -83,11 +83,11 @@ type ComplexityRoot struct {
 		Name                   func(childComplexity int) int
 		NodeCount              func(childComplexity int) int
 		ProjectName            func(childComplexity int) int
+		Provider               func(childComplexity int) int
 		ProviderSpecificConfig func(childComplexity int) int
 		Region                 func(childComplexity int) int
-		TargetProvider         func(childComplexity int) int
 		TargetSecret           func(childComplexity int) int
-		VolumeSize             func(childComplexity int) int
+		VolumeSizeGb           func(childComplexity int) int
 		WorkerCidr             func(childComplexity int) int
 	}
 
@@ -205,12 +205,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Error.Message(childComplexity), true
 
-	case "GCPConfig.bootDiskSize":
-		if e.complexity.GCPConfig.BootDiskSize == nil {
+	case "GCPConfig.bootDiskSizeGB":
+		if e.complexity.GCPConfig.BootDiskSizeGb == nil {
 			break
 		}
 
-		return e.complexity.GCPConfig.BootDiskSize(childComplexity), true
+		return e.complexity.GCPConfig.BootDiskSizeGb(childComplexity), true
 
 	case "GCPConfig.kubernetesVersion":
 		if e.complexity.GCPConfig.KubernetesVersion == nil {
@@ -338,6 +338,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GardenerConfig.ProjectName(childComplexity), true
 
+	case "GardenerConfig.provider":
+		if e.complexity.GardenerConfig.Provider == nil {
+			break
+		}
+
+		return e.complexity.GardenerConfig.Provider(childComplexity), true
+
 	case "GardenerConfig.providerSpecificConfig":
 		if e.complexity.GardenerConfig.ProviderSpecificConfig == nil {
 			break
@@ -352,13 +359,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GardenerConfig.Region(childComplexity), true
 
-	case "GardenerConfig.targetProvider":
-		if e.complexity.GardenerConfig.TargetProvider == nil {
-			break
-		}
-
-		return e.complexity.GardenerConfig.TargetProvider(childComplexity), true
-
 	case "GardenerConfig.targetSecret":
 		if e.complexity.GardenerConfig.TargetSecret == nil {
 			break
@@ -366,12 +366,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GardenerConfig.TargetSecret(childComplexity), true
 
-	case "GardenerConfig.volumeSize":
-		if e.complexity.GardenerConfig.VolumeSize == nil {
+	case "GardenerConfig.volumeSizeGB":
+		if e.complexity.GardenerConfig.VolumeSizeGb == nil {
 			break
 		}
 
-		return e.complexity.GardenerConfig.VolumeSize(childComplexity), true
+		return e.complexity.GardenerConfig.VolumeSizeGb(childComplexity), true
 
 	case "GardenerConfig.workerCidr":
 		if e.complexity.GardenerConfig.WorkerCidr == nil {
@@ -665,10 +665,10 @@ type GardenerConfig {
     projectName: String
     kubernetesVersion: String
     nodeCount: Int
-    volumeSize: String
+    volumeSizeGB: Int
     machineType: String
     region: String
-    targetProvider: String
+    provider: String
     targetSecret: String
     diskType: String
     workerCidr: String
@@ -701,7 +701,7 @@ type GCPConfig {
     projectName: String
     kubernetesVersion: String
     numberOfNodes: Int
-    bootDiskSize: String
+    bootDiskSizeGB: Int
     machineType: String
     region: String
     zone: String
@@ -778,10 +778,10 @@ input GardenerConfigInput {
     projectName: String!
     kubernetesVersion: String!
     nodeCount: Int!
-    volumeSize: String!
+    volumeSizeGB: Int!
     machineType: String!
     region: String!
-    targetProvider: String!
+    provider: String!
     targetSecret: String!
     diskType: String!
     workerCidr: String!
@@ -818,7 +818,7 @@ input GCPConfigInput {
     projectName: String!
     kubernetesVersion: String!
     numberOfNodes: Int!
-    bootDiskSize: String!
+    bootDiskSizeGB: Int!
     machineType: String!
     region: String! # TODO: later we may require either Region or Zone
     zone: String
@@ -1367,7 +1367,7 @@ func (ec *executionContext) _GCPConfig_numberOfNodes(ctx context.Context, field 
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _GCPConfig_bootDiskSize(ctx context.Context, field graphql.CollectedField, obj *GCPConfig) (ret graphql.Marshaler) {
+func (ec *executionContext) _GCPConfig_bootDiskSizeGB(ctx context.Context, field graphql.CollectedField, obj *GCPConfig) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -1386,7 +1386,7 @@ func (ec *executionContext) _GCPConfig_bootDiskSize(ctx context.Context, field g
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.BootDiskSize, nil
+		return obj.BootDiskSizeGb, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1395,10 +1395,10 @@ func (ec *executionContext) _GCPConfig_bootDiskSize(ctx context.Context, field g
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*int)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _GCPConfig_machineType(ctx context.Context, field graphql.CollectedField, obj *GCPConfig) (ret graphql.Marshaler) {
@@ -1673,7 +1673,7 @@ func (ec *executionContext) _GardenerConfig_nodeCount(ctx context.Context, field
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _GardenerConfig_volumeSize(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+func (ec *executionContext) _GardenerConfig_volumeSizeGB(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -1692,7 +1692,7 @@ func (ec *executionContext) _GardenerConfig_volumeSize(ctx context.Context, fiel
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.VolumeSize, nil
+		return obj.VolumeSizeGb, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1701,10 +1701,10 @@ func (ec *executionContext) _GardenerConfig_volumeSize(ctx context.Context, fiel
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*int)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _GardenerConfig_machineType(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
@@ -1775,7 +1775,7 @@ func (ec *executionContext) _GardenerConfig_region(ctx context.Context, field gr
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _GardenerConfig_targetProvider(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+func (ec *executionContext) _GardenerConfig_provider(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -1794,7 +1794,7 @@ func (ec *executionContext) _GardenerConfig_targetProvider(ctx context.Context, 
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.TargetProvider, nil
+		return obj.Provider, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4288,9 +4288,9 @@ func (ec *executionContext) unmarshalInputGCPConfigInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-		case "bootDiskSize":
+		case "bootDiskSizeGB":
 			var err error
-			it.BootDiskSize, err = ec.unmarshalNString2string(ctx, v)
+			it.BootDiskSizeGb, err = ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4366,9 +4366,9 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
-		case "volumeSize":
+		case "volumeSizeGB":
 			var err error
-			it.VolumeSize, err = ec.unmarshalNString2string(ctx, v)
+			it.VolumeSizeGb, err = ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4384,9 +4384,9 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
-		case "targetProvider":
+		case "provider":
 			var err error
-			it.TargetProvider, err = ec.unmarshalNString2string(ctx, v)
+			it.Provider, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4713,8 +4713,8 @@ func (ec *executionContext) _GCPConfig(ctx context.Context, sel ast.SelectionSet
 			out.Values[i] = ec._GCPConfig_kubernetesVersion(ctx, field, obj)
 		case "numberOfNodes":
 			out.Values[i] = ec._GCPConfig_numberOfNodes(ctx, field, obj)
-		case "bootDiskSize":
-			out.Values[i] = ec._GCPConfig_bootDiskSize(ctx, field, obj)
+		case "bootDiskSizeGB":
+			out.Values[i] = ec._GCPConfig_bootDiskSizeGB(ctx, field, obj)
 		case "machineType":
 			out.Values[i] = ec._GCPConfig_machineType(ctx, field, obj)
 		case "region":
@@ -4775,14 +4775,14 @@ func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._GardenerConfig_kubernetesVersion(ctx, field, obj)
 		case "nodeCount":
 			out.Values[i] = ec._GardenerConfig_nodeCount(ctx, field, obj)
-		case "volumeSize":
-			out.Values[i] = ec._GardenerConfig_volumeSize(ctx, field, obj)
+		case "volumeSizeGB":
+			out.Values[i] = ec._GardenerConfig_volumeSizeGB(ctx, field, obj)
 		case "machineType":
 			out.Values[i] = ec._GardenerConfig_machineType(ctx, field, obj)
 		case "region":
 			out.Values[i] = ec._GardenerConfig_region(ctx, field, obj)
-		case "targetProvider":
-			out.Values[i] = ec._GardenerConfig_targetProvider(ctx, field, obj)
+		case "provider":
+			out.Values[i] = ec._GardenerConfig_provider(ctx, field, obj)
 		case "targetSecret":
 			out.Values[i] = ec._GardenerConfig_targetSecret(ctx, field, obj)
 		case "diskType":
