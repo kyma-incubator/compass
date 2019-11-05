@@ -21,7 +21,7 @@ global:
       dir:
       version: "PR-448"
     provisioner:
-      dir: 
+      dir:
       version: "PR-432"
     certs_setup_job:
       containerRegistry:
@@ -31,7 +31,7 @@ global:
     tests:
       e2e:
         dir:
-        version: "PR-417"
+        version: "PR-435"
       connector:
         dir: pr/
         version: "PR-391"
