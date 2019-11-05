@@ -1463,6 +1463,7 @@ func TestResolver_EventAPI(t *testing.T) {
 
 	modelAPI := fixMinModelEventAPIDefinition(id, "placeholder")
 	gqlAPI := fixGQLEventAPIDefinition(id, "placeholder", "placeholder", "placeholder", "placeholder")
+	app := fixGQLApplication("foo", "foo", "foo")
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -1472,7 +1473,7 @@ func TestResolver_EventAPI(t *testing.T) {
 		ServiceFn       func() *automock.EventAPIService
 		ConverterFn     func() *automock.EventAPIConverter
 		InputID         string
-		ApplicationID   string
+		Application     *graphql.Application
 		ExpectedAPI     *graphql.EventAPIDefinition
 		ExpectedErr     error
 	}{
@@ -1490,10 +1491,10 @@ func TestResolver_EventAPI(t *testing.T) {
 				conv.On("ToGraphQL", modelAPI).Return(gqlAPI).Once()
 				return conv
 			},
-			InputID:       "foo",
-			ApplicationID: "foo",
-			ExpectedAPI:   gqlAPI,
-			ExpectedErr:   nil,
+			InputID:     "foo",
+			Application: app,
+			ExpectedAPI: gqlAPI,
+			ExpectedErr: nil,
 		},
 		{
 			Name:            "Returns error when application retrieval failed",
@@ -1508,10 +1509,10 @@ func TestResolver_EventAPI(t *testing.T) {
 				conv := &automock.EventAPIConverter{}
 				return conv
 			},
-			InputID:       "foo",
-			ApplicationID: "foo",
-			ExpectedAPI:   nil,
-			ExpectedErr:   testErr,
+			InputID:     "foo",
+			Application: app,
+			ExpectedAPI: nil,
+			ExpectedErr: testErr,
 		},
 		{
 			Name:            "Returns null when application retrieval failed",
@@ -1526,10 +1527,10 @@ func TestResolver_EventAPI(t *testing.T) {
 				conv := &automock.EventAPIConverter{}
 				return conv
 			},
-			InputID:       "foo",
-			ApplicationID: "foo",
-			ExpectedAPI:   nil,
-			ExpectedErr:   nil,
+			InputID:     "foo",
+			Application: app,
+			ExpectedAPI: nil,
+			ExpectedErr: nil,
 		},
 		{
 			Name:            "Returns error when commit begin error",
@@ -1543,10 +1544,10 @@ func TestResolver_EventAPI(t *testing.T) {
 				conv := &automock.EventAPIConverter{}
 				return conv
 			},
-			InputID:       "foo",
-			ApplicationID: "foo",
-			ExpectedAPI:   nil,
-			ExpectedErr:   testErr,
+			InputID:     "foo",
+			Application: app,
+			ExpectedAPI: nil,
+			ExpectedErr: testErr,
 		},
 		{
 			Name:            "Returns error when commit failed",
@@ -1560,10 +1561,10 @@ func TestResolver_EventAPI(t *testing.T) {
 				conv := &automock.EventAPIConverter{}
 				return conv
 			},
-			InputID:       "foo",
-			ApplicationID: "foo",
-			ExpectedAPI:   nil,
-			ExpectedErr:   testErr,
+			InputID:     "foo",
+			Application: app,
+			ExpectedAPI: nil,
+			ExpectedErr: testErr,
 		},
 	}
 
@@ -1576,7 +1577,7 @@ func TestResolver_EventAPI(t *testing.T) {
 			resolver := application.NewResolver(transact, nil, nil, svc, nil, nil, nil, nil, nil, nil, nil, nil, converter, nil)
 
 			// when
-			result, err := resolver.EventAPI(context.TODO(), testCase.InputID, testCase.ApplicationID)
+			result, err := resolver.EventAPI(context.TODO(), testCase.InputID, testCase.Application)
 
 			// then
 			assert.Equal(t, testCase.ExpectedAPI, result)
@@ -1596,6 +1597,7 @@ func TestResolver_API(t *testing.T) {
 		appId := "1"
 		modelAPI := fixModelAPIDefinition(id, appId, "name", "bar", "test")
 		gqlAPI := fixGQLAPIDefinition(id, appId, "name", "bar", "test")
+		app := fixGQLApplication("foo", "foo", "foo")
 		testErr := errors.New("Test error")
 		txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -1605,7 +1607,7 @@ func TestResolver_API(t *testing.T) {
 			ServiceFn       func() *automock.APIService
 			ConverterFn     func() *automock.APIConverter
 			InputID         string
-			ApplicationID   string
+			Application     *graphql.Application
 			ExpectedAPI     *graphql.APIDefinition
 			ExpectedErr     error
 		}{
@@ -1623,10 +1625,10 @@ func TestResolver_API(t *testing.T) {
 					conv.On("ToGraphQL", modelAPI).Return(gqlAPI).Once()
 					return conv
 				},
-				InputID:       "foo",
-				ApplicationID: "foo",
-				ExpectedAPI:   gqlAPI,
-				ExpectedErr:   nil,
+				InputID:     "foo",
+				Application: app,
+				ExpectedAPI: gqlAPI,
+				ExpectedErr: nil,
 			},
 			{
 				Name:            "Returns error when application retrieval failed",
@@ -1641,10 +1643,10 @@ func TestResolver_API(t *testing.T) {
 					conv := &automock.APIConverter{}
 					return conv
 				},
-				InputID:       "foo",
-				ApplicationID: "foo",
-				ExpectedAPI:   nil,
-				ExpectedErr:   testErr,
+				InputID:     "foo",
+				Application: app,
+				ExpectedAPI: nil,
+				ExpectedErr: testErr,
 			},
 			{
 				Name:            "Returns null when application retrieval failed",
@@ -1659,10 +1661,10 @@ func TestResolver_API(t *testing.T) {
 					conv := &automock.APIConverter{}
 					return conv
 				},
-				InputID:       "foo",
-				ApplicationID: "foo",
-				ExpectedAPI:   nil,
-				ExpectedErr:   nil,
+				InputID:     "foo",
+				Application: app,
+				ExpectedAPI: nil,
+				ExpectedErr: nil,
 			},
 			{
 				Name:            "Returns error when commit begin error",
@@ -1676,10 +1678,10 @@ func TestResolver_API(t *testing.T) {
 					conv := &automock.APIConverter{}
 					return conv
 				},
-				InputID:       "foo",
-				ApplicationID: "foo",
-				ExpectedAPI:   nil,
-				ExpectedErr:   testErr,
+				InputID:     "foo",
+				Application: app,
+				ExpectedAPI: nil,
+				ExpectedErr: testErr,
 			},
 			{
 				Name:            "Returns error when commit failed",
@@ -1693,10 +1695,10 @@ func TestResolver_API(t *testing.T) {
 					conv := &automock.APIConverter{}
 					return conv
 				},
-				InputID:       "foo",
-				ApplicationID: "foo",
-				ExpectedAPI:   nil,
-				ExpectedErr:   testErr,
+				InputID:     "foo",
+				Application: app,
+				ExpectedAPI: nil,
+				ExpectedErr: testErr,
 			},
 		}
 
@@ -1709,7 +1711,7 @@ func TestResolver_API(t *testing.T) {
 				resolver := application.NewResolver(transact, nil, svc, nil, nil, nil, nil, nil, nil, nil, nil, converter, nil, nil)
 
 				// when
-				result, err := resolver.API(context.TODO(), testCase.InputID, testCase.ApplicationID)
+				result, err := resolver.API(context.TODO(), testCase.InputID, testCase.Application)
 
 				// then
 				assert.Equal(t, testCase.ExpectedAPI, result)

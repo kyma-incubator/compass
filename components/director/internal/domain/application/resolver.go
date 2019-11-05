@@ -512,7 +512,7 @@ func (r *Resolver) EventAPIs(ctx context.Context, obj *graphql.Application, grou
 	}, nil
 }
 
-func (r *Resolver) API(ctx context.Context, id string, applicationID string) (*graphql.APIDefinition, error) {
+func (r *Resolver) API(ctx context.Context, id string, application *graphql.Application) (*graphql.APIDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -521,7 +521,7 @@ func (r *Resolver) API(ctx context.Context, id string, applicationID string) (*g
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	api, err := r.apiSvc.GetForApplication(ctx, id, applicationID)
+	api, err := r.apiSvc.GetForApplication(ctx, id, application.ID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, nil
@@ -537,7 +537,7 @@ func (r *Resolver) API(ctx context.Context, id string, applicationID string) (*g
 	return r.apiConverter.ToGraphQL(api), nil
 }
 
-func (r *Resolver) EventAPI(ctx context.Context, id string, applicationID string) (*graphql.EventAPIDefinition, error) {
+func (r *Resolver) EventAPI(ctx context.Context, id string, application *graphql.Application) (*graphql.EventAPIDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -546,7 +546,7 @@ func (r *Resolver) EventAPI(ctx context.Context, id string, applicationID string
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	eventAPI, err := r.eventAPISvc.GetForApplication(ctx, id, applicationID)
+	eventAPI, err := r.eventAPISvc.GetForApplication(ctx, id, application.ID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, nil
