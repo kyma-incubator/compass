@@ -4,6 +4,8 @@ import (
 	"errors"
 	"strconv"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/hydroform/types"
 )
@@ -88,21 +90,24 @@ func buildConfigForGardener(config model.GardenerConfig, credentialsFile string)
 	return cluster, provider, nil
 }
 
-func addProviderSpecificConfig(customConfiguration map[string]interface{}, providerSpecificConfig interface{}) (map[string]interface{}, error) {
-	gcpProviderConfig, ok := providerSpecificConfig.(model.GCPProviderConfig)
-	if ok {
+func addProviderSpecificConfig(customConfiguration map[string]interface{}, providerSpecificConfig string) (map[string]interface{}, error) {
+	var gcpProviderConfig model.GCPProviderConfig
+	err := util.DecodeJson(providerSpecificConfig, &gcpProviderConfig)
+	if err == nil {
 		customConfiguration["zone"] = gcpProviderConfig.Zone
 		return customConfiguration, nil
 	}
 
-	azureProviderConfig, ok := providerSpecificConfig.(model.AzureProviderConfig)
-	if ok {
+	var azureProviderConfig model.AzureProviderConfig
+	err = util.DecodeJson(providerSpecificConfig, &azureProviderConfig)
+	if err == nil {
 		customConfiguration["vnetcidr"] = azureProviderConfig.VnetCidr
 		return customConfiguration, nil
 	}
 
-	awsProviderConfig, ok := providerSpecificConfig.(model.AWSProviderConfig)
-	if ok {
+	var awsProviderConfig model.AWSProviderConfig
+	err = util.DecodeJson(providerSpecificConfig, &awsProviderConfig)
+	if err == nil {
 		customConfiguration["zone"] = awsProviderConfig.Zone
 		customConfiguration["internalscidr"] = awsProviderConfig.InternalCidr
 		customConfiguration["vpccidr"] = awsProviderConfig.VpcCidr

@@ -100,7 +100,7 @@ type GardenerConfig struct {
 	TargetProvider         *string                `json:"targetProvider"`
 	TargetSecret           *string                `json:"targetSecret"`
 	DiskType               *string                `json:"diskType"`
-	Workercidr             *string                `json:"workercidr"`
+	WorkerCidr             *string                `json:"workerCidr"`
 	AutoScalerMin          *int                   `json:"autoScalerMin"`
 	AutoScalerMax          *int                   `json:"autoScalerMax"`
 	MaxSurge               *int                   `json:"maxSurge"`
@@ -121,7 +121,7 @@ type GardenerConfigInput struct {
 	TargetProvider         string                 `json:"targetProvider"`
 	TargetSecret           string                 `json:"targetSecret"`
 	DiskType               string                 `json:"diskType"`
-	Workercidr             string                 `json:"workercidr"`
+	WorkerCidr             string                 `json:"workerCidr"`
 	AutoScalerMin          int                    `json:"autoScalerMin"`
 	AutoScalerMax          int                    `json:"autoScalerMax"`
 	MaxSurge               int                    `json:"maxSurge"`

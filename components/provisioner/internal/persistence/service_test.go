@@ -28,24 +28,22 @@ func TestSetProvisioning(t *testing.T) {
 	}
 
 	gardenerConfig := model.GardenerConfig{
-		Name:              "name",
-		ProjectName:       "projectName",
-		KubernetesVersion: "1.15",
-		NodeCount:         3,
-		VolumeSize:        "1TB",
-		DiskType:          "SSD",
-		MachineType:       "big_one",
-		TargetProvider:    "GCP",
-		TargetSecret:      "secret",
-		WorkerCidr:        "cidr",
-		Region:            "region",
-		AutoScalerMin:     1,
-		AutoScalerMax:     10,
-		MaxSurge:          2,
-		MaxUnavailable:    2,
-		ProviderSpecificConfig: model.GCPProviderConfig{
-			Zone: "zone",
-		},
+		Name:                   "name",
+		ProjectName:            "projectName",
+		KubernetesVersion:      "1.15",
+		NodeCount:              3,
+		VolumeSize:             "1TB",
+		DiskType:               "SSD",
+		MachineType:            "big_one",
+		TargetProvider:         "GCP",
+		TargetSecret:           "secret",
+		WorkerCidr:             "cidr",
+		Region:                 "region",
+		AutoScalerMin:          1,
+		AutoScalerMax:          10,
+		MaxSurge:               2,
+		MaxUnavailable:         2,
+		ProviderSpecificConfig: "{\"Zone\":\"zone\"}",
 	}
 
 	kymaConfig := model.KymaConfig{

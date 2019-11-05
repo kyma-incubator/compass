@@ -637,8 +637,8 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "master"
-  digest = "1:7e29b8bd35aabbeb6b8b44ca393081e086a90cf8f10397ff8c3abe4eb48760ea"
+  branch = "azure"
+  digest = "1:de5d53b7ff40e29bc2c3381bc6e3307583c316ceb440bc0ba98034052f470463"
   name = "github.com/kyma-incubator/hydroform"
   packages = [
     ".",
@@ -651,7 +651,8 @@
     "types",
   ]
   pruneopts = "UT"
-  revision = "6a54461f203801cd19e07148d7f56576ac54ff32"
+  revision = "2eec3e78ede639997fce9bbc71654379dc1a58c9"
+  source = "github.com/Maladie/hydroform"
 
 [[projects]]
   branch = "master"

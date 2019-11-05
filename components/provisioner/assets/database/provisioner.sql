@@ -26,12 +26,12 @@ CREATE TABLE gardener_config
     target_provider varchar(256) NOT NULL,
     target_secret varchar(256) NOT NULL,
     disk_type varchar(256) NOT NULL,
-    zone varchar(256) NOT NULL,
-    cidr varchar(256) NOT NULL,
+    worker_cidr varchar(256) NOT NULL,
     auto_scaler_min integer NOT NULL,
     auto_scaler_max integer NOT NULL,
     max_surge integer NOT NULL,
     max_unavailable integer NOT NULL,
+    provider_specific_config jsonb,
     UNIQUE(cluster_id),
     foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE
 );

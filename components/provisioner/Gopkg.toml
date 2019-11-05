@@ -27,6 +27,11 @@ required = [
   name = "k8s.io/kubernetes"
   version = "kubernetes-1.14.7"
 
+[[override]]
+  name = "github.com/kyma-incubator/hydroform"
+  source = "github.com/Maladie/hydroform"
+  branch = "azure"
+
 [prune]
   go-tests = true
   unused-packages = true

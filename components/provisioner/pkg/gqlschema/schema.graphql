@@ -31,7 +31,7 @@ type GardenerConfig {
     targetProvider: String
     targetSecret: String
     diskType: String
-    workercidr: String
+    workerCidr: String
     autoScalerMin: Int
     autoScalerMax: Int
     maxSurge: Int
@@ -144,7 +144,7 @@ input GardenerConfigInput {
     targetProvider: String!
     targetSecret: String!
     diskType: String!
-    workercidr: String!
+    workerCidr: String!
     autoScalerMin: Int!
     autoScalerMax: Int!
     maxSurge: Int!

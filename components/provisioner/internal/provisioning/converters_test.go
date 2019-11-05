@@ -1,6 +1,7 @@
 package provisioning
 
 import (
+	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
@@ -109,7 +110,7 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 				TargetProvider:    "GCP",
 				TargetSecret:      "secret",
 				DiskType:          "ssd",
-				Workercidr:        "cidr",
+				WorkerCidr:        "cidr",
 				AutoScalerMin:     1,
 				AutoScalerMax:     5,
 				MaxSurge:          1,
@@ -132,26 +133,24 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 
 	expectedRuntimeConfig := model.RuntimeConfig{
 		ClusterConfig: model.GardenerConfig{
-			ID:                "id",
-			Name:              "Something",
-			ProjectName:       "Project",
-			MachineType:       "n1-standard-1",
-			Region:            "region",
-			KubernetesVersion: "version",
-			NodeCount:         3,
-			VolumeSize:        "1TB",
-			DiskType:          "ssd",
-			TargetProvider:    "GCP",
-			TargetSecret:      "secret",
-			WorkerCidr:        "cidr",
-			AutoScalerMin:     1,
-			AutoScalerMax:     5,
-			MaxSurge:          1,
-			MaxUnavailable:    2,
-			ClusterID:         "runtimeID",
-			ProviderSpecificConfig: model.GCPProviderConfig{
-				Zone: "zone",
-			},
+			ID:                     "id",
+			Name:                   "Something",
+			ProjectName:            "Project",
+			MachineType:            "n1-standard-1",
+			Region:                 "region",
+			KubernetesVersion:      "version",
+			NodeCount:              3,
+			VolumeSize:             "1TB",
+			DiskType:               "ssd",
+			TargetProvider:         "GCP",
+			TargetSecret:           "secret",
+			WorkerCidr:             "cidr",
+			AutoScalerMin:          1,
+			AutoScalerMax:          5,
+			MaxSurge:               1,
+			MaxUnavailable:         2,
+			ClusterID:              "runtimeID",
+			ProviderSpecificConfig: "{\"Zone\":\"zone\"}",
 		},
 		Kubeconfig: nil,
 		KymaConfig: model.KymaConfig{
@@ -197,9 +196,10 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 			uuidGeneratorMock.On("New").Return("id").Times(4)
 
 			//when
-			runtimeConfig := runtimeConfigFromInput("runtimeID", config.input, uuidGeneratorMock)
+			runtimeConfig, err := runtimeConfigFromInput("runtimeID", config.input, uuidGeneratorMock)
 
 			//then
+			require.NoError(t, err)
 			assert.Equal(t, config.expected, runtimeConfig)
 			uuidGeneratorMock.AssertExpectations(t)
 		})
@@ -331,24 +331,22 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 			RuntimeConnectionStatus: model.RuntimeAgentConnectionStatusDisconnected,
 			RuntimeConfiguration: model.RuntimeConfig{
 				ClusterConfig: model.GardenerConfig{
-					Name:              name,
-					ProjectName:       project,
-					NodeCount:         nodes,
-					DiskType:          disk,
-					MachineType:       machine,
-					Region:            region,
-					VolumeSize:        volume,
-					KubernetesVersion: kubeversion,
-					TargetProvider:    provider,
-					TargetSecret:      secret,
-					WorkerCidr:        cidr,
-					AutoScalerMax:     autoScMax,
-					AutoScalerMin:     autoScMin,
-					MaxSurge:          surge,
-					MaxUnavailable:    unavailable,
-					ProviderSpecificConfig: model.GCPProviderConfig{
-						Zone: "zone",
-					},
+					Name:                   name,
+					ProjectName:            project,
+					NodeCount:              nodes,
+					DiskType:               disk,
+					MachineType:            machine,
+					Region:                 region,
+					VolumeSize:             volume,
+					KubernetesVersion:      kubeversion,
+					TargetProvider:         provider,
+					TargetSecret:           secret,
+					WorkerCidr:             cidr,
+					AutoScalerMax:          autoScMax,
+					AutoScalerMin:          autoScMin,
+					MaxSurge:               surge,
+					MaxUnavailable:         unavailable,
+					ProviderSpecificConfig: "{\"Zone\":\"zone\"}",
 				},
 				Kubeconfig: &kubeconfig,
 				KymaConfig: model.KymaConfig{
@@ -388,7 +386,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					KubernetesVersion: &kubeversion,
 					TargetProvider:    &provider,
 					TargetSecret:      &secret,
-					Workercidr:        &cidr,
+					WorkerCidr:        &cidr,
 					AutoScalerMax:     &autoScMax,
 					AutoScalerMin:     &autoScMin,
 					MaxSurge:          &surge,

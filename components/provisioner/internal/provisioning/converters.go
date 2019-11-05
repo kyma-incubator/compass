@@ -1,21 +1,29 @@
 package provisioning
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
-func runtimeConfigFromInput(runtimeID string, input gqlschema.ProvisionRuntimeInput, uuidGenerator persistence.UUIDGenerator) model.RuntimeConfig {
+func runtimeConfigFromInput(runtimeID string, input gqlschema.ProvisionRuntimeInput, uuidGenerator persistence.UUIDGenerator) (model.RuntimeConfig, error) {
 	kymaConfig := kymaConfigFromInput(runtimeID, *input.KymaConfig, uuidGenerator)
 
-	clusterConfig := clusterConfigFromInput(runtimeID, *input.ClusterConfig, uuidGenerator)
+	clusterConfig, err := clusterConfigFromInput(runtimeID, *input.ClusterConfig, uuidGenerator)
+
+	if err != nil {
+		return model.RuntimeConfig{}, err
+	}
 
 	return model.RuntimeConfig{
 		KymaConfig:            kymaConfig,
 		ClusterConfig:         clusterConfig,
 		CredentialsSecretName: input.Credentials.SecretName,
-	}
+	}, nil
 }
 
 func runtimeStatusToGraphQLStatus(status model.RuntimeStatus) *gqlschema.RuntimeStatus {
@@ -36,22 +44,26 @@ func operationStatusToGQLOperationStatus(operation model.Operation) *gqlschema.O
 	}
 }
 
-func clusterConfigFromInput(runtimeID string, input gqlschema.ClusterConfigInput, uuidGenerator persistence.UUIDGenerator) interface{} {
+func clusterConfigFromInput(runtimeID string, input gqlschema.ClusterConfigInput, uuidGenerator persistence.UUIDGenerator) (interface{}, error) {
 	if input.GardenerConfig != nil {
 		config := input.GardenerConfig
 		return gardenerConfigFromInput(runtimeID, *config, uuidGenerator)
 	}
 	if input.GcpConfig != nil {
 		config := input.GcpConfig
-		return gcpConfigFromInput(runtimeID, *config, uuidGenerator)
+		return gcpConfigFromInput(runtimeID, *config, uuidGenerator), nil
 	}
-	return nil
+	return nil, errors.New("cluster config does not match any provider")
 }
 
-func gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput, uuidGenerator persistence.UUIDGenerator) model.GardenerConfig {
+func gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput, uuidGenerator persistence.UUIDGenerator) (model.GardenerConfig, error) {
 	id := uuidGenerator.New()
 
-	providerSpecificConfig := providerSpecificConfigFromInput(input.ProviderSpecificConfig)
+	providerSpecificConfig, err := providerSpecificConfigFromInput(input.ProviderSpecificConfig)
+
+	if err != nil {
+		return model.GardenerConfig{}, err
+	}
 
 	return model.GardenerConfig{
 		ID:                     id,
@@ -64,7 +76,7 @@ func gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInp
 		MachineType:            input.MachineType,
 		TargetProvider:         input.TargetProvider,
 		TargetSecret:           input.TargetSecret,
-		WorkerCidr:             input.Workercidr,
+		WorkerCidr:             input.WorkerCidr,
 		Region:                 input.Region,
 		AutoScalerMin:          input.AutoScalerMin,
 		AutoScalerMax:          input.AutoScalerMax,
@@ -72,28 +84,38 @@ func gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInp
 		MaxUnavailable:         input.MaxUnavailable,
 		ClusterID:              runtimeID,
 		ProviderSpecificConfig: providerSpecificConfig,
-	}
+	}, nil
 }
-func providerSpecificConfigFromInput(input *gqlschema.ProviderSpecificInput) interface{} {
+
+func providerSpecificConfigFromInput(input *gqlschema.ProviderSpecificInput) (string, error) {
+	var providerConfig interface{}
+
 	if input.GcpConfig != nil {
-		return model.GCPProviderConfig{
+		providerConfig = model.GCPProviderConfig{
 			Zone: input.GcpConfig.Zone,
 		}
 	}
 	if input.AzureConfig != nil {
-		return model.AzureProviderConfig{
+		providerConfig = model.AzureProviderConfig{
 			VnetCidr: input.AzureConfig.VnetCidr,
 		}
 	}
 	if input.AwsConfig != nil {
-		return model.AWSProviderConfig{
+		providerConfig = model.AWSProviderConfig{
 			Zone:         input.AwsConfig.Zone,
 			VpcCidr:      input.AwsConfig.VpcCidr,
 			PublicCidr:   input.AwsConfig.PublicCidr,
 			InternalCidr: input.AwsConfig.InternalCidr,
 		}
 	}
-	return nil
+
+	providerConfigJson, err := json.Marshal(providerConfig)
+
+	if err != nil {
+		return "", errors.New(fmt.Sprintf("failed to build provider specific config: %s", err.Error()))
+	}
+
+	return string(providerConfigJson), nil
 }
 
 func gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfigInput, uuidGenerator persistence.UUIDGenerator) model.GCPConfig {
@@ -194,7 +216,7 @@ func gardenerConfigToGraphQLConfig(config model.GardenerConfig) gqlschema.Cluste
 		MachineType:            &config.MachineType,
 		TargetProvider:         &config.TargetProvider,
 		TargetSecret:           &config.TargetSecret,
-		Workercidr:             &config.WorkerCidr,
+		WorkerCidr:             &config.WorkerCidr,
 		Region:                 &config.Region,
 		AutoScalerMin:          &config.AutoScalerMin,
 		AutoScalerMax:          &config.AutoScalerMax,
@@ -203,23 +225,26 @@ func gardenerConfigToGraphQLConfig(config model.GardenerConfig) gqlschema.Cluste
 		ProviderSpecificConfig: providerSpecificConfig,
 	}
 }
-func providerSpecificConfigToGQLConfig(config interface{}) gqlschema.ProviderSpecificConfig {
-	gcpProviderConfig, ok := config.(model.GCPProviderConfig)
-	if ok {
+func providerSpecificConfigToGQLConfig(config string) gqlschema.ProviderSpecificConfig {
+	var gcpProviderConfig model.GCPProviderConfig
+	err := util.DecodeJson(config, &gcpProviderConfig)
+	if err == nil {
 		return gqlschema.GCPProviderConfig{
 			Zone: &gcpProviderConfig.Zone,
 		}
 	}
 
-	azureProviderConfig, ok := config.(model.AzureProviderConfig)
-	if ok {
+	var azureProviderConfig model.AzureProviderConfig
+	err = util.DecodeJson(config, &azureProviderConfig)
+	if err == nil {
 		return gqlschema.AzureProviderConfig{
 			VnetCidr: &azureProviderConfig.VnetCidr,
 		}
 	}
 
-	awsProviderConfig, ok := config.(model.AWSProviderConfig)
-	if ok {
+	var awsProviderConfig model.AWSProviderConfig
+	err = util.DecodeJson(config, &awsProviderConfig)
+	if err == nil {
 		return gqlschema.AWSProviderConfig{
 			Zone:         &awsProviderConfig.Zone,
 			VpcCidr:      &awsProviderConfig.VpcCidr,

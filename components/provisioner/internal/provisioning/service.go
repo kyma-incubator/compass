@@ -51,7 +51,11 @@ func (r *service) ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeI
 		return "", nil, err
 	}
 
-	runtimeConfig := runtimeConfigFromInput(id, config, r.uuidGenerator)
+	runtimeConfig, err := runtimeConfigFromInput(id, config, r.uuidGenerator)
+
+	if err != nil {
+		return "", nil, err
+	}
 
 	operation, err := r.persistenceService.SetProvisioningStarted(id, runtimeConfig)
 

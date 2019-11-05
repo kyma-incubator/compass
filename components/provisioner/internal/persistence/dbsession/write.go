@@ -32,8 +32,9 @@ func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberrors.Error {
 	_, err := ws.insertInto("gardener_config").
 		Columns("id", "cluster_id", "project_name", "name", "kubernetes_version",
-			"node_count", "volume_size", "machine_type", "region", "zone", "target_provider",
-			"target_secret", "disk_type", "cidr", "auto_scaler_min", "auto_scaler_max", "max_surge", "max_unavailable").
+			"node_count", "volume_size", "machine_type", "region", "target_provider",
+			"target_secret", "disk_type", "worker_cidr", "auto_scaler_min", "auto_scaler_max", "max_surge",
+			"max_unavailable", "provider_specific_config").
 		Record(config).
 		Exec()
 

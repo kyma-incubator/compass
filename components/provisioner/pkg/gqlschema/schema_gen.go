@@ -88,7 +88,7 @@ type ComplexityRoot struct {
 		TargetProvider         func(childComplexity int) int
 		TargetSecret           func(childComplexity int) int
 		VolumeSize             func(childComplexity int) int
-		Workercidr             func(childComplexity int) int
+		WorkerCidr             func(childComplexity int) int
 	}
 
 	KymaConfig struct {
@@ -373,12 +373,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GardenerConfig.VolumeSize(childComplexity), true
 
-	case "GardenerConfig.workercidr":
-		if e.complexity.GardenerConfig.Workercidr == nil {
+	case "GardenerConfig.workerCidr":
+		if e.complexity.GardenerConfig.WorkerCidr == nil {
 			break
 		}
 
-		return e.complexity.GardenerConfig.Workercidr(childComplexity), true
+		return e.complexity.GardenerConfig.WorkerCidr(childComplexity), true
 
 	case "KymaConfig.modules":
 		if e.complexity.KymaConfig.Modules == nil {
@@ -671,7 +671,7 @@ type GardenerConfig {
     targetProvider: String
     targetSecret: String
     diskType: String
-    workercidr: String
+    workerCidr: String
     autoScalerMin: Int
     autoScalerMax: Int
     maxSurge: Int
@@ -784,7 +784,7 @@ input GardenerConfigInput {
     targetProvider: String!
     targetSecret: String!
     diskType: String!
-    workercidr: String!
+    workerCidr: String!
     autoScalerMin: Int!
     autoScalerMax: Int!
     maxSurge: Int!
@@ -1877,7 +1877,7 @@ func (ec *executionContext) _GardenerConfig_diskType(ctx context.Context, field 
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _GardenerConfig_workercidr(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+func (ec *executionContext) _GardenerConfig_workerCidr(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -1896,7 +1896,7 @@ func (ec *executionContext) _GardenerConfig_workercidr(ctx context.Context, fiel
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Workercidr, nil
+		return obj.WorkerCidr, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4402,9 +4402,9 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
-		case "workercidr":
+		case "workerCidr":
 			var err error
-			it.Workercidr, err = ec.unmarshalNString2string(ctx, v)
+			it.WorkerCidr, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4787,8 +4787,8 @@ func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._GardenerConfig_targetSecret(ctx, field, obj)
 		case "diskType":
 			out.Values[i] = ec._GardenerConfig_diskType(ctx, field, obj)
-		case "workercidr":
-			out.Values[i] = ec._GardenerConfig_workercidr(ctx, field, obj)
+		case "workerCidr":
+			out.Values[i] = ec._GardenerConfig_workerCidr(ctx, field, obj)
 		case "autoScalerMin":
 			out.Values[i] = ec._GardenerConfig_autoScalerMin(ctx, field, obj)
 		case "autoScalerMax":

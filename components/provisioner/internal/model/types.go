@@ -72,7 +72,7 @@ type GardenerConfig struct {
 	AutoScalerMax          int
 	MaxSurge               int
 	MaxUnavailable         int
-	ProviderSpecificConfig interface{}
+	ProviderSpecificConfig string
 }
 
 type GCPProviderConfig struct {
