@@ -36,6 +36,7 @@ func TestSetProvisioning(t *testing.T) {
 		DiskType:               "SSD",
 		MachineType:            "big_one",
 		Provider:               "GCP",
+		Seed:                   "gcp-eu1",
 		TargetSecret:           "secret",
 		WorkerCidr:             "cidr",
 		Region:                 "region",

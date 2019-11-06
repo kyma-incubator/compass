@@ -24,6 +24,7 @@ CREATE TABLE gardener_config
     machine_type varchar(256) NOT NULL,
     region varchar(256) NOT NULL,
     provider varchar(256) NOT NULL,
+    seed varchar(256) NOT NULL,
     target_secret varchar(256) NOT NULL,
     disk_type varchar(256) NOT NULL,
     worker_cidr varchar(256) NOT NULL,

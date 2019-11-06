@@ -109,6 +109,7 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 				MachineType:       "n1-standard-1",
 				Region:            "region",
 				Provider:          "GCP",
+				Seed:              "gcp-eu1",
 				TargetSecret:      "secret",
 				DiskType:          "ssd",
 				WorkerCidr:        "cidr",
@@ -144,6 +145,7 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 			VolumeSizeGB:           1024,
 			DiskType:               "ssd",
 			Provider:               "GCP",
+			Seed:                   "gcp-eu1",
 			TargetSecret:           "secret",
 			WorkerCidr:             "cidr",
 			AutoScalerMin:          1,
@@ -314,6 +316,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		backupInit := gqlschema.KymaModuleBackupInit
 		kubeconfig := "kubeconfig"
 		provider := "GCP"
+		seed := "gcp-eu1"
 		secret := "secret"
 		cidr := "cidr"
 		autoScMax := 2
@@ -341,6 +344,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					VolumeSizeGB:           volume,
 					KubernetesVersion:      kubeversion,
 					Provider:               provider,
+					Seed:                   seed,
 					TargetSecret:           secret,
 					WorkerCidr:             cidr,
 					AutoScalerMax:          autoScMax,
@@ -386,6 +390,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					VolumeSizeGb:      &volume,
 					KubernetesVersion: &kubeversion,
 					Provider:          &provider,
+					Seed:              &seed,
 					TargetSecret:      &secret,
 					WorkerCidr:        &cidr,
 					AutoScalerMax:     &autoScMax,

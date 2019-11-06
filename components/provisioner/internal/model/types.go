@@ -65,6 +65,7 @@ type GardenerConfig struct {
 	DiskType               string
 	MachineType            string
 	Provider               string
+	Seed                   string
 	TargetSecret           string
 	Region                 string
 	WorkerCidr             string

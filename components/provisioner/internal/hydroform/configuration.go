@@ -54,6 +54,7 @@ func buildConfigForGardener(config model.GardenerConfig, credentialsFile string)
 
 	customConfiguration := map[string]interface{}{
 		"target_provider": config.Provider,
+		"target_seed":     config.Seed,
 		"target_secret":   config.TargetSecret,
 		"disk_type":       config.DiskType,
 		"workercidr":      config.WorkerCidr,
