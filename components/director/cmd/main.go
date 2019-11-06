@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/audit"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 
@@ -81,6 +83,12 @@ func main() {
 
 	stopCh := signal.SetupChannel()
 	scopeCfgProvider := createAndRunScopeConfigProvider(stopCh, cfg)
+
+	stopChTmp := signal.SetupChannel()
+	auditLogTest := audit.NewAuditLogTest()
+	executor.NewPeriodic(time.Minute*30, func(stopCh <-chan struct{}) {
+		auditLogTest.LogAuditEvent()
+	}).Run(stopChTmp)
 
 	gqlCfg := graphql.Config{
 		Resolvers: domain.NewRootResolver(transact, scopeCfgProvider, cfg.OneTimeToken, cfg.OAuth20),
