@@ -75,6 +75,7 @@ func (p *descriptionsDecoratorPlugin) MutateConfig(cfg *config.Config) error {
 
 func (p *descriptionsDecoratorPlugin) ensureDescription(f *ast.FieldDefinition, opType GraphqlOperationType) {
 
+	f.Description = deletePrevious(f.Description)
 	dirs, err := ioutil.ReadDir(ExamplesDirectory)
 	if err != nil {
 		log.Printf("While reading the examples directory: %s", err.Error())
@@ -121,6 +122,23 @@ func sanitizeName(name string, opType GraphqlOperationType) string {
 
 }
 
+func deletePrevious(description string) string {
+	if len(description) == 0 {
+		return ""
+	}
+	if description[:3] == "see" {
+		return ""
+	}
+	index := strings.Index(description, "\\")
+	if index == -1 {
+		return description
+	}
+	return description[:index]
+}
+
 func addExample(description string, dirName string, name string) string {
-	return strings.ToLower(fmt.Sprintf("%s \n see example [here](examples/%s/%s)", description, dirName, name))
+	if len(description) == 0 {
+		return strings.ToLower(fmt.Sprintf("see example [here](examples/%s/%s)", dirName, name))
+	}
+	return strings.ToLower(fmt.Sprintf("%s\\\n see example [here](examples/%s/%s)", description, dirName, name))
 }

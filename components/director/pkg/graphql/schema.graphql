@@ -534,131 +534,112 @@ type Webhook {
 
 type Query {
 	"""
-	maximum `first` parameter value is 100 
-	 see example [here](examples/query-applications/query-applications-with-label-filter.graphql) 
+	maximum `first` parameter value is 100\
+	 see example [here](examples/query-applications/query-applications-with-label-filter.graphql)\
 	 see example [here](examples/query-applications/query-applications.graphql)
 	"""
 	applications(filter: [LabelFilter!], first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applications")
 	"""
-	 
-	 see example [here](examples/query-application/query-api-runtime-auths.graphql) 
+	see example [here](examples/query-application/query-api-runtime-auths.graphql)\
 	 see example [here](examples/query-application/query-application.graphql)
 	"""
 	application(id: ID!): Application @hasScopes(path: "graphql.query.application")
 	"""
-	maximum `first` parameter value is 100 
+	maximum `first` parameter value is 100\
 	 see example [here](examples/query-applications-for-runtime/query-applications-for-runtime.graphql)
 	"""
 	applicationsForRuntime(runtimeID: ID!, first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applicationsForRuntime")
 	"""
-	maximum `first` parameter value is 100 
-	 see example [here](examples/query-runtimes/query-runtimes-with-label-filter.graphql) 
-	 see example [here](examples/query-runtimes/query-runtimes-with-pagination.graphql) 
+	maximum `first` parameter value is 100\
+	 see example [here](examples/query-runtimes/query-runtimes-with-label-filter.graphql)\
+	 see example [here](examples/query-runtimes/query-runtimes-with-pagination.graphql)\
 	 see example [here](examples/query-runtimes/query-runtimes.graphql)
 	"""
 	runtimes(filter: [LabelFilter!], first: Int = 100, after: PageCursor): RuntimePage! @hasScopes(path: "graphql.query.runtimes")
 	"""
-	 
-	 see example [here](examples/query-runtime/query-runtime.graphql)
+	see example [here](examples/query-runtime/query-runtime.graphql)
 	"""
 	runtime(id: ID!): Runtime @hasScopes(path: "graphql.query.runtime")
 	labelDefinitions: [LabelDefinition!]! @hasScopes(path: "graphql.query.labelDefinitions")
 	"""
-	 
-	 see example [here](examples/query-label-definition/query-label-definition.graphql)
+	see example [here](examples/query-label-definition/query-label-definition.graphql)
 	"""
 	labelDefinition(key: String!): LabelDefinition @hasScopes(path: "graphql.query.labelDefinition")
 	healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: PageCursor): HealthCheckPage! @hasScopes(path: "graphql.query.healthChecks")
 	"""
-	maximum `first` parameter value is 100 
+	maximum `first` parameter value is 100\
 	 see example [here](examples/query-integration-systems/query-integration-systems.graphql)
 	"""
 	integrationSystems(first: Int = 100, after: PageCursor): IntegrationSystemPage! @hasScopes(path: "graphql.query.integrationSystems")
 	"""
-	 
-	 see example [here](examples/query-integration-system/query-integration-system.graphql)
+	see example [here](examples/query-integration-system/query-integration-system.graphql)
 	"""
 	integrationSystem(id: ID!): IntegrationSystem @hasScopes(path: "graphql.query.integrationSystem")
 }
 
 type Mutation {
 	"""
-	 
-	 see example [here](examples/create-application/create-application-with-apis.graphql) 
-	 see example [here](examples/create-application/create-application-with-documents.graphql) 
-	 see example [here](examples/create-application/create-application-with-event-apis.graphql) 
-	 see example [here](examples/create-application/create-application-with-webhooks.graphql) 
+	see example [here](examples/create-application/create-application-with-apis.graphql)\
+	 see example [here](examples/create-application/create-application-with-documents.graphql)\
+	 see example [here](examples/create-application/create-application-with-event-apis.graphql)\
+	 see example [here](examples/create-application/create-application-with-webhooks.graphql)\
 	 see example [here](examples/create-application/create-application.graphql)
 	"""
 	createApplication(in: ApplicationCreateInput!): Application! @hasScopes(path: "graphql.mutation.createApplication")
 	"""
-	 
-	 see example [here](examples/update-application/update-application.graphql)
+	see example [here](examples/update-application/update-application.graphql)
 	"""
 	updateApplication(id: ID!, in: ApplicationUpdateInput!): Application! @hasScopes(path: "graphql.mutation.updateApplication")
 	"""
-	 
-	 see example [here](examples/delete-application/delete-application.graphql)
+	see example [here](examples/delete-application/delete-application.graphql)
 	"""
 	deleteApplication(id: ID!): Application! @hasScopes(path: "graphql.mutation.deleteApplication")
 	"""
-	 
-	 see example [here](examples/create-runtime/create-runtime.graphql)
+	see example [here](examples/create-runtime/create-runtime.graphql)
 	"""
 	createRuntime(in: RuntimeInput!): Runtime! @hasScopes(path: "graphql.mutation.createRuntime")
 	"""
-	 
-	 see example [here](examples/update-runtime/update-runtime.graphql)
+	see example [here](examples/update-runtime/update-runtime.graphql)
 	"""
 	updateRuntime(id: ID!, in: RuntimeInput!): Runtime! @hasScopes(path: "graphql.mutation.updateRuntime")
 	"""
-	 
-	 see example [here](examples/delete-runtime/delete-runtime.graphql)
+	see example [here](examples/delete-runtime/delete-runtime.graphql)
 	"""
 	deleteRuntime(id: ID!): Runtime! @hasScopes(path: "graphql.mutation.deleteRuntime")
 	"""
-	 
-	 see example [here](examples/create-integration-system/create-integration-system.graphql)
+	see example [here](examples/create-integration-system/create-integration-system.graphql)
 	"""
 	createIntegrationSystem(in: IntegrationSystemInput!): IntegrationSystem! @hasScopes(path: "graphql.mutation.createIntegrationSystem")
 	"""
-	 
-	 see example [here](examples/update-integration-system/update-integration-system.graphql)
+	see example [here](examples/update-integration-system/update-integration-system.graphql)
 	"""
 	updateIntegrationSystem(id: ID!, in: IntegrationSystemInput!): IntegrationSystem! @hasScopes(path: "graphql.mutation.updateIntegrationSystem")
 	"""
-	 
-	 see example [here](examples/delete-integration-system/delete-integration-system.graphql)
+	see example [here](examples/delete-integration-system/delete-integration-system.graphql)
 	"""
 	deleteIntegrationSystem(id: ID!): IntegrationSystem! @hasScopes(path: "graphql.mutation.deleteIntegrationSystem")
 	"""
-	 
-	 see example [here](examples/add-webhook/add-application-webhook.graphql)
+	see example [here](examples/add-webhook/add-application-webhook.graphql)
 	"""
 	addWebhook(applicationID: ID!, in: WebhookInput!): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
 	"""
-	 
-	 see example [here](examples/update-webhook/update-application-webhook.graphql)
+	see example [here](examples/update-webhook/update-application-webhook.graphql)
 	"""
 	updateWebhook(webhookID: ID!, in: WebhookInput!): Webhook! @hasScopes(path: "graphql.mutation.updateWebhook")
 	"""
-	 
-	 see example [here](examples/delete-webhook/delete-application-webhook.graphql)
+	see example [here](examples/delete-webhook/delete-application-webhook.graphql)
 	"""
 	deleteWebhook(webhookID: ID!): Webhook! @hasScopes(path: "graphql.mutation.deleteWebhook")
 	"""
-	 
-	 see example [here](examples/add-api/add-api.graphql)
+	see example [here](examples/add-api/add-api.graphql)
 	"""
 	addAPI(applicationID: ID!, in: APIDefinitionInput!): APIDefinition! @hasScopes(path: "graphql.mutation.addAPI")
 	"""
-	 
-	 see example [here](examples/update-api/update-api.graphql)
+	see example [here](examples/update-api/update-api.graphql)
 	"""
 	updateAPI(id: ID!, in: APIDefinitionInput!): APIDefinition! @hasScopes(path: "graphql.mutation.updateAPI")
 	"""
-	 
-	 see example [here](examples/delete-api/delete-api.graphql)
+	see example [here](examples/delete-api/delete-api.graphql)
 	"""
 	deleteAPI(id: ID!): APIDefinition! @hasScopes(path: "graphql.mutation.deleteAPI")
 	refetchAPISpec(apiID: ID!): APISpec! @hasScopes(path: "graphql.mutation.refetchAPISpec")
@@ -680,37 +661,32 @@ type Mutation {
 	deleteEventAPI(id: ID!): EventAPIDefinition! @hasScopes(path: "graphql.mutation.deleteEventAPI")
 	refetchEventAPISpec(eventID: ID!): EventAPISpec! @hasScopes(path: "graphql.mutation.refetchEventAPISpec")
 	"""
-	 
-	 see example [here](examples/add-document/add-document.graphql)
+	see example [here](examples/add-document/add-document.graphql)
 	"""
 	addDocument(applicationID: ID!, in: DocumentInput!): Document! @hasScopes(path: "graphql.mutation.addDocument")
 	"""
-	 
-	 see example [here](examples/delete-document/delete-document.graphql)
+	see example [here](examples/delete-document/delete-document.graphql)
 	"""
 	deleteDocument(id: ID!): Document! @hasScopes(path: "graphql.mutation.deleteDocument")
 	"""
-	 
-	 see example [here](examples/create-label-definition/create-label-definition.graphql)
+	see example [here](examples/create-label-definition/create-label-definition.graphql)
 	"""
 	createLabelDefinition(in: LabelDefinitionInput!): LabelDefinition! @hasScopes(path: "graphql.mutation.createLabelDefinition")
 	"""
-	 
-	 see example [here](examples/update-label-definition/update-label-definition.graphql)
+	see example [here](examples/update-label-definition/update-label-definition.graphql)
 	"""
 	updateLabelDefinition(in: LabelDefinitionInput!): LabelDefinition! @hasScopes(path: "graphql.mutation.updateLabelDefinition")
 	"""
-	 
-	 see example [here](examples/delete-label-definition/delete-label-definition.graphql)
+	see example [here](examples/delete-label-definition/delete-label-definition.graphql)
 	"""
 	deleteLabelDefinition(key: String!, deleteRelatedLabels: Boolean = false): LabelDefinition! @hasScopes(path: "graphql.mutation.deleteLabelDefinition")
 	"""
-	if a label with given key already exist, it will be replaced with provided value. 
+	if a label with given key already exist, it will be replaced with provided value.\
 	 see example [here](examples/set-application-label/set-application-label.graphql)
 	"""
 	setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setApplicationLabel")
 	"""
-	if application does not exist or the label key is not found, it returns an error. 
+	if application does not exist or the label key is not found, it returns an error.\
 	 see example [here](examples/delete-application-label/delete-application-label.graphql)
 	"""
 	deleteApplicationLabel(applicationID: ID!, key: String!): Label! @hasScopes(path: "graphql.mutation.deleteApplicationLabel")
