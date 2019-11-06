@@ -84,11 +84,10 @@ func main() {
 	stopCh := signal.SetupChannel()
 	scopeCfgProvider := createAndRunScopeConfigProvider(stopCh, cfg)
 
-	auditLogCh := signal.SetupChannel()
 	auditLogTest := audit.NewAuditLogTest()
-	executor.NewPeriodic(time.Minute*30, func(auditLogCh <-chan struct{}) {
+	executor.NewPeriodic(time.Minute*30, func(stopCh <-chan struct{}) {
 		auditLogTest.LogAuditEvent()
-	}).Run(auditLogCh)
+	}).Run(stopCh)
 
 	gqlCfg := graphql.Config{
 		Resolvers: domain.NewRootResolver(transact, scopeCfgProvider, cfg.OneTimeToken, cfg.OAuth20),
@@ -139,7 +138,6 @@ func main() {
 	log.Infof("Listening on %s...", cfg.Address)
 	go func() {
 		<-stopCh
-		<-auditLogCh
 		// Interrupt signal received - shut down the server
 		if err := srv.Shutdown(context.Background()); err != nil {
 			log.Errorf("HTTP server Shutdown: %v", err)
