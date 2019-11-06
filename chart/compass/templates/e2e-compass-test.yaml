@@ -33,7 +33,7 @@ spec:
           args: ["-c", "./wait-for-director.sh; /e2e.test -test.v; exit_code=$?; pkill -INT pilot-agent; sleep 4; exit $exit_code;"]
           env:
             - name: DIRECTOR_URL
-              value: "http://compass-gateway.{{ .Values.global.ingress.domainName }}/director"
+              value: "https://compass-gateway.{{ .Values.global.ingress.domainName }}/director"
             - name: ALL_SCOPES
               value: "runtime:write application:write label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read"
             - name: USER_EMAIL

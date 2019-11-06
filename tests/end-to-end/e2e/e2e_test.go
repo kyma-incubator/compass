@@ -51,7 +51,6 @@ func TestCompassAuth(t *testing.T) {
 
 	dexToken, err := idtokenprovider.Authenticate(config.IdProviderConfig)
 	require.NoError(t, err)
-	t.Log("token:", dexToken)
 	t.Log("Create Integration System with Dex id token")
 	tc.cli = common.NewAuthorizedGraphQLClient(dexToken)
 	intSys := createIntegrationSystem(t, ctx, "integration-system")
@@ -66,7 +65,7 @@ func TestCompassAuth(t *testing.T) {
 	t.Log("Issue a Hydra token with Client Credentials")
 	oauthCredentials := fmt.Sprintf("%s:%s", intSysOauthCredentialData.ClientID, intSysOauthCredentialData.ClientSecret)
 	encodedCredentials := base64.StdEncoding.EncodeToString([]byte(oauthCredentials))
-	hydraToken := fetchHydraAccessToken(t, domain, encodedCredentials, http.StatusOK)
+	hydraToken := fetchHydraAccessToken(t, domain, encodedCredentials, intSysOauthCredentialData.URL, http.StatusOK)
 
 	t.Log("Create an application as Integration System")
 	tc.cli = common.NewAuthorizedGraphQLClientWithCustomURL(hydraToken.AccessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", domain))
@@ -107,15 +106,15 @@ func TestCompassAuth(t *testing.T) {
 	require.Empty(t, app.ID)
 
 	t.Log("Check if token can not be fetched with old client credentials")
-	fetchHydraAccessToken(t, domain, encodedCredentials, http.StatusUnauthorized)
+	fetchHydraAccessToken(t, domain, encodedCredentials, intSysOauthCredentialData.URL, http.StatusUnauthorized)
 }
 
-func fetchHydraAccessToken(t *testing.T, domain string, encodedCredentials string, expectedStatusCode int) *hydraToken {
+func fetchHydraAccessToken(t *testing.T, domain string, encodedCredentials string, tokenEndpoint string, expectedStatusCode int) *hydraToken {
 	form := url.Values{}
 	form.Set("grant_type", "client_credentials")
 	form.Set("scope", "application:write application:read")
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("https://oauth2.%s/oauth2/token", domain), strings.NewReader(form.Encode()))
+	req, err := http.NewRequest("POST", tokenEndpoint, strings.NewReader(form.Encode()))
 	require.NoError(t, err)
 
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
