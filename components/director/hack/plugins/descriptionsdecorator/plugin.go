@@ -103,6 +103,9 @@ func sanitizeName(name string, opType GraphqlOperationType) string {
 	counter := 0
 	for index, letter := range name {
 		if unicode.IsUpper(letter) {
+			if index == 0 {
+				continue
+			}
 			name = fmt.Sprintf("%s-%s", name[:index+counter], name[index+counter:])
 			counter++
 		}
