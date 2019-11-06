@@ -22,7 +22,7 @@ matchNames=$(cat <<-END
       - name: compass-director
         namespace: compass-system
       - name: compass-e2e
-        namespace: compass-system
+        namespace: kyma-system
       - name: compass-connector-tests
         namespace: compass-system
 END

@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -50,7 +51,7 @@ func TestCompassAuth(t *testing.T) {
 
 	dexToken, err := idtokenprovider.Authenticate(config.IdProviderConfig)
 	require.NoError(t, err)
-
+	t.Log("token:", dexToken)
 	t.Log("Create Integration System with Dex id token")
 	tc.cli = common.NewAuthorizedGraphQLClient(dexToken)
 	intSys := createIntegrationSystem(t, ctx, "integration-system")
@@ -120,7 +121,13 @@ func fetchHydraAccessToken(t *testing.T, domain string, encodedCredentials strin
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Add("Authorization", fmt.Sprintf("Basic %s", encodedCredentials))
 
-	client := &http.Client{}
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
+	client := &http.Client{
+		Transport: transport,
+	}
 	resp, err := client.Do(req)
 	require.NoError(t, err)
 	defer httpRequestBodyCloser(t, resp)
