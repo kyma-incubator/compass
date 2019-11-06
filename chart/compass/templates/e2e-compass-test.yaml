@@ -16,7 +16,7 @@ spec:
         sidecar.istio.io/inject: "true"
     spec:
     {{ if .Values.global.isLocalEnv }}
-    hostAliases:
+      hostAliases:
       - ip: {{ .Values.global.minikubeIP }}
         hostnames:
           - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
