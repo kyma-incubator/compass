@@ -23,6 +23,7 @@ const (
 	Mutation          GraphqlOperationType = "mutation"
 	ExamplesDirectory                      = "../../examples"
 	UnsanitizedAPI                         = "A-P-I"
+	ExamplePrefix                          = "**Examples**"
 )
 
 var _ plugin.ConfigMutator = &descriptionsDecoratorPlugin{}
@@ -94,9 +95,9 @@ func (p *descriptionsDecoratorPlugin) ensureDescription(f *ast.FieldDefinition, 
 			return
 		}
 		if len(f.Description) == 0 {
-			f.Description += "**Examples**"
+			f.Description += ExamplePrefix
 		} else {
-			f.Description = fmt.Sprintf("%s\n\n%s", f.Description, "**Examples**")
+			f.Description = fmt.Sprintf("%s\n\n%s", f.Description, ExamplePrefix)
 		}
 		for _, file := range files {
 			withoutExt := strings.Replace(file.Name(), ".graphql", "", -1)
@@ -134,7 +135,7 @@ func deletePrevious(description string) string {
 		return ""
 	}
 
-	index := strings.Index(description, "**Examples**")
+	index := strings.Index(description, ExamplePrefix)
 	if index == -1 {
 		return description
 	}
