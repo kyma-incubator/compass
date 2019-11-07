@@ -57,11 +57,6 @@ func NewTestContext() (*TestContext, error) {
 }
 
 func (tc *TestContext) RunOperation(ctx context.Context, req *gcli.Request, resp interface{}) error {
-	tnt := os.Getenv("DEFAULT_TENANT")
-	if tnt != "" {
-		req.Header.Set("Tenant", tnt)
-	}
-
 	m := resultMapperFor(&resp)
 
 	return tc.withRetryOnTemporaryConnectionProblems(func() error {

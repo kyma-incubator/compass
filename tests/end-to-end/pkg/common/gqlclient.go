@@ -11,8 +11,7 @@ import (
 )
 
 func NewAuthorizedGraphQLClient(bearerToken string) *gcli.Client {
-	authorizedClient := newAuthorizedHTTPClient(bearerToken)
-	return gcli.NewClient(getDirectorGraphqlURL(), gcli.WithHTTPClient(authorizedClient))
+	return NewAuthorizedGraphQLClientWithCustomURL(bearerToken, getDirectorGraphqlURL())
 }
 
 func NewAuthorizedGraphQLClientWithCustomURL(bearerToken, url string) *gcli.Client {
@@ -23,10 +22,9 @@ func NewAuthorizedGraphQLClientWithCustomURL(bearerToken, url string) *gcli.Clie
 func getDirectorGraphqlURL() string {
 	url := os.Getenv("DIRECTOR_URL")
 	if url == "" {
-		url = "http://127.0.0.1:3000/graphql"
-	} else {
-		url = url + "/graphql"
+		url = "http://127.0.0.1:3000"
 	}
+	url = url + "/graphql"
 	return url
 }
 
@@ -47,6 +45,15 @@ func newAuthorizedHTTPClient(bearerToken string) *http.Client {
 		Transport: transport,
 		Timeout:   time.Second * 30,
 	}
+}
+
+func GetDexGraphQLClient(bearerToken string) *gcli.Client {
+	return NewAuthorizedGraphQLClient(bearerToken)
+}
+
+func GetOauthGraphQLClient(token string, url string) *gcli.Client {
+	gqlClient := NewAuthorizedGraphQLClientWithCustomURL(token, url)
+	return gqlClient
 }
 
 func (t *authenticatedTransport) RoundTrip(req *http.Request) (*http.Response, error) {

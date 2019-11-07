@@ -13,9 +13,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-
 	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/common"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/pkg/errors"
 
@@ -40,6 +40,7 @@ type hydraToken struct {
 
 func TestCompassAuth(t *testing.T) {
 	domain := os.Getenv("DOMAIN")
+	tenant := os.Getenv("DEFAULT_TENANT")
 	require.NotEmpty(t, domain)
 	ctx := context.Background()
 
@@ -49,12 +50,14 @@ func TestCompassAuth(t *testing.T) {
 
 	dexToken, err := idtokenprovider.Authenticate(config.IdProviderConfig)
 	require.NoError(t, err)
+
+	dexGraphQLClient := common.GetDexGraphQLClient(dexToken)
+
 	t.Log("Create Integration System with Dex id token")
-	tc.cli = common.NewAuthorizedGraphQLClient(dexToken)
-	intSys := createIntegrationSystem(t, ctx, "integration-system")
+	intSys := createIntegrationSystem(t, ctx, dexGraphQLClient, tenant, "integration-system")
 
 	t.Log("Generate Client Credentials for Integration System")
-	intSysAuth := generateClientCredentialsForIntegrationSystem(t, ctx, intSys.ID)
+	intSysAuth := generateClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, tenant, intSys.ID)
 	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
 	require.NotEmpty(t, intSysOauthCredentialData.ClientSecret)
@@ -63,31 +66,29 @@ func TestCompassAuth(t *testing.T) {
 	t.Log("Issue a Hydra token with Client Credentials")
 	oauthCredentials := fmt.Sprintf("%s:%s", intSysOauthCredentialData.ClientID, intSysOauthCredentialData.ClientSecret)
 	encodedCredentials := base64.StdEncoding.EncodeToString([]byte(oauthCredentials))
-	hydraToken := fetchHydraAccessToken(t, domain, encodedCredentials, intSysOauthCredentialData.URL, http.StatusOK)
+	hydraToken := fetchHydraAccessToken(t, encodedCredentials, intSysOauthCredentialData.URL, http.StatusOK)
+
+	oauthGraphQLClient := common.GetOauthGraphQLClient(hydraToken.AccessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", domain))
 
 	t.Log("Create an application as Integration System")
-	tc.cli = common.NewAuthorizedGraphQLClientWithCustomURL(hydraToken.AccessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", domain))
 	appInput := graphql.ApplicationCreateInput{
 		Name: "app-created-by-integration-system",
 	}
-	appByIntSys := createApplicationFromInputWithinTenant(t, ctx, appInput, *tc)
+	appByIntSys := createApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, tenant, appInput)
 
 	t.Log("Add API Spec to Application")
 	apiInput := graphql.APIDefinitionInput{
 		Name:      "new-api-name",
 		TargetURL: "new-api-url",
 	}
-	addApi(t, ctx, apiInput, appByIntSys.ID)
-
+	addApiWithinTenant(t, ctx, oauthGraphQLClient, tenant, apiInput, appByIntSys.ID)
 	t.Log("Remove application using Dex id token")
-	tc.cli = common.NewAuthorizedGraphQLClient(dexToken)
-	deleteApplication(t, ctx, appByIntSys.ID)
+	deleteApplication(t, ctx, dexGraphQLClient, tenant, appByIntSys.ID)
 
 	t.Log("Remove Integration System")
-	deleteIntegrationSystem(t, ctx, intSys.ID)
+	deleteIntegrationSystem(t, ctx, dexGraphQLClient, tenant, intSys.ID)
 
 	t.Log("Check if token granted for Integration System is invalid")
-	tc.cli = common.NewAuthorizedGraphQLClient(hydraToken.AccessToken)
 	appInput = graphql.ApplicationCreateInput{
 		Name: "app-which-should-be-not-created",
 	}
@@ -95,24 +96,24 @@ func TestCompassAuth(t *testing.T) {
 	require.NoError(t, err)
 
 	createRequest := fixCreateApplicationRequest(appInputGQL)
-	createRequest.Header = http.Header{"Tenant": {"3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"}}
+	createRequest.Header.Set("Tenant", tenant)
 	app := graphql.ApplicationExt{}
 	m := resultMapperFor(&app)
 
-	err = tc.withRetryOnTemporaryConnectionProblems(func() error { return tc.cli.Run(ctx, createRequest, &m) })
+	err = tc.withRetryOnTemporaryConnectionProblems(func() error { return oauthGraphQLClient.Run(ctx, createRequest, &m) })
 	require.NoError(t, err)
 	require.Empty(t, app.ID)
 
 	t.Log("Check if token can not be fetched with old client credentials")
-	fetchHydraAccessToken(t, domain, encodedCredentials, intSysOauthCredentialData.URL, http.StatusUnauthorized)
+	fetchHydraAccessToken(t, encodedCredentials, intSysOauthCredentialData.URL, http.StatusUnauthorized)
 }
 
-func fetchHydraAccessToken(t *testing.T, domain string, encodedCredentials string, tokenEndpoint string, expectedStatusCode int) *hydraToken {
+func fetchHydraAccessToken(t *testing.T, encodedCredentials string, tokenURL string, expectedStatusCode int) *hydraToken {
 	form := url.Values{}
 	form.Set("grant_type", "client_credentials")
 	form.Set("scope", "application:write application:read")
 
-	req, err := http.NewRequest("POST", tokenEndpoint, strings.NewReader(form.Encode()))
+	req, err := http.NewRequest("POST", tokenURL, strings.NewReader(form.Encode()))
 	require.NoError(t, err)
 
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
