@@ -637,8 +637,8 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "azure"
-  digest = "1:de5d53b7ff40e29bc2c3381bc6e3307583c316ceb440bc0ba98034052f470463"
+  branch = "master"
+  digest = "1:1bd476795aa01f1a5275fd06b73b5ed330102fce3938a79da851cf71e3d15149"
   name = "github.com/kyma-incubator/hydroform"
   packages = [
     ".",
@@ -651,20 +651,21 @@
     "types",
   ]
   pruneopts = "UT"
-  revision = "2eec3e78ede639997fce9bbc71654379dc1a58c9"
-  source = "github.com/Maladie/hydroform"
+  revision = "b358b7f6a333db6eb56d6315140b072da7bbe928"
 
 [[projects]]
-  branch = "master"
-  digest = "1:7e3adff4dd286acde937e1ff72cad269567002bd93cfac60d30c4c3c38baeaed"
+  digest = "1:42b59be850aaa9cd973a906a4d85df0d7fef66e99a51193390cff2ad0636b7bb"
   name = "github.com/kyma-incubator/terraform-provider-gardener"
   packages = [
     "client",
+    "expand",
+    "flatten",
     "provider",
     "shoot",
+    "validate",
   ]
   pruneopts = "UT"
-  revision = "f98ea637a5da8988415b6d43707bd84791fdd763"
+  revision = "100e0f88e4cff7ccc284c6c4322a3a09b50b68bf"
 
 [[projects]]
   digest = "1:12cb143f2148bf54bcd9fe622abac17325e85eeb1d84b8ec6caf1c80232108fd"
@@ -1367,15 +1368,17 @@
   revision = "ee9c4073cffa1a3cce1aad02aa46d3d3e691923d"
 
 [[projects]]
-  digest = "1:c5ea71d4c8fda56ca86755df2e754f40552627c82d25ba0c167b4bc36aee430f"
+  digest = "1:07464eacb3aa361766c7472b8fad39c21b612949fbc614056df12a69c0814202"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/equality",
     "pkg/api/errors",
     "pkg/api/meta",
     "pkg/api/resource",
+    "pkg/api/validation",
     "pkg/apis/meta/v1",
     "pkg/apis/meta/v1/unstructured",
+    "pkg/apis/meta/v1/validation",
     "pkg/apis/meta/v1beta1",
     "pkg/conversion",
     "pkg/conversion/queryparams",
