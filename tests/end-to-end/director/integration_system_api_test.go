@@ -39,7 +39,7 @@ func TestCreateIntegrationSystem(t *testing.T) {
 
 	//THEN
 	require.NotEmpty(t, output.Name)
-	saveQueryInExamples(t, createIntegrationSystemRequest.Query(), createIntegrationSystemCategory, "create integration system")
+	saveQueryInExamplesWithCustomDir(t, createIntegrationSystemRequest.Query(), createIntegrationSystemCategory, "create integration system")
 
 	t.Log("Check if Integration System was created")
 
@@ -50,7 +50,7 @@ func TestCreateIntegrationSystem(t *testing.T) {
 
 	require.NotEmpty(t, intSysOutput)
 	assertIntegrationSystem(t, intSysInput, intSysOutput)
-	saveQueryInExamples(t, getIntegrationSystemRequest.Query(), queryIntegrationSystemCategory, "query integration system")
+	saveQueryInExamplesWithCustomDir(t, getIntegrationSystemRequest.Query(), queryIntegrationSystemCategory, "query integration system")
 }
 
 func TestUpdateIntegrationSystem(t *testing.T) {
@@ -77,7 +77,7 @@ func TestUpdateIntegrationSystem(t *testing.T) {
 	//THEN
 	t.Log("Check if Integration System was updated")
 	assertIntegrationSystem(t, intSysInput, updateOutput)
-	saveQueryInExamples(t, updateIntegrationSystemRequest.Query(), updateIntegrationSystemCategory, "update integration system")
+	saveQueryInExamplesWithCustomDir(t, updateIntegrationSystemRequest.Query(), updateIntegrationSystemCategory, "update integration system")
 }
 
 func TestDeleteIntegrationSystem(t *testing.T) {
@@ -102,7 +102,7 @@ func TestDeleteIntegrationSystem(t *testing.T) {
 	out := getIntegrationSystem(t, ctx, intSys.ID)
 
 	require.Empty(t, out)
-	saveQueryInExamples(t, deleteIntegrationSystemRequest.Query(), deleteIntegrationSystemCategory, "delete integration system")
+	saveQueryInExamplesWithCustomDir(t, deleteIntegrationSystemRequest.Query(), deleteIntegrationSystemCategory, "delete integration system")
 }
 
 func TestQueryIntegrationSystem(t *testing.T) {
@@ -155,5 +155,5 @@ func TestQueryIntegrationSystems(t *testing.T) {
 	//THEN
 	t.Log("Check if Integration Systems were received")
 	assert.Equal(t, 2, output.TotalCount)
-	saveQueryInExamples(t, getIntegrationSystemsRequest.Query(), queryIntegrationSystemsCategory, "query integration systems")
+	saveQueryInExamplesWithCustomDir(t, getIntegrationSystemsRequest.Query(), queryIntegrationSystemsCategory, "query integration systems")
 }

@@ -44,7 +44,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 					%s
 				}
 			}`, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
-	saveQueryInExamples(t, createReq.Query(), createRuntimeCategory, "create runtime")
+	saveQueryInExamplesWithCustomDir(t, createReq.Query(), createRuntimeCategory, "create runtime")
 	err = tc.RunOperation(ctx, createReq, &actualRuntime)
 
 	//THEN
@@ -151,7 +151,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 				}
 		}
 		`, actualRuntime.ID, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
-	saveQueryInExamples(t, updateRuntimeReq.Query(), updateRuntimeCategory, "update runtime")
+	saveQueryInExamplesWithCustomDir(t, updateRuntimeReq.Query(), updateRuntimeCategory, "update runtime")
 	//WHEN
 	err = tc.RunOperation(ctx, updateRuntimeReq, &actualRuntime)
 
@@ -164,7 +164,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 
 	// WHEN
 	delReq := gcli.NewRequest(fmt.Sprintf(`mutation{result: deleteRuntime(id: "%s") {%s}}`, actualRuntime.ID, tc.gqlFieldsProvider.ForRuntime()))
-	saveQueryInExamples(t, delReq.Query(), deleteRuntimeCategory, "delete runtime")
+	saveQueryInExamplesWithCustomDir(t, delReq.Query(), deleteRuntimeCategory, "delete runtime")
 	err = tc.RunOperation(ctx, delReq, nil)
 
 	//THEN
@@ -212,7 +212,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 					%s
 				}
 			}`, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
-	saveQueryInExamples(t, createReq.Query(), createRuntimeCategory, "create runtime")
+	saveQueryInExamplesWithCustomDir(t, createReq.Query(), createRuntimeCategory, "create runtime")
 
 	// WHEN
 	err = tc.RunOperation(ctx, createReq, nil)
@@ -398,7 +398,7 @@ func TestQueryRuntimes(t *testing.T) {
 				}
 			}`, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForRuntime())))
 	err := tc.RunOperation(ctx, queryReq, &actualPage)
-	saveQueryInExamples(t, queryReq.Query(), queryRuntimesCategory, "query runtimes")
+	saveQueryInExamplesWithCustomDir(t, queryReq.Query(), queryRuntimesCategory, "query runtimes")
 
 	//THEN
 	require.NoError(t, err)
@@ -449,7 +449,7 @@ func TestQuerySpecificRuntime(t *testing.T) {
 				}
 			}`, createdRuntime.ID, tc.gqlFieldsProvider.ForRuntime()))
 	err = tc.RunOperation(ctx, queryReq, &queriedRuntime)
-	saveQueryInExamples(t, queryReq.Query(), queryRuntimeCategory, "query runtime")
+	saveQueryInExamplesWithCustomDir(t, queryReq.Query(), queryRuntimeCategory, "query runtime")
 
 	//THEN
 	require.NoError(t, err)
@@ -556,7 +556,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 	applicationPage := graphql.ApplicationPage{}
 
 	err = tc.RunOperationWithCustomTenant(ctx, tenantID, request, &applicationPage)
-	saveQueryInExamples(t, request.Query(), queryApplicationsForRuntimeCategory, "query applications for runtime")
+	saveQueryInExamplesWithCustomDir(t, request.Query(), queryApplicationsForRuntimeCategory, "query applications for runtime")
 
 	//THEN
 	require.NoError(t, err)
@@ -615,7 +615,7 @@ func TestQueryRuntimesWithPagination(t *testing.T) {
 	lastRuntimePage := graphql.RuntimePage{}
 	err := tc.RunOperation(ctx, runtimesRequest, &lastRuntimePage)
 	require.NoError(t, err)
-	saveQueryInExamples(t, runtimesRequest.Query(), queryRuntimesCategory, "query runtimes with pagination")
+	saveQueryInExamplesWithCustomDir(t, runtimesRequest.Query(), queryRuntimesCategory, "query runtimes with pagination")
 
 	//THEN
 	assert.False(t, lastRuntimePage.PageInfo.HasNextPage)

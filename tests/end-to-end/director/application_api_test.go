@@ -62,7 +62,7 @@ func TestCreateApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	err = tc.RunOperation(ctx, request, &actualApp)
 
 	//THEN
-	saveQueryInExamples(t, request.Query(), createApplicationCategory, "create application")
+	saveQueryInExamplesWithCustomDir(t, request.Query(), createApplicationCategory, "create application")
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
 	defer deleteApplication(t, actualApp.ID)
@@ -101,7 +101,7 @@ func TestCreateApplicationWithWebhooks(t *testing.T) {
 			appInputGQL,
 			tc.gqlFieldsProvider.ForApplication(),
 		))
-	saveQueryInExamples(t, request.Query(), createApplicationCategory, "create application with webhooks")
+	saveQueryInExamplesWithCustomDir(t, request.Query(), createApplicationCategory, "create application with webhooks")
 	err = tc.RunOperation(ctx, request, &actualApp)
 
 	//THEN
@@ -183,7 +183,7 @@ func TestCreateApplicationWithAPIs(t *testing.T) {
 			appInputGQL,
 			tc.gqlFieldsProvider.ForApplication(),
 		))
-	saveQueryInExamples(t, request.Query(), createApplicationCategory, "create application with APIs")
+	saveQueryInExamplesWithCustomDir(t, request.Query(), createApplicationCategory, "create application with APIs")
 
 	err = tc.RunOperation(ctx, request, &actualApp)
 
@@ -247,7 +247,7 @@ func TestCreateApplicationWithEventAPIs(t *testing.T) {
 			tc.gqlFieldsProvider.ForApplication(),
 		))
 
-	saveQueryInExamples(t, request.Query(), createApplicationCategory, "create application with event APIs")
+	saveQueryInExamplesWithCustomDir(t, request.Query(), createApplicationCategory, "create application with event APIs")
 	err = tc.RunOperation(ctx, request, &actualApp)
 
 	//THEN
@@ -302,7 +302,7 @@ func TestCreateApplicationWithDocuments(t *testing.T) {
 			tc.gqlFieldsProvider.ForApplication(),
 		))
 
-	saveQueryInExamples(t, request.Query(), createApplicationCategory, "create application with documents")
+	saveQueryInExamplesWithCustomDir(t, request.Query(), createApplicationCategory, "create application with documents")
 	err = tc.RunOperation(ctx, request, &actualApp)
 
 	//THEN
@@ -433,7 +433,7 @@ func TestUpdateApplication(t *testing.T) {
 	//THEN
 	require.NoError(t, err)
 	assert.Equal(t, expectedApp, updatedApp)
-	saveQueryInExamples(t, request.Query(), updateApplicationCategory, "update application")
+	saveQueryInExamplesWithCustomDir(t, request.Query(), updateApplicationCategory, "update application")
 }
 
 func TestCreateUpdateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
@@ -503,7 +503,7 @@ func TestDeleteApplication(t *testing.T) {
 					id
 				}
 			}`, actualApp.ID))
-	saveQueryInExamples(t, delReq.Query(), deleteApplicationCategory, "delete application")
+	saveQueryInExamplesWithCustomDir(t, delReq.Query(), deleteApplicationCategory, "delete application")
 	err = tc.RunOperation(ctx, delReq, &actualApp)
 
 	//THEN
@@ -542,7 +542,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 					value
 				}
 			}`, actualApp.ID, expectedLabel.Key, "[\"aaa\",\"bbb\"]"))
-		saveQueryInExamples(t, addReq.Query(), setApplicationLabelCategory, "set application label")
+		saveQueryInExamplesWithCustomDir(t, addReq.Query(), setApplicationLabelCategory, "set application label")
 		err := tc.RunOperation(ctx, addReq, &createdLabel)
 		require.NoError(t, err)
 		assert.Equal(t, &expectedLabel, createdLabel)
@@ -559,7 +559,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 					value
 				}
 			}`, actualApp.ID, expectedLabel.Key))
-		saveQueryInExamples(t, delReq.Query(), deleteApplicationLabelCategory, "delete application label")
+		saveQueryInExamplesWithCustomDir(t, delReq.Query(), deleteApplicationLabelCategory, "delete application label")
 		err = tc.RunOperation(ctx, delReq, &deletedLabel)
 		require.NoError(t, err)
 		assert.Equal(t, expectedLabel, deletedLabel)
@@ -582,7 +582,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 					%s
 				}
 			}`, actualApp.ID, webhookInStr, tc.gqlFieldsProvider.ForWebhooks()))
-		saveQueryInExamples(t, addReq.Query(), addWebhookCategory, "add application webhook")
+		saveQueryInExamplesWithCustomDir(t, addReq.Query(), addWebhookCategory, "add application webhook")
 
 		actualWebhook := graphql.Webhook{}
 		err = tc.RunOperation(ctx, addReq, &actualWebhook)
@@ -608,7 +608,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 					%s
 				}
 			}`, actualWebhook.ID, webhookInStr, tc.gqlFieldsProvider.ForWebhooks()))
-		saveQueryInExamples(t, updateReq.Query(), updateWebhookCategory, "update application webhook")
+		saveQueryInExamplesWithCustomDir(t, updateReq.Query(), updateWebhookCategory, "update application webhook")
 		err = tc.RunOperation(ctx, updateReq, &actualWebhook)
 		require.NoError(t, err)
 		assert.Equal(t, "updated-webhook", actualWebhook.URL)
@@ -622,7 +622,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 					%s
 				}
 			}`, actualWebhook.ID, tc.gqlFieldsProvider.ForWebhooks()))
-		saveQueryInExamples(t, deleteReq.Query(), deleteWebhookCategory, "delete application webhook")
+		saveQueryInExamplesWithCustomDir(t, deleteReq.Query(), deleteWebhookCategory, "delete application webhook")
 
 		//WHEN
 		err = tc.RunOperation(ctx, deleteReq, &actualWebhook)
@@ -650,7 +650,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 					%s
 				}
 			}`, actualApp.ID, inStr, tc.gqlFieldsProvider.ForAPIDefinition()))
-		saveQueryInExamples(t, addReq.Query(), addApiCategory, "add API")
+		saveQueryInExamplesWithCustomDir(t, addReq.Query(), addApiCategory, "add API")
 		err = tc.RunOperation(ctx, addReq, &actualAPI)
 
 		//THEN
@@ -684,7 +684,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 					}
 				}`, id, updateStr, tc.gqlFieldsProvider.ForAPIDefinition()))
 		err = tc.RunOperation(ctx, updateReq, &updatedAPI)
-		saveQueryInExamples(t, updateReq.Query(), updateApiCategory, "update API")
+		saveQueryInExamplesWithCustomDir(t, updateReq.Query(), updateApiCategory, "update API")
 
 		//THEN
 		require.NoError(t, err)
@@ -707,7 +707,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 					}
 				}`, id))
 		err = tc.RunOperation(ctx, deleteReq, &delAPI)
-		saveQueryInExamples(t, deleteReq.Query(), deleteApiCategory, "delete API")
+		saveQueryInExamplesWithCustomDir(t, deleteReq.Query(), deleteApiCategory, "delete API")
 
 		//THEN
 		require.NoError(t, err)
@@ -809,7 +809,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 					}
 			}`, actualApp.ID, inStr, tc.gqlFieldsProvider.ForDocument()))
 		err = tc.RunOperation(ctx, addReq, &actualDoc)
-		saveQueryInExamples(t, addReq.Query(), addDocumentCategory, "add Document")
+		saveQueryInExamplesWithCustomDir(t, addReq.Query(), addDocumentCategory, "add Document")
 
 		//THEN
 		require.NoError(t, err)
@@ -839,7 +839,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 					}
 				}`, id))
 		err = tc.RunOperation(ctx, deleteReq, &delDocument)
-		saveQueryInExamples(t, deleteReq.Query(), deleteDocumentCategory, "delete Document")
+		saveQueryInExamplesWithCustomDir(t, deleteReq.Query(), deleteDocumentCategory, "delete Document")
 
 		//THEN
 		require.NoError(t, err)
@@ -890,7 +890,7 @@ func TestQueryApplications(t *testing.T) {
 				}
 			}`, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication())))
 	err := tc.RunOperation(ctx, queryReq, &actualAppPage)
-	saveQueryInExamples(t, queryReq.Query(), queryApplicationsCategory, "query applications")
+	saveQueryInExamplesWithCustomDir(t, queryReq.Query(), queryApplicationsCategory, "query applications")
 
 	//THEN
 	require.NoError(t, err)
@@ -929,7 +929,7 @@ func TestQuerySpecificApplication(t *testing.T) {
 				}
 			}`, actualApp.ID, tc.gqlFieldsProvider.ForApplication()))
 	err = tc.RunOperation(context.Background(), queryAppReq, &actualApp)
-	saveQueryInExamples(t, queryAppReq.Query(), queryApplicationCategory, "query application")
+	saveQueryInExamplesWithCustomDir(t, queryAppReq.Query(), queryApplicationCategory, "query application")
 
 	//THEN
 	require.NoError(t, err)
@@ -1086,7 +1086,7 @@ func TestQueryAPIRuntimeAuths(t *testing.T) {
 					}
 
 					if !exampleSaved {
-						saveQueryInExamples(t, request.Query(), queryApplicationCategory, "query api runtime auths")
+						saveQueryInExamplesWithCustomDir(t, request.Query(), queryApplicationCategory, "query api runtime auths")
 						exampleSaved = true
 					}
 				})
@@ -1129,7 +1129,7 @@ func TestQuerySpecificAPIDefinition(t *testing.T) {
 				}
 			}`, applicationID, actualAPI.ID, tc.gqlFieldsProvider.ForAPIDefinition()))
 	err = tc.RunOperation(context.Background(), queryAppReq, &actualAPI)
-	saveQueryInExamples(t, queryAppReq.Query(), queryAPICategory, "query api")
+	saveQueryInExamplesWithCustomDir(t, queryAppReq.Query(), queryAPICategory, "query api")
 
 	//THEN
 	require.NoError(t, err)
@@ -1172,7 +1172,7 @@ func TestQuerySpecificEventAPIDefinition(t *testing.T) {
 				}
 			}`, applicationID, actualEventAPI.ID, tc.gqlFieldsProvider.ForEventAPI()))
 	err = tc.RunOperation(context.Background(), queryAppReq, &actualEventAPI)
-	saveQueryInExamples(t, queryAppReq.Query(), queryEventAPICategory, "query event api")
+	saveQueryInExamplesWithCustomDir(t, queryAppReq.Query(), queryEventAPICategory, "query event api")
 
 	//THEN
 	require.NoError(t, err)
