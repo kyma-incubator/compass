@@ -1,20 +1,20 @@
 package model
 
 type ApplicationTemplate struct {
-	ID string
-	Name string
-	Description *string
+	ID               string
+	Name             string
+	Description      *string
 	ApplicationInput *ApplicationCreateInput
-	Placeholders []ApplicationTemplatePlaceholder
-	AccessLevel ApplicationTemplateAccessLevel
+	Placeholders     []ApplicationTemplatePlaceholder
+	AccessLevel      ApplicationTemplateAccessLevel
 }
 
 type ApplicationTemplateInput struct {
-	Name string
-	Description *string
+	Name             string
+	Description      *string
 	ApplicationInput *ApplicationCreateInput
-	Placeholders []ApplicationTemplatePlaceholder
-	AccessLevel ApplicationTemplateAccessLevel
+	Placeholders     []ApplicationTemplatePlaceholder
+	AccessLevel      ApplicationTemplateAccessLevel
 }
 
 type ApplicationTemplateAccessLevel string
@@ -24,11 +24,11 @@ const (
 )
 
 type ApplicationTemplatePlaceholder struct {
-	Name string
+	Name        string
 	Description *string
 }
 
 type ApplicationTemplateValueInput struct {
 	Placeholder string
-	Value string
+	Value       string
 }

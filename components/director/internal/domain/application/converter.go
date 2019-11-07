@@ -28,13 +28,13 @@ func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
 	}
 
 	return &Entity{
-		ID:              in.ID,
-		TenantID:        in.Tenant,
-		Name:            in.Name,
-		Description:     repo.NewNullableString(in.Description),
-		StatusCondition: string(in.Status.Condition),
-		StatusTimestamp: in.Status.Timestamp,
-		HealthCheckURL:  repo.NewNullableString(in.HealthCheckURL),
+		ID:                  in.ID,
+		TenantID:            in.Tenant,
+		Name:                in.Name,
+		Description:         repo.NewNullableString(in.Description),
+		StatusCondition:     string(in.Status.Condition),
+		StatusTimestamp:     in.Status.Timestamp,
+		HealthCheckURL:      repo.NewNullableString(in.HealthCheckURL),
 		IntegrationSystemID: repo.NewNullableString(in.IntegrationSystemID),
 	}, nil
 }
@@ -54,7 +54,7 @@ func (c *converter) FromEntity(entity *Entity) *model.Application {
 			Timestamp: entity.StatusTimestamp,
 		},
 		IntegrationSystemID: repo.StringPtrFromNullableString(entity.IntegrationSystemID),
-		HealthCheckURL: repo.StringPtrFromNullableString(entity.HealthCheckURL),
+		HealthCheckURL:      repo.StringPtrFromNullableString(entity.HealthCheckURL),
 	}
 }
 
@@ -64,11 +64,11 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 	}
 
 	return &graphql.Application{
-		ID:             in.ID,
-		Status:         c.statusToGraphQL(in.Status),
-		Name:           in.Name,
-		Description:    in.Description,
-		HealthCheckURL: in.HealthCheckURL,
+		ID:                  in.ID,
+		Status:              c.statusToGraphQL(in.Status),
+		Name:                in.Name,
+		Description:         in.Description,
+		HealthCheckURL:      in.HealthCheckURL,
 		IntegrationSystemID: in.IntegrationSystemID,
 	}
 }
@@ -93,23 +93,23 @@ func (c *converter) CreateInputFromGraphQL(in graphql.ApplicationCreateInput) mo
 	}
 
 	return model.ApplicationCreateInput{
-		Name:           in.Name,
-		Description:    in.Description,
-		Labels:         labels,
-		HealthCheckURL: in.HealthCheckURL,
+		Name:                in.Name,
+		Description:         in.Description,
+		Labels:              labels,
+		HealthCheckURL:      in.HealthCheckURL,
 		IntegrationSystemID: in.IntegrationSystemID,
-		Webhooks:       c.webhook.MultipleInputFromGraphQL(in.Webhooks),
-		Documents:      c.document.MultipleInputFromGraphQL(in.Documents),
-		EventAPIs:      c.eventAPI.MultipleInputFromGraphQL(in.EventAPIs),
-		Apis:           c.api.MultipleInputFromGraphQL(in.Apis),
+		Webhooks:            c.webhook.MultipleInputFromGraphQL(in.Webhooks),
+		Documents:           c.document.MultipleInputFromGraphQL(in.Documents),
+		EventAPIs:           c.eventAPI.MultipleInputFromGraphQL(in.EventAPIs),
+		Apis:                c.api.MultipleInputFromGraphQL(in.Apis),
 	}
 }
 
 func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) model.ApplicationUpdateInput {
 	return model.ApplicationUpdateInput{
-		Name:           in.Name,
-		Description:    in.Description,
-		HealthCheckURL: in.HealthCheckURL,
+		Name:                in.Name,
+		Description:         in.Description,
+		HealthCheckURL:      in.HealthCheckURL,
 		IntegrationSystemID: in.IntegrationSystemID,
 	}
 }

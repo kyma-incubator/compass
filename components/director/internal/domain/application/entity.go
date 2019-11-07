@@ -6,13 +6,13 @@ import (
 )
 
 type Entity struct {
-	ID              string         `db:"id"`
-	TenantID        string         `db:"tenant_id"`
-	Name            string         `db:"name"`
-	Description     sql.NullString `db:"description"`
-	StatusCondition string         `db:"status_condition"`
-	StatusTimestamp time.Time      `db:"status_timestamp"`
-	HealthCheckURL  sql.NullString `db:"healthcheck_url"`
+	ID                  string         `db:"id"`
+	TenantID            string         `db:"tenant_id"`
+	Name                string         `db:"name"`
+	Description         sql.NullString `db:"description"`
+	StatusCondition     string         `db:"status_condition"`
+	StatusTimestamp     time.Time      `db:"status_timestamp"`
+	HealthCheckURL      sql.NullString `db:"healthcheck_url"`
 	IntegrationSystemID sql.NullString `db:"integration_system_id"`
 }
 
