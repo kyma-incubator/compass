@@ -15,7 +15,7 @@ import (
 
 var (
 	testURL  = "https://foo.bar"
-	intSysID = "int-sys"
+	intSysID = "iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"
 )
 
 func fixApplicationPage(applications []*model.Application) *model.ApplicationPage {

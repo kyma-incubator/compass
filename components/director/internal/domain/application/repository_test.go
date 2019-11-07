@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -375,6 +377,7 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 	countQuery := fmt.Sprintf(`SELECT COUNT\(\*\) FROM public\.applications WHERE tenant_id=\$1 AND "id" IN \(%s\)$`, applicationScenarioQuery)
 
 	conv := application.NewConverter(nil, nil, nil, nil)
+	intSysID := repo.NewValidNullableString("iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii")
 
 	testCases := []struct {
 		Name                    string
@@ -385,8 +388,8 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 		{
 			Name: "Success",
 			ExpectedApplicationRows: sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id"}).
-				AddRow(app1ID, tenantID, "App ABC", "Description for application ABC", "INITIAL", timestamp, "http://domain.local/app1", "test").
-				AddRow(app2ID, tenantID, "App XYZ", "Description for application XYZ", "INITIAL", timestamp, "http://domain.local/app2", "test"),
+				AddRow(app1ID, tenantID, "App ABC", "Description for application ABC", "INITIAL", timestamp, "http://domain.local/app1", intSysID).
+				AddRow(app2ID, tenantID, "App XYZ", "Description for application XYZ", "INITIAL", timestamp, "http://domain.local/app2", intSysID),
 			TotalCount:    2,
 			ExpectedError: nil,
 		},
