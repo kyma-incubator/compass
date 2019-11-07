@@ -15,7 +15,7 @@ import (
 const applicationTable string = `public.applications`
 
 var (
-	applicationColumns = []string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url"}
+	applicationColumns = []string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id"}
 	tenantColumn       = "tenant_id"
 )
 
@@ -42,7 +42,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		deleter:         repo.NewDeleter(applicationTable, tenantColumn),
 		pageableQuerier: repo.NewPageableQuerier(applicationTable, tenantColumn, applicationColumns),
 		creator:         repo.NewCreator(applicationTable, applicationColumns),
-		updater:         repo.NewUpdater(applicationTable, []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url"}, tenantColumn, []string{"id"}),
+		updater:         repo.NewUpdater(applicationTable, []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id"}, tenantColumn, []string{"id"}),
 		conv:            conv,
 	}
 }

@@ -32,6 +32,10 @@ enum ApplicationStatusCondition {
 	FAILED
 }
 
+enum ApplicationTemplateAccessLevel {
+	GLOBAL
+}
+
 enum ApplicationWebhookType {
 	CONFIGURATION_CHANGED
 }
@@ -78,7 +82,7 @@ enum SpecFormat {
 }
 
 """
- Every query that implements pagination returns object that implements Pageable interface.
+Every query that implements pagination returns object that implements Pageable interface.
 To specify page details, query specify two parameters: `first` and `after`.
 `first` specify page size, `after` is a cursor for the next page. When requesting first page, set `after` to empty value.
 For requesting next page, set `after` to `pageInfo.endCursor` returned from previous query.
@@ -116,12 +120,22 @@ input ApplicationCreateInput {
 	apis: [APIDefinitionInput!]
 	eventAPIs: [EventAPIDefinitionInput!]
 	documents: [DocumentInput!]
+	integrationSystemID: ID
+}
+
+input ApplicationTemplateInput {
+	name: String!
+	description: String
+	applicationInput: ApplicationCreateInput!
+	placeholders: [PlaceholderDefinitionInput!]
+	accessLevel: ApplicationTemplateAccessLevel!
 }
 
 input ApplicationUpdateInput {
 	name: String!
 	description: String
 	healthCheckURL: String
+	integrationSystemID: ID
 }
 
 input AuthInput {
@@ -212,10 +226,20 @@ input OAuthCredentialDataInput {
 	url: String!
 }
 
+input PlaceholderDefinitionInput {
+	name: String!
+	description: String
+}
+
 input RuntimeInput {
 	name: String!
 	description: String
 	labels: Labels
+}
+
+input TemplateValueInput {
+	placeholder: String!
+	value: String!
 }
 
 input VersionInput {
@@ -282,13 +306,14 @@ type Application {
 	id: ID!
 	name: String!
 	description: String
+	integrationSystemID: ID
 	labels(key: String): Labels!
 	status: ApplicationStatus!
 	webhooks: [Webhook!]!
 	healthCheckURL: String
 	"""
 	group allows to find different versions of the same API
-	  Maximum `first` parameter value is 100
+	Maximum `first` parameter value is 100
 	"""
 	apis(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage!
 	"""

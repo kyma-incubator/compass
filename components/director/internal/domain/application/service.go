@@ -271,6 +271,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 	app.Name = in.Name
 	app.Description = in.Description
 	app.HealthCheckURL = in.HealthCheckURL
+	app.IntegrationSystemID = in.IntegrationSystemID
 
 	err = s.appRepo.Update(ctx, app)
 	if err != nil {

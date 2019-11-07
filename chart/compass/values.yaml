@@ -10,7 +10,7 @@ global:
       version: "PR-391"
     director:
       dir:
-      version: "PR-426"
+      version: "PR-448"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -18,8 +18,8 @@ global:
       dir: pr/
       version: "PR-357"
     schema_migrator:
-      dir: pr/
-      version: "PR-357"
+      dir:
+      version: "PR-448"
     provisioner:
       dir:
       version: "dfdd3057"
