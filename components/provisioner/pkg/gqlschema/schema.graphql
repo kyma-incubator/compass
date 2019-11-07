@@ -29,6 +29,7 @@ type GardenerConfig {
     machineType: String
     region: String
     provider: String
+    seed: String
     targetSecret: String
     diskType: String
     workerCidr: String
@@ -142,6 +143,7 @@ input GardenerConfigInput {
     machineType: String!
     region: String!
     provider: String!
+    seed: String!
     targetSecret: String!
     diskType: String!
     workerCidr: String!

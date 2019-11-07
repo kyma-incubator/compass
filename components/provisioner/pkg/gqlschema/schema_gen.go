@@ -86,6 +86,7 @@ type ComplexityRoot struct {
 		Provider               func(childComplexity int) int
 		ProviderSpecificConfig func(childComplexity int) int
 		Region                 func(childComplexity int) int
+		Seed                   func(childComplexity int) int
 		TargetSecret           func(childComplexity int) int
 		VolumeSizeGb           func(childComplexity int) int
 		WorkerCidr             func(childComplexity int) int
@@ -358,6 +359,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GardenerConfig.Region(childComplexity), true
+
+	case "GardenerConfig.seed":
+		if e.complexity.GardenerConfig.Seed == nil {
+			break
+		}
+
+		return e.complexity.GardenerConfig.Seed(childComplexity), true
 
 	case "GardenerConfig.targetSecret":
 		if e.complexity.GardenerConfig.TargetSecret == nil {
@@ -669,6 +677,7 @@ type GardenerConfig {
     machineType: String
     region: String
     provider: String
+    seed: String
     targetSecret: String
     diskType: String
     workerCidr: String
@@ -782,6 +791,7 @@ input GardenerConfigInput {
     machineType: String!
     region: String!
     provider: String!
+    seed: String!
     targetSecret: String!
     diskType: String!
     workerCidr: String!
@@ -1795,6 +1805,40 @@ func (ec *executionContext) _GardenerConfig_provider(ctx context.Context, field 
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Provider, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GardenerConfig_seed(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Seed, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4390,6 +4434,12 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
+		case "seed":
+			var err error
+			it.Seed, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "targetSecret":
 			var err error
 			it.TargetSecret, err = ec.unmarshalNString2string(ctx, v)
@@ -4783,6 +4833,8 @@ func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._GardenerConfig_region(ctx, field, obj)
 		case "provider":
 			out.Values[i] = ec._GardenerConfig_provider(ctx, field, obj)
+		case "seed":
+			out.Values[i] = ec._GardenerConfig_seed(ctx, field, obj)
 		case "targetSecret":
 			out.Values[i] = ec._GardenerConfig_targetSecret(ctx, field, obj)
 		case "diskType":

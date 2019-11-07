@@ -98,6 +98,7 @@ type GardenerConfig struct {
 	MachineType            *string                `json:"machineType"`
 	Region                 *string                `json:"region"`
 	Provider               *string                `json:"provider"`
+	Seed                   *string                `json:"seed"`
 	TargetSecret           *string                `json:"targetSecret"`
 	DiskType               *string                `json:"diskType"`
 	WorkerCidr             *string                `json:"workerCidr"`
@@ -119,6 +120,7 @@ type GardenerConfigInput struct {
 	MachineType            string                 `json:"machineType"`
 	Region                 string                 `json:"region"`
 	Provider               string                 `json:"provider"`
+	Seed                   string                 `json:"seed"`
 	TargetSecret           string                 `json:"targetSecret"`
 	DiskType               string                 `json:"diskType"`
 	WorkerCidr             string                 `json:"workerCidr"`

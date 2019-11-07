@@ -24,6 +24,10 @@ required = [
   version = "2.6"
 
 [[override]]
+  name = "github.com/cpuguy83/go-md2man"
+  version = "1.0.10"
+
+[[override]]
   name = "k8s.io/kubernetes"
   version = "kubernetes-1.14.7"
 
