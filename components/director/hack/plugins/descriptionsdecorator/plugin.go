@@ -93,8 +93,15 @@ func (p *descriptionsDecoratorPlugin) ensureDescription(f *ast.FieldDefinition, 
 			log.Printf("While reading the examples subdirectory %s : %s", dir.Name(), err.Error())
 			return
 		}
+		if len(f.Description) == 0 {
+			f.Description += "**Examples**"
+		} else {
+			f.Description = fmt.Sprintf("%s\n\n%s", f.Description, "**Examples**")
+		}
 		for _, file := range files {
-			f.Description = addExample(f.Description, dir.Name(), file.Name())
+			withoutExt := strings.Replace(file.Name(), ".graphql", "", -1)
+			withoutDash := strings.Replace(withoutExt, "-", " ", -1)
+			f.Description = addExample(f.Description, withoutDash, dir.Name(), file.Name())
 		}
 
 	}
@@ -126,19 +133,17 @@ func deletePrevious(description string) string {
 	if len(description) == 0 {
 		return ""
 	}
-	if description[:3] == "see" {
-		return ""
-	}
-	index := strings.Index(description, "\\")
+
+	index := strings.Index(description, "**Examples**")
 	if index == -1 {
 		return description
 	}
-	return description[:index]
+	if index == 0 {
+		return ""
+	}
+	return description[:index-2]
 }
 
-func addExample(description string, dirName string, name string) string {
-	if len(description) == 0 {
-		return strings.ToLower(fmt.Sprintf("see example [here](examples/%s/%s)", dirName, name))
-	}
-	return strings.ToLower(fmt.Sprintf("%s\\\n see example [here](examples/%s/%s)", description, dirName, name))
+func addExample(description string, name, dirName string, fileName string) string {
+	return fmt.Sprintf("%s\n- [%s](examples/%s/%s)", description, name, dirName, fileName)
 }
