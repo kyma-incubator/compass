@@ -17,6 +17,9 @@ const (
 	createApplicationCategory = "create application"
 	queryApplicationsCategory = "query applications"
 	queryApplicationCategory  = "query application"
+	deleteWebhookCategory     = "delete webhook"
+	addWebhookCategory        = "add webhook"
+	updateWebhookCategory     = "update webhook"
 )
 
 func TestCreateApplicationWithAllSimpleFieldsProvided(t *testing.T) {
@@ -568,7 +571,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 					%s
 				}
 			}`, actualApp.ID, webhookInStr, tc.gqlFieldsProvider.ForWebhooks()))
-		saveQueryInExamples(t, addReq.Query(), "add application webhook")
+		saveQueryInExamplesWithCustomDir(t, addReq.Query(), addWebhookCategory, "add application webhook")
 
 		actualWebhook := graphql.Webhook{}
 		err = tc.RunOperation(ctx, addReq, &actualWebhook)
@@ -594,7 +597,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 					%s
 				}
 			}`, actualWebhook.ID, webhookInStr, tc.gqlFieldsProvider.ForWebhooks()))
-		saveQueryInExamples(t, updateReq.Query(), "update application webhook")
+		saveQueryInExamplesWithCustomDir(t, updateReq.Query(), updateWebhookCategory, "update application webhook")
 		err = tc.RunOperation(ctx, updateReq, &actualWebhook)
 		require.NoError(t, err)
 		assert.Equal(t, "updated-webhook", actualWebhook.URL)
@@ -608,7 +611,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 					%s
 				}
 			}`, actualWebhook.ID, tc.gqlFieldsProvider.ForWebhooks()))
-		saveQueryInExamples(t, deleteReq.Query(), "delete application webhook")
+		saveQueryInExamplesWithCustomDir(t, deleteReq.Query(), deleteWebhookCategory, "delete application webhook")
 
 		//WHEN
 		err = tc.RunOperation(ctx, deleteReq, &actualWebhook)
