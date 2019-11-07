@@ -59,7 +59,7 @@ func NewTestContext() (*TestContext, error) {
 func (tc *TestContext) RunOperation(ctx context.Context, req *gcli.Request, resp interface{}) error {
 	tnt := os.Getenv("DEFAULT_TENANT")
 	if tnt != "" {
-		req.Header["Tenant"] = []string{tnt}
+		req.Header.Set("Tenant", tnt)
 	}
 
 	m := resultMapperFor(&resp)
@@ -90,8 +90,7 @@ func (tc *TestContext) RunOperationWithCustomScopes(ctx context.Context, scopes 
 func (tc *TestContext) runCustomOperation(ctx context.Context, tenant string, scopes []string, req *gcli.Request, resp interface{}) error {
 	m := resultMapperFor(&resp)
 
-	// TODO: Remove tenant header after implementing https://github.com/kyma-incubator/compass/issues/288
-	req.Header["Tenant"] = []string{tenant}
+	req.Header.Set("Tenant", tenant)
 
 	token, err := jwtbuilder.Do(tenant, scopes)
 	if err != nil {

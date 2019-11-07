@@ -38,10 +38,8 @@ type hydraToken struct {
 	TokenType   string `json:"token_type"`
 }
 
-var domain string
-
 func TestCompassAuth(t *testing.T) {
-	domain = os.Getenv("DOMAIN")
+	domain := os.Getenv("DOMAIN")
 	require.NotEmpty(t, domain)
 	ctx := context.Background()
 
