@@ -12,6 +12,7 @@ An ApplicationTemplate is a reusable input for creating Applications that can be
 during Application creation.
 
 ## Manage Applications by Integration System
+
 Managing Integrations System is described in [a separate document](./integration-systems.md).
 Integration System is uniquely identified by its ID. To register an Application that is managed by an Integration System,
 specify `integrationSystemID` in the ApplicationRegisterInput.
@@ -32,8 +33,11 @@ input ApplicationRegisterInput {
 IntegrationSystemID is an optional property. It means that you can still register an Application that is not managed by an IntegrationSystem.
 
 ### Example
+
 In this example, Integration System is registered and then it configures newly added Application.
+
 1. Register Integration System
+
 ```graphql
 mutation {
     registerIntegrationSystem(in: {name: "simpleIntegrationSystem"} ) {
@@ -41,7 +45,6 @@ mutation {
       name
     }
 }
-
 ```
 2. Register Application with specified `integrationSystemID`
 ```graphql
@@ -77,6 +80,7 @@ Given Integration System has privileges for modifying only Applications with mat
 modify Applications managed manually or managed by other Integration System.
 
 ## Integration System supporting many Application types
+
 In the previous example, there was an assumption that every Application managed by given Integration System represents the same type
 of the Application that provides similar API and event definitions.  
 In case IntegrationSystem supporting many types of Applications, information about Application type should be stored in the Application labels.
@@ -94,6 +98,7 @@ mutation {
     }
 }
 ```
+
 Drawback of this approach is that label name (`simpleIntegrationSystem/applicationType`) and supported values(`ecommerce`,`marketing`) are arbitrary
 defined by a IntegrationSystem and has to be documented.
 Luckily, IntegrationSystem can simplify this process by defining ApplicationTemplates to explicitly specify supported types.
@@ -147,7 +152,9 @@ type Query {
 ```
 
 ### Example
+
 1. Integration System creates Application Template that represents `ecommerce` Application type.
+
 ```graphql
 mutation {
     createApplicationTemplate(in:{
@@ -162,7 +169,9 @@ mutation {
     }
  }
 ```
+
 2. A user lists of all ApplicationTemplates, thanks to that he will find out that there is ApplicationTemplate that represents `ecommerce` Application.
+
 ```graphql
 query  {
     applicationTemplates {
@@ -196,12 +205,15 @@ stored in the `application-type` label.
 In this example, IntegrationSystem registers ApplicationTemplate, but users can also define their own ApplicationTemplates.
 
 ## Use placeholders in ApplicationTemplate
+
 In the previous example, ApplicationTemplate was created with hardcoded Application name `ecommerce-app`.
 Because Application name has to be unique in given tenant, only one Application from given template can be created.
 Fortunately, ApplicationTemplate can define placeholders, that values has to provided when adding an Application.
 
 ### Example
+
 In this example we modify previously created ApplicationTemplate and make name configurable.
+
 1. Update ApplicationTemplate
 
 ```graphql
@@ -240,15 +252,14 @@ mutation {
 }
 ```
 
-## Use placeholders for providing Input Parameters
+## Providing input parameters
 
-Placeholders can be used also for providing input parameters required for configuring external Applications by Integration System.
-Let assume, that for enabling some Application, user has to provide credentials that will be used by Integration System
-to configure external solution. Such credentials can be stored in the labels.
-Because labels can store credentials, Compass has to ensure that given label can be read only by specific Integration System.
+Application template can also contain a label that defines the JSON schema for the input parameter. Input parameters are sometimes required to configure Application instance by the Integration System. Let assume, that for enabling some Application, the user has to provide credentials that will be used by Integration System to configure the external solution. Such input parameters can be described by appropriate JSON schema and stored under the  `simpleIntegrationSystem/inputParam` label. The Compass does not store credentials itself. It provides only the JSON schema through the API and the consumer is responsible for setting the appropriate values accordingly.
 
 ### Example
-1. Update ApplicationTemplate with labels representing input parameters used by Integration System
+
+1. Update the ApplicationTemplate with the label representing input parameters schema used by the Integration System.
+
 ```graphql
 mutation {
     updateApplicationTemplate(id:"some-id", in:{
@@ -257,39 +268,26 @@ mutation {
             name: "{{application-name}}",
             integrationSystemID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
             labels:[{key:"simple-integration-system/application-type",value:"ecommerce"},
-                    {key:"simple-integration-system/input-param/username", value:"{{username}}"},
-                     {key:"simple-integration-system/input-param/password", value:"{{password}}"},
+                    {key:"simple-integration-system/input-params""{\"type\": \"object\",\"required\": [\"username\",\"password\"],\"properties\": {\"username\": {\"type\": \"string\"},\"password\": {\"type\": \"string\"}}}"}
              ]
-
         },
         placeholders: [
         {
             name:"application-name",
             description:"Name of the application"
         },
-        {
-            name:"username",
-            description:"User name"
-        },
-        {
-            name:"password",
-            description:"Password"
-        },
-
         ],
         }) {
            name
+        }
     }
- }
 ```
 
 2. Register Application
  ```graphql
  mutation {
      registerApplicationFromTemplate(templateName:"ecommerce-template", values: [
-     {placeholder:"application-name", value:"MyApplication"},
-     {placeholder:"username", value:"john@doe.com"},
-     {placeholder:"password", value:"perch"}
+     {placeholder:"application-name", value:"MyApplication"}
      ]) {
          id
          name
@@ -299,7 +297,9 @@ mutation {
  ```
 
 ## Reasoning
+
 Compass API follows Larry Wall advice:
+
 > Easy things should be easy, and hard things should be possible.
 
 1. User still can register an Application without defining any IntegrationSystem or ApplicationTemplate.
@@ -313,6 +313,7 @@ From UI perspective, user has also simple view for registering application with 
 - register Application from Template
 
 # Future plans
+
 1. For every Compass top-level type, it should be possible to define label. Currently, we can add label for Application and Runtime, but in
 the future we plan to add possibility to label IntegrationSystem or ApplicationTemplate.
 2. To improve customer experience, there should be a possibility to define icon for Application, Runtime and Integration System.
