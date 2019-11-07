@@ -85,6 +85,11 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Eve
 		return "", errors.Wrapf(err, "while loading tenant from context")
 	}
 
+	err = in.Validate()
+	if err != nil {
+		return "", errors.Wrap(err, "while validating Event API Definition input")
+	}
+
 	id := s.uidService.Generate()
 
 	if in.Spec != nil && in.Spec.FetchRequest != nil {
@@ -107,6 +112,11 @@ func (s *service) Update(ctx context.Context, id string, in model.EventAPIDefini
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	err = in.Validate()
+	if err != nil {
+		return errors.Wrap(err, "while validating Event API Definition input")
 	}
 
 	eventAPI, err := s.Get(ctx, id)

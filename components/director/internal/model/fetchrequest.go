@@ -1,6 +1,14 @@
 package model
 
-import "time"
+import (
+	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
+
+	"github.com/go-ozzo/ozzo-validation/is"
+
+	validation "github.com/go-ozzo/ozzo-validation"
+)
 
 //  Compass performs fetch to validate if request is correct and stores a copy
 type FetchRequest struct {
@@ -49,6 +57,15 @@ type FetchRequestInput struct {
 	Auth   *AuthInput
 	Mode   *FetchMode
 	Filter *string
+}
+
+func (i *FetchRequestInput) Validate() error {
+	return validation.ValidateStruct(i,
+		validation.Field(&i.URL, validation.Required, is.URL, validation.Length(1, 256), validation.By(inputvalidation.ValidatePrintable)),
+		validation.Field(&i.Auth),
+		validation.Field(&i.Mode, validation.Required, validation.In(FetchModeSingle, FetchModePackage, FetchModeIndex), validation.By(inputvalidation.ValidatePrintable)),
+		validation.Field(&i.Filter, validation.NilOrNotEmpty, validation.Length(1, 256), validation.By(inputvalidation.ValidatePrintable)),
+	)
 }
 
 func (f *FetchRequestInput) ToFetchRequest(timestamp time.Time, id, tenant string, objectType FetchRequestReferenceObjectType, objectID string) *FetchRequest {

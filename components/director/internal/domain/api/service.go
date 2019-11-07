@@ -84,6 +84,11 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.API
 		return "", err
 	}
 
+	err = in.Validate()
+	if err != nil {
+		return "", errors.Wrap(err, "while validating API Definition input")
+	}
+
 	id := s.uidService.Generate()
 
 	if in.Spec != nil && in.Spec.FetchRequest != nil {
@@ -107,6 +112,11 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
+	}
+
+	err = in.Validate()
+	if err != nil {
+		return errors.Wrap(err, "while validating API Definition input")
 	}
 
 	api, err := s.Get(ctx, id)
