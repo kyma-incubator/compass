@@ -9,14 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	createIntegrationSystemCategory = "create integration system"
-	queryIntegrationSystemCategory  = "query integration system"
-	updateIntegrationSystemCategory = "update integration system"
-	deleteIntegrationSystemCategory = "delete integration system"
-	queryIntegrationSystemsCategory = "query integration systems"
-)
-
 func TestCreateIntegrationSystem(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -39,7 +31,7 @@ func TestCreateIntegrationSystem(t *testing.T) {
 
 	//THEN
 	require.NotEmpty(t, output.Name)
-	saveQueryInExamplesWithCustomDir(t, createIntegrationSystemRequest.Query(), createIntegrationSystemCategory, "create integration system")
+	saveQueryInExamples(t, createIntegrationSystemRequest.Query(), "create integration system")
 
 	t.Log("Check if Integration System was created")
 
@@ -50,7 +42,7 @@ func TestCreateIntegrationSystem(t *testing.T) {
 
 	require.NotEmpty(t, intSysOutput)
 	assertIntegrationSystem(t, intSysInput, intSysOutput)
-	saveQueryInExamplesWithCustomDir(t, getIntegrationSystemRequest.Query(), queryIntegrationSystemCategory, "query integration system")
+	saveQueryInExamples(t, getIntegrationSystemRequest.Query(), "query integration system")
 }
 
 func TestUpdateIntegrationSystem(t *testing.T) {
@@ -77,7 +69,7 @@ func TestUpdateIntegrationSystem(t *testing.T) {
 	//THEN
 	t.Log("Check if Integration System was updated")
 	assertIntegrationSystem(t, intSysInput, updateOutput)
-	saveQueryInExamplesWithCustomDir(t, updateIntegrationSystemRequest.Query(), updateIntegrationSystemCategory, "update integration system")
+	saveQueryInExamples(t, updateIntegrationSystemRequest.Query(), "update integration system")
 }
 
 func TestDeleteIntegrationSystem(t *testing.T) {
@@ -102,7 +94,7 @@ func TestDeleteIntegrationSystem(t *testing.T) {
 	out := getIntegrationSystem(t, ctx, intSys.ID)
 
 	require.Empty(t, out)
-	saveQueryInExamplesWithCustomDir(t, deleteIntegrationSystemRequest.Query(), deleteIntegrationSystemCategory, "delete integration system")
+	saveQueryInExamples(t, deleteIntegrationSystemRequest.Query(), "delete integration system")
 }
 
 func TestQueryIntegrationSystem(t *testing.T) {
@@ -155,5 +147,5 @@ func TestQueryIntegrationSystems(t *testing.T) {
 	//THEN
 	t.Log("Check if Integration Systems were received")
 	assert.Equal(t, 2, output.TotalCount)
-	saveQueryInExamplesWithCustomDir(t, getIntegrationSystemsRequest.Query(), queryIntegrationSystemsCategory, "query integration systems")
+	saveQueryInExamples(t, getIntegrationSystemsRequest.Query(), "query integration systems")
 }

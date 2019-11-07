@@ -16,13 +16,9 @@ import (
 )
 
 const (
-	scenariosLabel                      = "scenarios"
-	queryRuntimeCategory                = "query runtime"
-	queryRuntimesCategory               = "query runtimes"
-	createRuntimeCategory               = "create runtime"
-	updateRuntimeCategory               = "update runtime"
-	deleteRuntimeCategory               = "delete runtime"
-	queryApplicationsForRuntimeCategory = "query applications for runtime"
+	scenariosLabel        = "scenarios"
+	queryRuntimesCategory = "query runtimes"
+	createRuntimeCategory = "create runtime"
 )
 
 func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
@@ -151,7 +147,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 				}
 		}
 		`, actualRuntime.ID, runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
-	saveQueryInExamplesWithCustomDir(t, updateRuntimeReq.Query(), updateRuntimeCategory, "update runtime")
+	saveQueryInExamples(t, updateRuntimeReq.Query(), "update runtime")
 	//WHEN
 	err = tc.RunOperation(ctx, updateRuntimeReq, &actualRuntime)
 
@@ -164,7 +160,7 @@ func TestRuntimeCreateUpdateAndDelete(t *testing.T) {
 
 	// WHEN
 	delReq := gcli.NewRequest(fmt.Sprintf(`mutation{result: deleteRuntime(id: "%s") {%s}}`, actualRuntime.ID, tc.gqlFieldsProvider.ForRuntime()))
-	saveQueryInExamplesWithCustomDir(t, delReq.Query(), deleteRuntimeCategory, "delete runtime")
+	saveQueryInExamples(t, delReq.Query(), "delete runtime")
 	err = tc.RunOperation(ctx, delReq, nil)
 
 	//THEN
@@ -449,7 +445,7 @@ func TestQuerySpecificRuntime(t *testing.T) {
 				}
 			}`, createdRuntime.ID, tc.gqlFieldsProvider.ForRuntime()))
 	err = tc.RunOperation(ctx, queryReq, &queriedRuntime)
-	saveQueryInExamplesWithCustomDir(t, queryReq.Query(), queryRuntimeCategory, "query runtime")
+	saveQueryInExamples(t, queryReq.Query(), "query runtime")
 
 	//THEN
 	require.NoError(t, err)
@@ -556,7 +552,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 	applicationPage := graphql.ApplicationPage{}
 
 	err = tc.RunOperationWithCustomTenant(ctx, tenantID, request, &applicationPage)
-	saveQueryInExamplesWithCustomDir(t, request.Query(), queryApplicationsForRuntimeCategory, "query applications for runtime")
+	saveQueryInExamples(t, request.Query(), "query applications for runtime")
 
 	//THEN
 	require.NoError(t, err)
