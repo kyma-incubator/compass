@@ -58,6 +58,6 @@ for more details.
 
 ## ApplicationTemplate
 Represents an object for creating Applications from predefined static definition.
-See [Automatic Application Management document](./app-management.md)
+See [Automatic Application Management document](./auto-app-management.md)
 for more details.
   

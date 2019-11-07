@@ -1,7 +1,7 @@
 # Automatic Application Management
 
 Managing [Applications](./../terminology.md#Application) can be passed on some external system, to remove from Applications the burden of integration with Compass.
-Because of that [IntegrationSystems](./components.md#Integration-System) were introduced.
+Because of that [Integration System](./components.md#Integration-System) was introduced.
 
 To simplify creation of Applications, Director API is extended with ApplicationTemplate. 
 An ApplicationTemplate is reusable input for creating Applications that can be customized with placeholders provided 
