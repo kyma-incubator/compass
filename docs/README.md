@@ -22,6 +22,8 @@ These documents provide you with more architectural details:
 - [Runtime Agent contract](./architecture/runtime-agent-contract.md)
 - [Database scheme](./architecture/db-scheme.md)
 - [Authentication and authorization](./architecture/authentication-and-authorization.md)
+- [Integration Systems](./architecture/integration-systems.md)
+- [Proposal: Automatic Application Management](./architecture/auto-app-management.md)
 
 ## Examples
 
