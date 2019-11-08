@@ -4,11 +4,6 @@ required = [
 ]
 
 [[constraint]]
-  name = "github.com/kyma-incubator/compass"
-  source = "https://github.com/rafalpotempa/compass"
-  branch = "deprovisioning-clusters"
-
-[[constraint]]
   name = "github.com/kisielk/errcheck"
   revision = "e14f8d59a22d460d56c5ee92507cd94c78fbf274"
 
