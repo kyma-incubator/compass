@@ -91,7 +91,7 @@ func TestCompassAuth(t *testing.T) {
 	t.Log("Check if token can not be fetched with old client credentials")
 	_, err = fetchHydraAccessToken(t, encodedCredentials, intSysOauthCredentialData.URL)
 	require.Error(t, err)
-	assert.Equal(t, "Response status code is 401", err.Error())
+	assert.Equal(t, "response status code is 401", err.Error())
 }
 
 func fetchHydraAccessToken(t *testing.T, encodedCredentials string, tokenURL string) (*hydraToken, error) {
@@ -124,7 +124,7 @@ func fetchHydraAccessToken(t *testing.T, encodedCredentials string, tokenURL str
 	require.NoError(t, err)
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New(fmt.Sprintf("Response status code is %d", resp.StatusCode))
+		return nil, errors.New(fmt.Sprintf("response status code is %d", resp.StatusCode))
 	}
 	return &hydraToken, nil
 }
