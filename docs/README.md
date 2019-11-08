@@ -26,6 +26,7 @@ These documents provide you with more architectural details:
 - [Proposal: Automatic Application Management](./architecture/auto-app-management.md)
 - [Proposal: API Packages](./architecture/api-packages.md)
 - [Proposal: Input parameters for API, Event Definitions or API Packages in the Runtime](./architecture/input-parameters-on-runtime.md)
+- [Proposal: Custom configuration for Kyma installation](./architecture/provisioning-custom-configuration.md)
 
 ## Examples
 
