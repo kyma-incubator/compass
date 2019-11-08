@@ -88,7 +88,7 @@ func (p *descriptionsDecoratorPlugin) ensureDescription(f *ast.FieldDefinition, 
 	f.Description = deletePrevious(f.Description)
 	dirs, err := ioutil.ReadDir(p.examplesDirectory)
 	if err != nil {
-		log.Infof("No examples under %s directory, skipping adding description", p.examplesDirectory)
+		log.Infof("no examples under %s directory, skipping adding description", p.examplesDirectory)
 		return nil
 	}
 	for _, dir := range dirs {
@@ -100,7 +100,7 @@ func (p *descriptionsDecoratorPlugin) ensureDescription(f *ast.FieldDefinition, 
 		}
 		files, err := ioutil.ReadDir(path.Join(p.examplesDirectory, dir.Name()))
 		if err != nil {
-			return errors.Wrap(err, "While reading the examples subdirectory")
+			return errors.Wrap(err, "while reading the examples subdirectory")
 		}
 		if len(f.Description) == 0 {
 			f.Description += ExamplePrefix
