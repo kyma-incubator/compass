@@ -52,7 +52,7 @@ func TestMutateConfig(t *testing.T) {
 		assert.EqualError(t, err, testerr.Error())
 
 	})
-	t.Run("Wrong schema directory in config file", func(t *testing.T) {
+	t.Run("Wrong schema in config file", func(t *testing.T) {
 		// GIVEN
 		cfg, err := config.LoadConfig("testdata/wrong_config.yaml")
 		require.NoError(t, err)
