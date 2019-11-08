@@ -12,7 +12,7 @@ type EntityConverter struct {
 }
 
 // FromEntity provides a mock function with given fields: entity
-func (_m *EntityConverter) FromEntity(entity *apptemplate.Entity) *model.ApplicationTemplate {
+func (_m *EntityConverter) FromEntity(entity *apptemplate.Entity) (*model.ApplicationTemplate, error) {
 	ret := _m.Called(entity)
 
 	var r0 *model.ApplicationTemplate
@@ -24,7 +24,14 @@ func (_m *EntityConverter) FromEntity(entity *apptemplate.Entity) *model.Applica
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*apptemplate.Entity) error); ok {
+		r1 = rf(entity)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // ToEntity provides a mock function with given fields: in

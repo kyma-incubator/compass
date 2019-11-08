@@ -18,7 +18,7 @@ var (
 //go:generate mockery -name=EntityConverter -output=automock -outpkg=automock -case=underscore
 type EntityConverter interface {
 	ToEntity(in *model.ApplicationTemplate) (*Entity, error)
-	FromEntity(entity *Entity) *model.ApplicationTemplate
+	FromEntity(entity *Entity) (*model.ApplicationTemplate, error)
 }
 
 type repository struct {
@@ -57,7 +57,13 @@ func (r *repository) Get(ctx context.Context, id string) (*model.ApplicationTemp
 	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, &entity); err != nil {
 		return nil, err
 	}
-	return r.conv.FromEntity(&entity), nil
+
+	result, err := r.conv.FromEntity(&entity)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting Application Template with ID %s", id)
+	}
+
+	return result, nil
 }
 
 func (r *repository) Exists(ctx context.Context, id string) (bool, error) {
@@ -74,7 +80,11 @@ func (r *repository) List(ctx context.Context, pageSize int, cursor string) (mod
 	var items []*model.ApplicationTemplate
 
 	for _, entity := range entityCollection {
-		isModel := r.conv.FromEntity(&entity)
+		isModel, err := r.conv.FromEntity(&entity)
+		if err != nil {
+			return model.ApplicationTemplatePage{}, errors.Wrapf(err, "while converting Application Template entity with ID %s", entity.ID)
+		}
+
 		items = append(items, isModel)
 	}
 	return model.ApplicationTemplatePage{
