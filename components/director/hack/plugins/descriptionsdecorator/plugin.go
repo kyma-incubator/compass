@@ -3,29 +3,26 @@ package descriptionsdecorator
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"strings"
 	"unicode"
 
-	"github.com/pkg/errors"
-
-	"github.com/kyma-incubator/compass/components/director/hack/plugins"
-
 	"github.com/99designs/gqlgen/codegen/config"
 	"github.com/99designs/gqlgen/plugin"
+	"github.com/kyma-incubator/compass/components/director/hack/plugins"
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"github.com/vektah/gqlparser/ast"
 )
 
 type GraphqlOperationType string
 
 const (
-	Query             GraphqlOperationType = "query"
-	Mutation          GraphqlOperationType = "mutation"
-	ExamplesDirectory                      = "../../examples"
-	UnsanitizedAPI                         = "A-P-I"
-	ExamplePrefix                          = "**Examples**"
+	Query          GraphqlOperationType = "query"
+	Mutation       GraphqlOperationType = "mutation"
+	UnsanitizedAPI                      = "A-P-I"
+	ExamplePrefix                       = "**Examples**"
 )
 
 var _ plugin.ConfigMutator = &descriptionsDecoratorPlugin{}
@@ -55,12 +52,23 @@ func (p *descriptionsDecoratorPlugin) MutateConfig(cfg *config.Config) error {
 		return err
 	}
 
+	if (schema.Query == nil) && (schema.Mutation == nil) {
+		log.Info("No queries or mutations found, skipping adding examples")
+		return nil
+	}
+
 	for _, f := range schema.Query.Fields {
-		p.ensureDescription(f, Query)
+		err := p.ensureDescription(f, Query)
+		if err != nil {
+			return err
+		}
 	}
 
 	for _, f := range schema.Mutation.Fields {
-		p.ensureDescription(f, Mutation)
+		err := p.ensureDescription(f, Mutation)
+		if err != nil {
+			return err
+		}
 	}
 
 	if err := cfg.Check(); err != nil {
@@ -82,8 +90,8 @@ func (p *descriptionsDecoratorPlugin) ensureDescription(f *ast.FieldDefinition, 
 	f.Description = deletePrevious(f.Description)
 	dirs, err := ioutil.ReadDir(p.examplesDirectory)
 	if err != nil {
-		log.Printf("While reading the examples directory: %s", err.Error())
-		return errors.Wrap(err, "While reading the examples directory")
+		log.Infof("No examples under %s directory, skipping adding description", p.examplesDirectory)
+		return nil
 	}
 	for _, dir := range dirs {
 		if !dir.IsDir() {

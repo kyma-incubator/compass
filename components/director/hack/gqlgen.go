@@ -10,6 +10,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/hack/plugins/scopesdecorator"
 )
 
+const (
+	examplesDirectory = "../../examples"
+)
+
 func main() {
 	cfg, err := config.LoadConfig("config.yaml")
 	if err != nil {
@@ -18,7 +22,7 @@ func main() {
 	}
 
 	err = api.Generate(cfg,
-		api.AddPlugin(scopesdecorator.NewPlugin("schema.graphql")), api.AddPlugin(descriptionsdecorator.NewPlugin("schema.graphql", descriptionsdecorator.ExamplesDirectory)))
+		api.AddPlugin(scopesdecorator.NewPlugin("schema.graphql")), api.AddPlugin(descriptionsdecorator.NewPlugin("schema.graphql", examplesDirectory)))
 
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())

@@ -1,6 +1,7 @@
 package descriptionsdecorator_test
 
 import (
+	"errors"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -31,5 +32,34 @@ func TestMutateConfig(t *testing.T) {
 		assert.Equal(t, string(expected), string(actual))
 		err = os.Remove(testOutputFile)
 		require.NoError(t, err)
+	})
+	t.Run("No examples directory", func(t *testing.T) {
+		// GIVEN
+		cfg, err := config.LoadConfig("testdata/config.yaml")
+		require.NoError(t, err)
+		testOutputFile := "testdata/test_output.graphql"
+		testExamplesDir := "testdata/examples"
+		d := descriptionsdecorator.NewPlugin(testOutputFile, testExamplesDir)
+		err = d.MutateConfig(cfg)
+		require.Nil(t, err)
+		err = os.Remove(testOutputFile)
+		require.NoError(t, err)
+	})
+	t.Run("No config file", func(t *testing.T) {
+		// GIVEN
+		_, err := config.LoadConfig("testdata/no_config.yaml")
+		testerr := errors.New("unable to read config: open testdata/no_config.yaml: no such file or directory")
+		assert.EqualError(t, err, testerr.Error())
+
+	})
+	t.Run("Wrong schema directory in config file", func(t *testing.T) {
+		// GIVEN
+		cfg, err := config.LoadConfig("testdata/wrong_config.yaml")
+		require.NoError(t, err)
+		testOutputFile := "testdata/test_output.graphql"
+		testExamplesDir := "testdata/examples"
+		d := descriptionsdecorator.NewPlugin(testOutputFile, testExamplesDir)
+		err = d.MutateConfig(cfg)
+		assert.Nil(t, err)
 	})
 }
