@@ -83,7 +83,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		CleanupRuntimeData    func(childComplexity int, id string) int
-		DeprovisionRuntime    func(childComplexity int, id string, credentials CredentialsInput) int
+		DeprovisionRuntime    func(childComplexity int, id string) int
 		ProvisionRuntime      func(childComplexity int, id string, config ProvisionRuntimeInput) int
 		ReconnectRuntimeAgent func(childComplexity int, id string) int
 		UpgradeRuntime        func(childComplexity int, id string, config UpgradeRuntimeInput) int
@@ -103,9 +103,10 @@ type ComplexityRoot struct {
 	}
 
 	RuntimeConfig struct {
-		ClusterConfig func(childComplexity int) int
-		Kubeconfig    func(childComplexity int) int
-		KymaConfig    func(childComplexity int) int
+		ClusterConfig         func(childComplexity int) int
+		CredentialsSecretName func(childComplexity int) int
+		Kubeconfig            func(childComplexity int) int
+		KymaConfig            func(childComplexity int) int
 	}
 
 	RuntimeConnectionStatus struct {
@@ -123,7 +124,7 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	ProvisionRuntime(ctx context.Context, id string, config ProvisionRuntimeInput) (string, error)
 	UpgradeRuntime(ctx context.Context, id string, config UpgradeRuntimeInput) (string, error)
-	DeprovisionRuntime(ctx context.Context, id string, credentials CredentialsInput) (string, error)
+	DeprovisionRuntime(ctx context.Context, id string) (string, error)
 	CleanupRuntimeData(ctx context.Context, id string) (string, error)
 	ReconnectRuntimeAgent(ctx context.Context, id string) (string, error)
 }
@@ -358,7 +359,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeprovisionRuntime(childComplexity, args["id"].(string), args["credentials"].(CredentialsInput)), true
+		return e.complexity.Mutation.DeprovisionRuntime(childComplexity, args["id"].(string)), true
 
 	case "Mutation.provisionRuntime":
 		if e.complexity.Mutation.ProvisionRuntime == nil {
@@ -461,6 +462,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.RuntimeConfig.ClusterConfig(childComplexity), true
+
+	case "RuntimeConfig.credentialsSecretName":
+		if e.complexity.RuntimeConfig.CredentialsSecretName == nil {
+			break
+		}
+
+		return e.complexity.RuntimeConfig.CredentialsSecretName(childComplexity), true
 
 	case "RuntimeConfig.kubeconfig":
 		if e.complexity.RuntimeConfig.Kubeconfig == nil {
@@ -588,7 +596,7 @@ enum KymaModule {
 # Configuration of Runtime. We can consider returning kubeconfig as a part of this type.
 type RuntimeConfig {
     clusterConfig: ClusterConfig
-    # TODO: should we also return credentials (secret name used for provisioning)?
+    credentialsSecretName: String
     kymaConfig: KymaConfig
     kubeconfig: String
 }
@@ -739,7 +747,7 @@ type Mutation {
     # Runtime Management; only one asynchronous operation per RuntimeID can run at any given point in time
     provisionRuntime(id: String!, config: ProvisionRuntimeInput!): String!
     upgradeRuntime(id: String!, config: UpgradeRuntimeInput!): String!
-    deprovisionRuntime(id: String!, credentials: CredentialsInput!): String!
+    deprovisionRuntime(id: String!): String!
     cleanupRuntimeData(id: String!): String!
 
     # Compass Runtime Agent Connection Management
@@ -785,14 +793,6 @@ func (ec *executionContext) field_Mutation_deprovisionRuntime_args(ctx context.C
 		}
 	}
 	args["id"] = arg0
-	var arg1 CredentialsInput
-	if tmp, ok := rawArgs["credentials"]; ok {
-		arg1, err = ec.unmarshalNCredentialsInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCredentialsInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["credentials"] = arg1
 	return args, nil
 }
 
@@ -1964,7 +1964,7 @@ func (ec *executionContext) _Mutation_deprovisionRuntime(ctx context.Context, fi
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeprovisionRuntime(rctx, args["id"].(string), args["credentials"].(CredentialsInput))
+		return ec.resolvers.Mutation().DeprovisionRuntime(rctx, args["id"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2435,6 +2435,40 @@ func (ec *executionContext) _RuntimeConfig_clusterConfig(ctx context.Context, fi
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOClusterConfig2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐClusterConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RuntimeConfig_credentialsSecretName(ctx context.Context, field graphql.CollectedField, obj *RuntimeConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "RuntimeConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CredentialsSecretName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimeConfig_kymaConfig(ctx context.Context, field graphql.CollectedField, obj *RuntimeConfig) (ret graphql.Marshaler) {
@@ -4456,6 +4490,8 @@ func (ec *executionContext) _RuntimeConfig(ctx context.Context, sel ast.Selectio
 			out.Values[i] = graphql.MarshalString("RuntimeConfig")
 		case "clusterConfig":
 			out.Values[i] = ec._RuntimeConfig_clusterConfig(ctx, field, obj)
+		case "credentialsSecretName":
+			out.Values[i] = ec._RuntimeConfig_credentialsSecretName(ctx, field, obj)
 		case "kymaConfig":
 			out.Values[i] = ec._RuntimeConfig_kymaConfig(ctx, field, obj)
 		case "kubeconfig":

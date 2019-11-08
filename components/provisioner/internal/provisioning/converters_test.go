@@ -92,6 +92,7 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 				},
 				ClusterID: "runtimeID",
 			},
+			CredentialsSecretName: "secretName",
 		}
 	}
 
@@ -156,6 +157,7 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 			},
 			ClusterID: "runtimeID",
 		},
+		CredentialsSecretName: "secretName",
 	}
 
 	zone := "zone"

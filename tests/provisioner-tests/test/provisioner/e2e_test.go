@@ -106,7 +106,7 @@ func Test_E2e(t *testing.T) {
 	// TODO - Run Compass Runtime Agent Tests - it may require passing Credentials for MP
 
 	logrus.Infof("Deprovisioning runtime...")
-	deprovisioningOperationId, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtimeId, credentialsInput)
+	deprovisioningOperationId, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtimeId)
 	assertions.RequireNoError(t, err)
 	logrus.Infof("Deprovisioning operation id: %s", deprovisioningOperationId)
 
@@ -118,7 +118,7 @@ func Test_E2e(t *testing.T) {
 
 func ensureClusterIsDeprovisioned(runtimeId string, credentialsInput gqlschema.CredentialsInput) {
 	logrus.Infof("Ensuring the cluster is deprovisioned...")
-	deprovisioningOperationId, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtimeId, credentialsInput)
+	deprovisioningOperationId, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtimeId)
 	if err != nil {
 		logrus.Warnf("Ensuring the cluster is deprovisioned failed, cluster might have already been deprovisioned: %s", err.Error())
 		return

@@ -24,7 +24,7 @@ const (
 type Service interface {
 	ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeInput) (string, <-chan struct{}, error)
 	UpgradeRuntime(id string, config *gqlschema.UpgradeRuntimeInput) (string, error)
-	DeprovisionRuntime(id string, credentials gqlschema.CredentialsInput) (string, <-chan struct{}, error)
+	DeprovisionRuntime(id string) (string, <-chan struct{}, error)
 	CleanupRuntimeData(id string) (string, error)
 	ReconnectRuntimeAgent(id string) (string, error)
 	RuntimeStatus(id string) (*gqlschema.RuntimeStatus, error)
@@ -61,7 +61,7 @@ func (r *service) ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeI
 
 	finished := make(chan struct{})
 
-	go r.startProvisioning(operation.ID, id, runtimeConfig, config.Credentials.SecretName, finished)
+	go r.startProvisioning(operation.ID, id, runtimeConfig, runtimeConfig.CredentialsSecretName, finished)
 
 	return operation.ID, finished, err
 }
@@ -90,7 +90,7 @@ func lastProvisioningFailed(operation model.Operation) bool {
 	return operation.Type == model.Provision && operation.State == model.Failed
 }
 
-func (r *service) DeprovisionRuntime(id string, credentials gqlschema.CredentialsInput) (string, <-chan struct{}, error) {
+func (r *service) DeprovisionRuntime(id string) (string, <-chan struct{}, error) {
 	runtimeStatus, err := r.persistenceService.GetStatus(id)
 
 	if err != nil {
@@ -115,8 +115,7 @@ func (r *service) DeprovisionRuntime(id string, credentials gqlschema.Credential
 		return "", nil, dberr
 	}
 
-	//TODO For now we pass secret name in parameters but we need to consider if it should be stored in the database
-	go r.startDeprovisioning(operation.ID, id, runtimeStatus.RuntimeConfiguration, credentials.SecretName, cluster, finished)
+	go r.startDeprovisioning(operation.ID, id, runtimeStatus.RuntimeConfiguration, cluster, finished)
 
 	return operation.ID, finished, nil
 }
@@ -179,10 +178,10 @@ func (r *service) startProvisioning(operationID, runtimeID string, config model.
 	}
 }
 
-func (r *service) startDeprovisioning(operationID, runtimeID string, config model.RuntimeConfig, secretName string, cluster model.Cluster, finished chan<- struct{}) {
+func (r *service) startDeprovisioning(operationID, runtimeID string, config model.RuntimeConfig, cluster model.Cluster, finished chan<- struct{}) {
 	defer close(finished)
 	log.Infof("Deprovisioning runtime %s is starting", runtimeID)
-	err := r.hydroform.DeprovisionCluster(config, secretName, cluster.TerraformState)
+	err := r.hydroform.DeprovisionCluster(config, cluster.CredentialsSecretName, cluster.TerraformState)
 
 	if err != nil {
 		log.Errorf("Deprovisioning runtime %s failed: %s", runtimeID, err.Error())

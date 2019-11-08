@@ -83,9 +83,10 @@ func (ps persistenceService) SetProvisioningStarted(runtimeID string, runtimeCon
 	timestamp := time.Now()
 
 	cluster := model.Cluster{
-		ID:                runtimeID,
-		CreationTimestamp: timestamp,
-		TerraformState:    "{}",
+		ID:                    runtimeID,
+		CreationTimestamp:     timestamp,
+		CredentialsSecretName: runtimeConfig.CredentialsSecretName,
+		TerraformState:        "{}",
 	}
 
 	err = dbSession.InsertCluster(cluster)

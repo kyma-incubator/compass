@@ -37,10 +37,11 @@ const (
 )
 
 type Cluster struct {
-	ID                string
-	Kubeconfig        *string
-	TerraformState    string
-	CreationTimestamp time.Time
+	ID                    string
+	Kubeconfig            *string
+	TerraformState        string
+	CredentialsSecretName string
+	CreationTimestamp     time.Time
 }
 
 type Operation struct {
@@ -109,9 +110,10 @@ const (
 )
 
 type RuntimeConfig struct {
-	KymaConfig    KymaConfig
-	ClusterConfig interface{}
-	Kubeconfig    *string
+	KymaConfig            KymaConfig
+	ClusterConfig         interface{}
+	Kubeconfig            *string
+	CredentialsSecretName string
 }
 
 type RuntimeStatus struct {

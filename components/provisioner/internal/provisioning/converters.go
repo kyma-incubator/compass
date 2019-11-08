@@ -12,8 +12,9 @@ func runtimeConfigFromInput(runtimeID string, input gqlschema.ProvisionRuntimeIn
 	clusterConfig := clusterConfigFromInput(runtimeID, *input.ClusterConfig, uuidGenerator)
 
 	return model.RuntimeConfig{
-		KymaConfig:    kymaConfig,
-		ClusterConfig: clusterConfig,
+		KymaConfig:            kymaConfig,
+		ClusterConfig:         clusterConfig,
+		CredentialsSecretName: input.Credentials.SecretName,
 	}
 }
 
