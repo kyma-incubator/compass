@@ -22,16 +22,18 @@ func TestMutateConfig(t *testing.T) {
 		testExamplesDir := "testdata/examples"
 		d := descriptionsdecorator.NewPlugin(testOutputFile, testExamplesDir)
 		err = d.MutateConfig(cfg)
+		defer func() {
+			err = os.Remove(testOutputFile)
+			require.NoError(t, err)
+		}()
 		require.NoError(t, err)
 
 		actual, err := ioutil.ReadFile(testOutputFile)
 		require.NoError(t, err)
-
 		expected, err := ioutil.ReadFile("testdata/expected.graphql")
 		require.NoError(t, err)
 		assert.Equal(t, string(expected), string(actual))
-		err = os.Remove(testOutputFile)
-		require.NoError(t, err)
+
 	})
 	t.Run("No examples directory", func(t *testing.T) {
 		// GIVEN
@@ -41,9 +43,12 @@ func TestMutateConfig(t *testing.T) {
 		testExamplesDir := "testdata/examples"
 		d := descriptionsdecorator.NewPlugin(testOutputFile, testExamplesDir)
 		err = d.MutateConfig(cfg)
+		defer func() {
+			err = os.Remove(testOutputFile)
+			require.NoError(t, err)
+		}()
 		require.Nil(t, err)
-		err = os.Remove(testOutputFile)
-		require.NoError(t, err)
+
 	})
 	t.Run("No config file", func(t *testing.T) {
 		// GIVEN
@@ -60,8 +65,10 @@ func TestMutateConfig(t *testing.T) {
 		testExamplesDir := "testdata/examples"
 		d := descriptionsdecorator.NewPlugin(testOutputFile, testExamplesDir)
 		err = d.MutateConfig(cfg)
+		defer func() {
+			err = os.Remove(testOutputFile)
+			require.NoError(t, err)
+		}()
 		assert.Nil(t, err)
-		err = os.Remove(testOutputFile)
-		require.NoError(t, err)
 	})
 }

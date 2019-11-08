@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func saveQueryInExamples(t *testing.T, query string, exampleName string) {
+func saveExample(t *testing.T, query string, exampleName string) {
 	t.Helper()
 	sanitizedName := strings.Replace(exampleName, " ", "-", -1)
 	sanitizedName = strings.ToLower(sanitizedName)
@@ -31,7 +31,7 @@ func saveQueryInExamples(t *testing.T, query string, exampleName string) {
 	require.NoError(t, err)
 }
 
-func saveQueryInExamplesWithCustomDir(t *testing.T, query string, exampleDirectory string, exampleName string) {
+func saveExampleInCustomDir(t *testing.T, query string, exampleDirectory string, exampleName string) {
 	t.Helper()
 	sanitizedName := strings.Replace(exampleName, " ", "-", -1)
 	sanitizedName = strings.ToLower(sanitizedName)

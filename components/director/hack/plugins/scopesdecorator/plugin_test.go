@@ -15,7 +15,7 @@ import (
 func TestMutateConfig(t *testing.T) {
 	// GIVEN
 
-	t.Run("Succes", func(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
 		cfg, err := config.LoadConfig("testdata/config.yaml")
 		require.NoError(t, err)
 		testOutputFile := "testdata/test_output.graphql"
