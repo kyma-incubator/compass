@@ -4,57 +4,26 @@ This document presents the basic terminology and concepts that appear in the Com
 
 * **Administrator** - a user that can configure and group Applications and Runtimes.
 
-* [Agent]()
+* [Agent](https://github.com/kyma-incubator/compass/blob/master/docs/architecture/components.md#agent)
 
-* [Application]()
+* [Application](https://github.com/kyma-incubator/compass/blob/master/docs/architecture/components.md#application)
 
-* [ApplicationTemplate]()
+* [ApplicationTemplate](https://github.com/kyma-incubator/compass/blob/master/docs/architecture/components.md#applicationtemplate)
 
-* [Cockpit]()
+* [Cockpit](https://github.com/kyma-incubator/compass/blob/master/docs/architecture/components.md#cockpit)
 
-* [Connector]()
+* [Connector](https://github.com/kyma-incubator/compass/blob/master/docs/architecture/components.md#connector)
 
-* [Director]()
+* [Director](https://github.com/kyma-incubator/compass/blob/master/docs/architecture/components.md#director)
 
-* [Gateway]()
+* [Gateway](https://github.com/kyma-incubator/compass/blob/master/docs/architecture/components.md#gateway)
 
-* [Integration Service]()
+* [Integration System](https://github.com/kyma-incubator/compass/blob/master/docs/architecture/components.md#integration-system)
 
-* [Runtime]()
+* [Management Plane](https://github.com/kyma-incubator/compass/blob/master/docs/architecture/components.md#management-plane)
 
-* [Runtime Provisioner]()
+* [Runtime](https://github.com/kyma-incubator/compass/blob/master/docs/architecture/components.md#kyma-runtime)
 
-* **Tenant** - represents a group of users who share access to specific Applications and Runtimes.
+* [Runtime Provisioner](https://github.com/kyma-incubator/compass/blob/master/docs/architecture/components.md#runtime-provisioner)
 
-
------------------------------------------------
-
-
-
-### Administrator
-
-Administrator is a user that can configure and group Applications and Runtimes.
-
-### [Agent]()
-
-### [Application]()
-
-### [ApplicationTemplate]()
-
-### [Cockpit]()
-
-### [Connector]()
-
-### [Director]()
-
-### [Gateway]()
-
-### [Integration Service]()
-
-### [Runtime]()
-
-### [Runtime Provisioner]()
-
-### Tenant
-
-Tenant represents a group of users who share access to specific Applications and Runtimes.
+* **Tenant** - a group of users who share access to specific Applications and Runtimes.
