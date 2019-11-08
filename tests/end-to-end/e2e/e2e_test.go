@@ -76,7 +76,7 @@ func TestCompassAuth(t *testing.T) {
 		Name:      "new-api-name",
 		TargetURL: "new-api-url",
 	}
-	addApiWithinTenant(t, ctx, oauthGraphQLClient, tenant, apiInput, appByIntSys.ID)
+	addAPIWithinTenant(t, ctx, oauthGraphQLClient, tenant, apiInput, appByIntSys.ID)
 
 	t.Log("Remove application using Dex id token")
 	deleteApplication(t, ctx, dexGraphQLClient, tenant, appByIntSys.ID)

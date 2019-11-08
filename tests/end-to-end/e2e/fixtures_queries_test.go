@@ -32,7 +32,7 @@ func deleteApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client
 }
 
 // API Spec
-func addApiWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.APIDefinitionInput, applicationID string) *graphql.APIDefinitionExt {
+func addAPIWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.APIDefinitionInput, applicationID string) *graphql.APIDefinitionExt {
 	apiInputGQL, err := tc.Graphqlizer.APIDefinitionInputToGQL(in)
 	require.NoError(t, err)
 
