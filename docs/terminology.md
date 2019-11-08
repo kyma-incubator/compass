@@ -1,6 +1,6 @@
 # Terminology
 
-This document presents the basic terminology and concepts that appear in the Compass documentation.
+This is the basic terminology that appears in the Compass documentation:
 
 * **Administrator** - a user that can configure and group Applications and Runtimes.
 

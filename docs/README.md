@@ -8,7 +8,6 @@ This folder contains documents that relate to the project.
 
 Read these documents to learn the basics of the Compass architecture:
 
-- [Terminology](./terminology.md)
 - [Components](./architecture/components.md)
 - [Basic architecture](./architecture/basic-architecture.md)
 
