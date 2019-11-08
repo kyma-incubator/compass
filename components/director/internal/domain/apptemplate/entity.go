@@ -9,7 +9,7 @@ type Entity struct {
 	Name             string         `db:"name"`
 	Description      sql.NullString `db:"description"`
 	ApplicationInput string         `db:"application_input"`
-	Placeholders     string         `db:"application_input"`
+	Placeholders     sql.NullString `db:"application_input"`
 	AccessLevel      string         `db:"access_level"`
 }
 
