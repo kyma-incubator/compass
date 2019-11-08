@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/kyma-incubator/compass/components/director/hack/plugins"
+
 	"github.com/99designs/gqlgen/codegen/config"
 	"github.com/99designs/gqlgen/plugin"
 	"github.com/vektah/gqlparser/ast"
@@ -44,14 +46,16 @@ func (p *scopesDecoratorPlugin) MutateConfig(cfg *config.Config) error {
 		return err
 	}
 
-	for _, f := range schema.Query.Fields {
-		p.ensureDirective(f, Query)
+	if schema.Query != nil {
+		for _, f := range schema.Query.Fields {
+			p.ensureDirective(f, Query)
+		}
 	}
-
-	for _, f := range schema.Mutation.Fields {
-		p.ensureDirective(f, Mutation)
+	if schema.Query != nil {
+		for _, f := range schema.Mutation.Fields {
+			p.ensureDirective(f, Mutation)
+		}
 	}
-
 	if err := cfg.Check(); err != nil {
 		return err
 	}
@@ -61,7 +65,7 @@ func (p *scopesDecoratorPlugin) MutateConfig(cfg *config.Config) error {
 		return err
 	}
 
-	f := NewFormatter(schemaFile)
+	f := plugins.NewFormatter(schemaFile)
 	f.FormatSchema(schema)
 	return schemaFile.Close()
 }

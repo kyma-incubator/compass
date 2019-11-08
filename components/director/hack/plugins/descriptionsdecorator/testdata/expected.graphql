@@ -1,0 +1,22 @@
+type Query {
+	"""
+	test description
+	
+	**Examples**
+	- [query already has description](examples/query-already-has-description/query-already-has-description.graphql)
+	"""
+	alreadyHasDescription: String!
+	doesNotHaveDescription: String!
+}
+
+type Mutation {
+	"""
+	test description
+	
+	**Examples**
+	- [already has description](examples/already-has-description/already-has-description.graphql)
+	"""
+	alreadyHasDescription: String!
+	doesNotHaveDescription: String!
+}
+

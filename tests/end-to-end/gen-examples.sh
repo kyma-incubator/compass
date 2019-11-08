@@ -104,7 +104,7 @@ export DIRECTOR_URL="http://${DIRECTOR_URL}:${APP_PORT}"
 ./wait-for-director.sh
 
 echo -e "${GREEN}Removing previous GraphQL examples...${NC}"
-rm -f "${LOCAL_ROOT_PATH}/examples/"*
+rm -r "${LOCAL_ROOT_PATH}/components/director/examples/"
 
 echo -e "${GREEN}Running Director tests with generating examples...${NC}"
 go test -c "${SCRIPT_DIR}/director/" -tags ignore_external_dependencies
@@ -114,8 +114,8 @@ ALL_SCOPES="runtime:write application:write label_definition:write integration_s
 echo -e "${GREEN}Prettifying GraphQL examples...${NC}"
 img="prettier:latest"
 docker build -t ${img} ./tools/prettier
-docker run -v "${HOST_ROOT_PATH}/examples":/prettier/examples \
-    ${img} prettier --write ./examples/*.graphql
+docker run -v "${HOST_ROOT_PATH}/components/director/examples":/prettier/examples \
+    ${img} prettier --write "examples/**/*.graphql"
 
 cd "${SCRIPT_DIR}/tools/example-index-generator/"
-EXAMPLES_DIRECTORY="${LOCAL_ROOT_PATH}/examples" go run main.go
+EXAMPLES_DIRECTORY="${LOCAL_ROOT_PATH}/components/director/examples" go run main.go

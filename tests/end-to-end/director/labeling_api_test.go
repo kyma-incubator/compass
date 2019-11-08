@@ -39,7 +39,7 @@ func TestCreateLabelWithoutLabelDefinition(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, label.Key)
 	require.NotEmpty(t, label.Value)
-	saveQueryInExamples(t, setLabelRequest.Query(), "set application label")
+	saveExample(t, setLabelRequest.Query(), "set application label")
 
 	t.Log("Check if LabelDefinition was created internally")
 
@@ -51,7 +51,7 @@ func TestCreateLabelWithoutLabelDefinition(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, labelDefinition)
 	assert.Equal(t, label.Key, labelDefinition.Key)
-	saveQueryInExamples(t, getLabelDefinitionRequest.Query(), "query label definition")
+	saveExample(t, getLabelDefinitionRequest.Query(), "query label definition")
 }
 
 func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
@@ -110,7 +110,7 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 		require.Error(t, err)
 		errMsg := fmt.Sprintf("graphql: while creating label for Application: while validating Label value for '%s': while validating value %d against JSON Schema", labelKey, invalidLabelValue)
 		assert.Contains(t, err.Error(), errMsg)
-		saveQueryInExamples(t, createLabelDefinitionRequest.Query(), "create label definition")
+		saveExample(t, createLabelDefinitionRequest.Query(), "create label definition")
 
 	})
 
@@ -305,7 +305,7 @@ func TestEditLabelDefinition(t *testing.T) {
 		require.True(t, ok)
 
 		assert.Equal(t, expectedProperties, actualProperties)
-		saveQueryInExamples(t, updateLabelDefinitionReq.Query(), "update label definition")
+		saveExample(t, updateLabelDefinitionReq.Query(), "update label definition")
 	})
 }
 
@@ -466,7 +466,7 @@ func TestDeleteLabelDefinition(t *testing.T) {
 		err = tc.RunOperation(context.Background(), deleteLabelDefinitionRequest, nil)
 		require.Error(t, err)
 		assert.EqualError(t, err, "graphql: could not delete label definition, it is already used by at least one label")
-		saveQueryInExamples(t, deleteLabelDefinitionRequest.Query(), "delete label definition")
+		saveExample(t, deleteLabelDefinitionRequest.Query(), "delete label definition")
 	})
 
 	t.Run("Delete Label Definition while it's being used by some labels with deleteRelatedLabels parameter set to true - should succeed", func(t *testing.T) {
@@ -685,7 +685,7 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	assert.Equal(t, applicationPage.TotalCount, 1)
 	assert.Contains(t, applicationPage.Data[0].Labels, labelKeyBar)
 	assert.Equal(t, applicationPage.Data[0].Labels[labelKeyBar], labelValueBar)
-	saveQueryInExamples(t, applicationRequest.Query(), "query applications with label filter")
+	saveExampleInCustomDir(t, applicationRequest.Query(), queryApplicationsCategory, "query applications with label filter")
 }
 
 func TestSearchRuntimesByLabels(t *testing.T) {
@@ -764,7 +764,7 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	assert.Equal(t, runtimePage.TotalCount, 1)
 	assert.Contains(t, runtimePage.Data[0].Labels, labelKeyBar)
 	assert.Equal(t, runtimePage.Data[0].Labels[labelKeyBar], labelValueBar)
-	saveQueryInExamples(t, runtimesRequest.Query(), "query runtimes with label filter")
+	saveExampleInCustomDir(t, runtimesRequest.Query(), queryRuntimesCategory, "query runtimes with label filter")
 }
 
 func TestListLabelDefinitions(t *testing.T) {

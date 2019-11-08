@@ -1,10 +1,11 @@
-package scopesdecorator_test
+package plugins_test
 
 import (
 	"sort"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/hack/scopesdecorator"
+	"github.com/kyma-incubator/compass/components/director/hack/plugins"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vektah/gqlparser/ast"
@@ -12,7 +13,7 @@ import (
 
 func TestOrderedDefinitionList(t *testing.T) {
 	// GIVEN
-	definitions := scopesdecorator.OrderedDefinitionList{defMutation(), defQuery(), defObjectZ(), defObjectA(), defScalarB(), defScalarA(), defEnumB(), defEnumA()}
+	definitions := plugins.OrderedDefinitionList{defMutation(), defQuery(), defObjectZ(), defObjectA(), defScalarB(), defScalarA(), defEnumB(), defEnumA()}
 	// WHEN
 	sort.Sort(definitions)
 	// THEN
