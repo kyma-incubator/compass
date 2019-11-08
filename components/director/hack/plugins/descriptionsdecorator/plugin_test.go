@@ -61,5 +61,7 @@ func TestMutateConfig(t *testing.T) {
 		d := descriptionsdecorator.NewPlugin(testOutputFile, testExamplesDir)
 		err = d.MutateConfig(cfg)
 		assert.Nil(t, err)
+		err = os.Remove(testOutputFile)
+		require.NoError(t, err)
 	})
 }

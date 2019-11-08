@@ -46,14 +46,16 @@ func (p *scopesDecoratorPlugin) MutateConfig(cfg *config.Config) error {
 		return err
 	}
 
-	for _, f := range schema.Query.Fields {
-		p.ensureDirective(f, Query)
+	if schema.Query != nil {
+		for _, f := range schema.Query.Fields {
+			p.ensureDirective(f, Query)
+		}
 	}
-
-	for _, f := range schema.Mutation.Fields {
-		p.ensureDirective(f, Mutation)
+	if schema.Query != nil {
+		for _, f := range schema.Mutation.Fields {
+			p.ensureDirective(f, Mutation)
+		}
 	}
-
 	if err := cfg.Check(); err != nil {
 		return err
 	}

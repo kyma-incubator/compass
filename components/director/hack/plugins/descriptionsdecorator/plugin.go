@@ -52,25 +52,23 @@ func (p *descriptionsDecoratorPlugin) MutateConfig(cfg *config.Config) error {
 		return err
 	}
 
-	if (schema.Query == nil) && (schema.Mutation == nil) {
-		log.Info("No queries or mutations found, skipping adding examples")
-		return nil
-	}
-
-	for _, f := range schema.Query.Fields {
-		err := p.ensureDescription(f, Query)
-		if err != nil {
-			return err
+	if schema.Query != nil {
+		for _, f := range schema.Query.Fields {
+			err := p.ensureDescription(f, Query)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
-	for _, f := range schema.Mutation.Fields {
-		err := p.ensureDescription(f, Mutation)
-		if err != nil {
-			return err
+	if schema.Mutation != nil {
+		for _, f := range schema.Mutation.Fields {
+			err := p.ensureDescription(f, Mutation)
+			if err != nil {
+				return err
+			}
 		}
 	}
-
 	if err := cfg.Check(); err != nil {
 		return err
 	}

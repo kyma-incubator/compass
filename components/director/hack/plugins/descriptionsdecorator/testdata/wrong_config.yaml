@@ -1,1 +1,1 @@
-schema: testdata/no_input.graphql
+schema: testdata/wrong_input.graphql
