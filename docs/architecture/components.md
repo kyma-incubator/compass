@@ -52,3 +52,12 @@ Runtime Provisioner handles the creation, modification, and deletion of Runtimes
 ## Integration System
 
 Integration System is any system that provides integration for multiple tenants. It exists in a global scope without tenant assignment.
+See [Integration Systems document](./integration-systems.md)
+for more details.
+
+
+## ApplicationTemplate
+Represents an object for creating Applications from predefined static definition.
+See [Automatic Application Management document](./auto-app-management.md)
+for more details.
+  

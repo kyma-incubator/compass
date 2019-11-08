@@ -22,6 +22,10 @@ These documents provide you with more architectural details:
 - [Runtime Agent contract](./architecture/runtime-agent-contract.md)
 - [Database scheme](./architecture/db-scheme.md)
 - [Authentication and authorization](./architecture/authentication-and-authorization.md)
+- [Integration Systems](./architecture/integration-systems.md)
+- [Proposal: Automatic Application Management](./architecture/auto-app-management.md)
+- [Proposal: API Packages](./architecture/api-packages.md)
+- [Proposal: Input parameters for API, Event Definitions or API Packages in the Runtime](./architecture/input-parameters-on-runtime.md)
 - [Proposal: Custom configuration for Kyma installation](./architecture/provisioning-custom-configuration.md)
 
 ## Examples

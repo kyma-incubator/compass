@@ -12,7 +12,7 @@ type CredentialData interface {
 	IsCredentialData()
 }
 
-//  Every query that implements pagination returns object that implements Pageable interface.
+// Every query that implements pagination returns object that implements Pageable interface.
 // To specify page details, query specify two parameters: `first` and `after`.
 // `first` specify page size, `after` is a cursor for the next page. When requesting first page, set `after` to empty value.
 // For requesting next page, set `after` to `pageInfo.endCursor` returned from previous query.
@@ -51,14 +51,15 @@ type APISpecInput struct {
 }
 
 type ApplicationCreateInput struct {
-	Name           string                     `json:"name"`
-	Description    *string                    `json:"description"`
-	Labels         *Labels                    `json:"labels"`
-	Webhooks       []*WebhookInput            `json:"webhooks"`
-	HealthCheckURL *string                    `json:"healthCheckURL"`
-	Apis           []*APIDefinitionInput      `json:"apis"`
-	EventAPIs      []*EventAPIDefinitionInput `json:"eventAPIs"`
-	Documents      []*DocumentInput           `json:"documents"`
+	Name                string                     `json:"name"`
+	Description         *string                    `json:"description"`
+	Labels              *Labels                    `json:"labels"`
+	Webhooks            []*WebhookInput            `json:"webhooks"`
+	HealthCheckURL      *string                    `json:"healthCheckURL"`
+	Apis                []*APIDefinitionInput      `json:"apis"`
+	EventAPIs           []*EventAPIDefinitionInput `json:"eventAPIs"`
+	Documents           []*DocumentInput           `json:"documents"`
+	IntegrationSystemID *string                    `json:"integrationSystemID"`
 }
 
 type ApplicationPage struct {
@@ -74,10 +75,19 @@ type ApplicationStatus struct {
 	Timestamp Timestamp                  `json:"timestamp"`
 }
 
+type ApplicationTemplateInput struct {
+	Name             string                         `json:"name"`
+	Description      *string                        `json:"description"`
+	ApplicationInput *ApplicationCreateInput        `json:"applicationInput"`
+	Placeholders     []*PlaceholderDefinitionInput  `json:"placeholders"`
+	AccessLevel      ApplicationTemplateAccessLevel `json:"accessLevel"`
+}
+
 type ApplicationUpdateInput struct {
-	Name           string  `json:"name"`
-	Description    *string `json:"description"`
-	HealthCheckURL *string `json:"healthCheckURL"`
+	Name                string  `json:"name"`
+	Description         *string `json:"description"`
+	HealthCheckURL      *string `json:"healthCheckURL"`
+	IntegrationSystemID *string `json:"integrationSystemID"`
 }
 
 type Auth struct {
@@ -284,6 +294,11 @@ type PageInfo struct {
 	HasNextPage bool       `json:"hasNextPage"`
 }
 
+type PlaceholderDefinitionInput struct {
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+}
+
 type RuntimeInput struct {
 	Name        string  `json:"name"`
 	Description *string `json:"description"`
@@ -306,6 +321,11 @@ type RuntimeStatus struct {
 type SystemAuth struct {
 	ID   string `json:"id"`
 	Auth *Auth  `json:"auth"`
+}
+
+type TemplateValueInput struct {
+	Placeholder string `json:"placeholder"`
+	Value       string `json:"value"`
 }
 
 type Version struct {
@@ -422,6 +442,45 @@ func (e *ApplicationStatusCondition) UnmarshalGQL(v interface{}) error {
 }
 
 func (e ApplicationStatusCondition) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type ApplicationTemplateAccessLevel string
+
+const (
+	ApplicationTemplateAccessLevelGlobal ApplicationTemplateAccessLevel = "GLOBAL"
+)
+
+var AllApplicationTemplateAccessLevel = []ApplicationTemplateAccessLevel{
+	ApplicationTemplateAccessLevelGlobal,
+}
+
+func (e ApplicationTemplateAccessLevel) IsValid() bool {
+	switch e {
+	case ApplicationTemplateAccessLevelGlobal:
+		return true
+	}
+	return false
+}
+
+func (e ApplicationTemplateAccessLevel) String() string {
+	return string(e)
+}
+
+func (e *ApplicationTemplateAccessLevel) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ApplicationTemplateAccessLevel(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ApplicationTemplateAccessLevel", str)
+	}
+	return nil
+}
+
+func (e ApplicationTemplateAccessLevel) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

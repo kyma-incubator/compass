@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	apperrors "github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/persistence/txtest"
 
 	"github.com/google/uuid"
@@ -1452,6 +1454,275 @@ func TestResolver_EventAPIs(t *testing.T) {
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)
 		})
+	}
+}
+
+func TestResolver_EventAPI(t *testing.T) {
+	// given
+	id := "bar"
+
+	modelAPI := fixMinModelEventAPIDefinition(id, "placeholder")
+	gqlAPI := fixGQLEventAPIDefinition(id, "placeholder", "placeholder", "placeholder", "placeholder")
+	app := fixGQLApplication("foo", "foo", "foo")
+	testErr := errors.New("Test error")
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	testCases := []struct {
+		Name            string
+		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn       func() *automock.EventAPIService
+		ConverterFn     func() *automock.EventAPIConverter
+		InputID         string
+		Application     *graphql.Application
+		ExpectedAPI     *graphql.EventAPIDefinition
+		ExpectedErr     error
+	}{
+		{
+			Name:            "Success",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.EventAPIService {
+				svc := &automock.EventAPIService{}
+				svc.On("GetForApplication", txtest.CtxWithDBMatcher(), "foo", "foo").Return(modelAPI, nil).Once()
+
+				return svc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				conv.On("ToGraphQL", modelAPI).Return(gqlAPI).Once()
+				return conv
+			},
+			InputID:     "foo",
+			Application: app,
+			ExpectedAPI: gqlAPI,
+			ExpectedErr: nil,
+		},
+		{
+			Name:            "Returns error when application retrieval failed",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.EventAPIService {
+				svc := &automock.EventAPIService{}
+				svc.On("GetForApplication", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, testErr).Once()
+
+				return svc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				return conv
+			},
+			InputID:     "foo",
+			Application: app,
+			ExpectedAPI: nil,
+			ExpectedErr: testErr,
+		},
+		{
+			Name:            "Returns null when application retrieval failed",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.EventAPIService {
+				svc := &automock.EventAPIService{}
+				svc.On("GetForApplication", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, apperrors.NewNotFoundError("")).Once()
+
+				return svc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				return conv
+			},
+			InputID:     "foo",
+			Application: app,
+			ExpectedAPI: nil,
+			ExpectedErr: nil,
+		},
+		{
+			Name:            "Returns error when commit begin error",
+			TransactionerFn: txGen.ThatFailsOnBegin,
+			ServiceFn: func() *automock.EventAPIService {
+				svc := &automock.EventAPIService{}
+
+				return svc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				return conv
+			},
+			InputID:     "foo",
+			Application: app,
+			ExpectedAPI: nil,
+			ExpectedErr: testErr,
+		},
+		{
+			Name:            "Returns error when commit failed",
+			TransactionerFn: txGen.ThatFailsOnCommit,
+			ServiceFn: func() *automock.EventAPIService {
+				svc := &automock.EventAPIService{}
+				svc.On("GetForApplication", txtest.CtxWithDBMatcher(), "foo", "foo").Return(modelAPI, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.EventAPIConverter {
+				conv := &automock.EventAPIConverter{}
+				return conv
+			},
+			InputID:     "foo",
+			Application: app,
+			ExpectedAPI: nil,
+			ExpectedErr: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persist, transact := testCase.TransactionerFn()
+			svc := testCase.ServiceFn()
+			converter := testCase.ConverterFn()
+
+			resolver := application.NewResolver(transact, nil, nil, svc, nil, nil, nil, nil, nil, nil, nil, nil, converter, nil)
+
+			// when
+			result, err := resolver.EventAPI(context.TODO(), testCase.InputID, testCase.Application)
+
+			// then
+			assert.Equal(t, testCase.ExpectedAPI, result)
+			assert.Equal(t, testCase.ExpectedErr, err)
+
+			svc.AssertExpectations(t)
+			persist.AssertExpectations(t)
+			transact.AssertExpectations(t)
+			converter.AssertExpectations(t)
+		})
+	}
+}
+func TestResolver_API(t *testing.T) {
+	{
+		// given
+		id := "bar"
+		appId := "1"
+		modelAPI := fixModelAPIDefinition(id, appId, "name", "bar", "test")
+		gqlAPI := fixGQLAPIDefinition(id, appId, "name", "bar", "test")
+		app := fixGQLApplication("foo", "foo", "foo")
+		testErr := errors.New("Test error")
+		txGen := txtest.NewTransactionContextGenerator(testErr)
+
+		testCases := []struct {
+			Name            string
+			TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+			ServiceFn       func() *automock.APIService
+			ConverterFn     func() *automock.APIConverter
+			InputID         string
+			Application     *graphql.Application
+			ExpectedAPI     *graphql.APIDefinition
+			ExpectedErr     error
+		}{
+			{
+				Name:            "Success",
+				TransactionerFn: txGen.ThatSucceeds,
+				ServiceFn: func() *automock.APIService {
+					svc := &automock.APIService{}
+					svc.On("GetForApplication", txtest.CtxWithDBMatcher(), "foo", "foo").Return(modelAPI, nil).Once()
+
+					return svc
+				},
+				ConverterFn: func() *automock.APIConverter {
+					conv := &automock.APIConverter{}
+					conv.On("ToGraphQL", modelAPI).Return(gqlAPI).Once()
+					return conv
+				},
+				InputID:     "foo",
+				Application: app,
+				ExpectedAPI: gqlAPI,
+				ExpectedErr: nil,
+			},
+			{
+				Name:            "Returns error when application retrieval failed",
+				TransactionerFn: txGen.ThatDoesntExpectCommit,
+				ServiceFn: func() *automock.APIService {
+					svc := &automock.APIService{}
+					svc.On("GetForApplication", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, testErr).Once()
+
+					return svc
+				},
+				ConverterFn: func() *automock.APIConverter {
+					conv := &automock.APIConverter{}
+					return conv
+				},
+				InputID:     "foo",
+				Application: app,
+				ExpectedAPI: nil,
+				ExpectedErr: testErr,
+			},
+			{
+				Name:            "Returns null when application retrieval failed",
+				TransactionerFn: txGen.ThatDoesntExpectCommit,
+				ServiceFn: func() *automock.APIService {
+					svc := &automock.APIService{}
+					svc.On("GetForApplication", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, apperrors.NewNotFoundError("")).Once()
+
+					return svc
+				},
+				ConverterFn: func() *automock.APIConverter {
+					conv := &automock.APIConverter{}
+					return conv
+				},
+				InputID:     "foo",
+				Application: app,
+				ExpectedAPI: nil,
+				ExpectedErr: nil,
+			},
+			{
+				Name:            "Returns error when commit begin error",
+				TransactionerFn: txGen.ThatFailsOnBegin,
+				ServiceFn: func() *automock.APIService {
+					svc := &automock.APIService{}
+
+					return svc
+				},
+				ConverterFn: func() *automock.APIConverter {
+					conv := &automock.APIConverter{}
+					return conv
+				},
+				InputID:     "foo",
+				Application: app,
+				ExpectedAPI: nil,
+				ExpectedErr: testErr,
+			},
+			{
+				Name:            "Returns error when commit failed",
+				TransactionerFn: txGen.ThatFailsOnCommit,
+				ServiceFn: func() *automock.APIService {
+					svc := &automock.APIService{}
+					svc.On("GetForApplication", txtest.CtxWithDBMatcher(), "foo", "foo").Return(modelAPI, nil).Once()
+					return svc
+				},
+				ConverterFn: func() *automock.APIConverter {
+					conv := &automock.APIConverter{}
+					return conv
+				},
+				InputID:     "foo",
+				Application: app,
+				ExpectedAPI: nil,
+				ExpectedErr: testErr,
+			},
+		}
+
+		for _, testCase := range testCases {
+			t.Run(testCase.Name, func(t *testing.T) {
+				persist, transact := testCase.TransactionerFn()
+				svc := testCase.ServiceFn()
+				converter := testCase.ConverterFn()
+
+				resolver := application.NewResolver(transact, nil, svc, nil, nil, nil, nil, nil, nil, nil, nil, converter, nil, nil)
+
+				// when
+				result, err := resolver.API(context.TODO(), testCase.InputID, testCase.Application)
+
+				// then
+				assert.Equal(t, testCase.ExpectedAPI, result)
+				assert.Equal(t, testCase.ExpectedErr, err)
+
+				svc.AssertExpectations(t)
+				persist.AssertExpectations(t)
+				transact.AssertExpectations(t)
+				converter.AssertExpectations(t)
+			})
+		}
 	}
 }
 

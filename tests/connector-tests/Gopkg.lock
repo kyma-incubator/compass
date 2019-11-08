@@ -98,8 +98,7 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "302-secure-token-mutations"
-  digest = "1:c7eb30526f01621f14c639843547d9248da44a7a3dd255ddcc952c0a3f6012dd"
+  digest = "1:de5b5122bf0826ff9aec376ccdb277a363c68c13718aee708717ca2a80ffce56"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/connector/internal/apperrors",
@@ -112,8 +111,7 @@
     "components/connector/pkg/oathkeeper",
   ]
   pruneopts = "UT"
-  revision = "61c491d563d02fb50ab66a3ff44b70fb32e5515b"
-  source = "https://github.com/franpog859/compass"
+  revision = "ed26afa1728808f0d9d5b7cf37bf02b3e48b4cd8"
 
 [[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"

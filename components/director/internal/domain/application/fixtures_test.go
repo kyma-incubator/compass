@@ -14,7 +14,8 @@ import (
 )
 
 var (
-	testURL = "https://foo.bar"
+	testURL  = "https://foo.bar"
+	intSysID = "iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"
 )
 
 func fixApplicationPage(applications []*model.Application) *model.ApplicationPage {
@@ -60,9 +61,10 @@ func fixModelApplicationWithAllUpdatableFields(id, tenant, name, description, ur
 		Status: &model.ApplicationStatus{
 			Condition: model.ApplicationStatusConditionInitial,
 		},
-		Name:           name,
-		Description:    &description,
-		HealthCheckURL: &url,
+		IntegrationSystemID: &intSysID,
+		Name:                name,
+		Description:         &description,
+		HealthCheckURL:      &url,
 	}
 }
 
@@ -87,10 +89,11 @@ func fixDetailedModelApplication(t *testing.T, id, tenant, name, description str
 			Condition: model.ApplicationStatusConditionInitial,
 			Timestamp: time,
 		},
-		Name:           name,
-		Description:    &description,
-		Tenant:         tenant,
-		HealthCheckURL: &testURL,
+		Name:                name,
+		Description:         &description,
+		Tenant:              tenant,
+		HealthCheckURL:      &testURL,
+		IntegrationSystemID: &intSysID,
 	}
 }
 
@@ -104,9 +107,10 @@ func fixDetailedGQLApplication(t *testing.T, id, name, description string) *grap
 			Condition: graphql.ApplicationStatusConditionInitial,
 			Timestamp: graphql.Timestamp(time),
 		},
-		Name:           name,
-		Description:    &description,
-		HealthCheckURL: &testURL,
+		Name:                name,
+		Description:         &description,
+		HealthCheckURL:      &testURL,
+		IntegrationSystemID: &intSysID,
 	}
 }
 
@@ -115,13 +119,14 @@ func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description st
 	require.NoError(t, err)
 
 	return &application.Entity{
-		ID:              id,
-		TenantID:        tenant,
-		Name:            name,
-		Description:     repo.NewValidNullableString(description),
-		StatusCondition: string(model.ApplicationStatusConditionInitial),
-		StatusTimestamp: ts,
-		HealthCheckURL:  repo.NewValidNullableString(testURL),
+		ID:                  id,
+		TenantID:            tenant,
+		Name:                name,
+		Description:         repo.NewValidNullableString(description),
+		StatusCondition:     string(model.ApplicationStatusConditionInitial),
+		StatusTimestamp:     ts,
+		HealthCheckURL:      repo.NewValidNullableString(testURL),
+		IntegrationSystemID: repo.NewNullableString(&intSysID),
 	}
 }
 
@@ -134,7 +139,8 @@ func fixModelApplicationCreateInput(name, description string) model.ApplicationC
 		Labels: map[string]interface{}{
 			"test": []string{"val", "val2"},
 		},
-		HealthCheckURL: &testURL,
+		HealthCheckURL:      &testURL,
+		IntegrationSystemID: &intSysID,
 		Webhooks: []*model.WebhookInput{
 			{URL: "webhook1.foo.bar"},
 			{URL: "webhook2.foo.bar"},
@@ -156,9 +162,10 @@ func fixModelApplicationCreateInput(name, description string) model.ApplicationC
 
 func fixModelApplicationUpdateInput(name, description, url string) model.ApplicationUpdateInput {
 	return model.ApplicationUpdateInput{
-		Name:           name,
-		Description:    &description,
-		HealthCheckURL: &url,
+		Name:                name,
+		Description:         &description,
+		HealthCheckURL:      &url,
+		IntegrationSystemID: &intSysID,
 	}
 }
 
@@ -169,10 +176,11 @@ func fixGQLApplicationCreateInput(name, description string) graphql.ApplicationC
 	kind := "test"
 	desc := "Sample"
 	return graphql.ApplicationCreateInput{
-		Name:           name,
-		Description:    &description,
-		Labels:         &labels,
-		HealthCheckURL: &testURL,
+		Name:                name,
+		Description:         &description,
+		Labels:              &labels,
+		HealthCheckURL:      &testURL,
+		IntegrationSystemID: &intSysID,
 		Webhooks: []*graphql.WebhookInput{
 			{URL: "webhook1.foo.bar"},
 			{URL: "webhook2.foo.bar"},
@@ -194,9 +202,10 @@ func fixGQLApplicationCreateInput(name, description string) graphql.ApplicationC
 
 func fixGQLApplicationUpdateInput(name, description, url string) graphql.ApplicationUpdateInput {
 	return graphql.ApplicationUpdateInput{
-		Name:           name,
-		Description:    &description,
-		HealthCheckURL: &url,
+		Name:                name,
+		Description:         &description,
+		HealthCheckURL:      &url,
+		IntegrationSystemID: &intSysID,
 	}
 }
 
@@ -363,7 +372,10 @@ func fixModelEventAPIDefinition(id, appId, name, description string, group strin
 		Group:         &group,
 	}
 }
-
+func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventAPIDefinition {
+	return &model.EventAPIDefinition{ID: id, Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
+		ApplicationID: "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", Name: placeholder}
+}
 func fixGQLEventAPIDefinition(id, appId, name, description string, group string) *graphql.EventAPIDefinition {
 	return &graphql.EventAPIDefinition{
 		ID:            id,
