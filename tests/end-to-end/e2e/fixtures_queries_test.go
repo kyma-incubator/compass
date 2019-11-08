@@ -16,26 +16,17 @@ func createApplicationFromInputWithinTenant(t *testing.T, ctx context.Context, g
 	require.NoError(t, err)
 
 	createRequest := fixCreateApplicationRequest(appInputGQL)
-	createRequest.Header.Set("Tenant", tenant)
 	app := graphql.ApplicationExt{}
-	m := resultMapperFor(&app)
-
-	err = gqlClient.Run(ctx, createRequest, &m)
+	err = tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, createRequest, &app)
 	require.NoError(t, err)
-	//err = tc.withRetryOnTemporaryConnectionProblems(func() error { return tc.cli.Run(ctx, createRequest, &m) })
-	//require.NoError(t, err)
-	require.NotEmpty(t, app.ID)
 	return app
 }
 
 func deleteApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, applicationID string) graphql.ApplicationExt {
 	deleteRequest := fixDeleteApplicationRequest(t, applicationID)
-	deleteRequest.Header.Set("Tenant", tenant)
-
 	app := graphql.ApplicationExt{}
-	m := resultMapperFor(&app)
 
-	err := tc.withRetryOnTemporaryConnectionProblems(func() error { return gqlClient.Run(ctx, deleteRequest, &m) })
+	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, deleteRequest, &app)
 	require.NoError(t, err)
 	return app
 }
@@ -46,12 +37,9 @@ func addApiWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Clien
 	require.NoError(t, err)
 
 	addApiRequest := fixAddApiRequest(applicationID, apiInputGQL)
-	addApiRequest.Header.Set("Tenant", tenant)
-
 	api := graphql.APIDefinitionExt{}
-	m := resultMapperFor(&api)
 
-	err = tc.withRetryOnTemporaryConnectionProblems(func() error { return gqlClient.Run(ctx, addApiRequest, &m) })
+	err = tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, addApiRequest, &api)
 	require.NoError(t, err)
 	require.NotEmpty(t, api.ID)
 	return &api
@@ -66,30 +54,25 @@ func createIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.
 	}
 
 	req := fixCreateIntegrationSystemRequest(in)
-	req.Header.Set("Tenant", tenant)
-	out := &graphql.IntegrationSystemExt{}
+	intSys := &graphql.IntegrationSystemExt{}
 
-	m := resultMapperFor(&out)
-	err = tc.withRetryOnTemporaryConnectionProblems(func() error { return gqlClient.Run(ctx, req, &m) })
+	err = tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &intSys)
 	require.NoError(t, err)
-	require.NotEmpty(t, out)
-	return out
+	require.NotEmpty(t, intSys)
+	return intSys
 }
 
 func deleteIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) {
 	req := fixDeleteIntegrationSystem(id)
-	req.Header.Set("Tenant", tenant)
-	err := tc.withRetryOnTemporaryConnectionProblems(func() error { return gqlClient.Run(ctx, req, nil) })
+	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil)
 	require.NoError(t, err)
 }
 
 func generateClientCredentialsForIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.SystemAuth {
 	req := fixGenerateClientCredentialsForIntegrationSystem(id)
-	req.Header.Set("Tenant", tenant)
-	out := graphql.SystemAuth{}
+	systemAuth := graphql.SystemAuth{}
 
-	m := resultMapperFor(&out)
-	err := gqlClient.Run(ctx, req, &m)
+	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &systemAuth)
 	require.NoError(t, err)
-	return out
+	return systemAuth
 }

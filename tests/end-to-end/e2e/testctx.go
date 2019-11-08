@@ -2,18 +2,16 @@ package e2e
 
 import (
 	"context"
-	"os"
 	"reflect"
 	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/common"
+	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/gql"
 
 	"github.com/sirupsen/logrus"
 
 	"github.com/avast/retry-go"
 
-	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/jwtbuilder"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
@@ -32,36 +30,15 @@ func init() {
 
 // TestContext contains dependencies that help executing tests
 type TestContext struct {
-	Graphqlizer       common.Graphqlizer
-	gqlFieldsProvider common.GqlFieldsProvider
-	currentScopes     []string
-	cli               *gcli.Client
+	Graphqlizer       gql.Graphqlizer
+	gqlFieldsProvider gql.GqlFieldsProvider
 }
 
 func NewTestContext() (*TestContext, error) {
-	scopesStr := os.Getenv("ALL_SCOPES")
-
-	currentScopes := strings.Split(scopesStr, " ")
-
-	bearerToken, err := jwtbuilder.Do(defaultTenant, currentScopes)
-	if err != nil {
-		return nil, errors.Wrap(err, "while building JWT token")
-	}
-
 	return &TestContext{
-		Graphqlizer:       common.Graphqlizer{},
-		gqlFieldsProvider: common.GqlFieldsProvider{},
-		currentScopes:     currentScopes,
-		cli:               common.NewAuthorizedGraphQLClient(bearerToken),
+		Graphqlizer:       gql.Graphqlizer{},
+		gqlFieldsProvider: gql.GqlFieldsProvider{},
 	}, nil
-}
-
-func (tc *TestContext) RunOperation(ctx context.Context, req *gcli.Request, resp interface{}) error {
-	m := resultMapperFor(&resp)
-
-	return tc.withRetryOnTemporaryConnectionProblems(func() error {
-		return tc.cli.Run(ctx, req, &m)
-	})
 }
 
 func (tc *TestContext) withRetryOnTemporaryConnectionProblems(risky func() error) error {
@@ -74,25 +51,11 @@ func (tc *TestContext) withRetryOnTemporaryConnectionProblems(risky func() error
 	}))
 }
 
-func (tc *TestContext) RunOperationWithCustomTenant(ctx context.Context, tenant string, req *gcli.Request, resp interface{}) error {
-	return tc.runCustomOperation(ctx, tenant, tc.currentScopes, req, resp)
-}
-
-func (tc *TestContext) RunOperationWithCustomScopes(ctx context.Context, scopes []string, req *gcli.Request, resp interface{}) error {
-	return tc.runCustomOperation(ctx, defaultTenant, scopes, req, resp)
-}
-
-func (tc *TestContext) runCustomOperation(ctx context.Context, tenant string, scopes []string, req *gcli.Request, resp interface{}) error {
+func (tc *TestContext) RunOperationWithCustomTenant(ctx context.Context, cli *gcli.Client, tenant string, req *gcli.Request, resp interface{}) error {
 	m := resultMapperFor(&resp)
 
 	req.Header.Set("Tenant", tenant)
 
-	token, err := jwtbuilder.Do(tenant, scopes)
-	if err != nil {
-		return errors.Wrap(err, "while building JWT token")
-	}
-
-	cli := common.NewAuthorizedGraphQLClient(token)
 	return tc.withRetryOnTemporaryConnectionProblems(func() error { return cli.Run(ctx, req, &m) })
 }
 

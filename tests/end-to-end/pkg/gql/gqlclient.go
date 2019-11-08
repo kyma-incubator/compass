@@ -1,4 +1,4 @@
-package common
+package gql
 
 import (
 	"crypto/tls"
@@ -11,7 +11,7 @@ import (
 )
 
 func NewAuthorizedGraphQLClient(bearerToken string) *gcli.Client {
-	return NewAuthorizedGraphQLClientWithCustomURL(bearerToken, getDirectorGraphqlURL())
+	return NewAuthorizedGraphQLClientWithCustomURL(bearerToken, getDirectorGraphQLURL())
 }
 
 func NewAuthorizedGraphQLClientWithCustomURL(bearerToken, url string) *gcli.Client {
@@ -19,7 +19,7 @@ func NewAuthorizedGraphQLClientWithCustomURL(bearerToken, url string) *gcli.Clie
 	return gcli.NewClient(url, gcli.WithHTTPClient(authorizedClient))
 }
 
-func getDirectorGraphqlURL() string {
+func getDirectorGraphQLURL() string {
 	url := os.Getenv("DIRECTOR_URL")
 	if url == "" {
 		url = "http://127.0.0.1:3000"
@@ -45,15 +45,6 @@ func newAuthorizedHTTPClient(bearerToken string) *http.Client {
 		Transport: transport,
 		Timeout:   time.Second * 30,
 	}
-}
-
-func GetDexGraphQLClient(bearerToken string) *gcli.Client {
-	return NewAuthorizedGraphQLClient(bearerToken)
-}
-
-func GetOauthGraphQLClient(token string, url string) *gcli.Client {
-	gqlClient := NewAuthorizedGraphQLClientWithCustomURL(token, url)
-	return gqlClient
 }
 
 func (t *authenticatedTransport) RoundTrip(req *http.Request) (*http.Response, error) {

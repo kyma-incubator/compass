@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -13,23 +14,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/common"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/gql"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-
-	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/idtokenprovider"
 	"github.com/stretchr/testify/require"
 )
-
-func init() {
-	var err error
-	tc, err = NewTestContext()
-	if err != nil {
-		panic(errors.Wrap(err, "while test context setup"))
-	}
-}
 
 type hydraToken struct {
 	AccessToken string `json:"access_token"`
@@ -40,8 +33,9 @@ type hydraToken struct {
 
 func TestCompassAuth(t *testing.T) {
 	domain := os.Getenv("DOMAIN")
-	tenant := os.Getenv("DEFAULT_TENANT")
 	require.NotEmpty(t, domain)
+	tenant := os.Getenv("DEFAULT_TENANT")
+	require.NotEmpty(t, tenant)
 	ctx := context.Background()
 
 	t.Log("Get Dex id token")
@@ -51,7 +45,7 @@ func TestCompassAuth(t *testing.T) {
 	dexToken, err := idtokenprovider.Authenticate(config.IdProviderConfig)
 	require.NoError(t, err)
 
-	dexGraphQLClient := common.GetDexGraphQLClient(dexToken)
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	t.Log("Create Integration System with Dex id token")
 	intSys := createIntegrationSystem(t, ctx, dexGraphQLClient, tenant, "integration-system")
@@ -66,15 +60,16 @@ func TestCompassAuth(t *testing.T) {
 	t.Log("Issue a Hydra token with Client Credentials")
 	oauthCredentials := fmt.Sprintf("%s:%s", intSysOauthCredentialData.ClientID, intSysOauthCredentialData.ClientSecret)
 	encodedCredentials := base64.StdEncoding.EncodeToString([]byte(oauthCredentials))
-	hydraToken := fetchHydraAccessToken(t, encodedCredentials, intSysOauthCredentialData.URL, http.StatusOK)
-
-	oauthGraphQLClient := common.GetOauthGraphQLClient(hydraToken.AccessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", domain))
+	hydraToken, err := fetchHydraAccessToken(t, encodedCredentials, intSysOauthCredentialData.URL)
+	require.NoError(t, err)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(hydraToken.AccessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", domain))
 
 	t.Log("Create an application as Integration System")
 	appInput := graphql.ApplicationCreateInput{
 		Name: "app-created-by-integration-system",
 	}
 	appByIntSys := createApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, tenant, appInput)
+	require.NotEmpty(t, appByIntSys.ID)
 
 	t.Log("Add API Spec to Application")
 	apiInput := graphql.APIDefinitionInput{
@@ -82,6 +77,7 @@ func TestCompassAuth(t *testing.T) {
 		TargetURL: "new-api-url",
 	}
 	addApiWithinTenant(t, ctx, oauthGraphQLClient, tenant, apiInput, appByIntSys.ID)
+
 	t.Log("Remove application using Dex id token")
 	deleteApplication(t, ctx, dexGraphQLClient, tenant, appByIntSys.ID)
 
@@ -89,26 +85,16 @@ func TestCompassAuth(t *testing.T) {
 	deleteIntegrationSystem(t, ctx, dexGraphQLClient, tenant, intSys.ID)
 
 	t.Log("Check if token granted for Integration System is invalid")
-	appInput = graphql.ApplicationCreateInput{
-		Name: "app-which-should-be-not-created",
-	}
-	appInputGQL, err := tc.Graphqlizer.ApplicationCreateInputToGQL(appInput)
-	require.NoError(t, err)
-
-	createRequest := fixCreateApplicationRequest(appInputGQL)
-	createRequest.Header.Set("Tenant", tenant)
-	app := graphql.ApplicationExt{}
-	m := resultMapperFor(&app)
-
-	err = tc.withRetryOnTemporaryConnectionProblems(func() error { return oauthGraphQLClient.Run(ctx, createRequest, &m) })
-	require.NoError(t, err)
-	require.Empty(t, app.ID)
+	appByIntSys = createApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, tenant, appInput)
+	require.Empty(t, appByIntSys.ID)
 
 	t.Log("Check if token can not be fetched with old client credentials")
-	fetchHydraAccessToken(t, encodedCredentials, intSysOauthCredentialData.URL, http.StatusUnauthorized)
+	_, err = fetchHydraAccessToken(t, encodedCredentials, intSysOauthCredentialData.URL)
+	require.Error(t, err)
+	assert.Equal(t, "Response status code is 401", err.Error())
 }
 
-func fetchHydraAccessToken(t *testing.T, encodedCredentials string, tokenURL string, expectedStatusCode int) *hydraToken {
+func fetchHydraAccessToken(t *testing.T, encodedCredentials string, tokenURL string) (*hydraToken, error) {
 	form := url.Values{}
 	form.Set("grant_type", "client_credentials")
 	form.Set("scope", "application:write application:read")
@@ -136,9 +122,11 @@ func fetchHydraAccessToken(t *testing.T, encodedCredentials string, tokenURL str
 	hydraToken := hydraToken{}
 	err = json.Unmarshal(token, &hydraToken)
 	require.NoError(t, err)
-	require.Equal(t, expectedStatusCode, resp.StatusCode)
 
-	return &hydraToken
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New(fmt.Sprintf("Response status code is %d", resp.StatusCode))
+	}
+	return &hydraToken, nil
 }
 
 func httpRequestBodyCloser(t *testing.T, resp *http.Response) {
