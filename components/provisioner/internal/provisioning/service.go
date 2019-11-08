@@ -61,7 +61,7 @@ func (r *service) ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeI
 
 	finished := make(chan struct{})
 
-	go r.startProvisioning(operation.ID, id, runtimeConfig, config.Credentials.SecretName, finished)
+	go r.startProvisioning(operation.ID, id, runtimeConfig, runtimeConfig.CredentialsSecretName, finished)
 
 	return operation.ID, finished, err
 }

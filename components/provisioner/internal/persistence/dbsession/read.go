@@ -14,7 +14,7 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 	var cluster model.Cluster
 
 	err := r.session.
-		Select("id", "kubeconfig", "terraform_state", "creation_timestamp").
+		Select("id", "kubeconfig", "terraform_state", "credentials_secret_name", "creation_timestamp").
 		From("cluster").
 		Where(dbr.Eq("cluster.id", runtimeID)).
 		LoadOne(&cluster)
@@ -26,7 +26,6 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 
 		return model.Cluster{}, dberrors.Internal("Failed to get Cluster: %s", err)
 	}
-
 	return cluster, nil
 }
 
