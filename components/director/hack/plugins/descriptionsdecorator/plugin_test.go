@@ -22,10 +22,10 @@ func TestMutateConfig(t *testing.T) {
 		testExamplesDir := "testdata/examples"
 		d := descriptionsdecorator.NewPlugin(testOutputFile, testExamplesDir)
 		err = d.MutateConfig(cfg)
-		defer func() {
+		defer func(t *testing.T) {
 			err = os.Remove(testOutputFile)
 			require.NoError(t, err)
-		}()
+		}(t)
 		require.NoError(t, err)
 
 		actual, err := ioutil.ReadFile(testOutputFile)
@@ -43,10 +43,10 @@ func TestMutateConfig(t *testing.T) {
 		testExamplesDir := "testdata/examples"
 		d := descriptionsdecorator.NewPlugin(testOutputFile, testExamplesDir)
 		err = d.MutateConfig(cfg)
-		defer func() {
+		defer func(t *testing.T) {
 			err = os.Remove(testOutputFile)
 			require.NoError(t, err)
-		}()
+		}(t)
 		require.Nil(t, err)
 
 	})
@@ -65,10 +65,11 @@ func TestMutateConfig(t *testing.T) {
 		testExamplesDir := "testdata/examples"
 		d := descriptionsdecorator.NewPlugin(testOutputFile, testExamplesDir)
 		err = d.MutateConfig(cfg)
-		defer func() {
+		defer func(t *testing.T) {
 			err = os.Remove(testOutputFile)
 			require.NoError(t, err)
-		}()
+		}(t)
 		assert.Nil(t, err)
+
 	})
 }
