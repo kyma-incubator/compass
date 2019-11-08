@@ -9,6 +9,8 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/components/director/hack/plugins"
 
 	"github.com/99designs/gqlgen/codegen/config"
@@ -28,12 +30,13 @@ const (
 
 var _ plugin.ConfigMutator = &descriptionsDecoratorPlugin{}
 
-func NewPlugin(schemaFileName string) *descriptionsDecoratorPlugin {
-	return &descriptionsDecoratorPlugin{schemaFileName: schemaFileName}
+func NewPlugin(schemaFileName string, examplesDirectory string) *descriptionsDecoratorPlugin {
+	return &descriptionsDecoratorPlugin{schemaFileName: schemaFileName, examplesDirectory: examplesDirectory}
 }
 
 type descriptionsDecoratorPlugin struct {
-	schemaFileName string
+	schemaFileName    string
+	examplesDirectory string
 }
 
 func (p *descriptionsDecoratorPlugin) Name() string {
@@ -74,13 +77,13 @@ func (p *descriptionsDecoratorPlugin) MutateConfig(cfg *config.Config) error {
 	return schemaFile.Close()
 }
 
-func (p *descriptionsDecoratorPlugin) ensureDescription(f *ast.FieldDefinition, opType GraphqlOperationType) {
+func (p *descriptionsDecoratorPlugin) ensureDescription(f *ast.FieldDefinition, opType GraphqlOperationType) error {
 
 	f.Description = deletePrevious(f.Description)
-	dirs, err := ioutil.ReadDir(ExamplesDirectory)
+	dirs, err := ioutil.ReadDir(p.examplesDirectory)
 	if err != nil {
 		log.Printf("While reading the examples directory: %s", err.Error())
-		return
+		return errors.Wrap(err, "While reading the examples directory")
 	}
 	for _, dir := range dirs {
 		if !dir.IsDir() {
@@ -89,10 +92,9 @@ func (p *descriptionsDecoratorPlugin) ensureDescription(f *ast.FieldDefinition, 
 		if sanitizeName(f.Name, opType) != dir.Name() {
 			continue
 		}
-		files, err := ioutil.ReadDir(path.Join(ExamplesDirectory, dir.Name()))
+		files, err := ioutil.ReadDir(path.Join(p.examplesDirectory, dir.Name()))
 		if err != nil {
-			log.Printf("While reading the examples subdirectory %s : %s", dir.Name(), err.Error())
-			return
+			return errors.Wrap(err, "While reading the examples subdirectory")
 		}
 		if len(f.Description) == 0 {
 			f.Description += ExamplePrefix
@@ -106,6 +108,7 @@ func (p *descriptionsDecoratorPlugin) ensureDescription(f *ast.FieldDefinition, 
 		}
 
 	}
+	return nil
 }
 
 func sanitizeName(name string, opType GraphqlOperationType) string {

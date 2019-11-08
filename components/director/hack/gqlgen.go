@@ -18,7 +18,7 @@ func main() {
 	}
 
 	err = api.Generate(cfg,
-		api.AddPlugin(scopesdecorator.NewPlugin("schema.graphql")), api.AddPlugin(descriptionsdecorator.NewPlugin("schema.graphql")))
+		api.AddPlugin(scopesdecorator.NewPlugin("schema.graphql")), api.AddPlugin(descriptionsdecorator.NewPlugin("schema.graphql", descriptionsdecorator.ExamplesDirectory)))
 
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
