@@ -9,7 +9,7 @@ It allows you to provision the clusters in two ways:
 - [through Gardener](08-02-provisioning-gardener.md) on:
     * Google Cloud Platform (GCP)
     * Azure
-    * Amazon Web Services (AWS).
+    * Amazon Web Services (AWS).  
 Follow the links to access the respective tutorials. 
     
 You can access the Runtime Provisioner in two ways:
