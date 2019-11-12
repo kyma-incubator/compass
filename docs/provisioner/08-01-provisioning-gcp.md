@@ -1,31 +1,29 @@
 ---
-title: Overview
-type: Overview
+title: {Document title}
+type: Tutorials
 ---
 
-The Runtime Provisioner is a Compass component responsible for provisioning, installing, and deprovisioning clusters with Kyma (Kyma Runtimes).
-It allows you to provision the clusters in two ways:
-- [directly on Google Cloud Platform (GCP)](08-01-provisioning-gcp.md)
-- [through Gardener](08-02-provisioning-gardener.md) on:
-    * Google Cloud Platform (GCP)
-    * Azure
-    * Amazon Web Services (AWS).
-Follow the links to access the respective tutorials. 
-    
-You can access the Runtime Provisioner in two ways:
+>**NOTE:** Blockquotes in this document provide instructions. Remove them from the final document. Add more sections to the document if you need to explain a given aspect in more details. Use H2 (##) to introduce a new section.
+>
+>This is a template for the **Tutorials** document type that provides a clear step-by-step instruction that helps the user to understand a given concept better. The user must be able to go through all the steps of the document and complete them.
 
-- by making a call from inside the cluster with the Provisioner (e.g. from another pod)
+>  In the document:
+> * Start with the introductory sentence presented in this template.
+> * Follow the `08-{00}-{document-title}.md` convention to name the document. The title must summarize what it is about.
+>
+> For reference, see the existing **Tutorials** document concerning the [Sample service deployment on local machine](https://kyma-project.io/docs/master/root/kyma/#tutorials-sample-service-deployment-on-a-cluster).
 
-    ```bash
-    kubectl exec {COMMAND_TO_MAKE_A_CALL_FROM_INSIDE_THE_POD}
-    ```
 
-- by forwarding the port that the Application is listening on
+This tutorial shows {describe the purpose of the tutorial}.
 
-    ```bash
-    kubectl -n compass-system port-forward svc/compass-provisioner 3000:3000
-    ```
-    <!--- alternatively: by forwarding the port that the GraphQL Server is listening on --->
-    
+## Prerequisites
 
-The operations of provisioning and deprovisioning are asynchronous. 
+> List the requirements to complete an action described in the tutorial.
+
+## Steps
+
+> Provide the steps that the user must follow to complete a certain action. Use an ordered list to introduce the steps. Add more sub-sections if you need to explain a given aspect in more details. Use H3 (###) to introduce a new sub-section.
+
+## Troubleshooting
+
+> List potential issues and tips on how to avoid or solve these issues.
