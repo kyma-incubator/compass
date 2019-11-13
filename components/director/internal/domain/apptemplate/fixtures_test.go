@@ -4,20 +4,21 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 const (
-	testID       = "foo"
-	testName     = "bar"
+	testID          = "foo"
+	testName        = "bar"
 	testDescription = "Lorem ipsum"
-	testPageSize = 3
-	testCursor   = ""
+	testPageSize    = 3
+	testCursor      = ""
 )
 
 var (
@@ -60,7 +61,7 @@ func fixEntityAppTemplate(t *testing.T, id, name string) *apptemplate.Entity {
 func fixModelApplicationCreateInput() *model.ApplicationCreateInput {
 	desc := "Sample"
 	kind := "test"
-	testURL  := "https://foo.bar"
+	testURL := "https://foo.bar"
 	intSysID := "iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"
 	return &model.ApplicationCreateInput{
 		Name:        "foo",
@@ -93,7 +94,7 @@ func fixPlaceholders() []model.ApplicationTemplatePlaceholder {
 	placeholderDesc := "Foo bar"
 	return []model.ApplicationTemplatePlaceholder{
 		{
-			Name: "test",
+			Name:        "test",
 			Description: &placeholderDesc,
 		},
 	}

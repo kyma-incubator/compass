@@ -2,6 +2,7 @@ package apptemplate
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/pkg/errors"
@@ -106,4 +107,3 @@ func (r *repository) Update(ctx context.Context, model model.ApplicationTemplate
 func (r *repository) Delete(ctx context.Context, id string) error {
 	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
-

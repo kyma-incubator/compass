@@ -2,9 +2,10 @@ package apptemplate_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 	"regexp"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -134,7 +135,6 @@ func TestRepository_Get(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testError.Error())
 	})
-
 
 	t.Run("Error when converting", func(t *testing.T) {
 		// GIVEN

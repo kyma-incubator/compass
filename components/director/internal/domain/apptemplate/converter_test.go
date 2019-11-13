@@ -2,11 +2,12 @@ package apptemplate_test
 
 import (
 	"database/sql"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestConverter_ToEntity(t *testing.T) {
@@ -24,19 +25,19 @@ func TestConverter_ToEntity(t *testing.T) {
 		ExpectedErrMessage string
 	}{
 		{
-			Name:               "All properties given",
-			Input:              appTemplateModel,
-			Expected:           appTemplateEntity,
+			Name:     "All properties given",
+			Input:    appTemplateModel,
+			Expected: appTemplateEntity,
 		},
 		{
-			Name:               "Empty",
-			Input:              &model.ApplicationTemplate{},
-			Expected:           &apptemplate.Entity{},
+			Name:     "Empty",
+			Input:    &model.ApplicationTemplate{},
+			Expected: &apptemplate.Entity{},
 		},
 		{
-			Name:               "Nil",
-			Input:              nil,
-			Expected:           nil,
+			Name:     "Nil",
+			Input:    nil,
+			Expected: nil,
 		},
 		// Cannot test error case while marshalling Application Input or Placeholders
 	}
@@ -95,18 +96,18 @@ func TestConverter_FromEntity(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name:               "Application Input Unmarshall Error",
-			Input:              &apptemplate.Entity{
+			Name: "Application Input Unmarshall Error",
+			Input: &apptemplate.Entity{
 				ApplicationInput: "{dasdd",
 			},
 			ExpectedErrMessage: "while unpacking Application Create Input: invalid character 'd' looking for beginning of object key string",
 		},
 		{
-			Name:               "Placeholders Unmarshall Error",
-			Input:              &apptemplate.Entity{
+			Name: "Placeholders Unmarshall Error",
+			Input: &apptemplate.Entity{
 				Placeholders: sql.NullString{
-					String:"{dasdd",
-					Valid: true,
+					String: "{dasdd",
+					Valid:  true,
 				},
 			},
 			ExpectedErrMessage: "while unpacking Placeholders: invalid character 'd' looking for beginning of object key string",

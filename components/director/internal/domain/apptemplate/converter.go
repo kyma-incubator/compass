@@ -3,12 +3,13 @@ package apptemplate
 import (
 	"database/sql"
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/pkg/errors"
 )
 
-type AppConverter interface {}
+type AppConverter interface{}
 
 type converter struct{}
 
@@ -61,7 +62,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.ApplicationTemplate, erro
 		Name:             entity.Name,
 		Description:      repo.StringPtrFromNullableString(entity.Description),
 		ApplicationInput: appInput,
-		Placeholders:    placeholders,
+		Placeholders:     placeholders,
 		AccessLevel:      model.ApplicationTemplateAccessLevel(entity.AccessLevel),
 	}, nil
 }
@@ -92,7 +93,6 @@ func (c *converter) packApplicationInput(in *model.ApplicationCreateInput) (stri
 
 	return string(result), nil
 }
-
 
 func (c *converter) unpackPlaceholders(in sql.NullString) ([]model.ApplicationTemplatePlaceholder, error) {
 	if !in.Valid || in.String == "" {
