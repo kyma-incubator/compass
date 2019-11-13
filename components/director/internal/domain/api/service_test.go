@@ -362,13 +362,11 @@ func TestService_Create(t *testing.T) {
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
 				repo := &automock.FetchRequestRepository{}
-				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id).Once()
-				svc.On("Generate").Return(frID).Once()
 				return svc
 			},
 			Input:       modelInput,
@@ -378,6 +376,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error - Fetch Request Creation",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
+				repo.On("Create", ctx, modelAPIDefinition).Return(nil).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {

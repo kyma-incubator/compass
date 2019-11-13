@@ -101,18 +101,17 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.API
 
 	id := s.uidService.Generate()
 
+	api := in.ToAPIDefinition(id, applicationID, tnt)
+	err = s.repo.Create(ctx, api)
+	if err != nil {
+		return "", err
+	}
+
 	if in.Spec != nil && in.Spec.FetchRequest != nil {
 		_, err = s.createFetchRequest(ctx, tnt, *in.Spec.FetchRequest, id)
 		if err != nil {
 			return "", errors.Wrapf(err, "while creating FetchRequest for APIDefinition %s", id)
 		}
-	}
-
-	api := in.ToAPIDefinition(id, applicationID, tnt)
-
-	err = s.repo.Create(ctx, api)
-	if err != nil {
-		return "", err
 	}
 
 	return id, nil

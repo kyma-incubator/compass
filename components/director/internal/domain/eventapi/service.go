@@ -102,17 +102,18 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Eve
 
 	id := s.uidService.Generate()
 
-	if in.Spec != nil && in.Spec.FetchRequest != nil {
-		_, err = s.createFetchRequest(ctx, tnt, in.Spec.FetchRequest, id)
-		if err != nil {
-			return "", errors.Wrapf(err, "while creating FetchRequest for EventAPIDefinition %s", id)
-		}
-	}
 	eventAPI := in.ToEventAPIDefinition(id, applicationID, tnt)
 
 	err = s.eventAPIRepo.Create(ctx, eventAPI)
 	if err != nil {
 		return "", err
+	}
+
+	if in.Spec != nil && in.Spec.FetchRequest != nil {
+		_, err = s.createFetchRequest(ctx, tnt, in.Spec.FetchRequest, id)
+		if err != nil {
+			return "", errors.Wrapf(err, "while creating FetchRequest for EventAPIDefinition %s", id)
+		}
 	}
 
 	return id, nil
