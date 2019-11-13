@@ -627,6 +627,13 @@ func TestUpdateApplicationParts(t *testing.T) {
 		inStr, err := tc.graphqlizer.APIDefinitionInputToGQL(graphql.APIDefinitionInput{
 			Name:      "new-api-name",
 			TargetURL: "new-api-url",
+			Spec: &graphql.APISpecInput{
+				Format: graphql.SpecFormatJSON,
+				Type:   graphql.APISpecTypeOpenAPI,
+				FetchRequest: &graphql.FetchRequestInput{
+					URL: "foo.bar",
+				},
+			},
 		})
 
 		require.NoError(t, err)
@@ -717,6 +724,9 @@ func TestUpdateApplicationParts(t *testing.T) {
 			Spec: &graphql.EventAPISpecInput{
 				EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
 				Format:        graphql.SpecFormatYaml,
+				FetchRequest: &graphql.FetchRequestInput{
+					URL: "foo.bar",
+				},
 			},
 		})
 
