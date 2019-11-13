@@ -36,7 +36,7 @@ Here you can find mock GraphQL queries and mutations:
 
 ## Investigations
 
-Here you can read about conducted investigations and proposed solutions:
+Here you can read about the conducted investigations:
 
 - [Storage - Requirements](./investigations/storage/requirements.md)
 - [Storage - S3](./investigations/storage/s3/README.md)
