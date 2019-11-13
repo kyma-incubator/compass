@@ -66,7 +66,7 @@ func fixModelApplicationCreateInput() *model.ApplicationCreateInput {
 		Name:        "foo",
 		Description: &desc,
 		Labels: map[string]interface{}{
-			"test": []string{"val", "val2"},
+			"test": []interface{}{"val", "val2"},
 		},
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,

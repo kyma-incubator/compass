@@ -48,7 +48,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.ApplicationTemplate, erro
 
 	placeholders, err := c.unpackPlaceholders(entity.Placeholders)
 	if err != nil {
-		return nil, errors.Wrap(err, "while unpacking placeholders")
+		return nil, errors.Wrap(err, "while unpacking Placeholders")
 	}
 
 	appInput, err := c.unpackApplicationInput(entity.ApplicationInput)
@@ -67,6 +67,10 @@ func (c *converter) FromEntity(entity *Entity) (*model.ApplicationTemplate, erro
 }
 
 func (c *converter) unpackApplicationInput(in string) (*model.ApplicationCreateInput, error) {
+	if in == "" {
+		return nil, nil
+	}
+
 	var appInput model.ApplicationCreateInput
 	err := json.Unmarshal([]byte(in), &appInput)
 	if err != nil {
@@ -91,7 +95,7 @@ func (c *converter) packApplicationInput(in *model.ApplicationCreateInput) (stri
 
 
 func (c *converter) unpackPlaceholders(in sql.NullString) ([]model.ApplicationTemplatePlaceholder, error) {
-	if !in.Valid {
+	if !in.Valid || in.String == "" {
 		return nil, nil
 	}
 
