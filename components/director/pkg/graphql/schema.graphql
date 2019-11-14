@@ -337,6 +337,26 @@ type ApplicationPage implements Pageable {
 	totalCount: Int!
 }
 
+type ApplicationTemplate {
+	id: ID!
+	name: String!
+	description: String
+	applicationInput: String!
+	placeholders:       [PlaceholderDefinition!]
+	accessLevel: ApplicationTemplateAccessLevel!
+}
+
+type ApplicationTemplatePage implements Pageable{
+	data: [ApplicationTemplate!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
+}
+
+type PlaceholderDefinition {
+	name: String!
+	description: String
+}
+
 type ApplicationStatus {
 	condition: ApplicationStatusCondition!
 	timestamp: Timestamp!
@@ -561,7 +581,20 @@ type Query {
 	applicationsForRuntime(runtimeID: ID!, first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applicationsForRuntime")
 	"""
 	Maximum `first` parameter value is 100
-	
+
+	**Examples**
+	- [query application templates with label filter](examples/query-application-templates/query-application-templates-with-label-filter.graphql)
+	- [query application templates](examples/query-application-templates/query-application-templates.graphql)
+	"""
+	applicationTemplates(first: Int = 100, after: PageCursor): ApplicationTemplatePage! @hasScopes(path: "graphql.query.applicationTemplates")
+	"""
+	**Examples**
+	- [query application template](examples/query-application-template/query-application-template.graphql)
+	"""
+	applicationTemplate(id: ID!): ApplicationTemplate @hasScopes(path: "graphql.query.applicationTemplate")
+	"""
+	Maximum `first` parameter value is 100
+
 	**Examples**
 	- [query runtimes with label filter](examples/query-runtimes/query-runtimes-with-label-filter.graphql)
 	- [query runtimes with pagination](examples/query-runtimes/query-runtimes-with-pagination.graphql)
@@ -614,6 +647,21 @@ type Mutation {
 	- [delete application](examples/delete-application/delete-application.graphql)
 	"""
 	deleteApplication(id: ID!): Application! @hasScopes(path: "graphql.mutation.deleteApplication")
+	"""
+	**Examples**
+	- [create application template](examples/create-application-template/create-application-template.graphql)
+	"""
+	createApplicationTemplate(in: ApplicationTemplateInput!): ApplicationTemplate! @hasScopes(path: "graphql.mutation.createApplicationTemplate")
+	"""
+	**Examples**
+	- [update application template](examples/update-application-template/update-application-template.graphql)
+	"""
+	updateApplicationTemplate(id: ID!, in: ApplicationTemplateInput!): ApplicationTemplate! @hasScopes(path: "graphql.mutation.updateApplicationTemplate")
+	"""
+	**Examples**
+	- [delete application template](examples/delete-application-template/delete-application-template.graphql)
+	"""
+	deleteApplicationTemplate(id: ID!): ApplicationTemplate! @hasScopes(path: "graphql.mutation.deleteApplicationTemplate")
 	"""
 	**Examples**
 	- [create runtime](examples/create-runtime/create-runtime.graphql)
