@@ -38,9 +38,11 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			Modules: gqlschema.AllKymaModule,
 		}
 
+		kymaCredentials := &gqlschema.CredentialsInput{SecretName: "secret_1"}
+
 		expectedID := "ec781980-0533-4098-aab7-96b535569732"
 
-		config := gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, KymaConfig: kymaConfig}
+		config := gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: kymaCredentials, KymaConfig: kymaConfig}
 
 		provisioningService.On("ProvisionRuntime", runtimeID, config).Return(expectedID, nil, nil)
 

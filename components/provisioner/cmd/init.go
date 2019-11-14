@@ -21,7 +21,7 @@ import (
 )
 
 func newPersistenceService(connectionString, schemaPath string) (persistence.Service, error) {
-	connection, err := database.InitializeDatabase(connectionString, schemaPath)
+	connection, err := database.InitializeDatabase(connectionString, schemaPath, 20)
 	if err != nil {
 		return nil, err
 	}

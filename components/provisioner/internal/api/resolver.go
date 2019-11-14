@@ -54,6 +54,10 @@ func validateInput(config gqlschema.ProvisionRuntimeInput) error {
 		return errors.New("cannot provision runtime since Kyma modules list is empty")
 	}
 
+	if config.Credentials == nil {
+		return errors.New("cannot provision runtime since credentials are missing")
+	}
+
 	return nil
 }
 
