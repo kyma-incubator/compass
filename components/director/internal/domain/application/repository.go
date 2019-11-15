@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -99,6 +101,28 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 		PageInfo:   page}, nil
 }
 
+func (r *pgRepository) ListByIntegrationSystemID(ctx context.Context, appTenant string, id string, pageSize int, cursor string) (*model.ApplicationPage, error) {
+
+	var appsCollection EntityCollection
+
+	conditions := fmt.Sprintf("integration_system_id='%s'", id)
+	page, totalCount, err := r.pageableQuerier.List(ctx, appTenant, pageSize, cursor, "id", &appsCollection, conditions)
+	if err != nil {
+		return nil, err
+	}
+
+	var items []*model.Application
+
+	for _, appEnt := range appsCollection {
+		m := r.conv.FromEntity(&appEnt)
+		items = append(items, m)
+	}
+	return &model.ApplicationPage{
+		Data:       items,
+		TotalCount: totalCount,
+		PageInfo:   page}, nil
+}
+
 func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, scenarios []string, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	var appsCollection EntityCollection
 
@@ -113,7 +137,7 @@ func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, sc
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating scenarios filter query")
 	}
-
+	logrus.Info(scenariosSubquery)
 	var additionalConditions []string
 	if scenariosSubquery != "" {
 		additionalConditions = append(additionalConditions, fmt.Sprintf(`"id" IN (%s)`, scenariosSubquery))

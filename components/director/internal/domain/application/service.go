@@ -24,6 +24,7 @@ type ApplicationRepository interface {
 	Create(ctx context.Context, item *model.Application) error
 	Update(ctx context.Context, item *model.Application) error
 	Delete(ctx context.Context, tenant, id string) error
+	ListByIntegrationSystemID(ctx context.Context, appTenant string, id string, pageSize int, cursor string) (*model.ApplicationPage, error)
 }
 
 //go:generate mockery -name=LabelRepository -output=automock -outpkg=automock -case=underscore
@@ -71,6 +72,11 @@ type FetchRequestRepository interface {
 	Create(ctx context.Context, item *model.FetchRequest) error
 }
 
+//go:generate mockery -name=IntegrationSystemRepository -output=automock -outpkg=automock -case=underscore
+type IntegrationSystemRepository interface {
+	Exists(ctx context.Context, id string) (bool, error)
+}
+
 //go:generate mockery -name=LabelUpsertService -output=automock -outpkg=automock -case=underscore
 type LabelUpsertService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
@@ -96,6 +102,7 @@ type service struct {
 	labelRepo        LabelRepository
 	runtimeRepo      RuntimeRepository
 	fetchRequestRepo FetchRequestRepository
+	intSystemRepo    IntegrationSystemRepository
 
 	labelUpsertService LabelUpsertService
 	scenariosService   ScenariosService
@@ -103,7 +110,7 @@ type service struct {
 	timestampGen       timestamp.Generator
 }
 
-func NewService(app ApplicationRepository, webhook WebhookRepository, api APIRepository, eventAPI EventAPIRepository, documentRepo DocumentRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, fetchRequestRepo FetchRequestRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, uidService UIDService) *service {
+func NewService(app ApplicationRepository, webhook WebhookRepository, api APIRepository, eventAPI EventAPIRepository, documentRepo DocumentRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, fetchRequestRepo FetchRequestRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, uidService UIDService) *service {
 	return &service{
 		appRepo:            app,
 		webhookRepo:        webhook,
@@ -112,6 +119,7 @@ func NewService(app ApplicationRepository, webhook WebhookRepository, api APIRep
 		documentRepo:       documentRepo,
 		runtimeRepo:        runtimeRepo,
 		labelRepo:          labelRepo,
+		intSystemRepo:      intSystemRepo,
 		labelUpsertService: labelUpsertService,
 		scenariosService:   scenariosService,
 		uidService:         uidService,
@@ -131,6 +139,28 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 	}
 
 	return s.appRepo.List(ctx, appTenant, filter, pageSize, cursor)
+}
+
+func (s *service) ListByIntegrationSystemID(ctx context.Context, id string, pageSize int, cursor string) (*model.ApplicationPage, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	exist, err := s.intSystemRepo.Exists(ctx, id)
+	if err != nil {
+		return nil, errors.Wrap(err, "while checking if integration system exits")
+	}
+
+	if !exist {
+		return nil, errors.New("integration system does not exist")
+	}
+
+	if pageSize < 1 || pageSize > 100 {
+		return nil, errors.New("page size must be between 1 and 100")
+	}
+
+	return s.appRepo.ListByIntegrationSystemID(ctx, appTenant, id, pageSize, cursor)
 }
 
 func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, pageSize int, cursor string) (*model.ApplicationPage, error) {

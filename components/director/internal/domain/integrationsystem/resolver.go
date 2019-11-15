@@ -43,22 +43,29 @@ type OAuth20Service interface {
 	DeleteMultipleClientCredentials(ctx context.Context, auths []model.SystemAuth) error
 }
 
+//go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
+type ApplicationService interface {
+	ListByIntegrationSystemID(ctx context.Context, id string, pageSize int, cursor string) (*model.ApplicationPage, error)
+}
+
 type Resolver struct {
 	transact persistence.Transactioner
 
 	intSysSvc        IntegrationSystemService
 	sysAuthSvc       SystemAuthService
 	oAuth20Svc       OAuth20Service
+	appSvc           ApplicationService
 	intSysConverter  IntegrationSystemConverter
 	sysAuthConverter SystemAuthConverter
 }
 
-func NewResolver(transact persistence.Transactioner, intSysSvc IntegrationSystemService, sysAuthSvc SystemAuthService, oAuth20Svc OAuth20Service, intSysConverter IntegrationSystemConverter, sysAuthConverter SystemAuthConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, intSysSvc IntegrationSystemService, sysAuthSvc SystemAuthService, oAuth20Svc OAuth20Service, appSvc ApplicationService, intSysConverter IntegrationSystemConverter, sysAuthConverter SystemAuthConverter) *Resolver {
 	return &Resolver{
 		transact:         transact,
 		intSysSvc:        intSysSvc,
 		sysAuthSvc:       sysAuthSvc,
 		oAuth20Svc:       oAuth20Svc,
+		appSvc:           appSvc,
 		intSysConverter:  intSysConverter,
 		sysAuthConverter: sysAuthConverter,
 	}
@@ -204,6 +211,15 @@ func (r *Resolver) DeleteIntegrationSystem(ctx context.Context, id string) (*gra
 	if err != nil {
 		return nil, err
 	}
+
+	apps, err := r.appSvc.ListByIntegrationSystemID(ctx, intSys.ID, 100, "")
+	if err != nil {
+		return nil, err
+	}
+	if apps.TotalCount > 0 {
+		return nil, errors.New("cannot delete integration system because there are applications created by it")
+	}
+
 	auths, err := r.sysAuthSvc.ListForObject(ctx, model.IntegrationSystemReference, intSys.ID)
 	if err != nil {
 		return nil, err
