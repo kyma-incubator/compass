@@ -64,7 +64,10 @@ Make a call to the Runtime Provisioner to verify that provisioning succeeded. Pa
 
 ```graphql
 query { runtimeOperationStatus(id: "e9c9ed2d-2a3c-4802-a9b9-16d599dafd25") { 
-    operation state message runtimeID 
+    operation 
+    state 
+    message 
+    runtimeID 
 }}
 ```
 
