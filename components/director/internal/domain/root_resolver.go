@@ -63,6 +63,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	tokenConverter := onetimetoken.NewConverter()
 	systemAuthConverter := systemauth.NewConverter(authConverter)
 	intSysConverter := integrationsystem.NewConverter()
+	//appTemplateConverter := apptemplate.NewConverter() # TODO: Uncomment while implementing Service and Runtime
 
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewRepository()
