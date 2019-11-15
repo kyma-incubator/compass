@@ -36,6 +36,7 @@ var _ graphql.ResolverRoot = &RootResolver{}
 
 type RootResolver struct {
 	app         *application.Resolver
+	appTemplate *appTemplate.Resolver
 	api         *api.Resolver
 	eventAPI    *eventapi.Resolver
 	doc         *document.Resolver
@@ -155,6 +156,12 @@ func (r *queryResolver) Applications(ctx context.Context, filter []*graphql.Labe
 func (r *queryResolver) Application(ctx context.Context, id string) (*graphql.Application, error) {
 	return r.app.Application(ctx, id)
 }
+func (r *queryResolver) ApplicationTemplates(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationTemplatePage, error) {
+	return r.appTemplate.ApplicationTemplates(ctx, filter, first, after)
+}
+func (r *queryResolver) ApplicationTemplate(ctx context.Context, id string) (*graphql.ApplicationTemplate, error) {
+	return r.appTemplate.ApplicationTemplate(ctx, id)
+}
 func (r *queryResolver) ApplicationsForRuntime(ctx context.Context, runtimeID string, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
 	return r.app.ApplicationsForRuntime(ctx, runtimeID, first, after)
 }
@@ -192,6 +199,15 @@ func (r *mutationResolver) UpdateApplication(ctx context.Context, id string, in 
 }
 func (r *mutationResolver) DeleteApplication(ctx context.Context, id string) (*graphql.Application, error) {
 	return r.app.DeleteApplication(ctx, id)
+}
+func (r *mutationResolver) CreateApplicationTemplate(ctx context.Context, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
+	return r.appTemplate.CreateApplicationTemplate(ctx, in)
+}
+func (r *mutationResolver) UpdateApplicationTemplate(ctx context.Context, id string, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
+	return r.appTemplate.UpdateApplicationTemplate(ctx, id, in)
+}
+func (r *mutationResolver) DeleteApplicationTemplate(ctx context.Context, id string) (*graphql.ApplicationTemplate, error) {
+	return r.appTemplate.DeleteApplicationTemplate(ctx, id)
 }
 func (r *mutationResolver) AddWebhook(ctx context.Context, applicationID string, in graphql.WebhookInput) (*graphql.Webhook, error) {
 	return r.webhook.AddApplicationWebhook(ctx, applicationID, in)
