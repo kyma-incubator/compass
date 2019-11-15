@@ -42,6 +42,13 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
   AWS
   </summary>
   
+  - Existing project on Gardener
+  - AWS account with added AWS IAM policy for Gardener
+  - Access key created for your AWS user with the following credentials:
+    * Secrete Access Key
+    * Access Key ID
+  
+  > **NOTE:** To get the AWS IAM policy, access your project on Gardener, navigate to the **Secrets** tab, click on the help icon on the AWS card, and copy the `json` policy. 
     
   </details>
 </div>
@@ -68,44 +75,40 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
 
       > **NOTE:** To access the Runtime Provisioner, make a call from another Pod in the cluster containing the Runtime Provisioner or forward the port on which the GraphQL Server is listening.
     
-      > **NOTE:** The cluster name must not be longer than 21 characters.                                                                    
+      > **NOTE:** The cluster name must start with a lowercase letter followed by up to 19 lowercase letters, numbers, or hyphens, and cannot end with a hyphen.                                                                 
                                                                           
       ```graphql
-      mutation { provisionRuntime(id:"61d1841b-ccb5-44ed-a9ec-45f70cd2b0d6" config: {
-        clusterConfig: {
-          gardenerConfig: {
-            name: "{CLUSTER_NAME}" 
-            projectName: "{GARDENER_PROJECT_NAME}" 
-            kubernetesVersion: "1.15.4"
-            diskType: "pd-standard"
-            volumeSizeGB: 30
-            nodeCount: 3
-            machineType: "n1-standard-4"
-            region: "europe-west4"
-            provider: "gcp"
-              seed: "gcp-eu1"
-            targetSecret: "{GCP_SERVICE_ACCOUNT_KEY_SECRET_NAME}"
-            workerCidr: "10.250.0.0/19"
-            autoScalerMin: 2
-            autoScalerMax: 4
-            maxSurge: 4
-            maxUnavailable: 1
-            providerSpecificConfig: { 
-              gcpConfig: {
-                zone: "europe-west4-a"
+      mutation { 
+        provisionRuntime(
+          id:"61d1841b-ccb5-44ed-a9ec-45f70cd2b0d6" config: {
+            clusterConfig: {
+              gardenerConfig: {
+                name: "{CLUSTER_NAME}" 
+                projectName: "{GARDENER_PROJECT_NAME}" 
+                kubernetesVersion: "1.15.4"
+                diskType: "pd-standard"
+                volumeSizeGB: 30
+                nodeCount: 3
+                machineType: "n1-standard-4"
+                region: "europe-west4"
+                provider: "gcp"
+                seed: "gcp-eu1"
+                targetSecret: "{GARDENER_GCP_SECRET_NAME}"
+                workerCidr: "10.250.0.0/19"
+                autoScalerMin: 2
+                autoScalerMax: 4
+                maxSurge: 4
+                maxUnavailable: 1
+                providerSpecificConfig: { gcpConfig: { zone: "europe-west4-a" } }
               }
             }
+            kymaConfig: { version: "1.5", modules: Backup }
+            credentials: {
+              secretName: "{GAREDENER_SERVICE_ACCOUNT_CONFIGURATION_SECERT_NAME}" 
+            }
           }
-        }
-        kymaConfig: {
-          version: "1.5"
-          modules: Backup
-        }
-        credentials: {
-          secretName: "{GAREDENER_SERVICE_ACCOUNT_CONFIGURATION_SECERT_NAME}" 
-        }
+        )
       }
-      )}
       ```
     
       A successful call returns the ID of the provisioning operation:
@@ -130,7 +133,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
 
   1. Access your project on [Gardener](https://dashboard.garden.canary.k8s.ondemand.com).
 
-  2. In the **Secrets** tab, add a new Google Secret for Azure. Use the credentials you got from Azure.
+  2. In the **Secrets** tab, add a new Azure Secret. Use the credentials you got from Azure.
 
   3. In the **Members** tab, create a service account for Gardener. 
 
@@ -140,44 +143,38 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
 
       > **NOTE:** To access the Runtime Provisioner, make a call from another Pod in the cluster containing the Runtime Provisioner or forward the port on which the GraphQL Server is listening.
     
-      > **NOTE:** The cluster name must not be longer than 21 characters.                                                                    
+      > **NOTE:** The cluster name must start with a lowercase letter followed by up to 19 lowercase letters, numbers, or hyphens, and cannot end with a hyphen.                                                                  
                                                                           
       ```graphql
-      mutation { provisionRuntime(id:"61d1841b-ccb5-44ed-a9ec-45f70cd1b0d3" config: {
-        clusterConfig: {
-          gardenerConfig: {
-            name: "{CLUSTER_NAME}"
-            projectName: "{GARDENER_PROJECT_NAME}"
-            kubernetesVersion: "1.15.4"
-            diskType: "Standard_LRS"
-            volumeSizeGB: 35
-            nodeCount: 3
-            machineType: "Standard_D2_v3"
-            region: "westeurope"
-            provider: "azure"
-            seed: "az-eu1"
-            targetSecret: "{AZURE_APP_REGISTRATION_CLIENT_SECRET}"
-            workerCidr: "10.250.0.0/19"
-            autoScalerMin: 2
-            autoScalerMax: 4
-            maxSurge: 4
-            maxUnavailable: 1
-            providerSpecificConfig: { 
-              azureConfig: {
-                vnetCidr: "10.250.0.0/19"
+      mutation { 
+        provisionRuntime(
+          id:"61d1841b-ccb5-44ed-a9ec-45f70cd1b0d3" config: {
+            clusterConfig: {
+              gardenerConfig: {
+                name: "{CLUSTER_NAME}"
+                projectName: "{GARDENER_PROJECT_NAME}"
+                kubernetesVersion: "1.15.4"
+                diskType: "Standard_LRS"
+                volumeSizeGB: 35
+                nodeCount: 3
+                machineType: "Standard_D2_v3"
+                region: "westeurope"
+                provider: "azure"
+                seed: "az-eu1"
+                targetSecret: "{GARDENER_AZURE_SECRET_NAME}"
+                workerCidr: "10.250.0.0/19"
+                autoScalerMin: 2
+                autoScalerMax: 4
+                maxSurge: 4
+                maxUnavailable: 1
+                providerSpecificConfig: {  azureConfig: { vnetCidr: "10.250.0.0/19" } }
               }
             }
+            kymaConfig: { version: "1.5", modules: Backup }
+            credentials: { secretName: "{GARDENER_SERVICE_ACCOUNT_CONFIGURATION_SECRET_NAME}" }
           }
-        }
-        kymaConfig: {
-          version: "1.5"
-          modules: Backup
-        }
-        credentials: {
-          secretName: "{GARDENER_SERVICE_ACCOUNT_CONFIGURATION_SECRET_NAME}"
-        }
+        )
       }
-      )}
       ```
     
       A successful call returns the ID of the provisioning operation:
@@ -194,11 +191,77 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
   </details>
   
   <details>
-    <summary>
-    AWS
-    </summary>
+  <summary>
+  AWS
+  </summary>
       
+  To provision Kyma Runtime on AWS, follow these steps:
     
+  1. Access your project on [Gardener](https://dashboard.garden.canary.k8s.ondemand.com).
+  
+  2. In the **Secrets** tab, add a new AWS Secret. Use the credentials you got from AWS.
+    
+  3. In the **Members** tab, create a service account for Gardener. 
+
+  4. Download the service account configuration (`kubeconfig.yaml`) and use it to create a Secret in the `compass-system` Namespace.
+
+  5. Make a call to the Runtime Provisioner to create a cluster on AWS.
+
+      > **NOTE:** To access the Runtime Provisioner, make a call from another Pod in the cluster containing the Runtime Provisioner or forward the port on which the GraphQL Server is listening.
+    
+      > **NOTE:** The cluster name must start with a lowercase letter followed by up to 19 lowercase letters, numbers, or hyphens, and cannot end with a hyphen.                                                                  
+                                                                          
+      ```graphql
+      mutation { 
+        provisionRuntime(
+          id:"61d1841b-ccb5-44ed-a9ec-15f70cd2b0d2" 
+          config: {
+            clusterConfig: {
+              gardenerConfig: {
+                name: "{CLUSTER_NAME}"
+                projectName: "{GARDENER_PROJECT_NAME}"
+                kubernetesVersion: "1.15.4"
+                diskType: "gp2"
+                volumeSizeGB: 35
+                nodeCount: 3
+                machineType: "m4.2xlarge"
+                region: "eu-west-1"
+                provider: "aws"
+                seed: "aws-eu1"
+                targetSecret: "{GARDENER_AWS_SECRET_NAME}"
+                workerCidr: "10.250.0.0/19"
+                autoScalerMin: 2
+                autoScalerMax: 4
+                maxSurge: 4
+                maxUnavailable: 1
+                providerSpecificConfig: { 
+                  awsConfig: {
+                    publicCidr: "10.250.96.0/22",
+                    vpcCidr:         "10.250.0.0/16",
+                    internalCidr:   "10.250.112.0/22",
+                    zone:            "eu-west-1b",
+                  }
+                }
+              }
+            }
+            kymaConfig: { version: "1.5", modules: Backup }
+            credentials: { secretName: "{GARDENER_SERVICE_ACCOUNT_CONFIGURATION_SECRET_NAME}" }
+          }
+        )
+      }
+      ```
+    
+      A successful call returns the ID of the provisioning operation:
+    
+      ```graphql
+      {
+        "data": {
+          "provisionRuntime": "55dab98f-4efc-4afa-81df-b40ae2de146a"
+        }
+      }
+      ```
+    
+      The operation of provisioning is asynchronous. Use the provisioning operation ID to check the Runtime Operation Status and verify that the provisioning was successful.
   </details>
     
 </div>
@@ -239,7 +302,7 @@ If you get the `InProgress` status, it means that the provisioning has not yet f
 
 ## Check the Runtime Status
 
-Make a call to the Runtime Provisioner to check the Runtime Status. Pass the Runtime ID as `id`. 
+Make a call to the Runtime Provisioner to check the Runtime status. Pass the Runtime ID as `id`. 
 
 ```graphql
 query { runtimeStatus(id: "61d1841b-ccb5-44ed-a9ec-45f70cd2b0d6") {
@@ -290,24 +353,7 @@ An example response for a successful request looks like this:
             "Backup"
           ]
         },
-        "clusterConfig": {
-          "__typename": "GardenerConfig",
-          "name": "{CLUSTER_NAME}",
-          "workerCidr": "10.250.0.0/19",
-          "region": "europe-west4",
-          "diskType": "pd-standard",
-          "maxSurge": 4,
-          "nodeCount": 3,
-          "volumeSizeGB": 30,
-          "projectName": "{GARDENER_PROJECT_NAME}",
-          "machineType": "n1-standard-4",
-          "targetSecret": "{SERVICE_ACCOUNT_KEY_SECRET_NAME}",
-          "autoScalerMin": 2,
-          "autoScalerMax": 4,
-          "provider": "{PROVIDER}",
-          "maxUnavailable": 1,
-          "kubernetesVersion": "1.15.4"
-        }
+        "clusterConfig": {CLUSTER_CONFIG}
       }
     }
   }

@@ -22,28 +22,34 @@ To provision Kyma Runtime, make a call to the Runtime Provisioner with this exam
 
 > **NOTE:** To access the Runtime Provisioner, make a call from another Pod in the cluster containing the Runtime Provisioner or forward the port on which the GraphQL Server is listening.
 
+> **NOTE:** The cluster name must start with a lowercase letter followed by up to 39 lowercase letters, numbers, or hyphens, and cannot end with a hyphen.
+
 ```graphql
-mutation { provisionRuntime(id:"309051b6-0bac-44c8-8bae-3fc59c12bb5c" config: {
-  clusterConfig: {
-    gcpConfig: {
-      name: "{CLUSTER_NAME}"
-      projectName: "{GCP_PROJECT_NAME}"
-      kubernetesVersion: "1.13"
-      bootDiskSizeGB: 30
-      numberOfNodes: 1
-      machineType: "n1-standard-4"
-      region: "europe-west3-a"
-     }
-  }
-  kymaConfig: {
-    version: "1.5"
-    modules: Backup
-  }
-  credentials: {
-    secretName: "{SECRET_NAME}"
-  }
+mutation { 
+  provisionRuntime(
+    id:"309051b6-0bac-44c8-8bae-3fc59c12bb5c" 
+    config: {
+      clusterConfig: {
+        gcpConfig: {
+          name: "{CLUSTER_NAME}"
+          projectName: "{GCP_PROJECT_NAME}"
+          kubernetesVersion: "1.13"
+          bootDiskSizeGB: 30
+          numberOfNodes: 1
+          machineType: "n1-standard-4"
+          region: "europe-west3-a"
+         }
+      }
+      kymaConfig: {
+        version: "1.5"
+        modules: Backup
+      }
+      credentials: {
+        secretName: "{SECRET_NAME}"
+      }
+    }
+  )
 }
-)}
 ```
 
 A successful call returns the ID of the provisioning operation:
@@ -56,43 +62,11 @@ A successful call returns the ID of the provisioning operation:
 }
 ```
 
-The operation of provisioning is asynchronous. Use the provisioning operation ID to check the Runtime Operation Status and verify that the provisioning was successful.
-
-## Check the Runtime Operation Status
-
-Make a call to the Runtime Provisioner to verify that provisioning succeeded. Pass the ID of the provisioning operation as `id`.
-
-```graphql
-query { runtimeOperationStatus(id: "e9c9ed2d-2a3c-4802-a9b9-16d599dafd25") { 
-    operation 
-    state 
-    message 
-    runtimeID 
-}}
-```
-
-A successful call returns a response which includes the status of the provisioning operation (`state`) and the id of the provisioned Runtime (`runtimeID`):
-
-```graphql
-{
-  "data": {
-    "runtimeOperationStatus": {
-      "operation": "Provision",
-      "state": "Succeeded",
-      "message": "Operation succeeded.",
-      "runtimeID": "309051b6-0bac-44c8-8bae-3fc59c12bb5c"
-    }
-  }
-}
-```
-
-The `Succeeded` status means that the provisioning was successful and the cluster was created.
-
-If you get the `InProgress` status, it means that the provisioning has not yet finished. In that case, wait a few moments and check the status again. 
+The operation of provisioning is asynchronous. Use the provisioning operation ID to check the Runtime Operation Status and verify that the provisioning was successful. 
 
 ## Check the Runtime Status
 
-Make a call to the Runtime Provisioner to check the Runtime Status. Pass the Runtime ID as `id`. 
+Make a call to the Runtime Provisioner to check the Runtime status. Pass the Runtime ID as `id`. 
 
 ```graphql
 query { runtimeStatus(id: "309051b6-0bac-44c8-8bae-3fc59c12bb5c") {
@@ -143,17 +117,7 @@ An example response for a successful request looks like this:
             "Backup"
           ]
         },
-        "clusterConfig": {
-          "__typename": "GCPConfig",
-          "bootDiskSizeGB": 30,
-          "name": "{CLUSTER_NAME}",
-          "numberOfNodes": 1,
-          "kubernetesVersion": "1.13",
-          "projectName": "{GCP_PROJECT_NAME}",
-          "machineType": "n1-standard-4",
-          "zone": "",
-          "region": "europe-west3-a"
-        }
+        "clusterConfig": {CLUSTER_CONFIG}
       }
     }
   }
