@@ -1,29 +1,154 @@
 ---
-title: {Document title}
+title: Provision clusters on Google Cloud Platform (GCP)
 type: Tutorials
 ---
 
->**NOTE:** Blockquotes in this document provide instructions. Remove them from the final document. Add more sections to the document if you need to explain a given aspect in more details. Use H2 (##) to introduce a new section.
->
->This is a template for the **Tutorials** document type that provides a clear step-by-step instruction that helps the user to understand a given concept better. The user must be able to go through all the steps of the document and complete them.
-
->  In the document:
-> * Start with the introductory sentence presented in this template.
-> * Follow the `08-{00}-{document-title}.md` convention to name the document. The title must summarize what it is about.
->
-> For reference, see the existing **Tutorials** document concerning the [Sample service deployment on local machine](https://kyma-project.io/docs/master/root/kyma/#tutorials-sample-service-deployment-on-a-cluster).
-
-
-This tutorial shows {describe the purpose of the tutorial}.
+This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on Google Cloud Platform (GCP).
 
 ## Prerequisites
 
-> List the requirements to complete an action described in the tutorial.
+- Existing project on GCP
+- Service account on GCP with the following roles:
+    * Compute Admin
+    * Kubernetes Engine Admin
+    * Kubernetes Engine Cluster Admin
+    * Service Account User
+- Key generated for your service account downloaded in the `json` format
+- Secret from the service account key created in the `compass-system` Namespace
 
-## Steps
+## Provision Kyma Runtime on GCP
 
-> Provide the steps that the user must follow to complete a certain action. Use an ordered list to introduce the steps. Add more sub-sections if you need to explain a given aspect in more details. Use H3 (###) to introduce a new sub-section.
+To provision Kyma Runtime, make a call to the Runtime Provisioner with this example mutation:
 
-## Troubleshooting
+> **NOTE:** To access the Runtime Provisioner, make a call from another Pod in the cluster containing the Runtime Provisioner or forward the port on which the GraphQL Server is listening.
 
-> List potential issues and tips on how to avoid or solve these issues.
+```graphql
+mutation { provisionRuntime(id:"309051b6-0bac-44c8-8bae-3fc59c12bb5c" config: {
+    clusterConfig: {
+        gcpConfig: {
+            name: "{CLUSTER_NAME}"
+            projectName: "{GCP_PROJECT_NAME}"
+            kubernetesVersion: "1.13"
+            bootDiskSizeGB: 30
+            numberOfNodes: 1
+            machineType: "n1-standard-4"
+            region: "europe-west3-a"
+        }
+    }
+    kymaConfig: {
+        version: "1.5"
+        modules: Backup
+    }
+    credentials: {
+        secretName: "{SECRET_NAME}"
+    }
+})}
+```
+
+A successful call returns the ID of the provisioning operation:
+
+```grahpql
+{
+  "data": {
+    "provisionRuntime": "e9c9ed2d-2a3c-4802-a9b9-16d599dafd25"
+  }
+}
+```
+
+The operation of provisioning is asynchronous. Use the provisioning operation ID to check the Runtime Operation Status and verify that the provisioning was successful.
+
+## Check the Runtime Operation Status
+
+Make a call to the Runtime Provisioner to verify that provisioning succeeded. Pass the ID of the provisioning operation as `id`.
+
+```grahpql
+query { 
+    runtimeOperationStatus(id: "e9c9ed2d-2a3c-4802-a9b9-16d599dafd25") { 
+        operation state message runtimeID 
+    } 
+}
+```
+
+A successful call returns a response which includes the status of the provisioning operation (`state`) and the id of the provisioned Runtime (`runtimeID`):
+
+```graphql
+{
+  "data": {
+    "runtimeOperationStatus": {
+      "operation": "Provision",
+      "state": "Succeeded",
+      "message": "Operation succeeded.",
+      "runtimeID": "309051b6-0bac-44c8-8bae-3fc59c12bb5c"
+    }
+  }
+}
+```
+
+The `Succeeded` status means that the provisioning was successful and the cluster was created.
+
+If you get the `InProgress` status, it means that the provisioning has not yet finished. In that case, wait a few moments and check the status again. 
+
+## Check the Runtime Status
+
+Make a call to the Runtime Provisioner to check the Runtime Status. Pass the Runtime ID as `id`. 
+
+```graphql
+query { runtimeStatus(id: "309051b6-0bac-44c8-8bae-3fc59c12bb5c") {
+  runtimeConnectionStatus {
+    status errors {
+      message
+    } 
+  } 
+  lastOperationStatus {
+    message operation state runtimeID id
+  } 
+  runtimeConfiguration {
+    kubeconfig kymaConfig {
+      version modules 
+    } clusterConfig {
+      __typename ... on GCPConfig {
+        bootDiskSizeGB name numberOfNodes kubernetesVersion projectName machineType zone region }
+      ... on GardenerConfig { name workerCidr region diskType maxSurge nodeCount volumeSizeGB projectName machineType targetSecret autoScalerMin autoScalerMax provider maxUnavailable kubernetesVersion } } } } }
+```
+
+An example response for a successful request looks like this:
+
+```
+{
+  "data": {
+    "runtimeStatus": {
+      "runtimeConnectionStatus": {
+        "status": "Pending",
+        "errors": null
+      },
+      "lastOperationStatus": {
+        "message": "Operation succeeded.",
+        "operation": "Provision",
+        "state": "Succeeded",
+        "runtimeID": "309051b6-0bac-44c8-8bae-3fc59c12bb5c",
+        "id": "e9c9ed2d-2a3c-4802-a9b9-16d599dafd25"
+      },
+      "runtimeConfiguration": {
+        "kubeconfig": "{KUBECONFIG}",
+        "kymaConfig": {
+          "version": "1.5",
+          "modules": [
+            "Backup"
+          ]
+        },
+        "clusterConfig": {
+          "__typename": "GCPConfig",
+          "bootDiskSizeGB": 30,
+          "name": "{CLUSTER_NAME}",
+          "numberOfNodes": 1,
+          "kubernetesVersion": "1.13",
+          "projectName": "{GCP_PROJECT_NAME}",
+          "machineType": "n1-standard-4",
+          "zone": "",
+          "region": "europe-west3-a"
+        }
+      }
+    }
+  }
+}
+``` 
