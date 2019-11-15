@@ -337,7 +337,7 @@ func TestService_Create(t *testing.T) {
 			scenariosSvc := testCase.ScenariosServiceFn()
 			labelSvc := testCase.LabelServiceFn()
 			uidSvc := testCase.UIDServiceFn()
-			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo, nil, nil, fetchRequestRepo, labelSvc, scenariosSvc, uidSvc)
+			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo, nil, nil, fetchRequestRepo, nil, labelSvc, scenariosSvc, uidSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -364,7 +364,7 @@ func TestService_Create(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// when
 		_, err := svc.Create(context.TODO(), model.ApplicationCreateInput{})
 		assert.Equal(t, tenant.NoTenantError, err)
@@ -393,7 +393,7 @@ func TestService_CreateWithInvalidNames(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			//WHEN
 			_, err := svc.Create(ctx, testCase.Input)
@@ -469,7 +469,7 @@ func TestService_Update(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appRepo := testCase.AppRepoFn()
-			svc := application.NewService(appRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(appRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -516,7 +516,7 @@ func TestService_UpdateWithInvalidNames(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			//WHEN
 			err := svc.Update(ctx, appID, testCase.Input)
@@ -576,7 +576,7 @@ func TestService_Delete(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appRepo := testCase.AppRepoFn()
-			svc := application.NewService(appRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(appRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -648,7 +648,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// when
 			app, err := svc.Get(ctx, testCase.InputID)
@@ -753,7 +753,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// when
 			app, err := svc.List(ctx, testCase.InputLabelFilters, testCase.InputPageSize, after)
@@ -973,7 +973,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			runtimeRepository := testCase.RuntimeRepositoryFn()
 			labelRepository := testCase.LabelRepositoryFn()
 			appRepository := testCase.AppRepositoryFn()
-			svc := application.NewService(appRepository, nil, nil, nil, nil, runtimeRepository, labelRepository, nil, nil, nil, nil)
+			svc := application.NewService(appRepository, nil, nil, nil, nil, runtimeRepository, labelRepository, nil, nil, nil, nil, nil)
 
 			//WHEN
 			results, err := svc.ListByRuntimeID(ctx, testCase.Input, first, cursor)
@@ -1048,7 +1048,7 @@ func TestService_Exist(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
 			appRepo := testCase.RepositoryFn()
-			svc := application.NewService(appRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(appRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			value, err := svc.Exist(ctx, testCase.InputApplicationID)
@@ -1147,7 +1147,7 @@ func TestService_SetLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelSvc := testCase.LabelServiceFn()
-			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, nil, labelSvc, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, nil, nil, labelSvc, nil, nil)
 
 			// when
 			err := svc.SetLabel(ctx, testCase.InputLabel)
@@ -1258,7 +1258,7 @@ func TestService_GetLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(repo, nil, nil, nil, nil, nil, labelRepo, nil, nil, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil, labelRepo, nil, nil, nil, nil, nil)
 
 			// when
 			l, err := svc.GetLabel(ctx, testCase.InputApplicationID, testCase.InputLabel.Key)
@@ -1372,7 +1372,7 @@ func TestService_ListLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(repo, nil, nil, nil, nil, nil, labelRepo, nil, nil, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil, labelRepo, nil, nil, nil, nil, nil)
 
 			// when
 			l, err := svc.ListLabels(ctx, testCase.InputApplicationID)
@@ -1478,7 +1478,7 @@ func TestService_DeleteLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(repo, nil, nil, nil, nil, nil, labelRepo, nil, nil, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil, labelRepo, nil, nil, nil, nil, nil)
 
 			// when
 			err := svc.DeleteLabel(ctx, testCase.InputApplicationID, testCase.InputKey)

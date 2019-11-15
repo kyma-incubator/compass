@@ -2,6 +2,7 @@ package director
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -97,10 +98,11 @@ func TestDeleteIntegrationSystem(t *testing.T) {
 	saveExample(t, deleteIntegrationSystemRequest.Query(), "delete integration system")
 }
 
-func TestQueryIntegrationSystem(t *testing.T) {
+func TestDeleteIntegrationSystemWhileApplicationExists(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	name := "int-system"
+	testerr := errors.New("graphql: cannot delete integration system because there are applications created by it")
 
 	t.Log("Create integration system")
 	intSys := createIntegrationSystem(t, ctx, name)
