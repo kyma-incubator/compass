@@ -1,5 +1,7 @@
 package model
 
+import "github.com/kyma-incubator/compass/components/director/pkg/pagination"
+
 type ApplicationTemplate struct {
 	ID               string
 	Name             string
@@ -7,6 +9,12 @@ type ApplicationTemplate struct {
 	ApplicationInput *ApplicationCreateInput
 	Placeholders     []ApplicationTemplatePlaceholder
 	AccessLevel      ApplicationTemplateAccessLevel
+}
+
+type ApplicationTemplatePage struct {
+	Data       []*ApplicationTemplate
+	PageInfo   *pagination.Page
+	TotalCount int
 }
 
 type ApplicationTemplateInput struct {
