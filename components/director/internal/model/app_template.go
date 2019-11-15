@@ -40,3 +40,18 @@ type ApplicationTemplateValueInput struct {
 	Placeholder string
 	Value       string
 }
+
+func (a *ApplicationTemplateInput) ToApplicationTemplate(id string) ApplicationTemplate {
+	if a == nil {
+		return ApplicationTemplate{}
+	}
+
+	return ApplicationTemplate{
+		ID:               id,
+		Name:             a.Name,
+		Description:      a.Description,
+		ApplicationInput: a.ApplicationInput,
+		Placeholders:     a.Placeholders,
+		AccessLevel:      a.AccessLevel,
+	}
+}
