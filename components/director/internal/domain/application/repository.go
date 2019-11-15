@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -137,7 +135,6 @@ func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, sc
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating scenarios filter query")
 	}
-	logrus.Info(scenariosSubquery)
 	var additionalConditions []string
 	if scenariosSubquery != "" {
 		additionalConditions = append(additionalConditions, fmt.Sprintf(`"id" IN (%s)`, scenariosSubquery))
