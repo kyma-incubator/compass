@@ -62,12 +62,10 @@ The operation of provisioning is asynchronous. Use the provisioning operation ID
 
 Make a call to the Runtime Provisioner to verify that provisioning succeeded. Pass the ID of the provisioning operation as `id`.
 
-```grahpql
-query { 
-  runtimeOperationStatus(id: "e9c9ed2d-2a3c-4802-a9b9-16d599dafd25") { 
+```graphql
+query { runtimeOperationStatus(id: "e9c9ed2d-2a3c-4802-a9b9-16d599dafd25") { 
     operation state message runtimeID 
-  } 
-}
+}}
 ```
 
 A successful call returns a response which includes the status of the provisioning operation (`state`) and the id of the provisioned Runtime (`runtimeID`):
