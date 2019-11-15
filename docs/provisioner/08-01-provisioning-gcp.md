@@ -42,7 +42,8 @@ mutation { provisionRuntime(id:"309051b6-0bac-44c8-8bae-3fc59c12bb5c" config: {
     credentials: {
         secretName: "{SECRET_NAME}"
     }
-})}
+  }
+)}
 ```
 
 A successful call returns the ID of the provisioning operation:
@@ -108,12 +109,17 @@ query { runtimeStatus(id: "309051b6-0bac-44c8-8bae-3fc59c12bb5c") {
     } clusterConfig {
       __typename ... on GCPConfig {
         bootDiskSizeGB name numberOfNodes kubernetesVersion projectName machineType zone region }
-      ... on GardenerConfig { name workerCidr region diskType maxSurge nodeCount volumeSizeGB projectName machineType targetSecret autoScalerMin autoScalerMax provider maxUnavailable kubernetesVersion } } } } }
+      ... on GardenerConfig { name workerCidr region diskType maxSurge nodeCount volumeSizeGB projectName machineType targetSecret autoScalerMin autoScalerMax provider maxUnavailable kubernetesVersion 
+        } 
+      } 
+    } 
+  } 
+}
 ```
 
 An example response for a successful request looks like this:
 
-```
+```graphql
 {
   "data": {
     "runtimeStatus": {
