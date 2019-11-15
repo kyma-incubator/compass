@@ -110,7 +110,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
     
       A successful call returns the ID of the provisioning operation:
     
-      ```grahpql
+      ```graphql
       {
         "data": {
           "provisionRuntime": "7a8dc760-812c-4a35-a5fe-656a648ee2c8"
@@ -182,7 +182,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
     
       A successful call returns the ID of the provisioning operation:
     
-      ```grahpql
+      ```graphql
       {
         "data": {
           "provisionRuntime": "af0c8122-27ee-4a36-afa5-6e26c39929f2"
@@ -207,7 +207,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
 
 Make a call to the Runtime Provisioner to verify that provisioning succeeded. Pass the ID of the provisioning operation as `id`.
 
-```grahpql
+```graphql
 query { 
   runtimeOperationStatus(id: "7a8dc760-812c-4a35-a5fe-656a648ee2c8") { 
     operation 
