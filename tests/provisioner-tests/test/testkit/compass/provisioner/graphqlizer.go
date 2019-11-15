@@ -81,7 +81,7 @@ func (g *graphqlizer) GCPConfigInputToGraphQL(in gqlschema.GCPConfigInput) (stri
 		kubernetesVersion: "{{.KubernetesVersion}}"
         projectName: "{{.ProjectName}}"
 		numberOfNodes: {{.NumberOfNodes}}
-		bootDiskSize: "{{.BootDiskSize}}"
+		bootDiskSizeGb: {{.BootDiskSizeGb}}
 		machineType: "{{.MachineType}}"
 		region: "{{.Region}}"
 		{{- if .Zone }}
