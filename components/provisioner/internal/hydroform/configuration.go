@@ -64,7 +64,7 @@ func buildConfigForGardener(config model.GardenerConfig, credentialsFile string)
 		"max_unavailable": config.MaxUnavailable,
 	}
 
-	customConfiguration, err := addProviderSpecificConfig(customConfiguration, config.ProviderSpecificConfig)
+	err := addProviderSpecificConfig(customConfiguration, config.ProviderSpecificConfig)
 
 	if err != nil {
 		return &types.Cluster{}, &types.Provider{}, err
@@ -79,19 +79,19 @@ func buildConfigForGardener(config model.GardenerConfig, credentialsFile string)
 	return cluster, provider, nil
 }
 
-func addProviderSpecificConfig(customConfiguration map[string]interface{}, providerSpecificConfig string) (map[string]interface{}, error) {
+func addProviderSpecificConfig(customConfiguration map[string]interface{}, providerSpecificConfig string) (error) {
 	var gcpProviderConfig model.GCPProviderConfig
 	err := util.DecodeJson(providerSpecificConfig, &gcpProviderConfig)
 	if err == nil {
 		customConfiguration["zone"] = gcpProviderConfig.Zone
-		return customConfiguration, nil
+		return nil
 	}
 
 	var azureProviderConfig model.AzureProviderConfig
 	err = util.DecodeJson(providerSpecificConfig, &azureProviderConfig)
 	if err == nil {
 		customConfiguration["vnetcidr"] = azureProviderConfig.VnetCidr
-		return customConfiguration, nil
+		return nil
 	}
 
 	var awsProviderConfig model.AWSProviderConfig
@@ -101,8 +101,8 @@ func addProviderSpecificConfig(customConfiguration map[string]interface{}, provi
 		customConfiguration["internalscidr"] = awsProviderConfig.InternalCidr
 		customConfiguration["vpccidr"] = awsProviderConfig.VpcCidr
 		customConfiguration["publicscidr"] = awsProviderConfig.PublicCidr
-		return customConfiguration, nil
+		return nil
 	}
 
-	return nil, errors.New("provider specific configuration does not match any provider profile")
+	return errors.New("provider specific configuration does not match any provider profile")
 }

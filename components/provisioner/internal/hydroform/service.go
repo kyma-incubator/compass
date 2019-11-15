@@ -1,7 +1,7 @@
 package hydroform
 
 import (
-	"encoding/json"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	"io/ioutil"
 	"os"
 
@@ -13,7 +13,7 @@ import (
 	"github.com/kyma-incubator/hydroform/types"
 	"github.com/pkg/errors"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 const credentialsKey = "credentials"
@@ -76,7 +76,7 @@ func (s service) ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName 
 
 	log.Info("Retrieving cluster state")
 
-	internalState, err := stateToJson(cluster.ClusterInfo.InternalState)
+	internalState, err := util.EncodeJson(cluster.ClusterInfo.InternalState)
 
 	if err != nil {
 		return ClusterInfo{}, errors.Wrap(err, "Failed to retrieve cluster state")
@@ -91,7 +91,7 @@ func (s service) ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName 
 	}, nil
 }
 
-func (s service) DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretName string, terraformState string) error {
+func (s service) DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretName string, terraformStateJson string) error {
 	credentialsFileName, err := s.saveCredentialsToFile(secretName)
 	if err != nil {
 		return err
@@ -105,13 +105,15 @@ func (s service) DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretNam
 		return errors.Wrap(err, "Config preparation failed")
 	}
 
-	state, err := jsonToState(terraformState)
+	var state types.InternalState
+
+	err = util.DecodeJson(terraformStateJson, &state)
 
 	if err != nil {
 		return errors.Wrap(err, "Config preparation failed")
 	}
 
-	cluster.ClusterInfo = &types.ClusterInfo{InternalState: state}
+	cluster.ClusterInfo = &types.ClusterInfo{InternalState: &state}
 
 	log.Infof("Starting cluster deprovisioning")
 	return s.client.Deprovision(cluster, provider)
@@ -140,26 +142,6 @@ func (s service) saveCredentialsToFile(secretName string) (string, error) {
 	}
 
 	return tempFile.Name(), nil
-}
-
-func jsonToState(state string) (*types.InternalState, error) {
-	var terraformState types.InternalState
-
-	err := json.Unmarshal([]byte(state), &terraformState)
-
-	if err != nil {
-		return &types.InternalState{}, err
-	}
-
-	return &terraformState, nil
-}
-
-func stateToJson(state *types.InternalState) (string, error) {
-	bytes, err := json.Marshal(state)
-	if err != nil {
-		return "", err
-	}
-	return string(bytes), nil
 }
 
 func removeFile(fileName string) {

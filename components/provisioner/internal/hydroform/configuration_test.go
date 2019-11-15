@@ -133,7 +133,7 @@ func TestConfiguration(t *testing.T) {
 			MaxSurge:               1,
 			MaxUnavailable:         2,
 			ClusterID:              "runtimeID",
-			ProviderSpecificConfig: "{\"Zone\":\"zone\", \"InternalCidr\":\"cidr\", \"VpcCidr\":\"cidr\", \"PublicCidr\":\"cidr\"}",
+			ProviderSpecificConfig: "{\"VnetCidr\":\"cidr\"}",
 		}}
 
 		credentials := "credentials.yaml"
@@ -151,6 +151,68 @@ func TestConfiguration(t *testing.T) {
 				"max_unavailable": 2,
 				"target_provider": "azure",
 				"target_seed":     "az-eu1",
+				"target_secret":   "secret",
+				"vnetcidr":        "cidr",
+			},
+		}
+
+		expectedCluster := &types.Cluster{
+			Name:              "Something",
+			NodeCount:         3,
+			DiskSizeGB:        256,
+			MachineType:       "n1-standard-1",
+			Location:          "region",
+			KubernetesVersion: "version",
+		}
+
+		//when
+		cluster, provider, err := prepareConfig(config, credentials)
+
+		//then
+		require.NoError(t, err)
+		assert.Equal(t, expectedCluster, cluster)
+		assert.Equal(t, expectedProvider, provider)
+	})
+
+	t.Run("Should return correct gardener AWS configuration", func(t *testing.T) {
+		//given
+		config := model.RuntimeConfig{ClusterConfig: model.GardenerConfig{
+			ID:                     "id",
+			Name:                   "Something",
+			ProjectName:            "Project",
+			MachineType:            "n1-standard-1",
+			Region:                 "region",
+			KubernetesVersion:      "version",
+			NodeCount:              3,
+			VolumeSizeGB:           256,
+			DiskType:               "standard",
+			Provider:               "aws",
+			Seed:                   "aws-eu1",
+			TargetSecret:           "secret",
+			WorkerCidr:             "cidr",
+			AutoScalerMin:          1,
+			AutoScalerMax:          5,
+			MaxSurge:               1,
+			MaxUnavailable:         2,
+			ClusterID:              "runtimeID",
+			ProviderSpecificConfig: "{\"Zone\":\"zone\", \"InternalCidr\":\"cidr\", \"VpcCidr\":\"cidr\", \"PublicCidr\":\"cidr\"}",
+		}}
+
+		credentials := "credentials.yaml"
+
+		expectedProvider := &types.Provider{
+			Type:                types.Gardener,
+			ProjectName:         "Project",
+			CredentialsFilePath: credentials,
+			CustomConfigurations: map[string]interface{}{
+				"autoscaler_max":  5,
+				"autoscaler_min":  1,
+				"workercidr":      "cidr",
+				"disk_type":       "standard",
+				"max_surge":       1,
+				"max_unavailable": 2,
+				"target_provider": "aws",
+				"target_seed":     "aws-eu1",
 				"target_secret":   "secret",
 				"zone":            "zone",
 				"internalscidr":   "cidr",
