@@ -111,11 +111,11 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
       A successful call returns the ID of the provisioning operation:
     
       ```grahpql
-     {
+      {
         "data": {
           "provisionRuntime": "7a8dc760-812c-4a35-a5fe-656a648ee2c8"
         }
-     }
+      }
       ```
     
       The operation of provisioning is asynchronous. Use the provisioning operation ID to check the Runtime Operation Status and verify that the provisioning was successful.
@@ -209,12 +209,12 @@ Make a call to the Runtime Provisioner to verify that provisioning succeeded. Pa
 
 ```grahpql
 query { 
-    runtimeOperationStatus(id: "7a8dc760-812c-4a35-a5fe-656a648ee2c8") { 
-        operation 
-        state 
-        message 
-        runtimeID
-    } 
+  runtimeOperationStatus(id: "7a8dc760-812c-4a35-a5fe-656a648ee2c8") { 
+    operation 
+    state 
+    message 
+    runtimeID
+  } 
 }
 ```
 
@@ -256,8 +256,13 @@ query { runtimeStatus(id: "61d1841b-ccb5-44ed-a9ec-45f70cd2b0d6") {
       version modules 
     } clusterConfig {
       __typename ... on GCPConfig {
-        bootDiskSizeGB name numberOfNodes kubernetesVersion projectName machineType zone region }
-      ... on GardenerConfig { name workerCidr region diskType maxSurge nodeCount volumeSizeGB projectName machineType targetSecret autoScalerMin autoScalerMax provider maxUnavailable kubernetesVersion } } } } }
+        bootDiskSizeGB name numberOfNodes kubernetesVersion projectName machineType zone region 
+      }
+      ... on GardenerConfig { name workerCidr region diskType maxSurge nodeCount volumeSizeGB projectName machineType targetSecret autoScalerMin autoScalerMax provider maxUnavailable kubernetesVersion 
+      } 
+    } 
+  } 
+}}
 ```
 
 An example response for a successful request looks like this:

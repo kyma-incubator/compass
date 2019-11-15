@@ -24,25 +24,25 @@ To provision Kyma Runtime, make a call to the Runtime Provisioner with this exam
 
 ```graphql
 mutation { provisionRuntime(id:"309051b6-0bac-44c8-8bae-3fc59c12bb5c" config: {
-    clusterConfig: {
-        gcpConfig: {
-            name: "{CLUSTER_NAME}"
-            projectName: "{GCP_PROJECT_NAME}"
-            kubernetesVersion: "1.13"
-            bootDiskSizeGB: 30
-            numberOfNodes: 1
-            machineType: "n1-standard-4"
-            region: "europe-west3-a"
-        }
-    }
-    kymaConfig: {
-        version: "1.5"
-        modules: Backup
-    }
-    credentials: {
-        secretName: "{SECRET_NAME}"
-    }
+  clusterConfig: {
+    gcpConfig: {
+      name: "{CLUSTER_NAME}"
+      projectName: "{GCP_PROJECT_NAME}"
+      kubernetesVersion: "1.13"
+      bootDiskSizeGB: 30
+      numberOfNodes: 1
+      machineType: "n1-standard-4"
+      region: "europe-west3-a"
+     }
   }
+  kymaConfig: {
+    version: "1.5"
+    modules: Backup
+  }
+  credentials: {
+    secretName: "{SECRET_NAME}"
+  }
+}
 )}
 ```
 
@@ -64,9 +64,9 @@ Make a call to the Runtime Provisioner to verify that provisioning succeeded. Pa
 
 ```grahpql
 query { 
-    runtimeOperationStatus(id: "e9c9ed2d-2a3c-4802-a9b9-16d599dafd25") { 
-        operation state message runtimeID 
-    } 
+  runtimeOperationStatus(id: "e9c9ed2d-2a3c-4802-a9b9-16d599dafd25") { 
+    operation state message runtimeID 
+  } 
 }
 ```
 
