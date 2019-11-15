@@ -48,7 +48,7 @@ mutation { provisionRuntime(id:"309051b6-0bac-44c8-8bae-3fc59c12bb5c" config: {
 
 A successful call returns the ID of the provisioning operation:
 
-```grahpql
+```graphql
 {
   "data": {
     "provisionRuntime": "e9c9ed2d-2a3c-4802-a9b9-16d599dafd25"
