@@ -19,10 +19,9 @@ func TestConverter_ToEntity(t *testing.T) {
 	appTemplateModel := fixModelAppTemplate(id, name)
 
 	testCases := []struct {
-		Name               string
-		Input              *model.ApplicationTemplate
-		Expected           *apptemplate.Entity
-		ExpectedErrMessage string
+		Name     string
+		Input    *model.ApplicationTemplate
+		Expected *apptemplate.Entity
 	}{
 		{
 			Name:     "All properties given",
@@ -39,7 +38,7 @@ func TestConverter_ToEntity(t *testing.T) {
 			Input:    nil,
 			Expected: nil,
 		},
-		// Cannot test error case while marshalling Application Input or Placeholders
+		// Cannot test error case while marshalling Application Input or Placeholders: cannot create invalid object
 	}
 
 	for _, testCase := range testCases {
@@ -49,15 +48,8 @@ func TestConverter_ToEntity(t *testing.T) {
 			// when
 			res, err := conv.ToEntity(testCase.Input)
 
-			if testCase.ExpectedErrMessage != "" {
-				require.Error(t, err)
-				assert.Equal(t, testCase.ExpectedErrMessage, err.Error())
-			} else {
-				require.Nil(t, err)
-			}
-
 			// then
-
+			require.Nil(t, err)
 			assert.Equal(t, testCase.Expected, res)
 		})
 	}

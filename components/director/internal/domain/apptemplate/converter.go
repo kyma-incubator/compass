@@ -120,8 +120,5 @@ func (c *converter) packPlaceholders(in []model.ApplicationTemplatePlaceholder) 
 		return result, errors.Wrap(err, "while marshalling placeholders")
 	}
 
-	result.Valid = true
-	result.String = string(placeholdersMarshalled)
-
-	return result, nil
+	return repo.NewValidNullableString(string(placeholdersMarshalled)), nil
 }
