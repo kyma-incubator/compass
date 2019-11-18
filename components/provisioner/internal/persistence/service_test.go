@@ -44,7 +44,7 @@ func TestSetProvisioning(t *testing.T) {
 		AutoScalerMax:          10,
 		MaxSurge:               2,
 		MaxUnavailable:         2,
-		ProviderSpecificConfig: "{\"Zone\":\"zone\"}",
+		ProviderSpecificConfig: "{\"zone\":\"zone\"}",
 	}
 
 	kymaConfig := model.KymaConfig{

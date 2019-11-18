@@ -1,6 +1,7 @@
 package hydroform
 
 import (
+	configMock "github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/configuration/mocks"
 	"testing"
 
 	"github.com/hashicorp/terraform/terraform"
@@ -9,15 +10,6 @@ import (
 	"github.com/kyma-incubator/hydroform/types"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
-	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/fake"
-	core "k8s.io/client-go/kubernetes/typed/core/v1"
-)
-
-const (
-	secretName = "gardener"
-	namespace  = "compass-system"
 )
 
 var terraformState = `{"TerraformState":{"version":0,"serial":0,"lineage":"","modules":null}}`
@@ -37,20 +29,18 @@ func TestService_ProvisionCluster(t *testing.T) {
 	t.Run("Should provision cluster", func(t *testing.T) {
 		//given
 		hydroformClient := &mocks.Client{}
-		coreV1 := fake.NewSimpleClientset()
-		secrets := coreV1.CoreV1().Secrets(namespace)
+		builder := &configMock.ConfigBuilder{}
 
-		createFakeCredentialsSecret(t, secrets)
-		defer deleteSecret(t, secrets)
+		hydroformService := NewHydroformService(hydroformClient)
 
-		hydroformService := NewHydroformService(secrets, hydroformClient)
-
+		builder.On("Create").Return(&types.Cluster{}, &types.Provider{}, nil)
+		builder.On("CleanUp").Return()
 		hydroformClient.On("Provision", mock.Anything, mock.Anything).Return(&types.Cluster{ClusterInfo: &types.ClusterInfo{InternalState: &types.InternalState{TerraformState: &terraform.State{}}}}, nil)
 		hydroformClient.On("Status", mock.Anything, mock.Anything).Return(&types.ClusterStatus{Phase: types.Provisioned}, nil)
 		hydroformClient.On("Credentials", mock.Anything, mock.Anything).Return([]byte("kubeconfig"), nil)
 
 		//when
-		info, err := hydroformService.ProvisionCluster(config, secretName)
+		info, err := hydroformService.ProvisionCluster(builder)
 
 		//then
 		require.NoError(t, err)
@@ -63,44 +53,17 @@ func TestService_ProvisionCluster(t *testing.T) {
 func TestService_DeprovisionCluster(t *testing.T) {
 	//given
 	hydroformClient := &mocks.Client{}
-	coreV1 := fake.NewSimpleClientset()
-	secrets := coreV1.CoreV1().Secrets(namespace)
+	builder := &configMock.ConfigBuilder{}
 
-	createFakeCredentialsSecret(t, secrets)
-	defer deleteSecret(t, secrets)
+	hydroformService := NewHydroformService(hydroformClient)
 
-	hydroformService := NewHydroformService(secrets, hydroformClient)
-
+	builder.On("Create").Return(&types.Cluster{}, &types.Provider{}, nil)
+	builder.On("CleanUp").Return()
 	hydroformClient.On("Deprovision", mock.Anything, mock.Anything).Return(nil)
 
 	//when
-	err := hydroformService.DeprovisionCluster(config, secretName, terraformState)
+	err := hydroformService.DeprovisionCluster(builder, terraformState)
 
 	//then
-	require.NoError(t, err)
-}
-
-func createFakeCredentialsSecret(t *testing.T, secrets core.SecretInterface) {
-	secret := &v1.Secret{
-		ObjectMeta: meta.ObjectMeta{
-			Name:      secretName,
-			Namespace: namespace,
-		},
-		TypeMeta: meta.TypeMeta{
-			Kind:       "Secret",
-			APIVersion: "v1",
-		},
-		Data: map[string][]byte{
-			credentialsKey: []byte("YmFzZTY0IGNyZWRlbnRpYWxz"),
-		},
-	}
-
-	_, err := secrets.Create(secret)
-
-	require.NoError(t, err)
-}
-
-func deleteSecret(t *testing.T, secrets core.SecretInterface) {
-	err := secrets.Delete(secretName, &meta.DeleteOptions{})
 	require.NoError(t, err)
 }

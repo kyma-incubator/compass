@@ -93,22 +93,13 @@ func providerSpecificConfigFromInput(input *gqlschema.ProviderSpecificInput) (st
 	var providerConfig interface{}
 
 	if input.GcpConfig != nil {
-		providerConfig = model.GCPProviderConfig{
-			Zone: input.GcpConfig.Zone,
-		}
+		providerConfig = input.GcpConfig
 	}
 	if input.AzureConfig != nil {
-		providerConfig = model.AzureProviderConfig{
-			VnetCidr: input.AzureConfig.VnetCidr,
-		}
+		providerConfig = input.AzureConfig
 	}
 	if input.AwsConfig != nil {
-		providerConfig = model.AWSProviderConfig{
-			Zone:         input.AwsConfig.Zone,
-			VpcCidr:      input.AwsConfig.VpcCidr,
-			PublicCidr:   input.AwsConfig.PublicCidr,
-			InternalCidr: input.AwsConfig.InternalCidr,
-		}
+		providerConfig = input.AwsConfig
 	}
 
 	providerConfigJson, err := json.Marshal(providerConfig)
@@ -228,32 +219,24 @@ func gardenerConfigToGraphQLConfig(config model.GardenerConfig) gqlschema.Cluste
 		ProviderSpecificConfig: providerSpecificConfig,
 	}
 }
+
 func providerSpecificConfigToGQLConfig(config string) gqlschema.ProviderSpecificConfig {
-	var gcpProviderConfig model.GCPProviderConfig
+	var gcpProviderConfig gqlschema.GCPProviderConfig
 	err := util.DecodeJson(config, &gcpProviderConfig)
 	if err == nil {
-		return gqlschema.GCPProviderConfig{
-			Zone: &gcpProviderConfig.Zone,
-		}
+		return gcpProviderConfig
 	}
 
-	var azureProviderConfig model.AzureProviderConfig
+	var azureProviderConfig gqlschema.AzureProviderConfig
 	err = util.DecodeJson(config, &azureProviderConfig)
 	if err == nil {
-		return gqlschema.AzureProviderConfig{
-			VnetCidr: &azureProviderConfig.VnetCidr,
-		}
+		return azureProviderConfig
 	}
 
-	var awsProviderConfig model.AWSProviderConfig
+	var awsProviderConfig gqlschema.AWSProviderConfig
 	err = util.DecodeJson(config, &awsProviderConfig)
 	if err == nil {
-		return gqlschema.AWSProviderConfig{
-			Zone:         &awsProviderConfig.Zone,
-			VpcCidr:      &awsProviderConfig.VpcCidr,
-			PublicCidr:   &awsProviderConfig.PublicCidr,
-			InternalCidr: &awsProviderConfig.InternalCidr,
-		}
+		return awsProviderConfig
 	}
 	return nil
 }

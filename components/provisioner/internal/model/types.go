@@ -76,21 +76,6 @@ type GardenerConfig struct {
 	ProviderSpecificConfig string
 }
 
-type GCPProviderConfig struct {
-	Zone string
-}
-
-type AzureProviderConfig struct {
-	VnetCidr string
-}
-
-type AWSProviderConfig struct {
-	Zone         string
-	VpcCidr      string
-	PublicCidr   string
-	InternalCidr string
-}
-
 type GCPConfig struct {
 	ID                string
 	ClusterID         string

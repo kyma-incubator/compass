@@ -98,7 +98,7 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 		}
 	}
 
-	gardenerQGLInput := gqlschema.ProvisionRuntimeInput{
+	gardenerGCPQGLInput := gqlschema.ProvisionRuntimeInput{
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
 				Name:              "Something",
@@ -133,7 +133,7 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 		},
 	}
 
-	expectedRuntimeConfig := model.RuntimeConfig{
+	expectedGardenerGCPRuntimeConfig := model.RuntimeConfig{
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
 			Name:                   "Something",
@@ -153,7 +153,150 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 			MaxSurge:               1,
 			MaxUnavailable:         2,
 			ClusterID:              "runtimeID",
-			ProviderSpecificConfig: "{\"Zone\":\"zone\"}",
+			ProviderSpecificConfig: "{\"zone\":\"zone\"}",
+		},
+		Kubeconfig: nil,
+		KymaConfig: model.KymaConfig{
+			ID:      "id",
+			Version: "1.5",
+			Modules: []model.KymaConfigModule{
+				{ID: "id", Module: model.KymaModule("Backup"), KymaConfigID: "id"},
+				{ID: "id", Module: model.KymaModule("BackupInit"), KymaConfigID: "id"},
+			},
+			ClusterID: "runtimeID",
+		},
+		CredentialsSecretName: "secretName",
+	}
+
+	gardenerAzureQGLInput := gqlschema.ProvisionRuntimeInput{
+		ClusterConfig: &gqlschema.ClusterConfigInput{
+			GardenerConfig: &gqlschema.GardenerConfigInput{
+				Name:              "Something",
+				ProjectName:       "Project",
+				KubernetesVersion: "version",
+				NodeCount:         3,
+				VolumeSizeGb:      1024,
+				MachineType:       "n1-standard-1",
+				Region:            "region",
+				Provider:          "Azure",
+				Seed:              "az-eu1",
+				TargetSecret:      "secret",
+				DiskType:          "ssd",
+				WorkerCidr:        "cidr",
+				AutoScalerMin:     1,
+				AutoScalerMax:     5,
+				MaxSurge:          1,
+				MaxUnavailable:    2,
+				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+					AzureConfig: &gqlschema.AzureProviderConfigInput{
+						VnetCidr: "cidr",
+					},
+				},
+			},
+		},
+		Credentials: &gqlschema.CredentialsInput{
+			SecretName: "secretName",
+		},
+		KymaConfig: &gqlschema.KymaConfigInput{
+			Version: "1.5",
+			Modules: []gqlschema.KymaModule{gqlschema.KymaModuleBackup, gqlschema.KymaModuleBackupInit},
+		},
+	}
+
+	expectedGardenerAzureRuntimeConfig := model.RuntimeConfig{
+		ClusterConfig: model.GardenerConfig{
+			ID:                     "id",
+			Name:                   "Something",
+			ProjectName:            "Project",
+			MachineType:            "n1-standard-1",
+			Region:                 "region",
+			KubernetesVersion:      "version",
+			NodeCount:              3,
+			VolumeSizeGB:           1024,
+			DiskType:               "ssd",
+			Provider:               "Azure",
+			Seed:                   "az-eu1",
+			TargetSecret:           "secret",
+			WorkerCidr:             "cidr",
+			AutoScalerMin:          1,
+			AutoScalerMax:          5,
+			MaxSurge:               1,
+			MaxUnavailable:         2,
+			ClusterID:              "runtimeID",
+			ProviderSpecificConfig: "{\"vnetCidr\":\"cidr\"}",
+		},
+		Kubeconfig: nil,
+		KymaConfig: model.KymaConfig{
+			ID:      "id",
+			Version: "1.5",
+			Modules: []model.KymaConfigModule{
+				{ID: "id", Module: model.KymaModule("Backup"), KymaConfigID: "id"},
+				{ID: "id", Module: model.KymaModule("BackupInit"), KymaConfigID: "id"},
+			},
+			ClusterID: "runtimeID",
+		},
+		CredentialsSecretName: "secretName",
+	}
+
+	gardenerAWSQGLInput := gqlschema.ProvisionRuntimeInput{
+		ClusterConfig: &gqlschema.ClusterConfigInput{
+			GardenerConfig: &gqlschema.GardenerConfigInput{
+				Name:              "Something",
+				ProjectName:       "Project",
+				KubernetesVersion: "version",
+				NodeCount:         3,
+				VolumeSizeGb:      1024,
+				MachineType:       "n1-standard-1",
+				Region:            "region",
+				Provider:          "AWS",
+				Seed:              "aws-eu1",
+				TargetSecret:      "secret",
+				DiskType:          "ssd",
+				WorkerCidr:        "cidr",
+				AutoScalerMin:     1,
+				AutoScalerMax:     5,
+				MaxSurge:          1,
+				MaxUnavailable:    2,
+				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+					AwsConfig: &gqlschema.AWSProviderConfigInput{
+						Zone: "zone",
+						InternalCidr: "cidr",
+						VpcCidr: "cidr",
+						PublicCidr: "cidr",
+					},
+				},
+			},
+		},
+		Credentials: &gqlschema.CredentialsInput{
+			SecretName: "secretName",
+		},
+		KymaConfig: &gqlschema.KymaConfigInput{
+			Version: "1.5",
+			Modules: []gqlschema.KymaModule{gqlschema.KymaModuleBackup, gqlschema.KymaModuleBackupInit},
+		},
+	}
+
+	expectedGardenerAWSRuntimeConfig := model.RuntimeConfig{
+		ClusterConfig: model.GardenerConfig{
+			ID:                     "id",
+			Name:                   "Something",
+			ProjectName:            "Project",
+			MachineType:            "n1-standard-1",
+			Region:                 "region",
+			KubernetesVersion:      "version",
+			NodeCount:              3,
+			VolumeSizeGB:           1024,
+			DiskType:               "ssd",
+			Provider:               "AWS",
+			Seed:                   "aws-eu1",
+			TargetSecret:           "secret",
+			WorkerCidr:             "cidr",
+			AutoScalerMin:          1,
+			AutoScalerMax:          5,
+			MaxSurge:               1,
+			MaxUnavailable:         2,
+			ClusterID:              "runtimeID",
+			ProviderSpecificConfig: "{\"zone\":\"zone\",\"vpcCidr\":\"cidr\",\"publicCidr\":\"cidr\",\"internalCidr\":\"cidr\"}",
 		},
 		Kubeconfig: nil,
 		KymaConfig: model.KymaConfig{
@@ -186,9 +329,19 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 			description: "Should create proper runtime config struct with GCP input (empty zone)",
 		},
 		{
-			input:       gardenerQGLInput,
-			expected:    expectedRuntimeConfig,
-			description: "Should create proper runtime config struct with Gardener input",
+			input:       gardenerGCPQGLInput,
+			expected:    expectedGardenerGCPRuntimeConfig,
+			description: "Should create proper runtime config struct with Gardener input for GCP provider",
+		},
+		{
+			input:       gardenerAzureQGLInput,
+			expected:    expectedGardenerAzureRuntimeConfig,
+			description: "Should create proper runtime config struct with Gardener input for Azure provider",
+		},
+		{
+			input:       gardenerAWSQGLInput,
+			expected:    expectedGardenerAWSRuntimeConfig,
+			description: "Should create proper runtime config struct with Gardener input for AWS provider",
 		},
 	}
 

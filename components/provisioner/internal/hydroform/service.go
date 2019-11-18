@@ -1,38 +1,29 @@
 package hydroform
 
 import (
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
-	"io/ioutil"
-	"os"
-
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/client"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/configuration"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/hydroform/types"
 	"github.com/pkg/errors"
-	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/typed/core/v1"
 )
-
-const credentialsKey = "credentials"
 
 //go:generate mockery -name=Service
 type Service interface {
-	ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName string) (ClusterInfo, error)
-	DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretName string, terraformState string) error
+	ProvisionCluster(builder configuration.ConfigBuilder) (ClusterInfo, error)
+	DeprovisionCluster(builder configuration.ConfigBuilder, terraformState string) error
 }
 
 type service struct {
-	secrets v1.SecretInterface
 	client  client.Client
 }
 
-func NewHydroformService(secrets v1.SecretInterface, client client.Client) Service {
+func NewHydroformService(client client.Client) Service {
 	return &service{
-		secrets: secrets,
-		client:  client,
+		client: client,
 	}
 }
 
@@ -42,15 +33,10 @@ type ClusterInfo struct {
 	State         string
 }
 
-func (s service) ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName string) (ClusterInfo, error) {
-	credentialsFileName, err := s.saveCredentialsToFile(secretName)
-	if err != nil {
-		return ClusterInfo{}, err
-	}
-	defer removeFile(credentialsFileName)
-
+func (s service) ProvisionCluster(builder configuration.ConfigBuilder) (ClusterInfo, error) {
 	log.Info("Preparing config for runtime provisioning")
-	cluster, provider, err := prepareConfig(runtimeConfig, credentialsFileName)
+	cluster, provider, err := builder.Create()
+	defer builder.CleanUp()
 	if err != nil {
 		return ClusterInfo{}, errors.Wrap(err, "Config preparation failed")
 	}
@@ -91,15 +77,9 @@ func (s service) ProvisionCluster(runtimeConfig model.RuntimeConfig, secretName 
 	}, nil
 }
 
-func (s service) DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretName string, terraformStateJson string) error {
-	credentialsFileName, err := s.saveCredentialsToFile(secretName)
-	if err != nil {
-		return err
-	}
-	defer removeFile(credentialsFileName)
-
+func (s service) DeprovisionCluster(builder configuration.ConfigBuilder, terraformStateJson string) error {
 	log.Info("Preparing config for runtime deprovisioning")
-	cluster, provider, err := prepareConfig(runtimeConfig, credentialsFileName)
+	cluster, provider, err := builder.Create()
 
 	if err != nil {
 		return errors.Wrap(err, "Config preparation failed")
@@ -117,36 +97,4 @@ func (s service) DeprovisionCluster(runtimeConfig model.RuntimeConfig, secretNam
 
 	log.Infof("Starting cluster deprovisioning")
 	return s.client.Deprovision(cluster, provider)
-}
-
-func (s service) saveCredentialsToFile(secretName string) (string, error) {
-	secret, err := s.secrets.Get(secretName, meta.GetOptions{})
-	if err != nil {
-		return "", errors.WithMessagef(err, "Failed to get credentials from %s secret", secretName)
-	}
-
-	bytes, ok := secret.Data[credentialsKey]
-
-	if !ok {
-		return "", errors.New("Credentials not found within the secret")
-	}
-
-	tempFile, err := ioutil.TempFile("", secretName)
-	if err != nil {
-		return "", errors.Wrap(err, "Failed to create credentials file")
-	}
-
-	_, err = tempFile.Write(bytes)
-	if err != nil {
-		return "", errors.WithMessagef(err, "Failed to save credentials to %s file", tempFile.Name())
-	}
-
-	return tempFile.Name(), nil
-}
-
-func removeFile(fileName string) {
-	err := os.Remove(fileName)
-	if err != nil {
-		log.Errorf("Error while removing temporary credentials file %s: %s", fileName, err.Error())
-	}
 }
