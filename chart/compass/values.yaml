@@ -36,10 +36,8 @@ global:
         dir: pr/
         version: "PR-391"
       provisioner:
-        containerRegistry:
-          path: index.docker.io/kryszk/provisioner-tests
         dir:
-        version: "0.1"
+        version: "PR-432"
 
   isLocalEnv: false
 
