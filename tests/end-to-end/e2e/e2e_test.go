@@ -74,7 +74,7 @@ func TestCompassAuth(t *testing.T) {
 
 	t.Log("Add API Spec to Application")
 	apiInput := graphql.APIDefinitionInput{
-		Name:      "new-api-url",
+		Name:      "new-api-name",
 		TargetURL: "new-api-url",
 	}
 	addAPIWithinTenant(t, ctx, oauthGraphQLClient, tenant, apiInput, appByIntSys.ID)
