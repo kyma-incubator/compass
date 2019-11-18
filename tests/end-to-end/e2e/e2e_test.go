@@ -85,8 +85,8 @@ func TestCompassAuth(t *testing.T) {
 	auths := getSystemAuthsForIntegrationSystem(t, ctx, dexGraphQLClient, tenant, intSys.ID)
 	assert.Equal(t, intSysAuth, *auths[0])
 
-	t.Log("Remove application using Dex id token")
-	deleteApplication(t, ctx, dexGraphQLClient, tenant, appByIntSys.ID)
+	t.Log("Remove application to check if the oAuth token is still valid")
+	deleteApplication(t, ctx, oauthGraphQLClient, tenant, appByIntSys.ID)
 
 	t.Log("Remove Integration System")
 	deleteIntegrationSystem(t, ctx, dexGraphQLClient, tenant, intSys.ID)
