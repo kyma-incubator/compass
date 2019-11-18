@@ -91,6 +91,7 @@ type ComplexityRoot struct {
 		Documents           func(childComplexity int, first *int, after *PageCursor) int
 		EventAPI            func(childComplexity int, id string) int
 		EventAPIs           func(childComplexity int, group *string, first *int, after *PageCursor) int
+		EventConfiguration  func(childComplexity int) int
 		HealthCheckURL      func(childComplexity int) int
 		ID                  func(childComplexity int) int
 		IntegrationSystemID func(childComplexity int) int
@@ -98,6 +99,10 @@ type ComplexityRoot struct {
 		Name                func(childComplexity int) int
 		Status              func(childComplexity int) int
 		Webhooks            func(childComplexity int) int
+	}
+
+	ApplicationEventConfiguration struct {
+		DefaultURL func(childComplexity int) int
 	}
 
 	ApplicationPage struct {
@@ -356,6 +361,7 @@ type ApplicationResolver interface {
 	EventAPI(ctx context.Context, obj *Application, id string) (*EventAPIDefinition, error)
 	Documents(ctx context.Context, obj *Application, first *int, after *PageCursor) (*DocumentPage, error)
 	Auths(ctx context.Context, obj *Application) ([]*SystemAuth, error)
+	EventConfiguration(ctx context.Context, obj *Application) (*ApplicationEventConfiguration, error)
 }
 type DocumentResolver interface {
 	FetchRequest(ctx context.Context, obj *Document) (*FetchRequest, error)
@@ -659,6 +665,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Application.EventAPIs(childComplexity, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor)), true
 
+	case "Application.eventConfiguration":
+		if e.complexity.Application.EventConfiguration == nil {
+			break
+		}
+
+		return e.complexity.Application.EventConfiguration(childComplexity), true
+
 	case "Application.healthCheckURL":
 		if e.complexity.Application.HealthCheckURL == nil {
 			break
@@ -712,6 +725,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.Webhooks(childComplexity), true
+
+	case "ApplicationEventConfiguration.defaultURL":
+		if e.complexity.ApplicationEventConfiguration.DefaultURL == nil {
+			break
+		}
+
+		return e.complexity.ApplicationEventConfiguration.DefaultURL(childComplexity), true
 
 	case "ApplicationPage.data":
 		if e.complexity.ApplicationPage.Data == nil {
@@ -2408,6 +2428,11 @@ type Application {
 	eventAPI(id: ID!): EventAPIDefinition
 	documents(first: Int = 100, after: PageCursor): DocumentPage!
 	auths: [SystemAuth!]!
+	eventConfiguration: ApplicationEventConfiguration
+}
+
+type ApplicationEventConfiguration {
+	defaultURL: String!
 }
 
 type ApplicationPage implements Pageable {
@@ -4877,6 +4902,57 @@ func (ec *executionContext) _Application_auths(ctx context.Context, field graphq
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Application_eventConfiguration(ctx context.Context, field graphql.CollectedField, obj *Application) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Application",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Application().EventConfiguration(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ApplicationEventConfiguration)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOApplicationEventConfiguration2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationEventConfiguration(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ApplicationEventConfiguration_defaultURL(ctx context.Context, field graphql.CollectedField, obj *ApplicationEventConfiguration) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "ApplicationEventConfiguration",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DefaultURL, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ApplicationPage_data(ctx context.Context, field graphql.CollectedField, obj *ApplicationPage) graphql.Marshaler {
@@ -11168,6 +11244,44 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 				}
 				return res
 			})
+		case "eventConfiguration":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Application_eventConfiguration(ctx, field, obj)
+				return res
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var applicationEventConfigurationImplementors = []string{"ApplicationEventConfiguration"}
+
+func (ec *executionContext) _ApplicationEventConfiguration(ctx context.Context, sel ast.SelectionSet, obj *ApplicationEventConfiguration) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, applicationEventConfigurationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ApplicationEventConfiguration")
+		case "defaultURL":
+			out.Values[i] = ec._ApplicationEventConfiguration_defaultURL(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -14282,6 +14396,17 @@ func (ec *executionContext) marshalOApplication2ᚖgithubᚗcomᚋkymaᚑincubat
 		return graphql.Null
 	}
 	return ec._Application(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOApplicationEventConfiguration2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationEventConfiguration(ctx context.Context, sel ast.SelectionSet, v ApplicationEventConfiguration) graphql.Marshaler {
+	return ec._ApplicationEventConfiguration(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOApplicationEventConfiguration2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationEventConfiguration(ctx context.Context, sel ast.SelectionSet, v *ApplicationEventConfiguration) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ApplicationEventConfiguration(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx context.Context, sel ast.SelectionSet, v Auth) graphql.Marshaler {

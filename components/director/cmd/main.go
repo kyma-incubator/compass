@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/event"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 
@@ -46,6 +48,7 @@ type config struct {
 		Name     string `envconfig:"default=postgres,APP_DB_NAME"`
 		SSLMode  string `envconfig:"default=disable,APP_DB_SSL"`
 	}
+
 	APIEndpoint                   string `envconfig:"default=/graphql"`
 	TenantMappingEndpoint         string `envconfig:"default=/tenant-mapping"`
 	PlaygroundAPIEndpoint         string `envconfig:"default=/graphql"`
@@ -60,6 +63,7 @@ type config struct {
 
 	OneTimeToken onetimetoken.Config
 	OAuth20      oauth20.Config
+	Event        event.Config
 }
 
 func main() {
@@ -83,7 +87,7 @@ func main() {
 	scopeCfgProvider := createAndRunScopeConfigProvider(stopCh, cfg)
 
 	gqlCfg := graphql.Config{
-		Resolvers: domain.NewRootResolver(transact, scopeCfgProvider, cfg.OneTimeToken, cfg.OAuth20),
+		Resolvers: domain.NewRootResolver(transact, scopeCfgProvider, cfg.OneTimeToken, cfg.OAuth20, cfg.Event),
 		Directives: graphql.DirectiveRoot{
 			HasScopes: scope.NewDirective(scopeCfgProvider).VerifyScopes,
 		},

@@ -3,6 +3,8 @@ package domain
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/event"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 
@@ -47,7 +49,7 @@ type RootResolver struct {
 	intSys      *integrationsystem.Resolver
 }
 
-func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope.Provider, oneTimeTokenCfg onetimetoken.Config, oAuth20Cfg oauth20.Config) *RootResolver {
+func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope.Provider, oneTimeTokenCfg onetimetoken.Config, oAuth20Cfg oauth20.Config, eventCfg event.Config) *RootResolver {
 	authConverter := auth.NewConverter()
 	apiRtmAuthConverter := apiruntimeauth.NewConverter(authConverter)
 	runtimeConverter := runtime.NewConverter()
@@ -99,7 +101,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 
 	return &RootResolver{
-		app:         application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, systemAuthSvc, oAuth20Svc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter),
+		app:         application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, systemAuthSvc, oAuth20Svc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter, eventCfg.DefaultEventURL),
 		api:         api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, apiRtmAuthSvc, apiConverter, authConverter, frConverter, apiRtmAuthConverter),
 		eventAPI:    eventapi.NewResolver(transact, eventAPISvc, appSvc, eventAPIConverter, frConverter),
 		doc:         document.NewResolver(transact, docSvc, appSvc, frConverter),
@@ -331,6 +333,10 @@ func (r *applicationResolver) EventAPI(ctx context.Context, obj *graphql.Applica
 }
 func (r *applicationResolver) Documents(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {
 	return r.app.Documents(ctx, obj, first, after)
+}
+
+func (r *applicationResolver) EventConfiguration(ctx context.Context, obj *graphql.Application) (*graphql.ApplicationEventConfiguration, error) {
+	return r.app.EventConfiguration(ctx, obj)
 }
 
 type runtimeResolver struct {

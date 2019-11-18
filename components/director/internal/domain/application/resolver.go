@@ -135,9 +135,24 @@ type Resolver struct {
 	apiConverter      APIConverter
 	eventApiConverter EventAPIConverter
 	sysAuthConv       SystemAuthConverter
+	defaultEventURL   string // TODO
 }
 
-func NewResolver(transact persistence.Transactioner, svc ApplicationService, apiSvc APIService, eventAPISvc EventAPIService, documentSvc DocumentService, webhookSvc WebhookService, sysAuthSvc SystemAuthService, oAuth20Svc OAuth20Service, appConverter ApplicationConverter, documentConverter DocumentConverter, webhookConverter WebhookConverter, apiConverter APIConverter, eventAPIConverter EventAPIConverter, sysAuthConv SystemAuthConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner,
+	svc ApplicationService,
+	apiSvc APIService,
+	eventAPISvc EventAPIService,
+	documentSvc DocumentService,
+	webhookSvc WebhookService,
+	sysAuthSvc SystemAuthService,
+	oAuth20Svc OAuth20Service,
+	appConverter ApplicationConverter,
+	documentConverter DocumentConverter,
+	webhookConverter WebhookConverter,
+	apiConverter APIConverter,
+	eventAPIConverter EventAPIConverter,
+	sysAuthConv SystemAuthConverter,
+	defaultEventURL string) *Resolver {
 	return &Resolver{
 		transact:          transact,
 		appSvc:            svc,
@@ -153,6 +168,7 @@ func NewResolver(transact persistence.Transactioner, svc ApplicationService, api
 		apiConverter:      apiConverter,
 		eventApiConverter: eventAPIConverter,
 		sysAuthConv:       sysAuthConv,
+		defaultEventURL:   defaultEventURL,
 	}
 }
 
@@ -693,4 +709,14 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 	}
 
 	return out, nil
+}
+
+func (r *Resolver) EventConfiguration(ctx context.Context, obj *graphql.Application) (*graphql.ApplicationEventConfiguration, error) {
+	if r.defaultEventURL == "" {
+		return nil, nil
+	}
+	return &graphql.ApplicationEventConfiguration{
+		DefaultURL: r.defaultEventURL,
+	}, nil
+
 }
