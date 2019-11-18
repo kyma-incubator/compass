@@ -23,14 +23,14 @@ query { runtimeStatus(id: "309051b6-0bac-44c8-8bae-3fc59c12bb5c") {
     kubeconfig kymaConfig {
       version modules 
     } clusterConfig {
-      __typename ... on GCPConfig {
-        bootDiskSizeGB name numberOfNodes kubernetesVersion projectName machineType zone region }
-      ... on GardenerConfig { name workerCidr region diskType maxSurge nodeCount volumeSizeGB projectName machineType targetSecret autoScalerMin autoScalerMax provider maxUnavailable kubernetesVersion 
-        } 
-      } 
-    } 
-  } 
-}
+      __typename ... on GCPConfig { bootDiskSizeGB name numberOfNodes kubernetesVersion projectName machineType zone region }
+      ... on GardenerConfig { name workerCidr region diskType maxSurge nodeCount volumeSizeGB projectName machineType targetSecret autoScalerMin autoScalerMax provider maxUnavailable kubernetesVersion providerSpecificConfig
+      { __typename 
+        ... on GCPProviderConfig { zone } 
+        ... on AzureProviderConfig {vnetCidr}
+                ... on AWSProviderConfig {zone internalCidr vpcCidr publicCidr}      
+      }
+      } } } } }
 ```
 
 An example response for a successful request looks like this:
