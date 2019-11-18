@@ -63,7 +63,7 @@ func clusterConfig() string {
 			kubernetesVersion
 			projectName
 			nodeCount 
-			volumeSizeGb
+			volumeSizeGB
 			diskType
 			machineType
 			region
@@ -85,7 +85,7 @@ func clusterConfig() string {
 			kubernetesVersion
 			projectName
 			numberOfNodes 
-			bootDiskSizeGb
+			bootDiskSizeGB
 			machineType
 			region
 			zone
@@ -95,13 +95,13 @@ func clusterConfig() string {
 
 func providerSpecificConfig() string {
 	return fmt.Sprint(`
-	... on GCPProviderConfig { 
+		... on GCPProviderConfig { 
 			zone 
 		} 
-	... on AzureProviderConfig {
+		... on AzureProviderConfig {
 			vnetCidr
 		}
-	... on AWSProviderConfig {
+		... on AWSProviderConfig {
 			zone 
 			internalCidr 
 			vpcCidr 
