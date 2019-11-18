@@ -57,21 +57,22 @@ func (g *graphqlizer) CredentialsInputToGraphQL(in gqlschema.CredentialsInput) (
 func (g *graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
 		name: "{{.Name}}"
-		kubernetesVersion: "{{.KubernetesVersion}}"
         projectName: "{{.ProjectName}}"
+		kubernetesVersion: "{{.KubernetesVersion}}"
 		nodeCount: {{.NodeCount}}
-		volumeSize: "{{.VolumeSize}}"
+		volumeSizeGb: {{.VolumeSizeGB }}
 		machineType: "{{.MachineType}}"
-		diskType: "{{.DiskType}}"
 		region: "{{.Region}}"
-		zone: "{{.Zone}}"
-		targetProvider: "{{ .TargetProvider }}"
+		provider: "{{ .Provider }}"
+		diskType: "{{.DiskType}}"
+		seed: "{{ .Seed }}"
 		targetSecret: "{{ .TargetSecret }}"
-		cidr: "{{ .Cidr }}"
+		workerCidr: "{{ .WorkerCidr }}"
         autoScalerMin: {{ .AutoScalerMin }}
         autoScalerMax: {{ .AutoScalerMax }}
         maxSurge: {{ .MaxSurge }}
-        maxUnavailable: {{ .MaxUnavailable }}
+		maxUnavailable: {{ .MaxUnavailable }}
+		providerSpecificConfig: {{ .ProviderSpecificConfig }}
 	}`)
 }
 
@@ -81,7 +82,7 @@ func (g *graphqlizer) GCPConfigInputToGraphQL(in gqlschema.GCPConfigInput) (stri
 		kubernetesVersion: "{{.KubernetesVersion}}"
         projectName: "{{.ProjectName}}"
 		numberOfNodes: {{.NumberOfNodes}}
-		bootDiskSizeGb: {{.BootDiskSizeGb}}
+		bootDiskSizeGB: {{ .BootDiskSizeGb }}
 		machineType: "{{.MachineType}}"
 		region: "{{.Region}}"
 		{{- if .Zone }}
