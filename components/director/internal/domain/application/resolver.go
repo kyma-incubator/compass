@@ -135,7 +135,7 @@ type Resolver struct {
 	apiConverter      APIConverter
 	eventApiConverter EventAPIConverter
 	sysAuthConv       SystemAuthConverter
-	defaultEventURL   string // TODO
+	defaultEventURL   string 
 }
 
 func NewResolver(transact persistence.Transactioner,
