@@ -74,6 +74,36 @@ func IsNotUnique(err error) bool {
 	return false
 }
 
+type ConstraintViolation interface {
+	IsConstraintViolation()
+}
+
+type constraintViolationError struct {
+	table string
+}
+
+func NewConstraintViolationError(table string) *constraintViolationError {
+	return &constraintViolationError{
+		table: table,
+	}
+}
+
+func (e *constraintViolationError) Error() string {
+	return fmt.Sprintf("this object still has %s referenced by it", e.table)
+}
+
+func (constraintViolationError) IsConstraintViolation() {}
+
+func IsConstraintViolation(err error) bool {
+	if cause := errors.Cause(err); cause != nil {
+		err = cause
+	}
+	if _, ok := err.(ConstraintViolation); ok {
+		return true
+	}
+	return false
+}
+
 type InvalidCast interface {
 	InvalidCast()
 }

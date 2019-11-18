@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
+	"github.com/lib/pq"
+
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -78,8 +82,15 @@ func (g *universalDeleter) unsafeDelete(ctx context.Context, tenant *string, con
 	allArgs := getAllArgs(tenant, conditions)
 	res, err := persist.Exec(stmtBuilder.String(), allArgs...)
 	if err != nil {
+		pqerr, ok := err.(*pq.Error)
+		if ok {
+			if pqerr.Code.Class() == "23" {
+				return apperrors.NewConstraintViolationError(pqerr.Table)
+			}
+		}
 		return errors.Wrap(err, "while deleting from database")
 	}
+
 	if requireSingleRemoval {
 		affected, err := res.RowsAffected()
 		if err != nil {

@@ -166,3 +166,43 @@ func TestInvalidStringCastError(t *testing.T) {
 		})
 	}
 }
+
+func TestConstraintViolationError(t *testing.T) {
+	constraintViolationError := &constraintViolationError{}
+	wrappedConstraintViolationError := errors.Wrap(constraintViolationError, "wrapped text")
+	multiWrappedConstraintViolationError := errors.Wrap(wrappedConstraintViolationError, "multi wrapped")
+	testErr := errors.New("test")
+
+	testCases := []struct {
+		Name           string
+		Error          error
+		expectedResult bool
+	}{
+		{
+			Name:           "Unwrapped ConstraintViolation error",
+			Error:          constraintViolationError,
+			expectedResult: true,
+		},
+		{
+			Name:           "Wrapped ConstraintViolation error",
+			Error:          wrappedConstraintViolationError,
+			expectedResult: true,
+		},
+		{
+			Name:           "Multi wrapped ConstraintViolation error",
+			Error:          multiWrappedConstraintViolationError,
+			expectedResult: true,
+		},
+		{
+			Name:           "Different error",
+			Error:          testErr,
+			expectedResult: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			assert.Equal(t, testCase.expectedResult, IsConstraintViolation(testCase.Error))
+		})
+	}
+}
