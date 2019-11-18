@@ -1,8 +1,9 @@
 package provisioning
 
 import (
-	configMock "github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/configuration/mocks"
 	"testing"
+
+	configMock "github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/configuration/mocks"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
 

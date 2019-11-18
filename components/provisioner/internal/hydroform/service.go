@@ -18,7 +18,7 @@ type Service interface {
 }
 
 type service struct {
-	client  client.Client
+	client client.Client
 }
 
 func NewHydroformService(client client.Client) Service {

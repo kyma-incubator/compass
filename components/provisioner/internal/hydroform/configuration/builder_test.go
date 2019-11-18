@@ -1,10 +1,11 @@
 package configuration
 
 import (
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"testing"
 
-	"k8s.io/api/core/v1"
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+
+	v1 "k8s.io/api/core/v1"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/hydroform/types"

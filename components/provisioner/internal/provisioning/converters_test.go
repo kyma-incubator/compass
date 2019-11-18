@@ -259,10 +259,10 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 				MaxUnavailable:    2,
 				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 					AwsConfig: &gqlschema.AWSProviderConfigInput{
-						Zone: "zone",
+						Zone:         "zone",
 						InternalCidr: "cidr",
-						VpcCidr: "cidr",
-						PublicCidr: "cidr",
+						VpcCidr:      "cidr",
+						PublicCidr:   "cidr",
 					},
 				},
 			},

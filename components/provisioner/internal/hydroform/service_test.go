@@ -1,29 +1,18 @@
 package hydroform
 
 import (
-	configMock "github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/configuration/mocks"
 	"testing"
+
+	configMock "github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/configuration/mocks"
 
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/client/mocks"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/hydroform/types"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
 var terraformState = `{"TerraformState":{"version":0,"serial":0,"lineage":"","modules":null}}`
-var config = model.RuntimeConfig{ClusterConfig: model.GCPConfig{
-	ID:                "id",
-	Name:              "Something",
-	ProjectName:       "Project",
-	NumberOfNodes:     3,
-	BootDiskSizeGB:    256,
-	MachineType:       "n1-standard-1",
-	Region:            "region",
-	KubernetesVersion: "version",
-	ClusterID:         "runtimeID",
-}}
 
 func TestService_ProvisionCluster(t *testing.T) {
 	t.Run("Should provision cluster", func(t *testing.T) {
