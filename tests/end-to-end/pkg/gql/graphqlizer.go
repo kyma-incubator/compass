@@ -48,6 +48,9 @@ func (g *Graphqlizer) ApplicationCreateInputToGQL(in graphql.ApplicationCreateIn
 				{{- if $i}}, {{- end}} {{- DocumentInputToGQL $e }}
 			{{- end }} ]
 		{{- end }}
+		{{- if .IntegrationSystemID }}
+		integrationSystemID: "{{ .IntegrationSystemID }}",
+		{{- end }}
 	}`)
 }
 

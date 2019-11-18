@@ -68,6 +68,20 @@ func deleteIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.
 	require.NoError(t, err)
 }
 
+func deleteIntegrationSystemWithErr(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) {
+	req := fixDeleteIntegrationSystem(id)
+	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil)
+	require.Contains(t, err.Error(), "delete")
+}
+
+func getSystemAuthsForIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) []*graphql.SystemAuth {
+	req := fixGetIntegrationSystemRequest(id)
+	intSys := graphql.IntegrationSystemExt{}
+	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &intSys)
+	require.NoError(t, err)
+	return intSys.Auths
+}
+
 func generateClientCredentialsForIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.SystemAuth {
 	req := fixGenerateClientCredentialsForIntegrationSystem(id)
 	systemAuth := graphql.SystemAuth{}

@@ -119,7 +119,7 @@
     "components/director/pkg/scalar",
   ]
   pruneopts = "UT"
-  revision = "02bdbf22cc76d8b9942b9a780821b2bd86920263"
+  revision = "7889a251288aed359592506a3cd96285632355cf"
 
 [[projects]]
   branch = "master"
@@ -213,7 +213,7 @@
     "scrypt",
   ]
   pruneopts = "UT"
-  revision = "e1110fd1c708ef015366ea01799a23c459593c47"
+  revision = "497ca9f6d64f9bb73048a960b4098309edcd2205"
 
 [[projects]]
   branch = "master"
@@ -224,15 +224,15 @@
     "html/atom",
   ]
   pruneopts = "UT"
-  revision = "2180aed2234323691e9fd264fb1d32d20ff04b27"
+  revision = "f9c8255933865a6f8452ccf0cc47ac980da5ac56"
 
 [[projects]]
   branch = "master"
-  digest = "1:824b4d14e35e35e821d3127319e51eb838f72434100750ad395db96d00b5a871"
+  digest = "1:3b81f20605df873608343956a1f707bc63fe76bbc9ab3adb644ce95b4502a525"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "4c7a9d0fe056d9d1de37e1409ca8a5c17accb46a"
+  revision = "b5d5184f72d2900cd61b7676edc45ad9300e26a9"
 
 [[projects]]
   branch = "master"
@@ -254,7 +254,7 @@
     "internal/span",
   ]
   pruneopts = "UT"
-  revision = "4191b8cbba092238a318a71cdff48b20b4e1e5d8"
+  revision = "5a76f03bc7c327212912ed6b2a76a10d7f39b224"
 
 [[projects]]
   digest = "1:f26a5d382387e03a40d1471dddfba85dfff9bf05352d7e42d37612677c4d3c5c"

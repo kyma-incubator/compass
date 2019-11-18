@@ -28,6 +28,16 @@ func fixCreateIntegrationSystemRequest(integrationSystemInGQL string) *gcli.Requ
 			integrationSystemInGQL, tc.gqlFieldsProvider.ForIntegrationSystem()))
 }
 
+func fixGetIntegrationSystemRequest(integrationSystemID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: integrationSystem(id: %s) {
+					%s
+				}
+			}`,
+			fmt.Sprintf("\"%s\"", integrationSystemID), tc.gqlFieldsProvider.ForIntegrationSystem()))
+}
+
 // ADD
 func fixAddApiRequest(applicationId, apiInputInGQL string) *gcli.Request {
 	return gcli.NewRequest(

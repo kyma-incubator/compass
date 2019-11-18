@@ -66,17 +66,24 @@ func TestCompassAuth(t *testing.T) {
 
 	t.Log("Create an application as Integration System")
 	appInput := graphql.ApplicationCreateInput{
-		Name: "app-created-by-integration-system",
+		Name:                "app-created-by-integration-system",
+		IntegrationSystemID: &intSys.ID,
 	}
 	appByIntSys := createApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, tenant, appInput)
 	require.NotEmpty(t, appByIntSys.ID)
 
 	t.Log("Add API Spec to Application")
 	apiInput := graphql.APIDefinitionInput{
-		Name:      "new-api-name",
+		Name:      "new-api-url",
 		TargetURL: "new-api-url",
 	}
 	addAPIWithinTenant(t, ctx, oauthGraphQLClient, tenant, apiInput, appByIntSys.ID)
+	t.Log("Try removing Integration System")
+	deleteIntegrationSystemWithErr(t, ctx, dexGraphQLClient, tenant, intSys.ID)
+
+	t.Log("Check if SystemAuths are still present in the db")
+	auths := getSystemAuthsForIntegrationSystem(t, ctx, dexGraphQLClient, tenant, intSys.ID)
+	assert.Equal(t, intSysAuth, *auths[0])
 
 	t.Log("Remove application using Dex id token")
 	deleteApplication(t, ctx, dexGraphQLClient, tenant, appByIntSys.ID)
