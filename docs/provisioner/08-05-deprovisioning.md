@@ -25,4 +25,4 @@ This tutorial shows how to deprovision clusters with Kyma Runtimes (Runtimes).
   }
   ```
 
-  The operation of deprovisioning is asynchronous. Use the deprovisioning operation ID to [check the Runtime Operation Status](08-03-runtime-operation-status.md) and verify that the deprovisioning was successful. Use the Runtime ID (`id`) to [check the Runtime Status](08-04-runtime-status.md). 
+  The operation of deprovisioning is asynchronous. Use the deprovisioning operation ID (`deprovisionRuntime`) to [check the Runtime Operation Status](08-03-runtime-operation-status.md) and verify that the deprovisioning was successful. Use the Runtime ID (`id`) to [check the Runtime Status](08-04-runtime-status.md). 

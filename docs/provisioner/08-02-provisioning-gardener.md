@@ -121,7 +121,6 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
       }
       ```
     
-      The operation of provisioning is asynchronous. Use the provisioning operation ID to check the Runtime Operation Status and verify that the provisioning was successful.
   </details>
 
   <details>
@@ -187,7 +186,6 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
       }
       ```
     
-      The operation of provisioning is asynchronous. Use the provisioning operation ID to check the Runtime Operation Status and verify that the provisioning was successful.
   </details>
   
   <details>
@@ -260,8 +258,8 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
         }
       }
       ```
-    
-      The operation of provisioning is asynchronous. Use the provisioning operation ID to [check the Runtime Operation Status](08-03-runtime-operation-status.md) and verify that the provisioning was successful. Use the Runtime ID (`id`) to [check the Runtime Status](08-04-runtime-status.md). 
   </details>
     
 </div>
+
+The operation of provisioning is asynchronous. Use the provisioning operation ID (`provisionRuntime`) to [check the Runtime Operation Status](08-03-runtime-operation-status.md) and verify that the provisioning was successful. Use the Runtime ID (`id`) to [check the Runtime Status](08-04-runtime-status.md). 
