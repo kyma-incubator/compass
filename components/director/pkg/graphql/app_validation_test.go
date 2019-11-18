@@ -12,29 +12,29 @@ import (
 
 func TestApplicationCreateInput_Validate_Name(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value string
-		Valid bool
+		Name          string
+		Value         string
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: inputvalidationtest.ValidName,
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         inputvalidationtest.ValidName,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Empty string",
-			Value: inputvalidationtest.EmptyString,
-			Valid: false,
+			Name:          "Empty string",
+			Value:         inputvalidationtest.EmptyString,
+			ExpectedValid: false,
 		},
 		{
-			Name:  "Invalid Upper Case Letters",
-			Value: "Invalid",
-			Valid: false,
+			Name:          "Invalid Upper Case Letters",
+			Value:         "Invalid",
+			ExpectedValid: false,
 		},
 		{
-			Name:  "String longer than 37 chars",
-			Value: inputvalidationtest.String37Long,
-			Valid: false,
+			Name:          "String longer than 37 chars",
+			Value:         inputvalidationtest.String37Long,
+			ExpectedValid: false,
 		},
 	}
 
@@ -46,7 +46,7 @@ func TestApplicationCreateInput_Validate_Name(t *testing.T) {
 			//WHEN
 			err := app.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -57,29 +57,29 @@ func TestApplicationCreateInput_Validate_Name(t *testing.T) {
 
 func TestApplicationCreateInput_Validate_Description(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value *string
-		Valid bool
+		Name          string
+		Value         *string
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: str.Ptr("this is a valid description"),
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         str.Ptr("this is a valid description"),
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Nil pointer",
-			Value: nil,
-			Valid: true,
+			Name:          "Nil pointer",
+			Value:         nil,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Empty string",
-			Value: str.Ptr(inputvalidationtest.EmptyString),
-			Valid: true,
+			Name:          "Empty string",
+			Value:         str.Ptr(inputvalidationtest.EmptyString),
+			ExpectedValid: true,
 		},
 		{
-			Name:  "String longer than 128 chars",
-			Value: str.Ptr(inputvalidationtest.String129Long),
-			Valid: false,
+			Name:          "String longer than 128 chars",
+			Value:         str.Ptr(inputvalidationtest.String129Long),
+			ExpectedValid: false,
 		},
 	}
 
@@ -91,7 +91,7 @@ func TestApplicationCreateInput_Validate_Description(t *testing.T) {
 			//WHEN
 			err := app.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -102,29 +102,29 @@ func TestApplicationCreateInput_Validate_Description(t *testing.T) {
 
 func TestApplicationCreateInput_Validate_Labels(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value *graphql.Labels
-		Valid bool
+		Name          string
+		Value         *graphql.Labels
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: &graphql.Labels{"key": "value"},
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         &graphql.Labels{"key": "value"},
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Nil pointer",
-			Value: nil,
-			Valid: true,
+			Name:          "Nil pointer",
+			Value:         nil,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Label with array of strings",
-			Value: &graphql.Labels{"scenarios": []string{"ABC", "CBA", "TEST"}},
-			Valid: true,
+			Name:          "Label with array of strings",
+			Value:         &graphql.Labels{"scenarios": []string{"ABC", "CBA", "TEST"}},
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Invalid key",
-			Value: &graphql.Labels{"": "value"},
-			Valid: false,
+			Name:          "Invalid key",
+			Value:         &graphql.Labels{"": "value"},
+			ExpectedValid: false,
 		},
 	}
 
@@ -136,7 +136,7 @@ func TestApplicationCreateInput_Validate_Labels(t *testing.T) {
 			//WHEN
 			err := app.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -147,29 +147,29 @@ func TestApplicationCreateInput_Validate_Labels(t *testing.T) {
 
 func TestApplicationCreateInput_Validate_HealthCheckURL(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value *string
-		Valid bool
+		Name          string
+		Value         *string
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: str.Ptr(inputvalidationtest.ValidURL),
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         str.Ptr(inputvalidationtest.ValidURL),
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Valid nil value",
-			Value: nil,
-			Valid: true,
+			Name:          "ExpectedValid nil value",
+			Value:         nil,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "URL longer than 256",
-			Value: str.Ptr(inputvalidationtest.URL257Long),
-			Valid: false,
+			Name:          "URL longer than 256",
+			Value:         str.Ptr(inputvalidationtest.URL257Long),
+			ExpectedValid: false,
 		},
 		{
-			Name:  "Invalid",
-			Value: str.Ptr(inputvalidationtest.InvalidURL),
-			Valid: false,
+			Name:          "Invalid",
+			Value:         str.Ptr(inputvalidationtest.InvalidURL),
+			ExpectedValid: false,
 		},
 	}
 
@@ -181,7 +181,7 @@ func TestApplicationCreateInput_Validate_HealthCheckURL(t *testing.T) {
 			//WHEN
 			err := app.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -194,26 +194,25 @@ func TestApplicationCreateInput_Validate_Webhooks(t *testing.T) {
 	validObj := fixValidWebhookInput()
 
 	testCases := []struct {
-		Name  string
-		Value []*graphql.WebhookInput
-		Valid bool
+		Name          string
+		Value         []*graphql.WebhookInput
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid array",
-			Value: []*graphql.WebhookInput{&validObj},
-			Valid: true,
+			Name:          "ExpectedValid array",
+			Value:         []*graphql.WebhookInput{&validObj},
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Empty array",
-			Value: []*graphql.WebhookInput{},
-			Valid: true,
+			Name:          "Empty array",
+			Value:         []*graphql.WebhookInput{},
+			ExpectedValid: true,
 		},
-		//TODO: uncomment after implementation of webhook validation
-		//{
-		//	Name: "Array with invalid object",
-		//	Value: []*model.WebhookInput{&model.WebhookInput{}},
-		//	Valid:false,
-		//},
+		{
+			Name:          "Array with invalid object",
+			Value:         []*graphql.WebhookInput{{}},
+			ExpectedValid: false,
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -224,7 +223,7 @@ func TestApplicationCreateInput_Validate_Webhooks(t *testing.T) {
 			//WHEN
 			err := app.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -237,26 +236,25 @@ func TestApplicationCreateInput_Validate_APIs(t *testing.T) {
 	validObj := fixValidAPIDefinitionInput()
 
 	testCases := []struct {
-		Name  string
-		Value []*graphql.APIDefinitionInput
-		Valid bool
+		Name          string
+		Value         []*graphql.APIDefinitionInput
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid array",
-			Value: []*graphql.APIDefinitionInput{&validObj},
-			Valid: true,
+			Name:          "ExpectedValid array",
+			Value:         []*graphql.APIDefinitionInput{&validObj},
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Empty array",
-			Value: []*graphql.APIDefinitionInput{},
-			Valid: true,
+			Name:          "Empty array",
+			Value:         []*graphql.APIDefinitionInput{},
+			ExpectedValid: true,
 		},
-		//TODO: uncomment after implementation of APIs validation
-		//{
-		//	Name: "Array with invalid object",
-		//	Value: []*model.APIDefinitionInput{&model.APIDefinitionInput{}},
-		//	Valid:false,
-		//},
+		{
+			Name:          "Array with invalid object",
+			Value:         []*graphql.APIDefinitionInput{{}},
+			ExpectedValid: false,
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -267,7 +265,7 @@ func TestApplicationCreateInput_Validate_APIs(t *testing.T) {
 			//WHEN
 			err := app.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -280,26 +278,25 @@ func TestApplicationCreateInput_Validate_EventAPIs(t *testing.T) {
 	validObj := fixValidEventAPIDefinitionInput()
 
 	testCases := []struct {
-		Name  string
-		Value []*graphql.EventAPIDefinitionInput
-		Valid bool
+		Name          string
+		Value         []*graphql.EventAPIDefinitionInput
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid array",
-			Value: []*graphql.EventAPIDefinitionInput{&validObj},
-			Valid: true,
+			Name:          "ExpectedValid array",
+			Value:         []*graphql.EventAPIDefinitionInput{&validObj},
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Empty array",
-			Value: []*graphql.EventAPIDefinitionInput{},
-			Valid: true,
+			Name:          "Empty array",
+			Value:         []*graphql.EventAPIDefinitionInput{},
+			ExpectedValid: true,
 		},
-		//TODO: uncomment after implementation of eventAPIs validation
-		//{
-		//	Name: "Array with invalid object",
-		//	Value: []*model.EventAPIDefinitionInput{&model.EventAPIDefinitionInput{}},
-		//	Valid:false,
-		//},
+		{
+			Name:          "Array with invalid object",
+			Value:         []*graphql.EventAPIDefinitionInput{{}},
+			ExpectedValid: false,
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -310,7 +307,7 @@ func TestApplicationCreateInput_Validate_EventAPIs(t *testing.T) {
 			//WHEN
 			err := app.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -323,24 +320,24 @@ func TestApplicationCreateInput_Validate_Documents(t *testing.T) {
 	validDoc := fixValidDocument()
 
 	testCases := []struct {
-		Name  string
-		Value []*graphql.DocumentInput
-		Valid bool
+		Name          string
+		Value         []*graphql.DocumentInput
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid array",
-			Value: []*graphql.DocumentInput{&validDoc},
-			Valid: true,
+			Name:          "ExpectedValid array",
+			Value:         []*graphql.DocumentInput{&validDoc},
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Empty array",
-			Value: []*graphql.DocumentInput{},
-			Valid: true,
+			Name:          "Empty array",
+			Value:         []*graphql.DocumentInput{},
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Array with invalid object",
-			Value: []*graphql.DocumentInput{{}},
-			Valid: false,
+			Name:          "Array with invalid object",
+			Value:         []*graphql.DocumentInput{{}},
+			ExpectedValid: false,
 		},
 	}
 
@@ -352,7 +349,7 @@ func TestApplicationCreateInput_Validate_Documents(t *testing.T) {
 			//WHEN
 			err := app.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -363,29 +360,29 @@ func TestApplicationCreateInput_Validate_Documents(t *testing.T) {
 
 func TestApplicationUpdateInput_Validate_Name(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value string
-		Valid bool
+		Name          string
+		Value         string
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: inputvalidationtest.ValidName,
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         inputvalidationtest.ValidName,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Empty string",
-			Value: inputvalidationtest.EmptyString,
-			Valid: false,
+			Name:          "Empty string",
+			Value:         inputvalidationtest.EmptyString,
+			ExpectedValid: false,
 		},
 		{
-			Name:  "Invalid Upper Case Letters",
-			Value: inputvalidationtest.InvalidName,
-			Valid: false,
+			Name:          "Invalid Upper Case Letters",
+			Value:         inputvalidationtest.InvalidName,
+			ExpectedValid: false,
 		},
 		{
-			Name:  "String longer than 37 chars",
-			Value: inputvalidationtest.String37Long,
-			Valid: false,
+			Name:          "String longer than 37 chars",
+			Value:         inputvalidationtest.String37Long,
+			ExpectedValid: false,
 		},
 	}
 
@@ -397,7 +394,7 @@ func TestApplicationUpdateInput_Validate_Name(t *testing.T) {
 			//WHEN
 			err := app.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -408,29 +405,29 @@ func TestApplicationUpdateInput_Validate_Name(t *testing.T) {
 
 func TestApplicationUpdateInput_Validate_Description(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value *string
-		Valid bool
+		Name          string
+		Value         *string
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: str.Ptr(inputvalidationtest.ValidName),
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         str.Ptr(inputvalidationtest.ValidName),
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Nil pointer",
-			Value: nil,
-			Valid: true,
+			Name:          "Nil pointer",
+			Value:         nil,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Empty string",
-			Value: str.Ptr(inputvalidationtest.EmptyString),
-			Valid: true,
+			Name:          "Empty string",
+			Value:         str.Ptr(inputvalidationtest.EmptyString),
+			ExpectedValid: true,
 		},
 		{
-			Name:  "String longer than 128 chars",
-			Value: str.Ptr(inputvalidationtest.String129Long),
-			Valid: false,
+			Name:          "String longer than 128 chars",
+			Value:         str.Ptr(inputvalidationtest.String129Long),
+			ExpectedValid: false,
 		},
 	}
 
@@ -442,7 +439,7 @@ func TestApplicationUpdateInput_Validate_Description(t *testing.T) {
 			//WHEN
 			err := app.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -453,34 +450,34 @@ func TestApplicationUpdateInput_Validate_Description(t *testing.T) {
 
 func TestApplicationUpdateInput_Validate_HealthCheckURL(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value *string
-		Valid bool
+		Name          string
+		Value         *string
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: str.Ptr(inputvalidationtest.ValidURL),
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         str.Ptr(inputvalidationtest.ValidURL),
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Valid nil value",
-			Value: nil,
-			Valid: true,
+			Name:          "ExpectedValid nil value",
+			Value:         nil,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "URL longer than 256",
-			Value: str.Ptr(inputvalidationtest.URL257Long),
-			Valid: false,
+			Name:          "URL longer than 256",
+			Value:         str.Ptr(inputvalidationtest.URL257Long),
+			ExpectedValid: false,
 		},
 		{
-			Name:  "Invalid",
-			Value: str.Ptr(inputvalidationtest.InvalidURL),
-			Valid: false,
+			Name:          "Invalid",
+			Value:         str.Ptr(inputvalidationtest.InvalidURL),
+			ExpectedValid: false,
 		},
 		{
-			Name:  "URL without protocol",
-			Value: str.Ptr(inputvalidationtest.InvalidURL),
-			Valid: false,
+			Name:          "URL without protocol",
+			Value:         str.Ptr(inputvalidationtest.InvalidURL),
+			ExpectedValid: false,
 		},
 	}
 
@@ -492,7 +489,7 @@ func TestApplicationUpdateInput_Validate_HealthCheckURL(t *testing.T) {
 			//WHEN
 			err := app.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -511,12 +508,4 @@ func fixValidApplicationCreateInput() graphql.ApplicationCreateInput {
 	return graphql.ApplicationCreateInput{
 		Name: "application",
 	}
-}
-
-func fixValidAPIDefinitionInput() graphql.APIDefinitionInput {
-	return graphql.APIDefinitionInput{}
-}
-
-func fixValidEventAPIDefinitionInput() graphql.EventAPIDefinitionInput {
-	return graphql.EventAPIDefinitionInput{}
 }

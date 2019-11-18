@@ -35,7 +35,7 @@ func createApplicationFromInputWithinTenant(t *testing.T, ctx context.Context, i
 }
 
 func deleteApplicationLabel(t *testing.T, ctx context.Context, applicationID, labelKey string) {
-	deleteRequest := fixDeleteApplicationLabel(applicationID, labelKey)
+	deleteRequest := fixDeleteApplicationLabelRequest(applicationID, labelKey)
 
 	require.NoError(t, tc.RunOperation(ctx, deleteRequest, nil))
 }
@@ -51,7 +51,7 @@ func setApplicationLabel(t *testing.T, ctx context.Context, applicationID string
 }
 
 func generateClientCredentialsForApplication(t *testing.T, ctx context.Context, id string) graphql.SystemAuth {
-	req := fixGenerateClientCredentialsForApplication(id)
+	req := fixGenerateClientCredentialsForApplicationRequest(id)
 	out := graphql.SystemAuth{}
 	err := tc.RunOperation(ctx, req, &out)
 	require.NoError(t, err)
@@ -59,7 +59,7 @@ func generateClientCredentialsForApplication(t *testing.T, ctx context.Context, 
 }
 
 func deleteSystemAuthForApplication(t *testing.T, ctx context.Context, id string) {
-	req := fixDeleteSystemAuthForApplication(id)
+	req := fixDeleteSystemAuthForApplicationRequest(id)
 	err := tc.RunOperation(ctx, req, nil)
 	require.NoError(t, err)
 }
@@ -121,7 +121,7 @@ func getRuntime(t *testing.T, ctx context.Context, runtimeID string) *graphql.Ru
 
 func getRuntimeWithinTenant(t *testing.T, ctx context.Context, runtimeID string, tenant string) *graphql.RuntimeExt {
 	var runtime graphql.RuntimeExt
-	runtimeQuery := fixRuntimeQuery(runtimeID)
+	runtimeQuery := fixRuntimeRequest(runtimeID)
 
 	err := tc.RunOperationWithCustomTenant(ctx, tenant, runtimeQuery, &runtime)
 	require.NoError(t, err)
@@ -143,14 +143,14 @@ func deleteRuntime(t *testing.T, id string) {
 }
 
 func deleteRuntimeWithinTenant(t *testing.T, id string, tenantID string) {
-	delReq := fixDeleteRuntime(id)
+	delReq := fixDeleteRuntimeRequest(id)
 
 	err := tc.RunOperationWithCustomTenant(context.Background(), tenantID, delReq, nil)
 	require.NoError(t, err)
 }
 
 func generateClientCredentialsForRuntime(t *testing.T, ctx context.Context, id string) graphql.SystemAuth {
-	req := fixGenerateClientCredentialsForRuntime(id)
+	req := fixGenerateClientCredentialsForRuntimeRequest(id)
 	out := graphql.SystemAuth{}
 	err := tc.RunOperation(ctx, req, &out)
 	require.NoError(t, err)
@@ -158,7 +158,7 @@ func generateClientCredentialsForRuntime(t *testing.T, ctx context.Context, id s
 }
 
 func deleteSystemAuthForRuntime(t *testing.T, ctx context.Context, id string) {
-	req := fixDeleteSystemAuthForRuntime(id)
+	req := fixDeleteSystemAuthForRuntimeRequest(id)
 	err := tc.RunOperation(ctx, req, nil)
 	require.NoError(t, err)
 }
@@ -189,7 +189,7 @@ func deleteLabelDefinition(t *testing.T, ctx context.Context, labelDefinitionKey
 }
 
 func deleteLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, labelDefinitionKey string, deleteRelatedResources bool, tenantID string) {
-	deleteRequest := fixDeleteLabelDefinition(labelDefinitionKey, deleteRelatedResources)
+	deleteRequest := fixDeleteLabelDefinitionRequest(labelDefinitionKey, deleteRelatedResources)
 
 	require.NoError(t, tc.RunOperationWithCustomTenant(ctx, tenantID, deleteRequest, nil))
 }
@@ -218,17 +218,39 @@ func setAPIAuth(t *testing.T, ctx context.Context, apiID string, rtmID string, a
 }
 
 func deleteAPIAuth(t *testing.T, ctx context.Context, apiID string, rtmID string) {
-	request := fixDeleteAPIAuthRequest(apiID, rtmID)
+	request := fixDeleteAPIAuthRequestRequest(apiID, rtmID)
 
 	err := tc.RunOperation(ctx, request, nil)
 
 	require.NoError(t, err)
 }
 
+func addAPI(t *testing.T, ctx context.Context, appID string, apiInput graphql.APIDefinitionInput) graphql.APIDefinition {
+	apiGQL, err := tc.graphqlizer.APIDefinitionInputToGQL(apiInput)
+	require.NoError(t, err)
+	addAPIRequest := fixAddAPIRequest(appID, apiGQL)
+	//WHEN
+	outAPI := graphql.APIDefinition{}
+	err = tc.RunOperation(ctx, addAPIRequest, &outAPI)
+	require.NoError(t, err)
+	return outAPI
+}
+
+func addEventAPI(t *testing.T, ctx context.Context, appID string, apiInput graphql.EventAPIDefinitionInput) graphql.EventAPIDefinition {
+	eventAPIGQL, err := tc.graphqlizer.EventAPIDefinitionInputToGQL(apiInput)
+	require.NoError(t, err)
+	addAPIRequest := fixAddEventAPIRequest(appID, eventAPIGQL)
+	//WHEN
+	outEventAPI := graphql.EventAPIDefinition{}
+	err = tc.RunOperation(ctx, addAPIRequest, &outEventAPI)
+	require.NoError(t, err)
+	return outEventAPI
+}
+
 //OneTimeToken
 
 func generateOneTimeTokenForApplication(t *testing.T, ctx context.Context, id string) graphql.OneTimeToken {
-	tokenRequest := fixGenerateOneTimeTokenForApp(id)
+	tokenRequest := fixGenerateOneTimeTokenForAppRequest(id)
 	token := graphql.OneTimeToken{}
 	err := tc.RunOperation(ctx, tokenRequest, &token)
 	require.NoError(t, err)
@@ -236,7 +258,7 @@ func generateOneTimeTokenForApplication(t *testing.T, ctx context.Context, id st
 }
 
 func generateOneTimeTokenForRuntime(t *testing.T, ctx context.Context, id string) graphql.OneTimeToken {
-	tokenRequest := fixGenerateOneTimeTokenForRuntime(id)
+	tokenRequest := fixGenerateOneTimeTokenForRuntimeRequest(id)
 	token := graphql.OneTimeToken{}
 	err := tc.RunOperation(ctx, tokenRequest, &token)
 	require.NoError(t, err)
@@ -266,13 +288,13 @@ func createIntegrationSystem(t *testing.T, ctx context.Context, name string) *gr
 }
 
 func deleteIntegrationSystem(t *testing.T, ctx context.Context, id string) {
-	req := fixDeleteIntegrationSystem(id)
+	req := fixDeleteIntegrationSystemRequest(id)
 	err := tc.RunOperation(ctx, req, nil)
 	require.NoError(t, err)
 }
 
 func generateClientCredentialsForIntegrationSystem(t *testing.T, ctx context.Context, id string) graphql.SystemAuth {
-	req := fixGenerateClientCredentialsForIntegrationSystem(id)
+	req := fixGenerateClientCredentialsForIntegrationSystemRequest(id)
 	out := graphql.SystemAuth{}
 	err := tc.RunOperation(ctx, req, &out)
 	require.NoError(t, err)
@@ -280,7 +302,7 @@ func generateClientCredentialsForIntegrationSystem(t *testing.T, ctx context.Con
 }
 
 func deleteSystemAuthForIntegrationSystem(t *testing.T, ctx context.Context, id string) {
-	req := fixDeleteSystemAuthForIntegrationSystem(id)
+	req := fixDeleteSystemAuthForIntegrationSystemRequest(id)
 	err := tc.RunOperation(ctx, req, nil)
 	require.NoError(t, err)
 }

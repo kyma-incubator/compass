@@ -6,7 +6,7 @@ mutation {
       labels: { scenarios: ["DEFAULT"] }
       apis: [
         {
-          name: "comments/v1"
+          name: "comments-v1"
           description: "api for adding comments"
           targetURL: "http://mywordpress.com/comments"
           group: "comments"
@@ -27,7 +27,7 @@ mutation {
           }
         }
         {
-          name: "reviews/v1"
+          name: "reviews-v1"
           targetURL: "http://mywordpress.com/reviews"
           spec: {
             type: ODATA
@@ -53,7 +53,7 @@ mutation {
             credential: { basic: { username: "admin", password: "secret" } }
             requestAuth: {
               csrf: {
-                tokenEndpointURL: "token-URL"
+                tokenEndpointURL: "http://token.URL"
                 credential: {
                   oauth: {
                     clientId: "clientid"
