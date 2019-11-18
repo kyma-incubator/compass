@@ -62,6 +62,10 @@ type ApplicationCreateInput struct {
 	IntegrationSystemID *string                    `json:"integrationSystemID"`
 }
 
+type ApplicationEventConfiguration struct {
+	DefaultURL string `json:"defaultURL"`
+}
+
 type ApplicationPage struct {
 	Data       []*Application `json:"data"`
 	PageInfo   *PageInfo      `json:"pageInfo"`
