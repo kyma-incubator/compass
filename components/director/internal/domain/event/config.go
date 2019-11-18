@@ -1,5 +1,5 @@
 package event
 
 type Config struct {
-	DefaultEventURL string
+	DefaultEventURL string `envconfig:"optional"`
 }
