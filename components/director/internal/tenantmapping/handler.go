@@ -21,28 +21,28 @@ type ReqDataParser interface {
 	Parse(req *http.Request) (ReqData, error)
 }
 
-//go:generate mockery -name=TenantAndScopesForUserProvider -output=automock -outpkg=automock -case=underscore
-type TenantAndScopesForUserProvider interface {
-	GetTenantAndScopes(reqData ReqData, authID string) (ObjectContext, error)
+//go:generate mockery -name=ObjectContextForUserProvider -output=automock -outpkg=automock -case=underscore
+type ObjectContextForUserProvider interface {
+	GetObjectContext(reqData ReqData, authID string) (ObjectContext, error)
 }
 
-//go:generate mockery -name=TenantAndScopesForSystemAuthProvider -output=automock -outpkg=automock -case=underscore
-type TenantAndScopesForSystemAuthProvider interface {
-	GetTenantAndScopes(ctx context.Context, reqData ReqData, authID string, authFlow AuthFlow) (ObjectContext, error)
+//go:generate mockery -name=ObjectContextForSystemAuthProvider -output=automock -outpkg=automock -case=underscore
+type ObjectContextForSystemAuthProvider interface {
+	GetObjectContext(ctx context.Context, reqData ReqData, authID string, authFlow AuthFlow) (ObjectContext, error)
 }
 
 type Handler struct {
 	reqDataParser       ReqDataParser
 	transact            persistence.Transactioner
-	mapperForUser       TenantAndScopesForUserProvider
-	mapperForSystemAuth TenantAndScopesForSystemAuthProvider
+	mapperForUser       ObjectContextForUserProvider
+	mapperForSystemAuth ObjectContextForSystemAuthProvider
 }
 
 func NewHandler(
 	reqDataParser ReqDataParser,
 	transact persistence.Transactioner,
-	mapperForUser TenantAndScopesForUserProvider,
-	mapperForSystemAuth TenantAndScopesForSystemAuthProvider) *Handler {
+	mapperForUser ObjectContextForUserProvider,
+	mapperForSystemAuth ObjectContextForSystemAuthProvider) *Handler {
 	return &Handler{
 		reqDataParser:       reqDataParser,
 		transact:            transact,
@@ -99,9 +99,9 @@ func (h *Handler) lookupForTenantAndScopes(ctx context.Context, reqData ReqData)
 
 	switch authFlow {
 	case JWTAuthFlow:
-		return h.mapperForUser.GetTenantAndScopes(reqData, authID)
+		return h.mapperForUser.GetObjectContext(reqData, authID)
 	case OAuth2Flow, CertificateFlow:
-		return h.mapperForSystemAuth.GetTenantAndScopes(ctx, reqData, authID, authFlow)
+		return h.mapperForSystemAuth.GetObjectContext(ctx, reqData, authID, authFlow)
 	}
 
 	return ObjectContext{}, fmt.Errorf("unknown authentication flow (%s)", authFlow)

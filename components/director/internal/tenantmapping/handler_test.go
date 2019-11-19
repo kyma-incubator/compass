@@ -49,7 +49,7 @@ func TestHandler(t *testing.T) {
 		transactMock := getTransactMock()
 
 		mapperForUserMock := getMapperForUserMock()
-		mapperForUserMock.On("GetTenantAndScopes", reqDataMock, username).Return(objCtxMock, nil).Once()
+		mapperForUserMock.On("GetObjectContext", reqDataMock, username).Return(objCtxMock, nil).Once()
 
 		handler := tenantmapping.NewHandler(reqDataParserMock, transactMock, mapperForUserMock, nil)
 		handler.ServeHTTP(w, req)
@@ -90,7 +90,7 @@ func TestHandler(t *testing.T) {
 		transactMock := getTransactMock()
 
 		mapperForSystemAuthMock := getMapperForSystemAuthMock()
-		mapperForSystemAuthMock.On("GetTenantAndScopes", mock.Anything, reqDataMock, systemAuthID.String(), tenantmapping.OAuth2Flow).Return(objCtx, nil).Once()
+		mapperForSystemAuthMock.On("GetObjectContext", mock.Anything, reqDataMock, systemAuthID.String(), tenantmapping.OAuth2Flow).Return(objCtx, nil).Once()
 
 		handler := tenantmapping.NewHandler(reqDataParserMock, transactMock, nil, mapperForSystemAuthMock)
 		handler.ServeHTTP(w, req)
@@ -132,7 +132,7 @@ func TestHandler(t *testing.T) {
 		transactMock := getTransactMock()
 
 		mapperForSystemAuthMock := getMapperForSystemAuthMock()
-		mapperForSystemAuthMock.On("GetTenantAndScopes", mock.Anything, reqDataMock, systemAuthID.String(), tenantmapping.CertificateFlow).Return(objCtx, nil).Once()
+		mapperForSystemAuthMock.On("GetObjectContext", mock.Anything, reqDataMock, systemAuthID.String(), tenantmapping.CertificateFlow).Return(objCtx, nil).Once()
 
 		handler := tenantmapping.NewHandler(reqDataParserMock, transactMock, nil, mapperForSystemAuthMock)
 		handler.ServeHTTP(w, req)
@@ -228,13 +228,13 @@ func TestHandler(t *testing.T) {
 	})
 }
 
-func getMapperForUserMock() *automock.TenantAndScopesForUserProvider {
-	provider := &automock.TenantAndScopesForUserProvider{}
+func getMapperForUserMock() *automock.ObjectContextForUserProvider {
+	provider := &automock.ObjectContextForUserProvider{}
 	return provider
 }
 
-func getMapperForSystemAuthMock() *automock.TenantAndScopesForSystemAuthProvider {
-	provider := &automock.TenantAndScopesForSystemAuthProvider{}
+func getMapperForSystemAuthMock() *automock.ObjectContextForSystemAuthProvider {
+	provider := &automock.ObjectContextForSystemAuthProvider{}
 	return provider
 }
 

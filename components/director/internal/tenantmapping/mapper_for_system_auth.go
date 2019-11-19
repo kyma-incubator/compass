@@ -24,7 +24,7 @@ type mapperForSystemAuth struct {
 	scopesGetter  ScopesGetter
 }
 
-func (m *mapperForSystemAuth) GetTenantAndScopes(ctx context.Context, reqData ReqData, authID string, authFlow AuthFlow) (ObjectContext, error) {
+func (m *mapperForSystemAuth) GetObjectContext(ctx context.Context, reqData ReqData, authID string, authFlow AuthFlow) (ObjectContext, error) {
 	sysAuth, err := m.systemAuthSvc.GetGlobal(ctx, authID)
 	if err != nil {
 		return ObjectContext{}, errors.Wrap(err, "while retrieving system auth from database")
@@ -51,12 +51,12 @@ func (m *mapperForSystemAuth) GetTenantAndScopes(ctx context.Context, reqData Re
 		return ObjectContext{}, errors.Wrap(err, fmt.Sprintf("while fetching the tenant and scopes for object of type %s", refObjType))
 	}
 
-	objID, objType, err := getContextObj(refObjType, sysAuth)
+	refObjID, err := sysAuth.GetReferenceObjectID()
 	if err != nil {
 		return ObjectContext{}, errors.Wrap(err, "while getting context object")
 	}
 
-	return NewObjectContext(scopes, tenant, objID, objType), nil
+	return NewObjectContext(scopes, tenant, refObjID, string(refObjType)), nil
 }
 
 func (m *mapperForSystemAuth) getTenantAndScopesForIntegrationSystem(reqData ReqData) (string, string, error) {
@@ -117,17 +117,4 @@ func buildPath(refObjectType model.SystemAuthReferenceObjectType) string {
 	lowerCaseType := strings.ToLower(string(refObjectType))
 	transformedObjType := strings.ReplaceAll(lowerCaseType, " ", "_")
 	return fmt.Sprintf("%s.%s", clientCredentialScopesPrefix, transformedObjType)
-}
-
-func getContextObj(refObjType model.SystemAuthReferenceObjectType, sysAuth *model.SystemAuth) (string, string, error) {
-	switch refObjType {
-	case model.IntegrationSystemReference:
-		return *sysAuth.IntegrationSystemID, string(model.IntegrationSystemReference), nil
-	case model.RuntimeReference:
-		return *sysAuth.RuntimeID, string(model.RuntimeReference), nil
-	case model.ApplicationReference:
-		return *sysAuth.AppID, string(model.ApplicationReference), nil
-	default:
-		return "", "", fmt.Errorf("unable to determine context details for object of type %s", refObjType)
-	}
 }

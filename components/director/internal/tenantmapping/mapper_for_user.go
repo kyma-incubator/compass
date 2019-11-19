@@ -20,7 +20,7 @@ type mapperForUser struct {
 	staticUserRepo StaticUserRepository
 }
 
-func (m *mapperForUser) GetTenantAndScopes(reqData ReqData, username string) (ObjectContext, error) {
+func (m *mapperForUser) GetObjectContext(reqData ReqData, username string) (ObjectContext, error) {
 	var tenant, scopes string
 
 	staticUser, err := m.staticUserRepo.Get(username)
