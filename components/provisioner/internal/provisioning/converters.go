@@ -176,9 +176,10 @@ func runtimeAgentConnectionStatusToGraphQLStatus(status model.RuntimeAgentConnec
 
 func runtimeConfigurationToGraphQLConfiguration(config model.RuntimeConfig) *gqlschema.RuntimeConfig {
 	return &gqlschema.RuntimeConfig{
-		ClusterConfig: clusterConfigToGraphQLConfig(config.ClusterConfig),
-		KymaConfig:    kymaConfigToGraphQLConfig(config.KymaConfig),
-		Kubeconfig:    config.Kubeconfig,
+		ClusterConfig:         clusterConfigToGraphQLConfig(config.ClusterConfig),
+		KymaConfig:            kymaConfigToGraphQLConfig(config.KymaConfig),
+		Kubeconfig:            config.Kubeconfig,
+		CredentialsSecretName: &config.CredentialsSecretName,
 	}
 }
 

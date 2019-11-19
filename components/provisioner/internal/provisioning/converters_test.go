@@ -376,6 +376,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		backup := gqlschema.KymaModuleBackup
 		backupInit := gqlschema.KymaModuleBackupInit
 		kubeconfig := "kubeconfig"
+		secretName := "secretName"
 
 		runtimeStatus := model.RuntimeStatus{
 			LastOperationStatus: model.Operation{
@@ -409,6 +410,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					},
 					ClusterID: "runtimeID",
 				},
+				CredentialsSecretName: secretName,
 			},
 		}
 
@@ -442,7 +444,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					Version: &version,
 					Modules: []*gqlschema.KymaModule{&backup, &backupInit},
 				},
-				Kubeconfig: &kubeconfig,
+				Kubeconfig:            &kubeconfig,
+				CredentialsSecretName: &secretName,
 			},
 		}
 
@@ -476,6 +479,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		autoScMin := 2
 		surge := 1
 		unavailable := 1
+		secretName := "secretName"
 
 		runtimeStatus := model.RuntimeStatus{
 			LastOperationStatus: model.Operation{
@@ -514,6 +518,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 						{ID: "Id1", Module: model.KymaModule("BackupInit")},
 					},
 				},
+				CredentialsSecretName: secretName,
 			},
 		}
 
@@ -558,7 +563,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					Version: &version,
 					Modules: []*gqlschema.KymaModule{&backup, &backupInit},
 				},
-				Kubeconfig: &kubeconfig,
+				Kubeconfig:            &kubeconfig,
+				CredentialsSecretName: &secretName,
 			},
 		}
 
