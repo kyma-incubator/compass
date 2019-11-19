@@ -20,6 +20,7 @@ import (
 func TestHandler(t *testing.T) {
 	tenantID := uuid.New()
 	systemAuthID := uuid.New()
+	objID := uuid.New()
 
 	t.Run("success for the request parsed as JWT flow", func(t *testing.T) {
 		username := "admin"
@@ -31,7 +32,13 @@ func TestHandler(t *testing.T) {
 				},
 			},
 		}
-		expectedRespPayload := `{"subject":"","extra":{"name":"` + username + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
+		objCtxMock := tenantmapping.ObjectContext{
+			Scopes:     scopes,
+			TenantID:   tenantID.String(),
+			ObjectID:   username,
+			ObjectType: "Static User",
+		}
+		expectedRespPayload := `{"subject":"","extra":{"name":"` + username + `","objectID":"` + username + `","objectType":"Static User","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
 
 		req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", strings.NewReader(""))
 		w := httptest.NewRecorder()
@@ -42,7 +49,7 @@ func TestHandler(t *testing.T) {
 		transactMock := getTransactMock()
 
 		mapperForUserMock := getMapperForUserMock()
-		mapperForUserMock.On("GetTenantAndScopes", reqDataMock, username).Return(tenantID.String(), scopes, nil).Once()
+		mapperForUserMock.On("GetTenantAndScopes", reqDataMock, username).Return(objCtxMock, nil).Once()
 
 		handler := tenantmapping.NewHandler(reqDataParserMock, transactMock, mapperForUserMock, nil)
 		handler.ServeHTTP(w, req)
@@ -66,7 +73,13 @@ func TestHandler(t *testing.T) {
 				},
 			},
 		}
-		expectedRespPayload := `{"subject":"","extra":{"client_id":"` + systemAuthID.String() + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
+		objCtx := tenantmapping.ObjectContext{
+			Scopes:     scopes,
+			TenantID:   tenantID.String(),
+			ObjectID:   objID.String(),
+			ObjectType: "Integration System",
+		}
+		expectedRespPayload := `{"subject":"","extra":{"client_id":"` + systemAuthID.String() + `","objectID":"` + objID.String() + `","objectType":"Integration System","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
 
 		req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", strings.NewReader(""))
 		w := httptest.NewRecorder()
@@ -77,7 +90,7 @@ func TestHandler(t *testing.T) {
 		transactMock := getTransactMock()
 
 		mapperForSystemAuthMock := getMapperForSystemAuthMock()
-		mapperForSystemAuthMock.On("GetTenantAndScopes", mock.Anything, reqDataMock, systemAuthID.String(), tenantmapping.OAuth2Flow).Return(tenantID.String(), scopes, nil).Once()
+		mapperForSystemAuthMock.On("GetTenantAndScopes", mock.Anything, reqDataMock, systemAuthID.String(), tenantmapping.OAuth2Flow).Return(objCtx, nil).Once()
 
 		handler := tenantmapping.NewHandler(reqDataParserMock, transactMock, nil, mapperForSystemAuthMock)
 		handler.ServeHTTP(w, req)
@@ -102,7 +115,13 @@ func TestHandler(t *testing.T) {
 				},
 			},
 		}
-		expectedRespPayload := `{"subject":"","extra":{"scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":{"Client-Id-From-Certificate":["` + systemAuthID.String() + `"]}}`
+		objCtx := tenantmapping.ObjectContext{
+			Scopes:     scopes,
+			TenantID:   tenantID.String(),
+			ObjectID:   objID.String(),
+			ObjectType: "Integration System",
+		}
+		expectedRespPayload := `{"subject":"","extra":{"objectID":"` + objID.String() + `","objectType":"Integration System","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":{"Client-Id-From-Certificate":["` + systemAuthID.String() + `"]}}`
 
 		req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", strings.NewReader(""))
 		w := httptest.NewRecorder()
@@ -113,7 +132,7 @@ func TestHandler(t *testing.T) {
 		transactMock := getTransactMock()
 
 		mapperForSystemAuthMock := getMapperForSystemAuthMock()
-		mapperForSystemAuthMock.On("GetTenantAndScopes", mock.Anything, reqDataMock, systemAuthID.String(), tenantmapping.CertificateFlow).Return(tenantID.String(), scopes, nil).Once()
+		mapperForSystemAuthMock.On("GetTenantAndScopes", mock.Anything, reqDataMock, systemAuthID.String(), tenantmapping.CertificateFlow).Return(objCtx, nil).Once()
 
 		handler := tenantmapping.NewHandler(reqDataParserMock, transactMock, nil, mapperForSystemAuthMock)
 		handler.ServeHTTP(w, req)

@@ -24,25 +24,39 @@ type mapperForSystemAuth struct {
 	scopesGetter  ScopesGetter
 }
 
-func (m *mapperForSystemAuth) GetTenantAndScopes(ctx context.Context, reqData ReqData, authID string, authFlow AuthFlow) (string, string, error) {
+func (m *mapperForSystemAuth) GetTenantAndScopes(ctx context.Context, reqData ReqData, authID string, authFlow AuthFlow) (ObjectContext, error) {
 	sysAuth, err := m.systemAuthSvc.GetGlobal(ctx, authID)
 	if err != nil {
-		return "", "", errors.Wrap(err, "while retrieving system auth from database")
+		return ObjectContext{}, errors.Wrap(err, "while retrieving system auth from database")
 	}
 
 	refObjType, err := sysAuth.GetReferenceObjectType()
 	if err != nil {
-		return "", "", errors.Wrap(err, "while getting reference object type")
+		return ObjectContext{}, errors.Wrap(err, "while getting reference object type")
 	}
+
+	var scopes string
+	var tenant string
 
 	switch refObjType {
 	case model.IntegrationSystemReference:
-		return m.getTenantAndScopesForIntegrationSystem(reqData)
+		tenant, scopes, err = m.getTenantAndScopesForIntegrationSystem(reqData)
 	case model.RuntimeReference, model.ApplicationReference:
-		return m.getTenantAndScopesForApplicationOrRuntime(sysAuth, refObjType, reqData, authFlow)
+		tenant, scopes, err = m.getTenantAndScopesForApplicationOrRuntime(sysAuth, refObjType, reqData, authFlow)
+	default:
+		return ObjectContext{}, errors.Errorf("unsupported reference object type (%s)", refObjType)
 	}
 
-	return "", "", errors.Errorf("unsupported reference object type (%s)", refObjType)
+	if err != nil {
+		return ObjectContext{}, errors.Wrap(err, fmt.Sprintf("while fetching the tenant and scopes for object of type %s", refObjType))
+	}
+
+	objID, objType, err := getContextObj(refObjType, sysAuth)
+	if err != nil {
+		return ObjectContext{}, errors.Wrap(err, "while getting context object")
+	}
+
+	return NewObjectContext(scopes, tenant, objID, objType), nil
 }
 
 func (m *mapperForSystemAuth) getTenantAndScopesForIntegrationSystem(reqData ReqData) (string, string, error) {
@@ -103,4 +117,17 @@ func buildPath(refObjectType model.SystemAuthReferenceObjectType) string {
 	lowerCaseType := strings.ToLower(string(refObjectType))
 	transformedObjType := strings.ReplaceAll(lowerCaseType, " ", "_")
 	return fmt.Sprintf("%s.%s", clientCredentialScopesPrefix, transformedObjType)
+}
+
+func getContextObj(refObjType model.SystemAuthReferenceObjectType, sysAuth *model.SystemAuth) (string, string, error) {
+	switch refObjType {
+	case model.IntegrationSystemReference:
+		return *sysAuth.IntegrationSystemID, string(model.IntegrationSystemReference), nil
+	case model.RuntimeReference:
+		return *sysAuth.RuntimeID, string(model.RuntimeReference), nil
+	case model.ApplicationReference:
+		return *sysAuth.AppID, string(model.ApplicationReference), nil
+	default:
+		return "", "", fmt.Errorf("unable to determin context detials for object of type %s", refObjType)
+	}
 }

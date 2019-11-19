@@ -18,6 +18,7 @@ func TestMapperForUserGetTenantAndScopes(t *testing.T) {
 	username := "some-user"
 	expectedTenantID := uuid.New()
 	expectedScopes := []string{"application:read", "application:write"}
+	userObjCtxType := "Static User"
 
 	t.Run("returns tenant and scopes that are defined in the Extra map of ReqData", func(t *testing.T) {
 		reqData := tenantmapping.ReqData{
@@ -38,11 +39,13 @@ func TestMapperForUserGetTenantAndScopes(t *testing.T) {
 		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
 
 		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock)
-		tenant, scopes, err := mapper.GetTenantAndScopes(reqData, username)
+		objCtx, err := mapper.GetTenantAndScopes(reqData, username)
 
 		require.NoError(t, err)
-		require.Equal(t, expectedTenantID.String(), tenant)
-		require.Equal(t, strings.Join(expectedScopes, " "), scopes)
+		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
+		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
+		require.Equal(t, username, objCtx.ObjectID)
+		require.Equal(t, userObjCtxType, objCtx.ObjectType)
 
 		mock.AssertExpectationsForObjects(t, staticUserRepoMock)
 	})
@@ -66,11 +69,13 @@ func TestMapperForUserGetTenantAndScopes(t *testing.T) {
 		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
 
 		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock)
-		tenant, scopes, err := mapper.GetTenantAndScopes(reqData, username)
+		objCtx, err := mapper.GetTenantAndScopes(reqData, username)
 
 		require.NoError(t, err)
-		require.Equal(t, expectedTenantID.String(), tenant)
-		require.Equal(t, strings.Join(expectedScopes, " "), scopes)
+		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
+		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
+		require.Equal(t, username, objCtx.ObjectID)
+		require.Equal(t, userObjCtxType, objCtx.ObjectType)
 
 		mock.AssertExpectationsForObjects(t, staticUserRepoMock)
 	})
@@ -96,11 +101,13 @@ func TestMapperForUserGetTenantAndScopes(t *testing.T) {
 		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
 
 		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock)
-		tenant, scopes, err := mapper.GetTenantAndScopes(reqData, username)
+		objCtx, err := mapper.GetTenantAndScopes(reqData, username)
 
 		require.NoError(t, err)
-		require.Equal(t, expectedTenantID.String(), tenant)
-		require.Equal(t, strings.Join(expectedScopes, " "), scopes)
+		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
+		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
+		require.Equal(t, username, objCtx.ObjectID)
+		require.Equal(t, userObjCtxType, objCtx.ObjectType)
 
 		mock.AssertExpectationsForObjects(t, staticUserRepoMock)
 	})
@@ -126,11 +133,13 @@ func TestMapperForUserGetTenantAndScopes(t *testing.T) {
 		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
 
 		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock)
-		tenant, scopes, err := mapper.GetTenantAndScopes(reqData, username)
+		objCtx, err := mapper.GetTenantAndScopes(reqData, username)
 
 		require.NoError(t, err)
-		require.Equal(t, expectedTenantID.String(), tenant)
-		require.Equal(t, strings.Join(expectedScopes, " "), scopes)
+		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
+		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
+		require.Equal(t, username, objCtx.ObjectID)
+		require.Equal(t, userObjCtxType, objCtx.ObjectType)
 
 		mock.AssertExpectationsForObjects(t, staticUserRepoMock)
 	})
@@ -154,11 +163,13 @@ func TestMapperForUserGetTenantAndScopes(t *testing.T) {
 
 		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock)
 
-		tenant, scopes, err := mapper.GetTenantAndScopes(reqData, username)
+		objCtx, err := mapper.GetTenantAndScopes(reqData, username)
 
 		require.NoError(t, err)
-		require.Equal(t, expectedTenantID.String(), tenant)
-		require.Equal(t, strings.Join(expectedScopes, " "), scopes)
+		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
+		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
+		require.Equal(t, username, objCtx.ObjectID)
+		require.Equal(t, userObjCtxType, objCtx.ObjectType)
 
 		mock.AssertExpectationsForObjects(t, staticUserRepoMock)
 	})
@@ -176,7 +187,7 @@ func TestMapperForUserGetTenantAndScopes(t *testing.T) {
 
 		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock)
 
-		_, _, err := mapper.GetTenantAndScopes(reqData, username)
+		_, err := mapper.GetTenantAndScopes(reqData, username)
 
 		require.EqualError(t, err, "while fetching tenant: the key (tenant) does not exist in source object")
 
@@ -202,7 +213,7 @@ func TestMapperForUserGetTenantAndScopes(t *testing.T) {
 
 		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock)
 
-		_, _, err := mapper.GetTenantAndScopes(reqData, username)
+		_, err := mapper.GetTenantAndScopes(reqData, username)
 
 		require.EqualError(t, err, "tenant missmatch")
 
@@ -227,7 +238,7 @@ func TestMapperForUserGetTenantAndScopes(t *testing.T) {
 		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
 
 		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock)
-		_, _, err := mapper.GetTenantAndScopes(reqData, username)
+		_, err := mapper.GetTenantAndScopes(reqData, username)
 
 		require.EqualError(t, err, "while fetching tenant: while parsing the value for tenant: unable to cast the value to a string type")
 
@@ -252,7 +263,7 @@ func TestMapperForUserGetTenantAndScopes(t *testing.T) {
 		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
 
 		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock)
-		_, _, err := mapper.GetTenantAndScopes(reqData, username)
+		_, err := mapper.GetTenantAndScopes(reqData, username)
 
 		require.EqualError(t, err, "while fetching scopes: while parsing the value for scope: unable to cast the value to a string type")
 
@@ -268,7 +279,7 @@ func TestMapperForUserGetTenantAndScopes(t *testing.T) {
 
 		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock)
 
-		_, _, err := mapper.GetTenantAndScopes(reqData, username)
+		_, err := mapper.GetTenantAndScopes(reqData, username)
 
 		require.EqualError(t, err, "while searching for a static user with username non-existing: some-error")
 

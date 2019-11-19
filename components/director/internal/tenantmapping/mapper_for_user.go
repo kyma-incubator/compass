@@ -20,18 +20,18 @@ type mapperForUser struct {
 	staticUserRepo StaticUserRepository
 }
 
-func (m *mapperForUser) GetTenantAndScopes(reqData ReqData, username string) (string, string, error) {
+func (m *mapperForUser) GetTenantAndScopes(reqData ReqData, username string) (ObjectContext, error) {
 	var tenant, scopes string
 
 	staticUser, err := m.staticUserRepo.Get(username)
 	if err != nil {
-		return "", "", errors.Wrap(err, fmt.Sprintf("while searching for a static user with username %s", username))
+		return ObjectContext{}, errors.Wrap(err, fmt.Sprintf("while searching for a static user with username %s", username))
 	}
 
 	scopes, err = reqData.GetScopes()
 	if err != nil {
 		if !apperrors.IsKeyDoesNotExist(err) {
-			return "", "", errors.Wrap(err, "while fetching scopes")
+			return ObjectContext{}, errors.Wrap(err, "while fetching scopes")
 		}
 
 		scopes = strings.Join(staticUser.Scopes, " ")
@@ -39,14 +39,14 @@ func (m *mapperForUser) GetTenantAndScopes(reqData ReqData, username string) (st
 
 	tenant, err = reqData.GetTenantID()
 	if err != nil {
-		return "", "", errors.Wrap(err, "while fetching tenant")
+		return ObjectContext{}, errors.Wrap(err, "while fetching tenant")
 	}
 
 	if !hasValidTenant(staticUser.Tenants, tenant) {
-		return "", "", errors.New("tenant missmatch")
+		return ObjectContext{}, errors.New("tenant missmatch")
 	}
 
-	return tenant, scopes, nil
+	return NewObjectContext(scopes, tenant, staticUser.Username, "Static User"), nil
 }
 
 func hasValidTenant(assignedTenants []uuid.UUID, tenant string) bool {

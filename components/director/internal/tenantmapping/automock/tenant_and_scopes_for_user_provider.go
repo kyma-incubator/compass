@@ -11,29 +11,22 @@ type TenantAndScopesForUserProvider struct {
 }
 
 // GetTenantAndScopes provides a mock function with given fields: reqData, authID
-func (_m *TenantAndScopesForUserProvider) GetTenantAndScopes(reqData tenantmapping.ReqData, authID string) (string, string, error) {
+func (_m *TenantAndScopesForUserProvider) GetTenantAndScopes(reqData tenantmapping.ReqData, authID string) (tenantmapping.ObjectContext, error) {
 	ret := _m.Called(reqData, authID)
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func(tenantmapping.ReqData, string) string); ok {
+	var r0 tenantmapping.ObjectContext
+	if rf, ok := ret.Get(0).(func(tenantmapping.ReqData, string) tenantmapping.ObjectContext); ok {
 		r0 = rf(reqData, authID)
 	} else {
-		r0 = ret.Get(0).(string)
+		r0 = ret.Get(0).(tenantmapping.ObjectContext)
 	}
 
-	var r1 string
-	if rf, ok := ret.Get(1).(func(tenantmapping.ReqData, string) string); ok {
+	var r1 error
+	if rf, ok := ret.Get(1).(func(tenantmapping.ReqData, string) error); ok {
 		r1 = rf(reqData, authID)
 	} else {
-		r1 = ret.Get(1).(string)
+		r1 = ret.Error(1)
 	}
 
-	var r2 error
-	if rf, ok := ret.Get(2).(func(tenantmapping.ReqData, string) error); ok {
-		r2 = rf(reqData, authID)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
+	return r0, r1
 }

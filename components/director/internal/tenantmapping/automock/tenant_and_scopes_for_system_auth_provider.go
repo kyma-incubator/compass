@@ -12,29 +12,22 @@ type TenantAndScopesForSystemAuthProvider struct {
 }
 
 // GetTenantAndScopes provides a mock function with given fields: ctx, reqData, authID, authFlow
-func (_m *TenantAndScopesForSystemAuthProvider) GetTenantAndScopes(ctx context.Context, reqData tenantmapping.ReqData, authID string, authFlow tenantmapping.AuthFlow) (string, string, error) {
+func (_m *TenantAndScopesForSystemAuthProvider) GetTenantAndScopes(ctx context.Context, reqData tenantmapping.ReqData, authID string, authFlow tenantmapping.AuthFlow) (tenantmapping.ObjectContext, error) {
 	ret := _m.Called(ctx, reqData, authID, authFlow)
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, tenantmapping.ReqData, string, tenantmapping.AuthFlow) string); ok {
+	var r0 tenantmapping.ObjectContext
+	if rf, ok := ret.Get(0).(func(context.Context, tenantmapping.ReqData, string, tenantmapping.AuthFlow) tenantmapping.ObjectContext); ok {
 		r0 = rf(ctx, reqData, authID, authFlow)
 	} else {
-		r0 = ret.Get(0).(string)
+		r0 = ret.Get(0).(tenantmapping.ObjectContext)
 	}
 
-	var r1 string
-	if rf, ok := ret.Get(1).(func(context.Context, tenantmapping.ReqData, string, tenantmapping.AuthFlow) string); ok {
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, tenantmapping.ReqData, string, tenantmapping.AuthFlow) error); ok {
 		r1 = rf(ctx, reqData, authID, authFlow)
 	} else {
-		r1 = ret.Get(1).(string)
+		r1 = ret.Error(1)
 	}
 
-	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, tenantmapping.ReqData, string, tenantmapping.AuthFlow) error); ok {
-		r2 = rf(ctx, reqData, authID, authFlow)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
+	return r0, r1
 }
