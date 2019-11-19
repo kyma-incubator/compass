@@ -300,6 +300,7 @@ type ComplexityRoot struct {
 		LabelDefinitions       func(childComplexity int) int
 		Runtime                func(childComplexity int, id string) int
 		Runtimes               func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
+		Viewer                 func(childComplexity int) int
 	}
 
 	Runtime struct {
@@ -332,6 +333,12 @@ type ComplexityRoot struct {
 		DeprecatedSince func(childComplexity int) int
 		ForRemoval      func(childComplexity int) int
 		Value           func(childComplexity int) int
+	}
+
+	ViewerInfo struct {
+		ID         func(childComplexity int) int
+		Tenant     func(childComplexity int) int
+		ViewerType func(childComplexity int) int
 	}
 
 	Webhook struct {
@@ -414,6 +421,7 @@ type MutationResolver interface {
 	DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string) (*Label, error)
 }
 type QueryResolver interface {
+	Viewer(ctx context.Context) (*ViewerInfo, error)
 	Applications(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*ApplicationPage, error)
 	Application(ctx context.Context, id string) (*Application, error)
 	ApplicationsForRuntime(ctx context.Context, runtimeID string, first *int, after *PageCursor) (*ApplicationPage, error)
@@ -1848,6 +1856,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Runtimes(childComplexity, args["filter"].([]*LabelFilter), args["first"].(*int), args["after"].(*PageCursor)), true
 
+	case "Query.viewer":
+		if e.complexity.Query.Viewer == nil {
+			break
+		}
+
+		return e.complexity.Query.Viewer(childComplexity), true
+
 	case "Runtime.auths":
 		if e.complexity.Runtime.Auths == nil {
 			break
@@ -1971,6 +1986,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Version.Value(childComplexity), true
+
+	case "ViewerInfo.id":
+		if e.complexity.ViewerInfo.ID == nil {
+			break
+		}
+
+		return e.complexity.ViewerInfo.ID(childComplexity), true
+
+	case "ViewerInfo.tenant":
+		if e.complexity.ViewerInfo.Tenant == nil {
+			break
+		}
+
+		return e.complexity.ViewerInfo.Tenant(childComplexity), true
+
+	case "ViewerInfo.viewerType":
+		if e.complexity.ViewerInfo.ViewerType == nil {
+			break
+		}
+
+		return e.complexity.ViewerInfo.ViewerType(childComplexity), true
 
 	case "Webhook.applicationID":
 		if e.complexity.Webhook.ApplicationID == nil {
@@ -2183,6 +2219,13 @@ enum SpecFormat {
 	YAML
 	JSON
 	XML
+}
+
+enum ViewerType {
+	RUNTIME
+	APPLICATION
+	INTEGRATION_SYSTEM
+	USER
 }
 
 """
@@ -2633,6 +2676,12 @@ type Version {
 	forRemoval: Boolean
 }
 
+type ViewerInfo {
+	id: String!
+	viewerType: ViewerType!
+	tenant: String
+}
+
 type Webhook {
 	id: ID!
 	applicationID: ID!
@@ -2642,6 +2691,7 @@ type Webhook {
 }
 
 type Query {
+	viewer: ViewerInfo @hasScopes(path: "graphql.query.viewer")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
 	
@@ -8273,6 +8323,30 @@ func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field gra
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_viewer(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Viewer(rctx)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ViewerInfo)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOViewerInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐViewerInfo(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_applications(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -9098,6 +9172,84 @@ func (ec *executionContext) _Version_forRemoval(ctx context.Context, field graph
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ViewerInfo_id(ctx context.Context, field graphql.CollectedField, obj *ViewerInfo) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "ViewerInfo",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ViewerInfo_viewerType(ctx context.Context, field graphql.CollectedField, obj *ViewerInfo) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "ViewerInfo",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ViewerType, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(ViewerType)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNViewerType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐViewerType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ViewerInfo_tenant(ctx context.Context, field graphql.CollectedField, obj *ViewerInfo) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "ViewerInfo",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Tenant, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Webhook_id(ctx context.Context, field graphql.CollectedField, obj *Webhook) graphql.Marshaler {
@@ -12360,6 +12512,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "viewer":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_viewer(ctx, field)
+				return res
+			})
 		case "applications":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -12690,6 +12853,40 @@ func (ec *executionContext) _Version(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = ec._Version_deprecatedSince(ctx, field, obj)
 		case "forRemoval":
 			out.Values[i] = ec._Version_forRemoval(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var viewerInfoImplementors = []string{"ViewerInfo"}
+
+func (ec *executionContext) _ViewerInfo(ctx context.Context, sel ast.SelectionSet, obj *ViewerInfo) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, viewerInfoImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ViewerInfo")
+		case "id":
+			out.Values[i] = ec._ViewerInfo_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "viewerType":
+			out.Values[i] = ec._ViewerInfo_viewerType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "tenant":
+			out.Values[i] = ec._ViewerInfo_tenant(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -14044,6 +14241,15 @@ func (ec *executionContext) marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋ
 	return v
 }
 
+func (ec *executionContext) unmarshalNViewerType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐViewerType(ctx context.Context, v interface{}) (ViewerType, error) {
+	var res ViewerType
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNViewerType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐViewerType(ctx context.Context, sel ast.SelectionSet, v ViewerType) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) marshalNWebhook2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx context.Context, sel ast.SelectionSet, v Webhook) graphql.Marshaler {
 	return ec._Webhook(ctx, sel, &v)
 }
@@ -14990,6 +15196,17 @@ func (ec *executionContext) unmarshalOVersionInput2ᚖgithubᚗcomᚋkymaᚑincu
 	}
 	res, err := ec.unmarshalOVersionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐVersionInput(ctx, v)
 	return &res, err
+}
+
+func (ec *executionContext) marshalOViewerInfo2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐViewerInfo(ctx context.Context, sel ast.SelectionSet, v ViewerInfo) graphql.Marshaler {
+	return ec._ViewerInfo(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOViewerInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐViewerInfo(ctx context.Context, sel ast.SelectionSet, v *ViewerInfo) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ViewerInfo(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOWebhookInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInput(ctx context.Context, v interface{}) ([]*WebhookInput, error) {

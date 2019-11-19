@@ -3,6 +3,8 @@ package domain
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/viewer"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/event"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
@@ -47,6 +49,7 @@ type RootResolver struct {
 	systemAuth  *systemauth.Resolver
 	oAuth20     *oauth20.Resolver
 	intSys      *integrationsystem.Resolver
+	viewer      *viewer.Resolver
 }
 
 func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope.Provider, oneTimeTokenCfg onetimetoken.Config, oAuth20Cfg oauth20.Config, eventCfg event.Config) *RootResolver {
@@ -178,6 +181,10 @@ func (r *queryResolver) IntegrationSystems(ctx context.Context, first *int, afte
 }
 func (r *queryResolver) IntegrationSystem(ctx context.Context, id string) (*graphql.IntegrationSystem, error) {
 	return r.intSys.IntegrationSystem(ctx, id)
+}
+
+func (r *queryResolver) Viewer(ctx context.Context) (*graphql.ViewerInfo, error) {
+	return r.viewer.Viewer(ctx)
 }
 
 type mutationResolver struct {

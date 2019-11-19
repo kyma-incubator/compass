@@ -7,8 +7,10 @@ import (
 )
 
 type Claims struct {
-	Tenant string `json:"tenant"`
-	Scopes string `json:"scopes"`
+	Tenant     string `json:"tenant"`
+	Scopes     string `json:"scopes"`
+	ObjectID   string `json:"objectID"`
+	ObjectType string `json:"objectType"`
 	*jwt.StandardClaims
 }
 

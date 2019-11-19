@@ -349,6 +349,12 @@ type VersionInput struct {
 	ForRemoval      *bool   `json:"forRemoval"`
 }
 
+type ViewerInfo struct {
+	ID         string     `json:"id"`
+	ViewerType ViewerType `json:"viewerType"`
+	Tenant     *string    `json:"tenant"`
+}
+
 type Webhook struct {
 	ID            string                 `json:"id"`
 	ApplicationID string                 `json:"applicationID"`
@@ -854,5 +860,50 @@ func (e *SpecFormat) UnmarshalGQL(v interface{}) error {
 }
 
 func (e SpecFormat) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type ViewerType string
+
+const (
+	ViewerTypeRuntime           ViewerType = "RUNTIME"
+	ViewerTypeApplication       ViewerType = "APPLICATION"
+	ViewerTypeIntegrationSystem ViewerType = "INTEGRATION_SYSTEM"
+	ViewerTypeUser              ViewerType = "USER"
+)
+
+var AllViewerType = []ViewerType{
+	ViewerTypeRuntime,
+	ViewerTypeApplication,
+	ViewerTypeIntegrationSystem,
+	ViewerTypeUser,
+}
+
+func (e ViewerType) IsValid() bool {
+	switch e {
+	case ViewerTypeRuntime, ViewerTypeApplication, ViewerTypeIntegrationSystem, ViewerTypeUser:
+		return true
+	}
+	return false
+}
+
+func (e ViewerType) String() string {
+	return string(e)
+}
+
+func (e *ViewerType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ViewerType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ViewerType", str)
+	}
+	return nil
+}
+
+func (e ViewerType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

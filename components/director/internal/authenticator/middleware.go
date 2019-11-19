@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/viewer"
+
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -81,10 +83,12 @@ func (a *Authenticator) getBearerToken(r *http.Request) (string, error) {
 }
 
 func (a *Authenticator) contextWithClaims(ctx context.Context, claims Claims) context.Context {
-	ctxWithTenant := tenant.SaveToContext(ctx, claims.Tenant)
+	ctx = tenant.SaveToContext(ctx, claims.Tenant)
 	scopesArray := strings.Split(claims.Scopes, " ")
-	ctxWithScopes := scope.SaveToContext(ctxWithTenant, scopesArray)
-	return ctxWithScopes
+	ctx = scope.SaveToContext(ctx, scopesArray)
+	ctx = viewer.SaveIDToContext(ctx, claims.ObjectID)
+	ctx = viewer.SaveTypeToContext(ctx, claims.ObjectType)
+	return ctx
 }
 
 func (a *Authenticator) getKeyFunc() func(token *jwt.Token) (interface{}, error) {
