@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestMapperForSystemAuthGetTenantAndScopes(t *testing.T) {
+func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 	t.Run("returns tenant and scopes in the Application or Runtime SystemAuth case for Certificate flow", func(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
@@ -39,11 +39,13 @@ func TestMapperForSystemAuthGetTenantAndScopes(t *testing.T) {
 
 		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, scopesGetterMock)
 
-		tenant, scopes, err := mapper.GetTenantAndScopes(context.TODO(), reqData, authID.String(), tenantmapping.CertificateFlow)
+		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.CertificateFlow)
 
 		require.NoError(t, err)
-		require.Equal(t, expectedTenantID.String(), tenant)
-		require.Equal(t, strings.Join(expectedScopes, " "), scopes)
+		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
+		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
+		require.Equal(t, refObjID.String(), objCtx.ObjectID)
+		require.Equal(t, "Application", objCtx.ObjectType)
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock, scopesGetterMock)
 	})
@@ -72,11 +74,13 @@ func TestMapperForSystemAuthGetTenantAndScopes(t *testing.T) {
 
 		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
 
-		tenant, scopes, err := mapper.GetTenantAndScopes(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
+		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
 		require.NoError(t, err)
-		require.Equal(t, expectedTenantID.String(), tenant)
-		require.Equal(t, expectedScopes, scopes)
+		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
+		require.Equal(t, expectedScopes, objCtx.Scopes)
+		require.Equal(t, refObjID.String(), objCtx.ObjectID)
+		require.Equal(t, "Integration System", objCtx.ObjectType)
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
 	})
@@ -104,11 +108,13 @@ func TestMapperForSystemAuthGetTenantAndScopes(t *testing.T) {
 
 		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
 
-		tenant, scopes, err := mapper.GetTenantAndScopes(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
+		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
 		require.NoError(t, err)
-		require.Equal(t, expectedTenantID.String(), tenant)
-		require.Equal(t, expectedScopes, scopes)
+		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
+		require.Equal(t, expectedScopes, objCtx.Scopes)
+		require.Equal(t, refObjID.String(), objCtx.ObjectID)
+		require.Equal(t, "Application", objCtx.ObjectType)
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
 	})
@@ -123,7 +129,7 @@ func TestMapperForSystemAuthGetTenantAndScopes(t *testing.T) {
 
 		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
 
-		_, _, err := mapper.GetTenantAndScopes(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
+		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
 		require.EqualError(t, err, "while retrieving system auth from database: some-error")
 
@@ -141,7 +147,7 @@ func TestMapperForSystemAuthGetTenantAndScopes(t *testing.T) {
 
 		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
 
-		_, _, err := mapper.GetTenantAndScopes(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
+		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
 		require.EqualError(t, err, "while getting reference object type: unknown reference object type")
 
@@ -163,9 +169,9 @@ func TestMapperForSystemAuthGetTenantAndScopes(t *testing.T) {
 
 		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
 
-		_, _, err := mapper.GetTenantAndScopes(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
+		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
-		require.EqualError(t, err, "while fetching tenant: the key (tenant) does not exist in source object")
+		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Integration System: while fetching tenant: the key (tenant) does not exist in source object")
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
 	})
@@ -192,9 +198,9 @@ func TestMapperForSystemAuthGetTenantAndScopes(t *testing.T) {
 
 		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
 
-		_, _, err := mapper.GetTenantAndScopes(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
+		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
-		require.EqualError(t, err, "while fetching scopes: the key (scope) does not exist in source object")
+		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Integration System: while fetching scopes: the key (scope) does not exist in source object")
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
 	})
@@ -219,9 +225,9 @@ func TestMapperForSystemAuthGetTenantAndScopes(t *testing.T) {
 
 		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
 
-		_, _, err := mapper.GetTenantAndScopes(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
+		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
-		require.EqualError(t, err, "while fetching tenant: while parsing the value for tenant: unable to cast the value to a string type")
+		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Application: while fetching tenant: while parsing the value for tenant: unable to cast the value to a string type")
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
 	})
@@ -249,9 +255,9 @@ func TestMapperForSystemAuthGetTenantAndScopes(t *testing.T) {
 
 		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
 
-		_, _, err := mapper.GetTenantAndScopes(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
+		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
-		require.EqualError(t, err, "tenant missmatch")
+		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Application: tenant missmatch")
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
 	})
@@ -272,9 +278,9 @@ func TestMapperForSystemAuthGetTenantAndScopes(t *testing.T) {
 
 		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil)
 
-		_, _, err := mapper.GetTenantAndScopes(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
+		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.OAuth2Flow)
 
-		require.EqualError(t, err, "while fetching scopes: the key (scope) does not exist in source object")
+		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Application: while fetching scopes: the key (scope) does not exist in source object")
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
 	})
@@ -298,9 +304,9 @@ func TestMapperForSystemAuthGetTenantAndScopes(t *testing.T) {
 
 		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, scopesGetterMock)
 
-		_, _, err := mapper.GetTenantAndScopes(context.TODO(), reqData, authID.String(), tenantmapping.CertificateFlow)
+		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), tenantmapping.CertificateFlow)
 
-		require.EqualError(t, err, "while fetching scopes: some-error")
+		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Application: while fetching scopes: some-error")
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock, scopesGetterMock)
 	})

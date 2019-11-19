@@ -24,25 +24,39 @@ type mapperForSystemAuth struct {
 	scopesGetter  ScopesGetter
 }
 
-func (m *mapperForSystemAuth) GetTenantAndScopes(ctx context.Context, reqData ReqData, authID string, authFlow AuthFlow) (string, string, error) {
+func (m *mapperForSystemAuth) GetObjectContext(ctx context.Context, reqData ReqData, authID string, authFlow AuthFlow) (ObjectContext, error) {
 	sysAuth, err := m.systemAuthSvc.GetGlobal(ctx, authID)
 	if err != nil {
-		return "", "", errors.Wrap(err, "while retrieving system auth from database")
+		return ObjectContext{}, errors.Wrap(err, "while retrieving system auth from database")
 	}
 
 	refObjType, err := sysAuth.GetReferenceObjectType()
 	if err != nil {
-		return "", "", errors.Wrap(err, "while getting reference object type")
+		return ObjectContext{}, errors.Wrap(err, "while getting reference object type")
 	}
+
+	var scopes string
+	var tenant string
 
 	switch refObjType {
 	case model.IntegrationSystemReference:
-		return m.getTenantAndScopesForIntegrationSystem(reqData)
+		tenant, scopes, err = m.getTenantAndScopesForIntegrationSystem(reqData)
 	case model.RuntimeReference, model.ApplicationReference:
-		return m.getTenantAndScopesForApplicationOrRuntime(sysAuth, refObjType, reqData, authFlow)
+		tenant, scopes, err = m.getTenantAndScopesForApplicationOrRuntime(sysAuth, refObjType, reqData, authFlow)
+	default:
+		return ObjectContext{}, errors.Errorf("unsupported reference object type (%s)", refObjType)
 	}
 
-	return "", "", errors.Errorf("unsupported reference object type (%s)", refObjType)
+	if err != nil {
+		return ObjectContext{}, errors.Wrap(err, fmt.Sprintf("while fetching the tenant and scopes for object of type %s", refObjType))
+	}
+
+	refObjID, err := sysAuth.GetReferenceObjectID()
+	if err != nil {
+		return ObjectContext{}, errors.Wrap(err, "while getting context object")
+	}
+
+	return NewObjectContext(scopes, tenant, refObjID, string(refObjType)), nil
 }
 
 func (m *mapperForSystemAuth) getTenantAndScopesForIntegrationSystem(reqData ReqData) (string, string, error) {
