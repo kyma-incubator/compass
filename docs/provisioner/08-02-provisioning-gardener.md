@@ -73,7 +73,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
 
   5. Make a call to the Runtime Provisioner to create a cluster on GCP.
 
-      > **NOTE:** To access the Runtime Provisioner, make a call from another Pod in the cluster containing the Runtime Provisioner or forward the port on which the GraphQL Server is listening.
+      > **NOTE:** To access the Runtime Provisioner, forward the port on which the GraphQL Server is listening.
     
       > **NOTE:** The cluster name must start with a lowercase letter followed by up to 19 lowercase letters, numbers, or hyphens, and cannot end with a hyphen.                                                                 
                                                                           
@@ -140,7 +140,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
 
   5. Make a call to the Runtime Provisioner to create a cluster on Azure.
 
-      > **NOTE:** To access the Runtime Provisioner, make a call from another Pod in the cluster containing the Runtime Provisioner or forward the port on which the GraphQL Server is listening.
+      > **NOTE:** To access the Runtime Provisioner, forward the port on which the GraphQL Server is listening.
     
       > **NOTE:** The cluster name must start with a lowercase letter followed by up to 19 lowercase letters, numbers, or hyphens, and cannot end with a hyphen.                                                                  
                                                                           
@@ -205,7 +205,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
 
   5. Make a call to the Runtime Provisioner to create a cluster on AWS.
 
-      > **NOTE:** To access the Runtime Provisioner, make a call from another Pod in the cluster containing the Runtime Provisioner or forward the port on which the GraphQL Server is listening.
+      > **NOTE:** To access the Runtime Provisioner, forward the port on which the GraphQL Server is listening.
     
       > **NOTE:** The cluster name must start with a lowercase letter followed by up to 19 lowercase letters, numbers, or hyphens, and cannot end with a hyphen.                                                                  
                                                                           

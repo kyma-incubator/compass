@@ -7,7 +7,7 @@ This tutorial shows how to deprovision clusters with Kyma Runtimes (Runtimes).
 
 ## Deprovision Kyma Runtime
 
-> **NOTE:** To access the Runtime Provisioner, make a call from another Pod in the cluster containing the Runtime Provisioner or forward the port on which the GraphQL Server is listening.
+> **NOTE:** To access the Runtime Provisioner, forward the port on which the GraphQL Server is listening.
 
   To deprovision a Runtime, make a call to the Runtime Provisioner with a mutation like this:  
   
