@@ -222,7 +222,7 @@ func TestHandler(t *testing.T) {
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 
-		require.Equal(t, "while looking for tenant and scopes data: while determining the auth ID from the request: unable to find valid auth ID", strings.TrimSpace(string(body)))
+		require.Equal(t, "while getting object context: while determining the auth ID from the request: unable to find valid auth ID", strings.TrimSpace(string(body)))
 
 		mock.AssertExpectationsForObjects(t, reqDataParserMock, transactMock)
 	})

@@ -72,9 +72,9 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 
 	ctx := persistence.SaveToContext(req.Context(), tx)
 
-	objCtx, err := h.lookupForTenantAndScopes(ctx, reqData)
+	objCtx, err := h.getObjectContext(ctx, reqData)
 	if err != nil {
-		respondWithError(writer, http.StatusInternalServerError, err, "while looking for tenant and scopes data")
+		respondWithError(writer, http.StatusInternalServerError, err, "while getting object context")
 		return
 	}
 
@@ -91,7 +91,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (h *Handler) lookupForTenantAndScopes(ctx context.Context, reqData ReqData) (ObjectContext, error) {
+func (h *Handler) getObjectContext(ctx context.Context, reqData ReqData) (ObjectContext, error) {
 	authID, authFlow, err := reqData.GetAuthID()
 	if err != nil {
 		return ObjectContext{}, errors.Wrap(err, "while determining the auth ID from the request")
