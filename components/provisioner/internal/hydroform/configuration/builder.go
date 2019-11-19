@@ -18,38 +18,38 @@ import (
 
 const credentialsKey = "credentials"
 
-//go:generate mockery -name=ConfigBuilderFactory
-type ConfigBuilderFactory interface {
-	NewProvisioningBuilder(provisionInput gqlschema.ProvisionRuntimeInput) ConfigBuilder
-	NewDeprovisioningBuilder(runtimeConfig model.RuntimeConfig) ConfigBuilder
+//go:generate mockery -name=BuilderFactory
+type BuilderFactory interface {
+	NewProvisioningBuilder(provisionInput gqlschema.ProvisionRuntimeInput) Builder
+	NewDeprovisioningBuilder(runtimeConfig model.RuntimeConfig) Builder
 }
 
 type configBuilderFactory struct {
 	secrets v1.SecretInterface
 }
 
-func NewConfigBuilderFactory(secrets v1.SecretInterface) ConfigBuilderFactory {
+func NewConfigBuilderFactory(secrets v1.SecretInterface) BuilderFactory {
 	return &configBuilderFactory{
 		secrets: secrets,
 	}
 }
 
-func (cf configBuilderFactory) NewProvisioningBuilder(provisionInput gqlschema.ProvisionRuntimeInput) ConfigBuilder {
+func (cf configBuilderFactory) NewProvisioningBuilder(provisionInput gqlschema.ProvisionRuntimeInput) Builder {
 	return &provisioningBuilder{
 		secrets:               cf.secrets,
 		provisionRuntimeInput: provisionInput,
 	}
 }
 
-func (cf configBuilderFactory) NewDeprovisioningBuilder(runtimeConfig model.RuntimeConfig) ConfigBuilder {
+func (cf configBuilderFactory) NewDeprovisioningBuilder(runtimeConfig model.RuntimeConfig) Builder {
 	return &deprovisioningBuilder{
 		secrets:       cf.secrets,
 		runtimeConfig: runtimeConfig,
 	}
 }
 
-//go:generate mockery -name=ConfigBuilder
-type ConfigBuilder interface {
+//go:generate mockery -name=Builder
+type Builder interface {
 	Create() (*types.Cluster, *types.Provider, error)
 	CleanUp()
 }

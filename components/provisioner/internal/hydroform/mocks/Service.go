@@ -14,11 +14,11 @@ type Service struct {
 }
 
 // DeprovisionCluster provides a mock function with given fields: builder, terraformState
-func (_m *Service) DeprovisionCluster(builder configuration.ConfigBuilder, terraformState string) error {
+func (_m *Service) DeprovisionCluster(builder configuration.Builder, terraformState string) error {
 	ret := _m.Called(builder, terraformState)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(configuration.ConfigBuilder, string) error); ok {
+	if rf, ok := ret.Get(0).(func(configuration.Builder, string) error); ok {
 		r0 = rf(builder, terraformState)
 	} else {
 		r0 = ret.Error(0)
@@ -28,18 +28,18 @@ func (_m *Service) DeprovisionCluster(builder configuration.ConfigBuilder, terra
 }
 
 // ProvisionCluster provides a mock function with given fields: builder
-func (_m *Service) ProvisionCluster(builder configuration.ConfigBuilder) (hydroform.ClusterInfo, error) {
+func (_m *Service) ProvisionCluster(builder configuration.Builder) (hydroform.ClusterInfo, error) {
 	ret := _m.Called(builder)
 
 	var r0 hydroform.ClusterInfo
-	if rf, ok := ret.Get(0).(func(configuration.ConfigBuilder) hydroform.ClusterInfo); ok {
+	if rf, ok := ret.Get(0).(func(configuration.Builder) hydroform.ClusterInfo); ok {
 		r0 = rf(builder)
 	} else {
 		r0 = ret.Get(0).(hydroform.ClusterInfo)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(configuration.ConfigBuilder) error); ok {
+	if rf, ok := ret.Get(1).(func(configuration.Builder) error); ok {
 		r1 = rf(builder)
 	} else {
 		r1 = ret.Error(1)

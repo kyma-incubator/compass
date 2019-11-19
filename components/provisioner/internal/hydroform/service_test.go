@@ -18,7 +18,7 @@ func TestService_ProvisionCluster(t *testing.T) {
 	t.Run("Should provision cluster", func(t *testing.T) {
 		//given
 		hydroformClient := &mocks.Client{}
-		builder := &configMock.ConfigBuilder{}
+		builder := &configMock.Builder{}
 
 		hydroformService := NewHydroformService(hydroformClient)
 
@@ -42,7 +42,7 @@ func TestService_ProvisionCluster(t *testing.T) {
 func TestService_DeprovisionCluster(t *testing.T) {
 	//given
 	hydroformClient := &mocks.Client{}
-	builder := &configMock.ConfigBuilder{}
+	builder := &configMock.Builder{}
 
 	hydroformService := NewHydroformService(hydroformClient)
 

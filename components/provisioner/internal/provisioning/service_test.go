@@ -22,8 +22,8 @@ func TestService_ProvisionRuntime(t *testing.T) {
 	hydroformMock := &mocks.Service{}
 	persistenceServiceMock := &persistenceMocks.Service{}
 	uuidGenerator := &persistenceMocks.UUIDGenerator{}
-	factory := &configMock.ConfigBuilderFactory{}
-	builder := &configMock.ConfigBuilder{}
+	factory := &configMock.BuilderFactory{}
+	builder := &configMock.Builder{}
 
 	clusterConfig := &gqlschema.ClusterConfigInput{
 		GcpConfig: &gqlschema.GCPConfigInput{
@@ -123,8 +123,8 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 	persistenceServiceMock := &persistenceMocks.Service{}
 	hydroformMock := &mocks.Service{}
 	uuidGenerator := &persistenceMocks.UUIDGenerator{}
-	factory := &configMock.ConfigBuilderFactory{}
-	builder := &configMock.ConfigBuilder{}
+	factory := &configMock.BuilderFactory{}
+	builder := &configMock.Builder{}
 
 	runtimeConfig := model.RuntimeConfig{
 		ClusterConfig: model.GCPConfig{},
@@ -187,7 +187,7 @@ func TestService_RuntimeOperationStatus(t *testing.T) {
 	persistenceServiceMock := &persistenceMocks.Service{}
 	hydroformMock := &mocks.Service{}
 	uuidGenerator := &persistenceMocks.UUIDGenerator{}
-	factory := &configMock.ConfigBuilderFactory{}
+	factory := &configMock.BuilderFactory{}
 
 	t.Run("Should return operation status", func(t *testing.T) {
 		//given

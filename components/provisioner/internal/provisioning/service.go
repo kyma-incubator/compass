@@ -36,12 +36,12 @@ type Service interface {
 type service struct {
 	persistenceService   persistence.Service
 	hydroform            hydroform.Service
-	configBuilderFactory configuration.ConfigBuilderFactory
+	configBuilderFactory configuration.BuilderFactory
 	uuidGenerator        persistence.UUIDGenerator
 }
 
 func NewProvisioningService(persistenceService persistence.Service, uuidGenerator persistence.UUIDGenerator,
-	hydroform hydroform.Service, configBuilderFactory configuration.ConfigBuilderFactory) Service {
+	hydroform hydroform.Service, configBuilderFactory configuration.BuilderFactory) Service {
 	return &service{
 		persistenceService:   persistenceService,
 		hydroform:            hydroform,
@@ -169,7 +169,7 @@ func (r *service) CleanupRuntimeData(id string) (string, error) {
 	return id, r.persistenceService.CleanupClusterData(id)
 }
 
-func (r *service) startProvisioning(operationID, runtimeID string, builder configuration.ConfigBuilder, finished chan<- struct{}) {
+func (r *service) startProvisioning(operationID, runtimeID string, builder configuration.Builder, finished chan<- struct{}) {
 	defer close(finished)
 	log.Infof("Provisioning runtime %s is starting", runtimeID)
 	info, err := r.hydroform.ProvisionCluster(builder)
@@ -191,7 +191,7 @@ func (r *service) startProvisioning(operationID, runtimeID string, builder confi
 	}
 }
 
-func (r *service) startDeprovisioning(operationID, runtimeID string, builder configuration.ConfigBuilder, terraformState string, finished chan<- struct{}) {
+func (r *service) startDeprovisioning(operationID, runtimeID string, builder configuration.Builder, terraformState string, finished chan<- struct{}) {
 	defer close(finished)
 	log.Infof("Deprovisioning runtime %s is starting", runtimeID)
 	err := r.hydroform.DeprovisionCluster(builder, terraformState)

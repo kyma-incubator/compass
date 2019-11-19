@@ -13,8 +13,8 @@ import (
 
 //go:generate mockery -name=Service
 type Service interface {
-	ProvisionCluster(builder configuration.ConfigBuilder) (ClusterInfo, error)
-	DeprovisionCluster(builder configuration.ConfigBuilder, terraformState string) error
+	ProvisionCluster(builder configuration.Builder) (ClusterInfo, error)
+	DeprovisionCluster(builder configuration.Builder, terraformState string) error
 }
 
 type service struct {
@@ -33,7 +33,7 @@ type ClusterInfo struct {
 	State         string
 }
 
-func (s service) ProvisionCluster(builder configuration.ConfigBuilder) (ClusterInfo, error) {
+func (s service) ProvisionCluster(builder configuration.Builder) (ClusterInfo, error) {
 	log.Info("Preparing config for runtime provisioning")
 	cluster, provider, err := builder.Create()
 	defer builder.CleanUp()
@@ -77,7 +77,7 @@ func (s service) ProvisionCluster(builder configuration.ConfigBuilder) (ClusterI
 	}, nil
 }
 
-func (s service) DeprovisionCluster(builder configuration.ConfigBuilder, terraformStateJson string) error {
+func (s service) DeprovisionCluster(builder configuration.Builder, terraformStateJson string) error {
 	log.Info("Preparing config for runtime deprovisioning")
 	cluster, provider, err := builder.Create()
 
