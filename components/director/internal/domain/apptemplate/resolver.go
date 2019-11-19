@@ -95,11 +95,11 @@ func (r *Resolver) ApplicationTemplates(ctx context.Context, first *int, after *
 		return nil, err
 	}
 
-	gqlIntSys := r.appTemplateConverter.MultipleToGraphQL(appTemplatePage.Data)
-	totalCount := len(gqlIntSys)
+	gqlAppTemplate := r.appTemplateConverter.MultipleToGraphQL(appTemplatePage.Data)
+	totalCount := len(gqlAppTemplate)
 
 	return &graphql.ApplicationTemplatePage{
-		Data:       gqlIntSys,
+		Data:       gqlAppTemplate,
 		TotalCount: totalCount,
 		PageInfo: &graphql.PageInfo{
 			StartCursor: graphql.PageCursor(appTemplatePage.PageInfo.StartCursor),
@@ -125,7 +125,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		return nil, err
 	}
 
-	intSys, err := r.appTemplateSvc.Get(ctx, id)
+	appTemplate, err := r.appTemplateSvc.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -135,9 +135,9 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		return nil, err
 	}
 
-	gqlIntSys := r.appTemplateConverter.ToGraphQL(intSys)
+	gqlAppTemplate := r.appTemplateConverter.ToGraphQL(appTemplate)
 
-	return gqlIntSys, nil
+	return gqlAppTemplate, nil
 }
 
 func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
@@ -155,7 +155,7 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 		return nil, err
 	}
 
-	intSys, err := r.appTemplateSvc.Get(ctx, id)
+	appTemplate, err := r.appTemplateSvc.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -165,9 +165,9 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 		return nil, err
 	}
 
-	gqlIntSys := r.appTemplateConverter.ToGraphQL(intSys)
+	gqlAppTemplate := r.appTemplateConverter.ToGraphQL(appTemplate)
 
-	return gqlIntSys, nil
+	return gqlAppTemplate, nil
 }
 
 func (r *Resolver) DeleteApplicationTemplate(ctx context.Context, id string) (*graphql.ApplicationTemplate, error) {
@@ -179,7 +179,7 @@ func (r *Resolver) DeleteApplicationTemplate(ctx context.Context, id string) (*g
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	intSys, err := r.appTemplateSvc.Get(ctx, id)
+	appTemplate, err := r.appTemplateSvc.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +194,7 @@ func (r *Resolver) DeleteApplicationTemplate(ctx context.Context, id string) (*g
 		return nil, err
 	}
 
-	deletedIntSys := r.appTemplateConverter.ToGraphQL(intSys)
+	deletedAppTemplate := r.appTemplateConverter.ToGraphQL(appTemplate)
 
-	return deletedIntSys, nil
+	return deletedAppTemplate, nil
 }

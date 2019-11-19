@@ -4,17 +4,70 @@ import (
 	"database/sql"
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/pkg/errors"
 )
 
 type AppConverter interface{}
+type ApplicationConverter interface {
+	CreateInputFromGraphQL(in graphql.ApplicationCreateInput) model.ApplicationCreateInput
+}
 
-type converter struct{}
+type converter struct {
+	applicationConverter ApplicationConverter
+}
 
-func NewConverter() *converter {
-	return &converter{}
+func NewConverter(applicationConverter ApplicationConverter) *converter {
+	return &converter{
+		applicationConverter: applicationConverter,
+	}
+}
+
+func (c *converter) ToGraphQL(in *model.ApplicationTemplate) *graphql.ApplicationTemplate {
+	if in == nil {
+		return nil
+	}
+	appInput, err := c.applicationInputToString(in.ApplicationInput)
+	if err != nil {
+		return nil
+	}
+
+	return &graphql.ApplicationTemplate{
+		ID:               in.ID,
+		Name:             in.Name,
+		Description:      in.Description,
+		ApplicationInput: appInput,
+		Placeholders:     c.placeholdersToGraphql(in.Placeholders),
+		AccessLevel:      graphql.ApplicationTemplateAccessLevel(in.AccessLevel),
+	}
+}
+
+func (c *converter) MultipleToGraphQL(in []*model.ApplicationTemplate) []*graphql.ApplicationTemplate {
+	var appTemplates []*graphql.ApplicationTemplate
+	for _, r := range in {
+		if r == nil {
+			continue
+		}
+
+		appTemplates = append(appTemplates, c.ToGraphQL(r))
+	}
+
+	return appTemplates
+}
+
+func (c *converter) InputFromGraphQL(in graphql.ApplicationTemplateInput) model.ApplicationTemplateInput {
+	appInput := c.applicationConverter.CreateInputFromGraphQL(*in.ApplicationInput)
+
+	return model.ApplicationTemplateInput{
+		Name:             in.Name,
+		Description:      in.Description,
+		ApplicationInput: &appInput,
+		Placeholders:     c.placeholdersFromGraphql(in.Placeholders),
+		AccessLevel:      model.ApplicationTemplateAccessLevel(in.AccessLevel),
+	}
 }
 
 func (c *converter) ToEntity(in *model.ApplicationTemplate) (*Entity, error) {
@@ -121,4 +174,37 @@ func (c *converter) packPlaceholders(in []model.ApplicationTemplatePlaceholder) 
 	}
 
 	return repo.NewValidNullableString(string(placeholdersMarshalled)), nil
+}
+
+func (c *converter) applicationInputToString(in *model.ApplicationCreateInput) (string, error) {
+	appInput, err := json.Marshal(in)
+	if err != nil {
+		return "", errors.Wrap(err, "while marshaling default auth")
+	}
+	return string(appInput), nil
+}
+
+func (c *converter) placeholdersFromGraphql(in []*graphql.PlaceholderDefinitionInput) []model.ApplicationTemplatePlaceholder {
+	var placeholders []model.ApplicationTemplatePlaceholder
+	for _, p := range in {
+		np := model.ApplicationTemplatePlaceholder{
+			Name:        p.Name,
+			Description: p.Description,
+		}
+		placeholders = append(placeholders, np)
+	}
+	return placeholders
+}
+
+func (c *converter) placeholdersToGraphql(in []model.ApplicationTemplatePlaceholder) []*graphql.PlaceholderDefinition {
+	var placeholders []*graphql.PlaceholderDefinition
+	for _, p := range in {
+		np := graphql.PlaceholderDefinition{
+			Name:        p.Name,
+			Description: p.Description,
+		}
+		placeholders = append(placeholders, &np)
+	}
+
+	return placeholders
 }
