@@ -128,6 +128,6 @@ func getContextObj(refObjType model.SystemAuthReferenceObjectType, sysAuth *mode
 	case model.ApplicationReference:
 		return *sysAuth.AppID, string(model.ApplicationReference), nil
 	default:
-		return "", "", fmt.Errorf("unable to determin context detials for object of type %s", refObjType)
+		return "", "", fmt.Errorf("unable to determine context details for object of type %s", refObjType)
 	}
 }
