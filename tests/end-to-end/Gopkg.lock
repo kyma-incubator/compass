@@ -112,14 +112,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:160492e60a907962bde613623910fd343f68cba73319d22ae7b4c6b9e385e8d0"
+  digest = "1:b2989d201ae6dc4c70a63676905690aff6e10f76214be4c7d47d9cf7399b2676"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/pkg/graphql",
     "components/director/pkg/scalar",
   ]
   pruneopts = "UT"
-  revision = "7889a251288aed359592506a3cd96285632355cf"
+  revision = "9e2e22a1aa1ac215d63bf53c545ee9536c7405fe"
 
 [[projects]]
   branch = "master"
@@ -224,19 +224,19 @@
     "html/atom",
   ]
   pruneopts = "UT"
-  revision = "f9c8255933865a6f8452ccf0cc47ac980da5ac56"
+  revision = "fc4aabc6c91483155dade6fbb627cc953a723260"
 
 [[projects]]
   branch = "master"
-  digest = "1:3b81f20605df873608343956a1f707bc63fe76bbc9ab3adb644ce95b4502a525"
+  digest = "1:fc96eb481f72e9a5edeb4bb3f3610d3b9384c036f7c1e39f8c0dedff23d0c34d"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "b5d5184f72d2900cd61b7676edc45ad9300e26a9"
+  revision = "e882bf8e40c23f260d489ef820e5e8eead5e76e3"
 
 [[projects]]
   branch = "master"
-  digest = "1:c6844361728aad543b24489ce34dd854487d3fb19b7d6b7eca111e318e82b00c"
+  digest = "1:b8c0ebe25da393d35060d76c38af904d5689eb63de8b76898747c641aff4c2df"
   name = "golang.org/x/tools"
   packages = [
     "cmd/goimports",
@@ -254,7 +254,7 @@
     "internal/span",
   ]
   pruneopts = "UT"
-  revision = "5a76f03bc7c327212912ed6b2a76a10d7f39b224"
+  revision = "07fc4c7f2b9857711f6306c76424246e8d6eab64"
 
 [[projects]]
   digest = "1:f26a5d382387e03a40d1471dddfba85dfff9bf05352d7e42d37612677c4d3c5c"
