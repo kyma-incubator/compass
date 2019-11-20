@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const tableName string = `public.application_templates`
+const tableName string = `public.app_templates`
 
 var (
 	updatableTableColumns = []string{"name", "description", "application_input", "placeholders", "access_level"}

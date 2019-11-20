@@ -43,7 +43,7 @@ func TestConverter_ToEntity(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			conv := apptemplate.NewConverter()
+			conv := apptemplate.NewConverter(nil)
 
 			// when
 			res, err := conv.ToEntity(testCase.Input)
@@ -108,7 +108,7 @@ func TestConverter_FromEntity(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			conv := apptemplate.NewConverter()
+			conv := apptemplate.NewConverter(nil)
 
 			// when
 			res, err := conv.FromEntity(testCase.Input)
