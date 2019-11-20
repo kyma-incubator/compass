@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/gql"
+
 	gcli "github.com/machinebox/graphql"
 )
 
@@ -193,7 +195,7 @@ func fixAPIRuntimeAuthRequest(applicationID string, runtimeID string) *gcli.Requ
 							result: application(id: "%s") {
 								%s
 							}
-						}`, applicationID, tc.gqlFieldsProvider.ForApplication(fieldCtx{
+						}`, applicationID, tc.gqlFieldsProvider.ForApplication(gql.FieldCtx{
 			"APIDefinition.auth": fmt.Sprintf(`auth(runtimeID: "%s") {%s}`, runtimeID, tc.gqlFieldsProvider.ForAPIRuntimeAuth()),
 		})))
 }

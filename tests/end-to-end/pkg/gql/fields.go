@@ -10,10 +10,10 @@ type GqlFieldsProvider struct{}
 
 // fieldCtx is a map of optional fields that can be passed to FieldsProvider
 // Map keys should be in following format: `type.field` eg. `APIDefinition.auth`
-type fieldCtx map[string]string
+type FieldCtx map[string]string
 
 // addFieldsFromContext checks if field context contains specific keys, adds them to provided fields and returns them
-func addFieldsFromContext(oldFields string, ctx []fieldCtx, keys []string) string {
+func addFieldsFromContext(oldFields string, ctx []FieldCtx, keys []string) string {
 	var newFields []string
 	for _, key := range keys {
 		for _, dict := range ctx {
@@ -39,7 +39,7 @@ func (fp *GqlFieldsProvider) Page(item string) string {
 	`, item, fp.ForPageInfo())
 }
 
-func (fp *GqlFieldsProvider) ForApplication(ctx ...fieldCtx) string {
+func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 	return fmt.Sprintf(`id
 		name
 		description
@@ -65,7 +65,7 @@ func (fp *GqlFieldsProvider) ForWebhooks() string {
 		}`, fp.ForAuth())
 }
 
-func (fp *GqlFieldsProvider) ForAPIDefinition(ctx ...fieldCtx) string {
+func (fp *GqlFieldsProvider) ForAPIDefinition(ctx ...FieldCtx) string {
 	return addFieldsFromContext(fmt.Sprintf(`		id
 		name
 		description
