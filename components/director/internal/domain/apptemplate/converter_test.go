@@ -49,7 +49,7 @@ func TestConverter_ToEntity(t *testing.T) {
 			res, err := conv.ToEntity(testCase.Input)
 
 			// then
-			require.Nil(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, testCase.Expected, res)
 		})
 	}

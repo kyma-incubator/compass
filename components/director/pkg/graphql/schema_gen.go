@@ -17528,6 +17528,17 @@ func (ec *executionContext) marshalOApplicationEventConfiguration2ᚖgithubᚗco
 	return ec._ApplicationEventConfiguration(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOApplicationTemplate2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplate(ctx context.Context, sel ast.SelectionSet, v ApplicationTemplate) graphql.Marshaler {
+	return ec._ApplicationTemplate(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOApplicationTemplate2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplate(ctx context.Context, sel ast.SelectionSet, v *ApplicationTemplate) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ApplicationTemplate(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx context.Context, sel ast.SelectionSet, v Auth) graphql.Marshaler {
 	return ec._Auth(ctx, sel, &v)
 }
