@@ -69,7 +69,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
 
   3. In the **Members** tab, create a service account for Gardener. 
 
-  4. Download the service account configuration (`kubeconfig.yaml`) and use it to create a Secret in the `compass-system` Namespace.
+  4. Download the service account configuration (`kubeconfig.yaml`) and use it to create a Secret in the `compass-system` Namespace with the key `credentials` and the value encoded with base64.
 
   5. Make a call to the Runtime Provisioner to create a cluster on GCP.
 
@@ -136,7 +136,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
 
   3. In the **Members** tab, create a service account for Gardener. 
 
-  4. Download the service account configuration (`kubeconfig.yaml`) and use it to create a Secret in the `compass-system` Namespace.
+  4. Download the service account configuration (`kubeconfig.yaml`) and use it to create a Secret in the `compass-system` Namespace with the key `credentials` and the value encoded with base64.
 
   5. Make a call to the Runtime Provisioner to create a cluster on Azure.
 
@@ -201,7 +201,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
     
   3. In the **Members** tab, create a service account for Gardener. 
 
-  4. Download the service account configuration (`kubeconfig.yaml`) and use it to create a Secret in the `compass-system` Namespace.
+  4. Download the service account configuration (`kubeconfig.yaml`) and use it to create a Secret in the `compass-system` Namespace with the key `credentials` and the value encoded with base64.
 
   5. Make a call to the Runtime Provisioner to create a cluster on AWS.
 

@@ -14,7 +14,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
     * Kubernetes Engine Cluster Admin
     * Service Account User
 - Key generated for your service account downloaded in the `json` format
-- Secret from the service account key created in the `compass-system` Namespace
+- Secret from the service account key created in the `compass-system` Namespace with the key `credentials` and the value encoded with base64
 
 ## Provision Kyma Runtime on GCP
 
