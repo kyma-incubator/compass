@@ -5,9 +5,10 @@
 - Call Hydra for OAuth 2.0 access token with client_id and client_secret pair - https://github.com/kyma-incubator/examples/tree/master/ory-hydra/scenarios/client-credentials
 - Create an Application (as Integration System)
 - Add example API Spec using issued OAuth2.0 Access token (as Integration System)
-- Remove application as user (using JWT token from Dex)
+- Try removing the Integration System
+- Remove Application using issued OAuth2.0 Access token (test if the token is still valid)
 - Remove IntegrationSystem as user (using JWT token from Dex)
-- Test if token granted for IntegrationSystem is invalid
+- Test if token granted for Integration System is invalid
 - Test if IntegrationSystem cannot fetch token
 
 ## How to run test locally
