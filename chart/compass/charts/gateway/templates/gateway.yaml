@@ -25,7 +25,7 @@ spec:
         httpsRedirect: true # automatic 301 redirect from http to https
       hosts:
         - "*.{{.Values.global.ingress.domainName}}"
-  {{- end -}}
+{{- end -}}
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
