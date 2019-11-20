@@ -2,6 +2,8 @@ package persistence
 
 import "fmt"
 
+const connStringf string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
+
 type DatabaseConfig struct {
 	User     string `envconfig:"default=postgres,APP_DB_USER"`
 	Password string `envconfig:"default=pgsql@12345,APP_DB_PASSWORD"`
