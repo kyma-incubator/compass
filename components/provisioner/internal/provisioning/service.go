@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/configuration"
 
 	log "github.com/sirupsen/logrus"
@@ -210,22 +212,8 @@ func (r *service) startDeprovisioning(operationID, runtimeID string, builder con
 }
 
 func updateOperationStatus(updateFunction func() error) {
-	err := retry(interval, retryCount, updateFunction)
+	err := util.Retry(interval, retryCount, updateFunction)
 	if err != nil {
 		log.Errorf("Failed to set operation status, %s", err.Error())
 	}
-}
-
-func retry(interval time.Duration, count int, operation func() error) error {
-	var err error
-	for i := 0; i < count; i++ {
-		err = operation()
-		if err == nil {
-			return nil
-		}
-		log.Errorf("Error during updating operation status: %s", err.Error())
-		time.Sleep(interval)
-	}
-
-	return err
 }

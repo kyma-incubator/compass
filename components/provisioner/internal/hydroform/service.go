@@ -1,14 +1,20 @@
 package hydroform
 
 import (
+	"time"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/client"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/configuration"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
-
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/hydroform/types"
 	"github.com/pkg/errors"
+)
+
+const (
+	timeout  = 20 * time.Minute
+	interval = 30 * time.Second
 )
 
 //go:generate mockery -name=Service
@@ -48,7 +54,17 @@ func (s service) ProvisionCluster(builder configuration.Builder) (ClusterInfo, e
 		return ClusterInfo{}, errors.Wrap(err, "Cluster provisioning failed")
 	}
 
-	status, err := s.client.Status(cluster, provider)
+	var status *types.ClusterStatus
+
+	//TODO Change this temporary solution when Hydroform handles Provisioning status correctly
+	err = util.WaitForFunction(interval, timeout, func() (bool, error) {
+		status, err = s.client.Status(cluster, provider)
+		if err != nil {
+			return false, err
+		}
+		return status.Phase == types.Provisioned, nil
+	})
+
 	if err != nil {
 		return ClusterInfo{}, err
 	}
