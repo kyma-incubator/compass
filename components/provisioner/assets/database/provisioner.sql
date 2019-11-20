@@ -99,3 +99,16 @@ CREATE TABLE kyma_config_module
     kyma_config_id uuid NOT NULL,
     foreign key (kyma_config_id) REFERENCES kyma_config (id) ON DELETE CASCADE
 );
+
+
+-- Installation Artifacts
+
+CREATE TABLE installation_artifacts
+(
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    tiller text NOT NULL,
+    installer text NOT NULL,
+    kyma_config_id uuid NOT NULL,
+    unique(kyma_config_id),
+    foreign key (kyma_config_id) references kyma_config (id) ON DELETE CASCADE
+);
