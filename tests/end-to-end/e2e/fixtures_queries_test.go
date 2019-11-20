@@ -71,6 +71,7 @@ func deleteIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.
 func deleteIntegrationSystemWithErr(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) {
 	req := fixDeleteIntegrationSystem(id)
 	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil)
+	require.Error(t, err)
 	require.Contains(t, err.Error(), "referenced by it")
 }
 

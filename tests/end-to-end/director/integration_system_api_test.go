@@ -97,41 +97,6 @@ func TestDeleteIntegrationSystem(t *testing.T) {
 	saveExample(t, deleteIntegrationSystemRequest.Query(), "delete integration system")
 }
 
-func TestDeleteIntegrationSystemWhileApplicationExists(t *testing.T) {
-	// GIVEN
-	ctx := context.Background()
-	name := "int-system"
-
-	t.Log("Create integration system")
-	intSys := createIntegrationSystem(t, ctx, name)
-
-	input := graphql.ApplicationCreateInput{
-		Name:                "test",
-		IntegrationSystemID: &intSys.ID,
-	}
-	appInputGQL, err := tc.graphqlizer.ApplicationCreateInputToGQL(input)
-	require.NoError(t, err)
-	createRequest := fixCreateApplicationRequest(appInputGQL)
-
-	app := graphql.ApplicationExt{}
-
-	err = tc.RunOperation(ctx, createRequest, &app)
-	require.NoError(t, err)
-
-	deleteIntegrationSystemRequest := fixDeleteIntegrationSystem(intSys.ID)
-	deleteOutput := graphql.IntegrationSystemExt{}
-
-	// WHEN
-	t.Log("Delete integration system")
-	err = tc.RunOperation(ctx, deleteIntegrationSystemRequest, &deleteOutput)
-
-	//THEN
-	require.Contains(t, err.Error(), "referenced by it")
-	deleteApplication(t, app.ID)
-	err = tc.RunOperation(ctx, deleteIntegrationSystemRequest, &deleteOutput)
-	require.NoError(t, err)
-}
-
 func TestQueryIntegrationSystem(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()

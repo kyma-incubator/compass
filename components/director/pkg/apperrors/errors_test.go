@@ -42,7 +42,8 @@ func TestIsNotFoundError(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			assert.Equal(t, testCase.expectedResult, IsNotFoundError(testCase.Error))
+			result := IsNotFoundError(testCase.Error)
+			assert.Equal(t, testCase.expectedResult, result)
 		})
 	}
 }
@@ -82,7 +83,8 @@ func TestIsNotUnique(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			assert.Equal(t, testCase.expectedResult, IsNotUnique(testCase.Error))
+			result := IsNotUnique(testCase.Error)
+			assert.Equal(t, testCase.expectedResult, result)
 		})
 	}
 }
@@ -122,7 +124,8 @@ func TestKeyDoesNotExistError(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			assert.Equal(t, testCase.expectedResult, IsKeyDoesNotExist(testCase.Error))
+			result := IsKeyDoesNotExist(testCase.Error)
+			assert.Equal(t, testCase.expectedResult, result)
 		})
 	}
 }
@@ -162,7 +165,8 @@ func TestInvalidStringCastError(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			assert.Equal(t, testCase.expectedResult, IsInvalidCast(testCase.Error))
+			result := IsInvalidCast(testCase.Error)
+			assert.Equal(t, testCase.expectedResult, result)
 		})
 	}
 }
@@ -202,7 +206,8 @@ func TestConstraintViolationError(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			assert.Equal(t, testCase.expectedResult, IsConstraintViolation(testCase.Error))
+			result := IsConstraintViolation(testCase.Error)
+			assert.Equal(t, testCase.expectedResult, result)
 		})
 	}
 }

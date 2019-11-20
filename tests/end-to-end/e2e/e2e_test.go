@@ -83,6 +83,7 @@ func TestCompassAuth(t *testing.T) {
 
 	t.Log("Check if SystemAuths are still present in the db")
 	auths := getSystemAuthsForIntegrationSystem(t, ctx, dexGraphQLClient, tenant, intSys.ID)
+	require.NotNil(t, auths)
 	assert.Equal(t, intSysAuth, *auths[0])
 
 	t.Log("Remove application to check if the oAuth token is still valid")
