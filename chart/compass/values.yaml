@@ -45,7 +45,6 @@ global:
     hasDefaultEventURL: false
     port: 3000
 
-
   connector:
     graphql:
       external:
