@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -27,6 +26,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain"
+	"github.com/kyma-incubator/compass/components/director/internal/healthz"
 
 	"github.com/pkg/errors"
 
@@ -36,19 +36,9 @@ import (
 	"github.com/vrischmann/envconfig"
 )
 
-const connStringf string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
-
 type config struct {
-	Address  string `envconfig:"default=127.0.0.1:3000"`
-	Database struct {
-		User     string `envconfig:"default=postgres,APP_DB_USER"`
-		Password string `envconfig:"default=pgsql@12345,APP_DB_PASSWORD"`
-		Host     string `envconfig:"default=localhost,APP_DB_HOST"`
-		Port     string `envconfig:"default=5432,APP_DB_PORT"`
-		Name     string `envconfig:"default=postgres,APP_DB_NAME"`
-		SSLMode  string `envconfig:"default=disable,APP_DB_SSL"`
-	}
-
+	Address                       string `envconfig:"default=127.0.0.1:3000"`
+	Database                      persistence.DatabaseConfig
 	APIEndpoint                   string `envconfig:"default=/graphql"`
 	TenantMappingEndpoint         string `envconfig:"default=/tenant-mapping"`
 	PlaygroundAPIEndpoint         string `envconfig:"default=/graphql"`
@@ -73,8 +63,7 @@ func main() {
 
 	configureLogger()
 
-	connString := fmt.Sprintf(connStringf, cfg.Database.Host, cfg.Database.Port, cfg.Database.User,
-		cfg.Database.Password, cfg.Database.Name, cfg.Database.SSLMode)
+	connString := persistence.GetConnString(cfg.Database)
 	transact, closeFunc, err := persistence.Configure(log.StandardLogger(), connString)
 	exitOnError(err, "Error while establishing the connection to the database")
 
@@ -123,13 +112,8 @@ func main() {
 
 	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandlerFunc)
 
-	mainRouter.HandleFunc("/healthz", func(writer http.ResponseWriter, request *http.Request) {
-		writer.WriteHeader(200)
-		_, err := writer.Write([]byte("ok"))
-		if err != nil {
-			log.Errorf(errors.Wrapf(err, "while writing to response body").Error())
-		}
-	})
+	log.Infof("Registering Healthz endpoint...")
+	mainRouter.HandleFunc("/healthz", healthz.NewHTTPHandler(log.StandardLogger()))
 
 	examplesServer := http.FileServer(http.Dir("./examples/"))
 	mainRouter.PathPrefix("/examples/").Handler(http.StripPrefix("/examples/", examplesServer))
