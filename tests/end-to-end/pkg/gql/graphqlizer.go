@@ -48,9 +48,26 @@ func (g *Graphqlizer) ApplicationCreateInputToGQL(in graphql.ApplicationCreateIn
 				{{- if $i}}, {{- end}} {{- DocumentInputToGQL $e }}
 			{{- end }} ]
 		{{- end }}
+		{{- if .IntegrationSystemID }}
+		integrationSystemID: "{{ .IntegrationSystemID }}",
+		{{- end }}
 	}`)
 }
 
+func (g *Graphqlizer) ApplicationUpdateInputToGQL(in graphql.ApplicationUpdateInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{.Name}}",
+		{{- if .Description }}
+		description: "{{.Description}}",
+		{{- end }}
+		{{- if .HealthCheckURL }}
+		healthCheckURL: "{{ .HealthCheckURL }}"
+		{{- end }}
+		{{- if .IntegrationSystemID }}
+			integrationSystemID: "{{ .IntegrationSystemID }}",
+		{{- end }}
+	}`)
+}
 func (g *Graphqlizer) DocumentInputToGQL(in *graphql.DocumentInput) (string, error) {
 	return g.genericToGQL(in, `{
 		title: "{{.Title}}",

@@ -42,7 +42,8 @@ func TestIsNotFoundError(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			assert.Equal(t, testCase.expectedResult, IsNotFoundError(testCase.Error))
+			result := IsNotFoundError(testCase.Error)
+			assert.Equal(t, testCase.expectedResult, result)
 		})
 	}
 }
@@ -82,7 +83,8 @@ func TestIsNotUnique(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			assert.Equal(t, testCase.expectedResult, IsNotUnique(testCase.Error))
+			result := IsNotUnique(testCase.Error)
+			assert.Equal(t, testCase.expectedResult, result)
 		})
 	}
 }
@@ -122,7 +124,8 @@ func TestKeyDoesNotExistError(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			assert.Equal(t, testCase.expectedResult, IsKeyDoesNotExist(testCase.Error))
+			result := IsKeyDoesNotExist(testCase.Error)
+			assert.Equal(t, testCase.expectedResult, result)
 		})
 	}
 }
@@ -162,7 +165,49 @@ func TestInvalidStringCastError(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			assert.Equal(t, testCase.expectedResult, IsInvalidCast(testCase.Error))
+			result := IsInvalidCast(testCase.Error)
+			assert.Equal(t, testCase.expectedResult, result)
+		})
+	}
+}
+
+func TestConstraintViolationError(t *testing.T) {
+	constraintViolationError := &constraintViolationError{}
+	wrappedConstraintViolationError := errors.Wrap(constraintViolationError, "wrapped text")
+	multiWrappedConstraintViolationError := errors.Wrap(wrappedConstraintViolationError, "multi wrapped")
+	testErr := errors.New("test")
+
+	testCases := []struct {
+		Name           string
+		Error          error
+		expectedResult bool
+	}{
+		{
+			Name:           "Unwrapped ConstraintViolation error",
+			Error:          constraintViolationError,
+			expectedResult: true,
+		},
+		{
+			Name:           "Wrapped ConstraintViolation error",
+			Error:          wrappedConstraintViolationError,
+			expectedResult: true,
+		},
+		{
+			Name:           "Multi wrapped ConstraintViolation error",
+			Error:          multiWrappedConstraintViolationError,
+			expectedResult: true,
+		},
+		{
+			Name:           "Different error",
+			Error:          testErr,
+			expectedResult: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			result := IsConstraintViolation(testCase.Error)
+			assert.Equal(t, testCase.expectedResult, result)
 		})
 	}
 }
