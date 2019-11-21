@@ -96,7 +96,7 @@ type GCPRuntimeStatus struct {
 		ClusterConfig         *schema.GCPConfig  `json:"clusterConfig"`
 		KymaConfig            *schema.KymaConfig `json:"kymaConfig"`
 		Kubeconfig            *string            `json:"kubeconfig"`
-		CredentialsSecretName *string            `json:credentialsSecretName`
+		CredentialsSecretName *string            `json:"credentialsSecretName"`
 	} `json:"runtimeConfiguration"`
 }
 
