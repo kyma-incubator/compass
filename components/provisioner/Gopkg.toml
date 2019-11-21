@@ -23,6 +23,18 @@ required = [
   name = "github.com/gocraft/dbr"
   version = "2.6"
 
+[[constraint]]
+  name = "github.com/kyma-incubator/hydroform"
+  revision = "b358b7f6a333db6eb56d6315140b072da7bbe928"
+
+[[override]]
+  name = "github.com/cpuguy83/go-md2man"
+  version = "1.0.10"
+
+[[override]]
+  name = "github.com/kyma-incubator/terraform-provider-gardener"
+  revision = "100e0f88e4cff7ccc284c6c4322a3a09b50b68bf"
+
 [[override]]
   name = "k8s.io/kubernetes"
   version = "kubernetes-1.14.7"

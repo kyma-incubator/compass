@@ -25,18 +25,36 @@ type GardenerConfig {
     projectName: String
     kubernetesVersion: String
     nodeCount: Int
-    volumeSize: String
+    volumeSizeGB: Int
     machineType: String
     region: String
-    targetProvider: String
+    provider: String
+    seed: String
     targetSecret: String
     diskType: String
-    zone: String
-    cidr: String
+    workerCidr: String
     autoScalerMin: Int
     autoScalerMax: Int
     maxSurge: Int
     maxUnavailable: Int
+    providerSpecificConfig: ProviderSpecificConfig
+}
+
+union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig
+
+type GCPProviderConfig {
+    zone: String
+}
+
+type AzureProviderConfig {
+    vnetCidr: String
+}
+
+type AWSProviderConfig {
+    zone: String
+    vpcCidr: String
+    publicCidr: String
+    internalCidr: String
 }
 
 type GCPConfig {
@@ -44,7 +62,7 @@ type GCPConfig {
     projectName: String
     kubernetesVersion: String
     numberOfNodes: Int
-    bootDiskSize: String
+    bootDiskSizeGB: Int
     machineType: String
     region: String
     zone: String
@@ -121,18 +139,40 @@ input GardenerConfigInput {
     projectName: String!
     kubernetesVersion: String!
     nodeCount: Int!
-    volumeSize: String!
+    volumeSizeGB: Int!
     machineType: String!
     region: String!
-    targetProvider: String!
+    provider: String!
+    seed: String!
     targetSecret: String!
     diskType: String!
-    zone: String!
-    cidr: String!
+    workerCidr: String!
     autoScalerMin: Int!
     autoScalerMax: Int!
     maxSurge: Int!
     maxUnavailable: Int!
+    providerSpecificConfig: ProviderSpecificInput!
+}
+
+input ProviderSpecificInput {
+    gcpConfig: GCPProviderConfigInput
+    azureConfig: AzureProviderConfigInput
+    awsConfig: AWSProviderConfigInput
+}
+
+input GCPProviderConfigInput {
+    zone: String!
+}
+
+input AzureProviderConfigInput {
+    vnetCidr: String!
+}
+
+input AWSProviderConfigInput {
+    zone: String!
+    vpcCidr: String!
+    publicCidr: String!
+    internalCidr: String!
 }
 
 input GCPConfigInput {
@@ -140,7 +180,7 @@ input GCPConfigInput {
     projectName: String!
     kubernetesVersion: String!
     numberOfNodes: Int!
-    bootDiskSize: String!
+    bootDiskSizeGB: Int!
     machineType: String!
     region: String! # TODO: later we may require either Region or Zone
     zone: String
