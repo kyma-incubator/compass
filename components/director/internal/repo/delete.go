@@ -84,9 +84,7 @@ func (g *universalDeleter) unsafeDelete(ctx context.Context, tenant *string, con
 	if err != nil {
 		pqerr, ok := err.(*pq.Error)
 		if ok {
-			if pqerr.Code.Class() == "23" {
-				return apperrors.NewConstraintViolationError(pqerr.Table)
-			}
+			return specificPqError(pqerr)
 		}
 		return errors.Wrap(err, "while deleting from database")
 	}
@@ -101,5 +99,12 @@ func (g *universalDeleter) unsafeDelete(ctx context.Context, tenant *string, con
 		}
 	}
 
+	return nil
+}
+
+func specificPqError(err *pq.Error) error {
+	if err.Code.Class() == "23" {
+		return apperrors.NewConstraintViolationError(err.Table)
+	}
 	return nil
 }

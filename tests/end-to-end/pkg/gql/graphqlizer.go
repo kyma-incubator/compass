@@ -63,6 +63,9 @@ func (g *Graphqlizer) ApplicationUpdateInputToGQL(in graphql.ApplicationUpdateIn
 		{{- if .HealthCheckURL }}
 		healthCheckURL: "{{ .HealthCheckURL }}"
 		{{- end }}
+		{{- if .IntegrationSystemID }}
+			integrationSystemID: "{{ .IntegrationSystemID }}",
+		{{- end }}
 	}`)
 }
 func (g *Graphqlizer) DocumentInputToGQL(in *graphql.DocumentInput) (string, error) {
