@@ -3,12 +3,14 @@ package provisioning
 import (
 	"testing"
 
+	uuidMocks "github.com/kyma-incubator/compass/components/provisioner/internal/uuid/mocks"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
-	persistenceMocks "github.com/kyma-incubator/compass/components/provisioner/internal/persistence/mocks"
+	persistenceMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-incubator/hydroform/types"
 	"github.com/stretchr/testify/assert"
@@ -19,7 +21,7 @@ import (
 func TestService_ProvisionRuntime(t *testing.T) {
 	hydroformMock := &mocks.Service{}
 	persistenceServiceMock := &persistenceMocks.Service{}
-	uuidGenerator := &persistenceMocks.UUIDGenerator{}
+	uuidGenerator := &uuidMocks.UUIDGenerator{}
 
 	clusterConfig := &gqlschema.ClusterConfigInput{
 		GcpConfig: &gqlschema.GCPConfigInput{
@@ -99,7 +101,6 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		//given
 		runtimeID := "0ad91f16-d553-413f-aa27-4eefd9e5f1c6"
 		persistenceServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{}, nil)
-		uuidGenerator := &persistenceMocks.UUIDGenerator{}
 
 		service := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock)
 
@@ -116,7 +117,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 func TestService_DeprovisionRuntime(t *testing.T) {
 	persistenceServiceMock := &persistenceMocks.Service{}
 	hydroformMock := &mocks.Service{}
-	uuidGenerator := &persistenceMocks.UUIDGenerator{}
+	uuidGenerator := &uuidMocks.UUIDGenerator{}
 
 	runtimeConfig := model.RuntimeConfig{
 		ClusterConfig: model.GCPConfig{},
@@ -177,7 +178,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 func TestService_RuntimeOperationStatus(t *testing.T) {
 	persistenceServiceMock := &persistenceMocks.Service{}
 	hydroformMock := &mocks.Service{}
-	uuidGenerator := &persistenceMocks.UUIDGenerator{}
+	uuidGenerator := &uuidMocks.UUIDGenerator{}
 
 	t.Run("Should return operation status", func(t *testing.T) {
 		//given

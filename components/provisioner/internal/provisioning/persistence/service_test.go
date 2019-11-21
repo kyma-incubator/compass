@@ -4,10 +4,12 @@ import (
 	"testing"
 	"time"
 
+	uuidMocks "github.com/kyma-incubator/compass/components/provisioner/internal/uuid/mocks"
+
+	sessionMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
-	sessionMocks "github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dbsession/mocks"
-	persistenceMocks "github.com/kyma-incubator/compass/components/provisioner/internal/persistence/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -102,7 +104,7 @@ func TestSetProvisioning(t *testing.T) {
 			// given
 			sessionFactoryMock := &sessionMocks.Factory{}
 			writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
-			uuidGenerator := &persistenceMocks.UUIDGenerator{}
+			uuidGenerator := &uuidMocks.UUIDGenerator{}
 
 			uuidGenerator.On("New").Return(operationID, nil)
 
@@ -138,7 +140,7 @@ func TestSetProvisioning(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
-		uuidGenerator := &persistenceMocks.UUIDGenerator{}
+		uuidGenerator := &uuidMocks.UUIDGenerator{}
 
 		writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(dberrors.Internal("some error"))
 		writeSessionWithinTransactionMock.On("RollbackUnlessCommitted").Return()
@@ -162,7 +164,7 @@ func TestSetProvisioning(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
-		uuidGenerator := &persistenceMocks.UUIDGenerator{}
+		uuidGenerator := &uuidMocks.UUIDGenerator{}
 
 		writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(nil)
 		writeSessionWithinTransactionMock.On("InsertGCPConfig", gcpConfig).Return(nil)
@@ -199,7 +201,7 @@ func TestSetProvisioning(t *testing.T) {
 			// given
 			sessionFactoryMock := &sessionMocks.Factory{}
 			writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
-			uuidGenerator := &persistenceMocks.UUIDGenerator{}
+			uuidGenerator := &uuidMocks.UUIDGenerator{}
 
 			writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(nil)
 			writeSessionWithinTransactionMock.On(cfg.insertClusterConfigMethodName, cfg.config.ClusterConfig).Return(dberrors.Internal("some error"))
@@ -226,7 +228,7 @@ func TestSetProvisioning(t *testing.T) {
 		sessionFactoryMock := &sessionMocks.Factory{}
 		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
 
-		uuidGenerator := &persistenceMocks.UUIDGenerator{}
+		uuidGenerator := &uuidMocks.UUIDGenerator{}
 
 		uuidGenerator.On("New").Return(operationID, nil)
 
@@ -257,7 +259,7 @@ func TestSetProvisioning(t *testing.T) {
 		sessionFactoryMock := &sessionMocks.Factory{}
 		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
 
-		uuidGenerator := &persistenceMocks.UUIDGenerator{}
+		uuidGenerator := &uuidMocks.UUIDGenerator{}
 
 		uuidGenerator.On("New").Return(operationID, nil)
 
@@ -304,7 +306,7 @@ func TestSetDeprovisioning(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
-		uuidGenerator := &persistenceMocks.UUIDGenerator{}
+		uuidGenerator := &uuidMocks.UUIDGenerator{}
 
 		uuidGenerator.On("New").Return(operationID, nil)
 
@@ -351,7 +353,7 @@ func TestSetUpgrade(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
-		uuidGenerator := &persistenceMocks.UUIDGenerator{}
+		uuidGenerator := &uuidMocks.UUIDGenerator{}
 
 		uuidGenerator.On("New").Return(operationID, nil)
 
@@ -411,7 +413,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		readSessionMock := &sessionMocks.ReadSession{}
-		uuidGenerator := &persistenceMocks.UUIDGenerator{}
+		uuidGenerator := &uuidMocks.UUIDGenerator{}
 
 		readSessionMock.On("GetLastOperation", runtimeID).Return(operation, nil)
 		readSessionMock.On("GetClusterConfig", runtimeID).Return(gcpConfig, nil)
@@ -441,7 +443,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		readSessionMock := &sessionMocks.ReadSession{}
-		uuidGenerator := &persistenceMocks.UUIDGenerator{}
+		uuidGenerator := &uuidMocks.UUIDGenerator{}
 
 		readSessionMock.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.Internal("some error"))
 		sessionFactoryMock.On("NewReadSession").Return(readSessionMock, nil)
@@ -458,7 +460,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		readSessionMock := &sessionMocks.ReadSession{}
-		uuidGenerator := &persistenceMocks.UUIDGenerator{}
+		uuidGenerator := &uuidMocks.UUIDGenerator{}
 
 		readSessionMock.On("GetLastOperation", runtimeID).Return(operation, nil)
 		readSessionMock.On("GetClusterConfig", runtimeID).Return(model.GCPConfig{}, dberrors.Internal("some error"))
@@ -476,7 +478,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		readSessionMock := &sessionMocks.ReadSession{}
-		uuidGenerator := &persistenceMocks.UUIDGenerator{}
+		uuidGenerator := &uuidMocks.UUIDGenerator{}
 
 		readSessionMock.On("GetLastOperation", runtimeID).Return(operation, nil)
 		readSessionMock.On("GetClusterConfig", runtimeID).Return(gcpConfig, nil)
@@ -496,7 +498,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		readSessionMock := &sessionMocks.ReadSession{}
-		uuidGenerator := &persistenceMocks.UUIDGenerator{}
+		uuidGenerator := &uuidMocks.UUIDGenerator{}
 
 		readSessionMock.On("GetLastOperation", runtimeID).Return(operation, nil)
 		readSessionMock.On("GetClusterConfig", runtimeID).Return(gcpConfig, nil)

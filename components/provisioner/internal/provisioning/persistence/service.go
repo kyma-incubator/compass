@@ -3,7 +3,9 @@ package persistence
 import (
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dbsession"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 
@@ -27,10 +29,10 @@ type Service interface {
 
 type persistenceService struct {
 	dbSessionFactory dbsession.Factory
-	uuidGenerator    UUIDGenerator
+	uuidGenerator    uuid.UUIDGenerator
 }
 
-func NewService(dbSessionFactory dbsession.Factory, uuidGenerator UUIDGenerator) Service {
+func NewService(dbSessionFactory dbsession.Factory, uuidGenerator uuid.UUIDGenerator) Service {
 	return persistenceService{
 		dbSessionFactory: dbSessionFactory,
 		uuidGenerator:    uuidGenerator,
@@ -157,7 +159,6 @@ func (ps persistenceService) CleanupClusterData(runtimeID string) dberrors.Error
 }
 
 func (ps persistenceService) setOperationStarted(dbSession dbsession.WriteSession, runtimeID string, operationType model.OperationType, timestamp time.Time, message string, errorMessageFmt string) (model.Operation, dberrors.Error) {
-
 	id := ps.uuidGenerator.New()
 
 	operation := model.Operation{

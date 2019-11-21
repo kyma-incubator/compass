@@ -2,11 +2,11 @@ package provisioning
 
 import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
-func runtimeConfigFromInput(runtimeID string, input gqlschema.ProvisionRuntimeInput, uuidGenerator persistence.UUIDGenerator) model.RuntimeConfig {
+func runtimeConfigFromInput(runtimeID string, input gqlschema.ProvisionRuntimeInput, uuidGenerator uuid.UUIDGenerator) model.RuntimeConfig {
 	kymaConfig := kymaConfigFromInput(runtimeID, *input.KymaConfig, uuidGenerator)
 
 	clusterConfig := clusterConfigFromInput(runtimeID, *input.ClusterConfig, uuidGenerator)
@@ -36,7 +36,7 @@ func operationStatusToGQLOperationStatus(operation model.Operation) *gqlschema.O
 	}
 }
 
-func clusterConfigFromInput(runtimeID string, input gqlschema.ClusterConfigInput, uuidGenerator persistence.UUIDGenerator) interface{} {
+func clusterConfigFromInput(runtimeID string, input gqlschema.ClusterConfigInput, uuidGenerator uuid.UUIDGenerator) interface{} {
 	if input.GardenerConfig != nil {
 		config := input.GardenerConfig
 		return gardenerConfigFromInput(runtimeID, *config, uuidGenerator)
@@ -48,7 +48,7 @@ func clusterConfigFromInput(runtimeID string, input gqlschema.ClusterConfigInput
 	return nil
 }
 
-func gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput, uuidGenerator persistence.UUIDGenerator) model.GardenerConfig {
+func gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput, uuidGenerator uuid.UUIDGenerator) model.GardenerConfig {
 	id := uuidGenerator.New()
 
 	return model.GardenerConfig{
@@ -73,7 +73,7 @@ func gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInp
 	}
 }
 
-func gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfigInput, uuidGenerator persistence.UUIDGenerator) model.GCPConfig {
+func gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfigInput, uuidGenerator uuid.UUIDGenerator) model.GCPConfig {
 	id := uuidGenerator.New()
 
 	zone := ""
@@ -95,7 +95,7 @@ func gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfigInput, uuidGe
 	}
 }
 
-func kymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput, uuidGenerator persistence.UUIDGenerator) model.KymaConfig {
+func kymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput, uuidGenerator uuid.UUIDGenerator) model.KymaConfig {
 	var modules []model.KymaConfigModule
 	kymaConfigID := uuidGenerator.New()
 

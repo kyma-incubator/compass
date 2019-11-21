@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence"
+
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-incubator/hydroform/types"
@@ -34,10 +37,10 @@ type Service interface {
 type service struct {
 	persistenceService persistence.Service
 	hydroform          hydroform.Service
-	uuidGenerator      persistence.UUIDGenerator
+	uuidGenerator      uuid.UUIDGenerator
 }
 
-func NewProvisioningService(persistenceService persistence.Service, uuidGenerator persistence.UUIDGenerator, hydroform hydroform.Service) Service {
+func NewProvisioningService(persistenceService persistence.Service, uuidGenerator uuid.UUIDGenerator, hydroform hydroform.Service) Service {
 	return &service{
 		persistenceService: persistenceService,
 		hydroform:          hydroform,
@@ -158,24 +161,31 @@ func (r *service) CleanupRuntimeData(id string) (string, error) {
 
 func (r *service) startProvisioning(operationID, runtimeID string, config model.RuntimeConfig, secretName string, finished chan<- struct{}) {
 	defer close(finished)
-	log.Infof("Provisioning runtime %s is starting", runtimeID)
-	info, err := r.hydroform.ProvisionCluster(config, secretName)
 
-	if err != nil || info.ClusterStatus != types.Provisioned {
-		log.Errorf("Provisioning runtime %s failed: %s", runtimeID, err.Error())
-		updateOperationStatus(func() error {
-			return r.persistenceService.SetAsFailed(operationID, err.Error())
-		})
-	} else {
-		log.Infof("Provisioning runtime %s finished successfully", runtimeID)
-		updateOperationStatus(func() error {
-			err := r.persistenceService.Update(runtimeID, info.KubeConfig, info.State)
-			if err != nil {
-				return r.persistenceService.SetAsFailed(operationID, err.Error())
-			}
-			return r.persistenceService.SetAsSucceeded(operationID)
-		})
+	log.Infof("Provisioning runtime %s is starting...", runtimeID)
+	info, err := r.hydroform.ProvisionCluster(config, secretName)
+	if err != nil {
+		log.Errorf("Error provisioning runtime %s: %s", runtimeID, err.Error())
+		r.setOperationAsFailed(operationID, err.Error())
+		return
 	}
+	if info.ClusterStatus != types.Provisioned {
+		log.Errorf("Provisioning runtime %s failed, cluster status: %s", runtimeID, info.ClusterStatus)
+		r.setOperationAsFailed(operationID, fmt.Sprintf("Provisioning failed from unknown reason, cluster status: %s", info.ClusterStatus))
+		return
+	}
+
+	log.Infof("Runtime %s provisioned successfully. Starting Kyma installation...", runtimeID)
+
+	// TODO - trigger installation
+
+	updateOperationStatus(func() error {
+		err := r.persistenceService.Update(runtimeID, info.KubeConfig, info.State)
+		if err != nil {
+			return r.persistenceService.SetAsFailed(operationID, err.Error())
+		}
+		return r.persistenceService.SetAsSucceeded(operationID)
+	})
 }
 
 func (r *service) startDeprovisioning(operationID, runtimeID string, config model.RuntimeConfig, cluster model.Cluster, finished chan<- struct{}) {
@@ -194,6 +204,12 @@ func (r *service) startDeprovisioning(operationID, runtimeID string, config mode
 			return r.persistenceService.SetAsSucceeded(operationID)
 		})
 	}
+}
+
+func (r *service) setOperationAsFailed(operationID, message string) {
+	updateOperationStatus(func() error {
+		return r.persistenceService.SetAsFailed(operationID, message)
+	})
 }
 
 func updateOperationStatus(updateFunction func() error) {

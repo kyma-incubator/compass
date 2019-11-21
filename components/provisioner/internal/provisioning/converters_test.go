@@ -3,9 +3,10 @@ package provisioning
 import (
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid/mocks"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 
-	persistenceMocks "github.com/kyma-incubator/compass/components/provisioner/internal/persistence/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
 )
@@ -187,7 +188,7 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 	for _, config := range configurations {
 		t.Run("Should create proper runtime config struct with GCP input", func(t *testing.T) {
 			//given
-			uuidGeneratorMock := &persistenceMocks.UUIDGenerator{}
+			uuidGeneratorMock := &mocks.UUIDGenerator{}
 			uuidGeneratorMock.On("New").Return("id").Times(4)
 
 			//when

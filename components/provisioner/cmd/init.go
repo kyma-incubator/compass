@@ -4,10 +4,11 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/client"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dbsession"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
+	persistence2 "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 	"github.com/pkg/errors"
 
 	"path/filepath"
@@ -20,22 +21,22 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-func newPersistenceService(connectionString, schemaPath string) (persistence.Service, error) {
+func newPersistenceService(connectionString, schemaPath string) (persistence2.Service, error) {
 	connection, err := database.InitializeDatabase(connectionString, schemaPath)
 	if err != nil {
 		return nil, err
 	}
 
 	dbSessionFactory := dbsession.NewFactory(connection)
-	uuidGenerator := persistence.NewUUIDGenerator()
+	uuidGenerator := uuid.NewUUIDGenerator()
 
-	return persistence.NewService(dbSessionFactory, uuidGenerator), nil
+	return persistence2.NewService(dbSessionFactory, uuidGenerator), nil
 }
 
-func newProvisioningService(persistenceService persistence.Service, secrets v1.SecretInterface) provisioning.Service {
+func newProvisioningService(persistenceService persistence2.Service, secrets v1.SecretInterface) provisioning.Service {
 	hydroformClient := client.NewHydroformClient()
 	hydroformService := hydroform.NewHydroformService(secrets, hydroformClient)
-	uuidGenerator := persistence.NewUUIDGenerator()
+	uuidGenerator := uuid.NewUUIDGenerator()
 
 	return provisioning.NewProvisioningService(persistenceService, uuidGenerator, hydroformService)
 }
