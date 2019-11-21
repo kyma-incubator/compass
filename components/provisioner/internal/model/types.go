@@ -55,24 +55,25 @@ type Operation struct {
 }
 
 type GardenerConfig struct {
-	ID                string
-	ClusterID         string
-	Name              string
-	ProjectName       string
-	KubernetesVersion string
-	NodeCount         int
-	VolumeSize        string
-	DiskType          string
-	MachineType       string
-	TargetProvider    string
-	TargetSecret      string
-	Cidr              string
-	Region            string
-	Zone              string
-	AutoScalerMin     int
-	AutoScalerMax     int
-	MaxSurge          int
-	MaxUnavailable    int
+	ID                     string
+	ClusterID              string
+	Name                   string
+	ProjectName            string
+	KubernetesVersion      string
+	NodeCount              int
+	VolumeSizeGB           int
+	DiskType               string
+	MachineType            string
+	Provider               string
+	Seed                   string
+	TargetSecret           string
+	Region                 string
+	WorkerCidr             string
+	AutoScalerMin          int
+	AutoScalerMax          int
+	MaxSurge               int
+	MaxUnavailable         int
+	ProviderSpecificConfig string
 }
 
 type GCPConfig struct {
@@ -82,7 +83,7 @@ type GCPConfig struct {
 	ProjectName       string
 	KubernetesVersion string
 	NumberOfNodes     int
-	BootDiskSize      string
+	BootDiskSizeGB    int
 	MachineType       string
 	Region            string
 	Zone              string

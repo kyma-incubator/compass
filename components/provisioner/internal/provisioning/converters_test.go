@@ -3,6 +3,8 @@ package provisioning
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 
 	persistenceMocks "github.com/kyma-incubator/compass/components/provisioner/internal/persistence/mocks"
@@ -51,7 +53,7 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 					Name:              "Something",
 					ProjectName:       "Project",
 					NumberOfNodes:     3,
-					BootDiskSize:      "256",
+					BootDiskSizeGb:    256,
 					MachineType:       "n1-standard-1",
 					Region:            "region",
 					Zone:              zone,
@@ -75,7 +77,7 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 				Name:              "Something",
 				ProjectName:       "Project",
 				NumberOfNodes:     3,
-				BootDiskSize:      "256",
+				BootDiskSizeGB:    256,
 				MachineType:       "n1-standard-1",
 				Region:            "region",
 				Zone:              zone,
@@ -96,25 +98,30 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 		}
 	}
 
-	gardenerQGLInput := gqlschema.ProvisionRuntimeInput{
+	gardenerGCPQGLInput := gqlschema.ProvisionRuntimeInput{
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
 				Name:              "Something",
 				ProjectName:       "Project",
 				KubernetesVersion: "version",
 				NodeCount:         3,
-				VolumeSize:        "1TB",
+				VolumeSizeGb:      1024,
 				MachineType:       "n1-standard-1",
 				Region:            "region",
-				TargetProvider:    "GCP",
+				Provider:          "GCP",
+				Seed:              "gcp-eu1",
 				TargetSecret:      "secret",
 				DiskType:          "ssd",
-				Zone:              "zone",
-				Cidr:              "cidr",
+				WorkerCidr:        "cidr",
 				AutoScalerMin:     1,
 				AutoScalerMax:     5,
 				MaxSurge:          1,
 				MaxUnavailable:    2,
+				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+					GcpConfig: &gqlschema.GCPProviderConfigInput{
+						Zone: "zone",
+					},
+				},
 			},
 		},
 		Credentials: &gqlschema.CredentialsInput{
@@ -126,26 +133,170 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 		},
 	}
 
-	expectedRuntimeConfig := model.RuntimeConfig{
+	expectedGardenerGCPRuntimeConfig := model.RuntimeConfig{
 		ClusterConfig: model.GardenerConfig{
-			ID:                "id",
-			Name:              "Something",
-			ProjectName:       "Project",
-			MachineType:       "n1-standard-1",
-			Region:            "region",
-			Zone:              "zone",
-			KubernetesVersion: "version",
-			NodeCount:         3,
-			VolumeSize:        "1TB",
-			DiskType:          "ssd",
-			TargetProvider:    "GCP",
-			TargetSecret:      "secret",
-			Cidr:              "cidr",
-			AutoScalerMin:     1,
-			AutoScalerMax:     5,
-			MaxSurge:          1,
-			MaxUnavailable:    2,
-			ClusterID:         "runtimeID",
+			ID:                     "id",
+			Name:                   "Something",
+			ProjectName:            "Project",
+			MachineType:            "n1-standard-1",
+			Region:                 "region",
+			KubernetesVersion:      "version",
+			NodeCount:              3,
+			VolumeSizeGB:           1024,
+			DiskType:               "ssd",
+			Provider:               "GCP",
+			Seed:                   "gcp-eu1",
+			TargetSecret:           "secret",
+			WorkerCidr:             "cidr",
+			AutoScalerMin:          1,
+			AutoScalerMax:          5,
+			MaxSurge:               1,
+			MaxUnavailable:         2,
+			ClusterID:              "runtimeID",
+			ProviderSpecificConfig: "{\"zone\":\"zone\"}",
+		},
+		Kubeconfig: nil,
+		KymaConfig: model.KymaConfig{
+			ID:      "id",
+			Version: "1.5",
+			Modules: []model.KymaConfigModule{
+				{ID: "id", Module: model.KymaModule("Backup"), KymaConfigID: "id"},
+				{ID: "id", Module: model.KymaModule("BackupInit"), KymaConfigID: "id"},
+			},
+			ClusterID: "runtimeID",
+		},
+		CredentialsSecretName: "secretName",
+	}
+
+	gardenerAzureQGLInput := gqlschema.ProvisionRuntimeInput{
+		ClusterConfig: &gqlschema.ClusterConfigInput{
+			GardenerConfig: &gqlschema.GardenerConfigInput{
+				Name:              "Something",
+				ProjectName:       "Project",
+				KubernetesVersion: "version",
+				NodeCount:         3,
+				VolumeSizeGb:      1024,
+				MachineType:       "n1-standard-1",
+				Region:            "region",
+				Provider:          "Azure",
+				Seed:              "az-eu1",
+				TargetSecret:      "secret",
+				DiskType:          "ssd",
+				WorkerCidr:        "cidr",
+				AutoScalerMin:     1,
+				AutoScalerMax:     5,
+				MaxSurge:          1,
+				MaxUnavailable:    2,
+				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+					AzureConfig: &gqlschema.AzureProviderConfigInput{
+						VnetCidr: "cidr",
+					},
+				},
+			},
+		},
+		Credentials: &gqlschema.CredentialsInput{
+			SecretName: "secretName",
+		},
+		KymaConfig: &gqlschema.KymaConfigInput{
+			Version: "1.5",
+			Modules: []gqlschema.KymaModule{gqlschema.KymaModuleBackup, gqlschema.KymaModuleBackupInit},
+		},
+	}
+
+	expectedGardenerAzureRuntimeConfig := model.RuntimeConfig{
+		ClusterConfig: model.GardenerConfig{
+			ID:                     "id",
+			Name:                   "Something",
+			ProjectName:            "Project",
+			MachineType:            "n1-standard-1",
+			Region:                 "region",
+			KubernetesVersion:      "version",
+			NodeCount:              3,
+			VolumeSizeGB:           1024,
+			DiskType:               "ssd",
+			Provider:               "Azure",
+			Seed:                   "az-eu1",
+			TargetSecret:           "secret",
+			WorkerCidr:             "cidr",
+			AutoScalerMin:          1,
+			AutoScalerMax:          5,
+			MaxSurge:               1,
+			MaxUnavailable:         2,
+			ClusterID:              "runtimeID",
+			ProviderSpecificConfig: "{\"vnetCidr\":\"cidr\"}",
+		},
+		Kubeconfig: nil,
+		KymaConfig: model.KymaConfig{
+			ID:      "id",
+			Version: "1.5",
+			Modules: []model.KymaConfigModule{
+				{ID: "id", Module: model.KymaModule("Backup"), KymaConfigID: "id"},
+				{ID: "id", Module: model.KymaModule("BackupInit"), KymaConfigID: "id"},
+			},
+			ClusterID: "runtimeID",
+		},
+		CredentialsSecretName: "secretName",
+	}
+
+	gardenerAWSQGLInput := gqlschema.ProvisionRuntimeInput{
+		ClusterConfig: &gqlschema.ClusterConfigInput{
+			GardenerConfig: &gqlschema.GardenerConfigInput{
+				Name:              "Something",
+				ProjectName:       "Project",
+				KubernetesVersion: "version",
+				NodeCount:         3,
+				VolumeSizeGb:      1024,
+				MachineType:       "n1-standard-1",
+				Region:            "region",
+				Provider:          "AWS",
+				Seed:              "aws-eu1",
+				TargetSecret:      "secret",
+				DiskType:          "ssd",
+				WorkerCidr:        "cidr",
+				AutoScalerMin:     1,
+				AutoScalerMax:     5,
+				MaxSurge:          1,
+				MaxUnavailable:    2,
+				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+					AwsConfig: &gqlschema.AWSProviderConfigInput{
+						Zone:         "zone",
+						InternalCidr: "cidr",
+						VpcCidr:      "cidr",
+						PublicCidr:   "cidr",
+					},
+				},
+			},
+		},
+		Credentials: &gqlschema.CredentialsInput{
+			SecretName: "secretName",
+		},
+		KymaConfig: &gqlschema.KymaConfigInput{
+			Version: "1.5",
+			Modules: []gqlschema.KymaModule{gqlschema.KymaModuleBackup, gqlschema.KymaModuleBackupInit},
+		},
+	}
+
+	expectedGardenerAWSRuntimeConfig := model.RuntimeConfig{
+		ClusterConfig: model.GardenerConfig{
+			ID:                     "id",
+			Name:                   "Something",
+			ProjectName:            "Project",
+			MachineType:            "n1-standard-1",
+			Region:                 "region",
+			KubernetesVersion:      "version",
+			NodeCount:              3,
+			VolumeSizeGB:           1024,
+			DiskType:               "ssd",
+			Provider:               "AWS",
+			Seed:                   "aws-eu1",
+			TargetSecret:           "secret",
+			WorkerCidr:             "cidr",
+			AutoScalerMin:          1,
+			AutoScalerMax:          5,
+			MaxSurge:               1,
+			MaxUnavailable:         2,
+			ClusterID:              "runtimeID",
+			ProviderSpecificConfig: "{\"zone\":\"zone\",\"vpcCidr\":\"cidr\",\"publicCidr\":\"cidr\",\"internalCidr\":\"cidr\"}",
 		},
 		Kubeconfig: nil,
 		KymaConfig: model.KymaConfig{
@@ -178,9 +329,19 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 			description: "Should create proper runtime config struct with GCP input (empty zone)",
 		},
 		{
-			input:       gardenerQGLInput,
-			expected:    expectedRuntimeConfig,
-			description: "Should create proper runtime config struct with Gardener input",
+			input:       gardenerGCPQGLInput,
+			expected:    expectedGardenerGCPRuntimeConfig,
+			description: "Should create proper runtime config struct with Gardener input for GCP provider",
+		},
+		{
+			input:       gardenerAzureQGLInput,
+			expected:    expectedGardenerAzureRuntimeConfig,
+			description: "Should create proper runtime config struct with Gardener input for Azure provider",
+		},
+		{
+			input:       gardenerAWSQGLInput,
+			expected:    expectedGardenerAWSRuntimeConfig,
+			description: "Should create proper runtime config struct with Gardener input for AWS provider",
 		},
 	}
 
@@ -191,9 +352,10 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 			uuidGeneratorMock.On("New").Return("id").Times(4)
 
 			//when
-			runtimeConfig := runtimeConfigFromInput("runtimeID", config.input, uuidGeneratorMock)
+			runtimeConfig, err := runtimeConfigFromInput("runtimeID", config.input, uuidGeneratorMock)
 
 			//then
+			require.NoError(t, err)
 			assert.Equal(t, config.expected, runtimeConfig)
 			uuidGeneratorMock.AssertExpectations(t)
 		})
@@ -205,7 +367,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		name := "Something"
 		project := "Project"
 		numberOfNodes := 3
-		bootDiskSize := "256"
+		bootDiskSize := 256
 		machine := "machine"
 		region := "region"
 		zone := "zone"
@@ -214,6 +376,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		backup := gqlschema.KymaModuleBackup
 		backupInit := gqlschema.KymaModuleBackupInit
 		kubeconfig := "kubeconfig"
+		secretName := "secretName"
 
 		runtimeStatus := model.RuntimeStatus{
 			LastOperationStatus: model.Operation{
@@ -230,7 +393,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					Name:              "Something",
 					ProjectName:       "Project",
 					NumberOfNodes:     3,
-					BootDiskSize:      "256",
+					BootDiskSizeGB:    256,
 					MachineType:       "machine",
 					Region:            "region",
 					Zone:              "zone",
@@ -247,6 +410,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					},
 					ClusterID: "runtimeID",
 				},
+				CredentialsSecretName: secretName,
 			},
 		}
 
@@ -273,14 +437,15 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					Region:            &region,
 					Zone:              &zone,
 					NumberOfNodes:     &numberOfNodes,
-					BootDiskSize:      &bootDiskSize,
+					BootDiskSizeGb:    &bootDiskSize,
 					KubernetesVersion: &kubeversion,
 				},
 				KymaConfig: &gqlschema.KymaConfig{
 					Version: &version,
 					Modules: []*gqlschema.KymaModule{&backup, &backupInit},
 				},
-				Kubeconfig: &kubeconfig,
+				Kubeconfig:            &kubeconfig,
+				CredentialsSecretName: &secretName,
 			},
 		}
 
@@ -296,23 +461,25 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		name := "Something"
 		project := "Project"
 		nodes := 3
-		disk := "256"
+		disk := "standard"
 		machine := "machine"
 		region := "region"
 		zone := "zone"
-		volume := "volume"
+		volume := 256
 		kubeversion := "kubeversion"
 		version := "1.5"
 		backup := gqlschema.KymaModuleBackup
 		backupInit := gqlschema.KymaModuleBackupInit
 		kubeconfig := "kubeconfig"
 		provider := "GCP"
+		seed := "gcp-eu1"
 		secret := "secret"
 		cidr := "cidr"
 		autoScMax := 2
 		autoScMin := 2
 		surge := 1
 		unavailable := 1
+		secretName := "secretName"
 
 		runtimeStatus := model.RuntimeStatus{
 			LastOperationStatus: model.Operation{
@@ -325,22 +492,23 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 			RuntimeConnectionStatus: model.RuntimeAgentConnectionStatusDisconnected,
 			RuntimeConfiguration: model.RuntimeConfig{
 				ClusterConfig: model.GardenerConfig{
-					Name:              name,
-					ProjectName:       project,
-					NodeCount:         nodes,
-					DiskType:          disk,
-					MachineType:       machine,
-					Region:            region,
-					Zone:              zone,
-					VolumeSize:        volume,
-					KubernetesVersion: kubeversion,
-					TargetProvider:    provider,
-					TargetSecret:      secret,
-					Cidr:              cidr,
-					AutoScalerMax:     autoScMax,
-					AutoScalerMin:     autoScMin,
-					MaxSurge:          surge,
-					MaxUnavailable:    unavailable,
+					Name:                   name,
+					ProjectName:            project,
+					NodeCount:              nodes,
+					DiskType:               disk,
+					MachineType:            machine,
+					Region:                 region,
+					VolumeSizeGB:           volume,
+					KubernetesVersion:      kubeversion,
+					Provider:               provider,
+					Seed:                   seed,
+					TargetSecret:           secret,
+					WorkerCidr:             cidr,
+					AutoScalerMax:          autoScMax,
+					AutoScalerMin:          autoScMin,
+					MaxSurge:               surge,
+					MaxUnavailable:         unavailable,
+					ProviderSpecificConfig: "{\"Zone\":\"zone\"}",
 				},
 				Kubeconfig: &kubeconfig,
 				KymaConfig: model.KymaConfig{
@@ -350,6 +518,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 						{ID: "Id1", Module: model.KymaModule("BackupInit")},
 					},
 				},
+				CredentialsSecretName: secretName,
 			},
 		}
 
@@ -376,22 +545,26 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					DiskType:          &disk,
 					MachineType:       &machine,
 					Region:            &region,
-					Zone:              &zone,
-					VolumeSize:        &volume,
+					VolumeSizeGb:      &volume,
 					KubernetesVersion: &kubeversion,
-					TargetProvider:    &provider,
+					Provider:          &provider,
+					Seed:              &seed,
 					TargetSecret:      &secret,
-					Cidr:              &cidr,
+					WorkerCidr:        &cidr,
 					AutoScalerMax:     &autoScMax,
 					AutoScalerMin:     &autoScMin,
 					MaxSurge:          &surge,
 					MaxUnavailable:    &unavailable,
+					ProviderSpecificConfig: gqlschema.GCPProviderConfig{
+						Zone: &zone,
+					},
 				},
 				KymaConfig: &gqlschema.KymaConfig{
 					Version: &version,
 					Modules: []*gqlschema.KymaModule{&backup, &backupInit},
 				},
-				Kubeconfig: &kubeconfig,
+				Kubeconfig:            &kubeconfig,
+				CredentialsSecretName: &secretName,
 			},
 		}
 

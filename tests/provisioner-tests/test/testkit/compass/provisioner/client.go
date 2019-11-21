@@ -93,9 +93,10 @@ type GCPRuntimeStatus struct {
 	LastOperationStatus     *schema.OperationStatus         `json:"lastOperationStatus"`
 	RuntimeConnectionStatus *schema.RuntimeConnectionStatus `json:"runtimeConnectionStatus"`
 	RuntimeConfiguration    struct {
-		ClusterConfig *schema.GCPConfig  `json:"clusterConfig"`
-		KymaConfig    *schema.KymaConfig `json:"kymaConfig"`
-		Kubeconfig    *string            `json:"kubeconfig"`
+		ClusterConfig         *schema.GCPConfig  `json:"clusterConfig"`
+		KymaConfig            *schema.KymaConfig `json:"kymaConfig"`
+		Kubeconfig            *string            `json:"kubeconfig"`
+		CredentialsSecretName *string            `json:"credentialsSecretName"`
 	} `json:"runtimeConfiguration"`
 }
 

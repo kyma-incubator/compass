@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/configuration"
+
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
@@ -32,16 +36,19 @@ type Service interface {
 }
 
 type service struct {
-	persistenceService persistence.Service
-	hydroform          hydroform.Service
-	uuidGenerator      persistence.UUIDGenerator
+	persistenceService   persistence.Service
+	hydroform            hydroform.Service
+	configBuilderFactory configuration.BuilderFactory
+	uuidGenerator        persistence.UUIDGenerator
 }
 
-func NewProvisioningService(persistenceService persistence.Service, uuidGenerator persistence.UUIDGenerator, hydroform hydroform.Service) Service {
+func NewProvisioningService(persistenceService persistence.Service, uuidGenerator persistence.UUIDGenerator,
+	hydroform hydroform.Service, configBuilderFactory configuration.BuilderFactory) Service {
 	return &service{
-		persistenceService: persistenceService,
-		hydroform:          hydroform,
-		uuidGenerator:      uuidGenerator,
+		persistenceService:   persistenceService,
+		hydroform:            hydroform,
+		configBuilderFactory: configBuilderFactory,
+		uuidGenerator:        uuidGenerator,
 	}
 }
 
@@ -51,7 +58,11 @@ func (r *service) ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeI
 		return "", nil, err
 	}
 
-	runtimeConfig := runtimeConfigFromInput(id, config, r.uuidGenerator)
+	runtimeConfig, err := runtimeConfigFromInput(id, config, r.uuidGenerator)
+
+	if err != nil {
+		return "", nil, err
+	}
 
 	operation, err := r.persistenceService.SetProvisioningStarted(id, runtimeConfig)
 
@@ -61,7 +72,9 @@ func (r *service) ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeI
 
 	finished := make(chan struct{})
 
-	go r.startProvisioning(operation.ID, id, runtimeConfig, runtimeConfig.CredentialsSecretName, finished)
+	builder := r.configBuilderFactory.NewProvisioningBuilder(config)
+
+	go r.startProvisioning(operation.ID, id, builder, finished)
 
 	return operation.ID, finished, err
 }
@@ -115,7 +128,9 @@ func (r *service) DeprovisionRuntime(id string) (string, <-chan struct{}, error)
 		return "", nil, dberr
 	}
 
-	go r.startDeprovisioning(operation.ID, id, runtimeStatus.RuntimeConfiguration, cluster, finished)
+	builder := r.configBuilderFactory.NewDeprovisioningBuilder(runtimeStatus.RuntimeConfiguration)
+
+	go r.startDeprovisioning(operation.ID, id, builder, cluster.TerraformState, finished)
 
 	return operation.ID, finished, nil
 }
@@ -156,10 +171,10 @@ func (r *service) CleanupRuntimeData(id string) (string, error) {
 	return id, r.persistenceService.CleanupClusterData(id)
 }
 
-func (r *service) startProvisioning(operationID, runtimeID string, config model.RuntimeConfig, secretName string, finished chan<- struct{}) {
+func (r *service) startProvisioning(operationID, runtimeID string, builder configuration.Builder, finished chan<- struct{}) {
 	defer close(finished)
 	log.Infof("Provisioning runtime %s is starting", runtimeID)
-	info, err := r.hydroform.ProvisionCluster(config, secretName)
+	info, err := r.hydroform.ProvisionCluster(builder)
 
 	if err != nil || info.ClusterStatus != types.Provisioned {
 		log.Errorf("Provisioning runtime %s failed: %s", runtimeID, err.Error())
@@ -178,10 +193,10 @@ func (r *service) startProvisioning(operationID, runtimeID string, config model.
 	}
 }
 
-func (r *service) startDeprovisioning(operationID, runtimeID string, config model.RuntimeConfig, cluster model.Cluster, finished chan<- struct{}) {
+func (r *service) startDeprovisioning(operationID, runtimeID string, builder configuration.Builder, terraformState string, finished chan<- struct{}) {
 	defer close(finished)
 	log.Infof("Deprovisioning runtime %s is starting", runtimeID)
-	err := r.hydroform.DeprovisionCluster(config, cluster.CredentialsSecretName, cluster.TerraformState)
+	err := r.hydroform.DeprovisionCluster(builder, terraformState)
 
 	if err != nil {
 		log.Errorf("Deprovisioning runtime %s failed: %s", runtimeID, err.Error())
@@ -197,22 +212,8 @@ func (r *service) startDeprovisioning(operationID, runtimeID string, config mode
 }
 
 func updateOperationStatus(updateFunction func() error) {
-	err := retry(interval, retryCount, updateFunction)
+	err := util.Retry(interval, retryCount, updateFunction)
 	if err != nil {
 		log.Errorf("Failed to set operation status, %s", err.Error())
 	}
-}
-
-func retry(interval time.Duration, count int, operation func() error) error {
-	var err error
-	for i := 0; i < count; i++ {
-		err = operation()
-		if err == nil {
-			return nil
-		}
-		log.Errorf("Error during updating operation status: %s", err.Error())
-		time.Sleep(interval)
-	}
-
-	return err
 }
