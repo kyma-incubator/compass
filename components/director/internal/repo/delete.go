@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
 	"github.com/lib/pq"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
@@ -99,12 +97,5 @@ func (g *universalDeleter) unsafeDelete(ctx context.Context, tenant *string, con
 		}
 	}
 
-	return nil
-}
-
-func specificPqError(err *pq.Error) error {
-	if err.Code.Class() == "23" {
-		return apperrors.NewConstraintViolationError(err.Table)
-	}
 	return nil
 }
