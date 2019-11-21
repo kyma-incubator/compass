@@ -35,10 +35,8 @@ func IsNotFoundError(err error) bool {
 	if cause := errors.Cause(err); cause != nil {
 		err = cause
 	}
-	if _, ok := err.(NotFound); ok {
-		return true
-	}
-	return false
+	_, ok := err.(NotFound)
+	return ok
 }
 
 type NotUnique interface {
@@ -68,10 +66,8 @@ func IsNotUnique(err error) bool {
 	if cause := errors.Cause(err); cause != nil {
 		err = cause
 	}
-	if _, ok := err.(NotUnique); ok {
-		return true
-	}
-	return false
+	_, ok := err.(NotUnique)
+	return ok
 }
 
 type ConstraintViolation interface {
@@ -98,10 +94,8 @@ func IsConstraintViolation(err error) bool {
 	if cause := errors.Cause(err); cause != nil {
 		err = cause
 	}
-	if _, ok := err.(ConstraintViolation); ok {
-		return true
-	}
-	return false
+	_, ok := err.(ConstraintViolation)
+	return ok
 }
 
 type InvalidCast interface {

@@ -10,5 +10,5 @@ const (
 	// UniqueViolation is the error code that happens when the Unique Key is violated
 	UniqueViolation pq.ErrorCode = "23505"
 	//ConstraintViolation is the class of errors that happens when any constraint is violated
-	ConstraintViolation = "23"
+	ConstraintViolation pq.ErrorClass = "23"
 )

@@ -9,8 +9,7 @@ func IsConstraintViolation(err error) bool {
 		return false
 	}
 
-	pqerr, ok := err.(*pq.Error)
-	if ok {
+	if pqerr, ok := err.(*pq.Error); ok {
 		if pqerr.Code.Class() == ConstraintViolation {
 			return true
 		}
