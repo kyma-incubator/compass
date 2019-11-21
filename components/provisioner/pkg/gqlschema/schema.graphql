@@ -21,22 +21,22 @@ type RuntimeConfig {
 union ClusterConfig = GardenerConfig | GCPConfig
 
 type GardenerConfig {
-    name: String
-    projectName: String
-    kubernetesVersion: String
-    nodeCount: Int
-    volumeSize: String
-    machineType: String
-    region: String
-    targetProvider: String
-    targetSecret: String
-    diskType: String
-    zone: String
-    cidr: String
-    autoScalerMin: Int
-    autoScalerMax: Int
-    maxSurge: Int
-    maxUnavailable: Int
+    name: String                # Cluster name
+    projectName: String         # Gardener project in which the cluster is created
+    kubernetesVersion: String   # Kubernetes version to be installed on the cluster
+    nodeCount: Int              # Number of nodes
+    volumeSize: String          # Size of the available disk, provided in GB
+    machineType: String         # Type of node machines, varies depending on the provider
+    region: String              # Region in which the cluster is created
+    targetProvider: String      # Target provider on which to provision the cluster (Azure, AWS, GCP)
+    targetSecret: String        # Secret in Gardener containing credentials to the target provider
+    diskType: String            # Disk type, varies depending on the provider
+    zone: String                # Zone in which the cluster is created
+    cidr: String                # Classless Inter-Domain Routing for the nodes
+    autoScalerMin: Int          # Minimum number of VMs to create
+    autoScalerMax: Int          # Maximum number of VMs to create
+    maxSurge: Int               # Maximum number of VMs created during an update
+    maxUnavailable: Int         # Maximum number of VMs that can be unavailable during an update
 }
 
 type GCPConfig {

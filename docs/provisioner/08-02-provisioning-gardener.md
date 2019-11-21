@@ -104,7 +104,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
             }
             kymaConfig: { version: "1.5", modules: Backup }
             credentials: {
-              secretName: "{GAREDENER_SERVICE_ACCOUNT_CONFIGURATION_SECERT_NAME}" 
+              secretName: "{GARDENER_SERVICE_ACCOUNT_CONFIGURATION_SECERT_NAME}" 
             }
           }
         )

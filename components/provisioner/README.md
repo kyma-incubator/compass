@@ -1,6 +1,11 @@
 # Provisioner
 
-The Runtime Provisioner is a Compass component responsible for provisioning, installing, and deprovisioning clusters with Kyma (Kyma Runtimes). For more details, see the Runtime Provisioner [documentation](https://github.com/kyma-incubator/compass/tree/master/docs/provisioner).
+The Runtime Provisioner is a Compass component responsible for provisioning, installing, and deprovisioning clusters with Kyma (Kyma Runtimes).
+
+> **NOTE:** Kyma installation is not implemented yet. 
+
+For more details, see the Runtime Provisioner [documentation](https://github.com/kyma-incubator/compass/tree/master/docs/provisioner).
+
 
 ## Development
 
@@ -35,3 +40,5 @@ Before you can run the Runtime Provisioner, you have to configure access to Post
 ```bash
 $ docker run --rm -p 5432:5432 -e POSTGRES_PASSWORD=password postgres
 ```
+
+The Runtime Provisioner also needs access to the cluster from which it fetches Secrets.  
