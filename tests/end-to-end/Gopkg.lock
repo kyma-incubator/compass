@@ -21,12 +21,12 @@
   version = "v1.1.0"
 
 [[projects]]
-  digest = "1:d37f34e1e231ee4b8657d1b6153e2696b1d7341850f648f5d78151d3bc1f677b"
+  digest = "1:a5f0485ed2aad9b9c6a730815d1f2bc92b0acc126d7ee8e36c1a51882fc284f5"
   name = "github.com/Masterminds/semver"
   packages = ["."]
   pruneopts = "UT"
-  revision = "fe7c21038085e01e67044ec1efe3afb1eaa59f75"
-  version = "v3.0.1"
+  revision = "25911d36c978be5eb3e81847734874fd4e1dc6c7"
+  version = "v3.0.2"
 
 [[projects]]
   digest = "1:b565deb585c50ab8e94fe5d6c9903f1495970b97814803e4ab0e70c0a9c87a30"
@@ -112,14 +112,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:77acd73ae7a332ee7603a582bec8343eca417926a3aeff0aad0eacb7d730cfab"
+  digest = "1:b2989d201ae6dc4c70a63676905690aff6e10f76214be4c7d47d9cf7399b2676"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/pkg/graphql",
     "components/director/pkg/scalar",
   ]
   pruneopts = "UT"
-  revision = "5e243b3cc16e7ca2fa3719f089ee60759c98ece3"
+  revision = "9e2e22a1aa1ac215d63bf53c545ee9536c7405fe"
 
 [[projects]]
   branch = "master"
@@ -181,7 +181,7 @@
   version = "v1.4.0"
 
 [[projects]]
-  digest = "1:b4e8aaca88f799355f4ac560bce4293fb85ff21003dd0d5741ca503f7a788e91"
+  digest = "1:831b94be76a8fe3b3b882e52752423070f1b2d7940ecc381cdac66ac01492bfd"
   name = "github.com/vektah/gqlparser"
   packages = [
     ".",
@@ -193,8 +193,8 @@
     "validator/rules",
   ]
   pruneopts = "UT"
-  revision = "05741cdb0871330d8bc980d4afd21ab34eceee83"
-  version = "v1.1.2"
+  revision = "6b4a7854a7ef7ee3f626490d1e2d22a823828fc6"
+  version = "v1.2.0"
 
 [[projects]]
   digest = "1:bb32a7e267540d9f2d26753426d5e360c5bd858b9b78e26b9f0c99219024d8f5"
@@ -213,30 +213,30 @@
     "scrypt",
   ]
   pruneopts = "UT"
-  revision = "8986dd9e96cf0a6f74da406c005ba3df38527c04"
+  revision = "497ca9f6d64f9bb73048a960b4098309edcd2205"
 
 [[projects]]
   branch = "master"
-  digest = "1:0be3fc4126c5a734c67e77fb3befd681f9efe0d0774efd31bae8f5826238ca36"
+  digest = "1:46cdc35c1813b1ebcb372087e78ff161f1bafee8ecd268a54f21d15c5fcfdc0a"
   name = "golang.org/x/net"
   packages = [
     "html",
     "html/atom",
   ]
   pruneopts = "UT"
-  revision = "fe3aa8a4527195a6057b3fad46619d7d090e99b5"
+  revision = "fc4aabc6c91483155dade6fbb627cc953a723260"
 
 [[projects]]
   branch = "master"
-  digest = "1:999c8e6b10ddb08bc4ea3a56d4e838194c4884eac6ecf90a9aa98ed8475fdf37"
+  digest = "1:fc96eb481f72e9a5edeb4bb3f3610d3b9384c036f7c1e39f8c0dedff23d0c34d"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "195ce5e7f934b923d8fc432cf5a2561f2b334da9"
+  revision = "e882bf8e40c23f260d489ef820e5e8eead5e76e3"
 
 [[projects]]
   branch = "master"
-  digest = "1:2b53ea4b03221eb338f1d2c6ad664d94b8851211b651e7f46fbe3ba2dca0f00f"
+  digest = "1:b8c0ebe25da393d35060d76c38af904d5689eb63de8b76898747c641aff4c2df"
   name = "golang.org/x/tools"
   packages = [
     "cmd/goimports",
@@ -254,15 +254,15 @@
     "internal/span",
   ]
   pruneopts = "UT"
-  revision = "9cc4af7d6b2c2a2e47f9cfaa500cd669b42e449b"
+  revision = "07fc4c7f2b9857711f6306c76424246e8d6eab64"
 
 [[projects]]
-  digest = "1:59f10c1537d2199d9115d946927fe31165959a95190849c82ff11e05803528b0"
+  digest = "1:f26a5d382387e03a40d1471dddfba85dfff9bf05352d7e42d37612677c4d3c5c"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   pruneopts = "UT"
-  revision = "f221b8435cfb71e54062f6c6e99e9ade30b124d5"
-  version = "v2.2.4"
+  revision = "f90ceb4f409096b60e2e9076b38b304b8246e5fa"
+  version = "v2.2.5"
 
 [solve-meta]
   analyzer-name = "dep"
