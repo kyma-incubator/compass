@@ -47,7 +47,7 @@ Director handles the process of managing Applications and Runtimes. It also requ
 
 ## Runtime Provisioner
 
-Runtime Provisioner handles the creation, modification, and deletion of Runtimes. This component is interchangeable.
+[Runtime Provisioner](https://github.com/kyma-incubator/compass/tree/master/docs/provisioner) handles the creation, modification, and deletion of Runtimes. This component is interchangeable.
 
 ## Integration System
 
