@@ -1,11 +1,13 @@
 # Provisioner
 
+The Runtime Provisioner is a Compass component responsible for provisioning, installing, and deprovisioning clusters with Kyma (Kyma Runtimes). For more details, see the Runtime Provisioner [documentation](https://github.com/kyma-incubator/compass/tree/master/docs/provisioner).
+
 ## Development
 
 After you introduce changes in the GraphQL schema, run the `gqlgen.sh` script.
 To run the Provisioner, use the following command:
 
-```
+```bash
 go run cmd/main.go
 ```
 
