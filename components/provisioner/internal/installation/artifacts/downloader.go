@@ -46,4 +46,5 @@ func (ad artifactsDownloader) fetchLatestReleases() error {
 	// TODO - fetch n latest releases
 	// TODO - save releases to DB
 
+	return nil
 }

@@ -59,7 +59,7 @@ func main() {
 	connString := fmt.Sprintf(connStringFormat, cfg.Database.Host, cfg.Database.Port, cfg.Database.User,
 		cfg.Database.Password, cfg.Database.Name, cfg.Database.SSLMode)
 
-	resolver, err := newResolver(connString, cfg.Database.SchemaFilePath, cfg.CredentialsNamespace)
+	resolver, err := newResolver(cfg, connString)
 	exitOnError(err, "Failed to initialize GraphQL resolver ")
 
 	gqlCfg := gqlschema.Config{

@@ -38,12 +38,12 @@ func newPersistenceService(connectionString, schemaPath string) (persistence.Ser
 
 func newProvisioningService(config config, persistenceService persistence.Service, secrets v1.SecretInterface, artifactsProvider installation.ArtifactsProvider) provisioning.Service {
 	hydroformClient := client.NewHydroformClient()
-	hydroformService := hydroform.NewHydroformService(secrets, hydroformClient)
+	hydroformService := hydroform.NewHydroformService(hydroformClient)
 	uuidGenerator := uuid.NewUUIDGenerator()
 	factory := configuration.NewConfigBuilderFactory(secrets)
 	installationService := installation.NewInstallationService(config.Installation.Timeout, artifactsProvider, installation2.NewKymaInstaller, config.Installation.ErrorsCountFailureThreshold)
 
-	return provisioning.NewProvisioningService(persistenceService, uuidGenerator, hydroformService, factory,installationService)
+	return provisioning.NewProvisioningService(persistenceService, uuidGenerator, hydroformService, factory, installationService)
 }
 
 func newSecretsInterface(namespace string) (v1.SecretInterface, error) {
@@ -67,16 +67,17 @@ func newSecretsInterface(namespace string) (v1.SecretInterface, error) {
 	return coreClientset.CoreV1().Secrets(namespace), nil
 }
 
-func newResolver(connectionString string, schemaFilePath string, namespace string) (*api.Resolver, error) {
-	persistenceService, err := newPersistenceService(connectionString, schemaFilePath)
+func newResolver(config config, connectionString string) (*api.Resolver, error) {
+	persistenceService, err := newPersistenceService(connectionString, config.Database.SchemaFilePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to initialize persistence")
 	}
 
-	secretInterface, err := newSecretsInterface(namespace)
+	secretInterface, err := newSecretsInterface(config.CredentialsNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to create secrets interface")
 	}
 
-	return api.NewResolver(newProvisioningService(persistenceService, secretInterface)), nil
+	// TODO -  pass artifacts provider
+	return api.NewResolver(newProvisioningService(config, persistenceService, secretInterface, nil)), nil
 }

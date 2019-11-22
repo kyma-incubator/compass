@@ -3,8 +3,8 @@ package provisioning
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid/mocks"
+	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 

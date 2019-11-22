@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"k8s.io/client-go/tools/clientcmd"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
-
-	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
@@ -45,17 +43,17 @@ type service struct {
 	persistenceService   persistence.Service
 	hydroform            hydroform.Service
 	configBuilderFactory configuration.BuilderFactory
-	installationService installation.Service
-	uuidGenerator        persistence.UUIDGenerator
+	installationService  installation.Service
+	uuidGenerator        uuid.UUIDGenerator
 }
 
-func NewProvisioningService(persistenceService persistence.Service, uuidGenerator persistence.UUIDGenerator,
+func NewProvisioningService(persistenceService persistence.Service, uuidGenerator uuid.UUIDGenerator,
 	hydroform hydroform.Service, configBuilderFactory configuration.BuilderFactory, installationService installation.Service) Service {
 	return &service{
 		persistenceService:   persistenceService,
 		hydroform:            hydroform,
 		configBuilderFactory: configBuilderFactory,
-		installationService: installationService,
+		installationService:  installationService,
 		uuidGenerator:        uuidGenerator,
 	}
 }
@@ -82,7 +80,7 @@ func (r *service) ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeI
 
 	builder := r.configBuilderFactory.NewProvisioningBuilder(config)
 
-	go r.startProvisioning(operation.ID, id, builder, finished)
+	go r.startProvisioning(operation.ID, id, config.KymaConfig.Version, builder, finished)
 
 	return operation.ID, finished, err
 }
@@ -179,7 +177,8 @@ func (r *service) CleanupRuntimeData(id string) (string, error) {
 	return id, r.persistenceService.CleanupClusterData(id)
 }
 
-func (r *service) startProvisioning(operationID, runtimeID string, builder configuration.Builder, finished chan<- struct{}) {
+// TODO - refactor
+func (r *service) startProvisioning(operationID, runtimeID, kymaVersion string, builder configuration.Builder, finished chan<- struct{}) {
 	defer close(finished)
 
 	log.Infof("Provisioning runtime %s is starting...", runtimeID)
@@ -204,21 +203,7 @@ func (r *service) startProvisioning(operationID, runtimeID string, builder confi
 
 	log.Infof("Runtime %s provisioned successfully. Starting Kyma installation...", runtimeID)
 
-	kubeconfig, err := clientcmd.NewClientConfigFromBytes([]byte(info.KubeConfig))
-	if err != nil {
-		log.Errorf("Error provisioning runtime %s: %s", runtimeID, err.Error())
-		r.setOperationAsFailed(operationID, err.Error())
-		return
-	}
-
-	clientConfig, err := kubeconfig.ClientConfig()
-	if err != nil {
-		log.Errorf("Error provisioning runtime %s: %s", runtimeID, err.Error())
-		r.setOperationAsFailed(operationID, err.Error())
-		return
-	}
-
-	err = r.installationService.InstallKyma(clientConfig, config.KymaConfig.Version)
+	err = r.installationService.InstallKyma(info.KubeConfig, kymaVersion)
 	if err != nil {
 		log.Errorf("Error installing Kyma on runtime %s: %s", runtimeID, err.Error())
 		r.setOperationAsFailed(operationID, err.Error())

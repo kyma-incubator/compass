@@ -7,6 +7,8 @@ import (
 	"log"
 	"time"
 
+	"k8s.io/client-go/tools/clientcmd"
+
 	pkgErrors "github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/artifacts"
@@ -22,8 +24,9 @@ type ArtifactsProvider interface {
 	GetArtifacts(version string) (artifacts.ReleaseArtifacts, error)
 }
 
+//go:generate mockery -name=Service
 type Service interface {
-	InstallKyma(kubeconfig *rest.Config, kymaVersion string) error
+	InstallKyma(kubeconfigRaw, kymaVersion string) error
 }
 
 func NewInstallationService(installationTimeout time.Duration, artifactsProvider ArtifactsProvider, installationHandler InstallationHandler, installErrFailureThreshold int) Service {
@@ -42,13 +45,29 @@ type installationService struct {
 	installationHandler                InstallationHandler
 }
 
-func (s *installationService) InstallKyma(kubeconfig *rest.Config, kymaVersion string) error {
+func (s *installationService) InstallKyma(kubeconfigRaw, kymaVersion string) error {
+	kubeconfig, err := clientcmd.NewClientConfigFromBytes([]byte(kubeconfigRaw))
+	if err != nil {
+		//log.Errorf("Error provisioning runtime %s: %s", runtimeID, err.Error())
+		//r.setOperationAsFailed(operationID, err.Error())
+		//return fmt.Errorf("Error provisioning runtime %s: %s", runtimeID, err.Error())
+		return fmt.Errorf("error constructing kubeconfig from raw config: %s", err.Error())
+	}
+
+	clientConfig, err := kubeconfig.ClientConfig()
+	if err != nil {
+		//log.Errorf("Error provisioning runtime %s: %s", runtimeID, err.Error())
+		//r.setOperationAsFailed(operationID, err.Error())
+		//return
+		return fmt.Errorf("failed to get client kubeconfig from parsed config: %s", err.Error())
+	}
+
 	releaseArtifacts, err := s.artifactsProvider.GetArtifacts(kymaVersion)
 	if err != nil {
 		return pkgErrors.Wrap(err, "Failed to get release Artifacts")
 	}
 
-	kymaInstaller, err := s.installationHandler(kubeconfig)
+	kymaInstaller, err := s.installationHandler(clientConfig)
 	if err != nil {
 		return pkgErrors.Wrap(err, "Failed to create Kyma installer")
 	}
@@ -92,7 +111,7 @@ func (s *installationService) waitForInstallation(stateChannel <-chan installati
 			if !ok {
 				continue
 			}
-			log.Printf("An error occurred: %v", err)
+			log.Printf("An error occurred: %v", err) // TODO = log with context or remove
 
 			installationError := installation.InstallationError{}
 			if ok := errors.As(err, &installationError); ok {
@@ -105,6 +124,7 @@ func (s *installationService) waitForInstallation(stateChannel <-chan installati
 				if len(installationError.ErrorEntries) > s.installationErrorsFailureThreshold {
 					return fmt.Errorf("installation errors exceeded occured: %s", installationError.Details())
 				}
+				continue
 			}
 
 			return err
