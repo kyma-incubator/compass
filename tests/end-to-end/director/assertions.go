@@ -21,6 +21,7 @@ func assertApplication(t *testing.T, in graphql.ApplicationCreateInput, actualAp
 	assertEventsAPI(t, in.EventAPIs, actualApp.EventAPIs.Data)
 }
 
+//TODO: After fixing the 'Labels' scalar turn this back into regular assertion
 func assertLabels(t *testing.T, in graphql.Labels, actual graphql.Labels, id *string) {
 	for key, value := range actual {
 		if key == "integration-system-id" {
