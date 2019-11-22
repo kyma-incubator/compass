@@ -1,15 +1,15 @@
 ---
-title: Provision clusters on GCP, AWS, or AZURE through Gardener
+title: Provision clusters through Gardener
 type: Tutorials
 ---
 
-This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on Google Cloud Platform (GCP), Microsoft Azure, and Amazon Web Services (AWS) using [Gardener](https://dashboard.garden.canary.k8s.ondemand.com).
+This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud Platform (GCP), Microsoft Azure, and Amazon Web Services (AWS) using [Gardener](https://dashboard.garden.canary.k8s.ondemand.com).
 
 ## Prerequisites
 
 <div tabs name="Prerequisites" group="Provisioning-Gardener">
   <details>
-  <summary>
+  <summary label="GCP">
   GCP
   </summary>
   
@@ -20,17 +20,17 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
       * Service Account Token Creator
       * Service Account User
       * Compute Admin
-  - Key generated for your service account downloaded in the `json` format
+  - Key generated for your service account, downloaded in the JSON format
   </details>
   
   <details>
-  <summary>
+  <summary label="Azure">
   Azure
   </summary>
   
   - Existing project on Gardener
-  - Valid Azure Subscription with the Contributor role and the Subscription ID 
-  - Existing App registration on Azure and its following credentials:
+  - Valid Azure subscription with the Contributor role and the subscription ID 
+  - Existing App registration on Azure with the following credentials:
     * Application ID (Client ID)
     * Directory ID (Tenant ID)
     * Client secret (application password)
@@ -38,7 +38,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
   </details>
   
   <details>
-  <summary>
+  <summary label="AWS">
   AWS
   </summary>
   
@@ -48,16 +48,18 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
     * Secrete Access Key
     * Access Key ID
   
-  > **NOTE:** To get the AWS IAM policy, access your project on Gardener, navigate to the **Secrets** tab, click on the help icon on the AWS card, and copy the `json` policy. 
+  > **NOTE:** To get the AWS IAM policy, access your project on Gardener, navigate to the **Secrets** tab, click on the help icon on the AWS card, and copy the JSON policy. 
     
   </details>
 </div>
 
-## Provision Kyma Runtime through Gardener
+> **NOTE:** To access the Runtime Provisioner, forward the port on which the GraphQL Server is listening.   
+
+## Steps
 
 <div tabs name="Provisioning" group="Provisioning-Gardener">
   <details>
-  <summary>
+  <summary label="GCP">
   GCP
   </summary>
 
@@ -69,11 +71,9 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
 
   3. In the **Members** tab, create a service account for Gardener. 
 
-  4. Download the service account configuration (`kubeconfig.yaml`) and use it to create a Secret in the `compass-system` Namespace with the key `credentials` and the value encoded with base64.
+  4. Download the service account configuration (`kubeconfig.yaml`) and use it to create a Secret in the `compass-system` Namespace with the key named `credentials` and the value encoded with base64.
 
   5. Make a call to the Runtime Provisioner to create a cluster on GCP.
-
-      > **NOTE:** To access the Runtime Provisioner, forward the port on which the GraphQL Server is listening.
     
       > **NOTE:** The cluster name must start with a lowercase letter followed by up to 19 lowercase letters, numbers, or hyphens, and cannot end with a hyphen.                                                                 
                                                                           
@@ -124,7 +124,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
   </details>
 
   <details>
-  <summary>
+  <summary label="Azure">
   Azure
   </summary>
 
@@ -189,7 +189,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
   </details>
   
   <details>
-  <summary>
+  <summary label="AWS">
   AWS
   </summary>
       

@@ -3,7 +3,7 @@ title: Provision clusters on Google Cloud Platform (GCP)
 type: Tutorials
 ---
 
-This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on Google Cloud Platform (GCP).
+This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud Platform (GCP).
 
 ## Prerequisites
 
@@ -13,14 +13,14 @@ This tutorial shows how to provision clusters with Kyma Runtimes (Runtimes) on G
     * Kubernetes Engine Admin
     * Kubernetes Engine Cluster Admin
     * Service Account User
-- Key generated for your service account downloaded in the `json` format
-- Secret from the service account key created in the `compass-system` Namespace with the key `credentials` and the value encoded with base64
+- Key generated for your service account, downloaded in the JSON format
+- Secret from the service account key created in the `compass-system` Namespace, with the key named `credentials` and the value encoded with base64
 
-## Provision Kyma Runtime on GCP
+> **NOTE:** To access the Runtime Provisioner, forward the port on which the GraphQL Server is listening.
+
+## Steps
 
 To provision Kyma Runtime, make a call to the Runtime Provisioner with this example mutation:
-
-> **NOTE:** To access the Runtime Provisioner, make a call from another Pod in the cluster containing the Runtime Provisioner or forward the port on which the GraphQL Server is listening.
 
 > **NOTE:** The cluster name must start with a lowercase letter followed by up to 39 lowercase letters, numbers, or hyphens, and cannot end with a hyphen.
 

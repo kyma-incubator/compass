@@ -135,7 +135,7 @@ input ClusterConfigInput {
 }
 
 input GardenerConfigInput {
-    name: String!                                   # Name of te cluster to create
+    name: String!                                   # Name of the cluster to create
     projectName: String!                            # Gardener project in which the cluster is created
     kubernetesVersion: String!                      # Kubernetes version to be installed on the cluster
     nodeCount: Int!                                 # Number of nodes to create

@@ -3,9 +3,9 @@ title: Clean up Runtime data
 type: Tutorials
 ---
 
-This tutorial shows how to clean up Runtime data. This operation wipes all the data concerning the Runtime of a given ID from the database and frees up the Runtime ID for reuse. 
+This tutorial shows how to clean up Runtime data. This operation removes a given Runtime and all its data from the database and frees up the Runtime ID for reuse. 
 
-## Clean up Kyma Runtime data
+## Steps
 
 > **NOTE:** To access the Runtime Provisioner, forward the port on which the GraphQL Server is listening.
 

@@ -3,9 +3,9 @@ title: Deprovision clusters
 type: Tutorials
 ---
 
-This tutorial shows how to deprovision clusters with Kyma Runtimes (Runtimes).
+This tutorial shows how to deprovision clusters with Kyma Runtimes.
 
-## Deprovision Kyma Runtime
+## Steps
 
 > **NOTE:** To access the Runtime Provisioner, forward the port on which the GraphQL Server is listening.
 

@@ -5,7 +5,7 @@ type: Tutorials
 
 This tutorial shows how to check the Runtime status.
 
-## Check the Runtime Status
+## Steps
 
 Make a call to the Runtime Provisioner to check the Runtime status. Pass the Runtime ID as `id`. 
 
