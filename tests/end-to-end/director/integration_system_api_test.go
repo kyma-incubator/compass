@@ -97,6 +97,28 @@ func TestDeleteIntegrationSystem(t *testing.T) {
 	saveExample(t, deleteIntegrationSystemRequest.Query(), "delete integration system")
 }
 
+func TestQueryIntegrationSystem(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	name := "int-system"
+
+	t.Log("Create integration system")
+	intSys := createIntegrationSystem(t, ctx, name)
+	getIntegrationSystemRequest := fixIntegrationSystemRequest(intSys.ID)
+	output := graphql.IntegrationSystemExt{}
+
+	// WHEN
+	t.Log("Get integration system")
+	err := tc.RunOperation(ctx, getIntegrationSystemRequest, &output)
+	require.NoError(t, err)
+	require.NotEmpty(t, output.ID)
+	defer deleteIntegrationSystem(t, ctx, output.ID)
+
+	//THEN
+	t.Log("Check if Integration System was received")
+	assert.Equal(t, name, output.Name)
+}
+
 func TestQueryIntegrationSystems(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
