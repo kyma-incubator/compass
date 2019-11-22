@@ -120,80 +120,80 @@ enum RuntimeAgentConnectionStatus {
 # Inputs
 
 input ProvisionRuntimeInput {
-    clusterConfig: ClusterConfigInput!
-    credentials: CredentialsInput!
-    kymaConfig: KymaConfigInput!
+    clusterConfig: ClusterConfigInput!  # Configuration of the cluster to provision
+    credentials: CredentialsInput!      # Credentials
+    kymaConfig: KymaConfigInput!        # Configuration of Kyma to be installed on the provisioned cluster
 }
 
 input CredentialsInput {
-    secretName: String!
+    secretName: String!     # Secret name
 }
 
 input ClusterConfigInput {
-    gardenerConfig: GardenerConfigInput
-    gcpConfig: GCPConfigInput
+    gardenerConfig: GardenerConfigInput     # Gardener-specific configuration for the cluster to be provisioned
+    gcpConfig: GCPConfigInput               # GCP-specific configuration for the cluster to be provisioned
 }
 
 input GardenerConfigInput {
-    name: String!
-    projectName: String!
-    kubernetesVersion: String!
-    nodeCount: Int!
-    volumeSizeGB: Int!
-    machineType: String!
-    region: String!
-    provider: String!
-    seed: String!
-    targetSecret: String!
-    diskType: String!
-    workerCidr: String!
-    autoScalerMin: Int!
-    autoScalerMax: Int!
-    maxSurge: Int!
-    maxUnavailable: Int!
-    providerSpecificConfig: ProviderSpecificInput!
+    name: String!                                   # Name of te cluster to create
+    projectName: String!                            # Gardener project in which the cluster is created
+    kubernetesVersion: String!                      # Kubernetes version to be installed on the cluster
+    nodeCount: Int!                                 # Number of nodes to create
+    volumeSizeGB: Int!                              # Size of the available disk, provided in GB
+    machineType: String!                            # Type of node machines, varies depending on the target provider
+    region: String!                                 # Region in which the cluster is created
+    provider: String!                               # Target provider on which to provision the cluster (Azure, AWS, GCP)
+    seed: String!                                   # Name of the seed cluster that runs the control plane of the Shoot
+    targetSecret: String!                           # Secret in Gardener containing credentials to the target provider
+    diskType: String!                               # Disk type, varies depending on the target provider
+    workerCidr: String!                             # Classless Inter-Domain Routing range for the nodes
+    autoScalerMin: Int!                             # Minimum number of VMs to create
+    autoScalerMax: Int!                             # Maximum number of VMs to create
+    maxSurge: Int!                                  # Maximum number of VMs created during an update
+    maxUnavailable: Int!                            # Maximum number of VMs that can be unavailable during an update
+    providerSpecificConfig: ProviderSpecificInput!  # Additional parameters, vary depending on the target provider
 }
 
 input ProviderSpecificInput {
-    gcpConfig: GCPProviderConfigInput
-    azureConfig: AzureProviderConfigInput
-    awsConfig: AWSProviderConfigInput
+    gcpConfig: GCPProviderConfigInput        # GCP-specific configuration for the cluster to be provisioned
+    azureConfig: AzureProviderConfigInput    # Azure-specific configuration for the cluster to be provisioned
+    awsConfig: AWSProviderConfigInput        # AWS-specific configuration for the cluster to be provisioned
 }
 
 input GCPProviderConfigInput {
-    zone: String!
+    zone: String!      # Zone in which to create the cluster
 }
 
 input AzureProviderConfigInput {
-    vnetCidr: String!
+    vnetCidr: String!   # Classless Inter-Domain Routing for the Azure Virtual Network
 }
 
 input AWSProviderConfigInput {
-    zone: String!
-    vpcCidr: String!
-    publicCidr: String!
-    internalCidr: String!
+    zone: String!           # Zone in which to create the cluster
+    vpcCidr: String!        # Classless Inter-Domain Routing for the virtual public cloud
+    publicCidr: String!     # Classless Inter-Domain Routing for the public subnet
+    internalCidr: String!   # Classless Inter-Domain Routing for the private subnet
 }
 
 input GCPConfigInput {
-    name: String!
-    projectName: String!
-    kubernetesVersion: String!
-    numberOfNodes: Int!
-    bootDiskSizeGB: Int!
-    machineType: String!
-    region: String! # TODO: later we may require either Region or Zone
-    zone: String
+    name: String!                   # Name of the cluster to create
+    projectName: String!            # GCP project in which to create the cluster
+    kubernetesVersion: String!      # Kubernetes version to be installed on the cluster
+    numberOfNodes: Int!             # Number of nodes to create
+    bootDiskSizeGB: Int!            # Size of the available disk, provided in GB
+    machineType: String!            # Type of node machines
+    region: String! # TODO: later we may require either Region or Zone ## Region in which to create the cluster
+    zone: String                    # Zone in which to create the cluster
 }
 
 input KymaConfigInput {
-    version: String!
-    modules: [KymaModule!]
+    version: String!        # Kyma version to install on the cluster
+    modules: [KymaModule!]  # Kyma components to install on the cluster
 }
 
 input UpgradeRuntimeInput {
-    clusterConfig: UpgradeClusterInput
-    kymaConfig: KymaConfigInput
+    clusterConfig: UpgradeClusterInput  # Configuration of the cluster to upgrade
+    kymaConfig: KymaConfigInput         # Configuration of the Kyma Runtime to upgrade
 }
 
 input UpgradeClusterInput {
