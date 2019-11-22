@@ -51,9 +51,6 @@ func (g *Graphqlizer) ApplicationCreateInputToGQL(in graphql.ApplicationCreateIn
 		{{- if .IntegrationSystemID }}
 		integrationSystemID: "{{ .IntegrationSystemID }}",
 		{{- end }}
-		{{- if .IntegrationSystemID }}
-		integrationSystemID: "{{ .IntegrationSystemID }}",
-		{{- end }}
 	}`)
 }
 
@@ -64,10 +61,10 @@ func (g *Graphqlizer) ApplicationUpdateInputToGQL(in graphql.ApplicationUpdateIn
 		description: "{{.Description}}",
 		{{- end }}
 		{{- if .HealthCheckURL }}
-		healthCheckURL: "{{ .HealthCheckURL }}"
+		healthCheckURL: "{{ .HealthCheckURL }}",
 		{{- end }}
 		{{- if .IntegrationSystemID }}
-			integrationSystemID: "{{ .IntegrationSystemID }}",
+		integrationSystemID: "{{ .IntegrationSystemID }}",
 		{{- end }}
 	}`)
 }
