@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/ptr"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -315,7 +313,6 @@ func TestCreateApplicationWithNonExistentIntegrationSystem(t *testing.T) {
 	actualApp := graphql.ApplicationExt{}
 
 	request := fixCreateApplicationRequest(appInputGQL)
-	logrus.Info(request)
 	// WHEN
 	err = tc.RunOperation(ctx, request, &actualApp)
 

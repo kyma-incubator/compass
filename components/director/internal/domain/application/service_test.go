@@ -553,7 +553,7 @@ func TestService_Update(t *testing.T) {
 		Name               string
 		AppRepoFn          func() *automock.ApplicationRepository
 		IntSysRepoFn       func() *automock.IntegrationSystemRepository
-		LblUpsrtSvc        func() *automock.LabelUpsertService
+		LabelUpsertSvcFn   func() *automock.LabelUpsertService
 		Input              model.ApplicationUpdateInput
 		InputID            string
 		ExpectedErrMessage string
@@ -572,7 +572,7 @@ func TestService_Update(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
 				return repo
 			},
-			LblUpsrtSvc: func() *automock.LabelUpsertService {
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
 				svc.On("UpsertLabel", ctx, tnt, intSysLabel).Return(nil).Once()
 				return svc
@@ -594,7 +594,7 @@ func TestService_Update(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
 				return repo
 			},
-			LblUpsrtSvc: func() *automock.LabelUpsertService {
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
 				return svc
 			},
@@ -614,7 +614,7 @@ func TestService_Update(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
 				return repo
 			},
-			LblUpsrtSvc: func() *automock.LabelUpsertService {
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
 				return svc
 			},
@@ -633,7 +633,7 @@ func TestService_Update(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(false, nil).Once()
 				return repo
 			},
-			LblUpsrtSvc: func() *automock.LabelUpsertService {
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
 				return svc
 			},
@@ -652,7 +652,7 @@ func TestService_Update(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(false, testErr).Once()
 				return repo
 			},
-			LblUpsrtSvc: func() *automock.LabelUpsertService {
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
 				return svc
 			},
@@ -674,7 +674,7 @@ func TestService_Update(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
 				return repo
 			},
-			LblUpsrtSvc: func() *automock.LabelUpsertService {
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
 				svc.On("UpsertLabel", ctx, tnt, intSysLabel).Return(testErr).Once()
 				return svc
@@ -697,7 +697,7 @@ func TestService_Update(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
 				return repo
 			},
-			LblUpsrtSvc: func() *automock.LabelUpsertService {
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
 				return svc
 			},
@@ -719,7 +719,7 @@ func TestService_Update(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
 				return repo
 			},
-			LblUpsrtSvc: func() *automock.LabelUpsertService {
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
 				return svc
 			},
@@ -733,7 +733,7 @@ func TestService_Update(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appRepo := testCase.AppRepoFn()
 			intSysRepo := testCase.IntSysRepoFn()
-			lblUpsrtSvc := testCase.LblUpsrtSvc()
+			lblUpsrtSvc := testCase.LabelUpsertSvcFn()
 			svc := application.NewService(appRepo, nil, nil, nil, nil, nil, nil, nil, intSysRepo, lblUpsrtSvc, nil, nil)
 
 			// when
