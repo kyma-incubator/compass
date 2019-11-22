@@ -13,7 +13,7 @@ enum KymaModule {
 # Configuration of Runtime. We can consider returning kubeconfig as a part of this type.
 type RuntimeConfig {
     clusterConfig: ClusterConfig
-    credentialsSecretName: String
+    # TODO: should we also return credentials (secret name used for provisioning)?
     kymaConfig: KymaConfig
     kubeconfig: String
 }
@@ -21,40 +21,22 @@ type RuntimeConfig {
 union ClusterConfig = GardenerConfig | GCPConfig
 
 type GardenerConfig {
-    name: String                                    # Cluster name
-    projectName: String                             # Gardener project in which the cluster is created
-    kubernetesVersion: String                       # Kubernetes version to be installed on the cluster
-    nodeCount: Int                                  # Number of nodes
-    volumeSizeGB: Int                               # Size of the available disk, provided in GB
-    machineType: String                             # Type of node machines, varies depending on the target provider
-    region: String                                  # Region in which the cluster is created
-    provider: String                                # Target provider on which to provision the cluster (Azure, AWS, GCP)
-    seed: String                                    # Name of the seed cluster that runs the control plane of the Shoot
-    targetSecret: String                            # Secret in Gardener containing credentials to the target provider
-    diskType: String                                # Disk type, varies depending on the target provider
-    workerCidr: String                              # Classless Inter-Domain Routing for the nodes
-    autoScalerMin: Int                              # Minimum number of VMs to create
-    autoScalerMax: Int                              # Maximum number of VMs to create
-    maxSurge: Int                                   # Maximum number of VMs created during an update
-    maxUnavailable: Int                             # Maximum number of VMs that can be unavailable during an update
-    providerSpecificConfig: ProviderSpecificConfig  # Additional parameters, vary depending on the target provider
-}
-
-union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig
-
-type GCPProviderConfig {
-    zone: String
-}
-
-type AzureProviderConfig {
-    vnetCidr: String
-}
-
-type AWSProviderConfig {
-    zone: String
-    vpcCidr: String
-    publicCidr: String
-    internalCidr: String
+    name: String                # Cluster name
+    projectName: String         # Gardener project in which the cluster is created
+    kubernetesVersion: String   # Kubernetes version to be installed on the cluster
+    nodeCount: Int              # Number of nodes
+    volumeSize: String          # Size of the available disk, provided in GB
+    machineType: String         # Type of node machines, varies depending on the provider
+    region: String              # Region in which the cluster is created
+    targetProvider: String      # Target provider on which to provision the cluster (Azure, AWS, GCP)
+    targetSecret: String        # Secret in Gardener containing credentials to the target provider
+    diskType: String            # Disk type, varies depending on the provider
+    zone: String                # Zone in which the cluster is created
+    cidr: String                # Classless Inter-Domain Routing for the nodes
+    autoScalerMin: Int          # Minimum number of VMs to create
+    autoScalerMax: Int          # Maximum number of VMs to create
+    maxSurge: Int               # Maximum number of VMs created during an update
+    maxUnavailable: Int         # Maximum number of VMs that can be unavailable during an update
 }
 
 type GCPConfig {
@@ -62,7 +44,7 @@ type GCPConfig {
     projectName: String
     kubernetesVersion: String
     numberOfNodes: Int
-    bootDiskSizeGB: Int
+    bootDiskSize: String
     machineType: String
     region: String
     zone: String
@@ -139,40 +121,18 @@ input GardenerConfigInput {
     projectName: String!
     kubernetesVersion: String!
     nodeCount: Int!
-    volumeSizeGB: Int!
+    volumeSize: String!
     machineType: String!
     region: String!
-    provider: String!
-    seed: String!
+    targetProvider: String!
     targetSecret: String!
     diskType: String!
-    workerCidr: String!
+    zone: String!
+    cidr: String!
     autoScalerMin: Int!
     autoScalerMax: Int!
     maxSurge: Int!
     maxUnavailable: Int!
-    providerSpecificConfig: ProviderSpecificInput!
-}
-
-input ProviderSpecificInput {
-    gcpConfig: GCPProviderConfigInput
-    azureConfig: AzureProviderConfigInput
-    awsConfig: AWSProviderConfigInput
-}
-
-input GCPProviderConfigInput {
-    zone: String!
-}
-
-input AzureProviderConfigInput {
-    vnetCidr: String!
-}
-
-input AWSProviderConfigInput {
-    zone: String!
-    vpcCidr: String!
-    publicCidr: String!
-    internalCidr: String!
 }
 
 input GCPConfigInput {
@@ -180,7 +140,7 @@ input GCPConfigInput {
     projectName: String!
     kubernetesVersion: String!
     numberOfNodes: Int!
-    bootDiskSizeGB: Int!
+    bootDiskSize: String!
     machineType: String!
     region: String! # TODO: later we may require either Region or Zone
     zone: String
@@ -204,7 +164,7 @@ type Mutation {
     # Runtime Management; only one asynchronous operation per RuntimeID can run at any given point in time
     provisionRuntime(id: String!, config: ProvisionRuntimeInput!): String!
     upgradeRuntime(id: String!, config: UpgradeRuntimeInput!): String!
-    deprovisionRuntime(id: String!): String!
+    deprovisionRuntime(id: String!, credentials: CredentialsInput!): String!
     cleanupRuntimeData(id: String!): String!
 
     # Compass Runtime Agent Connection Management
