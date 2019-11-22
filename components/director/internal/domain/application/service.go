@@ -15,6 +15,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	intSysKey = "integration-system-id"
+)
+
 //go:generate mockery -name=ApplicationRepository -output=automock -outpkg=automock -case=underscore
 type ApplicationRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
@@ -256,10 +260,9 @@ func (s *service) Create(ctx context.Context, in model.ApplicationCreateInput) (
 		in.Labels[model.ScenariosKey] = model.ScenariosDefaultValue
 	}
 
+	in.Labels[intSysKey] = ""
 	if in.IntegrationSystemID != nil {
-		in.Labels["integration-system-id"] = *in.IntegrationSystemID
-	} else {
-		in.Labels["integration-system-id"] = ""
+		in.Labels[intSysKey] = *in.IntegrationSystemID
 	}
 
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
@@ -300,11 +303,9 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 		return errors.Wrap(err, "while updating Application")
 	}
 
-	var intSysLabel *model.LabelInput
+	intSysLabel := createLabel(intSysKey, "", id)
 	if in.IntegrationSystemID != nil {
-		intSysLabel = createLabel("integration-system-id", *in.IntegrationSystemID, id)
-	} else {
-		intSysLabel = createLabel("integration-system-id", "", id)
+		intSysLabel = createLabel(intSysKey, *in.IntegrationSystemID, id)
 	}
 
 	err = s.SetLabel(ctx, intSysLabel)
