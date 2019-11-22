@@ -26,7 +26,7 @@ type config struct {
 		User     string `envconfig:"default=postgres"`
 		Password string `envconfig:"default=password"`
 		Host     string `envconfig:"default=localhost"`
-		Port     string `envconfig:"default=54320"`
+		Port     string `envconfig:"default=5432"`
 		Name     string `envconfig:"default=provisioner"`
 		SSLMode  string `envconfig:"default=disable"`
 
