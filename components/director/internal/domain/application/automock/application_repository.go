@@ -113,29 +113,6 @@ func (_m *ApplicationRepository) List(ctx context.Context, tenant string, filter
 	return r0, r1
 }
 
-// ListByIntegrationSystemID provides a mock function with given fields: ctx, appTenant, id, pageSize, cursor
-func (_m *ApplicationRepository) ListByIntegrationSystemID(ctx context.Context, appTenant string, id string, pageSize int, cursor string) (*model.ApplicationPage, error) {
-	ret := _m.Called(ctx, appTenant, id, pageSize, cursor)
-
-	var r0 *model.ApplicationPage
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, int, string) *model.ApplicationPage); ok {
-		r0 = rf(ctx, appTenant, id, pageSize, cursor)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.ApplicationPage)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, int, string) error); ok {
-		r1 = rf(ctx, appTenant, id, pageSize, cursor)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // ListByScenarios provides a mock function with given fields: ctx, tenantID, scenarios, pageSize, cursor
 func (_m *ApplicationRepository) ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	ret := _m.Called(ctx, tenantID, scenarios, pageSize, cursor)

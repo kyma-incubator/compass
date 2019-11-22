@@ -233,7 +233,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationCreateInput) (
 
 	err = s.ensureIntSysExists(ctx, in.IntegrationSystemID)
 	if err != nil {
-		return "", errors.Wrap(err, "while validating Integration System")
+		return "", err
 	}
 
 	id := s.uidService.Generate()
@@ -308,22 +308,6 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 	return nil
 }
 
-func (s *service) ensureIntSysExists(ctx context.Context, id *string) error {
-	if id == nil {
-		return nil
-	}
-
-	exists, err := s.intSystemRepo.Exists(ctx, *id)
-	if err != nil {
-		return err
-	}
-
-	if !exists {
-		return errors.New(fmt.Sprintf("Integration System with ID: %s does not exist", *id))
-	}
-	return nil
-}
-
 func (s *service) Delete(ctx context.Context, id string) error {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -371,7 +355,7 @@ func (s *service) GetLabel(ctx context.Context, applicationID string, key string
 		return nil, errors.Wrap(err, "while checking Application existence")
 	}
 	if !appExists {
-		return nil, fmt.Errorf("Application with ID %s doesn't exist", applicationID)
+		return nil, fmt.Errorf("application with ID %s doesn't exist", applicationID)
 	}
 
 	label, err := s.labelRepo.GetByKey(ctx, appTenant, model.ApplicationLabelableObject, applicationID, key)
@@ -395,7 +379,7 @@ func (s *service) ListLabels(ctx context.Context, applicationID string) (map[str
 	}
 
 	if !appExists {
-		return nil, fmt.Errorf("Application with ID %s doesn't exist", applicationID)
+		return nil, fmt.Errorf("application with ID %s doesn't exist", applicationID)
 	}
 
 	labels, err := s.labelRepo.ListForObject(ctx, appTenant, model.ApplicationLabelableObject, applicationID)
@@ -421,7 +405,7 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 		return errors.Wrap(err, "while checking Application existence")
 	}
 	if !appExists {
-		return fmt.Errorf("Application with ID %s doesn't exist", applicationID)
+		return fmt.Errorf("application with ID %s doesn't exist", applicationID)
 	}
 
 	err = s.labelRepo.Delete(ctx, appTenant, model.ApplicationLabelableObject, applicationID, key)
@@ -556,6 +540,22 @@ func createLabel(key string, value string, objectID string) *model.LabelInput {
 		Key:        key,
 		Value:      value,
 		ObjectID:   objectID,
-		ObjectType: "Application",
+		ObjectType: model.ApplicationLabelableObject,
 	}
+}
+
+func (s *service) ensureIntSysExists(ctx context.Context, id *string) error {
+	if id == nil {
+		return nil
+	}
+
+	exists, err := s.intSystemRepo.Exists(ctx, *id)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		return errors.New(fmt.Sprintf("Integration System with ID: %s does not exist", *id))
+	}
+	return nil
 }
