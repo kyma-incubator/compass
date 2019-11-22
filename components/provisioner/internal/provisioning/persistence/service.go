@@ -63,9 +63,10 @@ func (ps persistenceService) GetStatus(runtimeID string) (model.RuntimeStatus, d
 	}
 
 	runtimeConfiguration := model.RuntimeConfig{
-		KymaConfig:    kymaConfig,
-		ClusterConfig: clusterConfig,
-		Kubeconfig:    cluster.Kubeconfig,
+		KymaConfig:            kymaConfig,
+		ClusterConfig:         clusterConfig,
+		Kubeconfig:            cluster.Kubeconfig,
+		CredentialsSecretName: cluster.CredentialsSecretName,
 	}
 
 	return model.RuntimeStatus{

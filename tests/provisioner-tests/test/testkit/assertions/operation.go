@@ -17,7 +17,7 @@ func AssertOperation(t *testing.T, expectedState gqlschema.OperationState, expec
 	require.NotNil(t, operation.ID)
 	require.NotNil(t, operation.Message)
 
-	logrus.Infof("Assering operation %s is in %s state.", *operation.ID, expectedState)
+	logrus.Infof("Asserting operation %s is in %s state.", *operation.ID, expectedState)
 	logrus.Infof("Operation message: %s", *operation.Message)
 	require.Equal(t, expectedState, operation.State)
 	assert.Equal(t, expectedType, operation.Operation)

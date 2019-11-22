@@ -63,30 +63,51 @@ func clusterConfig() string {
 			kubernetesVersion
 			projectName
 			nodeCount 
-			volumeSize
+			volumeSizeGB
 			diskType
 			machineType
 			region
-		  	targetProvider
+		  	provider
+			seed
 			targetSecret
-			zone
-			cidr
+			diskType
+			workerCidr
 			autoScalerMin
 			autoScalerMax
 			maxSurge
 			maxUnavailable
+			providerSpecificConfig {
+				%s
+			}
 		}
 		...  on GCPConfig {
 			name 
 			kubernetesVersion
 			projectName
 			numberOfNodes 
-			bootDiskSize
+			bootDiskSizeGB
 			machineType
 			region
 			zone
 		}
-`)
+`, providerSpecificConfig())
+}
+
+func providerSpecificConfig() string {
+	return fmt.Sprint(`
+		... on GCPProviderConfig { 
+			zone 
+		} 
+		... on AzureProviderConfig {
+			vnetCidr
+		}
+		... on AWSProviderConfig {
+			zone 
+			internalCidr 
+			vpcCidr 
+			publicCidr
+		}  
+	`)
 }
 
 func operationStatusData() string {

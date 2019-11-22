@@ -42,7 +42,7 @@ func Test_E2e(t *testing.T) {
 				ProjectName:       config.GCPProjectName,
 				KubernetesVersion: "1.14",
 				NumberOfNodes:     3,
-				BootDiskSize:      "30",
+				BootDiskSizeGb:    30,
 				MachineType:       gcpMachineType,
 				Region:            gcpClusterZone,
 			},
@@ -55,7 +55,7 @@ func Test_E2e(t *testing.T) {
 	provisioningOperationId, err := testSuite.ProvisionerClient.ProvisionRuntime(runtimeId, provisioningInput)
 	assertions.RequireNoError(t, err)
 	logrus.Infof("Provisioning operation id: %s", provisioningOperationId)
-	defer ensureClusterIsDeprovisioned(runtimeId, credentialsInput)
+	defer ensureClusterIsDeprovisioned(runtimeId)
 
 	var provisioningOperationStatus gqlschema.OperationStatus
 	err = testkit.RunParallelToMainFunction(ProvisioningTimeout+5*time.Second,
@@ -116,7 +116,7 @@ func Test_E2e(t *testing.T) {
 	logrus.Infof("Runtime deprovisioned successfully")
 }
 
-func ensureClusterIsDeprovisioned(runtimeId string, credentialsInput gqlschema.CredentialsInput) {
+func ensureClusterIsDeprovisioned(runtimeId string) {
 	logrus.Infof("Ensuring the cluster is deprovisioned...")
 	deprovisioningOperationId, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtimeId)
 	if err != nil {
@@ -149,7 +149,7 @@ func assertGCPRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionRuntim
 	assertions.AssertNotNillAndEqualString(t, input.ClusterConfig.GcpConfig.Name, gcpClusterConfig.Name)
 	assertions.AssertNotNillAndEqualString(t, input.ClusterConfig.GcpConfig.Region, gcpClusterConfig.Region)
 	assertions.AssertNotNillAndEqualString(t, input.ClusterConfig.GcpConfig.KubernetesVersion, gcpClusterConfig.KubernetesVersion)
-	assertions.AssertNotNillAndEqualString(t, input.ClusterConfig.GcpConfig.BootDiskSize, gcpClusterConfig.BootDiskSize)
+	assertions.AssertNotNillAndEqualInt(t, input.ClusterConfig.GcpConfig.BootDiskSizeGb, gcpClusterConfig.BootDiskSizeGb)
 	assertions.AssertNotNillAndEqualString(t, input.ClusterConfig.GcpConfig.MachineType, gcpClusterConfig.MachineType)
 	assertions.AssertNotNillAndEqualInt(t, input.ClusterConfig.GcpConfig.NumberOfNodes, gcpClusterConfig.NumberOfNodes)
 	assert.Equal(t, unwrapString(input.ClusterConfig.GcpConfig.Zone), unwrapString(gcpClusterConfig.Zone))

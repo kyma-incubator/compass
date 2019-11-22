@@ -10,7 +10,7 @@ global:
       version: "PR-391"
     director:
       dir:
-      version: "PR-472"
+      version: "PR-473"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -22,7 +22,7 @@ global:
       version: "PR-448"
     provisioner:
       dir:
-      version: "PR-432"
+      version: "PR-424"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -31,20 +31,19 @@ global:
     tests:
       e2e:
         dir:
-        version: "PR-464"
+        version: "PR-473"
       connector:
         dir: pr/
         version: "PR-391"
       provisioner:
         dir:
-        version: "PR-432"
+        version: "PR-424"
 
   isLocalEnv: false
 
   director:
     hasDefaultEventURL: false
     port: 3000
-
 
   connector:
     graphql:

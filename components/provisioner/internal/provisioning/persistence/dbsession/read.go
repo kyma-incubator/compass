@@ -76,9 +76,9 @@ func (r readSession) GetClusterConfig(runtimeID string) (interface{}, dberrors.E
 
 	err := r.session.
 		Select("gardener_config.id", "cluster_id", "gardener_config.name", "project_name", "kubernetes_version",
-			"node_count", "volume_size", "disk_type", "machine_type", "target_provider",
-			"target_secret", "cidr", "region", "zone", "auto_scaler_min", "auto_scaler_max",
-			"max_surge", "max_unavailable").
+			"node_count", "volume_size_gb", "disk_type", "machine_type", "provider", "seed",
+			"target_secret", "worker_cidr", "region", "auto_scaler_min", "auto_scaler_max",
+			"max_surge", "max_unavailable", "provider_specific_config").
 		From("cluster").
 		Join("gardener_config", "cluster.id=gardener_config.cluster_id").
 		Where(dbr.Eq("cluster.id", runtimeID)).
@@ -96,7 +96,7 @@ func (r readSession) GetClusterConfig(runtimeID string) (interface{}, dberrors.E
 
 	err = r.session.
 		Select("gcp_config.id", "cluster_id", "name", "project_name", "kubernetes_version",
-			"number_of_nodes", "boot_disk_size", "machine_type", "region", "zone").
+			"number_of_nodes", "boot_disk_size_gb", "machine_type", "region", "zone").
 		From("cluster").
 		Join("gcp_config", "cluster.id=gcp_config.cluster_id").
 		Where(dbr.Eq("cluster.id", runtimeID)).

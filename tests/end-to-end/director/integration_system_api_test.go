@@ -104,7 +104,6 @@ func TestQueryIntegrationSystem(t *testing.T) {
 
 	t.Log("Create integration system")
 	intSys := createIntegrationSystem(t, ctx, name)
-
 	getIntegrationSystemRequest := fixIntegrationSystemRequest(intSys.ID)
 	output := graphql.IntegrationSystemExt{}
 
