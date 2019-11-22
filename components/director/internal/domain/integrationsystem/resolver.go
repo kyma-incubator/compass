@@ -209,17 +209,17 @@ func (r *Resolver) DeleteIntegrationSystem(ctx context.Context, id string) (*gra
 		return nil, err
 	}
 
-	err = r.oAuth20Svc.DeleteMultipleClientCredentials(ctx, auths)
-	if err != nil {
-		return nil, err
-	}
-
 	err = r.intSysSvc.Delete(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
 	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.oAuth20Svc.DeleteMultipleClientCredentials(ctx, auths)
 	if err != nil {
 		return nil, err
 	}

@@ -35,10 +35,8 @@ func IsNotFoundError(err error) bool {
 	if cause := errors.Cause(err); cause != nil {
 		err = cause
 	}
-	if _, ok := err.(NotFound); ok {
-		return true
-	}
-	return false
+	_, ok := err.(NotFound)
+	return ok
 }
 
 type NotUnique interface {
@@ -68,10 +66,36 @@ func IsNotUnique(err error) bool {
 	if cause := errors.Cause(err); cause != nil {
 		err = cause
 	}
-	if _, ok := err.(NotUnique); ok {
-		return true
+	_, ok := err.(NotUnique)
+	return ok
+}
+
+type ConstraintViolation interface {
+	ConstraintViolation()
+}
+
+type constraintViolationError struct {
+	table string
+}
+
+func NewConstraintViolationError(table string) *constraintViolationError {
+	return &constraintViolationError{
+		table: table,
 	}
-	return false
+}
+
+func (e *constraintViolationError) Error() string {
+	return fmt.Sprintf("this object still has %s referenced by it", e.table)
+}
+
+func (constraintViolationError) ConstraintViolation() {}
+
+func IsConstraintViolation(err error) bool {
+	if cause := errors.Cause(err); cause != nil {
+		err = cause
+	}
+	_, ok := err.(ConstraintViolation)
+	return ok
 }
 
 type InvalidCast interface {

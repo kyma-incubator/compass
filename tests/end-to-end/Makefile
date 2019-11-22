@@ -7,11 +7,11 @@ export DIRECTOR_GRAPHQL_API
 
 include $(SCRIPTS_DIR)/generic_make_go.mk
 
-.PHONY: gen-examples test-e2e clean-up
+.PHONY: generate-director-examples clean-up
 
 VERIFY_IGNORE := /vendor\|/automock\|/testdata
 
-verify:: test-e2e
+verify:: generate-director-examples
 
 $(eval $(call test-local))
 
@@ -19,8 +19,8 @@ $(eval $(call test-local))
 # and the container itsefl has to be connected to the network
 test-local: ;
 
-test-e2e:
-	@echo make test-e2e
+generate-director-examples:
+	@echo make generate-director-examples
 	@docker network create --driver bridge gen-examples-network
 	@docker run $(DOCKER_INTERACTIVE) \
 		-v /var/run/docker.sock:/var/run/docker.sock \

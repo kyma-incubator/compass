@@ -11,12 +11,13 @@ import (
 )
 
 type Application struct {
-	ID             string
-	Tenant         string
-	Name           string
-	Description    *string
-	Status         *ApplicationStatus
-	HealthCheckURL *string
+	ID                  string
+	Tenant              string
+	Name                string
+	Description         *string
+	Status              *ApplicationStatus
+	HealthCheckURL      *string
+	IntegrationSystemID *string
 }
 
 type ApplicationStatus struct {
@@ -42,14 +43,15 @@ type ApplicationPage struct {
 }
 
 type ApplicationCreateInput struct {
-	Name           string
-	Description    *string
-	Labels         map[string]interface{}
-	HealthCheckURL *string
-	Webhooks       []*WebhookInput
-	Apis           []*APIDefinitionInput
-	EventAPIs      []*EventAPIDefinitionInput
-	Documents      []*DocumentInput
+	Name                string
+	Description         *string
+	Labels              map[string]interface{}
+	HealthCheckURL      *string
+	Webhooks            []*WebhookInput
+	Apis                []*APIDefinitionInput
+	EventAPIs           []*EventAPIDefinitionInput
+	Documents           []*DocumentInput
+	IntegrationSystemID *string
 }
 
 func (i *ApplicationCreateInput) ToApplication(timestamp time.Time, condition ApplicationStatusCondition, id, tenant string) *Application {
@@ -58,11 +60,12 @@ func (i *ApplicationCreateInput) ToApplication(timestamp time.Time, condition Ap
 	}
 
 	return &Application{
-		ID:             id,
-		Name:           i.Name,
-		Description:    i.Description,
-		Tenant:         tenant,
-		HealthCheckURL: i.HealthCheckURL,
+		ID:                  id,
+		Name:                i.Name,
+		Description:         i.Description,
+		Tenant:              tenant,
+		HealthCheckURL:      i.HealthCheckURL,
+		IntegrationSystemID: i.IntegrationSystemID,
 		Status: &ApplicationStatus{
 			Condition: condition,
 			Timestamp: timestamp,
@@ -75,9 +78,10 @@ func (i *ApplicationCreateInput) Validate() error {
 }
 
 type ApplicationUpdateInput struct {
-	Name           string
-	Description    *string
-	HealthCheckURL *string
+	Name                string
+	Description         *string
+	HealthCheckURL      *string
+	IntegrationSystemID *string
 }
 
 func (i *ApplicationUpdateInput) Validate() error {

@@ -18,6 +18,7 @@ func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 	_, err := ws.insertInto("cluster").
 		Pair("id", cluster.ID).
 		Pair("terraform_state", cluster.TerraformState).
+		Pair("credentials_secret_name", cluster.CredentialsSecretName).
 		Pair("creation_timestamp", cluster.CreationTimestamp).
 		Exec()
 
@@ -31,8 +32,9 @@ func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberrors.Error {
 	_, err := ws.insertInto("gardener_config").
 		Columns("id", "cluster_id", "project_name", "name", "kubernetes_version",
-			"node_count", "volume_size", "machine_type", "region", "zone", "target_provider",
-			"target_secret", "disk_type", "cidr", "auto_scaler_min", "auto_scaler_max", "max_surge", "max_unavailable").
+			"node_count", "volume_size_gb", "machine_type", "region", "provider", "seed",
+			"target_secret", "disk_type", "worker_cidr", "auto_scaler_min", "auto_scaler_max", "max_surge",
+			"max_unavailable", "provider_specific_config").
 		Record(config).
 		Exec()
 
@@ -45,7 +47,7 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 
 func (ws writeSession) InsertGCPConfig(config model.GCPConfig) dberrors.Error {
 	_, err := ws.insertInto("gcp_config").
-		Columns("id", "cluster_id", "name", "project_name", "kubernetes_version", "number_of_nodes", "boot_disk_size",
+		Columns("id", "cluster_id", "name", "project_name", "kubernetes_version", "number_of_nodes", "boot_disk_size_gb",
 			"machine_type", "zone", "region").
 		Record(config).
 		Exec()

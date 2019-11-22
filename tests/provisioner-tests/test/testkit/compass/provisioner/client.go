@@ -11,7 +11,7 @@ import (
 type Client interface {
 	ProvisionRuntime(runtimeID string, config schema.ProvisionRuntimeInput) (string, error)
 	UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInput) (string, error)
-	DeprovisionRuntime(runtimeID string, input schema.CredentialsInput) (string, error)
+	DeprovisionRuntime(runtimeID string) (string, error)
 	ReconnectRuntimeAgent(runtimeID string) (string, error)
 	GCPRuntimeStatus(runtimeID string) (GCPRuntimeStatus, error)
 	RuntimeOperationStatus(operationID string) (schema.OperationStatus, error)
@@ -65,17 +65,12 @@ func (c client) UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInp
 	return operationId, nil
 }
 
-func (c client) DeprovisionRuntime(runtimeID string, input schema.CredentialsInput) (string, error) {
-	credentialsInput, err := c.graphqlizer.CredentialsInputToGraphQL(input)
-	if err != nil {
-		return "", errors.Wrap(err, "Failed to deprovision Runtime: Failed to convert Credentials Input to query")
-	}
-
-	query := c.queryProvider.deprovisionRuntime(runtimeID, credentialsInput)
+func (c client) DeprovisionRuntime(runtimeID string) (string, error) {
+	query := c.queryProvider.deprovisionRuntime(runtimeID)
 	req := gcli.NewRequest(query)
 
 	var operationId string
-	err = c.graphQLClient.ExecuteRequest(req, &operationId, "")
+	err := c.graphQLClient.ExecuteRequest(req, &operationId, "")
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to deprovision Runtime")
 	}
@@ -98,9 +93,10 @@ type GCPRuntimeStatus struct {
 	LastOperationStatus     *schema.OperationStatus         `json:"lastOperationStatus"`
 	RuntimeConnectionStatus *schema.RuntimeConnectionStatus `json:"runtimeConnectionStatus"`
 	RuntimeConfiguration    struct {
-		ClusterConfig *schema.GCPConfig  `json:"clusterConfig"`
-		KymaConfig    *schema.KymaConfig `json:"kymaConfig"`
-		Kubeconfig    *string            `json:"kubeconfig"`
+		ClusterConfig         *schema.GCPConfig  `json:"clusterConfig"`
+		KymaConfig            *schema.KymaConfig `json:"kymaConfig"`
+		Kubeconfig            *string            `json:"kubeconfig"`
+		CredentialsSecretName *string            `json:"credentialsSecretName"`
 	} `json:"runtimeConfiguration"`
 }
 

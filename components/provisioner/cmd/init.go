@@ -4,6 +4,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/client"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/configuration"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dbsession"
@@ -34,10 +35,11 @@ func newPersistenceService(connectionString, schemaPath string) (persistence.Ser
 
 func newProvisioningService(persistenceService persistence.Service, secrets v1.SecretInterface) provisioning.Service {
 	hydroformClient := client.NewHydroformClient()
-	hydroformService := hydroform.NewHydroformService(secrets, hydroformClient)
+	hydroformService := hydroform.NewHydroformService(hydroformClient)
 	uuidGenerator := persistence.NewUUIDGenerator()
+	factory := configuration.NewConfigBuilderFactory(secrets)
 
-	return provisioning.NewProvisioningService(persistenceService, uuidGenerator, hydroformService)
+	return provisioning.NewProvisioningService(persistenceService, uuidGenerator, hydroformService, factory)
 }
 
 func newSecretsInterface(namespace string) (v1.SecretInterface, error) {

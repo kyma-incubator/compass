@@ -1,20 +1,30 @@
 package provisioning
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
-func runtimeConfigFromInput(runtimeID string, input gqlschema.ProvisionRuntimeInput, uuidGenerator persistence.UUIDGenerator) model.RuntimeConfig {
+func runtimeConfigFromInput(runtimeID string, input gqlschema.ProvisionRuntimeInput, uuidGenerator persistence.UUIDGenerator) (model.RuntimeConfig, error) {
 	kymaConfig := kymaConfigFromInput(runtimeID, *input.KymaConfig, uuidGenerator)
 
-	clusterConfig := clusterConfigFromInput(runtimeID, *input.ClusterConfig, uuidGenerator)
+	clusterConfig, err := clusterConfigFromInput(runtimeID, *input.ClusterConfig, uuidGenerator)
+
+	if err != nil {
+		return model.RuntimeConfig{}, err
+	}
 
 	return model.RuntimeConfig{
-		KymaConfig:    kymaConfig,
-		ClusterConfig: clusterConfig,
-	}
+		KymaConfig:            kymaConfig,
+		ClusterConfig:         clusterConfig,
+		CredentialsSecretName: input.Credentials.SecretName,
+	}, nil
 }
 
 func runtimeStatusToGraphQLStatus(status model.RuntimeStatus) *gqlschema.RuntimeStatus {
@@ -35,41 +45,70 @@ func operationStatusToGQLOperationStatus(operation model.Operation) *gqlschema.O
 	}
 }
 
-func clusterConfigFromInput(runtimeID string, input gqlschema.ClusterConfigInput, uuidGenerator persistence.UUIDGenerator) interface{} {
+func clusterConfigFromInput(runtimeID string, input gqlschema.ClusterConfigInput, uuidGenerator persistence.UUIDGenerator) (interface{}, error) {
 	if input.GardenerConfig != nil {
 		config := input.GardenerConfig
 		return gardenerConfigFromInput(runtimeID, *config, uuidGenerator)
 	}
 	if input.GcpConfig != nil {
 		config := input.GcpConfig
-		return gcpConfigFromInput(runtimeID, *config, uuidGenerator)
+		return gcpConfigFromInput(runtimeID, *config, uuidGenerator), nil
 	}
-	return nil
+	return nil, errors.New("cluster config does not match any provider")
 }
 
-func gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput, uuidGenerator persistence.UUIDGenerator) model.GardenerConfig {
+func gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput, uuidGenerator persistence.UUIDGenerator) (model.GardenerConfig, error) {
 	id := uuidGenerator.New()
 
-	return model.GardenerConfig{
-		ID:                id,
-		Name:              input.Name,
-		ProjectName:       input.ProjectName,
-		KubernetesVersion: input.KubernetesVersion,
-		NodeCount:         input.NodeCount,
-		VolumeSize:        input.VolumeSize,
-		DiskType:          input.DiskType,
-		MachineType:       input.MachineType,
-		TargetProvider:    input.TargetProvider,
-		TargetSecret:      input.TargetSecret,
-		Cidr:              input.Cidr,
-		Region:            input.Region,
-		Zone:              input.Zone,
-		AutoScalerMin:     input.AutoScalerMin,
-		AutoScalerMax:     input.AutoScalerMax,
-		MaxSurge:          input.MaxSurge,
-		MaxUnavailable:    input.MaxUnavailable,
-		ClusterID:         runtimeID,
+	providerSpecificConfig, err := providerSpecificConfigFromInput(input.ProviderSpecificConfig)
+
+	if err != nil {
+		return model.GardenerConfig{}, err
 	}
+
+	return model.GardenerConfig{
+		ID:                     id,
+		Name:                   input.Name,
+		ProjectName:            input.ProjectName,
+		KubernetesVersion:      input.KubernetesVersion,
+		NodeCount:              input.NodeCount,
+		VolumeSizeGB:           input.VolumeSizeGb,
+		DiskType:               input.DiskType,
+		MachineType:            input.MachineType,
+		Provider:               input.Provider,
+		Seed:                   input.Seed,
+		TargetSecret:           input.TargetSecret,
+		WorkerCidr:             input.WorkerCidr,
+		Region:                 input.Region,
+		AutoScalerMin:          input.AutoScalerMin,
+		AutoScalerMax:          input.AutoScalerMax,
+		MaxSurge:               input.MaxSurge,
+		MaxUnavailable:         input.MaxUnavailable,
+		ClusterID:              runtimeID,
+		ProviderSpecificConfig: providerSpecificConfig,
+	}, nil
+}
+
+func providerSpecificConfigFromInput(input *gqlschema.ProviderSpecificInput) (string, error) {
+	var providerConfig interface{}
+
+	if input.GcpConfig != nil {
+		providerConfig = input.GcpConfig
+	}
+	if input.AzureConfig != nil {
+		providerConfig = input.AzureConfig
+	}
+	if input.AwsConfig != nil {
+		providerConfig = input.AwsConfig
+	}
+
+	providerConfigJson, err := json.Marshal(providerConfig)
+
+	if err != nil {
+		return "", errors.New(fmt.Sprintf("failed to build provider specific config: %s", err.Error()))
+	}
+
+	return string(providerConfigJson), nil
 }
 
 func gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfigInput, uuidGenerator persistence.UUIDGenerator) model.GCPConfig {
@@ -86,7 +125,7 @@ func gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfigInput, uuidGe
 		ProjectName:       input.ProjectName,
 		KubernetesVersion: input.KubernetesVersion,
 		NumberOfNodes:     input.NumberOfNodes,
-		BootDiskSize:      input.BootDiskSize,
+		BootDiskSizeGB:    input.BootDiskSizeGb,
 		MachineType:       input.MachineType,
 		Region:            input.Region,
 		Zone:              zone,
@@ -137,9 +176,10 @@ func runtimeAgentConnectionStatusToGraphQLStatus(status model.RuntimeAgentConnec
 
 func runtimeConfigurationToGraphQLConfiguration(config model.RuntimeConfig) *gqlschema.RuntimeConfig {
 	return &gqlschema.RuntimeConfig{
-		ClusterConfig: clusterConfigToGraphQLConfig(config.ClusterConfig),
-		KymaConfig:    kymaConfigToGraphQLConfig(config.KymaConfig),
-		Kubeconfig:    config.Kubeconfig,
+		ClusterConfig:         clusterConfigToGraphQLConfig(config.ClusterConfig),
+		KymaConfig:            kymaConfigToGraphQLConfig(config.KymaConfig),
+		Kubeconfig:            config.Kubeconfig,
+		CredentialsSecretName: &config.CredentialsSecretName,
 	}
 }
 
@@ -158,24 +198,48 @@ func clusterConfigToGraphQLConfig(config interface{}) gqlschema.ClusterConfig {
 
 func gardenerConfigToGraphQLConfig(config model.GardenerConfig) gqlschema.ClusterConfig {
 
+	providerSpecificConfig := providerSpecificConfigToGQLConfig(config.ProviderSpecificConfig)
+
 	return gqlschema.GardenerConfig{
-		Name:              &config.Name,
-		ProjectName:       &config.ProjectName,
-		KubernetesVersion: &config.KubernetesVersion,
-		NodeCount:         &config.NodeCount,
-		DiskType:          &config.DiskType,
-		VolumeSize:        &config.VolumeSize,
-		MachineType:       &config.MachineType,
-		TargetProvider:    &config.TargetProvider,
-		TargetSecret:      &config.TargetSecret,
-		Cidr:              &config.Cidr,
-		Region:            &config.Region,
-		Zone:              &config.Zone,
-		AutoScalerMin:     &config.AutoScalerMin,
-		AutoScalerMax:     &config.AutoScalerMax,
-		MaxSurge:          &config.MaxSurge,
-		MaxUnavailable:    &config.MaxUnavailable,
+		Name:                   &config.Name,
+		ProjectName:            &config.ProjectName,
+		KubernetesVersion:      &config.KubernetesVersion,
+		NodeCount:              &config.NodeCount,
+		DiskType:               &config.DiskType,
+		VolumeSizeGb:           &config.VolumeSizeGB,
+		MachineType:            &config.MachineType,
+		Provider:               &config.Provider,
+		Seed:                   &config.Seed,
+		TargetSecret:           &config.TargetSecret,
+		WorkerCidr:             &config.WorkerCidr,
+		Region:                 &config.Region,
+		AutoScalerMin:          &config.AutoScalerMin,
+		AutoScalerMax:          &config.AutoScalerMax,
+		MaxSurge:               &config.MaxSurge,
+		MaxUnavailable:         &config.MaxUnavailable,
+		ProviderSpecificConfig: providerSpecificConfig,
 	}
+}
+
+func providerSpecificConfigToGQLConfig(config string) gqlschema.ProviderSpecificConfig {
+	var gcpProviderConfig gqlschema.GCPProviderConfig
+	err := util.DecodeJson(config, &gcpProviderConfig)
+	if err == nil {
+		return gcpProviderConfig
+	}
+
+	var azureProviderConfig gqlschema.AzureProviderConfig
+	err = util.DecodeJson(config, &azureProviderConfig)
+	if err == nil {
+		return azureProviderConfig
+	}
+
+	var awsProviderConfig gqlschema.AWSProviderConfig
+	err = util.DecodeJson(config, &awsProviderConfig)
+	if err == nil {
+		return awsProviderConfig
+	}
+	return nil
 }
 
 func gcpConfigToGraphQLConfig(config model.GCPConfig) gqlschema.ClusterConfig {
@@ -184,7 +248,7 @@ func gcpConfigToGraphQLConfig(config model.GCPConfig) gqlschema.ClusterConfig {
 		ProjectName:       &config.ProjectName,
 		KubernetesVersion: &config.KubernetesVersion,
 		NumberOfNodes:     &config.NumberOfNodes,
-		BootDiskSize:      &config.BootDiskSize,
+		BootDiskSizeGb:    &config.BootDiskSizeGB,
 		MachineType:       &config.MachineType,
 		Region:            &config.Region,
 		Zone:              &config.Zone,

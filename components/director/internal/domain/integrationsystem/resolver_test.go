@@ -589,7 +589,6 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 			},
 			OAuth20SvcFn: func() *automock.OAuth20Service {
 				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", txtest.CtxWithDBMatcher(), testAuths).Return(nil)
 				return svc
 			},
 			ExpectedError: testError,
@@ -635,7 +634,6 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 			},
 			OAuth20SvcFn: func() *automock.OAuth20Service {
 				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", txtest.CtxWithDBMatcher(), testAuths).Return(nil)
 				return svc
 			},
 			ExpectedError: testError,
@@ -665,10 +663,11 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 		},
 		{
 			Name: "Return error when deleting oauth credential failed ",
-			TxFn: txGen.ThatDoesntExpectCommit,
+			TxFn: txGen.ThatSucceeds,
 			IntSysSvcFn: func() *automock.IntegrationSystemService {
 				svc := &automock.IntegrationSystemService{}
 				svc.On("Get", txtest.CtxWithDBMatcher(), "foo").Return(modelIntSys, nil).Once()
+				svc.On("Delete", txtest.CtxWithDBMatcher(), testID).Return(nil).Once()
 				return svc
 			},
 			IntSysConvFn: func() *automock.IntegrationSystemConverter {

@@ -6,7 +6,12 @@ import (
 
 	"github.com/99designs/gqlgen/api"
 	"github.com/99designs/gqlgen/codegen/config"
-	"github.com/kyma-incubator/compass/components/director/hack/scopesdecorator"
+	"github.com/kyma-incubator/compass/components/director/hack/plugins/descriptionsdecorator"
+	"github.com/kyma-incubator/compass/components/director/hack/plugins/scopesdecorator"
+)
+
+const (
+	examplesDirectory = "../../examples"
 )
 
 func main() {
@@ -17,7 +22,7 @@ func main() {
 	}
 
 	err = api.Generate(cfg,
-		api.AddPlugin(scopesdecorator.NewPlugin("schema.graphql")))
+		api.AddPlugin(scopesdecorator.NewPlugin("schema.graphql")), api.AddPlugin(descriptionsdecorator.NewPlugin("schema.graphql", examplesDirectory)))
 
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())

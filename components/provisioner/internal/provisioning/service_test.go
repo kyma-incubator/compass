@@ -3,6 +3,8 @@ package provisioning
 import (
 	"testing"
 
+	configMock "github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/configuration/mocks"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/mocks"
@@ -20,13 +22,15 @@ func TestService_ProvisionRuntime(t *testing.T) {
 	hydroformMock := &mocks.Service{}
 	persistenceServiceMock := &persistenceMocks.Service{}
 	uuidGenerator := &persistenceMocks.UUIDGenerator{}
+	factory := &configMock.BuilderFactory{}
+	builder := &configMock.Builder{}
 
 	clusterConfig := &gqlschema.ClusterConfigInput{
 		GcpConfig: &gqlschema.GCPConfigInput{
 			Name:              "Something",
 			ProjectName:       "Project",
 			NumberOfNodes:     3,
-			BootDiskSize:      "256",
+			BootDiskSizeGb:    256,
 			MachineType:       "machine",
 			Region:            "region",
 			Zone:              new(string),
@@ -52,8 +56,9 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		persistenceServiceMock.On("Update", runtimeID, "", "").Return(nil)
 		persistenceServiceMock.On("SetAsSucceeded", expOperationID).Return(nil)
 		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: "", State: ""}, nil)
+		factory.On("NewProvisioningBuilder", mock.Anything).Return(builder)
 
-		service := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock)
+		service := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock, factory)
 
 		//when
 		operationID, finished, err := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: &gqlschema.CredentialsInput{}, KymaConfig: kymaConfig})
@@ -79,8 +84,9 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		persistenceServiceMock.On("Update", runtimeID, "", "").Return(nil)
 		persistenceServiceMock.On("SetAsSucceeded", expOperationID).Return(nil)
 		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: "", State: ""}, nil)
+		factory.On("NewProvisioningBuilder", mock.Anything).Return(builder)
 
-		service := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock)
+		service := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock, factory)
 
 		//when
 		operationID, finished, err := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: &gqlschema.CredentialsInput{}, KymaConfig: kymaConfig})
@@ -101,7 +107,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		persistenceServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{}, nil)
 		uuidGenerator := &persistenceMocks.UUIDGenerator{}
 
-		service := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock)
+		service := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock, factory)
 
 		//when
 		_, _, err := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: &gqlschema.CredentialsInput{}, KymaConfig: kymaConfig})
@@ -117,6 +123,8 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 	persistenceServiceMock := &persistenceMocks.Service{}
 	hydroformMock := &mocks.Service{}
 	uuidGenerator := &persistenceMocks.UUIDGenerator{}
+	factory := &configMock.BuilderFactory{}
+	builder := &configMock.Builder{}
 
 	runtimeConfig := model.RuntimeConfig{
 		ClusterConfig: model.GCPConfig{},
@@ -136,11 +144,12 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		persistenceServiceMock.On("GetClusterData", runtimeID).Return(model.Cluster{TerraformState: "{}"}, nil)
 		persistenceServiceMock.On("SetAsSucceeded", expOperationID).Return(nil)
 		hydroformMock.On("DeprovisionCluster", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		factory.On("NewDeprovisioningBuilder", mock.Anything).Return(builder)
 
-		resolver := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock)
+		resolver := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock, factory)
 
 		//when
-		opt, finished, err := resolver.DeprovisionRuntime(runtimeID, gqlschema.CredentialsInput{})
+		opt, finished, err := resolver.DeprovisionRuntime(runtimeID)
 		require.NoError(t, err)
 
 		waitUntilFinished(finished)
@@ -161,10 +170,10 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 
 		persistenceServiceMock.On("GetStatus", runtimeID).Return(runtimeStatus, nil)
 
-		resolver := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock)
+		resolver := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock, factory)
 
 		//when
-		_, _, err := resolver.DeprovisionRuntime(runtimeID, gqlschema.CredentialsInput{})
+		_, _, err := resolver.DeprovisionRuntime(runtimeID)
 
 		//then
 		require.Error(t, err)
@@ -178,6 +187,7 @@ func TestService_RuntimeOperationStatus(t *testing.T) {
 	persistenceServiceMock := &persistenceMocks.Service{}
 	hydroformMock := &mocks.Service{}
 	uuidGenerator := &persistenceMocks.UUIDGenerator{}
+	factory := &configMock.BuilderFactory{}
 
 	t.Run("Should return operation status", func(t *testing.T) {
 		//given
@@ -193,7 +203,7 @@ func TestService_RuntimeOperationStatus(t *testing.T) {
 		}
 
 		persistenceServiceMock.On("Get", operationID).Return(operation, nil)
-		resolver := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock)
+		resolver := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock, factory)
 
 		//when
 		status, err := resolver.RuntimeOperationStatus(operationID)

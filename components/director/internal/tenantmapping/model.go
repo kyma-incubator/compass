@@ -123,3 +123,19 @@ func (d *ReqData) GetScopes() (string, error) {
 
 	return "", apperrors.NewKeyDoesNotExistError(ScopesKey)
 }
+
+type ObjectContext struct {
+	Scopes     string
+	TenantID   string
+	ObjectID   string
+	ObjectType string
+}
+
+func NewObjectContext(scopes, tenantID, objID, objType string) ObjectContext {
+	return ObjectContext{
+		Scopes:     scopes,
+		TenantID:   tenantID,
+		ObjectID:   objID,
+		ObjectType: objType,
+	}
+}

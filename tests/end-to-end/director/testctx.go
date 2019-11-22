@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/gql"
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/avast/retry-go"
@@ -30,8 +32,8 @@ func init() {
 
 // testContext contains dependencies that help executing tests
 type testContext struct {
-	graphqlizer       graphqlizer
-	gqlFieldsProvider gqlFieldsProvider
+	graphqlizer       gql.Graphqlizer
+	gqlFieldsProvider gql.GqlFieldsProvider
 	currentScopes     []string
 	cli               *gcli.Client
 }
@@ -46,10 +48,10 @@ func newTestContext() (*testContext, error) {
 	}
 
 	return &testContext{
-		graphqlizer:       graphqlizer{},
-		gqlFieldsProvider: gqlFieldsProvider{},
+		graphqlizer:       gql.Graphqlizer{},
+		gqlFieldsProvider: gql.GqlFieldsProvider{},
 		currentScopes:     currentScopes,
-		cli:               newAuthorizedGraphQLClient(bearerToken),
+		cli:               gql.NewAuthorizedGraphQLClient(bearerToken),
 	}, nil
 }
 
@@ -87,7 +89,7 @@ func (tc *testContext) runCustomOperation(ctx context.Context, tenant string, sc
 		return errors.Wrap(err, "while building JWT token")
 	}
 
-	cli := newAuthorizedGraphQLClient(token)
+	cli := gql.NewAuthorizedGraphQLClient(token)
 	return tc.withRetryOnTemporaryConnectionProblems(func() error { return cli.Run(ctx, req, &m) })
 }
 

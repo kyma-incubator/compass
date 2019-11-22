@@ -17,6 +17,7 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 	desc := "Sample"
 	id := "foo"
 	tenant := "sample"
+	intSysID := "bar"
 	timestamp := time.Now()
 	testCases := []struct {
 		Name     string
@@ -33,14 +34,16 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 						"test": "foo",
 					},
 				},
-				HealthCheckURL: &url,
+				HealthCheckURL:      &url,
+				IntegrationSystemID: &intSysID,
 			},
 			Expected: &model.Application{
-				Name:           "Foo",
-				ID:             id,
-				Tenant:         tenant,
-				Description:    &desc,
-				HealthCheckURL: &url,
+				Name:                "Foo",
+				ID:                  id,
+				Tenant:              tenant,
+				Description:         &desc,
+				HealthCheckURL:      &url,
+				IntegrationSystemID: &intSysID,
 				Status: &model.ApplicationStatus{
 					Timestamp: timestamp,
 					Condition: model.ApplicationStatusConditionUnknown,

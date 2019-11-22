@@ -21,28 +21,28 @@ type ReqDataParser interface {
 	Parse(req *http.Request) (ReqData, error)
 }
 
-//go:generate mockery -name=TenantAndScopesForUserProvider -output=automock -outpkg=automock -case=underscore
-type TenantAndScopesForUserProvider interface {
-	GetTenantAndScopes(reqData ReqData, authID string) (string, string, error)
+//go:generate mockery -name=ObjectContextForUserProvider -output=automock -outpkg=automock -case=underscore
+type ObjectContextForUserProvider interface {
+	GetObjectContext(reqData ReqData, authID string) (ObjectContext, error)
 }
 
-//go:generate mockery -name=TenantAndScopesForSystemAuthProvider -output=automock -outpkg=automock -case=underscore
-type TenantAndScopesForSystemAuthProvider interface {
-	GetTenantAndScopes(ctx context.Context, reqData ReqData, authID string, authFlow AuthFlow) (string, string, error)
+//go:generate mockery -name=ObjectContextForSystemAuthProvider -output=automock -outpkg=automock -case=underscore
+type ObjectContextForSystemAuthProvider interface {
+	GetObjectContext(ctx context.Context, reqData ReqData, authID string, authFlow AuthFlow) (ObjectContext, error)
 }
 
 type Handler struct {
 	reqDataParser       ReqDataParser
 	transact            persistence.Transactioner
-	mapperForUser       TenantAndScopesForUserProvider
-	mapperForSystemAuth TenantAndScopesForSystemAuthProvider
+	mapperForUser       ObjectContextForUserProvider
+	mapperForSystemAuth ObjectContextForSystemAuthProvider
 }
 
 func NewHandler(
 	reqDataParser ReqDataParser,
 	transact persistence.Transactioner,
-	mapperForUser TenantAndScopesForUserProvider,
-	mapperForSystemAuth TenantAndScopesForSystemAuthProvider) *Handler {
+	mapperForUser ObjectContextForUserProvider,
+	mapperForSystemAuth ObjectContextForSystemAuthProvider) *Handler {
 	return &Handler{
 		reqDataParser:       reqDataParser,
 		transact:            transact,
@@ -72,14 +72,16 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 
 	ctx := persistence.SaveToContext(req.Context(), tx)
 
-	tenantID, scopes, err := h.lookupForTenantAndScopes(ctx, reqData)
+	objCtx, err := h.getObjectContext(ctx, reqData)
 	if err != nil {
-		respondWithError(writer, http.StatusInternalServerError, err, "while looking for tenant and scopes data")
+		respondWithError(writer, http.StatusInternalServerError, err, "while getting object context")
 		return
 	}
 
-	reqData.Body.Extra["tenant"] = tenantID
-	reqData.Body.Extra["scope"] = scopes
+	reqData.Body.Extra["tenant"] = objCtx.TenantID
+	reqData.Body.Extra["scope"] = objCtx.Scopes
+	reqData.Body.Extra["objectID"] = objCtx.ObjectID
+	reqData.Body.Extra["objectType"] = objCtx.ObjectType
 
 	writer.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(writer).Encode(reqData.Body)
@@ -89,20 +91,20 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (h *Handler) lookupForTenantAndScopes(ctx context.Context, reqData ReqData) (string, string, error) {
+func (h *Handler) getObjectContext(ctx context.Context, reqData ReqData) (ObjectContext, error) {
 	authID, authFlow, err := reqData.GetAuthID()
 	if err != nil {
-		return "", "", errors.Wrap(err, "while determining the auth ID from the request")
+		return ObjectContext{}, errors.Wrap(err, "while determining the auth ID from the request")
 	}
 
 	switch authFlow {
 	case JWTAuthFlow:
-		return h.mapperForUser.GetTenantAndScopes(reqData, authID)
+		return h.mapperForUser.GetObjectContext(reqData, authID)
 	case OAuth2Flow, CertificateFlow:
-		return h.mapperForSystemAuth.GetTenantAndScopes(ctx, reqData, authID, authFlow)
+		return h.mapperForSystemAuth.GetObjectContext(ctx, reqData, authID, authFlow)
 	}
 
-	return "", "", fmt.Errorf("unknown authentication flow (%s)", authFlow)
+	return ObjectContext{}, fmt.Errorf("unknown authentication flow (%s)", authFlow)
 }
 
 func respondWithError(writer http.ResponseWriter, httpErrorCode int, err error, wrapperStr string) {

@@ -21,12 +21,12 @@
   version = "v1.1.0"
 
 [[projects]]
-  digest = "1:d37f34e1e231ee4b8657d1b6153e2696b1d7341850f648f5d78151d3bc1f677b"
+  digest = "1:a5f0485ed2aad9b9c6a730815d1f2bc92b0acc126d7ee8e36c1a51882fc284f5"
   name = "github.com/Masterminds/semver"
   packages = ["."]
   pruneopts = "UT"
-  revision = "fe7c21038085e01e67044ec1efe3afb1eaa59f75"
-  version = "v3.0.1"
+  revision = "25911d36c978be5eb3e81847734874fd4e1dc6c7"
+  version = "v3.0.2"
 
 [[projects]]
   digest = "1:b565deb585c50ab8e94fe5d6c9903f1495970b97814803e4ab0e70c0a9c87a30"
@@ -37,20 +37,20 @@
   version = "v2.22.0"
 
 [[projects]]
-  digest = "1:786e862ec180708b60ee670723e3edd969fd4309e7b1c315cd7de058ac62a011"
+  digest = "1:35a3c0cb74b67330a1593e1ca2bca87d914c372eb60ebccc0902743d8466e3d6"
   name = "github.com/agnivade/levenshtein"
   packages = ["."]
   pruneopts = "UT"
-  revision = "51b298ff305e72cfd29166dccc3f9878e82f9fdc"
-  version = "v1.0.2"
+  revision = "5f1ee18e3efadffd18ef076ac4181cc92d87188c"
+  version = "v1.0.3"
 
 [[projects]]
-  digest = "1:7c51a593e7593dbbaec61e209bdd04095995362834e4399aaa5a9227c25bb403"
+  digest = "1:6c7e9c6eaab0e5579b85151932e4e11347cd2869a97b2a098b80a872abe561d6"
   name = "github.com/avast/retry-go"
   packages = ["."]
   pruneopts = "UT"
-  revision = "101acd3290b786bf437607d874596e3996484d8d"
-  version = "v2.4.1"
+  revision = "a322e24d96313ab405dec28ad5711f036c6d25a3"
+  version = "v2.4.2"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -112,14 +112,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:77acd73ae7a332ee7603a582bec8343eca417926a3aeff0aad0eacb7d730cfab"
+  digest = "1:b2989d201ae6dc4c70a63676905690aff6e10f76214be4c7d47d9cf7399b2676"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/pkg/graphql",
     "components/director/pkg/scalar",
   ]
   pruneopts = "UT"
-  revision = "b83580e50cc847f3a14a34d9c5c25ad23cbc4696"
+  revision = "9e2e22a1aa1ac215d63bf53c545ee9536c7405fe"
 
 [[projects]]
   branch = "master"
@@ -181,7 +181,7 @@
   version = "v1.4.0"
 
 [[projects]]
-  digest = "1:b4e8aaca88f799355f4ac560bce4293fb85ff21003dd0d5741ca503f7a788e91"
+  digest = "1:831b94be76a8fe3b3b882e52752423070f1b2d7940ecc381cdac66ac01492bfd"
   name = "github.com/vektah/gqlparser"
   packages = [
     ".",
@@ -193,8 +193,16 @@
     "validator/rules",
   ]
   pruneopts = "UT"
-  revision = "05741cdb0871330d8bc980d4afd21ab34eceee83"
-  version = "v1.1.2"
+  revision = "6b4a7854a7ef7ee3f626490d1e2d22a823828fc6"
+  version = "v1.2.0"
+
+[[projects]]
+  digest = "1:bb32a7e267540d9f2d26753426d5e360c5bd858b9b78e26b9f0c99219024d8f5"
+  name = "github.com/vrischmann/envconfig"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "cf601e2565a0a7c7418ed014d28a507be6cb1e45"
+  version = "v1.2.0"
 
 [[projects]]
   branch = "master"
@@ -205,19 +213,30 @@
     "scrypt",
   ]
   pruneopts = "UT"
-  revision = "87dc89f01550277dc22b74ffcf4cd89fa2f40f4c"
+  revision = "497ca9f6d64f9bb73048a960b4098309edcd2205"
 
 [[projects]]
   branch = "master"
-  digest = "1:70b2bf25c4ed23c61dae668e4151d87a7edc5965bc3ccfecd1b9fe5f1752092a"
+  digest = "1:46cdc35c1813b1ebcb372087e78ff161f1bafee8ecd268a54f21d15c5fcfdc0a"
+  name = "golang.org/x/net"
+  packages = [
+    "html",
+    "html/atom",
+  ]
+  pruneopts = "UT"
+  revision = "fc4aabc6c91483155dade6fbb627cc953a723260"
+
+[[projects]]
+  branch = "master"
+  digest = "1:fc96eb481f72e9a5edeb4bb3f3610d3b9384c036f7c1e39f8c0dedff23d0c34d"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "3e7259c5e7c2076bb2728047a3df75adb1bad8e5"
+  revision = "e882bf8e40c23f260d489ef820e5e8eead5e76e3"
 
 [[projects]]
   branch = "master"
-  digest = "1:4a21d6d41ed21f6461f9eee7b2072af459cbf74d1fb9beed92fff71ea4e3de5a"
+  digest = "1:b8c0ebe25da393d35060d76c38af904d5689eb63de8b76898747c641aff4c2df"
   name = "golang.org/x/tools"
   packages = [
     "cmd/goimports",
@@ -235,15 +254,15 @@
     "internal/span",
   ]
   pruneopts = "UT"
-  revision = "7178990c25039b756510e51a36380458e3a96487"
+  revision = "07fc4c7f2b9857711f6306c76424246e8d6eab64"
 
 [[projects]]
-  digest = "1:59f10c1537d2199d9115d946927fe31165959a95190849c82ff11e05803528b0"
+  digest = "1:f26a5d382387e03a40d1471dddfba85dfff9bf05352d7e42d37612677c4d3c5c"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   pruneopts = "UT"
-  revision = "f221b8435cfb71e54062f6c6e99e9ade30b124d5"
-  version = "v2.2.4"
+  revision = "f90ceb4f409096b60e2e9076b38b304b8246e5fa"
+  version = "v2.2.5"
 
 [solve-meta]
   analyzer-name = "dep"
@@ -260,6 +279,8 @@
     "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/require",
+    "github.com/vrischmann/envconfig",
+    "golang.org/x/net/html",
     "golang.org/x/tools/cmd/goimports",
   ]
   solver-name = "gps-cdcl"

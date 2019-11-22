@@ -20,7 +20,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			Name:              "Something",
 			ProjectName:       "Project",
 			NumberOfNodes:     3,
-			BootDiskSize:      "256",
+			BootDiskSizeGb:    256,
 			MachineType:       "machine",
 			Region:            "region",
 			Zone:              new(string),
@@ -103,14 +103,12 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 		provisioningService := &mocks.Service{}
 		provisioner := NewResolver(provisioningService)
 
-		credentials := gqlschema.CredentialsInput{SecretName: "secretName"}
-
 		expectedID := "ec781980-0533-4098-aab7-96b535569732"
 
-		provisioningService.On("DeprovisionRuntime", runtimeID, credentials).Return(expectedID, nil, nil)
+		provisioningService.On("DeprovisionRuntime", runtimeID).Return(expectedID, nil, nil)
 
 		//when
-		operationID, err := provisioner.DeprovisionRuntime(ctx, runtimeID, credentials)
+		operationID, err := provisioner.DeprovisionRuntime(ctx, runtimeID)
 
 		//then
 		require.NoError(t, err)
@@ -122,12 +120,10 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 		provisioningService := &mocks.Service{}
 		provisioner := NewResolver(provisioningService)
 
-		credentials := gqlschema.CredentialsInput{SecretName: "secretName"}
-
-		provisioningService.On("DeprovisionRuntime", runtimeID, credentials).Return("", nil, errors.New("Deprovisioning fails because reasons"))
+		provisioningService.On("DeprovisionRuntime", runtimeID).Return("", nil, errors.New("Deprovisioning fails because reasons"))
 
 		//when
-		operationID, err := provisioner.DeprovisionRuntime(ctx, runtimeID, credentials)
+		operationID, err := provisioner.DeprovisionRuntime(ctx, runtimeID)
 
 		//then
 		require.Error(t, err)

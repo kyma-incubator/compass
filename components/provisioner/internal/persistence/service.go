@@ -61,9 +61,10 @@ func (ps persistenceService) GetStatus(runtimeID string) (model.RuntimeStatus, d
 	}
 
 	runtimeConfiguration := model.RuntimeConfig{
-		KymaConfig:    kymaConfig,
-		ClusterConfig: clusterConfig,
-		Kubeconfig:    cluster.Kubeconfig,
+		KymaConfig:            kymaConfig,
+		ClusterConfig:         clusterConfig,
+		Kubeconfig:            cluster.Kubeconfig,
+		CredentialsSecretName: cluster.CredentialsSecretName,
 	}
 
 	return model.RuntimeStatus{
@@ -83,9 +84,10 @@ func (ps persistenceService) SetProvisioningStarted(runtimeID string, runtimeCon
 	timestamp := time.Now()
 
 	cluster := model.Cluster{
-		ID:                runtimeID,
-		CreationTimestamp: timestamp,
-		TerraformState:    "{}",
+		ID:                    runtimeID,
+		CreationTimestamp:     timestamp,
+		CredentialsSecretName: runtimeConfig.CredentialsSecretName,
+		TerraformState:        "{}",
 	}
 
 	err = dbSession.InsertCluster(cluster)

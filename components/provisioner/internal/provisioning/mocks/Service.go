@@ -33,20 +33,20 @@ func (_m *Service) CleanupRuntimeData(id string) (string, error) {
 	return r0, r1
 }
 
-// DeprovisionRuntime provides a mock function with given fields: id, credentials
-func (_m *Service) DeprovisionRuntime(id string, credentials gqlschema.CredentialsInput) (string, <-chan struct{}, error) {
-	ret := _m.Called(id, credentials)
+// DeprovisionRuntime provides a mock function with given fields: id
+func (_m *Service) DeprovisionRuntime(id string) (string, <-chan struct{}, error) {
+	ret := _m.Called(id)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string, gqlschema.CredentialsInput) string); ok {
-		r0 = rf(id, credentials)
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(id)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 <-chan struct{}
-	if rf, ok := ret.Get(1).(func(string, gqlschema.CredentialsInput) <-chan struct{}); ok {
-		r1 = rf(id, credentials)
+	if rf, ok := ret.Get(1).(func(string) <-chan struct{}); ok {
+		r1 = rf(id)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(<-chan struct{})
@@ -54,8 +54,8 @@ func (_m *Service) DeprovisionRuntime(id string, credentials gqlschema.Credentia
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(string, gqlschema.CredentialsInput) error); ok {
-		r2 = rf(id, credentials)
+	if rf, ok := ret.Get(2).(func(string) error); ok {
+		r2 = rf(id)
 	} else {
 		r2 = ret.Error(2)
 	}
