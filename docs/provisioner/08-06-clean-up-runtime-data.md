@@ -15,7 +15,7 @@ To clean up Runtime data for a given Runtime, make a call to the Runtime Provisi
 mutation { cleanupRuntimeData(id: "61d1841b-ccb5-44ed-a9ec-45f70cd1b0d3")}
 ```
 
-A successful call returns the ID of the wiped-out Runtime:
+A successful call returns the ID of the wiped Runtime:
 
 ```graphql
 {
