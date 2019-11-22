@@ -13,7 +13,7 @@ API Consumer - Application / Runtime / Integration System / User
 
 RuntimeAgent wants to read auth details for application's API.
 The RuntimeAgent should be allowed to read field `auth` only with his own ID.
-In this case we will use new directive `limitAccessFor` and `limitIntegrationSystemAccessTo`.
+In this case we will use new directive `limitAccessFor` and `limitManagerAccessTo`.
 
 ### Restrict access to `application { auths }`
 
@@ -38,7 +38,7 @@ When Integration System request specific Application/Runtime, it should be able 
 To achieve those restrictions the following solution is proposed:
 
 ### Add information about API consumer in Tenant Mapping service
-Tenant Mapping Service adds 2 items to the JWT token
+We can use information which is added in Tenant Mapping Service to JWT [PR](https://github.com/kyma-incubator/compass/pull/475):
 1. Object Type, service is able to determine who calls the API, whether it is Application, Runtime or IntegrationSystem
 2. Object ID of caller
 
@@ -67,7 +67,7 @@ The proposed directive does following things:
 
 Currently we cannot use this directive on query param: [issue](https://github.com/99designs/gqlgen/issues/760).
 
-### Directive `limitIntegrationSystemAccessTo`
+### Directive `limitManagerAccessTo`
 This directive will limit access to application/runtime resolvers managed by integration system
 
 Proposed directive:
@@ -77,7 +77,7 @@ enum managedResourceType {
     APPLICATION
 }
 
-directive @limitIntegrationSystemAccessTo(managedResourceType: managedResourceType!, idField: String!) on FIELD_DEFINITION
+directive @limitManagerAccessTo(managedResourceType: managedResourceType!, idField: String!) on FIELD_DEFINITION
 ```
 
 The proposed directive does following things:
@@ -89,7 +89,7 @@ If integration system doesn't manage the application/runtime, the following erro
 Currently we cannot use this directive on query param ( https://github.com/99designs/gqlgen/issues/760).
 
 ### Database schema change
-Every resource managed by integration system have to have column with reference to integration system table record.
+Every resource managed by integration system have to be reachable from integration system perspective.
 
 ### New scopes
 
@@ -130,7 +130,10 @@ type Query {
     ...   
     integrationSystem(id: ID!): IntegrationSystem @hasScopes(path: "graphql.query.integrationSystem") @limitAccessFor(consumerType: INTEGRATION_SYSTEM, idField: "id")
     runtime(id: ID!): Runtime @hasScopes(path: "graphql.query.runtime") @limitAccessFor(consumerType: RUNTIME, idField: "id")
-    application(id: ID!): Application @hasScopes(path: "graphql.query.application") @limitAccessFor(consumerType: APPLICATION, idField: "id")
+    application(id: ID!): Application @hasScopes(path: "graphql.query.application") 
+        @limitAccessFor(consumerType: APPLICATION, idField: "id")
+        @limitManagerAccessTo(managedResourceType: APPLICATION, idField: "id")
+
 
     applicationsForRuntime(runtimeID: ID!, first: Int = 100, after: PageCursor): ApplicationPage! 
         @hasScopes(path: "graphql.query.applicationsForRuntime")
@@ -161,18 +164,18 @@ the Runtime Agent will get an error `Access Denied`, because the IDs are differe
     * When IntegrationSystem with ID `ABCD` executes query `applicationsForRuntime` with param `runtimeID` equal to `DCBA`, 
 The directive doesn't compare anything, because it's only turn on for the `RUNTIME`.
 
-### Example flow for applications with limitIntegrationSystemAccessTo directive
+### Example flow for applications with limitManagerAccessTo directive
 Example based on `application(id)` flow.
-In this case besides `limitAccessFor` directive we are also going to apply `limitIntegrationSystemAccessTo`.
+In this case besides `limitAccessFor` directive we are also going to apply `limitManagerAccessTo`.
 
-We add `limitIntegrationSystemAccessTo` directive to `application` query:
+We add `limitManagerAccessTo` directive to `application` query:
 
 ```graphql
 type Query {
     application(id: ID!): Application!
     @hasScopes(path: "graphql.query.applicationsForRuntime")
     @limitAccessFor(consumerType: APPLICATION, idField: "id")  
-    @limitIntegrationSystemAccessTo(managedResourceType: APPLICATION, idField: "id")  
+    @limitManagerAccessTo(managedResourceType: APPLICATION, idField: "id")  
 }
 ```
 
@@ -180,5 +183,5 @@ Execution flow:
 1. Integration system asks for application with id `DCBA`
 1. Tenant Mapping Service recognize API consumer, then add `ID` and `consumerType` to JWT token.
 2. Directive `limitAccessFor` allows the request because consumer is not an application.
-3. Directive `limitIntegrationSystemAccessTo` is executed.
+3. Directive `limitManagerAccessTo` is executed.
    The directive checks if given application is managed by integration system, if yes the request is allowed, in other case the `Access Denied` error is returned.
