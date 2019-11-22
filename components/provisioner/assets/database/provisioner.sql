@@ -81,6 +81,16 @@ CREATE TABLE operation
     foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE
 );
 
+-- Kyma Release
+
+CREATE TABLE kyma_release
+(
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    version varchar(256) NOT NULL,
+    tiller_yaml text NOT NULL,
+    installer_yaml text NOT NULL,
+    unique(version)
+);
 
 -- Kyma Config
 
@@ -88,9 +98,11 @@ CREATE TABLE kyma_config
 (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     version varchar(256) NOT NULL,
+    release_id uuid, --TODO: Delete 'version' column and add 'NOT NULL' here
     cluster_id uuid NOT NULL,
     UNIQUE(cluster_id),
-    foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE
+    foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE,
+    foreign key (release_id) REFERENCES kyma_release (id) ON DELETE RESTRICT
 );
 
 CREATE TABLE kyma_config_module
