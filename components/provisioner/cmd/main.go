@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -30,6 +31,11 @@ type config struct {
 		SSLMode  string `envconfig:"default=disable"`
 
 		SchemaFilePath string `envconfig:"default=assets/database/provisioner.sql"`
+	}
+
+	Installation struct {
+		Timeout                     time.Duration `envconfig:"default=30m"`
+		ErrorsCountFailureThreshold int           `envconfig:"default=5"`
 	}
 }
 

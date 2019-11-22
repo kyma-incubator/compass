@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"k8s.io/client-go/tools/clientcmd"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence"
@@ -35,16 +39,18 @@ type Service interface {
 }
 
 type service struct {
-	persistenceService persistence.Service
-	hydroform          hydroform.Service
-	uuidGenerator      uuid.UUIDGenerator
+	persistenceService  persistence.Service
+	hydroform           hydroform.Service
+	installationService installation.Service
+	uuidGenerator       uuid.UUIDGenerator
 }
 
-func NewProvisioningService(persistenceService persistence.Service, uuidGenerator uuid.UUIDGenerator, hydroform hydroform.Service) Service {
+func NewProvisioningService(persistenceService persistence.Service, uuidGenerator uuid.UUIDGenerator, hydroform hydroform.Service, installationService installation.Service) Service {
 	return &service{
-		persistenceService: persistenceService,
-		hydroform:          hydroform,
-		uuidGenerator:      uuidGenerator,
+		persistenceService:  persistenceService,
+		hydroform:           hydroform,
+		installationService: installationService,
+		uuidGenerator:       uuidGenerator,
 	}
 }
 
@@ -175,15 +181,39 @@ func (r *service) startProvisioning(operationID, runtimeID string, config model.
 		return
 	}
 
+	err = r.persistenceService.Update(runtimeID, info.KubeConfig, info.State)
+	if err != nil {
+		log.Errorf("Failed to update runtime with status")
+		r.setOperationAsFailed(operationID, err.Error())
+		return
+	}
+
 	log.Infof("Runtime %s provisioned successfully. Starting Kyma installation...", runtimeID)
 
-	// TODO - trigger installation
+	kubeconfig, err := clientcmd.NewClientConfigFromBytes([]byte(info.KubeConfig))
+	if err != nil {
+		log.Errorf("Error provisioning runtime %s: %s", runtimeID, err.Error())
+		r.setOperationAsFailed(operationID, err.Error())
+		return
+	}
+
+	clientConfig, err := kubeconfig.ClientConfig()
+	if err != nil {
+		log.Errorf("Error provisioning runtime %s: %s", runtimeID, err.Error())
+		r.setOperationAsFailed(operationID, err.Error())
+		return
+	}
+
+	err = r.installationService.InstallKyma(clientConfig, config.KymaConfig.Version)
+	if err != nil {
+		log.Errorf("Error installing Kyma on runtime %s: %s", runtimeID, err.Error())
+		r.setOperationAsFailed(operationID, err.Error())
+		return
+	}
+
+	log.Infof("Kyma installed successfully on %s Runtime", runtimeID)
 
 	updateOperationStatus(func() error {
-		err := r.persistenceService.Update(runtimeID, info.KubeConfig, info.State)
-		if err != nil {
-			return r.persistenceService.SetAsFailed(operationID, err.Error())
-		}
 		return r.persistenceService.SetAsSucceeded(operationID)
 	})
 }

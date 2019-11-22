@@ -4,11 +4,13 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/client"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
-	persistence2 "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
+	installation2 "github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/pkg/errors"
 
 	"path/filepath"
@@ -21,7 +23,7 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-func newPersistenceService(connectionString, schemaPath string) (persistence2.Service, error) {
+func newPersistenceService(connectionString, schemaPath string) (persistence.Service, error) {
 	connection, err := database.InitializeDatabase(connectionString, schemaPath)
 	if err != nil {
 		return nil, err
@@ -30,15 +32,16 @@ func newPersistenceService(connectionString, schemaPath string) (persistence2.Se
 	dbSessionFactory := dbsession.NewFactory(connection)
 	uuidGenerator := uuid.NewUUIDGenerator()
 
-	return persistence2.NewService(dbSessionFactory, uuidGenerator), nil
+	return persistence.NewService(dbSessionFactory, uuidGenerator), nil
 }
 
-func newProvisioningService(persistenceService persistence2.Service, secrets v1.SecretInterface) provisioning.Service {
+func newProvisioningService(config config, persistenceService persistence.Service, secrets v1.SecretInterface, artifactsProvider installation.ArtifactsProvider) provisioning.Service {
 	hydroformClient := client.NewHydroformClient()
 	hydroformService := hydroform.NewHydroformService(secrets, hydroformClient)
 	uuidGenerator := uuid.NewUUIDGenerator()
+	installationService := installation.NewInstallationService(config.Installation.Timeout, artifactsProvider, installation2.NewKymaInstaller, config.Installation.ErrorsCountFailureThreshold)
 
-	return provisioning.NewProvisioningService(persistenceService, uuidGenerator, hydroformService)
+	return provisioning.NewProvisioningService(persistenceService, uuidGenerator, hydroformService, installationService)
 }
 
 func newSecretsInterface(namespace string) (v1.SecretInterface, error) {
