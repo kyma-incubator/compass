@@ -263,7 +263,7 @@ func TestCleanUpRuntimeData(t *testing.T) {
 		persistenceServiceMock.AssertExpectations(t)
 	})
 
-	t.Run("Should pass and return Runtime ID and Clean Up Runtime status when given Runtime gets deleted", func(t *testing.T) {
+	t.Run("Should pass and return Runtime ID and Clean Up Runtime Data status when data for given Runtime gets deleted", func(t *testing.T) {
 		// given
 		runtimeID := "a24142da-1111-4ec2-93e3-e47ccaa6973f"
 		uuidGenerator := &persistenceMocks.UUIDGenerator{}
