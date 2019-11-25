@@ -2075,6 +2075,9 @@ var parsedSchema = gqlparser.MustLoadSchema(
 HasScopes directive is added automatically to every query and mutation by scopesdecorator plugin that is triggerred by gqlgen.sh script.
 """
 directive @hasScopes(path: String!) on FIELD_DEFINITION
+"""
+Validate directive marks mutation arguments that will be validated.
+"""
 directive @validate on ARGUMENT_DEFINITION
 scalar Any
 
