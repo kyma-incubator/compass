@@ -117,7 +117,7 @@ func (ws writeSession) DeleteCluster(runtimeID string) dberrors.Error {
 	val, err := result.RowsAffected()
 
 	if err != nil {
-		return dberrors.Internal("Could not fetch rows affected: %s", err)
+		return dberrors.Internal("Could not fetch the number of rows affected: %s", err)
 	}
 
 	if val == 0 {

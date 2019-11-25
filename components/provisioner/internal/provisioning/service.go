@@ -175,9 +175,16 @@ func (r *service) CleanupRuntimeData(id string) (*gqlschema.CleanUpRuntimeStatus
 			message := fmt.Sprintf("Runtime with ID %s not found in the database", id)
 			return &gqlschema.CleanUpRuntimeStatus{ID: id, Message: &message}, nil
 		}
+
+		if err.Code() == dberrors.CodeInternal {
+			message := fmt.Sprintf("Could not clean data for Runtime with ID %s: %s", id, err)
+			log.Error(message)
+			return nil, errors.New(message)
+		}
 	}
 
-	return &gqlschema.CleanUpRuntimeStatus{ID: id}, err
+	message := fmt.Sprintf("Successfully cleaned up data for Runtime with ID %s", id)
+	return &gqlschema.CleanUpRuntimeStatus{ID: id, Message: &message}, nil
 }
 
 func (r *service) startProvisioning(operationID, runtimeID string, builder configuration.Builder, finished chan<- struct{}) {
