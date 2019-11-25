@@ -65,7 +65,6 @@ func TestHasScope(t *testing.T) {
 		// THEN
 		assert.EqualError(t, err, "while getting required scopes: some error")
 	})
-
 }
 
 func fixGivenError() error {
