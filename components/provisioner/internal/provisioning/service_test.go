@@ -220,7 +220,7 @@ func TestService_RuntimeOperationStatus(t *testing.T) {
 }
 
 func TestCleanUpRuntimeData(t *testing.T) {
-	t.Run("Should fail to get Clean Up Runtime status when Runtime ID not found in database", func(t *testing.T) {
+	t.Run("Should fail to get Clean Up Runtime Data status when Runtime ID not found in database", func(t *testing.T) {
 		// given
 		runtimeID := "a24142da-1111-4ec2-93e3-e47ccaa6973f"
 		uuidGenerator := &persistenceMocks.UUIDGenerator{}
@@ -242,7 +242,7 @@ func TestCleanUpRuntimeData(t *testing.T) {
 		persistenceServiceMock.AssertExpectations(t)
 	})
 
-	t.Run("Should fail to get Clean Up Runtime status when internal database error occurs", func(t *testing.T) {
+	t.Run("Should fail to get Clean Up Runtime Data status when internal database error occurs", func(t *testing.T) {
 		// given
 		runtimeID := "a24142da-1111-4ec2-93e3-e47ccaa6973f"
 		uuidGenerator := &persistenceMocks.UUIDGenerator{}
