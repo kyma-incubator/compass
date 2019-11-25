@@ -219,6 +219,30 @@ func TestService_RuntimeOperationStatus(t *testing.T) {
 	})
 }
 
+func TestCleanUpRuntimeData(t *testing.T) {
+	t.Run("Should fail to get Clean Up Runtime status when Runtime ID not found in database", func(t *testing.T) {
+		// given
+		runtimeID := "a24142da-1111-4ec2-93e3-e47ccaa6973f"
+		uuidGenerator := &persistenceMocks.UUIDGenerator{}
+		hydroformMock := &mocks.Service{}
+		factory := &configMock.BuilderFactory{}
+
+		persistenceServiceMock := &persistenceMocks.Service{}
+		persistenceServiceMock.On("CleanupClusterData", runtimeID).Return(dberrors.NotFound("Could not find given Runtime in database"))
+
+		provisioningService := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock, factory)
+
+		// when
+		result, err := provisioningService.CleanupRuntimeData(runtimeID)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, runtimeID, result.ID)
+		assert.NotEmpty(t, result.Message)
+		persistenceServiceMock.AssertExpectations(t)
+	})
+}
+
 func waitUntilFinished(finished <-chan struct{}) {
 	for {
 		_, ok := <-finished
