@@ -48,17 +48,11 @@ type installationService struct {
 func (s *installationService) InstallKyma(kubeconfigRaw, kymaVersion string) error {
 	kubeconfig, err := clientcmd.NewClientConfigFromBytes([]byte(kubeconfigRaw))
 	if err != nil {
-		//log.Errorf("Error provisioning runtime %s: %s", runtimeID, err.Error())
-		//r.setOperationAsFailed(operationID, err.Error())
-		//return fmt.Errorf("Error provisioning runtime %s: %s", runtimeID, err.Error())
 		return fmt.Errorf("error constructing kubeconfig from raw config: %s", err.Error())
 	}
 
 	clientConfig, err := kubeconfig.ClientConfig()
 	if err != nil {
-		//log.Errorf("Error provisioning runtime %s: %s", runtimeID, err.Error())
-		//r.setOperationAsFailed(operationID, err.Error())
-		//return
 		return fmt.Errorf("failed to get client kubeconfig from parsed config: %s", err.Error())
 	}
 

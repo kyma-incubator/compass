@@ -27,7 +27,7 @@ func (r artifactsRepository) GetArtifacts(version string) (ReleaseArtifacts, dbe
 
 	err := session.
 		Select("id", "version", "tiller_yaml", "installer_yaml").
-		From("kyma_artifacts").
+		From("kyma_release").
 		Where(dbr.Eq("version", version)).
 		LoadOne(&artifacts)
 
@@ -46,7 +46,7 @@ func (r artifactsRepository) SaveArtifacts(artifacts ReleaseArtifacts) (ReleaseA
 
 	session := r.connection.NewSession(nil)
 
-	_, err := session.InsertInto("kyma_artifacts").
+	_, err := session.InsertInto("kyma_release").
 		Columns("id", "version", "tiller_yaml", "installer_yaml").
 		Record(artifacts).
 		Exec()
