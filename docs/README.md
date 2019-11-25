@@ -46,4 +46,5 @@ Here you can read about the conducted investigations:
 - [Storage - SQL Toolbox](./investigations/storage/sql-toolbox/sql-toolbox.md)
 - [GraphQL - File Upload](./investigations/graphql-file-upload/file-upload-with-graphql.md)
 - [GraphQL - Mutation for updating complex types](./investigations/graphql-complex-updates/graphql-complex-updates.md)
+- [GraphQL - Secure Resolvers](./investigations/secure-resolvers/secure-resolvers.md)
 - [Documentation - Generating static page for our schema](./investigations/api-documentation/generate-api-documentation.md)
