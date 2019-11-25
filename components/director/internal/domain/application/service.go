@@ -235,9 +235,13 @@ func (s *service) Create(ctx context.Context, in model.ApplicationCreateInput) (
 		return "", errors.Wrap(err, "while validating Application input")
 	}
 
-	err = s.ensureIntSysExists(ctx, in.IntegrationSystemID)
+	exists, err := s.ensureIntSysExists(ctx, in.IntegrationSystemID)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "while ensuring integration system exists")
+	}
+
+	if !exists {
+		return "", errors.New(fmt.Sprintf("while ensuring integration system exists: Integration System with ID: %s does not exist", *in.IntegrationSystemID))
 	}
 
 	id := s.uidService.Generate()
@@ -283,9 +287,13 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 		return err
 	}
 
-	err = s.ensureIntSysExists(ctx, in.IntegrationSystemID)
+	exists, err := s.ensureIntSysExists(ctx, in.IntegrationSystemID)
 	if err != nil {
 		return errors.Wrap(err, "while validating Integration System ID")
+	}
+
+	if !exists {
+		return errors.New(fmt.Sprintf("integration System with ID: %s does not exist", *in.IntegrationSystemID))
 	}
 
 	app, err := s.Get(ctx, id)
@@ -551,18 +559,18 @@ func createLabel(key string, value string, objectID string) *model.LabelInput {
 	}
 }
 
-func (s *service) ensureIntSysExists(ctx context.Context, id *string) error {
+func (s *service) ensureIntSysExists(ctx context.Context, id *string) (bool, error) {
 	if id == nil {
-		return nil
+		return true, nil
 	}
 
 	exists, err := s.intSystemRepo.Exists(ctx, *id)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	if !exists {
-		return errors.New(fmt.Sprintf("Integration System with ID: %s does not exist", *id))
+		return false, nil
 	}
-	return nil
+	return true, nil
 }

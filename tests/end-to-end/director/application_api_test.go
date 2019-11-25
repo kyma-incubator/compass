@@ -22,7 +22,7 @@ const (
 	updateWebhookCategory     = "update webhook"
 )
 
-var sampleUUID = "69230297-3c81-4711-aac2-3afa8cb42e2d"
+var integrationSystemID = "69230297-3c81-4711-aac2-3afa8cb42e2d"
 
 func TestCreateApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	// GIVEN
@@ -1265,7 +1265,7 @@ func fixSampleApplicationCreateInputWithName(placeholder, name string) graphql.A
 
 func fixSampleApplicationCreateInputWithIntegrationSystem(placeholder string) graphql.ApplicationCreateInput {
 	sampleInput := fixSampleApplicationCreateInput(placeholder)
-	sampleInput.IntegrationSystemID = &sampleUUID
+	sampleInput.IntegrationSystemID = &integrationSystemID
 	return sampleInput
 }
 
@@ -1282,7 +1282,7 @@ func fixSampleApplicationUpdateInputWithIntegrationSystem(placeholder string) gr
 		Name:                placeholder,
 		Description:         &placeholder,
 		HealthCheckURL:      &placeholder,
-		IntegrationSystemID: &sampleUUID,
+		IntegrationSystemID: &integrationSystemID,
 	}
 }
 
