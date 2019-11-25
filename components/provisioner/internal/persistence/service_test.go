@@ -529,4 +529,3 @@ func getClusterMatcher(expected model.Cluster) func(model.Cluster) bool {
 			cluster.TerraformState == expected.TerraformState && cluster.Kubeconfig == expected.Kubeconfig
 	}
 }
-
