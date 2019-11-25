@@ -8,12 +8,37 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type testStruct struct {
+	returnErr error
+}
+
+func (ts testStruct) Validate() error {
+	return ts.returnErr
+}
+
 func TestDirective_Validate(t *testing.T) {
 	validatorDirective := NewDirective()
 	testErr := errors.New("testError")
 	ctx := context.TODO()
 	t.Run("Success", func(t *testing.T) {
-		//TODO:
+		//GIVEN
+		ts := testStruct{}
+		//WHEN
+		result, err := validatorDirective.Validate(ctx, ts, next(ts, nil))
+		//THEN
+		require.NoError(t, err)
+		require.Equal(t, ts, result)
+	})
+
+	t.Run("object is invalid", func(t *testing.T) {
+		//GIVEN
+		ts := testStruct{returnErr: testErr}
+		//WHEN
+		result, err := validatorDirective.Validate(ctx, ts, next(ts, nil))
+		//THEN
+		require.Error(t, err)
+		require.EqualError(t, err, testErr.Error())
+		require.Equal(t, ts, result)
 	})
 
 	t.Run("object is not validatable", func(t *testing.T) {
