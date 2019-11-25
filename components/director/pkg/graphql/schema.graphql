@@ -2,6 +2,7 @@
 HasScopes directive is added automatically to every query and mutation by scopesdecorator plugin that is triggerred by gqlgen.sh script.
 """
 directive @hasScopes(path: String!) on FIELD_DEFINITION
+directive @validate on ARGUMENT_DEFINITION
 scalar Any
 
 scalar CLOB
