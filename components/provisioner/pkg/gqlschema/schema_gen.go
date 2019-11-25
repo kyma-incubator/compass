@@ -53,6 +53,11 @@ type ComplexityRoot struct {
 		VnetCidr func(childComplexity int) int
 	}
 
+	CleanUpRuntimeStatus struct {
+		ID      func(childComplexity int) int
+		Message func(childComplexity int) int
+	}
+
 	Error struct {
 		Message func(childComplexity int) int
 	}
@@ -141,7 +146,7 @@ type MutationResolver interface {
 	ProvisionRuntime(ctx context.Context, id string, config ProvisionRuntimeInput) (string, error)
 	UpgradeRuntime(ctx context.Context, id string, config UpgradeRuntimeInput) (string, error)
 	DeprovisionRuntime(ctx context.Context, id string) (string, error)
-	CleanupRuntimeData(ctx context.Context, id string) (string, error)
+	CleanupRuntimeData(ctx context.Context, id string) (*CleanUpRuntimeStatus, error)
 	ReconnectRuntimeAgent(ctx context.Context, id string) (string, error)
 }
 type QueryResolver interface {
@@ -198,6 +203,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AzureProviderConfig.VnetCidr(childComplexity), true
+
+	case "CleanUpRuntimeStatus.id":
+		if e.complexity.CleanUpRuntimeStatus.ID == nil {
+			break
+		}
+
+		return e.complexity.CleanUpRuntimeStatus.ID(childComplexity), true
+
+	case "CleanUpRuntimeStatus.message":
+		if e.complexity.CleanUpRuntimeStatus.Message == nil {
+			break
+		}
+
+		return e.complexity.CleanUpRuntimeStatus.Message(childComplexity), true
 
 	case "Error.message":
 		if e.complexity.Error.Message == nil {
@@ -765,83 +784,88 @@ enum RuntimeAgentConnectionStatus {
     Disconnected
 }
 
+type CleanUpRuntimeStatus {
+    id: String!
+    message: String
+}
+
 # Inputs
 
 input ProvisionRuntimeInput {
-    clusterConfig: ClusterConfigInput!
-    credentials: CredentialsInput!
-    kymaConfig: KymaConfigInput!
+    clusterConfig: ClusterConfigInput!  # Configuration of the cluster to provision
+    credentials: CredentialsInput!      # Credentials
+    kymaConfig: KymaConfigInput!        # Configuration of Kyma to be installed on the provisioned cluster
 }
 
 input CredentialsInput {
-    secretName: String!
+    secretName: String!     # Secret name
 }
 
 input ClusterConfigInput {
-    gardenerConfig: GardenerConfigInput
-    gcpConfig: GCPConfigInput
+    gardenerConfig: GardenerConfigInput     # Gardener-specific configuration for the cluster to be provisioned
+    gcpConfig: GCPConfigInput               # GCP-specific configuration for the cluster to be provisioned
 }
 
 input GardenerConfigInput {
-    name: String!
-    projectName: String!
-    kubernetesVersion: String!
-    nodeCount: Int!
-    volumeSizeGB: Int!
-    machineType: String!
-    region: String!
-    provider: String!
-    seed: String!
-    targetSecret: String!
-    diskType: String!
-    workerCidr: String!
-    autoScalerMin: Int!
-    autoScalerMax: Int!
-    maxSurge: Int!
-    maxUnavailable: Int!
-    providerSpecificConfig: ProviderSpecificInput!
+    name: String!                                   # Name of the cluster to create
+    projectName: String!                            # Gardener project in which the cluster is created
+    kubernetesVersion: String!                      # Kubernetes version to be installed on the cluster
+    nodeCount: Int!                                 # Number of nodes to create
+    volumeSizeGB: Int!                              # Size of the available disk, provided in GB
+    machineType: String!                            # Type of node machines, varies depending on the target provider
+    region: String!                                 # Region in which the cluster is created
+    provider: String!                               # Target provider on which to provision the cluster (Azure, AWS, GCP)
+    seed: String!                                   # Name of the seed cluster that runs the control plane of the Shoot
+    targetSecret: String!                           # Secret in Gardener containing credentials to the target provider
+    diskType: String!                               # Disk type, varies depending on the target provider
+    workerCidr: String!                             # Classless Inter-Domain Routing range for the nodes
+    autoScalerMin: Int!                             # Minimum number of VMs to create
+    autoScalerMax: Int!                             # Maximum number of VMs to create
+    maxSurge: Int!                                  # Maximum number of VMs created during an update
+    maxUnavailable: Int!                            # Maximum number of VMs that can be unavailable during an update
+    providerSpecificConfig: ProviderSpecificInput!  # Additional parameters, vary depending on the target provider
 }
 
 input ProviderSpecificInput {
-    gcpConfig: GCPProviderConfigInput
-    azureConfig: AzureProviderConfigInput
-    awsConfig: AWSProviderConfigInput
+    gcpConfig: GCPProviderConfigInput        # GCP-specific configuration for the cluster to be provisioned
+    azureConfig: AzureProviderConfigInput    # Azure-specific configuration for the cluster to be provisioned
+    awsConfig: AWSProviderConfigInput        # AWS-specific configuration for the cluster to be provisioned
 }
 
 input GCPProviderConfigInput {
-    zone: String!
+    zone: String!      # Zone in which to create the cluster
 }
 
 input AzureProviderConfigInput {
-    vnetCidr: String!
+    vnetCidr: String!   # Classless Inter-Domain Routing for the Azure Virtual Network
 }
 
 input AWSProviderConfigInput {
-    zone: String!
-    vpcCidr: String!
-    publicCidr: String!
-    internalCidr: String!
+    zone: String!           # Zone in which to create the cluster
+    vpcCidr: String!        # Classless Inter-Domain Routing for the virtual public cloud
+    publicCidr: String!     # Classless Inter-Domain Routing for the public subnet
+    internalCidr: String!   # Classless Inter-Domain Routing for the private subnet
 }
 
 input GCPConfigInput {
-    name: String!
-    projectName: String!
-    kubernetesVersion: String!
-    numberOfNodes: Int!
-    bootDiskSizeGB: Int!
-    machineType: String!
-    region: String! # TODO: later we may require either Region or Zone
-    zone: String
+    name: String!                   # Name of the cluster to create
+    projectName: String!            # GCP project in which to create the cluster
+    kubernetesVersion: String!      # Kubernetes version to be installed on the cluster
+    numberOfNodes: Int!             # Number of nodes to create
+    bootDiskSizeGB: Int!            # Size of the available disk, provided in GB
+    machineType: String!            # Type of node machines
+    region: String! # TODO: later we may require either Region or Zone ## Region in which to create the cluster
+    zone: String                    # Zone in which to create the cluster
 }
 
 input KymaConfigInput {
-    version: String!
-    modules: [KymaModule!]
+    version: String!        # Kyma version to install on the cluster
+    modules: [KymaModule!]  # Kyma components to install on the cluster
 }
 
 input UpgradeRuntimeInput {
-    clusterConfig: UpgradeClusterInput
-    kymaConfig: KymaConfigInput
+    clusterConfig: UpgradeClusterInput  # Configuration of the cluster to upgrade
+    kymaConfig: KymaConfigInput         # Configuration of the Kyma Runtime to upgrade
 }
 
 input UpgradeClusterInput {
@@ -853,7 +877,7 @@ type Mutation {
     provisionRuntime(id: String!, config: ProvisionRuntimeInput!): String!
     upgradeRuntime(id: String!, config: UpgradeRuntimeInput!): String!
     deprovisionRuntime(id: String!): String!
-    cleanupRuntimeData(id: String!): String!
+    cleanupRuntimeData(id: String!): CleanUpRuntimeStatus!
 
     # Compass Runtime Agent Connection Management
     reconnectRuntimeAgent(id: String!): String!
@@ -865,8 +889,7 @@ type Query {
 
     # Provides status of specified operation
     runtimeOperationStatus(id: String!): OperationStatus
-}
-`},
+}`},
 )
 
 // endregion ************************** generated!.gotpl **************************
@@ -1193,6 +1216,77 @@ func (ec *executionContext) _AzureProviderConfig_vnetCidr(ctx context.Context, f
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.VnetCidr, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _CleanUpRuntimeStatus_id(ctx context.Context, field graphql.CollectedField, obj *CleanUpRuntimeStatus) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "CleanUpRuntimeStatus",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _CleanUpRuntimeStatus_message(ctx context.Context, field graphql.CollectedField, obj *CleanUpRuntimeStatus) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "CleanUpRuntimeStatus",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2363,10 +2457,10 @@ func (ec *executionContext) _Mutation_cleanupRuntimeData(ctx context.Context, fi
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*CleanUpRuntimeStatus)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNCleanUpRuntimeStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCleanUpRuntimeStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_reconnectRuntimeAgent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4720,6 +4814,35 @@ func (ec *executionContext) _AzureProviderConfig(ctx context.Context, sel ast.Se
 	return out
 }
 
+var cleanUpRuntimeStatusImplementors = []string{"CleanUpRuntimeStatus"}
+
+func (ec *executionContext) _CleanUpRuntimeStatus(ctx context.Context, sel ast.SelectionSet, obj *CleanUpRuntimeStatus) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, cleanUpRuntimeStatusImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CleanUpRuntimeStatus")
+		case "id":
+			out.Values[i] = ec._CleanUpRuntimeStatus_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "message":
+			out.Values[i] = ec._CleanUpRuntimeStatus_message(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var errorImplementors = []string{"Error"}
 
 func (ec *executionContext) _Error(ctx context.Context, sel ast.SelectionSet, obj *Error) graphql.Marshaler {
@@ -5373,6 +5496,20 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNCleanUpRuntimeStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCleanUpRuntimeStatus(ctx context.Context, sel ast.SelectionSet, v CleanUpRuntimeStatus) graphql.Marshaler {
+	return ec._CleanUpRuntimeStatus(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNCleanUpRuntimeStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCleanUpRuntimeStatus(ctx context.Context, sel ast.SelectionSet, v *CleanUpRuntimeStatus) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._CleanUpRuntimeStatus(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNClusterConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐClusterConfigInput(ctx context.Context, v interface{}) (ClusterConfigInput, error) {

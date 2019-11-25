@@ -95,7 +95,7 @@ func (r *Resolver) RuntimeOperationStatus(ctx context.Context, operationID strin
 	return status, err
 }
 
-func (r *Resolver) CleanupRuntimeData(ctx context.Context, id string) (string, error) {
+func (r *Resolver) CleanupRuntimeData(ctx context.Context, id string) (*gqlschema.CleanUpRuntimeStatus, error) {
 	res, err := r.provisioning.CleanupRuntimeData(id)
 	if err != nil {
 		log.Errorf("Failed to cleanup data for runtime %s: %s", id, err)

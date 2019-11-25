@@ -13,14 +13,16 @@ type Service struct {
 }
 
 // CleanupRuntimeData provides a mock function with given fields: id
-func (_m *Service) CleanupRuntimeData(id string) (string, error) {
+func (_m *Service) CleanupRuntimeData(id string) (*gqlschema.CleanUpRuntimeStatus, error) {
 	ret := _m.Called(id)
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func(string) string); ok {
+	var r0 *gqlschema.CleanUpRuntimeStatus
+	if rf, ok := ret.Get(0).(func(string) *gqlschema.CleanUpRuntimeStatus); ok {
 		r0 = rf(id)
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*gqlschema.CleanUpRuntimeStatus)
+		}
 	}
 
 	var r1 error
