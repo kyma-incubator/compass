@@ -1,7 +1,9 @@
-package graphql
+package graphql_test
 
 import (
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -9,7 +11,7 @@ import (
 
 func TestUnmarshalBasicAuth(t *testing.T) {
 	// GIVEN
-	a := &Auth{}
+	a := &graphql.Auth{}
 	// WHEN
 	err := a.UnmarshalJSON([]byte(`{
 		"credential": {
@@ -27,7 +29,7 @@ func TestUnmarshalBasicAuth(t *testing.T) {
 	assert.Len(t, scopes, 2)
 	assert.Contains(t, scopes, "read")
 	assert.Contains(t, scopes, "write")
-	basic, ok := a.Credential.(*BasicCredentialData)
+	basic, ok := a.Credential.(*graphql.BasicCredentialData)
 	require.True(t, ok)
 	assert.Equal(t, "aaa", basic.Username)
 	assert.Equal(t, "bbb", basic.Password)
@@ -35,7 +37,7 @@ func TestUnmarshalBasicAuth(t *testing.T) {
 
 func TestUnmarshalOAuth(t *testing.T) {
 	// GIVEN
-	a := &Auth{}
+	a := &graphql.Auth{}
 	// WHEN
 	err := a.UnmarshalJSON([]byte(`{
   		"credential": {
@@ -54,7 +56,7 @@ func TestUnmarshalOAuth(t *testing.T) {
 	assert.Len(t, scopes, 2)
 	assert.Contains(t, scopes, "read")
 	assert.Contains(t, scopes, "write")
-	oauth, ok := a.Credential.(*OAuthCredentialData)
+	oauth, ok := a.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
 	assert.Equal(t, "oauth.url", oauth.URL)
 	assert.Equal(t, "client-id", oauth.ClientID)
@@ -63,7 +65,7 @@ func TestUnmarshalOAuth(t *testing.T) {
 
 func TestUnmarshalCSRFBasicAuth(t *testing.T) {
 	// GIVEN
-	a := &CSRFTokenCredentialRequestAuth{}
+	a := &graphql.CSRFTokenCredentialRequestAuth{}
 	// WHEN
 	err := a.UnmarshalJSON([]byte(`{
 		"credential": {
@@ -81,7 +83,7 @@ func TestUnmarshalCSRFBasicAuth(t *testing.T) {
 	assert.Len(t, scopes, 2)
 	assert.Contains(t, scopes, "read")
 	assert.Contains(t, scopes, "write")
-	basic, ok := a.Credential.(*BasicCredentialData)
+	basic, ok := a.Credential.(*graphql.BasicCredentialData)
 	require.True(t, ok)
 	assert.Equal(t, "aaa", basic.Username)
 	assert.Equal(t, "bbb", basic.Password)
@@ -89,7 +91,7 @@ func TestUnmarshalCSRFBasicAuth(t *testing.T) {
 
 func TestUnmarshalCSRFOAuth(t *testing.T) {
 	// GIVEN
-	a := &CSRFTokenCredentialRequestAuth{}
+	a := &graphql.CSRFTokenCredentialRequestAuth{}
 	// WHEN
 	err := a.UnmarshalJSON([]byte(`{
   		"credential": {
@@ -108,7 +110,7 @@ func TestUnmarshalCSRFOAuth(t *testing.T) {
 	assert.Len(t, scopes, 2)
 	assert.Contains(t, scopes, "read")
 	assert.Contains(t, scopes, "write")
-	oauth, ok := a.Credential.(*OAuthCredentialData)
+	oauth, ok := a.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
 	assert.Equal(t, "oauth.url", oauth.URL)
 	assert.Equal(t, "client-id", oauth.ClientID)

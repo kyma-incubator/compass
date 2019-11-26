@@ -37,7 +37,7 @@ func TestDirective_Validate(t *testing.T) {
 		result, err := validatorDirective.Validate(ctx, ts, next(ts, nil))
 		//THEN
 		require.Error(t, err)
-		require.EqualError(t, err, testErr.Error())
+		require.EqualError(t, err, "validation error for type testStruct: testError")
 		require.Equal(t, ts, result)
 	})
 
