@@ -15,7 +15,7 @@ type ApplicationTemplateConverter struct {
 }
 
 // InputFromGraphQL provides a mock function with given fields: in
-func (_m *ApplicationTemplateConverter) InputFromGraphQL(in graphql.ApplicationTemplateInput) model.ApplicationTemplateInput {
+func (_m *ApplicationTemplateConverter) InputFromGraphQL(in graphql.ApplicationTemplateInput) (model.ApplicationTemplateInput, error) {
 	ret := _m.Called(in)
 
 	var r0 model.ApplicationTemplateInput
@@ -25,11 +25,18 @@ func (_m *ApplicationTemplateConverter) InputFromGraphQL(in graphql.ApplicationT
 		r0 = ret.Get(0).(model.ApplicationTemplateInput)
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(graphql.ApplicationTemplateInput) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // MultipleToGraphQL provides a mock function with given fields: in
-func (_m *ApplicationTemplateConverter) MultipleToGraphQL(in []*model.ApplicationTemplate) []*graphql.ApplicationTemplate {
+func (_m *ApplicationTemplateConverter) MultipleToGraphQL(in []*model.ApplicationTemplate) ([]*graphql.ApplicationTemplate, error) {
 	ret := _m.Called(in)
 
 	var r0 []*graphql.ApplicationTemplate
@@ -41,11 +48,18 @@ func (_m *ApplicationTemplateConverter) MultipleToGraphQL(in []*model.Applicatio
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func([]*model.ApplicationTemplate) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // ToGraphQL provides a mock function with given fields: in
-func (_m *ApplicationTemplateConverter) ToGraphQL(in *model.ApplicationTemplate) *graphql.ApplicationTemplate {
+func (_m *ApplicationTemplateConverter) ToGraphQL(in *model.ApplicationTemplate) (*graphql.ApplicationTemplate, error) {
 	ret := _m.Called(in)
 
 	var r0 *graphql.ApplicationTemplate
@@ -57,5 +71,12 @@ func (_m *ApplicationTemplateConverter) ToGraphQL(in *model.ApplicationTemplate)
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*model.ApplicationTemplate) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }

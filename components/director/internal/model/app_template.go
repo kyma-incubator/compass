@@ -6,7 +6,7 @@ type ApplicationTemplate struct {
 	ID               string
 	Name             string
 	Description      *string
-	ApplicationInput *ApplicationCreateInput
+	ApplicationInput string
 	Placeholders     []ApplicationTemplatePlaceholder
 	AccessLevel      ApplicationTemplateAccessLevel
 }
@@ -20,7 +20,7 @@ type ApplicationTemplatePage struct {
 type ApplicationTemplateInput struct {
 	Name             string
 	Description      *string
-	ApplicationInput *ApplicationCreateInput
+	ApplicationInput string
 	Placeholders     []ApplicationTemplatePlaceholder
 	AccessLevel      ApplicationTemplateAccessLevel
 }

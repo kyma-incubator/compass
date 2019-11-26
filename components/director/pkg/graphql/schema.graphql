@@ -347,7 +347,7 @@ type ApplicationTemplate {
 	name: String!
 	description: String
 	applicationInput: String!
-	placeholders: [PlaceholderDefinition!]
+	placeholders: [PlaceholderDefinition!]!
 	accessLevel: ApplicationTemplateAccessLevel!
 }
 

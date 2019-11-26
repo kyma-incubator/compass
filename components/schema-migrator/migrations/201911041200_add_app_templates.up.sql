@@ -12,6 +12,9 @@ CREATE TABLE app_templates (
     access_level app_templates_access_level NOT NULL
 );
 
+ALTER TABLE app_templates
+    ADD CONSTRAINT application_template_name_unique UNIQUE (name);
+
 ALTER TABLE applications ADD COLUMN integration_system_id uuid;
 ALTER TABLE applications
     ADD CONSTRAINT applications_integration_system_id_fk

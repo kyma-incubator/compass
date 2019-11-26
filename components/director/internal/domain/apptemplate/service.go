@@ -40,6 +40,11 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 	id := s.uidService.Generate()
 	appTemplate := in.ToApplicationTemplate(id)
 
+	ok := checkIfPlaceholdersAreUnique(appTemplate.Placeholders)
+	if !ok {
+		return "", errors.New("while validating uniqueness of placeholders")
+	}
+
 	err := s.appTemplateRepo.Create(ctx, appTemplate)
 	if err != nil {
 		return "", errors.Wrap(err, "while creating Application Template")
@@ -49,12 +54,12 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.ApplicationTemplate, error) {
-	intSys, err := s.appTemplateRepo.Get(ctx, id)
+	appTemplate, err := s.appTemplateRepo.Get(ctx, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Application Template with ID %s", id)
 	}
 
-	return intSys, nil
+	return appTemplate, nil
 }
 
 func (s *service) Exists(ctx context.Context, id string) (bool, error) {
@@ -77,6 +82,11 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (model.
 func (s *service) Update(ctx context.Context, id string, in model.ApplicationTemplateInput) error {
 	appTemplate := in.ToApplicationTemplate(id)
 
+	ok := checkIfPlaceholdersAreUnique(appTemplate.Placeholders)
+	if !ok {
+		return errors.New("while validating uniqueness of placeholders")
+	}
+
 	err := s.appTemplateRepo.Update(ctx, appTemplate)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Application Template with ID %s", id)
@@ -92,4 +102,17 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	}
 
 	return nil
+}
+
+func checkIfPlaceholdersAreUnique(placeholders []model.ApplicationTemplatePlaceholder) bool {
+	keys := make(map[string]interface{})
+	for _, item := range placeholders {
+		_, exist := keys[item.Name]
+		if exist {
+			return false
+		} else {
+			keys[item.Name] = struct{}{}
+		}
+	}
+	return true
 }

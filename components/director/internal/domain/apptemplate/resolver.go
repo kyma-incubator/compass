@@ -23,9 +23,9 @@ type ApplicationTemplateService interface {
 
 //go:generate mockery -name=ApplicationTemplateConverter -output=automock -outpkg=automock -case=underscore
 type ApplicationTemplateConverter interface {
-	ToGraphQL(in *model.ApplicationTemplate) *graphql.ApplicationTemplate
-	MultipleToGraphQL(in []*model.ApplicationTemplate) []*graphql.ApplicationTemplate
-	InputFromGraphQL(in graphql.ApplicationTemplateInput) model.ApplicationTemplateInput
+	ToGraphQL(in *model.ApplicationTemplate) (*graphql.ApplicationTemplate, error)
+	MultipleToGraphQL(in []*model.ApplicationTemplate) ([]*graphql.ApplicationTemplate, error)
+	InputFromGraphQL(in graphql.ApplicationTemplateInput) (model.ApplicationTemplateInput, error)
 }
 
 type Resolver struct {
@@ -52,7 +52,7 @@ func (r *Resolver) ApplicationTemplate(ctx context.Context, id string) (*graphql
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	is, err := r.appTemplateSvc.Get(ctx, id)
+	appTemplate, err := r.appTemplateSvc.Get(ctx, id)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, nil
@@ -65,7 +65,12 @@ func (r *Resolver) ApplicationTemplate(ctx context.Context, id string) (*graphql
 		return nil, err
 	}
 
-	return r.appTemplateConverter.ToGraphQL(is), nil
+	out, err := r.appTemplateConverter.ToGraphQL(appTemplate)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting application template to graphql")
+	}
+
+	return out, nil
 }
 
 func (r *Resolver) ApplicationTemplates(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.ApplicationTemplatePage, error) {
@@ -95,7 +100,10 @@ func (r *Resolver) ApplicationTemplates(ctx context.Context, first *int, after *
 		return nil, err
 	}
 
-	gqlAppTemplate := r.appTemplateConverter.MultipleToGraphQL(appTemplatePage.Data)
+	gqlAppTemplate, err := r.appTemplateConverter.MultipleToGraphQL(appTemplatePage.Data)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting application templates to graphql")
+	}
 	totalCount := len(gqlAppTemplate)
 
 	return &graphql.ApplicationTemplatePage{
@@ -110,8 +118,6 @@ func (r *Resolver) ApplicationTemplates(ctx context.Context, first *int, after *
 }
 
 func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
-	convertedIn := r.appTemplateConverter.InputFromGraphQL(in)
-
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -119,6 +125,11 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	defer r.transact.RollbackUnlessCommited(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
+
+	convertedIn, err := r.appTemplateConverter.InputFromGraphQL(in)
+	if err != nil {
+		return nil, err
+	}
 
 	id, err := r.appTemplateSvc.Create(ctx, convertedIn)
 	if err != nil {
@@ -135,7 +146,10 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		return nil, err
 	}
 
-	gqlAppTemplate := r.appTemplateConverter.ToGraphQL(appTemplate)
+	gqlAppTemplate, err := r.appTemplateConverter.ToGraphQL(appTemplate)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting application template to graphql")
+	}
 
 	return gqlAppTemplate, nil
 }
@@ -149,7 +163,11 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn := r.appTemplateConverter.InputFromGraphQL(in)
+	convertedIn, err := r.appTemplateConverter.InputFromGraphQL(in)
+	if err != nil {
+		return nil, err
+	}
+
 	err = r.appTemplateSvc.Update(ctx, id, convertedIn)
 	if err != nil {
 		return nil, err
@@ -165,7 +183,10 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 		return nil, err
 	}
 
-	gqlAppTemplate := r.appTemplateConverter.ToGraphQL(appTemplate)
+	gqlAppTemplate, err := r.appTemplateConverter.ToGraphQL(appTemplate)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting application template to graphql")
+	}
 
 	return gqlAppTemplate, nil
 }
@@ -194,7 +215,10 @@ func (r *Resolver) DeleteApplicationTemplate(ctx context.Context, id string) (*g
 		return nil, err
 	}
 
-	deletedAppTemplate := r.appTemplateConverter.ToGraphQL(appTemplate)
+	deletedAppTemplate, err := r.appTemplateConverter.ToGraphQL(appTemplate)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting application template to graphql")
+	}
 
 	return deletedAppTemplate, nil
 }

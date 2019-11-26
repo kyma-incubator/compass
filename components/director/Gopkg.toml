@@ -47,3 +47,7 @@ required = [
 [[constraint]]
   name = "github.com/ghodss/yaml"
   branch = "master"
+
+[[constraint]]
+  name = "github.com/Masterminds/sprig"
+  version = "v2.22.0"

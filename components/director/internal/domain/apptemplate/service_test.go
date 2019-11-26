@@ -23,17 +23,18 @@ func TestService_Create(t *testing.T) {
 		uidSvc.On("Generate").Return(testID).Once()
 		return uidSvc
 	}
-	modelAppTemplateInput := fixModelAppTemplateInput(testName)
 	modelAppTemplate := fixModelAppTemplate(testID, testName)
 
 	testCases := []struct {
 		Name              string
+		Input             *model.ApplicationTemplateInput
 		AppTemplateRepoFn func() *automock.ApplicationTemplateRepository
 		ExpectedError     error
 		ExpectedOutput    string
 	}{
 		{
-			Name: "Success",
+			Name:  "Success",
+			Input: fixModelAppTemplateInput(testName, fixApplicationCreateInputString()),
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Create", ctx, *modelAppTemplate).Return(nil).Once()
@@ -42,11 +43,32 @@ func TestService_Create(t *testing.T) {
 			ExpectedOutput: testID,
 		},
 		{
-			Name: "Error when creating",
+			Name: "Error when application template placeholders are not unique",
+			Input: &model.ApplicationTemplateInput{
+				Placeholders: []model.ApplicationTemplatePlaceholder{
+					{
+						Name:        testName,
+						Description: nil,
+					},
+					{
+						Name:        testName,
+						Description: nil,
+					},
+				},
+			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
-				intSysRepo := &automock.ApplicationTemplateRepository{}
-				intSysRepo.On("Create", ctx, *modelAppTemplate).Return(testError).Once()
-				return intSysRepo
+				appTemplateRepo := &automock.ApplicationTemplateRepository{}
+				return appTemplateRepo
+			},
+			ExpectedError: errors.New("while validating uniqueness of placeholders"),
+		},
+		{
+			Name:  "Error when creating",
+			Input: fixModelAppTemplateInput(testName, fixApplicationCreateInputString()),
+			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
+				appTemplateRepo := &automock.ApplicationTemplateRepository{}
+				appTemplateRepo.On("Create", ctx, *modelAppTemplate).Return(testError).Once()
+				return appTemplateRepo
 			},
 			ExpectedError:  testError,
 			ExpectedOutput: "",
@@ -60,7 +82,7 @@ func TestService_Create(t *testing.T) {
 			svc := apptemplate.NewService(appTemplateRepo, idSvc)
 
 			// WHEN
-			result, err := svc.Create(ctx, *modelAppTemplateInput)
+			result, err := svc.Create(ctx, *testCase.Input)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -98,7 +120,7 @@ func TestService_Get(t *testing.T) {
 			ExpectedOutput: modelAppTemplate,
 		},
 		{
-			Name: "Error when getting integration system",
+			Name: "Error when getting application template",
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Get", ctx, testID).Return(nil, testError).Once()
@@ -150,7 +172,7 @@ func TestService_Exists(t *testing.T) {
 			ExpectedOutput: true,
 		},
 		{
-			Name: "Error when getting integration system",
+			Name: "Error when getting application template",
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Exists", ctx, testID).Return(false, testError).Once()
@@ -209,7 +231,7 @@ func TestService_List(t *testing.T) {
 			ExpectedOutput: modelAppTemplate,
 		},
 		{
-			Name: "Error when listing integration system",
+			Name: "Error when listing application template",
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("List", ctx, 50, testCursor).Return(model.ApplicationTemplatePage{}, testError).Once()
@@ -267,15 +289,16 @@ func TestService_Update(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testTenant)
 	modelAppTemplate := fixModelAppTemplate(testID, testName)
-	modelAppTemplateInput := fixModelAppTemplateInput(testName)
 
 	testCases := []struct {
 		Name              string
+		Input             *model.ApplicationTemplateInput
 		AppTemplateRepoFn func() *automock.ApplicationTemplateRepository
 		ExpectedError     error
 	}{
 		{
-			Name: "Success",
+			Name:  "Success",
+			Input: fixModelAppTemplateInput(testName, fixApplicationCreateInputString()),
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Update", ctx, *modelAppTemplate).Return(nil).Once()
@@ -283,7 +306,28 @@ func TestService_Update(t *testing.T) {
 			},
 		},
 		{
-			Name: "Error when updating integration system",
+			Name: "Error when application template placeholders are not unique",
+			Input: &model.ApplicationTemplateInput{
+				Placeholders: []model.ApplicationTemplatePlaceholder{
+					{
+						Name:        testName,
+						Description: nil,
+					},
+					{
+						Name:        testName,
+						Description: nil,
+					},
+				},
+			},
+			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
+				appTemplateRepo := &automock.ApplicationTemplateRepository{}
+				return appTemplateRepo
+			},
+			ExpectedError: errors.New("while validating uniqueness of placeholders"),
+		},
+		{
+			Name:  "Error when updating application template",
+			Input: fixModelAppTemplateInput(testName, fixApplicationCreateInputString()),
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Update", ctx, *modelAppTemplate).Return(testError).Once()
@@ -299,7 +343,7 @@ func TestService_Update(t *testing.T) {
 			svc := apptemplate.NewService(appTemplateRepo, nil)
 
 			// WHEN
-			err := svc.Update(ctx, testID, *modelAppTemplateInput)
+			err := svc.Update(ctx, testID, *testCase.Input)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -332,7 +376,7 @@ func TestService_Delete(t *testing.T) {
 			},
 		},
 		{
-			Name: "Error when deleting integration system",
+			Name: "Error when deleting application template",
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Delete", ctx, testID).Return(testError).Once()
