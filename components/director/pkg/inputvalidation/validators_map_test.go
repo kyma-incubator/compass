@@ -9,11 +9,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestEachMapKey(t *testing.T) {
+func TestEachKey(t *testing.T) {
 	structToValidate := struct {
-		String string
-		Map    map[string]string
-		Nil    map[string]string
+		String  string
+		Map     map[string]string
+		Nil     map[string]string
+		Pointer *map[string]string
 	}{
 		String: "test",
 		Map: map[string]string{
@@ -22,6 +23,9 @@ func TestEachMapKey(t *testing.T) {
 			"Ę":    "Ę",
 		},
 		Nil: nil,
+		Pointer: &map[string]string{
+			"aaa": "bbb",
+		},
 	}
 
 	// GIVEN
@@ -45,6 +49,13 @@ func TestEachMapKey(t *testing.T) {
 			ExpectedError: nil,
 		},
 		{
+			Name: "Success when pointer to map",
+			Rules: []*validation.FieldRules{
+				validation.Field(&structToValidate.Map, inputvalidation.EachKey(validation.Required)),
+			},
+			ExpectedError: nil,
+		},
+		{
 			Name: "Works with custom validators",
 			Rules: []*validation.FieldRules{
 				validation.Field(&structToValidate.Map, inputvalidation.EachKey(inputvalidation.Name)),
@@ -56,7 +67,7 @@ func TestEachMapKey(t *testing.T) {
 			Rules: []*validation.FieldRules{
 				validation.Field(&structToValidate.String, inputvalidation.EachKey(validation.Required)),
 			},
-			ExpectedError: errors.New("String: must be a map."),
+			ExpectedError: errors.New("String: must be a map or a pointer to map."),
 		},
 		{
 			Name: "Returns error when one map key is invalid",
@@ -71,6 +82,13 @@ func TestEachMapKey(t *testing.T) {
 				validation.Field(&structToValidate.Map, inputvalidation.EachKey(validation.Required, validation.Length(1, 2))),
 			},
 			ExpectedError: errors.New("Map: (AAAA: the length must be between 1 and 2; aaa: the length must be between 1 and 2.)."),
+		},
+		{
+			Name: "Returns error when pointer to invalid map",
+			Rules: []*validation.FieldRules{
+				validation.Field(&structToValidate.Pointer, inputvalidation.EachKey(validation.Required, validation.Length(100, 200))),
+			},
+			ExpectedError: errors.New("Pointer: (aaa: the length must be between 100 and 200.)."),
 		},
 	}
 

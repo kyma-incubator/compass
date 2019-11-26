@@ -24,43 +24,53 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 package inputvalidation
 
 import (
+	"errors"
 	"reflect"
+	"strconv"
 
 	validation "github.com/go-ozzo/ozzo-validation"
-	"github.com/pkg/errors"
 )
 
-type eachKeyRule []validation.Rule
+type eachRule []validation.Rule
 
-// EachKey returns a validation rule that loops through a map and validates each key inside with the provided rules.
+// Each returns a validation rule that loops through an iterable (map, slice or array)
+// and validates each value inside with the provided rules.
 // An empty iterable is considered valid. Use the Required rule to make sure the iterable is not empty.
-func EachKey(rules ...validation.Rule) *eachKeyRule {
-	mr := eachKeyRule(rules)
-	return &mr
+func Each(rules ...validation.Rule) *eachRule {
+	r := eachRule(rules)
+	return &r
 }
 
-func (v eachKeyRule) Validate(value interface{}) error {
+// Loops through the given iterable and calls the Ozzo Validate() method for each value.
+func (r eachRule) Validate(value interface{}) error {
 	errs := validation.Errors{}
 
-	t := reflect.ValueOf(value)
+	v := reflect.ValueOf(value)
 
-	if t.Kind() == reflect.Ptr {
-		if t.IsNil() {
+	if v.Kind() == reflect.Ptr {
+		if v.IsNil() {
 			return nil
 		}
-		t = t.Elem()
+		v = v.Elem()
 	}
 
-	switch t.Kind() {
+	switch v.Kind() {
 	case reflect.Map:
-		for _, k := range t.MapKeys() {
-			val := getInterface(k)
-			if err := validation.Validate(val, v...); err != nil {
-				errs[getString(k)] = err
+		for _, k := range v.MapKeys() {
+			val := r.getInterface(v.MapIndex(k))
+			if err := validation.Validate(val, r...); err != nil {
+				errs[r.getString(k)] = err
+			}
+		}
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < v.Len(); i++ {
+			val := r.getInterface(v.Index(i))
+			if err := validation.Validate(val, r...); err != nil {
+				errs[strconv.Itoa(i)] = err
 			}
 		}
 	default:
-		return errors.New("must be a map or a pointer to map")
+		return errors.New("must be an iterable (map, slice or array) or a pointer to iterable")
 	}
 
 	if len(errs) > 0 {
@@ -69,7 +79,7 @@ func (v eachKeyRule) Validate(value interface{}) error {
 	return nil
 }
 
-func getInterface(value reflect.Value) interface{} {
+func (r *eachRule) getInterface(value reflect.Value) interface{} {
 	switch value.Kind() {
 	case reflect.Ptr, reflect.Interface:
 		if value.IsNil() {
@@ -81,7 +91,7 @@ func getInterface(value reflect.Value) interface{} {
 	}
 }
 
-func getString(value reflect.Value) string {
+func (r *eachRule) getString(value reflect.Value) string {
 	switch value.Kind() {
 	case reflect.Ptr, reflect.Interface:
 		if value.IsNil() {
