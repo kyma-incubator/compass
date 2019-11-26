@@ -25,7 +25,8 @@ func (d *directive) Validate(ctx context.Context, obj interface{}, next graphql.
 
 	validatableObj, ok := constructedObj.(Validatable)
 	if !ok {
-		return nil, errors.New("misuse of directive, object is not validatable")
+		return nil, errors.Errorf("misuse of directive, object is not validatable: %T", constructedObj)
+
 	}
 
 	return validatableObj, validatableObj.Validate()
