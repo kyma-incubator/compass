@@ -1,6 +1,7 @@
 package director
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -214,4 +215,26 @@ func assertRuntime(t *testing.T, in graphql.RuntimeInput, actualRuntime graphql.
 func assertIntegrationSystem(t *testing.T, in graphql.IntegrationSystemInput, actualIntegrationSystem graphql.IntegrationSystemExt) {
 	assert.Equal(t, in.Name, actualIntegrationSystem.Name)
 	assert.Equal(t, in.Description, actualIntegrationSystem.Description)
+}
+
+func assertApplicationTemplate(t *testing.T, in graphql.ApplicationTemplateInput, actualApplicationTemplate graphql.ApplicationTemplate) {
+	assert.Equal(t, in.Name, actualApplicationTemplate.Name)
+	assert.Equal(t, in.Description, actualApplicationTemplate.Description)
+
+	graphqlApplicationInput, err := tc.graphqlizer.ApplicationCreateInputToGQL(*in.ApplicationInput)
+	require.NoError(t, err)
+
+	graphqlApplicationInput = strings.Replace(graphqlApplicationInput, "\t", "", -1)
+	graphqlApplicationInput = strings.Replace(graphqlApplicationInput, "\n", "", -1)
+
+	assert.Equal(t, graphqlApplicationInput, actualApplicationTemplate.ApplicationInput)
+	assertApplicationTemplatePlaceholder(t, in.Placeholders, actualApplicationTemplate.Placeholders)
+	assert.Equal(t, in.AccessLevel, actualApplicationTemplate.AccessLevel)
+}
+
+func assertApplicationTemplatePlaceholder(t *testing.T, in []*graphql.PlaceholderDefinitionInput, actualPlaceholders []*graphql.PlaceholderDefinition) {
+	for i, _ := range in {
+		assert.Equal(t, in[i].Name, actualPlaceholders[i].Name)
+		assert.Equal(t, in[i].Description, actualPlaceholders[i].Description)
+	}
 }

@@ -68,6 +68,24 @@ func (g *Graphqlizer) ApplicationUpdateInputToGQL(in graphql.ApplicationUpdateIn
 		{{- end }}
 	}`)
 }
+
+func (g *Graphqlizer) ApplicationTemplateInputToGQL(in graphql.ApplicationTemplateInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{.Name}}",
+		{{- if .Description }}
+		description: "{{.Description}}",
+		{{- end }}
+		applicationInput: {{ ApplicationCreateInputToGQL .ApplicationInput}},
+		{{- if .Placeholders }}
+		placeholders: [
+			{{- range $i, $e := .Placeholders }} 
+				{{- if $i}}, {{- end}} {{ PlaceholderDefinitionInputToGQL $e }}
+			{{- end }} ],
+		{{- end }}
+		accessLevel: {{.AccessLevel}},
+	}`)
+}
+
 func (g *Graphqlizer) DocumentInputToGQL(in *graphql.DocumentInput) (string, error) {
 	return g.genericToGQL(in, `{
 		title: "{{.Title}}",
@@ -317,8 +335,18 @@ func (g *Graphqlizer) IntegrationSystemInputToGQL(in graphql.IntegrationSystemIn
 	}`)
 }
 
+func (g *Graphqlizer) PlaceholderDefinitionInputToGQL(in graphql.PlaceholderDefinitionInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{.Name}}",
+		{{- if .Description }}
+		description: "{{.Description}}",
+		{{- end }}
+	}`)
+}
+
 func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error) {
 	fm := sprig.TxtFuncMap()
+	fm["ApplicationCreateInputToGQL"] = g.ApplicationCreateInputToGQL
 	fm["DocumentInputToGQL"] = g.DocumentInputToGQL
 	fm["FetchRequesstInputToGQL"] = g.FetchRequestInputToGQL
 	fm["AuthInputToGQL"] = g.AuthInputToGQL
@@ -334,6 +362,7 @@ func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	fm["CredentialDataInputToGQL"] = g.CredentialDataInputToGQL
 	fm["CSRFTokenCredentialRequestAuthInputToGQL"] = g.CSRFTokenCredentialRequestAuthInputToGQL
 	fm["CredentialRequestAuthInputToGQL"] = g.CredentialRequestAuthInputToGQL
+	fm["PlaceholderDefinitionInputToGQL"] = g.PlaceholderDefinitionInputToGQL
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)
 	if err != nil {

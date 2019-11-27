@@ -31,7 +31,7 @@ global:
     tests:
       e2e:
         dir:
-        version: "PR-499"
+        version: "PR-513"
       connector:
         dir: pr/
         version: "PR-391"
