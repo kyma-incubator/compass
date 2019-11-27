@@ -10,9 +10,6 @@ export PIPELINE_BUILD
 
 include $(SCRIPTS_DIR)/generic_make_go.mk
 
-net_delete::
-	docker network rm $(TESTING_DB_NETWORK)
-
 .PHONY: gqlgen check-gqlgen testing-with-database-network additional-errcheck clean-up
 
 verify:: testing-with-database-network additional-errcheck gqlgen check-gqlgen
@@ -27,7 +24,7 @@ testing-with-database-network:
 	@echo testing-with-database-network
 	@docker network inspect $(TESTING_DB_NETWORK) >/dev/null 2>&1 || \
 	docker network create --driver bridge $(TESTING_DB_NETWORK)
-	docker run $(DOCKER_INTERACTIVE) \
+	@docker run $(DOCKER_INTERACTIVE) \
 		-v $(DOCKER_SOCKET):$(DOCKER_SOCKET) \
 		-v $(COMPONENT_DIR)/../../:$(WORKSPACE_COMPONENT_DIR)/../../ \
 		--network=$(TESTING_DB_NETWORK) \

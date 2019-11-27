@@ -2,118 +2,29 @@ package api
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"testing"
 	"time"
 
-	"github.com/docker/go-connections/nat"
-	"github.com/gocraft/dbr"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
+	"github.com/kyma-incubator/hydroform/types"
+
 	configMock "github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/configuration/mocks"
 	hydroformmocks "github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dbsession"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/testutils"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-	"github.com/kyma-incubator/hydroform/types"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	testcontainers "github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/wait"
 )
 
-const (
-	dbUser = "admin"
-	dbPass = "nimda"
-	dbName = "provisioner"
-	dbPort = "5432"
-)
+func waitForOperationCompleted(provisioningService provisioning.Service, operationID string, seconds uint) error {
 
-func makeConnectionString(host string, port string) string {
-
-	if os.Getenv("PIPELINE_BUILD") == "" {
-		host = "localhost"
-	} else {
-		port = dbPort
-	}
-
-	const connStringFormat string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
-
-	return fmt.Sprintf(connStringFormat, host, port, dbUser,
-		dbPass, dbName, "disable")
-}
-
-func closeDatabase(t *testing.T, connection *dbr.Connection) {
-	if connection != nil {
-		err := connection.Close()
-		assert.Nil(t, err, "Failed to close db connection")
-	}
-}
-
-func initDBContainer(t *testing.T, ctx context.Context) (testcontainers.Container, string, string, error) {
-
-	netReq := testcontainers.NetworkRequest{
-		Name:   "test_network",
-		Driver: "bridge",
-	}
-
-	provider, err := testcontainers.NewDockerProvider()
-
-	if err != nil {
-		return nil, "", "", err
-	}
-
-	_, err = provider.GetNetwork(ctx, netReq)
-
-	if err != nil {
-		return nil, "", "", err
-	}
-
-	req := testcontainers.ContainerRequest{
-		Image:        "postgres:11",
-		ExposedPorts: []string{fmt.Sprintf("%s", dbPort)},
-		Networks:     []string{"test_network"},
-		NetworkAliases: map[string][]string{
-			"test_network": {"postgres_db"},
-		},
-		Env: map[string]string{
-			"POSTGRES_USER":     "admin",
-			"POSTGRES_PASSWORD": "nimda",
-			"POSTGRES_DB":       "provisioner",
-		},
-		WaitingFor: wait.ForListeningPort(nat.Port(dbPort)),
-	}
-
-	postgresContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
-	})
-
-	if err != nil {
-		t.Logf("Failed to create contianer: %s", err.Error())
-		return nil, "", "", err
-	}
-
-	port, err := postgresContainer.MappedPort(ctx, dbPort)
-	if err != nil {
-		t.Logf("Failed to get mapped port for container %s : %s", postgresContainer.GetContainerID(), err.Error())
-		errTerminate := postgresContainer.Terminate(ctx)
-		if errTerminate != nil {
-			t.Logf("Failed to terminate container %s after failing of getting mapped port: %s", postgresContainer.GetContainerID(), err.Error())
-		}
-		return nil, "", "", err
-	}
-
-	return postgresContainer, port.Port(), "postgres_db", nil
-}
-
-func waitForOperationCompleted(provisioningService provisioning.Service, operationID string) error {
-
-	retryCount := 3
+	retryCount := seconds
 	for ; retryCount > 0; retryCount-- {
 
 		status, err := provisioningService.RuntimeOperationStatus(operationID)
@@ -178,55 +89,123 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 		},
 	}
 
+	clusterConfigForGardenerWithAzure := &gqlschema.ClusterConfigInput{
+		GardenerConfig: &gqlschema.GardenerConfigInput{
+			Name:              "Something",
+			ProjectName:       "Project",
+			KubernetesVersion: "version",
+			NodeCount:         3,
+			VolumeSizeGb:      1024,
+			MachineType:       "n1-standard-1",
+			Region:            "region",
+			Provider:          "Azure",
+			Seed:              "gcp-eu1",
+			TargetSecret:      "secret",
+			DiskType:          "ssd",
+			WorkerCidr:        "cidr",
+			AutoScalerMin:     1,
+			AutoScalerMax:     5,
+			MaxSurge:          1,
+			MaxUnavailable:    2,
+			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+				AzureConfig: &gqlschema.AzureProviderConfigInput{
+					VnetCidr: "cidr",
+				},
+			},
+		},
+	}
+
+	clusterConfigForGardenerWithAWS := &gqlschema.ClusterConfigInput{
+		GardenerConfig: &gqlschema.GardenerConfigInput{
+			Name:              "Something",
+			ProjectName:       "Project",
+			KubernetesVersion: "version",
+			NodeCount:         3,
+			VolumeSizeGb:      1024,
+			MachineType:       "n1-standard-1",
+			Region:            "region",
+			Provider:          "AWS",
+			Seed:              "aws-eu1",
+			TargetSecret:      "secret",
+			DiskType:          "ssd",
+			WorkerCidr:        "cidr",
+			AutoScalerMin:     1,
+			AutoScalerMax:     5,
+			MaxSurge:          1,
+			MaxUnavailable:    2,
+			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+				AwsConfig: &gqlschema.AWSProviderConfigInput{
+					Zone:         "zone",
+					InternalCidr: "cidr",
+					VpcCidr:      "cidr",
+					PublicCidr:   "cidr",
+				},
+			},
+		},
+	}
+
 	testConfig := []provisionerTestConfig{
-		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bbd", config: clusterConfigForGCP, description: "Should provision and deprovision a runtime with happy flow using correct GCP configuration"},
-		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bbe", config: clusterConfigForGardenerWithGCP, description: "Should provision and deprovision a runtime with happy flow using correct Gardener with GCP configuration"},
+		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bba", config: clusterConfigForGCP, description: "Should provision and deprovision a runtime with happy flow using correct GCP configuration"},
+		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bbb", config: clusterConfigForGardenerWithGCP, description: "Should provision and deprovision a runtime with happy flow using correct Gardener with GCP configuration 1"},
+		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bb4", config: clusterConfigForGardenerWithAzure, description: "Should provision and deprovision a runtime with happy flow using correct Gardener with Azure configuration"},
+		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bb5", config: clusterConfigForGardenerWithAWS, description: "Should provision and deprovision a runtime with happy flow using correct Gardener with AWS configuration"},
 	}
 	return testConfig
 }
 
 func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 
+	mockedKubeConfigValue := "test config value"
+	mockedTerraformState := `{"test_key": "test_value"}`
+
 	hydroformServiceMock := &hydroformmocks.Service{}
 	factory := &configMock.BuilderFactory{}
 	builder := &configMock.Builder{}
-	hydroformServiceMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: "", State: "{}"}, nil)
-	hydroformServiceMock.On("DeprovisionCluster", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	hydroformServiceMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: mockedKubeConfigValue, State: mockedTerraformState}, nil).
+		Run(func(args mock.Arguments) {
+			time.Sleep(1 * time.Second)
+		})
+
+	hydroformServiceMock.On("DeprovisionCluster", mock.Anything, mock.Anything, mock.Anything).Return(nil).
+		Run(func(args mock.Arguments) {
+			time.Sleep(1 * time.Second)
+		})
 	factory.On("NewProvisioningBuilder", mock.Anything).Return(builder)
 	factory.On("NewDeprovisioningBuilder", mock.Anything).Return(builder)
 
 	uuidGenerator := persistence.NewUUIDGenerator()
 
 	ctx := context.Background()
-	postgresContainer, mappedPort, hostName, err := initDBContainer(t, ctx)
+
+	cleanupNetwork, err := testutils.EnsureTestNetworkForDB(t, ctx)
 	require.NoError(t, err)
-	require.NotNil(t, postgresContainer)
+	defer cleanupNetwork()
 
-	defer postgresContainer.Terminate(ctx)
+	containerCleanupFunc, connString, err := testutils.InitTestDBContainer(t, ctx, "postgres_database")
+	require.NoError(t, err)
 
-	connString := makeConnectionString(hostName, mappedPort)
-	schemaFilePath := "../../assets/database/provisioner.sql"
+	defer containerCleanupFunc()
 
-	connection, err := database.InitializeDatabase(connString, schemaFilePath, 4)
+	connection, err := database.InitializeDatabase(connString, testutils.SchemaFilePath, 4)
 
 	require.NoError(t, err)
 	require.NotNil(t, connection)
 
-	defer closeDatabase(t, connection)
+	defer testutils.CloseDatabase(t, connection)
 
 	kymaConfig := &gqlschema.KymaConfigInput{
 		Version: "1.5",
 		Modules: gqlschema.AllKymaModule,
 	}
 
-	kymaCredentials := &gqlschema.CredentialsInput{SecretName: "secret_1"}
+	providerCredentials := &gqlschema.CredentialsInput{SecretName: "secret_1"}
 
 	clusterConfigurations := getTestClusterConfigurations()
 
 	for _, cfg := range clusterConfigurations {
 		t.Run(cfg.description, func(t *testing.T) {
 
-			fullConfig := gqlschema.ProvisionRuntimeInput{ClusterConfig: cfg.config, Credentials: kymaCredentials, KymaConfig: kymaConfig}
+			fullConfig := gqlschema.ProvisionRuntimeInput{ClusterConfig: cfg.config, Credentials: providerCredentials, KymaConfig: kymaConfig}
 
 			dbSessionFactory := dbsession.NewFactory(connection)
 			persistenceService := persistence.NewService(dbSessionFactory, uuidGenerator)
@@ -252,7 +231,7 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			require.NotNil(t, runtimeStatusProvisioningStarted)
 			assert.Equal(t, statusForProvisioningStarted, runtimeStatusProvisioningStarted.LastOperationStatus)
 
-			err = waitForOperationCompleted(provisioningService, operationID)
+			err = waitForOperationCompleted(provisioningService, operationID, 3)
 			require.NoError(t, err)
 
 			messageProvisioningSucceeded := "Operation succeeded."
@@ -269,6 +248,14 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, runtimeStatusProvisioned)
 			assert.Equal(t, statusForProvisioningSucceeded, runtimeStatusProvisioned.LastOperationStatus)
+
+			clusterData, err := persistenceService.GetClusterData(cfg.runtimeID)
+
+			require.NoError(t, err)
+			require.NotNil(t, clusterData)
+			require.NotNil(t, clusterData.Kubeconfig)
+			assert.Equal(t, mockedTerraformState, clusterData.TerraformState)
+			assert.Equal(t, mockedKubeConfigValue, *clusterData.Kubeconfig)
 
 			deprovisionID, err := provisioner.DeprovisionRuntime(ctx, cfg.runtimeID)
 			require.NoError(t, err)
@@ -289,7 +276,7 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			require.NotNil(t, runtimeStatusDeprovStarted)
 			assert.Equal(t, statusForDeprovisioningStarted, runtimeStatusDeprovStarted.LastOperationStatus)
 
-			err = waitForOperationCompleted(provisioningService, operationID)
+			err = waitForOperationCompleted(provisioningService, deprovisionID, 3)
 			require.NoError(t, err)
 
 			messageDeprovSucceess := "Operation succeeded."

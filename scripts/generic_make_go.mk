@@ -25,6 +25,8 @@ FILES_TO_CHECK = find . -type f -name "*.go" | grep -v "$(VERIFY_IGNORE)"
 DIRS_TO_CHECK = go list ./... | grep -v "$(VERIFY_IGNORE)"
 # DIRS_TO_IGNORE is a command used to determine which directories should not be verified
 DIRS_TO_IGNORE = go list ./... | grep "$(VERIFY_IGNORE)"
+
+# Base docker configuration
 DOCKER_CREATE_OPTS := -v $(LOCAL_DIR):$(WORKSPACE_LOCAL_DIR):delegated --rm -w $(WORKSPACE_COMPONENT_DIR) $(BUILDPACK)
 
 # Check if go is available
@@ -159,6 +161,6 @@ list:
 
 .PHONY: exec
 exec:
-	docker run $(DOCKER_INTERACTIVE) \
+	@docker run $(DOCKER_INTERACTIVE) \
     		-v $(COMPONENT_DIR):$(WORKSPACE_COMPONENT_DIR):delegated \
     		$(DOCKER_CREATE_OPTS) bash

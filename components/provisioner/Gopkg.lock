@@ -1720,7 +1720,6 @@
     "github.com/99designs/gqlgen/graphql",
     "github.com/99designs/gqlgen/graphql/introspection",
     "github.com/99designs/gqlgen/handler",
-    "github.com/docker/go-connections/nat",
     "github.com/gocraft/dbr",
     "github.com/google/uuid",
     "github.com/gorilla/mux",
