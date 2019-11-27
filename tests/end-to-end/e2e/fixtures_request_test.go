@@ -76,3 +76,12 @@ func fixDeleteIntegrationSystem(intSysID string) *gcli.Request {
 				}
 			}`, intSysID, tc.gqlFieldsProvider.ForIntegrationSystem()))
 }
+
+func fixGenerateOneTimeTokenForApplication(appID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: generateOneTimeTokenForApplication(id: "%s") {
+					%s
+				}
+			}`, appID, tc.gqlFieldsProvider.ForOneTimeToken()))
+}
