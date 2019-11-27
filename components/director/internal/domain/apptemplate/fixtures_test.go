@@ -37,12 +37,12 @@ func fixModelAppTemplate(id, name string) *model.ApplicationTemplate {
 	appInputString := fixApplicationCreateInputString()
 
 	return &model.ApplicationTemplate{
-		ID:               id,
-		Name:             name,
-		Description:      &desc,
-		ApplicationInput: appInputString,
-		Placeholders:     fixModelPlaceholders(),
-		AccessLevel:      model.GlobalApplicationTemplateAccessLevel,
+		ID:                   id,
+		Name:                 name,
+		Description:          &desc,
+		ApplicationInputJSON: appInputString,
+		Placeholders:         fixModelPlaceholders(),
+		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
 	}
 }
 
@@ -87,11 +87,11 @@ func fixModelAppTemplateInput(name string, appInputString string) *model.Applica
 	desc := testDescription
 
 	return &model.ApplicationTemplateInput{
-		Name:             name,
-		Description:      &desc,
-		ApplicationInput: appInputString,
-		Placeholders:     fixModelPlaceholders(),
-		AccessLevel:      model.GlobalApplicationTemplateAccessLevel,
+		Name:                 name,
+		Description:          &desc,
+		ApplicationInputJSON: appInputString,
+		Placeholders:         fixModelPlaceholders(),
+		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
 	}
 }
 

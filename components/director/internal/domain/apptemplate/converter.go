@@ -34,8 +34,8 @@ func (c *converter) ToGraphQL(in *model.ApplicationTemplate) (*graphql.Applicati
 
 	var gqlAppInput string
 	var err error
-	if in.ApplicationInput != "" {
-		gqlAppInput, err = c.graphqliseApplicationCreateInput(in.ApplicationInput)
+	if in.ApplicationInputJSON != "" {
+		gqlAppInput, err = c.graphqliseApplicationCreateInput(in.ApplicationInputJSON)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while graphqlising application create input")
 		}
@@ -81,11 +81,11 @@ func (c *converter) InputFromGraphQL(in graphql.ApplicationTemplateInput) (model
 	}
 
 	return model.ApplicationTemplateInput{
-		Name:             in.Name,
-		Description:      in.Description,
-		ApplicationInput: appCreateInput,
-		Placeholders:     c.placeholdersFromGraphql(in.Placeholders),
-		AccessLevel:      model.ApplicationTemplateAccessLevel(in.AccessLevel),
+		Name:                 in.Name,
+		Description:          in.Description,
+		ApplicationInputJSON: appCreateInput,
+		Placeholders:         c.placeholdersFromGraphql(in.Placeholders),
+		AccessLevel:          model.ApplicationTemplateAccessLevel(in.AccessLevel),
 	}, nil
 }
 
@@ -103,7 +103,7 @@ func (c *converter) ToEntity(in *model.ApplicationTemplate) (*Entity, error) {
 		ID:                   in.ID,
 		Name:                 in.Name,
 		Description:          repo.NewNullableString(in.Description),
-		ApplicationInputJSON: in.ApplicationInput,
+		ApplicationInputJSON: in.ApplicationInputJSON,
 		PlaceholdersJSON:     placeholders,
 		AccessLevel:          string(in.AccessLevel),
 	}, nil
@@ -120,12 +120,12 @@ func (c *converter) FromEntity(entity *Entity) (*model.ApplicationTemplate, erro
 	}
 
 	return &model.ApplicationTemplate{
-		ID:               entity.ID,
-		Name:             entity.Name,
-		Description:      repo.StringPtrFromNullableString(entity.Description),
-		ApplicationInput: entity.ApplicationInputJSON,
-		Placeholders:     placeholders,
-		AccessLevel:      model.ApplicationTemplateAccessLevel(entity.AccessLevel),
+		ID:                   entity.ID,
+		Name:                 entity.Name,
+		Description:          repo.StringPtrFromNullableString(entity.Description),
+		ApplicationInputJSON: entity.ApplicationInputJSON,
+		Placeholders:         placeholders,
+		AccessLevel:          model.ApplicationTemplateAccessLevel(entity.AccessLevel),
 	}, nil
 }
 

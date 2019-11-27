@@ -33,9 +33,9 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		{
 			Name: "Error when graphqlising Application Create Input",
 			Input: &model.ApplicationTemplate{
-				ID:               testID,
-				Name:             testName,
-				ApplicationInput: "{abc",
+				ID:                   testID,
+				Name:                 testName,
+				ApplicationInputJSON: "{abc",
 			},
 			Expected:      nil,
 			ExpectedError: true,
@@ -98,9 +98,9 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 			Input: []*model.ApplicationTemplate{
 				fixModelAppTemplate("id1", "name1"),
 				{
-					ID:               testID,
-					Name:             testName,
-					ApplicationInput: "",
+					ID:                   testID,
+					Name:                 testName,
+					ApplicationInputJSON: "",
 				},
 			},
 			Expected:      nil,
@@ -111,9 +111,9 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 			Input: []*model.ApplicationTemplate{
 				fixModelAppTemplate("id1", "name1"),
 				{
-					ID:               testID,
-					Name:             testName,
-					ApplicationInput: "{abc",
+					ID:                   testID,
+					Name:                 testName,
+					ApplicationInputJSON: "{abc",
 				},
 			},
 			Expected:      nil,
