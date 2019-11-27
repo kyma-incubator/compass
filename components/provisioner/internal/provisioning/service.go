@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/converters"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 
@@ -42,16 +42,18 @@ type service struct {
 	persistenceService  persistence.Service
 	hydroform           hydroform.Service
 	installationService installation.Service
-	uuidGenerator       uuid.UUIDGenerator
+	inputConverter      converters.InputConverter
+	graphQLConverter    converters.GraphQLConverter
 }
 
-func NewProvisioningService(persistenceService persistence.Service, uuidGenerator uuid.UUIDGenerator,
-	hydroform hydroform.Service, installationService installation.Service) Service {
+func NewProvisioningService(persistenceService persistence.Service, inputConverter converters.InputConverter,
+	graphQLConverter converters.GraphQLConverter, hydroform hydroform.Service, installationService installation.Service) Service {
 	return &service{
 		persistenceService:  persistenceService,
 		hydroform:           hydroform,
 		installationService: installationService,
-		uuidGenerator:       uuidGenerator,
+		inputConverter:      inputConverter,
+		graphQLConverter:    graphQLConverter,
 	}
 }
 
@@ -61,7 +63,7 @@ func (r *service) ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeI
 		return "", nil, err
 	}
 
-	cluster, err := runtimeConfigFromInput(id, config, r.uuidGenerator)
+	cluster, err := r.inputConverter.ProvisioningInputToCluster(id, config)
 	if err != nil {
 		return "", nil, err
 	}
@@ -144,9 +146,7 @@ func (r *service) RuntimeStatus(runtimeID string) (*gqlschema.RuntimeStatus, err
 		return nil, err
 	}
 
-	status := runtimeStatusToGraphQLStatus(runtimeStatus)
-
-	return status, nil
+	return r.graphQLConverter.RuntimeStatusToGraphQLStatus(runtimeStatus), nil
 }
 
 func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.OperationStatus, error) {
@@ -156,9 +156,7 @@ func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.Operati
 		return nil, err
 	}
 
-	status := operationStatusToGQLOperationStatus(operation)
-
-	return status, nil
+	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
 }
 
 func (r *service) CleanupRuntimeData(id string) (string, error) {
@@ -208,7 +206,7 @@ func (r *service) startProvisioning(operationID string, cluster model.Cluster, f
 func (r *service) startDeprovisioning(operationID string, cluster model.Cluster, finished chan<- struct{}) {
 	defer close(finished)
 	log.Infof("Deprovisioning runtime %s is starting", cluster.ID)
-	err := r.hydroform.DeprovisionCluster(cluster.ClusterConfig, cluster.TerraformState)
+	err := r.hydroform.DeprovisionCluster(cluster)
 
 	if err != nil {
 		log.Errorf("Deprovisioning runtime %s failed: %s", cluster.ID, err.Error())

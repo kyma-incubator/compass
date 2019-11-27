@@ -65,8 +65,13 @@ func (c GardenerConfig) ToHydroformConfiguration(credentialsFilePath string) (*t
 
 type ProviderSpecificConfig string
 
+func (c ProviderSpecificConfig) RawJSON() string {
+	return string(c)
+}
+
 type GardenerProviderConfig interface {
 	AsMap() map[string]interface{}
+	RawJSON() string
 }
 
 type GCPGardenerConfig struct {

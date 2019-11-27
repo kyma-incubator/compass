@@ -8,20 +8,24 @@ import (
 
 type GraphQLConverter interface {
 	RuntimeStatusToGraphQLStatus(status model.RuntimeStatus) *gqlschema.RuntimeStatus
+	OperationStatusToGQLOperationStatus(operation model.Operation) *gqlschema.OperationStatus
 }
 
-type graphQLConverter struct {
+func NewGraphQLConverter() GraphQLConverter {
+	return &graphQLConverter{}
 }
+
+type graphQLConverter struct{}
 
 func (c graphQLConverter) RuntimeStatusToGraphQLStatus(status model.RuntimeStatus) *gqlschema.RuntimeStatus {
 	return &gqlschema.RuntimeStatus{
-		LastOperationStatus:     c.operationStatusToGQLOperationStatus(status.LastOperationStatus),
+		LastOperationStatus:     c.OperationStatusToGQLOperationStatus(status.LastOperationStatus),
 		RuntimeConnectionStatus: c.runtimeConnectionStatusToGraphQLStatus(status.RuntimeConnectionStatus),
-		RuntimeConfiguration:    c.runtimeConfigurationToGraphQLConfiguration(status.RuntimeConfiguration),
+		RuntimeConfiguration:    c.clusterToToGraphQLRuntimeConfiguration(status.RuntimeConfiguration),
 	}
 }
 
-func (c graphQLConverter) operationStatusToGQLOperationStatus(operation model.Operation) *gqlschema.OperationStatus {
+func (c graphQLConverter) OperationStatusToGQLOperationStatus(operation model.Operation) *gqlschema.OperationStatus {
 	return &gqlschema.OperationStatus{
 		ID:        &operation.ID,
 		Operation: c.operationTypeToGraphQLType(operation.Type),
@@ -48,7 +52,7 @@ func (c graphQLConverter) runtimeAgentConnectionStatusToGraphQLStatus(status mod
 	}
 }
 
-func (c graphQLConverter) runtimeConfigurationToGraphQLConfiguration(config model.RuntimeConfig) *gqlschema.RuntimeConfig {
+func (c graphQLConverter) clusterToToGraphQLRuntimeConfiguration(config model.Cluster) *gqlschema.RuntimeConfig {
 	return &gqlschema.RuntimeConfig{
 		ClusterConfig:         c.clusterConfigToGraphQLConfig(config.ClusterConfig),
 		KymaConfig:            c.kymaConfigToGraphQLConfig(config.KymaConfig),
@@ -72,7 +76,7 @@ func (c graphQLConverter) clusterConfigToGraphQLConfig(config interface{}) gqlsc
 
 func (c graphQLConverter) gardenerConfigToGraphQLConfig(config model.GardenerConfig) gqlschema.ClusterConfig {
 
-	providerSpecificConfig := c.providerSpecificConfigToGQLConfig(config.GardenerProviderConfig)
+	providerSpecificConfig := c.providerSpecificConfigToGQLConfig(config.GardenerProviderConfig.RawJSON())
 
 	return gqlschema.GardenerConfig{
 		Name:                   &config.Name,

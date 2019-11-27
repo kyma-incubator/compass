@@ -7,11 +7,11 @@ import (
 	"log"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+
 	"k8s.io/client-go/tools/clientcmd"
 
 	pkgErrors "github.com/pkg/errors"
-
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 
 	"github.com/kyma-incubator/hydroform/install/installation"
 	"k8s.io/client-go/rest"
@@ -21,12 +21,12 @@ type InstallationHandler func(*rest.Config, ...installation.InstallationOption) 
 
 //go:generate mockery -name=ArtifactsProvider
 type ArtifactsProvider interface {
-	GetArtifacts(version string) (release.Release, error)
+	GetArtifacts(version string) (model.Release, error)
 }
 
 //go:generate mockery -name=Service
 type Service interface {
-	InstallKyma(kubeconfigRaw string, release release.Release) error
+	InstallKyma(kubeconfigRaw string, release model.Release) error
 }
 
 func NewInstallationService(installationTimeout time.Duration, artifactsProvider ArtifactsProvider, installationHandler InstallationHandler, installErrFailureThreshold int) Service {
@@ -45,7 +45,7 @@ type installationService struct {
 	installationHandler                InstallationHandler
 }
 
-func (s *installationService) InstallKyma(kubeconfigRaw, kymaVersion string) error {
+func (s *installationService) InstallKyma(kubeconfigRaw string, release model.Release) error {
 	kubeconfig, err := clientcmd.NewClientConfigFromBytes([]byte(kubeconfigRaw))
 	if err != nil {
 		return fmt.Errorf("error constructing kubeconfig from raw config: %s", err.Error())

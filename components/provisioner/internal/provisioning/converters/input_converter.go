@@ -1,7 +1,8 @@
 package converters
 
 import (
-	"errors"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 
@@ -27,10 +28,12 @@ type converter struct {
 }
 
 func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput) (model.Cluster, error) {
-	kymaConfig := c.kymaConfigFromInput(runtimeID, *input.KymaConfig)
+	kymaConfig, err := c.kymaConfigFromInput(runtimeID, *input.KymaConfig)
+	if err != nil {
+		return model.Cluster{}, err
+	}
 
 	clusterConfig, err := c.clusterConfigFromInput(runtimeID, *input.ClusterConfig)
-
 	if err != nil {
 		return model.Cluster{}, err
 	}
@@ -122,7 +125,16 @@ func (c converter) gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfi
 	}
 }
 
-func (c converter) kymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) model.KymaConfig {
+func (c converter) kymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, error) {
+	release, err := c.readSession.GetReleaseByVersion(input.Version)
+	if err != nil {
+		if err.Code() == dberrors.CodeNotFound {
+			return model.KymaConfig{}, errors.Errorf("Kyma Release %s not found", input.Version)
+		}
+
+		return model.KymaConfig{}, errors.WithMessagef(err, "Failed to get Kyma Release with version %s", input.Version)
+	}
+
 	var modules []model.KymaConfigModule
 	kymaConfigID := c.uuidGenerator.New()
 
@@ -140,8 +152,8 @@ func (c converter) kymaConfigFromInput(runtimeID string, input gqlschema.KymaCon
 
 	return model.KymaConfig{
 		ID:        kymaConfigID,
-		Version:   input.Version,
+		Release:   release,
 		Modules:   modules,
 		ClusterID: runtimeID,
-	}
+	}, nil
 }
