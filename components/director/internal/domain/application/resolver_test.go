@@ -29,11 +29,11 @@ func TestResolver_CreateApplication(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	desc := "Lorem ipsum"
-	gqlInput := graphql.ApplicationCreateInput{
+	gqlInput := graphql.ApplicationRegisterInput{
 		Name:        "Foo",
 		Description: &desc,
 	}
-	modelInput := model.ApplicationCreateInput{
+	modelInput := model.ApplicationRegisterInput{
 		Name:        "Foo",
 		Description: &desc,
 	}
@@ -44,7 +44,7 @@ func TestResolver_CreateApplication(t *testing.T) {
 		TransactionerFn     func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn           func() *automock.ApplicationService
 		ConverterFn         func() *automock.ApplicationConverter
-		Input               graphql.ApplicationCreateInput
+		Input               graphql.ApplicationRegisterInput
 		ExpectedApplication *graphql.Application
 		ExpectedErr         error
 	}{
@@ -131,7 +131,7 @@ func TestResolver_CreateApplication(t *testing.T) {
 			resolver.SetConverter(converter)
 
 			// when
-			result, err := resolver.CreateApplication(context.TODO(), testCase.Input)
+			result, err := resolver.RegisterApplication(context.TODO(), testCase.Input)
 
 			// then
 			assert.Equal(t, testCase.ExpectedApplication, result)
@@ -506,7 +506,7 @@ func TestResolver_DeleteApplication(t *testing.T) {
 			resolver.SetConverter(converter)
 
 			// when
-			result, err := resolver.DeleteApplication(context.TODO(), testCase.InputID)
+			result, err := resolver.UnregisterApplication(context.TODO(), testCase.InputID)
 
 			// then
 			assert.Equal(t, testCase.ExpectedApplication, result)
@@ -1361,7 +1361,7 @@ func TestResolver_Apis(t *testing.T) {
 
 			resolver := application.NewResolver(transact, nil, svc, nil, nil, nil, nil, nil, nil, nil, nil, converter, nil, nil, "")
 			// when
-			result, err := resolver.Apis(context.TODO(), app, &group, &first, &gqlAfter)
+			result, err := resolver.ApiDefinitions(context.TODO(), app, &group, &first, &gqlAfter)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
@@ -1388,7 +1388,7 @@ func TestResolver_EventAPIs(t *testing.T) {
 		fixModelEventAPIDefinition("bar", applicationID, "Bar", "Lorem Ipsum", group),
 	}
 
-	gqlEventAPIDefinitions := []*graphql.EventAPIDefinition{
+	gqlEventAPIDefinitions := []*graphql.EventDefinition{
 		fixGQLEventAPIDefinition("foo", applicationID, "Foo", "Lorem Ipsum", group),
 		fixGQLEventAPIDefinition("bar", applicationID, "Bar", "Lorem Ipsum", group),
 	}
@@ -1406,7 +1406,7 @@ func TestResolver_EventAPIs(t *testing.T) {
 		ConverterFn     func() *automock.EventAPIConverter
 		InputFirst      *int
 		InputAfter      *graphql.PageCursor
-		ExpectedResult  *graphql.EventAPIDefinitionPage
+		ExpectedResult  *graphql.EventDefinitionPage
 		ExpectedErr     error
 	}{
 		{
@@ -1486,7 +1486,7 @@ func TestResolver_EventAPI(t *testing.T) {
 		ConverterFn     func() *automock.EventAPIConverter
 		InputID         string
 		Application     *graphql.Application
-		ExpectedAPI     *graphql.EventAPIDefinition
+		ExpectedAPI     *graphql.EventDefinition
 		ExpectedErr     error
 	}{
 		{
@@ -1589,7 +1589,7 @@ func TestResolver_EventAPI(t *testing.T) {
 			resolver := application.NewResolver(transact, nil, nil, svc, nil, nil, nil, nil, nil, nil, nil, nil, converter, nil, "")
 
 			// when
-			result, err := resolver.EventAPI(context.TODO(), testCase.InputID, testCase.Application)
+			result, err := resolver.EventDefinition(context.TODO(), testCase.InputID, testCase.Application)
 
 			// then
 			assert.Equal(t, testCase.ExpectedAPI, result)
@@ -1723,7 +1723,7 @@ func TestResolver_API(t *testing.T) {
 				resolver := application.NewResolver(transact, nil, svc, nil, nil, nil, nil, nil, nil, nil, nil, converter, nil, nil, "")
 
 				// when
-				result, err := resolver.API(context.TODO(), testCase.InputID, testCase.Application)
+				result, err := resolver.APIDefinition(context.TODO(), testCase.InputID, testCase.Application)
 
 				// then
 				assert.Equal(t, testCase.ExpectedAPI, result)

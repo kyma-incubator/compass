@@ -16,8 +16,8 @@ func TestTokenGeneration(t *testing.T) {
 	t.Run("Generate one time token for Runtime", func(t *testing.T) {
 		//GIVEN
 		ctx := context.TODO()
-		runtime := createRuntime(t, ctx, "test")
-		defer deleteRuntime(t, runtime.ID)
+		runtime := registerRuntime(t, ctx, "test")
+		defer unregisterRuntime(t, runtime.ID)
 		tokenRequestNumber := 3
 
 		//WHEN
@@ -34,8 +34,8 @@ func TestTokenGeneration(t *testing.T) {
 	t.Run("Generate one time token for Application", func(t *testing.T) {
 		//GIVEN
 		ctx := context.TODO()
-		app := createApplication(t, ctx, "test")
-		defer deleteApplication(t, app.ID)
+		app := registerApplication(t, ctx, "test")
+		defer unregisterApplication(t, app.ID)
 		tokenRequestNumber := 3
 
 		//WHEN

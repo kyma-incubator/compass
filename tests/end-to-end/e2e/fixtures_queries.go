@@ -57,14 +57,14 @@ func createIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.
 	return intSys
 }
 
-func deleteIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) {
-	req := fixDeleteIntegrationSystem(id)
+func unregisterIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) {
+	req := fixunregisterIntegrationSystem(id)
 	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil)
 	require.NoError(t, err)
 }
 
-func deleteIntegrationSystemWithErr(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) {
-	req := fixDeleteIntegrationSystem(id)
+func unregisterIntegrationSystemWithErr(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) {
+	req := fixunregisterIntegrationSystem(id)
 	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "referenced by it")

@@ -68,10 +68,10 @@ func fixDeleteApplicationRequest(t *testing.T, id string) *gcli.Request {
 	}`, id, tc.gqlFieldsProvider.ForApplication()))
 }
 
-func fixDeleteIntegrationSystem(intSysID string) *gcli.Request {
+func fixunregisterIntegrationSystem(intSysID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: deleteIntegrationSystem(id: "%s") {
+			result: unregisterIntegrationSystem(id: "%s") {
 					%s
 				}
 			}`, intSysID, tc.gqlFieldsProvider.ForIntegrationSystem()))

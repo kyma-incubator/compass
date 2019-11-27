@@ -12,11 +12,11 @@ type EventAPIConverter struct {
 }
 
 // InputFromGraphQL provides a mock function with given fields: in
-func (_m *EventAPIConverter) InputFromGraphQL(in *graphql.EventAPIDefinitionInput) *model.EventAPIDefinitionInput {
+func (_m *EventAPIConverter) InputFromGraphQL(in *graphql.EventDefinitionInput) *model.EventAPIDefinitionInput {
 	ret := _m.Called(in)
 
 	var r0 *model.EventAPIDefinitionInput
-	if rf, ok := ret.Get(0).(func(*graphql.EventAPIDefinitionInput) *model.EventAPIDefinitionInput); ok {
+	if rf, ok := ret.Get(0).(func(*graphql.EventDefinitionInput) *model.EventAPIDefinitionInput); ok {
 		r0 = rf(in)
 	} else {
 		if ret.Get(0) != nil {
@@ -28,11 +28,11 @@ func (_m *EventAPIConverter) InputFromGraphQL(in *graphql.EventAPIDefinitionInpu
 }
 
 // MultipleInputFromGraphQL provides a mock function with given fields: in
-func (_m *EventAPIConverter) MultipleInputFromGraphQL(in []*graphql.EventAPIDefinitionInput) []*model.EventAPIDefinitionInput {
+func (_m *EventAPIConverter) MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) []*model.EventAPIDefinitionInput {
 	ret := _m.Called(in)
 
 	var r0 []*model.EventAPIDefinitionInput
-	if rf, ok := ret.Get(0).(func([]*graphql.EventAPIDefinitionInput) []*model.EventAPIDefinitionInput); ok {
+	if rf, ok := ret.Get(0).(func([]*graphql.EventDefinitionInput) []*model.EventAPIDefinitionInput); ok {
 		r0 = rf(in)
 	} else {
 		if ret.Get(0) != nil {
@@ -44,15 +44,15 @@ func (_m *EventAPIConverter) MultipleInputFromGraphQL(in []*graphql.EventAPIDefi
 }
 
 // MultipleToGraphQL provides a mock function with given fields: in
-func (_m *EventAPIConverter) MultipleToGraphQL(in []*model.EventAPIDefinition) []*graphql.EventAPIDefinition {
+func (_m *EventAPIConverter) MultipleToGraphQL(in []*model.EventAPIDefinition) []*graphql.EventDefinition {
 	ret := _m.Called(in)
 
-	var r0 []*graphql.EventAPIDefinition
-	if rf, ok := ret.Get(0).(func([]*model.EventAPIDefinition) []*graphql.EventAPIDefinition); ok {
+	var r0 []*graphql.EventDefinition
+	if rf, ok := ret.Get(0).(func([]*model.EventAPIDefinition) []*graphql.EventDefinition); ok {
 		r0 = rf(in)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*graphql.EventAPIDefinition)
+			r0 = ret.Get(0).([]*graphql.EventDefinition)
 		}
 	}
 
@@ -60,15 +60,15 @@ func (_m *EventAPIConverter) MultipleToGraphQL(in []*model.EventAPIDefinition) [
 }
 
 // ToGraphQL provides a mock function with given fields: in
-func (_m *EventAPIConverter) ToGraphQL(in *model.EventAPIDefinition) *graphql.EventAPIDefinition {
+func (_m *EventAPIConverter) ToGraphQL(in *model.EventAPIDefinition) *graphql.EventDefinition {
 	ret := _m.Called(in)
 
-	var r0 *graphql.EventAPIDefinition
-	if rf, ok := ret.Get(0).(func(*model.EventAPIDefinition) *graphql.EventAPIDefinition); ok {
+	var r0 *graphql.EventDefinition
+	if rf, ok := ret.Get(0).(func(*model.EventAPIDefinition) *graphql.EventDefinition); ok {
 		r0 = rf(in)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*graphql.EventAPIDefinition)
+			r0 = ret.Get(0).(*graphql.EventDefinition)
 		}
 	}
 

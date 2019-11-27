@@ -23,8 +23,8 @@ func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventAPIDefini
 	return &model.EventAPIDefinition{ID: id, Tenant: tenantID, ApplicationID: appID, Name: placeholder}
 }
 
-func fixGQLEventAPIDefinition(id, placeholder string) *graphql.EventAPIDefinition {
-	return &graphql.EventAPIDefinition{
+func fixGQLEventAPIDefinition(id, placeholder string) *graphql.EventDefinition {
+	return &graphql.EventDefinition{
 		ID:            id,
 		ApplicationID: appID,
 		Name:          placeholder,
@@ -51,14 +51,14 @@ func fixFullModelEventAPIDefinition(id, placeholder string) model.EventAPIDefini
 	}
 }
 
-func fixDetailedGQLEventAPIDefinition(id, placeholder string) *graphql.EventAPIDefinition {
+func fixDetailedGQLEventAPIDefinition(id, placeholder string) *graphql.EventDefinition {
 	data := graphql.CLOB("data")
 	format := graphql.SpecFormatJSON
 
-	spec := &graphql.EventAPISpec{
+	spec := &graphql.EventSpec{
 		Data:         &data,
 		Format:       format,
-		Type:         graphql.EventAPISpecTypeAsyncAPI,
+		Type:         graphql.EventSpecTypeAsyncAPI,
 		DefinitionID: id,
 	}
 
@@ -72,7 +72,7 @@ func fixDetailedGQLEventAPIDefinition(id, placeholder string) *graphql.EventAPID
 		ForRemoval:      &forRemoval,
 	}
 
-	return &graphql.EventAPIDefinition{
+	return &graphql.EventDefinition{
 		ID:            id,
 		ApplicationID: appID,
 		Name:          placeholder,
@@ -113,14 +113,14 @@ func fixModelEventAPIDefinitionInput() *model.EventAPIDefinitionInput {
 	}
 }
 
-func fixGQLEventAPIDefinitionInput() *graphql.EventAPIDefinitionInput {
+func fixGQLEventAPIDefinitionInput() *graphql.EventDefinitionInput {
 	data := graphql.CLOB("data")
 
-	spec := &graphql.EventAPISpecInput{
-		Data:          &data,
-		EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
-		Format:        graphql.SpecFormatYaml,
-		FetchRequest:  &graphql.FetchRequestInput{},
+	spec := &graphql.EventSpecInput{
+		Data:         &data,
+		Type:         graphql.EventSpecTypeAsyncAPI,
+		Format:       graphql.SpecFormatYaml,
+		FetchRequest: &graphql.FetchRequestInput{},
 	}
 
 	deprecated := false
@@ -133,7 +133,7 @@ func fixGQLEventAPIDefinitionInput() *graphql.EventAPIDefinitionInput {
 		ForRemoval:      &forRemoval,
 	}
 
-	return &graphql.EventAPIDefinitionInput{
+	return &graphql.EventDefinitionInput{
 		Name:        "name",
 		Description: str.Ptr("description"),
 		Group:       str.Ptr("group"),

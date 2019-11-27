@@ -224,7 +224,7 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	return exist, nil
 }
 
-func (s *service) Create(ctx context.Context, in model.ApplicationCreateInput) (string, error) {
+func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
@@ -421,7 +421,7 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 	return nil
 }
 
-func (s *service) createRelatedResources(ctx context.Context, in model.ApplicationCreateInput, tenant string, applicationID string) error {
+func (s *service) createRelatedResources(ctx context.Context, in model.ApplicationRegisterInput, tenant string, applicationID string) error {
 	var err error
 	var webhooks []*model.Webhook
 	for _, item := range in.Webhooks {
@@ -475,7 +475,7 @@ func (s *service) createEvents(ctx context.Context, appID, tenant string, events
 		eventID := s.uidService.Generate()
 		err = s.eventAPIRepo.Create(ctx, item.ToEventAPIDefinition(eventID, appID, tenant))
 		if err != nil {
-			return errors.Wrap(err, "while creating API for application")
+			return errors.Wrap(err, "while creating EventDefinitions for application")
 		}
 
 		if item.Spec != nil && item.Spec.FetchRequest != nil {
@@ -522,7 +522,7 @@ func (s *service) deleteRelatedResources(ctx context.Context, tenant, applicatio
 
 	err = s.eventAPIRepo.DeleteAllByApplicationID(ctx, tenant, applicationID)
 	if err != nil {
-		return errors.Wrapf(err, "while deleting EventAPIs for application %s", applicationID)
+		return errors.Wrapf(err, "while deleting EventDefinitions for application %s", applicationID)
 	}
 
 	err = s.documentRepo.DeleteAllByApplicationID(ctx, tenant, applicationID)

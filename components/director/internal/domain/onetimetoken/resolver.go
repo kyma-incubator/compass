@@ -29,7 +29,7 @@ func NewTokenResolver(transact persistence.Transactioner, svc TokenService, conv
 	return &Resolver{transact: transact, svc: svc, conv: conv}
 }
 
-func (r *Resolver) GenerateOneTimeTokenForRuntime(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
+func (r *Resolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -50,7 +50,7 @@ func (r *Resolver) GenerateOneTimeTokenForRuntime(ctx context.Context, id string
 	return &gqlToken, nil
 }
 
-func (r *Resolver) GenerateOneTimeTokenForApplication(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
+func (r *Resolver) RequestOneTimeTokenForApplication(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err

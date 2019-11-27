@@ -24,10 +24,10 @@ type EventAPIService interface {
 
 //go:generate mockery -name=EventAPIConverter -output=automock -outpkg=automock -case=underscore
 type EventAPIConverter interface {
-	ToGraphQL(in *model.EventAPIDefinition) *graphql.EventAPIDefinition
-	MultipleToGraphQL(in []*model.EventAPIDefinition) []*graphql.EventAPIDefinition
-	MultipleInputFromGraphQL(in []*graphql.EventAPIDefinitionInput) []*model.EventAPIDefinitionInput
-	InputFromGraphQL(in *graphql.EventAPIDefinitionInput) *model.EventAPIDefinitionInput
+	ToGraphQL(in *model.EventAPIDefinition) *graphql.EventDefinition
+	MultipleToGraphQL(in []*model.EventAPIDefinition) []*graphql.EventDefinition
+	MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) []*model.EventAPIDefinitionInput
+	InputFromGraphQL(in *graphql.EventDefinitionInput) *model.EventAPIDefinitionInput
 }
 
 //go:generate mockery -name=FetchRequestConverter -output=automock -outpkg=automock -case=underscore
@@ -59,7 +59,7 @@ func NewResolver(transact persistence.Transactioner, svc EventAPIService, appSvc
 	}
 }
 
-func (r *Resolver) AddEventAPI(ctx context.Context, applicationID string, in graphql.EventAPIDefinitionInput) (*graphql.EventAPIDefinition, error) {
+func (r *Resolver) AddEventDefinition(ctx context.Context, applicationID string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -99,7 +99,7 @@ func (r *Resolver) AddEventAPI(ctx context.Context, applicationID string, in gra
 	return gqlAPI, nil
 }
 
-func (r *Resolver) UpdateEventAPI(ctx context.Context, id string, in graphql.EventAPIDefinitionInput) (*graphql.EventAPIDefinition, error) {
+func (r *Resolver) UpdateEventDefinition(ctx context.Context, id string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -130,7 +130,7 @@ func (r *Resolver) UpdateEventAPI(ctx context.Context, id string, in graphql.Eve
 	return gqlAPI, nil
 }
 
-func (r *Resolver) DeleteEventAPI(ctx context.Context, id string) (*graphql.EventAPIDefinition, error) {
+func (r *Resolver) DeleteEventDefinition(ctx context.Context, id string) (*graphql.EventDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -159,7 +159,7 @@ func (r *Resolver) DeleteEventAPI(ctx context.Context, id string) (*graphql.Even
 	return deletedAPI, nil
 }
 
-func (r *Resolver) RefetchEventAPISpec(ctx context.Context, eventID string) (*graphql.EventAPISpec, error) {
+func (r *Resolver) RefetchEventDefinitionSpec(ctx context.Context, eventID string) (*graphql.EventSpec, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -183,7 +183,7 @@ func (r *Resolver) RefetchEventAPISpec(ctx context.Context, eventID string) (*gr
 	return convertedOut.Spec, nil
 }
 
-func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventAPISpec) (*graphql.FetchRequest, error) {
+func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*graphql.FetchRequest, error) {
 	if obj == nil {
 		return nil, errors.New("Event API Spec cannot be empty")
 	}

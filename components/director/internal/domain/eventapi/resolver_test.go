@@ -42,7 +42,7 @@ func TestResolver_AddEventAPI(t *testing.T) {
 		ServiceFn       func() *automock.EventAPIService
 		AppServiceFn    func() *automock.ApplicationService
 		ConverterFn     func() *automock.EventAPIConverter
-		ExpectedAPI     *graphql.EventAPIDefinition
+		ExpectedAPI     *graphql.EventDefinition
 		ExpectedErr     error
 	}{
 		{
@@ -204,7 +204,7 @@ func TestResolver_AddEventAPI(t *testing.T) {
 			resolver := eventapi.NewResolver(tx, svc, appSvc, converter, nil)
 
 			// when
-			result, err := resolver.AddEventAPI(context.TODO(), appId, *gqlAPIInput)
+			result, err := resolver.AddEventDefinition(context.TODO(), appId, *gqlAPIInput)
 
 			// then
 			assert.Equal(t, testCase.ExpectedAPI, result)
@@ -238,7 +238,7 @@ func TestResolver_DeleteEventAPI(t *testing.T) {
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn       func() *automock.EventAPIService
 		ConverterFn     func() *automock.EventAPIConverter
-		ExpectedAPI     *graphql.EventAPIDefinition
+		ExpectedAPI     *graphql.EventDefinition
 		ExpectedErr     error
 	}{
 		{
@@ -333,7 +333,7 @@ func TestResolver_DeleteEventAPI(t *testing.T) {
 			resolver := eventapi.NewResolver(tx, svc, nil, converter, nil)
 
 			// when
-			result, err := resolver.DeleteEventAPI(context.TODO(), id)
+			result, err := resolver.DeleteEventDefinition(context.TODO(), id)
 
 			// then
 			assert.Equal(t, testCase.ExpectedAPI, result)
@@ -365,8 +365,8 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 		ServiceFn             func() *automock.EventAPIService
 		ConverterFn           func() *automock.EventAPIConverter
 		InputWebhookID        string
-		InputAPI              graphql.EventAPIDefinitionInput
-		ExpectedAPIDefinition *graphql.EventAPIDefinition
+		InputAPI              graphql.EventDefinitionInput
+		ExpectedAPIDefinition *graphql.EventDefinition
 		ExpectedErr           error
 	}{
 		{
@@ -470,7 +470,7 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 			resolver := eventapi.NewResolver(tx, svc, nil, converter, nil)
 
 			// when
-			result, err := resolver.UpdateEventAPI(context.TODO(), id, *gqlAPIDefinitionInput)
+			result, err := resolver.UpdateEventDefinition(context.TODO(), id, *gqlAPIDefinitionInput)
 
 			// then
 			assert.Equal(t, testCase.ExpectedAPIDefinition, result)
@@ -500,11 +500,11 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 	}
 
 	clob := graphql.CLOB(dataBytes)
-	gqlEventAPISpec := &graphql.EventAPISpec{
+	gqlEventAPISpec := &graphql.EventSpec{
 		Data: &clob,
 	}
 
-	gqlEventAPIDefinition := &graphql.EventAPIDefinition{
+	gqlEventAPIDefinition := &graphql.EventDefinition{
 		Spec: gqlEventAPISpec,
 	}
 
@@ -514,7 +514,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn       func() *automock.EventAPIService
 		ConvFn          func() *automock.EventAPIConverter
-		ExpectedAPISpec *graphql.EventAPISpec
+		ExpectedAPISpec *graphql.EventSpec
 		ExpectedErr     error
 	}{
 		{
@@ -588,7 +588,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			resolver := eventapi.NewResolver(transact, svc, nil, conv, nil)
 
 			// when
-			result, err := resolver.RefetchEventAPISpec(context.TODO(), apiID)
+			result, err := resolver.RefetchEventDefinitionSpec(context.TODO(), apiID)
 
 			// then
 			assert.Equal(t, testCase.ExpectedAPISpec, result)
@@ -608,7 +608,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 
 	id := "bar"
 	url := "foo.bar"
-	eventAPISpec := &graphql.EventAPISpec{DefinitionID: id}
+	eventAPISpec := &graphql.EventSpec{DefinitionID: id}
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -620,7 +620,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn       func() *automock.EventAPIService
 		ConverterFn     func() *automock.FetchRequestConverter
-		EventApiSpec    *graphql.EventAPISpec
+		EventApiSpec    *graphql.EventSpec
 		ExpectedResult  *graphql.FetchRequest
 		ExpectedErr     error
 	}{

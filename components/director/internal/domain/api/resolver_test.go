@@ -202,7 +202,7 @@ func TestResolver_AddAPI(t *testing.T) {
 			resolver := api.NewResolver(transact, svc, appSvc, nil, nil, converter, nil, nil, nil)
 
 			// when
-			result, err := resolver.AddAPI(context.TODO(), appId, *gqlAPIInput)
+			result, err := resolver.AddAPIDefinition(context.TODO(), appId, *gqlAPIInput)
 
 			// then
 			assert.Equal(t, testCase.ExpectedAPI, result)
@@ -330,7 +330,7 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			resolver := api.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil)
 
 			// when
-			result, err := resolver.DeleteAPI(context.TODO(), id)
+			result, err := resolver.DeleteAPIDefinition(context.TODO(), id)
 
 			// then
 			assert.Equal(t, testCase.ExpectedAPI, result)
@@ -470,7 +470,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			resolver := api.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil)
 
 			// when
-			result, err := resolver.UpdateAPI(context.TODO(), id, *gqlAPIDefinitionInput)
+			result, err := resolver.UpdateAPIDefinition(context.TODO(), id, *gqlAPIDefinitionInput)
 
 			// then
 			assert.Equal(t, testCase.ExpectedAPIDefinition, result)

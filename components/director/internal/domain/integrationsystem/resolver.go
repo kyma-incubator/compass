@@ -129,7 +129,7 @@ func (r *Resolver) IntegrationSystems(ctx context.Context, first *int, after *gr
 	}, nil
 }
 
-func (r *Resolver) CreateIntegrationSystem(ctx context.Context, in graphql.IntegrationSystemInput) (*graphql.IntegrationSystem, error) {
+func (r *Resolver) RegisterIntegrationSystem(ctx context.Context, in graphql.IntegrationSystemInput) (*graphql.IntegrationSystem, error) {
 	convertedIn := r.intSysConverter.InputFromGraphQL(in)
 
 	tx, err := r.transact.Begin()
@@ -190,7 +190,7 @@ func (r *Resolver) UpdateIntegrationSystem(ctx context.Context, id string, in gr
 	return gqlIntSys, nil
 }
 
-func (r *Resolver) DeleteIntegrationSystem(ctx context.Context, id string) (*graphql.IntegrationSystem, error) {
+func (r *Resolver) UnregisterIntegrationSystem(ctx context.Context, id string) (*graphql.IntegrationSystem, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err

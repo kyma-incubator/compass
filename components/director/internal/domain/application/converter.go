@@ -88,13 +88,13 @@ func (c *converter) MultipleToGraphQL(in []*model.Application) []*graphql.Applic
 	return runtimes
 }
 
-func (c *converter) CreateInputFromGraphQL(in graphql.ApplicationCreateInput) model.ApplicationCreateInput {
+func (c *converter) CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) model.ApplicationRegisterInput {
 	var labels map[string]interface{}
 	if in.Labels != nil {
 		labels = *in.Labels
 	}
 
-	return model.ApplicationCreateInput{
+	return model.ApplicationRegisterInput{
 		Name:                in.Name,
 		Description:         in.Description,
 		Labels:              labels,
@@ -102,8 +102,8 @@ func (c *converter) CreateInputFromGraphQL(in graphql.ApplicationCreateInput) mo
 		IntegrationSystemID: in.IntegrationSystemID,
 		Webhooks:            c.webhook.MultipleInputFromGraphQL(in.Webhooks),
 		Documents:           c.document.MultipleInputFromGraphQL(in.Documents),
-		EventAPIs:           c.eventAPI.MultipleInputFromGraphQL(in.EventAPIs),
-		Apis:                c.api.MultipleInputFromGraphQL(in.Apis),
+		EventAPIs:           c.eventAPI.MultipleInputFromGraphQL(in.EventDefinitions),
+		Apis:                c.api.MultipleInputFromGraphQL(in.APIDefinitions),
 	}
 }
 

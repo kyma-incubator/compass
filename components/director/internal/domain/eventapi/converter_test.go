@@ -26,12 +26,12 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	modelEventAPIDefinition := fixFullModelEventAPIDefinition("foo", "placeholder")
 	gqlEventAPIDefinition := fixDetailedGQLEventAPIDefinition("foo", "placeholder")
 	emptyModelEventAPIDefinition := &model.EventAPIDefinition{}
-	emptyGraphQLEventAPIDefinition := &graphql.EventAPIDefinition{}
+	emptyGraphQLEventDefinition := &graphql.EventDefinition{}
 
 	testCases := []struct {
 		Name                  string
 		Input                 *model.EventAPIDefinition
-		Expected              *graphql.EventAPIDefinition
+		Expected              *graphql.EventDefinition
 		FetchRequestConverter func() *automock.FetchRequestConverter
 		VersionConverter      func() *automock.VersionConverter
 	}{
@@ -52,7 +52,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		{
 			Name:     "Empty",
 			Input:    emptyModelEventAPIDefinition,
-			Expected: emptyGraphQLEventAPIDefinition,
+			Expected: emptyGraphQLEventDefinition,
 			FetchRequestConverter: func() *automock.FetchRequestConverter {
 				return &automock.FetchRequestConverter{}
 			},
@@ -102,7 +102,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 		nil,
 	}
 
-	expected := []*graphql.EventAPIDefinition{
+	expected := []*graphql.EventDefinition{
 		fixGQLEventAPIDefinition("foo", "placeholder"),
 		fixGQLEventAPIDefinition("bar", "placeholder"),
 		{},
@@ -132,11 +132,11 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 	// given
 	gqlEventAPIDefinitionInput := fixGQLEventAPIDefinitionInput()
 	modelEventAPIDefinitionInput := fixModelEventAPIDefinitionInput()
-	emptyGQLEventAPIDefinition := &graphql.EventAPIDefinitionInput{}
+	emptyGQLEventAPIDefinition := &graphql.EventDefinitionInput{}
 	emptyModelEventAPIDefinition := &model.EventAPIDefinitionInput{}
 	testCases := []struct {
 		Name                  string
-		Input                 *graphql.EventAPIDefinitionInput
+		Input                 *graphql.EventDefinitionInput
 		Expected              *model.EventAPIDefinitionInput
 		FetchRequestConverter func() *automock.FetchRequestConverter
 		VersionConverter      func() *automock.VersionConverter
@@ -210,11 +210,11 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 	modelApi2 := fixModelEventAPIDefinitionInput()
 	modelApi2.Group = str.Ptr("group2")
 
-	gqlEventAPIDefinitionInputs := []*graphql.EventAPIDefinitionInput{gqlApi1, gqlApi2}
+	gqlEventAPIDefinitionInputs := []*graphql.EventDefinitionInput{gqlApi1, gqlApi2}
 	modelEventAPIDefinitionInputs := []*model.EventAPIDefinitionInput{modelApi1, modelApi2}
 	testCases := []struct {
 		Name                  string
-		Input                 []*graphql.EventAPIDefinitionInput
+		Input                 []*graphql.EventDefinitionInput
 		Expected              []*model.EventAPIDefinitionInput
 		FetchRequestConverter func() *automock.FetchRequestConverter
 		VersionConverter      func() *automock.VersionConverter
@@ -242,7 +242,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 		},
 		{
 			Name:     "Empty",
-			Input:    []*graphql.EventAPIDefinitionInput{},
+			Input:    []*graphql.EventDefinitionInput{},
 			Expected: nil,
 			FetchRequestConverter: func() *automock.FetchRequestConverter {
 				return &automock.FetchRequestConverter{}
@@ -295,7 +295,7 @@ func TestEventApiSpecDataConversionNilStaysNil(t *testing.T) {
 
 	converter := eventapi.NewConverter(mockFrConv, mockVersionConv)
 	// WHEN & THEN
-	convertedInputModel := converter.InputFromGraphQL(&graphql.EventAPIDefinitionInput{Spec: &graphql.EventAPISpecInput{}})
+	convertedInputModel := converter.InputFromGraphQL(&graphql.EventDefinitionInput{Spec: &graphql.EventSpecInput{}})
 	require.NotNil(t, convertedInputModel)
 	require.NotNil(t, convertedInputModel.Spec)
 	require.Nil(t, convertedInputModel.Spec.Data)

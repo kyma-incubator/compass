@@ -18,7 +18,7 @@ import (
 
 //go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
 type ApplicationService interface {
-	Create(ctx context.Context, in model.ApplicationCreateInput) (string, error)
+	Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error)
 	Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error
 	Get(ctx context.Context, id string) (*model.Application, error)
 	Delete(ctx context.Context, id string) error
@@ -34,7 +34,7 @@ type ApplicationService interface {
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
 	MultipleToGraphQL(in []*model.Application) []*graphql.Application
-	CreateInputFromGraphQL(in graphql.ApplicationCreateInput) model.ApplicationCreateInput
+	CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) model.ApplicationRegisterInput
 	UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) model.ApplicationUpdateInput
 }
 
@@ -68,10 +68,10 @@ type EventAPIService interface {
 
 //go:generate mockery -name=EventAPIConverter -output=automock -outpkg=automock -case=underscore
 type EventAPIConverter interface {
-	ToGraphQL(in *model.EventAPIDefinition) *graphql.EventAPIDefinition
-	MultipleToGraphQL(in []*model.EventAPIDefinition) []*graphql.EventAPIDefinition
-	MultipleInputFromGraphQL(in []*graphql.EventAPIDefinitionInput) []*model.EventAPIDefinitionInput
-	InputFromGraphQL(in *graphql.EventAPIDefinitionInput) *model.EventAPIDefinitionInput
+	ToGraphQL(in *model.EventAPIDefinition) *graphql.EventDefinition
+	MultipleToGraphQL(in []*model.EventAPIDefinition) []*graphql.EventDefinition
+	MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) []*model.EventAPIDefinitionInput
+	InputFromGraphQL(in *graphql.EventDefinitionInput) *model.EventAPIDefinitionInput
 }
 
 //go:generate mockery -name=DocumentService -output=automock -outpkg=automock -case=underscore
@@ -287,7 +287,7 @@ func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string,
 	}, nil
 }
 
-func (r *Resolver) CreateApplication(ctx context.Context, in graphql.ApplicationCreateInput) (*graphql.Application, error) {
+func (r *Resolver) RegisterApplication(ctx context.Context, in graphql.ApplicationRegisterInput) (*graphql.Application, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -345,7 +345,7 @@ func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.
 
 	return gqlApp, nil
 }
-func (r *Resolver) DeleteApplication(ctx context.Context, id string) (*graphql.Application, error) {
+func (r *Resolver) UnregisterApplication(ctx context.Context, id string) (*graphql.Application, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -448,7 +448,7 @@ func (r *Resolver) DeleteApplicationLabel(ctx context.Context, applicationID str
 	}, nil
 }
 
-func (r *Resolver) Apis(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
+func (r *Resolver) ApiDefinitions(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -489,7 +489,7 @@ func (r *Resolver) Apis(ctx context.Context, obj *graphql.Application, group *st
 		},
 	}, nil
 }
-func (r *Resolver) EventAPIs(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.EventAPIDefinitionPage, error) {
+func (r *Resolver) EventAPIs(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.EventDefinitionPage, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -519,7 +519,7 @@ func (r *Resolver) EventAPIs(ctx context.Context, obj *graphql.Application, grou
 	gqlApis := r.eventApiConverter.MultipleToGraphQL(eventAPIPage.Data)
 	totalCount := len(gqlApis)
 
-	return &graphql.EventAPIDefinitionPage{
+	return &graphql.EventDefinitionPage{
 		Data:       gqlApis,
 		TotalCount: totalCount,
 		PageInfo: &graphql.PageInfo{
@@ -530,7 +530,7 @@ func (r *Resolver) EventAPIs(ctx context.Context, obj *graphql.Application, grou
 	}, nil
 }
 
-func (r *Resolver) API(ctx context.Context, id string, application *graphql.Application) (*graphql.APIDefinition, error) {
+func (r *Resolver) APIDefinition(ctx context.Context, id string, application *graphql.Application) (*graphql.APIDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -555,7 +555,7 @@ func (r *Resolver) API(ctx context.Context, id string, application *graphql.Appl
 	return r.apiConverter.ToGraphQL(api), nil
 }
 
-func (r *Resolver) EventAPI(ctx context.Context, id string, application *graphql.Application) (*graphql.EventAPIDefinition, error) {
+func (r *Resolver) EventDefinition(ctx context.Context, id string, application *graphql.Application) (*graphql.EventDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err

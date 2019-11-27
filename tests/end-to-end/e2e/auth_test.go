@@ -65,11 +65,11 @@ func TestCompassAuth(t *testing.T) {
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(hydraToken.AccessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", domain))
 
 	t.Log("Create an application as Integration System")
-	appInput := graphql.ApplicationCreateInput{
+	appInput := graphql.ApplicationRegisterInput{
 		Name:                "app-created-by-integration-system",
 		IntegrationSystemID: &intSys.ID,
 	}
-	appByIntSys := createApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, tenant, appInput)
+	appByIntSys := registerApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, tenant, appInput)
 	require.NotEmpty(t, appByIntSys.ID)
 
 	t.Log("Add API Spec to Application")
@@ -79,7 +79,7 @@ func TestCompassAuth(t *testing.T) {
 	}
 	addAPIWithinTenant(t, ctx, oauthGraphQLClient, tenant, apiInput, appByIntSys.ID)
 	t.Log("Try removing Integration System")
-	deleteIntegrationSystemWithErr(t, ctx, dexGraphQLClient, tenant, intSys.ID)
+	unregisterIntegrationSystemWithErr(t, ctx, dexGraphQLClient, tenant, intSys.ID)
 
 	t.Log("Check if SystemAuths are still present in the db")
 	auths := getSystemAuthsForIntegrationSystem(t, ctx, dexGraphQLClient, tenant, intSys.ID)
@@ -91,10 +91,10 @@ func TestCompassAuth(t *testing.T) {
 	deleteApplication(t, ctx, oauthGraphQLClient, tenant, appByIntSys.ID)
 
 	t.Log("Remove Integration System")
-	deleteIntegrationSystem(t, ctx, dexGraphQLClient, tenant, intSys.ID)
+	unregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenant, intSys.ID)
 
 	t.Log("Check if token granted for Integration System is invalid")
-	appByIntSys = createApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, tenant, appInput)
+	appByIntSys = registerApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, tenant, appInput)
 	require.Empty(t, appByIntSys.ID)
 
 	t.Log("Check if token can not be fetched with old client credentials")

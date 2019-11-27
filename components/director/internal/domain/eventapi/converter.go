@@ -25,12 +25,12 @@ func NewConverter(fr FetchRequestConverter, vc VersionConverter) *converter {
 	return &converter{fr: fr, vc: vc}
 }
 
-func (c *converter) ToGraphQL(in *model.EventAPIDefinition) *graphql.EventAPIDefinition {
+func (c *converter) ToGraphQL(in *model.EventAPIDefinition) *graphql.EventDefinition {
 	if in == nil {
 		return nil
 	}
 
-	return &graphql.EventAPIDefinition{
+	return &graphql.EventDefinition{
 		ID:            in.ID,
 		ApplicationID: in.ApplicationID,
 		Name:          in.Name,
@@ -41,8 +41,8 @@ func (c *converter) ToGraphQL(in *model.EventAPIDefinition) *graphql.EventAPIDef
 	}
 }
 
-func (c *converter) MultipleToGraphQL(in []*model.EventAPIDefinition) []*graphql.EventAPIDefinition {
-	var apis []*graphql.EventAPIDefinition
+func (c *converter) MultipleToGraphQL(in []*model.EventAPIDefinition) []*graphql.EventDefinition {
+	var apis []*graphql.EventDefinition
 	for _, a := range in {
 		if a == nil {
 			continue
@@ -53,7 +53,7 @@ func (c *converter) MultipleToGraphQL(in []*model.EventAPIDefinition) []*graphql
 	return apis
 }
 
-func (c *converter) MultipleInputFromGraphQL(in []*graphql.EventAPIDefinitionInput) []*model.EventAPIDefinitionInput {
+func (c *converter) MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) []*model.EventAPIDefinitionInput {
 	var arr []*model.EventAPIDefinitionInput
 	for _, item := range in {
 		api := c.InputFromGraphQL(item)
@@ -63,7 +63,7 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.EventAPIDefinitionInp
 	return arr
 }
 
-func (c *converter) InputFromGraphQL(in *graphql.EventAPIDefinitionInput) *model.EventAPIDefinitionInput {
+func (c *converter) InputFromGraphQL(in *graphql.EventDefinitionInput) *model.EventAPIDefinitionInput {
 	if in == nil {
 		return nil
 	}
@@ -77,7 +77,7 @@ func (c *converter) InputFromGraphQL(in *graphql.EventAPIDefinitionInput) *model
 	}
 }
 
-func (c *converter) eventAPISpecToGraphQL(definitionID string, in *model.EventAPISpec) *graphql.EventAPISpec {
+func (c *converter) eventAPISpecToGraphQL(definitionID string, in *model.EventAPISpec) *graphql.EventSpec {
 	if in == nil {
 		return nil
 	}
@@ -88,15 +88,15 @@ func (c *converter) eventAPISpecToGraphQL(definitionID string, in *model.EventAP
 		data = &tmp
 	}
 
-	return &graphql.EventAPISpec{
+	return &graphql.EventSpec{
 		Data:         data,
-		Type:         graphql.EventAPISpecType(in.Type),
+		Type:         graphql.EventSpecType(in.Type),
 		Format:       graphql.SpecFormat(in.Format),
 		DefinitionID: definitionID,
 	}
 }
 
-func (c *converter) eventAPISpecInputFromGraphQL(in *graphql.EventAPISpecInput) *model.EventAPISpecInput {
+func (c *converter) eventAPISpecInputFromGraphQL(in *graphql.EventSpecInput) *model.EventAPISpecInput {
 	if in == nil {
 		return nil
 	}
@@ -104,7 +104,7 @@ func (c *converter) eventAPISpecInputFromGraphQL(in *graphql.EventAPISpecInput) 
 	return &model.EventAPISpecInput{
 		Data:          (*string)(in.Data),
 		Format:        model.SpecFormat(in.Format),
-		EventSpecType: model.EventAPISpecType(in.EventSpecType),
+		EventSpecType: model.EventAPISpecType(in.Type),
 		FetchRequest:  c.fr.InputFromGraphQL(in.FetchRequest),
 	}
 }

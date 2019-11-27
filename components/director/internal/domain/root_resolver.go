@@ -143,8 +143,8 @@ func (r *RootResolver) APISpec() graphql.APISpecResolver {
 func (r *RootResolver) Document() graphql.DocumentResolver {
 	return &documentResolver{r}
 }
-func (r *RootResolver) EventAPISpec() graphql.EventAPISpecResolver {
-	return &eventAPISpecResolver{r}
+func (r *RootResolver) EventSpec() graphql.EventSpecResolver {
+	return &eventSpecResolver{r}
 }
 
 func (r *RootResolver) IntegrationSystem() graphql.IntegrationSystemResolver {
@@ -196,14 +196,14 @@ type mutationResolver struct {
 	*RootResolver
 }
 
-func (r *mutationResolver) CreateApplication(ctx context.Context, in graphql.ApplicationCreateInput) (*graphql.Application, error) {
-	return r.app.CreateApplication(ctx, in)
+func (r *mutationResolver) RegisterApplication(ctx context.Context, in graphql.ApplicationRegisterInput) (*graphql.Application, error) {
+	return r.app.RegisterApplication(ctx, in)
 }
 func (r *mutationResolver) UpdateApplication(ctx context.Context, id string, in graphql.ApplicationUpdateInput) (*graphql.Application, error) {
 	return r.app.UpdateApplication(ctx, id, in)
 }
-func (r *mutationResolver) DeleteApplication(ctx context.Context, id string) (*graphql.Application, error) {
-	return r.app.DeleteApplication(ctx, id)
+func (r *mutationResolver) UnregisterApplication(ctx context.Context, id string) (*graphql.Application, error) {
+	return r.app.UnregisterApplication(ctx, id)
 }
 func (r *mutationResolver) CreateApplicationTemplate(ctx context.Context, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
 	return r.appTemplate.CreateApplicationTemplate(ctx, in)
@@ -226,14 +226,14 @@ func (r *mutationResolver) UpdateWebhook(ctx context.Context, webhookID string, 
 func (r *mutationResolver) DeleteWebhook(ctx context.Context, webhookID string) (*graphql.Webhook, error) {
 	return r.webhook.DeleteApplicationWebhook(ctx, webhookID)
 }
-func (r *mutationResolver) AddAPI(ctx context.Context, applicationID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
-	return r.api.AddAPI(ctx, applicationID, in)
+func (r *mutationResolver) AddAPIDefinition(ctx context.Context, applicationID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
+	return r.api.AddAPIDefinition(ctx, applicationID, in)
 }
-func (r *mutationResolver) UpdateAPI(ctx context.Context, id string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
-	return r.api.UpdateAPI(ctx, id, in)
+func (r *mutationResolver) UpdateAPIDefinition(ctx context.Context, id string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
+	return r.api.UpdateAPIDefinition(ctx, id, in)
 }
-func (r *mutationResolver) DeleteAPI(ctx context.Context, id string) (*graphql.APIDefinition, error) {
-	return r.api.DeleteAPI(ctx, id)
+func (r *mutationResolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql.APIDefinition, error) {
+	return r.api.DeleteAPIDefinition(ctx, id)
 }
 func (r *mutationResolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.APISpec, error) {
 	return r.api.RefetchAPISpec(ctx, apiID)
@@ -244,25 +244,25 @@ func (r *mutationResolver) SetAPIAuth(ctx context.Context, apiID string, runtime
 func (r *mutationResolver) DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*graphql.APIRuntimeAuth, error) {
 	return r.api.DeleteAPIAuth(ctx, apiID, runtimeID)
 }
-func (r *mutationResolver) AddEventAPI(ctx context.Context, applicationID string, in graphql.EventAPIDefinitionInput) (*graphql.EventAPIDefinition, error) {
-	return r.eventAPI.AddEventAPI(ctx, applicationID, in)
+func (r *mutationResolver) AddEventDefinition(ctx context.Context, applicationID string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
+	return r.eventAPI.AddEventDefinition(ctx, applicationID, in)
 }
-func (r *mutationResolver) UpdateEventAPI(ctx context.Context, id string, in graphql.EventAPIDefinitionInput) (*graphql.EventAPIDefinition, error) {
-	return r.eventAPI.UpdateEventAPI(ctx, id, in)
+func (r *mutationResolver) UpdateEventDefinition(ctx context.Context, id string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
+	return r.eventAPI.UpdateEventDefinition(ctx, id, in)
 }
-func (r *mutationResolver) DeleteEventAPI(ctx context.Context, id string) (*graphql.EventAPIDefinition, error) {
-	return r.eventAPI.DeleteEventAPI(ctx, id)
+func (r *mutationResolver) DeleteEventDefinition(ctx context.Context, id string) (*graphql.EventDefinition, error) {
+	return r.eventAPI.DeleteEventDefinition(ctx, id)
 }
-func (r *mutationResolver) RefetchEventAPISpec(ctx context.Context, eventID string) (*graphql.EventAPISpec, error) {
-	return r.eventAPI.RefetchEventAPISpec(ctx, eventID)
+func (r *mutationResolver) RefetchEventDefinitionSpec(ctx context.Context, eventID string) (*graphql.EventSpec, error) {
+	return r.eventAPI.RefetchEventDefinitionSpec(ctx, eventID)
 }
-func (r *mutationResolver) CreateRuntime(ctx context.Context, in graphql.RuntimeInput) (*graphql.Runtime, error) {
-	return r.runtime.CreateRuntime(ctx, in)
+func (r *mutationResolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput) (*graphql.Runtime, error) {
+	return r.runtime.RegisterRuntime(ctx, in)
 }
 func (r *mutationResolver) UpdateRuntime(ctx context.Context, id string, in graphql.RuntimeInput) (*graphql.Runtime, error) {
 	return r.runtime.UpdateRuntime(ctx, id, in)
 }
-func (r *mutationResolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runtime, error) {
+func (r *mutationResolver) UnregisterRuntime(ctx context.Context, id string) (*graphql.Runtime, error) {
 	return r.runtime.DeleteRuntime(ctx, id)
 }
 func (r *mutationResolver) AddDocument(ctx context.Context, applicationID string, in graphql.DocumentInput) (*graphql.Document, error) {
@@ -292,20 +292,20 @@ func (r *mutationResolver) SetRuntimeLabel(ctx context.Context, runtimeID string
 func (r *mutationResolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string) (*graphql.Label, error) {
 	return r.runtime.DeleteRuntimeLabel(ctx, runtimeID, key)
 }
-func (r *mutationResolver) GenerateOneTimeTokenForApplication(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
-	return r.token.GenerateOneTimeTokenForApplication(ctx, id)
+func (r *mutationResolver) RequestOneTimeTokenForApplication(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
+	return r.token.RequestOneTimeTokenForApplication(ctx, id)
 }
-func (r *mutationResolver) GenerateOneTimeTokenForRuntime(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
-	return r.token.GenerateOneTimeTokenForRuntime(ctx, id)
+func (r *mutationResolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
+	return r.token.RequestOneTimeTokenForRuntime(ctx, id)
 }
-func (r *mutationResolver) GenerateClientCredentialsForRuntime(ctx context.Context, id string) (*graphql.SystemAuth, error) {
-	return r.oAuth20.GenerateClientCredentialsForRuntime(ctx, id)
+func (r *mutationResolver) RequestClientCredentialsForRuntime(ctx context.Context, id string) (*graphql.SystemAuth, error) {
+	return r.oAuth20.RequestClientCredentialsForRuntime(ctx, id)
 }
-func (r *mutationResolver) GenerateClientCredentialsForApplication(ctx context.Context, id string) (*graphql.SystemAuth, error) {
-	return r.oAuth20.GenerateClientCredentialsForApplication(ctx, id)
+func (r *mutationResolver) RequestClientCredentialsForApplication(ctx context.Context, id string) (*graphql.SystemAuth, error) {
+	return r.oAuth20.RequestClientCredentialsForApplication(ctx, id)
 }
-func (r *mutationResolver) GenerateClientCredentialsForIntegrationSystem(ctx context.Context, id string) (*graphql.SystemAuth, error) {
-	return r.oAuth20.GenerateClientCredentialsForIntegrationSystem(ctx, id)
+func (r *mutationResolver) RequestClientCredentialsForIntegrationSystem(ctx context.Context, id string) (*graphql.SystemAuth, error) {
+	return r.oAuth20.RequestClientCredentialsForIntegrationSystem(ctx, id)
 }
 func (r *mutationResolver) DeleteSystemAuthForRuntime(ctx context.Context, authID string) (*graphql.SystemAuth, error) {
 	fn := r.systemAuth.GenericDeleteSystemAuth(model.RuntimeReference)
@@ -319,14 +319,14 @@ func (r *mutationResolver) DeleteSystemAuthForIntegrationSystem(ctx context.Cont
 	fn := r.systemAuth.GenericDeleteSystemAuth(model.IntegrationSystemReference)
 	return fn(ctx, authID)
 }
-func (r *mutationResolver) CreateIntegrationSystem(ctx context.Context, in graphql.IntegrationSystemInput) (*graphql.IntegrationSystem, error) {
-	return r.intSys.CreateIntegrationSystem(ctx, in)
+func (r *mutationResolver) RegisterIntegrationSystem(ctx context.Context, in graphql.IntegrationSystemInput) (*graphql.IntegrationSystem, error) {
+	return r.intSys.RegisterIntegrationSystem(ctx, in)
 }
 func (r *mutationResolver) UpdateIntegrationSystem(ctx context.Context, id string, in graphql.IntegrationSystemInput) (*graphql.IntegrationSystem, error) {
 	return r.intSys.UpdateIntegrationSystem(ctx, id, in)
 }
-func (r *mutationResolver) DeleteIntegrationSystem(ctx context.Context, id string) (*graphql.IntegrationSystem, error) {
-	return r.intSys.DeleteIntegrationSystem(ctx, id)
+func (r *mutationResolver) UnregisterIntegrationSystem(ctx context.Context, id string) (*graphql.IntegrationSystem, error) {
+	return r.intSys.UnregisterIntegrationSystem(ctx, id)
 }
 
 type applicationResolver struct {
@@ -343,17 +343,17 @@ func (r *applicationResolver) Labels(ctx context.Context, obj *graphql.Applicati
 func (r *applicationResolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*graphql.Webhook, error) {
 	return r.app.Webhooks(ctx, obj)
 }
-func (r *applicationResolver) Apis(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
-	return r.app.Apis(ctx, obj, group, first, after)
+func (r *applicationResolver) APIDefinitions(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
+	return r.app.ApiDefinitions(ctx, obj, group, first, after)
 }
-func (r *applicationResolver) EventAPIs(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.EventAPIDefinitionPage, error) {
+func (r *applicationResolver) EventDefinitions(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.EventDefinitionPage, error) {
 	return r.app.EventAPIs(ctx, obj, group, first, after)
 }
-func (r *applicationResolver) API(ctx context.Context, obj *graphql.Application, id string) (*graphql.APIDefinition, error) {
-	return r.app.API(ctx, id, obj)
+func (r *applicationResolver) APIDefinition(ctx context.Context, obj *graphql.Application, id string) (*graphql.APIDefinition, error) {
+	return r.app.APIDefinition(ctx, id, obj)
 }
-func (r *applicationResolver) EventAPI(ctx context.Context, obj *graphql.Application, id string) (*graphql.EventAPIDefinition, error) {
-	return r.app.EventAPI(ctx, id, obj)
+func (r *applicationResolver) EventDefinition(ctx context.Context, obj *graphql.Application, id string) (*graphql.EventDefinition, error) {
+	return r.app.EventDefinition(ctx, id, obj)
 }
 func (r *applicationResolver) Documents(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {
 	return r.app.Documents(ctx, obj, first, after)
@@ -398,9 +398,9 @@ func (r *documentResolver) FetchRequest(ctx context.Context, obj *graphql.Docume
 	return r.doc.FetchRequest(ctx, obj)
 }
 
-type eventAPISpecResolver struct{ *RootResolver }
+type eventSpecResolver struct{ *RootResolver }
 
-func (r *eventAPISpecResolver) FetchRequest(ctx context.Context, obj *graphql.EventAPISpec) (*graphql.FetchRequest, error) {
+func (r *eventSpecResolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*graphql.FetchRequest, error) {
 	return r.eventAPI.FetchRequest(ctx, obj)
 }
 

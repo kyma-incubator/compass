@@ -111,7 +111,7 @@ func fixGQLAppTemplateInput(name string) *graphql.ApplicationTemplateInput {
 	return &graphql.ApplicationTemplateInput{
 		Name:        name,
 		Description: &desc,
-		ApplicationInput: &graphql.ApplicationCreateInput{
+		ApplicationInput: &graphql.ApplicationRegisterInput{
 			Name:        "foo",
 			Description: &desc,
 		},
