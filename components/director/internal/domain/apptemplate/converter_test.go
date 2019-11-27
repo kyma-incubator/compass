@@ -252,7 +252,7 @@ func TestConverter_FromEntity(t *testing.T) {
 					Valid:  true,
 				},
 			},
-			ExpectedErrMessage: "while unpacking PlaceholdersJSON: invalid character 'd' looking for beginning of object key string",
+			ExpectedErrMessage: "while converting placeholders from JSON to model: invalid character 'd' looking for beginning of object key string",
 		},
 	}
 

@@ -32,15 +32,13 @@ func (c *converter) ToGraphQL(in *model.ApplicationTemplate) (*graphql.Applicati
 		return nil, nil
 	}
 
-	var gqlAppInput string
-	var err error
-	if in.ApplicationInputJSON != "" {
-		gqlAppInput, err = c.graphqliseApplicationCreateInput(in.ApplicationInputJSON)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while graphqlising application create input")
-		}
-	} else {
+	if in.ApplicationInputJSON == "" {
 		return nil, errors.New("application input is empty")
+	}
+
+	gqlAppInput, err := c.graphqliseApplicationCreateInput(in.ApplicationInputJSON)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while graphqlising application create input")
 	}
 
 	return &graphql.ApplicationTemplate{
@@ -96,7 +94,7 @@ func (c *converter) ToEntity(in *model.ApplicationTemplate) (*Entity, error) {
 
 	placeholders, err := c.placeholdersModelToJSON(in.Placeholders)
 	if err != nil {
-		return nil, errors.Wrap(err, "while packing PlaceholdersJSON")
+		return nil, errors.Wrap(err, "while converting placeholders from model to JSON")
 	}
 
 	return &Entity{
@@ -116,7 +114,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.ApplicationTemplate, erro
 
 	placeholders, err := c.placeholdersJSONToModel(entity.PlaceholdersJSON)
 	if err != nil {
-		return nil, errors.Wrap(err, "while unpacking PlaceholdersJSON")
+		return nil, errors.Wrap(err, "while converting placeholders from JSON to model")
 	}
 
 	return &model.ApplicationTemplate{
