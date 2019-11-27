@@ -51,7 +51,7 @@ version: VersionInput | false | |  
 
 ### EventAPISpecInput
 
-- ~~Struct validator ensures that `type` and `format` work together (ASYNC_API works with YAML and JSON)~~ not needed yet because we have only one event API spec type
+- Struct validator ensures that `type` and `format` work together (ASYNC_API works with YAML and JSON)
 
 Field | Required | Rules | Comment
 --- | --- | --- | ---
