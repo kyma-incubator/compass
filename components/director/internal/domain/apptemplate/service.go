@@ -2,6 +2,7 @@ package apptemplate
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 
@@ -40,9 +41,9 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 	id := s.uidService.Generate()
 	appTemplate := in.ToApplicationTemplate(id)
 
-	ok := checkIfPlaceholdersAreUnique(appTemplate.Placeholders)
+	faultyPlaceholder, ok := s.checkIfPlaceholdersAreUnique(appTemplate.Placeholders)
 	if !ok {
-		return "", errors.New("while validating uniqueness of placeholders")
+		return "", fmt.Errorf("while creating Application Template [name=%s]: placeholder [name=%s] appears more than once", in.Name, faultyPlaceholder)
 	}
 
 	err := s.appTemplateRepo.Create(ctx, appTemplate)
@@ -82,9 +83,9 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (model.
 func (s *service) Update(ctx context.Context, id string, in model.ApplicationTemplateInput) error {
 	appTemplate := in.ToApplicationTemplate(id)
 
-	ok := checkIfPlaceholdersAreUnique(appTemplate.Placeholders)
+	faultyPlaceholder, ok := s.checkIfPlaceholdersAreUnique(appTemplate.Placeholders)
 	if !ok {
-		return errors.New("while validating uniqueness of placeholders")
+		return fmt.Errorf("while creating Application Template [name=%s]: placeholder [name=%s] appears more than once", in.Name, faultyPlaceholder)
 	}
 
 	err := s.appTemplateRepo.Update(ctx, appTemplate)
@@ -104,15 +105,15 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func checkIfPlaceholdersAreUnique(placeholders []model.ApplicationTemplatePlaceholder) bool {
+func (s *service) checkIfPlaceholdersAreUnique(placeholders []model.ApplicationTemplatePlaceholder) (string, bool) {
 	keys := make(map[string]interface{})
 	for _, item := range placeholders {
 		_, exist := keys[item.Name]
 		if exist {
-			return false
+			return item.Name, false
 		} else {
 			keys[item.Name] = struct{}{}
 		}
 	}
-	return true
+	return "", true
 }

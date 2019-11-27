@@ -118,12 +118,12 @@ func fixEntityAppTemplate(t *testing.T, id, name string) *apptemplate.Entity {
 	require.NoError(t, err)
 
 	return &apptemplate.Entity{
-		ID:               id,
-		Name:             name,
-		Description:      repo.NewValidNullableString(testDescription),
-		ApplicationInput: marshalledAppInput,
-		Placeholders:     repo.NewValidNullableString(string(marshalledPlaceholders)),
-		AccessLevel:      string(model.GlobalApplicationTemplateAccessLevel),
+		ID:                   id,
+		Name:                 name,
+		Description:          repo.NewValidNullableString(testDescription),
+		ApplicationInputJSON: marshalledAppInput,
+		PlaceholdersJSON:     repo.NewValidNullableString(string(marshalledPlaceholders)),
+		AccessLevel:          string(model.GlobalApplicationTemplateAccessLevel),
 	}
 }
 
@@ -166,13 +166,13 @@ func fixGQLPlaceholders() []*graphql.PlaceholderDefinition {
 }
 
 func fixAppTemplateCreateArgs(entity apptemplate.Entity) []driver.Value {
-	return []driver.Value{entity.ID, entity.Name, entity.Description, entity.ApplicationInput, entity.Placeholders, entity.AccessLevel}
+	return []driver.Value{entity.ID, entity.Name, entity.Description, entity.ApplicationInputJSON, entity.PlaceholdersJSON, entity.AccessLevel}
 }
 
 func fixSQLRows(entities []apptemplate.Entity) *sqlmock.Rows {
 	out := sqlmock.NewRows(testTableColumns)
 	for _, entity := range entities {
-		out.AddRow(entity.ID, entity.Name, entity.Description, entity.ApplicationInput, entity.Placeholders, entity.AccessLevel)
+		out.AddRow(entity.ID, entity.Name, entity.Description, entity.ApplicationInputJSON, entity.PlaceholdersJSON, entity.AccessLevel)
 	}
 	return out
 }

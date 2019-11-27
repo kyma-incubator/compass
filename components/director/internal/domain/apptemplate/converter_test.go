@@ -43,8 +43,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		{
 			Name:          "Empty",
 			Input:         &model.ApplicationTemplate{},
-			Expected:      &graphql.ApplicationTemplate{},
-			ExpectedError: false,
+			Expected:      nil,
+			ExpectedError: true,
 		},
 		{
 			Name:          "Nil",
@@ -85,15 +85,26 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 			Input: []*model.ApplicationTemplate{
 				fixModelAppTemplate("id1", "name1"),
 				fixModelAppTemplate("id2", "name2"),
-				{},
 				nil,
 			},
 			Expected: []*graphql.ApplicationTemplate{
 				fixGQLAppTemplate("id1", "name1"),
 				fixGQLAppTemplate("id2", "name2"),
-				{},
 			},
 			ExpectedError: false,
+		},
+		{
+			Name: "Error when application input is empty",
+			Input: []*model.ApplicationTemplate{
+				fixModelAppTemplate("id1", "name1"),
+				{
+					ID:               testID,
+					Name:             testName,
+					ApplicationInput: "",
+				},
+			},
+			Expected:      nil,
+			ExpectedError: true,
 		},
 		{
 			Name: "Error when converting application template",
@@ -234,14 +245,14 @@ func TestConverter_FromEntity(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Placeholders Unmarshall Error",
+			Name: "PlaceholdersJSON Unmarshall Error",
 			Input: &apptemplate.Entity{
-				Placeholders: sql.NullString{
+				PlaceholdersJSON: sql.NullString{
 					String: "{dasdd",
 					Valid:  true,
 				},
 			},
-			ExpectedErrMessage: "while unpacking Placeholders: invalid character 'd' looking for beginning of object key string",
+			ExpectedErrMessage: "while unpacking PlaceholdersJSON: invalid character 'd' looking for beginning of object key string",
 		},
 	}
 

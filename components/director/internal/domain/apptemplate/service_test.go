@@ -3,6 +3,7 @@ package apptemplate_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -60,10 +61,10 @@ func TestService_Create(t *testing.T) {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				return appTemplateRepo
 			},
-			ExpectedError: errors.New("while validating uniqueness of placeholders"),
+			ExpectedError: fmt.Errorf("while creating Application Template [name=]: placeholder [name=%s] appears more than once", testName),
 		},
 		{
-			Name:  "Error when creating",
+			Name:  "Error when creating application template",
 			Input: fixModelAppTemplateInput(testName, fixApplicationCreateInputString()),
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
@@ -323,7 +324,7 @@ func TestService_Update(t *testing.T) {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				return appTemplateRepo
 			},
-			ExpectedError: errors.New("while validating uniqueness of placeholders"),
+			ExpectedError: fmt.Errorf("while creating Application Template [name=]: placeholder [name=%s] appears more than once", testName),
 		},
 		{
 			Name:  "Error when updating application template",
