@@ -2,14 +2,137 @@ package director
 
 import (
 	"context"
+	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
-	"github.com/stretchr/testify/require"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+// Runtime Validation
+
+func TestCreateRuntime_Validation(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	invalidInput := graphql.RuntimeInput{
+		Name: "0invalid",
+	}
+	inputString, err := tc.graphqlizer.RuntimeInputToGQL(invalidInput)
+	require.NoError(t, err)
+	var result graphql.Runtime
+	request := fixCreateRuntimeRequest(inputString)
+
+	// WHEN
+	err = tc.RunOperation(ctx, request, &result)
+
+	// THEN
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "validation error for type RuntimeInput")
+}
+
+func TestUpdateRuntime_Validation(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	rtm := createRuntime(t, ctx, "validation-test-rtm")
+	defer deleteRuntime(t, rtm.ID)
+
+	invalidInput := graphql.RuntimeInput{
+		Name: "0invalid",
+	}
+	inputString, err := tc.graphqlizer.RuntimeInputToGQL(invalidInput)
+	require.NoError(t, err)
+	var result graphql.Runtime
+	request := fixUpdateRuntimeRequest(rtm.ID, inputString)
+
+	// WHEN
+	err = tc.RunOperation(ctx, request, &result)
+
+	// THEN
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "validation error for type RuntimeInput")
+}
+
+// Label Definition Validation
+
+func TestCreateLabelDefinition_Validation(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	invalidInput := graphql.LabelDefinitionInput{
+		Key: "",
+	}
+	inputString, err := tc.graphqlizer.LabelDefinitionInputToGQL(invalidInput)
+	require.NoError(t, err)
+	var result graphql.Runtime
+	request := fixCreateLabelDefinitionRequest(inputString)
+
+	// WHEN
+	err = tc.RunOperation(ctx, request, &result)
+
+	// THEN
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "validation error for type LabelDefinitionInput")
+}
+
+func TestUpdateLabelDefinition_Validation(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	key := "test-validation-ld"
+	ld := createLabelDefinitionWithinTenant(t, ctx, key, map[string]string{"type": "string"}, defaultTenant)
+	defer deleteLabelDefinitionWithinTenant(t, ctx, ld.Key, true, defaultTenant)
+	invalidSchema := graphql.JSONSchema(`"{\"test\":}"`)
+	invalidInput := graphql.LabelDefinitionInput{
+		Key:    key,
+		Schema: &invalidSchema,
+	}
+	inputString, err := tc.graphqlizer.LabelDefinitionInputToGQL(invalidInput)
+	require.NoError(t, err)
+	var result graphql.Runtime
+	request := fixUpdateLabelDefinitionRequest(inputString)
+
+	// WHEN
+	err = tc.RunOperation(ctx, request, &result)
+
+	// THEN
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "validation error for type LabelDefinitionInput")
+}
+
+// Label Validation
+
+func TestSetApplicationLabel_Validation(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	app := createApplication(t, ctx, "validation-test-app")
+	defer deleteApplication(t, app.ID)
+
+	request := fixSetApplicationLabelRequest(app.ID, strings.Repeat("x", 257), "")
+	var result graphql.Label
+
+	// WHEN
+	err := tc.RunOperation(ctx, request, &result)
+
+	// THEN
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "validation error for type LabelInput")
+}
+
+func TestSetRuntimeLabel_Validation(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	rtm := createRuntime(t, ctx, "validation-test-rtm")
+	defer deleteRuntime(t, rtm.ID)
+
+	request := fixSetRuntimeLabelRequest(rtm.ID, strings.Repeat("x", 257), "")
+	var result graphql.Label
+
+	// WHEN
+	err := tc.RunOperation(ctx, request, &result)
+
+	// THEN
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "validation error for type LabelInput")
+}
 
 // Auth Validation
 
