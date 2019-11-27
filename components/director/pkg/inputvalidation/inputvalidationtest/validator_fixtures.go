@@ -7,8 +7,5 @@ var (
 )
 
 const (
-	NonPrintableString   = "\u0000"
-	PrintableString      = "汉ʋǟʟɨɖ ɨռքʊȶ!لْحُرُوف ٱلْعَرَبِيَّر"
-	WhitespaceCharString = "\u0009"
-	ValidName            = "thi5-1npu7.15-valid"
+	ValidName = "thi5-1npu7.15-valid"
 )

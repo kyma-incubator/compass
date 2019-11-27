@@ -6,15 +6,11 @@ This document contains validation rules for all input types.
 
 ## Validation rules explanation
 
-- `printable` - Printable unicode characters (space included).
-- `printableWithWhitespace` - Printable unicode characters and whitespace characters.
 - `name` - Up to 36 characters long. The characters allowed in names are: digits (`0`-`9`), lower case letters (`a`-`z`),`-`, and `.`. Based on Kubernetes resource name format.
 - `required` - Cannot be nil or empty.
-- `not_empty` - Cannot be empty (can be nil if pointer).
 - `url` - Valid URL.
 - `max` - Maximal allowed length.
 - `oneof` - Value has to be one of specified values.
-- `uuid` - Valid UUID.
 - `[$VALIDATION_RULE]` - Array that can be nil or empty but every array element has to fulfill specified `$VALIDATION_RULE`.
 
 
@@ -24,13 +20,13 @@ This document contains validation rules for all input types.
 
 Field | Rules | Comment
 --- | --- | ---
-name: String! | `required`, `name`|  
-description: String | `not_empty`, `max=128`, `printableWithWhitespace` |  
-targetURL: String! | `required`, `url`, `printable`, `max=256` |  varchar(256) in db
-group: String | `not_empty`, `printable`, `max=36` |  varchar(256) in db
-spec: APISpecInput |   | 
-version: VersionInput |   |  
-defaultAuth: AuthInput |   |  
+name: String! | `required`, `name` |  
+description: String |`max=128` |  
+targetURL: String! | `required`, `url`, `max=256` |  varchar(256) in db
+group: String | `max=36` |  varchar(256) in db
+spec: APISpecInput | | 
+version: VersionInput | |  
+defaultAuth: AuthInput | |  
 
 ### APISpecInput
 
@@ -38,20 +34,20 @@ defaultAuth: AuthInput |   |  
 
 Field | Rules | Comment
 --- | --- | ---
-data: CLOB (string) | `not_empty`, `printableWithWhitespace` |  
-type: APISpecType! | `required`, `oneof=[ODATA, OPEN_API]`, `printable` |  
-format: SpecFormat! | `required`, `oneof=[YAML, JSON, XML]`, `printable` |  
-fetchRequest: FetchRequestInput |   |  
+data: CLOB (string) | |  
+type: APISpecType! | `required`, `oneof=[ODATA, OPEN_API]` |  
+format: SpecFormat! | `required`, `oneof=[YAML, JSON, XML]` |  
+fetchRequest: FetchRequestInput | |  
 
 ### EventAPIDefinitionInput
 
 Field | Rules | Comment
 --- | --- | ---
 name: String! | `required`, `name` | varchar(256) in db  
-description: String | `not_empty`, `printableWithWhitespace`, `max=128` |  
+description: String | `max=128` |  
 spec: EventAPISpecInput! | `required` | 
-group: String | `not_empty`, `printable`, `max=36`  | varchar(256) in db  
-version: VersionInput |   |  
+group: String | `max=36` | varchar(256) in db  
+version: VersionInput | |  
 
 ### EventAPISpecInput
 
@@ -59,29 +55,29 @@ version: VersionInput |   |  
 
 Field | Rules | Comment
 --- | --- | ---
-data: CLOB (string) | `not_empty`, `printableWithWhitespace` |  
-eventSpecType: EventAPISpecType! | `required`, `oneof=[ASYNC_API]`, `printable` |  
-format: SpecFormat! | `required`, `oneof=[YAML, JSON]`, `printable` |  
-fetchRequest: FetchRequestInput |   |  
+data: CLOB (string) | |  
+eventSpecType: EventAPISpecType! | `required`, `oneof=[ASYNC_API]` |  
+format: SpecFormat! | `required`, `oneof=[YAML, JSON]` |  
+fetchRequest: FetchRequestInput | |  
 
 ### VersionInput
 
 Field | Rules | Comment
 --- | --- | ---
-value: String! | `required`, `printable`, `max=256` | varchar(256) in db
-deprecated: Boolean = false | `required` | required because has default value (?)
-deprecatedSince: String | `not_empty`, `printable`, `max=256` | varchar(256) in db
-forRemoval: Boolean = false | `required` | required because has default value (?)
+value: String! | `required`, `max=256` | varchar(256) in db
+deprecated: Boolean = false | `required` | required because has default value
+deprecatedSince: String | `max=256` | varchar(256) in db
+forRemoval: Boolean = false | `required` | required because has default value
 
 ### ApplicationCreateInput
 
 Field | Rules | Comment
 --- | --- | ---
 name: String! | `required`, `name` | max 36 characters
-description: String | `not_empty`, `printableWithWhitespace`, `max=128` |  
-labels: Labels (map[string]interface{}) | key: `required`, `printable` |  
+description: String | `max=128` |  
+labels: Labels (map[string]interface{}) | key: `required` |  
 webhooks: [WebhookInput!] | `[required]` |  
-healthCheckURL: String | `not_empty`, `url`, `printable`, `max=256` | varchar(256) in db  
+healthCheckURL: String | `url`, `max=256` | varchar(256) in db  
 apis: [APIDefinitionInput!] | `[required]` |  
 eventAPIs: [EventAPIDefinitionInput!] | `[required]` |  
 documents: [DocumentInput!] | `[required]` |  
@@ -91,92 +87,92 @@ documents: [DocumentInput!] | `[required]` |  
 Field | Rules | Comment
 --- | --- | ---
 name: String! | `required`, `name` | max 36 characters
-description: String | `not_empty`, `printableWithWhitespace`, `max=128` |  
-healthCheckURL: String | `not_empty`, `url`, `printable`, `max=256` | varchar(256) in db  
+description: String | `max=128` |  
+healthCheckURL: String | `url`, `max=256` | varchar(256) in db  
 
 ### ApplicationTemplateInput
 
 Field | Rules | Comment
 --- | --- | ---
 name: String! | `required`, `name` |
-description: String | `not_empty`, `printableWithWhitespace`, `max=128` |  
+description: String | `max=128` |  
 applicationInput: ApplicationCreateInput! | `required` |  
 placeholders: [PlaceholderDefinitionInput!] | `[required]` |  
-accessLevel: ApplicationTemplateAccessLevel! | `required`, `oneof=[GLOBAL]`, `printable` | 
+accessLevel: ApplicationTemplateAccessLevel! | `required`, `oneof=[GLOBAL]` | 
 
 ### PlaceholderDefinitionInput
 
 Field | Rules | Comment
 --- | --- | ---
 name: String! | `required`, `name` |
-description: String | `not_empty`, `printableWithWhitespace`, `max=128` | 
+description: String | `max=128` | 
 
 ### RuntimeInput
 
 Field | Rules | Comment
 --- | --- | ---
 name: String! | `required`, `name` | varchar(256) in db
-description: String | `not_empty`, `printableWithWhitespace`, `max=128` |
-labels: Labels (map[string]interface{}) | key: `required`, `printable` |
+description: String | `max=128` |
+labels: Labels (map[string]interface{}) | key: `required` |
 
 ### IntegrationSystemInput
 
 Field | Rules | Comment
 --- | --- | ---
 name: String! | `required`, `name` | varchar(256) in db  
-description: String | `not_empty`, `printableWithWhitespace`, `max=128` |  
+description: String | `max=128` |  
 
 ### DocumentInput
 
 Field | Rules | Comment
 --- | --- | ---
-title: String! | `required`, `printable`, `max=128` |  varchar(256) in db
-displayName: String! | `required`, `printable`, `max=128` |  varchar(256) in db
-description: String! | `required`, `printableWithWhitespace`, `max=128` |  
-format: DocumentFormat! | `required`, `printable`, `oneof=[MARKDOWN]` |  
-kind: String | `not_empty`, `printable`, `max=256`  |  varchar(256) in db
-data: CLOB (string) | `not_empty`, `printableWithWhitespace` |  
-fetchRequest: FetchRequestInput |  |  
+title: String! | `required`, `max=128` |  varchar(256) in db
+displayName: String! | `required`, `max=128` |  varchar(256) in db
+description: String! | `required`, `max=128` |  
+format: DocumentFormat! | `required`, `oneof=[MARKDOWN]` |  
+kind: String | `max=256` |  varchar(256) in db
+data: CLOB (string) | |  
+fetchRequest: FetchRequestInput | |  
 
 ### WebhookInput
 
 Field | Rules | Comment
 --- | --- | ---
-type: ApplicationWebhookType! | `required`, `printable`, `oneof=[CONFIGURATION_CHANGED]` |
-url: String! | `required`, `url`, `printable`, `max=256` | varchar(256) in db
+type: ApplicationWebhookType! | `required`, `oneof=[CONFIGURATION_CHANGED]` |
+url: String! | `required`, `url`, `max=256` | varchar(256) in db
 auth: AuthInput | |
 
 ### LabelDefinitionInput
 
 Field | Rules | Comment
 --- | --- | ---
-key: String! | `required`, `printable`, `max=256` | varchar(256) in db  
-schema: JSONSchema (string) | `not_empty`, `printableWithWhitespace` |  
+key: String! | `required`, `max=256` | varchar(256) in db  
+schema: JSONSchema (string) | |  
 
 ### LabelInput
 
 Field | Rules | Comment
 --- | --- | ---
-key: String! | `required`, `printable`, `max=256` | varchar(256) in db  
+key: String! | `required`, `max=256` | varchar(256) in db  
 value: Any! (interface{}) | `required` | 
 
 ### FetchRequestInput
 
 Field | Rules | Comment
 --- | --- | ---
-url: String! | `required`, `url`, `printable`, `max=256` | varchar(256) in db  
-auth: AuthInput |  |  
-mode: FetchMode = SINGLE | `required`, `oneof=[SINGLE, PACKAGE, INDEX]`, `printable` | required because has default value (?)
-filter: String | `not_empty`, `printable`, `max=256`  | varchar(256) in db  
+url: String! | `required`, `url`, `max=256` | varchar(256) in db  
+auth: AuthInput | |  
+mode: FetchMode = SINGLE | `required`, `oneof=[SINGLE, PACKAGE, INDEX]` | required because has default value
+filter: String | `max=256` | varchar(256) in db  
 
 ### AuthInput
 
 Field | Rules | Comment
 --- | --- | ---
 credential: CredentialDataInput! | `required` |  
-additionalHeaders: HttpHeaders (map[string][]string) | key: `required`, `printable` value: `required`, `[required]`, `[printable]` |  
-additionalQueryParams: QueryParams (map[string][]string) | key: `required`, `printable` value: `required`, `[required]`, `[printable]` |  
-requestAuth: CredentialRequestAuthInput |   | 
+additionalHeaders: HttpHeaders (map[string][]string) | key: `required`, value: `required`, `[required]` |  
+additionalQueryParams: QueryParams (map[string][]string) | key: `required`, value: `required`, `[required]` |  
+requestAuth: CredentialRequestAuthInput | | 
 
 ### CredentialDataInput
 
@@ -184,23 +180,23 @@ requestAuth: CredentialRequestAuthInput |   |
 
 Field | Rules | Comment
 --- | --- | ---
-basic: BasicCredentialDataInput |   |  
-oauth: OAuthCredentialDataInput |   |  
+basic: BasicCredentialDataInput | |  
+oauth: OAuthCredentialDataInput | |  
 
 ### BasicCredentialDataInput
 
 Field | Rules | Comment
 --- | --- | ---
-username: String! | `required`, `printable` |  
-password: String! | `required`, `printable` |  
+username: String! | `required` |  
+password: String! | `required` |  
 
 ### OAuthCredentialDataInput
 
 Field | Rules | Comment
 --- | --- | ---
-clientId: ID! | `required`, `printable` |
-clientSecret: String! | `required`, `printable` |
-url: String! | `required`, `printable`, `url` |
+clientId: ID! | `required` |
+clientSecret: String! | `required` |
+url: String! | `required`, `url` |
 
 ### CredentialRequestAuthInput
 
@@ -208,13 +204,13 @@ url: String! | `required`, `printable`, `url` |
 
 Field | Rules | Comment
 --- | --- | ---
-csrf: CSRFTokenCredentialRequestAuthInput |   |  
+csrf: CSRFTokenCredentialRequestAuthInput | |  
 
 ### CSRFTokenCredentialRequestAuthInput
 
 Field | Rules | Comment
 --- | --- | ---
-tokenEndpointURL: String! | `required`, `printable`, `url` |  
+tokenEndpointURL: String! | `required`, `url` |  
 credential: CredentialDataInput! | `required` | 
-additionalHeaders: HttpHeaders (map[string][]string) | key: `required`, `printable` value: `required`, `[required]`, `[printable]` | 
-additionalQueryParams: QueryParams (map[string][]string) | key: `required`, `printable` value: `required`, `[required]`, `[printable]` | 
+additionalHeaders: HttpHeaders (map[string][]string) | key: `required`, value: `required`, `[required]` | 
+additionalQueryParams: QueryParams (map[string][]string) | key: `required`, value: `required`, `[required]` | 

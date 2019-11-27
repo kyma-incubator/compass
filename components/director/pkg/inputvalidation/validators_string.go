@@ -2,7 +2,6 @@ package inputvalidation
 
 import (
 	"reflect"
-	"unicode"
 
 	k8svalidation "k8s.io/apimachinery/pkg/api/validation"
 
@@ -10,9 +9,7 @@ import (
 )
 
 var (
-	Name                    = &nameRule{}
-	Printable               = &printableRule{}
-	PrintableWithWhitespace = &printableWithWhitespaceRule{}
+	Name = &nameRule{}
 )
 
 type nameRule struct{}
@@ -34,44 +31,6 @@ func (v *nameRule) Validate(value interface{}) error {
 	}
 	if errorMsg := k8svalidation.NameIsDNSSubdomain(s, false); errorMsg != nil {
 		return errors.Errorf("%v", errorMsg)
-	}
-	return nil
-}
-
-type printableRule struct{}
-
-func (v printableRule) Validate(value interface{}) error {
-	s, isNil, err := ensureIsString(value)
-	if err != nil {
-		return err
-	}
-	if isNil {
-		return nil
-	}
-
-	for _, r := range s {
-		if !unicode.IsPrint(r) {
-			return errors.New("cannot contain not printable characters")
-		}
-	}
-	return nil
-}
-
-type printableWithWhitespaceRule struct{}
-
-func (v printableWithWhitespaceRule) Validate(value interface{}) error {
-	s, isNil, err := ensureIsString(value)
-	if err != nil {
-		return err
-	}
-	if isNil {
-		return nil
-	}
-
-	for _, r := range s {
-		if !unicode.IsPrint(r) && !unicode.IsSpace(r) {
-			return errors.New("cannot contain not printable or whitespace characters")
-		}
 	}
 	return nil
 }
