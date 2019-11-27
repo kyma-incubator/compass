@@ -10,6 +10,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/gocraft/dbr"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
+	configMock "github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/configuration/mocks"
 	hydroformmocks "github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
@@ -77,7 +78,7 @@ func initDBContainer(t *testing.T, ctx context.Context) (testcontainers.Containe
 		ExposedPorts: []string{fmt.Sprintf("%s", dbPort)},
 		Networks:     []string{"test_network"},
 		NetworkAliases: map[string][]string{
-			"test_network": {"postgres_database"},
+			"test_network": {"postgres_db"},
 		},
 		Env: map[string]string{
 			"POSTGRES_USER":     "admin",
@@ -107,7 +108,7 @@ func initDBContainer(t *testing.T, ctx context.Context) (testcontainers.Containe
 		return nil, "", "", err
 	}
 
-	return postgresContainer, port.Port(), "postgres_database", nil
+	return postgresContainer, port.Port(), "postgres_db", nil
 }
 
 func waitForOperationCompleted(provisioningService provisioning.Service, operationID string) error {
@@ -143,7 +144,7 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 			Name:              "Something",
 			ProjectName:       "Project",
 			NumberOfNodes:     3,
-			BootDiskSize:      "256",
+			BootDiskSizeGb:    256,
 			MachineType:       "machine",
 			Region:            "region",
 			Zone:              new(string),
@@ -157,18 +158,23 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 			ProjectName:       "Project",
 			KubernetesVersion: "version",
 			NodeCount:         3,
-			VolumeSize:        "1TB",
+			VolumeSizeGb:      1024,
 			MachineType:       "n1-standard-1",
 			Region:            "region",
-			TargetProvider:    "GCP",
+			Provider:          "GCP",
+			Seed:              "gcp-eu1",
 			TargetSecret:      "secret",
 			DiskType:          "ssd",
-			Zone:              "zone",
-			Cidr:              "cidr",
+			WorkerCidr:        "cidr",
 			AutoScalerMin:     1,
 			AutoScalerMax:     5,
 			MaxSurge:          1,
 			MaxUnavailable:    2,
+			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+				GcpConfig: &gqlschema.GCPProviderConfigInput{
+					Zone: "zone",
+				},
+			},
 		},
 	}
 
@@ -182,8 +188,12 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	hydroformServiceMock := &hydroformmocks.Service{}
+	factory := &configMock.BuilderFactory{}
+	builder := &configMock.Builder{}
 	hydroformServiceMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: "", State: "{}"}, nil)
 	hydroformServiceMock.On("DeprovisionCluster", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	factory.On("NewProvisioningBuilder", mock.Anything).Return(builder)
+	factory.On("NewDeprovisioningBuilder", mock.Anything).Return(builder)
 
 	uuidGenerator := persistence.NewUUIDGenerator()
 
@@ -220,7 +230,7 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			dbSessionFactory := dbsession.NewFactory(connection)
 			persistenceService := persistence.NewService(dbSessionFactory, uuidGenerator)
-			provisioningService := provisioning.NewProvisioningService(persistenceService, uuidGenerator, hydroformServiceMock)
+			provisioningService := provisioning.NewProvisioningService(persistenceService, uuidGenerator, hydroformServiceMock, factory)
 			provisioner := NewResolver(provisioningService)
 
 			operationID, err := provisioner.ProvisionRuntime(ctx, cfg.runtimeID, fullConfig)
