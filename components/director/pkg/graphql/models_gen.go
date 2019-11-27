@@ -79,6 +79,15 @@ type ApplicationStatus struct {
 	Timestamp Timestamp                  `json:"timestamp"`
 }
 
+type ApplicationTemplate struct {
+	ID               string                         `json:"id"`
+	Name             string                         `json:"name"`
+	Description      *string                        `json:"description"`
+	ApplicationInput string                         `json:"applicationInput"`
+	Placeholders     []*PlaceholderDefinition       `json:"placeholders"`
+	AccessLevel      ApplicationTemplateAccessLevel `json:"accessLevel"`
+}
+
 type ApplicationTemplateInput struct {
 	Name             string                         `json:"name"`
 	Description      *string                        `json:"description"`
@@ -86,6 +95,14 @@ type ApplicationTemplateInput struct {
 	Placeholders     []*PlaceholderDefinitionInput  `json:"placeholders"`
 	AccessLevel      ApplicationTemplateAccessLevel `json:"accessLevel"`
 }
+
+type ApplicationTemplatePage struct {
+	Data       []*ApplicationTemplate `json:"data"`
+	PageInfo   *PageInfo              `json:"pageInfo"`
+	TotalCount int                    `json:"totalCount"`
+}
+
+func (ApplicationTemplatePage) IsPageable() {}
 
 type ApplicationUpdateInput struct {
 	Name                string  `json:"name"`
@@ -296,6 +313,11 @@ type PageInfo struct {
 	StartCursor PageCursor `json:"startCursor"`
 	EndCursor   PageCursor `json:"endCursor"`
 	HasNextPage bool       `json:"hasNextPage"`
+}
+
+type PlaceholderDefinition struct {
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
 }
 
 type PlaceholderDefinitionInput struct {
