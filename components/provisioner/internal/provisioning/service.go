@@ -178,7 +178,6 @@ func (r *service) CleanupRuntimeData(id string) (*gqlschema.CleanUpRuntimeStatus
 
 		if err.Code() == dberrors.CodeInternal {
 			message := fmt.Sprintf("Could not clean data for Runtime with ID %s: %s", id, err)
-			log.Error(message)
 			return nil, errors.New(message)
 		}
 	}
