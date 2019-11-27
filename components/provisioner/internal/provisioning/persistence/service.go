@@ -14,17 +14,19 @@ import (
 
 //go:generate mockery -name=Service
 type Service interface {
-	GetStatus(runtimeID string) (model.RuntimeStatus, dberrors.Error)
-	SetProvisioningStarted(runtimeID string, runtimeConfig model.RuntimeConfig) (model.Operation, dberrors.Error)
+	GetRuntimeStatus(runtimeID string) (model.RuntimeStatus, dberrors.Error)
+
+	SetProvisioningStarted(runtimeID string, runtimeConfig model.Cluster) (model.Operation, dberrors.Error)
 	SetDeprovisioningStarted(runtimeID string) (model.Operation, dberrors.Error)
 	SetUpgradeStarted(runtimeID string) (model.Operation, dberrors.Error)
 	GetLastOperation(runtimeID string) (model.Operation, dberrors.Error)
-	Update(runtimeID string, kubeconfig string, terraformState string) dberrors.Error
+	UpdateClusterData(runtimeID string, kubeconfig string, terraformState string) dberrors.Error // TODO - set provisioning finished?
 	CleanupClusterData(runtimeID string) dberrors.Error
 	GetClusterData(runtimeID string) (model.Cluster, dberrors.Error)
-	Get(operationID string) (model.Operation, error)
-	SetAsFailed(operationID string, message string) error
-	SetAsSucceeded(operationID string) error
+
+	GetOperation(operationID string) (model.Operation, error)
+	SetOperationAsFailed(operationID string, message string) error
+	SetOperationAsSucceeded(operationID string) error
 }
 
 type persistenceService struct {
@@ -39,7 +41,7 @@ func NewService(dbSessionFactory dbsession.Factory, uuidGenerator uuid.UUIDGener
 	}
 }
 
-func (ps persistenceService) GetStatus(runtimeID string) (model.RuntimeStatus, dberrors.Error) {
+func (ps persistenceService) GetRuntimeStatus(runtimeID string) (model.RuntimeStatus, dberrors.Error) {
 	session := ps.dbSessionFactory.NewReadSession()
 
 	operation, err := session.GetLastOperation(runtimeID)
@@ -47,7 +49,7 @@ func (ps persistenceService) GetStatus(runtimeID string) (model.RuntimeStatus, d
 		return model.RuntimeStatus{}, err
 	}
 
-	clusterConfig, err := session.GetClusterConfig(runtimeID)
+	clusterConfig, err := session.GetProviderConfig(runtimeID)
 	if err != nil {
 		return model.RuntimeStatus{}, err
 	}
@@ -62,51 +64,41 @@ func (ps persistenceService) GetStatus(runtimeID string) (model.RuntimeStatus, d
 		return model.RuntimeStatus{}, err
 	}
 
-	runtimeConfiguration := model.RuntimeConfig{
-		KymaConfig:            kymaConfig,
-		ClusterConfig:         clusterConfig,
-		Kubeconfig:            cluster.Kubeconfig,
-		CredentialsSecretName: cluster.CredentialsSecretName,
-	}
+	cluster.KymaConfig = kymaConfig
+	cluster.ClusterConfig = clusterConfig
 
 	return model.RuntimeStatus{
 		LastOperationStatus:  operation,
-		RuntimeConfiguration: runtimeConfiguration,
+		RuntimeConfiguration: cluster,
 	}, nil
 }
 
-func (ps persistenceService) SetProvisioningStarted(runtimeID string, runtimeConfig model.RuntimeConfig) (model.Operation, dberrors.Error) {
+func (ps persistenceService) SetProvisioningStarted(runtimeID string, cluster model.Cluster) (model.Operation, dberrors.Error) {
 	dbSession, err := ps.dbSessionFactory.NewSessionWithinTransaction()
 	if err != nil {
 		return model.Operation{}, dberrors.Internal("Failed to create repository: %s", err)
 	}
-
 	defer dbSession.RollbackUnlessCommitted()
 
 	timestamp := time.Now()
 
-	cluster := model.Cluster{
-		ID:                    runtimeID,
-		CreationTimestamp:     timestamp,
-		CredentialsSecretName: runtimeConfig.CredentialsSecretName,
-		TerraformState:        "{}",
-	}
+	cluster.CreationTimestamp = timestamp
+	cluster.TerraformState = "{}"
 
 	err = dbSession.InsertCluster(cluster)
 	if err != nil {
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
-	gcpConfig, isGCP := runtimeConfig.GCPConfig()
+	gcpConfig, isGCP := cluster.GCPConfig()
 	if isGCP {
-
 		err = dbSession.InsertGCPConfig(gcpConfig)
 		if err != nil {
 			return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 		}
 	}
 
-	gardenerConfig, isGardener := runtimeConfig.GardenerConfig()
+	gardenerConfig, isGardener := cluster.GardenerConfig()
 	if isGardener {
 		err = dbSession.InsertGardenerConfig(gardenerConfig)
 		if err != nil {
@@ -114,13 +106,12 @@ func (ps persistenceService) SetProvisioningStarted(runtimeID string, runtimeCon
 		}
 	}
 
-	err = dbSession.InsertKymaConfig(runtimeConfig.KymaConfig)
+	err = dbSession.InsertKymaConfig(cluster.KymaConfig)
 	if err != nil {
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
 	operation, err := ps.setOperationStarted(dbSession, runtimeID, model.Provision, timestamp, "Provisioning started", "Failed to set provisioning started: %s")
-
 	if err != nil {
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
@@ -147,7 +138,7 @@ func (ps persistenceService) GetLastOperation(runtimeID string) (model.Operation
 	return session.GetLastOperation(runtimeID)
 }
 
-func (ps persistenceService) Update(runtimeID string, kubeconfig string, terraformState string) dberrors.Error {
+func (ps persistenceService) UpdateClusterData(runtimeID string, kubeconfig string, terraformState string) dberrors.Error {
 	session := ps.dbSessionFactory.NewWriteSession()
 
 	return session.UpdateCluster(runtimeID, kubeconfig, terraformState)
@@ -185,19 +176,19 @@ func (ps persistenceService) GetClusterData(runtimeID string) (model.Cluster, db
 	return session.GetCluster(runtimeID)
 }
 
-func (ps persistenceService) Get(operationID string) (model.Operation, error) {
+func (ps persistenceService) GetOperation(operationID string) (model.Operation, error) {
 	session := ps.dbSessionFactory.NewReadSession()
 
 	return session.GetOperation(operationID)
 }
 
-func (ps persistenceService) SetAsFailed(operationID string, message string) error {
+func (ps persistenceService) SetOperationAsFailed(operationID string, message string) error {
 	session := ps.dbSessionFactory.NewWriteSession()
 
 	return session.UpdateOperationState(operationID, message, model.Failed)
 }
 
-func (ps persistenceService) SetAsSucceeded(operationID string) error {
+func (ps persistenceService) SetOperationAsSucceeded(operationID string) error {
 	session := ps.dbSessionFactory.NewWriteSession()
 
 	return session.UpdateOperationState(operationID, "Operation succeeded.", model.Succeeded)

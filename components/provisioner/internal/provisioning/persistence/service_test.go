@@ -30,39 +30,48 @@ func TestSetProvisioning(t *testing.T) {
 	}
 
 	gardenerConfig := model.GardenerConfig{
-		Name:                   "name",
-		ProjectName:            "projectName",
-		KubernetesVersion:      "1.15",
-		NodeCount:              3,
-		VolumeSizeGB:           1024,
-		DiskType:               "SSD",
-		MachineType:            "big_one",
-		Provider:               "GCP",
-		Seed:                   "gcp-eu1",
-		TargetSecret:           "secret",
-		WorkerCidr:             "cidr",
-		Region:                 "region",
-		AutoScalerMin:          1,
-		AutoScalerMax:          10,
-		MaxSurge:               2,
-		MaxUnavailable:         2,
-		ProviderSpecificConfig: "{\"zone\":\"zone\"}",
+		Name:              "name",
+		ProjectName:       "projectName",
+		KubernetesVersion: "1.15",
+		NodeCount:         3,
+		VolumeSizeGB:      1024,
+		DiskType:          "SSD",
+		MachineType:       "big_one",
+		Provider:          "GCP",
+		Seed:              "gcp-eu1",
+		TargetSecret:      "secret",
+		WorkerCidr:        "cidr",
+		Region:            "region",
+		AutoScalerMin:     1,
+		AutoScalerMax:     10,
+		MaxSurge:          2,
+		MaxUnavailable:    2,
+		GardenerProviderConfig: model.GCPGardenerConfig{
+			ProviderSpecificConfig: "{\"zone\":\"zone\"}",
+		},
 	}
 
 	kymaConfig := model.KymaConfig{
-		Version: "1.6",
+		Release: model.Release{
+			Id:            "releaseID",
+			Version:       "1.7",
+			TillerYAML:    "tiller: yaml",
+			InstallerYAML: "installer: yaml",
+		},
 		Modules: []model.KymaConfigModule{
 			{ID: "id1", Module: model.KymaModule("core")},
 			{ID: "id2", Module: model.KymaModule("monitoring")},
 		},
 	}
 
-	runtimeGCPConfig := model.RuntimeConfig{
+	runtimeGCPConfig := model.Cluster{
+		ID:            runtimeID,
 		KymaConfig:    kymaConfig,
 		ClusterConfig: gcpConfig,
 	}
 
-	runtimeGardenerConfig := model.RuntimeConfig{
+	runtimeGardenerConfig := model.Cluster{
+		ID:            runtimeID,
 		KymaConfig:    kymaConfig,
 		ClusterConfig: gardenerConfig,
 	}
@@ -83,8 +92,7 @@ func TestSetProvisioning(t *testing.T) {
 	operationMatcher := getOperationMather(operation)
 
 	runtimeConfigurations := []struct {
-		config model.RuntimeConfig
-
+		config                        model.Cluster
 		description                   string
 		insertClusterConfigMethodName string
 	}{
@@ -188,7 +196,7 @@ func TestSetProvisioning(t *testing.T) {
 	})
 
 	clusterConfigurations := []struct {
-		config model.RuntimeConfig
+		config model.Cluster
 
 		description                   string
 		insertClusterConfigMethodName string
@@ -397,7 +405,12 @@ func TestGetRuntimeStatus(t *testing.T) {
 	}
 
 	kymaConfig := model.KymaConfig{
-		Version: "1.6",
+		Release: model.Release{
+			Id:            "releaseID",
+			Version:       "1.7",
+			TillerYAML:    "tiller: yaml",
+			InstallerYAML: "installer: yaml",
+		},
 		Modules: []model.KymaConfigModule{
 			{ID: "id1", Module: model.KymaModule("core")},
 			{ID: "id2", Module: model.KymaModule("monitoring")},
@@ -417,7 +430,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 		uuidGenerator := &uuidMocks.UUIDGenerator{}
 
 		readSessionMock.On("GetLastOperation", runtimeID).Return(operation, nil)
-		readSessionMock.On("GetClusterConfig", runtimeID).Return(gcpConfig, nil)
+		readSessionMock.On("GetProviderConfig", runtimeID).Return(gcpConfig, nil)
 		readSessionMock.On("GetKymaConfig", runtimeID).Return(kymaConfig, nil)
 		readSessionMock.On("GetCluster", runtimeID).Return(cluster, nil)
 
@@ -425,15 +438,17 @@ func TestGetRuntimeStatus(t *testing.T) {
 
 		expected := model.RuntimeStatus{
 			LastOperationStatus: operation,
-			RuntimeConfiguration: model.RuntimeConfig{
-				ClusterConfig: gcpConfig,
-				KymaConfig:    kymaConfig,
+			RuntimeConfiguration: model.Cluster{
+				ID:             runtimeID,
+				ClusterConfig:  gcpConfig,
+				KymaConfig:     kymaConfig,
+				TerraformState: "{}",
 			},
 		}
 
 		// when
 		runtimeService := NewService(sessionFactoryMock, uuidGenerator)
-		runtimeStatus, err := runtimeService.GetStatus(runtimeID)
+		runtimeStatus, err := runtimeService.GetRuntimeStatus(runtimeID)
 
 		// then
 		assert.NoError(t, err)
@@ -451,7 +466,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 
 		// when
 		runtimeService := NewService(sessionFactoryMock, uuidGenerator)
-		_, err := runtimeService.GetStatus(runtimeID)
+		_, err := runtimeService.GetRuntimeStatus(runtimeID)
 
 		// then
 		assert.Error(t, err)
@@ -464,12 +479,12 @@ func TestGetRuntimeStatus(t *testing.T) {
 		uuidGenerator := &uuidMocks.UUIDGenerator{}
 
 		readSessionMock.On("GetLastOperation", runtimeID).Return(operation, nil)
-		readSessionMock.On("GetClusterConfig", runtimeID).Return(model.GCPConfig{}, dberrors.Internal("some error"))
+		readSessionMock.On("GetProviderConfig", runtimeID).Return(model.GCPConfig{}, dberrors.Internal("some error"))
 		sessionFactoryMock.On("NewReadSession").Return(readSessionMock, nil)
 
 		// when
 		runtimeService := NewService(sessionFactoryMock, uuidGenerator)
-		_, err := runtimeService.GetStatus(runtimeID)
+		_, err := runtimeService.GetRuntimeStatus(runtimeID)
 
 		// then
 		assert.Error(t, err)
@@ -482,14 +497,14 @@ func TestGetRuntimeStatus(t *testing.T) {
 		uuidGenerator := &uuidMocks.UUIDGenerator{}
 
 		readSessionMock.On("GetLastOperation", runtimeID).Return(operation, nil)
-		readSessionMock.On("GetClusterConfig", runtimeID).Return(gcpConfig, nil)
+		readSessionMock.On("GetProviderConfig", runtimeID).Return(gcpConfig, nil)
 		readSessionMock.On("GetKymaConfig", runtimeID).Return(model.KymaConfig{}, dberrors.Internal("some error"))
 
 		sessionFactoryMock.On("NewReadSession").Return(readSessionMock, nil)
 
 		// when
 		runtimeService := NewService(sessionFactoryMock, uuidGenerator)
-		_, err := runtimeService.GetStatus(runtimeID)
+		_, err := runtimeService.GetRuntimeStatus(runtimeID)
 
 		// then
 		assert.Error(t, err)
@@ -502,7 +517,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 		uuidGenerator := &uuidMocks.UUIDGenerator{}
 
 		readSessionMock.On("GetLastOperation", runtimeID).Return(operation, nil)
-		readSessionMock.On("GetClusterConfig", runtimeID).Return(gcpConfig, nil)
+		readSessionMock.On("GetProviderConfig", runtimeID).Return(gcpConfig, nil)
 		readSessionMock.On("GetKymaConfig", runtimeID).Return(kymaConfig, nil)
 		readSessionMock.On("GetCluster", runtimeID).Return(model.Cluster{}, dberrors.Internal("some error"))
 
@@ -510,7 +525,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 
 		// when
 		runtimeService := NewService(sessionFactoryMock, uuidGenerator)
-		_, err := runtimeService.GetStatus(runtimeID)
+		_, err := runtimeService.GetRuntimeStatus(runtimeID)
 
 		// then
 		assert.Error(t, err)

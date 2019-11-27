@@ -61,7 +61,7 @@ func (ws writeSession) InsertGCPConfig(config model.GCPConfig) dberrors.Error {
 
 func (ws writeSession) InsertKymaConfig(kymaConfig model.KymaConfig) dberrors.Error {
 	_, err := ws.insertInto("kyma_config").
-		Columns("id", "version", "cluster_id").
+		Columns("id", "release_id", "cluster_id").
 		Record(&kymaConfig).
 		Exec()
 

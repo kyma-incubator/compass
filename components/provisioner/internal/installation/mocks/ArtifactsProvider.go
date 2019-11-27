@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	artifacts "github.com/kyma-incubator/compass/components/provisioner/internal/installation/artifacts"
+	artifacts "github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -13,15 +13,15 @@ type ArtifactsProvider struct {
 	mock.Mock
 }
 
-// GetArtifacts provides a mock function with given fields: version
-func (_m *ArtifactsProvider) GetArtifacts(version string) (artifacts.ReleaseArtifacts, error) {
+// GetRelease provides a mock function with given fields: version
+func (_m *ArtifactsProvider) GetArtifacts(version string) (artifacts.Release, error) {
 	ret := _m.Called(version)
 
-	var r0 artifacts.ReleaseArtifacts
-	if rf, ok := ret.Get(0).(func(string) artifacts.ReleaseArtifacts); ok {
+	var r0 artifacts.Release
+	if rf, ok := ret.Get(0).(func(string) artifacts.Release); ok {
 		r0 = rf(version)
 	} else {
-		r0 = ret.Get(0).(artifacts.ReleaseArtifacts)
+		r0 = ret.Get(0).(artifacts.Release)
 	}
 
 	var r1 error

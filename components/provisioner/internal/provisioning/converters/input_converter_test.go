@@ -1,4 +1,4 @@
-package provisioning
+package converters
 
 import (
 	"testing"
@@ -153,7 +153,7 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 			MaxSurge:               1,
 			MaxUnavailable:         2,
 			ClusterID:              "runtimeID",
-			ProviderSpecificConfig: "{\"zone\":\"zone\"}",
+			GardenerProviderConfig: "{\"zone\":\"zone\"}",
 		},
 		Kubeconfig: nil,
 		KymaConfig: model.KymaConfig{
@@ -223,7 +223,7 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 			MaxSurge:               1,
 			MaxUnavailable:         2,
 			ClusterID:              "runtimeID",
-			ProviderSpecificConfig: "{\"vnetCidr\":\"cidr\"}",
+			GardenerProviderConfig: "{\"vnetCidr\":\"cidr\"}",
 		},
 		Kubeconfig: nil,
 		KymaConfig: model.KymaConfig{
@@ -296,7 +296,7 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 			MaxSurge:               1,
 			MaxUnavailable:         2,
 			ClusterID:              "runtimeID",
-			ProviderSpecificConfig: "{\"zone\":\"zone\",\"vpcCidr\":\"cidr\",\"publicCidr\":\"cidr\",\"internalCidr\":\"cidr\"}",
+			GardenerProviderConfig: "{\"zone\":\"zone\",\"vpcCidr\":\"cidr\",\"publicCidr\":\"cidr\",\"internalCidr\":\"cidr\"}",
 		},
 		Kubeconfig: nil,
 		KymaConfig: model.KymaConfig{
@@ -508,7 +508,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					AutoScalerMin:          autoScMin,
 					MaxSurge:               surge,
 					MaxUnavailable:         unavailable,
-					ProviderSpecificConfig: "{\"Zone\":\"zone\"}",
+					GardenerProviderConfig: "{\"Zone\":\"zone\"}",
 				},
 				Kubeconfig: &kubeconfig,
 				KymaConfig: model.KymaConfig{

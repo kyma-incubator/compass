@@ -11,7 +11,7 @@ import (
 
 	pkgErrors "github.com/pkg/errors"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/artifacts"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 
 	"github.com/kyma-incubator/hydroform/install/installation"
 	"k8s.io/client-go/rest"
@@ -21,12 +21,12 @@ type InstallationHandler func(*rest.Config, ...installation.InstallationOption) 
 
 //go:generate mockery -name=ArtifactsProvider
 type ArtifactsProvider interface {
-	GetArtifacts(version string) (artifacts.ReleaseArtifacts, error)
+	GetArtifacts(version string) (release.Release, error)
 }
 
 //go:generate mockery -name=Service
 type Service interface {
-	InstallKyma(kubeconfigRaw, kymaVersion string) error
+	InstallKyma(kubeconfigRaw string, release release.Release) error
 }
 
 func NewInstallationService(installationTimeout time.Duration, artifactsProvider ArtifactsProvider, installationHandler InstallationHandler, installErrFailureThreshold int) Service {

@@ -685,10 +685,10 @@ type GardenerConfig {
     autoScalerMax: Int
     maxSurge: Int
     maxUnavailable: Int
-    providerSpecificConfig: ProviderSpecificConfig
+    providerSpecificConfig: GardenerProviderConfig
 }
 
-union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig
+union GardenerProviderConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig
 
 type GCPProviderConfig {
     zone: String
@@ -4666,7 +4666,7 @@ func (ec *executionContext) _ProviderSpecificConfig(ctx context.Context, sel ast
 
 // region    **************************** object.gotpl ****************************
 
-var aWSProviderConfigImplementors = []string{"AWSProviderConfig", "ProviderSpecificConfig"}
+var aWSProviderConfigImplementors = []string{"AWSProviderConfig", "GardenerProviderConfig"}
 
 func (ec *executionContext) _AWSProviderConfig(ctx context.Context, sel ast.SelectionSet, obj *AWSProviderConfig) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.RequestContext, sel, aWSProviderConfigImplementors)
@@ -4696,7 +4696,7 @@ func (ec *executionContext) _AWSProviderConfig(ctx context.Context, sel ast.Sele
 	return out
 }
 
-var azureProviderConfigImplementors = []string{"AzureProviderConfig", "ProviderSpecificConfig"}
+var azureProviderConfigImplementors = []string{"AzureProviderConfig", "GardenerProviderConfig"}
 
 func (ec *executionContext) _AzureProviderConfig(ctx context.Context, sel ast.SelectionSet, obj *AzureProviderConfig) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.RequestContext, sel, azureProviderConfigImplementors)
@@ -4782,7 +4782,7 @@ func (ec *executionContext) _GCPConfig(ctx context.Context, sel ast.SelectionSet
 	return out
 }
 
-var gCPProviderConfigImplementors = []string{"GCPProviderConfig", "ProviderSpecificConfig"}
+var gCPProviderConfigImplementors = []string{"GCPProviderConfig", "GardenerProviderConfig"}
 
 func (ec *executionContext) _GCPProviderConfig(ctx context.Context, sel ast.SelectionSet, obj *GCPProviderConfig) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.RequestContext, sel, gCPProviderConfigImplementors)

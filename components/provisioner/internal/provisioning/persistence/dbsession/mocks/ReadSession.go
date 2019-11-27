@@ -38,31 +38,6 @@ func (_m *ReadSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Err
 	return r0, r1
 }
 
-// GetClusterConfig provides a mock function with given fields: runtimeID
-func (_m *ReadSession) GetClusterConfig(runtimeID string) (interface{}, dberrors.Error) {
-	ret := _m.Called(runtimeID)
-
-	var r0 interface{}
-	if rf, ok := ret.Get(0).(func(string) interface{}); ok {
-		r0 = rf(runtimeID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(interface{})
-		}
-	}
-
-	var r1 dberrors.Error
-	if rf, ok := ret.Get(1).(func(string) dberrors.Error); ok {
-		r1 = rf(runtimeID)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(dberrors.Error)
-		}
-	}
-
-	return r0, r1
-}
-
 // GetKymaConfig provides a mock function with given fields: runtimeID
 func (_m *ReadSession) GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error) {
 	ret := _m.Called(runtimeID)
@@ -123,6 +98,54 @@ func (_m *ReadSession) GetOperation(operationID string) (model.Operation, dberro
 	var r1 dberrors.Error
 	if rf, ok := ret.Get(1).(func(string) dberrors.Error); ok {
 		r1 = rf(operationID)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(dberrors.Error)
+		}
+	}
+
+	return r0, r1
+}
+
+// GetProviderConfig provides a mock function with given fields: runtimeID
+func (_m *ReadSession) GetProviderConfig(runtimeID string) (model.ProviderConfiguration, dberrors.Error) {
+	ret := _m.Called(runtimeID)
+
+	var r0 model.ProviderConfiguration
+	if rf, ok := ret.Get(0).(func(string) model.ProviderConfiguration); ok {
+		r0 = rf(runtimeID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(model.ProviderConfiguration)
+		}
+	}
+
+	var r1 dberrors.Error
+	if rf, ok := ret.Get(1).(func(string) dberrors.Error); ok {
+		r1 = rf(runtimeID)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(dberrors.Error)
+		}
+	}
+
+	return r0, r1
+}
+
+// GetReleaseByVersion provides a mock function with given fields: version
+func (_m *ReadSession) GetReleaseByVersion(version string) (model.Release, dberrors.Error) {
+	ret := _m.Called(version)
+
+	var r0 model.Release
+	if rf, ok := ret.Get(0).(func(string) model.Release); ok {
+		r0 = rf(version)
+	} else {
+		r0 = ret.Get(0).(model.Release)
+	}
+
+	var r1 dberrors.Error
+	if rf, ok := ret.Get(1).(func(string) dberrors.Error); ok {
+		r1 = rf(version)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(dberrors.Error)

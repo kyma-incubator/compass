@@ -30,8 +30,8 @@ func (_m *Service) CleanupClusterData(runtimeID string) dberrors.Error {
 	return r0
 }
 
-// Get provides a mock function with given fields: operationID
-func (_m *Service) Get(operationID string) (model.Operation, error) {
+// GetOperation provides a mock function with given fields: operationID
+func (_m *Service) GetOperation(operationID string) (model.Operation, error) {
 	ret := _m.Called(operationID)
 
 	var r0 model.Operation
@@ -97,7 +97,7 @@ func (_m *Service) GetLastOperation(runtimeID string) (model.Operation, dberrors
 	return r0, r1
 }
 
-// GetStatus provides a mock function with given fields: runtimeID
+// GetRuntimeStatus provides a mock function with given fields: runtimeID
 func (_m *Service) GetStatus(runtimeID string) (model.RuntimeStatus, dberrors.Error) {
 	ret := _m.Called(runtimeID)
 
@@ -120,7 +120,7 @@ func (_m *Service) GetStatus(runtimeID string) (model.RuntimeStatus, dberrors.Er
 	return r0, r1
 }
 
-// SetAsFailed provides a mock function with given fields: operationID, message
+// SetOperationAsFailed provides a mock function with given fields: operationID, message
 func (_m *Service) SetAsFailed(operationID string, message string) error {
 	ret := _m.Called(operationID, message)
 
@@ -134,7 +134,7 @@ func (_m *Service) SetAsFailed(operationID string, message string) error {
 	return r0
 }
 
-// SetAsSucceeded provides a mock function with given fields: operationID
+// SetOperationAsSucceeded provides a mock function with given fields: operationID
 func (_m *Service) SetAsSucceeded(operationID string) error {
 	ret := _m.Called(operationID)
 
@@ -217,8 +217,8 @@ func (_m *Service) SetUpgradeStarted(runtimeID string) (model.Operation, dberror
 	return r0, r1
 }
 
-// Update provides a mock function with given fields: runtimeID, kubeconfig, terraformState
-func (_m *Service) Update(runtimeID string, kubeconfig string, terraformState string) dberrors.Error {
+// UpdateClusterData provides a mock function with given fields: runtimeID, kubeconfig, terraformState
+func (_m *Service) UpdateClusterData(runtimeID string, kubeconfig string, terraformState string) dberrors.Error {
 	ret := _m.Called(runtimeID, kubeconfig, terraformState)
 
 	var r0 dberrors.Error

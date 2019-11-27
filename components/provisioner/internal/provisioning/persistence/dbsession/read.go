@@ -31,18 +31,25 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 
 func (r readSession) GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error) {
 	var kymaConfig []struct {
-		ID           string
-		KymaConfigID string
-		Version      string
-		Module       string
-		ClusterID    string
+		ID            string
+		KymaConfigID  string
+		ReleaseID     string
+		Version       string
+		TillerYAML    string
+		InstallerYAML string
+		Module        string
+		ClusterID     string
 	}
 
 	rowsCount, err := r.session.
-		Select("kyma_config_module.id", "kyma_config_id", "kyma_config.version", "kyma_config_module.module", "cluster_id").
+		Select("kyma_config_id", "kyma_config.release_id",
+			"kyma_config_module.id", "kyma_config_module.module",
+			"cluster_id",
+			"kyma_release.version", "kyma_release.tiller_yaml", "kyma_release.installer_yaml").
 		From("cluster").
 		Join("kyma_config", "cluster.id=kyma_config.cluster_id").
 		Join("kyma_config_module", "kyma_config.id=kyma_config_module.kyma_config_id").
+		Join("kyma_release", "kyma_config.release_id=kyma_release.id").
 		Where(dbr.Eq("cluster.id", runtimeID)).
 		Load(&kymaConfig)
 
@@ -51,7 +58,7 @@ func (r readSession) GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors
 	}
 
 	if rowsCount == 0 {
-		return model.KymaConfig{}, dberrors.NotFound("Cannot find Kyma Config for runtimeID:'%s", runtimeID)
+		return model.KymaConfig{}, dberrors.NotFound("Cannot find Kyma Config for runtimeID: %s", runtimeID)
 	}
 
 	kymaModules := make([]model.KymaConfigModule, 0)
@@ -65,13 +72,18 @@ func (r readSession) GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors
 	}
 
 	return model.KymaConfig{
-		ID:      kymaConfig[0].KymaConfigID,
-		Version: kymaConfig[0].Version,
+		ID: kymaConfig[0].KymaConfigID,
+		Release: model.Release{
+			Id:            kymaConfig[0].ReleaseID,
+			Version:       kymaConfig[0].Version,
+			TillerYAML:    kymaConfig[0].TillerYAML,
+			InstallerYAML: kymaConfig[0].InstallerYAML,
+		},
 		Modules: kymaModules,
 	}, nil
 }
 
-func (r readSession) GetClusterConfig(runtimeID string) (interface{}, dberrors.Error) {
+func (r readSession) GetProviderConfig(runtimeID string) (model.ProviderConfiguration, dberrors.Error) {
 	var gardenerConfig model.GardenerConfig
 
 	err := r.session.
@@ -153,4 +165,23 @@ func (r readSession) GetLastOperation(runtimeID string) (model.Operation, dberro
 	}
 
 	return operation, nil
+}
+
+func (r readSession) GetReleaseByVersion(version string) (model.Release, dberrors.Error) {
+	var release model.Release
+
+	err := r.session.
+		Select("id", "version", "tiller_yaml", "installer_yaml").
+		From("kyma_release").
+		Where(dbr.Eq("version", version)).
+		LoadOne(&release)
+
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return model.Release{}, dberrors.NotFound("Kyma release for version %s not found", version)
+		}
+		return model.Release{}, dberrors.Internal("Failed to get Kyma release for version %s: %s", version, err.Error())
+	}
+
+	return release, nil
 }

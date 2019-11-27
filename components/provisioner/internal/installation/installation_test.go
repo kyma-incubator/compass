@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/artifacts"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 
 	"github.com/stretchr/testify/require"
 
@@ -106,10 +106,10 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 	} {
 		t.Run(testCase.description, func(t *testing.T) {
 			// given
-			releaseArtifacts := artifacts.ReleaseArtifacts{Version: kymaVersion, TillerYAML: tillerYAML, InstallerYAML: installerYAML}
+			releaseArtifacts := release.Release{Version: kymaVersion, TillerYAML: tillerYAML, InstallerYAML: installerYAML}
 
 			artifactsProvider := &mocks.ArtifactsProvider{}
-			artifactsProvider.On("GetArtifacts", kymaVersion).Return(releaseArtifacts, nil)
+			artifactsProvider.On("GetRelease", kymaVersion).Return(releaseArtifacts, nil)
 
 			expectedInstallation := installation.Installation{
 				TillerYaml:    tillerYAML,
@@ -139,10 +139,10 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 
 	t.Run("should return error when failed to trigger installation", func(t *testing.T) {
 		// given
-		releaseArtifacts := artifacts.ReleaseArtifacts{Version: kymaVersion, TillerYAML: tillerYAML, InstallerYAML: installerYAML}
+		releaseArtifacts := release.Release{Version: kymaVersion, TillerYAML: tillerYAML, InstallerYAML: installerYAML}
 
 		artifactsProvider := &mocks.ArtifactsProvider{}
-		artifactsProvider.On("GetArtifacts", kymaVersion).Return(releaseArtifacts, nil)
+		artifactsProvider.On("GetRelease", kymaVersion).Return(releaseArtifacts, nil)
 
 		installationHandlerConstructor := newErrorInstallerHandler(t, nil, errors.New("error"))
 		installationSvc := NewInstallationService(10*time.Minute, artifactsProvider, installationHandlerConstructor, installErrFailureThreshold)
@@ -156,10 +156,10 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 
 	t.Run("should return error when failed to prepare installation", func(t *testing.T) {
 		// given
-		releaseArtifacts := artifacts.ReleaseArtifacts{Version: kymaVersion, TillerYAML: tillerYAML, InstallerYAML: installerYAML}
+		releaseArtifacts := release.Release{Version: kymaVersion, TillerYAML: tillerYAML, InstallerYAML: installerYAML}
 
 		artifactsProvider := &mocks.ArtifactsProvider{}
-		artifactsProvider.On("GetArtifacts", kymaVersion).Return(releaseArtifacts, nil)
+		artifactsProvider.On("GetRelease", kymaVersion).Return(releaseArtifacts, nil)
 
 		installationHandlerConstructor := newErrorInstallerHandler(t, errors.New("error"), nil)
 		installationSvc := NewInstallationService(10*time.Minute, artifactsProvider, installationHandlerConstructor, installErrFailureThreshold)
@@ -174,7 +174,7 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 	t.Run("should return error when failed to get artifacts", func(t *testing.T) {
 		// given
 		artifactsProvider := &mocks.ArtifactsProvider{}
-		artifactsProvider.On("GetArtifacts", kymaVersion).Return(artifacts.ReleaseArtifacts{}, errors.New("error"))
+		artifactsProvider.On("GetRelease", kymaVersion).Return(release.Release{}, errors.New("error"))
 
 		installationSvc := NewInstallationService(10*time.Minute, artifactsProvider, nil, installErrFailureThreshold)
 
@@ -188,7 +188,7 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 	t.Run("should return error when failed to parse kubeconfig", func(t *testing.T) {
 		// given
 		artifactsProvider := &mocks.ArtifactsProvider{}
-		artifactsProvider.On("GetArtifacts", kymaVersion).Return(artifacts.ReleaseArtifacts{}, errors.New("error"))
+		artifactsProvider.On("GetRelease", kymaVersion).Return(release.Release{}, errors.New("error"))
 
 		installationSvc := NewInstallationService(10*time.Minute, artifactsProvider, nil, installErrFailureThreshold)
 

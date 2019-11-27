@@ -19,7 +19,8 @@ type ReadSession interface {
 	GetOperation(operationID string) (model.Operation, dberrors.Error)
 	GetLastOperation(runtimeID string) (model.Operation, dberrors.Error)
 	GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error)
-	GetClusterConfig(runtimeID string) (interface{}, dberrors.Error)
+	GetProviderConfig(runtimeID string) (model.ProviderConfiguration, dberrors.Error)
+	GetReleaseByVersion(version string) (model.Release, dberrors.Error)
 }
 
 //go:generate mockery -name=WriteSession

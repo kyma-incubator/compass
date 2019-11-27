@@ -8,7 +8,7 @@ type KymaModule string
 
 type KymaConfig struct {
 	ID        string
-	Version   string
+	Release   Release
 	Modules   []KymaConfigModule
 	ClusterID string
 }
@@ -17,6 +17,13 @@ type KymaConfigModule struct {
 	ID           string
 	Module       KymaModule
 	KymaConfigID string
+}
+
+type Release struct {
+	Id            string
+	Version       string
+	TillerYAML    string
+	InstallerYAML string
 }
 
 type OperationState string
@@ -42,6 +49,21 @@ type Cluster struct {
 	TerraformState        string
 	CredentialsSecretName string
 	CreationTimestamp     time.Time
+
+	ClusterConfig ProviderConfiguration `db:"-"`
+	KymaConfig    KymaConfig            `db:"-"`
+}
+
+func (c Cluster) GCPConfig() (GCPConfig, bool) {
+	gcpConfig, ok := c.ClusterConfig.(GCPConfig)
+
+	return gcpConfig, ok
+}
+
+func (c Cluster) GardenerConfig() (GardenerConfig, bool) {
+	gardenerConfig, ok := c.ClusterConfig.(GardenerConfig)
+
+	return gardenerConfig, ok
 }
 
 type Operation struct {
@@ -54,55 +76,20 @@ type Operation struct {
 	ClusterID      string
 }
 
-type GardenerConfig struct {
-	ID                     string
-	ClusterID              string
-	Name                   string
-	ProjectName            string
-	KubernetesVersion      string
-	NodeCount              int
-	VolumeSizeGB           int
-	DiskType               string
-	MachineType            string
-	Provider               string
-	Seed                   string
-	TargetSecret           string
-	Region                 string
-	WorkerCidr             string
-	AutoScalerMin          int
-	AutoScalerMax          int
-	MaxSurge               int
-	MaxUnavailable         int
-	ProviderSpecificConfig string
-}
-
-type GCPConfig struct {
-	ID                string
-	ClusterID         string
-	Name              string
-	ProjectName       string
-	KubernetesVersion string
-	NumberOfNodes     int
-	BootDiskSizeGB    int
-	MachineType       string
-	Region            string
-	Zone              string
-}
-
 type RuntimeAgentConnectionStatus int
 
-type ClusterConfig struct {
-	ID             string
-	ClusterID      string
-	Name           string
-	NodeCount      int
-	DiskSize       string
-	MachineType    string
-	Region         string
-	Version        string
-	Credentials    string
-	ProviderConfig interface{}
-}
+//type ClusterConfig struct {
+//	ID             string
+//	ClusterID      string
+//	Name           string
+//	NodeCount      int
+//	DiskSize       string
+//	MachineType    string
+//	Region         string
+//	Version        string
+//	Credentials    string
+//	ProviderConfig ProviderConfiguration
+//}
 
 const (
 	RuntimeAgentConnectionStatusPending      RuntimeAgentConnectionStatus = iota
@@ -110,27 +97,15 @@ const (
 	RuntimeAgentConnectionStatusDisconnected RuntimeAgentConnectionStatus = iota
 )
 
-type RuntimeConfig struct {
-	KymaConfig            KymaConfig
-	ClusterConfig         interface{}
-	Kubeconfig            *string
-	CredentialsSecretName string
-}
-
 type RuntimeStatus struct {
 	LastOperationStatus     Operation
 	RuntimeConnectionStatus RuntimeAgentConnectionStatus
-	RuntimeConfiguration    RuntimeConfig
+	RuntimeConfiguration    Cluster
 }
 
-func (rc RuntimeConfig) GCPConfig() (GCPConfig, bool) {
-	gcpConfig, ok := rc.ClusterConfig.(GCPConfig)
-
-	return gcpConfig, ok
-}
-
-func (rc RuntimeConfig) GardenerConfig() (GardenerConfig, bool) {
-	gardenerConfig, ok := rc.ClusterConfig.(GardenerConfig)
-
-	return gardenerConfig, ok
-}
+//type RuntimeConfig struct {
+//	KymaConfig            KymaConfig
+//	ClusterConfig         ClusterConfig
+//	Kubeconfig            *string
+//	CredentialsSecretName string
+//}

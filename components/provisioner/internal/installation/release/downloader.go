@@ -1,4 +1,4 @@
-package artifacts
+package release
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 )
 
 type Repository interface {
-	GetArtifacts(version string) (ReleaseArtifacts, dberrors.Error)
-	SaveArtifacts(artifacts ReleaseArtifacts) (ReleaseArtifacts, dberrors.Error)
+	GetRelease(version string) (Release, dberrors.Error)
+	SaveRelease(artifacts Release) (Release, dberrors.Error)
 }
 
 func NewArtifactsDownloader(repository Repository, latestReleases int, includePreReleases bool) *artifactsDownloader {
