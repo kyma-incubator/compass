@@ -18,199 +18,199 @@ This document contains validation rules for all input types.
 
 ### APIDefinitionInput
 
-Field | Rules | Comment
---- | --- | ---
-name: String! | `required`, `name` |  
-description: String |`max=128` |  
-targetURL: String! | `required`, `url`, `max=256` |  varchar(256) in db
-group: String | `max=36` |  varchar(256) in db
-spec: APISpecInput | | 
-version: VersionInput | |  
-defaultAuth: AuthInput | |  
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+name: String! | true | `name` |  
+description: String | false |`max=128` |  
+targetURL: String! | true | `url`, `max=256` |  varchar(256) in db
+group: String | false | `max=36` |  varchar(256) in db
+spec: APISpecInput | false | | 
+version: VersionInput | false | |  
+defaultAuth: AuthInput | false | |  
 
 ### APISpecInput
 
 - Struct validator ensures that `type` and `format` work together (ODATA works with XML and JSON, OPEN_API works with YAML and JSON)
 
-Field | Rules | Comment
---- | --- | ---
-data: CLOB (string) | |  
-type: APISpecType! | `required`, `oneof=[ODATA, OPEN_API]` |  
-format: SpecFormat! | `required`, `oneof=[YAML, JSON, XML]` |  
-fetchRequest: FetchRequestInput | |  
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+data: CLOB (string) | false | |  
+type: APISpecType! | true | `oneof=[ODATA, OPEN_API]` |  
+format: SpecFormat! | true | `oneof=[YAML, JSON, XML]` |  
+fetchRequest: FetchRequestInput | false | |  
 
 ### EventAPIDefinitionInput
 
-Field | Rules | Comment
---- | --- | ---
-name: String! | `required`, `name` | varchar(256) in db  
-description: String | `max=128` |  
-spec: EventAPISpecInput! | `required` | 
-group: String | `max=36` | varchar(256) in db  
-version: VersionInput | |  
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+name: String! | true | `name` | varchar(256) in db  
+description: String | false | `max=128` |  
+spec: EventAPISpecInput! | true | | 
+group: String | false | `max=36` | varchar(256) in db  
+version: VersionInput | false | |  
 
 ### EventAPISpecInput
 
 - ~~Struct validator ensures that `type` and `format` work together (ASYNC_API works with YAML and JSON)~~ not needed yet because we have only one event API spec type
 
-Field | Rules | Comment
---- | --- | ---
-data: CLOB (string) | |  
-eventSpecType: EventAPISpecType! | `required`, `oneof=[ASYNC_API]` |  
-format: SpecFormat! | `required`, `oneof=[YAML, JSON]` |  
-fetchRequest: FetchRequestInput | |  
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+data: CLOB (string) | false | |  
+eventSpecType: EventAPISpecType! | true | `oneof=[ASYNC_API]` |  
+format: SpecFormat! | true | `oneof=[YAML, JSON]` |  
+fetchRequest: FetchRequestInput | false | |  
 
 ### VersionInput
 
-Field | Rules | Comment
---- | --- | ---
-value: String! | `required`, `max=256` | varchar(256) in db
-deprecated: Boolean = false | `required` | required because has default value
-deprecatedSince: String | `max=256` | varchar(256) in db
-forRemoval: Boolean = false | `required` | required because has default value
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+value: String! | true | `max=256` | varchar(256) in db
+deprecated: Boolean = false | true | | required because has default value
+deprecatedSince: String | false | `max=256` | varchar(256) in db
+forRemoval: Boolean = false | true | | required because has default value
 
 ### ApplicationCreateInput
 
-Field | Rules | Comment
---- | --- | ---
-name: String! | `required`, `name` | max 36 characters
-description: String | `max=128` |  
-labels: Labels (map[string]interface{}) | key: `required` |  
-webhooks: [WebhookInput!] | `[required]` |  
-healthCheckURL: String | `url`, `max=256` | varchar(256) in db  
-apis: [APIDefinitionInput!] | `[required]` |  
-eventAPIs: [EventAPIDefinitionInput!] | `[required]` |  
-documents: [DocumentInput!] | `[required]` |  
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+name: String! | true | `name` | max 36 characters
+description: String | false | `max=128` |  
+labels: Labels (map[string]interface{}) | false | key: `required` |  
+webhooks: [WebhookInput!] | false | `[required]` |  
+healthCheckURL: String | false | `url`, `max=256` | varchar(256) in db  
+apis: [APIDefinitionInput!] | false | `[required]` |  
+eventAPIs: [EventAPIDefinitionInput!] | false | `[required]` |  
+documents: [DocumentInput!] | false | `[required]` |  
 
 ### ApplicationUpdateInput
 
-Field | Rules | Comment
---- | --- | ---
-name: String! | `required`, `name` | max 36 characters
-description: String | `max=128` |  
-healthCheckURL: String | `url`, `max=256` | varchar(256) in db  
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+name: String! | true | `name` | max 36 characters
+description: String | false | `max=128` |  
+healthCheckURL: String | false | `url`, `max=256` | varchar(256) in db  
 
 ### ApplicationTemplateInput
 
-Field | Rules | Comment
---- | --- | ---
-name: String! | `required`, `name` |
-description: String | `max=128` |  
-applicationInput: ApplicationCreateInput! | `required` |  
-placeholders: [PlaceholderDefinitionInput!] | `[required]` |  
-accessLevel: ApplicationTemplateAccessLevel! | `required`, `oneof=[GLOBAL]` | 
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+name: String! | true | `name` |
+description: String | false | `max=128` |  
+applicationInput: ApplicationCreateInput! | true | |  
+placeholders: [PlaceholderDefinitionInput!] | false | `[required]` |  
+accessLevel: ApplicationTemplateAccessLevel! | true | `oneof=[GLOBAL]` | 
 
 ### PlaceholderDefinitionInput
 
-Field | Rules | Comment
---- | --- | ---
-name: String! | `required`, `name` |
-description: String | `max=128` | 
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+name: String! | true | `name` |
+description: String | false | `max=128` | 
 
 ### RuntimeInput
 
-Field | Rules | Comment
---- | --- | ---
-name: String! | `required`, `name` | varchar(256) in db
-description: String | `max=128` |
-labels: Labels (map[string]interface{}) | key: `required` |
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+name: String! | true | `name` | varchar(256) in db
+description: String | false | `max=128` |
+labels: Labels (map[string]interface{}) | false | key: `required` |
 
 ### IntegrationSystemInput
 
-Field | Rules | Comment
---- | --- | ---
-name: String! | `required`, `name` | varchar(256) in db  
-description: String | `max=128` |  
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+name: String! | true | `name` | varchar(256) in db  
+description: String | false | `max=128` |  
 
 ### DocumentInput
 
-Field | Rules | Comment
---- | --- | ---
-title: String! | `required`, `max=128` |  varchar(256) in db
-displayName: String! | `required`, `max=128` |  varchar(256) in db
-description: String! | `required`, `max=128` |  
-format: DocumentFormat! | `required`, `oneof=[MARKDOWN]` |  
-kind: String | `max=256` |  varchar(256) in db
-data: CLOB (string) | |  
-fetchRequest: FetchRequestInput | |  
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+title: String! | true | `max=128` |  varchar(256) in db
+displayName: String! | true | `max=128` |  varchar(256) in db
+description: String! | true | `max=128` |  
+format: DocumentFormat! | true | `oneof=[MARKDOWN]` |  
+kind: String | false | `max=256` |  varchar(256) in db
+data: CLOB (string) | false | |  
+fetchRequest: FetchRequestInput | false | |  
 
 ### WebhookInput
 
-Field | Rules | Comment
---- | --- | ---
-type: ApplicationWebhookType! | `required`, `oneof=[CONFIGURATION_CHANGED]` |
-url: String! | `required`, `url`, `max=256` | varchar(256) in db
-auth: AuthInput | |
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+type: ApplicationWebhookType! | true | `oneof=[CONFIGURATION_CHANGED]` |
+url: String! | true | `url`, `max=256` | varchar(256) in db
+auth: AuthInput | false | |
 
 ### LabelDefinitionInput
 
-Field | Rules | Comment
---- | --- | ---
-key: String! | `required`, `max=256` | varchar(256) in db  
-schema: JSONSchema (string) | |  
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+key: String! | true | `max=256` | varchar(256) in db  
+schema: JSONSchema (string) | false | |  
 
 ### LabelInput
 
-Field | Rules | Comment
---- | --- | ---
-key: String! | `required`, `max=256` | varchar(256) in db  
-value: Any! (interface{}) | `required` | 
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+key: String! | true | `max=256` | varchar(256) in db  
+value: Any! (interface{}) | true | | 
 
 ### FetchRequestInput
 
-Field | Rules | Comment
---- | --- | ---
-url: String! | `required`, `url`, `max=256` | varchar(256) in db  
-auth: AuthInput | |  
-mode: FetchMode = SINGLE | `required`, `oneof=[SINGLE, PACKAGE, INDEX]` | required because has default value
-filter: String | `max=256` | varchar(256) in db  
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+url: String! | true | `url`, `max=256` | varchar(256) in db  
+auth: AuthInput | false | |  
+mode: FetchMode = SINGLE | true | `oneof=[SINGLE, PACKAGE, INDEX]` | required because has default value
+filter: String | false | `max=256` | varchar(256) in db  
 
 ### AuthInput
 
-Field | Rules | Comment
---- | --- | ---
-credential: CredentialDataInput! | `required` |  
-additionalHeaders: HttpHeaders (map[string][]string) | key: `required`, value: `required`, `[required]` |  
-additionalQueryParams: QueryParams (map[string][]string) | key: `required`, value: `required`, `[required]` |  
-requestAuth: CredentialRequestAuthInput | | 
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+credential: CredentialDataInput! | true | |  
+additionalHeaders: HttpHeaders (map[string][]string) | false | key: `required`, value: `required`, `[required]` |  
+additionalQueryParams: QueryParams (map[string][]string) | false | key: `required`, value: `required`, `[required]` |  
+requestAuth: CredentialRequestAuthInput | false | | 
 
 ### CredentialDataInput
 
 - Struct validator ensuring that exactly one field is not nil
 
-Field | Rules | Comment
---- | --- | ---
-basic: BasicCredentialDataInput | |  
-oauth: OAuthCredentialDataInput | |  
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+basic: BasicCredentialDataInput | false | |  
+oauth: OAuthCredentialDataInput | false | |  
 
 ### BasicCredentialDataInput
 
-Field | Rules | Comment
---- | --- | ---
-username: String! | `required` |  
-password: String! | `required` |  
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+username: String! | true | |  
+password: String! | true | |  
 
 ### OAuthCredentialDataInput
 
-Field | Rules | Comment
---- | --- | ---
-clientId: ID! | `required` |
-clientSecret: String! | `required` |
-url: String! | `required`, `url` |
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+clientId: ID! | true | |
+clientSecret: String! | true | |
+url: String! | true | `url` |
 
 ### CredentialRequestAuthInput
 
 - Struct validator ensuring that exactly one field is not nil
 
-Field | Rules | Comment
---- | --- | ---
-csrf: CSRFTokenCredentialRequestAuthInput | |  
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+csrf: CSRFTokenCredentialRequestAuthInput | false | |  
 
 ### CSRFTokenCredentialRequestAuthInput
 
-Field | Rules | Comment
---- | --- | ---
-tokenEndpointURL: String! | `required`, `url` |  
-credential: CredentialDataInput! | `required` | 
-additionalHeaders: HttpHeaders (map[string][]string) | key: `required`, value: `required`, `[required]` | 
-additionalQueryParams: QueryParams (map[string][]string) | key: `required`, value: `required`, `[required]` | 
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+tokenEndpointURL: String! | true | `url` |  
+credential: CredentialDataInput! | true | | 
+additionalHeaders: HttpHeaders (map[string][]string) | false | key: `required`, value: `required`, `[required]` | 
+additionalQueryParams: QueryParams (map[string][]string) | false | key: `required`, value: `required`, `[required]` | 

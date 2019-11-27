@@ -17,7 +17,7 @@ func NewDirective() *directive {
 	return &directive{}
 }
 
-func (d *directive) Validate(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error) {
+func (d *directive) Validate(ctx context.Context, obj interface{}, next graphql.Resolver) (interface{}, error) {
 	constructedObj, err := next(ctx)
 	if err != nil {
 		return nil, err

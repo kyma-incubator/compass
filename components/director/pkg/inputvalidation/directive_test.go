@@ -20,7 +20,7 @@ func TestDirective_Validate(t *testing.T) {
 	validatorDirective := NewDirective()
 	testErr := errors.New("testError")
 	ctx := context.TODO()
-	t.Run("Success", func(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
 		//GIVEN
 		ts := testStruct{}
 		//WHEN
