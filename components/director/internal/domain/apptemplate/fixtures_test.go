@@ -4,7 +4,12 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
@@ -14,6 +19,7 @@ import (
 )
 
 const (
+	testTenant      = "tnt"
 	testID          = "foo"
 	testName        = "bar"
 	testDescription = "Lorem ipsum"
@@ -28,70 +34,109 @@ var (
 
 func fixModelAppTemplate(id, name string) *model.ApplicationTemplate {
 	desc := testDescription
+	appInputString := fixApplicationCreateInputString()
 
 	return &model.ApplicationTemplate{
+		ID:                   id,
+		Name:                 name,
+		Description:          &desc,
+		ApplicationInputJSON: appInputString,
+		Placeholders:         fixModelPlaceholders(),
+		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
+	}
+}
+
+func fixGQLAppTemplate(id, name string) *graphql.ApplicationTemplate {
+	desc := testDescription
+
+	return &graphql.ApplicationTemplate{
 		ID:               id,
 		Name:             name,
 		Description:      &desc,
-		ApplicationInput: fixModelApplicationCreateInput(),
-		Placeholders:     fixPlaceholders(),
-		AccessLevel:      model.GlobalApplicationTemplateAccessLevel,
+		ApplicationInput: fixApplicationCreateInputGraphqlized(),
+		Placeholders:     fixGQLPlaceholders(),
+		AccessLevel:      graphql.ApplicationTemplateAccessLevelGlobal,
+	}
+}
+
+func fixModelAppTemplatePage(appTemplates []*model.ApplicationTemplate) model.ApplicationTemplatePage {
+	return model.ApplicationTemplatePage{
+		Data: appTemplates,
+		PageInfo: &pagination.Page{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(appTemplates),
+	}
+}
+
+func fixGQLAppTemplatePage(appTemplates []*graphql.ApplicationTemplate) graphql.ApplicationTemplatePage {
+	return graphql.ApplicationTemplatePage{
+		Data: appTemplates,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(appTemplates),
+	}
+}
+
+func fixModelAppTemplateInput(name string, appInputString string) *model.ApplicationTemplateInput {
+	desc := testDescription
+
+	return &model.ApplicationTemplateInput{
+		Name:                 name,
+		Description:          &desc,
+		ApplicationInputJSON: appInputString,
+		Placeholders:         fixModelPlaceholders(),
+		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
+	}
+}
+
+func fixGQLAppTemplateInput(name string) *graphql.ApplicationTemplateInput {
+	desc := testDescription
+
+	return &graphql.ApplicationTemplateInput{
+		Name:        name,
+		Description: &desc,
+		ApplicationInput: &graphql.ApplicationCreateInput{
+			Name:        "foo",
+			Description: &desc,
+		},
+		Placeholders: fixGQLPlaceholderDefinitionInput(),
+		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
 	}
 }
 
 func fixEntityAppTemplate(t *testing.T, id, name string) *apptemplate.Entity {
-	appInput := fixModelApplicationCreateInput()
-	marshalledAppInput, err := json.Marshal(appInput)
-	require.NoError(t, err)
+	marshalledAppInput := `{"name":"foo","description":"Lorem ipsum"}`
 
-	placeholders := fixPlaceholders()
+	placeholders := fixModelPlaceholders()
 	marshalledPlaceholders, err := json.Marshal(placeholders)
 	require.NoError(t, err)
 
 	return &apptemplate.Entity{
-		ID:               id,
-		Name:             name,
-		Description:      repo.NewValidNullableString(testDescription),
-		ApplicationInput: string(marshalledAppInput),
-		Placeholders:     repo.NewValidNullableString(string(marshalledPlaceholders)),
-		AccessLevel:      string(model.GlobalApplicationTemplateAccessLevel),
+		ID:                   id,
+		Name:                 name,
+		Description:          repo.NewValidNullableString(testDescription),
+		ApplicationInputJSON: marshalledAppInput,
+		PlaceholdersJSON:     repo.NewValidNullableString(string(marshalledPlaceholders)),
+		AccessLevel:          string(model.GlobalApplicationTemplateAccessLevel),
 	}
 }
 
-func fixModelApplicationCreateInput() *model.ApplicationCreateInput {
-	desc := "Sample"
-	kind := "test"
-	testURL := "https://foo.bar"
-	intSysID := "iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"
-	return &model.ApplicationCreateInput{
-		Name:        "foo",
-		Description: &desc,
-		Labels: map[string]interface{}{
-			"test": []interface{}{"val", "val2"},
-		},
-		HealthCheckURL:      &testURL,
-		IntegrationSystemID: &intSysID,
-		Webhooks: []*model.WebhookInput{
-			{URL: "webhook1.foo.bar"},
-			{URL: "webhook2.foo.bar"},
-		},
-		Apis: []*model.APIDefinitionInput{
-			{Name: "api1", TargetURL: "foo.bar"},
-			{Name: "api2", TargetURL: "foo.bar2"},
-		},
-		EventAPIs: []*model.EventAPIDefinitionInput{
-			{Name: "event1", Description: &desc},
-			{Name: "event2", Description: &desc},
-		},
-		Documents: []*model.DocumentInput{
-			{DisplayName: "doc1", Kind: &kind},
-			{DisplayName: "doc2", Kind: &kind},
-		},
-	}
+func fixApplicationCreateInputString() string {
+
+	return fmt.Sprintf(`{"name":"foo","description":"%s"}`, testDescription)
 }
 
-func fixPlaceholders() []model.ApplicationTemplatePlaceholder {
-	placeholderDesc := "Foo bar"
+func fixApplicationCreateInputGraphqlized() string {
+	return `{name: "foo",description: "Lorem ipsum",}`
+}
+func fixModelPlaceholders() []model.ApplicationTemplatePlaceholder {
+	placeholderDesc := testDescription
 	return []model.ApplicationTemplatePlaceholder{
 		{
 			Name:        "test",
@@ -100,14 +145,34 @@ func fixPlaceholders() []model.ApplicationTemplatePlaceholder {
 	}
 }
 
+func fixGQLPlaceholderDefinitionInput() []*graphql.PlaceholderDefinitionInput {
+	placeholderDesc := testDescription
+	return []*graphql.PlaceholderDefinitionInput{
+		{
+			Name:        "test",
+			Description: &placeholderDesc,
+		},
+	}
+}
+
+func fixGQLPlaceholders() []*graphql.PlaceholderDefinition {
+	placeholderDesc := testDescription
+	return []*graphql.PlaceholderDefinition{
+		{
+			Name:        "test",
+			Description: &placeholderDesc,
+		},
+	}
+}
+
 func fixAppTemplateCreateArgs(entity apptemplate.Entity) []driver.Value {
-	return []driver.Value{entity.ID, entity.Name, entity.Description, entity.ApplicationInput, entity.Placeholders, entity.AccessLevel}
+	return []driver.Value{entity.ID, entity.Name, entity.Description, entity.ApplicationInputJSON, entity.PlaceholdersJSON, entity.AccessLevel}
 }
 
 func fixSQLRows(entities []apptemplate.Entity) *sqlmock.Rows {
 	out := sqlmock.NewRows(testTableColumns)
 	for _, entity := range entities {
-		out.AddRow(entity.ID, entity.Name, entity.Description, entity.ApplicationInput, entity.Placeholders, entity.AccessLevel)
+		out.AddRow(entity.ID, entity.Name, entity.Description, entity.ApplicationInputJSON, entity.PlaceholdersJSON, entity.AccessLevel)
 	}
 	return out
 }

@@ -346,6 +346,21 @@ type ApplicationStatus {
 	timestamp: Timestamp!
 }
 
+type ApplicationTemplate {
+	id: ID!
+	name: String!
+	description: String
+	applicationInput: String!
+	placeholders: [PlaceholderDefinition!]!
+	accessLevel: ApplicationTemplateAccessLevel!
+}
+
+type ApplicationTemplatePage implements Pageable {
+	data: [ApplicationTemplate!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
+}
+
 type Auth {
 	credential: CredentialData!
 	additionalHeaders: HttpHeaders
@@ -489,6 +504,11 @@ type PageInfo {
 	hasNextPage: Boolean!
 }
 
+type PlaceholderDefinition {
+	name: String!
+	description: String
+}
+
 type Runtime {
 	id: ID!
 	name: String!
@@ -565,6 +585,11 @@ type Query {
 	applicationsForRuntime(runtimeID: ID!, first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applicationsForRuntime")
 	"""
 	Maximum `first` parameter value is 100
+	"""
+	applicationTemplates(first: Int = 100, after: PageCursor): ApplicationTemplatePage! @hasScopes(path: "graphql.query.applicationTemplates")
+	applicationTemplate(id: ID!): ApplicationTemplate @hasScopes(path: "graphql.query.applicationTemplate")
+	"""
+	Maximum `first` parameter value is 100
 	
 	**Examples**
 	- [query runtimes with label filter](examples/query-runtimes/query-runtimes-with-label-filter.graphql)
@@ -618,6 +643,9 @@ type Mutation {
 	- [delete application](examples/delete-application/delete-application.graphql)
 	"""
 	deleteApplication(id: ID!): Application! @hasScopes(path: "graphql.mutation.deleteApplication")
+	createApplicationTemplate(in: ApplicationTemplateInput!): ApplicationTemplate! @hasScopes(path: "graphql.mutation.createApplicationTemplate")
+	updateApplicationTemplate(id: ID!, in: ApplicationTemplateInput!): ApplicationTemplate! @hasScopes(path: "graphql.mutation.updateApplicationTemplate")
+	deleteApplicationTemplate(id: ID!): ApplicationTemplate! @hasScopes(path: "graphql.mutation.deleteApplicationTemplate")
 	"""
 	**Examples**
 	- [create runtime](examples/create-runtime/create-runtime.graphql)
