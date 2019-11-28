@@ -42,7 +42,7 @@ type AzureProviderConfigInput struct {
 	VnetCidr string `json:"vnetCidr"`
 }
 
-type CleanUpRuntimeStatus struct {
+type CleanUpRuntimeDataResult struct {
 	ID      string  `json:"id"`
 	Message *string `json:"message"`
 }

@@ -146,7 +146,7 @@ type MutationResolver interface {
 	ProvisionRuntime(ctx context.Context, id string, config ProvisionRuntimeInput) (string, error)
 	UpgradeRuntime(ctx context.Context, id string, config UpgradeRuntimeInput) (string, error)
 	DeprovisionRuntime(ctx context.Context, id string) (string, error)
-	CleanupRuntimeData(ctx context.Context, id string) (*CleanUpRuntimeStatus, error)
+	CleanupRuntimeData(ctx context.Context, id string) (*CleanUpRuntimeDataResult, error)
 	ReconnectRuntimeAgent(ctx context.Context, id string) (string, error)
 }
 type QueryResolver interface {
@@ -204,14 +204,14 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.AzureProviderConfig.VnetCidr(childComplexity), true
 
-	case "CleanUpRuntimeStatus.id":
+	case "CleanUpRuntimeDataResult.id":
 		if e.complexity.CleanUpRuntimeStatus.ID == nil {
 			break
 		}
 
 		return e.complexity.CleanUpRuntimeStatus.ID(childComplexity), true
 
-	case "CleanUpRuntimeStatus.message":
+	case "CleanUpRuntimeDataResult.message":
 		if e.complexity.CleanUpRuntimeStatus.Message == nil {
 			break
 		}
@@ -784,7 +784,7 @@ enum RuntimeAgentConnectionStatus {
     Disconnected
 }
 
-type CleanUpRuntimeStatus {
+type CleanUpRuntimeDataResult {
     id: String!
     message: String
 }
@@ -877,7 +877,7 @@ type Mutation {
     provisionRuntime(id: String!, config: ProvisionRuntimeInput!): String!
     upgradeRuntime(id: String!, config: UpgradeRuntimeInput!): String!
     deprovisionRuntime(id: String!): String!
-    cleanupRuntimeData(id: String!): CleanUpRuntimeStatus!
+    cleanupRuntimeData(id: String!): CleanUpRuntimeDataResult!
 
     # Compass Runtime Agent Connection Management
     reconnectRuntimeAgent(id: String!): String!
@@ -1230,7 +1230,7 @@ func (ec *executionContext) _AzureProviderConfig_vnetCidr(ctx context.Context, f
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _CleanUpRuntimeStatus_id(ctx context.Context, field graphql.CollectedField, obj *CleanUpRuntimeStatus) (ret graphql.Marshaler) {
+func (ec *executionContext) _CleanUpRuntimeStatus_id(ctx context.Context, field graphql.CollectedField, obj *CleanUpRuntimeDataResult) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -1240,7 +1240,7 @@ func (ec *executionContext) _CleanUpRuntimeStatus_id(ctx context.Context, field 
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "CleanUpRuntimeStatus",
+		Object:   "CleanUpRuntimeDataResult",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -1267,7 +1267,7 @@ func (ec *executionContext) _CleanUpRuntimeStatus_id(ctx context.Context, field 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _CleanUpRuntimeStatus_message(ctx context.Context, field graphql.CollectedField, obj *CleanUpRuntimeStatus) (ret graphql.Marshaler) {
+func (ec *executionContext) _CleanUpRuntimeStatus_message(ctx context.Context, field graphql.CollectedField, obj *CleanUpRuntimeDataResult) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -1277,7 +1277,7 @@ func (ec *executionContext) _CleanUpRuntimeStatus_message(ctx context.Context, f
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "CleanUpRuntimeStatus",
+		Object:   "CleanUpRuntimeDataResult",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -2457,7 +2457,7 @@ func (ec *executionContext) _Mutation_cleanupRuntimeData(ctx context.Context, fi
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*CleanUpRuntimeStatus)
+	res := resTmp.(*CleanUpRuntimeDataResult)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNCleanUpRuntimeStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCleanUpRuntimeStatus(ctx, field.Selections, res)
@@ -4814,9 +4814,9 @@ func (ec *executionContext) _AzureProviderConfig(ctx context.Context, sel ast.Se
 	return out
 }
 
-var cleanUpRuntimeStatusImplementors = []string{"CleanUpRuntimeStatus"}
+var cleanUpRuntimeStatusImplementors = []string{"CleanUpRuntimeDataResult"}
 
-func (ec *executionContext) _CleanUpRuntimeStatus(ctx context.Context, sel ast.SelectionSet, obj *CleanUpRuntimeStatus) graphql.Marshaler {
+func (ec *executionContext) _CleanUpRuntimeStatus(ctx context.Context, sel ast.SelectionSet, obj *CleanUpRuntimeDataResult) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.RequestContext, sel, cleanUpRuntimeStatusImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -4824,7 +4824,7 @@ func (ec *executionContext) _CleanUpRuntimeStatus(ctx context.Context, sel ast.S
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("CleanUpRuntimeStatus")
+			out.Values[i] = graphql.MarshalString("CleanUpRuntimeDataResult")
 		case "id":
 			out.Values[i] = ec._CleanUpRuntimeStatus_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -5498,11 +5498,11 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalNCleanUpRuntimeStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCleanUpRuntimeStatus(ctx context.Context, sel ast.SelectionSet, v CleanUpRuntimeStatus) graphql.Marshaler {
+func (ec *executionContext) marshalNCleanUpRuntimeStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCleanUpRuntimeStatus(ctx context.Context, sel ast.SelectionSet, v CleanUpRuntimeDataResult) graphql.Marshaler {
 	return ec._CleanUpRuntimeStatus(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNCleanUpRuntimeStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCleanUpRuntimeStatus(ctx context.Context, sel ast.SelectionSet, v *CleanUpRuntimeStatus) graphql.Marshaler {
+func (ec *executionContext) marshalNCleanUpRuntimeStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCleanUpRuntimeStatus(ctx context.Context, sel ast.SelectionSet, v *CleanUpRuntimeDataResult) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")

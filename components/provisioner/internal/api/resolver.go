@@ -105,7 +105,7 @@ func (r *Resolver) RuntimeOperationStatus(ctx context.Context, operationID strin
 	return status, nil
 }
 
-func (r *Resolver) CleanupRuntimeData(ctx context.Context, id string) (*gqlschema.CleanUpRuntimeStatus, error) {
+func (r *Resolver) CleanupRuntimeData(ctx context.Context, id string) (*gqlschema.CleanUpRuntimeDataResult, error) {
 	log.Infof("Requested cleaning up Runtime data for Runtime %s.", id)
 
 	res, err := r.provisioning.CleanupRuntimeData(id)

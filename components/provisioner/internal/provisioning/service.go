@@ -29,7 +29,7 @@ type Service interface {
 	ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeInput) (string, <-chan struct{}, error)
 	UpgradeRuntime(id string, config *gqlschema.UpgradeRuntimeInput) (string, error)
 	DeprovisionRuntime(id string) (string, <-chan struct{}, error)
-	CleanupRuntimeData(id string) (*gqlschema.CleanUpRuntimeStatus, error)
+	CleanupRuntimeData(id string) (*gqlschema.CleanUpRuntimeDataResult, error)
 	ReconnectRuntimeAgent(id string) (string, error)
 	RuntimeStatus(id string) (*gqlschema.RuntimeStatus, error)
 	RuntimeOperationStatus(id string) (*gqlschema.OperationStatus, error)
@@ -167,13 +167,13 @@ func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.Operati
 	return status, nil
 }
 
-func (r *service) CleanupRuntimeData(id string) (*gqlschema.CleanUpRuntimeStatus, error) {
+func (r *service) CleanupRuntimeData(id string) (*gqlschema.CleanUpRuntimeDataResult, error) {
 	err := r.persistenceService.CleanupClusterData(id)
 
 	if err != nil {
 		if err.Code() == dberrors.CodeNotFound {
 			message := fmt.Sprintf("Runtime with ID %s not found in the database", id)
-			return &gqlschema.CleanUpRuntimeStatus{ID: id, Message: &message}, nil
+			return &gqlschema.CleanUpRuntimeDataResult{ID: id, Message: &message}, nil
 		}
 
 		if err.Code() == dberrors.CodeInternal {
@@ -183,7 +183,7 @@ func (r *service) CleanupRuntimeData(id string) (*gqlschema.CleanUpRuntimeStatus
 	}
 
 	message := fmt.Sprintf("Successfully cleaned up data for Runtime with ID %s", id)
-	return &gqlschema.CleanUpRuntimeStatus{ID: id, Message: &message}, nil
+	return &gqlschema.CleanUpRuntimeDataResult{ID: id, Message: &message}, nil
 }
 
 func (r *service) startProvisioning(operationID, runtimeID string, builder configuration.Builder, finished chan<- struct{}) {
