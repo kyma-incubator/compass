@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/event"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
@@ -79,6 +81,7 @@ func main() {
 		Resolvers: domain.NewRootResolver(transact, scopeCfgProvider, cfg.OneTimeToken, cfg.OAuth20, cfg.Event),
 		Directives: graphql.DirectiveRoot{
 			HasScopes: scope.NewDirective(scopeCfgProvider).VerifyScopes,
+			Validate:  inputvalidation.NewDirective().Validate,
 		},
 	}
 

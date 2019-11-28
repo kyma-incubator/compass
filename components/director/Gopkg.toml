@@ -49,5 +49,5 @@ required = [
   branch = "master"
 
 [[constraint]]
-  name = "github.com/Masterminds/sprig"
-  version = "v2.22.0"
+  name = "github.com/go-ozzo/ozzo-validation"
+  version = "3.6.0"

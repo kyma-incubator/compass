@@ -89,6 +89,14 @@
   revision = "25d852aebe32c875e9c044af3eef9c7dc6bc777f"
 
 [[projects]]
+  digest = "1:5672cac2a0190dbb0658806e0f8e220ae4a4120451603504c22ef89a1126c109"
+  name = "github.com/go-ozzo/ozzo-validation"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "199b55b36bc1af151e6eea487cc92ffa5b460b81"
+  version = "v3.6.0"
+
+[[projects]]
   digest = "1:582e25eccee928dc12416ea4c23b6dae8f3b5687730632aa1473ebebe80a2359"
   name = "github.com/gogo/protobuf"
   packages = [
@@ -515,6 +523,7 @@
     "github.com/Masterminds/sprig",
     "github.com/dgrijalva/jwt-go",
     "github.com/ghodss/yaml",
+    "github.com/go-ozzo/ozzo-validation",
     "github.com/google/uuid",
     "github.com/gorilla/mux",
     "github.com/hashicorp/go-multierror",

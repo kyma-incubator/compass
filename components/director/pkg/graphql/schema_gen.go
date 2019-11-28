@@ -48,6 +48,8 @@ type ResolverRoot interface {
 
 type DirectiveRoot struct {
 	HasScopes func(ctx context.Context, obj interface{}, next graphql.Resolver, path string) (res interface{}, err error)
+
+	Validate func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
 }
 
 type ComplexityRoot struct {
@@ -2240,6 +2242,10 @@ var parsedSchema = gqlparser.MustLoadSchema(
 HasScopes directive is added automatically to every query and mutation by scopesdecorator plugin that is triggerred by gqlgen.sh script.
 """
 directive @hasScopes(path: String!) on FIELD_DEFINITION
+"""
+Validate directive marks mutation arguments that will be validated.
+"""
+directive @validate on ARGUMENT_DEFINITION
 scalar Any
 
 scalar CLOB
