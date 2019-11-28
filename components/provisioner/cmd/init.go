@@ -4,14 +4,15 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/client"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/configuration"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/converters"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
-	installation2 "github.com/kyma-incubator/hydroform/install/installation"
+	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/pkg/errors"
 
 	"path/filepath"
@@ -24,26 +25,16 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-func newPersistenceService(connectionString, schemaPath string) (persistence.Service, error) {
-	connection, err := database.InitializeDatabase(connectionString, schemaPath)
-	if err != nil {
-		return nil, err
-	}
-
-	dbSessionFactory := dbsession.NewFactory(connection)
-	uuidGenerator := uuid.NewUUIDGenerator()
-
-	return persistence.NewService(dbSessionFactory, uuidGenerator), nil
-}
-
-func newProvisioningService(config config, persistenceService persistence.Service, secrets v1.SecretInterface, artifactsProvider installation.ArtifactsProvider) provisioning.Service {
+func newProvisioningService(config config, persistenceService persistence.Service, secrets v1.SecretInterface, releaseRepo release.ReadRepository) provisioning.Service {
 	hydroformClient := client.NewHydroformClient()
-	hydroformService := hydroform.NewHydroformService(hydroformClient)
+	hydroformService := hydroform.NewHydroformService(hydroformClient, secrets)
 	uuidGenerator := uuid.NewUUIDGenerator()
-	factory := configuration.NewConfigBuilderFactory(secrets)
-	installationService := installation.NewInstallationService(config.Installation.Timeout, artifactsProvider, installation2.NewKymaInstaller, config.Installation.ErrorsCountFailureThreshold)
+	installationService := installation.NewInstallationService(config.Installation.Timeout, installationSDK.NewKymaInstaller, config.Installation.ErrorsCountFailureThreshold)
 
-	return provisioning.NewProvisioningService(persistenceService, uuidGenerator, hydroformService, factory, installationService)
+	inputConverter := converters.NewInputConverter(uuidGenerator, releaseRepo)
+	graphQLConverter := converters.NewGraphQLConverter()
+
+	return provisioning.NewProvisioningService(persistenceService, inputConverter, graphQLConverter, hydroformService, installationService)
 }
 
 func newSecretsInterface(namespace string) (v1.SecretInterface, error) {
@@ -68,16 +59,20 @@ func newSecretsInterface(namespace string) (v1.SecretInterface, error) {
 }
 
 func newResolver(config config, connectionString string) (*api.Resolver, error) {
-	persistenceService, err := newPersistenceService(connectionString, config.Database.SchemaFilePath)
+	connection, err := database.InitializeDatabase(connectionString, config.Database.SchemaFilePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to initialize persistence")
 	}
+	dbSessionFactory := dbsession.NewFactory(connection)
+
+	persistenceService := persistence.NewService(dbSessionFactory, uuid.NewUUIDGenerator())
+
+	releaseRepo := release.NewReleaseRepository(connection)
 
 	secretInterface, err := newSecretsInterface(config.CredentialsNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to create secrets interface")
 	}
 
-	// TODO -  pass artifacts provider
-	return api.NewResolver(newProvisioningService(config, persistenceService, secretInterface, nil)), nil
+	return api.NewResolver(newProvisioningService(config, persistenceService, secretInterface, releaseRepo)), nil
 }

@@ -7,6 +7,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 
 	"k8s.io/client-go/tools/clientcmd"
@@ -19,21 +21,15 @@ import (
 
 type InstallationHandler func(*rest.Config, ...installation.InstallationOption) (installation.Installer, error)
 
-//go:generate mockery -name=ArtifactsProvider
-type ArtifactsProvider interface {
-	GetArtifacts(version string) (model.Release, error)
-}
-
 //go:generate mockery -name=Service
 type Service interface {
 	InstallKyma(kubeconfigRaw string, release model.Release) error
 }
 
-func NewInstallationService(installationTimeout time.Duration, artifactsProvider ArtifactsProvider, installationHandler InstallationHandler, installErrFailureThreshold int) Service {
+func NewInstallationService(installationTimeout time.Duration, installationHandler InstallationHandler, installErrFailureThreshold int) Service {
 	return &installationService{
 		installationErrorsFailureThreshold: installErrFailureThreshold,
 		kymaInstallationTimeout:            installationTimeout,
-		artifactsProvider:                  artifactsProvider,
 		installationHandler:                installationHandler,
 	}
 }
@@ -41,7 +37,7 @@ func NewInstallationService(installationTimeout time.Duration, artifactsProvider
 type installationService struct {
 	installationErrorsFailureThreshold int
 	kymaInstallationTimeout            time.Duration
-	artifactsProvider                  ArtifactsProvider
+	releaseRepo                        release.ReadRepository
 	installationHandler                InstallationHandler
 }
 
@@ -56,19 +52,14 @@ func (s *installationService) InstallKyma(kubeconfigRaw string, release model.Re
 		return fmt.Errorf("failed to get client kubeconfig from parsed config: %s", err.Error())
 	}
 
-	releaseArtifacts, err := s.artifactsProvider.GetArtifacts("")
-	if err != nil {
-		return pkgErrors.Wrap(err, "Failed to get release Artifacts")
-	}
-
 	kymaInstaller, err := s.installationHandler(clientConfig)
 	if err != nil {
 		return pkgErrors.Wrap(err, "Failed to create Kyma installer")
 	}
 
 	installationConfig := installation.Installation{
-		TillerYaml:    releaseArtifacts.TillerYAML,
-		InstallerYaml: releaseArtifacts.InstallerYAML,
+		TillerYaml:    release.TillerYAML,
+		InstallerYaml: release.InstallerYAML,
 		Configuration: installation.Configuration{},
 	}
 

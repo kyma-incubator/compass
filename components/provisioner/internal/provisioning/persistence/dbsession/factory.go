@@ -20,7 +20,6 @@ type ReadSession interface {
 	GetLastOperation(runtimeID string) (model.Operation, dberrors.Error)
 	GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error)
 	GetProviderConfig(runtimeID string) (model.ProviderConfiguration, dberrors.Error)
-	GetReleaseByVersion(version string) (model.Release, dberrors.Error)
 }
 
 //go:generate mockery -name=WriteSession

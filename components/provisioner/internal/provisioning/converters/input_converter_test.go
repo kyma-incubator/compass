@@ -3,7 +3,9 @@ package converters
 import (
 	"testing"
 
-	dbMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
+	realeaseMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/release/mocks"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid/mocks"
 	"github.com/stretchr/testify/require"
@@ -18,9 +20,9 @@ const (
 	kymaVersion = "1.5"
 )
 
-func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
+func Test_ProvisioningInputToCluster(t *testing.T) {
 
-	readSession := &dbMocks.ReadSession{}
+	readSession := &realeaseMocks.Repository{}
 	readSession.On("GetReleaseByVersion", kymaVersion).Return(fixKymaRelease(), nil)
 
 	createGQLRuntimeInputGCP := func(zone *string) gqlschema.ProvisionRuntimeInput {
@@ -344,23 +346,71 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 	}
 }
 
-//func fixBaseGardenerConfigInput() *gqlschema.GardenerConfigInput {
-//	return &gqlschema.GardenerConfigInput{
-//		Name:              "Something",
-//		ProjectName:       "Project",
-//		KubernetesVersion: "version",
-//		NodeCount:         3,
-//		VolumeSizeGb:      1024,
-//		MachineType:       "n1-standard-1",
-//		Region:            "region",
-//		Provider:          "GCP",
-//		Seed:              "gcp-eu1",
-//		TargetSecret:      "secret",
-//		DiskType:          "ssd",
-//		WorkerCidr:        "cidr",
-//		AutoScalerMin:     1,
-//		AutoScalerMax:     5,
-//		MaxSurge:          1,
-//		MaxUnavailable:    2,
-//
-//}
+func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
+
+	t.Run("should return error when failed to get kyma release", func(t *testing.T) {
+		// given
+		uuidGeneratorMock := &mocks.UUIDGenerator{}
+		readSession := &realeaseMocks.Repository{}
+		readSession.On("GetReleaseByVersion", kymaVersion).Return(model.Release{}, dberrors.NotFound("error"))
+
+		input := gqlschema.ProvisionRuntimeInput{
+			ClusterConfig: &gqlschema.ClusterConfigInput{
+				GcpConfig: &gqlschema.GCPConfigInput{},
+			},
+			Credentials: &gqlschema.CredentialsInput{
+				SecretName: "secretName",
+			},
+			KymaConfig: &gqlschema.KymaConfigInput{
+				Version: kymaVersion,
+			},
+		}
+
+		inputConverter := NewInputConverter(uuidGeneratorMock, readSession)
+
+		//when
+		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input)
+
+		//then
+		require.Error(t, err)
+		uuidGeneratorMock.AssertExpectations(t)
+	})
+
+	t.Run("should return error when no provider input provided", func(t *testing.T) {
+		// given
+		input := gqlschema.ProvisionRuntimeInput{
+			ClusterConfig: &gqlschema.ClusterConfigInput{},
+		}
+
+		inputConverter := NewInputConverter(nil, nil)
+
+		//when
+		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input)
+
+		//then
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "does not match any provider")
+	})
+
+	t.Run("should return error when no Gardener provider specified", func(t *testing.T) {
+		// given
+		uuidGeneratorMock := &mocks.UUIDGenerator{}
+		uuidGeneratorMock.On("New").Return("id").Times(4)
+
+		input := gqlschema.ProvisionRuntimeInput{
+			ClusterConfig: &gqlschema.ClusterConfigInput{
+				GardenerConfig: &gqlschema.GardenerConfigInput{},
+			},
+		}
+
+		inputConverter := NewInputConverter(uuidGeneratorMock, nil)
+
+		//when
+		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input)
+
+		//then
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "provider config not specified")
+	})
+
+}

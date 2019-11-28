@@ -2,14 +2,7 @@ package release
 
 import (
 	"context"
-
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 )
-
-type Repository interface {
-	GetRelease(version string) (Release, dberrors.Error)
-	SaveRelease(artifacts Release) (Release, dberrors.Error)
-}
 
 func NewArtifactsDownloader(repository Repository, latestReleases int, includePreReleases bool) *artifactsDownloader {
 	return &artifactsDownloader{

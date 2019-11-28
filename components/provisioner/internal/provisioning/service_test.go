@@ -4,6 +4,8 @@ import (
 	"errors"
 	"testing"
 
+	releaseMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/release/mocks"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/converters"
@@ -43,11 +45,9 @@ func TestService_ProvisionRuntime(t *testing.T) {
 	hydroformMock := &mocks.Service{}
 	persistenceServiceMock := &persistenceMocks.Service{}
 	installationSvc := &installationMocks.Service{}
+	releaseRepo := &releaseMocks.Repository{}
 
-	readSession := &dbMocks.ReadSession{}
-	readSession.On("GetReleaseByVersion", kymaVersion).Return(kymaRelease, nil)
-
-	inputConverter := converters.NewInputConverter(uuid.NewUUIDGenerator(), readSession)
+	inputConverter := converters.NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo)
 	graphQLConverter := converters.NewGraphQLConverter()
 
 	clusterConfig := &gqlschema.ClusterConfigInput{
@@ -74,6 +74,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		expOperationID := "223949ed-e6b6-4ab2-ab3e-8e19cd456dd40"
 		operation := model.Operation{ID: expOperationID}
 
+		releaseRepo.On("GetReleaseByVersion", kymaVersion).Return(kymaRelease, nil)
 		persistenceServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.NotFound("Not found"))
 		persistenceServiceMock.On("SetProvisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
 		persistenceServiceMock.On("UpdateClusterData", runtimeID, kubeconfigFile, "").Return(nil)
@@ -94,6 +95,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		hydroformMock.AssertExpectations(t)
 		persistenceServiceMock.AssertExpectations(t)
 		installationSvc.AssertExpectations(t)
+		releaseRepo.AssertExpectations(t)
 	})
 
 	t.Run("Should start runtime provisioning and return operation ID when previous provisioning failed", func(t *testing.T) {
@@ -102,6 +104,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		expOperationID := "223949ed-e6b6-4ab2-ab3e-8e19cd456dd40"
 		operation := model.Operation{ID: expOperationID}
 
+		releaseRepo.On("GetReleaseByVersion", kymaVersion).Return(kymaRelease, nil)
 		persistenceServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{Type: model.Provision, State: model.Failed}, nil)
 		persistenceServiceMock.On("CleanupClusterData", runtimeID).Return(nil)
 		persistenceServiceMock.On("SetProvisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
@@ -123,6 +126,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		hydroformMock.AssertExpectations(t)
 		persistenceServiceMock.AssertExpectations(t)
 		installationSvc.AssertExpectations(t)
+		releaseRepo.AssertExpectations(t)
 	})
 
 	t.Run("Should return error when Kyma installation failed", func(t *testing.T) {
@@ -131,6 +135,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		expOperationID := "223949ed-e6b6-4ab2-ab3e-8e19cd456dd40"
 		operation := model.Operation{ID: expOperationID}
 
+		releaseRepo.On("GetReleaseByVersion", kymaVersion).Return(kymaRelease, nil)
 		persistenceServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.NotFound("Not found"))
 		persistenceServiceMock.On("SetProvisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
 		persistenceServiceMock.On("UpdateClusterData", runtimeID, kubeconfigFile, "").Return(nil)
@@ -151,6 +156,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		hydroformMock.AssertExpectations(t)
 		persistenceServiceMock.AssertExpectations(t)
 		installationSvc.AssertExpectations(t)
+		releaseRepo.AssertExpectations(t)
 	})
 
 	t.Run("Should return error when cluster is already provisioned", func(t *testing.T) {

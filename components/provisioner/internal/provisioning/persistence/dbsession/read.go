@@ -166,22 +166,3 @@ func (r readSession) GetLastOperation(runtimeID string) (model.Operation, dberro
 
 	return operation, nil
 }
-
-func (r readSession) GetReleaseByVersion(version string) (model.Release, dberrors.Error) {
-	var release model.Release
-
-	err := r.session.
-		Select("id", "version", "tiller_yaml", "installer_yaml").
-		From("kyma_release").
-		Where(dbr.Eq("version", version)).
-		LoadOne(&release)
-
-	if err != nil {
-		if err == dbr.ErrNotFound {
-			return model.Release{}, dberrors.NotFound("Kyma release for version %s not found", version)
-		}
-		return model.Release{}, dberrors.Internal("Failed to get Kyma release for version %s: %s", version, err.Error())
-	}
-
-	return release, nil
-}

@@ -1,10 +1,9 @@
 package converters
 
 import (
+	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 	"github.com/pkg/errors"
-
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
@@ -15,39 +14,51 @@ type InputConverter interface {
 	ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput) (model.Cluster, error)
 }
 
-func NewInputConverter(uuidGenerator uuid.UUIDGenerator, session dbsession.ReadSession) InputConverter {
+func NewInputConverter(uuidGenerator uuid.UUIDGenerator, releaseRepo release.ReadRepository) InputConverter {
 	return &converter{
 		uuidGenerator: uuidGenerator,
-		readSession:   session,
+		releaseRepo:   releaseRepo,
 	}
 }
 
 type converter struct {
 	uuidGenerator uuid.UUIDGenerator
-	readSession   dbsession.ReadSession
+	releaseRepo   release.ReadRepository
 }
 
 func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput) (model.Cluster, error) {
-	kymaConfig, err := c.kymaConfigFromInput(runtimeID, *input.KymaConfig)
-	if err != nil {
-		return model.Cluster{}, err
+	var err error
+
+	var kymaConfig model.KymaConfig
+	if input.KymaConfig != nil {
+		kymaConfig, err = c.kymaConfigFromInput(runtimeID, *input.KymaConfig)
+		if err != nil {
+			return model.Cluster{}, err
+		}
 	}
 
-	clusterConfig, err := c.clusterConfigFromInput(runtimeID, *input.ClusterConfig)
-	if err != nil {
-		return model.Cluster{}, err
+	var providerConfig model.ProviderConfiguration
+	if input.ClusterConfig != nil {
+		providerConfig, err = c.providerConfigFromInput(runtimeID, *input.ClusterConfig)
+		if err != nil {
+			return model.Cluster{}, err
+		}
+	}
+
+	var credSecretName string
+	if input.Credentials != nil {
+		credSecretName = input.Credentials.SecretName
 	}
 
 	return model.Cluster{
 		ID:                    runtimeID,
-		CredentialsSecretName: input.Credentials.SecretName,
-
-		KymaConfig:    kymaConfig,
-		ClusterConfig: clusterConfig,
+		CredentialsSecretName: credSecretName,
+		KymaConfig:            kymaConfig,
+		ClusterConfig:         providerConfig,
 	}, nil
 }
 
-func (c converter) clusterConfigFromInput(runtimeID string, input gqlschema.ClusterConfigInput) (model.ProviderConfiguration, error) {
+func (c converter) providerConfigFromInput(runtimeID string, input gqlschema.ClusterConfigInput) (model.ProviderConfiguration, error) {
 	if input.GardenerConfig != nil {
 		config := input.GardenerConfig
 		return c.gardenerConfigFromInput(runtimeID, *config)
@@ -92,6 +103,10 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 }
 
 func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpecificInput) (model.GardenerProviderConfig, error) {
+	if input == nil {
+		return nil, errors.New("provider config not specified")
+	}
+
 	if input.GcpConfig != nil {
 		return model.NewGCPGardenerConfig(*input.GcpConfig)
 	}
@@ -102,7 +117,7 @@ func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpec
 		return model.NewAWSGardenerConfig(*input.AwsConfig)
 	}
 
-	return nil, errors.New("provider config not provided")
+	return nil, errors.New("provider config not specified")
 }
 
 func (c converter) gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfigInput) model.GCPConfig {
@@ -128,7 +143,7 @@ func (c converter) gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfi
 }
 
 func (c converter) kymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, error) {
-	release, err := c.readSession.GetReleaseByVersion(input.Version)
+	kymaRelease, err := c.releaseRepo.GetReleaseByVersion(input.Version)
 	if err != nil {
 		if err.Code() == dberrors.CodeNotFound {
 			return model.KymaConfig{}, errors.Errorf("Kyma Release %s not found", input.Version)
@@ -154,7 +169,7 @@ func (c converter) kymaConfigFromInput(runtimeID string, input gqlschema.KymaCon
 
 	return model.KymaConfig{
 		ID:        kymaConfigID,
-		Release:   release,
+		Release:   kymaRelease,
 		Modules:   modules,
 		ClusterID: runtimeID,
 	}, nil
