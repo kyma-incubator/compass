@@ -660,6 +660,7 @@ type Mutation {
 	- [create application template](examples/create-application-template/create-application-template.graphql)
 	"""
 	createApplicationTemplate(in: ApplicationTemplateInput!): ApplicationTemplate! @hasScopes(path: "graphql.mutation.createApplicationTemplate")
+	createApplicationFromTemplate(templateName: String!, values: [TemplateValueInput]): Application! @hasScopes(path: "graphql.mutation.createApplicationFromTemplate")
 	"""
 	**Examples**
 	- [update application template](examples/update-application-template/update-application-template.graphql)

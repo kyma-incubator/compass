@@ -208,6 +208,9 @@ func (r *mutationResolver) DeleteApplication(ctx context.Context, id string) (*g
 func (r *mutationResolver) CreateApplicationTemplate(ctx context.Context, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
 	return r.appTemplate.CreateApplicationTemplate(ctx, in)
 }
+func (r *mutationResolver) CreateApplicationFromTemplate(ctx context.Context, templateName string, values []*graphql.TemplateValueInput) (*graphql.Application, error) {
+	return r.appTemplate.CreateApplicationFromTemplate(ctx, templateName, values)
+}
 func (r *mutationResolver) UpdateApplicationTemplate(ctx context.Context, id string, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
 	return r.appTemplate.UpdateApplicationTemplate(ctx, id, in)
 }

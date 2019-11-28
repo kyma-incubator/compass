@@ -154,6 +154,43 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	return gqlAppTemplate, nil
 }
 
+func (r *Resolver) CreateApplicationFromTemplate(ctx context.Context, templateName string, values []*graphql.TemplateValueInput) (*graphql.Application, error) {
+	//tx, err := r.transact.Begin()
+	//if err != nil {
+	//	return nil, err
+	//}
+	//defer r.transact.RollbackUnlessCommited(tx)
+	//
+	//ctx = persistence.SaveToContext(ctx, tx)
+	//
+	//convertedIn, err := r.appTemplateConverter.InputFromGraphQL(in)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//id, err := r.appTemplateSvc.Create(ctx, convertedIn)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//appTemplate, err := r.appTemplateSvc.Get(ctx, id)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//err = tx.Commit()
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//gqlAppTemplate, err := r.appTemplateConverter.ToGraphQL(appTemplate)
+	//if err != nil {
+	//	return nil, errors.Wrapf(err, "while converting application template to graphql")
+	//}
+	//
+	//return gqlAppTemplate, nil
+}
+
 func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
