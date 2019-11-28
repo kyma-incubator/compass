@@ -121,7 +121,7 @@ func (r *service) DeprovisionRuntime(id string) (string, <-chan struct{}, error)
 
 	finished := make(chan struct{})
 
-	cluster, dberr := r.persistenceService.GetClusterData(id) // TODO - make sure full config is fetched
+	cluster, dberr := r.persistenceService.GetClusterData(id)
 	if dberr != nil {
 		return "", nil, dberr
 	}

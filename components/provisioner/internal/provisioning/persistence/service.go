@@ -15,15 +15,14 @@ import (
 //go:generate mockery -name=Service
 type Service interface {
 	GetRuntimeStatus(runtimeID string) (model.RuntimeStatus, dberrors.Error)
-
 	SetProvisioningStarted(runtimeID string, runtimeConfig model.Cluster) (model.Operation, dberrors.Error)
 	SetDeprovisioningStarted(runtimeID string) (model.Operation, dberrors.Error)
 	SetUpgradeStarted(runtimeID string) (model.Operation, dberrors.Error)
-	GetLastOperation(runtimeID string) (model.Operation, dberrors.Error)
 	UpdateClusterData(runtimeID string, kubeconfig string, terraformState string) dberrors.Error // TODO - set provisioning finished?
 	CleanupClusterData(runtimeID string) dberrors.Error
 	GetClusterData(runtimeID string) (model.Cluster, dberrors.Error)
 
+	GetLastOperation(runtimeID string) (model.Operation, dberrors.Error)
 	GetOperation(operationID string) (model.Operation, error)
 	SetOperationAsFailed(operationID string, message string) error
 	SetOperationAsSucceeded(operationID string) error

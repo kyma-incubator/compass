@@ -56,7 +56,7 @@ func (s *installationService) InstallKyma(kubeconfigRaw string, release model.Re
 		return fmt.Errorf("failed to get client kubeconfig from parsed config: %s", err.Error())
 	}
 
-	releaseArtifacts, err := s.artifactsProvider.GetArtifacts(kymaVersion)
+	releaseArtifacts, err := s.artifactsProvider.GetArtifacts("")
 	if err != nil {
 		return pkgErrors.Wrap(err, "Failed to get release Artifacts")
 	}

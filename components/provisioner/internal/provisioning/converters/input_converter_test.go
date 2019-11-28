@@ -3,6 +3,8 @@ package converters
 import (
 	"testing"
 
+	dbMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid/mocks"
 	"github.com/stretchr/testify/require"
 
@@ -12,39 +14,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestOperationStatusToGQLOperationStatus(t *testing.T) {
-
-	t.Run("Should create proper operation status struct", func(t *testing.T) {
-		//given
-		operation := model.Operation{
-			ID:        "5f6e3ab6-d803-430a-8fac-29c9c9b4485a",
-			Type:      model.Upgrade,
-			State:     model.InProgress,
-			Message:   "Some message",
-			ClusterID: "6af76034-272a-42be-ac39-30e075f515a3",
-		}
-
-		operationID := "5f6e3ab6-d803-430a-8fac-29c9c9b4485a"
-		message := "Some message"
-		runtimeID := "6af76034-272a-42be-ac39-30e075f515a3"
-
-		expectedOperationStatus := &gqlschema.OperationStatus{
-			ID:        &operationID,
-			Operation: gqlschema.OperationTypeUpgrade,
-			State:     gqlschema.OperationStateInProgress,
-			Message:   &message,
-			RuntimeID: &runtimeID,
-		}
-
-		//when
-		status := operationStatusToGQLOperationStatus(operation)
-
-		//then
-		assert.Equal(t, expectedOperationStatus, status)
-	})
-}
+const (
+	kymaVersion = "1.5"
+)
 
 func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
+
+	readSession := &dbMocks.ReadSession{}
+	readSession.On("GetReleaseByVersion", kymaVersion).Return(fixKymaRelease(), nil)
 
 	createGQLRuntimeInputGCP := func(zone *string) gqlschema.ProvisionRuntimeInput {
 		return gqlschema.ProvisionRuntimeInput{
@@ -64,14 +41,15 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 				SecretName: "secretName",
 			},
 			KymaConfig: &gqlschema.KymaConfigInput{
-				Version: "1.5",
+				Version: kymaVersion,
 				Modules: []gqlschema.KymaModule{gqlschema.KymaModuleBackup, gqlschema.KymaModuleBackupInit},
 			},
 		}
 	}
 
-	createExpectedRuntimeInputGCP := func(zone string) model.RuntimeConfig {
-		return model.RuntimeConfig{
+	createExpectedRuntimeInputGCP := func(zone string) model.Cluster {
+		return model.Cluster{
+			ID: "runtimeID",
 			ClusterConfig: model.GCPConfig{
 				ID:                "id",
 				Name:              "Something",
@@ -86,17 +64,16 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 			},
 			Kubeconfig: nil,
 			KymaConfig: model.KymaConfig{
-				ID:      "id",
-				Version: "1.5",
-				Modules: []model.KymaConfigModule{
-					{ID: "id", Module: model.KymaModule("Backup"), KymaConfigID: "id"},
-					{ID: "id", Module: model.KymaModule("BackupInit"), KymaConfigID: "id"},
-				},
+				ID:        "id",
+				Release:   fixKymaRelease(),
+				Modules:   fixKymaModules(),
 				ClusterID: "runtimeID",
 			},
 			CredentialsSecretName: "secretName",
 		}
 	}
+
+	gcpGardenerProvider := &gqlschema.GCPProviderConfigInput{Zone: "zone"}
 
 	gardenerGCPQGLInput := gqlschema.ProvisionRuntimeInput{
 		ClusterConfig: &gqlschema.ClusterConfigInput{
@@ -118,9 +95,7 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 				MaxSurge:          1,
 				MaxUnavailable:    2,
 				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
-					GcpConfig: &gqlschema.GCPProviderConfigInput{
-						Zone: "zone",
-					},
+					GcpConfig: gcpGardenerProvider,
 				},
 			},
 		},
@@ -128,12 +103,16 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 			SecretName: "secretName",
 		},
 		KymaConfig: &gqlschema.KymaConfigInput{
-			Version: "1.5",
+			Version: kymaVersion,
 			Modules: []gqlschema.KymaModule{gqlschema.KymaModuleBackup, gqlschema.KymaModuleBackupInit},
 		},
 	}
 
-	expectedGardenerGCPRuntimeConfig := model.RuntimeConfig{
+	expectedGCPProviderCfg, err := model.NewGCPGardenerConfig(*gcpGardenerProvider)
+	require.NoError(t, err)
+
+	expectedGardenerGCPRuntimeConfig := model.Cluster{
+		ID: "runtimeID",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
 			Name:                   "Something",
@@ -153,20 +132,19 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 			MaxSurge:               1,
 			MaxUnavailable:         2,
 			ClusterID:              "runtimeID",
-			GardenerProviderConfig: "{\"zone\":\"zone\"}",
+			GardenerProviderConfig: expectedGCPProviderCfg,
 		},
 		Kubeconfig: nil,
 		KymaConfig: model.KymaConfig{
-			ID:      "id",
-			Version: "1.5",
-			Modules: []model.KymaConfigModule{
-				{ID: "id", Module: model.KymaModule("Backup"), KymaConfigID: "id"},
-				{ID: "id", Module: model.KymaModule("BackupInit"), KymaConfigID: "id"},
-			},
+			ID:        "id",
+			Release:   fixKymaRelease(),
+			Modules:   fixKymaModules(),
 			ClusterID: "runtimeID",
 		},
 		CredentialsSecretName: "secretName",
 	}
+
+	azureGardenerProvider := &gqlschema.AzureProviderConfigInput{VnetCidr: "cidr"}
 
 	gardenerAzureQGLInput := gqlschema.ProvisionRuntimeInput{
 		ClusterConfig: &gqlschema.ClusterConfigInput{
@@ -188,9 +166,7 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 				MaxSurge:          1,
 				MaxUnavailable:    2,
 				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
-					AzureConfig: &gqlschema.AzureProviderConfigInput{
-						VnetCidr: "cidr",
-					},
+					AzureConfig: azureGardenerProvider,
 				},
 			},
 		},
@@ -198,12 +174,16 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 			SecretName: "secretName",
 		},
 		KymaConfig: &gqlschema.KymaConfigInput{
-			Version: "1.5",
+			Version: kymaVersion,
 			Modules: []gqlschema.KymaModule{gqlschema.KymaModuleBackup, gqlschema.KymaModuleBackupInit},
 		},
 	}
 
-	expectedGardenerAzureRuntimeConfig := model.RuntimeConfig{
+	expectedAzureProviderCfg, err := model.NewAzureGardenerConfig(*azureGardenerProvider)
+	require.NoError(t, err)
+
+	expectedGardenerAzureRuntimeConfig := model.Cluster{
+		ID: "runtimeID",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
 			Name:                   "Something",
@@ -223,19 +203,23 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 			MaxSurge:               1,
 			MaxUnavailable:         2,
 			ClusterID:              "runtimeID",
-			GardenerProviderConfig: "{\"vnetCidr\":\"cidr\"}",
+			GardenerProviderConfig: expectedAzureProviderCfg,
 		},
 		Kubeconfig: nil,
 		KymaConfig: model.KymaConfig{
-			ID:      "id",
-			Version: "1.5",
-			Modules: []model.KymaConfigModule{
-				{ID: "id", Module: model.KymaModule("Backup"), KymaConfigID: "id"},
-				{ID: "id", Module: model.KymaModule("BackupInit"), KymaConfigID: "id"},
-			},
+			ID:        "id",
+			Release:   fixKymaRelease(),
+			Modules:   fixKymaModules(),
 			ClusterID: "runtimeID",
 		},
 		CredentialsSecretName: "secretName",
+	}
+
+	awsGardenerProvider := &gqlschema.AWSProviderConfigInput{
+		Zone:         "zone",
+		InternalCidr: "cidr",
+		VpcCidr:      "cidr",
+		PublicCidr:   "cidr",
 	}
 
 	gardenerAWSQGLInput := gqlschema.ProvisionRuntimeInput{
@@ -258,12 +242,7 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 				MaxSurge:          1,
 				MaxUnavailable:    2,
 				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
-					AwsConfig: &gqlschema.AWSProviderConfigInput{
-						Zone:         "zone",
-						InternalCidr: "cidr",
-						VpcCidr:      "cidr",
-						PublicCidr:   "cidr",
-					},
+					AwsConfig: awsGardenerProvider,
 				},
 			},
 		},
@@ -271,12 +250,16 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 			SecretName: "secretName",
 		},
 		KymaConfig: &gqlschema.KymaConfigInput{
-			Version: "1.5",
+			Version: kymaVersion,
 			Modules: []gqlschema.KymaModule{gqlschema.KymaModuleBackup, gqlschema.KymaModuleBackupInit},
 		},
 	}
 
-	expectedGardenerAWSRuntimeConfig := model.RuntimeConfig{
+	expectedAWSProviderCfg, err := model.NewAWSGardenerConfig(*awsGardenerProvider)
+	require.NoError(t, err)
+
+	expectedGardenerAWSRuntimeConfig := model.Cluster{
+		ID: "runtimeID",
 		ClusterConfig: model.GardenerConfig{
 			ID:                     "id",
 			Name:                   "Something",
@@ -296,16 +279,13 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 			MaxSurge:               1,
 			MaxUnavailable:         2,
 			ClusterID:              "runtimeID",
-			GardenerProviderConfig: "{\"zone\":\"zone\",\"vpcCidr\":\"cidr\",\"publicCidr\":\"cidr\",\"internalCidr\":\"cidr\"}",
+			GardenerProviderConfig: expectedAWSProviderCfg,
 		},
 		Kubeconfig: nil,
 		KymaConfig: model.KymaConfig{
-			ID:      "id",
-			Version: "1.5",
-			Modules: []model.KymaConfigModule{
-				{ID: "id", Module: model.KymaModule("Backup"), KymaConfigID: "id"},
-				{ID: "id", Module: model.KymaModule("BackupInit"), KymaConfigID: "id"},
-			},
+			ID:        "id",
+			Release:   fixKymaRelease(),
+			Modules:   fixKymaModules(),
 			ClusterID: "runtimeID",
 		},
 		CredentialsSecretName: "secretName",
@@ -315,7 +295,7 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 
 	configurations := []struct {
 		input       gqlschema.ProvisionRuntimeInput
-		expected    model.RuntimeConfig
+		expected    model.Cluster
 		description string
 	}{
 		{
@@ -345,233 +325,42 @@ func TestRuntimeConfigFromGraphQLRuntimeConfig(t *testing.T) {
 		},
 	}
 
-	for _, config := range configurations {
-		t.Run("Should create proper runtime config struct with GCP input", func(t *testing.T) {
+	for _, testCase := range configurations {
+		t.Run(testCase.description, func(t *testing.T) {
 			//given
 			uuidGeneratorMock := &mocks.UUIDGenerator{}
 			uuidGeneratorMock.On("New").Return("id").Times(4)
 
+			inputConverter := NewInputConverter(uuidGeneratorMock, readSession)
+
 			//when
-			runtimeConfig, err := runtimeConfigFromInput("runtimeID", config.input, uuidGeneratorMock)
+			runtimeConfig, err := inputConverter.ProvisioningInputToCluster("runtimeID", testCase.input)
 
 			//then
 			require.NoError(t, err)
-			assert.Equal(t, config.expected, runtimeConfig)
+			assert.Equal(t, testCase.expected, runtimeConfig)
 			uuidGeneratorMock.AssertExpectations(t)
 		})
 	}
 }
 
-func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
-	t.Run("Should create proper runtime status struct for GCP config", func(t *testing.T) {
-		name := "Something"
-		project := "Project"
-		numberOfNodes := 3
-		bootDiskSize := 256
-		machine := "machine"
-		region := "region"
-		zone := "zone"
-		kubeversion := "kubeversion"
-		version := "1.5"
-		backup := gqlschema.KymaModuleBackup
-		backupInit := gqlschema.KymaModuleBackupInit
-		kubeconfig := "kubeconfig"
-		secretName := "secretName"
-
-		runtimeStatus := model.RuntimeStatus{
-			LastOperationStatus: model.Operation{
-				ID:        "5f6e3ab6-d803-430a-8fac-29c9c9b4485a",
-				Type:      model.Provision,
-				State:     model.Succeeded,
-				Message:   "Some message",
-				ClusterID: "6af76034-272a-42be-ac39-30e075f515a3",
-			},
-			RuntimeConnectionStatus: model.RuntimeAgentConnectionStatusConnected,
-			RuntimeConfiguration: model.RuntimeConfig{
-				ClusterConfig: model.GCPConfig{
-					ID:                "id",
-					Name:              "Something",
-					ProjectName:       "Project",
-					NumberOfNodes:     3,
-					BootDiskSizeGB:    256,
-					MachineType:       "machine",
-					Region:            "region",
-					Zone:              "zone",
-					KubernetesVersion: "kubeversion",
-					ClusterID:         "runtimeID",
-				},
-				Kubeconfig: &kubeconfig,
-				KymaConfig: model.KymaConfig{
-					ID:      "id",
-					Version: "1.5",
-					Modules: []model.KymaConfigModule{
-						{ID: "id", Module: model.KymaModule("Backup"), KymaConfigID: "id"},
-						{ID: "id", Module: model.KymaModule("BackupInit"), KymaConfigID: "id"},
-					},
-					ClusterID: "runtimeID",
-				},
-				CredentialsSecretName: secretName,
-			},
-		}
-
-		operationID := "5f6e3ab6-d803-430a-8fac-29c9c9b4485a"
-		message := "Some message"
-		runtimeID := "6af76034-272a-42be-ac39-30e075f515a3"
-
-		expectedRuntimeStatus := &gqlschema.RuntimeStatus{
-			LastOperationStatus: &gqlschema.OperationStatus{
-				ID:        &operationID,
-				Operation: gqlschema.OperationTypeProvision,
-				State:     gqlschema.OperationStateSucceeded,
-				Message:   &message,
-				RuntimeID: &runtimeID,
-			},
-			RuntimeConnectionStatus: &gqlschema.RuntimeConnectionStatus{
-				Status: gqlschema.RuntimeAgentConnectionStatusConnected,
-			},
-			RuntimeConfiguration: &gqlschema.RuntimeConfig{
-				ClusterConfig: gqlschema.GCPConfig{
-					Name:              &name,
-					ProjectName:       &project,
-					MachineType:       &machine,
-					Region:            &region,
-					Zone:              &zone,
-					NumberOfNodes:     &numberOfNodes,
-					BootDiskSizeGb:    &bootDiskSize,
-					KubernetesVersion: &kubeversion,
-				},
-				KymaConfig: &gqlschema.KymaConfig{
-					Version: &version,
-					Modules: []*gqlschema.KymaModule{&backup, &backupInit},
-				},
-				Kubeconfig:            &kubeconfig,
-				CredentialsSecretName: &secretName,
-			},
-		}
-
-		//when
-		gqlStatus := runtimeStatusToGraphQLStatus(runtimeStatus)
-
-		//then
-		assert.Equal(t, expectedRuntimeStatus, gqlStatus)
-	})
-
-	t.Run("Should create proper runtime status struct for gardener config", func(t *testing.T) {
-		//given
-		name := "Something"
-		project := "Project"
-		nodes := 3
-		disk := "standard"
-		machine := "machine"
-		region := "region"
-		zone := "zone"
-		volume := 256
-		kubeversion := "kubeversion"
-		version := "1.5"
-		backup := gqlschema.KymaModuleBackup
-		backupInit := gqlschema.KymaModuleBackupInit
-		kubeconfig := "kubeconfig"
-		provider := "GCP"
-		seed := "gcp-eu1"
-		secret := "secret"
-		cidr := "cidr"
-		autoScMax := 2
-		autoScMin := 2
-		surge := 1
-		unavailable := 1
-		secretName := "secretName"
-
-		runtimeStatus := model.RuntimeStatus{
-			LastOperationStatus: model.Operation{
-				ID:        "5f6e3ab6-d803-430a-8fac-29c9c9b4485a",
-				Type:      model.Deprovision,
-				State:     model.Failed,
-				Message:   "Some message",
-				ClusterID: "6af76034-272a-42be-ac39-30e075f515a3",
-			},
-			RuntimeConnectionStatus: model.RuntimeAgentConnectionStatusDisconnected,
-			RuntimeConfiguration: model.RuntimeConfig{
-				ClusterConfig: model.GardenerConfig{
-					Name:                   name,
-					ProjectName:            project,
-					NodeCount:              nodes,
-					DiskType:               disk,
-					MachineType:            machine,
-					Region:                 region,
-					VolumeSizeGB:           volume,
-					KubernetesVersion:      kubeversion,
-					Provider:               provider,
-					Seed:                   seed,
-					TargetSecret:           secret,
-					WorkerCidr:             cidr,
-					AutoScalerMax:          autoScMax,
-					AutoScalerMin:          autoScMin,
-					MaxSurge:               surge,
-					MaxUnavailable:         unavailable,
-					GardenerProviderConfig: "{\"Zone\":\"zone\"}",
-				},
-				Kubeconfig: &kubeconfig,
-				KymaConfig: model.KymaConfig{
-					Version: version,
-					Modules: []model.KymaConfigModule{
-						{ID: "Id1", Module: model.KymaModule("Backup")},
-						{ID: "Id1", Module: model.KymaModule("BackupInit")},
-					},
-				},
-				CredentialsSecretName: secretName,
-			},
-		}
-
-		operationID := "5f6e3ab6-d803-430a-8fac-29c9c9b4485a"
-		message := "Some message"
-		runtimeID := "6af76034-272a-42be-ac39-30e075f515a3"
-
-		expectedRuntimeStatus := &gqlschema.RuntimeStatus{
-			LastOperationStatus: &gqlschema.OperationStatus{
-				ID:        &operationID,
-				Operation: gqlschema.OperationTypeDeprovision,
-				State:     gqlschema.OperationStateFailed,
-				Message:   &message,
-				RuntimeID: &runtimeID,
-			},
-			RuntimeConnectionStatus: &gqlschema.RuntimeConnectionStatus{
-				Status: gqlschema.RuntimeAgentConnectionStatusDisconnected,
-			},
-			RuntimeConfiguration: &gqlschema.RuntimeConfig{
-				ClusterConfig: gqlschema.GardenerConfig{
-					Name:              &name,
-					ProjectName:       &project,
-					NodeCount:         &nodes,
-					DiskType:          &disk,
-					MachineType:       &machine,
-					Region:            &region,
-					VolumeSizeGb:      &volume,
-					KubernetesVersion: &kubeversion,
-					Provider:          &provider,
-					Seed:              &seed,
-					TargetSecret:      &secret,
-					WorkerCidr:        &cidr,
-					AutoScalerMax:     &autoScMax,
-					AutoScalerMin:     &autoScMin,
-					MaxSurge:          &surge,
-					MaxUnavailable:    &unavailable,
-					ProviderSpecificConfig: gqlschema.GCPProviderConfig{
-						Zone: &zone,
-					},
-				},
-				KymaConfig: &gqlschema.KymaConfig{
-					Version: &version,
-					Modules: []*gqlschema.KymaModule{&backup, &backupInit},
-				},
-				Kubeconfig:            &kubeconfig,
-				CredentialsSecretName: &secretName,
-			},
-		}
-
-		//when
-		gqlStatus := runtimeStatusToGraphQLStatus(runtimeStatus)
-
-		//then
-		assert.Equal(t, expectedRuntimeStatus, gqlStatus)
-	})
-}
+//func fixBaseGardenerConfigInput() *gqlschema.GardenerConfigInput {
+//	return &gqlschema.GardenerConfigInput{
+//		Name:              "Something",
+//		ProjectName:       "Project",
+//		KubernetesVersion: "version",
+//		NodeCount:         3,
+//		VolumeSizeGb:      1024,
+//		MachineType:       "n1-standard-1",
+//		Region:            "region",
+//		Provider:          "GCP",
+//		Seed:              "gcp-eu1",
+//		TargetSecret:      "secret",
+//		DiskType:          "ssd",
+//		WorkerCidr:        "cidr",
+//		AutoScalerMin:     1,
+//		AutoScalerMax:     5,
+//		MaxSurge:          1,
+//		MaxUnavailable:    2,
+//
+//}
