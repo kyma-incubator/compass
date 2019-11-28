@@ -14,6 +14,7 @@ type Repository interface {
 
 type ReadRepository interface {
 	GetReleaseByVersion(version string) (model.Release, dberrors.Error)
+	ReleaseExists(version string) (bool, dberrors.Error)
 }
 
 func NewReleaseRepository(connection *dbr.Connection) *releaseRepository {
@@ -46,6 +47,19 @@ func (r releaseRepository) GetReleaseByVersion(version string) (model.Release, d
 
 	return release, nil
 }
+
+func (r releaseRepository) 	ReleaseExists(version string) (bool, dberrors.Error) {
+	_, err := r.GetReleaseByVersion(version)
+
+	if err != nil {
+		if err.Code() == dberrors.CodeNotFound {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
 
 func (r releaseRepository) SaveRelease(artifacts model.Release) (model.Release, dberrors.Error) {
 	session := r.connection.NewSession(nil)
