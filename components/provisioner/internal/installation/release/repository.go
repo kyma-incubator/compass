@@ -4,6 +4,7 @@ import (
 	"github.com/gocraft/dbr"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 )
 
 //go:generate mockery -name=Repository
@@ -17,14 +18,16 @@ type ReadRepository interface {
 	ReleaseExists(version string) (bool, dberrors.Error)
 }
 
-func NewReleaseRepository(connection *dbr.Connection) *releaseRepository {
+func NewReleaseRepository(connection *dbr.Connection, generator uuid.UUIDGenerator) *releaseRepository {
 	return &releaseRepository{
 		connection: connection,
+		generator:  generator,
 	}
 }
 
 type releaseRepository struct {
 	connection *dbr.Connection
+	generator  uuid.UUIDGenerator
 }
 
 func (r releaseRepository) GetReleaseByVersion(version string) (model.Release, dberrors.Error) {
@@ -48,7 +51,7 @@ func (r releaseRepository) GetReleaseByVersion(version string) (model.Release, d
 	return release, nil
 }
 
-func (r releaseRepository) 	ReleaseExists(version string) (bool, dberrors.Error) {
+func (r releaseRepository) ReleaseExists(version string) (bool, dberrors.Error) {
 	_, err := r.GetReleaseByVersion(version)
 
 	if err != nil {
@@ -60,8 +63,8 @@ func (r releaseRepository) 	ReleaseExists(version string) (bool, dberrors.Error)
 	return true, nil
 }
 
-
 func (r releaseRepository) SaveRelease(artifacts model.Release) (model.Release, dberrors.Error) {
+	artifacts.Id = r.generator.New()
 	session := r.connection.NewSession(nil)
 
 	_, err := session.InsertInto("kyma_release").

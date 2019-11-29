@@ -5,32 +5,28 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"sort"
-	"strconv"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+	"github.com/sirupsen/logrus"
 )
 
 const (
-	longInterval  = 1 * time.Hour
-	shortInterval = 1 * time.Minute
+	LongInterval  = 1 * time.Hour
+	ShortInterval = 1 * time.Minute
 
-	timeout = 30 * time.Second
+	Timeout = 5 * time.Second
 
 	releaseFetchURL   = "https://api.github.com/repos/kyma-project/kyma/releases"
 	installerYAMLName = "kyma-installer-cluster.yaml"
 	tillerFormat      = "https://raw.githubusercontent.com/kyma-project/kyma/release-%s/installation/resources/tiller.yaml"
 )
 
-func NewArtifactsDownloader(repository Repository, latestReleases int, includePreReleases bool, log logrus.Entry) *artifactsDownloader {
-	client := http.Client{
-		Timeout: timeout,
-	}
-
+func NewArtifactsDownloader(repository Repository, latestReleases int, includePreReleases bool, client *http.Client, log *logrus.Entry) *artifactsDownloader {
 	return &artifactsDownloader{
 		repository:         repository,
 		latestReleases:     latestReleases,
@@ -44,8 +40,8 @@ type artifactsDownloader struct {
 	repository         Repository
 	latestReleases     int
 	includePreReleases bool
-	httpClient         http.Client
-	log                logrus.Entry
+	httpClient         *http.Client
+	log                *logrus.Entry
 }
 
 func (ad artifactsDownloader) FetchPeriodically(ctx context.Context, shortInterval, longInterval time.Duration) {
@@ -139,24 +135,21 @@ func (ad artifactsDownloader) buildRelease(release model.GithubRelease) (model.R
 
 	tillerURL := buildTillerURL(release.Name)
 
-	installerYAML, err := ad.DownloadYAML(installerURL)
-	tillerYAML, err := ad.DownloadYAML(tillerURL)
+	installerYAML, err := ad.downloadYAML(installerURL)
+	tillerYAML, err := ad.downloadYAML(tillerURL)
 
 	if err != nil {
 		return model.Release{}, err
 	}
 
-	id := strconv.Itoa(release.Id)
-
 	return model.Release{
-		Id:            id,
 		Version:       release.Name,
 		TillerYAML:    tillerYAML,
 		InstallerYAML: installerYAML,
 	}, nil
 }
 
-func (ad artifactsDownloader) DownloadYAML(url string) (string, error) {
+func (ad artifactsDownloader) downloadYAML(url string) (string, error) {
 	body, err := ad.sendRequest(url)
 
 	if err != nil {
@@ -204,6 +197,10 @@ func getLatestReleases(releases []model.GithubRelease, latestReleases int) []mod
 	sort.Slice(releases, func(i, j int) bool {
 		return releases[i].Id > releases[j].Id
 	})
+
+	if len(releases) < latestReleases {
+		return releases
+	}
 
 	return releases[0:latestReleases]
 }
