@@ -80,7 +80,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		persistenceServiceMock.On("UpdateClusterData", runtimeID, kubeconfigFile, []byte("")).Return(nil)
 		persistenceServiceMock.On("SetOperationAsSucceeded", expOperationID).Return(nil)
 		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: kubeconfigFile, State: []byte("")}, nil)
-		installationSvc.On("InstallKyma", kubeconfigFile, kymaRelease).Return(nil)
+		installationSvc.On("InstallKyma", runtimeID, kubeconfigFile, kymaRelease).Return(nil)
 
 		service := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, installationSvc)
 
@@ -114,7 +114,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		persistenceServiceMock.On("UpdateClusterData", runtimeID, kubeconfigFile, []byte("")).Return(nil)
 		persistenceServiceMock.On("SetOperationAsSucceeded", expOperationID).Return(nil)
 		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: kubeconfigFile, State: []byte("")}, nil)
-		installationSvc.On("InstallKyma", kubeconfigFile, kymaRelease).Return(nil)
+		installationSvc.On("InstallKyma", runtimeID, kubeconfigFile, kymaRelease).Return(nil)
 
 		service := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, installationSvc)
 
@@ -146,7 +146,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		persistenceServiceMock.On("SetProvisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
 		persistenceServiceMock.On("UpdateClusterData", runtimeID, kubeconfigFile, []byte("")).Return(nil)
 		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: kubeconfigFile, State: []byte("")}, nil)
-		installationSvc.On("InstallKyma", kubeconfigFile, kymaRelease).Return(errors.New("error"))
+		installationSvc.On("InstallKyma", runtimeID, kubeconfigFile, kymaRelease).Return(errors.New("error"))
 		persistenceServiceMock.On("SetOperationAsFailed", expOperationID, mock.AnythingOfType("string")).Return(nil)
 
 		service := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, installationSvc)

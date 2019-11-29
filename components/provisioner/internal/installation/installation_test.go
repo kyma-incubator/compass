@@ -45,6 +45,8 @@ users:
     client-certificate: /Users/i351738/.minikube/client.crt
     client-key: /Users/i351738/.minikube/client.key
 `
+
+	runtimeId = "abcd-efgh"
 )
 
 func TestInstallationService_InstallKyma(t *testing.T) {
@@ -121,7 +123,7 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 			go testCase.installationMock(stateChannel, errChannel)
 
 			// when
-			err := installationSvc.InstallKyma(kubeconfig, kymaRelease)
+			err := installationSvc.InstallKyma(runtimeId, kubeconfig, kymaRelease)
 
 			// then
 			if testCase.shouldFail {
@@ -138,7 +140,7 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, installErrFailureThreshold)
 
 		// when
-		err := installationSvc.InstallKyma(kubeconfig, kymaRelease)
+		err := installationSvc.InstallKyma(runtimeId, kubeconfig, kymaRelease)
 
 		// then
 		require.Error(t, err)
@@ -150,7 +152,7 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, installErrFailureThreshold)
 
 		// when
-		err := installationSvc.InstallKyma(kubeconfig, kymaRelease)
+		err := installationSvc.InstallKyma(runtimeId, kubeconfig, kymaRelease)
 
 		// then
 		require.Error(t, err)
@@ -161,7 +163,7 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 		installationSvc := NewInstallationService(10*time.Minute, nil, installErrFailureThreshold)
 
 		// when
-		err := installationSvc.InstallKyma("", kymaRelease)
+		err := installationSvc.InstallKyma(runtimeId, "", kymaRelease)
 
 		// then
 		require.Error(t, err)

@@ -83,8 +83,13 @@ func (r readSession) GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors
 	}, nil
 }
 
+type gardenerConfigRead struct {
+	model.GardenerConfig
+	ProviderSpecificConfig string `db:"provider_specific_config"`
+}
+
 func (r readSession) GetProviderConfig(runtimeID string) (model.ProviderConfiguration, dberrors.Error) {
-	var gardenerConfig model.GardenerConfig
+	gardenerConfig := gardenerConfigRead{}
 
 	err := r.session.
 		Select("gardener_config.id", "cluster_id", "gardener_config.name", "project_name", "kubernetes_version",
