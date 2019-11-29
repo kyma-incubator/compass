@@ -16,6 +16,7 @@ import (
 )
 
 const (
+	//TODO Think if some of those values should be moved to chart values
 	LongInterval  = 1 * time.Hour
 	ShortInterval = 1 * time.Minute
 
