@@ -30,6 +30,8 @@ RUN wget https://github.com/kyma-incubator/terraform-provider-gardener/releases/
 
 FROM alpine:3.10
 LABEL source = git@github.com:kyma-incubator/compass.git
+# Hydroform needs write permissions
+RUN mkdir /app && chmod 777 /app
 WORKDIR /app
 
 #
@@ -39,7 +41,9 @@ WORKDIR /app
 COPY --from=builder /assets /assets
 COPY --from=builder /app /app
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=builder /go/src/github.com/kyma-incubator/compass/components/provisioner/terraform-provider-gardener-linux-amd64 terraform-provider-gardener
+COPY --from=builder /go/src/github.com/kyma-incubator/compass/components/provisioner/terraform-provider-gardener-linux-amd64 /.terraform.d/plugins/linux_amd64/terraform-provider-gardener
+
+RUN chmod +x /.terraform.d/plugins/linux_amd64/terraform-provider-gardener
 
 #
 # Run app

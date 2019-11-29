@@ -218,11 +218,11 @@ func (_m *Service) SetUpgradeStarted(runtimeID string) (model.Operation, dberror
 }
 
 // UpdateClusterData provides a mock function with given fields: runtimeID, kubeconfig, terraformState
-func (_m *Service) UpdateClusterData(runtimeID string, kubeconfig string, terraformState string) dberrors.Error {
+func (_m *Service) UpdateClusterData(runtimeID string, kubeconfig string, terraformState []byte) dberrors.Error {
 	ret := _m.Called(runtimeID, kubeconfig, terraformState)
 
 	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(string, string, string) dberrors.Error); ok {
+	if rf, ok := ret.Get(0).(func(string, string, []byte) dberrors.Error); ok {
 		r0 = rf(runtimeID, kubeconfig, terraformState)
 	} else {
 		if ret.Get(0) != nil {

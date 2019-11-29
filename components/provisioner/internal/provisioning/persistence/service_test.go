@@ -102,7 +102,7 @@ func TestSetProvisioning(t *testing.T) {
 
 	cluster := model.Cluster{
 		ID:                runtimeID,
-		TerraformState:    "{}",
+		TerraformState:    []byte("state"),
 		CreationTimestamp: timestamp,
 	}
 
@@ -420,7 +420,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 	cluster := model.Cluster{
 		ID:             runtimeID,
 		Kubeconfig:     nil,
-		TerraformState: "{}",
+		TerraformState: []byte("state"),
 	}
 
 	t.Run("Should get runtime status", func(t *testing.T) {
@@ -442,7 +442,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 				ID:             runtimeID,
 				ClusterConfig:  gcpConfig,
 				KymaConfig:     kymaConfig,
-				TerraformState: "{}",
+				TerraformState: []byte("state"),
 			},
 		}
 
@@ -543,6 +543,6 @@ func getOperationMather(expected model.Operation) func(model.Operation) bool {
 func getClusterMatcher(expected model.Cluster) func(model.Cluster) bool {
 	return func(cluster model.Cluster) bool {
 		return cluster.ID == expected.ID &&
-			cluster.TerraformState == expected.TerraformState && cluster.Kubeconfig == expected.Kubeconfig
+			string(cluster.TerraformState) == string(expected.TerraformState) && cluster.Kubeconfig == expected.Kubeconfig
 	}
 }

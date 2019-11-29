@@ -31,11 +31,25 @@ func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 
 func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberrors.Error {
 	_, err := ws.insertInto("gardener_config").
-		Columns("id", "cluster_id", "project_name", "name", "kubernetes_version",
-			"node_count", "volume_size_gb", "machine_type", "region", "provider", "seed",
-			"target_secret", "disk_type", "worker_cidr", "auto_scaler_min", "auto_scaler_max", "max_surge",
-			"max_unavailable", "provider_specific_config").
-		Record(config).
+		Pair("id", config.ID).
+		Pair("cluster_id", config.ClusterID).
+		Pair("project_name", config.ProjectName).
+		Pair("name", config.Name).
+		Pair("kubernetes_version", config.KubernetesVersion).
+		Pair("node_count", config.NodeCount).
+		Pair("volume_size_gb", config.VolumeSizeGB).
+		Pair("machine_type", config.MachineType).
+		Pair("region", config.Region).
+		Pair("provider", config.Provider).
+		Pair("seed", config.Seed).
+		Pair("target_secret", config.TargetSecret).
+		Pair("disk_type", config.DiskType).
+		Pair("worker_cidr", config.WorkerCidr).
+		Pair("auto_scaler_min", config.AutoScalerMin).
+		Pair("auto_scaler_max", config.AutoScalerMax).
+		Pair("max_surge", config.MaxSurge).
+		Pair("max_unavailable", config.MaxUnavailable).
+		Pair("provider_specific_config", config.GardenerProviderConfig.RawJSON()).
 		Exec()
 
 	if err != nil {
@@ -132,7 +146,7 @@ func (ws writeSession) UpdateOperationState(operationID string, message string, 
 	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update operation %s state: %s", operationID, err))
 }
 
-func (ws writeSession) UpdateCluster(runtimeID string, kubeconfig string, terraformState string) dberrors.Error {
+func (ws writeSession) UpdateCluster(runtimeID string, kubeconfig string, terraformState []byte) dberrors.Error {
 	res, err := ws.update("cluster").
 		Where(dbr.Eq("id", runtimeID)).
 		Set("kubeconfig", kubeconfig).

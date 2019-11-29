@@ -112,11 +112,11 @@ func (_m *WriteSession) InsertOperation(operation model.Operation) dberrors.Erro
 }
 
 // UpdateCluster provides a mock function with given fields: runtimeID, kubeconfig, terraformState
-func (_m *WriteSession) UpdateCluster(runtimeID string, kubeconfig string, terraformState string) dberrors.Error {
+func (_m *WriteSession) UpdateCluster(runtimeID string, kubeconfig string, terraformState []byte) dberrors.Error {
 	ret := _m.Called(runtimeID, kubeconfig, terraformState)
 
 	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(string, string, string) dberrors.Error); ok {
+	if rf, ok := ret.Get(0).(func(string, string, []byte) dberrors.Error); ok {
 		r0 = rf(runtimeID, kubeconfig, terraformState)
 	} else {
 		if ret.Get(0) != nil {

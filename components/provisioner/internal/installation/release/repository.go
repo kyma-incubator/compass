@@ -1,7 +1,7 @@
 package release
 
 import (
-	dbr "github.com/gocraft/dbr/v2"
+	"github.com/gocraft/dbr/v2"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 )
@@ -48,7 +48,7 @@ func (r releaseRepository) GetReleaseByVersion(version string) (model.Release, d
 	return release, nil
 }
 
-func (r releaseRepository) 	ReleaseExists(version string) (bool, dberrors.Error) {
+func (r releaseRepository) ReleaseExists(version string) (bool, dberrors.Error) {
 	_, err := r.GetReleaseByVersion(version)
 
 	if err != nil {
@@ -59,7 +59,6 @@ func (r releaseRepository) 	ReleaseExists(version string) (bool, dberrors.Error)
 	}
 	return true, nil
 }
-
 
 func (r releaseRepository) SaveRelease(artifacts model.Release) (model.Release, dberrors.Error) {
 	session := r.connection.NewSession(nil)

@@ -18,7 +18,7 @@ type Service interface {
 	SetProvisioningStarted(runtimeID string, runtimeConfig model.Cluster) (model.Operation, dberrors.Error)
 	SetDeprovisioningStarted(runtimeID string) (model.Operation, dberrors.Error)
 	SetUpgradeStarted(runtimeID string) (model.Operation, dberrors.Error)
-	UpdateClusterData(runtimeID string, kubeconfig string, terraformState string) dberrors.Error // TODO - set provisioning finished?
+	UpdateClusterData(runtimeID string, kubeconfig string, terraformState []byte) dberrors.Error // TODO - set provisioning finished?
 	CleanupClusterData(runtimeID string) dberrors.Error
 	GetClusterData(runtimeID string) (model.Cluster, dberrors.Error)
 
@@ -82,7 +82,7 @@ func (ps persistenceService) SetProvisioningStarted(runtimeID string, cluster mo
 	timestamp := time.Now()
 
 	cluster.CreationTimestamp = timestamp
-	cluster.TerraformState = "{}"
+	cluster.TerraformState = []byte("state")
 
 	err = dbSession.InsertCluster(cluster)
 	if err != nil {
@@ -137,7 +137,7 @@ func (ps persistenceService) GetLastOperation(runtimeID string) (model.Operation
 	return session.GetLastOperation(runtimeID)
 }
 
-func (ps persistenceService) UpdateClusterData(runtimeID string, kubeconfig string, terraformState string) dberrors.Error {
+func (ps persistenceService) UpdateClusterData(runtimeID string, kubeconfig string, terraformState []byte) dberrors.Error {
 	session := ps.dbSessionFactory.NewWriteSession()
 
 	return session.UpdateCluster(runtimeID, kubeconfig, terraformState)

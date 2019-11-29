@@ -10,25 +10,25 @@ import (
 )
 
 type GardenerConfig struct {
-	ID                string
-	ClusterID         string
-	Name              string
-	ProjectName       string
-	KubernetesVersion string
-	NodeCount         int
-	VolumeSizeGB      int
-	DiskType          string
-	MachineType       string
-	Provider          string
-	Seed              string
-	TargetSecret      string
-	Region            string
-	WorkerCidr        string
-	AutoScalerMin     int
-	AutoScalerMax     int
-	MaxSurge          int
-	MaxUnavailable    int
-	GardenerProviderConfig
+	ID                     string
+	ClusterID              string
+	Name                   string
+	ProjectName            string
+	KubernetesVersion      string
+	NodeCount              int
+	VolumeSizeGB           int
+	DiskType               string
+	MachineType            string
+	Provider               string
+	Seed                   string
+	TargetSecret           string
+	Region                 string
+	WorkerCidr             string
+	AutoScalerMin          int
+	AutoScalerMax          int
+	MaxSurge               int
+	MaxUnavailable         int
+	GardenerProviderConfig GardenerProviderConfig
 }
 
 func (c GardenerConfig) ToHydroformConfiguration(credentialsFilePath string) (*types.Cluster, *types.Provider) {
@@ -92,6 +92,10 @@ func NewGCPGardenerConfig(input *gqlschema.GCPProviderConfigInput) (GCPGardenerC
 }
 
 func (c GCPGardenerConfig) AsMap() map[string]interface{} {
+	if c.input == nil {
+		// TODO - try to unmarshal?
+	}
+
 	return map[string]interface{}{
 		"zone": c.input.Zone,
 	}
