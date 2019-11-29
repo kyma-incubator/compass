@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/kyma-incubator/hydroform/types"
 
@@ -31,7 +32,7 @@ type GardenerConfig struct {
 	GardenerProviderConfig GardenerProviderConfig
 }
 
-func (c GardenerConfig) ToHydroformConfiguration(credentialsFilePath string) (*types.Cluster, *types.Provider) {
+func (c GardenerConfig) ToHydroformConfiguration(credentialsFilePath string) (*types.Cluster, *types.Provider, error) {
 	cluster := &types.Cluster{
 		KubernetesVersion: c.KubernetesVersion,
 		Name:              c.Name,
@@ -41,7 +42,10 @@ func (c GardenerConfig) ToHydroformConfiguration(credentialsFilePath string) (*t
 		MachineType:       c.MachineType,
 	}
 
-	customConfiguration := c.GardenerProviderConfig.AsMap()
+	customConfiguration, err := c.GardenerProviderConfig.AsMap()
+	if err != nil {
+		return nil, nil, err
+	}
 
 	customConfiguration["target_provider"] = c.Provider
 	customConfiguration["target_seed"] = c.Seed
@@ -60,7 +64,7 @@ func (c GardenerConfig) ToHydroformConfiguration(credentialsFilePath string) (*t
 		CustomConfigurations: customConfiguration,
 	}
 
-	return cluster, provider
+	return cluster, provider, nil
 }
 
 type ProviderSpecificConfig string
@@ -70,7 +74,7 @@ func (c ProviderSpecificConfig) RawJSON() string {
 }
 
 type GardenerProviderConfig interface {
-	AsMap() map[string]interface{}
+	AsMap() (map[string]interface{}, error)
 	RawJSON() string
 }
 
@@ -79,26 +83,29 @@ type GCPGardenerConfig struct {
 	input *gqlschema.GCPProviderConfigInput `db:"-"`
 }
 
-func NewGCPGardenerConfig(input *gqlschema.GCPProviderConfigInput) (GCPGardenerConfig, error) {
+func NewGCPGardenerConfig(input *gqlschema.GCPProviderConfigInput) (*GCPGardenerConfig, error) {
 	config, err := json.Marshal(input)
 	if err != nil {
-		return GCPGardenerConfig{}, errors.New("failed to marshal GCP Gardener config")
+		return &GCPGardenerConfig{}, errors.New("failed to marshal GCP Gardener config")
 	}
 
-	return GCPGardenerConfig{
+	return &GCPGardenerConfig{
 		ProviderSpecificConfig: ProviderSpecificConfig(config),
 		input:                  input,
 	}, nil
 }
 
-func (c GCPGardenerConfig) AsMap() map[string]interface{} {
+func (c *GCPGardenerConfig) AsMap() (map[string]interface{}, error) {
 	if c.input == nil {
-		// TODO - try to unmarshal?
+		err := json.Unmarshal([]byte(c.ProviderSpecificConfig), &c.input)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode Gardener GCP config: %s", err.Error())
+		}
 	}
 
 	return map[string]interface{}{
 		"zone": c.input.Zone,
-	}
+	}, nil
 }
 
 type AzureGardenerConfig struct {
@@ -106,22 +113,29 @@ type AzureGardenerConfig struct {
 	input *gqlschema.AzureProviderConfigInput `db:"-"`
 }
 
-func NewAzureGardenerConfig(input *gqlschema.AzureProviderConfigInput) (AzureGardenerConfig, error) {
+func NewAzureGardenerConfig(input *gqlschema.AzureProviderConfigInput) (*AzureGardenerConfig, error) {
 	config, err := json.Marshal(input)
 	if err != nil {
-		return AzureGardenerConfig{}, errors.New("failed to marshal GCP Gardener config")
+		return &AzureGardenerConfig{}, errors.New("failed to marshal GCP Gardener config")
 	}
 
-	return AzureGardenerConfig{
+	return &AzureGardenerConfig{
 		ProviderSpecificConfig: ProviderSpecificConfig(config),
 		input:                  input,
 	}, nil
 }
 
-func (c AzureGardenerConfig) AsMap() map[string]interface{} {
+func (c AzureGardenerConfig) AsMap() (map[string]interface{}, error) {
+	if c.input == nil {
+		err := json.Unmarshal([]byte(c.ProviderSpecificConfig), &c.input)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode Gardener Azure config: %s", err.Error())
+		}
+	}
+
 	return map[string]interface{}{
 		"vnetcidr": c.input.VnetCidr,
-	}
+	}, nil
 }
 
 type AWSGardenerConfig struct {
@@ -129,23 +143,30 @@ type AWSGardenerConfig struct {
 	input *gqlschema.AWSProviderConfigInput `db:"-"`
 }
 
-func NewAWSGardenerConfig(input *gqlschema.AWSProviderConfigInput) (AWSGardenerConfig, error) {
+func NewAWSGardenerConfig(input *gqlschema.AWSProviderConfigInput) (*AWSGardenerConfig, error) {
 	config, err := json.Marshal(input)
 	if err != nil {
-		return AWSGardenerConfig{}, errors.New("failed to marshal GCP Gardener config")
+		return &AWSGardenerConfig{}, errors.New("failed to marshal GCP Gardener config")
 	}
 
-	return AWSGardenerConfig{
+	return &AWSGardenerConfig{
 		ProviderSpecificConfig: ProviderSpecificConfig(config),
 		input:                  input,
 	}, nil
 }
 
-func (c AWSGardenerConfig) AsMap() map[string]interface{} {
+func (c *AWSGardenerConfig) AsMap() (map[string]interface{}, error) {
+	if c.input == nil {
+		err := json.Unmarshal([]byte(c.ProviderSpecificConfig), &c.input)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode Gardener AWS config: %s", err.Error())
+		}
+	}
+
 	return map[string]interface{}{
 		"zone":          c.input.Zone,
 		"internalscidr": c.input.InternalCidr,
 		"vpccidr":       c.input.VpcCidr,
 		"publicscidr":   c.input.PublicCidr,
-	}
+	}, nil
 }

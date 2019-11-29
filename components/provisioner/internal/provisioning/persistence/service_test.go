@@ -46,7 +46,7 @@ func TestSetProvisioning(t *testing.T) {
 		AutoScalerMax:     10,
 		MaxSurge:          2,
 		MaxUnavailable:    2,
-		GardenerProviderConfig: model.GCPGardenerConfig{
+		GardenerProviderConfig: &model.GCPGardenerConfig{
 			ProviderSpecificConfig: "{\"zone\":\"zone\"}",
 		},
 	}

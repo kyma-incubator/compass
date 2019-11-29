@@ -188,7 +188,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					AutoScalerMin:     autoScMin,
 					MaxSurge:          surge,
 					MaxUnavailable:    unavailable,
-					GardenerProviderConfig: model.GCPGardenerConfig{
+					GardenerProviderConfig: &model.GCPGardenerConfig{
 						ProviderSpecificConfig: "{\"Zone\":\"zone\"}",
 					},
 				},

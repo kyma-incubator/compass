@@ -15,7 +15,7 @@ type GCPConfig struct {
 	Zone              string
 }
 
-func (c GCPConfig) ToHydroformConfiguration(credentialsFileName string) (*types.Cluster, *types.Provider) {
+func (c GCPConfig) ToHydroformConfiguration(credentialsFileName string) (*types.Cluster, *types.Provider, error) {
 	cluster := &types.Cluster{
 		KubernetesVersion: c.KubernetesVersion,
 		Name:              c.Name,
@@ -33,5 +33,5 @@ func (c GCPConfig) ToHydroformConfiguration(credentialsFileName string) (*types.
 			"zone": c.Zone,
 		},
 	}
-	return cluster, provider
+	return cluster, provider, nil
 }

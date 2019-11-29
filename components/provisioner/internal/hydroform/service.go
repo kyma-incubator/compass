@@ -53,14 +53,17 @@ type ClusterInfo struct {
 }
 
 func (s service) ProvisionCluster(clusterData model.Cluster) (ClusterInfo, error) {
-	log.Infof("Preparing config for %s runtime provisioning", clusterData.ID)
+	log.Infof("Preparing config for %s Runtime provisioning", clusterData.ID)
 	credentialsFile, err := s.saveCredentialsToFile(clusterData.CredentialsSecretName)
 	if err != nil {
 		return ClusterInfo{}, errors.WithMessagef(err, "Failed to save credentials to secret for %s Runtime", clusterData.ID)
 	}
 	defer removeFile(credentialsFile)
 
-	cluster, provider := clusterData.ClusterConfig.ToHydroformConfiguration(credentialsFile)
+	cluster, provider, err := clusterData.ClusterConfig.ToHydroformConfiguration(credentialsFile)
+	if err != nil {
+		return ClusterInfo{}, errors.WithMessagef(err, "Failed to convert  Provider config to Hydroform config for %s Runtime: %s", clusterData.ID, err.Error())
+	}
 
 	log.Infof("Starting %s Runtime provisioning", clusterData.ID)
 	cluster, err = s.hydroformClient.Provision(cluster, provider)
@@ -110,7 +113,10 @@ func (s service) DeprovisionCluster(clusterData model.Cluster) error {
 	}
 	defer removeFile(credentialsFile)
 
-	cluster, provider := clusterData.ClusterConfig.ToHydroformConfiguration(credentialsFile)
+	cluster, provider, err := clusterData.ClusterConfig.ToHydroformConfiguration(credentialsFile)
+	if err != nil {
+		return errors.WithMessagef(err, "Failed to convert Provider config to Hydroform %s Runtime: %s", clusterData.ID, err.Error())
+	}
 
 	reader := bytes.NewReader(clusterData.TerraformState)
 	stateFile, err := statefile.Read(reader)

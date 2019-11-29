@@ -124,15 +124,46 @@ func TestGardenerConfig_ToHydroformConfiguration(t *testing.T) {
 			gardenerProviderConfig := fixGardenerConfig(testCase.provider, testCase.providerConfig)
 
 			// when
-			cluster, provider := gardenerProviderConfig.ToHydroformConfiguration(credentialsFile)
+			cluster, provider, err := gardenerProviderConfig.ToHydroformConfiguration(credentialsFile)
 
 			// then
+			require.NoError(t, err)
 			expectedProvider := getExpectedProvider(testCase.expectedProviderCustomConfig)
 
 			assert.Equal(t, expectedCluster, cluster)
 			assert.Equal(t, expectedProvider, provider)
 		})
 	}
+}
+
+func Test_AsMap_Error(t *testing.T) {
+
+	for _, testCase := range []struct {
+		description            string
+		gardenerProviderConfig GardenerProviderConfig
+	}{
+		{
+			description:            "gcp gardener config",
+			gardenerProviderConfig: &GCPGardenerConfig{ProviderSpecificConfig: ProviderSpecificConfig("invalid json")},
+		},
+		{
+			description:            "azure gardener config",
+			gardenerProviderConfig: &AzureGardenerConfig{ProviderSpecificConfig: ProviderSpecificConfig("invalid json")},
+		},
+		{
+			description:            "azure gardener config",
+			gardenerProviderConfig: &AWSGardenerConfig{ProviderSpecificConfig: ProviderSpecificConfig("invalid json")},
+		},
+	} {
+		t.Run("should faild when invalid json for "+testCase.description, func(t *testing.T) {
+			// when
+			_, err := testCase.gardenerProviderConfig.AsMap()
+
+			// then
+			require.Error(t, err)
+		})
+	}
+
 }
 
 func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) GardenerConfig {

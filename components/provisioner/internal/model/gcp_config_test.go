@@ -3,6 +3,8 @@ package model
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-incubator/hydroform/types"
@@ -45,8 +47,9 @@ func TestGCPConfig_ToHydroformConfiguration(t *testing.T) {
 		Zone:              "west",
 	}
 
-	cluster, provider := gcpConfig.ToHydroformConfiguration(credentialsFile)
+	cluster, provider, err := gcpConfig.ToHydroformConfiguration(credentialsFile)
 
+	require.NoError(t, err)
 	assert.Equal(t, expectedCluster, cluster)
 	assert.Equal(t, expectedProvider, provider)
 }

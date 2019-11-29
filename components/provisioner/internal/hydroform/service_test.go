@@ -26,10 +26,11 @@ import (
 type mockProviderConfiguration struct {
 	cluster  *types.Cluster
 	provider *types.Provider
+	err      error
 }
 
-func (c mockProviderConfiguration) ToHydroformConfiguration(credentialsFileName string) (*types.Cluster, *types.Provider) {
-	return c.cluster, c.provider
+func (c mockProviderConfiguration) ToHydroformConfiguration(credentialsFileName string) (*types.Cluster, *types.Provider, error) {
+	return c.cluster, c.provider, c.err
 }
 
 const (
@@ -143,6 +144,24 @@ func TestService_ProvisionCluster_Errors(t *testing.T) {
 		})
 	}
 
+	t.Run("should return error when failed to convert provider config to Hydroform config", func(t *testing.T) {
+		//given
+		hydroformClient := &mocks.Client{}
+		clusterData := model.Cluster{
+			ID:            "abcd",
+			ClusterConfig: mockProviderConfiguration{err: errors.New("error")},
+		}
+
+		hydroformService := NewHydroformService(hydroformClient, secretsClient)
+
+		//when
+		_, err := hydroformService.ProvisionCluster(clusterData)
+
+		//then
+		require.Error(t, err)
+		hydroformClient.AssertExpectations(t)
+	})
+
 	t.Run("should return error when no credentials in secret", func(t *testing.T) {
 		//given
 		hydroformClient := &mocks.Client{}
@@ -215,6 +234,25 @@ func TestService_DeprovisionCluster(t *testing.T) {
 
 		hydroformClient := &mocks.Client{}
 		secretsClient := fake.NewSimpleClientset(secret).CoreV1().Secrets(secretsNamespace)
+
+		hydroformService := NewHydroformService(hydroformClient, secretsClient)
+
+		//when
+		err := hydroformService.DeprovisionCluster(clusterData)
+
+		//then
+		require.Error(t, err)
+		hydroformClient.AssertExpectations(t)
+	})
+
+	t.Run("should return error when failed to convert provider config to Hydroform config", func(t *testing.T) {
+		//given
+		hydroformClient := &mocks.Client{}
+		secretsClient := fake.NewSimpleClientset(secret).CoreV1().Secrets(secretsNamespace)
+		clusterData := model.Cluster{
+			ID:            "abcd",
+			ClusterConfig: mockProviderConfiguration{err: errors.New("error")},
+		}
 
 		hydroformService := NewHydroformService(hydroformClient, secretsClient)
 
