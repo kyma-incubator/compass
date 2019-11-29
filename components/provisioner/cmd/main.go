@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	"net/http"
 	"time"
 
@@ -59,8 +61,18 @@ func main() {
 	connString := fmt.Sprintf(connStringFormat, cfg.Database.Host, cfg.Database.Port, cfg.Database.User,
 		cfg.Database.Password, cfg.Database.Name, cfg.Database.SSLMode)
 
-	resolver, err := newResolver(cfg, connString)
+	persistenceService, releaseRepository, err := initRepositories(cfg, connString)
+
+	exitOnError(err, "Failed to initialize Repositories ")
+
+	resolver, err := newResolver(cfg, persistenceService, releaseRepository)
 	exitOnError(err, "Failed to initialize GraphQL resolver ")
+
+	client := &http.Client{Timeout: release.Timeout}
+	logger := log.WithField("Component", "Artifact Downloader")
+	downloader := release.NewArtifactsDownloader(releaseRepository, 5, false, client, logger)
+
+	go downloader.FetchPeriodically(context.Background(), release.ShortInterval, release.LongInterval)
 
 	gqlCfg := gqlschema.Config{
 		Resolvers: resolver,
@@ -76,6 +88,7 @@ func main() {
 	http.Handle("/", router)
 
 	log.Printf("API listening on %s...", cfg.Address)
+
 	if err := http.ListenAndServe(cfg.Address, router); err != nil {
 		panic(err)
 	}

@@ -58,21 +58,25 @@ func newSecretsInterface(namespace string) (v1.SecretInterface, error) {
 	return coreClientset.CoreV1().Secrets(namespace), nil
 }
 
-func newResolver(config config, connectionString string) (*api.Resolver, error) {
-	connection, err := database.InitializeDatabase(connectionString, config.Database.SchemaFilePath)
-	if err != nil {
-		return nil, errors.Wrap(err, "Failed to initialize persistence")
-	}
-	dbSessionFactory := dbsession.NewFactory(connection)
-
-	persistenceService := persistence.NewService(dbSessionFactory, uuid.NewUUIDGenerator())
-
-	releaseRepo := release.NewReleaseRepository(connection)
-
+func newResolver(config config, persistenceService persistence.Service, releaseRepo release.Repository) (*api.Resolver, error) {
 	secretInterface, err := newSecretsInterface(config.CredentialsNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to create secrets interface")
 	}
 
 	return api.NewResolver(newProvisioningService(config, persistenceService, secretInterface, releaseRepo)), nil
+}
+
+func initRepositories(config config, connectionString string) (persistence.Service, release.Repository, error) {
+	connection, err := database.InitializeDatabase(connectionString, config.Database.SchemaFilePath)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "Failed to initialize persistence")
+	}
+	dbSessionFactory := dbsession.NewFactory(connection)
+
+	persistenceService := persistence.NewService(dbSessionFactory, uuid.NewUUIDGenerator())
+
+	releaseRepo := release.NewReleaseRepository(connection, uuid.NewUUIDGenerator())
+
+	return persistenceService, releaseRepo, nil
 }
