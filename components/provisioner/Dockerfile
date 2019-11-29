@@ -7,12 +7,17 @@ WORKDIR ${BASE_APP_DIR}
 # Copy files
 #
 
+ENV GO111MODULES=on
+
 COPY ./assets/ /assets/
 COPY ./internal/ ${BASE_APP_DIR}/internal/
 COPY ./pkg/ ${BASE_APP_DIR}/pkg/
-COPY ./vendor/ ${BASE_APP_DIR}/vendor/
 COPY ./cmd/ ${BASE_APP_DIR}/cmd
 COPY ./licenses ${BASE_APP_DIR}/licenses
+COPY ./go.mod ${BASE_APP_DIR}/go.mod
+COPY ./go.sum ${BASE_APP_DIR}/go.sum
+
+RUN apk add git && go mod download
 
 #
 # Add ca-certificates
