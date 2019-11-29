@@ -1,7 +1,7 @@
 package dbsession
 
 import (
-	"github.com/gocraft/dbr"
+	dbr "github.com/gocraft/dbr/v2"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 )
@@ -30,7 +30,7 @@ type WriteSession interface {
 	InsertKymaConfig(kymaConfig model.KymaConfig) dberrors.Error
 	InsertOperation(operation model.Operation) dberrors.Error
 	UpdateOperationState(operationID string, message string, state model.OperationState) dberrors.Error
-	UpdateCluster(runtimeID string, kubeconfig string, terraformState string) dberrors.Error
+	UpdateCluster(runtimeID string, kubeconfig string, terraformState []byte) dberrors.Error
 	DeleteCluster(runtimeID string) dberrors.Error
 }
 

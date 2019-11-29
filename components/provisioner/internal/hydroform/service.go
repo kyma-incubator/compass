@@ -1,9 +1,12 @@
 package hydroform
 
 import (
+	"bytes"
 	"io/ioutil"
 	"os"
 	"time"
+
+	"github.com/hashicorp/terraform/states/statefile"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 
@@ -46,7 +49,7 @@ func NewHydroformService(hydroformClient client.Client, secretsClient v1.SecretI
 type ClusterInfo struct {
 	ClusterStatus types.Phase
 	KubeConfig    string
-	State         string
+	State         []byte
 }
 
 func (s service) ProvisionCluster(clusterData model.Cluster) (ClusterInfo, error) {
@@ -86,14 +89,15 @@ func (s service) ProvisionCluster(clusterData model.Cluster) (ClusterInfo, error
 		return ClusterInfo{}, errors.WithMessagef(err, "Failed to get kubeconfig for %s Runtime", clusterData.ID)
 	}
 
-	internalState, err := util.EncodeJson(cluster.ClusterInfo.InternalState)
+	var buffer bytes.Buffer
+	err = statefile.Write(cluster.ClusterInfo.InternalState.TerraformState, &buffer)
 	if err != nil {
-		return ClusterInfo{}, errors.WithMessagef(err, "Failed to encode Terraform state for %s Runtime", clusterData.ID)
+		return ClusterInfo{}, errors.WithMessagef(err, "Failed to write Terraform state file for %s Runtime", clusterData.ID)
 	}
 
 	return ClusterInfo{
 		ClusterStatus: status.Phase,
-		State:         internalState,
+		State:         buffer.Bytes(),
 		KubeConfig:    string(kubeconfig),
 	}, nil
 }
@@ -108,13 +112,14 @@ func (s service) DeprovisionCluster(clusterData model.Cluster) error {
 
 	cluster, provider := clusterData.ClusterConfig.ToHydroformConfiguration(credentialsFile)
 
-	var state types.InternalState
-	err = util.DecodeJson(clusterData.TerraformState, &state)
+	reader := bytes.NewReader(clusterData.TerraformState)
+	stateFile, err := statefile.Read(reader)
 	if err != nil {
-		return errors.WithMessagef(err, "Failed to decode Terraform state for %s Runtime", clusterData.ID)
+		return errors.WithMessagef(err, "Failed to write Terraform state to file for %s Runtime", clusterData.ID)
 	}
 
-	cluster.ClusterInfo = &types.ClusterInfo{InternalState: &state}
+	internalState := types.InternalState{TerraformState: stateFile}
+	cluster.ClusterInfo = &types.ClusterInfo{InternalState: &internalState}
 
 	log.Infof("Starting deprovisioning of %s Runtime", clusterData.ID)
 	return s.hydroformClient.Deprovision(cluster, provider)
@@ -126,7 +131,7 @@ func (s service) saveCredentialsToFile(secretName string) (string, error) {
 		return "", errors.WithMessagef(err, "Failed to get credentials from %s secret", secretName)
 	}
 
-	bytes, ok := secret.Data[credentialsKey]
+	credBytes, ok := secret.Data[credentialsKey]
 	if !ok {
 		return "", errors.New("Credentials not found within the secret")
 	}
@@ -136,7 +141,7 @@ func (s service) saveCredentialsToFile(secretName string) (string, error) {
 		return "", errors.Wrap(err, "Failed to create credentials file")
 	}
 
-	_, err = tempFile.Write(bytes)
+	_, err = tempFile.Write(credBytes)
 	if err != nil {
 		return "", errors.WithMessagef(err, "Failed to save credentials to %s file", tempFile.Name())
 	}

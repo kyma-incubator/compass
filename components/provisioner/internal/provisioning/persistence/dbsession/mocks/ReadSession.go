@@ -131,26 +131,3 @@ func (_m *ReadSession) GetProviderConfig(runtimeID string) (model.ProviderConfig
 
 	return r0, r1
 }
-
-// GetReleaseByVersion provides a mock function with given fields: version
-func (_m *ReadSession) GetReleaseByVersion(version string) (model.Release, dberrors.Error) {
-	ret := _m.Called(version)
-
-	var r0 model.Release
-	if rf, ok := ret.Get(0).(func(string) model.Release); ok {
-		r0 = rf(version)
-	} else {
-		r0 = ret.Get(0).(model.Release)
-	}
-
-	var r1 dberrors.Error
-	if rf, ok := ret.Get(1).(func(string) dberrors.Error); ok {
-		r1 = rf(version)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(dberrors.Error)
-		}
-	}
-
-	return r0, r1
-}

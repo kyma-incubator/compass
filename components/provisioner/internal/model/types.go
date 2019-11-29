@@ -58,7 +58,7 @@ const (
 type Cluster struct {
 	ID                    string
 	Kubeconfig            *string
-	TerraformState        string
+	TerraformState        []byte
 	CredentialsSecretName string
 	CreationTimestamp     time.Time
 
@@ -90,19 +90,6 @@ type Operation struct {
 
 type RuntimeAgentConnectionStatus int
 
-//type ClusterConfig struct {
-//	ID             string
-//	ClusterID      string
-//	Name           string
-//	NodeCount      int
-//	DiskSize       string
-//	MachineType    string
-//	Region         string
-//	Version        string
-//	Credentials    string
-//	ProviderConfig ProviderConfiguration
-//}
-
 const (
 	RuntimeAgentConnectionStatusPending      RuntimeAgentConnectionStatus = iota
 	RuntimeAgentConnectionStatusConnected    RuntimeAgentConnectionStatus = iota
@@ -114,10 +101,3 @@ type RuntimeStatus struct {
 	RuntimeConnectionStatus RuntimeAgentConnectionStatus
 	RuntimeConfiguration    Cluster
 }
-
-//type RuntimeConfig struct {
-//	KymaConfig            KymaConfig
-//	ClusterConfig         ClusterConfig
-//	Kubeconfig            *string
-//	CredentialsSecretName string
-//}

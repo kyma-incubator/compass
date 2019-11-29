@@ -76,10 +76,10 @@ type GardenerProviderConfig interface {
 
 type GCPGardenerConfig struct {
 	ProviderSpecificConfig
-	input gqlschema.GCPProviderConfigInput `db:"-"`
+	input *gqlschema.GCPProviderConfigInput `db:"-"`
 }
 
-func NewGCPGardenerConfig(input gqlschema.GCPProviderConfigInput) (GCPGardenerConfig, error) {
+func NewGCPGardenerConfig(input *gqlschema.GCPProviderConfigInput) (GCPGardenerConfig, error) {
 	config, err := json.Marshal(input)
 	if err != nil {
 		return GCPGardenerConfig{}, errors.New("failed to marshal GCP Gardener config")
@@ -92,6 +92,10 @@ func NewGCPGardenerConfig(input gqlschema.GCPProviderConfigInput) (GCPGardenerCo
 }
 
 func (c GCPGardenerConfig) AsMap() map[string]interface{} {
+	if c.input == nil {
+		// TODO - try to unmarshal?
+	}
+
 	return map[string]interface{}{
 		"zone": c.input.Zone,
 	}
@@ -99,10 +103,10 @@ func (c GCPGardenerConfig) AsMap() map[string]interface{} {
 
 type AzureGardenerConfig struct {
 	ProviderSpecificConfig
-	input gqlschema.AzureProviderConfigInput `db:"-"`
+	input *gqlschema.AzureProviderConfigInput `db:"-"`
 }
 
-func NewAzureGardenerConfig(input gqlschema.AzureProviderConfigInput) (AzureGardenerConfig, error) {
+func NewAzureGardenerConfig(input *gqlschema.AzureProviderConfigInput) (AzureGardenerConfig, error) {
 	config, err := json.Marshal(input)
 	if err != nil {
 		return AzureGardenerConfig{}, errors.New("failed to marshal GCP Gardener config")
@@ -122,10 +126,10 @@ func (c AzureGardenerConfig) AsMap() map[string]interface{} {
 
 type AWSGardenerConfig struct {
 	ProviderSpecificConfig
-	input gqlschema.AWSProviderConfigInput `db:"-"`
+	input *gqlschema.AWSProviderConfigInput `db:"-"`
 }
 
-func NewAWSGardenerConfig(input gqlschema.AWSProviderConfigInput) (AWSGardenerConfig, error) {
+func NewAWSGardenerConfig(input *gqlschema.AWSProviderConfigInput) (AWSGardenerConfig, error) {
 	config, err := json.Marshal(input)
 	if err != nil {
 		return AWSGardenerConfig{}, errors.New("failed to marshal GCP Gardener config")

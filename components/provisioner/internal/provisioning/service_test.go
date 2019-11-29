@@ -9,7 +9,6 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/converters"
-	dbMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
 
 	installationMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/mocks"
 	uuidMocks "github.com/kyma-incubator/compass/components/provisioner/internal/uuid/mocks"
@@ -78,9 +77,9 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 		persistenceServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.NotFound("Not found"))
 		persistenceServiceMock.On("SetProvisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
-		persistenceServiceMock.On("UpdateClusterData", runtimeID, kubeconfigFile, "").Return(nil)
+		persistenceServiceMock.On("UpdateClusterData", runtimeID, kubeconfigFile, []byte("")).Return(nil)
 		persistenceServiceMock.On("SetOperationAsSucceeded", expOperationID).Return(nil)
-		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: kubeconfigFile, State: ""}, nil)
+		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: kubeconfigFile, State: []byte("")}, nil)
 		installationSvc.On("InstallKyma", kubeconfigFile, kymaRelease).Return(nil)
 
 		service := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, installationSvc)
@@ -112,9 +111,9 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		persistenceServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{Type: model.Provision, State: model.Failed}, nil)
 		persistenceServiceMock.On("CleanupClusterData", runtimeID).Return(nil)
 		persistenceServiceMock.On("SetProvisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
-		persistenceServiceMock.On("UpdateClusterData", runtimeID, kubeconfigFile, "").Return(nil)
+		persistenceServiceMock.On("UpdateClusterData", runtimeID, kubeconfigFile, []byte("")).Return(nil)
 		persistenceServiceMock.On("SetOperationAsSucceeded", expOperationID).Return(nil)
-		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: kubeconfigFile, State: ""}, nil)
+		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: kubeconfigFile, State: []byte("")}, nil)
 		installationSvc.On("InstallKyma", kubeconfigFile, kymaRelease).Return(nil)
 
 		service := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, installationSvc)
@@ -145,8 +144,8 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 		persistenceServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.NotFound("Not found"))
 		persistenceServiceMock.On("SetProvisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
-		persistenceServiceMock.On("UpdateClusterData", runtimeID, kubeconfigFile, "").Return(nil)
-		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: kubeconfigFile, State: ""}, nil)
+		persistenceServiceMock.On("UpdateClusterData", runtimeID, kubeconfigFile, []byte("")).Return(nil)
+		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: kubeconfigFile, State: []byte("")}, nil)
 		installationSvc.On("InstallKyma", kubeconfigFile, kymaRelease).Return(errors.New("error"))
 		persistenceServiceMock.On("SetOperationAsFailed", expOperationID, mock.AnythingOfType("string")).Return(nil)
 
@@ -189,10 +188,10 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 	persistenceServiceMock := &persistenceMocks.Service{}
 	hydroformMock := &mocks.Service{}
 
-	readSession := &dbMocks.ReadSession{}
-	readSession.On("GetReleaseByVersion", kymaVersion).Return(kymaRelease, nil)
+	releaseRepo := &releaseMocks.Repository{}
+	releaseRepo.On("GetReleaseByVersion", kymaVersion).Return(kymaRelease, nil)
 
-	inputConverter := converters.NewInputConverter(uuid.NewUUIDGenerator(), readSession)
+	inputConverter := converters.NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo)
 	graphQLConverter := converters.NewGraphQLConverter()
 
 	t.Run("Should start runtime deprovisioning and return operation ID", func(t *testing.T) {
@@ -205,7 +204,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 
 		persistenceServiceMock.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 		persistenceServiceMock.On("SetDeprovisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
-		persistenceServiceMock.On("GetClusterData", runtimeID).Return(model.Cluster{TerraformState: "{}", ClusterConfig: model.GCPConfig{}}, nil)
+		persistenceServiceMock.On("GetClusterData", runtimeID).Return(model.Cluster{TerraformState: []byte("{}"), ClusterConfig: model.GCPConfig{}}, nil)
 		persistenceServiceMock.On("SetOperationAsSucceeded", expOperationID).Return(nil)
 		hydroformMock.On("DeprovisionCluster", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -247,10 +246,10 @@ func TestService_RuntimeOperationStatus(t *testing.T) {
 	hydroformMock := &mocks.Service{}
 	uuidGenerator := &uuidMocks.UUIDGenerator{}
 
-	readSession := &dbMocks.ReadSession{}
-	readSession.On("GetReleaseByVersion", kymaVersion).Return(kymaRelease, nil)
+	releaseRepo := &releaseMocks.Repository{}
+	releaseRepo.On("GetReleaseByVersion", kymaVersion).Return(kymaRelease, nil)
 
-	inputConverter := converters.NewInputConverter(uuidGenerator, readSession)
+	inputConverter := converters.NewInputConverter(uuidGenerator, releaseRepo)
 	graphQLConverter := converters.NewGraphQLConverter()
 
 	t.Run("Should return operation status", func(t *testing.T) {

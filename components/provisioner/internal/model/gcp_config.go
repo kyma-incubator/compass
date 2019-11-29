@@ -29,10 +29,9 @@ func (c GCPConfig) ToHydroformConfiguration(credentialsFileName string) (*types.
 		Type:                types.GCP,
 		ProjectName:         c.ProjectName,
 		CredentialsFilePath: credentialsFileName,
+		CustomConfigurations: map[string]interface{}{
+			"zone": c.Zone,
+		},
 	}
 	return cluster, provider
 }
-
-//func (db *deprovisioningBuilder) buildConfigForGCP(config model.GCPConfig) (*types.Cluster, *types.Provider, error) {
-
-//}
