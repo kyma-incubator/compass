@@ -1,7 +1,7 @@
 package release
 
 import (
-	"github.com/gocraft/dbr"
+	dbr "github.com/gocraft/dbr/v2"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 )

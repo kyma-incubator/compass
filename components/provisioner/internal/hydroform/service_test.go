@@ -3,6 +3,8 @@ package hydroform
 import (
 	"testing"
 
+	"github.com/hashicorp/terraform/states/statefile"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
@@ -12,7 +14,6 @@ import (
 
 	"k8s.io/client-go/kubernetes/fake"
 
-	"github.com/hashicorp/terraform/terraform"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/client/mocks"
 	"github.com/kyma-incubator/hydroform/types"
 	"github.com/stretchr/testify/mock"
@@ -34,7 +35,7 @@ const (
 )
 
 var (
-	terraformState = `{"TerraformState":{"version":0,"serial":0,"lineage":"","modules":null}}`
+	terraformState = `{"TerraformState":{"TerraformVersion":null,"Serial":0,"Lineage":"","State":null}}`
 	credentials    = []byte("credentials")
 	secret         = &v1.Secret{
 		ObjectMeta: v12.ObjectMeta{Name: credentialsSecret, Namespace: secretsNamespace},
@@ -59,7 +60,7 @@ func TestService_ProvisionCluster(t *testing.T) {
 		hydroformClient := &mocks.Client{}
 		secretsClient := fake.NewSimpleClientset(secret).CoreV1().Secrets(secretsNamespace)
 
-		hydroformClient.On("Provision", hydroformCluster, hydroformProvider).Return(&types.Cluster{ClusterInfo: &types.ClusterInfo{InternalState: &types.InternalState{TerraformState: &terraform.State{}}}}, nil)
+		hydroformClient.On("Provision", hydroformCluster, hydroformProvider).Return(&types.Cluster{ClusterInfo: &types.ClusterInfo{InternalState: &types.InternalState{TerraformState: &statefile.File{}}}}, nil)
 		hydroformClient.On("Status", mock.Anything, mock.Anything).Return(&types.ClusterStatus{Phase: types.Provisioned}, nil)
 		hydroformClient.On("Credentials", mock.Anything, mock.Anything).Return([]byte("kubeconfig"), nil)
 
@@ -97,7 +98,7 @@ func TestService_ProvisionCluster_Errors(t *testing.T) {
 		{
 			description: "fail to fetch kubeconfig",
 			mockFunc: func(hydroformClient *mocks.Client) {
-				hydroformClient.On("Provision", hydroformCluster, hydroformProvider).Return(&types.Cluster{ClusterInfo: &types.ClusterInfo{InternalState: &types.InternalState{TerraformState: &terraform.State{}}}}, nil)
+				hydroformClient.On("Provision", hydroformCluster, hydroformProvider).Return(&types.Cluster{ClusterInfo: &types.ClusterInfo{InternalState: &types.InternalState{TerraformState: &statefile.File{}}}}, nil)
 				hydroformClient.On("Status", mock.Anything, mock.Anything).Return(&types.ClusterStatus{Phase: types.Provisioned}, nil)
 				hydroformClient.On("Credentials", mock.Anything, mock.Anything).Return(nil, errors.New("error"))
 			},
@@ -105,7 +106,7 @@ func TestService_ProvisionCluster_Errors(t *testing.T) {
 		{
 			description: "fail to get cluster status",
 			mockFunc: func(hydroformClient *mocks.Client) {
-				hydroformClient.On("Provision", hydroformCluster, hydroformProvider).Return(&types.Cluster{ClusterInfo: &types.ClusterInfo{InternalState: &types.InternalState{TerraformState: &terraform.State{}}}}, nil)
+				hydroformClient.On("Provision", hydroformCluster, hydroformProvider).Return(&types.Cluster{ClusterInfo: &types.ClusterInfo{InternalState: &types.InternalState{TerraformState: &statefile.File{}}}}, nil)
 				hydroformClient.On("Status", mock.Anything, mock.Anything).Return(nil, errors.New("error"))
 			},
 		},

@@ -110,7 +110,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		},
 	}
 
-	expectedGCPProviderCfg, err := model.NewGCPGardenerConfig(*gcpGardenerProvider)
+	expectedGCPProviderCfg, err := model.NewGCPGardenerConfig(gcpGardenerProvider)
 	require.NoError(t, err)
 
 	expectedGardenerGCPRuntimeConfig := model.Cluster{
@@ -181,7 +181,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		},
 	}
 
-	expectedAzureProviderCfg, err := model.NewAzureGardenerConfig(*azureGardenerProvider)
+	expectedAzureProviderCfg, err := model.NewAzureGardenerConfig(azureGardenerProvider)
 	require.NoError(t, err)
 
 	expectedGardenerAzureRuntimeConfig := model.Cluster{
@@ -257,7 +257,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		},
 	}
 
-	expectedAWSProviderCfg, err := model.NewAWSGardenerConfig(*awsGardenerProvider)
+	expectedAWSProviderCfg, err := model.NewAWSGardenerConfig(awsGardenerProvider)
 	require.NoError(t, err)
 
 	expectedGardenerAWSRuntimeConfig := model.Cluster{

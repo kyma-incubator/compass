@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/gocraft/dbr"
+	dbr "github.com/gocraft/dbr/v2"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 )
@@ -61,8 +61,9 @@ func (ws writeSession) InsertGCPConfig(config model.GCPConfig) dberrors.Error {
 
 func (ws writeSession) InsertKymaConfig(kymaConfig model.KymaConfig) dberrors.Error {
 	_, err := ws.insertInto("kyma_config").
-		Columns("id", "release_id", "cluster_id").
-		Record(&kymaConfig).
+		Pair("id", kymaConfig.ID).
+		Pair("release_id", kymaConfig.Release.Id).
+		Pair("cluster_id", kymaConfig.ClusterID).
 		Exec()
 
 	if err != nil {

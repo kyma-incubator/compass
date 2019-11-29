@@ -108,13 +108,13 @@ func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpec
 	}
 
 	if input.GcpConfig != nil {
-		return model.NewGCPGardenerConfig(*input.GcpConfig)
+		return model.NewGCPGardenerConfig(input.GcpConfig)
 	}
 	if input.AzureConfig != nil {
-		return model.NewAzureGardenerConfig(*input.AzureConfig)
+		return model.NewAzureGardenerConfig(input.AzureConfig)
 	}
 	if input.AwsConfig != nil {
-		return model.NewAWSGardenerConfig(*input.AwsConfig)
+		return model.NewAWSGardenerConfig(input.AwsConfig)
 	}
 
 	return nil, errors.New("provider config not specified")

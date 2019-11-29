@@ -141,7 +141,6 @@ func (r *service) ReconnectRuntimeAgent(id string) (string, error) {
 
 func (r *service) RuntimeStatus(runtimeID string) (*gqlschema.RuntimeStatus, error) {
 	runtimeStatus, err := r.persistenceService.GetRuntimeStatus(runtimeID)
-
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +150,6 @@ func (r *service) RuntimeStatus(runtimeID string) (*gqlschema.RuntimeStatus, err
 
 func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.OperationStatus, error) {
 	operation, err := r.persistenceService.GetOperation(operationID)
-
 	if err != nil {
 		return nil, err
 	}
