@@ -112,9 +112,17 @@ func (s *installationService) waitForInstallation(stateChannel <-chan installati
 				continue
 			}
 
+			invalidStateError := installation.InvalidInstallationStateError{}
+			if ok := errors.As(err, &installationError); ok {
+			}
+
 			return err
 		default:
 			time.Sleep(1 * time.Second)
 		}
 	}
+}
+
+func (s *installationService) isInstallationError() bool {
+
 }
