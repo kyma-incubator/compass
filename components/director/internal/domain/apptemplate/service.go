@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -13,6 +15,7 @@ import (
 type ApplicationTemplateRepository interface {
 	Create(ctx context.Context, item model.ApplicationTemplate) error
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
+	GetByName(ctx context.Context, id string) (*model.ApplicationTemplate, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	List(ctx context.Context, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
 	Update(ctx context.Context, model model.ApplicationTemplate) error
@@ -46,7 +49,12 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 		return "", fmt.Errorf("while creating Application Template [name=%s]: placeholder [name=%s] appears more than once", in.Name, faultyPlaceholder)
 	}
 
-	err := s.appTemplateRepo.Create(ctx, appTemplate)
+	err := s.validatePlaceholders(in.ApplicationInputJSON, in.Placeholders)
+	if err != nil {
+		return "", errors.Wrapf(err, "while validating placeholders") //TODO err msg
+	}
+
+	err = s.appTemplateRepo.Create(ctx, appTemplate)
 	if err != nil {
 		return "", errors.Wrap(err, "while creating Application Template")
 	}
@@ -58,6 +66,15 @@ func (s *service) Get(ctx context.Context, id string) (*model.ApplicationTemplat
 	appTemplate, err := s.appTemplateRepo.Get(ctx, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Application Template with ID %s", id)
+	}
+
+	return appTemplate, nil
+}
+
+func (s *service) GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error) {
+	appTemplate, err := s.appTemplateRepo.GetByName(ctx, name)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Application Template with [name=%s]", name)
 	}
 
 	return appTemplate, nil
@@ -103,6 +120,16 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	}
 
 	return nil
+}
+
+func (s *service) validatePlaceholders(appInputJSON string, placeholders []model.ApplicationTemplatePlaceholder) error {
+	fmt.Println(appInputJSON)
+	return nil
+}
+
+func (s *service) FillPlaceholders(ctx context.Context, appTemplate *model.ApplicationTemplate, templatePlaceholderValues []*graphql.TemplateValueInput) model.ApplicationCreateInput {
+
+	return model.ApplicationCreateInput{}
 }
 
 func (s *service) checkIfPlaceholdersAreUnique(placeholders []model.ApplicationTemplatePlaceholder) (string, bool) {

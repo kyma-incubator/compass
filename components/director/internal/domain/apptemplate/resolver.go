@@ -3,6 +3,8 @@ package apptemplate
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -16,9 +18,11 @@ import (
 type ApplicationTemplateService interface {
 	Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error)
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
+	GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error)
 	List(ctx context.Context, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
 	Update(ctx context.Context, id string, in model.ApplicationTemplateInput) error
 	Delete(ctx context.Context, id string) error
+	FillPlaceholders(ctx context.Context, appTemplate *model.ApplicationTemplate, templatePlaceholderValues []*graphql.TemplateValueInput) model.ApplicationCreateInput
 }
 
 //go:generate mockery -name=ApplicationTemplateConverter -output=automock -outpkg=automock -case=underscore
@@ -31,13 +35,17 @@ type ApplicationTemplateConverter interface {
 type Resolver struct {
 	transact persistence.Transactioner
 
+	appSvc               application.ApplicationService
+	appConverter         application.ApplicationConverter
 	appTemplateSvc       ApplicationTemplateService
 	appTemplateConverter ApplicationTemplateConverter
 }
 
-func NewResolver(transact persistence.Transactioner, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, appSvc application.ApplicationService, appConverter application.ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter) *Resolver {
 	return &Resolver{
 		transact:             transact,
+		appSvc:               appSvc,
+		appConverter:         appConverter,
 		appTemplateSvc:       appTemplateSvc,
 		appTemplateConverter: appTemplateConverter,
 	}
@@ -155,40 +163,38 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 }
 
 func (r *Resolver) CreateApplicationFromTemplate(ctx context.Context, templateName string, values []*graphql.TemplateValueInput) (*graphql.Application, error) {
-	//tx, err := r.transact.Begin()
-	//if err != nil {
-	//	return nil, err
-	//}
-	//defer r.transact.RollbackUnlessCommited(tx)
-	//
-	//ctx = persistence.SaveToContext(ctx, tx)
-	//
-	//convertedIn, err := r.appTemplateConverter.InputFromGraphQL(in)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//id, err := r.appTemplateSvc.Create(ctx, convertedIn)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//appTemplate, err := r.appTemplateSvc.Get(ctx, id)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//err = tx.Commit()
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//gqlAppTemplate, err := r.appTemplateConverter.ToGraphQL(appTemplate)
-	//if err != nil {
-	//	return nil, errors.Wrapf(err, "while converting application template to graphql")
-	//}
-	//
-	//return gqlAppTemplate, nil
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	appTemplate, err := r.appTemplateSvc.GetByName(ctx, templateName)
+	if err != nil {
+		return nil, err
+	}
+
+	appCreateInput := r.appTemplateSvc.FillPlaceholders(ctx, appTemplate, values)
+
+	id, err := r.appSvc.Create(ctx, appCreateInput)
+	if err != nil {
+		return nil, err
+	}
+
+	app, err := r.appSvc.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	gqlApp := r.appConverter.ToGraphQL(app)
+	return gqlApp, nil
 }
 
 func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
