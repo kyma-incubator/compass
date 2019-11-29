@@ -114,17 +114,17 @@ func (r *service) DeprovisionRuntime(id string) (string, <-chan struct{}, error)
 		return "", nil, errors.Errorf("cannot start new operation for %s Runtime while previous one is in progress", id)
 	}
 
+	cluster, dberr := r.persistenceService.GetClusterData(id)
+	if dberr != nil {
+		return "", nil, dberr
+	}
+
 	operation, err := r.persistenceService.SetDeprovisioningStarted(id)
 	if err != nil {
 		return "", nil, err
 	}
 
 	finished := make(chan struct{})
-
-	cluster, dberr := r.persistenceService.GetClusterData(id)
-	if dberr != nil {
-		return "", nil, dberr
-	}
 
 	go r.startDeprovisioning(operation.ID, cluster, finished)
 
@@ -187,7 +187,7 @@ func (r *service) startProvisioning(operationID string, cluster model.Cluster, f
 
 	log.Infof("Runtime %s provisioned successfully. Starting Kyma installation...", cluster.ID)
 
-	err = r.installationService.InstallKyma(info.KubeConfig, cluster.KymaConfig.Release)
+	err = r.installationService.InstallKyma(cluster.ID, info.KubeConfig, cluster.KymaConfig.Release)
 	if err != nil {
 		log.Errorf("Error installing Kyma on runtime %s: %s", cluster.ID, err.Error())
 		r.setOperationAsFailed(operationID, err.Error())

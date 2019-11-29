@@ -32,3 +32,5 @@ require (
 )
 
 replace github.com/kyma-incubator/hydroform => github.com/Szymongib/hydroform v0.0.0-20191129124609-345d2f43317b
+
+replace github.com/kyma-incubator/hydroform/install => github.com/Szymongib/hydroform/install v0.0.0-20191129124609-345d2f43317b

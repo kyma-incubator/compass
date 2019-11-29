@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 
@@ -23,7 +24,7 @@ type InstallationHandler func(*rest.Config, ...installation.InstallationOption) 
 
 //go:generate mockery -name=Service
 type Service interface {
-	InstallKyma(kubeconfigRaw string, release model.Release) error
+	InstallKyma(runtimeId, kubeconfigRaw string, release model.Release) error
 }
 
 func NewInstallationService(installationTimeout time.Duration, installationHandler InstallationHandler, installErrFailureThreshold int) Service {
@@ -41,7 +42,7 @@ type installationService struct {
 	installationHandler                InstallationHandler
 }
 
-func (s *installationService) InstallKyma(kubeconfigRaw string, release model.Release) error {
+func (s *installationService) InstallKyma(runtimeId, kubeconfigRaw string, release model.Release) error {
 	kubeconfig, err := clientcmd.NewClientConfigFromBytes([]byte(kubeconfigRaw))
 	if err != nil {
 		return fmt.Errorf("error constructing kubeconfig from raw config: %s", err.Error())
@@ -76,7 +77,7 @@ func (s *installationService) InstallKyma(kubeconfigRaw string, release model.Re
 		return pkgErrors.Wrap(err, "Failed to start Kyma installation")
 	}
 
-	err = s.waitForInstallation(stateChannel, errChannel)
+	err = s.waitForInstallation(runtimeId, stateChannel, errChannel)
 	if err != nil {
 		return pkgErrors.Wrap(err, "Error while waiting for Kyma to install")
 	}
@@ -84,35 +85,30 @@ func (s *installationService) InstallKyma(kubeconfigRaw string, release model.Re
 	return nil
 }
 
-func (s *installationService) waitForInstallation(stateChannel <-chan installation.InstallationState, errorChannel <-chan error) error {
+func (s *installationService) waitForInstallation(runtimeId string, stateChannel <-chan installation.InstallationState, errorChannel <-chan error) error {
 	for {
 		select {
 		case state, ok := <-stateChannel:
 			if !ok {
 				return nil
 			}
-			log.Printf("Description: %s, State: %s", state.Description, state.State)
+			logrus.Infof("Installing Kyma on Runtime %s. Description: %s, State: %s", runtimeId, state.Description, state.State)
 		case err, ok := <-errorChannel:
 			if !ok {
 				continue
 			}
-			log.Printf("An error occurred: %v", err) // TODO = log with context or remove
 
 			installationError := installation.InstallationError{}
 			if ok := errors.As(err, &installationError); ok {
-				log.Printf("Installation errors occured:")
-				for _, e := range installationError.ErrorEntries {
-					log.Printf("Component: %s", e.Component)
-					log.Printf(e.Log)
-				}
+				logrus.Warnf("Warning: installation error occurred while installing kyma for %s Runtime: %s. Details: %s", runtimeId, installationError.Error(), installationError.Details())
 
 				if len(installationError.ErrorEntries) > s.installationErrorsFailureThreshold {
-					return fmt.Errorf("installation errors exceeded occured: %s", installationError.Details())
+					return fmt.Errorf("installation errors exceeded threshold, errors details: %s", installationError.Details())
 				}
 				continue
 			}
 
-			return err
+			return fmt.Errorf("an error occurred while installing kyma for %s Runtime: %s.", runtimeId, err.Error())
 		default:
 			time.Sleep(1 * time.Second)
 		}
