@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/ptr"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -23,13 +25,13 @@ func TestCreateApplicationTemplate(t *testing.T) {
 
 	// WHEN
 	t.Log("Create application template")
-
 	err = tc.RunOperation(ctx, createApplicationTemplateRequest, &output)
+
+	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, output.ID)
 	defer deleteApplicationTemplate(t, ctx, output.ID)
 
-	//THEN
 	require.NotEmpty(t, output.Name)
 	saveExample(t, createApplicationTemplateRequest.Query(), "create application template")
 
@@ -52,11 +54,13 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	newName := "new-app-template"
 	newDescription := "new description"
 	newAppCreateInput := &graphql.ApplicationCreateInput{
-		Name: "new-app-create-input",
+		Name:           "new-app-create-input",
+		HealthCheckURL: ptr.String("http://url.valid"),
 	}
 
 	t.Log("Create application template")
 	appTemplate := createApplicationTemplate(t, ctx, name)
+	defer deleteApplicationTemplate(t, ctx, appTemplate.ID)
 
 	appTemplateInput := graphql.ApplicationTemplateInput{Name: newName, ApplicationInput: newAppCreateInput, Description: &newDescription, AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal}
 	appTemplateGQL, err := tc.graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
@@ -68,7 +72,6 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	err = tc.RunOperation(ctx, updateAppTemplateRequest, &updateOutput)
 	require.NoError(t, err)
 	require.NotEmpty(t, updateOutput.ID)
-	defer deleteApplicationTemplate(t, ctx, updateOutput.ID)
 
 	//THEN
 	t.Log("Check if application template was updated")
@@ -108,6 +111,7 @@ func TestQueryApplicationTemplate(t *testing.T) {
 
 	t.Log("Create application template")
 	appTemplate := createApplicationTemplate(t, ctx, name)
+	defer deleteApplicationTemplate(t, ctx, appTemplate.ID)
 
 	getApplicationTemplateRequest := fixApplicationTemplateRequest(appTemplate.ID)
 	output := graphql.ApplicationTemplate{}
@@ -117,7 +121,6 @@ func TestQueryApplicationTemplate(t *testing.T) {
 	err := tc.RunOperation(ctx, getApplicationTemplateRequest, &output)
 	require.NoError(t, err)
 	require.NotEmpty(t, output.ID)
-	defer deleteApplicationTemplate(t, ctx, output.ID)
 
 	//THEN
 	t.Log("Check if application template was received")

@@ -4,7 +4,13 @@ mutation {
     in: {
       name: "app-template-name"
       description: "app-template-desc"
-      applicationInput: { name: "app" }
+      applicationInput: {
+        name: "app"
+        description: "test"
+        labels: { a: ["b", "c"], d: ["e", "f"] }
+        webhooks: [{ type: CONFIGURATION_CHANGED, url: "http://url.com" }]
+        healthCheckURL: "http://url.valid"
+      }
       placeholders: [
         { name: "new-placeholder", description: "new-placeholder-desc" }
       ]

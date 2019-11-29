@@ -221,13 +221,16 @@ func assertApplicationTemplate(t *testing.T, in graphql.ApplicationTemplateInput
 	assert.Equal(t, in.Name, actualApplicationTemplate.Name)
 	assert.Equal(t, in.Description, actualApplicationTemplate.Description)
 
-	graphqlApplicationInput, err := tc.graphqlizer.ApplicationCreateInputToGQL(*in.ApplicationInput)
+	gqlAppInput, err := tc.graphqlizer.ApplicationCreateInputToGQL(*in.ApplicationInput)
 	require.NoError(t, err)
 
-	graphqlApplicationInput = strings.Replace(graphqlApplicationInput, "\t", "", -1)
-	graphqlApplicationInput = strings.Replace(graphqlApplicationInput, "\n", "", -1)
+	gqlAppInput = strings.Replace(gqlAppInput, "\t", "", -1)
+	gqlAppInput = strings.Replace(gqlAppInput, "\n", "", -1)
+	if gqlAppInput[len(gqlAppInput)-2:len(gqlAppInput)-1] == "," {
+		gqlAppInput = gqlAppInput[:len(gqlAppInput)-2] + string("") + gqlAppInput[len(gqlAppInput)-1:]
+	}
 
-	assert.Equal(t, graphqlApplicationInput, actualApplicationTemplate.ApplicationInput)
+	assert.Equal(t, gqlAppInput, actualApplicationTemplate.ApplicationInput)
 	assertApplicationTemplatePlaceholder(t, in.Placeholders, actualApplicationTemplate.Placeholders)
 	assert.Equal(t, in.AccessLevel, actualApplicationTemplate.AccessLevel)
 }

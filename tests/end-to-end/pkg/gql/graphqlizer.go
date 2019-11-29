@@ -82,7 +82,7 @@ func (g *Graphqlizer) ApplicationTemplateInputToGQL(in graphql.ApplicationTempla
 				{{- if $i}}, {{- end}} {{ PlaceholderDefinitionInputToGQL $e }}
 			{{- end }} ],
 		{{- end }}
-		accessLevel: {{.AccessLevel}},
+		accessLevel: {{.AccessLevel}}
 	}`)
 }
 

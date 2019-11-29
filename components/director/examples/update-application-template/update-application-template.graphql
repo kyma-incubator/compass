@@ -5,7 +5,10 @@ mutation {
     in: {
       name: "new-app-template"
       description: "new description"
-      applicationInput: { name: "new-app-create-input" }
+      applicationInput: {
+        name: "new-app-create-input"
+        healthCheckURL: "http://url.valid"
+      }
       accessLevel: GLOBAL
     }
   ) {

@@ -69,7 +69,17 @@ func fixApplicationTemplate(name string) graphql.ApplicationTemplateInput {
 		Name:        name,
 		Description: &appTemplateDesc,
 		ApplicationInput: &graphql.ApplicationCreateInput{
-			Name: "app",
+			Name:        "app",
+			Description: ptr.String("test"),
+			Labels: &graphql.Labels{
+				"a": []string{"b", "c"},
+				"d": []string{"e", "f"},
+			},
+			Webhooks: []*graphql.WebhookInput{{
+				Type: graphql.ApplicationWebhookTypeConfigurationChanged,
+				URL:  "http://url.com",
+			}},
+			HealthCheckURL: ptr.String("http://url.valid"),
 		},
 		Placeholders: []*graphql.PlaceholderDefinitionInput{
 			{
