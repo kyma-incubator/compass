@@ -11,7 +11,6 @@ require (
 	github.com/gorilla/mux v1.7.3
 	github.com/hashicorp/terraform v0.12.16
 	github.com/json-iterator/go v1.1.8 // indirect
-	github.com/kyma-incubator/hydroform v0.0.0-20191128070310-d7996cb46e38
 	github.com/kyma-incubator/hydroform/install v0.0.0-20191128070310-d7996cb46e38
 	github.com/lib/pq v1.2.0
 	github.com/onsi/ginkgo v1.10.1 // indirect
@@ -27,7 +26,7 @@ require (
 	gopkg.in/yaml.v2 v2.2.4 // indirect
 	k8s.io/api v0.0.0-20190819141258-3544db3b9e44
 	k8s.io/apimachinery v0.0.0-20190817020851-f2f3a405f61d
-	k8s.io/client-go v12.0.0+incompatible
+	k8s.io/client-go v0.0.0-20190819141724-e14f31a72a77
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20191107075043-30be4d16710a // indirect
 )
