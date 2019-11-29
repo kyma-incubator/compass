@@ -28,25 +28,25 @@ func (g *Graphqlizer) ApplicationCreateInputToGQL(in graphql.ApplicationCreateIn
 			{{- end }} ],
 		{{- end}}
 		{{- if .HealthCheckURL }}
-		healthCheckURL: "{{ .HealthCheckURL }}"
+		healthCheckURL: "{{ .HealthCheckURL }}",
 		{{- end }}
 		{{- if .Apis }}
 		apis: [
 			{{- range $i, $e := .Apis }}
 			{{- if $i}}, {{- end}} {{ APIDefinitionInputToGQL $e }}
-			{{- end }}]
+			{{- end }}],
 		{{- end }}
 		{{- if .EventAPIs }}
 		eventAPIs: [
 			{{- range $i, $e := .EventAPIs }}
 			{{- if $i}}, {{- end}} {{ EventAPIDefinitionInputToGQL $e }}
-			{{- end }}]
+			{{- end }}],
 		{{- end }}
 		{{- if .Documents }} 
 		documents: [
 			{{- range $i, $e := .Documents }} 
 				{{- if $i}}, {{- end}} {{- DocumentInputToGQL $e }}
-			{{- end }} ]
+			{{- end }} ],
 		{{- end }}
 		{{- if .IntegrationSystemID }}
 		integrationSystemID: "{{ .IntegrationSystemID }}",
@@ -61,10 +61,10 @@ func (g *Graphqlizer) ApplicationUpdateInputToGQL(in graphql.ApplicationUpdateIn
 		description: "{{.Description}}",
 		{{- end }}
 		{{- if .HealthCheckURL }}
-		healthCheckURL: "{{ .HealthCheckURL }}"
+		healthCheckURL: "{{ .HealthCheckURL }}",
 		{{- end }}
 		{{- if .IntegrationSystemID }}
-			integrationSystemID: "{{ .IntegrationSystemID }}",
+		integrationSystemID: "{{ .IntegrationSystemID }}",
 		{{- end }}
 	}`)
 }

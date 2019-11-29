@@ -545,6 +545,7 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 				svc.On("DeleteMultipleClientCredentials", txtest.CtxWithDBMatcher(), testAuths).Return(nil)
 				return svc
 			},
+
 			ExpectedOutput: gqlIntSys,
 		},
 		{
@@ -636,6 +637,7 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 				svc := &automock.OAuth20Service{}
 				return svc
 			},
+
 			ExpectedError: testError,
 		},
 		{
@@ -659,6 +661,7 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 				svc := &automock.OAuth20Service{}
 				return svc
 			},
+
 			ExpectedError: testError,
 		},
 		{
@@ -684,6 +687,7 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 				svc.On("DeleteMultipleClientCredentials", txtest.CtxWithDBMatcher(), testAuths).Return(testError)
 				return svc
 			},
+
 			ExpectedError: testError,
 		},
 	}

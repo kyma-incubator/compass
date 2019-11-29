@@ -15,6 +15,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	intSysKey = "integration-system-id"
+)
+
 //go:generate mockery -name=ApplicationRepository -output=automock -outpkg=automock -case=underscore
 type ApplicationRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
@@ -71,6 +75,11 @@ type FetchRequestRepository interface {
 	Create(ctx context.Context, item *model.FetchRequest) error
 }
 
+//go:generate mockery -name=IntegrationSystemRepository -output=automock -outpkg=automock -case=underscore
+type IntegrationSystemRepository interface {
+	Exists(ctx context.Context, id string) (bool, error)
+}
+
 //go:generate mockery -name=LabelUpsertService -output=automock -outpkg=automock -case=underscore
 type LabelUpsertService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
@@ -96,6 +105,7 @@ type service struct {
 	labelRepo        LabelRepository
 	runtimeRepo      RuntimeRepository
 	fetchRequestRepo FetchRequestRepository
+	intSystemRepo    IntegrationSystemRepository
 
 	labelUpsertService LabelUpsertService
 	scenariosService   ScenariosService
@@ -103,7 +113,7 @@ type service struct {
 	timestampGen       timestamp.Generator
 }
 
-func NewService(app ApplicationRepository, webhook WebhookRepository, api APIRepository, eventAPI EventAPIRepository, documentRepo DocumentRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, fetchRequestRepo FetchRequestRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, uidService UIDService) *service {
+func NewService(app ApplicationRepository, webhook WebhookRepository, api APIRepository, eventAPI EventAPIRepository, documentRepo DocumentRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, fetchRequestRepo FetchRequestRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, uidService UIDService) *service {
 	return &service{
 		appRepo:            app,
 		webhookRepo:        webhook,
@@ -112,6 +122,7 @@ func NewService(app ApplicationRepository, webhook WebhookRepository, api APIRep
 		documentRepo:       documentRepo,
 		runtimeRepo:        runtimeRepo,
 		labelRepo:          labelRepo,
+		intSystemRepo:      intSystemRepo,
 		labelUpsertService: labelUpsertService,
 		scenariosService:   scenariosService,
 		uidService:         uidService,
@@ -224,6 +235,15 @@ func (s *service) Create(ctx context.Context, in model.ApplicationCreateInput) (
 		return "", errors.Wrap(err, "while validating Application input")
 	}
 
+	exists, err := s.ensureIntSysExists(ctx, in.IntegrationSystemID)
+	if err != nil {
+		return "", errors.Wrap(err, "while ensuring integration system exists")
+	}
+
+	if !exists {
+		return "", errors.New(fmt.Sprintf("while ensuring integration system exists: Integration System with ID: %s does not exist", *in.IntegrationSystemID))
+	}
+
 	id := s.uidService.Generate()
 	app := in.ToApplication(s.timestampGen(), model.ApplicationStatusConditionInitial, id, appTenant)
 
@@ -244,11 +264,15 @@ func (s *service) Create(ctx context.Context, in model.ApplicationCreateInput) (
 		in.Labels[model.ScenariosKey] = model.ScenariosDefaultValue
 	}
 
+	in.Labels[intSysKey] = ""
+	if in.IntegrationSystemID != nil {
+		in.Labels[intSysKey] = *in.IntegrationSystemID
+	}
+
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
 	if err != nil {
 		return id, errors.Wrapf(err, "while creating multiple labels for Application")
 	}
-
 	err = s.createRelatedResources(ctx, in, app.Tenant, app.ID)
 	if err != nil {
 		return "", errors.Wrap(err, "while creating related Application resources")
@@ -261,6 +285,15 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 	err := in.Validate()
 	if err != nil {
 		return err
+	}
+
+	exists, err := s.ensureIntSysExists(ctx, in.IntegrationSystemID)
+	if err != nil {
+		return errors.Wrap(err, "while validating Integration System ID")
+	}
+
+	if !exists {
+		return errors.New(fmt.Sprintf("integration System with ID: %s does not exist", *in.IntegrationSystemID))
 	}
 
 	app, err := s.Get(ctx, id)
@@ -278,6 +311,15 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 		return errors.Wrap(err, "while updating Application")
 	}
 
+	intSysLabel := createLabel(intSysKey, "", id)
+	if in.IntegrationSystemID != nil {
+		intSysLabel = createLabel(intSysKey, *in.IntegrationSystemID, id)
+	}
+
+	err = s.SetLabel(ctx, intSysLabel)
+	if err != nil {
+		return errors.Wrap(err, "while setting the integration system label")
+	}
 	return nil
 }
 
@@ -306,7 +348,7 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 		return errors.Wrap(err, "while checking Application existence")
 	}
 	if !appExists {
-		return fmt.Errorf("Application with ID %s doesn't exist", labelInput.ObjectID)
+		return fmt.Errorf("application with ID %s doesn't exist", labelInput.ObjectID)
 	}
 
 	err = s.labelUpsertService.UpsertLabel(ctx, appTenant, labelInput)
@@ -328,7 +370,7 @@ func (s *service) GetLabel(ctx context.Context, applicationID string, key string
 		return nil, errors.Wrap(err, "while checking Application existence")
 	}
 	if !appExists {
-		return nil, fmt.Errorf("Application with ID %s doesn't exist", applicationID)
+		return nil, fmt.Errorf("application with ID %s doesn't exist", applicationID)
 	}
 
 	label, err := s.labelRepo.GetByKey(ctx, appTenant, model.ApplicationLabelableObject, applicationID, key)
@@ -352,7 +394,7 @@ func (s *service) ListLabels(ctx context.Context, applicationID string) (map[str
 	}
 
 	if !appExists {
-		return nil, fmt.Errorf("Application with ID %s doesn't exist", applicationID)
+		return nil, fmt.Errorf("application with ID %s doesn't exist", applicationID)
 	}
 
 	labels, err := s.labelRepo.ListForObject(ctx, appTenant, model.ApplicationLabelableObject, applicationID)
@@ -378,7 +420,7 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 		return errors.Wrap(err, "while checking Application existence")
 	}
 	if !appExists {
-		return fmt.Errorf("Application with ID %s doesn't exist", applicationID)
+		return fmt.Errorf("application with ID %s doesn't exist", applicationID)
 	}
 
 	err = s.labelRepo.Delete(ctx, appTenant, model.ApplicationLabelableObject, applicationID, key)
@@ -506,4 +548,29 @@ func getScenariosValues(labels interface{}) ([]string, error) {
 	}
 
 	return scenarios, nil
+}
+
+func createLabel(key string, value string, objectID string) *model.LabelInput {
+	return &model.LabelInput{
+		Key:        key,
+		Value:      value,
+		ObjectID:   objectID,
+		ObjectType: model.ApplicationLabelableObject,
+	}
+}
+
+func (s *service) ensureIntSysExists(ctx context.Context, id *string) (bool, error) {
+	if id == nil {
+		return true, nil
+	}
+
+	exists, err := s.intSystemRepo.Exists(ctx, *id)
+	if err != nil {
+		return false, err
+	}
+
+	if !exists {
+		return false, nil
+	}
+	return true, nil
 }

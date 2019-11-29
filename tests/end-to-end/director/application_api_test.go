@@ -22,6 +22,8 @@ const (
 	updateWebhookCategory     = "update webhook"
 )
 
+var integrationSystemID = "69230297-3c81-4711-aac2-3afa8cb42e2d"
+
 func TestCreateApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -301,6 +303,25 @@ func TestCreateApplicationWithDocuments(t *testing.T) {
 	assertApplication(t, in, actualApp)
 }
 
+func TestCreateApplicationWithNonExistentIntegrationSystem(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+
+	in := fixSampleApplicationCreateInputWithIntegrationSystem("placeholder")
+	appInputGQL, err := tc.graphqlizer.ApplicationCreateInputToGQL(in)
+	require.NoError(t, err)
+	actualApp := graphql.ApplicationExt{}
+
+	request := fixCreateApplicationRequest(appInputGQL)
+	// WHEN
+	err = tc.RunOperation(ctx, request, &actualApp)
+
+	//THEN
+	require.Error(t, err)
+	require.NotNil(t, err.Error())
+	require.Contains(t, err.Error(), "does not exist")
+}
+
 func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 	applicationId := "cf889c38-490d-4896-96a7-c0721eca9932"
 
@@ -423,6 +444,28 @@ func TestUpdateApplication(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, expectedApp, updatedApp)
 	saveExample(t, request.Query(), "update application")
+}
+
+func TestUpdateApplicationWithNonExistentIntegrationSystem(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+
+	actualApp := createApplication(t, ctx, "before")
+	defer deleteApplication(t, actualApp.ID)
+
+	updateInput := fixSampleApplicationUpdateInputWithIntegrationSystem("after")
+	updateInputGQL, err := tc.graphqlizer.ApplicationUpdateInputToGQL(updateInput)
+	require.NoError(t, err)
+	request := fixUpdateApplicationRequest(actualApp.ID, updateInputGQL)
+	updatedApp := graphql.ApplicationExt{}
+
+	//WHEN
+	err = tc.RunOperation(ctx, request, &updatedApp)
+
+	//THEN
+	require.Error(t, err)
+	require.NotNil(t, err.Error())
+	require.Contains(t, err.Error(), "does not exist")
 }
 
 func TestCreateUpdateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
@@ -1220,11 +1263,26 @@ func fixSampleApplicationCreateInputWithName(placeholder, name string) graphql.A
 	return sampleInput
 }
 
+func fixSampleApplicationCreateInputWithIntegrationSystem(placeholder string) graphql.ApplicationCreateInput {
+	sampleInput := fixSampleApplicationCreateInput(placeholder)
+	sampleInput.IntegrationSystemID = &integrationSystemID
+	return sampleInput
+}
+
 func fixSampleApplicationUpdateInput(placeholder string) graphql.ApplicationUpdateInput {
 	return graphql.ApplicationUpdateInput{
 		Name:           placeholder,
 		Description:    &placeholder,
 		HealthCheckURL: &placeholder,
+	}
+}
+
+func fixSampleApplicationUpdateInputWithIntegrationSystem(placeholder string) graphql.ApplicationUpdateInput {
+	return graphql.ApplicationUpdateInput{
+		Name:                placeholder,
+		Description:         &placeholder,
+		HealthCheckURL:      &placeholder,
+		IntegrationSystemID: &integrationSystemID,
 	}
 }
 

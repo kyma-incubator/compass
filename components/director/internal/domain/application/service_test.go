@@ -51,10 +51,18 @@ func TestService_Create(t *testing.T) {
 		Labels: map[string]interface{}{
 			"label": "value",
 		},
+		IntegrationSystemID: &intSysID,
 	}
-	scenariosDefaultLabel := map[string]interface{}{
-		model.ScenariosKey: model.ScenariosDefaultValue,
+	defaultLabels := map[string]interface{}{
+		model.ScenariosKey:      model.ScenariosDefaultValue,
+		"integration-system-id": intSysID,
+		"label":                 "value",
 	}
+	defaultLabelsWithoutIntSys := map[string]interface{}{
+		model.ScenariosKey:      model.ScenariosDefaultValue,
+		"integration-system-id": "",
+	}
+
 	id := "foo"
 
 	tnt := "tenant"
@@ -78,6 +86,7 @@ func TestService_Create(t *testing.T) {
 		EventAPIRepoFn     func() *automock.EventAPIRepository
 		DocumentRepoFn     func() *automock.DocumentRepository
 		FetchRequestRepoFn func() *automock.FetchRequestRepository
+		IntSysRepoFn       func() *automock.IntegrationSystemRepository
 		ScenariosServiceFn func() *automock.ScenariosService
 		LabelServiceFn     func() *automock.LabelUpsertService
 		UIDServiceFn       func() *automock.UIDService
@@ -120,6 +129,11 @@ func TestService_Create(t *testing.T) {
 				repo.On("Create", ctx, fixFetchRequest("eventapi.foo.bar", model.EventAPIFetchRequestReference, timestamp)).Return(nil).Once()
 				return repo
 			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
@@ -127,7 +141,7 @@ func TestService_Create(t *testing.T) {
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
-				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, modelInput.Labels).Return(nil).Once()
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, defaultLabels).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -166,6 +180,11 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.FetchRequestRepository{}
 				return repo
 			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
@@ -173,7 +192,7 @@ func TestService_Create(t *testing.T) {
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
-				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, scenariosDefaultLabel).Return(nil).Once()
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, defaultLabelsWithoutIntSys).Return(nil).Once()
 				svc.On("UpsertLabel", ctx, tnt, labelScenarios).Return(nil).Once()
 				return svc
 			},
@@ -213,6 +232,11 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.FetchRequestRepository{}
 				return repo
 			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
@@ -220,7 +244,7 @@ func TestService_Create(t *testing.T) {
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
-				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, scenariosDefaultLabel).Return(nil).Once()
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, defaultLabelsWithoutIntSys).Return(nil).Once()
 				svc.On("UpsertLabel", ctx, tnt, labelScenarios).Return(nil).Once()
 				return svc
 			},
@@ -231,7 +255,7 @@ func TestService_Create(t *testing.T) {
 			},
 			Input: model.ApplicationCreateInput{
 				Name:   "test",
-				Labels: scenariosDefaultLabel,
+				Labels: defaultLabelsWithoutIntSys,
 			},
 			ExpectedErr: nil,
 		},
@@ -260,6 +284,11 @@ func TestService_Create(t *testing.T) {
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
 				repo := &automock.FetchRequestRepository{}
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
 				return repo
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
@@ -307,6 +336,11 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.FetchRequestRepository{}
 				return repo
 			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				return repo
@@ -319,6 +353,98 @@ func TestService_Create(t *testing.T) {
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id).Once()
+				return svc
+			},
+			Input:       modelInput,
+			ExpectedErr: testErr,
+		},
+		{
+			Name: "Returns error when integration system doesn't exist",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				return repo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				return repo
+			},
+			APIRepoFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				return repo
+			},
+			EventAPIRepoFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				return repo
+			},
+			DocumentRepoFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				return repo
+			},
+			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(false, nil).Once()
+				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				repo := &automock.ScenariosService{}
+				return repo
+			},
+			LabelServiceFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				return svc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				return svc
+			},
+			Input:       modelInput,
+			ExpectedErr: errors.New("does not exist"),
+		},
+		{
+			Name: "Returns error when checking for integration system fails",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				return repo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				return repo
+			},
+			APIRepoFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				return repo
+			},
+			EventAPIRepoFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				return repo
+			},
+			DocumentRepoFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				return repo
+			},
+			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(false, testErr).Once()
+				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				repo := &automock.ScenariosService{}
+				return repo
+			},
+			LabelServiceFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				return svc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
 				return svc
 			},
 			Input:       modelInput,
@@ -337,7 +463,8 @@ func TestService_Create(t *testing.T) {
 			scenariosSvc := testCase.ScenariosServiceFn()
 			labelSvc := testCase.LabelServiceFn()
 			uidSvc := testCase.UIDServiceFn()
-			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo, nil, nil, fetchRequestRepo, labelSvc, scenariosSvc, uidSvc)
+			intSysRepo := testCase.IntSysRepoFn()
+			svc := application.NewService(appRepo, webhookRepo, apiRepo, eventAPIRepo, documentRepo, nil, nil, fetchRequestRepo, intSysRepo, labelSvc, scenariosSvc, uidSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -364,7 +491,7 @@ func TestService_Create(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// when
 		_, err := svc.Create(context.TODO(), model.ApplicationCreateInput{})
 		assert.Equal(t, tenant.NoTenantError, err)
@@ -393,7 +520,7 @@ func TestService_CreateWithInvalidNames(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			//WHEN
 			_, err := svc.Create(ctx, testCase.Input)
@@ -418,13 +545,15 @@ func TestService_Update(t *testing.T) {
 	updateInput := fixModelApplicationUpdateInput(updatedName, updatedDescription, updatedURL)
 	applicationModelBefore := fixModelApplicationWithAllUpdatableFields(id, tnt, "initialn", "initiald", "initialu")
 	applicationModelAfter := fixModelApplicationWithAllUpdatableFields(id, tnt, updatedName, updatedDescription, updatedURL)
-
+	intSysLabel := fixLabelInput("integration-system-id", intSysID, id, model.ApplicationLabelableObject)
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt)
 
 	testCases := []struct {
 		Name               string
 		AppRepoFn          func() *automock.ApplicationRepository
+		IntSysRepoFn       func() *automock.IntegrationSystemRepository
+		LabelUpsertSvcFn   func() *automock.LabelUpsertService
 		Input              model.ApplicationUpdateInput
 		InputID            string
 		ExpectedErrMessage string
@@ -433,9 +562,20 @@ func TestService_Update(t *testing.T) {
 			Name: "Success",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, tnt, "foo").Return(applicationModelBefore, nil).Once()
+				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
 				repo.On("Update", ctx, applicationModelAfter).Return(nil).Once()
+				repo.On("Exists", ctx, tnt, id).Return(true, nil).Once()
 				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				svc.On("UpsertLabel", ctx, tnt, intSysLabel).Return(nil).Once()
+				return svc
 			},
 			InputID:            "foo",
 			Input:              updateInput,
@@ -445,9 +585,18 @@ func TestService_Update(t *testing.T) {
 			Name: "Returns error when application update failed",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, tnt, "foo").Return(applicationModelBefore, nil).Once()
+				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
 				repo.On("Update", ctx, applicationModelAfter).Return(testErr).Once()
 				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				return svc
 			},
 			InputID:            "foo",
 			Input:              updateInput,
@@ -457,8 +606,122 @@ func TestService_Update(t *testing.T) {
 			Name: "Returns error when application retrieval failed",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, tnt, "foo").Return(nil, testErr).Once()
+				repo.On("GetByID", ctx, tnt, id).Return(nil, testErr).Once()
 				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				return svc
+			},
+			InputID:            "foo",
+			Input:              updateInput,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when Integration System does not exist",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(false, nil).Once()
+				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				return svc
+			},
+			InputID:            "foo",
+			Input:              updateInput,
+			ExpectedErrMessage: errors.New("does not exist").Error(),
+		},
+		{
+			Name: "Returns error ensuring Integration System existance failed",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(false, testErr).Once()
+				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				return svc
+			},
+			InputID:            "foo",
+			Input:              updateInput,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when setting label fails",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
+				repo.On("Update", ctx, applicationModelAfter).Return(nil).Once()
+				repo.On("Exists", ctx, tnt, id).Return(true, nil).Once()
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				svc.On("UpsertLabel", ctx, tnt, intSysLabel).Return(testErr).Once()
+				return svc
+			},
+			InputID:            "foo",
+			Input:              updateInput,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when app does not exist",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
+				repo.On("Update", ctx, applicationModelAfter).Return(nil).Once()
+				repo.On("Exists", ctx, tnt, id).Return(false, nil).Once()
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				return svc
+			},
+			InputID:            "foo",
+			Input:              updateInput,
+			ExpectedErrMessage: "doesn't exist",
+		},
+		{
+			Name: "Returns error when ensuring app existence fails",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
+				repo.On("Update", ctx, applicationModelAfter).Return(nil).Once()
+				repo.On("Exists", ctx, tnt, id).Return(false, testErr).Once()
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				return svc
 			},
 			InputID:            "foo",
 			Input:              updateInput,
@@ -469,7 +732,9 @@ func TestService_Update(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appRepo := testCase.AppRepoFn()
-			svc := application.NewService(appRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			intSysRepo := testCase.IntSysRepoFn()
+			lblUpsrtSvc := testCase.LabelUpsertSvcFn()
+			svc := application.NewService(appRepo, nil, nil, nil, nil, nil, nil, nil, intSysRepo, lblUpsrtSvc, nil, nil)
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -483,6 +748,8 @@ func TestService_Update(t *testing.T) {
 			}
 
 			appRepo.AssertExpectations(t)
+			intSysRepo.AssertExpectations(t)
+			lblUpsrtSvc.AssertExpectations(t)
 		})
 	}
 }
@@ -516,7 +783,7 @@ func TestService_UpdateWithInvalidNames(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			//WHEN
 			err := svc.Update(ctx, appID, testCase.Input)
@@ -576,7 +843,7 @@ func TestService_Delete(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appRepo := testCase.AppRepoFn()
-			svc := application.NewService(appRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(appRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -648,7 +915,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// when
 			app, err := svc.Get(ctx, testCase.InputID)
@@ -753,7 +1020,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// when
 			app, err := svc.List(ctx, testCase.InputLabelFilters, testCase.InputPageSize, after)
@@ -973,7 +1240,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			runtimeRepository := testCase.RuntimeRepositoryFn()
 			labelRepository := testCase.LabelRepositoryFn()
 			appRepository := testCase.AppRepositoryFn()
-			svc := application.NewService(appRepository, nil, nil, nil, nil, runtimeRepository, labelRepository, nil, nil, nil, nil)
+			svc := application.NewService(appRepository, nil, nil, nil, nil, runtimeRepository, labelRepository, nil, nil, nil, nil, nil)
 
 			//WHEN
 			results, err := svc.ListByRuntimeID(ctx, testCase.Input, first, cursor)
@@ -1048,7 +1315,7 @@ func TestService_Exist(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
 			appRepo := testCase.RepositoryFn()
-			svc := application.NewService(appRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(appRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			value, err := svc.Exist(ctx, testCase.InputApplicationID)
@@ -1147,7 +1414,7 @@ func TestService_SetLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelSvc := testCase.LabelServiceFn()
-			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, nil, labelSvc, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil, nil, nil, nil, labelSvc, nil, nil)
 
 			// when
 			err := svc.SetLabel(ctx, testCase.InputLabel)
@@ -1258,7 +1525,7 @@ func TestService_GetLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(repo, nil, nil, nil, nil, nil, labelRepo, nil, nil, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil, labelRepo, nil, nil, nil, nil, nil)
 
 			// when
 			l, err := svc.GetLabel(ctx, testCase.InputApplicationID, testCase.InputLabel.Key)
@@ -1372,7 +1639,7 @@ func TestService_ListLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(repo, nil, nil, nil, nil, nil, labelRepo, nil, nil, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil, labelRepo, nil, nil, nil, nil, nil)
 
 			// when
 			l, err := svc.ListLabels(ctx, testCase.InputApplicationID)
@@ -1478,7 +1745,7 @@ func TestService_DeleteLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(repo, nil, nil, nil, nil, nil, labelRepo, nil, nil, nil, nil)
+			svc := application.NewService(repo, nil, nil, nil, nil, nil, labelRepo, nil, nil, nil, nil, nil)
 
 			// when
 			err := svc.DeleteLabel(ctx, testCase.InputApplicationID, testCase.InputKey)

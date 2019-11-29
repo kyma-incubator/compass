@@ -13,16 +13,26 @@ func assertApplication(t *testing.T, in graphql.ApplicationCreateInput, actualAp
 
 	assert.Equal(t, in.Name, actualApp.Name)
 	assert.Equal(t, in.Description, actualApp.Description)
-	if in.Labels != nil {
-		assert.Equal(t, *in.Labels, actualApp.Labels)
-	} else {
-		assert.Empty(t, actualApp.Labels)
-	}
+	assertLabels(t, *in.Labels, actualApp.Labels, actualApp.IntegrationSystemID)
 	assert.Equal(t, in.HealthCheckURL, actualApp.HealthCheckURL)
 	assertWebhooks(t, in.Webhooks, actualApp.Webhooks)
 	assertDocuments(t, in.Documents, actualApp.Documents.Data)
 	assertAPI(t, in.Apis, actualApp.Apis.Data)
 	assertEventsAPI(t, in.EventAPIs, actualApp.EventAPIs.Data)
+}
+
+//TODO: After fixing the 'Labels' scalar turn this back into regular assertion
+func assertLabels(t *testing.T, in graphql.Labels, actual graphql.Labels, id *string) {
+	for key, value := range actual {
+		if key == "integration-system-id" {
+			if id == nil {
+				continue
+			}
+			assert.Equal(t, value, id)
+			continue
+		}
+		assert.Equal(t, value, in[key])
+	}
 }
 
 func assertWebhooks(t *testing.T, in []*graphql.WebhookInput, actual []graphql.Webhook) {
