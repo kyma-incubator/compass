@@ -114,7 +114,7 @@ imports-local:
 check-fmt-local:
 	@if [ -n "$$(gofmt -l $$($(FILES_TO_CHECK)))" ]; then \
 		gofmt -l $$($(FILES_TO_CHECK)); \
-		echo "✗ some files contain not propery formatted imports. To repair run make imports-local"; \
+		echo "✗ some files contain not propery formatted imports. To repair run make imports"; \
 		exit 1; \
 	fi;
 
