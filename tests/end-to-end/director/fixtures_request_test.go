@@ -52,7 +52,26 @@ func fixCreateIntegrationSystemRequest(integrationSystemInGQL string) *gcli.Requ
 			integrationSystemInGQL, tc.gqlFieldsProvider.ForIntegrationSystem()))
 }
 
+func fixAddWebhookRequest(applicationID, webhookInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: addWebhook(applicationID: "%s", in: %s) {
+					%s
+				}
+			}`,
+			applicationID, webhookInGQL, tc.gqlFieldsProvider.ForWebhooks()))
+}
+
 //UPDATE
+func fixUpdateWebhookRequest(webhookID, webhookInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: updateWebhook(webhookID: "%s", in: %s) {
+					%s
+				}
+			}`,
+			webhookID, webhookInGQL, tc.gqlFieldsProvider.ForWebhooks()))
+}
 func fixUpdateApplicationRequest(id, updateInputGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {

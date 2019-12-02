@@ -329,7 +329,7 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 		//GIVEN
 		ctx := context.Background()
 		webhookInStr, err := tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
-			URL:  "new-webhook",
+			URL:  "http://new.webhook",
 			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 		})
 		require.NoError(t, err)
@@ -603,7 +603,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 	t.Run("manage webhooks", func(t *testing.T) {
 		// add
 		webhookInStr, err := tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
-			URL:  "new-webhook",
+			URL:  "http://new-webhook.url",
 			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 		})
 
@@ -619,7 +619,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		actualWebhook := graphql.Webhook{}
 		err = tc.RunOperation(ctx, addReq, &actualWebhook)
 		require.NoError(t, err)
-		assert.Equal(t, "new-webhook", actualWebhook.URL)
+		assert.Equal(t, "http://new-webhook.url", actualWebhook.URL)
 		assert.Equal(t, graphql.ApplicationWebhookTypeConfigurationChanged, actualWebhook.Type)
 		id := actualWebhook.ID
 		require.NotNil(t, id)
@@ -630,7 +630,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 		// update
 		webhookInStr, err = tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
-			URL: "updated-webhook", Type: graphql.ApplicationWebhookTypeConfigurationChanged,
+			URL: "http://updated-webhook.url", Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 		})
 
 		require.NoError(t, err)
@@ -643,7 +643,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		saveExampleInCustomDir(t, updateReq.Query(), updateWebhookCategory, "update application webhook")
 		err = tc.RunOperation(ctx, updateReq, &actualWebhook)
 		require.NoError(t, err)
-		assert.Equal(t, "updated-webhook", actualWebhook.URL)
+		assert.Equal(t, "http://updated-webhook.url", actualWebhook.URL)
 
 		// delete
 
@@ -661,7 +661,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, "updated-webhook", actualWebhook.URL)
+		assert.Equal(t, "http://updated-webhook.url", actualWebhook.URL)
 
 	})
 

@@ -2,6 +2,8 @@ package inputvalidation
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/pkg/errors"
@@ -29,5 +31,13 @@ func (d *directive) Validate(ctx context.Context, obj interface{}, next graphql.
 
 	}
 
-	return validatableObj, validatableObj.Validate()
+	var typeName string
+	split := strings.Split(fmt.Sprintf("%T", constructedObj), ".")
+	if len(split) > 1 {
+		typeName = split[1]
+	} else {
+		typeName = split[0]
+	}
+
+	return validatableObj, errors.Wrapf(validatableObj.Validate(), "validation error for type %s", typeName)
 }

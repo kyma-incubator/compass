@@ -65,6 +65,14 @@
   version = "v1.0.3"
 
 [[projects]]
+  digest = "1:320e7ead93de9fd2b0e59b50fd92a4d50c1f8ab455d96bc2eb083267453a9709"
+  name = "github.com/asaskevich/govalidator"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "ccb8e960c48f04d6935e72476ae4a51028f9e22f"
+  version = "v9"
+
+[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
@@ -89,9 +97,12 @@
   revision = "25d852aebe32c875e9c044af3eef9c7dc6bc777f"
 
 [[projects]]
-  digest = "1:5672cac2a0190dbb0658806e0f8e220ae4a4120451603504c22ef89a1126c109"
+  digest = "1:5f7b0c5ddd7f129e3a95b534b624b96aefd0487305af5828620a63a9dc94286f"
   name = "github.com/go-ozzo/ozzo-validation"
-  packages = ["."]
+  packages = [
+    ".",
+    "is",
+  ]
   pruneopts = "UT"
   revision = "199b55b36bc1af151e6eea487cc92ffa5b460b81"
   version = "v3.6.0"
@@ -524,6 +535,7 @@
     "github.com/dgrijalva/jwt-go",
     "github.com/ghodss/yaml",
     "github.com/go-ozzo/ozzo-validation",
+    "github.com/go-ozzo/ozzo-validation/is",
     "github.com/google/uuid",
     "github.com/gorilla/mux",
     "github.com/hashicorp/go-multierror",
