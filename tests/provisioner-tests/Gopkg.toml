@@ -5,8 +5,7 @@ required = [
 
 [[constraint]]
   name = "github.com/kyma-incubator/compass"
-  branch = "provisioner-azure-aks"
-  source = "https://github.com/Maladie/compass"
+  revision = "86a963975089cc7d3cc4e74a0e35fc537f813be0"
   
 [[constraint]]
   name = "github.com/Masterminds/sprig"
