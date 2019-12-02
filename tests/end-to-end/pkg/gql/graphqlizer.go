@@ -82,7 +82,7 @@ func (g *Graphqlizer) ApplicationTemplateInputToGQL(in graphql.ApplicationTempla
 				{{- if $i}}, {{- end}} {{ PlaceholderDefinitionInputToGQL $e }}
 			{{- end }} ],
 		{{- end }}
-		accessLevel: {{.AccessLevel}}
+		accessLevel: {{.AccessLevel}},
 	}`)
 }
 
@@ -99,7 +99,7 @@ func (g *Graphqlizer) DocumentInputToGQL(in *graphql.DocumentInput) (string, err
 		data: "{{.Data}}",
 		{{- end}}
 		{{- if .FetchRequest }}
-		fetchRequest: {{- FetchRequesstInputToGQL .FetchRequest }} 
+		fetchRequest: {{- FetchRequesstInputToGQL .FetchRequest }},
 		{{- end}}
 }`)
 }
@@ -108,7 +108,7 @@ func (g *Graphqlizer) FetchRequestInputToGQL(in *graphql.FetchRequestInput) (str
 	return g.genericToGQL(in, `{
 		url: "{{.URL}}",
 		{{- if .Auth }}
-		auth: {{- AuthInputToGQL .Auth }}
+		auth: {{- AuthInputToGQL .Auth }},
 		{{- end }}
 		{{- if .Mode }}
 		mode: {{.Mode}},
@@ -122,7 +122,7 @@ func (g *Graphqlizer) FetchRequestInputToGQL(in *graphql.FetchRequestInput) (str
 func (g *Graphqlizer) CredentialRequestAuthInputToGQL(in *graphql.CredentialRequestAuthInput) (string, error) {
 	return g.genericToGQL(in, `{
 		{{- if .Csrf }}
-		csrf: {{ CSRFTokenCredentialRequestAuthInputToGQL .Csrf }}
+		csrf: {{ CSRFTokenCredentialRequestAuthInputToGQL .Csrf }},
 		{{- end }}
 	}`)
 }
@@ -133,14 +133,14 @@ func (g *Graphqlizer) CredentialDataInputToGQL(in *graphql.CredentialDataInput) 
 			basic: {
 				username: "{{ .Basic.Username }}",
 				password: "{{ .Basic.Password }}",
-			}
+			},
 			{{- end }}
 			{{- if .Oauth }}
 			oauth: {
 				clientId: "{{ .Oauth.ClientID }}",
 				clientSecret: "{{ .Oauth.ClientSecret }}",
 				url: "{{ .Oauth.URL }}",
-			}
+			},
 			{{- end }}
 	}`)
 }
@@ -153,7 +153,7 @@ func (g *Graphqlizer) CSRFTokenCredentialRequestAuthInputToGQL(in *graphql.CSRFT
 			additionalHeaders : {{ HTTPHeadersToGQL .AdditionalHeaders }},
 			{{- end }}
 			{{- if .AdditionalQueryParams }}
-			additionalQueryParams : {{ QueryParamsToGQL .AdditionalQueryParams }}
+			additionalQueryParams : {{ QueryParamsToGQL .AdditionalQueryParams }},
 			{{- end }}
 	}`)
 }
@@ -179,7 +179,7 @@ func (g *Graphqlizer) LabelsToGQL(in graphql.Labels) (string, error) {
 			{{$k}}: [
 				{{- range $i,$j := $v }}
 					{{- if $i}},{{- end}}"{{$j}}"
-				{{- end }} ]
+				{{- end }} ],
 		{{- end}}
 	}`)
 }
@@ -211,7 +211,7 @@ func (g *Graphqlizer) WebhookInputToGQL(in *graphql.WebhookInput) (string, error
 		type: {{.Type}},
 		url: "{{.URL }}",
 		{{- if .Auth }} 
-		auth: {{- AuthInputToGQL .Auth }}
+		auth: {{- AuthInputToGQL .Auth }},
 		{{- end }}
 
 	}`)
@@ -264,7 +264,7 @@ func (g *Graphqlizer) EventAPISpecInputToGQL(in graphql.EventAPISpecInput) (stri
 		{{- if .FetchRequest }}
 		fetchRequest: {{- FetchRequesstInputToGQL .FetchRequest }},
 		{{- end }}
-		format: {{.Format}}
+		format: {{.Format}},
 	}`)
 }
 
@@ -291,7 +291,7 @@ func (g *Graphqlizer) VersionInputToGQL(in graphql.VersionInput) (string, error)
 		deprecatedSince: "{{.DeprecatedSince}}",
 		{{- end}}
 		{{- if .ForRemoval }}
-		forRemoval: {{.ForRemoval }}
+		forRemoval: {{.ForRemoval }},
 		{{- end }}
 	}`)
 }

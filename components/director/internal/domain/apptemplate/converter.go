@@ -127,15 +127,15 @@ func (c *converter) FromEntity(entity *Entity) (*model.ApplicationTemplate, erro
 	}, nil
 }
 
-func (c *converter) graphqliseApplicationCreateInput(applicationInput string) (string, error) {
-	var jsonAppInput graphql.ApplicationCreateInput
-	err := json.Unmarshal([]byte(applicationInput), &jsonAppInput)
+func (c *converter) graphqliseApplicationCreateInput(jsonAppInput string) (string, error) {
+	var gqlAppCreateInput graphql.ApplicationCreateInput
+	err := json.Unmarshal([]byte(jsonAppInput), &gqlAppCreateInput)
 	if err != nil {
 		return "", errors.Wrap(err, "while unmarshaling application create input")
 	}
 
 	g := Graphqlizer{}
-	gqlAppInput, err := g.ApplicationCreateInputToGQL(jsonAppInput)
+	gqlAppInput, err := g.ApplicationCreateInputToGQL(gqlAppCreateInput)
 	if err != nil {
 		return "", errors.Wrap(err, "while graphqlising application create input")
 	}

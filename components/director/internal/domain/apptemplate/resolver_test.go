@@ -285,7 +285,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
 	modelAppTemplate := fixModelAppTemplate(testID, testName)
-	modelAppTemplateInput := fixModelAppTemplateInput(testName, fixApplicationCreateInputString())
+	modelAppTemplateInput := fixModelAppTemplateInput(testName, appInputJSONString)
 	gqlAppTemplate := fixGQLAppTemplate(testID, testName)
 	gqlAppTemplateInput := fixGQLAppTemplateInput(testName)
 
@@ -442,7 +442,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
 	modelAppTemplate := fixModelAppTemplate(testID, testName)
-	modelAppTemplateInput := fixModelAppTemplateInput(testName, fixApplicationCreateInputString())
+	modelAppTemplateInput := fixModelAppTemplateInput(testName, appInputJSONString)
 	gqlAppTemplate := fixGQLAppTemplate(testID, testName)
 	gqlAppTemplateInput := fixGQLAppTemplateInput(testName)
 

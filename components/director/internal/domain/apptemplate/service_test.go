@@ -35,7 +35,7 @@ func TestService_Create(t *testing.T) {
 	}{
 		{
 			Name:  "Success",
-			Input: fixModelAppTemplateInput(testName, fixApplicationCreateInputString()),
+			Input: fixModelAppTemplateInput(testName, appInputJSONString),
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Create", ctx, *modelAppTemplate).Return(nil).Once()
@@ -65,7 +65,7 @@ func TestService_Create(t *testing.T) {
 		},
 		{
 			Name:  "Error when creating application template",
-			Input: fixModelAppTemplateInput(testName, fixApplicationCreateInputString()),
+			Input: fixModelAppTemplateInput(testName, appInputJSONString),
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Create", ctx, *modelAppTemplate).Return(testError).Once()
@@ -299,7 +299,7 @@ func TestService_Update(t *testing.T) {
 	}{
 		{
 			Name:  "Success",
-			Input: fixModelAppTemplateInput(testName, fixApplicationCreateInputString()),
+			Input: fixModelAppTemplateInput(testName, appInputJSONString),
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Update", ctx, *modelAppTemplate).Return(nil).Once()
@@ -328,7 +328,7 @@ func TestService_Update(t *testing.T) {
 		},
 		{
 			Name:  "Error when updating application template",
-			Input: fixModelAppTemplateInput(testName, fixApplicationCreateInputString()),
+			Input: fixModelAppTemplateInput(testName, appInputJSONString),
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Update", ctx, *modelAppTemplate).Return(testError).Once()

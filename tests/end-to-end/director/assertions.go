@@ -226,9 +226,6 @@ func assertApplicationTemplate(t *testing.T, in graphql.ApplicationTemplateInput
 
 	gqlAppInput = strings.Replace(gqlAppInput, "\t", "", -1)
 	gqlAppInput = strings.Replace(gqlAppInput, "\n", "", -1)
-	if gqlAppInput[len(gqlAppInput)-2:len(gqlAppInput)-1] == "," {
-		gqlAppInput = gqlAppInput[:len(gqlAppInput)-2] + string("") + gqlAppInput[len(gqlAppInput)-1:]
-	}
 
 	assert.Equal(t, gqlAppInput, actualApplicationTemplate.ApplicationInput)
 	assertApplicationTemplatePlaceholder(t, in.Placeholders, actualApplicationTemplate.Placeholders)

@@ -4,7 +4,6 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -19,12 +18,14 @@ import (
 )
 
 const (
-	testTenant      = "tnt"
-	testID          = "foo"
-	testName        = "bar"
-	testDescription = "Lorem ipsum"
-	testPageSize    = 3
-	testCursor      = ""
+	testTenant         = "tnt"
+	testID             = "foo"
+	testName           = "bar"
+	testDescription    = "Lorem ipsum"
+	testPageSize       = 3
+	testCursor         = ""
+	appInputJSONString = `{"Name":"foo","Description":"Lorem ipsum","Labels":{"test":["val","val2"]},"HealthCheckURL":"https://foo.bar","Webhooks":[{"Type":"","URL":"webhook1.foo.bar","Auth":null},{"Type":"","URL":"webhook2.foo.bar","Auth":null}],"Apis":[{"Name":"api1","Description":null,"TargetURL":"foo.bar","Group":null,"Spec":null,"Version":null,"DefaultAuth":null},{"Name":"api2","Description":null,"TargetURL":"foo.bar2","Group":null,"Spec":null,"Version":null,"DefaultAuth":null}],"EventAPIs":[{"Name":"event1","Description":"Sample","Spec":{"Data":"data","Type":"ASYNC_API","Format":"JSON"},"Group":null,"Version":null},{"Name":"event2","Description":"Sample","Spec":{"Data":"data2","Type":"ASYNC_API","Format":"JSON"},"Group":null,"Version":null}],"Documents":[{"Title":"","DisplayName":"doc1","Description":"","Format":"","Kind":"test","Data":null,"FetchRequest":null},{"Title":"","DisplayName":"doc2","Description":"","Format":"","Kind":"test","Data":null,"FetchRequest":null}],"IntegrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
+	appInputGQLString  = `{name: "foo",description: "Lorem ipsum",labels: {test: ["val","val2" ],},webhooks: [ {type: ,url: "webhook1.foo.bar",}, {type: ,url: "webhook2.foo.bar",} ],healthCheckURL: "https://foo.bar",apis: [ {name: "api1",targetURL: "foo.bar",}, {name: "api2",targetURL: "foo.bar2",}],eventAPIs: [ {name: "event1",description: "Sample",spec: {data: "data",eventSpecType: ,format: JSON,},}, {name: "event2",description: "Sample",spec: {data: "data2",eventSpecType: ,format: JSON,},}], documents: [{title: "",displayName: "doc1",description: "",format: ,kind: "test",},{title: "",displayName: "doc2",description: "",format: ,kind: "test",} ],integrationSystemID: "iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii",}`
 )
 
 var (
@@ -34,13 +35,12 @@ var (
 
 func fixModelAppTemplate(id, name string) *model.ApplicationTemplate {
 	desc := testDescription
-	appInputString := fixApplicationCreateInputString()
 
 	return &model.ApplicationTemplate{
 		ID:                   id,
 		Name:                 name,
 		Description:          &desc,
-		ApplicationInputJSON: appInputString,
+		ApplicationInputJSON: appInputJSONString,
 		Placeholders:         fixModelPlaceholders(),
 		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
 	}
@@ -53,7 +53,7 @@ func fixGQLAppTemplate(id, name string) *graphql.ApplicationTemplate {
 		ID:               id,
 		Name:             name,
 		Description:      &desc,
-		ApplicationInput: fixApplicationCreateInputGraphqlized(),
+		ApplicationInput: appInputGQLString,
 		Placeholders:     fixGQLPlaceholders(),
 		AccessLevel:      graphql.ApplicationTemplateAccessLevelGlobal,
 	}
@@ -125,14 +125,6 @@ func fixEntityAppTemplate(t *testing.T, id, name string) *apptemplate.Entity {
 		PlaceholdersJSON:     repo.NewValidNullableString(string(marshalledPlaceholders)),
 		AccessLevel:          string(model.GlobalApplicationTemplateAccessLevel),
 	}
-}
-
-func fixApplicationCreateInputString() string {
-	return fmt.Sprintf(`{"Name":"foo","Description":"%s","Labels":{"test":["val","val2"]},"HealthCheckURL":"https://foo.bar","Webhooks":[{"Type":"","URL":"webhook1.foo.bar","Auth":null},{"Type":"","URL":"webhook2.foo.bar","Auth":null}],"Apis":[{"Name":"api1","Description":null,"TargetURL":"foo.bar","Group":null,"Spec":null,"Version":null,"DefaultAuth":null},{"Name":"api2","Description":null,"TargetURL":"foo.bar2","Group":null,"Spec":null,"Version":null,"DefaultAuth":null}],"EventAPIs":[{"Name":"event1","Description":"Sample","Spec":{"Data":"data","Type":"ASYNC_API","Format":"JSON"},"Group":null,"Version":null},{"Name":"event2","Description":"Sample","Spec":{"Data":"data2","Type":"ASYNC_API","Format":"JSON"},"Group":null,"Version":null}],"Documents":[{"Title":"","DisplayName":"doc1","Description":"","Format":"","Kind":"test","Data":null,"FetchRequest":null},{"Title":"","DisplayName":"doc2","Description":"","Format":"","Kind":"test","Data":null,"FetchRequest":null}],"IntegrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`, testDescription)
-}
-
-func fixApplicationCreateInputGraphqlized() string {
-	return `{name: "foo",description: "Lorem ipsum",labels: {test: ["val","val2" ]},webhooks: [ {type: ,url: "webhook1.foo.bar",}, {type: ,url: "webhook2.foo.bar",} ],healthCheckURL: "https://foo.bar"apis: [ {name: "api1",targetURL: "foo.bar",}, {name: "api2",targetURL: "foo.bar2",}]eventAPIs: [ {name: "event1",description: "Sample",spec: {data: "data",eventSpecType: ,format: JSON},}, {name: "event2",description: "Sample",spec: {data: "data2",eventSpecType: ,format: JSON},}] documents: [{title: "",displayName: "doc1",description: "",format: ,kind: "test",},{title: "",displayName: "doc2",description: "",format: ,kind: "test",} ]integrationSystemID: "iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii",}`
 }
 
 func fixModelPlaceholders() []model.ApplicationTemplatePlaceholder {
