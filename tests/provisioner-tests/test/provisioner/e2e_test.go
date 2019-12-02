@@ -28,6 +28,9 @@ const (
 )
 
 func Test_E2e(t *testing.T) {
+	// TODO: Support for GCP was dropped and for now the GCP tests are skipped
+	t.SkipNow()
+
 	logrus.Infof("Starting tests. Test id: %s", testSuite.TestId)
 
 	runtimeId := uuid.New().String()
