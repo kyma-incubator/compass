@@ -194,7 +194,7 @@ func (r *service) startProvisioning(operationID string, cluster model.Cluster, f
 		return
 	}
 
-	log.Infof("Kyma installed successfully on %s Runtime", cluster.ID)
+	log.Infof("Kyma installed successfully on %s Runtime. Operation %s finished. Setting status to success.", cluster.ID, operationID)
 
 	updateOperationStatus(func() error {
 		return r.persistenceService.SetOperationAsSucceeded(operationID)
@@ -205,18 +205,16 @@ func (r *service) startDeprovisioning(operationID string, cluster model.Cluster,
 	defer close(finished)
 	log.Infof("Deprovisioning runtime %s is starting", cluster.ID)
 	err := r.hydroform.DeprovisionCluster(cluster)
-
 	if err != nil {
 		log.Errorf("Deprovisioning runtime %s failed: %s", cluster.ID, err.Error())
-		updateOperationStatus(func() error {
-			return r.persistenceService.SetOperationAsFailed(operationID, err.Error())
-		})
-	} else {
-		log.Infof("Deprovisioning runtime %s finished successfully", cluster.ID)
-		updateOperationStatus(func() error {
-			return r.persistenceService.SetOperationAsSucceeded(operationID)
-		})
+		r.setOperationAsFailed(operationID, err.Error())
+		return
 	}
+
+	log.Infof("Deprovisioning runtime %s finished successfully. Operation %s finished. Setting status to success.", cluster.ID, operationID)
+	updateOperationStatus(func() error {
+		return r.persistenceService.SetOperationAsSucceeded(operationID)
+	})
 }
 
 func (r *service) setOperationAsFailed(operationID, message string) {

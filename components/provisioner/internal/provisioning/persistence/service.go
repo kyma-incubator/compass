@@ -48,23 +48,10 @@ func (ps persistenceService) GetRuntimeStatus(runtimeID string) (model.RuntimeSt
 		return model.RuntimeStatus{}, err
 	}
 
-	clusterConfig, err := session.GetProviderConfig(runtimeID)
+	cluster, err := ps.GetClusterData(runtimeID)
 	if err != nil {
 		return model.RuntimeStatus{}, err
 	}
-
-	kymaConfig, err := session.GetKymaConfig(runtimeID)
-	if err != nil {
-		return model.RuntimeStatus{}, err
-	}
-
-	cluster, err := session.GetCluster(runtimeID)
-	if err != nil {
-		return model.RuntimeStatus{}, err
-	}
-
-	cluster.KymaConfig = kymaConfig
-	cluster.ClusterConfig = clusterConfig
 
 	return model.RuntimeStatus{
 		LastOperationStatus:  operation,
@@ -172,7 +159,25 @@ func (ps persistenceService) setOperationStarted(dbSession dbsession.WriteSessio
 func (ps persistenceService) GetClusterData(runtimeID string) (model.Cluster, dberrors.Error) {
 	session := ps.dbSessionFactory.NewReadSession()
 
-	return session.GetCluster(runtimeID)
+	clusterConfig, err := session.GetProviderConfig(runtimeID)
+	if err != nil {
+		return model.Cluster{}, err
+	}
+
+	kymaConfig, err := session.GetKymaConfig(runtimeID)
+	if err != nil {
+		return model.Cluster{}, err
+	}
+
+	cluster, err := session.GetCluster(runtimeID)
+	if err != nil {
+		return model.Cluster{}, err
+	}
+
+	cluster.KymaConfig = kymaConfig
+	cluster.ClusterConfig = clusterConfig
+
+	return cluster, nil
 }
 
 func (ps persistenceService) GetOperation(operationID string) (model.Operation, error) {

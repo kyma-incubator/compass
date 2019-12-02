@@ -472,7 +472,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 		assert.Error(t, err)
 	})
 
-	t.Run("Should fail to get runtime status when getting cluster config failed", func(t *testing.T) {
+	t.Run("Should fail to get runtime status when getting provider config failed", func(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		readSessionMock := &sessionMocks.ReadSession{}
@@ -490,7 +490,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 		assert.Error(t, err)
 	})
 
-	t.Run("Should fail to get runtime status when getting cluster config failed", func(t *testing.T) {
+	t.Run("Should fail to get runtime status when getting kyma config failed", func(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		readSessionMock := &sessionMocks.ReadSession{}
