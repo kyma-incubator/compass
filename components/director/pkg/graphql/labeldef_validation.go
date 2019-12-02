@@ -9,9 +9,9 @@ import (
 
 func (i LabelDefinitionInput) Validate() error {
 	return validation.Errors{
-		"ValidSchema": i.validateSchema(),
-		"Key":         validation.Validate(i.Key, validation.Required, validation.Length(0, 256)),
-		"Schema":      validation.Validate(i.Schema),
+		"rule.ValidSchema": i.validateSchema(),
+		"Key":              validation.Validate(i.Key, validation.Required, validation.Length(0, 256)),
+		"Schema":           validation.Validate(i.Schema),
 	}.Filter()
 }
 
