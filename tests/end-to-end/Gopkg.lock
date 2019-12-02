@@ -115,6 +115,7 @@
   digest = "1:160492e60a907962bde613623910fd343f68cba73319d22ae7b4c6b9e385e8d0"
   name = "github.com/kyma-incubator/compass"
   packages = [
+    "components/connector/pkg/graphql/externalschema",
     "components/director/pkg/graphql",
     "components/director/pkg/scalar",
   ]
@@ -273,6 +274,7 @@
     "github.com/dgrijalva/jwt-go",
     "github.com/google/uuid",
     "github.com/kisielk/errcheck",
+    "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
     "github.com/machinebox/graphql",
     "github.com/pkg/errors",
