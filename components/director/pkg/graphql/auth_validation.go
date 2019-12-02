@@ -23,7 +23,7 @@ func (i AuthInput) Validate() error {
 
 func (i CredentialDataInput) Validate() error {
 	return validation.Errors{
-		"ExactlyOneNotNil": inputvalidation.ValidateExactlyOneNotNil(
+		"rule.ExactlyOneNotNil": inputvalidation.ValidateExactlyOneNotNil(
 			"exactly one credential input has to be specified",
 			i.Basic, i.Oauth,
 		),
@@ -48,13 +48,9 @@ func (i OAuthCredentialDataInput) Validate() error {
 }
 
 func (i CredentialRequestAuthInput) Validate() error {
-	return validation.Errors{
-		"ExactlyOneNotNil": inputvalidation.ValidateExactlyOneNotNil(
-			"exactly one credential input has to be specified",
-			i.Csrf,
-		),
-		"Csrf": validation.Validate(i.Csrf),
-	}.Filter()
+	return validation.ValidateStruct(&i,
+		validation.Field(&i.Csrf, validation.Required),
+	)
 }
 
 func (i CSRFTokenCredentialRequestAuthInput) Validate() error {
