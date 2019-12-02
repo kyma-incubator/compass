@@ -71,14 +71,17 @@ func (s service) ProvisionCluster(clusterData model.Cluster) (ClusterInfo, error
 		return ClusterInfo{}, errors.WithMessagef(err, "Cluster %s provisioning failed", clusterData.ID)
 	}
 
-	var status *types.ClusterStatus
+	log.Infof("Cluster provisioned for %s Runtime", clusterData.ID)
 
+	var status *types.ClusterStatus
 	//TODO Change this temporary solution when Hydroform handles Provisioning status correctly
 	err = util.WaitForFunction(interval, timeout, func() (bool, error) {
 		status, err = s.hydroformClient.Status(cluster, provider)
 		if err != nil {
 			return false, err
 		}
+		log.Infof("Cluster status for %s Runtime: %s", clusterData.ID, status.Phase)
+
 		return status.Phase == types.Provisioned, nil
 	})
 	if err != nil {

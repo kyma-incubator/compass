@@ -64,6 +64,7 @@ func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, e
 	operationID, _, err := r.provisioning.DeprovisionRuntime(id)
 	if err != nil {
 		log.Errorf("Failed to provision runtime %s: %s", id, err)
+		return "", err
 	}
 	log.Infof("Deprovisioning stared for %s runtime. Operation id %s", id, operationID)
 
