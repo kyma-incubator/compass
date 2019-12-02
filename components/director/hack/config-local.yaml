@@ -13,8 +13,6 @@ graphql:
     healthChecks: ["health_checks:read"]
     integrationSystem: ["integration_system:read"]
     integrationSystems: ["integration_system:read"]
-    api: ["application:read"]
-    eventAPI: ["application:read"]
 
   mutation:
     createApplication: ["application:write"]
@@ -71,4 +69,6 @@ clientCredentialsRegistrationScopes:
   integration_system:
     - "application:read"
     - "application:write"
+    - "application_template:read"
+    - "application_template:write"
     - "integration_system:read"

@@ -22,6 +22,16 @@ func fixCreateApplicationRequest(applicationInGQL string) *gcli.Request {
 			applicationInGQL, tc.gqlFieldsProvider.ForApplication()))
 }
 
+func fixCreateApplicationTemplateRequest(applicationTemplateInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: createApplicationTemplate(in: %s) {
+					%s
+				}
+			}`,
+			applicationTemplateInGQL, tc.gqlFieldsProvider.ForApplicationTemplate()))
+}
+
 func fixCreateRuntimeRequest(runtimeInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
@@ -79,6 +89,15 @@ func fixUpdateApplicationRequest(id, updateInputGQL string) *gcli.Request {
     					%s
 					}
 				}`, id, updateInputGQL, tc.gqlFieldsProvider.ForApplication()))
+}
+
+func fixUpdateApplicationTemplateRequest(id, updateInputGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+  				result: updateApplicationTemplate(id: "%s", in: %s) {
+    					%s
+					}
+				}`, id, updateInputGQL, tc.gqlFieldsProvider.ForApplicationTemplate()))
 }
 
 func fixUpdateLabelDefinitionRequest(ldInputGQL string) *gcli.Request {
@@ -254,6 +273,15 @@ func fixApplicationRequest(applicationID string) *gcli.Request {
 			}`, applicationID, tc.gqlFieldsProvider.ForApplication()))
 }
 
+func fixApplicationTemplateRequest(applicationTemplateID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: applicationTemplate(id: "%s") {
+					%s
+				}
+			}`, applicationTemplateID, tc.gqlFieldsProvider.ForApplicationTemplate()))
+}
+
 func fixLabelDefinitionsRequest() *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
@@ -272,6 +300,16 @@ func fixApplications(labelFilterInGQL string, first int, after string) *gcli.Req
 					}
 				}`,
 			labelFilterInGQL, first, after, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication())))
+}
+
+func fixApplicationTemplates(first int, after string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: applicationTemplates(first: %d, after: "%s") {
+						%s
+					}
+				}`,
+			first, after, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplicationTemplate())))
 }
 
 func fixRuntimes(labelFilterInGQL string, first int, after string) *gcli.Request {
@@ -366,6 +404,15 @@ func fixDeleteSystemAuthForIntegrationSystem(authID string) *gcli.Request {
 					%s
 				}
 			}`, authID, tc.gqlFieldsProvider.ForSystemAuth()))
+}
+
+func fixDeleteApplicationTemplate(appTemplateID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: deleteApplicationTemplate(id: "%s") {
+					%s
+				}
+			}`, appTemplateID, tc.gqlFieldsProvider.ForApplicationTemplate()))
 }
 
 func removeDoubleQuotesFromJSONKeys(in string) string {

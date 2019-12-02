@@ -2825,8 +2825,15 @@ type Query {
 	applicationsForRuntime(runtimeID: ID!, first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applicationsForRuntime")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
+	
+	**Examples**
+	- [query application templates](examples/query-application-templates/query-application-templates.graphql)
 	"""
 	applicationTemplates(first: Int = 100, after: PageCursor): ApplicationTemplatePage! @hasScopes(path: "graphql.query.applicationTemplates")
+	"""
+	**Examples**
+	- [query application template](examples/query-application-template/query-application-template.graphql)
+	"""
 	applicationTemplate(id: ID!): ApplicationTemplate @hasScopes(path: "graphql.query.applicationTemplate")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
@@ -2883,8 +2890,20 @@ type Mutation {
 	- [delete application](examples/delete-application/delete-application.graphql)
 	"""
 	deleteApplication(id: ID!): Application! @hasScopes(path: "graphql.mutation.deleteApplication")
+	"""
+	**Examples**
+	- [create application template](examples/create-application-template/create-application-template.graphql)
+	"""
 	createApplicationTemplate(in: ApplicationTemplateInput!): ApplicationTemplate! @hasScopes(path: "graphql.mutation.createApplicationTemplate")
+	"""
+	**Examples**
+	- [update application template](examples/update-application-template/update-application-template.graphql)
+	"""
 	updateApplicationTemplate(id: ID!, in: ApplicationTemplateInput!): ApplicationTemplate! @hasScopes(path: "graphql.mutation.updateApplicationTemplate")
+	"""
+	**Examples**
+	- [delete application template](examples/delete-application-template/delete-application-template.graphql)
+	"""
 	deleteApplicationTemplate(id: ID!): ApplicationTemplate! @hasScopes(path: "graphql.mutation.deleteApplicationTemplate")
 	"""
 	**Examples**
