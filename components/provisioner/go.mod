@@ -3,7 +3,7 @@ module github.com/kyma-incubator/compass/components/provisioner
 go 1.13
 
 require (
-	github.com/99designs/gqlgen v0.10.2
+	github.com/99designs/gqlgen v0.9.0
 	github.com/evanphx/json-patch v4.2.0+incompatible // indirect
 	github.com/gocraft/dbr/v2 v2.6.3
 	github.com/gogo/protobuf v1.2.2-0.20190723190241-65acae22fc9d // indirect

@@ -102,7 +102,13 @@ func (r readSession) GetProviderConfig(runtimeID string) (model.ProviderConfigur
 		LoadOne(&gardenerConfig)
 
 	if err == nil {
-		return gardenerConfig, nil
+		gardenerConfigProviderConfig, err := model.NewGardenerProviderConfigFromJSON(gardenerConfig.ProviderSpecificConfig)
+		if err != nil {
+			return model.GardenerConfig{}, dberrors.Internal("Failed to decode Gardener provider config fetched from database")
+		}
+
+		gardenerConfig.GardenerConfig.GardenerProviderConfig = gardenerConfigProviderConfig
+		return gardenerConfig.GardenerConfig, nil
 	}
 
 	if err != dbr.ErrNotFound {

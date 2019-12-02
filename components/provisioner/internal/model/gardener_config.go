@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+
 	"github.com/kyma-incubator/hydroform/types"
 
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
@@ -76,6 +78,29 @@ func (c ProviderSpecificConfig) RawJSON() string {
 type GardenerProviderConfig interface {
 	AsMap() (map[string]interface{}, error)
 	RawJSON() string
+	AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig
+}
+
+func NewGardenerProviderConfigFromJSON(jsonData string) (GardenerProviderConfig, error) {
+	var gcpProviderConfig gqlschema.GCPProviderConfigInput
+	err := util.DecodeJson(jsonData, &gcpProviderConfig)
+	if err == nil {
+		return &GCPGardenerConfig{input: &gcpProviderConfig, ProviderSpecificConfig: ProviderSpecificConfig(jsonData)}, nil
+	}
+
+	var azureProviderConfig gqlschema.AzureProviderConfigInput
+	err = util.DecodeJson(jsonData, &azureProviderConfig)
+	if err == nil {
+		return &AzureGardenerConfig{input: &azureProviderConfig, ProviderSpecificConfig: ProviderSpecificConfig(jsonData)}, nil
+	}
+
+	var awsProviderConfig gqlschema.AWSProviderConfigInput
+	err = util.DecodeJson(jsonData, &awsProviderConfig)
+	if err == nil {
+		return &AWSGardenerConfig{input: &awsProviderConfig, ProviderSpecificConfig: ProviderSpecificConfig(jsonData)}, nil
+	}
+
+	return nil, errors.New("json data does not match any of Gardener providers")
 }
 
 type GCPGardenerConfig struct {
@@ -108,6 +133,10 @@ func (c *GCPGardenerConfig) AsMap() (map[string]interface{}, error) {
 	}, nil
 }
 
+func (c GCPGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig {
+	return gqlschema.GCPProviderConfig{Zone: &c.input.Zone}
+}
+
 type AzureGardenerConfig struct {
 	ProviderSpecificConfig
 	input *gqlschema.AzureProviderConfigInput `db:"-"`
@@ -125,7 +154,7 @@ func NewAzureGardenerConfig(input *gqlschema.AzureProviderConfigInput) (*AzureGa
 	}, nil
 }
 
-func (c AzureGardenerConfig) AsMap() (map[string]interface{}, error) {
+func (c *AzureGardenerConfig) AsMap() (map[string]interface{}, error) {
 	if c.input == nil {
 		err := json.Unmarshal([]byte(c.ProviderSpecificConfig), &c.input)
 		if err != nil {
@@ -136,6 +165,10 @@ func (c AzureGardenerConfig) AsMap() (map[string]interface{}, error) {
 	return map[string]interface{}{
 		"vnetcidr": c.input.VnetCidr,
 	}, nil
+}
+
+func (c AzureGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig {
+	return gqlschema.AzureProviderConfig{VnetCidr: &c.input.VnetCidr}
 }
 
 type AWSGardenerConfig struct {
@@ -169,4 +202,13 @@ func (c *AWSGardenerConfig) AsMap() (map[string]interface{}, error) {
 		"vpccidr":       c.input.VpcCidr,
 		"publicscidr":   c.input.PublicCidr,
 	}, nil
+}
+
+func (c AWSGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig {
+	return gqlschema.AWSProviderConfig{
+		Zone:         &c.input.Zone,
+		VpcCidr:      &c.input.VpcCidr,
+		PublicCidr:   &c.input.PublicCidr,
+		InternalCidr: &c.input.InternalCidr,
+	}
 }

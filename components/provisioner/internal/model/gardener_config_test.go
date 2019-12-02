@@ -3,6 +3,8 @@ package model
 import (
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/require"
 
@@ -136,6 +138,74 @@ func TestGardenerConfig_ToHydroformConfiguration(t *testing.T) {
 	}
 }
 
+func Test_NewGardenerConfigFromJSON(t *testing.T) {
+
+	gcpConfigJSON := `{"zone":"zone"}`
+	azureConfigJSON := `{"vnetCidr":"10.10.11.11/255"}`
+	awsConfigJSON := `{"zone":"zone","vpcCidr":"10.10.11.11/255","publicCidr":"10.10.11.12/255","internalCidr":"10.10.11.13/255"}`
+
+	for _, testCase := range []struct {
+		description                    string
+		jsonData                       string
+		expectedConfig                 GardenerProviderConfig
+		expectedProviderSpecificConfig gqlschema.ProviderSpecificConfig
+	}{
+		{
+			description: "should create GCP Gardener config",
+			jsonData:    gcpConfigJSON,
+			expectedConfig: &GCPGardenerConfig{
+				ProviderSpecificConfig: ProviderSpecificConfig(gcpConfigJSON),
+				input:                  &gqlschema.GCPProviderConfigInput{Zone: "zone"},
+			},
+			expectedProviderSpecificConfig: gqlschema.GCPProviderConfig{Zone: util.StringPtr("zone")},
+		},
+		{
+			description: "should create Azure Gardener config",
+			jsonData:    azureConfigJSON,
+			expectedConfig: &AzureGardenerConfig{
+				ProviderSpecificConfig: ProviderSpecificConfig(azureConfigJSON),
+				input:                  &gqlschema.AzureProviderConfigInput{VnetCidr: "10.10.11.11/255"},
+			},
+			expectedProviderSpecificConfig: gqlschema.AzureProviderConfig{VnetCidr: util.StringPtr("10.10.11.11/255")},
+		},
+		{
+			description: "should create AWS Gardener config",
+			jsonData:    awsConfigJSON,
+			expectedConfig: &AWSGardenerConfig{
+				ProviderSpecificConfig: ProviderSpecificConfig(awsConfigJSON),
+				input: &gqlschema.AWSProviderConfigInput{
+					Zone:         "zone",
+					VpcCidr:      "10.10.11.11/255",
+					PublicCidr:   "10.10.11.12/255",
+					InternalCidr: "10.10.11.13/255",
+				},
+			},
+			expectedProviderSpecificConfig: gqlschema.AWSProviderConfig{
+				Zone:         util.StringPtr("zone"),
+				VpcCidr:      util.StringPtr("10.10.11.11/255"),
+				PublicCidr:   util.StringPtr("10.10.11.12/255"),
+				InternalCidr: util.StringPtr("10.10.11.13/255"),
+			},
+		},
+	} {
+		t.Run(testCase.description, func(t *testing.T) {
+			// when
+			gardenerProviderConfig, err := NewGardenerProviderConfigFromJSON(testCase.jsonData)
+
+			// then
+			require.NoError(t, err)
+			assert.Equal(t, testCase.expectedConfig, gardenerProviderConfig)
+
+			// when
+			providerSpecificConfig := gardenerProviderConfig.AsProviderSpecificConfig()
+
+			// then
+			assert.Equal(t, testCase.expectedProviderSpecificConfig, providerSpecificConfig)
+		})
+	}
+
+}
+
 func Test_AsMap_Error(t *testing.T) {
 
 	for _, testCase := range []struct {
@@ -163,7 +233,6 @@ func Test_AsMap_Error(t *testing.T) {
 			require.Error(t, err)
 		})
 	}
-
 }
 
 func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) GardenerConfig {

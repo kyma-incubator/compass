@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 
 	log "github.com/sirupsen/logrus"
 
@@ -19,7 +21,7 @@ import (
 const connStringFormat string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
 
 type config struct {
-	Address               string `envconfig:"default=127.0.0.1:3050"`
+	Address               string `envconfig:"default=127.0.0.1:3000"`
 	APIEndpoint           string `envconfig:"default=/graphql"`
 	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
 	CredentialsNamespace  string `envconfig:"default=compass-system"`

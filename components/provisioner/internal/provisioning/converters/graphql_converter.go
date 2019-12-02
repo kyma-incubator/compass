@@ -2,7 +2,6 @@ package converters
 
 import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
@@ -76,7 +75,7 @@ func (c graphQLConverter) clusterConfigToGraphQLConfig(config interface{}) gqlsc
 
 func (c graphQLConverter) gardenerConfigToGraphQLConfig(config model.GardenerConfig) gqlschema.ClusterConfig {
 
-	providerSpecificConfig := c.providerSpecificConfigToGQLConfig(config.GardenerProviderConfig.RawJSON())
+	providerSpecificConfig := config.GardenerProviderConfig.AsProviderSpecificConfig()
 
 	return gqlschema.GardenerConfig{
 		Name:                   &config.Name,
@@ -97,27 +96,6 @@ func (c graphQLConverter) gardenerConfigToGraphQLConfig(config model.GardenerCon
 		MaxUnavailable:         &config.MaxUnavailable,
 		ProviderSpecificConfig: providerSpecificConfig,
 	}
-}
-
-func (c graphQLConverter) providerSpecificConfigToGQLConfig(config string) gqlschema.ProviderSpecificConfig {
-	var gcpProviderConfig gqlschema.GCPProviderConfig
-	err := util.DecodeJson(config, &gcpProviderConfig)
-	if err == nil {
-		return gcpProviderConfig
-	}
-
-	var azureProviderConfig gqlschema.AzureProviderConfig
-	err = util.DecodeJson(config, &azureProviderConfig)
-	if err == nil {
-		return azureProviderConfig
-	}
-
-	var awsProviderConfig gqlschema.AWSProviderConfig
-	err = util.DecodeJson(config, &awsProviderConfig)
-	if err == nil {
-		return awsProviderConfig
-	}
-	return nil
 }
 
 func (c graphQLConverter) gcpConfigToGraphQLConfig(config model.GCPConfig) gqlschema.ClusterConfig {

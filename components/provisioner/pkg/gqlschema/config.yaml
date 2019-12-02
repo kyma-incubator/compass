@@ -17,6 +17,4 @@ struct_tag: json
 # graphql. These normally come from the db or a remote api.
 
 models:
-  AWSProviderConfigInput:
-    model: "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema.AWSProviderConfig"
 

@@ -43,6 +43,7 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, id string, config gqlsc
 	operationID, _, err := r.provisioning.ProvisionRuntime(id, config)
 	if err != nil {
 		log.Errorf("Failed to provision runtime %s: %s", id, err)
+		return "", err
 	}
 	log.Infof("Provisioning stared for %s runtime. Operation id %s", id, operationID)
 

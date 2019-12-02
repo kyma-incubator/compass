@@ -3,6 +3,8 @@ package converters
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
@@ -161,6 +163,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		unavailable := 1
 		secretName := "secretName"
 
+		gardenerProviderConfig, err := model.NewGardenerProviderConfigFromJSON(`{"Zone":"zone"}`)
+		require.NoError(t, err)
+
 		runtimeStatus := model.RuntimeStatus{
 			LastOperationStatus: model.Operation{
 				ID:        "5f6e3ab6-d803-430a-8fac-29c9c9b4485a",
@@ -172,25 +177,23 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 			RuntimeConnectionStatus: model.RuntimeAgentConnectionStatusDisconnected,
 			RuntimeConfiguration: model.Cluster{
 				ClusterConfig: model.GardenerConfig{
-					Name:              name,
-					ProjectName:       project,
-					NodeCount:         nodes,
-					DiskType:          disk,
-					MachineType:       machine,
-					Region:            region,
-					VolumeSizeGB:      volume,
-					KubernetesVersion: kubeversion,
-					Provider:          provider,
-					Seed:              seed,
-					TargetSecret:      secret,
-					WorkerCidr:        cidr,
-					AutoScalerMax:     autoScMax,
-					AutoScalerMin:     autoScMin,
-					MaxSurge:          surge,
-					MaxUnavailable:    unavailable,
-					GardenerProviderConfig: &model.GCPGardenerConfig{
-						ProviderSpecificConfig: "{\"Zone\":\"zone\"}",
-					},
+					Name:                   name,
+					ProjectName:            project,
+					NodeCount:              nodes,
+					DiskType:               disk,
+					MachineType:            machine,
+					Region:                 region,
+					VolumeSizeGB:           volume,
+					KubernetesVersion:      kubeversion,
+					Provider:               provider,
+					Seed:                   seed,
+					TargetSecret:           secret,
+					WorkerCidr:             cidr,
+					AutoScalerMax:          autoScMax,
+					AutoScalerMin:          autoScMin,
+					MaxSurge:               surge,
+					MaxUnavailable:         unavailable,
+					GardenerProviderConfig: gardenerProviderConfig,
 				},
 				Kubeconfig: &kubeconfig,
 				KymaConfig: model.KymaConfig{
