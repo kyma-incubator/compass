@@ -247,3 +247,8 @@ func (fp *GqlFieldsProvider) ForPlaceholders() interface{} {
 		name
 		description`
 }
+
+func (fp *GqlFieldsProvider) ForEventingConfiguration() interface{} {
+	return `
+		defaultURL`
+}

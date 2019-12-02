@@ -42,6 +42,7 @@ type RootResolver struct {
 	appTemplate *apptemplate.Resolver
 	api         *api.Resolver
 	eventAPI    *eventdef.Resolver
+	eventing    *eventing.Resolver
 	doc         *document.Resolver
 	runtime     *runtime.Resolver
 	healthCheck *healthcheck.Resolver
@@ -112,6 +113,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 		appTemplate: apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter),
 		api:         api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, apiRtmAuthSvc, apiConverter, authConverter, frConverter, apiRtmAuthConverter),
 		eventAPI:    eventdef.NewResolver(transact, eventAPISvc, appSvc, eventAPIConverter, frConverter),
+		eventing:    eventing.NewResolver(transact, eventingSvc),
 		doc:         document.NewResolver(transact, docSvc, appSvc, frConverter),
 		runtime:     runtime.NewResolver(transact, runtimeSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc),
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
@@ -336,11 +338,11 @@ func (r *mutationResolver) UnregisterIntegrationSystem(ctx context.Context, id s
 }
 
 func (r *mutationResolver) SetDefaultEventingForApplication(ctx context.Context, appID string, runtimeID string) (*graphql.ApplicationEventingConfiguration, error) {
-	return nil, nil
+	return r.eventing.SetDefaultEventingForApplication(ctx, appID, runtimeID)
 }
 
 func (r *mutationResolver) DeleteDefaultEventingForApplication(ctx context.Context, appID string) (*graphql.ApplicationEventingConfiguration, error) {
-	return nil, nil
+	return r.eventing.DeleteDefaultEventingForApplication(ctx, appID)
 }
 
 type applicationResolver struct {
