@@ -455,80 +455,115 @@ func TestGetRuntimeStatus(t *testing.T) {
 		assert.Equal(t, expected, runtimeStatus)
 	})
 
-	t.Run("Should fail to get runtime status when getting last operation failed", func(t *testing.T) {
+	for _, testCase := range []struct {
+		description     string
+		sessionMockFunc func(session *sessionMocks.ReadSession)
+	}{
+		{
+			description: "should fail to get Runtime status when getting last operation failed",
+			sessionMockFunc: func(readSessionMock *sessionMocks.ReadSession) {
+				readSessionMock.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.Internal("some error"))
+			},
+		},
+		{
+			description: "should fail to get Runtime status when getting provider config failed",
+			sessionMockFunc: func(readSessionMock *sessionMocks.ReadSession) {
+				readSessionMock.On("GetLastOperation", runtimeID).Return(operation, nil)
+				readSessionMock.On("GetProviderConfig", runtimeID).Return(model.GCPConfig{}, dberrors.Internal("some error"))
+			},
+		},
+		{
+			description: "should fail to get Runtime status when getting kyma config failed",
+			sessionMockFunc: func(readSessionMock *sessionMocks.ReadSession) {
+				readSessionMock.On("GetLastOperation", runtimeID).Return(operation, nil)
+				readSessionMock.On("GetProviderConfig", runtimeID).Return(gcpConfig, nil)
+				readSessionMock.On("GetKymaConfig", runtimeID).Return(model.KymaConfig{}, dberrors.Internal("some error"))
+			},
+		},
+		{
+			description: "should fail to get Runtime status when getting cluster config failed",
+			sessionMockFunc: func(readSessionMock *sessionMocks.ReadSession) {
+				readSessionMock.On("GetLastOperation", runtimeID).Return(operation, nil)
+				readSessionMock.On("GetProviderConfig", runtimeID).Return(gcpConfig, nil)
+				readSessionMock.On("GetKymaConfig", runtimeID).Return(kymaConfig, nil)
+				readSessionMock.On("GetCluster", runtimeID).Return(model.Cluster{}, dberrors.Internal("some error"))
+			},
+		},
+	} {
+		t.Run(testCase.description, func(t *testing.T) {
+			// given
+			sessionFactoryMock := &sessionMocks.Factory{}
+			readSessionMock := &sessionMocks.ReadSession{}
+			uuidGenerator := &uuidMocks.UUIDGenerator{}
+
+			testCase.sessionMockFunc(readSessionMock)
+
+			sessionFactoryMock.On("NewReadSession").Return(readSessionMock, nil)
+
+			// when
+			runtimeService := NewService(sessionFactoryMock, uuidGenerator)
+			_, err := runtimeService.GetRuntimeStatus(runtimeID)
+
+			// then
+			assert.Error(t, err)
+		})
+	}
+}
+
+func TestGetClusterData(t *testing.T) {
+	runtimeID := "runtimeID"
+
+	gcpConfig := model.GCPConfig{
+		Name:        "name",
+		ProjectName: "projectName",
+	}
+
+	kymaConfig := model.KymaConfig{
+		Release: model.Release{
+			Id:            "releaseID",
+			Version:       "1.7",
+			TillerYAML:    "tiller: yaml",
+			InstallerYAML: "installer: yaml",
+		},
+		Modules: []model.KymaConfigModule{
+			{ID: "id1", Module: model.KymaModule("core")},
+			{ID: "id2", Module: model.KymaModule("monitoring")},
+		},
+	}
+
+	cluster := model.Cluster{
+		ID:             runtimeID,
+		Kubeconfig:     nil,
+		TerraformState: []byte("state"),
+	}
+
+	t.Run("Should get cluster data", func(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		readSessionMock := &sessionMocks.ReadSession{}
 		uuidGenerator := &uuidMocks.UUIDGenerator{}
 
-		readSessionMock.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.Internal("some error"))
-		sessionFactoryMock.On("NewReadSession").Return(readSessionMock, nil)
-
-		// when
-		runtimeService := NewService(sessionFactoryMock, uuidGenerator)
-		_, err := runtimeService.GetRuntimeStatus(runtimeID)
-
-		// then
-		assert.Error(t, err)
-	})
-
-	t.Run("Should fail to get runtime status when getting provider config failed", func(t *testing.T) {
-		// given
-		sessionFactoryMock := &sessionMocks.Factory{}
-		readSessionMock := &sessionMocks.ReadSession{}
-		uuidGenerator := &uuidMocks.UUIDGenerator{}
-
-		readSessionMock.On("GetLastOperation", runtimeID).Return(operation, nil)
-		readSessionMock.On("GetProviderConfig", runtimeID).Return(model.GCPConfig{}, dberrors.Internal("some error"))
-		sessionFactoryMock.On("NewReadSession").Return(readSessionMock, nil)
-
-		// when
-		runtimeService := NewService(sessionFactoryMock, uuidGenerator)
-		_, err := runtimeService.GetRuntimeStatus(runtimeID)
-
-		// then
-		assert.Error(t, err)
-	})
-
-	t.Run("Should fail to get runtime status when getting kyma config failed", func(t *testing.T) {
-		// given
-		sessionFactoryMock := &sessionMocks.Factory{}
-		readSessionMock := &sessionMocks.ReadSession{}
-		uuidGenerator := &uuidMocks.UUIDGenerator{}
-
-		readSessionMock.On("GetLastOperation", runtimeID).Return(operation, nil)
-		readSessionMock.On("GetProviderConfig", runtimeID).Return(gcpConfig, nil)
-		readSessionMock.On("GetKymaConfig", runtimeID).Return(model.KymaConfig{}, dberrors.Internal("some error"))
-
-		sessionFactoryMock.On("NewReadSession").Return(readSessionMock, nil)
-
-		// when
-		runtimeService := NewService(sessionFactoryMock, uuidGenerator)
-		_, err := runtimeService.GetRuntimeStatus(runtimeID)
-
-		// then
-		assert.Error(t, err)
-	})
-
-	t.Run("Should fail to get runtime status when getting cluster data failed", func(t *testing.T) {
-		// given
-		sessionFactoryMock := &sessionMocks.Factory{}
-		readSessionMock := &sessionMocks.ReadSession{}
-		uuidGenerator := &uuidMocks.UUIDGenerator{}
-
-		readSessionMock.On("GetLastOperation", runtimeID).Return(operation, nil)
 		readSessionMock.On("GetProviderConfig", runtimeID).Return(gcpConfig, nil)
 		readSessionMock.On("GetKymaConfig", runtimeID).Return(kymaConfig, nil)
-		readSessionMock.On("GetCluster", runtimeID).Return(model.Cluster{}, dberrors.Internal("some error"))
+		readSessionMock.On("GetCluster", runtimeID).Return(cluster, nil)
 
 		sessionFactoryMock.On("NewReadSession").Return(readSessionMock, nil)
 
+		expected := model.Cluster{
+			ID:             runtimeID,
+			Kubeconfig:     nil,
+			TerraformState: []byte("state"),
+			KymaConfig:     kymaConfig,
+			ClusterConfig:  gcpConfig,
+		}
+
 		// when
 		runtimeService := NewService(sessionFactoryMock, uuidGenerator)
-		_, err := runtimeService.GetRuntimeStatus(runtimeID)
+		runtimeStatus, err := runtimeService.GetClusterData(runtimeID)
 
 		// then
-		assert.Error(t, err)
+		assert.NoError(t, err)
+		assert.Equal(t, expected, runtimeStatus)
 	})
 }
 
