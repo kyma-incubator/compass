@@ -161,7 +161,6 @@ func (r *service) CleanupRuntimeData(id string) (string, error) {
 	return id, r.persistenceService.CleanupClusterData(id)
 }
 
-// TODO - refactor
 func (r *service) startProvisioning(operationID string, cluster model.Cluster, finished chan<- struct{}) {
 	defer close(finished)
 
@@ -186,7 +185,6 @@ func (r *service) startProvisioning(operationID string, cluster model.Cluster, f
 	}
 
 	log.Infof("Runtime %s provisioned successfully. Starting Kyma installation...", cluster.ID)
-
 	err = r.installationService.InstallKyma(cluster.ID, info.KubeConfig, cluster.KymaConfig.Release)
 	if err != nil {
 		log.Errorf("Error installing Kyma on runtime %s: %s", cluster.ID, err.Error())
