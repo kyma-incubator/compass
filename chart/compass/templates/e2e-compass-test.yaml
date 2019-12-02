@@ -23,6 +23,7 @@ spec:
           - "dex.{{ .Values.global.ingress.domainName }}"
           - "oauth2.{{ .Values.global.ingress.domainName }}"
           - "compass-gateway-auth-oauth.{{ .Values.global.ingress.domainName }}"
+          - "compass-gateway-mtls.{{ .Values.global.ingress.domainName }}"
     {{ end }}
       shareProcessNamespace: true
       containers:
