@@ -26,10 +26,13 @@ mod-verify-local:
 test-local:
 	GO111MODULE=on go test ./...
 
+# TODO - there is no errcheck in go1.13 buildpack, consider creating buildpack-toolbox with go1.13 version
+errcheck-local: ;
+
 go-mod-check-local:
 	@echo make go-mod-check
 	go mod tidy
-	@if [ -n "$$(git status -s go.*)" ]; then \
+	@if [ -z "$$(git status -s go.*)" ]; then \
 		echo -e "${RED}✗ go mod tidy modified go.mod or go.sum files${NC}"; \
 		git status -s git status -s go.*; \
 		exit 1; \
