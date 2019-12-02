@@ -54,15 +54,21 @@ func FilterQuery(queryFor model.LabelableObject, setCombination SetCombination, 
 			// is not production ready, we need to transform the Query from
 			// SQL/JSON path to old JSON queries.
 			if strings.ToUpper(lblFilter.Key) == scenariosLabelKey {
-				extractedValue, err := ExtractValueFromJSONPath(queryValue)
+				extractedValues, err := ExtractValueFromJSONPath(queryValue)
 				if err != nil {
 					return "", errors.Wrap(err, "while extracting value from JSON path")
 				}
 
-				queryValue = `["` + *extractedValue + `"]`
-			}
+				queryValues := make([]string, len(extractedValues))
+				for idx, extractedValue := range extractedValues {
+					queryValues[idx] = pq.QuoteLiteral(extractedValue)
+				}
 
-			queryBuilder.WriteString(fmt.Sprintf(` AND "value" @> %s`, pq.QuoteLiteral(queryValue)))
+				queryValue = `array[` + strings.Join(queryValues, ",") + `]`
+				queryBuilder.WriteString(fmt.Sprintf(` AND "value" ?| %s`, queryValue))
+			} else {
+				queryBuilder.WriteString(fmt.Sprintf(` AND "value" @> %s`, pq.QuoteLiteral(queryValue)))
+			}
 		}
 	}
 

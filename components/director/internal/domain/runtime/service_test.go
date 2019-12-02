@@ -488,8 +488,8 @@ func TestService_List(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	modelRuntimes := []*model.Runtime{
-		fixModelRuntime("foo", "tenant-foo", "Foo", "Lorem Ipsum"),
-		fixModelRuntime("bar", "tenant-bar", "Bar", "Lorem Ipsum"),
+		fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Lorem Ipsum"),
+		fixModelRuntime(t, "bar", "tenant-bar", "Bar", "Lorem Ipsum"),
 	}
 	runtimePage := &model.RuntimePage{
 		Data:       modelRuntimes,

@@ -5,7 +5,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/event"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 
@@ -53,7 +53,7 @@ type RootResolver struct {
 	intSys      *integrationsystem.Resolver
 }
 
-func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope.Provider, oneTimeTokenCfg onetimetoken.Config, oAuth20Cfg oauth20.Config, eventCfg event.Config) *RootResolver {
+func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope.Provider, oneTimeTokenCfg onetimetoken.Config, oAuth20Cfg oauth20.Config) *RootResolver {
 	authConverter := auth.NewConverter()
 	apiRtmAuthConverter := apiruntimeauth.NewConverter(authConverter)
 	runtimeConverter := runtime.NewConverter()
@@ -105,14 +105,15 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	tokenSvc := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, oneTimeTokenCfg.ConnectorURL)
 	oAuth20Svc := oauth20.NewService(scopeCfgProvider, uidSvc, oAuth20Cfg)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
+	eventingSvc := eventing.NewService(runtimeRepo, labelRepo)
 
 	return &RootResolver{
-		app:         application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, systemAuthSvc, oAuth20Svc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter, eventCfg.DefaultEventURL),
+		app:         application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter, eventingSvc),
 		appTemplate: apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter),
 		api:         api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, apiRtmAuthSvc, apiConverter, authConverter, frConverter, apiRtmAuthConverter),
 		eventAPI:    eventdef.NewResolver(transact, eventAPISvc, appSvc, eventAPIConverter, frConverter),
 		doc:         document.NewResolver(transact, docSvc, appSvc, frConverter),
-		runtime:     runtime.NewResolver(transact, runtimeSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter),
+		runtime:     runtime.NewResolver(transact, runtimeSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc),
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
 		webhook:     webhook.NewResolver(transact, webhookSvc, appSvc, webhookConverter),
 		labelDef:    labeldef.NewResolver(transact, labelDefSvc, labelDefConverter),
@@ -334,6 +335,14 @@ func (r *mutationResolver) UnregisterIntegrationSystem(ctx context.Context, id s
 	return r.intSys.UnregisterIntegrationSystem(ctx, id)
 }
 
+func (r *mutationResolver) SetDefaultEventingForApplication(ctx context.Context, appID string, runtimeID string) (*graphql.ApplicationEventingConfiguration, error) {
+	return nil, nil
+}
+
+func (r *mutationResolver) DeleteDefaultEventingForApplication(ctx context.Context, appID string) (*graphql.ApplicationEventingConfiguration, error) {
+	return nil, nil
+}
+
 type applicationResolver struct {
 	*RootResolver
 }
@@ -364,8 +373,8 @@ func (r *applicationResolver) Documents(ctx context.Context, obj *graphql.Applic
 	return r.app.Documents(ctx, obj, first, after)
 }
 
-func (r *applicationResolver) EventConfiguration(ctx context.Context, obj *graphql.Application) (*graphql.ApplicationEventConfiguration, error) {
-	return r.app.EventConfiguration(ctx, obj)
+func (r *applicationResolver) EventingConfiguration(ctx context.Context, obj *graphql.Application) (*graphql.ApplicationEventingConfiguration, error) {
+	return r.app.EventingConfiguration(ctx, obj)
 }
 
 type runtimeResolver struct {
@@ -378,6 +387,10 @@ func (r *runtimeResolver) Labels(ctx context.Context, obj *graphql.Runtime, key 
 
 func (r *runtimeResolver) Auths(ctx context.Context, obj *graphql.Runtime) ([]*graphql.SystemAuth, error) {
 	return r.runtime.Auths(ctx, obj)
+}
+
+func (r *runtimeResolver) EventingConfiguration(ctx context.Context, obj *graphql.Runtime) (*graphql.RuntimeEventingConfiguration, error) {
+	return r.runtime.EventingConfiguration(ctx, obj)
 }
 
 type apiDefinitionResolver struct {

@@ -7,6 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence/txtest"
+	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -17,6 +18,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -127,7 +129,7 @@ func TestResolver_CreateApplication(t *testing.T) {
 			persistTx, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
-			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "")
+			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -274,7 +276,7 @@ func TestResolver_UpdateApplication(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "")
+			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -502,7 +504,7 @@ func TestResolver_DeleteApplication(t *testing.T) {
 			persistTx, transact := testCase.TransactionerFn()
 			sysAuthSvc := testCase.SysAuthServiceFn()
 			oAuth20Svc := testCase.OAuth20ServiceFn()
-			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, sysAuthSvc, oAuth20Svc, nil, nil, nil, nil, nil, nil, "")
+			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, oAuth20Svc, sysAuthSvc, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -587,7 +589,7 @@ func TestResolver_Application(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "")
+			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -681,7 +683,7 @@ func TestResolver_Applications(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "")
+			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -815,7 +817,7 @@ func TestResolver_ApplicationsForRuntime(t *testing.T) {
 			applicationConverter := testCase.AppConverterFn()
 			persistTx, transact := testCase.TransactionerFn()
 
-			resolver := application.NewResolver(transact, applicationSvc, nil, nil, nil, nil, nil, nil, applicationConverter, nil, nil, nil, nil, nil, "")
+			resolver := application.NewResolver(transact, applicationSvc, nil, nil, nil, nil, nil, nil, applicationConverter, nil, nil, nil, nil, nil, nil)
 
 			//WHEN
 			result, err := resolver.ApplicationsForRuntime(context.TODO(), testCase.InputRuntimeID, &first, &gqlAfter)
@@ -911,7 +913,7 @@ func TestResolver_SetApplicationLabel(t *testing.T) {
 			persistTx := testCase.PersistenceFn()
 			transactioner := testCase.TransactionerFn(persistTx)
 
-			resolver := application.NewResolver(transactioner, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "")
+			resolver := application.NewResolver(transactioner, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -928,7 +930,7 @@ func TestResolver_SetApplicationLabel(t *testing.T) {
 	}
 
 	t.Run("Returns error when Label input validation failed", func(t *testing.T) {
-		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "")
+		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// when
 		result, err := resolver.SetApplicationLabel(context.TODO(), "", "", "")
@@ -1038,7 +1040,7 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 			persistTx := testCase.PersistenceFn()
 			transactioner := testCase.TransactionerFn(persistTx)
 
-			resolver := application.NewResolver(transactioner, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "")
+			resolver := application.NewResolver(transactioner, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
 			// when
@@ -1125,7 +1127,7 @@ func TestResolver_Documents(t *testing.T) {
 			persistTx := testCase.PersistenceFn()
 			transact := testCase.TransactionerFn(persistTx)
 
-			resolver := application.NewResolver(transact, nil, nil, nil, svc, nil, nil, nil, nil, converter, nil, nil, nil, nil, "")
+			resolver := application.NewResolver(transact, nil, nil, nil, svc, nil, nil, nil, nil, converter, nil, nil, nil, nil, nil)
 
 			// when
 			result, err := resolver.Documents(context.TODO(), app, &first, &gqlAfter)
@@ -1241,7 +1243,7 @@ func TestResolver_Webhooks(t *testing.T) {
 			mockPersistence := testCase.PersistenceFn()
 			mockTransactioner := testCase.TransactionerFn(mockPersistence)
 
-			resolver := application.NewResolver(mockTransactioner, nil, nil, nil, nil, svc, nil, nil, nil, nil, converter, nil, nil, nil, "")
+			resolver := application.NewResolver(mockTransactioner, nil, nil, nil, nil, svc, nil, nil, nil, nil, converter, nil, nil, nil, nil)
 
 			// when
 			result, err := resolver.Webhooks(context.TODO(), app)
@@ -1359,7 +1361,7 @@ func TestResolver_Apis(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(transact, nil, svc, nil, nil, nil, nil, nil, nil, nil, nil, converter, nil, nil, "")
+			resolver := application.NewResolver(transact, nil, svc, nil, nil, nil, nil, nil, nil, nil, nil, converter, nil, nil, nil)
 			// when
 			result, err := resolver.ApiDefinitions(context.TODO(), app, &group, &first, &gqlAfter)
 
@@ -1453,7 +1455,7 @@ func TestResolver_EventAPIs(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(transact, nil, nil, svc, nil, nil, nil, nil, nil, nil, nil, nil, converter, nil, "")
+			resolver := application.NewResolver(transact, nil, nil, svc, nil, nil, nil, nil, nil, nil, nil, nil, converter, nil, nil)
 			// when
 			result, err := resolver.EventDefinitions(context.TODO(), app, &group, testCase.InputFirst, testCase.InputAfter)
 
@@ -1586,7 +1588,7 @@ func TestResolver_EventAPI(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := application.NewResolver(transact, nil, nil, svc, nil, nil, nil, nil, nil, nil, nil, nil, converter, nil, "")
+			resolver := application.NewResolver(transact, nil, nil, svc, nil, nil, nil, nil, nil, nil, nil, nil, converter, nil, nil)
 
 			// when
 			result, err := resolver.EventDefinition(context.TODO(), testCase.InputID, testCase.Application)
@@ -1720,7 +1722,7 @@ func TestResolver_API(t *testing.T) {
 				svc := testCase.ServiceFn()
 				converter := testCase.ConverterFn()
 
-				resolver := application.NewResolver(transact, nil, svc, nil, nil, nil, nil, nil, nil, nil, nil, converter, nil, nil, "")
+				resolver := application.NewResolver(transact, nil, svc, nil, nil, nil, nil, nil, nil, nil, nil, converter, nil, nil, nil)
 
 				// when
 				result, err := resolver.APIDefinition(context.TODO(), testCase.InputID, testCase.Application)
@@ -1818,7 +1820,7 @@ func TestResolver_Labels(t *testing.T) {
 			persistTx := testCase.PersistenceFn()
 			transact := testCase.TransactionerFn(persistTx)
 
-			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "")
+			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// when
 			result, err := resolver.Labels(context.TODO(), gqlApp, &testCase.InputKey)
@@ -1926,7 +1928,7 @@ func TestResolver_Auths(t *testing.T) {
 			persist, transact := testCase.TransactionerFn()
 			conv := testCase.SysAuthConvFn()
 
-			resolver := application.NewResolver(transact, nil, nil, nil, nil, nil, svc, nil, nil, nil, nil, nil, nil, conv, "")
+			resolver := application.NewResolver(transact, nil, nil, nil, nil, nil, nil, svc, nil, nil, nil, nil, nil, conv, nil)
 
 			// when
 			result, err := resolver.Auths(context.TODO(), testCase.InputApp)
@@ -1943,7 +1945,7 @@ func TestResolver_Auths(t *testing.T) {
 	}
 
 	t.Run("Returns error when application is nil", func(t *testing.T) {
-		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "")
+		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		//WHEN
 		_, err := resolver.Auths(context.TODO(), nil)
 		//THEN
@@ -1952,27 +1954,121 @@ func TestResolver_Auths(t *testing.T) {
 	})
 }
 
-func TestApplicationEventConfiguration(t *testing.T) {
-	t.Run("Returns default event URL when it is provided", func(t *testing.T) {
+func TestResolver_EventingConfiguration(t *testing.T) {
+	// GIVEN
+	tnt := "tnt"
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt)
+
+	applicationID := uuid.New()
+	gqlApp := fixGQLApplication(applicationID.String(), "bar", "baz")
+
+	testErr := errors.New("this is a test error")
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	defaultEveningURL := "https://eventing.domain.local"
+	modelAppEventingCfg := fixModelApplicationEventingConfiguration(defaultEveningURL)
+	gqlAppEventingCfg := fixGQLApplicationEventingConfiguration(defaultEveningURL)
+
+	testCases := []struct {
+		Name            string
+		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		EventingSvcFn   func() *automock.EventingService
+		ExpectedOutput  *graphql.ApplicationEventingConfiguration
+		ExpectedError   error
+	}{
+		{
+			Name:            "Success",
+			TransactionerFn: txGen.ThatSucceeds,
+			EventingSvcFn: func() *automock.EventingService {
+				eventingSvc := &automock.EventingService{}
+				eventingSvc.On("GetForApplication", txtest.CtxWithDBMatcher(), applicationID).Return(modelAppEventingCfg, nil).Once()
+
+				return eventingSvc
+			},
+			ExpectedOutput: gqlAppEventingCfg,
+			ExpectedError:  nil,
+		}, {
+			Name:            "Error when getting the configuration for runtime failed",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			EventingSvcFn: func() *automock.EventingService {
+				eventingSvc := &automock.EventingService{}
+				eventingSvc.On("GetForApplication", txtest.CtxWithDBMatcher(), applicationID).Return(nil, testErr).Once()
+
+				return eventingSvc
+			},
+			ExpectedOutput: nil,
+			ExpectedError:  testErr,
+		}, {
+			Name:            "Error when beginning transaction",
+			TransactionerFn: txGen.ThatFailsOnBegin,
+			EventingSvcFn: func() *automock.EventingService {
+				eventingSvc := &automock.EventingService{}
+				return eventingSvc
+			},
+			ExpectedOutput: nil,
+			ExpectedError:  testErr,
+		}, {
+			Name:            "Error when committing transaction",
+			TransactionerFn: txGen.ThatFailsOnCommit,
+			EventingSvcFn: func() *automock.EventingService {
+				eventingSvc := &automock.EventingService{}
+				eventingSvc.On("GetForApplication", txtest.CtxWithDBMatcher(), applicationID).Return(modelAppEventingCfg, nil).Once()
+
+				return eventingSvc
+			},
+			ExpectedOutput: nil,
+			ExpectedError:  testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persist, transact := testCase.TransactionerFn()
+			eventingSvc := testCase.EventingSvcFn()
+
+			resolver := application.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, eventingSvc)
+
+			// WHEN
+			result, err := resolver.EventingConfiguration(ctx, gqlApp)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedOutput, result)
+
+			mock.AssertExpectationsForObjects(t, eventingSvc, transact, persist)
+		})
+	}
+
+	t.Run("Error when parent object ID is not a valid UUID", func(t *testing.T) {
 		// GIVEN
-		givenEventURL := "http://default.event.url"
-		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, givenEventURL)
+		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+
 		// WHEN
-		actualConfig, err := resolver.EventConfiguration(context.TODO(), &graphql.Application{})
+		result, err := resolver.EventingConfiguration(ctx, &graphql.Application{ID: "abc"})
+
 		// THEN
-		require.NoError(t, err)
-		require.NotNil(t, actualConfig)
-		assert.Equal(t, givenEventURL, actualConfig.DefaultURL)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "while parsing application ID as UUID")
+		assert.Nil(t, result)
 	})
 
-	t.Run("Returns null when default event URL when it is not provided", func(t *testing.T) {
+	t.Run("Error when parent object is nil", func(t *testing.T) {
 		// GIVEN
-		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "")
+		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+
 		// WHEN
-		actualConfig, err := resolver.EventConfiguration(context.TODO(), &graphql.Application{})
+		result, err := resolver.EventingConfiguration(context.TODO(), nil)
+
 		// THEN
-		require.NoError(t, err)
-		require.Nil(t, actualConfig)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Application cannot be empty")
+		assert.Nil(t, result)
 	})
 }
 

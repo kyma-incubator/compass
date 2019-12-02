@@ -57,7 +57,7 @@ func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Application, error) {
 	var appEnt Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, &appEnt); err != nil {
+	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &appEnt); err != nil {
 		return nil, err
 	}
 
@@ -106,7 +106,7 @@ func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, sc
 
 	for _, scenarioValue := range scenarios {
 		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, scenarioValue)
-		scenariosFilers = append(scenariosFilers, &labelfilter.LabelFilter{Key: model.ScenariosKey, Query: &query})
+		scenariosFilers = append(scenariosFilers, labelfilter.NewForKeyWithQuery(model.ScenariosKey, query))
 	}
 
 	scenariosSubquery, err := label.FilterQuery(model.ApplicationLabelableObject, label.UnionSet, tenant, scenariosFilers)

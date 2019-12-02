@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/google/uuid"
@@ -74,6 +75,11 @@ type EventAPIConverter interface {
 	InputFromGraphQL(in *graphql.EventDefinitionInput) *model.EventDefinitionInput
 }
 
+//go:generate mockery -name=EventingService -output=automock -outpkg=automock -case=underscore
+type EventingService interface {
+	GetForApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error)
+}
+
 //go:generate mockery -name=DocumentService -output=automock -outpkg=automock -case=underscore
 type DocumentService interface {
 	List(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.DocumentPage, error)
@@ -117,6 +123,12 @@ type OAuth20Service interface {
 	DeleteMultipleClientCredentials(ctx context.Context, auths []model.SystemAuth) error
 }
 
+//go:generate mockery -name=RuntimeService -output=automock -outpkg=automock -case=underscore
+type RuntimeService interface {
+	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
+	GetLabel(ctx context.Context, runtimeID string, key string) (*model.Label, error)
+}
+
 type Resolver struct {
 	transact persistence.Transactioner
 
@@ -127,15 +139,15 @@ type Resolver struct {
 	eventDefSvc EventDefinitionService
 	webhookSvc  WebhookService
 	documentSvc DocumentService
-	sysAuthSvc  SystemAuthService
 	oAuth20Svc  OAuth20Service
+	sysAuthSvc  SystemAuthService
 
 	documentConverter DocumentConverter
 	webhookConverter  WebhookConverter
 	apiConverter      APIConverter
 	eventApiConverter EventAPIConverter
 	sysAuthConv       SystemAuthConverter
-	defaultEventURL   string
+	eventingSvc       EventingService
 }
 
 func NewResolver(transact persistence.Transactioner,
@@ -144,15 +156,15 @@ func NewResolver(transact persistence.Transactioner,
 	eventDefSrv EventDefinitionService,
 	documentSvc DocumentService,
 	webhookSvc WebhookService,
-	sysAuthSvc SystemAuthService,
 	oAuth20Svc OAuth20Service,
+	sysAuthSvc SystemAuthService,
 	appConverter ApplicationConverter,
 	documentConverter DocumentConverter,
 	webhookConverter WebhookConverter,
 	apiConverter APIConverter,
 	eventAPIConverter EventAPIConverter,
 	sysAuthConv SystemAuthConverter,
-	defaultEventURL string) *Resolver {
+	eventingSvc EventingService) *Resolver {
 	return &Resolver{
 		transact:          transact,
 		appSvc:            svc,
@@ -160,15 +172,15 @@ func NewResolver(transact persistence.Transactioner,
 		eventDefSvc:       eventDefSrv,
 		documentSvc:       documentSvc,
 		webhookSvc:        webhookSvc,
-		sysAuthSvc:        sysAuthSvc,
 		oAuth20Svc:        oAuth20Svc,
+		sysAuthSvc:        sysAuthSvc,
 		appConverter:      appConverter,
 		documentConverter: documentConverter,
 		webhookConverter:  webhookConverter,
 		apiConverter:      apiConverter,
 		eventApiConverter: eventAPIConverter,
 		sysAuthConv:       sysAuthConv,
-		defaultEventURL:   defaultEventURL,
+		eventingSvc:       eventingSvc,
 	}
 }
 
@@ -713,12 +725,32 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 	return out, nil
 }
 
-func (r *Resolver) EventConfiguration(ctx context.Context, obj *graphql.Application) (*graphql.ApplicationEventConfiguration, error) {
-	if r.defaultEventURL == "" {
-		return nil, nil
+func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Application) (*graphql.ApplicationEventingConfiguration, error) {
+	if obj == nil {
+		return nil, errors.New("Application cannot be empty")
 	}
-	return &graphql.ApplicationEventConfiguration{
-		DefaultURL: r.defaultEventURL,
-	}, nil
 
+	appID, err := uuid.Parse(obj.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing application ID as UUID")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, errors.Wrap(err, "while opening the transaction")
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	eventingCfg, err := r.eventingSvc.GetForApplication(ctx, appID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching eventing cofiguration for application")
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, errors.Wrap(err, "while commiting the transaction")
+	}
+
+	return eventing.ApplicationEventingConfigurationToGraphQL(eventingCfg), nil
 }
