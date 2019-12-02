@@ -600,7 +600,7 @@ func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
 
 	// WHEN
 	err = tc.RunOperation(ctx, updateLabelDefinitionRequest, &labelDefinition)
-	errMsg := fmt.Sprintf(`graphql: validation error for type LabelDefinitionInput: ValidSchema: while validating schema for key %s: items.enum: At least one of the items must match, items.enum.0: items.enum.0 does not match: "%s".`, labelKey, defaultValue)
+	errMsg := fmt.Sprintf(`graphql: validation error for type LabelDefinitionInput: rule.ValidSchema: while validating schema for key %s: items.enum: At least one of the items must match, items.enum.0: items.enum.0 does not match: "%s".`, labelKey, defaultValue)
 
 	// THEN
 	require.Error(t, err)
