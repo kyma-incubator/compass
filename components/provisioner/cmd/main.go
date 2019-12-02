@@ -74,7 +74,9 @@ func main() {
 	logger := log.WithField("Component", "Artifact Downloader")
 	downloader := release.NewArtifactsDownloader(releaseRepository, 5, false, client, logger)
 
-	go downloader.FetchPeriodically(context.Background(), release.ShortInterval, release.LongInterval)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go downloader.FetchPeriodically(ctx, release.ShortInterval, release.LongInterval)
 
 	gqlCfg := gqlschema.Config{
 		Resolvers: resolver,

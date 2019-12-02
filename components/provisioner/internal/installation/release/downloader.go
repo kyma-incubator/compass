@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"sort"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/sirupsen/logrus"
@@ -64,7 +65,6 @@ func (ad artifactsDownloader) FetchPeriodically(ctx context.Context, shortInterv
 
 func (ad artifactsDownloader) fetchLatestReleases() error {
 	releases, err := ad.fetchReleases()
-
 	if err != nil {
 		return err
 	}
@@ -79,18 +79,13 @@ func (ad artifactsDownloader) fetchLatestReleases() error {
 }
 
 func (ad artifactsDownloader) fetchReleases() ([]model.GithubRelease, error) {
-	body, err := ad.sendRequest(releaseFetchURL)
-
+	responseBody, err := ad.sendRequest(releaseFetchURL)
 	if err != nil {
 		return nil, err
 	}
 
-	defer body.Close()
-
 	var releases []model.GithubRelease
-
-	err = json.NewDecoder(body).Decode(&releases)
-
+	err = json.Unmarshal(responseBody, &releases)
 	if err != nil {
 		return nil, err
 	}
@@ -137,8 +132,11 @@ func (ad artifactsDownloader) buildRelease(release model.GithubRelease) (model.R
 	tillerURL := buildTillerURL(release.Name)
 
 	installerYAML, err := ad.downloadYAML(installerURL)
-	tillerYAML, err := ad.downloadYAML(tillerURL)
+	if err != nil {
+		return model.Release{}, err
+	}
 
+	tillerYAML, err := ad.downloadYAML(tillerURL)
 	if err != nil {
 		return model.Release{}, err
 	}
@@ -151,35 +149,31 @@ func (ad artifactsDownloader) buildRelease(release model.GithubRelease) (model.R
 }
 
 func (ad artifactsDownloader) downloadYAML(url string) (string, error) {
-	body, err := ad.sendRequest(url)
-
+	responseBody, err := ad.sendRequest(url)
 	if err != nil {
 		return "", err
 	}
 
-	defer body.Close()
-
-	bytes, err := ioutil.ReadAll(body)
-
-	if err != nil {
-		return "", err
-	}
-
-	return string(bytes), nil
+	return string(responseBody), nil
 }
 
-func (ad artifactsDownloader) sendRequest(url string) (io.ReadCloser, error) {
+func (ad artifactsDownloader) sendRequest(url string) ([]byte, error) {
 	resp, err := ad.httpClient.Get(url)
-
 	if err != nil {
 		return nil, err
 	}
+	defer util.Close(resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.New(fmt.Sprintf("Received unexpected http status %d", resp.StatusCode))
 	}
 
-	return resp.Body, nil
+	bytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes, nil
 }
 
 func filterPreReleases(releases []model.GithubRelease) []model.GithubRelease {
