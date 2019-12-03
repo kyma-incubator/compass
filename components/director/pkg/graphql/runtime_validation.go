@@ -8,7 +8,7 @@ import (
 func (i RuntimeInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Name, validation.Required, inputvalidation.Name),
-		validation.Field(&i.Description, validation.Length(0, 128)),
+		validation.Field(&i.Description, validation.Length(0, StringLengthLimitShort)),
 		validation.Field(&i.Labels, inputvalidation.EachKey(validation.Required)),
 	)
 }
