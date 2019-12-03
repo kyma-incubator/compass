@@ -24,13 +24,13 @@ require (
 	github.com/vrischmann/envconfig v1.2.0
 	golang.org/x/sys v0.0.0-20190826190057-c7b8b68b1456 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	k8s.io/api v0.0.0-20191004120003-3a12735a829a
-	k8s.io/apimachinery v0.0.0-20191004115701-31ade1b30762
-	k8s.io/client-go v0.0.0-20191029021442-5f2132fc4383
+	k8s.io/api v0.0.0-20191114100237-2cd11237263f
+	k8s.io/apimachinery v0.0.0-20191004115701-31ade1b30762 // tag kubernetes-1.15.6
+	k8s.io/client-go v0.0.0-20191114101336-8cba805ad12d // tag kubernetes-1.15.6
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20191107075043-30be4d16710a // indirect
 )
 
-replace github.com/kyma-incubator/hydroform => github.com/Szymongib/hydroform v0.0.0-20191203081503-887c7c8879ef
+replace github.com/kyma-incubator/hydroform => github.com/Szymongib/hydroform v0.0.0-20191203093804-e9fcbe88dcd5
 
-replace github.com/kyma-incubator/hydroform/install => github.com/Szymongib/hydroform/install v0.0.0-20191203081503-887c7c8879ef
+replace github.com/kyma-incubator/hydroform/install => github.com/Szymongib/hydroform/install v0.0.0-20191203093804-e9fcbe88dcd5
