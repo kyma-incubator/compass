@@ -157,15 +157,6 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "provisioner-azure-aks"
-  digest = "1:be9ef0d88b89af544b68b52e5552cd8a3deeb9f38ba7a5aa02497c44bd11ed76"
-  name = "github.com/kyma-incubator/compass"
-  packages = ["components/provisioner/pkg/gqlschema"]
-  pruneopts = "NUT"
-  revision = "059ced3da3d90f15dd39872007ae21e00e12ad8c"
-  source = "https://github.com/Maladie/compass"
-
-[[projects]]
   digest = "1:8139f3ca1f0523e8db13e12c21b5c1b3ec2f396ae27c64ca1bc126f8136d2e7f"
   name = "github.com/machinebox/graphql"
   packages = ["."]
