@@ -124,7 +124,7 @@ func (s service) DeprovisionCluster(clusterData model.Cluster) error {
 	reader := bytes.NewReader(clusterData.TerraformState)
 	stateFile, err := statefile.Read(reader)
 	if err != nil {
-		return errors.WithMessagef(err, "Failed to write Terraform state to file for %s Runtime", clusterData.ID)
+		return errors.WithMessagef(err, "Failed to read Terraform state from file for %s Runtime", clusterData.ID)
 	}
 
 	internalState := types.InternalState{TerraformState: stateFile}
