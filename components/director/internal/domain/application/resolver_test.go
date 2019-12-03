@@ -926,6 +926,18 @@ func TestResolver_SetApplicationLabel(t *testing.T) {
 			persistTx.AssertExpectations(t)
 		})
 	}
+
+	t.Run("Returns error when Label input validation failed", func(t *testing.T) {
+		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "")
+
+		// when
+		result, err := resolver.SetApplicationLabel(context.TODO(), "", "", "")
+
+		// then
+		require.Nil(t, result)
+		require.Error(t, err)
+		assert.EqualError(t, err, "validation error for type LabelInput: key: cannot be blank; value: cannot be blank.")
+	})
 }
 
 func TestResolver_DeleteApplicationLabel(t *testing.T) {

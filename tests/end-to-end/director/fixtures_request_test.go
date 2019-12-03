@@ -73,6 +73,16 @@ func fixAddWebhookRequest(applicationID, webhookInGQL string) *gcli.Request {
 }
 
 //UPDATE
+func fixUpdateRuntimeRequest(id, updateInputInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: updateRuntime(id: "%s", in: %s) {
+					%s
+				}
+			}`,
+			id, updateInputInGQL, tc.gqlFieldsProvider.ForRuntime()))
+}
+
 func fixUpdateWebhookRequest(webhookID, webhookInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
@@ -82,6 +92,7 @@ func fixUpdateWebhookRequest(webhookID, webhookInGQL string) *gcli.Request {
 			}`,
 			webhookID, webhookInGQL, tc.gqlFieldsProvider.ForWebhooks()))
 }
+
 func fixUpdateApplicationRequest(id, updateInputGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {

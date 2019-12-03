@@ -101,11 +101,6 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 }
 
 func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, error) {
-	err := in.Validate()
-	if err != nil {
-		return "", errors.Wrap(err, "while validating Runtime input")
-	}
-
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", errors.Wrapf(err, "while loading tenant from context")
@@ -137,11 +132,6 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 }
 
 func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) error {
-	err := in.Validate()
-	if err != nil {
-		return errors.Wrap(err, "while validating Runtime input")
-	}
-
 	rtm, err := s.Get(ctx, id)
 	if err != nil {
 		return errors.Wrap(err, "while getting Runtime")

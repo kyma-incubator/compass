@@ -46,19 +46,6 @@ func TestServiceCreate(t *testing.T) {
 		assert.Equal(t, defWithID, actual)
 	})
 
-	t.Run("returns error if Label Definition is invalid", func(t *testing.T) {
-		// GIVEN
-		mockUID := &automock.UIDService{}
-		defer mockUID.AssertExpectations(t)
-
-		mockUID.On("Generate").Return(fixUUID())
-		sut := labeldef.NewService(nil, nil, mockUID)
-		// WHEN
-		_, err := sut.Create(context.TODO(), model.LabelDefinition{})
-		// THEN
-		require.EqualError(t, err, "while validation Label Definition: missing Tenant field")
-	})
-
 	t.Run("returns error if cannot persist Label Definition", func(t *testing.T) {
 		// GIVEN
 		mockUID := &automock.UIDService{}
@@ -284,16 +271,6 @@ func TestServiceUpdate(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		require.EqualError(t, err, `label with key "oldProperty" is not valid against new schema for Runtime with ID "foo": (root): nonExistingProp is required`)
-	})
-
-	t.Run("returns error when validation of Label Definition failed", func(t *testing.T) {
-		// GIVEN
-
-		sut := labeldef.NewService(nil, nil, nil)
-		// WHEN
-		err := sut.Update(context.TODO(), model.LabelDefinition{})
-		// THEN
-		require.EqualError(t, err, "while validating Label Definition: missing Tenant field")
 	})
 
 	t.Run("returns error when error occured during receiving Label Definition", func(t *testing.T) {

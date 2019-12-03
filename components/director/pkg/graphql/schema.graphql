@@ -224,6 +224,11 @@ input LabelFilter {
 	query: String
 }
 
+input LabelInput {
+	key: String!
+	value: Any!
+}
+
 input OAuthCredentialDataInput {
 	clientId: ID!
 	clientSecret: String!
@@ -669,12 +674,12 @@ type Mutation {
 	**Examples**
 	- [create runtime](examples/create-runtime/create-runtime.graphql)
 	"""
-	createRuntime(in: RuntimeInput!): Runtime! @hasScopes(path: "graphql.mutation.createRuntime")
+	createRuntime(in: RuntimeInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.createRuntime")
 	"""
 	**Examples**
 	- [update runtime](examples/update-runtime/update-runtime.graphql)
 	"""
-	updateRuntime(id: ID!, in: RuntimeInput!): Runtime! @hasScopes(path: "graphql.mutation.updateRuntime")
+	updateRuntime(id: ID!, in: RuntimeInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.updateRuntime")
 	"""
 	**Examples**
 	- [delete runtime](examples/delete-runtime/delete-runtime.graphql)
@@ -757,12 +762,12 @@ type Mutation {
 	**Examples**
 	- [create label definition](examples/create-label-definition/create-label-definition.graphql)
 	"""
-	createLabelDefinition(in: LabelDefinitionInput!): LabelDefinition! @hasScopes(path: "graphql.mutation.createLabelDefinition")
+	createLabelDefinition(in: LabelDefinitionInput! @validate): LabelDefinition! @hasScopes(path: "graphql.mutation.createLabelDefinition")
 	"""
 	**Examples**
 	- [update label definition](examples/update-label-definition/update-label-definition.graphql)
 	"""
-	updateLabelDefinition(in: LabelDefinitionInput!): LabelDefinition! @hasScopes(path: "graphql.mutation.updateLabelDefinition")
+	updateLabelDefinition(in: LabelDefinitionInput! @validate): LabelDefinition! @hasScopes(path: "graphql.mutation.updateLabelDefinition")
 	"""
 	**Examples**
 	- [delete label definition](examples/delete-label-definition/delete-label-definition.graphql)

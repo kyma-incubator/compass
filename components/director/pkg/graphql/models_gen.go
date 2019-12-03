@@ -289,6 +289,11 @@ type LabelFilter struct {
 	Query *string `json:"query"`
 }
 
+type LabelInput struct {
+	Key   string      `json:"key"`
+	Value interface{} `json:"value"`
+}
+
 type OAuthCredentialData struct {
 	ClientID     string `json:"clientId"`
 	ClientSecret string `json:"clientSecret"`
