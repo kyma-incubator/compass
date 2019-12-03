@@ -31,6 +31,6 @@ require (
 	k8s.io/kube-openapi v0.0.0-20191107075043-30be4d16710a // indirect
 )
 
-replace github.com/kyma-incubator/hydroform => github.com/Szymongib/hydroform v0.0.0-20191129130315-c76f70710e07
+replace github.com/kyma-incubator/hydroform => github.com/Szymongib/hydroform v0.0.0-20191203081503-887c7c8879ef
 
-replace github.com/kyma-incubator/hydroform/install => github.com/Szymongib/hydroform/install v0.0.0-20191129130315-c76f70710e07
+replace github.com/kyma-incubator/hydroform/install => github.com/Szymongib/hydroform/install v0.0.0-20191203081503-887c7c8879ef

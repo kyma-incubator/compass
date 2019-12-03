@@ -20,6 +20,10 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+const (
+	tillerWaitTime = 4 * time.Minute
+)
+
 type InstallationHandler func(*rest.Config, ...installation.InstallationOption) (installation.Installer, error)
 
 //go:generate mockery -name=Service
@@ -53,7 +57,7 @@ func (s *installationService) InstallKyma(runtimeId, kubeconfigRaw string, relea
 		return fmt.Errorf("failed to get client kubeconfig from parsed config: %s", err.Error())
 	}
 
-	kymaInstaller, err := s.installationHandler(clientConfig)
+	kymaInstaller, err := s.installationHandler(clientConfig, installation.WithTillerWaitTime(tillerWaitTime))
 	if err != nil {
 		return pkgErrors.Wrap(err, "Failed to create Kyma installer")
 	}

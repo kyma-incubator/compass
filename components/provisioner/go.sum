@@ -29,10 +29,10 @@ github.com/PuerkitoBio/purell v1.0.0/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbt
 github.com/PuerkitoBio/purell v1.1.0/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbtSwDGJws/X0=
 github.com/PuerkitoBio/urlesc v0.0.0-20160726150825-5bd2802263f2/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
 github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
-github.com/Szymongib/hydroform v0.0.0-20191129130315-c76f70710e07 h1:qUY8MtyWX1vnHvjSWcKA/iQum3UIFqGJZbVx0t8TK7w=
-github.com/Szymongib/hydroform v0.0.0-20191129130315-c76f70710e07/go.mod h1:P/F7WIHHzce/IzzpjnQAEJWnUdA86yJtexetrdqGmC0=
-github.com/Szymongib/hydroform/install v0.0.0-20191129130315-c76f70710e07 h1:G8QOsXZvr78cMUJjxZfbR+XjyMRLwM6eTzBWcJD5TOk=
-github.com/Szymongib/hydroform/install v0.0.0-20191129130315-c76f70710e07/go.mod h1:cu0KmMDfLm1nY+lkRWhckdjeo+lzUsI4YkLCkRc3zWY=
+github.com/Szymongib/hydroform v0.0.0-20191203081503-887c7c8879ef h1:mfFgSvX+WjR/6SG+qXSxEAp4OPS0JG9XW4cJVIesSoA=
+github.com/Szymongib/hydroform v0.0.0-20191203081503-887c7c8879ef/go.mod h1:P/F7WIHHzce/IzzpjnQAEJWnUdA86yJtexetrdqGmC0=
+github.com/Szymongib/hydroform/install v0.0.0-20191203081503-887c7c8879ef h1:rbgyU0lksT6cVrVMZir2GGu3GGP2tqgL7Z1UMmbYbng=
+github.com/Szymongib/hydroform/install v0.0.0-20191203081503-887c7c8879ef/go.mod h1:cu0KmMDfLm1nY+lkRWhckdjeo+lzUsI4YkLCkRc3zWY=
 github.com/Unknwon/com v0.0.0-20151008135407-28b053d5a292 h1:tuQ7w+my8a8mkwN7x2TSd7OzTjkZ7rAeSyH4xncuAMI=
 github.com/Unknwon/com v0.0.0-20151008135407-28b053d5a292/go.mod h1:KYCjqMOeHpNuTOiFQU6WEcTG7poCJrUs0YgyHNtn1no=
 github.com/abdullin/seq v0.0.0-20160510034733-d5467c17e7af h1:DBNMBMuMiWYu0b+8KMJuWmfCkcxl09JwdlqwDZZ6U14=
