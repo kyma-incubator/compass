@@ -515,6 +515,27 @@ func TestGetRuntimeStatus(t *testing.T) {
 	})
 }
 
+func TestCleanupClusterData(t *testing.T) {
+
+	t.Run("Should clean up cluster data", func(t *testing.T) {
+
+		// given
+		sessionFactoryMock := &sessionMocks.Factory{}
+		writeSessionMock := &sessionMocks.WriteSession{}
+		runtimeID := "runtimeID"
+
+		sessionFactoryMock.On("NewWriteSession").Return(writeSessionMock)
+		writeSessionMock.On("DeleteCluster", runtimeID).Return(nil)
+
+		// when
+		runtimeService := NewService(sessionFactoryMock, nil)
+		err := runtimeService.CleanupClusterData(runtimeID)
+
+		// then
+		assert.NoError(t, err)
+	})
+}
+
 func getOperationMatcher(expected model.Operation) func(model.Operation) bool {
 	return func(op model.Operation) bool {
 		return op.Type == expected.Type &&
