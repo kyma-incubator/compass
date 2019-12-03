@@ -12,7 +12,7 @@ COPY ./pkg/ ${BASE_APP_DIR}/pkg/
 COPY ./vendor/ ${BASE_APP_DIR}/vendor/
 COPY ./cmd/ ${BASE_APP_DIR}/cmd/
 COPY ./hack/ ${BASE_APP_DIR}/hack/
-COPY ./licenses ${BASE_APP_DIR}/licenses
+COPY ./licenses/ ${BASE_APP_DIR}/licenses/
 
 #
 # Build app
@@ -30,6 +30,7 @@ WORKDIR /app
 #
 
 COPY --from=builder /app /app
+COPY ./examples/ /app/examples/
 
 #
 # Run app
