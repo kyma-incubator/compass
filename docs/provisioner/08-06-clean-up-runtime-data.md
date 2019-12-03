@@ -20,7 +20,7 @@ mutation { cleanupRuntimeData(id: "61d1841b-ccb5-44ed-a9ec-45f70cd1b0d3")
 }
 ```
 
-A successful call returns the Runtime ID and the status message on whether the data clean-up succeeded:
+A successful call returns the Runtime ID and the message on whether the data clean-up succeeded:
 
 ```graphql
 {
