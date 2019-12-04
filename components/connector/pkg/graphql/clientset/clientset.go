@@ -63,8 +63,8 @@ func (cs ConnectorClientSet) CertificateSecuredClient(baseURL string, certificat
 	return newCertificateSecuredConnectorClient(baseURL, certificate)
 }
 
-func (c ConnectorClientSet) GenerateCertificateForToken(token, connectorURL string) (tls.Certificate, error) {
-	connectorClient := newTokenSecuredClient(connectorURL, c.skipTLSVerify)
+func (cs ConnectorClientSet) GenerateCertificateForToken(token, connectorURL string) (tls.Certificate, error) {
+	connectorClient := newTokenSecuredClient(connectorURL, cs.skipTLSVerify)
 
 	config, err := connectorClient.Configuration(token)
 	if err != nil {
@@ -76,11 +76,7 @@ func (c ConnectorClientSet) GenerateCertificateForToken(token, connectorURL stri
 		return tls.Certificate{}, err
 	}
 
-	pemCSR := pem.EncodeToMemory(&pem.Block{
-		Type: "CERTIFICATE REQUEST", Bytes: csr.Raw,
-	})
-
-	encodedCSR := base64.StdEncoding.EncodeToString(pemCSR)
+	encodedCSR := encodeCSR(csr)
 
 	certResult, err := connectorClient.SignCSR(encodedCSR, config.Token.Token)
 	if err != nil {
@@ -123,6 +119,14 @@ func decodeCertificates(pemCertChain []byte) ([]*x509.Certificate, error) {
 	}
 
 	return certificates, nil
+}
+
+func encodeCSR(csr *x509.CertificateRequest) string {
+	pemCSR := pem.EncodeToMemory(&pem.Block{
+		Type: "CERTIFICATE REQUEST", Bytes: csr.Raw,
+	})
+
+	return base64.StdEncoding.EncodeToString(pemCSR)
 }
 
 func NewTLSCertificate(key *rsa.PrivateKey, certificates ...*x509.Certificate) tls.Certificate {

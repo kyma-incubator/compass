@@ -69,6 +69,8 @@ func newRequest(query string, headers ...http.Header) *gcli.Request {
 
 	header := mergeHeaders(headers)
 	req.Header = header
+
+	return req
 }
 
 func mergeHeaders(headers []http.Header) http.Header {
