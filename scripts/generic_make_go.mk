@@ -103,7 +103,7 @@ dep-status-local:
 
 check-imports-local:
 	@if [ -n "$$(goimports -l $$($(FILES_TO_CHECK)))" ]; then \
-		echo "✗ some files contain not propery formatted imports. To repair run make imports-local"; \
+		echo "✗ some files are not properly formatted or contain not formatted imports. To repair run make imports"; \
 		goimports -l $$($(FILES_TO_CHECK)); \
 		exit 1; \
 	fi;
@@ -114,7 +114,7 @@ imports-local:
 check-fmt-local:
 	@if [ -n "$$(gofmt -l $$($(FILES_TO_CHECK)))" ]; then \
 		gofmt -l $$($(FILES_TO_CHECK)); \
-		echo "✗ some files contain not propery formatted imports. To repair run make imports"; \
+		echo "✗ some files are not properly formatted. To repair run make fmt"; \
 		exit 1; \
 	fi;
 
