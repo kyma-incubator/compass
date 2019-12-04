@@ -3,8 +3,8 @@
 Managing Applications can be passed on some external system, to remove from Applications the burden of integration with Compass.
 Because of that [Integration System](./components.md#Integration-System) was introduced.
 
-To simplify creation of Applications, Director API is extended with ApplicationTemplate.
-An ApplicationTemplate is reusable input for creating Applications that can be customized with placeholders provided
+To simplify the creation of Applications, Director API is extended with ApplicationTemplate.
+An ApplicationTemplate is a reusable input for creating Applications that can be customized with placeholders provided
 during Application creation.
 
 ## Manage Applications by Integration System
@@ -23,10 +23,9 @@ input ApplicationCreateInput {
     eventAPIs: [EventAPIDefinitionInput!]
     documents: [DocumentInput!]
     integrationSystemID: ID
-    labels: [LabelInput!]
 }
 ```
-IntegrationSystemID is an optional property. It means that you can still create Application that is not managed by IntegrationSystem.
+IntegrationSystemID is an optional property. It means that you can still create Application that is not managed by an IntegrationSystem.
 
 ### Example
 In this example, Integration System is registered and then it configures newly added Application.
@@ -51,7 +50,7 @@ mutation {
     }
 }
 ```
-Compass adds protected label with name `integrationSystemID` for just created Application, so output of the previous mutation is the following:
+3. Compass adds protected label with name `integration-system-id` for just created Application, so output of the previous mutation is the following:
 ```json
 {
   "data": {
@@ -61,7 +60,7 @@ Compass adds protected label with name `integrationSystemID` for just created Ap
       "integrationSystemID": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
       "labels": {
         "scenarios":["DEFAULT"],
-        "integrationSystemID":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+        "integration-system-id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
       }
     }
   }
@@ -78,7 +77,7 @@ In the previous example, there was an assumption that every Application managed 
 of the Application that provides similar API and event definitions.  
 In case IntegrationSystem supporting many types of Applications, information about Application type should be stored in the Application labels.
 Let assume that IntegrationSystem supports two types of Applications: `ecommerce` and `marketing` and such information
-is stored in label `{integration-system-name}/applicationType`.
+is stored in label `{integration-system-name}/application-type`.
 To create an Application of type `ecommerce`, use following mutation:
 ```graphql
 mutation {
@@ -119,13 +118,13 @@ enum ApplicationTemplateAccessLevel {
 
 
 input PlaceholderDefinitionInput {
-    name            String!
-    description     String
+    name:            String!
+    description:     String
 }
 
 input TemplateValueInput {
-    placeholder     String!
-    value           String!
+    placeholder:     String!
+    value:           String!
 }
 
 type Mutation {
@@ -151,7 +150,7 @@ mutation {
         applicationInput:{
             name: "ecommerce-app",
             integrationSystemID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-            labels:[{key:"simpleIntegrationSystem/applicationType",value:"ecommerce"}]
+            labels: [{key:"simple-integration-system/application-type",value:"ecommerce"}]
         }
         }) {
            name
@@ -170,25 +169,24 @@ query  {
 }
 
 ```
-
-
-2. A user creates an Application from template:
+3. A user creates an Application from template:
 ```graphql
 mutation {
     createApplicationFromTemplate(templateName:"ecommerce-template") {
         id
         name
         labels
+    }
 }
 ```
 
 This mutation creates Application with name `ecommerce-app`, integrationSystemID is set to `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa` and
 with two labels:
-- `integrationSystemID` with value `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa`
-- `simpleIntegrationSystem/applicationType` with value `ecommerce`
+- `integration-system-id` with value `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa`
+- `simple-integration-system/application-type` with value `ecommerce`
 
 When Integration System noticed, that new Application was created, it starts configuring it according to information
-stored in the `applicationType` label.
+stored in the `application-type` label.
 
 In this example, IntegrationSystem registers ApplicationTemplate, but users can also define their own ApplicationTemplates.
 
@@ -208,7 +206,7 @@ mutation {
         applicationInput:{
             name: "{{APPLICATION_NAME}}",
             integrationSystemID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-            labels:[{key:"simpleIntegrationSystem/applicationType",value:"ecommerce"}]
+            labels:[{key:"simple-integration-system/application-type",value:"ecommerce"}]
 
         },
         placeholders: [
@@ -229,10 +227,11 @@ When user creates Application from Template that defines placeholders, current v
 
 ```graphql
 mutation {
-    createApplicationFromTemplate(templateName:"ecommerce-template", values: [{placeholder:"APPLICATION_NAME", value:"MyApplication"}]) {
+    createApplicationFromTemplate(templateName:"ecommerce-template", values: [{placeholder:"APPLICATION_NAME", value:"my-aplication"}]) {
         id
         name
         labels
+    }
 }
 ```
 
@@ -252,9 +251,9 @@ mutation {
         applicationInput:{
             name: "{{APPLICATION_NAME}}",
             integrationSystemID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-            labels:[{key:"simpleIntegrationSystem/applicationType",value:"ecommerce"},
-                    {key:"simpleIntegrationSystem/inputParam/username", value:"{{USERNAME}}"},
-                     {key:"simpleIntegrationSystem/inputParam/password", value:"{{PASSWORD}}"},
+            labels:[{key:"simple-integration-system/application-type",value:"ecommerce"},
+                    {key:"simple-integration-system/input-param/username", value:"{{USERNAME}}"},
+                     {key:"simple-integration-system/input-param/password", value:"{{PASSWORD}}"},
              ]
 
         },
@@ -290,7 +289,8 @@ mutation {
          id
          name
          labels
- }
+    }
+}
  ```
 
 ## Reasoning

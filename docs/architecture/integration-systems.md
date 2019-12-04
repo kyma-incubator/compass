@@ -13,12 +13,19 @@ managing its Client Credentials.
 type IntegrationSystem {
     id: ID!
     name: String!
+    desciption: String
     auths: [SystemAuth!]!
 }
 
 input IntegrationSystemInput {
     name: String!
     description: String
+}
+
+type IntegrationSystemPage implements Pageable {
+	data: [IntegrationSystem!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
 }
 
 type Mutation {
