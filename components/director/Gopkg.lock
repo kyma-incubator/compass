@@ -532,6 +532,7 @@
     "github.com/99designs/gqlgen/plugin",
     "github.com/DATA-DOG/go-sqlmock",
     "github.com/Masterminds/sprig",
+    "github.com/asaskevich/govalidator",
     "github.com/dgrijalva/jwt-go",
     "github.com/ghodss/yaml",
     "github.com/go-ozzo/ozzo-validation",

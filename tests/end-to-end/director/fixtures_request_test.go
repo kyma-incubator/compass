@@ -62,6 +62,15 @@ func fixCreateIntegrationSystemRequest(integrationSystemInGQL string) *gcli.Requ
 			integrationSystemInGQL, tc.gqlFieldsProvider.ForIntegrationSystem()))
 }
 
+func fixAddDocumentRequest(appID, documentInputInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		result: addDocument(applicationID: "%s", in: %s) {
+ 				%s
+			}				
+		}`, appID, documentInputInGQL, tc.gqlFieldsProvider.ForDocument()))
+}
+
 func fixAddWebhookRequest(applicationID, webhookInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {

@@ -644,12 +644,12 @@ type Mutation {
 	- [create application with webhooks](examples/create-application/create-application-with-webhooks.graphql)
 	- [create application](examples/create-application/create-application.graphql)
 	"""
-	createApplication(in: ApplicationCreateInput!): Application! @hasScopes(path: "graphql.mutation.createApplication")
+	createApplication(in: ApplicationCreateInput! @validate): Application! @hasScopes(path: "graphql.mutation.createApplication")
 	"""
 	**Examples**
 	- [update application](examples/update-application/update-application.graphql)
 	"""
-	updateApplication(id: ID!, in: ApplicationUpdateInput!): Application! @hasScopes(path: "graphql.mutation.updateApplication")
+	updateApplication(id: ID!, in: ApplicationUpdateInput! @validate): Application! @hasScopes(path: "graphql.mutation.updateApplication")
 	"""
 	**Examples**
 	- [delete application](examples/delete-application/delete-application.graphql)
@@ -689,12 +689,12 @@ type Mutation {
 	**Examples**
 	- [create integration system](examples/create-integration-system/create-integration-system.graphql)
 	"""
-	createIntegrationSystem(in: IntegrationSystemInput!): IntegrationSystem! @hasScopes(path: "graphql.mutation.createIntegrationSystem")
+	createIntegrationSystem(in: IntegrationSystemInput! @validate): IntegrationSystem! @hasScopes(path: "graphql.mutation.createIntegrationSystem")
 	"""
 	**Examples**
 	- [update integration system](examples/update-integration-system/update-integration-system.graphql)
 	"""
-	updateIntegrationSystem(id: ID!, in: IntegrationSystemInput!): IntegrationSystem! @hasScopes(path: "graphql.mutation.updateIntegrationSystem")
+	updateIntegrationSystem(id: ID!, in: IntegrationSystemInput! @validate): IntegrationSystem! @hasScopes(path: "graphql.mutation.updateIntegrationSystem")
 	"""
 	**Examples**
 	- [delete integration system](examples/delete-integration-system/delete-integration-system.graphql)
@@ -752,7 +752,7 @@ type Mutation {
 	**Examples**
 	- [add document](examples/add-document/add-document.graphql)
 	"""
-	addDocument(applicationID: ID!, in: DocumentInput!): Document! @hasScopes(path: "graphql.mutation.addDocument")
+	addDocument(applicationID: ID!, in: DocumentInput! @validate): Document! @hasScopes(path: "graphql.mutation.addDocument")
 	"""
 	**Examples**
 	- [delete document](examples/delete-document/delete-document.graphql)
