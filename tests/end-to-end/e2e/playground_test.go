@@ -13,7 +13,9 @@ import (
 	"testing"
 	"time"
 
-	retry "github.com/avast/retry-go"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/avast/retry-go"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/connector"
 	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/gql"
@@ -24,10 +26,11 @@ import (
 
 func TestDirectorPlaygroundAccess(t *testing.T) {
 	const (
-		DirectorURLformat   = "https://%s.%s/director"
-		OAuth2Subdomain     = "compass-gateway-auth-oauth"
-		JWTSubdomain        = "compass-gateway"
-		ClientCertSubdomain = "compass-gateway-mtls"
+		DirectorRedirectURLFormat = "https://%s.%s/director"
+		DirectorURLFormat         = DirectorRedirectURLFormat + "/"
+		OAuth2Subdomain           = "compass-gateway-auth-oauth"
+		JWTSubdomain              = "compass-gateway"
+		ClientCertSubdomain       = "compass-gateway-mtls"
 	)
 
 	domain := os.Getenv("DOMAIN")
@@ -35,10 +38,19 @@ func TestDirectorPlaygroundAccess(t *testing.T) {
 
 	t.Run("Access playground via OAuth2 subdomain", func(t *testing.T) {
 		client := getClient()
-		url := fmt.Sprintf(DirectorURLformat, OAuth2Subdomain, domain)
-		resp, err := getPlaygroundWithRetries(client, url)
-		require.NoError(t, err)
 
+		redirectURL := fmt.Sprintf(DirectorRedirectURLFormat, OAuth2Subdomain, domain)
+		url := fmt.Sprintf(DirectorURLFormat, OAuth2Subdomain, domain)
+
+		redirectResp, err := fetchURLWithRetries(client, redirectURL)
+		require.NoError(t, err)
+		defer closeBody(t, redirectResp.Body)
+
+		assert.Equal(t, url, redirectResp.Request.URL.String())
+		assert.Equal(t, http.StatusOK, redirectResp.StatusCode)
+
+		resp, err := fetchURLWithRetries(client, url)
+		require.NoError(t, err)
 		defer closeBody(t, resp.Body)
 
 		require.Equal(t, http.StatusOK, resp.StatusCode)
@@ -46,10 +58,19 @@ func TestDirectorPlaygroundAccess(t *testing.T) {
 
 	t.Run("Access playground via JWT subdomain", func(t *testing.T) {
 		client := getClient()
-		url := fmt.Sprintf(DirectorURLformat, JWTSubdomain, domain)
-		resp, err := getPlaygroundWithRetries(client, url)
-		require.NoError(t, err)
 
+		redirectURL := fmt.Sprintf(DirectorRedirectURLFormat, JWTSubdomain, domain)
+		url := fmt.Sprintf(DirectorURLFormat, JWTSubdomain, domain)
+
+		redirectResp, err := fetchURLWithRetries(client, redirectURL)
+		require.NoError(t, err)
+		defer closeBody(t, redirectResp.Body)
+
+		assert.Equal(t, url, redirectResp.Request.URL.String())
+		assert.Equal(t, http.StatusOK, redirectResp.StatusCode)
+
+		resp, err := fetchURLWithRetries(client, url)
+		require.NoError(t, err)
 		defer closeBody(t, resp.Body)
 
 		require.Equal(t, http.StatusOK, resp.StatusCode)
@@ -72,8 +93,18 @@ func TestDirectorPlaygroundAccess(t *testing.T) {
 		certChain, clientKey := generateClientCertForApplication(t, oneTimeToken)
 
 		client := getClientWithCert(certChain, clientKey)
-		url := fmt.Sprintf(DirectorURLformat, ClientCertSubdomain, domain)
-		resp, err := getPlaygroundWithRetries(client, url)
+
+		redirectURL := fmt.Sprintf(DirectorRedirectURLFormat, ClientCertSubdomain, domain)
+		url := fmt.Sprintf(DirectorURLFormat, ClientCertSubdomain, domain)
+
+		redirectResp, err := fetchURLWithRetries(client, redirectURL)
+		require.NoError(t, err)
+		defer closeBody(t, redirectResp.Body)
+
+		assert.Equal(t, url, redirectResp.Request.URL.String())
+		assert.Equal(t, http.StatusOK, redirectResp.StatusCode)
+
+		resp, err := fetchURLWithRetries(client, url)
 		require.NoError(t, err)
 
 		defer closeBody(t, resp.Body)
@@ -82,7 +113,7 @@ func TestDirectorPlaygroundAccess(t *testing.T) {
 	})
 }
 
-func getPlaygroundWithRetries(client *http.Client, url string) (*http.Response, error) {
+func fetchURLWithRetries(client *http.Client, url string) (*http.Response, error) {
 	const (
 		maxAttempts = 10
 		delay       = 10
