@@ -67,18 +67,27 @@ func (s service) GenerateOneTimeToken(ctx context.Context, id string, tokenType 
 		if err != nil {
 			return model.OneTimeToken{}, errors.Wrap(err, "while getting tenant from context")
 		}
-		_, err = s.labelSvc.GetByKey(ctx, tnt, model.ApplicationLabelableObject, id, "customTokenService")
+		appTypeLabel, err := s.labelSvc.GetByKey(ctx, tnt, model.ApplicationLabelableObject, id, "applicationType")
 
 		switch {
 		case apperrors.IsNotFoundError(err):
 			// do nothing
 		case err != nil:
-			return model.OneTimeToken{}, errors.Wrap(err, "while getting label `customTokenService`")
+			return model.OneTimeToken{}, errors.Wrap(err, "while getting label `applicationType`")
 		default:
+
+			appType,ok := appTypeLabel.Value.(string)
+			if !ok {
+				return model.OneTimeToken{}, errors.New("while casting applicationType to string")
+			}
+
+			if appType != "SFSF" && appType != "S4HanaCloud" {
+				break
+			}
 			params := &url.Values{}
 			params.Set("app", id)
 			params.Set("name", fmt.Sprintf("application-%d", time.Now().Unix()))
-			params.Set("type", "S4HanaCloud")
+			params.Set("type", appType)
 
 			baseUrl, err := url.Parse("http://localhost:8082")
 			if err != nil {
@@ -103,12 +112,12 @@ func (s service) GenerateOneTimeToken(ctx context.Context, id string, tokenType 
 			}
 
 			paringToken := PairingIntegrationToken{}
-			err = json.Unmarshal(b, paringToken)
+			err = json.Unmarshal(b, &paringToken)
 			if err != nil {
 				return model.OneTimeToken{}, errors.Wrap(err, "while unmarshalling JSON")
 			}
 
-			return model.OneTimeToken{Token: paringToken.IntegrationToken}, nil
+			return model.OneTimeToken{Token: paringToken.IntegrationToken,ConnectorURL:"not applicable"}, nil
 
 		}
 
