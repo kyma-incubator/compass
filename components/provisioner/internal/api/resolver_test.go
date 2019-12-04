@@ -233,7 +233,7 @@ func TestResolver_CleanupRuntimeData(t *testing.T) {
 	ctx := context.Background()
 	runtimeID := "1100bb59-9c40-4ebb-b846-7477c4dc5bbd"
 
-	t.Run("Should clean up Runtime data",func(t *testing.T) {
+	t.Run("Should clean up Runtime data", func(t *testing.T) {
 
 		//given
 		provisioningService := &mocks.Service{}
@@ -256,7 +256,7 @@ func TestResolver_CleanupRuntimeData(t *testing.T) {
 		provisioningService.AssertExpectations(t)
 	})
 
-	t.Run("Should return error when CleanupRuntimeData fails", func(t *testing.T){
+	t.Run("Should return error when CleanupRuntimeData fails", func(t *testing.T) {
 
 		// given
 		provisioningService := &mocks.Service{}
@@ -273,6 +273,5 @@ func TestResolver_CleanupRuntimeData(t *testing.T) {
 		provisioningService.AssertExpectations(t)
 
 	})
-
 
 }
