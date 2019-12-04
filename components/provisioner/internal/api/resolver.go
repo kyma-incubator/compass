@@ -34,41 +34,41 @@ func NewResolver(provisioningService provisioning.Service) *Resolver {
 func (r *Resolver) ProvisionRuntime(ctx context.Context, id string, config gqlschema.ProvisionRuntimeInput) (string, error) {
 	err := validateInput(config)
 	if err != nil {
-		log.Errorf("Failed to provision runtime %s: %s", id, err)
+		log.Errorf("Failed to provision Runtime %s: %s", id, err)
 		return "", err
 	}
 
-	log.Infof("Requested provisioning of %s runtime.", id)
+	log.Infof("Requested provisioning of Runtime %s.", id)
 
 	operationID, _, err := r.provisioning.ProvisionRuntime(id, config)
 	if err != nil {
-		log.Errorf("Failed to provision runtime %s: %s", id, err)
+		log.Errorf("Failed to provision Runtime %s: %s", id, err)
 		return "", err
 	}
-	log.Infof("Provisioning stared for %s runtime. Operation id %s", id, operationID)
+	log.Infof("Provisioning stared for Runtime %s. Operation id %s", id, operationID)
 
-	return operationID, err
+	return operationID, nil
 }
 
 func validateInput(config gqlschema.ProvisionRuntimeInput) error {
 	if len(config.KymaConfig.Modules) == 0 {
-		return errors.New("cannot provision runtime since Kyma modules list is empty")
+		return errors.New("cannot provision Runtime since Kyma modules list is empty")
 	}
 
 	return nil
 }
 
 func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, error) {
-	log.Infof("Requested deprovisioning of %s runtime.", id)
+	log.Infof("Requested deprovisioning of Runtime %s.", id)
 
 	operationID, _, err := r.provisioning.DeprovisionRuntime(id)
 	if err != nil {
-		log.Errorf("Failed to provision runtime %s: %s", id, err)
+		log.Errorf("Failed to provision Runtime %s: %s", id, err)
 		return "", err
 	}
-	log.Infof("Deprovisioning stared for %s runtime. Operation id %s", id, operationID)
+	log.Infof("Deprovisioning started for Runtime %s. Operation id %s", id, operationID)
 
-	return operationID, err
+	return operationID, nil
 }
 
 func (r *Resolver) UpgradeRuntime(ctx context.Context, id string, config gqlschema.UpgradeRuntimeInput) (string, error) {
@@ -80,28 +80,40 @@ func (r *Resolver) ReconnectRuntimeAgent(ctx context.Context, id string) (string
 }
 
 func (r *Resolver) RuntimeStatus(ctx context.Context, runtimeID string) (*gqlschema.RuntimeStatus, error) {
+	log.Infof("Requested to get status for Runtime %s.", runtimeID)
+
 	status, err := r.provisioning.RuntimeStatus(runtimeID)
 	if err != nil {
-		log.Errorf("Failed to get status for runtime %s: %s", runtimeID, err)
+		log.Errorf("Failed to get status for Runtime %s: %s", runtimeID, err)
+		return nil, err
 	}
+	log.Infof("Getting status for Runtime %s succeeded.", runtimeID)
 
-	return status, err
+	return status, nil
 }
 
 func (r *Resolver) RuntimeOperationStatus(ctx context.Context, operationID string) (*gqlschema.OperationStatus, error) {
+	log.Infof("Requested to get Runtime operation status for Operation %s.", operationID)
+
 	status, err := r.provisioning.RuntimeOperationStatus(operationID)
 	if err != nil {
-		log.Errorf("Failed to get runtime operation status: %s Operation ID: %s", err, operationID)
+		log.Errorf("Failed to get Runtime operation status: %s Operation ID: %s", err, operationID)
+		return nil, err
 	}
+	log.Infof("Getting Runtime operation status for Operation %s succeeded.", operationID)
 
-	return status, err
+	return status, nil
 }
 
-func (r *Resolver) CleanupRuntimeData(ctx context.Context, id string) (string, error) {
+func (r *Resolver) CleanupRuntimeData(ctx context.Context, id string) (*gqlschema.CleanUpRuntimeDataResult, error) {
+	log.Infof("Requested cleaning up Runtime data for Runtime %s.", id)
+
 	res, err := r.provisioning.CleanupRuntimeData(id)
 	if err != nil {
-		log.Errorf("Failed to cleanup data for runtime %s: %s", id, err)
+		log.Errorf("Failed to cleanup data for Runtime %s: %s", id, err)
+		return nil, err
 	}
+	log.Infof("Cleaning up Runtime data for Runtime %s succeeded.", id)
 
-	return res, err
+	return res, nil
 }

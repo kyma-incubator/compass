@@ -3,12 +3,12 @@ package model
 import "github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 type ApplicationTemplate struct {
-	ID               string
-	Name             string
-	Description      *string
-	ApplicationInput *ApplicationCreateInput
-	Placeholders     []ApplicationTemplatePlaceholder
-	AccessLevel      ApplicationTemplateAccessLevel
+	ID                   string
+	Name                 string
+	Description          *string
+	ApplicationInputJSON string
+	Placeholders         []ApplicationTemplatePlaceholder
+	AccessLevel          ApplicationTemplateAccessLevel
 }
 
 type ApplicationTemplatePage struct {
@@ -18,11 +18,11 @@ type ApplicationTemplatePage struct {
 }
 
 type ApplicationTemplateInput struct {
-	Name             string
-	Description      *string
-	ApplicationInput *ApplicationCreateInput
-	Placeholders     []ApplicationTemplatePlaceholder
-	AccessLevel      ApplicationTemplateAccessLevel
+	Name                 string
+	Description          *string
+	ApplicationInputJSON string
+	Placeholders         []ApplicationTemplatePlaceholder
+	AccessLevel          ApplicationTemplateAccessLevel
 }
 
 type ApplicationTemplateAccessLevel string
@@ -39,4 +39,19 @@ type ApplicationTemplatePlaceholder struct {
 type ApplicationTemplateValueInput struct {
 	Placeholder string
 	Value       string
+}
+
+func (a *ApplicationTemplateInput) ToApplicationTemplate(id string) ApplicationTemplate {
+	if a == nil {
+		return ApplicationTemplate{}
+	}
+
+	return ApplicationTemplate{
+		ID:                   id,
+		Name:                 a.Name,
+		Description:          a.Description,
+		ApplicationInputJSON: a.ApplicationInputJSON,
+		Placeholders:         a.Placeholders,
+		AccessLevel:          a.AccessLevel,
+	}
 }

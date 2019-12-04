@@ -61,3 +61,33 @@ func fixRuntimeInput(placeholder string) graphql.RuntimeInput {
 		Labels:      &graphql.Labels{"placeholder": []interface{}{"placeholder"}},
 	}
 }
+
+func fixApplicationTemplate(name string) graphql.ApplicationTemplateInput {
+	appTemplateDesc := "app-template-desc"
+	placeholderDesc := "new-placeholder-desc"
+	appTemplateInput := graphql.ApplicationTemplateInput{
+		Name:        name,
+		Description: &appTemplateDesc,
+		ApplicationInput: &graphql.ApplicationCreateInput{
+			Name:        "app",
+			Description: ptr.String("test"),
+			Labels: &graphql.Labels{
+				"a": []string{"b", "c"},
+				"d": []string{"e", "f"},
+			},
+			Webhooks: []*graphql.WebhookInput{{
+				Type: graphql.ApplicationWebhookTypeConfigurationChanged,
+				URL:  "http://url.com",
+			}},
+			HealthCheckURL: ptr.String("http://url.valid"),
+		},
+		Placeholders: []*graphql.PlaceholderDefinitionInput{
+			{
+				Name:        "new-placeholder",
+				Description: &placeholderDesc,
+			},
+		},
+		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
+	}
+	return appTemplateInput
+}

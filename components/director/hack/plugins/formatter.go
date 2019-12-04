@@ -258,6 +258,8 @@ func (f *formatter) FormatArgumentDefinition(def *ast.ArgumentDefinition) {
 		f.WriteWord("=")
 		f.FormatValue(def.DefaultValue)
 	}
+
+	f.FormatDirectiveList(def.Directives)
 }
 
 func (f *formatter) FormatDirectiveLocation(location ast.DirectiveLocation) {

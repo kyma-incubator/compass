@@ -121,12 +121,22 @@ func (ws writeSession) InsertOperation(operation model.Operation) dberrors.Error
 }
 
 func (ws writeSession) DeleteCluster(runtimeID string) dberrors.Error {
-	_, err := ws.deleteFrom("cluster").
+	result, err := ws.deleteFrom("cluster").
 		Where(dbr.Eq("id", runtimeID)).
 		Exec()
 
 	if err != nil {
 		return dberrors.Internal("Failed to delete record in Cluster table: %s", err)
+	}
+
+	val, err := result.RowsAffected()
+
+	if err != nil {
+		return dberrors.Internal("Could not fetch the number of rows affected: %s", err)
+	}
+
+	if val == 0 {
+		return dberrors.NotFound("Runtime with ID %s not found", runtimeID)
 	}
 
 	return nil

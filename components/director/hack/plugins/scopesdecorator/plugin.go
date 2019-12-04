@@ -51,7 +51,7 @@ func (p *scopesDecoratorPlugin) MutateConfig(cfg *config.Config) error {
 			p.ensureDirective(f, Query)
 		}
 	}
-	if schema.Query != nil {
+	if schema.Mutation != nil {
 		for _, f := range schema.Mutation.Fields {
 			p.ensureDirective(f, Mutation)
 		}

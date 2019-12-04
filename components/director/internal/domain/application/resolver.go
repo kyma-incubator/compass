@@ -387,6 +387,12 @@ func (r *Resolver) DeleteApplication(ctx context.Context, id string) (*graphql.A
 	return deletedApp, nil
 }
 func (r *Resolver) SetApplicationLabel(ctx context.Context, applicationID string, key string, value interface{}) (*graphql.Label, error) {
+	// TODO: Use @validation directive on input type instead, after resolving https://github.com/kyma-incubator/compass/issues/515
+	gqlLabel := graphql.LabelInput{Key: key, Value: value}
+	if err := gqlLabel.Validate(); err != nil {
+		return nil, errors.Wrap(err, "validation error for type LabelInput")
+	}
+
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err

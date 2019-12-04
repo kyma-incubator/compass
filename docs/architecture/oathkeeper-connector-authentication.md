@@ -59,8 +59,8 @@ Use this access rules configuration:
         api:
           url: http://localhost:8080/v1/tokens/resolve  # URL of Connector Service REST API authenticator
           retry:
-            number: 3
-            delayInMilliseconds: 3000
+            number_of_retries: 3
+            delay_in_milliseconds: 3000
 ```
 
 
