@@ -112,14 +112,15 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b2989d201ae6dc4c70a63676905690aff6e10f76214be4c7d47d9cf7399b2676"
+  digest = "1:d32852e0a3347599aacd107e7513a576545e5c3982330f8a752e69006a1c9893"
   name = "github.com/kyma-incubator/compass"
   packages = [
+    "components/connector/pkg/graphql/externalschema",
     "components/director/pkg/graphql",
     "components/director/pkg/scalar",
   ]
   pruneopts = "UT"
-  revision = "9e2e22a1aa1ac215d63bf53c545ee9536c7405fe"
+  revision = "052677e364822c62c7312db173bc1d54393eaee3"
 
 [[projects]]
   branch = "master"
@@ -213,7 +214,7 @@
     "scrypt",
   ]
   pruneopts = "UT"
-  revision = "497ca9f6d64f9bb73048a960b4098309edcd2205"
+  revision = "e1110fd1c708ef015366ea01799a23c459593c47"
 
 [[projects]]
   branch = "master"
@@ -224,19 +225,19 @@
     "html/atom",
   ]
   pruneopts = "UT"
-  revision = "fc4aabc6c91483155dade6fbb627cc953a723260"
+  revision = "2180aed2234323691e9fd264fb1d32d20ff04b27"
 
 [[projects]]
   branch = "master"
-  digest = "1:fc96eb481f72e9a5edeb4bb3f3610d3b9384c036f7c1e39f8c0dedff23d0c34d"
+  digest = "1:824b4d14e35e35e821d3127319e51eb838f72434100750ad395db96d00b5a871"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "e882bf8e40c23f260d489ef820e5e8eead5e76e3"
+  revision = "4c7a9d0fe056d9d1de37e1409ca8a5c17accb46a"
 
 [[projects]]
   branch = "master"
-  digest = "1:b8c0ebe25da393d35060d76c38af904d5689eb63de8b76898747c641aff4c2df"
+  digest = "1:c6844361728aad543b24489ce34dd854487d3fb19b7d6b7eca111e318e82b00c"
   name = "golang.org/x/tools"
   packages = [
     "cmd/goimports",
@@ -254,7 +255,7 @@
     "internal/span",
   ]
   pruneopts = "UT"
-  revision = "07fc4c7f2b9857711f6306c76424246e8d6eab64"
+  revision = "4191b8cbba092238a318a71cdff48b20b4e1e5d8"
 
 [[projects]]
   digest = "1:f26a5d382387e03a40d1471dddfba85dfff9bf05352d7e42d37612677c4d3c5c"
@@ -273,6 +274,7 @@
     "github.com/dgrijalva/jwt-go",
     "github.com/google/uuid",
     "github.com/kisielk/errcheck",
+    "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
     "github.com/machinebox/graphql",
     "github.com/pkg/errors",

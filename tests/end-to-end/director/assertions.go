@@ -1,6 +1,7 @@
 package director
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -13,16 +14,26 @@ func assertApplication(t *testing.T, in graphql.ApplicationCreateInput, actualAp
 
 	assert.Equal(t, in.Name, actualApp.Name)
 	assert.Equal(t, in.Description, actualApp.Description)
-	if in.Labels != nil {
-		assert.Equal(t, *in.Labels, actualApp.Labels)
-	} else {
-		assert.Empty(t, actualApp.Labels)
-	}
+	assertLabels(t, *in.Labels, actualApp.Labels, actualApp.IntegrationSystemID)
 	assert.Equal(t, in.HealthCheckURL, actualApp.HealthCheckURL)
 	assertWebhooks(t, in.Webhooks, actualApp.Webhooks)
 	assertDocuments(t, in.Documents, actualApp.Documents.Data)
 	assertAPI(t, in.Apis, actualApp.Apis.Data)
 	assertEventsAPI(t, in.EventAPIs, actualApp.EventAPIs.Data)
+}
+
+//TODO: After fixing the 'Labels' scalar turn this back into regular assertion
+func assertLabels(t *testing.T, in graphql.Labels, actual graphql.Labels, id *string) {
+	for key, value := range actual {
+		if key == "integration-system-id" {
+			if id == nil {
+				continue
+			}
+			assert.Equal(t, value, id)
+			continue
+		}
+		assert.Equal(t, value, in[key])
+	}
 }
 
 func assertWebhooks(t *testing.T, in []*graphql.WebhookInput, actual []graphql.Webhook) {
@@ -204,4 +215,26 @@ func assertRuntime(t *testing.T, in graphql.RuntimeInput, actualRuntime graphql.
 func assertIntegrationSystem(t *testing.T, in graphql.IntegrationSystemInput, actualIntegrationSystem graphql.IntegrationSystemExt) {
 	assert.Equal(t, in.Name, actualIntegrationSystem.Name)
 	assert.Equal(t, in.Description, actualIntegrationSystem.Description)
+}
+
+func assertApplicationTemplate(t *testing.T, in graphql.ApplicationTemplateInput, actualApplicationTemplate graphql.ApplicationTemplate) {
+	assert.Equal(t, in.Name, actualApplicationTemplate.Name)
+	assert.Equal(t, in.Description, actualApplicationTemplate.Description)
+
+	gqlAppInput, err := tc.graphqlizer.ApplicationCreateInputToGQL(*in.ApplicationInput)
+	require.NoError(t, err)
+
+	gqlAppInput = strings.Replace(gqlAppInput, "\t", "", -1)
+	gqlAppInput = strings.Replace(gqlAppInput, "\n", "", -1)
+
+	assert.Equal(t, gqlAppInput, actualApplicationTemplate.ApplicationInput)
+	assertApplicationTemplatePlaceholder(t, in.Placeholders, actualApplicationTemplate.Placeholders)
+	assert.Equal(t, in.AccessLevel, actualApplicationTemplate.AccessLevel)
+}
+
+func assertApplicationTemplatePlaceholder(t *testing.T, in []*graphql.PlaceholderDefinitionInput, actualPlaceholders []*graphql.PlaceholderDefinition) {
+	for i, _ := range in {
+		assert.Equal(t, in[i].Name, actualPlaceholders[i].Name)
+		assert.Equal(t, in[i].Description, actualPlaceholders[i].Description)
+	}
 }

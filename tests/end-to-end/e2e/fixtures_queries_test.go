@@ -91,3 +91,16 @@ func generateClientCredentialsForIntegrationSystem(t *testing.T, ctx context.Con
 	require.NoError(t, err)
 	return systemAuth
 }
+
+func generateOneTimeTokenForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.OneTimeToken {
+	req := fixGenerateOneTimeTokenForApplication(id)
+	oneTimeToken := graphql.OneTimeToken{}
+
+	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &oneTimeToken)
+	require.NoError(t, err)
+
+	require.NotEmpty(t, oneTimeToken.ConnectorURL)
+	require.NotEmpty(t, oneTimeToken.Token)
+
+	return oneTimeToken
+}

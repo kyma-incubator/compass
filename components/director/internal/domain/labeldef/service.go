@@ -52,9 +52,6 @@ type UIDService interface {
 func (s *service) Create(ctx context.Context, def model.LabelDefinition) (model.LabelDefinition, error) {
 	id := s.uidService.Generate()
 	def.ID = id
-	if err := def.Validate(); err != nil {
-		return model.LabelDefinition{}, errors.Wrap(err, "while validation Label Definition")
-	}
 
 	if err := s.repo.Create(ctx, def); err != nil {
 		return model.LabelDefinition{}, errors.Wrap(err, "while storing Label Definition")
@@ -80,10 +77,6 @@ func (s *service) List(ctx context.Context, tenant string) ([]model.LabelDefinit
 }
 
 func (s *service) Update(ctx context.Context, def model.LabelDefinition) error {
-	if err := def.ValidateForUpdate(); err != nil {
-		return errors.Wrap(err, "while validating Label Definition")
-	}
-
 	ld, err := s.repo.GetByKey(ctx, def.Tenant, def.Key)
 	if err != nil {
 		return errors.Wrap(err, "while receiving Label Definition")

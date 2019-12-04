@@ -20,7 +20,10 @@ const (
 	deleteWebhookCategory     = "delete webhook"
 	addWebhookCategory        = "add webhook"
 	updateWebhookCategory     = "update webhook"
+	webhookURL                = "https://kyma-project.io"
 )
+
+var integrationSystemID = "69230297-3c81-4711-aac2-3afa8cb42e2d"
 
 func TestCreateApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	// GIVEN
@@ -256,7 +259,7 @@ func TestCreateApplicationWithDocuments(t *testing.T) {
 				Title:       "Readme",
 				Description: "Detailed description of project",
 				Format:      graphql.DocumentFormatMarkdown,
-
+				DisplayName: "display-name",
 				FetchRequest: &graphql.FetchRequestInput{
 					URL:    "kyma-project.io",
 					Mode:   ptr.FetchMode(graphql.FetchModePackage),
@@ -268,6 +271,7 @@ func TestCreateApplicationWithDocuments(t *testing.T) {
 				Title:       "Troubleshooting",
 				Description: "Troubleshooting description",
 				Format:      graphql.DocumentFormatMarkdown,
+				DisplayName: "display-name",
 				Data:        ptr.CLOB(graphql.CLOB("No problems, everything works on my machine")),
 			},
 		},
@@ -301,6 +305,25 @@ func TestCreateApplicationWithDocuments(t *testing.T) {
 	assertApplication(t, in, actualApp)
 }
 
+func TestCreateApplicationWithNonExistentIntegrationSystem(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+
+	in := fixSampleApplicationCreateInputWithIntegrationSystem("placeholder")
+	appInputGQL, err := tc.graphqlizer.ApplicationCreateInputToGQL(in)
+	require.NoError(t, err)
+	actualApp := graphql.ApplicationExt{}
+
+	request := fixCreateApplicationRequest(appInputGQL)
+	// WHEN
+	err = tc.RunOperation(ctx, request, &actualApp)
+
+	//THEN
+	require.Error(t, err)
+	require.NotNil(t, err.Error())
+	require.Contains(t, err.Error(), "does not exist")
+}
+
 func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 	applicationId := "cf889c38-490d-4896-96a7-c0721eca9932"
 
@@ -308,7 +331,7 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 		//GIVEN
 		ctx := context.Background()
 		webhookInStr, err := tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
-			URL:  "new-webhook",
+			URL:  "http://new.webhook",
 			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 		})
 		require.NoError(t, err)
@@ -408,7 +431,7 @@ func TestUpdateApplication(t *testing.T) {
 	expectedApp := actualApp
 	expectedApp.Name = "after"
 	expectedApp.Description = ptr.String("after")
-	expectedApp.HealthCheckURL = ptr.String("after")
+	expectedApp.HealthCheckURL = ptr.String("https://kyma-project.io")
 
 	updateInput := fixSampleApplicationUpdateInput("after")
 	updateInputGQL, err := tc.graphqlizer.ApplicationUpdateInputToGQL(updateInput)
@@ -423,6 +446,28 @@ func TestUpdateApplication(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, expectedApp, updatedApp)
 	saveExample(t, request.Query(), "update application")
+}
+
+func TestUpdateApplicationWithNonExistentIntegrationSystem(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+
+	actualApp := createApplication(t, ctx, "before")
+	defer deleteApplication(t, actualApp.ID)
+
+	updateInput := fixSampleApplicationUpdateInputWithIntegrationSystem("after")
+	updateInputGQL, err := tc.graphqlizer.ApplicationUpdateInputToGQL(updateInput)
+	require.NoError(t, err)
+	request := fixUpdateApplicationRequest(actualApp.ID, updateInputGQL)
+	updatedApp := graphql.ApplicationExt{}
+
+	//WHEN
+	err = tc.RunOperation(ctx, request, &updatedApp)
+
+	//THEN
+	require.Error(t, err)
+	require.NotNil(t, err.Error())
+	require.Contains(t, err.Error(), "does not exist")
 }
 
 func TestCreateUpdateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
@@ -560,7 +605,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 	t.Run("manage webhooks", func(t *testing.T) {
 		// add
 		webhookInStr, err := tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
-			URL:  "new-webhook",
+			URL:  "http://new-webhook.url",
 			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 		})
 
@@ -576,7 +621,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		actualWebhook := graphql.Webhook{}
 		err = tc.RunOperation(ctx, addReq, &actualWebhook)
 		require.NoError(t, err)
-		assert.Equal(t, "new-webhook", actualWebhook.URL)
+		assert.Equal(t, "http://new-webhook.url", actualWebhook.URL)
 		assert.Equal(t, graphql.ApplicationWebhookTypeConfigurationChanged, actualWebhook.Type)
 		id := actualWebhook.ID
 		require.NotNil(t, id)
@@ -587,7 +632,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 		// update
 		webhookInStr, err = tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
-			URL: "updated-webhook", Type: graphql.ApplicationWebhookTypeConfigurationChanged,
+			URL: "http://updated-webhook.url", Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 		})
 
 		require.NoError(t, err)
@@ -600,7 +645,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		saveExampleInCustomDir(t, updateReq.Query(), updateWebhookCategory, "update application webhook")
 		err = tc.RunOperation(ctx, updateReq, &actualWebhook)
 		require.NoError(t, err)
-		assert.Equal(t, "updated-webhook", actualWebhook.URL)
+		assert.Equal(t, "http://updated-webhook.url", actualWebhook.URL)
 
 		// delete
 
@@ -618,7 +663,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, "updated-webhook", actualWebhook.URL)
+		assert.Equal(t, "http://updated-webhook.url", actualWebhook.URL)
 
 	})
 
@@ -1195,8 +1240,10 @@ func fixSampleApplicationCreateInput(placeholder string) graphql.ApplicationCrea
 	return graphql.ApplicationCreateInput{
 		Name: placeholder,
 		Documents: []*graphql.DocumentInput{{
-			Title:  placeholder,
-			Format: graphql.DocumentFormatMarkdown}},
+			Title:       placeholder,
+			DisplayName: placeholder,
+			Description: placeholder,
+			Format:      graphql.DocumentFormatMarkdown}},
 		Apis: []*graphql.APIDefinitionInput{{
 			Name:      placeholder,
 			TargetURL: placeholder}},
@@ -1208,7 +1255,7 @@ func fixSampleApplicationCreateInput(placeholder string) graphql.ApplicationCrea
 			}}},
 		Webhooks: []*graphql.WebhookInput{{
 			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
-			URL:  placeholder},
+			URL:  webhookURL},
 		},
 		Labels: &graphql.Labels{placeholder: []interface{}{placeholder}},
 	}
@@ -1220,11 +1267,26 @@ func fixSampleApplicationCreateInputWithName(placeholder, name string) graphql.A
 	return sampleInput
 }
 
+func fixSampleApplicationCreateInputWithIntegrationSystem(placeholder string) graphql.ApplicationCreateInput {
+	sampleInput := fixSampleApplicationCreateInput(placeholder)
+	sampleInput.IntegrationSystemID = &integrationSystemID
+	return sampleInput
+}
+
 func fixSampleApplicationUpdateInput(placeholder string) graphql.ApplicationUpdateInput {
 	return graphql.ApplicationUpdateInput{
 		Name:           placeholder,
 		Description:    &placeholder,
-		HealthCheckURL: &placeholder,
+		HealthCheckURL: ptr.String(webhookURL),
+	}
+}
+
+func fixSampleApplicationUpdateInputWithIntegrationSystem(placeholder string) graphql.ApplicationUpdateInput {
+	return graphql.ApplicationUpdateInput{
+		Name:                placeholder,
+		Description:         &placeholder,
+		HealthCheckURL:      ptr.String(webhookURL),
+		IntegrationSystemID: &integrationSystemID,
 	}
 }
 

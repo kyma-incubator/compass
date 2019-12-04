@@ -64,6 +64,34 @@ func deleteSystemAuthForApplication(t *testing.T, ctx context.Context, id string
 	require.NoError(t, err)
 }
 
+//Application Template
+func getApplicationTemplate(t *testing.T, ctx context.Context, id string) *graphql.ApplicationTemplate {
+	appTemplateRequest := fixApplicationTemplateRequest(id)
+	appTemplate := graphql.ApplicationTemplate{}
+	require.NoError(t, tc.RunOperation(ctx, appTemplateRequest, &appTemplate))
+	return &appTemplate
+}
+
+func createApplicationTemplate(t *testing.T, ctx context.Context, name string) graphql.ApplicationTemplate {
+	appTemplateInput := fixApplicationTemplate(name)
+	appTemplate, err := tc.graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
+	require.NoError(t, err)
+
+	createApplicationTemplateRequest := fixCreateApplicationTemplateRequest(appTemplate)
+	output := graphql.ApplicationTemplate{}
+
+	err = tc.RunOperation(ctx, createApplicationTemplateRequest, &output)
+	require.NoError(t, err)
+	require.NotEmpty(t, output.ID)
+	return output
+}
+
+func deleteApplicationTemplate(t *testing.T, ctx context.Context, id string) {
+	req := fixDeleteApplicationTemplate(id)
+	err := tc.RunOperation(ctx, req, nil)
+	require.NoError(t, err)
+}
+
 //Runtime
 func createRuntime(t *testing.T, ctx context.Context, placeholder string) *graphql.RuntimeExt {
 	input := fixRuntimeInput(placeholder)
@@ -229,7 +257,6 @@ func createIntegrationSystem(t *testing.T, ctx context.Context, name string) *gr
 	if err != nil {
 		return nil
 	}
-
 	req := fixCreateIntegrationSystemRequest(in)
 	out := &graphql.IntegrationSystemExt{}
 	err = tc.RunOperation(ctx, req, out)

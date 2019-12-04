@@ -42,7 +42,6 @@ type SystemAuthConverter interface {
 type OAuth20Service interface {
 	DeleteMultipleClientCredentials(ctx context.Context, auths []model.SystemAuth) error
 }
-
 type Resolver struct {
 	transact persistence.Transactioner
 
@@ -204,6 +203,7 @@ func (r *Resolver) DeleteIntegrationSystem(ctx context.Context, id string) (*gra
 	if err != nil {
 		return nil, err
 	}
+
 	auths, err := r.sysAuthSvc.ListForObject(ctx, model.IntegrationSystemReference, intSys.ID)
 	if err != nil {
 		return nil, err
