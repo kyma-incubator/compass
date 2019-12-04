@@ -156,6 +156,14 @@
   version = "v1.0.2"
 
 [[projects]]
+  digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
+  name = "github.com/machinebox/graphql"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "05b17f3157491bbfa5d6fc2006443a272d960d15"
+  version = "v0.2.2"
+
+[[projects]]
   digest = "1:33422d238f147d247752996a26574ac48dcf472976eda7f5134015f06bf16563"
   name = "github.com/modern-go/concurrent"
   packages = ["."]
@@ -596,6 +604,7 @@
     "github.com/99designs/gqlgen/handler",
     "github.com/gorilla/mux",
     "github.com/kisielk/errcheck",
+    "github.com/machinebox/graphql",
     "github.com/patrickmn/go-cache",
     "github.com/pkg/errors",
     "github.com/sirupsen/logrus",
