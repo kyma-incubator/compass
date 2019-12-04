@@ -31,6 +31,11 @@ const (
 	GlobalApplicationTemplateAccessLevel ApplicationTemplateAccessLevel = "GLOBAL"
 )
 
+type ApplicationFromTemplateInput struct {
+	TemplateName string
+	Values       []*ApplicationTemplateValueInput
+}
+
 type ApplicationTemplatePlaceholder struct {
 	Name        string
 	Description *string

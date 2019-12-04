@@ -12,19 +12,16 @@ import (
 	"github.com/pkg/errors"
 )
 
-type AppConverter interface{}
-type ApplicationConverter interface {
-	CreateInputFromGraphQL(in graphql.ApplicationCreateInput) model.ApplicationCreateInput
+type AppConverter interface {
+	CreateInputGQLToJSON(in *graphql.ApplicationCreateInput) (string, error)
 }
 
 type converter struct {
-	applicationConverter ApplicationConverter
+	appConverter AppConverter
 }
 
-func NewConverter(applicationConverter ApplicationConverter) *converter {
-	return &converter{
-		applicationConverter: applicationConverter,
-	}
+func NewConverter(appConverter AppConverter) *converter {
+	return &converter{appConverter: appConverter}
 }
 
 func (c *converter) ToGraphQL(in *model.ApplicationTemplate) (*graphql.ApplicationTemplate, error) {
@@ -72,7 +69,7 @@ func (c *converter) InputFromGraphQL(in graphql.ApplicationTemplateInput) (model
 	var appCreateInput string
 	var err error
 	if in.ApplicationInput != nil {
-		appCreateInput, err = c.applicationCreateInputGQLToJSON(in.ApplicationInput)
+		appCreateInput, err = c.appConverter.CreateInputGQLToJSON(in.ApplicationInput)
 		if err != nil {
 			return model.ApplicationTemplateInput{}, errors.Wrap(err, "while packing GQL application input")
 		}
@@ -85,6 +82,22 @@ func (c *converter) InputFromGraphQL(in graphql.ApplicationTemplateInput) (model
 		Placeholders:         c.placeholdersFromGraphql(in.Placeholders),
 		AccessLevel:          model.ApplicationTemplateAccessLevel(in.AccessLevel),
 	}, nil
+}
+
+func (c *converter) ApplicationFromTemplateInputFromGraphQL(in graphql.ApplicationFromTemplateInput) model.ApplicationFromTemplateInput {
+	var values []*model.ApplicationTemplateValueInput
+	for _, value := range in.Values {
+		valueInput := model.ApplicationTemplateValueInput{
+			Placeholder: value.Placeholder,
+			Value:       value.Value,
+		}
+		values = append(values, &valueInput)
+	}
+
+	return model.ApplicationFromTemplateInput{
+		TemplateName: in.TemplateName,
+		Values:       values,
+	}
 }
 
 func (c *converter) ToEntity(in *model.ApplicationTemplate) (*Entity, error) {
@@ -142,42 +155,6 @@ func (c *converter) graphqliseApplicationCreateInput(jsonAppInput string) (strin
 	gqlAppInput = strings.Replace(gqlAppInput, "\t", "", -1)
 	gqlAppInput = strings.Replace(gqlAppInput, "\n", "", -1)
 	return gqlAppInput, nil
-}
-
-func (c *converter) applicationCreateInputJSONToModel(in string) (*model.ApplicationCreateInput, error) {
-	if in == "" {
-		return nil, nil
-	}
-
-	var appInput model.ApplicationCreateInput
-	err := json.Unmarshal([]byte(in), &appInput)
-	if err != nil {
-		return nil, err
-	}
-
-	return &appInput, nil
-}
-
-func (c *converter) applicationCreateInputModelToJSON(in *model.ApplicationCreateInput) (string, error) {
-	if in == nil {
-		return "", nil
-	}
-
-	result, err := json.Marshal(in)
-	if err != nil {
-		return "", errors.Wrap(err, "while marshalling Application input")
-	}
-
-	return string(result), nil
-}
-
-func (c *converter) applicationCreateInputGQLToJSON(in *graphql.ApplicationCreateInput) (string, error) {
-	appInput, err := json.Marshal(in)
-	if err != nil {
-		return "", errors.Wrap(err, "while marshaling application input")
-	}
-
-	return string(appInput), nil
 }
 
 func (c *converter) placeholdersJSONToModel(in sql.NullString) ([]model.ApplicationTemplatePlaceholder, error) {

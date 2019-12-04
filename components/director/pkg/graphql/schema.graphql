@@ -127,6 +127,11 @@ input ApplicationCreateInput {
 	integrationSystemID: ID
 }
 
+input ApplicationFromTemplateInput {
+	templateName: String!
+	values: [TemplateValueInput!]
+}
+
 input ApplicationTemplateInput {
 	name: String!
 	description: String
@@ -659,13 +664,13 @@ type Mutation {
 	**Examples**
 	- [create application template](examples/create-application-template/create-application-template.graphql)
 	"""
-	createApplicationTemplate(in: ApplicationTemplateInput!): ApplicationTemplate! @hasScopes(path: "graphql.mutation.createApplicationTemplate")
-	createApplicationFromTemplate(templateName: String!, values: [TemplateValueInput]): Application! @hasScopes(path: "graphql.mutation.createApplicationFromTemplate")
+	createApplicationTemplate(in: ApplicationTemplateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.createApplicationTemplate")
+	registerApplicationFromTemplate(in: ApplicationFromTemplateInput! @validate): Application! @hasScopes(path: "graphql.mutation.registerApplicationFromTemplate")
 	"""
 	**Examples**
 	- [update application template](examples/update-application-template/update-application-template.graphql)
 	"""
-	updateApplicationTemplate(id: ID!, in: ApplicationTemplateInput!): ApplicationTemplate! @hasScopes(path: "graphql.mutation.updateApplicationTemplate")
+	updateApplicationTemplate(id: ID!, in: ApplicationTemplateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.updateApplicationTemplate")
 	"""
 	**Examples**
 	- [delete application template](examples/delete-application-template/delete-application-template.graphql)

@@ -22,7 +22,7 @@ type ApplicationTemplateService interface {
 	List(ctx context.Context, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
 	Update(ctx context.Context, id string, in model.ApplicationTemplateInput) error
 	Delete(ctx context.Context, id string) error
-	FillPlaceholders(ctx context.Context, appTemplate *model.ApplicationTemplate, templatePlaceholderValues []*graphql.TemplateValueInput) model.ApplicationCreateInput
+	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, templatePlaceholderValues []*model.ApplicationTemplateValueInput) (string, error)
 }
 
 //go:generate mockery -name=ApplicationTemplateConverter -output=automock -outpkg=automock -case=underscore
@@ -30,18 +30,26 @@ type ApplicationTemplateConverter interface {
 	ToGraphQL(in *model.ApplicationTemplate) (*graphql.ApplicationTemplate, error)
 	MultipleToGraphQL(in []*model.ApplicationTemplate) ([]*graphql.ApplicationTemplate, error)
 	InputFromGraphQL(in graphql.ApplicationTemplateInput) (model.ApplicationTemplateInput, error)
+	ApplicationFromTemplateInputFromGraphQL(in graphql.ApplicationFromTemplateInput) model.ApplicationFromTemplateInput
+}
+
+//go:generate mockery -name=ApplicationConverter -output=automock -outpkg=automock -case=underscore
+type ApplicationConverter interface {
+	ToGraphQL(in *model.Application) *graphql.Application
+	CreateInputJSONToGQL(in string) (graphql.ApplicationCreateInput, error)
+	CreateInputFromGraphQL(in graphql.ApplicationCreateInput) model.ApplicationCreateInput
 }
 
 type Resolver struct {
 	transact persistence.Transactioner
 
 	appSvc               application.ApplicationService
-	appConverter         application.ApplicationConverter
+	appConverter         ApplicationConverter
 	appTemplateSvc       ApplicationTemplateService
 	appTemplateConverter ApplicationTemplateConverter
 }
 
-func NewResolver(transact persistence.Transactioner, appSvc application.ApplicationService, appConverter application.ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, appSvc application.ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter) *Resolver {
 	return &Resolver{
 		transact:             transact,
 		appSvc:               appSvc,
@@ -162,7 +170,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	return gqlAppTemplate, nil
 }
 
-func (r *Resolver) CreateApplicationFromTemplate(ctx context.Context, templateName string, values []*graphql.TemplateValueInput) (*graphql.Application, error) {
+func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graphql.ApplicationFromTemplateInput) (*graphql.Application, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -171,14 +179,30 @@ func (r *Resolver) CreateApplicationFromTemplate(ctx context.Context, templateNa
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	appTemplate, err := r.appTemplateSvc.GetByName(ctx, templateName)
+	convertedIn := r.appTemplateConverter.ApplicationFromTemplateInputFromGraphQL(in)
+
+	appTemplate, err := r.appTemplateSvc.GetByName(ctx, convertedIn.TemplateName)
 	if err != nil {
 		return nil, err
 	}
 
-	appCreateInput := r.appTemplateSvc.FillPlaceholders(ctx, appTemplate, values)
+	appCreateInputJSON, err := r.appTemplateSvc.PrepareApplicationCreateInputJSON(appTemplate, convertedIn.Values)
+	if err != nil {
+		return nil, err
+	}
 
-	id, err := r.appSvc.Create(ctx, appCreateInput)
+	appCreateInputGQL, err := r.appConverter.CreateInputJSONToGQL(appCreateInputJSON)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := appCreateInputGQL.Validate(); err != nil {
+		return nil, errors.Wrapf(err, "while validating application input from application template [name=%s]", convertedIn.TemplateName)
+	}
+
+	appCreateInputModel := r.appConverter.CreateInputFromGraphQL(appCreateInputGQL)
+
+	id, err := r.appSvc.Create(ctx, appCreateInputModel)
 	if err != nil {
 		return nil, err
 	}
