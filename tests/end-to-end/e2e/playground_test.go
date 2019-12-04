@@ -9,7 +9,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"testing"
 	"time"
 
@@ -22,98 +21,99 @@ import (
 	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/idtokenprovider"
 	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
+	"github.com/vrischmann/envconfig"
 )
 
-func TestDirectorPlaygroundAccess(t *testing.T) {
-	const (
-		DirectorRedirectURLFormat = "https://%s.%s/director"
-		DirectorURLFormat         = DirectorRedirectURLFormat + "/"
-		OAuth2Subdomain           = "compass-gateway-auth-oauth"
-		JWTSubdomain              = "compass-gateway"
-		ClientCertSubdomain       = "compass-gateway-mtls"
-	)
+type playgroundTestConfig struct {
+	Gateway struct {
+		Domain               string `envconfig:"DOMAIN"`
+		JWTSubdomain         string
+		OAuth20Subdomain     string `envconfig:"GATEWAY_OAUTH2_SUBDOMAIN"`
+		ClientCertsSubdomain string
+	}
+	DirectorURLFormat          string `envconfig:"default=https://%s.%s/director"`
+	DirectorGraphQLExamplePath string `envconfig:"default=examples/create-application/create-application.graphql"`
+	DefaultTenant              string
+}
 
-	domain := os.Getenv("DOMAIN")
-	require.NotEmpty(t, domain)
+type playgroundTestSuite struct {
+	t          *testing.T
+	client     *http.Client
+	urlBuilder *playgroundURLBuilder
+	subdomain  string
+}
+
+func newPlaygroundTestSuite(t *testing.T, cfg *playgroundTestConfig, subdomain string) *playgroundTestSuite {
+	urlBuilder := newPlaygroundURLBuilder(cfg)
+	return &playgroundTestSuite{t: t, urlBuilder: urlBuilder, subdomain: subdomain, client: getClient()}
+}
+
+func (ts *playgroundTestSuite) setHTTPClient(client *http.Client) {
+	ts.client = client
+}
+
+func (ts *playgroundTestSuite) checkDirectorPlaygroundWithRedirection() {
+	resp, err := getURLWithRetries(ts.client, ts.urlBuilder.getRedirectionStartURL(ts.subdomain))
+	require.NoError(ts.t, err)
+	defer closeBody(ts.t, resp.Body)
+
+	assert.Equal(ts.t, ts.urlBuilder.getFinalURL(ts.subdomain), resp.Request.URL.String()) // test redirection to URL with trailing slash
+	assert.Equal(ts.t, http.StatusOK, resp.StatusCode)
+}
+
+func (ts *playgroundTestSuite) checkDirectorGraphQLExample() {
+	resp, err := getURLWithRetries(ts.client, ts.urlBuilder.getGraphQLExampleURL(ts.subdomain))
+	require.NoError(ts.t, err)
+	defer closeBody(ts.t, resp.Body)
+
+	assert.Equal(ts.t, http.StatusOK, resp.StatusCode)
+}
+
+func TestDirectorPlaygroundAccess(t *testing.T) {
+	cfg := &playgroundTestConfig{}
+	err := envconfig.Init(&cfg)
+	require.NoError(t, err)
 
 	t.Run("Access playground via OAuth2 subdomain", func(t *testing.T) {
-		client := getClient()
+		subdomain := cfg.Gateway.OAuth20Subdomain
+		testSuite := newPlaygroundTestSuite(t, cfg, subdomain)
 
-		redirectURL := fmt.Sprintf(DirectorRedirectURLFormat, OAuth2Subdomain, domain)
-		url := fmt.Sprintf(DirectorURLFormat, OAuth2Subdomain, domain)
-
-		redirectResp, err := fetchURLWithRetries(client, redirectURL)
-		require.NoError(t, err)
-		defer closeBody(t, redirectResp.Body)
-
-		assert.Equal(t, url, redirectResp.Request.URL.String())
-		assert.Equal(t, http.StatusOK, redirectResp.StatusCode)
-
-		resp, err := fetchURLWithRetries(client, url)
-		require.NoError(t, err)
-		defer closeBody(t, resp.Body)
-
-		require.Equal(t, http.StatusOK, resp.StatusCode)
+		testSuite.checkDirectorPlaygroundWithRedirection()
+		testSuite.checkDirectorGraphQLExample()
 	})
 
 	t.Run("Access playground via JWT subdomain", func(t *testing.T) {
-		client := getClient()
+		subdomain := cfg.Gateway.JWTSubdomain
+		testSuite := newPlaygroundTestSuite(t, cfg, subdomain)
 
-		redirectURL := fmt.Sprintf(DirectorRedirectURLFormat, JWTSubdomain, domain)
-		url := fmt.Sprintf(DirectorURLFormat, JWTSubdomain, domain)
-
-		redirectResp, err := fetchURLWithRetries(client, redirectURL)
-		require.NoError(t, err)
-		defer closeBody(t, redirectResp.Body)
-
-		assert.Equal(t, url, redirectResp.Request.URL.String())
-		assert.Equal(t, http.StatusOK, redirectResp.StatusCode)
-
-		resp, err := fetchURLWithRetries(client, url)
-		require.NoError(t, err)
-		defer closeBody(t, resp.Body)
-
-		require.Equal(t, http.StatusOK, resp.StatusCode)
+		testSuite.checkDirectorPlaygroundWithRedirection()
+		testSuite.checkDirectorGraphQLExample()
 	})
 
 	t.Run("Access playground via client certificate subdomain", func(t *testing.T) {
-		ctx := context.Background()
-
-		tenant := os.Getenv("DEFAULT_TENANT")
-		require.NotEmpty(t, tenant)
+		subdomain := cfg.Gateway.ClientCertsSubdomain
+		tenant := cfg.DefaultTenant
 
 		dexToken := getDexToken(t)
 		dexGQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
+		ctx := context.Background()
 		appID := createApplicationForCertPlaygroundTest(t, ctx, tenant, dexGQLClient)
 		defer deleteApplication(t, ctx, dexGQLClient, tenant, appID)
 
 		oneTimeToken := generateOneTimeTokenForApplication(t, ctx, dexGQLClient, tenant, appID)
-
 		certChain, clientKey := generateClientCertForApplication(t, oneTimeToken)
-
 		client := getClientWithCert(certChain, clientKey)
 
-		redirectURL := fmt.Sprintf(DirectorRedirectURLFormat, ClientCertSubdomain, domain)
-		url := fmt.Sprintf(DirectorURLFormat, ClientCertSubdomain, domain)
+		testSuite := newPlaygroundTestSuite(t, cfg, subdomain)
+		testSuite.setHTTPClient(client)
 
-		redirectResp, err := fetchURLWithRetries(client, redirectURL)
-		require.NoError(t, err)
-		defer closeBody(t, redirectResp.Body)
-
-		assert.Equal(t, url, redirectResp.Request.URL.String())
-		assert.Equal(t, http.StatusOK, redirectResp.StatusCode)
-
-		resp, err := fetchURLWithRetries(client, url)
-		require.NoError(t, err)
-
-		defer closeBody(t, resp.Body)
-
-		require.Equal(t, http.StatusOK, resp.StatusCode)
+		testSuite.checkDirectorPlaygroundWithRedirection()
+		testSuite.checkDirectorGraphQLExample()
 	})
 }
 
-func fetchURLWithRetries(client *http.Client, url string) (*http.Response, error) {
+func getURLWithRetries(client *http.Client, url string) (*http.Response, error) {
 	const (
 		maxAttempts = 10
 		delay       = 10
