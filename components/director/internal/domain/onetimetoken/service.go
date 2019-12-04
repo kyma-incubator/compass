@@ -2,7 +2,15 @@ package onetimetoken
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/tenant"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	gcli "github.com/machinebox/graphql"
@@ -32,17 +40,80 @@ type GraphQLClient interface {
 type SystemAuthService interface {
 	Create(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error)
 }
+
+//go:generate mockery -name=LabelRepository -output=automock -outpkg=automock -case=underscore
+type LabelRepository interface {
+	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
+}
+
 type service struct {
 	cli          GraphQLClient
 	connectorURL string
 	sysAuthSvc   SystemAuthService
+	labelSvc     LabelRepository
 }
 
-func NewTokenService(gcli GraphQLClient, sysAuthSvc SystemAuthService, connectorURL string) *service {
-	return &service{cli: gcli, connectorURL: connectorURL, sysAuthSvc: sysAuthSvc}
+func NewTokenService(gcli GraphQLClient, sysAuthSvc SystemAuthService, labelService LabelRepository, connectorURL string) *service {
+	return &service{cli: gcli, connectorURL: connectorURL, sysAuthSvc: sysAuthSvc, labelSvc: labelService}
+}
+
+type PairingIntegrationToken struct {
+	IntegrationToken string `json:"integrationToken"`
 }
 
 func (s service) GenerateOneTimeToken(ctx context.Context, id string, tokenType model.SystemAuthReferenceObjectType) (model.OneTimeToken, error) {
+	if tokenType == model.ApplicationReference {
+		tnt, err := tenant.LoadFromContext(ctx)
+		if err != nil {
+			return model.OneTimeToken{}, errors.Wrap(err, "while getting tenant from context")
+		}
+		_, err = s.labelSvc.GetByKey(ctx, tnt, model.ApplicationLabelableObject, id, "customTokenService")
+
+		switch {
+		case apperrors.IsNotFoundError(err):
+			// do nothing
+		case err != nil:
+			return model.OneTimeToken{}, errors.Wrap(err, "while getting label `customTokenService`")
+		default:
+			params := &url.Values{}
+			params.Set("app", id)
+			params.Set("name", fmt.Sprintf("application-%d", time.Now().Unix()))
+			params.Set("type", "S4HanaCloud")
+
+			baseUrl, err := url.Parse("http://localhost:8082")
+			if err != nil {
+				return model.OneTimeToken{}, errors.Wrap(err, "while parsing sidecar url")
+			}
+			baseUrl.RawQuery = params.Encode()
+			resp, err := http.Get(baseUrl.String())
+			if err != nil {
+				return model.OneTimeToken{}, errors.Wrap(err, "while making get request")
+			}
+
+			if resp.StatusCode != 200 {
+				return model.OneTimeToken{}, fmt.Errorf("expected status code: %d, got: %d", http.StatusOK, resp.StatusCode)
+			}
+			if resp.Body == nil {
+				return model.OneTimeToken{}, errors.New("empty response body")
+			}
+
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return model.OneTimeToken{}, errors.Wrap(err, "while reading resp body")
+			}
+
+			paringToken := PairingIntegrationToken{}
+			err = json.Unmarshal(b, paringToken)
+			if err != nil {
+				return model.OneTimeToken{}, errors.Wrap(err, "while unmarshalling JSON")
+			}
+
+			return model.OneTimeToken{Token: paringToken.IntegrationToken}, nil
+
+		}
+
+	}
+
 	sysAuthID, err := s.sysAuthSvc.Create(ctx, tokenType, id, nil)
 	if err != nil {
 		return model.OneTimeToken{}, errors.Wrap(err, "while creating System Auth")

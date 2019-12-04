@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/tenant"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
@@ -32,6 +35,7 @@ func TestTokenService_GetOneTimeTokenForRuntime(t *testing.T) {
 	t.Run("Success runtime token", func(t *testing.T) {
 		//GIVEN
 		ctx := context.TODO()
+		ctx = tenant.SaveToContext(ctx, "tenant")
 		cli := &automock.GraphQLClient{}
 		expectedToken := "token"
 
@@ -42,7 +46,8 @@ func TestTokenService_GetOneTimeTokenForRuntime(t *testing.T) {
 		sysAuthSvc := &automock.SystemAuthService{}
 		sysAuthSvc.On("Create", ctx, model.RuntimeReference, runtimeID, (*model.AuthInput)(nil)).
 			Return(authID, nil)
-		svc := onetimetoken.NewTokenService(cli, sysAuthSvc, URL)
+
+		svc := onetimetoken.NewTokenService(cli, sysAuthSvc, mockLabelRepo(), URL)
 
 		//WHEN
 		authToken, err := svc.GenerateOneTimeToken(ctx, runtimeID, model.RuntimeReference)
@@ -56,6 +61,7 @@ func TestTokenService_GetOneTimeTokenForRuntime(t *testing.T) {
 
 	t.Run("Error - generating token failed", func(t *testing.T) {
 		ctx := context.TODO()
+		ctx = tenant.SaveToContext(ctx, "tenant")
 		cli := &automock.GraphQLClient{}
 		testErr := errors.New("test error")
 		cli.On("Run", ctx, expectedRequest, &onetimetoken.ConnectorTokenModel{}).
@@ -63,7 +69,7 @@ func TestTokenService_GetOneTimeTokenForRuntime(t *testing.T) {
 		sysAuthSvc := &automock.SystemAuthService{}
 		sysAuthSvc.On("Create", ctx, model.RuntimeReference, runtimeID, (*model.AuthInput)(nil)).
 			Return(authID, nil)
-		svc := onetimetoken.NewTokenService(cli, sysAuthSvc, URL)
+		svc := onetimetoken.NewTokenService(cli, sysAuthSvc, mockLabelRepo(), URL)
 
 		//WHEN
 		_, err := svc.GenerateOneTimeToken(ctx, runtimeID, model.RuntimeReference)
@@ -77,12 +83,13 @@ func TestTokenService_GetOneTimeTokenForRuntime(t *testing.T) {
 
 	t.Run("Error - saving auth failed", func(t *testing.T) {
 		ctx := context.TODO()
+		ctx = tenant.SaveToContext(ctx, "tenant")
 		testErr := errors.New("test error")
 		cli := &automock.GraphQLClient{}
 		sysAuthSvc := &automock.SystemAuthService{}
 		sysAuthSvc.On("Create", ctx, model.RuntimeReference, runtimeID, (*model.AuthInput)(nil)).
 			Return("", testErr)
-		svc := onetimetoken.NewTokenService(cli, sysAuthSvc, URL)
+		svc := onetimetoken.NewTokenService(cli, sysAuthSvc, mockLabelRepo(), URL)
 
 		//WHEN
 		_, err := svc.GenerateOneTimeToken(ctx, runtimeID, model.RuntimeReference)
@@ -109,6 +116,7 @@ func TestTokenService_GetOneTimeTokenForApp(t *testing.T) {
 	t.Run("Success application token", func(t *testing.T) {
 		//GIVEN
 		ctx := context.TODO()
+		ctx = tenant.SaveToContext(ctx, "tenant")
 		cli := &automock.GraphQLClient{}
 		expectedToken := "token"
 
@@ -118,7 +126,7 @@ func TestTokenService_GetOneTimeTokenForApp(t *testing.T) {
 		sysAuthSvc := &automock.SystemAuthService{}
 		sysAuthSvc.On("Create", ctx, model.ApplicationReference, appID, (*model.AuthInput)(nil)).
 			Return(authID, nil)
-		svc := onetimetoken.NewTokenService(cli, sysAuthSvc, URL)
+		svc := onetimetoken.NewTokenService(cli, sysAuthSvc, mockLabelRepo(), URL)
 
 		//WHEN
 		authToken, err := svc.GenerateOneTimeToken(ctx, appID, model.ApplicationReference)
@@ -132,6 +140,7 @@ func TestTokenService_GetOneTimeTokenForApp(t *testing.T) {
 
 	t.Run("Error - generating token failed", func(t *testing.T) {
 		ctx := context.TODO()
+		ctx = tenant.SaveToContext(ctx, "tenant")
 		cli := &automock.GraphQLClient{}
 		testErr := errors.New("test error")
 		cli.On("Run", ctx, expectedRequest, &onetimetoken.ConnectorTokenModel{}).
@@ -139,7 +148,7 @@ func TestTokenService_GetOneTimeTokenForApp(t *testing.T) {
 		sysAuthSvc := &automock.SystemAuthService{}
 		sysAuthSvc.On("Create", ctx, model.ApplicationReference, appID, (*model.AuthInput)(nil)).
 			Return(authID, nil)
-		svc := onetimetoken.NewTokenService(cli, sysAuthSvc, URL)
+		svc := onetimetoken.NewTokenService(cli, sysAuthSvc, mockLabelRepo(), URL)
 
 		//WHEN
 		_, err := svc.GenerateOneTimeToken(ctx, appID, model.ApplicationReference)
@@ -158,4 +167,11 @@ func generateFakeToken(t *testing.T, generated onetimetoken.ConnectorTokenModel)
 		require.True(t, ok)
 		*arg = generated
 	}
+}
+
+func mockLabelRepo() *automock.LabelRepository {
+	repo := &automock.LabelRepository{}
+	repo.On("GetByKey", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, apperrors.NewNotFoundError("id"))
+
+	return repo
 }
