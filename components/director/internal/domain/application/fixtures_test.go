@@ -402,3 +402,12 @@ func fixFetchRequest(url string, objectType model.FetchRequestReferenceObjectTyp
 		ObjectID:   "foo",
 	}
 }
+
+func fixLabelInput(key string, value string, objectID string, objectType model.LabelableObject) *model.LabelInput {
+	return &model.LabelInput{
+		Key:        key,
+		Value:      value,
+		ObjectID:   objectID,
+		ObjectType: objectType,
+	}
+}

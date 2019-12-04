@@ -54,6 +54,16 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 	`, fp.ForWebhooks(), fp.Page(fp.ForAPIDefinition(ctx...)), fp.Page(fp.ForEventAPI()), fp.Page(fp.ForDocument()), fp.ForSystemAuth())
 }
 
+func (fp *GqlFieldsProvider) ForApplicationTemplate(ctx ...FieldCtx) string {
+	return fmt.Sprintf(`id
+		name
+		description
+		applicationInput
+		placeholders {%s}
+		accessLevel
+	`, fp.ForPlaceholders())
+}
+
 func (fp *GqlFieldsProvider) ForWebhooks() string {
 	return fmt.Sprintf(
 		`id
@@ -225,4 +235,10 @@ func (fp *GqlFieldsProvider) ForIntegrationSystem() string {
 		name
 		description
 		auths {%s}`, fp.ForSystemAuth())
+}
+
+func (fp *GqlFieldsProvider) ForPlaceholders() interface{} {
+	return `
+		name
+		description`
 }

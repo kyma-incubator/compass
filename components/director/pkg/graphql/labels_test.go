@@ -1,8 +1,10 @@
-package graphql
+package graphql_test
 
 import (
 	"bytes"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -12,23 +14,23 @@ func TestLabels_UnmarshalGQL(t *testing.T) {
 		input    interface{}
 		err      bool
 		errMsg   string
-		expected Labels
+		expected graphql.Labels
 	}{
 		//given
 		"correct input map[string]string": {
 			input:    map[string]interface{}{"annotation": "val1"},
 			err:      false,
-			expected: Labels{"annotation": "val1"},
+			expected: graphql.Labels{"annotation": "val1"},
 		},
 		"correct input map[string]int": {
 			input:    map[string]interface{}{"annotation": 123},
 			err:      false,
-			expected: Labels{"annotation": 123},
+			expected: graphql.Labels{"annotation": 123},
 		},
 		"correct input map[string][]string": {
 			input:    map[string]interface{}{"annotation": []string{"val1", "val2"}},
 			err:      false,
-			expected: Labels{"annotation": []string{"val1", "val2"}},
+			expected: graphql.Labels{"annotation": []string{"val1", "val2"}},
 		},
 		"error: input is nil": {
 			input:  nil,
@@ -41,7 +43,7 @@ func TestLabels_UnmarshalGQL(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			//when
-			a := Labels{}
+			a := graphql.Labels{}
 			err := a.UnmarshalGQL(tc.input)
 
 			//then
@@ -61,12 +63,12 @@ func TestLabels_MarshalGQL(t *testing.T) {
 	as := assert.New(t)
 
 	var tests = []struct {
-		input    Labels
+		input    graphql.Labels
 		expected string
 	}{
 		//given
-		{Labels{"annotation": 123}, `{"annotation":123}`},
-		{Labels{"annotation": []string{"val1", "val2"}}, `{"annotation":["val1","val2"]}`},
+		{graphql.Labels{"annotation": 123}, `{"annotation":123}`},
+		{graphql.Labels{"annotation": []string{"val1", "val2"}}, `{"annotation":["val1","val2"]}`},
 	}
 
 	for _, test := range tests {

@@ -43,7 +43,7 @@ func TestService_Create(t *testing.T) {
 			ExpectedOutput: testID,
 		},
 		{
-			Name: "Error when creating",
+			Name: "Error when creating Integration System",
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
 				intSysRepo := &automock.IntegrationSystemRepository{}
 				intSysRepo.On("Create", ctx, *modelIntSys).Return(testError).Once()

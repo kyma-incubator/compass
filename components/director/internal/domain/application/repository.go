@@ -113,7 +113,6 @@ func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, sc
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating scenarios filter query")
 	}
-
 	var additionalConditions []string
 	if scenariosSubquery != "" {
 		additionalConditions = append(additionalConditions, fmt.Sprintf(`"id" IN (%s)`, scenariosSubquery))

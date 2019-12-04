@@ -22,6 +22,16 @@ func fixCreateApplicationRequest(applicationInGQL string) *gcli.Request {
 			applicationInGQL, tc.gqlFieldsProvider.ForApplication()))
 }
 
+func fixCreateApplicationTemplateRequest(applicationTemplateInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: createApplicationTemplate(in: %s) {
+					%s
+				}
+			}`,
+			applicationTemplateInGQL, tc.gqlFieldsProvider.ForApplicationTemplate()))
+}
+
 func fixCreateRuntimeRequest(runtimeInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
@@ -52,7 +62,46 @@ func fixCreateIntegrationSystemRequest(integrationSystemInGQL string) *gcli.Requ
 			integrationSystemInGQL, tc.gqlFieldsProvider.ForIntegrationSystem()))
 }
 
+func fixAddDocumentRequest(appID, documentInputInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		result: addDocument(applicationID: "%s", in: %s) {
+ 				%s
+			}				
+		}`, appID, documentInputInGQL, tc.gqlFieldsProvider.ForDocument()))
+}
+
+func fixAddWebhookRequest(applicationID, webhookInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: addWebhook(applicationID: "%s", in: %s) {
+					%s
+				}
+			}`,
+			applicationID, webhookInGQL, tc.gqlFieldsProvider.ForWebhooks()))
+}
+
 //UPDATE
+func fixUpdateRuntimeRequest(id, updateInputInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: updateRuntime(id: "%s", in: %s) {
+					%s
+				}
+			}`,
+			id, updateInputInGQL, tc.gqlFieldsProvider.ForRuntime()))
+}
+
+func fixUpdateWebhookRequest(webhookID, webhookInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: updateWebhook(webhookID: "%s", in: %s) {
+					%s
+				}
+			}`,
+			webhookID, webhookInGQL, tc.gqlFieldsProvider.ForWebhooks()))
+}
+
 func fixUpdateApplicationRequest(id, updateInputGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
@@ -60,6 +109,15 @@ func fixUpdateApplicationRequest(id, updateInputGQL string) *gcli.Request {
     					%s
 					}
 				}`, id, updateInputGQL, tc.gqlFieldsProvider.ForApplication()))
+}
+
+func fixUpdateApplicationTemplateRequest(id, updateInputGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+  				result: updateApplicationTemplate(id: "%s", in: %s) {
+    					%s
+					}
+				}`, id, updateInputGQL, tc.gqlFieldsProvider.ForApplicationTemplate()))
 }
 
 func fixUpdateLabelDefinitionRequest(ldInputGQL string) *gcli.Request {
@@ -235,6 +293,15 @@ func fixApplicationRequest(applicationID string) *gcli.Request {
 			}`, applicationID, tc.gqlFieldsProvider.ForApplication()))
 }
 
+func fixApplicationTemplateRequest(applicationTemplateID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: applicationTemplate(id: "%s") {
+					%s
+				}
+			}`, applicationTemplateID, tc.gqlFieldsProvider.ForApplicationTemplate()))
+}
+
 func fixLabelDefinitionsRequest() *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
@@ -253,6 +320,16 @@ func fixApplications(labelFilterInGQL string, first int, after string) *gcli.Req
 					}
 				}`,
 			labelFilterInGQL, first, after, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplication())))
+}
+
+func fixApplicationTemplates(first int, after string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: applicationTemplates(first: %d, after: "%s") {
+						%s
+					}
+				}`,
+			first, after, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplicationTemplate())))
 }
 
 func fixRuntimes(labelFilterInGQL string, first int, after string) *gcli.Request {
@@ -347,6 +424,15 @@ func fixDeleteSystemAuthForIntegrationSystem(authID string) *gcli.Request {
 					%s
 				}
 			}`, authID, tc.gqlFieldsProvider.ForSystemAuth()))
+}
+
+func fixDeleteApplicationTemplate(appTemplateID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: deleteApplicationTemplate(id: "%s") {
+					%s
+				}
+			}`, appTemplateID, tc.gqlFieldsProvider.ForApplicationTemplate()))
 }
 
 func removeDoubleQuotesFromJSONKeys(in string) string {

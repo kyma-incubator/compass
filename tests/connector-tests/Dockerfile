@@ -11,7 +11,7 @@ FROM alpine:3.10
 
 LABEL source=git@github.com:kyma-project/kyma.git
 
-RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add ca-certificates curl
 
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/connector-tests/scripts/entrypoint.sh .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/connector-tests/apitests.test .
