@@ -2,10 +2,12 @@ package director
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/ptr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -136,86 +138,116 @@ func TestSetRuntimeLabel_Validation(t *testing.T) {
 
 // Auth Validation
 
-func TestSetAPIAuth_Validation(t *testing.T) {
-	// GIVEN
-	ctx := context.Background()
-	app := createApplication(t, ctx, "validation-test-app")
-	defer deleteApplication(t, app.ID)
-	require.Len(t, app.Apis.Data, 1)
-	rtm := createRuntime(t, ctx, "validation-test-rtm")
-	defer deleteRuntime(t, rtm.ID)
+const longDescErrorMsg = "graphql: validation error for type %s: description: the length must be no more than 128."
 
-	invalidAuthInput := graphql.AuthInput{
-		Credential: &graphql.CredentialDataInput{
-			Basic: &graphql.BasicCredentialDataInput{
-				Username: "custom",
-				Password: "auth",
-			},
-			Oauth: &graphql.OAuthCredentialDataInput{
-				ClientID:     "v",
-				ClientSecret: "v",
-				URL:          "http://v.url",
-			},
+func TestCreateApplicationInput_Validation(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	app := fixSampleApplicationCreateInputWithName("placeholder", "name")
+	longDesc := strings.Repeat("a", 129)
+	app.Description = &longDesc
+
+	appInputGQL, err := tc.graphqlizer.ApplicationCreateInputToGQL(app)
+	require.NoError(t, err)
+	createRequest := fixCreateApplicationRequest(appInputGQL)
+
+	//WHEN
+	err = tc.RunOperation(ctx, createRequest, nil)
+
+	//THEN
+	require.Error(t, err)
+	assert.EqualError(t, err, fmt.Sprintf(longDescErrorMsg, "ApplicationCreateInput"))
+}
+
+func TestCreateApplicationUpdateInput_Validation(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	app := createApplication(t, ctx, "app-name")
+	defer deleteApplication(t, app.ID)
+
+	longDesc := strings.Repeat("a", 129)
+	appUpdate := graphql.ApplicationUpdateInput{Name: "name", Description: &longDesc}
+	appInputGQL, err := tc.graphqlizer.ApplicationUpdateInputToGQL(appUpdate)
+	require.NoError(t, err)
+	updateRequest := fixUpdateApplicationRequest(app.ID, appInputGQL)
+
+	//WHEN
+	err = tc.RunOperation(ctx, updateRequest, nil)
+
+	//THEN
+	require.Error(t, err)
+	assert.EqualError(t, err, fmt.Sprintf(longDescErrorMsg, "ApplicationUpdateInput"))
+}
+
+func TestAddDocument_Validation(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	app := createApplication(t, ctx, "app-name")
+	defer deleteApplication(t, app.ID)
+
+	doc := fixDocumentInput()
+	doc.DisplayName = strings.Repeat("a", 129)
+	docInputGQL, err := tc.graphqlizer.DocumentInputToGQL(&doc)
+	require.NoError(t, err)
+	createRequest := fixAddDocumentRequest(app.ID, docInputGQL)
+
+	//WHEN
+	err = tc.RunOperation(ctx, createRequest, nil)
+
+	//THEN
+	require.Error(t, err)
+	assert.EqualError(t, err, "graphql: validation error for type DocumentInput: displayName: the length must be between 1 and 128.")
+}
+
+func TestCreateIntegrationSystem_Validation(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	intSys := graphql.IntegrationSystemInput{Name: "valid-name"}
+	longDesc := strings.Repeat("a", 129)
+	intSys.Description = &longDesc
+
+	isInputGQL, err := tc.graphqlizer.IntegrationSystemInputToGQL(intSys)
+	require.NoError(t, err)
+	createRequest := fixCreateIntegrationSystemRequest(isInputGQL)
+
+	//WHEN
+	err = tc.RunOperation(ctx, createRequest, nil)
+
+	//THEN
+	require.Error(t, err)
+	assert.EqualError(t, err, fmt.Sprintf(longDescErrorMsg, "IntegrationSystemInput"))
+}
+
+func TestUpdateIntegrationSystem_Validation(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	intSys := createIntegrationSystem(t, ctx, "integration-system")
+	defer deleteIntegrationSystem(t, ctx, intSys.ID)
+	longDesc := strings.Repeat("a", 129)
+	intSysUpdate := graphql.IntegrationSystemInput{Name: "name", Description: &longDesc}
+	isUpdateGQL, err := tc.graphqlizer.IntegrationSystemInputToGQL(intSysUpdate)
+	require.NoError(t, err)
+	update := fixUpdateIntegrationSystemRequest(intSys.ID, isUpdateGQL)
+
+	//WHEN
+	err = tc.RunOperation(ctx, update, nil)
+
+	//THEN
+	require.Error(t, err)
+	assert.EqualError(t, err, fmt.Sprintf(longDescErrorMsg, "IntegrationSystemInput"))
+}
+
+func fixDocumentInput() graphql.DocumentInput {
+	return graphql.DocumentInput{
+		Title:       "Readme",
+		Description: "Detailed description of project",
+		Format:      graphql.DocumentFormatMarkdown,
+		DisplayName: "display-name",
+		FetchRequest: &graphql.FetchRequestInput{
+			URL:    "kyma-project.io",
+			Mode:   ptr.FetchMode(graphql.FetchModePackage),
+			Filter: ptr.String("/docs/README.md"),
+			Auth:   fixBasicAuth(),
 		},
 	}
-	authInStr, err := tc.graphqlizer.AuthInputToGQL(&invalidAuthInput)
-	require.NoError(t, err)
-	var apiRtmAuth graphql.APIRuntimeAuth
-	request := fixSetAPIAuthRequest(app.Apis.Data[0].ID, rtm.ID, authInStr)
-
-	// WHEN
-	err = tc.RunOperation(ctx, request, &apiRtmAuth)
-
-	// THEN
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "validation error for type AuthInput")
-}
-
-// Webhook Validation
-
-func TestAddWebhook_Validation(t *testing.T) {
-	// GIVEN
-	ctx := context.Background()
-	app := createApplication(t, ctx, "validation-test-app")
-	defer deleteApplication(t, app.ID)
-
-	invalidWebhookInput := graphql.WebhookInput{
-		Type: graphql.ApplicationWebhookTypeConfigurationChanged,
-		URL:  "invalid",
-	}
-	webhookInStr, err := tc.graphqlizer.WebhookInputToGQL(&invalidWebhookInput)
-	require.NoError(t, err)
-	var webhook graphql.Webhook
-	request := fixAddWebhookRequest(app.ID, webhookInStr)
-
-	// WHEN
-	err = tc.RunOperation(ctx, request, &webhook)
-
-	// THEN
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "validation error for type WebhookInput")
-}
-
-func TestUpdateWebhook_Validation(t *testing.T) {
-	// GIVEN
-	ctx := context.Background()
-	app := createApplication(t, ctx, "validation-test-app")
-	defer deleteApplication(t, app.ID)
-	require.Len(t, app.Webhooks, 1)
-
-	invalidWebhookInput := graphql.WebhookInput{
-		Type: graphql.ApplicationWebhookTypeConfigurationChanged,
-		URL:  "invalid",
-	}
-	webhookInStr, err := tc.graphqlizer.WebhookInputToGQL(&invalidWebhookInput)
-	require.NoError(t, err)
-	var webhook graphql.Webhook
-	request := fixUpdateWebhookRequest(app.Webhooks[0].ID, webhookInStr)
-
-	// WHEN
-	err = tc.RunOperation(ctx, request, &webhook)
-
-	// THEN
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "validation error for type WebhookInput")
 }

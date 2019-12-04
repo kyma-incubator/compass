@@ -67,7 +67,7 @@ func TestEachKey(t *testing.T) {
 			Rules: []*validation.FieldRules{
 				validation.Field(&structToValidate.String, inputvalidation.EachKey(validation.Required)),
 			},
-			ExpectedError: errors.New("String: must be a map or a pointer to map."),
+			ExpectedError: errors.New("String: the value must be a map."),
 		},
 		{
 			Name: "Returns error when one map key is invalid",

@@ -2,7 +2,11 @@
 mutation {
   result: updateApplication(
     id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-    in: { name: "after", description: "after", healthCheckURL: "after" }
+    in: {
+      name: "after"
+      description: "after"
+      healthCheckURL: "https://kyma-project.io"
+    }
   ) {
     id
     name

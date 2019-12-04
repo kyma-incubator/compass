@@ -3,7 +3,6 @@ package application_test
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
@@ -53,6 +52,7 @@ func TestService_Create(t *testing.T) {
 		},
 		IntegrationSystemID: &intSysID,
 	}
+
 	defaultLabels := map[string]interface{}{
 		model.ScenariosKey:      model.ScenariosDefaultValue,
 		"integration-system-id": intSysID,
@@ -498,40 +498,6 @@ func TestService_Create(t *testing.T) {
 	})
 }
 
-func TestService_CreateWithInvalidNames(t *testing.T) {
-	//GIVEN
-	tnt := "tenant"
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
-
-	testCases := []struct {
-		Name               string
-		InputID            string
-		Input              model.ApplicationCreateInput
-		ExpectedErrMessage string
-	}{
-		{
-			Name:               "Returns error when application name is empty",
-			InputID:            "foo",
-			Input:              model.ApplicationCreateInput{Name: ""},
-			ExpectedErrMessage: "a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character",
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-
-			//WHEN
-			_, err := svc.Create(ctx, testCase.Input)
-
-			//THEN
-			require.NotNil(t, err)
-			assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
-		})
-	}
-}
-
 func TestService_Update(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
@@ -750,47 +716,6 @@ func TestService_Update(t *testing.T) {
 			appRepo.AssertExpectations(t)
 			intSysRepo.AssertExpectations(t)
 			lblUpsrtSvc.AssertExpectations(t)
-		})
-	}
-}
-
-func TestService_UpdateWithInvalidNames(t *testing.T) {
-	//GIVEN
-	testError := errors.New("a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character")
-	tnt := "tenant"
-	appID := ""
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
-
-	testCases := []struct {
-		Name        string
-		InputID     string
-		Input       model.ApplicationUpdateInput
-		ExpectedErr error
-	}{
-		{
-			Name:        "Returns error when application name is empty",
-			InputID:     "foo",
-			Input:       model.ApplicationUpdateInput{Name: ""},
-			ExpectedErr: testError,
-		},
-		{
-			Name:        "Returns error when application name contains upper case letter",
-			InputID:     "foo",
-			Input:       model.ApplicationUpdateInput{Name: "upperCase"},
-			ExpectedErr: testError,
-		}}
-
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-
-			//WHEN
-			err := svc.Update(ctx, appID, testCase.Input)
-
-			//THEN
-			require.Error(t, err)
-			assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
 		})
 	}
 }
@@ -1322,6 +1247,7 @@ func TestService_Exist(t *testing.T) {
 
 			// THEN
 			if testCase.ExpectedError != nil {
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
 			} else {
 				require.Nil(t, err)
@@ -1423,6 +1349,7 @@ func TestService_SetLabel(t *testing.T) {
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 			} else {
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 

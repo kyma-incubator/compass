@@ -230,11 +230,6 @@ func (s *service) Create(ctx context.Context, in model.ApplicationCreateInput) (
 		return "", err
 	}
 
-	err = in.Validate()
-	if err != nil {
-		return "", errors.Wrap(err, "while validating Application input")
-	}
-
 	exists, err := s.ensureIntSysExists(ctx, in.IntegrationSystemID)
 	if err != nil {
 		return "", errors.Wrap(err, "while ensuring integration system exists")
@@ -282,11 +277,6 @@ func (s *service) Create(ctx context.Context, in model.ApplicationCreateInput) (
 }
 
 func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error {
-	err := in.Validate()
-	if err != nil {
-		return err
-	}
-
 	exists, err := s.ensureIntSysExists(ctx, in.IntegrationSystemID)
 	if err != nil {
 		return errors.Wrap(err, "while validating Integration System ID")
@@ -442,40 +432,67 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 		return errors.Wrapf(err, "while creating Webhooks for application")
 	}
 
-	for _, item := range in.Apis {
+	err = s.createAPIs(ctx, applicationID, tenant, in.Apis)
+	if err != nil {
+		return errors.Wrapf(err, "while creating APIs for application")
+	}
+
+	err = s.createEvents(ctx, applicationID, tenant, in.EventAPIs)
+	if err != nil {
+		return errors.Wrapf(err, "while creating Events for application")
+	}
+
+	err = s.createDocuments(ctx, applicationID, tenant, in.Documents)
+	if err != nil {
+		return errors.Wrapf(err, "while creating Documents for application")
+	}
+
+	return nil
+}
+
+func (s *service) createAPIs(ctx context.Context, appID, tenant string, apis []*model.APIDefinitionInput) error {
+	var err error
+	for _, item := range apis {
 		apiDefID := s.uidService.Generate()
-		err = s.apiRepo.Create(ctx, item.ToAPIDefinition(apiDefID, applicationID, tenant))
+		err = s.apiRepo.Create(ctx, item.ToAPIDefinition(apiDefID, appID, tenant))
 		if err != nil {
-			return errors.Wrapf(err, "while creating APIs for application")
+			return errors.Wrap(err, "while creating API for application")
 		}
 
 		if item.Spec != nil && item.Spec.FetchRequest != nil {
 			_, err = s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.APIFetchRequestReference, apiDefID)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "while creating FetchRequest for application")
 			}
 		}
 	}
+	return nil
+}
 
-	for _, item := range in.EventAPIs {
-		eventAPIDefID := s.uidService.Generate()
-		err = s.eventAPIRepo.Create(ctx, item.ToEventAPIDefinition(eventAPIDefID, applicationID, tenant))
+func (s *service) createEvents(ctx context.Context, appID, tenant string, events []*model.EventAPIDefinitionInput) error {
+	var err error
+	for _, item := range events {
+		eventID := s.uidService.Generate()
+		err = s.eventAPIRepo.Create(ctx, item.ToEventAPIDefinition(eventID, appID, tenant))
 		if err != nil {
-			return errors.Wrapf(err, "while creating EventAPIs for application")
+			return errors.Wrap(err, "while creating API for application")
 		}
 
 		if item.Spec != nil && item.Spec.FetchRequest != nil {
-			_, err = s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.EventAPIFetchRequestReference, eventAPIDefID)
+			_, err = s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.EventAPIFetchRequestReference, eventID)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "while creating FetchRequest for application")
 			}
 		}
 	}
+	return nil
+}
 
-	for _, item := range in.Documents {
+func (s *service) createDocuments(ctx context.Context, appID, tenant string, events []*model.DocumentInput) error {
+	var err error
+	for _, item := range events {
 		documentID := s.uidService.Generate()
-
-		err = s.documentRepo.Create(ctx, item.ToDocument(documentID, tenant, applicationID))
+		err = s.documentRepo.Create(ctx, item.ToDocument(documentID, tenant, appID))
 		if err != nil {
 			return errors.Wrapf(err, "while creating Document for application")
 		}
@@ -487,7 +504,6 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 			}
 		}
 	}
-
 	return nil
 }
 
@@ -501,7 +517,7 @@ func (s *service) deleteRelatedResources(ctx context.Context, tenant, applicatio
 
 	err = s.apiRepo.DeleteAllByApplicationID(ctx, tenant, applicationID)
 	if err != nil {
-		return errors.Wrapf(err, "while deleting APIs for application %s", applicationID)
+		return errors.Wrapf(err, "while deleting Apis for application %s", applicationID)
 	}
 
 	err = s.eventAPIRepo.DeleteAllByApplicationID(ctx, tenant, applicationID)

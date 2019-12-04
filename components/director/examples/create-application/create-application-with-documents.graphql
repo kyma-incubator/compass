@@ -7,7 +7,7 @@ mutation {
       documents: [
         {
           title: "Readme"
-          displayName: ""
+          displayName: "display-name"
           description: "Detailed description of project"
           format: MARKDOWN
           fetchRequest: {
@@ -26,7 +26,7 @@ mutation {
         }
         {
           title: "Troubleshooting"
-          displayName: ""
+          displayName: "display-name"
           description: "Troubleshooting description"
           format: MARKDOWN
           data: "No problems, everything works on my machine"

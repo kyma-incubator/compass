@@ -20,6 +20,7 @@ const (
 	deleteWebhookCategory     = "delete webhook"
 	addWebhookCategory        = "add webhook"
 	updateWebhookCategory     = "update webhook"
+	webhookURL                = "https://kyma-project.io"
 )
 
 var integrationSystemID = "69230297-3c81-4711-aac2-3afa8cb42e2d"
@@ -258,7 +259,7 @@ func TestCreateApplicationWithDocuments(t *testing.T) {
 				Title:       "Readme",
 				Description: "Detailed description of project",
 				Format:      graphql.DocumentFormatMarkdown,
-
+				DisplayName: "display-name",
 				FetchRequest: &graphql.FetchRequestInput{
 					URL:    "kyma-project.io",
 					Mode:   ptr.FetchMode(graphql.FetchModePackage),
@@ -270,6 +271,7 @@ func TestCreateApplicationWithDocuments(t *testing.T) {
 				Title:       "Troubleshooting",
 				Description: "Troubleshooting description",
 				Format:      graphql.DocumentFormatMarkdown,
+				DisplayName: "display-name",
 				Data:        ptr.CLOB(graphql.CLOB("No problems, everything works on my machine")),
 			},
 		},
@@ -429,7 +431,7 @@ func TestUpdateApplication(t *testing.T) {
 	expectedApp := actualApp
 	expectedApp.Name = "after"
 	expectedApp.Description = ptr.String("after")
-	expectedApp.HealthCheckURL = ptr.String("after")
+	expectedApp.HealthCheckURL = ptr.String("https://kyma-project.io")
 
 	updateInput := fixSampleApplicationUpdateInput("after")
 	updateInputGQL, err := tc.graphqlizer.ApplicationUpdateInputToGQL(updateInput)
@@ -1238,8 +1240,10 @@ func fixSampleApplicationCreateInput(placeholder string) graphql.ApplicationCrea
 	return graphql.ApplicationCreateInput{
 		Name: placeholder,
 		Documents: []*graphql.DocumentInput{{
-			Title:  placeholder,
-			Format: graphql.DocumentFormatMarkdown}},
+			Title:       placeholder,
+			DisplayName: placeholder,
+			Description: placeholder,
+			Format:      graphql.DocumentFormatMarkdown}},
 		Apis: []*graphql.APIDefinitionInput{{
 			Name:      placeholder,
 			TargetURL: placeholder}},
@@ -1251,7 +1255,7 @@ func fixSampleApplicationCreateInput(placeholder string) graphql.ApplicationCrea
 			}}},
 		Webhooks: []*graphql.WebhookInput{{
 			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
-			URL:  placeholder},
+			URL:  webhookURL},
 		},
 		Labels: &graphql.Labels{placeholder: []interface{}{placeholder}},
 	}
@@ -1273,7 +1277,7 @@ func fixSampleApplicationUpdateInput(placeholder string) graphql.ApplicationUpda
 	return graphql.ApplicationUpdateInput{
 		Name:           placeholder,
 		Description:    &placeholder,
-		HealthCheckURL: &placeholder,
+		HealthCheckURL: ptr.String(webhookURL),
 	}
 }
 
@@ -1281,7 +1285,7 @@ func fixSampleApplicationUpdateInputWithIntegrationSystem(placeholder string) gr
 	return graphql.ApplicationUpdateInput{
 		Name:                placeholder,
 		Description:         &placeholder,
-		HealthCheckURL:      &placeholder,
+		HealthCheckURL:      ptr.String(webhookURL),
 		IntegrationSystemID: &integrationSystemID,
 	}
 }
