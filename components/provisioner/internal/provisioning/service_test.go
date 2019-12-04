@@ -219,6 +219,73 @@ func TestService_RuntimeOperationStatus(t *testing.T) {
 	})
 }
 
+func TestCleanUpRuntimeData(t *testing.T) {
+	t.Run("Should fail to get Clean Up Runtime Data result when Runtime ID not found in database", func(t *testing.T) {
+		// given
+		runtimeID := "a24142da-1111-4ec2-93e3-e47ccaa6973f"
+		uuidGenerator := &persistenceMocks.UUIDGenerator{}
+		hydroformMock := &mocks.Service{}
+		factory := &configMock.BuilderFactory{}
+
+		persistenceServiceMock := &persistenceMocks.Service{}
+		persistenceServiceMock.On("CleanupClusterData", runtimeID).Return(dberrors.NotFound("Could not find given Runtime in database"))
+
+		provisioningService := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock, factory)
+
+		// when
+		result, err := provisioningService.CleanupRuntimeData(runtimeID)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, runtimeID, result.ID)
+		assert.NotEmpty(t, result.Message)
+		persistenceServiceMock.AssertExpectations(t)
+	})
+
+	t.Run("Should fail to get Clean Up Runtime Data result when internal database error occurs", func(t *testing.T) {
+		// given
+		runtimeID := "a24142da-1111-4ec2-93e3-e47ccaa6973f"
+		uuidGenerator := &persistenceMocks.UUIDGenerator{}
+		hydroformMock := &mocks.Service{}
+		factory := &configMock.BuilderFactory{}
+
+		persistenceServiceMock := &persistenceMocks.Service{}
+		persistenceServiceMock.On("CleanupClusterData", runtimeID).Return(dberrors.Internal("Internal database error occurred"))
+
+		provisioningService := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock, factory)
+
+		// when
+		result, err := provisioningService.CleanupRuntimeData(runtimeID)
+
+		// then
+		require.Error(t, err)
+		require.Nil(t, result)
+		persistenceServiceMock.AssertExpectations(t)
+	})
+
+	t.Run("Should pass and return Runtime ID and Clean Up Runtime Data result when data for given Runtime gets deleted", func(t *testing.T) {
+		// given
+		runtimeID := "a24142da-1111-4ec2-93e3-e47ccaa6973f"
+		uuidGenerator := &persistenceMocks.UUIDGenerator{}
+		hydroformMock := &mocks.Service{}
+		factory := &configMock.BuilderFactory{}
+
+		persistenceServiceMock := &persistenceMocks.Service{}
+		persistenceServiceMock.On("CleanupClusterData", runtimeID).Return(nil)
+
+		provisioningService := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock, factory)
+
+		// when
+		result, err := provisioningService.CleanupRuntimeData(runtimeID)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, runtimeID, result.ID)
+		assert.NotEmpty(t, result.Message)
+		persistenceServiceMock.AssertExpectations(t)
+	})
+}
+
 func waitUntilFinished(finished <-chan struct{}) {
 	for {
 		_, ok := <-finished
