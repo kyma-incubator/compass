@@ -48,7 +48,7 @@ The diagram below represents registering IntegrationSystem and pairing it with D
 
 ![](./assets/integration-system-registration.svg)
 
-1. An Integration System Administrator executes mutation  `createIntegrationSystem` with the following input:
+1. An Integration System Administrator executes mutation  `registerIntegrationSystem` with the following input:
 ```graphql
 registerIntegrationSystem(in:{name: "IntegrationSystemFromBigProvider"})
 ```
