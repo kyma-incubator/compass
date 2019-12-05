@@ -1,5 +1,9 @@
 # Automatic Application Management
 
+> **NOTE**: This document currently contains changes in API that are not yet implemented:
+>- Label input in ApplicationRegisterInput
+>- Updated mutation names, such as `register` and `unregisterApplication`
+
 Managing Applications can be passed on some external system, to remove from Applications the burden of integration with Compass.
 Because of that [Integration System](./components.md#Integration-System) was introduced.
 
@@ -79,8 +83,6 @@ In case IntegrationSystem supporting many types of Applications, information abo
 Let assume that IntegrationSystem supports two types of Applications: `ecommerce` and `marketing` and such information
 is stored in label `{integration-system-name}/application-type`.
 To register an Application of type `ecommerce`, use following mutation:
-
-> **NOTE**: The labeling input of the API is likely to change in the near future.
 
 ```graphql
 mutation {
