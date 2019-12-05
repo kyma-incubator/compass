@@ -136,11 +136,11 @@ func TestSetRuntimeLabel_Validation(t *testing.T) {
 	assert.Contains(t, err.Error(), "validation error for type LabelInput")
 }
 
-// Auth Validation
+// Application Validation
 
 const longDescErrorMsg = "graphql: validation error for type %s: description: the length must be no more than 128."
 
-func TestCreateApplicationInput_Validation(t *testing.T) {
+func TestCreateApplication_Validation(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
 	app := fixSampleApplicationCreateInputWithName("placeholder", "name")
@@ -159,7 +159,7 @@ func TestCreateApplicationInput_Validation(t *testing.T) {
 	assert.EqualError(t, err, fmt.Sprintf(longDescErrorMsg, "ApplicationCreateInput"))
 }
 
-func TestCreateApplicationUpdateInput_Validation(t *testing.T) {
+func TestUpdateApplication_Validation(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
 	app := createApplication(t, ctx, "app-name")
@@ -329,6 +329,56 @@ func fixEventAPIDefinitionInput() graphql.EventAPIDefinitionInput {
 			EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
 			Format:        graphql.SpecFormatJSON,
 		}}
+}
+
+// Application Template
+
+func TestCreateApplicationTemplate_Validation(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+
+	appCreateInput := fixSampleApplicationCreateInput("placeholder")
+	invalidInput := graphql.ApplicationTemplateInput{
+		Name:             "0invalid",
+		Placeholders:     []*graphql.PlaceholderDefinitionInput{},
+		ApplicationInput: &appCreateInput,
+	}
+	inputString, err := tc.graphqlizer.ApplicationTemplateInputToGQL(invalidInput)
+	require.NoError(t, err)
+	var result graphql.ApplicationTemplate
+	request := fixCreateApplicationTemplateRequest(inputString)
+
+	// WHEN
+	err = tc.RunOperation(ctx, request, &result)
+
+	// THEN
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "validation error for type ApplicationTemplateInput")
+}
+
+func TestUpdateApplicationTemplate_Validation(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	appTpl := createApplicationTemplate(t, ctx, "validation-test-app-tpl")
+	defer deleteApplicationTemplate(t, ctx, appTpl.ID)
+
+	appCreateInput := fixSampleApplicationCreateInput("placeholder")
+	invalidInput := graphql.ApplicationTemplateInput{
+		Name:             "0invalid",
+		Placeholders:     []*graphql.PlaceholderDefinitionInput{},
+		ApplicationInput: &appCreateInput,
+	}
+	inputString, err := tc.graphqlizer.ApplicationTemplateInputToGQL(invalidInput)
+	require.NoError(t, err)
+	var result graphql.ApplicationTemplate
+	request := fixUpdateApplicationTemplateRequest(appTpl.ID, inputString)
+
+	// WHEN
+	err = tc.RunOperation(ctx, request, &result)
+
+	// THEN
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "validation error for type ApplicationTemplateInput")
 }
 
 func fixDocumentInput() graphql.DocumentInput {
