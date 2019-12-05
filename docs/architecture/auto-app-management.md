@@ -13,7 +13,7 @@ Integration System is uniquely identified by its ID. To create an Application th
 specify `integrationSystemID` in the ApplicationCreateInput.
 
 ```graphql
-input ApplicationCreateInput {
+input ApplicationRegisterInput {
     name: String!
     description: String
     labels: Labels
@@ -32,7 +32,7 @@ In this example, Integration System is registered and then it configures newly a
 1. Register Integration System
 ```graphql
 mutation {
-    createIntegrationSystem(in: {name: "simpleIntegrationSystem"} ) {
+    registerIntegrationSystem(in: {name: "simpleIntegrationSystem"} ) {
       id
       name
     }
@@ -42,7 +42,7 @@ mutation {
 2. Create Application with specified `integrationSystemID`
 ```graphql
 mutation {
-    createApplication(in:{name:"simpleApplication", integrationSystemID:"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"}) {
+    registerApplication(in:{name:"simpleApplication", integrationSystemID:"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"}) {
         id
         name
         integrationSystemID
@@ -54,7 +54,7 @@ mutation {
 ```json
 {
   "data": {
-    "createApplication": {
+    "registerApplication": {
       "id": "d046590f-934f-411f-91e2-d446b404a2a2",
       "name": "simpleApplication",
       "integrationSystemID": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
@@ -84,7 +84,7 @@ To create an Application of type `ecommerce`, use following mutation:
 
 ```graphql
 mutation {
-    createApplication(in:{name:"ecommerceApp", integrationSystemID:"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", labels:[{key:"simpleIntegrationSystem/applicationType",value:"ecommerce"}]}) {
+    registerApplication(in:{name:"ecommerceApp", integrationSystemID:"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", labels:[{key:"simpleIntegrationSystem/applicationType",value:"ecommerce"}]}) {
         id
         name
         integrationSystemID
@@ -135,7 +135,7 @@ type Mutation {
     updateApplicationTemplate(id: ID!, in: ApplicationTemplateInput!): ApplicationTemplate!
     deleteApplicationTemplate(id: ID!): ApplicationTemplate!
 
-    createApplicationFromTemplate(templateName: String!, values: [TemplateValueInput]): Application!
+    registerApplicationFromTemplate(templateName: String!, values: [TemplateValueInput]): Application!
 
 }
 type Query {
@@ -175,7 +175,7 @@ query  {
 3. A user creates an Application from template:
 ```graphql
 mutation {
-    createApplicationFromTemplate(templateName:"ecommerce-template") {
+    registerApplicationFromTemplate(templateName:"ecommerce-template") {
         id
         name
         labels
@@ -230,7 +230,7 @@ When user creates Application from Template that defines placeholders, current v
 
 ```graphql
 mutation {
-    createApplicationFromTemplate(templateName:"ecommerce-template", values: [{placeholder:"APPLICATION_NAME", value:"my-aplication"}]) {
+    registerApplicationFromTemplate(templateName:"ecommerce-template", values: [{placeholder:"APPLICATION_NAME", value:"my-aplication"}]) {
         id
         name
         labels
@@ -284,7 +284,7 @@ mutation {
 2. Create Application
  ```graphql
  mutation {
-     createApplicationFromTemplate(templateName:"ecommerce-template", values: [
+     registerApplicationFromTemplate(templateName:"ecommerce-template", values: [
      {placeholder:"APPLICATION_NAME", value:"MyApplication"},
      {placeholder:"USERNAME", value:"john@doe.com"},
      {placeholder:"PASSWORD", value:"perch"}
