@@ -79,6 +79,9 @@ In case IntegrationSystem supporting many types of Applications, information abo
 Let assume that IntegrationSystem supports two types of Applications: `ecommerce` and `marketing` and such information
 is stored in label `{integration-system-name}/application-type`.
 To create an Application of type `ecommerce`, use following mutation:
+
+> **NOTE**: The labeling input of the API is likely to change in the near future.
+
 ```graphql
 mutation {
     createApplication(in:{name:"ecommerceApp", integrationSystemID:"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", labels:[{key:"simpleIntegrationSystem/applicationType",value:"ecommerce"}]}) {
