@@ -12,8 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/avast/retry-go"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/connector"
@@ -23,51 +21,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/vrischmann/envconfig"
 )
-
-type playgroundTestConfig struct {
-	Gateway struct {
-		Domain               string `envconfig:"DOMAIN"`
-		JWTSubdomain         string
-		OAuth20Subdomain     string `envconfig:"GATEWAY_OAUTH2_SUBDOMAIN"`
-		ClientCertsSubdomain string
-	}
-	DirectorURLFormat          string `envconfig:"default=https://%s.%s/director"`
-	DirectorGraphQLExamplePath string `envconfig:"default=examples/create-application/create-application.graphql"`
-	DefaultTenant              string
-}
-
-type playgroundTestSuite struct {
-	t          *testing.T
-	client     *http.Client
-	urlBuilder *playgroundURLBuilder
-	subdomain  string
-}
-
-func newPlaygroundTestSuite(t *testing.T, cfg *playgroundTestConfig, subdomain string) *playgroundTestSuite {
-	urlBuilder := newPlaygroundURLBuilder(cfg)
-	return &playgroundTestSuite{t: t, urlBuilder: urlBuilder, subdomain: subdomain, client: getClient()}
-}
-
-func (ts *playgroundTestSuite) setHTTPClient(client *http.Client) {
-	ts.client = client
-}
-
-func (ts *playgroundTestSuite) checkDirectorPlaygroundWithRedirection() {
-	resp, err := getURLWithRetries(ts.client, ts.urlBuilder.getRedirectionStartURL(ts.subdomain))
-	require.NoError(ts.t, err)
-	defer closeBody(ts.t, resp.Body)
-
-	assert.Equal(ts.t, ts.urlBuilder.getFinalURL(ts.subdomain), resp.Request.URL.String()) // test redirection to URL with trailing slash
-	assert.Equal(ts.t, http.StatusOK, resp.StatusCode)
-}
-
-func (ts *playgroundTestSuite) checkDirectorGraphQLExample() {
-	resp, err := getURLWithRetries(ts.client, ts.urlBuilder.getGraphQLExampleURL(ts.subdomain))
-	require.NoError(ts.t, err)
-	defer closeBody(ts.t, resp.Body)
-
-	assert.Equal(ts.t, http.StatusOK, resp.StatusCode)
-}
 
 func TestDirectorPlaygroundAccess(t *testing.T) {
 	cfg := &playgroundTestConfig{}

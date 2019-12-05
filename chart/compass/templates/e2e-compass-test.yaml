@@ -51,7 +51,7 @@ spec:
               value: "{{.Values.global.defaultTenant}}"
             - name: DOMAIN
               value: "{{ .Values.global.ingress.domainName }}"
-            - name: GATEWAY_OAUTH2_SUBDOMAIN
+            - name: GATEWAY_OAUTH20_SUBDOMAIN
               value: "compass-gateway-auth-oauth"
             - name: GATEWAY_JWT_SUBDOMAIN
               value: "compass-gateway"
