@@ -35,10 +35,9 @@ var (
 	testTableColumns = []string{"id", "name", "description", "application_input", "placeholders", "access_level"}
 )
 
-func fixModelAppTemplate(id, name string) *model.ApplicationTemplate {
+func fixModelAppTemplate(id, name string, appInputJSON ...string) *model.ApplicationTemplate {
 	desc := testDescription
-
-	return &model.ApplicationTemplate{
+	out := model.ApplicationTemplate{
 		ID:                   id,
 		Name:                 name,
 		Description:          &desc,
@@ -46,6 +45,12 @@ func fixModelAppTemplate(id, name string) *model.ApplicationTemplate {
 		Placeholders:         fixModelPlaceholders(),
 		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
 	}
+
+	if len(appInputJSON) == 1 {
+		out.ApplicationInputJSON = appInputJSON[0]
+	}
+
+	return &out
 }
 
 func fixGQLAppTemplate(id, name string) *graphql.ApplicationTemplate {
