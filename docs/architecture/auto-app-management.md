@@ -106,7 +106,7 @@ input ApplicationTemplateInput {
     description: String
 
     applicationInput: ApplicationCreateInput!
-    placeholders:       [PlaceholderDefinitionInput!]
+    placeholders: [PlaceholderDefinitionInput!]
 
     accessLevel: ApplicationTemplateAccessLevel!
 
@@ -118,13 +118,13 @@ enum ApplicationTemplateAccessLevel {
 
 
 input PlaceholderDefinitionInput {
-    name:            String!
-    description:     String
+    name: String!
+    description: String
 }
 
 input TemplateValueInput {
-    placeholder:     String!
-    value:           String!
+    placeholder: String!
+    value: String!
 }
 
 type Mutation {
