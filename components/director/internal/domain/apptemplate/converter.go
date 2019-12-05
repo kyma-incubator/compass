@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+//go:generate mockery -name=AppConverter -output=automock -outpkg=automock -case=underscore
 type AppConverter interface {
 	CreateInputGQLToJSON(in *graphql.ApplicationCreateInput) (string, error)
 }

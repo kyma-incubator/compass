@@ -3,6 +3,8 @@ package application_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -267,6 +269,38 @@ func TestConverter_FromEntity(t *testing.T) {
 		// THEN
 		assertApplicationDefinition(t, appModel, appEntity)
 	})
+}
+
+func TestConverter_CreateInputGQLJSONConversion(t *testing.T) {
+	// GIVEN
+	conv := application.NewConverter(nil, nil, nil, nil)
+
+	t.Run("Successful two-way conversion", func(t *testing.T) {
+		inputGQL := fixGQLApplicationCreateInput("name", "description")
+		inputGQL.Labels = &graphql.Labels{"test": "test"}
+
+		// WHEN
+		// GQL -> JSON
+		json, err := conv.CreateInputGQLToJSON(&inputGQL)
+		require.NoError(t, err)
+
+		// JSON -> GQL
+		outputGQL, err := conv.CreateInputJSONToGQL(json)
+		require.NoError(t, err)
+
+		// THEN
+		require.Equal(t, inputGQL, outputGQL)
+	})
+
+	t.Run("Successful empty JSON to GQL conversion", func(t *testing.T) {
+		// WHEN
+		outputGQL, err := conv.CreateInputJSONToGQL("")
+
+		// THEN
+		require.NoError(t, err)
+		require.Empty(t, outputGQL)
+	})
+
 }
 
 func assertApplicationDefinition(t *testing.T, appModel *model.Application, entity *application.Entity) {

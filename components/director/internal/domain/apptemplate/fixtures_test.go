@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -21,7 +22,6 @@ const (
 	testTenant         = "tnt"
 	testID             = "foo"
 	testName           = "bar"
-	testDescription    = "Lorem ipsum"
 	testPageSize       = 3
 	testCursor         = ""
 	appInputJSONString = `{"Name":"foo","Description":"Lorem ipsum","Labels":{"test":["val","val2"]},"HealthCheckURL":"https://foo.bar","Webhooks":[{"Type":"","URL":"webhook1.foo.bar","Auth":null},{"Type":"","URL":"webhook2.foo.bar","Auth":null}],"Apis":[{"Name":"api1","Description":null,"TargetURL":"foo.bar","Group":null,"Spec":null,"Version":null,"DefaultAuth":null},{"Name":"api2","Description":null,"TargetURL":"foo.bar2","Group":null,"Spec":null,"Version":null,"DefaultAuth":null}],"EventAPIs":[{"Name":"event1","Description":"Sample","Spec":{"Data":"data","Type":"ASYNC_API","Format":"JSON"},"Group":null,"Version":null},{"Name":"event2","Description":"Sample","Spec":{"Data":"data2","Type":"ASYNC_API","Format":"JSON"},"Group":null,"Version":null}],"Documents":[{"Title":"","DisplayName":"doc1","Description":"","Format":"","Kind":"test","Data":null,"FetchRequest":null},{"Title":"","DisplayName":"doc2","Description":"","Format":"","Kind":"test","Data":null,"FetchRequest":null}],"IntegrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
@@ -29,6 +29,8 @@ const (
 )
 
 var (
+	testDescription  = "Lorem ipsum"
+	testURL          = "http://valid.url"
 	testError        = errors.New("test error")
 	testTableColumns = []string{"id", "name", "description", "application_input", "placeholders", "access_level"}
 )
@@ -157,6 +159,26 @@ func fixGQLPlaceholders() []*graphql.PlaceholderDefinition {
 	}
 }
 
+func fixGQLApplicationFromTemplateInput(name string) graphql.ApplicationFromTemplateInput {
+	return graphql.ApplicationFromTemplateInput{
+		TemplateName: name,
+		Values: []*graphql.TemplateValueInput{
+			{Placeholder: "a", Value: "b"},
+			{Placeholder: "c", Value: "d"},
+		},
+	}
+}
+
+func fixModelApplicationFromTemplateInput(name string) model.ApplicationFromTemplateInput {
+	return model.ApplicationFromTemplateInput{
+		TemplateName: name,
+		Values: []*model.ApplicationTemplateValueInput{
+			{Placeholder: "a", Value: "b"},
+			{Placeholder: "c", Value: "d"},
+		},
+	}
+}
+
 func fixAppTemplateCreateArgs(entity apptemplate.Entity) []driver.Value {
 	return []driver.Value{entity.ID, entity.Name, entity.Description, entity.ApplicationInputJSON, entity.PlaceholdersJSON, entity.AccessLevel}
 }
@@ -167,4 +189,43 @@ func fixSQLRows(entities []apptemplate.Entity) *sqlmock.Rows {
 		out.AddRow(entity.ID, entity.Name, entity.Description, entity.ApplicationInputJSON, entity.PlaceholdersJSON, entity.AccessLevel)
 	}
 	return out
+}
+
+func fixJSONApplicationCreateInput(name string) string {
+	return fmt.Sprintf(`{"Name": "%s", "Description": "%s", "HealthCheckURL": "%s"}`, name, testDescription, testURL)
+}
+
+func fixModelApplicationCreateInput(name string) model.ApplicationCreateInput {
+	return model.ApplicationCreateInput{
+		Name:           name,
+		Description:    &testDescription,
+		HealthCheckURL: &testURL,
+	}
+}
+
+func fixGQLApplicationCreateInput(name string) graphql.ApplicationCreateInput {
+	return graphql.ApplicationCreateInput{
+		Name:           name,
+		Description:    &testDescription,
+		HealthCheckURL: &testURL,
+	}
+}
+
+func fixModelApplication(id, name string) model.Application {
+	return model.Application{
+		ID:             id,
+		Tenant:         testTenant,
+		Name:           name,
+		Description:    &testDescription,
+		HealthCheckURL: &testURL,
+	}
+}
+
+func fixGQLApplication(id, name string) graphql.Application {
+	return graphql.Application{
+		ID:             id,
+		Name:           name,
+		Description:    &testDescription,
+		HealthCheckURL: &testURL,
+	}
 }

@@ -3,7 +3,6 @@ package apptemplate_test
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -42,26 +41,6 @@ func TestService_Create(t *testing.T) {
 				return appTemplateRepo
 			},
 			ExpectedOutput: testID,
-		},
-		{
-			Name: "Error when application template placeholders are not unique",
-			Input: &model.ApplicationTemplateInput{
-				Placeholders: []model.ApplicationTemplatePlaceholder{
-					{
-						Name:        testName,
-						Description: nil,
-					},
-					{
-						Name:        testName,
-						Description: nil,
-					},
-				},
-			},
-			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
-				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				return appTemplateRepo
-			},
-			ExpectedError: fmt.Errorf("while creating Application Template [name=]: placeholder [name=%s] appears more than once", testName),
 		},
 		{
 			Name:  "Error when creating application template",
@@ -305,26 +284,6 @@ func TestService_Update(t *testing.T) {
 				appTemplateRepo.On("Update", ctx, *modelAppTemplate).Return(nil).Once()
 				return appTemplateRepo
 			},
-		},
-		{
-			Name: "Error when application template placeholders are not unique",
-			Input: &model.ApplicationTemplateInput{
-				Placeholders: []model.ApplicationTemplatePlaceholder{
-					{
-						Name:        testName,
-						Description: nil,
-					},
-					{
-						Name:        testName,
-						Description: nil,
-					},
-				},
-			},
-			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
-				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				return appTemplateRepo
-			},
-			ExpectedError: fmt.Errorf("while creating Application Template [name=]: placeholder [name=%s] appears more than once", testName),
 		},
 		{
 			Name:  "Error when updating application template",

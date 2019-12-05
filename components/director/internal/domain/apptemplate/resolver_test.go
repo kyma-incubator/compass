@@ -129,7 +129,7 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 			appTemplateSvc := testCase.AppTemplateSvcFn()
 			appTemplateConv := testCase.AppTemplateConvFn()
 
-			resolver := apptemplate.NewResolver(transact, appTemplateSvc, appTemplateConv)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv)
 
 			// WHEN
 			result, err := resolver.ApplicationTemplate(ctx, testID)
@@ -256,7 +256,7 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 			appTemplateSvc := testCase.AppTemplateSvcFn()
 			appTemplateConv := testCase.AppTemplateConvFn()
 
-			resolver := apptemplate.NewResolver(transact, appTemplateSvc, appTemplateConv)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv)
 
 			// WHEN
 			result, err := resolver.ApplicationTemplates(ctx, &first, &gqlAfter)
@@ -413,7 +413,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			appTemplateSvc := testCase.AppTemplateSvcFn()
 			appTemplateConv := testCase.AppTemplateConvFn()
 
-			resolver := apptemplate.NewResolver(transact, appTemplateSvc, appTemplateConv)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv)
 
 			// WHEN
 			result, err := resolver.CreateApplicationTemplate(ctx, *gqlAppTemplateInput)
@@ -431,6 +431,97 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			transact.AssertExpectations(t)
 			appTemplateSvc.AssertExpectations(t)
 			appTemplateConv.AssertExpectations(t)
+		})
+	}
+}
+
+func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
+	// GIVEN
+	ctx := tenant.SaveToContext(context.TODO(), testTenant)
+
+	txGen := txtest.NewTransactionContextGenerator(testError)
+
+	modelAppTemplate := fixModelAppTemplate(testID, testName)
+
+	jsonApplicationCreateInput := fixJSONApplicationCreateInput(testName)
+	modelApplicationCreateInput := fixModelApplicationCreateInput(testName)
+	gqlApplicationCreateInput := fixGQLApplicationCreateInput(testName)
+
+	modelApplication := fixModelApplication(testID, testName)
+	gqlApplication := fixGQLApplication(testID, testName)
+
+	gqlAppFromTemplateInput := fixGQLApplicationFromTemplateInput(testName)
+	modelAppFromTemplateInput := fixModelApplicationFromTemplateInput(testName)
+
+	testCases := []struct {
+		Name              string
+		TxFn              func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		AppTemplateSvcFn  func() *automock.ApplicationTemplateService
+		AppTemplateConvFn func() *automock.ApplicationTemplateConverter
+		AppSvcFn          func() *automock.ApplicationService
+		AppConvFn         func() *automock.ApplicationConverter
+		ExpectedOutput    *graphql.Application
+		ExpectedError     error
+	}{
+		{
+			Name: "Success",
+			TxFn: txGen.ThatSucceeds,
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("GetByName", txtest.CtxWithDBMatcher(), testName).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonApplicationCreateInput, nil).Once()
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", gqlAppFromTemplateInput).Return(modelAppFromTemplateInput).Once()
+				return appTemplateConv
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Create", txtest.CtxWithDBMatcher(), modelApplicationCreateInput).Return(testID, nil).Once()
+				appSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(&modelApplication, nil).Once()
+				return appSvc
+			},
+			AppConvFn: func() *automock.ApplicationConverter {
+				appConv := &automock.ApplicationConverter{}
+				appConv.On("CreateInputJSONToGQL", jsonApplicationCreateInput).Return(gqlApplicationCreateInput, nil).Once()
+				appConv.On("CreateInputFromGraphQL", gqlApplicationCreateInput).Return(modelApplicationCreateInput).Once()
+				appConv.On("ToGraphQL", &modelApplication).Return(&gqlApplication).Once()
+				return appConv
+			},
+			ExpectedOutput: &gqlApplication,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persist, transact := testCase.TxFn()
+			appTemplateSvc := testCase.AppTemplateSvcFn()
+			appTemplateConv := testCase.AppTemplateConvFn()
+			appSvc := testCase.AppSvcFn()
+			appConv := testCase.AppConvFn()
+
+			resolver := apptemplate.NewResolver(transact, appSvc, appConv, appTemplateSvc, appTemplateConv)
+
+			// WHEN
+			result, err := resolver.RegisterApplicationFromTemplate(ctx, gqlAppFromTemplateInput)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedOutput, result)
+
+			persist.AssertExpectations(t)
+			transact.AssertExpectations(t)
+			appTemplateSvc.AssertExpectations(t)
+			appTemplateConv.AssertExpectations(t)
+			appSvc.AssertExpectations(t)
+			appConv.AssertExpectations(t)
 		})
 	}
 }
@@ -570,7 +661,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			appTemplateSvc := testCase.AppTemplateSvcFn()
 			appTemplateConv := testCase.AppTemplateConvFn()
 
-			resolver := apptemplate.NewResolver(transact, appTemplateSvc, appTemplateConv)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv)
 
 			// WHEN
 			result, err := resolver.UpdateApplicationTemplate(ctx, testID, *gqlAppTemplateInput)
@@ -705,7 +796,7 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 			persist, transact := testCase.TxFn()
 			appTemplateSvc := testCase.AppTemplateSvcFn()
 			appTemplateConv := testCase.AppTemplateConvFn()
-			resolver := apptemplate.NewResolver(transact, appTemplateSvc, appTemplateConv)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv)
 
 			// WHEN
 			result, err := resolver.DeleteApplicationTemplate(ctx, testID)

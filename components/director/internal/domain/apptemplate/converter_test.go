@@ -4,7 +4,8 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/application/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate/automock"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
@@ -15,7 +16,7 @@ import (
 
 func TestConverter_ToGraphQL(t *testing.T) {
 	// GIVEN
-	appConv := &automock.ApplicationConverter{}
+	appConv := &automock.AppConverter{}
 	converter := apptemplate.NewConverter(appConv)
 
 	testCases := []struct {
@@ -139,36 +140,82 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 
 func TestConverter_InputFromGraphQL(t *testing.T) {
 	// GIVEN
-	appConv := &automock.ApplicationConverter{}
-	converter := apptemplate.NewConverter(appConv)
+	appTemplateInputGQL := fixGQLAppTemplateInput(testName)
+	appTemplateInputModel := fixModelAppTemplateInput(testName, "{\"name\":\"foo\",\"description\":\"Lorem ipsum\",\"labels\":null,\"webhooks\":null,\"healthCheckURL\":null,\"apis\":null,\"eventAPIs\":null,\"documents\":null,\"integrationSystemID\":null}")
 
 	testCases := []struct {
-		Name     string
-		Input    graphql.ApplicationTemplateInput
-		Expected model.ApplicationTemplateInput
+		Name           string
+		AppConverterFn func() *automock.AppConverter
+		Input          graphql.ApplicationTemplateInput
+		Expected       model.ApplicationTemplateInput
+		ExpectedError  error
 	}{
 		{
-			Name:     "All properties given",
-			Input:    *fixGQLAppTemplateInput(testName),
-			Expected: *fixModelAppTemplateInput(testName, "{\"name\":\"foo\",\"description\":\"Lorem ipsum\",\"labels\":null,\"webhooks\":null,\"healthCheckURL\":null,\"apis\":null,\"eventAPIs\":null,\"documents\":null,\"integrationSystemID\":null}"),
+			Name: "All properties given",
+			AppConverterFn: func() *automock.AppConverter {
+				appConverter := automock.AppConverter{}
+				appConverter.On("CreateInputGQLToJSON", appTemplateInputGQL.ApplicationInput).Return(appTemplateInputModel.ApplicationInputJSON, nil).Once()
+				return &appConverter
+			},
+			Input:         *appTemplateInputGQL,
+			Expected:      *appTemplateInputModel,
+			ExpectedError: nil,
 		},
 		{
-			Name:     "Empty",
-			Input:    graphql.ApplicationTemplateInput{},
-			Expected: model.ApplicationTemplateInput{},
+			Name: "Empty",
+			AppConverterFn: func() *automock.AppConverter {
+				appConverter := automock.AppConverter{}
+				return &appConverter
+			},
+			Input:         graphql.ApplicationTemplateInput{},
+			Expected:      model.ApplicationTemplateInput{},
+			ExpectedError: nil,
+		},
+		{
+			Name: "Error when converting",
+			AppConverterFn: func() *automock.AppConverter {
+				appConverter := automock.AppConverter{}
+				appConverter.On("CreateInputGQLToJSON", appTemplateInputGQL.ApplicationInput).Return("", testError).Once()
+				return &appConverter
+			},
+			Input:         *appTemplateInputGQL,
+			Expected:      model.ApplicationTemplateInput{},
+			ExpectedError: testError,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
+			appConv := testCase.AppConverterFn()
+			converter := apptemplate.NewConverter(appConv)
 			// WHEN
 			res, err := converter.InputFromGraphQL(testCase.Input)
-			require.NoError(t, err)
 
 			// THEN
-			assert.Equal(t, testCase.Expected, res)
+			if testCase.ExpectedError == nil {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.Expected, res)
+			} else {
+				require.Error(t, err)
+			}
+
+			appConv.AssertExpectations(t)
 		})
 	}
+}
+
+func TestConverter_ApplicationFromTemplateInputFromGraphQL(t *testing.T) {
+	// GIVEN
+	conv := apptemplate.NewConverter(nil)
+
+	in := fixGQLApplicationFromTemplateInput(testName)
+	expected := fixModelApplicationFromTemplateInput(testName)
+
+	// WHEN
+	result := conv.ApplicationFromTemplateInputFromGraphQL(in)
+
+	// THEN
+	assert.Equal(t, expected, result)
 }
 
 func TestConverter_ToEntity(t *testing.T) {

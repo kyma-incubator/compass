@@ -3,8 +3,6 @@ package apptemplate
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -40,16 +38,22 @@ type ApplicationConverter interface {
 	CreateInputFromGraphQL(in graphql.ApplicationCreateInput) model.ApplicationCreateInput
 }
 
+//go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
+type ApplicationService interface {
+	Create(ctx context.Context, in model.ApplicationCreateInput) (string, error)
+	Get(ctx context.Context, id string) (*model.Application, error)
+}
+
 type Resolver struct {
 	transact persistence.Transactioner
 
-	appSvc               application.ApplicationService
+	appSvc               ApplicationService
 	appConverter         ApplicationConverter
 	appTemplateSvc       ApplicationTemplateService
 	appTemplateConverter ApplicationTemplateConverter
 }
 
-func NewResolver(transact persistence.Transactioner, appSvc application.ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter) *Resolver {
 	return &Resolver{
 		transact:             transact,
 		appSvc:               appSvc,
