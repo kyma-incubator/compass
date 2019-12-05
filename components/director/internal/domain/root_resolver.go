@@ -93,7 +93,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, uidSvc)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
-	tokenSvc := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, labelRepo, oneTimeTokenCfg.ConnectorURL)
+	tokenSvc := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, appSvc, labelRepo, oneTimeTokenCfg.ConnectorURL)
 	oAuth20Svc := oauth20.NewService(scopeCfgProvider, uidSvc, oAuth20Cfg)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 

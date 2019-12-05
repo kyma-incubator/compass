@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -41,6 +40,10 @@ type SystemAuthService interface {
 	Create(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error)
 }
 
+type ApplicationService interface {
+	Get(ctx context.Context, id string) (*model.Application, error)
+}
+
 //go:generate mockery -name=LabelRepository -output=automock -outpkg=automock -case=underscore
 type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
@@ -50,11 +53,12 @@ type service struct {
 	cli          GraphQLClient
 	connectorURL string
 	sysAuthSvc   SystemAuthService
+	appSvc       ApplicationService
 	labelSvc     LabelRepository
 }
 
-func NewTokenService(gcli GraphQLClient, sysAuthSvc SystemAuthService, labelService LabelRepository, connectorURL string) *service {
-	return &service{cli: gcli, connectorURL: connectorURL, sysAuthSvc: sysAuthSvc, labelSvc: labelService}
+func NewTokenService(gcli GraphQLClient, sysAuthSvc SystemAuthService, appSvc ApplicationService, labelService LabelRepository, connectorURL string) *service {
+	return &service{cli: gcli, connectorURL: connectorURL, sysAuthSvc: sysAuthSvc, labelSvc: labelService, appSvc: appSvc}
 }
 
 type PairingIntegrationToken struct {
@@ -76,7 +80,7 @@ func (s service) GenerateOneTimeToken(ctx context.Context, id string, tokenType 
 			return model.OneTimeToken{}, errors.Wrap(err, "while getting label `applicationType`")
 		default:
 
-			appType,ok := appTypeLabel.Value.(string)
+			appType, ok := appTypeLabel.Value.(string)
 			if !ok {
 				return model.OneTimeToken{}, errors.New("while casting applicationType to string")
 			}
@@ -84,9 +88,15 @@ func (s service) GenerateOneTimeToken(ctx context.Context, id string, tokenType 
 			if appType != "SFSF" && appType != "S4HanaCloud" {
 				break
 			}
+
+			app, err := s.appSvc.Get(ctx, id)
+			if err != nil {
+				return model.OneTimeToken{}, errors.New("while getting the application")
+			}
+
 			params := &url.Values{}
 			params.Set("app", id)
-			params.Set("name", fmt.Sprintf("application-%d", time.Now().Unix()))
+			params.Set("name", app.Name)
 			params.Set("type", appType)
 
 			baseUrl, err := url.Parse("http://localhost:8082")
@@ -117,7 +127,7 @@ func (s service) GenerateOneTimeToken(ctx context.Context, id string, tokenType 
 				return model.OneTimeToken{}, errors.Wrap(err, "while unmarshalling JSON")
 			}
 
-			return model.OneTimeToken{Token: paringToken.IntegrationToken,ConnectorURL:"not applicable"}, nil
+			return model.OneTimeToken{Token: paringToken.IntegrationToken, ConnectorURL: "not applicable"}, nil
 
 		}
 
