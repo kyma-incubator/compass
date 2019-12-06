@@ -383,6 +383,24 @@ func TestUpdateApplicationTemplate_Validation(t *testing.T) {
 	assert.Contains(t, err.Error(), "validation error for type ApplicationTemplateInput")
 }
 
+func TestRegisterApplicationFromTemplate_Validation(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	tmpl := createApplicationTemplate(t, ctx, "validation-app")
+	defer deleteApplicationTemplate(t, ctx, tmpl.ID)
+
+	appFromTmpl := graphql.ApplicationFromTemplateInput{}
+	appFromTmplGQL, err := tc.graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
+	require.NoError(t, err)
+	registerAppFromTmpl := fixRegisterApplicationFromTemplate(appFromTmplGQL)
+	//WHEN
+	err = tc.RunOperation(ctx, registerAppFromTmpl, nil)
+
+	//THEN
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "TemplateName: cannot be blank.")
+}
+
 func fixDocumentInput() graphql.DocumentInput {
 	return graphql.DocumentInput{
 		Title:       "Readme",

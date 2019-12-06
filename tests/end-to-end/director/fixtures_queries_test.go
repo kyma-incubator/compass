@@ -72,9 +72,8 @@ func getApplicationTemplate(t *testing.T, ctx context.Context, id string) *graph
 	return &appTemplate
 }
 
-func createApplicationTemplate(t *testing.T, ctx context.Context, name string) graphql.ApplicationTemplate {
-	appTemplateInput := fixApplicationTemplate(name)
-	appTemplate, err := tc.graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
+func createApplicationTemplateFromInput(t *testing.T, ctx context.Context, input graphql.ApplicationTemplateInput) graphql.ApplicationTemplate {
+	appTemplate, err := tc.graphqlizer.ApplicationTemplateInputToGQL(input)
 	require.NoError(t, err)
 
 	createApplicationTemplateRequest := fixCreateApplicationTemplateRequest(appTemplate)
@@ -84,6 +83,10 @@ func createApplicationTemplate(t *testing.T, ctx context.Context, name string) g
 	require.NoError(t, err)
 	require.NotEmpty(t, output.ID)
 	return output
+}
+
+func createApplicationTemplate(t *testing.T, ctx context.Context, name string) graphql.ApplicationTemplate {
+	return createApplicationTemplateFromInput(t, ctx, fixApplicationTemplate(name))
 }
 
 func deleteApplicationTemplate(t *testing.T, ctx context.Context, id string) {
