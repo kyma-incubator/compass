@@ -31,6 +31,8 @@ go run cmd/main.go
 
 This table lists the environment variables, their descriptions, and default values:
 
+
+
 | Parameter | Description | Default value |
 |-----------|-------------|---------------|
 | **Address** | Provisioner address with the port | `127.0.0.1:3050` |
@@ -42,5 +44,7 @@ This table lists the environment variables, their descriptions, and default valu
 | **Database.Host** | Database host | `localhost` |
 | **Database.Port** | Database port | `5432` |
 | **Database.Name** | Database name | `provisioner` |
-| **Database.SSLMode** | SSL Mode for PostgrSQL. See all the possible values [here](https://www.postgresql.org/docs/9.1/libpq-ssl.html).  | `disable`|
+| **Database.SSLMode** | SSL Mode for PostgrSQL. See all the possible values [here](https://www.postgresql.org/docs/9.1/libpq-ssl.html)  | `disable`|
+| **Installation.Timeout** | Kyma installation timeout | `30m`|
+| **Installation.ErrorsCountFailureThreshold** | Amount of installation errors that cause installation to fail  | `5`|
 
