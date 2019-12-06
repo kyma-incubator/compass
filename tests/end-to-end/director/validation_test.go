@@ -342,6 +342,7 @@ func TestCreateApplicationTemplate_Validation(t *testing.T) {
 		Name:             "0invalid",
 		Placeholders:     []*graphql.PlaceholderDefinitionInput{},
 		ApplicationInput: &appCreateInput,
+		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
 	}
 	inputString, err := tc.graphqlizer.ApplicationTemplateInputToGQL(invalidInput)
 	require.NoError(t, err)
@@ -367,6 +368,7 @@ func TestUpdateApplicationTemplate_Validation(t *testing.T) {
 		Name:             "0invalid",
 		Placeholders:     []*graphql.PlaceholderDefinitionInput{},
 		ApplicationInput: &appCreateInput,
+		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
 	}
 	inputString, err := tc.graphqlizer.ApplicationTemplateInputToGQL(invalidInput)
 	require.NoError(t, err)
