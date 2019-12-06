@@ -106,23 +106,14 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *service) PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, templatePlaceholderValues []*model.ApplicationTemplateValueInput) (string, error) {
+func (s *service) PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error) {
 	appCreateInputJSON := appTemplate.ApplicationInputJSON
 	for _, placeholder := range appTemplate.Placeholders {
-		newValue, err := s.lookForPlaceholderValue(templatePlaceholderValues, placeholder.Name)
+		newValue, err := values.FindPlaceholderValue(placeholder.Name)
 		if err != nil {
-			return "", err
+			return "", errors.Wrap(err, "required placeholder not provided")
 		}
 		appCreateInputJSON = strings.ReplaceAll(appCreateInputJSON, fmt.Sprintf("{{%s}}", placeholder.Name), newValue)
 	}
 	return appCreateInputJSON, nil
-}
-
-func (s *service) lookForPlaceholderValue(values []*model.ApplicationTemplateValueInput, placeholderName string) (string, error) {
-	for _, value := range values {
-		if value.Placeholder == placeholderName {
-			return value.Value, nil
-		}
-	}
-	return "", errors.Errorf("required placeholder [name=%s] value not provided", placeholderName)
 }

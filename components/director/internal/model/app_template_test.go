@@ -63,3 +63,49 @@ func TestApplicationTemplateInput_ToApplicationTemplate(t *testing.T) {
 		})
 	}
 }
+
+func TestApplicationFromTemplateInputValues_FindPlaceholderValue(t *testing.T) {
+	// given
+	var values model.ApplicationFromTemplateInputValues = []*model.ApplicationTemplateValueInput{
+		{Placeholder: "a", Value: "foo"},
+		{Placeholder: "b", Value: "bar"},
+	}
+
+	expectedSuccessRes := "foo"
+	expectedErr := fmt.Errorf("value for placeholder name '%s' not found", "baz")
+
+	testCases := []struct {
+		Name           string
+		Input          string
+		ExpectedResult *string
+		ExpectedError  *error
+	}{
+		{
+			Name:           "Success",
+			Input:          "a",
+			ExpectedResult: &expectedSuccessRes,
+		},
+		{
+			Name:          "Error",
+			Input:         "baz",
+			ExpectedError: &expectedErr,
+		},
+	}
+
+	for i, testCase := range testCases {
+		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+
+			// when
+			result, err := values.FindPlaceholderValue(testCase.Input)
+
+			// then
+			if testCase.ExpectedResult != nil {
+				assert.Equal(t, testCase.ExpectedResult, &result)
+			}
+
+			if testCase.ExpectedError != nil {
+				assert.Equal(t, *testCase.ExpectedError, err)
+			}
+		})
+	}
+}

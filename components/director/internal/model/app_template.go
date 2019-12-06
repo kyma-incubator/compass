@@ -1,6 +1,10 @@
 package model
 
-import "github.com/kyma-incubator/compass/components/director/pkg/pagination"
+import (
+	"fmt"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+)
 
 type ApplicationTemplate struct {
 	ID                   string
@@ -33,7 +37,18 @@ const (
 
 type ApplicationFromTemplateInput struct {
 	TemplateName string
-	Values       []*ApplicationTemplateValueInput
+	Values       ApplicationFromTemplateInputValues
+}
+
+type ApplicationFromTemplateInputValues []*ApplicationTemplateValueInput
+
+func (in ApplicationFromTemplateInputValues) FindPlaceholderValue(name string) (string, error) {
+	for _, value := range in {
+		if value.Placeholder == name {
+			return value.Value, nil
+		}
+	}
+	return "", fmt.Errorf("value for placeholder name '%s' not found", name)
 }
 
 type ApplicationTemplatePlaceholder struct {

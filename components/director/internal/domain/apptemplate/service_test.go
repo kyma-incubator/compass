@@ -429,7 +429,7 @@ func TestService_PrepareApplicationCreateInputJSON(t *testing.T) {
 	testCases := []struct {
 		Name             string
 		InputAppTemplate *model.ApplicationTemplate
-		InputValues      []*model.ApplicationTemplateValueInput
+		InputValues      model.ApplicationFromTemplateInputValues
 		ExpectedOutput   string
 		ExpectedError    error
 	}{
@@ -465,9 +465,9 @@ func TestService_PrepareApplicationCreateInputJSON(t *testing.T) {
 					{Name: "name", Description: str.Ptr("Application name")},
 				},
 			},
-			InputValues:    nil,
+			InputValues:    []*model.ApplicationTemplateValueInput{},
 			ExpectedOutput: "",
-			ExpectedError:  errors.New("required placeholder [name=name] value not provided"),
+			ExpectedError:  errors.New("required placeholder not provided: value for placeholder name 'name' not found"),
 		},
 	}
 

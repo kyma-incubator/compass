@@ -20,7 +20,7 @@ type ApplicationTemplateService interface {
 	List(ctx context.Context, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
 	Update(ctx context.Context, id string, in model.ApplicationTemplateInput) error
 	Delete(ctx context.Context, id string) error
-	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, templatePlaceholderValues []*model.ApplicationTemplateValueInput) (string, error)
+	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
 }
 
 //go:generate mockery -name=ApplicationTemplateConverter -output=automock -outpkg=automock -case=underscore
