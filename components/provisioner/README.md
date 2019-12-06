@@ -32,19 +32,18 @@ go run cmd/main.go
 This table lists the environment variables, their descriptions, and default values:
 
 
-
 | Parameter | Description | Default value |
 |-----------|-------------|---------------|
-| **Address** | Provisioner address with the port | `127.0.0.1:3050` |
-| **APIEdnpoint** | Endpoint for the GraphQL API | `/graphql` |
-| **PlaygroundAPIEndpoint** | Endpoint for the API playground | `/graphql` |
-| **SchemaFilePath** | Filepath for the database schema | `assets/database/provisioner.sql` |
-| **Database.User** | Database username | `postgres` |
-| **Database.Password** | Database user password | `password` |
-| **Database.Host** | Database host | `localhost` |
-| **Database.Port** | Database port | `5432` |
-| **Database.Name** | Database name | `provisioner` |
-| **Database.SSLMode** | SSL Mode for PostgrSQL. See all the possible values [here](https://www.postgresql.org/docs/9.1/libpq-ssl.html)  | `disable`|
-| **Installation.Timeout** | Kyma installation timeout | `30m`|
-| **Installation.ErrorsCountFailureThreshold** | Amount of installation errors that cause installation to fail  | `5`|
+| **APP_ADDRESS** | Provisioner address with the port | `127.0.0.1:3050` |
+| **APP_API_ENDPOINT** | Endpoint for the GraphQL API | `/graphql` |
+| **APP_PLAYGROUND_API_ENDPOINT** | Endpoint for the API playground | `/graphql` |
+| **APP_SCHEMA_FILE_PATH** | Filepath for the database schema | `assets/database/provisioner.sql` |
+| **APP_DATABASE_USE** | Database username | `postgres` |
+| **APP_DATABASE_PASSWORD** | Database user password | `password` |
+| **APP_DATABASE_HOST** | Database host | `localhost` |
+| **APP_DATABASE_PORT** | Database port | `5432` |
+| **APP_DATABASE_NAME** | Database name | `provisioner` |
+| **APP_DATABASE_SSL_MODE** | SSL Mode for PostgrSQL. See all the possible values [here](https://www.postgresql.org/docs/9.1/libpq-ssl.html)  | `disable`|
+| **APP_INSTALLATION_TIMEOUT** | Kyma installation timeout | `30m`|
+| **APP_INSTALLATION_ERRORS_COUNT_FAILURE_THRESHOLD** | Amount of installation errors that cause installation to fail  | `5`|
 
