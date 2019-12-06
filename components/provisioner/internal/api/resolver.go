@@ -42,7 +42,7 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, id string, config gqlsc
 	}
 
 	if config.ClusterConfig.GcpConfig != nil && config.ClusterConfig.GardenerConfig == nil {
-		err := fmt.Errorf("Provisioning on GCP is not supported now, Runtime ID: %s", id)
+		err := fmt.Errorf("Provisioning on GCP is currently not supported, Runtime ID: %s", id)
 		log.Errorf(err.Error())
 		return "", err
 	}

@@ -109,7 +109,7 @@ func (s service) ProvisionCluster(clusterData model.Cluster) (ClusterInfo, error
 }
 
 func (s service) DeprovisionCluster(clusterData model.Cluster) error {
-	log.Infof("Preparing config for %s runtime deprovisioning", clusterData.ID)
+	log.Infof("Preparing config for %s Runtime deprovisioning", clusterData.ID)
 	credentialsFile, err := s.saveCredentialsToFile(clusterData.CredentialsSecretName)
 	if err != nil {
 		return errors.WithMessagef(err, "Failed to save credentials to secret for %s Runtime", clusterData.ID)

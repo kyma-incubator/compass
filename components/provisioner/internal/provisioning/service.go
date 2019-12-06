@@ -188,7 +188,7 @@ func (r *service) startProvisioning(operationID string, cluster model.Cluster, f
 	}
 	if info.ClusterStatus != types.Provisioned {
 		log.Errorf("Provisioning runtime %s failed, cluster status: %s", cluster.ID, info.ClusterStatus)
-		r.setOperationAsFailed(operationID, fmt.Sprintf("Provisioning failed from unknown reason, cluster status: %s", info.ClusterStatus))
+		r.setOperationAsFailed(operationID, fmt.Sprintf("Provisioning failed for unknown reason, cluster status: %s", info.ClusterStatus))
 		return
 	}
 
