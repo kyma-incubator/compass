@@ -17,30 +17,30 @@ var (
 
 func TestLabelDefinitionInput_Validate(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value graphql.LabelDefinitionInput
-		Valid bool
+		Name          string
+		Value         graphql.LabelDefinitionInput
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: fixValidLabelDefinitionInput(),
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         fixValidLabelDefinitionInput(),
+			ExpectedValid: true,
 		},
 		{
-			Name: "Valid - Schema provided",
+			Name: "ExpectedValid - Schema provided",
 			Value: graphql.LabelDefinitionInput{
 				Key:    "ok",
 				Schema: &validSchema,
 			},
-			Valid: true,
+			ExpectedValid: true,
 		},
 		{
-			Name: "Valid - Scenarios schema",
+			Name: "ExpectedValid - Scenarios schema",
 			Value: graphql.LabelDefinitionInput{
 				Key:    model.ScenariosKey,
 				Schema: fixScenariosSchema(t),
 			},
-			Valid: true,
+			ExpectedValid: true,
 		},
 		{
 			Name: "Invalid - Invalid schema format",
@@ -48,7 +48,7 @@ func TestLabelDefinitionInput_Validate(t *testing.T) {
 				Key:    "ok",
 				Schema: &invalidSchema,
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - Scenarios schema invalid format",
@@ -56,7 +56,7 @@ func TestLabelDefinitionInput_Validate(t *testing.T) {
 				Key:    model.ScenariosKey,
 				Schema: &invalidSchema,
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - Scenarios schema invalid",
@@ -64,7 +64,7 @@ func TestLabelDefinitionInput_Validate(t *testing.T) {
 				Key:    model.ScenariosKey,
 				Schema: &validSchema,
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - Scenarios schema nil",
@@ -72,7 +72,7 @@ func TestLabelDefinitionInput_Validate(t *testing.T) {
 				Key:    model.ScenariosKey,
 				Schema: nil,
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - Scenarios schema with enum value which does not meet the regex - enum value contains invalid character",
@@ -88,7 +88,7 @@ func TestLabelDefinitionInput_Validate(t *testing.T) {
 					}
 				}`),
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - Scenarios schema with enum value which does not meet the regex - enum value too long",
@@ -104,7 +104,7 @@ func TestLabelDefinitionInput_Validate(t *testing.T) {
 					}	
 				}`),
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - scenarios schema without DEFAULT enum value",
@@ -120,7 +120,7 @@ func TestLabelDefinitionInput_Validate(t *testing.T) {
 					}
 				}`),
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 	}
 
@@ -131,7 +131,7 @@ func TestLabelDefinitionInput_Validate(t *testing.T) {
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -142,24 +142,24 @@ func TestLabelDefinitionInput_Validate(t *testing.T) {
 
 func TestLabelDefinitionInput_Validate_Key(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value string
-		Valid bool
+		Name          string
+		Value         string
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: "valid",
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         "valid",
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Invalid - Empty",
-			Value: inputvalidationtest.EmptyString,
-			Valid: false,
+			Name:          "Invalid - Empty",
+			Value:         inputvalidationtest.EmptyString,
+			ExpectedValid: false,
 		},
 		{
-			Name:  "Invalid - Too long",
-			Value: inputvalidationtest.String257Long,
-			Valid: false,
+			Name:          "Invalid - Too long",
+			Value:         inputvalidationtest.String257Long,
+			ExpectedValid: false,
 		},
 	}
 
@@ -171,7 +171,7 @@ func TestLabelDefinitionInput_Validate_Key(t *testing.T) {
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -182,19 +182,19 @@ func TestLabelDefinitionInput_Validate_Key(t *testing.T) {
 
 func TestLabelDefinitionInput_Validate_Schema(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value *graphql.JSONSchema
-		Valid bool
+		Name          string
+		Value         *graphql.JSONSchema
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: &validSchema,
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         &validSchema,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Valid - Nil",
-			Value: (*graphql.JSONSchema)(nil),
-			Valid: true,
+			Name:          "ExpectedValid - Nil",
+			Value:         (*graphql.JSONSchema)(nil),
+			ExpectedValid: true,
 		},
 	}
 
@@ -206,7 +206,7 @@ func TestLabelDefinitionInput_Validate_Schema(t *testing.T) {
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)

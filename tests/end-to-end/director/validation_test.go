@@ -223,7 +223,7 @@ func TestUpdateIntegrationSystem_Validation(t *testing.T) {
 	ctx := context.TODO()
 	intSys := createIntegrationSystem(t, ctx, "integration-system")
 	defer deleteIntegrationSystem(t, ctx, intSys.ID)
-	longDesc := strings.Repeat("a", 129)
+	longDesc := strings.Repeat("a", 256)
 	intSysUpdate := graphql.IntegrationSystemInput{Name: "name", Description: &longDesc}
 	isUpdateGQL, err := tc.graphqlizer.IntegrationSystemInputToGQL(intSysUpdate)
 	require.NoError(t, err)
@@ -235,6 +235,100 @@ func TestUpdateIntegrationSystem_Validation(t *testing.T) {
 	//THEN
 	require.Error(t, err)
 	assert.EqualError(t, err, fmt.Sprintf(longDescErrorMsg, "IntegrationSystemInput"))
+}
+
+func TestAddAPI_Validation(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	app := createApplication(t, ctx, "name")
+	defer deleteApplication(t, app.ID)
+
+	api := graphql.APIDefinitionInput{Name: "name", TargetURL: "https://kyma project.io"}
+	apiGQL, err := tc.graphqlizer.APIDefinitionInputToGQL(api)
+	require.NoError(t, err)
+	addAPIRequest := fixAddAPIRequest(app.ID, apiGQL)
+
+	//WHEN
+	err = tc.RunOperation(ctx, addAPIRequest, nil)
+
+	//THEN
+	require.Error(t, err)
+	require.EqualError(t, err, "graphql: validation error for type APIDefinitionInput: targetURL: must be a valid URL.")
+}
+
+func TestUpdateAPI_Validation(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	app := createApplication(t, ctx, "name")
+	defer deleteApplication(t, app.ID)
+
+	api := graphql.APIDefinitionInput{Name: "name", TargetURL: "https://kyma-project.io"}
+	addAPI(t, ctx, app.ID, api)
+
+	api.TargetURL = "invalid URL"
+	apiGQL, err := tc.graphqlizer.APIDefinitionInputToGQL(api)
+	require.NoError(t, err)
+	updateAPIRequest := fixUpdateAPIRequest(app.ID, apiGQL)
+
+	//WHEN
+	err = tc.RunOperation(ctx, updateAPIRequest, nil)
+
+	//THEN
+	require.Error(t, err)
+	require.EqualError(t, err, "graphql: validation error for type APIDefinitionInput: targetURL: is not valid URL.")
+}
+
+func TestAddEventAPI_Validation(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	app := createApplication(t, ctx, "name")
+	defer deleteApplication(t, app.ID)
+
+	eventAPI := fixEventAPIDefinitionInput()
+	longDesc := strings.Repeat("a", 129)
+	eventAPI.Description = &longDesc
+	evenApiGQL, err := tc.graphqlizer.EventAPIDefinitionInputToGQL(eventAPI)
+	require.NoError(t, err)
+	addEventAPIRequest := fixAddEventAPIRequest(app.ID, evenApiGQL)
+
+	//WHEN
+	err = tc.RunOperation(ctx, addEventAPIRequest, nil)
+
+	//THEN
+	require.Error(t, err)
+	require.EqualError(t, err, fmt.Sprintf(longDescErrorMsg, "EventAPIDefinitionInput"))
+}
+
+func TestUpdateEventAPI_Validation(t *testing.T) {
+	ctx := context.TODO()
+	app := createApplication(t, ctx, "name")
+	defer deleteApplication(t, app.ID)
+
+	eventAPIUpdate := fixEventAPIDefinitionInput()
+	eventAPI := addEventAPI(t, ctx, app.ID, eventAPIUpdate)
+
+	longDesc := strings.Repeat("a", 129)
+	eventAPIUpdate.Description = &longDesc
+	evenApiGQL, err := tc.graphqlizer.EventAPIDefinitionInputToGQL(eventAPIUpdate)
+	require.NoError(t, err)
+	updateEventAPI := fixUpdateEventAPIRequest(eventAPI.ID, evenApiGQL)
+
+	//WHEN
+	err = tc.RunOperation(ctx, updateEventAPI, nil)
+
+	//THEN
+	require.Error(t, err)
+	require.EqualError(t, err, fmt.Sprintf(longDescErrorMsg, "EventAPIDefinitionInput"))
+}
+
+func fixEventAPIDefinitionInput() graphql.EventAPIDefinitionInput {
+	data := graphql.CLOB("data")
+	return graphql.EventAPIDefinitionInput{Name: "name",
+		Spec: &graphql.EventAPISpecInput{
+			Data:          &data,
+			EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
+			Format:        graphql.SpecFormatJSON,
+		}}
 }
 
 func fixDocumentInput() graphql.DocumentInput {

@@ -1,17 +1,15 @@
 package graphql_test
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation/inputvalidationtest"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/stretchr/testify/require"
 )
 
-func TestFetchRequestInput_Validate_URL(t *testing.T) {
+func TestVersionInput_Validate_Value(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		Value         string
@@ -19,17 +17,17 @@ func TestFetchRequestInput_Validate_URL(t *testing.T) {
 	}{
 		{
 			Name:          "ExpectedValid",
-			Value:         inputvalidationtest.ValidURL,
+			Value:         "ExpectedValid",
 			ExpectedValid: true,
 		},
 		{
-			Name:          "URL longer than 256",
-			Value:         "https://kyma-project.io/" + strings.Repeat("a", 233),
+			Name:          "Empty string",
+			Value:         inputvalidationtest.EmptyString,
 			ExpectedValid: false,
 		},
 		{
-			Name:          "Invalid",
-			Value:         "kyma-project",
+			Name:          "String longer than 256 chars",
+			Value:         inputvalidationtest.String257Long,
 			ExpectedValid: false,
 		},
 	}
@@ -37,10 +35,10 @@ func TestFetchRequestInput_Validate_URL(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			fr := fixValidFetchRequestInput()
-			fr.URL = testCase.Value
+			obj := fixValidVersionInput()
+			obj.Value = testCase.Value
 			//WHEN
-			err := fr.Validate()
+			err := obj.Validate()
 			//THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
@@ -51,26 +49,22 @@ func TestFetchRequestInput_Validate_URL(t *testing.T) {
 	}
 }
 
-func TestFetchRequestInput_Validate_Auth(t *testing.T) {
-	validObj := fixValidAuthInput()
+func TestVersionInput_Validate_Deprecated(t *testing.T) {
+	boolean := true
+
 	testCases := []struct {
 		Name          string
-		Value         *graphql.AuthInput
+		Value         *bool
 		ExpectedValid bool
 	}{
 		{
 			Name:          "ExpectedValid",
-			Value:         &validObj,
+			Value:         &boolean,
 			ExpectedValid: true,
 		},
 		{
-			Name:          "ExpectedValid nil value",
+			Name:          "Nil value",
 			Value:         nil,
-			ExpectedValid: true,
-		},
-		{
-			Name:          "Invalid object",
-			Value:         &graphql.AuthInput{},
 			ExpectedValid: false,
 		},
 	}
@@ -78,10 +72,10 @@ func TestFetchRequestInput_Validate_Auth(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			fr := fixValidFetchRequestInput()
-			fr.Auth = testCase.Value
+			doc := fixValidVersionInput()
+			doc.Deprecated = testCase.Value
 			//WHEN
-			err := fr.Validate()
+			err := doc.Validate()
 			//THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
@@ -92,47 +86,7 @@ func TestFetchRequestInput_Validate_Auth(t *testing.T) {
 	}
 }
 
-func TestFetchRequestInput_Validate_Mode(t *testing.T) {
-	testCases := []struct {
-		Name          string
-		Value         *graphql.FetchMode
-		ExpectedValid bool
-	}{
-		{
-			Name:          "ExpectedValid",
-			Value:         (*graphql.FetchMode)(str.Ptr("SINGLE")),
-			ExpectedValid: true,
-		},
-		{
-			Name:          "ExpectedValid nil value",
-			Value:         nil,
-			ExpectedValid: true,
-		},
-		{
-			Name:          "Invalid object",
-			Value:         (*graphql.FetchMode)(str.Ptr("INVALID")),
-			ExpectedValid: false,
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			//GIVEN
-			fr := fixValidFetchRequestInput()
-			fr.Mode = testCase.Value
-			//WHEN
-			err := fr.Validate()
-			//THEN
-			if testCase.ExpectedValid {
-				require.NoError(t, err)
-			} else {
-				require.Error(t, err)
-			}
-		})
-	}
-}
-
-func TestFetchRequestInput_Validate_Filter(t *testing.T) {
+func TestVersionInput_Validate_DeprecatedSince(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		Value         *string
@@ -144,17 +98,17 @@ func TestFetchRequestInput_Validate_Filter(t *testing.T) {
 			ExpectedValid: true,
 		},
 		{
-			Name:          "ExpectedValid nil pointer",
+			Name:          "Nil pointer",
 			Value:         nil,
 			ExpectedValid: true,
 		},
 		{
 			Name:          "Empty string",
 			Value:         str.Ptr(inputvalidationtest.EmptyString),
-			ExpectedValid: false,
+			ExpectedValid: true,
 		},
 		{
-			Name:          "String bigger than 256 chars",
+			Name:          "String longer than 256 chars",
 			Value:         str.Ptr(inputvalidationtest.String257Long),
 			ExpectedValid: false,
 		},
@@ -163,10 +117,10 @@ func TestFetchRequestInput_Validate_Filter(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			fr := fixValidFetchRequestInput()
-			fr.Filter = testCase.Value
+			obj := fixValidVersionInput()
+			obj.DeprecatedSince = testCase.Value
 			//WHEN
-			err := fr.Validate()
+			err := obj.Validate()
 			//THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
@@ -177,8 +131,45 @@ func TestFetchRequestInput_Validate_Filter(t *testing.T) {
 	}
 }
 
-func fixValidFetchRequestInput() graphql.FetchRequestInput {
-	return graphql.FetchRequestInput{
-		URL: "https://kyma-project.io",
+func TestVersionInput_Validate_ForRemoval(t *testing.T) {
+	boolean := true
+
+	testCases := []struct {
+		Name          string
+		Value         *bool
+		ExpectedValid bool
+	}{
+		{
+			Name:          "ExpectedValid",
+			Value:         &boolean,
+			ExpectedValid: true,
+		},
+		{
+			Name:          "Nil value",
+			Value:         nil,
+			ExpectedValid: false,
+		},
 	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			doc := fixValidVersionInput()
+			doc.ForRemoval = testCase.Value
+			//WHEN
+			err := doc.Validate()
+			//THEN
+			if testCase.ExpectedValid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
+func fixValidVersionInput() graphql.VersionInput {
+	boolean := true
+	return graphql.VersionInput{
+		Value: "value", Deprecated: &boolean, ForRemoval: &boolean}
 }

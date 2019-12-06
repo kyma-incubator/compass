@@ -2959,12 +2959,12 @@ type Mutation {
 	**Examples**
 	- [add api](examples/add-api/add-api.graphql)
 	"""
-	addAPI(applicationID: ID!, in: APIDefinitionInput!): APIDefinition! @hasScopes(path: "graphql.mutation.addAPI")
+	addAPI(applicationID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPI")
 	"""
 	**Examples**
 	- [update api](examples/update-api/update-api.graphql)
 	"""
-	updateAPI(id: ID!, in: APIDefinitionInput!): APIDefinition! @hasScopes(path: "graphql.mutation.updateAPI")
+	updateAPI(id: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.updateAPI")
 	"""
 	**Examples**
 	- [delete api](examples/delete-api/delete-api.graphql)
@@ -2984,8 +2984,8 @@ type Mutation {
 	"""
 	setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput! @validate): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.setAPIAuth")
 	deleteAPIAuth(apiID: ID!, runtimeID: ID!): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.deleteAPIAuth")
-	addEventAPI(applicationID: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition! @hasScopes(path: "graphql.mutation.addEventAPI")
-	updateEventAPI(id: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition! @hasScopes(path: "graphql.mutation.updateEventAPI")
+	addEventAPI(applicationID: ID!, in: EventAPIDefinitionInput! @validate): EventAPIDefinition! @hasScopes(path: "graphql.mutation.addEventAPI")
+	updateEventAPI(id: ID!, in: EventAPIDefinitionInput! @validate): EventAPIDefinition! @hasScopes(path: "graphql.mutation.updateEventAPI")
 	deleteEventAPI(id: ID!): EventAPIDefinition! @hasScopes(path: "graphql.mutation.deleteEventAPI")
 	refetchEventAPISpec(eventID: ID!): EventAPISpec! @hasScopes(path: "graphql.mutation.refetchEventAPISpec")
 	"""
@@ -3209,9 +3209,21 @@ func (ec *executionContext) field_Mutation_addAPI_args(ctx context.Context, rawA
 	args["applicationID"] = arg0
 	var arg1 APIDefinitionInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg1, err = ec.unmarshalNAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(APIDefinitionInput); ok {
+			arg1 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.APIDefinitionInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -3265,9 +3277,21 @@ func (ec *executionContext) field_Mutation_addEventAPI_args(ctx context.Context,
 	args["applicationID"] = arg0
 	var arg1 EventAPIDefinitionInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg1, err = ec.unmarshalNEventAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinitionInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNEventAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinitionInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(EventAPIDefinitionInput); ok {
+			arg1 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.EventAPIDefinitionInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -3881,9 +3905,21 @@ func (ec *executionContext) field_Mutation_updateAPI_args(ctx context.Context, r
 	args["id"] = arg0
 	var arg1 APIDefinitionInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg1, err = ec.unmarshalNAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(APIDefinitionInput); ok {
+			arg1 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.APIDefinitionInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -3959,9 +3995,21 @@ func (ec *executionContext) field_Mutation_updateEventAPI_args(ctx context.Conte
 	args["id"] = arg0
 	var arg1 EventAPIDefinitionInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg1, err = ec.unmarshalNEventAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinitionInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNEventAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinitionInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(EventAPIDefinitionInput); ok {
+			arg1 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.EventAPIDefinitionInput`, tmp)
 		}
 	}
 	args["in"] = arg1

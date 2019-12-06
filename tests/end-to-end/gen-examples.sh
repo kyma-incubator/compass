@@ -114,7 +114,7 @@ ALL_SCOPES="runtime:write application:write label_definition:write integration_s
 echo -e "${GREEN}Prettifying GraphQL examples...${NC}"
 img="prettier:latest"
 docker build -t ${img} ./tools/prettier
-docker run -v "${HOST_ROOT_PATH}/components/director/examples":/prettier/examples \
+docker run --rm -v "${HOST_ROOT_PATH}/components/director/examples":/prettier/examples \
     ${img} prettier --write "examples/**/*.graphql"
 
 cd "${SCRIPT_DIR}/tools/example-index-generator/"

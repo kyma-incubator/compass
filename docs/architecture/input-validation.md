@@ -31,6 +31,7 @@ defaultAuth: AuthInput | false | |  
 ### APISpecInput
 
 - Struct validator ensures that `type` and `format` work together (ODATA works with XML and JSON, OPEN_API works with YAML and JSON)
+- Struct validator ensures that only one of `data` and `fetchRequest` is present
 
 Field | Required | Rules | Comment
 --- | --- | --- | ---
@@ -52,6 +53,7 @@ version: VersionInput | false | |  
 ### EventAPISpecInput
 
 - Struct validator ensures that `type` and `format` work together (ASYNC_API works with YAML and JSON)
+- Struct validator ensures that only one of `data` and `fetchRequest` is present
 
 Field | Required | Rules | Comment
 --- | --- | --- | ---

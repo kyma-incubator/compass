@@ -10,24 +10,24 @@ import (
 
 func TestLabelInput_Validate_Key(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value string
-		Valid bool
+		Name          string
+		Value         string
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: "valid",
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         "valid",
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Invalid - Empty",
-			Value: inputvalidationtest.EmptyString,
-			Valid: false,
+			Name:          "Invalid - Empty",
+			Value:         inputvalidationtest.EmptyString,
+			ExpectedValid: false,
 		},
 		{
-			Name:  "Invalid - Too long",
-			Value: inputvalidationtest.String257Long,
-			Valid: false,
+			Name:          "Invalid - Too long",
+			Value:         inputvalidationtest.String257Long,
+			ExpectedValid: false,
 		},
 	}
 
@@ -39,7 +39,7 @@ func TestLabelInput_Validate_Key(t *testing.T) {
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -50,34 +50,34 @@ func TestLabelInput_Validate_Key(t *testing.T) {
 
 func TestLabelInput_Validate_Value(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value interface{}
-		Valid bool
+		Name          string
+		Value         interface{}
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: "valid",
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         "valid",
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Valid - Map with strings",
-			Value: map[string]string{"a": "b"},
-			Valid: true,
+			Name:          "ExpectedValid - Map with strings",
+			Value:         map[string]string{"a": "b"},
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Valid - Slice of ints",
-			Value: []int{1, 2, 3},
-			Valid: true,
+			Name:          "ExpectedValid - Slice of ints",
+			Value:         []int{1, 2, 3},
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Invalid - Nil",
-			Value: nil,
-			Valid: false,
+			Name:          "Invalid - Nil",
+			Value:         nil,
+			ExpectedValid: false,
 		},
 		{
-			Name:  "Invalid - Empty string",
-			Value: inputvalidationtest.EmptyString,
-			Valid: false,
+			Name:          "Invalid - Empty string",
+			Value:         inputvalidationtest.EmptyString,
+			ExpectedValid: false,
 		},
 	}
 
@@ -89,7 +89,7 @@ func TestLabelInput_Validate_Value(t *testing.T) {
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)

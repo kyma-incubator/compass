@@ -11,24 +11,24 @@ import (
 
 func TestRuntimeInput_Validate_Name(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value string
-		Valid bool
+		Name          string
+		Value         string
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: inputvalidationtest.ValidName,
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         inputvalidationtest.ValidName,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Invalid - Empty",
-			Value: inputvalidationtest.EmptyString,
-			Valid: false,
+			Name:          "Invalid - Empty",
+			Value:         inputvalidationtest.EmptyString,
+			ExpectedValid: false,
 		},
 		{
-			Name:  "Invalid - Invalid Name",
-			Value: inputvalidationtest.InvalidName,
-			Valid: false,
+			Name:          "Invalid - Invalid Name",
+			Value:         inputvalidationtest.InvalidName,
+			ExpectedValid: false,
 		},
 	}
 
@@ -40,7 +40,7 @@ func TestRuntimeInput_Validate_Name(t *testing.T) {
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -51,29 +51,29 @@ func TestRuntimeInput_Validate_Name(t *testing.T) {
 
 func TestRuntimeInput_Validate_Description(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value *string
-		Valid bool
+		Name          string
+		Value         *string
+		ExpectedValid bool
 	}{
 		{
-			Name: "Valid",
+			Name: "ExpectedValid",
 			Value: str.Ptr("valid	valid"),
-			Valid: true,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Valid - Nil",
-			Value: (*string)(nil),
-			Valid: true,
+			Name:          "ExpectedValid - Nil",
+			Value:         (*string)(nil),
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Valid - Empty",
-			Value: str.Ptr(inputvalidationtest.EmptyString),
-			Valid: true,
+			Name:          "ExpectedValid - Empty",
+			Value:         str.Ptr(inputvalidationtest.EmptyString),
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Invalid - Too long",
-			Value: str.Ptr(inputvalidationtest.String129Long),
-			Valid: false,
+			Name:          "Invalid - Too long",
+			Value:         str.Ptr(inputvalidationtest.String129Long),
+			ExpectedValid: false,
 		},
 	}
 
@@ -85,7 +85,7 @@ func TestRuntimeInput_Validate_Description(t *testing.T) {
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -95,35 +95,35 @@ func TestRuntimeInput_Validate_Description(t *testing.T) {
 }
 func TestRuntimeInput_Validate_Labels(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value *graphql.Labels
-		Valid bool
+		Name          string
+		Value         *graphql.Labels
+		ExpectedValid bool
 	}{
 		{
-			Name: "Valid",
+			Name: "ExpectedValid",
 			Value: &graphql.Labels{
 				"test": "ok",
 			},
-			Valid: true,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Valid - Nil",
-			Value: nil,
-			Valid: true,
+			Name:          "ExpectedValid - Nil",
+			Value:         nil,
+			ExpectedValid: true,
 		},
 		{
-			Name: "Valid - Nil map value",
+			Name: "ExpectedValid - Nil map value",
 			Value: &graphql.Labels{
 				"test": nil,
 			},
-			Valid: true,
+			ExpectedValid: true,
 		},
 		{
 			Name: "Invalid - Empty map key",
 			Value: &graphql.Labels{
 				inputvalidationtest.EmptyString: "val",
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 	}
 
@@ -135,7 +135,7 @@ func TestRuntimeInput_Validate_Labels(t *testing.T) {
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
