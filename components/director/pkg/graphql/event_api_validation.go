@@ -33,7 +33,7 @@ func (i EventAPISpecInput) validateTypeWithMatchingSpecFormat() error {
 			return errors.Errorf("format %s is not a valid spec format for spec type %s", i.Format, i.EventSpecType)
 		}
 	default:
-		return errors.New("invalid spec type")
+		return errors.Errorf("%s is an invalid spec type", i.EventSpecType)
 	}
 	return nil
 }
