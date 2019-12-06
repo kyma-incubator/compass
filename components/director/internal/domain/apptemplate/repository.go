@@ -67,6 +67,20 @@ func (r *repository) Get(ctx context.Context, id string) (*model.ApplicationTemp
 	return result, nil
 }
 
+func (r *repository) GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error) {
+	var entity Entity
+	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("name", name)}, &entity); err != nil {
+		return nil, err
+	}
+
+	result, err := r.conv.FromEntity(&entity)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting Application Template with [name=%s]", name)
+	}
+
+	return result, nil
+}
+
 func (r *repository) Exists(ctx context.Context, id string) (bool, error) {
 	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
 }

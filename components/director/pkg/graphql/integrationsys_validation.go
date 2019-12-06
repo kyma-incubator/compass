@@ -8,6 +8,6 @@ import (
 func (i IntegrationSystemInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Name, validation.Required, inputvalidation.Name),
-		validation.Field(&i.Description, validation.Length(0, shortStringLengthLimit)),
+		validation.Field(&i.Description, validation.RuneLength(0, shortStringLengthLimit)),
 	)
 }

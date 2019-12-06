@@ -94,6 +94,8 @@ healthCheckURL: String | false | `url`, `max=256` | varchar(256) in db  
 
 ### ApplicationTemplateInput
 
+- Struct validator ensures that provided placeholders' names are unique and that they are used in `applicationInput` 
+
 Field | Required | Rules | Comment
 --- | --- | --- | ---
 name: String! | true | `name` |
@@ -107,7 +109,23 @@ accessLevel: ApplicationTemplateAccessLevel! | true | `oneof=[GLOBAL]` |
 Field | Required | Rules | Comment
 --- | --- | --- | ---
 name: String! | true | `name` |
-description: String | false | `max=128` | 
+description: String | false | `max=128` |
+
+### ApplicationFromTemplateInput
+
+- Struct validator ensures that provided placeholders' names are unique
+
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+templateName: String! | true | `name` |
+values: [TemplateValueInput!] | false | `[required]` |
+
+### TemplateValueInput
+
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+placeholder: String! | true | `name` |
+value: String! | true | | 
 
 ### RuntimeInput
 
