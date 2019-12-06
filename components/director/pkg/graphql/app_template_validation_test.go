@@ -154,47 +154,6 @@ func TestApplicationTemplateInput_Validate_Description(t *testing.T) {
 	}
 }
 
-func TestApplicationTemplateInput_Validate_ApplicationInput(t *testing.T) {
-	validAppInput := fixValidApplicationCreateInput()
-	testCases := []struct {
-		Name  string
-		Value *graphql.ApplicationCreateInput
-		Valid bool
-	}{
-		{
-			Name:  "Valid",
-			Value: &validAppInput,
-			Valid: true,
-		},
-		{
-			Name:  "Invalid - Nil",
-			Value: nil,
-			Valid: false,
-		},
-		{
-			Name:  "Invalid - Nested validation error",
-			Value: &graphql.ApplicationCreateInput{},
-			Valid: false,
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			//GIVEN
-			sut := fixValidApplicationTemplateInput()
-			sut.ApplicationInput = testCase.Value
-			//WHEN
-			err := sut.Validate()
-			//THEN
-			if testCase.Valid {
-				require.NoError(t, err)
-			} else {
-				require.Error(t, err)
-			}
-		})
-	}
-}
-
 func TestApplicationTemplateInput_Validate_Placeholders(t *testing.T) {
 	testPlaceholderName := "test"
 	testCases := []struct {

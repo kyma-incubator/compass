@@ -15,7 +15,6 @@ func (i ApplicationTemplateInput) Validate() error {
 		"rule.ValidPlaceholders": i.validPlaceholders(),
 		"Name":                   validation.Validate(i.Name, validation.Required, inputvalidation.Name),
 		"Description":            validation.Validate(i.Description, validation.RuneLength(0, shortStringLengthLimit)),
-		"ApplicationInput":       validation.Validate(i.ApplicationInput, validation.Required),
 		"Placeholders":           validation.Validate(i.Placeholders, validation.Each(validation.Required)),
 		"AccessLevel":            validation.Validate(i.AccessLevel, validation.Required, validation.In(ApplicationTemplateAccessLevelGlobal)),
 	}.Filter()

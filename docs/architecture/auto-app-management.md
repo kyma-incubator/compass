@@ -101,7 +101,7 @@ Luckily, IntegrationSystem can simplify this process by defining ApplicationTemp
 ## Managing ApplicationTemplates
 ApplicationTemplate defines ApplicationInput used to register Application. ApplicationInput can contain a variable part - placeholders.
 Placeholders are represented in template in the following form:
-```{{PLACEHOLDER_NAME}}```
+```{{placeholder-name}}```
 Every placeholder is required. Compass blocks registering Application from template if any placeholder has missing actual value.
 In the first iteration ApplicationTemplate will be registered globally and will be visible for all tenants (notice `accessLevel` field)
 
@@ -209,14 +209,14 @@ mutation {
     updateApplicationTemplate(id:"some-id", in:{
         name:"ecommerce-template",
         applicationInput:{
-            name: "{{APPLICATION_NAME}}",
+            name: "{{application-name}}",
             integrationSystemID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
             labels:[{key:"simple-integration-system/application-type",value:"ecommerce"}]
 
         },
         placeholders: [
         {
-            name:"APPLICATION_NAME",
+            name:"application-name",
             description:"Name of the application"
         }],
         }) {
@@ -225,14 +225,14 @@ mutation {
  }
 ```
 
-As you can see, `APPLICATION_NAME` placeholder is defined. In ApplicationInput, we refer to the placeholder in the following form: `{{APPLICATION_NAME}}`.
+As you can see, `application-name` placeholder is defined. In ApplicationInput, we refer to the placeholder in the following form: `{{application-name}}`.
 
 2. Register Application from Template
 When user registers Application from Template that defines placeholders, current value for all placeholders has to be specified.
 
 ```graphql
 mutation {
-    registerApplicationFromTemplate(templateName:"ecommerce-template", values: [{placeholder:"APPLICATION_NAME", value:"my-aplication"}]) {
+    registerApplicationFromTemplate(templateName:"ecommerce-template", values: [{placeholder:"application-name", value:"my-aplication"}]) {
         id
         name
         labels
@@ -254,25 +254,25 @@ mutation {
     updateApplicationTemplate(id:"some-id", in:{
         name:"ecommerce-template",
         applicationInput:{
-            name: "{{APPLICATION_NAME}}",
+            name: "{{application-name}}",
             integrationSystemID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
             labels:[{key:"simple-integration-system/application-type",value:"ecommerce"},
-                    {key:"simple-integration-system/input-param/username", value:"{{USERNAME}}"},
-                     {key:"simple-integration-system/input-param/password", value:"{{PASSWORD}}"},
+                    {key:"simple-integration-system/input-param/username", value:"{{username}}"},
+                     {key:"simple-integration-system/input-param/password", value:"{{password}}"},
              ]
 
         },
         placeholders: [
         {
-            name:"APPLICATION_NAME",
+            name:"application-name",
             description:"Name of the application"
         },
         {
-            name:"USERNAME",
+            name:"username",
             description:"User name"
         },
         {
-            name:"PASSWORD",
+            name:"password",
             description:"Password"
         },
 
@@ -287,9 +287,9 @@ mutation {
  ```graphql
  mutation {
      registerApplicationFromTemplate(templateName:"ecommerce-template", values: [
-     {placeholder:"APPLICATION_NAME", value:"MyApplication"},
-     {placeholder:"USERNAME", value:"john@doe.com"},
-     {placeholder:"PASSWORD", value:"perch"}
+     {placeholder:"application-name", value:"MyApplication"},
+     {placeholder:"username", value:"john@doe.com"},
+     {placeholder:"password", value:"perch"}
      ]) {
          id
          name
