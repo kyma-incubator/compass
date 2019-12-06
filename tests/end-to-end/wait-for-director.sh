@@ -16,7 +16,7 @@ directorIsUp=false
 set +e
 while [ $i -lt "$maxRetries" ]
 do
-    curl --fail "${DIRECTOR_URL}/healthz"
+    curl -k --fail "${DIRECTOR_URL}/healthz"
     res=$?
 
     if [ "$res" -eq "0" ]; then
