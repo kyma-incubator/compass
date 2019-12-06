@@ -4,8 +4,8 @@
 
 echo "Checking if Director is up..."
 
-if [ -z "$DIRECTOR_URL" ]; then
-      echo "\$DIRECTOR_URL env variable is empty"
+if [ -z "$DIRECTOR_HEALTHZ_URL" ]; then
+      echo "\$DIRECTOR_HEALTHZ_URL env variable is empty"
       exit 1
 fi
 
@@ -16,7 +16,7 @@ directorIsUp=false
 set +e
 while [ $i -lt "$maxRetries" ]
 do
-    curl -k --fail "${DIRECTOR_URL}/healthz"
+    curl --fail "${DIRECTOR_HEALTHZ_URL}"
     res=$?
 
     if [ "$res" -eq "0" ]; then
