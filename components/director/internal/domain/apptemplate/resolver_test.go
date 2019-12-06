@@ -446,7 +446,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 	modelAppCreateInput := fixModelApplicationCreateInput(testName)
 	gqlAppCreateInput := fixGQLApplicationCreateInput(testName)
 
-	modelAppTemplate := fixModelAppTemplate(testID, testName, jsonAppCreateInput)
+	modelAppTemplate := fixModelAppTemplateWithAppInputJSON(testID, testName, jsonAppCreateInput)
 
 	modelApplication := fixModelApplication(testID, testName)
 	gqlApplication := fixGQLApplication(testID, testName)

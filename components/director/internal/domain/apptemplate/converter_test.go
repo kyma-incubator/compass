@@ -141,7 +141,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 func TestConverter_InputFromGraphQL(t *testing.T) {
 	// GIVEN
 	appTemplateInputGQL := fixGQLAppTemplateInput(testName)
-	appTemplateInputModel := fixModelAppTemplateInput(testName, "{\"name\":\"foo\",\"description\":\"Lorem ipsum\",\"labels\":null,\"webhooks\":null,\"healthCheckURL\":null,\"apis\":null,\"eventAPIs\":null,\"documents\":null,\"integrationSystemID\":null}")
+	appTemplateInputModel := fixModelAppTemplateInput(testName, "{\"name\":\"foo\",\"description\":\"Lorem ipsum\"}")
 
 	testCases := []struct {
 		Name           string

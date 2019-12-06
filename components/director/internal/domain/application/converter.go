@@ -117,14 +117,10 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) mo
 }
 
 func (c *converter) CreateInputJSONToGQL(in string) (graphql.ApplicationCreateInput, error) {
-	if in == "" {
-		return graphql.ApplicationCreateInput{}, nil
-	}
-
 	var appInput graphql.ApplicationCreateInput
 	err := json.Unmarshal([]byte(in), &appInput)
 	if err != nil {
-		return graphql.ApplicationCreateInput{}, err
+		return graphql.ApplicationCreateInput{}, errors.Wrap(err, "while unmarshalling string to ApplicationCreateInput")
 	}
 
 	return appInput, nil

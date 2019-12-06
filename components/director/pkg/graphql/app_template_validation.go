@@ -12,7 +12,7 @@ import (
 
 func (i ApplicationTemplateInput) Validate() error {
 	return validation.Errors{
-		"rule.ValidPlaceholders": i.validPlaceholders(),
+		"Rule.ValidPlaceholders": i.validPlaceholders(),
 		"Name":                   validation.Validate(i.Name, validation.Required, inputvalidation.Name),
 		"Description":            validation.Validate(i.Description, validation.RuneLength(0, shortStringLengthLimit)),
 		"Placeholders":           validation.Validate(i.Placeholders, validation.Each(validation.Required)),
@@ -21,7 +21,7 @@ func (i ApplicationTemplateInput) Validate() error {
 }
 
 func (i ApplicationTemplateInput) validPlaceholders() error {
-	if err := i.ensurePlaceholdersUnique(); err != nil {
+	if err := i.ensureUniquePlaceholders(); err != nil {
 		return err
 	}
 	if err := i.ensurePlaceholdersUsed(); err != nil {
@@ -30,18 +30,18 @@ func (i ApplicationTemplateInput) validPlaceholders() error {
 	return nil
 }
 
-func (i ApplicationTemplateInput) ensurePlaceholdersUnique() error {
+func (i ApplicationTemplateInput) ensureUniquePlaceholders() error {
 	keys := make(map[string]interface{})
 	for _, item := range i.Placeholders {
 		if item == nil {
 			continue
 		}
-		_, exist := keys[item.Name]
-		if exist {
+
+		if _, exist := keys[item.Name]; exist {
 			return errors.Errorf("placeholder [name=%s] not unique", item.Name)
-		} else {
-			keys[item.Name] = struct{}{}
 		}
+
+		keys[item.Name] = struct{}{}
 	}
 	return nil
 }
@@ -75,7 +75,7 @@ func (i PlaceholderDefinitionInput) Validate() error {
 
 func (i ApplicationFromTemplateInput) Validate() error {
 	return validation.Errors{
-		"rule.UniquePlaceholders": i.ensureUniquePlaceholders(),
+		"Rule.UniquePlaceholders": i.ensureUniquePlaceholders(),
 		"TemplateName":            validation.Validate(i.TemplateName, validation.Required, inputvalidation.Name),
 		"Values":                  validation.Validate(i.Values, validation.Each(validation.Required)),
 	}.Filter()
@@ -87,12 +87,11 @@ func (i ApplicationFromTemplateInput) ensureUniquePlaceholders() error {
 		if item == nil {
 			continue
 		}
-		_, exist := keys[item.Placeholder]
-		if exist {
+		if _, exist := keys[item.Placeholder]; exist {
 			return errors.Errorf("placeholder [name=%s] not unique", item.Placeholder)
-		} else {
-			keys[item.Placeholder] = struct{}{}
 		}
+
+		keys[item.Placeholder] = struct{}{}
 	}
 	return nil
 }

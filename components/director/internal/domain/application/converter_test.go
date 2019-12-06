@@ -292,13 +292,14 @@ func TestConverter_CreateInputGQLJSONConversion(t *testing.T) {
 		require.Equal(t, inputGQL, outputGQL)
 	})
 
-	t.Run("Successful empty JSON to GQL conversion", func(t *testing.T) {
+	t.Run("Error while JSON to GQL conversion", func(t *testing.T) {
 		// WHEN
-		outputGQL, err := conv.CreateInputJSONToGQL("")
+		expectedErr := "invalid character 'a' looking for beginning of value"
+		_, err := conv.CreateInputJSONToGQL("ad[sd")
 
 		// THEN
-		require.NoError(t, err)
-		require.Empty(t, outputGQL)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), expectedErr)
 	})
 
 }
