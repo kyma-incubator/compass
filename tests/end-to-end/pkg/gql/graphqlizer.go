@@ -75,7 +75,7 @@ func (g *Graphqlizer) ApplicationTemplateInputToGQL(in graphql.ApplicationTempla
 		{{- if .Description }}
 		description: "{{.Description}}",
 		{{- end }}
-		applicationInput: {{ ApplicationCreateInputToGQL .ApplicationInput}},
+		applicationInput: {{ ApplicationRegisterInputToGQL .ApplicationInput}},
 		{{- if .Placeholders }}
 		placeholders: [
 			{{- range $i, $e := .Placeholders }} 
@@ -365,7 +365,7 @@ func (g *Graphqlizer) ApplicationFromTemplateInputToGQL(in graphql.ApplicationFr
 
 func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error) {
 	fm := sprig.TxtFuncMap()
-	fm["ApplicationCreateInputToGQL"] = g.ApplicationCreateInputToGQL
+	fm["ApplicationRegisterInputToGQL"] = g.ApplicationRegisterInputToGQL
 	fm["DocumentInputToGQL"] = g.DocumentInputToGQL
 	fm["FetchRequesstInputToGQL"] = g.FetchRequestInputToGQL
 	fm["AuthInputToGQL"] = g.AuthInputToGQL

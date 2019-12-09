@@ -239,12 +239,12 @@ func addAPI(t *testing.T, ctx context.Context, appID string, apiInput graphql.AP
 	return outAPI
 }
 
-func addEventAPI(t *testing.T, ctx context.Context, appID string, apiInput graphql.EventAPIDefinitionInput) graphql.EventAPIDefinition {
-	eventAPIGQL, err := tc.graphqlizer.EventAPIDefinitionInputToGQL(apiInput)
+func addEventDefinition(t *testing.T, ctx context.Context, appID string, apiInput graphql.EventDefinitionInput) graphql.EventDefinition {
+	eventAPIGQL, err := tc.graphqlizer.EventDefinitionInputToGQL(apiInput)
 	require.NoError(t, err)
 	addAPIRequest := fixAddEventAPIRequest(appID, eventAPIGQL)
 	//WHEN
-	outEventAPI := graphql.EventAPIDefinition{}
+	outEventAPI := graphql.EventDefinition{}
 	err = tc.RunOperation(ctx, addAPIRequest, &outEventAPI)
 	require.NoError(t, err)
 	return outEventAPI
@@ -252,7 +252,7 @@ func addEventAPI(t *testing.T, ctx context.Context, appID string, apiInput graph
 
 //OneTimeToken
 
-func generateOneTimeTokenForApplication(t *testing.T, ctx context.Context, id string) graphql.OneTimeToken {
+func requestOneTimeTokenForApplication(t *testing.T, ctx context.Context, id string) graphql.OneTimeToken {
 	tokenRequest := fixRequestOneTimeTokenForApp(id)
 	token := graphql.OneTimeToken{}
 	err := tc.RunOperation(ctx, tokenRequest, &token)
@@ -260,7 +260,7 @@ func generateOneTimeTokenForApplication(t *testing.T, ctx context.Context, id st
 	return token
 }
 
-func generateOneTimeTokenForRuntime(t *testing.T, ctx context.Context, id string) graphql.OneTimeToken {
+func requestOneTimeTokenForRuntime(t *testing.T, ctx context.Context, id string) graphql.OneTimeToken {
 	tokenRequest := fixRequestOneTimeTokenForRuntime(id)
 	token := graphql.OneTimeToken{}
 	err := tc.RunOperation(ctx, tokenRequest, &token)
@@ -296,7 +296,7 @@ func unregisterIntegrationSystem(t *testing.T, ctx context.Context, id string) {
 	require.NoError(t, err)
 }
 
-func generateClientCredentialsForIntegrationSystem(t *testing.T, ctx context.Context, id string) graphql.SystemAuth {
+func requestClientCredentialsForIntegrationSystem(t *testing.T, ctx context.Context, id string) graphql.SystemAuth {
 	req := fixRequestClientCredentialsForIntegrationSystem(id)
 	out := graphql.SystemAuth{}
 	err := tc.RunOperation(ctx, req, &out)

@@ -81,8 +81,8 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 }
 
 func TestConverter_CreateInputFromGraphQL(t *testing.T) {
-	allPropsInput := fixGQLApplicationCreateInput("foo", "Lorem ipsum")
-	allPropsExpected := fixModelApplicationCreateInput("foo", "Lorem ipsum")
+	allPropsInput := fixGQLApplicationRegisterInput("foo", "Lorem ipsum")
+	allPropsExpected := fixModelApplicationRegisterInput("foo", "Lorem ipsum")
 
 	// given
 	testCases := []struct {
@@ -105,12 +105,12 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 			},
 			APIConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("MultipleInputFromGraphQL", allPropsInput.APIDefinitions).Return(allPropsExpected.Apis)
+				conv.On("MultipleInputFromGraphQL", allPropsInput.APIDefinitions).Return(allPropsExpected.APIDefinitions)
 				return conv
 			},
 			EventAPIConverterFn: func() *automock.EventAPIConverter {
 				conv := &automock.EventAPIConverter{}
-				conv.On("MultipleInputFromGraphQL", allPropsInput.EventDefinitions).Return(allPropsExpected.EventAPIs)
+				conv.On("MultipleInputFromGraphQL", allPropsInput.EventDefinitions).Return(allPropsExpected.EventDefinitions)
 				return conv
 			},
 			DocumentConverterFn: func() *automock.DocumentConverter {
@@ -276,7 +276,7 @@ func TestConverter_CreateInputGQLJSONConversion(t *testing.T) {
 	conv := application.NewConverter(nil, nil, nil, nil)
 
 	t.Run("Successful two-way conversion", func(t *testing.T) {
-		inputGQL := fixGQLApplicationCreateInput("name", "description")
+		inputGQL := fixGQLApplicationRegisterInput("name", "description")
 		inputGQL.Labels = &graphql.Labels{"test": "test"}
 
 		// WHEN

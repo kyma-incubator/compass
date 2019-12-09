@@ -1,4 +1,4 @@
-package eventapi_test
+package eventdef_test
 
 import (
 	"context"
@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/eventapi"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/eventapi/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
@@ -19,14 +19,14 @@ import (
 
 func TestPgRepository_GetByID(t *testing.T) {
 	// given
-	eventAPIDefEntity := fixFullEventAPIDef(eventAPIID, "placeholder")
+	eventAPIDefEntity := fixFullEventDef(eventAPIID, "placeholder")
 	selectQuery := `^SELECT (.+) FROM "public"."event_api_definitions" WHERE tenant_id = \$1 AND id = \$2$`
 	testError := errors.New("test error")
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixEventAPIDefinitionColumns()).
-			AddRow(fixEventAPIDefinitionRow(eventAPIID, "placeholder")...)
+		rows := sqlmock.NewRows(fixEventDefinitionColumns()).
+			AddRow(fixEventDefinitionRow(eventAPIID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
 			WithArgs(tenantID, eventAPIID).
@@ -34,8 +34,8 @@ func TestPgRepository_GetByID(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EventAPIDefinitionConverter{}
-		convMock.On("FromEntity", eventAPIDefEntity).Return(model.EventAPIDefinition{ID: eventAPIID, Tenant: tenantID}, nil).Once()
-		pgRepository := eventapi.NewRepository(convMock)
+		convMock.On("FromEntity", eventAPIDefEntity).Return(model.EventDefinition{ID: eventAPIID, Tenant: tenantID}, nil).Once()
+		pgRepository := eventdef.NewRepository(convMock)
 		// WHEN
 		modelEventAPIDef, err := pgRepository.GetByID(ctx, tenantID, eventAPIID)
 		//THEN
@@ -48,8 +48,8 @@ func TestPgRepository_GetByID(t *testing.T) {
 
 	t.Run("returns error when conversion failed", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixEventAPIDefinitionColumns()).
-			AddRow(fixEventAPIDefinitionRow(eventAPIID, "placeholder")...)
+		rows := sqlmock.NewRows(fixEventDefinitionColumns()).
+			AddRow(fixEventDefinitionRow(eventAPIID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
 			WithArgs(tenantID, eventAPIID).
@@ -57,8 +57,8 @@ func TestPgRepository_GetByID(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EventAPIDefinitionConverter{}
-		convMock.On("FromEntity", eventAPIDefEntity).Return(model.EventAPIDefinition{}, testError).Once()
-		pgRepository := eventapi.NewRepository(convMock)
+		convMock.On("FromEntity", eventAPIDefEntity).Return(model.EventDefinition{}, testError).Once()
+		pgRepository := eventdef.NewRepository(convMock)
 		// WHEN
 		_, err := pgRepository.GetByID(ctx, tenantID, eventAPIID)
 		//THEN
@@ -75,7 +75,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 			WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		pgRepository := eventapi.NewRepository(nil)
+		pgRepository := eventdef.NewRepository(nil)
 		// WHEN
 		_, err := pgRepository.GetByID(ctx, tenantID, eventAPIID)
 		//THEN
@@ -87,14 +87,14 @@ func TestPgRepository_GetByID(t *testing.T) {
 
 func TestPgRepository_GetForApplication(t *testing.T) {
 	// given
-	eventAPIDefEntity := fixFullEventAPIDef(eventAPIID, "placeholder")
+	eventAPIDefEntity := fixFullEventDef(eventAPIID, "placeholder")
 	selectQuery := `^SELECT (.+) FROM "public"."event_api_definitions" WHERE tenant_id = \$1 AND id = \$2 AND app_id = \$3`
 	testError := errors.New("test error")
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixEventAPIDefinitionColumns()).
-			AddRow(fixEventAPIDefinitionRow(eventAPIID, "placeholder")...)
+		rows := sqlmock.NewRows(fixEventDefinitionColumns()).
+			AddRow(fixEventDefinitionRow(eventAPIID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
 			WithArgs(tenantID, eventAPIID, appID).
@@ -102,8 +102,8 @@ func TestPgRepository_GetForApplication(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EventAPIDefinitionConverter{}
-		convMock.On("FromEntity", eventAPIDefEntity).Return(model.EventAPIDefinition{ID: eventAPIID, Tenant: tenantID, ApplicationID: appID}, nil).Once()
-		pgRepository := eventapi.NewRepository(convMock)
+		convMock.On("FromEntity", eventAPIDefEntity).Return(model.EventDefinition{ID: eventAPIID, Tenant: tenantID, ApplicationID: appID}, nil).Once()
+		pgRepository := eventdef.NewRepository(convMock)
 		// WHEN
 		modelEventAPIDef, err := pgRepository.GetForApplication(ctx, tenantID, eventAPIID, appID)
 		//THEN
@@ -117,7 +117,7 @@ func TestPgRepository_GetForApplication(t *testing.T) {
 
 	t.Run("DB Error", func(t *testing.T) {
 		// given
-		repo := eventapi.NewRepository(nil)
+		repo := eventdef.NewRepository(nil)
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		testError := errors.New("test error")
 
@@ -138,8 +138,8 @@ func TestPgRepository_GetForApplication(t *testing.T) {
 
 	t.Run("returns error when conversion failed", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixEventAPIDefinitionColumns()).
-			AddRow(fixEventAPIDefinitionRow(eventAPIID, "placeholder")...)
+		rows := sqlmock.NewRows(fixEventDefinitionColumns()).
+			AddRow(fixEventDefinitionRow(eventAPIID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
 			WithArgs(tenantID, eventAPIID, appID).
@@ -147,8 +147,8 @@ func TestPgRepository_GetForApplication(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EventAPIDefinitionConverter{}
-		convMock.On("FromEntity", eventAPIDefEntity).Return(model.EventAPIDefinition{}, testError).Once()
-		pgRepository := eventapi.NewRepository(convMock)
+		convMock.On("FromEntity", eventAPIDefEntity).Return(model.EventDefinition{}, testError).Once()
+		pgRepository := eventdef.NewRepository(convMock)
 		// WHEN
 		_, err := pgRepository.GetForApplication(ctx, tenantID, eventAPIID, appID)
 		//THEN
@@ -165,7 +165,7 @@ func TestPgRepository_GetForApplication(t *testing.T) {
 			WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		pgRepository := eventapi.NewRepository(nil)
+		pgRepository := eventdef.NewRepository(nil)
 		// WHEN
 		_, err := pgRepository.GetForApplication(ctx, tenantID, eventAPIID, appID)
 		//THEN
@@ -186,9 +186,9 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 	inputCursor := ""
 	totalCount := 2
 	firstEventAPIDefID := "111111111-1111-1111-1111-111111111111"
-	firstEventAPIDefEntity := fixFullEventAPIDef(firstEventAPIDefID, "placeholder")
+	firstEventAPIDefEntity := fixFullEventDef(firstEventAPIDefID, "placeholder")
 	secondEventAPIDefID := "222222222-2222-2222-2222-222222222222"
-	secondEventAPIDefEntity := fixFullEventAPIDef(secondEventAPIDefID, "placeholder")
+	secondEventAPIDefEntity := fixFullEventDef(secondEventAPIDefID, "placeholder")
 
 	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM "public"."event_api_definitions" 
 		WHERE tenant_id=\$1 AND app_id = '%s' 
@@ -200,9 +200,9 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixEventAPIDefinitionColumns()).
-			AddRow(fixEventAPIDefinitionRow(firstEventAPIDefID, "placeholder")...).
-			AddRow(fixEventAPIDefinitionRow(secondEventAPIDefID, "placeholder")...)
+		rows := sqlmock.NewRows(fixEventDefinitionColumns()).
+			AddRow(fixEventDefinitionRow(firstEventAPIDefID, "placeholder")...).
+			AddRow(fixEventDefinitionRow(secondEventAPIDefID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
 			WithArgs(tenantID).
@@ -214,9 +214,9 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EventAPIDefinitionConverter{}
-		convMock.On("FromEntity", firstEventAPIDefEntity).Return(model.EventAPIDefinition{ID: firstEventAPIDefID}, nil)
-		convMock.On("FromEntity", secondEventAPIDefEntity).Return(model.EventAPIDefinition{ID: secondEventAPIDefID}, nil)
-		pgRepository := eventapi.NewRepository(convMock)
+		convMock.On("FromEntity", firstEventAPIDefEntity).Return(model.EventDefinition{ID: firstEventAPIDefID}, nil)
+		convMock.On("FromEntity", secondEventAPIDefEntity).Return(model.EventDefinition{ID: secondEventAPIDefID}, nil)
+		pgRepository := eventdef.NewRepository(convMock)
 		// WHEN
 		modelEventAPIDef, err := pgRepository.ListByApplicationID(ctx, tenantID, appID, inputPageSize, inputCursor)
 		//THEN
@@ -232,8 +232,8 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 
 	t.Run("returns error when conversion from entity to model failed", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixEventAPIDefinitionColumns()).
-			AddRow(fixEventAPIDefinitionRow(firstEventAPIDefID, "placeholder")...)
+		rows := sqlmock.NewRows(fixEventDefinitionColumns()).
+			AddRow(fixEventDefinitionRow(firstEventAPIDefID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
 			WithArgs(tenantID).
@@ -245,8 +245,8 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
 		convMock := &automock.EventAPIDefinitionConverter{}
-		convMock.On("FromEntity", firstEventAPIDefEntity).Return(model.EventAPIDefinition{}, testErr).Once()
-		pgRepository := eventapi.NewRepository(convMock)
+		convMock.On("FromEntity", firstEventAPIDefEntity).Return(model.EventDefinition{}, testErr).Once()
+		pgRepository := eventdef.NewRepository(convMock)
 		//WHEN
 		_, err := pgRepository.ListByApplicationID(ctx, tenantID, appID, inputPageSize, inputCursor)
 		//THEN
@@ -263,7 +263,7 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 			WillReturnError(testErr)
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		pgRepository := eventapi.NewRepository(nil)
+		pgRepository := eventdef.NewRepository(nil)
 		// WHEN
 		_, err := pgRepository.ListByApplicationID(ctx, tenantID, appID, inputPageSize, inputCursor)
 		//THEN
@@ -275,20 +275,20 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 
 func TestPgRepository_Create(t *testing.T) {
 	//GIVEN
-	eventAPIDefModel := fixFullModelEventAPIDefinition(eventAPIID, "placeholder")
-	eventAPIDefEntity := fixFullEventAPIDef(eventAPIID, "placeholder")
+	eventAPIDefModel := fixFullModelEventDefinition(eventAPIID, "placeholder")
+	eventAPIDefEntity := fixFullEventDef(eventAPIID, "placeholder")
 	insertQuery := `^INSERT INTO "public"."event_api_definitions" \(.+\) VALUES \(.+\)$`
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		sqlMock.ExpectExec(insertQuery).
-			WithArgs(fixEventAPICreateArgs(eventAPIID, eventAPIDefModel)...).
+			WithArgs(fixEventCreateArgs(eventAPIID, eventAPIDefModel)...).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := automock.EventAPIDefinitionConverter{}
 		convMock.On("ToEntity", eventAPIDefModel).Return(eventAPIDefEntity, nil).Once()
-		pgRepository := eventapi.NewRepository(&convMock)
+		pgRepository := eventdef.NewRepository(&convMock)
 		//WHEN
 		err := pgRepository.Create(ctx, &eventAPIDefModel)
 		//THEN
@@ -300,8 +300,8 @@ func TestPgRepository_Create(t *testing.T) {
 	t.Run("returns error when conversion from model to entity failed", func(t *testing.T) {
 		ctx := context.TODO()
 		convMock := automock.EventAPIDefinitionConverter{}
-		convMock.On("ToEntity", eventAPIDefModel).Return(eventapi.Entity{}, errors.New("test error"))
-		pgRepository := eventapi.NewRepository(&convMock)
+		convMock.On("ToEntity", eventAPIDefModel).Return(eventdef.Entity{}, errors.New("test error"))
+		pgRepository := eventdef.NewRepository(&convMock)
 		// WHEN
 		err := pgRepository.Create(ctx, &eventAPIDefModel)
 		// THEN
@@ -313,7 +313,7 @@ func TestPgRepository_Create(t *testing.T) {
 	t.Run("returns error when item is nil", func(t *testing.T) {
 		ctx := context.TODO()
 		convMock := automock.EventAPIDefinitionConverter{}
-		pgRepository := eventapi.NewRepository(&convMock)
+		pgRepository := eventdef.NewRepository(&convMock)
 		// WHEN
 		err := pgRepository.Create(ctx, nil)
 		// THEN
@@ -328,11 +328,11 @@ func TestPgRepository_Create(t *testing.T) {
 		convMock := automock.EventAPIDefinitionConverter{}
 		convMock.On("ToEntity", eventAPIDefModel).Return(eventAPIDefEntity, nil).Once()
 		sqlMock.ExpectExec(insertQuery).
-			WithArgs(fixEventAPICreateArgs(eventAPIID, eventAPIDefModel)...).
+			WithArgs(fixEventCreateArgs(eventAPIID, eventAPIDefModel)...).
 			WillReturnError(testErr)
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		pgRepository := eventapi.NewRepository(&convMock)
+		pgRepository := eventdef.NewRepository(&convMock)
 		//WHEN
 		err := pgRepository.Create(ctx, &eventAPIDefModel)
 		//THEN
@@ -349,19 +349,19 @@ func TestPgRepository_CreateMany(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		first := fixFullModelEventAPIDefinition(eventAPIID, "first")
-		second := fixFullModelEventAPIDefinition(eventAPIID, "second")
-		third := fixFullModelEventAPIDefinition(eventAPIID, "third")
-		items := []*model.EventAPIDefinition{&first, &second, &third}
+		first := fixFullModelEventDefinition(eventAPIID, "first")
+		second := fixFullModelEventDefinition(eventAPIID, "second")
+		third := fixFullModelEventDefinition(eventAPIID, "third")
+		items := []*model.EventDefinition{&first, &second, &third}
 
 		convMock := &automock.EventAPIDefinitionConverter{}
 		for _, item := range items {
-			convMock.On("ToEntity", *item).Return(fixFullEventAPIDef(item.ID, item.Name), nil).Once()
+			convMock.On("ToEntity", *item).Return(fixFullEventDef(item.ID, item.Name), nil).Once()
 			sqlMock.ExpectExec(insertQuery).
-				WithArgs(fixEventAPICreateArgs(item.ID, *item)...).
+				WithArgs(fixEventCreateArgs(item.ID, *item)...).
 				WillReturnResult(sqlmock.NewResult(-1, 1))
 		}
-		pgRepository := eventapi.NewRepository(convMock)
+		pgRepository := eventdef.NewRepository(convMock)
 		//WHEN
 		err := pgRepository.CreateMany(ctx, items)
 		//THEN
@@ -373,13 +373,13 @@ func TestPgRepository_CreateMany(t *testing.T) {
 	t.Run("returns error when conversion from model to entity failed", func(t *testing.T) {
 		sqlxDB, _ := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		eventAPIModel := fixFullModelEventAPIDefinition(eventAPIID, "api")
+		eventAPIModel := fixFullModelEventDefinition(eventAPIID, "api")
 		require.NotNil(t, eventAPIModel)
-		items := []*model.EventAPIDefinition{&eventAPIModel}
+		items := []*model.EventDefinition{&eventAPIModel}
 
 		convMock := automock.EventAPIDefinitionConverter{}
-		convMock.On("ToEntity", eventAPIModel).Return(eventapi.Entity{}, errors.New("test error"))
-		pgRepository := eventapi.NewRepository(&convMock)
+		convMock.On("ToEntity", eventAPIModel).Return(eventdef.Entity{}, errors.New("test error"))
+		pgRepository := eventdef.NewRepository(&convMock)
 		//WHEN
 		err := pgRepository.CreateMany(ctx, items)
 		//THEN
@@ -393,16 +393,16 @@ func TestPgRepository_CreateMany(t *testing.T) {
 
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		item := fixFullModelEventAPIDefinition(eventAPIID, "first")
+		item := fixFullModelEventDefinition(eventAPIID, "first")
 
 		convMock := &automock.EventAPIDefinitionConverter{}
-		convMock.On("ToEntity", item).Return(fixFullEventAPIDef(item.ID, item.Name), nil).Once()
+		convMock.On("ToEntity", item).Return(fixFullEventDef(item.ID, item.Name), nil).Once()
 		sqlMock.ExpectExec(insertQuery).
-			WithArgs(fixEventAPICreateArgs(item.ID, item)...).
+			WithArgs(fixEventCreateArgs(item.ID, item)...).
 			WillReturnError(testErr)
-		pgRepository := eventapi.NewRepository(convMock)
+		pgRepository := eventdef.NewRepository(convMock)
 		//WHEN
-		err := pgRepository.CreateMany(ctx, []*model.EventAPIDefinition{&item})
+		err := pgRepository.CreateMany(ctx, []*model.EventDefinition{&item})
 		//THEN
 		require.Error(t, err)
 		assert.Error(t, err, testErr)
@@ -419,8 +419,8 @@ func TestPgRepository_Update(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		eventAPIModel := fixFullModelEventAPIDefinition(eventAPIID, "update")
-		entity := fixFullEventAPIDef(eventAPIID, "update")
+		eventAPIModel := fixFullModelEventDefinition(eventAPIID, "update")
+		entity := fixFullEventDef(eventAPIID, "update")
 
 		convMock := &automock.EventAPIDefinitionConverter{}
 		convMock.On("ToEntity", eventAPIModel).Return(entity, nil)
@@ -430,7 +430,7 @@ func TestPgRepository_Update(t *testing.T) {
 				entity.VersionForRemoval, tenantID, entity.ID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		pgRepository := eventapi.NewRepository(convMock)
+		pgRepository := eventdef.NewRepository(convMock)
 		//WHEN
 		err := pgRepository.Update(ctx, &eventAPIModel)
 		//THEN
@@ -442,10 +442,10 @@ func TestPgRepository_Update(t *testing.T) {
 	t.Run("returns error when conversion from model to entity failed", func(t *testing.T) {
 		sqlxDB, _ := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		eventAPIModel := model.EventAPIDefinition{}
+		eventAPIModel := model.EventDefinition{}
 		convMock := &automock.EventAPIDefinitionConverter{}
-		convMock.On("ToEntity", eventAPIModel).Return(eventapi.Entity{}, errors.New("test error")).Once()
-		pgRepository := eventapi.NewRepository(convMock)
+		convMock.On("ToEntity", eventAPIModel).Return(eventdef.Entity{}, errors.New("test error")).Once()
+		pgRepository := eventdef.NewRepository(convMock)
 		//WHEN
 		err := pgRepository.Update(ctx, &eventAPIModel)
 		//THEN
@@ -458,7 +458,7 @@ func TestPgRepository_Update(t *testing.T) {
 		sqlxDB, _ := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EventAPIDefinitionConverter{}
-		pgRepository := eventapi.NewRepository(convMock)
+		pgRepository := eventdef.NewRepository(convMock)
 		//WHEN
 		err := pgRepository.Update(ctx, nil)
 		//THEN
@@ -475,7 +475,7 @@ func TestPgRepository_Delete(t *testing.T) {
 
 	sqlMock.ExpectExec(deleteQuery).WithArgs(tenantID, eventAPIID).WillReturnResult(sqlmock.NewResult(-1, 1))
 	convMock := &automock.EventAPIDefinitionConverter{}
-	pgRepository := eventapi.NewRepository(convMock)
+	pgRepository := eventdef.NewRepository(convMock)
 	//WHEN
 	err := pgRepository.Delete(ctx, tenantID, eventAPIID)
 	//THEN
@@ -491,7 +491,7 @@ func TestPgRepository_DeleteAllByApplicationID(t *testing.T) {
 
 	sqlMock.ExpectExec(deleteQuery).WithArgs(tenantID, appID).WillReturnResult(sqlmock.NewResult(-1, 1))
 	convMock := &automock.EventAPIDefinitionConverter{}
-	pgRepository := eventapi.NewRepository(convMock)
+	pgRepository := eventdef.NewRepository(convMock)
 	//WHEN
 	err := pgRepository.DeleteAllByApplicationID(ctx, tenantID, appID)
 	//THEN
@@ -508,7 +508,7 @@ func TestPgRepository_Exists(t *testing.T) {
 
 	sqlMock.ExpectQuery(existQuery).WithArgs(tenantID, eventAPIID).WillReturnRows(testdb.RowWhenObjectExist())
 	convMock := &automock.EventAPIDefinitionConverter{}
-	pgRepository := eventapi.NewRepository(convMock)
+	pgRepository := eventdef.NewRepository(convMock)
 	//WHEN
 	found, err := pgRepository.Exists(ctx, tenantID, eventAPIID)
 	//THEN

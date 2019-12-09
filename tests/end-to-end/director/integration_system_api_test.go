@@ -33,7 +33,7 @@ func TestRegisterIntegrationSystem(t *testing.T) {
 	require.NotEmpty(t, output.Name)
 	saveExample(t, registerIntegrationSystemRequest.Query(), "register integration system")
 
-	t.Log("Check if Integration System was registeed")
+	t.Log("Check if Integration System was registered")
 
 	getIntegrationSystemRequest := fixIntegrationSystemRequest(output.ID)
 	intSysOutput := graphql.IntegrationSystemExt{}
@@ -84,7 +84,7 @@ func TestunregisterIntegrationSystem(t *testing.T) {
 	deleteOutput := graphql.IntegrationSystemExt{}
 
 	// WHEN
-	t.Log("Delete integration system")
+	t.Log("Unregister integration system")
 	err := tc.RunOperation(ctx, unregisterIntegrationSystemRequest, &deleteOutput)
 	require.NoError(t, err)
 
@@ -94,7 +94,7 @@ func TestunregisterIntegrationSystem(t *testing.T) {
 	out := getIntegrationSystem(t, ctx, intSys.ID)
 
 	require.Empty(t, out)
-	saveExample(t, unregisterIntegrationSystemRequest.Query(), "delete integration system")
+	saveExample(t, unregisterIntegrationSystemRequest.Query(), "unregister integration system")
 }
 
 func TestQueryIntegrationSystem(t *testing.T) {

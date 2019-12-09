@@ -1,10 +1,10 @@
-package eventapi_test
+package eventdef_test
 
 import (
 	"database/sql/driver"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/eventapi"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -19,11 +19,11 @@ const (
 	tenantID   = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
 )
 
-func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventAPIDefinition {
-	return &model.EventAPIDefinition{ID: id, Tenant: tenantID, ApplicationID: appID, Name: placeholder}
+func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
+	return &model.EventDefinition{ID: id, Tenant: tenantID, ApplicationID: appID, Name: placeholder}
 }
 
-func fixGQLEventAPIDefinition(id, placeholder string) *graphql.EventDefinition {
+func fixGQLEventDefinition(id, placeholder string) *graphql.EventDefinition {
 	return &graphql.EventDefinition{
 		ID:            id,
 		ApplicationID: appID,
@@ -31,15 +31,15 @@ func fixGQLEventAPIDefinition(id, placeholder string) *graphql.EventDefinition {
 	}
 }
 
-func fixFullModelEventAPIDefinition(id, placeholder string) model.EventAPIDefinition {
-	spec := &model.EventAPISpec{
+func fixFullModelEventDefinition(id, placeholder string) model.EventDefinition {
+	spec := &model.EventSpec{
 		Data:   str.Ptr("data"),
 		Format: model.SpecFormatJSON,
-		Type:   model.EventAPISpecTypeAsyncAPI,
+		Type:   model.EventSpecTypeAsyncAPI,
 	}
 	v := fixVersionModel()
 
-	return model.EventAPIDefinition{
+	return model.EventDefinition{
 		ID:            id,
 		ApplicationID: appID,
 		Tenant:        tenantID,
@@ -51,7 +51,7 @@ func fixFullModelEventAPIDefinition(id, placeholder string) model.EventAPIDefini
 	}
 }
 
-func fixDetailedGQLEventAPIDefinition(id, placeholder string) *graphql.EventDefinition {
+func fixDetailedGQLEventDefinition(id, placeholder string) *graphql.EventDefinition {
 	data := graphql.CLOB("data")
 	format := graphql.SpecFormatJSON
 
@@ -83,13 +83,13 @@ func fixDetailedGQLEventAPIDefinition(id, placeholder string) *graphql.EventDefi
 	}
 }
 
-func fixModelEventAPIDefinitionInput() *model.EventAPIDefinitionInput {
+func fixModelEventDefinitionInput() *model.EventDefinitionInput {
 	data := "data"
 	format := model.SpecFormatYaml
 
-	spec := &model.EventAPISpecInput{
+	spec := &model.EventSpecInput{
 		Data:          &data,
-		EventSpecType: model.EventAPISpecTypeAsyncAPI,
+		EventSpecType: model.EventSpecTypeAsyncAPI,
 		Format:        format,
 		FetchRequest:  &model.FetchRequestInput{},
 	}
@@ -104,7 +104,7 @@ func fixModelEventAPIDefinitionInput() *model.EventAPIDefinitionInput {
 		ForRemoval:      &forRemoval,
 	}
 
-	return &model.EventAPIDefinitionInput{
+	return &model.EventDefinitionInput{
 		Name:        "name",
 		Description: str.Ptr("description"),
 		Group:       str.Ptr("group"),
@@ -113,7 +113,7 @@ func fixModelEventAPIDefinitionInput() *model.EventAPIDefinitionInput {
 	}
 }
 
-func fixGQLEventAPIDefinitionInput() *graphql.EventDefinitionInput {
+func fixGQLEventDefinitionInput() *graphql.EventDefinitionInput {
 	data := graphql.CLOB("data")
 
 	spec := &graphql.EventSpecInput{
@@ -142,26 +142,26 @@ func fixGQLEventAPIDefinitionInput() *graphql.EventDefinitionInput {
 	}
 }
 
-func fixFullEventAPIDef(id, placeholder string) eventapi.Entity {
+func fixFullEventDef(id, placeholder string) eventdef.Entity {
 	v := fixVersionEntity()
-	return eventapi.Entity{
+	return eventdef.Entity{
 		ID:          id,
 		AppID:       appID,
 		TenantID:    tenantID,
 		Name:        placeholder,
 		GroupName:   repo.NewValidNullableString("group_" + placeholder),
 		Description: repo.NewValidNullableString("desc_" + placeholder),
-		EntitySpec: eventapi.EntitySpec{
+		EntitySpec: eventdef.EntitySpec{
 			SpecData:   repo.NewValidNullableString("data"),
-			SpecType:   repo.NewValidNullableString(string(model.EventAPISpecTypeAsyncAPI)),
+			SpecType:   repo.NewValidNullableString(string(model.EventSpecTypeAsyncAPI)),
 			SpecFormat: repo.NewValidNullableString(string(model.SpecFormatJSON)),
 		},
 		Version: v,
 	}
 }
 
-func fixMinEntityEventAPIDef(id, placeholder string) eventapi.Entity {
-	return eventapi.Entity{ID: id, TenantID: tenantID, AppID: appID, Name: placeholder}
+func fixMinEntityEventDef(id, placeholder string) eventdef.Entity {
+	return eventdef.Entity{ID: id, TenantID: tenantID, AppID: appID, Name: placeholder}
 }
 
 func fixVersionModel() model.Version {
@@ -184,18 +184,18 @@ func fixVersionEntity() version.Version {
 	}
 }
 
-func fixEventAPIDefinitionColumns() []string {
+func fixEventDefinitionColumns() []string {
 	return []string{"id", "tenant_id", "app_id", "name", "description", "group_name", "spec_data",
 		"spec_format", "spec_type", "version_value", "version_deprecated",
 		"version_deprecated_since", "version_for_removal"}
 }
 
-func fixEventAPIDefinitionRow(id, placeholder string) []driver.Value {
+func fixEventDefinitionRow(id, placeholder string) []driver.Value {
 	return []driver.Value{id, tenantID, appID, placeholder, "desc_" + placeholder, "group_" + placeholder,
 		"data", "JSON", "ASYNC_API", "v1.1", false, "v1.0", false}
 }
 
-func fixEventAPICreateArgs(id string, api model.EventAPIDefinition) []driver.Value {
+func fixEventCreateArgs(id string, api model.EventDefinition) []driver.Value {
 	return []driver.Value{id, tenantID, appID, api.Name, api.Description, api.Group,
 		api.Spec.Data, string(api.Spec.Format), string(api.Spec.Type), api.Version.Value, api.Version.Deprecated,
 		api.Version.DeprecatedSince, api.Version.ForRemoval}

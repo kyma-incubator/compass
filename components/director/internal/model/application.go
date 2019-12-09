@@ -42,8 +42,8 @@ type ApplicationRegisterInput struct {
 	Labels              map[string]interface{}
 	HealthCheckURL      *string
 	Webhooks            []*WebhookInput
-	Apis                []*APIDefinitionInput
-	EventAPIs           []*EventAPIDefinitionInput
+	APIDefinitions      []*APIDefinitionInput
+	EventDefinitions    []*EventDefinitionInput
 	Documents           []*DocumentInput
 	IntegrationSystemID *string
 }

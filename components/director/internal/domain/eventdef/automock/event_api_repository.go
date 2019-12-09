@@ -13,11 +13,11 @@ type EventAPIRepository struct {
 }
 
 // Create provides a mock function with given fields: ctx, item
-func (_m *EventAPIRepository) Create(ctx context.Context, item *model.EventAPIDefinition) error {
+func (_m *EventAPIRepository) Create(ctx context.Context, item *model.EventDefinition) error {
 	ret := _m.Called(ctx, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.EventAPIDefinition) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *model.EventDefinition) error); ok {
 		r0 = rf(ctx, item)
 	} else {
 		r0 = ret.Error(0)
@@ -27,11 +27,11 @@ func (_m *EventAPIRepository) Create(ctx context.Context, item *model.EventAPIDe
 }
 
 // CreateMany provides a mock function with given fields: ctx, items
-func (_m *EventAPIRepository) CreateMany(ctx context.Context, items []*model.EventAPIDefinition) error {
+func (_m *EventAPIRepository) CreateMany(ctx context.Context, items []*model.EventDefinition) error {
 	ret := _m.Called(ctx, items)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []*model.EventAPIDefinition) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []*model.EventDefinition) error); ok {
 		r0 = rf(ctx, items)
 	} else {
 		r0 = ret.Error(0)
@@ -90,15 +90,15 @@ func (_m *EventAPIRepository) Exists(ctx context.Context, tenantID string, id st
 }
 
 // GetByID provides a mock function with given fields: ctx, tenantID, id
-func (_m *EventAPIRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.EventAPIDefinition, error) {
+func (_m *EventAPIRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error) {
 	ret := _m.Called(ctx, tenantID, id)
 
-	var r0 *model.EventAPIDefinition
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.EventAPIDefinition); ok {
+	var r0 *model.EventDefinition
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.EventDefinition); ok {
 		r0 = rf(ctx, tenantID, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.EventAPIDefinition)
+			r0 = ret.Get(0).(*model.EventDefinition)
 		}
 	}
 
@@ -113,15 +113,15 @@ func (_m *EventAPIRepository) GetByID(ctx context.Context, tenantID string, id s
 }
 
 // GetForApplication provides a mock function with given fields: ctx, tenant, id, applicationID
-func (_m *EventAPIRepository) GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.EventAPIDefinition, error) {
+func (_m *EventAPIRepository) GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.EventDefinition, error) {
 	ret := _m.Called(ctx, tenant, id, applicationID)
 
-	var r0 *model.EventAPIDefinition
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.EventAPIDefinition); ok {
+	var r0 *model.EventDefinition
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.EventDefinition); ok {
 		r0 = rf(ctx, tenant, id, applicationID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.EventAPIDefinition)
+			r0 = ret.Get(0).(*model.EventDefinition)
 		}
 	}
 
@@ -136,15 +136,15 @@ func (_m *EventAPIRepository) GetForApplication(ctx context.Context, tenant stri
 }
 
 // ListByApplicationID provides a mock function with given fields: ctx, tenantID, applicationID, pageSize, cursor
-func (_m *EventAPIRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventAPIDefinitionPage, error) {
+func (_m *EventAPIRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
 	ret := _m.Called(ctx, tenantID, applicationID, pageSize, cursor)
 
-	var r0 *model.EventAPIDefinitionPage
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, int, string) *model.EventAPIDefinitionPage); ok {
+	var r0 *model.EventDefinitionPage
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, int, string) *model.EventDefinitionPage); ok {
 		r0 = rf(ctx, tenantID, applicationID, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.EventAPIDefinitionPage)
+			r0 = ret.Get(0).(*model.EventDefinitionPage)
 		}
 	}
 
@@ -159,11 +159,11 @@ func (_m *EventAPIRepository) ListByApplicationID(ctx context.Context, tenantID 
 }
 
 // Update provides a mock function with given fields: ctx, item
-func (_m *EventAPIRepository) Update(ctx context.Context, item *model.EventAPIDefinition) error {
+func (_m *EventAPIRepository) Update(ctx context.Context, item *model.EventDefinition) error {
 	ret := _m.Called(ctx, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.EventAPIDefinition) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *model.EventDefinition) error); ok {
 		r0 = rf(ctx, item)
 	} else {
 		r0 = ret.Error(0)

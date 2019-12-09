@@ -41,7 +41,7 @@ func addAPIWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Clien
 }
 
 // Integration System
-func createIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, name string) *graphql.IntegrationSystemExt {
+func registerIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, name string) *graphql.IntegrationSystemExt {
 	input := graphql.IntegrationSystemInput{Name: name}
 	in, err := tc.Graphqlizer.IntegrationSystemInputToGQL(input)
 	if err != nil {
@@ -58,13 +58,13 @@ func createIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.
 }
 
 func unregisterIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) {
-	req := fixunregisterIntegrationSystem(id)
+	req := fixUnregisterIntegrationSystem(id)
 	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil)
 	require.NoError(t, err)
 }
 
 func unregisterIntegrationSystemWithErr(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) {
-	req := fixunregisterIntegrationSystem(id)
+	req := fixUnregisterIntegrationSystem(id)
 	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "referenced by it")

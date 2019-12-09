@@ -2,7 +2,7 @@
 
 package automock
 
-import eventapi "github.com/kyma-incubator/compass/components/director/internal/domain/eventapi"
+import eventdef "github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
 import mock "github.com/stretchr/testify/mock"
 import model "github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -12,18 +12,18 @@ type EventAPIDefinitionConverter struct {
 }
 
 // FromEntity provides a mock function with given fields: entity
-func (_m *EventAPIDefinitionConverter) FromEntity(entity eventapi.Entity) (model.EventAPIDefinition, error) {
+func (_m *EventAPIDefinitionConverter) FromEntity(entity eventdef.Entity) (model.EventDefinition, error) {
 	ret := _m.Called(entity)
 
-	var r0 model.EventAPIDefinition
-	if rf, ok := ret.Get(0).(func(eventapi.Entity) model.EventAPIDefinition); ok {
+	var r0 model.EventDefinition
+	if rf, ok := ret.Get(0).(func(eventdef.Entity) model.EventDefinition); ok {
 		r0 = rf(entity)
 	} else {
-		r0 = ret.Get(0).(model.EventAPIDefinition)
+		r0 = ret.Get(0).(model.EventDefinition)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(eventapi.Entity) error); ok {
+	if rf, ok := ret.Get(1).(func(eventdef.Entity) error); ok {
 		r1 = rf(entity)
 	} else {
 		r1 = ret.Error(1)
@@ -33,18 +33,18 @@ func (_m *EventAPIDefinitionConverter) FromEntity(entity eventapi.Entity) (model
 }
 
 // ToEntity provides a mock function with given fields: apiModel
-func (_m *EventAPIDefinitionConverter) ToEntity(apiModel model.EventAPIDefinition) (eventapi.Entity, error) {
+func (_m *EventAPIDefinitionConverter) ToEntity(apiModel model.EventDefinition) (eventdef.Entity, error) {
 	ret := _m.Called(apiModel)
 
-	var r0 eventapi.Entity
-	if rf, ok := ret.Get(0).(func(model.EventAPIDefinition) eventapi.Entity); ok {
+	var r0 eventdef.Entity
+	if rf, ok := ret.Get(0).(func(model.EventDefinition) eventdef.Entity); ok {
 		r0 = rf(apiModel)
 	} else {
-		r0 = ret.Get(0).(eventapi.Entity)
+		r0 = ret.Get(0).(eventdef.Entity)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(model.EventAPIDefinition) error); ok {
+	if rf, ok := ret.Get(1).(func(model.EventDefinition) error); ok {
 		r1 = rf(apiModel)
 	} else {
 		r1 = ret.Error(1)

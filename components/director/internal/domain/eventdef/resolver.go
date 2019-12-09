@@ -1,4 +1,4 @@
-package eventapi
+package eventdef
 
 import (
 	"context"
@@ -12,22 +12,22 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-//go:generate mockery -name=EventAPIService -output=automock -outpkg=automock -case=underscore
-type EventAPIService interface {
-	Create(ctx context.Context, applicationID string, in model.EventAPIDefinitionInput) (string, error)
-	Update(ctx context.Context, id string, in model.EventAPIDefinitionInput) error
-	Get(ctx context.Context, id string) (*model.EventAPIDefinition, error)
+//go:generate mockery -name=EventDefService -output=automock -outpkg=automock -case=underscore
+type EventDefService interface {
+	Create(ctx context.Context, applicationID string, in model.EventDefinitionInput) (string, error)
+	Update(ctx context.Context, id string, in model.EventDefinitionInput) error
+	Get(ctx context.Context, id string) (*model.EventDefinition, error)
 	Delete(ctx context.Context, id string) error
-	RefetchAPISpec(ctx context.Context, id string) (*model.EventAPISpec, error)
+	RefetchAPISpec(ctx context.Context, id string) (*model.EventSpec, error)
 	GetFetchRequest(ctx context.Context, eventAPIDefID string) (*model.FetchRequest, error)
 }
 
-//go:generate mockery -name=EventAPIConverter -output=automock -outpkg=automock -case=underscore
-type EventAPIConverter interface {
-	ToGraphQL(in *model.EventAPIDefinition) *graphql.EventDefinition
-	MultipleToGraphQL(in []*model.EventAPIDefinition) []*graphql.EventDefinition
-	MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) []*model.EventAPIDefinitionInput
-	InputFromGraphQL(in *graphql.EventDefinitionInput) *model.EventAPIDefinitionInput
+//go:generate mockery -name=EventDefConverter -output=automock -outpkg=automock -case=underscore
+type EventDefConverter interface {
+	ToGraphQL(in *model.EventDefinition) *graphql.EventDefinition
+	MultipleToGraphQL(in []*model.EventDefinition) []*graphql.EventDefinition
+	MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) []*model.EventDefinitionInput
+	InputFromGraphQL(in *graphql.EventDefinitionInput) *model.EventDefinitionInput
 }
 
 //go:generate mockery -name=FetchRequestConverter -output=automock -outpkg=automock -case=underscore
@@ -43,13 +43,13 @@ type ApplicationService interface {
 
 type Resolver struct {
 	transact    persistence.Transactioner
-	svc         EventAPIService
+	svc         EventDefService
 	appSvc      ApplicationService
-	converter   EventAPIConverter
+	converter   EventDefConverter
 	frConverter FetchRequestConverter
 }
 
-func NewResolver(transact persistence.Transactioner, svc EventAPIService, appSvc ApplicationService, converter EventAPIConverter, frConverter FetchRequestConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc EventDefService, appSvc ApplicationService, converter EventDefConverter, frConverter FetchRequestConverter) *Resolver {
 	return &Resolver{
 		transact:    transact,
 		svc:         svc,
@@ -178,14 +178,14 @@ func (r *Resolver) RefetchEventDefinitionSpec(ctx context.Context, eventID strin
 		return nil, err
 	}
 
-	convertedOut := r.converter.ToGraphQL(&model.EventAPIDefinition{Spec: spec})
+	convertedOut := r.converter.ToGraphQL(&model.EventDefinition{Spec: spec})
 
 	return convertedOut.Spec, nil
 }
 
 func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*graphql.FetchRequest, error) {
 	if obj == nil {
-		return nil, errors.New("Event API Spec cannot be empty")
+		return nil, errors.New("Event Spec cannot be empty")
 	}
 
 	tx, err := r.transact.Begin()
@@ -197,7 +197,7 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*g
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	if obj.DefinitionID == "" {
-		return nil, errors.New("Internal Server Error: Cannot fetch FetchRequest. EventAPIDefinition ID is empty")
+		return nil, errors.New("Internal Server Error: Cannot fetch FetchRequest. EventDefinition ID is empty")
 	}
 
 	fr, err := r.svc.GetFetchRequest(ctx, obj.DefinitionID)

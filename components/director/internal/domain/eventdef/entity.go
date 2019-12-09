@@ -1,4 +1,4 @@
-package eventapi
+package eventdef
 
 import (
 	"database/sql"

@@ -21,7 +21,7 @@ const (
 	registerRuntimeCategory = "register runtime"
 )
 
-func TestRuntimeRegisterUpdateAndDelete(t *testing.T) {
+func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	givenInput := graphql.RuntimeInput{

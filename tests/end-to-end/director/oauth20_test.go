@@ -275,7 +275,7 @@ func TestDeleteSystemAuthFromIntegrationSystem(t *testing.T) {
 	require.NotEmpty(t, intSys)
 	defer unregisterIntegrationSystem(t, ctx, intSys.ID)
 
-	intSysAuth := generateClientCredentialsForIntegrationSystem(t, ctx, intSys.ID)
+	intSysAuth := requestClientCredentialsForIntegrationSystem(t, ctx, intSys.ID)
 	require.NotEmpty(t, intSysAuth)
 
 	deleteSystemAuthForIntegrationSystemRequest := fixDeleteSystemAuthForIntegrationSystemRequest(intSysAuth.ID)
@@ -303,7 +303,7 @@ func TestDeleteSystemAuthFromIntegrationSystemUsingApplicationMutationShouldRepo
 	require.NotEmpty(t, intSys)
 	defer unregisterIntegrationSystem(t, ctx, intSys.ID)
 
-	intSysAuth := generateClientCredentialsForIntegrationSystem(t, ctx, intSys.ID)
+	intSysAuth := requestClientCredentialsForIntegrationSystem(t, ctx, intSys.ID)
 	require.NotEmpty(t, intSysAuth)
 	defer deleteClientCredentialsForIntegrationSystem(t, intSysAuth.ID)
 
@@ -328,7 +328,7 @@ func TestDeleteSystemAuthFromIntegrationSystemUsingRuntimeMutationShouldReportEr
 	require.NotEmpty(t, intSys)
 	defer unregisterIntegrationSystem(t, ctx, intSys.ID)
 
-	intSysAuth := generateClientCredentialsForIntegrationSystem(t, ctx, intSys.ID)
+	intSysAuth := requestClientCredentialsForIntegrationSystem(t, ctx, intSys.ID)
 	require.NotEmpty(t, intSysAuth)
 	defer deleteClientCredentialsForIntegrationSystem(t, intSysAuth.ID)
 

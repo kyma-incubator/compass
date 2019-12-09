@@ -1,4 +1,4 @@
-package eventapi
+package eventdef
 
 import (
 	"context"
@@ -25,8 +25,8 @@ var (
 
 //go:generate mockery -name=EventAPIDefinitionConverter -output=automock -outpkg=automock -case=underscore
 type EventAPIDefinitionConverter interface {
-	FromEntity(entity Entity) (model.EventAPIDefinition, error)
-	ToEntity(apiModel model.EventAPIDefinition) (Entity, error)
+	FromEntity(entity Entity) (model.EventDefinition, error)
+	ToEntity(apiModel model.EventDefinition) (Entity, error)
 }
 
 type pgRepository struct {
@@ -57,22 +57,22 @@ func (r EventAPIDefCollection) Len() int {
 	return len(r)
 }
 
-func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.EventAPIDefinition, error) {
+func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error) {
 	var eventAPIDefEntity Entity
 	err := r.singleGetter.Get(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, &eventAPIDefEntity)
 	if err != nil {
-		return nil, errors.Wrap(err, "while getting EventAPIDefinition")
+		return nil, errors.Wrap(err, "while getting EventDefinition")
 	}
 
 	eventAPIDefModel, err := r.conv.FromEntity(eventAPIDefEntity)
 	if err != nil {
-		return nil, errors.Wrap(err, "while creating EventAPIDefinition entity to model")
+		return nil, errors.Wrap(err, "while creating EventDefinition entity to model")
 	}
 
 	return &eventAPIDefModel, nil
 }
 
-func (r *pgRepository) GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.EventAPIDefinition, error) {
+func (r *pgRepository) GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.EventDefinition, error) {
 	var ent Entity
 
 	conditions := repo.Conditions{
@@ -85,13 +85,13 @@ func (r *pgRepository) GetForApplication(ctx context.Context, tenant string, id 
 
 	eventAPIModel, err := r.conv.FromEntity(ent)
 	if err != nil {
-		return nil, errors.Wrap(err, "while creating event api definition model from entity")
+		return nil, errors.Wrap(err, "while creating event definition model from entity")
 	}
 
 	return &eventAPIModel, nil
 }
 
-func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventAPIDefinitionPage, error) {
+func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
 	appCond := fmt.Sprintf("app_id = %s ", pq.QuoteLiteral(applicationID))
 	var eventAPIDefCollection EventAPIDefCollection
 	page, totalCount, err := r.pageableQuerier.List(ctx, tenantID, pageSize, cursor, "id", &eventAPIDefCollection, appCond)
@@ -99,31 +99,31 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string,
 		return nil, err
 	}
 
-	var items []*model.EventAPIDefinition
+	var items []*model.EventDefinition
 
 	for _, apiDefEnt := range eventAPIDefCollection {
 		m, err := r.conv.FromEntity(apiDefEnt)
 		if err != nil {
-			return nil, errors.Wrap(err, "while creating EventAPIDefinition model from entity")
+			return nil, errors.Wrap(err, "while creating EventDefinition model from entity")
 		}
 		items = append(items, &m)
 	}
 
-	return &model.EventAPIDefinitionPage{
+	return &model.EventDefinitionPage{
 		Data:       items,
 		TotalCount: totalCount,
 		PageInfo:   page,
 	}, nil
 }
 
-func (r *pgRepository) Create(ctx context.Context, item *model.EventAPIDefinition) error {
+func (r *pgRepository) Create(ctx context.Context, item *model.EventDefinition) error {
 	if item == nil {
 		return errors.New("item cannot be nil")
 	}
 
 	entity, err := r.conv.ToEntity(*item)
 	if err != nil {
-		return errors.Wrap(err, "while creating EventAPIDefinition model to entity")
+		return errors.Wrap(err, "while creating EventDefinition model to entity")
 	}
 
 	err = r.creator.Create(ctx, entity)
@@ -134,7 +134,7 @@ func (r *pgRepository) Create(ctx context.Context, item *model.EventAPIDefinitio
 	return nil
 }
 
-func (r *pgRepository) CreateMany(ctx context.Context, items []*model.EventAPIDefinition) error {
+func (r *pgRepository) CreateMany(ctx context.Context, items []*model.EventDefinition) error {
 	for index, item := range items {
 		entity, err := r.conv.ToEntity(*item)
 		if err != nil {
@@ -149,7 +149,7 @@ func (r *pgRepository) CreateMany(ctx context.Context, items []*model.EventAPIDe
 	return nil
 }
 
-func (r *pgRepository) Update(ctx context.Context, item *model.EventAPIDefinition) error {
+func (r *pgRepository) Update(ctx context.Context, item *model.EventDefinition) error {
 	if item == nil {
 		return errors.New("item cannot be nil")
 	}

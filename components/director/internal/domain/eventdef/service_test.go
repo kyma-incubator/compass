@@ -1,4 +1,4 @@
-package eventapi_test
+package eventdef_test
 
 import (
 	"context"
@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/eventapi"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/eventapi/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
 	"github.com/stretchr/testify/assert"
@@ -33,9 +33,9 @@ func TestService_Get(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		RepositoryFn       func() *automock.EventAPIRepository
-		Input              model.EventAPIDefinitionInput
+		Input              model.EventDefinitionInput
 		InputID            string
-		ExpectedDocument   *model.EventAPIDefinition
+		ExpectedDocument   *model.EventDefinition
 		ExpectedErrMessage string
 	}{
 		{
@@ -66,7 +66,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := eventapi.NewService(repo, nil, nil)
+			svc := eventdef.NewService(repo, nil, nil)
 
 			// when
 			eventAPIDefinition, err := svc.Get(ctx, testCase.InputID)
@@ -83,7 +83,7 @@ func TestService_Get(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := eventapi.NewService(nil, nil, nil)
+		svc := eventdef.NewService(nil, nil, nil)
 		// WHEN
 		_, err := svc.Get(context.TODO(), "")
 		// THEN
@@ -105,10 +105,10 @@ func TestService_GetForApplication(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		RepositoryFn       func() *automock.EventAPIRepository
-		Input              model.EventAPIDefinitionInput
+		Input              model.EventDefinitionInput
 		InputID            string
 		ApplicationID      string
-		ExpectedDocument   *model.EventAPIDefinition
+		ExpectedDocument   *model.EventDefinition
 		ExpectedErrMessage string
 	}{
 		{
@@ -141,7 +141,7 @@ func TestService_GetForApplication(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := eventapi.NewService(repo, nil, nil)
+			svc := eventdef.NewService(repo, nil, nil)
 
 			// when
 			eventAPIDefinition, err := svc.GetForApplication(ctx, testCase.InputID, testCase.ApplicationID)
@@ -158,7 +158,7 @@ func TestService_GetForApplication(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := eventapi.NewService(nil, nil, nil)
+		svc := eventdef.NewService(nil, nil, nil)
 		// WHEN
 		_, err := svc.GetForApplication(context.TODO(), "", "")
 		// THEN
@@ -174,12 +174,12 @@ func TestService_List(t *testing.T) {
 	id := "foo"
 	applicationID := "bar"
 
-	eventAPIDefinitions := []*model.EventAPIDefinition{
+	eventAPIDefinitions := []*model.EventDefinition{
 		fixMinModelEventAPIDefinition(id, "placeholder"),
 		fixMinModelEventAPIDefinition(id, "placeholder"),
 		fixMinModelEventAPIDefinition(id, "placeholder"),
 	}
-	eventAPIDefinitionPage := &model.EventAPIDefinitionPage{
+	eventAPIDefinitionPage := &model.EventDefinitionPage{
 		Data:       eventAPIDefinitions,
 		TotalCount: len(eventAPIDefinitions),
 		PageInfo: &pagination.Page{
@@ -200,7 +200,7 @@ func TestService_List(t *testing.T) {
 		RepositoryFn       func() *automock.EventAPIRepository
 		InputPageSize      int
 		InputCursor        string
-		ExpectedResult     *model.EventAPIDefinitionPage
+		ExpectedResult     *model.EventDefinitionPage
 		ExpectedErrMessage string
 	}{
 		{
@@ -255,7 +255,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := eventapi.NewService(repo, nil, nil)
+			svc := eventdef.NewService(repo, nil, nil)
 
 			// when
 			docs, err := svc.List(ctx, applicationID, testCase.InputPageSize, testCase.InputCursor)
@@ -272,7 +272,7 @@ func TestService_List(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := eventapi.NewService(nil, nil, nil)
+		svc := eventdef.NewService(nil, nil, nil)
 		// WHEN
 		_, err := svc.List(context.TODO(), "", 5, "")
 		// THEN
@@ -293,9 +293,9 @@ func TestService_Create(t *testing.T) {
 	frID := "fr-id"
 	frURL := "foo.bar"
 
-	modelInput := model.EventAPIDefinitionInput{
+	modelInput := model.EventDefinitionInput{
 		Name: name,
-		Spec: &model.EventAPISpecInput{
+		Spec: &model.EventSpecInput{
 			FetchRequest: &model.FetchRequestInput{
 				URL: frURL,
 			},
@@ -303,12 +303,12 @@ func TestService_Create(t *testing.T) {
 		Version: &model.VersionInput{},
 	}
 
-	modelEventAPIDefinition := &model.EventAPIDefinition{
+	modelEventAPIDefinition := &model.EventDefinition{
 		ID:            id,
 		Tenant:        tenantID,
 		ApplicationID: applicationID,
 		Name:          name,
-		Spec:          &model.EventAPISpec{},
+		Spec:          &model.EventSpec{},
 		Version:       &model.Version{},
 	}
 
@@ -320,7 +320,7 @@ func TestService_Create(t *testing.T) {
 		RepositoryFn       func() *automock.EventAPIRepository
 		FetchRequestRepoFn func() *automock.FetchRequestRepository
 		UIDServiceFn       func() *automock.UIDService
-		Input              model.EventAPIDefinitionInput
+		Input              model.EventDefinitionInput
 		ExpectedErr        error
 	}{
 		{
@@ -393,7 +393,7 @@ func TestService_Create(t *testing.T) {
 			fetchRequestRepo := testCase.FetchRequestRepoFn()
 			uidSvc := testCase.UIDServiceFn()
 
-			svc := eventapi.NewService(repo, fetchRequestRepo, uidSvc)
+			svc := eventdef.NewService(repo, fetchRequestRepo, uidSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -413,9 +413,9 @@ func TestService_Create(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := eventapi.NewService(nil, nil, nil)
+		svc := eventdef.NewService(nil, nil, nil)
 		// WHEN
-		_, err := svc.Create(context.TODO(), "", model.EventAPIDefinitionInput{})
+		_, err := svc.Create(context.TODO(), "", model.EventDefinitionInput{})
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -431,9 +431,9 @@ func TestService_Update(t *testing.T) {
 	frID := "fr-id"
 	frURL := "foo.bar"
 
-	modelInput := model.EventAPIDefinitionInput{
+	modelInput := model.EventDefinitionInput{
 		Name: "Foo",
-		Spec: &model.EventAPISpecInput{
+		Spec: &model.EventSpecInput{
 			FetchRequest: &model.FetchRequestInput{
 				URL: frURL,
 			},
@@ -441,15 +441,15 @@ func TestService_Update(t *testing.T) {
 		Version: &model.VersionInput{},
 	}
 
-	inputEventAPIDefinitionModel := mock.MatchedBy(func(api *model.EventAPIDefinition) bool {
+	inputEventAPIDefinitionModel := mock.MatchedBy(func(api *model.EventDefinition) bool {
 		return api.Name == modelInput.Name
 	})
 
-	eventAPIDefinitionModel := &model.EventAPIDefinition{
+	eventAPIDefinitionModel := &model.EventDefinition{
 		Name:          "Bar",
 		Tenant:        tenantID,
 		ApplicationID: "id",
-		Spec:          &model.EventAPISpec{},
+		Spec:          &model.EventSpec{},
 		Version:       &model.Version{},
 	}
 
@@ -461,7 +461,7 @@ func TestService_Update(t *testing.T) {
 		RepositoryFn       func() *automock.EventAPIRepository
 		FetchRequestRepoFn func() *automock.FetchRequestRepository
 		UIDServiceFn       func() *automock.UIDService
-		Input              model.EventAPIDefinitionInput
+		Input              model.EventDefinitionInput
 		InputID            string
 		ExpectedErr        error
 	}{
@@ -539,7 +539,7 @@ func TestService_Update(t *testing.T) {
 			fetchRequestRepo := testCase.FetchRequestRepoFn()
 			uidSvc := testCase.UIDServiceFn()
 
-			svc := eventapi.NewService(repo, fetchRequestRepo, uidSvc)
+			svc := eventdef.NewService(repo, fetchRequestRepo, uidSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -559,9 +559,9 @@ func TestService_Update(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := eventapi.NewService(nil, nil, nil)
+		svc := eventdef.NewService(nil, nil, nil)
 		// WHEN
-		err := svc.Update(context.TODO(), "", model.EventAPIDefinitionInput{})
+		err := svc.Update(context.TODO(), "", model.EventDefinitionInput{})
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -580,7 +580,7 @@ func TestService_Delete(t *testing.T) {
 	testCases := []struct {
 		Name         string
 		RepositoryFn func() *automock.EventAPIRepository
-		Input        model.EventAPIDefinitionInput
+		Input        model.EventDefinitionInput
 		InputID      string
 		ExpectedErr  error
 	}{
@@ -611,7 +611,7 @@ func TestService_Delete(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := eventapi.NewService(repo, nil, nil)
+			svc := eventdef.NewService(repo, nil, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -627,7 +627,7 @@ func TestService_Delete(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := eventapi.NewService(nil, nil, nil)
+		svc := eventdef.NewService(nil, nil, nil)
 		// WHEN
 		err := svc.Delete(context.TODO(), "")
 		// THEN
@@ -646,18 +646,18 @@ func TestService_RefetchAPISpec(t *testing.T) {
 	ctx = tenant.SaveToContext(ctx, tenantID)
 
 	dataBytes := "data"
-	modelAPISpec := &model.EventAPISpec{
+	modelAPISpec := &model.EventSpec{
 		Data: &dataBytes,
 	}
 
-	modelAPIDefinition := &model.EventAPIDefinition{
+	modelAPIDefinition := &model.EventDefinition{
 		Spec: modelAPISpec,
 	}
 
 	testCases := []struct {
 		Name            string
 		RepositoryFn    func() *automock.EventAPIRepository
-		ExpectedAPISpec *model.EventAPISpec
+		ExpectedAPISpec *model.EventSpec
 		ExpectedErr     error
 	}{
 		{
@@ -687,7 +687,7 @@ func TestService_RefetchAPISpec(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := eventapi.NewService(repo, nil, nil)
+			svc := eventdef.NewService(repo, nil, nil)
 
 			// when
 			result, err := svc.RefetchAPISpec(ctx, apiID)
@@ -700,7 +700,7 @@ func TestService_RefetchAPISpec(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := eventapi.NewService(nil, nil, nil)
+		svc := eventdef.NewService(nil, nil, nil)
 		// WHEN
 		_, err := svc.RefetchAPISpec(context.TODO(), "")
 		// THEN
@@ -797,7 +797,7 @@ func TestService_GetFetchRequest(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			fetchRequestRepo := testCase.FetchRequestRepoFn()
-			svc := eventapi.NewService(repo, fetchRequestRepo, nil)
+			svc := eventdef.NewService(repo, fetchRequestRepo, nil)
 
 			// when
 			l, err := svc.GetFetchRequest(ctx, refID)
@@ -817,7 +817,7 @@ func TestService_GetFetchRequest(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := eventapi.NewService(nil, nil, nil)
+		svc := eventdef.NewService(nil, nil, nil)
 		// when
 		_, err := svc.GetFetchRequest(context.TODO(), "dd")
 		assert.Equal(t, tenant.NoTenantError, err)

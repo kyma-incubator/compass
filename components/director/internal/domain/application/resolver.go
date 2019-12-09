@@ -56,22 +56,22 @@ type APIConverter interface {
 	InputFromGraphQL(in *graphql.APIDefinitionInput) *model.APIDefinitionInput
 }
 
-//go:generate mockery -name=EventAPIService -output=automock -outpkg=automock -case=underscore
-type EventAPIService interface {
-	Get(ctx context.Context, id string) (*model.EventAPIDefinition, error)
-	GetForApplication(ctx context.Context, id string, applicationID string) (*model.EventAPIDefinition, error)
-	List(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.EventAPIDefinitionPage, error)
-	Create(ctx context.Context, applicationID string, in model.EventAPIDefinitionInput) (string, error)
-	Update(ctx context.Context, id string, in model.EventAPIDefinitionInput) error
+//go:generate mockery -name=EventDefinitionService -output=automock -outpkg=automock -case=underscore
+type EventDefinitionService interface {
+	Get(ctx context.Context, id string) (*model.EventDefinition, error)
+	GetForApplication(ctx context.Context, id string, applicationID string) (*model.EventDefinition, error)
+	List(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
+	Create(ctx context.Context, applicationID string, in model.EventDefinitionInput) (string, error)
+	Update(ctx context.Context, id string, in model.EventDefinitionInput) error
 	Delete(ctx context.Context, id string) error
 }
 
 //go:generate mockery -name=EventAPIConverter -output=automock -outpkg=automock -case=underscore
 type EventAPIConverter interface {
-	ToGraphQL(in *model.EventAPIDefinition) *graphql.EventDefinition
-	MultipleToGraphQL(in []*model.EventAPIDefinition) []*graphql.EventDefinition
-	MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) []*model.EventAPIDefinitionInput
-	InputFromGraphQL(in *graphql.EventDefinitionInput) *model.EventAPIDefinitionInput
+	ToGraphQL(in *model.EventDefinition) *graphql.EventDefinition
+	MultipleToGraphQL(in []*model.EventDefinition) []*graphql.EventDefinition
+	MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) []*model.EventDefinitionInput
+	InputFromGraphQL(in *graphql.EventDefinitionInput) *model.EventDefinitionInput
 }
 
 //go:generate mockery -name=DocumentService -output=automock -outpkg=automock -case=underscore
@@ -124,7 +124,7 @@ type Resolver struct {
 	appConverter ApplicationConverter
 
 	apiSvc      APIService
-	eventAPISvc EventAPIService
+	eventDefSvc EventDefinitionService
 	webhookSvc  WebhookService
 	documentSvc DocumentService
 	sysAuthSvc  SystemAuthService
@@ -141,7 +141,7 @@ type Resolver struct {
 func NewResolver(transact persistence.Transactioner,
 	svc ApplicationService,
 	apiSvc APIService,
-	eventAPISvc EventAPIService,
+	eventDefSrv EventDefinitionService,
 	documentSvc DocumentService,
 	webhookSvc WebhookService,
 	sysAuthSvc SystemAuthService,
@@ -157,7 +157,7 @@ func NewResolver(transact persistence.Transactioner,
 		transact:          transact,
 		appSvc:            svc,
 		apiSvc:            apiSvc,
-		eventAPISvc:       eventAPISvc,
+		eventDefSvc:       eventDefSrv,
 		documentSvc:       documentSvc,
 		webhookSvc:        webhookSvc,
 		sysAuthSvc:        sysAuthSvc,
@@ -489,7 +489,7 @@ func (r *Resolver) ApiDefinitions(ctx context.Context, obj *graphql.Application,
 		},
 	}, nil
 }
-func (r *Resolver) EventAPIs(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.EventDefinitionPage, error) {
+func (r *Resolver) EventDefinitions(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.EventDefinitionPage, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -506,7 +506,7 @@ func (r *Resolver) EventAPIs(ctx context.Context, obj *graphql.Application, grou
 		return nil, errors.New("missing required parameter 'first'")
 	}
 
-	eventAPIPage, err := r.eventAPISvc.List(ctx, obj.ID, *first, cursor)
+	eventAPIPage, err := r.eventDefSvc.List(ctx, obj.ID, *first, cursor)
 	if err != nil {
 		return nil, err
 	}
@@ -564,7 +564,7 @@ func (r *Resolver) EventDefinition(ctx context.Context, id string, application *
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	eventAPI, err := r.eventAPISvc.GetForApplication(ctx, id, application.ID)
+	eventAPI, err := r.eventDefSvc.GetForApplication(ctx, id, application.ID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, nil

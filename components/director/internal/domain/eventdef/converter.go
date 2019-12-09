@@ -1,4 +1,4 @@
-package eventapi
+package eventdef
 
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
@@ -25,7 +25,7 @@ func NewConverter(fr FetchRequestConverter, vc VersionConverter) *converter {
 	return &converter{fr: fr, vc: vc}
 }
 
-func (c *converter) ToGraphQL(in *model.EventAPIDefinition) *graphql.EventDefinition {
+func (c *converter) ToGraphQL(in *model.EventDefinition) *graphql.EventDefinition {
 	if in == nil {
 		return nil
 	}
@@ -41,7 +41,7 @@ func (c *converter) ToGraphQL(in *model.EventAPIDefinition) *graphql.EventDefini
 	}
 }
 
-func (c *converter) MultipleToGraphQL(in []*model.EventAPIDefinition) []*graphql.EventDefinition {
+func (c *converter) MultipleToGraphQL(in []*model.EventDefinition) []*graphql.EventDefinition {
 	var apis []*graphql.EventDefinition
 	for _, a := range in {
 		if a == nil {
@@ -53,8 +53,8 @@ func (c *converter) MultipleToGraphQL(in []*model.EventAPIDefinition) []*graphql
 	return apis
 }
 
-func (c *converter) MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) []*model.EventAPIDefinitionInput {
-	var arr []*model.EventAPIDefinitionInput
+func (c *converter) MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) []*model.EventDefinitionInput {
+	var arr []*model.EventDefinitionInput
 	for _, item := range in {
 		api := c.InputFromGraphQL(item)
 		arr = append(arr, api)
@@ -63,12 +63,12 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput)
 	return arr
 }
 
-func (c *converter) InputFromGraphQL(in *graphql.EventDefinitionInput) *model.EventAPIDefinitionInput {
+func (c *converter) InputFromGraphQL(in *graphql.EventDefinitionInput) *model.EventDefinitionInput {
 	if in == nil {
 		return nil
 	}
 
-	return &model.EventAPIDefinitionInput{
+	return &model.EventDefinitionInput{
 		Name:        in.Name,
 		Description: in.Description,
 		Spec:        c.eventAPISpecInputFromGraphQL(in.Spec),
@@ -77,7 +77,7 @@ func (c *converter) InputFromGraphQL(in *graphql.EventDefinitionInput) *model.Ev
 	}
 }
 
-func (c *converter) eventAPISpecToGraphQL(definitionID string, in *model.EventAPISpec) *graphql.EventSpec {
+func (c *converter) eventAPISpecToGraphQL(definitionID string, in *model.EventSpec) *graphql.EventSpec {
 	if in == nil {
 		return nil
 	}
@@ -96,21 +96,21 @@ func (c *converter) eventAPISpecToGraphQL(definitionID string, in *model.EventAP
 	}
 }
 
-func (c *converter) eventAPISpecInputFromGraphQL(in *graphql.EventSpecInput) *model.EventAPISpecInput {
+func (c *converter) eventAPISpecInputFromGraphQL(in *graphql.EventSpecInput) *model.EventSpecInput {
 	if in == nil {
 		return nil
 	}
 
-	return &model.EventAPISpecInput{
+	return &model.EventSpecInput{
 		Data:          (*string)(in.Data),
 		Format:        model.SpecFormat(in.Format),
-		EventSpecType: model.EventAPISpecType(in.Type),
+		EventSpecType: model.EventSpecType(in.Type),
 		FetchRequest:  c.fr.InputFromGraphQL(in.FetchRequest),
 	}
 }
 
-func (c *converter) FromEntity(entity Entity) (model.EventAPIDefinition, error) {
-	return model.EventAPIDefinition{
+func (c *converter) FromEntity(entity Entity) (model.EventDefinition, error) {
+	return model.EventDefinition{
 		ID:            entity.ID,
 		Tenant:        entity.TenantID,
 		ApplicationID: entity.AppID,
@@ -122,7 +122,7 @@ func (c *converter) FromEntity(entity Entity) (model.EventAPIDefinition, error) 
 	}, nil
 }
 
-func (c *converter) ToEntity(eventModel model.EventAPIDefinition) (Entity, error) {
+func (c *converter) ToEntity(eventModel model.EventDefinition) (Entity, error) {
 	return Entity{
 		ID:          eventModel.ID,
 		TenantID:    eventModel.Tenant,
@@ -143,7 +143,7 @@ func (c *converter) convertVersionToEntity(inVer *model.Version) version.Version
 	return c.vc.ToEntity(*inVer)
 }
 
-func (c *converter) apiSpecToEntity(spec *model.EventAPISpec) EntitySpec {
+func (c *converter) apiSpecToEntity(spec *model.EventSpec) EntitySpec {
 	var apiSpecEnt EntitySpec
 	if spec != nil {
 		apiSpecEnt = EntitySpec{
@@ -156,12 +156,12 @@ func (c *converter) apiSpecToEntity(spec *model.EventAPISpec) EntitySpec {
 	return apiSpecEnt
 }
 
-func (c *converter) apiSpecFromEntity(specEnt EntitySpec) *model.EventAPISpec {
+func (c *converter) apiSpecFromEntity(specEnt EntitySpec) *model.EventSpec {
 	if !specEnt.SpecType.Valid && !specEnt.SpecFormat.Valid && !specEnt.SpecData.Valid {
 		return nil
 	}
 
-	apiSpec := model.EventAPISpec{}
+	apiSpec := model.EventSpec{}
 	specFormat := repo.StringPtrFromNullableString(specEnt.SpecFormat)
 	if specFormat != nil {
 		apiSpec.Format = model.SpecFormat(*specFormat)
@@ -169,7 +169,7 @@ func (c *converter) apiSpecFromEntity(specEnt EntitySpec) *model.EventAPISpec {
 
 	specType := repo.StringPtrFromNullableString(specEnt.SpecType)
 	if specFormat != nil {
-		apiSpec.Type = model.EventAPISpecType(*specType)
+		apiSpec.Type = model.EventSpecType(*specType)
 	}
 	apiSpec.Data = repo.StringPtrFromNullableString(specEnt.SpecData)
 

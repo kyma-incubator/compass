@@ -20,7 +20,7 @@ const (
 	deleteWebhookCategory       = "delete webhook"
 	addWebhookCategory          = "add webhook"
 	updateWebhookCategory       = "update webhook"
-	webhookURL                = "https://kyma-project.io"
+	webhookURL                  = "https://kyma-project.io"
 )
 
 var integrationSystemID = "69230297-3c81-4711-aac2-3afa8cb42e2d"
@@ -176,7 +176,7 @@ func TestRegisterApplicationWithAPIs(t *testing.T) {
 			appInputGQL,
 			tc.gqlFieldsProvider.ForApplication(),
 		))
-	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with APIs")
+	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with API definitions")
 
 	err = tc.RunOperation(ctx, request, &actualApp)
 
@@ -187,7 +187,7 @@ func TestRegisterApplicationWithAPIs(t *testing.T) {
 	assertApplication(t, in, actualApp)
 }
 
-func TestRegisterApplicationWithEventAPIs(t *testing.T) {
+func TestRegisterApplicationWithEventDefinitions(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	in := graphql.ApplicationRegisterInput{
@@ -240,7 +240,7 @@ func TestRegisterApplicationWithEventAPIs(t *testing.T) {
 			tc.gqlFieldsProvider.ForApplication(),
 		))
 
-	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "create application with event APIs")
+	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with event definitions")
 	err = tc.RunOperation(ctx, request, &actualApp)
 
 	//THEN
@@ -296,7 +296,7 @@ func TestRegisterApplicationWithDocuments(t *testing.T) {
 			tc.gqlFieldsProvider.ForApplication(),
 		))
 
-	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "create application with documents")
+	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with documents")
 	err = tc.RunOperation(ctx, request, &actualApp)
 
 	//THEN
@@ -541,7 +541,7 @@ func TestDeleteApplication(t *testing.T) {
 					id
 				}
 			}`, actualApp.ID))
-	saveExample(t, delReq.Query(), "delete application")
+	saveExample(t, delReq.Query(), "unregister application")
 	err = tc.RunOperation(ctx, delReq, &actualApp)
 
 	//THEN
@@ -695,7 +695,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 					%s
 				}
 			}`, actualApp.ID, inStr, tc.gqlFieldsProvider.ForAPIDefinition()))
-		saveExample(t, addReq.Query(), "add API")
+		saveExample(t, addReq.Query(), "add API Definition")
 		err = tc.RunOperation(ctx, addReq, &actualAPI)
 
 		//THEN
@@ -729,7 +729,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 					}
 				}`, id, updateStr, tc.gqlFieldsProvider.ForAPIDefinition()))
 		err = tc.RunOperation(ctx, updateReq, &updatedAPI)
-		saveExample(t, updateReq.Query(), "update API")
+		saveExample(t, updateReq.Query(), "update API Definition")
 
 		//THEN
 		require.NoError(t, err)
@@ -752,7 +752,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 					}
 				}`, id))
 		err = tc.RunOperation(ctx, deleteReq, &delAPI)
-		saveExample(t, deleteReq.Query(), "delete API")
+		saveExample(t, deleteReq.Query(), "delete API Definition")
 
 		//THEN
 		require.NoError(t, err)
@@ -789,6 +789,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 						%s	
 					}
 				}`, actualApp.ID, inStr, tc.gqlFieldsProvider.ForEventDefinition()))
+		saveExample(t, addReq.Query(), "add Event Definition")
 		err = tc.RunOperation(ctx, addReq, &actualEventAPI)
 		// THEN
 		require.NoError(t, err)
@@ -818,6 +819,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 						%s
 					}
 				}`, actualEventAPI.ID, updateStr, tc.gqlFieldsProvider.ForEventDefinition()))
+		saveExample(t, updateReq.Query(), "update Event Definition")
 		err = tc.RunOperation(ctx, updateReq, &actualEventAPI)
 
 		// THEN
@@ -832,6 +834,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 					id
 				}
 			}`, actualEventAPI.ID))
+		saveExample(t, delReq.Query(), "delete Event Definition")
 		err = tc.RunOperation(ctx, delReq, nil)
 		// THEN
 		require.NoError(t, err)
@@ -905,7 +908,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		// TODO later
 	})
 
-	t.Run("refetch Event API", func(t *testing.T) {
+	t.Run("refetch Event Spec", func(t *testing.T) {
 		// TODO later
 	})
 }
@@ -1180,7 +1183,7 @@ func TestQuerySpecificAPIDefinition(t *testing.T) {
 				}
 			}`, applicationID, actualAPI.ID, tc.gqlFieldsProvider.ForAPIDefinition()))
 	err = tc.RunOperation(context.Background(), queryAppReq, &actualAPI)
-	saveExample(t, queryAppReq.Query(), "query api")
+	saveExample(t, queryAppReq.Query(), "query api definition")
 
 	//THEN
 	require.NoError(t, err)
@@ -1192,7 +1195,7 @@ func TestQuerySpecificEventAPIDefinition(t *testing.T) {
 	in := graphql.EventDefinitionInput{
 		Name: "test",
 		Spec: &graphql.EventSpecInput{
-			Type:   graphql.EventAPISpecTypeAsyncAPI,
+			Type:   graphql.EventSpecTypeAsyncAPI,
 			Format: graphql.SpecFormatYaml,
 			FetchRequest: &graphql.FetchRequestInput{
 				URL: "https://kyma-project.io",
@@ -1226,7 +1229,7 @@ func TestQuerySpecificEventAPIDefinition(t *testing.T) {
 				}
 			}`, applicationID, actualEventAPI.ID, tc.gqlFieldsProvider.ForEventDefinition()))
 	err = tc.RunOperation(context.Background(), queryAppReq, &actualEventAPI)
-	saveExample(t, queryAppReq.Query(), "query event api")
+	saveExample(t, queryAppReq.Query(), "query event definition")
 
 	//THEN
 	require.NoError(t, err)

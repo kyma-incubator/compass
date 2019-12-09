@@ -84,7 +84,7 @@ func fixAddWebhookRequest(applicationID, webhookInGQL string) *gcli.Request {
 func fixAddAPIRequest(appID, APIInputGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-		result: addAPI(applicationID: "%s", in: %s) {
+		result: addAPIDefinition(applicationID: "%s", in: %s) {
 				%s
 			}
 		}
@@ -94,7 +94,7 @@ func fixAddAPIRequest(appID, APIInputGQL string) *gcli.Request {
 func fixUpdateAPIRequest(appID, APIInputGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-		result: updateAPI(id: "%s", in: %s) {
+		result: updateAPIDefinition(id: "%s", in: %s) {
 				%s
 			}
 		}
@@ -104,21 +104,21 @@ func fixUpdateAPIRequest(appID, APIInputGQL string) *gcli.Request {
 func fixAddEventAPIRequest(appID, eventAPIInputGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-		result: addEventAPI(applicationID: "%s", in: %s) {
+		result: addEventDefinition(applicationID: "%s", in: %s) {
 				%s
 			}
 		}
-		`, appID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventAPI()))
+		`, appID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventDefinition()))
 }
 
 func fixUpdateEventAPIRequest(appID, eventAPIInputGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-		result: updateEventAPI(id: "%s", in: %s) {
+		result: updateEventDefinition(id: "%s", in: %s) {
 				%s
 			}
 		}
-		`, appID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventAPI()))
+		`, appID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventDefinition()))
 }
 
 //UPDATE

@@ -71,7 +71,7 @@ echo -e "${GREEN}Building Director image...${NC}"
 cd "${SCRIPT_DIR}/../../components/director/"
 mkdir -p ./licenses
 dep ensure --vendor-only -v
-docker build -t ${DIRECTOR_IMG_NAME} ./
+docker build -t $DIRECTOR_IMG_NAME ./
 
 echo -e "${GREEN}Running Director...${NC}"
 
@@ -110,8 +110,6 @@ echo -e "${GREEN}Running Director tests with generating examples...${NC}"
 go test -c "${SCRIPT_DIR}/director/" -tags ignore_external_dependencies
 ALL_SCOPES="runtime:write application:write label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read application_template:read application_template:write" \
 ./director.test
-
-
 
 echo -e "${GREEN}Prettifying GraphQL examples...${NC}"
 img="prettier:latest"

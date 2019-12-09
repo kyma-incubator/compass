@@ -48,7 +48,7 @@ func TestCompassAuth(t *testing.T) {
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	t.Log("Create Integration System with Dex id token")
-	intSys := createIntegrationSystem(t, ctx, dexGraphQLClient, tenant, "integration-system")
+	intSys := registerIntegrationSystem(t, ctx, dexGraphQLClient, tenant, "integration-system")
 
 	t.Log("Generate Client Credentials for Integration System")
 	intSysAuth := generateClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, tenant, intSys.ID)

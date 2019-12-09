@@ -22,7 +22,7 @@ func TestTokenGeneration(t *testing.T) {
 
 		//WHEN
 		for i := 0; i < tokenRequestNumber; i++ {
-			token := generateOneTimeTokenForRuntime(t, ctx, runtime.ID)
+			token := requestOneTimeTokenForRuntime(t, ctx, runtime.ID)
 			assert.NotEmpty(t, token.Token)
 			assert.NotEmpty(t, token.ConnectorURL)
 		}
@@ -40,7 +40,7 @@ func TestTokenGeneration(t *testing.T) {
 
 		//WHEN
 		for i := 0; i < tokenRequestNumber; i++ {
-			token := generateOneTimeTokenForApplication(t, ctx, app.ID)
+			token := requestOneTimeTokenForApplication(t, ctx, app.ID)
 			assert.NotEmpty(t, token.Token)
 			assert.NotEmpty(t, token.ConnectorURL)
 		}

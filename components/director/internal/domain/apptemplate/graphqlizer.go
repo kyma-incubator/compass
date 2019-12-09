@@ -32,13 +32,13 @@ func (g *Graphqlizer) ApplicationCreateInputToGQL(in graphql.ApplicationRegister
 		healthCheckURL: "{{ .HealthCheckURL }}",
 		{{- end }}
 		{{- if .APIDefinitions }}
-		apis: [
+		apiDefinitions: [
 			{{- range $i, $e := .APIDefinitions }}
 			{{- if $i}}, {{- end}} {{ APIDefinitionInputToGQL $e }}
 			{{- end }}],
 		{{- end }}
 		{{- if .EventDefinitions }}
-		eventAPIs: [
+		eventDefinitions: [
 			{{- range $i, $e := .EventDefinitions }}
 			{{- if $i}}, {{- end}} {{ EventDefinitionInputToGQL $e }}
 			{{- end }}],
@@ -229,7 +229,7 @@ func (g *Graphqlizer) EventAPISpecInputToGQL(in graphql.EventSpecInput) (string,
 		{{- if .Data }}
 		data: "{{.Data}}",
 		{{- end }}
-		type: {{.EventSpecType}},
+		type: {{.Type}},
 		{{- if .FetchRequest }}
 		fetchRequest: {{- FetchRequesstInputToGQL .FetchRequest }},
 		{{- end }}

@@ -35,16 +35,16 @@ func TestService_Create(t *testing.T) {
 			{Title: "foo", Description: "test", FetchRequest: &model.FetchRequestInput{URL: "doc.foo.bar"}},
 			{Title: "bar", Description: "test"},
 		},
-		Apis: []*model.APIDefinitionInput{
+		APIDefinitions: []*model.APIDefinitionInput{
 			{
 				Name: "foo",
 				Spec: &model.APISpecInput{FetchRequest: &model.FetchRequestInput{URL: "api.foo.bar"}},
 			}, {Name: "bar"},
 		},
-		EventAPIs: []*model.EventAPIDefinitionInput{
+		EventDefinitions: []*model.EventDefinitionInput{
 			{
 				Name: "foo",
-				Spec: &model.EventAPISpecInput{FetchRequest: &model.FetchRequestInput{URL: "eventapi.foo.bar"}},
+				Spec: &model.EventSpecInput{FetchRequest: &model.FetchRequestInput{URL: "eventapi.foo.bar"}},
 			}, {Name: "bar"},
 		},
 		Labels: map[string]interface{}{
@@ -113,8 +113,8 @@ func TestService_Create(t *testing.T) {
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, &model.EventAPIDefinition{ID: "foo", ApplicationID: "foo", Tenant: tnt, Name: "foo", Spec: &model.EventAPISpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.EventAPIDefinition{ID: "foo", ApplicationID: "foo", Tenant: tnt, Name: "bar"}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", ApplicationID: "foo", Tenant: tnt, Name: "foo", Spec: &model.EventSpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", ApplicationID: "foo", Tenant: tnt, Name: "bar"}).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -1694,7 +1694,7 @@ type testModel struct {
 	ApplicationMatcherFn func(app *model.Application) bool
 	Webhooks             []*model.Webhook
 	Apis                 []*model.APIDefinition
-	EventAPIs            []*model.EventAPIDefinition
+	EventAPIs            []*model.EventDefinition
 	Documents            []*model.Document
 }
 
@@ -1707,13 +1707,13 @@ func modelFromInput(in model.ApplicationRegisterInput, tenant, applicationID str
 	}
 
 	var apisModel []*model.APIDefinition
-	for _, item := range in.Apis {
+	for _, item := range in.APIDefinitions {
 		apisModel = append(apisModel, item.ToAPIDefinition(uuid.New().String(), applicationID, tenant))
 	}
 
-	var eventAPIsModel []*model.EventAPIDefinition
-	for _, item := range in.EventAPIs {
-		eventAPIsModel = append(eventAPIsModel, item.ToEventAPIDefinition(uuid.New().String(), tenant, applicationID))
+	var eventAPIsModel []*model.EventDefinition
+	for _, item := range in.EventDefinitions {
+		eventAPIsModel = append(eventAPIsModel, item.ToEventDefinition(uuid.New().String(), tenant, applicationID))
 	}
 
 	var documentsModel []*model.Document

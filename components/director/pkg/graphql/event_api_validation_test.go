@@ -101,11 +101,11 @@ func TestEventAPIDefinitionInput_Validate_Description(t *testing.T) {
 
 func TestEventAPIDefinitionInput_Validate_Spec(t *testing.T) {
 	validObj := fixValidEventAPISpecInput()
-	emptyObj := graphql.EventAPISpecInput{}
+	emptyObj := graphql.EventSpecInput{}
 
 	testCases := []struct {
 		Name          string
-		Value         *graphql.EventAPISpecInput
+		Value         *graphql.EventSpecInput
 		ExpectedValid bool
 	}{
 		{
@@ -233,17 +233,17 @@ func TestEventAPIDefinitionInput_Validate_Version(t *testing.T) {
 func TestEventAPISpecInput_Validate_EventSpecType(t *testing.T) {
 	testCases := []struct {
 		Name          string
-		Value         graphql.EventAPISpecType
+		Value         graphql.EventSpecType
 		ExpectedValid bool
 	}{
 		{
 			Name:          "ExpectedValid",
-			Value:         graphql.EventAPISpecTypeAsyncAPI,
+			Value:         graphql.EventSpecTypeAsyncAPI,
 			ExpectedValid: true,
 		},
 		{
 			Name:          "Invalid object",
-			Value:         graphql.EventAPISpecType("INVALID"),
+			Value:         graphql.EventSpecType("INVALID"),
 			ExpectedValid: false,
 		},
 		{
@@ -256,7 +256,7 @@ func TestEventAPISpecInput_Validate_EventSpecType(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
 			obj := fixValidEventAPISpecInput()
-			obj.EventSpecType = testCase.Value
+			obj.Type = testCase.Value
 			//WHEN
 			err := obj.Validate()
 			//THEN
@@ -356,16 +356,16 @@ func TestEventAPISpecInput_Validate_FetchRequest(t *testing.T) {
 	}
 }
 
-func fixValidEventAPISpecInput() graphql.EventAPISpecInput {
+func fixValidEventAPISpecInput() graphql.EventSpecInput {
 	req := fixValidFetchRequestInput()
-	return graphql.EventAPISpecInput{
-		FetchRequest:  &req,
-		Format:        graphql.SpecFormatJSON,
-		EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
+	return graphql.EventSpecInput{
+		FetchRequest: &req,
+		Format:       graphql.SpecFormatJSON,
+		Type:         graphql.EventSpecTypeAsyncAPI,
 	}
 }
 
-func fixValidEventAPIDefinitionInput() graphql.EventAPIDefinitionInput {
+func fixValidEventAPIDefinitionInput() graphql.EventDefinitionInput {
 	eventSpec := fixValidEventAPISpecInput()
-	return graphql.EventAPIDefinitionInput{Name: "valid-name", Spec: &eventSpec}
+	return graphql.EventDefinitionInput{Name: "valid-name", Spec: &eventSpec}
 }

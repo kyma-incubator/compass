@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestResolver_CommonGenerateClientCredentialsSuccess(t *testing.T) {
+func TestResolver_CommonRequestClientCredentialsSuccess(t *testing.T) {
 	// Given
 	id := "foo"
 	clientID := "clientid"
@@ -146,7 +146,7 @@ func TestResolver_CommonGenerateClientCredentialsSuccess(t *testing.T) {
 	}
 }
 
-func TestResolver_CommonGenerateClientCredentialsError(t *testing.T) {
+func TestResolver_CommonRequestClientCredentialsError(t *testing.T) {
 	// Given
 	id := "foo"
 	objType := model.RuntimeReference

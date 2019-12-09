@@ -501,7 +501,7 @@ func TestResolver_UpdateIntegrationSystem(t *testing.T) {
 	}
 }
 
-func TestResolver_unregisterIntegrationSystem(t *testing.T) {
+func TestResolver_UnregisterIntegrationSystem(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testTenant)
 

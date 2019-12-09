@@ -3,6 +3,8 @@ package domain
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/event"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
@@ -17,7 +19,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/eventapi"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/healthcheck"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/integrationsystem"
@@ -40,7 +41,7 @@ type RootResolver struct {
 	app         *application.Resolver
 	appTemplate *apptemplate.Resolver
 	api         *api.Resolver
-	eventAPI    *eventapi.Resolver
+	eventAPI    *eventdef.Resolver
 	doc         *document.Resolver
 	runtime     *runtime.Resolver
 	healthCheck *healthcheck.Resolver
@@ -61,7 +62,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	docConverter := document.NewConverter(frConverter)
 	webhookConverter := webhook.NewConverter(authConverter)
 	apiConverter := api.NewConverter(authConverter, frConverter, versionConverter)
-	eventAPIConverter := eventapi.NewConverter(frConverter, versionConverter)
+	eventAPIConverter := eventdef.NewConverter(frConverter, versionConverter)
 	appConverter := application.NewConverter(webhookConverter, apiConverter, eventAPIConverter, docConverter)
 	labelDefConverter := labeldef.NewConverter()
 	labelConverter := label.NewConverter()
@@ -78,7 +79,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 	webhookRepo := webhook.NewRepository(webhookConverter)
 	apiRepo := api.NewRepository(apiConverter)
-	eventAPIRepo := eventapi.NewRepository(eventAPIConverter)
+	eventAPIRepo := eventdef.NewRepository(eventAPIConverter)
 	docRepo := document.NewRepository(docConverter)
 	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
 	apiRtmAuthRepo := apiruntimeauth.NewRepository(apiRtmAuthConverter)
@@ -94,7 +95,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo, runtimeRepo, labelRepo, fetchRequestRepo, intSysRepo, labelUpsertSvc, scenariosSvc, uidSvc)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidSvc)
-	eventAPISvc := eventapi.NewService(eventAPIRepo, fetchRequestRepo, uidSvc)
+	eventAPISvc := eventdef.NewService(eventAPIRepo, fetchRequestRepo, uidSvc)
 	webhookSvc := webhook.NewService(webhookRepo, uidSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc)
@@ -109,7 +110,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 		app:         application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, systemAuthSvc, oAuth20Svc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter, eventCfg.DefaultEventURL),
 		appTemplate: apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter),
 		api:         api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, apiRtmAuthSvc, apiConverter, authConverter, frConverter, apiRtmAuthConverter),
-		eventAPI:    eventapi.NewResolver(transact, eventAPISvc, appSvc, eventAPIConverter, frConverter),
+		eventAPI:    eventdef.NewResolver(transact, eventAPISvc, appSvc, eventAPIConverter, frConverter),
 		doc:         document.NewResolver(transact, docSvc, appSvc, frConverter),
 		runtime:     runtime.NewResolver(transact, runtimeSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter),
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
@@ -347,7 +348,7 @@ func (r *applicationResolver) APIDefinitions(ctx context.Context, obj *graphql.A
 	return r.app.ApiDefinitions(ctx, obj, group, first, after)
 }
 func (r *applicationResolver) EventDefinitions(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.EventDefinitionPage, error) {
-	return r.app.EventAPIs(ctx, obj, group, first, after)
+	return r.app.EventDefinitions(ctx, obj, group, first, after)
 }
 func (r *applicationResolver) APIDefinition(ctx context.Context, obj *graphql.Application, id string) (*graphql.APIDefinition, error) {
 	return r.app.APIDefinition(ctx, id, obj)

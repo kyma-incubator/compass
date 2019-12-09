@@ -115,6 +115,11 @@ input APISpecInput {
 	fetchRequest: FetchRequestInput
 }
 
+input ApplicationFromTemplateInput {
+	templateName: String!
+	values: [TemplateValueInput!]
+}
+
 input ApplicationRegisterInput {
 	name: String!
 	description: String
@@ -125,11 +130,6 @@ input ApplicationRegisterInput {
 	eventDefinitions: [EventDefinitionInput!]
 	documents: [DocumentInput!]
 	integrationSystemID: ID
-}
-
-input ApplicationFromTemplateInput {
-	templateName: String!
-	values: [TemplateValueInput!]
 }
 
 input ApplicationTemplateInput {
@@ -331,7 +331,7 @@ type Application {
 	"""
 	apiDefinitions(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage!
 	"""
-	group allows to find different versions of the same event API
+	group allows to find different versions of the same event Definitions
 	"""
 	eventDefinitions(group: String, first: Int = 100, after: PageCursor): EventDefinitionPage!
 	apiDefinition(id: ID!): APIDefinition
@@ -595,7 +595,7 @@ type Query {
 	applicationsForRuntime(runtimeID: ID!, first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applicationsForRuntime")
 	"""
 	Maximum `first` parameter value is 100
-
+	
 	**Examples**
 	- [query application templates](examples/query-application-templates/query-application-templates.graphql)
 	"""
@@ -643,9 +643,9 @@ type Query {
 type Mutation {
 	"""
 	**Examples**
-	- [create application with documents](examples/register-application/create-application-with-documents.graphql)
-	- [create application with event apis](examples/register-application/create-application-with-event-apis.graphql)
 	- [register application with apis](examples/register-application/register-application-with-apis.graphql)
+	- [register application with documents](examples/register-application/register-application-with-documents.graphql)
+	- [register application with event apis](examples/register-application/register-application-with-event-apis.graphql)
 	- [register application with webhooks](examples/register-application/register-application-with-webhooks.graphql)
 	- [register application](examples/register-application/register-application.graphql)
 	"""
@@ -655,6 +655,10 @@ type Mutation {
 	- [update application](examples/update-application/update-application.graphql)
 	"""
 	updateApplication(id: ID!, in: ApplicationUpdateInput! @validate): Application! @hasScopes(path: "graphql.mutation.updateApplication")
+	"""
+	**Examples**
+	- [unregister application](examples/unregister-application/unregister-application.graphql)
+	"""
 	unregisterApplication(id: ID!): Application! @hasScopes(path: "graphql.mutation.unregisterApplication")
 	"""
 	**Examples**
@@ -717,8 +721,20 @@ type Mutation {
 	- [delete application webhook](examples/delete-webhook/delete-application-webhook.graphql)
 	"""
 	deleteWebhook(webhookID: ID!): Webhook! @hasScopes(path: "graphql.mutation.deleteWebhook")
+	"""
+	**Examples**
+	- [add api definition](examples/add-api-definition/add-api-definition.graphql)
+	"""
 	addAPIDefinition(applicationID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinition")
+	"""
+	**Examples**
+	- [update api definition](examples/update-api-definition/update-api-definition.graphql)
+	"""
 	updateAPIDefinition(id: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.updateAPIDefinition")
+	"""
+	**Examples**
+	- [delete api definition](examples/delete-api-definition/delete-api-definition.graphql)
+	"""
 	deleteAPIDefinition(id: ID!): APIDefinition! @hasScopes(path: "graphql.mutation.deleteAPIDefinition")
 	refetchAPISpec(apiID: ID!): APISpec! @hasScopes(path: "graphql.mutation.refetchAPISpec")
 	requestOneTimeTokenForRuntime(id: ID!): OneTimeToken! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForRuntime")

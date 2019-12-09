@@ -221,7 +221,7 @@ func assertApplicationTemplate(t *testing.T, in graphql.ApplicationTemplateInput
 	assert.Equal(t, in.Name, actualApplicationTemplate.Name)
 	assert.Equal(t, in.Description, actualApplicationTemplate.Description)
 
-	gqlAppInput, err := tc.graphqlizer.ApplicationCreateInputToGQL(*in.ApplicationInput)
+	gqlAppInput, err := tc.graphqlizer.ApplicationRegisterInputToGQL(*in.ApplicationInput)
 	require.NoError(t, err)
 
 	gqlAppInput = strings.Replace(gqlAppInput, "\t", "", -1)

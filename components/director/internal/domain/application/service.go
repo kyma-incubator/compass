@@ -60,8 +60,8 @@ type APIRepository interface {
 
 //go:generate mockery -name=EventAPIRepository -output=automock -outpkg=automock -case=underscore
 type EventAPIRepository interface {
-	ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventAPIDefinitionPage, error)
-	Create(ctx context.Context, items *model.EventAPIDefinition) error
+	ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
+	Create(ctx context.Context, items *model.EventDefinition) error
 	DeleteAllByApplicationID(ctx context.Context, tenantID string, appID string) error
 }
 
@@ -432,12 +432,12 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 		return errors.Wrapf(err, "while creating Webhooks for application")
 	}
 
-	err = s.createAPIs(ctx, applicationID, tenant, in.Apis)
+	err = s.createAPIs(ctx, applicationID, tenant, in.APIDefinitions)
 	if err != nil {
 		return errors.Wrapf(err, "while creating APIs for application")
 	}
 
-	err = s.createEvents(ctx, applicationID, tenant, in.EventAPIs)
+	err = s.createEvents(ctx, applicationID, tenant, in.EventDefinitions)
 	if err != nil {
 		return errors.Wrapf(err, "while creating Events for application")
 	}
@@ -469,11 +469,11 @@ func (s *service) createAPIs(ctx context.Context, appID, tenant string, apis []*
 	return nil
 }
 
-func (s *service) createEvents(ctx context.Context, appID, tenant string, events []*model.EventAPIDefinitionInput) error {
+func (s *service) createEvents(ctx context.Context, appID, tenant string, events []*model.EventDefinitionInput) error {
 	var err error
 	for _, item := range events {
 		eventID := s.uidService.Generate()
-		err = s.eventAPIRepo.Create(ctx, item.ToEventAPIDefinition(eventID, appID, tenant))
+		err = s.eventAPIRepo.Create(ctx, item.ToEventDefinition(eventID, appID, tenant))
 		if err != nil {
 			return errors.Wrap(err, "while creating EventDefinitions for application")
 		}
@@ -517,7 +517,7 @@ func (s *service) deleteRelatedResources(ctx context.Context, tenant, applicatio
 
 	err = s.apiRepo.DeleteAllByApplicationID(ctx, tenant, applicationID)
 	if err != nil {
-		return errors.Wrapf(err, "while deleting Apis for application %s", applicationID)
+		return errors.Wrapf(err, "while deleting APIDefinitions for application %s", applicationID)
 	}
 
 	err = s.eventAPIRepo.DeleteAllByApplicationID(ctx, tenant, applicationID)
