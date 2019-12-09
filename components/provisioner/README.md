@@ -34,7 +34,7 @@ This table lists the environment variables, their descriptions, and default valu
 
 | Parameter | Description | Default value |
 |-----------|-------------|---------------|
-| **APP_ADDRESS** | Provisioner address with the port | `127.0.0.1:3050` |
+| **APP_ADDRESS** | Provisioner address with the port | `127.0.0.1:3000` |
 | **APP_API_ENDPOINT** | Endpoint for the GraphQL API | `/graphql` |
 | **APP_PLAYGROUND_API_ENDPOINT** | Endpoint for the API playground | `/graphql` |
 | **APP_SCHEMA_FILE_PATH** | Filepath for the database schema | `assets/database/provisioner.sql` |
