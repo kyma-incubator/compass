@@ -31,7 +31,7 @@ RUN apk add -U --no-cache ca-certificates && update-ca-certificates
 
 RUN go build -v -o main ./cmd/
 RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
-RUN wget https://github.com/kyma-incubator/terraform-provider-gardener/releases/download/v0.0.1/terraform-provider-gardener-linux-amd64
+RUN wget https://github.com/kyma-incubator/terraform-provider-gardener/releases/download/v0.0.2/terraform-provider-gardener-linux-amd64
 
 FROM alpine:3.10
 LABEL source = git@github.com:kyma-incubator/compass.git
