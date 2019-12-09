@@ -4,8 +4,6 @@
 
 The Runtime Provisioner is a Compass component responsible for provisioning, installing, and deprovisioning clusters with Kyma (Kyma Runtimes). The relationship between clusters and Runtimes is 1:1.
 
-> **NOTE:** Kyma installation is not implemented yet. 
-
 For more details, see the Runtime Provisioner [documentation](https://github.com/kyma-incubator/compass/tree/master/docs/provisioner).
 
 ## Prerequisites
