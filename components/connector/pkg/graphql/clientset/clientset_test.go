@@ -3,6 +3,8 @@ package clientset
 import (
 	"testing"
 
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
@@ -50,4 +52,14 @@ func Test_Clientset(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, certResponse.CertificateChain)
 	assert.NotEmpty(t, certResponse.ClientCertificate)
+
+	// when
+	revokeResponse, err := certSecuredClient.RevokeCertificate()
+
+	// then
+	require.NoError(t, err)
+	require.True(t, revokeResponse)
+	revocationCM, err := k8sClientSet.CoreV1().ConfigMaps("default").Get(testConfigMapName, v1.GetOptions{})
+	require.NoError(t, err)
+	assert.Len(t, revocationCM.Data, 1)
 }

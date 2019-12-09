@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"k8s.io/client-go/kubernetes"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -32,16 +34,20 @@ const (
 	caCertFile = "testdata/ca_crt.pem"
 	caKeyFile  = "testdata/ca_key.pem"
 
-	testSecretName = "test-secret"
+	testSecretName    = "test-secret"
+	testConfigMapName = "test-secret"
 )
 
 var (
 	externalAPIUrl string
 	tokenService   tokens.Service
+	k8sClientSet   kubernetes.Interface
 )
 
 func TestMain(m *testing.M) {
 	err := os.Setenv("APP_CA_SECRET_NAME", testSecretName)
+	exitOnError(err, "Error setting APP_CA_SECRET_NAME env")
+	err = os.Setenv("APP_REVOCATION_CONFIG_MAP_NAME", testConfigMapName)
 	exitOnError(err, "Error setting APP_CA_SECRET_NAME env")
 
 	cfg := config.Config{}
@@ -53,15 +59,20 @@ func TestMain(m *testing.M) {
 	caKey, err := ioutil.ReadFile(caKeyFile)
 	exitOnError(err, "Error reading CA key file")
 
-	k8sClientSet := fake.NewSimpleClientset(&v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{Name: "test-secret", Namespace: "default"},
-		Data: map[string][]byte{
-			"ca.crt": []byte(caCertificate),
-			"ca.key": []byte(caKey),
+	k8sClientSet = fake.NewSimpleClientset(
+		&v1.Secret{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-secret", Namespace: "default"},
+			Data: map[string][]byte{
+				"ca.crt": []byte(caCertificate),
+				"ca.key": []byte(caKey),
+			},
 		},
-		StringData: nil,
-		Type:       "",
-	})
+		&v1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{Name: testSecretName, Namespace: "default"},
+			Data:       nil,
+			BinaryData: nil,
+		},
+	)
 
 	internalComponents := config.InitInternalComponents(cfg, k8sClientSet)
 
