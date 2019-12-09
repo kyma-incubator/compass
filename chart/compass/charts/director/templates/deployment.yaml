@@ -115,5 +115,3 @@ spec:
         - name: static-users
           configMap:
             name: {{ template "fullname" . }}-static-users
-        
-

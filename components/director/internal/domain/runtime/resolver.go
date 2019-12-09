@@ -242,6 +242,12 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 }
 
 func (r *Resolver) SetRuntimeLabel(ctx context.Context, runtimeID string, key string, value interface{}) (*graphql.Label, error) {
+	// TODO: Use @validation directive on input type instead, after resolving https://github.com/kyma-incubator/compass/issues/515
+	gqlLabel := graphql.LabelInput{Key: key, Value: value}
+	if err := gqlLabel.Validate(); err != nil {
+		return nil, errors.Wrap(err, "validation error for type LabelInput")
+	}
+
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err

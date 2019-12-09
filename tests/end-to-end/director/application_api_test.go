@@ -20,7 +20,10 @@ const (
 	deleteWebhookCategory     = "delete webhook"
 	addWebhookCategory        = "add webhook"
 	updateWebhookCategory     = "update webhook"
+	webhookURL                = "https://kyma-project.io"
 )
+
+var integrationSystemID = "69230297-3c81-4711-aac2-3afa8cb42e2d"
 
 func TestCreateApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	// GIVEN
@@ -107,7 +110,7 @@ func TestCreateApplicationWithAPIs(t *testing.T) {
 		Name: "wordpress",
 		Apis: []*graphql.APIDefinitionInput{
 			{
-				Name:        "comments/v1",
+				Name:        "comments-v1",
 				Description: ptr.String("api for adding comments"),
 				TargetURL:   "http://mywordpress.com/comments",
 				Group:       ptr.String("comments"),
@@ -120,7 +123,7 @@ func TestCreateApplicationWithAPIs(t *testing.T) {
 				},
 			},
 			{
-				Name:      "reviews/v1",
+				Name:      "reviews-v1",
 				TargetURL: "http://mywordpress.com/reviews",
 				Spec: &graphql.APISpecInput{
 					Type:   graphql.APISpecTypeOdata,
@@ -137,7 +140,7 @@ func TestCreateApplicationWithAPIs(t *testing.T) {
 					RequestAuth: &graphql.CredentialRequestAuthInput{
 						Csrf: &graphql.CSRFTokenCredentialRequestAuthInput{
 							Credential:       fixOAuthCredential(),
-							TokenEndpointURL: "token-URL",
+							TokenEndpointURL: "http://token.URL",
 						},
 					},
 				},
@@ -190,7 +193,7 @@ func TestCreateApplicationWithEventAPIs(t *testing.T) {
 		Name: "create-application-with-event-apis",
 		EventAPIs: []*graphql.EventAPIDefinitionInput{
 			{
-				Name:        "comments/v1",
+				Name:        "comments-v1",
 				Description: ptr.String("comments events"),
 				Version:     fixDepracatedVersion1(),
 				Group:       ptr.String("comments"),
@@ -201,7 +204,7 @@ func TestCreateApplicationWithEventAPIs(t *testing.T) {
 				},
 			},
 			{
-				Name:        "reviews/v1",
+				Name:        "reviews-v1",
 				Description: ptr.String("review events"),
 				Spec: &graphql.EventAPISpecInput{
 					EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
@@ -256,7 +259,7 @@ func TestCreateApplicationWithDocuments(t *testing.T) {
 				Title:       "Readme",
 				Description: "Detailed description of project",
 				Format:      graphql.DocumentFormatMarkdown,
-
+				DisplayName: "display-name",
 				FetchRequest: &graphql.FetchRequestInput{
 					URL:    "kyma-project.io",
 					Mode:   ptr.FetchMode(graphql.FetchModePackage),
@@ -268,6 +271,7 @@ func TestCreateApplicationWithDocuments(t *testing.T) {
 				Title:       "Troubleshooting",
 				Description: "Troubleshooting description",
 				Format:      graphql.DocumentFormatMarkdown,
+				DisplayName: "display-name",
 				Data:        ptr.CLOB(graphql.CLOB("No problems, everything works on my machine")),
 			},
 		},
@@ -301,6 +305,25 @@ func TestCreateApplicationWithDocuments(t *testing.T) {
 	assertApplication(t, in, actualApp)
 }
 
+func TestCreateApplicationWithNonExistentIntegrationSystem(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+
+	in := fixSampleApplicationCreateInputWithIntegrationSystem("placeholder")
+	appInputGQL, err := tc.graphqlizer.ApplicationCreateInputToGQL(in)
+	require.NoError(t, err)
+	actualApp := graphql.ApplicationExt{}
+
+	request := fixCreateApplicationRequest(appInputGQL)
+	// WHEN
+	err = tc.RunOperation(ctx, request, &actualApp)
+
+	//THEN
+	require.Error(t, err)
+	require.NotNil(t, err.Error())
+	require.Contains(t, err.Error(), "does not exist")
+}
+
 func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 	applicationId := "cf889c38-490d-4896-96a7-c0721eca9932"
 
@@ -308,7 +331,7 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 		//GIVEN
 		ctx := context.Background()
 		webhookInStr, err := tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
-			URL:  "new-webhook",
+			URL:  webhookURL,
 			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 		})
 		require.NoError(t, err)
@@ -331,7 +354,7 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 		ctx := context.Background()
 		apiInStr, err := tc.graphqlizer.APIDefinitionInputToGQL(graphql.APIDefinitionInput{
 			Name:      "new-api-name",
-			TargetURL: "new-api-url",
+			TargetURL: "https://target.url",
 		})
 		require.NoError(t, err)
 
@@ -357,6 +380,9 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 			Spec: &graphql.EventAPISpecInput{
 				EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
 				Format:        graphql.SpecFormatYaml,
+				FetchRequest: &graphql.FetchRequestInput{
+					URL: "https://kyma-project.io",
+				},
 			},
 		})
 		require.NoError(t, err)
@@ -408,7 +434,7 @@ func TestUpdateApplication(t *testing.T) {
 	expectedApp := actualApp
 	expectedApp.Name = "after"
 	expectedApp.Description = ptr.String("after")
-	expectedApp.HealthCheckURL = ptr.String("after")
+	expectedApp.HealthCheckURL = ptr.String("https://kyma-project.io")
 
 	updateInput := fixSampleApplicationUpdateInput("after")
 	updateInputGQL, err := tc.graphqlizer.ApplicationUpdateInputToGQL(updateInput)
@@ -423,6 +449,28 @@ func TestUpdateApplication(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, expectedApp, updatedApp)
 	saveExample(t, request.Query(), "update application")
+}
+
+func TestUpdateApplicationWithNonExistentIntegrationSystem(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+
+	actualApp := createApplication(t, ctx, "before")
+	defer deleteApplication(t, actualApp.ID)
+
+	updateInput := fixSampleApplicationUpdateInputWithIntegrationSystem("after")
+	updateInputGQL, err := tc.graphqlizer.ApplicationUpdateInputToGQL(updateInput)
+	require.NoError(t, err)
+	request := fixUpdateApplicationRequest(actualApp.ID, updateInputGQL)
+	updatedApp := graphql.ApplicationExt{}
+
+	//WHEN
+	err = tc.RunOperation(ctx, request, &updatedApp)
+
+	//THEN
+	require.Error(t, err)
+	require.NotNil(t, err.Error())
+	require.Contains(t, err.Error(), "does not exist")
 }
 
 func TestCreateUpdateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
@@ -560,7 +608,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 	t.Run("manage webhooks", func(t *testing.T) {
 		// add
 		webhookInStr, err := tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
-			URL:  "new-webhook",
+			URL:  "http://new-webhook.url",
 			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 		})
 
@@ -576,7 +624,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		actualWebhook := graphql.Webhook{}
 		err = tc.RunOperation(ctx, addReq, &actualWebhook)
 		require.NoError(t, err)
-		assert.Equal(t, "new-webhook", actualWebhook.URL)
+		assert.Equal(t, "http://new-webhook.url", actualWebhook.URL)
 		assert.Equal(t, graphql.ApplicationWebhookTypeConfigurationChanged, actualWebhook.Type)
 		id := actualWebhook.ID
 		require.NotNil(t, id)
@@ -587,7 +635,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 		// update
 		webhookInStr, err = tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
-			URL: "updated-webhook", Type: graphql.ApplicationWebhookTypeConfigurationChanged,
+			URL: "http://updated-webhook.url", Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 		})
 
 		require.NoError(t, err)
@@ -600,7 +648,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		saveExampleInCustomDir(t, updateReq.Query(), updateWebhookCategory, "update application webhook")
 		err = tc.RunOperation(ctx, updateReq, &actualWebhook)
 		require.NoError(t, err)
-		assert.Equal(t, "updated-webhook", actualWebhook.URL)
+		assert.Equal(t, "http://updated-webhook.url", actualWebhook.URL)
 
 		// delete
 
@@ -618,7 +666,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, "updated-webhook", actualWebhook.URL)
+		assert.Equal(t, "http://updated-webhook.url", actualWebhook.URL)
 
 	})
 
@@ -626,12 +674,12 @@ func TestUpdateApplicationParts(t *testing.T) {
 		// add
 		inStr, err := tc.graphqlizer.APIDefinitionInputToGQL(graphql.APIDefinitionInput{
 			Name:      "new-api-name",
-			TargetURL: "new-api-url",
+			TargetURL: "https://target.url",
 			Spec: &graphql.APISpecInput{
 				Format: graphql.SpecFormatJSON,
 				Type:   graphql.APISpecTypeOpenAPI,
 				FetchRequest: &graphql.FetchRequestInput{
-					URL: "foo.bar",
+					URL: "https://foo.bar",
 				},
 			},
 		})
@@ -654,7 +702,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		id := actualAPI.ID
 		require.NotNil(t, id)
 		assert.Equal(t, "new-api-name", actualAPI.Name)
-		assert.Equal(t, "new-api-url", actualAPI.TargetURL)
+		assert.Equal(t, "https://target.url", actualAPI.TargetURL)
 
 		updatedApp := getApp(ctx, t, actualApp.ID)
 		assert.Len(t, updatedApp.Apis.Data, 2)
@@ -668,7 +716,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		// update
 
 		//GIVEN
-		updateStr, err := tc.graphqlizer.APIDefinitionInputToGQL(graphql.APIDefinitionInput{Name: "updated-api-name", TargetURL: "updated-api-url"})
+		updateStr, err := tc.graphqlizer.APIDefinitionInputToGQL(graphql.APIDefinitionInput{Name: "updated-api-name", TargetURL: "http://updated-target.url"})
 		require.NoError(t, err)
 		updatedAPI := graphql.APIDefinition{}
 
@@ -756,6 +804,9 @@ func TestUpdateApplicationParts(t *testing.T) {
 			Spec: &graphql.EventAPISpecInput{
 				EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
 				Format:        graphql.SpecFormatYaml,
+				FetchRequest: &graphql.FetchRequestInput{
+					URL: "https://kyma-project.io",
+				},
 			}})
 		require.NoError(t, err)
 
@@ -1098,7 +1149,7 @@ func TestQuerySpecificAPIDefinition(t *testing.T) {
 	// GIVEN
 	in := graphql.APIDefinitionInput{
 		Name:      "test",
-		TargetURL: "test",
+		TargetURL: "http://target.url",
 	}
 
 	APIInputGQL, err := tc.graphqlizer.APIDefinitionInputToGQL(in)
@@ -1140,8 +1191,11 @@ func TestQuerySpecificEventAPIDefinition(t *testing.T) {
 	in := graphql.EventAPIDefinitionInput{
 		Name: "test",
 		Spec: &graphql.EventAPISpecInput{
-			EventSpecType: "ASYNC_API",
-			Format:        "YAML",
+			EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
+			Format:        graphql.SpecFormatYaml,
+			FetchRequest: &graphql.FetchRequestInput{
+				URL: "https://kyma-project.io",
+			},
 		},
 	}
 	EventAPIInputGQL, err := tc.graphqlizer.EventAPIDefinitionInputToGQL(in)
@@ -1195,20 +1249,25 @@ func fixSampleApplicationCreateInput(placeholder string) graphql.ApplicationCrea
 	return graphql.ApplicationCreateInput{
 		Name: placeholder,
 		Documents: []*graphql.DocumentInput{{
-			Title:  placeholder,
-			Format: graphql.DocumentFormatMarkdown}},
+			Title:       placeholder,
+			DisplayName: placeholder,
+			Description: placeholder,
+			Format:      graphql.DocumentFormatMarkdown}},
 		Apis: []*graphql.APIDefinitionInput{{
 			Name:      placeholder,
-			TargetURL: placeholder}},
+			TargetURL: "http://kyma-project.io"}},
 		EventAPIs: []*graphql.EventAPIDefinitionInput{{
 			Name: placeholder,
 			Spec: &graphql.EventAPISpecInput{
 				EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
 				Format:        graphql.SpecFormatYaml,
+				FetchRequest: &graphql.FetchRequestInput{
+					URL: "https://kyma-project.io",
+				},
 			}}},
 		Webhooks: []*graphql.WebhookInput{{
 			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
-			URL:  placeholder},
+			URL:  webhookURL},
 		},
 		Labels: &graphql.Labels{placeholder: []interface{}{placeholder}},
 	}
@@ -1220,11 +1279,26 @@ func fixSampleApplicationCreateInputWithName(placeholder, name string) graphql.A
 	return sampleInput
 }
 
+func fixSampleApplicationCreateInputWithIntegrationSystem(placeholder string) graphql.ApplicationCreateInput {
+	sampleInput := fixSampleApplicationCreateInput(placeholder)
+	sampleInput.IntegrationSystemID = &integrationSystemID
+	return sampleInput
+}
+
 func fixSampleApplicationUpdateInput(placeholder string) graphql.ApplicationUpdateInput {
 	return graphql.ApplicationUpdateInput{
 		Name:           placeholder,
 		Description:    &placeholder,
-		HealthCheckURL: &placeholder,
+		HealthCheckURL: ptr.String(webhookURL),
+	}
+}
+
+func fixSampleApplicationUpdateInputWithIntegrationSystem(placeholder string) graphql.ApplicationUpdateInput {
+	return graphql.ApplicationUpdateInput{
+		Name:                placeholder,
+		Description:         &placeholder,
+		HealthCheckURL:      ptr.String(webhookURL),
+		IntegrationSystemID: &integrationSystemID,
 	}
 }
 

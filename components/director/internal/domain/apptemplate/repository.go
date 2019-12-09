@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const tableName string = `public.application_templates`
+const tableName string = `public.app_templates`
 
 var (
 	updatableTableColumns = []string{"name", "description", "application_input", "placeholders", "access_level"}
@@ -62,6 +62,20 @@ func (r *repository) Get(ctx context.Context, id string) (*model.ApplicationTemp
 	result, err := r.conv.FromEntity(&entity)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting Application Template with ID %s", id)
+	}
+
+	return result, nil
+}
+
+func (r *repository) GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error) {
+	var entity Entity
+	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("name", name)}, &entity); err != nil {
+		return nil, err
+	}
+
+	result, err := r.conv.FromEntity(&entity)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting Application Template with [name=%s]", name)
 	}
 
 	return result, nil

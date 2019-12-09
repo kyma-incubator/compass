@@ -45,6 +45,14 @@
   version = "v1.0.3"
 
 [[projects]]
+  digest = "1:320e7ead93de9fd2b0e59b50fd92a4d50c1f8ab455d96bc2eb083267453a9709"
+  name = "github.com/asaskevich/govalidator"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "ccb8e960c48f04d6935e72476ae4a51028f9e22f"
+  version = "v9"
+
+[[projects]]
   digest = "1:6c7e9c6eaab0e5579b85151932e4e11347cd2869a97b2a098b80a872abe561d6"
   name = "github.com/avast/retry-go"
   packages = ["."]
@@ -69,12 +77,58 @@
   version = "v3.2.0"
 
 [[projects]]
+  digest = "1:5f7b0c5ddd7f129e3a95b534b624b96aefd0487305af5828620a63a9dc94286f"
+  name = "github.com/go-ozzo/ozzo-validation"
+  packages = [
+    ".",
+    "is",
+  ]
+  pruneopts = "UT"
+  revision = "199b55b36bc1af151e6eea487cc92ffa5b460b81"
+  version = "v3.6.0"
+
+[[projects]]
+  digest = "1:582e25eccee928dc12416ea4c23b6dae8f3b5687730632aa1473ebebe80a2359"
+  name = "github.com/gogo/protobuf"
+  packages = [
+    "proto",
+    "sortkeys",
+  ]
+  pruneopts = "UT"
+  revision = "5628607bb4c51c3157aacc3a50f0ab707582b805"
+  version = "v1.3.1"
+
+[[projects]]
+  digest = "1:a6181aca1fd5e27103f9a920876f29ac72854df7345a39f3b01e61c8c94cc8af"
+  name = "github.com/google/gofuzz"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "f140a6486e521aad38f5917de355cbf147cc0496"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:582b704bebaa06b48c29b0cec224a6058a09c86883aaddabde889cd1a5f73e1b"
   name = "github.com/google/uuid"
   packages = ["."]
   pruneopts = "UT"
   revision = "0cd6bf5da1e1c83f8b45653022c74f71af0538a4"
   version = "v1.1.1"
+
+[[projects]]
+  digest = "1:0ade334594e69404d80d9d323445d2297ff8161637f9b2d347cc6973d2d6f05b"
+  name = "github.com/hashicorp/errwrap"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "8a6fb523712970c966eefc6b39ed2c5e74880354"
+  version = "v1.0.0"
+
+[[projects]]
+  digest = "1:f668349b83f7d779567c880550534addeca7ebadfdcf44b0b9c39be61864b4b7"
+  name = "github.com/hashicorp/go-multierror"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "886a7fbe3eb1c874d46f623bfa70af45f425b3d1"
+  version = "v1.0.0"
 
 [[projects]]
   digest = "1:f9a5e090336881be43cfc1cf468330c1bdd60abdc9dd194e0b1ab69f4b94dd7c"
@@ -112,14 +166,19 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b2989d201ae6dc4c70a63676905690aff6e10f76214be4c7d47d9cf7399b2676"
+  digest = "1:328e9a4362e395a3e3cef47ed43bd9f8148de5506f2c3219646ed0e2330ab229"
   name = "github.com/kyma-incubator/compass"
   packages = [
+    "components/connector/pkg/graphql/externalschema",
+    "components/director/internal/model",
     "components/director/pkg/graphql",
+    "components/director/pkg/inputvalidation",
+    "components/director/pkg/jsonschema",
+    "components/director/pkg/pagination",
     "components/director/pkg/scalar",
   ]
   pruneopts = "UT"
-  revision = "9e2e22a1aa1ac215d63bf53c545ee9536c7405fe"
+  revision = "91ed97a77766be70bded83c35485ad40bd5b25dc"
 
 [[projects]]
   branch = "master"
@@ -206,6 +265,30 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:87fe9bca786484cef53d52adeec7d1c52bc2bfbee75734eddeb75fc5c7023871"
+  name = "github.com/xeipuuv/gojsonpointer"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "02993c407bfbf5f6dae44c4f4b1cf6a39b5fc5bb"
+
+[[projects]]
+  branch = "master"
+  digest = "1:dc6a6c28ca45d38cfce9f7cb61681ee38c5b99ec1425339bfc1e1a7ba769c807"
+  name = "github.com/xeipuuv/gojsonreference"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "bd5ef7bd5415a7ac448318e64f11a24cd21e594b"
+
+[[projects]]
+  digest = "1:a8a0ed98532819a3b0dc5cf3264a14e30aba5284b793ba2850d6f381ada5f987"
+  name = "github.com/xeipuuv/gojsonschema"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "82fcdeb203eb6ab2a67d0a623d9c19e5e5a64927"
+  version = "v1.2.0"
+
+[[projects]]
+  branch = "master"
   digest = "1:39628c44b67004cdd7ff753f6490588b87defe2569413378719d7e4f92df352d"
   name = "golang.org/x/crypto"
   packages = [
@@ -213,30 +296,59 @@
     "scrypt",
   ]
   pruneopts = "UT"
-  revision = "497ca9f6d64f9bb73048a960b4098309edcd2205"
+  revision = "e1110fd1c708ef015366ea01799a23c459593c47"
 
 [[projects]]
   branch = "master"
-  digest = "1:46cdc35c1813b1ebcb372087e78ff161f1bafee8ecd268a54f21d15c5fcfdc0a"
+  digest = "1:e5a59d3fa3bb25d42bfc526c30035f07d9811224988c46b459719ac06dd63441"
   name = "golang.org/x/net"
   packages = [
     "html",
     "html/atom",
+    "http/httpguts",
+    "http2",
+    "http2/hpack",
+    "idna",
   ]
   pruneopts = "UT"
-  revision = "fc4aabc6c91483155dade6fbb627cc953a723260"
+  revision = "2180aed2234323691e9fd264fb1d32d20ff04b27"
 
 [[projects]]
   branch = "master"
-  digest = "1:fc96eb481f72e9a5edeb4bb3f3610d3b9384c036f7c1e39f8c0dedff23d0c34d"
+  digest = "1:824b4d14e35e35e821d3127319e51eb838f72434100750ad395db96d00b5a871"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "e882bf8e40c23f260d489ef820e5e8eead5e76e3"
+  revision = "4c7a9d0fe056d9d1de37e1409ca8a5c17accb46a"
+
+[[projects]]
+  digest = "1:8d8faad6b12a3a4c819a3f9618cb6ee1fa1cfc33253abeeea8b55336721e3405"
+  name = "golang.org/x/text"
+  packages = [
+    "collate",
+    "collate/build",
+    "internal/colltab",
+    "internal/gen",
+    "internal/language",
+    "internal/language/compact",
+    "internal/tag",
+    "internal/triegen",
+    "internal/ucd",
+    "language",
+    "secure/bidirule",
+    "transform",
+    "unicode/bidi",
+    "unicode/cldr",
+    "unicode/norm",
+    "unicode/rangetable",
+  ]
+  pruneopts = "UT"
+  revision = "342b2e1fbaa52c93f31447ad2c6abc048c63e475"
+  version = "v0.3.2"
 
 [[projects]]
   branch = "master"
-  digest = "1:b8c0ebe25da393d35060d76c38af904d5689eb63de8b76898747c641aff4c2df"
+  digest = "1:c6844361728aad543b24489ce34dd854487d3fb19b7d6b7eca111e318e82b00c"
   name = "golang.org/x/tools"
   packages = [
     "cmd/goimports",
@@ -254,7 +366,15 @@
     "internal/span",
   ]
   pruneopts = "UT"
-  revision = "07fc4c7f2b9857711f6306c76424246e8d6eab64"
+  revision = "4191b8cbba092238a318a71cdff48b20b4e1e5d8"
+
+[[projects]]
+  digest = "1:2d1fbdc6777e5408cabeb02bf336305e724b925ff4546ded0fa8715a7267922a"
+  name = "gopkg.in/inf.v0"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "d2d2541c53f18d2a059457998ce2876cc8e67cbf"
+  version = "v0.9.1"
 
 [[projects]]
   digest = "1:f26a5d382387e03a40d1471dddfba85dfff9bf05352d7e42d37612677c4d3c5c"
@@ -263,6 +383,48 @@
   pruneopts = "UT"
   revision = "f90ceb4f409096b60e2e9076b38b304b8246e5fa"
   version = "v2.2.5"
+
+[[projects]]
+  branch = "master"
+  digest = "1:c1e47561b2e58a28ab64b4b7dc946279f62eae3f1487e83767ab64bcf2fd2522"
+  name = "k8s.io/apimachinery"
+  packages = [
+    "pkg/api/equality",
+    "pkg/api/meta",
+    "pkg/api/resource",
+    "pkg/api/validation",
+    "pkg/apis/meta/v1",
+    "pkg/apis/meta/v1/validation",
+    "pkg/conversion",
+    "pkg/conversion/queryparams",
+    "pkg/fields",
+    "pkg/labels",
+    "pkg/runtime",
+    "pkg/runtime/schema",
+    "pkg/selection",
+    "pkg/types",
+    "pkg/util/errors",
+    "pkg/util/intstr",
+    "pkg/util/json",
+    "pkg/util/naming",
+    "pkg/util/net",
+    "pkg/util/runtime",
+    "pkg/util/sets",
+    "pkg/util/validation",
+    "pkg/util/validation/field",
+    "pkg/watch",
+    "third_party/forked/golang/reflect",
+  ]
+  pruneopts = "UT"
+  revision = "adc6f4cd9e7d28fc1c1e5efc658d940d55c0f356"
+
+[[projects]]
+  digest = "1:93e82f25d75aba18436ad1ac042cb49493f096011f2541075721ed6f9e05c044"
+  name = "k8s.io/klog"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "2ca9ad30301bf30a8a6e0fa2110db6b8df699a91"
+  version = "v1.0.0"
 
 [solve-meta]
   analyzer-name = "dep"
@@ -273,6 +435,7 @@
     "github.com/dgrijalva/jwt-go",
     "github.com/google/uuid",
     "github.com/kisielk/errcheck",
+    "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
     "github.com/machinebox/graphql",
     "github.com/pkg/errors",

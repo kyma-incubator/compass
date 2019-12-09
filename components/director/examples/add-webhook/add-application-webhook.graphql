@@ -2,7 +2,7 @@
 mutation {
   result: addWebhook(
     applicationID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-    in: { type: CONFIGURATION_CHANGED, url: "new-webhook" }
+    in: { type: CONFIGURATION_CHANGED, url: "http://new-webhook.url" }
   ) {
     id
     applicationID

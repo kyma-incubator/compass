@@ -5,6 +5,8 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/event"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 
@@ -36,6 +38,7 @@ var _ graphql.ResolverRoot = &RootResolver{}
 
 type RootResolver struct {
 	app         *application.Resolver
+	appTemplate *apptemplate.Resolver
 	api         *api.Resolver
 	eventAPI    *eventapi.Resolver
 	doc         *document.Resolver
@@ -65,11 +68,12 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	tokenConverter := onetimetoken.NewConverter()
 	systemAuthConverter := systemauth.NewConverter(authConverter)
 	intSysConverter := integrationsystem.NewConverter()
-	//appTemplateConverter := apptemplate.NewConverter() # TODO: Uncomment while implementing Service and Runtime
+	appTemplateConverter := apptemplate.NewConverter(appConverter)
 
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewRepository()
 	applicationRepo := application.NewRepository(appConverter)
+	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
 	labelRepo := label.NewRepository(labelConverter)
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 	webhookRepo := webhook.NewRepository(webhookConverter)
@@ -87,7 +91,8 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	apiRtmAuthSvc := apiruntimeauth.NewService(apiRtmAuthRepo, uidSvc)
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc)
-	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo, runtimeRepo, labelRepo, fetchRequestRepo, labelUpsertSvc, scenariosSvc, uidSvc)
+	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo, runtimeRepo, labelRepo, fetchRequestRepo, intSysRepo, labelUpsertSvc, scenariosSvc, uidSvc)
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidSvc)
 	eventAPISvc := eventapi.NewService(eventAPIRepo, fetchRequestRepo, uidSvc)
 	webhookSvc := webhook.NewService(webhookRepo, uidSvc)
@@ -102,6 +107,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 
 	return &RootResolver{
 		app:         application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, systemAuthSvc, oAuth20Svc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter, eventCfg.DefaultEventURL),
+		appTemplate: apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter),
 		api:         api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, apiRtmAuthSvc, apiConverter, authConverter, frConverter, apiRtmAuthConverter),
 		eventAPI:    eventapi.NewResolver(transact, eventAPISvc, appSvc, eventAPIConverter, frConverter),
 		doc:         document.NewResolver(transact, docSvc, appSvc, frConverter),
@@ -155,6 +161,12 @@ func (r *queryResolver) Applications(ctx context.Context, filter []*graphql.Labe
 func (r *queryResolver) Application(ctx context.Context, id string) (*graphql.Application, error) {
 	return r.app.Application(ctx, id)
 }
+func (r *queryResolver) ApplicationTemplates(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.ApplicationTemplatePage, error) {
+	return r.appTemplate.ApplicationTemplates(ctx, first, after)
+}
+func (r *queryResolver) ApplicationTemplate(ctx context.Context, id string) (*graphql.ApplicationTemplate, error) {
+	return r.appTemplate.ApplicationTemplate(ctx, id)
+}
 func (r *queryResolver) ApplicationsForRuntime(ctx context.Context, runtimeID string, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
 	return r.app.ApplicationsForRuntime(ctx, runtimeID, first, after)
 }
@@ -192,6 +204,18 @@ func (r *mutationResolver) UpdateApplication(ctx context.Context, id string, in 
 }
 func (r *mutationResolver) DeleteApplication(ctx context.Context, id string) (*graphql.Application, error) {
 	return r.app.DeleteApplication(ctx, id)
+}
+func (r *mutationResolver) CreateApplicationTemplate(ctx context.Context, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
+	return r.appTemplate.CreateApplicationTemplate(ctx, in)
+}
+func (r *mutationResolver) RegisterApplicationFromTemplate(ctx context.Context, in graphql.ApplicationFromTemplateInput) (*graphql.Application, error) {
+	return r.appTemplate.RegisterApplicationFromTemplate(ctx, in)
+}
+func (r *mutationResolver) UpdateApplicationTemplate(ctx context.Context, id string, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
+	return r.appTemplate.UpdateApplicationTemplate(ctx, id, in)
+}
+func (r *mutationResolver) DeleteApplicationTemplate(ctx context.Context, id string) (*graphql.ApplicationTemplate, error) {
+	return r.appTemplate.DeleteApplicationTemplate(ctx, id)
 }
 func (r *mutationResolver) AddWebhook(ctx context.Context, applicationID string, in graphql.WebhookInput) (*graphql.Webhook, error) {
 	return r.webhook.AddApplicationWebhook(ctx, applicationID, in)

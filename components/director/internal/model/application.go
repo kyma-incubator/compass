@@ -3,10 +3,6 @@ package model
 import (
 	"time"
 
-	"github.com/pkg/errors"
-
-	"k8s.io/apimachinery/pkg/api/validation"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
@@ -33,8 +29,6 @@ const (
 	ApplicationStatusConditionReady   ApplicationStatusCondition = "READY"
 	ApplicationStatusConditionFailed  ApplicationStatusCondition = "FAILED"
 )
-
-const applicationNameMaxLength = 36
 
 type ApplicationPage struct {
 	Data       []*Application
@@ -73,27 +67,9 @@ func (i *ApplicationCreateInput) ToApplication(timestamp time.Time, condition Ap
 	}
 }
 
-func (i *ApplicationCreateInput) Validate() error {
-	return validateApplicationName(i.Name)
-}
-
 type ApplicationUpdateInput struct {
 	Name                string
 	Description         *string
 	HealthCheckURL      *string
 	IntegrationSystemID *string
-}
-
-func (i *ApplicationUpdateInput) Validate() error {
-	return validateApplicationName(i.Name)
-}
-
-func validateApplicationName(name string) error {
-	if errorMsg := validation.NameIsDNSSubdomain(name, false); errorMsg != nil {
-		return errors.Errorf("%v", errorMsg)
-	}
-	if len(name) > applicationNameMaxLength {
-		return errors.Errorf("application name is too long, must be maximum %d characters long", applicationNameMaxLength)
-	}
-	return nil
 }

@@ -68,13 +68,14 @@ func TestService_Get(t *testing.T) {
 			svc := document.NewService(repo, nil, nil)
 
 			// when
-			document, err := svc.Get(ctx, testCase.InputID)
+			doc, err := svc.Get(ctx, testCase.InputID)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
-				assert.Equal(t, testCase.ExpectedDocument, document)
+				assert.Equal(t, testCase.ExpectedDocument, doc)
 			} else {
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
@@ -154,6 +155,7 @@ func TestService_List(t *testing.T) {
 				require.NoError(t, err)
 				assert.Equal(t, testCase.ExpectedResult, docs)
 			} else {
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
@@ -338,6 +340,7 @@ func TestService_Delete(t *testing.T) {
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 			} else {
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 

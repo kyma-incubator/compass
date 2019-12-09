@@ -23,7 +23,9 @@ These documents provide you with more architectural details:
 - [Database scheme](./architecture/db-scheme.md)
 - [Authentication and authorization](./architecture/authentication-and-authorization.md)
 - [Integration Systems](./architecture/integration-systems.md)
-- [Proposal: Automatic Application Management](./architecture/auto-app-management.md)
+- [Proposal: Input validation](./architecture/input-validation.md)
+- [Proposal: API specifications support](./architecture/api-specs-support.md)
+- [Automatic Application Management](./architecture/auto-app-management.md)
 - [Proposal: API Packages](./architecture/api-packages.md)
 - [Proposal: Input parameters for API, Event Definitions or API Packages in the Runtime](./architecture/input-parameters-on-runtime.md)
 - [Proposal: Custom configuration for Kyma installation](./architecture/provisioning-custom-configuration.md)
@@ -32,7 +34,7 @@ These documents provide you with more architectural details:
 
 Here you can find mock GraphQL queries and mutations:
 
-- [Examples](./../examples/README.md)
+- [Examples](./../components/director/examples/README.md)
 
 ## Investigations
 
@@ -46,4 +48,5 @@ Here you can read about the conducted investigations:
 - [Storage - SQL Toolbox](./investigations/storage/sql-toolbox/sql-toolbox.md)
 - [GraphQL - File Upload](./investigations/graphql-file-upload/file-upload-with-graphql.md)
 - [GraphQL - Mutation for updating complex types](./investigations/graphql-complex-updates/graphql-complex-updates.md)
+- [GraphQL - Secure Resolvers](./investigations/secure-resolvers/secure-resolvers.md)
 - [Documentation - Generating static page for our schema](./investigations/api-documentation/generate-api-documentation.md)

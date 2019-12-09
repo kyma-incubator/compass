@@ -263,10 +263,6 @@ func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string,
 		return nil, errors.Wrap(err, "while converting runtimeID to UUID")
 	}
 
-	if first == nil {
-		return nil, errors.New("missing required parameter 'first'")
-	}
-
 	appPage, err := r.appSvc.ListByRuntimeID(ctx, runtimeUUID, *first, cursor)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting all Application for Runtime")
@@ -387,6 +383,12 @@ func (r *Resolver) DeleteApplication(ctx context.Context, id string) (*graphql.A
 	return deletedApp, nil
 }
 func (r *Resolver) SetApplicationLabel(ctx context.Context, applicationID string, key string, value interface{}) (*graphql.Label, error) {
+	// TODO: Use @validation directive on input type instead, after resolving https://github.com/kyma-incubator/compass/issues/515
+	gqlLabel := graphql.LabelInput{Key: key, Value: value}
+	if err := gqlLabel.Validate(); err != nil {
+		return nil, errors.Wrap(err, "validation error for type LabelInput")
+	}
+
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err

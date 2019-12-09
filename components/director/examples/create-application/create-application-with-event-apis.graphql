@@ -6,7 +6,7 @@ mutation {
       labels: { scenarios: ["DEFAULT"] }
       eventAPIs: [
         {
-          name: "comments/v1"
+          name: "comments-v1"
           description: "comments events"
           spec: { data: "asyncapi", eventSpecType: ASYNC_API, format: YAML }
           group: "comments"
@@ -18,7 +18,7 @@ mutation {
           }
         }
         {
-          name: "reviews/v1"
+          name: "reviews-v1"
           description: "review events"
           spec: {
             eventSpecType: ASYNC_API
