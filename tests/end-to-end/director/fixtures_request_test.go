@@ -479,3 +479,13 @@ func removeDoubleQuotesFromJSONKeys(in string) string {
 	var validRegex = regexp.MustCompile(`"(\w+|\$\w+)"\s*:`)
 	return validRegex.ReplaceAllString(in, `$1:`)
 }
+
+func fixRegisterApplicationFromTemplate(applicationFromTemplateInputInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: registerApplicationFromTemplate(in: %s) {
+					%s
+				}
+			}`,
+			applicationFromTemplateInputInGQL, tc.gqlFieldsProvider.ForApplication()))
+}

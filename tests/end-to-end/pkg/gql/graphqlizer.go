@@ -344,6 +344,25 @@ func (g *Graphqlizer) PlaceholderDefinitionInputToGQL(in graphql.PlaceholderDefi
 	}`)
 }
 
+func (g *Graphqlizer) TemplateValueInputToGQL(in graphql.TemplateValueInput) (string, error) {
+	return g.genericToGQL(in, `{
+		placeholder: "{{.Placeholder}}"
+		value: "{{.Value}}"
+	}`)
+}
+
+func (g *Graphqlizer) ApplicationFromTemplateInputToGQL(in graphql.ApplicationFromTemplateInput) (string, error) {
+	return g.genericToGQL(in, `{
+		templateName: "{{.TemplateName}}"
+		{{- if .Values }}
+		values: [
+			{{- range $i, $e := .Values }} 
+				{{- if $i}}, {{- end}} {{ TemplateValueInput $e }}
+			{{- end }} ],
+		{{- end }},
+	}`)
+}
+
 func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error) {
 	fm := sprig.TxtFuncMap()
 	fm["ApplicationCreateInputToGQL"] = g.ApplicationCreateInputToGQL
@@ -363,6 +382,7 @@ func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	fm["CSRFTokenCredentialRequestAuthInputToGQL"] = g.CSRFTokenCredentialRequestAuthInputToGQL
 	fm["CredentialRequestAuthInputToGQL"] = g.CredentialRequestAuthInputToGQL
 	fm["PlaceholderDefinitionInputToGQL"] = g.PlaceholderDefinitionInputToGQL
+	fm["TemplateValueInput"] = g.TemplateValueInputToGQL
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)
 	if err != nil {
