@@ -136,11 +136,11 @@ func TestSetRuntimeLabel_Validation(t *testing.T) {
 	assert.Contains(t, err.Error(), "validation error for type LabelInput")
 }
 
-// Auth Validation
+// Application Validation
 
 const longDescErrorMsg = "graphql: validation error for type %s: description: the length must be no more than 128."
 
-func TestCreateApplicationInput_Validation(t *testing.T) {
+func TestCreateApplication_Validation(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
 	app := fixSampleApplicationCreateInputWithName("placeholder", "name")
@@ -159,7 +159,7 @@ func TestCreateApplicationInput_Validation(t *testing.T) {
 	assert.EqualError(t, err, fmt.Sprintf(longDescErrorMsg, "ApplicationCreateInput"))
 }
 
-func TestCreateApplicationUpdateInput_Validation(t *testing.T) {
+func TestUpdateApplication_Validation(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
 	app := createApplication(t, ctx, "app-name")
@@ -223,7 +223,7 @@ func TestUpdateIntegrationSystem_Validation(t *testing.T) {
 	ctx := context.TODO()
 	intSys := createIntegrationSystem(t, ctx, "integration-system")
 	defer deleteIntegrationSystem(t, ctx, intSys.ID)
-	longDesc := strings.Repeat("a", 129)
+	longDesc := strings.Repeat("a", 256)
 	intSysUpdate := graphql.IntegrationSystemInput{Name: "name", Description: &longDesc}
 	isUpdateGQL, err := tc.graphqlizer.IntegrationSystemInputToGQL(intSysUpdate)
 	require.NoError(t, err)
@@ -235,6 +235,170 @@ func TestUpdateIntegrationSystem_Validation(t *testing.T) {
 	//THEN
 	require.Error(t, err)
 	assert.EqualError(t, err, fmt.Sprintf(longDescErrorMsg, "IntegrationSystemInput"))
+}
+
+func TestAddAPI_Validation(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	app := createApplication(t, ctx, "name")
+	defer deleteApplication(t, app.ID)
+
+	api := graphql.APIDefinitionInput{Name: "name", TargetURL: "https://kyma project.io"}
+	apiGQL, err := tc.graphqlizer.APIDefinitionInputToGQL(api)
+	require.NoError(t, err)
+	addAPIRequest := fixAddAPIRequest(app.ID, apiGQL)
+
+	//WHEN
+	err = tc.RunOperation(ctx, addAPIRequest, nil)
+
+	//THEN
+	require.Error(t, err)
+	require.EqualError(t, err, "graphql: validation error for type APIDefinitionInput: targetURL: must be a valid URL.")
+}
+
+func TestUpdateAPI_Validation(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	app := createApplication(t, ctx, "name")
+	defer deleteApplication(t, app.ID)
+
+	api := graphql.APIDefinitionInput{Name: "name", TargetURL: "https://kyma-project.io"}
+	addAPI(t, ctx, app.ID, api)
+
+	api.TargetURL = "invalid URL"
+	apiGQL, err := tc.graphqlizer.APIDefinitionInputToGQL(api)
+	require.NoError(t, err)
+	updateAPIRequest := fixUpdateAPIRequest(app.ID, apiGQL)
+
+	//WHEN
+	err = tc.RunOperation(ctx, updateAPIRequest, nil)
+
+	//THEN
+	require.Error(t, err)
+	require.EqualError(t, err, "graphql: validation error for type APIDefinitionInput: targetURL: is not valid URL.")
+}
+
+func TestAddEventAPI_Validation(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	app := createApplication(t, ctx, "name")
+	defer deleteApplication(t, app.ID)
+
+	eventAPI := fixEventAPIDefinitionInput()
+	longDesc := strings.Repeat("a", 129)
+	eventAPI.Description = &longDesc
+	evenApiGQL, err := tc.graphqlizer.EventAPIDefinitionInputToGQL(eventAPI)
+	require.NoError(t, err)
+	addEventAPIRequest := fixAddEventAPIRequest(app.ID, evenApiGQL)
+
+	//WHEN
+	err = tc.RunOperation(ctx, addEventAPIRequest, nil)
+
+	//THEN
+	require.Error(t, err)
+	require.EqualError(t, err, fmt.Sprintf(longDescErrorMsg, "EventAPIDefinitionInput"))
+}
+
+func TestUpdateEventAPI_Validation(t *testing.T) {
+	ctx := context.TODO()
+	app := createApplication(t, ctx, "name")
+	defer deleteApplication(t, app.ID)
+
+	eventAPIUpdate := fixEventAPIDefinitionInput()
+	eventAPI := addEventAPI(t, ctx, app.ID, eventAPIUpdate)
+
+	longDesc := strings.Repeat("a", 129)
+	eventAPIUpdate.Description = &longDesc
+	evenApiGQL, err := tc.graphqlizer.EventAPIDefinitionInputToGQL(eventAPIUpdate)
+	require.NoError(t, err)
+	updateEventAPI := fixUpdateEventAPIRequest(eventAPI.ID, evenApiGQL)
+
+	//WHEN
+	err = tc.RunOperation(ctx, updateEventAPI, nil)
+
+	//THEN
+	require.Error(t, err)
+	require.EqualError(t, err, fmt.Sprintf(longDescErrorMsg, "EventAPIDefinitionInput"))
+}
+
+func fixEventAPIDefinitionInput() graphql.EventAPIDefinitionInput {
+	data := graphql.CLOB("data")
+	return graphql.EventAPIDefinitionInput{Name: "name",
+		Spec: &graphql.EventAPISpecInput{
+			Data:          &data,
+			EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
+			Format:        graphql.SpecFormatJSON,
+		}}
+}
+
+// Application Template
+
+func TestCreateApplicationTemplate_Validation(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+
+	appCreateInput := fixSampleApplicationCreateInput("placeholder")
+	invalidInput := graphql.ApplicationTemplateInput{
+		Name:             "0invalid",
+		Placeholders:     []*graphql.PlaceholderDefinitionInput{},
+		ApplicationInput: &appCreateInput,
+		AccessLevel:      graphql.ApplicationTemplateAccessLevelGlobal,
+	}
+	inputString, err := tc.graphqlizer.ApplicationTemplateInputToGQL(invalidInput)
+	require.NoError(t, err)
+	var result graphql.ApplicationTemplate
+	request := fixCreateApplicationTemplateRequest(inputString)
+
+	// WHEN
+	err = tc.RunOperation(ctx, request, &result)
+
+	// THEN
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "validation error for type ApplicationTemplateInput")
+}
+
+func TestUpdateApplicationTemplate_Validation(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	appTpl := createApplicationTemplate(t, ctx, "validation-test-app-tpl")
+	defer deleteApplicationTemplate(t, ctx, appTpl.ID)
+
+	appCreateInput := fixSampleApplicationCreateInput("placeholder")
+	invalidInput := graphql.ApplicationTemplateInput{
+		Name:             "0invalid",
+		Placeholders:     []*graphql.PlaceholderDefinitionInput{},
+		ApplicationInput: &appCreateInput,
+		AccessLevel:      graphql.ApplicationTemplateAccessLevelGlobal,
+	}
+	inputString, err := tc.graphqlizer.ApplicationTemplateInputToGQL(invalidInput)
+	require.NoError(t, err)
+	var result graphql.ApplicationTemplate
+	request := fixUpdateApplicationTemplateRequest(appTpl.ID, inputString)
+
+	// WHEN
+	err = tc.RunOperation(ctx, request, &result)
+
+	// THEN
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "validation error for type ApplicationTemplateInput")
+}
+
+func TestRegisterApplicationFromTemplate_Validation(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	tmpl := createApplicationTemplate(t, ctx, "validation-app")
+	defer deleteApplicationTemplate(t, ctx, tmpl.ID)
+
+	appFromTmpl := graphql.ApplicationFromTemplateInput{}
+	appFromTmplGQL, err := tc.graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
+	require.NoError(t, err)
+	registerAppFromTmpl := fixRegisterApplicationFromTemplate(appFromTmplGQL)
+	//WHEN
+	err = tc.RunOperation(ctx, registerAppFromTmpl, nil)
+
+	//THEN
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "TemplateName: cannot be blank.")
 }
 
 func fixDocumentInput() graphql.DocumentInput {

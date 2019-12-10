@@ -80,7 +80,7 @@ func TestDeleteIntegrationSystem(t *testing.T) {
 	t.Log("Create integration system")
 	intSys := createIntegrationSystem(t, ctx, name)
 
-	deleteIntegrationSystemRequest := fixDeleteIntegrationSystem(intSys.ID)
+	deleteIntegrationSystemRequest := fixDeleteIntegrationSystemRequest(intSys.ID)
 	deleteOutput := graphql.IntegrationSystemExt{}
 
 	// WHEN

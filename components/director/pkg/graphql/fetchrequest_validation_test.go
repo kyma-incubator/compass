@@ -13,24 +13,24 @@ import (
 
 func TestFetchRequestInput_Validate_URL(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value string
-		Valid bool
+		Name          string
+		Value         string
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: inputvalidationtest.ValidURL,
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         inputvalidationtest.ValidURL,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "URL longer than 256",
-			Value: "https://kyma-project.io/" + strings.Repeat("a", 233),
-			Valid: false,
+			Name:          "URL longer than 256",
+			Value:         "https://kyma-project.io/" + strings.Repeat("a", 233),
+			ExpectedValid: false,
 		},
 		{
-			Name:  "Invalid",
-			Value: "kyma-project",
-			Valid: false,
+			Name:          "Invalid",
+			Value:         "kyma-project",
+			ExpectedValid: false,
 		},
 	}
 
@@ -42,7 +42,7 @@ func TestFetchRequestInput_Validate_URL(t *testing.T) {
 			//WHEN
 			err := fr.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -52,27 +52,27 @@ func TestFetchRequestInput_Validate_URL(t *testing.T) {
 }
 
 func TestFetchRequestInput_Validate_Auth(t *testing.T) {
+	validObj := fixValidAuthInput()
 	testCases := []struct {
-		Name  string
-		Value *graphql.AuthInput
-		Valid bool
+		Name          string
+		Value         *graphql.AuthInput
+		ExpectedValid bool
 	}{
-		//TODO: uncommend and fix those tests after implementing AuthInput.Validate()
-		//{
-		//	Name:  "Valid",
-		//	Value: fixValidInputAuth(),
-		//	Valid: true,
-		//},
 		{
-			Name:  "Valid nil value",
-			Value: nil,
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         &validObj,
+			ExpectedValid: true,
 		},
-		//{
-		//	Name:  "Invalid object",
-		//	Value: &model.AuthInput{},
-		//	Valid: false,
-		//},
+		{
+			Name:          "ExpectedValid nil value",
+			Value:         nil,
+			ExpectedValid: true,
+		},
+		{
+			Name:          "Invalid object",
+			Value:         &graphql.AuthInput{},
+			ExpectedValid: false,
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -83,7 +83,7 @@ func TestFetchRequestInput_Validate_Auth(t *testing.T) {
 			//WHEN
 			err := fr.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -94,24 +94,24 @@ func TestFetchRequestInput_Validate_Auth(t *testing.T) {
 
 func TestFetchRequestInput_Validate_Mode(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value *graphql.FetchMode
-		Valid bool
+		Name          string
+		Value         *graphql.FetchMode
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: (*graphql.FetchMode)(str.Ptr("SINGLE")),
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         (*graphql.FetchMode)(str.Ptr("SINGLE")),
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Valid nil value",
-			Value: nil,
-			Valid: true,
+			Name:          "ExpectedValid nil value",
+			Value:         nil,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Invalid object",
-			Value: (*graphql.FetchMode)(str.Ptr("INVALID")),
-			Valid: false,
+			Name:          "Invalid object",
+			Value:         (*graphql.FetchMode)(str.Ptr("INVALID")),
+			ExpectedValid: false,
 		},
 	}
 
@@ -123,7 +123,7 @@ func TestFetchRequestInput_Validate_Mode(t *testing.T) {
 			//WHEN
 			err := fr.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -134,29 +134,29 @@ func TestFetchRequestInput_Validate_Mode(t *testing.T) {
 
 func TestFetchRequestInput_Validate_Filter(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value *string
-		Valid bool
+		Name          string
+		Value         *string
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: str.Ptr("this is a valid string"),
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         str.Ptr("this is a valid string"),
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Valid nil pointer",
-			Value: nil,
-			Valid: true,
+			Name:          "ExpectedValid nil pointer",
+			Value:         nil,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Empty string",
-			Value: str.Ptr(inputvalidationtest.EmptyString),
-			Valid: false,
+			Name:          "Empty string",
+			Value:         str.Ptr(inputvalidationtest.EmptyString),
+			ExpectedValid: false,
 		},
 		{
-			Name:  "String bigger than 256 chars",
-			Value: str.Ptr(inputvalidationtest.String257Long),
-			Valid: false,
+			Name:          "String bigger than 256 chars",
+			Value:         str.Ptr(inputvalidationtest.String257Long),
+			ExpectedValid: false,
 		},
 	}
 
@@ -168,7 +168,7 @@ func TestFetchRequestInput_Validate_Filter(t *testing.T) {
 			//WHEN
 			err := fr.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)

@@ -81,6 +81,46 @@ func fixAddWebhookRequest(applicationID, webhookInGQL string) *gcli.Request {
 			applicationID, webhookInGQL, tc.gqlFieldsProvider.ForWebhooks()))
 }
 
+func fixAddAPIRequest(appID, APIInputGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		result: addAPI(applicationID: "%s", in: %s) {
+				%s
+			}
+		}
+		`, appID, APIInputGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
+}
+
+func fixUpdateAPIRequest(appID, APIInputGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		result: updateAPI(id: "%s", in: %s) {
+				%s
+			}
+		}
+		`, appID, APIInputGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
+}
+
+func fixAddEventAPIRequest(appID, eventAPIInputGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		result: addEventAPI(applicationID: "%s", in: %s) {
+				%s
+			}
+		}
+		`, appID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventAPI()))
+}
+
+func fixUpdateEventAPIRequest(appID, eventAPIInputGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		result: updateEventAPI(id: "%s", in: %s) {
+				%s
+			}
+		}
+		`, appID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventAPI()))
+}
+
 //UPDATE
 func fixUpdateRuntimeRequest(id, updateInputInGQL string) *gcli.Request {
 	return gcli.NewRequest(
@@ -129,7 +169,7 @@ func fixUpdateLabelDefinitionRequest(ldInputGQL string) *gcli.Request {
 				}`, ldInputGQL, tc.gqlFieldsProvider.ForLabelDefinition()))
 }
 
-func fixGenerateOneTimeTokenForRuntime(id string) *gcli.Request {
+func fixGenerateOneTimeTokenForRuntimeRequest(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 				result: generateOneTimeTokenForRuntime(id: "%s") {
@@ -138,7 +178,7 @@ func fixGenerateOneTimeTokenForRuntime(id string) *gcli.Request {
 				}`, id, tc.gqlFieldsProvider.ForOneTimeToken()))
 }
 
-func fixGenerateOneTimeTokenForApp(id string) *gcli.Request {
+func fixGenerateOneTimeTokenForAppRequest(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 				result: generateOneTimeTokenForApplication(id: "%s") {
@@ -156,7 +196,7 @@ func fixUpdateIntegrationSystemRequest(id, integrationSystemInGQL string) *gcli.
 				}`, id, integrationSystemInGQL, tc.gqlFieldsProvider.ForIntegrationSystem()))
 }
 
-func fixGenerateClientCredentialsForApplication(id string) *gcli.Request {
+func fixGenerateClientCredentialsForApplicationRequest(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 				result: generateClientCredentialsForApplication(id: "%s") {
@@ -165,7 +205,7 @@ func fixGenerateClientCredentialsForApplication(id string) *gcli.Request {
 				}`, id, tc.gqlFieldsProvider.ForSystemAuth()))
 }
 
-func fixGenerateClientCredentialsForRuntime(id string) *gcli.Request {
+func fixGenerateClientCredentialsForRuntimeRequest(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 				result: generateClientCredentialsForRuntime(id: "%s") {
@@ -174,7 +214,7 @@ func fixGenerateClientCredentialsForRuntime(id string) *gcli.Request {
 				}`, id, tc.gqlFieldsProvider.ForSystemAuth()))
 }
 
-func fixGenerateClientCredentialsForIntegrationSystem(id string) *gcli.Request {
+func fixGenerateClientCredentialsForIntegrationSystemRequest(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 				result: generateClientCredentialsForIntegrationSystem(id: "%s") {
@@ -238,7 +278,7 @@ func fixApplicationForRuntimeRequest(runtimeID string) *gcli.Request {
 		))
 }
 
-func fixRuntimeRequestWithPagination(after int, cursor string) *gcli.Request {
+func fixRuntimeRequestWithPaginationRequest(after int, cursor string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: runtimes(first:%d, after:"%s") {
@@ -258,7 +298,7 @@ func fixAPIRuntimeAuthRequest(applicationID string, runtimeID string) *gcli.Requ
 		})))
 }
 
-func fixRuntimeQuery(runtimeID string) *gcli.Request {
+func fixRuntimeRequest(runtimeID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: runtime(id: "%s") {
@@ -266,7 +306,7 @@ func fixRuntimeQuery(runtimeID string) *gcli.Request {
 				}}`, runtimeID, tc.gqlFieldsProvider.ForRuntime()))
 }
 
-func fixDeleteRuntime(id string) *gcli.Request {
+func fixDeleteRuntimeRequest(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation{deleteRuntime(id: "%s") {
 				id
@@ -312,7 +352,7 @@ func fixLabelDefinitionsRequest() *gcli.Request {
 			}`))
 }
 
-func fixApplications(labelFilterInGQL string, first int, after string) *gcli.Request {
+func fixApplicationsRequest(labelFilterInGQL string, first int, after string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 				result: applications(filter: %s, first: %d, after: "%s") {
@@ -332,7 +372,7 @@ func fixApplicationTemplates(first int, after string) *gcli.Request {
 			first, after, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForApplicationTemplate())))
 }
 
-func fixRuntimes(labelFilterInGQL string, first int, after string) *gcli.Request {
+func fixRuntimesRequest(labelFilterInGQL string, first int, after string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 				result: runtimes(filter: %s, first: %d, after: "%s") {
@@ -363,7 +403,7 @@ func fixIntegrationSystemRequest(intSysID string) *gcli.Request {
 }
 
 // DELETE
-func fixDeleteLabelDefinition(labelDefinitionKey string, deleteRelatedLabels bool) *gcli.Request {
+func fixDeleteLabelDefinitionRequest(labelDefinitionKey string, deleteRelatedLabels bool) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			result: deleteLabelDefinition(key: "%s", deleteRelatedLabels: %t) {
@@ -372,7 +412,7 @@ func fixDeleteLabelDefinition(labelDefinitionKey string, deleteRelatedLabels boo
 			}`, labelDefinitionKey, deleteRelatedLabels, tc.gqlFieldsProvider.ForLabelDefinition()))
 }
 
-func fixDeleteApplicationLabel(applicationID, labelKey string) *gcli.Request {
+func fixDeleteApplicationLabelRequest(applicationID, labelKey string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			result: deleteApplicationLabel(applicationID: "%s", key: "%s") {
@@ -381,7 +421,7 @@ func fixDeleteApplicationLabel(applicationID, labelKey string) *gcli.Request {
 			}`, applicationID, labelKey, tc.gqlFieldsProvider.ForLabel()))
 }
 
-func fixDeleteAPIAuthRequest(apiID string, rtmID string) *gcli.Request {
+func fixDeleteAPIAuthRequestRequest(apiID string, rtmID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			result: deleteAPIAuth(apiID: "%s",runtimeID: "%s") {
@@ -390,7 +430,7 @@ func fixDeleteAPIAuthRequest(apiID string, rtmID string) *gcli.Request {
 			}`, apiID, rtmID, tc.gqlFieldsProvider.ForAPIRuntimeAuth()))
 }
 
-func fixDeleteIntegrationSystem(intSysID string) *gcli.Request {
+func fixDeleteIntegrationSystemRequest(intSysID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			result: deleteIntegrationSystem(id: "%s") {
@@ -399,7 +439,7 @@ func fixDeleteIntegrationSystem(intSysID string) *gcli.Request {
 			}`, intSysID, tc.gqlFieldsProvider.ForIntegrationSystem()))
 }
 
-func fixDeleteSystemAuthForApplication(authID string) *gcli.Request {
+func fixDeleteSystemAuthForApplicationRequest(authID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			result: deleteSystemAuthForApplication(authID: "%s") {
@@ -408,7 +448,7 @@ func fixDeleteSystemAuthForApplication(authID string) *gcli.Request {
 			}`, authID, tc.gqlFieldsProvider.ForSystemAuth()))
 }
 
-func fixDeleteSystemAuthForRuntime(authID string) *gcli.Request {
+func fixDeleteSystemAuthForRuntimeRequest(authID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			result: deleteSystemAuthForRuntime(authID: "%s") {
@@ -417,7 +457,7 @@ func fixDeleteSystemAuthForRuntime(authID string) *gcli.Request {
 			}`, authID, tc.gqlFieldsProvider.ForSystemAuth()))
 }
 
-func fixDeleteSystemAuthForIntegrationSystem(authID string) *gcli.Request {
+func fixDeleteSystemAuthForIntegrationSystemRequest(authID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			result: deleteSystemAuthForIntegrationSystem(authID: "%s") {
@@ -438,4 +478,14 @@ func fixDeleteApplicationTemplate(appTemplateID string) *gcli.Request {
 func removeDoubleQuotesFromJSONKeys(in string) string {
 	var validRegex = regexp.MustCompile(`"(\w+|\$\w+)"\s*:`)
 	return validRegex.ReplaceAllString(in, `$1:`)
+}
+
+func fixRegisterApplicationFromTemplate(applicationFromTemplateInputInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: registerApplicationFromTemplate(in: %s) {
+					%s
+				}
+			}`,
+			applicationFromTemplateInputInGQL, tc.gqlFieldsProvider.ForApplication()))
 }

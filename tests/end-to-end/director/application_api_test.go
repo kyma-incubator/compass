@@ -110,7 +110,7 @@ func TestCreateApplicationWithAPIs(t *testing.T) {
 		Name: "wordpress",
 		Apis: []*graphql.APIDefinitionInput{
 			{
-				Name:        "comments/v1",
+				Name:        "comments-v1",
 				Description: ptr.String("api for adding comments"),
 				TargetURL:   "http://mywordpress.com/comments",
 				Group:       ptr.String("comments"),
@@ -123,7 +123,7 @@ func TestCreateApplicationWithAPIs(t *testing.T) {
 				},
 			},
 			{
-				Name:      "reviews/v1",
+				Name:      "reviews-v1",
 				TargetURL: "http://mywordpress.com/reviews",
 				Spec: &graphql.APISpecInput{
 					Type:   graphql.APISpecTypeOdata,
@@ -140,7 +140,7 @@ func TestCreateApplicationWithAPIs(t *testing.T) {
 					RequestAuth: &graphql.CredentialRequestAuthInput{
 						Csrf: &graphql.CSRFTokenCredentialRequestAuthInput{
 							Credential:       fixOAuthCredential(),
-							TokenEndpointURL: "token-URL",
+							TokenEndpointURL: "http://token.URL",
 						},
 					},
 				},
@@ -193,7 +193,7 @@ func TestCreateApplicationWithEventAPIs(t *testing.T) {
 		Name: "create-application-with-event-apis",
 		EventAPIs: []*graphql.EventAPIDefinitionInput{
 			{
-				Name:        "comments/v1",
+				Name:        "comments-v1",
 				Description: ptr.String("comments events"),
 				Version:     fixDepracatedVersion1(),
 				Group:       ptr.String("comments"),
@@ -204,7 +204,7 @@ func TestCreateApplicationWithEventAPIs(t *testing.T) {
 				},
 			},
 			{
-				Name:        "reviews/v1",
+				Name:        "reviews-v1",
 				Description: ptr.String("review events"),
 				Spec: &graphql.EventAPISpecInput{
 					EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
@@ -331,7 +331,7 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 		//GIVEN
 		ctx := context.Background()
 		webhookInStr, err := tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
-			URL:  "http://new.webhook",
+			URL:  webhookURL,
 			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 		})
 		require.NoError(t, err)
@@ -354,7 +354,7 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 		ctx := context.Background()
 		apiInStr, err := tc.graphqlizer.APIDefinitionInputToGQL(graphql.APIDefinitionInput{
 			Name:      "new-api-name",
-			TargetURL: "new-api-url",
+			TargetURL: "https://target.url",
 		})
 		require.NoError(t, err)
 
@@ -380,6 +380,9 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 			Spec: &graphql.EventAPISpecInput{
 				EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
 				Format:        graphql.SpecFormatYaml,
+				FetchRequest: &graphql.FetchRequestInput{
+					URL: "https://kyma-project.io",
+				},
 			},
 		})
 		require.NoError(t, err)
@@ -671,12 +674,12 @@ func TestUpdateApplicationParts(t *testing.T) {
 		// add
 		inStr, err := tc.graphqlizer.APIDefinitionInputToGQL(graphql.APIDefinitionInput{
 			Name:      "new-api-name",
-			TargetURL: "new-api-url",
+			TargetURL: "https://target.url",
 			Spec: &graphql.APISpecInput{
 				Format: graphql.SpecFormatJSON,
 				Type:   graphql.APISpecTypeOpenAPI,
 				FetchRequest: &graphql.FetchRequestInput{
-					URL: "foo.bar",
+					URL: "https://foo.bar",
 				},
 			},
 		})
@@ -699,7 +702,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		id := actualAPI.ID
 		require.NotNil(t, id)
 		assert.Equal(t, "new-api-name", actualAPI.Name)
-		assert.Equal(t, "new-api-url", actualAPI.TargetURL)
+		assert.Equal(t, "https://target.url", actualAPI.TargetURL)
 
 		updatedApp := getApp(ctx, t, actualApp.ID)
 		assert.Len(t, updatedApp.Apis.Data, 2)
@@ -713,7 +716,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		// update
 
 		//GIVEN
-		updateStr, err := tc.graphqlizer.APIDefinitionInputToGQL(graphql.APIDefinitionInput{Name: "updated-api-name", TargetURL: "updated-api-url"})
+		updateStr, err := tc.graphqlizer.APIDefinitionInputToGQL(graphql.APIDefinitionInput{Name: "updated-api-name", TargetURL: "http://updated-target.url"})
 		require.NoError(t, err)
 		updatedAPI := graphql.APIDefinition{}
 
@@ -801,6 +804,9 @@ func TestUpdateApplicationParts(t *testing.T) {
 			Spec: &graphql.EventAPISpecInput{
 				EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
 				Format:        graphql.SpecFormatYaml,
+				FetchRequest: &graphql.FetchRequestInput{
+					URL: "https://kyma-project.io",
+				},
 			}})
 		require.NoError(t, err)
 
@@ -1143,7 +1149,7 @@ func TestQuerySpecificAPIDefinition(t *testing.T) {
 	// GIVEN
 	in := graphql.APIDefinitionInput{
 		Name:      "test",
-		TargetURL: "test",
+		TargetURL: "http://target.url",
 	}
 
 	APIInputGQL, err := tc.graphqlizer.APIDefinitionInputToGQL(in)
@@ -1185,8 +1191,11 @@ func TestQuerySpecificEventAPIDefinition(t *testing.T) {
 	in := graphql.EventAPIDefinitionInput{
 		Name: "test",
 		Spec: &graphql.EventAPISpecInput{
-			EventSpecType: "ASYNC_API",
-			Format:        "YAML",
+			EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
+			Format:        graphql.SpecFormatYaml,
+			FetchRequest: &graphql.FetchRequestInput{
+				URL: "https://kyma-project.io",
+			},
 		},
 	}
 	EventAPIInputGQL, err := tc.graphqlizer.EventAPIDefinitionInputToGQL(in)
@@ -1246,12 +1255,15 @@ func fixSampleApplicationCreateInput(placeholder string) graphql.ApplicationCrea
 			Format:      graphql.DocumentFormatMarkdown}},
 		Apis: []*graphql.APIDefinitionInput{{
 			Name:      placeholder,
-			TargetURL: placeholder}},
+			TargetURL: "http://kyma-project.io"}},
 		EventAPIs: []*graphql.EventAPIDefinitionInput{{
 			Name: placeholder,
 			Spec: &graphql.EventAPISpecInput{
 				EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
 				Format:        graphql.SpecFormatYaml,
+				FetchRequest: &graphql.FetchRequestInput{
+					URL: "https://kyma-project.io",
+				},
 			}}},
 		Webhooks: []*graphql.WebhookInput{{
 			Type: graphql.ApplicationWebhookTypeConfigurationChanged,

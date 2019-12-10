@@ -4,8 +4,12 @@ mutation {
     applicationID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
     in: {
       name: "new-api-name"
-      targetURL: "new-api-url"
-      spec: { type: OPEN_API, format: JSON, fetchRequest: { url: "foo.bar" } }
+      targetURL: "https://target.url"
+      spec: {
+        type: OPEN_API
+        format: JSON
+        fetchRequest: { url: "https://foo.bar" }
+      }
     }
   ) {
     id

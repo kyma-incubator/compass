@@ -15,14 +15,13 @@ import (
 )
 
 const (
-	retryCount       = 20
 	schemaName       = "public"
 	clusterTableName = "cluster"
 )
 
 // InitializeDatabase opens database connection and initializes schema if it does not exist
 // This is temporary solution
-func InitializeDatabase(connectionString, schemaFilePath string) (*dbr.Connection, error) {
+func InitializeDatabase(connectionString, schemaFilePath string, retryCount int) (*dbr.Connection, error) {
 	connection, err := waitForDatabaseAccess(connectionString, retryCount)
 	if err != nil {
 		return nil, err

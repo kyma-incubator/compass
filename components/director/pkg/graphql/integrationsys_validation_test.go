@@ -11,29 +11,29 @@ import (
 
 func TestIntegrationSystemInput_Validate_Name(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value string
-		Valid bool
+		Name          string
+		Value         string
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: "name-123.com",
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         "name-123.com",
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Empty string",
-			Value: inputvalidationtest.EmptyString,
-			Valid: false,
+			Name:          "Empty string",
+			Value:         inputvalidationtest.EmptyString,
+			ExpectedValid: false,
 		},
 		{
-			Name:  "Invalid Upper Case Letters",
-			Value: "Invalid",
-			Valid: false,
+			Name:          "Invalid Upper Case Letters",
+			Value:         "Invalid",
+			ExpectedValid: false,
 		},
 		{
-			Name:  "String longer than 37 chars",
-			Value: inputvalidationtest.String37Long,
-			Valid: false,
+			Name:          "String longer than 37 chars",
+			Value:         inputvalidationtest.String37Long,
+			ExpectedValid: false,
 		},
 	}
 
@@ -45,7 +45,7 @@ func TestIntegrationSystemInput_Validate_Name(t *testing.T) {
 			//WHEN
 			err := is.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -56,29 +56,29 @@ func TestIntegrationSystemInput_Validate_Name(t *testing.T) {
 
 func TestIntegrationSystemInput_Validate_Description(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value *string
-		Valid bool
+		Name          string
+		Value         *string
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: str.Ptr("Valid Value"),
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         str.Ptr("ExpectedValid Value"),
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Valid nil pointer",
-			Value: nil,
-			Valid: true,
+			Name:          "ExpectedValid nil pointer",
+			Value:         nil,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Empty string",
-			Value: str.Ptr(inputvalidationtest.EmptyString),
-			Valid: true,
+			Name:          "Empty string",
+			Value:         str.Ptr(inputvalidationtest.EmptyString),
+			ExpectedValid: true,
 		},
 		{
-			Name:  "String longer than 128 chars",
-			Value: str.Ptr(inputvalidationtest.String129Long),
-			Valid: false,
+			Name:          "String longer than 128 chars",
+			Value:         str.Ptr(inputvalidationtest.String129Long),
+			ExpectedValid: false,
 		},
 	}
 
@@ -90,7 +90,7 @@ func TestIntegrationSystemInput_Validate_Description(t *testing.T) {
 			//WHEN
 			err := is.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)

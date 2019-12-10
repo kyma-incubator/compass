@@ -66,6 +66,11 @@ type ApplicationEventConfiguration struct {
 	DefaultURL string `json:"defaultURL"`
 }
 
+type ApplicationFromTemplateInput struct {
+	TemplateName string                `json:"templateName"`
+	Values       []*TemplateValueInput `json:"values"`
+}
+
 type ApplicationPage struct {
 	Data       []*Application `json:"data"`
 	PageInfo   *PageInfo      `json:"pageInfo"`

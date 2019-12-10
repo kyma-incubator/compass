@@ -11,24 +11,24 @@ import (
 
 func TestDocumentInput_Validate_Title(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value string
-		Valid bool
+		Name          string
+		Value         string
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: "Valid",
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         "ExpectedValid",
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Empty string",
-			Value: inputvalidationtest.EmptyString,
-			Valid: false,
+			Name:          "Empty string",
+			Value:         inputvalidationtest.EmptyString,
+			ExpectedValid: false,
 		},
 		{
-			Name:  "String longer than 128 chars",
-			Value: inputvalidationtest.String129Long,
-			Valid: false,
+			Name:          "String longer than 128 chars",
+			Value:         inputvalidationtest.String129Long,
+			ExpectedValid: false,
 		},
 	}
 
@@ -40,7 +40,7 @@ func TestDocumentInput_Validate_Title(t *testing.T) {
 			//WHEN
 			err := doc.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -51,24 +51,24 @@ func TestDocumentInput_Validate_Title(t *testing.T) {
 
 func TestDocumentInput_Validate_DisplayName(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value string
-		Valid bool
+		Name          string
+		Value         string
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: "Valid",
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         "ExpectedValid",
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Empty string",
-			Value: inputvalidationtest.EmptyString,
-			Valid: false,
+			Name:          "Empty string",
+			Value:         inputvalidationtest.EmptyString,
+			ExpectedValid: false,
 		},
 		{
-			Name:  "String longer than 128 chars",
-			Value: inputvalidationtest.String129Long,
-			Valid: false,
+			Name:          "String longer than 128 chars",
+			Value:         inputvalidationtest.String129Long,
+			ExpectedValid: false,
 		},
 	}
 
@@ -80,7 +80,7 @@ func TestDocumentInput_Validate_DisplayName(t *testing.T) {
 			//WHEN
 			err := doc.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -91,24 +91,24 @@ func TestDocumentInput_Validate_DisplayName(t *testing.T) {
 
 func TestDocumentInput_Validate_Description(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value string
-		Valid bool
+		Name          string
+		Value         string
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: "this is a valid description",
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         "this is a valid description",
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Empty string",
-			Value: inputvalidationtest.EmptyString,
-			Valid: false,
+			Name:          "Empty string",
+			Value:         inputvalidationtest.EmptyString,
+			ExpectedValid: false,
 		},
 		{
-			Name:  "String longer than 128 chars",
-			Value: inputvalidationtest.String129Long,
-			Valid: false,
+			Name:          "String longer than 128 chars",
+			Value:         inputvalidationtest.String129Long,
+			ExpectedValid: false,
 		},
 	}
 
@@ -120,7 +120,7 @@ func TestDocumentInput_Validate_Description(t *testing.T) {
 			//WHEN
 			err := doc.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -131,24 +131,24 @@ func TestDocumentInput_Validate_Description(t *testing.T) {
 
 func TestDocumentInput_Validate_Format(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value graphql.DocumentFormat
-		Valid bool
+		Name          string
+		Value         graphql.DocumentFormat
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: "MARKDOWN",
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         "MARKDOWN",
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Invalid",
-			Value: "INVALID",
-			Valid: false,
+			Name:          "Invalid",
+			Value:         "INVALID",
+			ExpectedValid: false,
 		},
 		{
-			Name:  "Empty string",
-			Value: inputvalidationtest.EmptyString,
-			Valid: false,
+			Name:          "Empty string",
+			Value:         inputvalidationtest.EmptyString,
+			ExpectedValid: false,
 		},
 	}
 
@@ -160,7 +160,7 @@ func TestDocumentInput_Validate_Format(t *testing.T) {
 			//WHEN
 			err := doc.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -172,29 +172,29 @@ func TestDocumentInput_Validate_Format(t *testing.T) {
 
 func TestDocumentInput_Validate_Kind(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value *string
-		Valid bool
+		Name          string
+		Value         *string
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: str.Ptr("Valid"),
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         str.Ptr("ExpectedValid"),
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Valid nil pointer",
-			Value: nil,
-			Valid: true,
+			Name:          "ExpectedValid nil pointer",
+			Value:         nil,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Empty string",
-			Value: str.Ptr(inputvalidationtest.EmptyString),
-			Valid: true,
+			Name:          "Empty string",
+			Value:         str.Ptr(inputvalidationtest.EmptyString),
+			ExpectedValid: true,
 		},
 		{
-			Name:  "String longer than 256 chars",
-			Value: str.Ptr(inputvalidationtest.String257Long),
-			Valid: false,
+			Name:          "String longer than 256 chars",
+			Value:         str.Ptr(inputvalidationtest.String257Long),
+			ExpectedValid: false,
 		},
 	}
 
@@ -206,7 +206,7 @@ func TestDocumentInput_Validate_Kind(t *testing.T) {
 			//WHEN
 			err := doc.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -217,30 +217,30 @@ func TestDocumentInput_Validate_Kind(t *testing.T) {
 
 func TestDocumentInput_Validate_Data(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value *graphql.CLOB
-		Valid bool
+		Name          string
+		Value         *graphql.CLOB
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: fixCLOB("Valid"),
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         fixCLOB("ExpectedValid"),
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Valid nil pointer",
-			Value: nil,
-			Valid: true,
+			Name:          "ExpectedValid nil pointer",
+			Value:         nil,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "String longer than 256 chars",
-			Value: fixCLOB(inputvalidationtest.String257Long),
-			Valid: true,
+			Name:          "String longer than 256 chars",
+			Value:         fixCLOB(inputvalidationtest.String257Long),
+			ExpectedValid: true,
 		},
 		{
 
-			Name:  "Empty string",
-			Value: fixCLOB(inputvalidationtest.EmptyString),
-			Valid: false,
+			Name:          "Empty string",
+			Value:         fixCLOB(inputvalidationtest.EmptyString),
+			ExpectedValid: false,
 		},
 	}
 
@@ -252,7 +252,7 @@ func TestDocumentInput_Validate_Data(t *testing.T) {
 			//WHEN
 			err := doc.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -262,26 +262,26 @@ func TestDocumentInput_Validate_Data(t *testing.T) {
 }
 
 func TestDocumentInput_Validate_FetchRequest(t *testing.T) {
-	valid := fixValidFetchRequestInput()
+	validObj := fixValidFetchRequestInput()
 	testCases := []struct {
-		Name  string
-		Value *graphql.FetchRequestInput
-		Valid bool
+		Name          string
+		Value         *graphql.FetchRequestInput
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: &valid,
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         &validObj,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Valid, nil value",
-			Value: nil,
-			Valid: true,
+			Name:          "ExpectedValid, nil value",
+			Value:         nil,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Invalid object",
-			Value: &graphql.FetchRequestInput{URL: "test-string"},
-			Valid: false,
+			Name:          "Invalid object",
+			Value:         &graphql.FetchRequestInput{URL: "test-string"},
+			ExpectedValid: false,
 		},
 	}
 
@@ -293,7 +293,7 @@ func TestDocumentInput_Validate_FetchRequest(t *testing.T) {
 			//WHEN
 			err := doc.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)

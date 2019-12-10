@@ -10,24 +10,24 @@ import (
 
 func TestWebhookInput_Validate_Type(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value graphql.ApplicationWebhookType
-		Valid bool
+		Name          string
+		Value         graphql.ApplicationWebhookType
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: graphql.ApplicationWebhookTypeConfigurationChanged,
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         graphql.ApplicationWebhookTypeConfigurationChanged,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Invalid - Empty",
-			Value: inputvalidationtest.EmptyString,
-			Valid: false,
+			Name:          "Invalid - Empty",
+			Value:         inputvalidationtest.EmptyString,
+			ExpectedValid: false,
 		},
 		{
-			Name:  "Invalid - Not enum",
-			Value: "invalid",
-			Valid: false,
+			Name:          "Invalid - Not enum",
+			Value:         "invalid",
+			ExpectedValid: false,
 		},
 	}
 
@@ -39,7 +39,7 @@ func TestWebhookInput_Validate_Type(t *testing.T) {
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -50,29 +50,29 @@ func TestWebhookInput_Validate_Type(t *testing.T) {
 
 func TestWebhookInput_Validate_URL(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value string
-		Valid bool
+		Name          string
+		Value         string
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: inputvalidationtest.ValidURL,
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         inputvalidationtest.ValidURL,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Invalid - Empty string",
-			Value: inputvalidationtest.EmptyString,
-			Valid: false,
+			Name:          "Invalid - Empty string",
+			Value:         inputvalidationtest.EmptyString,
+			ExpectedValid: false,
 		},
 		{
-			Name:  "Invalid - Invalid URL",
-			Value: inputvalidationtest.InvalidURL,
-			Valid: false,
+			Name:          "Invalid - Invalid URL",
+			Value:         inputvalidationtest.InvalidURL,
+			ExpectedValid: false,
 		},
 		{
-			Name:  "Invalid - Too long",
-			Value: inputvalidationtest.URL257Long,
-			Valid: false,
+			Name:          "Invalid - Too long",
+			Value:         inputvalidationtest.URL257Long,
+			ExpectedValid: false,
 		},
 	}
 
@@ -84,7 +84,7 @@ func TestWebhookInput_Validate_URL(t *testing.T) {
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -96,24 +96,24 @@ func TestWebhookInput_Validate_URL(t *testing.T) {
 func TestWebhookInput_Validate_Auth(t *testing.T) {
 	auth := fixValidAuthInput()
 	testCases := []struct {
-		Name  string
-		Value *graphql.AuthInput
-		Valid bool
+		Name          string
+		Value         *graphql.AuthInput
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: &auth,
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         &auth,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Valid - nil",
-			Value: nil,
-			Valid: true,
+			Name:          "ExpectedValid - nil",
+			Value:         nil,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Invalid - Nested validation error",
-			Value: &graphql.AuthInput{},
-			Valid: false,
+			Name:          "Invalid - Nested validation error",
+			Value:         &graphql.AuthInput{},
+			ExpectedValid: false,
 		},
 	}
 
@@ -125,7 +125,7 @@ func TestWebhookInput_Validate_Auth(t *testing.T) {
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)

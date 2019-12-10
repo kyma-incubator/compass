@@ -75,7 +75,7 @@ func TestCompassAuth(t *testing.T) {
 	t.Log("Add API Spec to Application")
 	apiInput := graphql.APIDefinitionInput{
 		Name:      "new-api-name",
-		TargetURL: "new-api-url",
+		TargetURL: "https://kyma-project.io",
 	}
 	addAPIWithinTenant(t, ctx, oauthGraphQLClient, tenant, apiInput, appByIntSys.ID)
 	t.Log("Try removing Integration System")
