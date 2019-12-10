@@ -49,17 +49,18 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			}
 
 			claims := Claims{}
-
-			token, err := jwt.ParseWithClaims(bearerToken, &claims, a.getKeyFunc())
+			_, err = jwt.ParseWithClaims(bearerToken, &claims, a.getKeyFunc())
 			if err != nil {
 				wrappedErr := errors.Wrap(err, "while parsing token")
 				log.Error(wrappedErr)
-				http.Error(w, wrappedErr.Error(), http.StatusUnauthorized)
-				return
-			}
 
-			if !token.Valid {
-				http.Error(w, "Invalid token", http.StatusUnauthorized)
+				vErr, ok := err.(*jwt.ValidationError)
+				if !ok || !isInvalidTenantError(vErr.Inner) {
+					http.Error(w, wrappedErr.Error(), http.StatusUnauthorized)
+					return
+				}
+
+				http.Error(w, fmt.Sprintf("forbidden: %s", err.Error()), http.StatusForbidden)
 				return
 			}
 

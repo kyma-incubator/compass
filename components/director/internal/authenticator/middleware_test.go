@@ -98,7 +98,27 @@ func TestAuthenticator_Handler(t *testing.T) {
 		//then
 		assert.Equal(t, "OK", rr.Body.String())
 		assert.Equal(t, http.StatusOK, rr.Code)
+	})
 
+	t.Run("Error - forbidden when tenant is empty", func(t *testing.T) {
+		//given
+		middleware := createMiddleware(t, true)
+		handler := testHandler(t, tnt, scopes)
+		rr := httptest.NewRecorder()
+
+		req, err := http.NewRequest("GET", "/", nil)
+		require.NoError(t, err)
+
+		token := createNotSingedToken(t, "", scopes)
+		require.NoError(t, err)
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+
+		//when
+		middleware(handler).ServeHTTP(rr, req)
+
+		//then
+		assert.Equal(t, "forbidden: Invalid tenant\n", rr.Body.String())
+		assert.Equal(t, http.StatusForbidden, rr.Code)
 	})
 
 	t.Run("Error - token with no signing method when it's not allowed", func(t *testing.T) {
