@@ -35,17 +35,17 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.Provis
 
 	err := validateInput(config)
 	if err != nil {
-		log.Errorf("Failed to provision runtime %s: %s", config.RuntimeConfig.Name, err)
+		log.Errorf("Failed to provision runtime %s: %s", config.RuntimeInput.Name, err)
 		return "", err
 	}
 
-	log.Infof("Requested provisioning of %s runtime.", config.RuntimeConfig.Name)
+	log.Infof("Requested provisioning of %s runtime.", config.RuntimeInput.Name)
 
 	operationID, _, err := r.provisioning.ProvisionRuntime(config)
 	if err != nil {
-		log.Errorf("Failed to provision runtime %s: %s", config.RuntimeConfig.Name, err)
+		log.Errorf("Failed to provision runtime %s: %s", config.RuntimeInput.Name, err)
 	}
-	log.Infof("Provisioning stared for %s runtime. Operation id %s", config.RuntimeConfig.Name, operationID)
+	log.Infof("Provisioning stared for %s runtime. Operation id %s", config.RuntimeInput.Name, operationID)
 
 	return operationID, err
 }

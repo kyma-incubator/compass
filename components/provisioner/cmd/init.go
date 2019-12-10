@@ -2,11 +2,10 @@ package main
 
 import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/clients"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/graphql"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/client"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/director/gqlclient"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/configuration"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
@@ -40,13 +39,21 @@ func newProvisioningService(persistenceService persistence.Service, secrets v1.S
 	hydroformClient := client.NewHydroformClient()
 	hydroformService := hydroform.NewHydroformService(hydroformClient)
 
-	directorClient := client.NewDirectorClient()
-	//clientsProvider := NewClientsProvider(graphql.New, options.InsecureConnectorCommunication, options.InsecureConfigurationFetch, options.QueryLogging)
+	// all this data from configuration oAuth ???
+	insecureConnectionCommunication := false
+	insecureConfigFetch := false
+	enableLogging := true
+	url := "test.url"
+	runtimeConfig := "runtime_config"
+
+	provider := clients.NewGQLClientsProvider(graphql.New, insecureConnectionCommunication, insecureConfigFetch, enableLogging)
+
+	directorClient, _ := provider.GetDirectorClient(nil, url, runtimeConfig)
 
 	uuidGenerator := persistence.NewUUIDGenerator()
 	factory := configuration.NewConfigBuilderFactory(secrets)
 
-	return provisioning.NewProvisioningService(persistenceService, uuidGenerator, hydroformService, factory)
+	return provisioning.NewProvisioningService(persistenceService, uuidGenerator, hydroformService, directorClient, factory)
 }
 
 func newSecretsInterface(namespace string) (v1.SecretInterface, error) {

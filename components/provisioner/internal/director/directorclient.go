@@ -1,17 +1,17 @@
 package director
 
 import (
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	gcli "github.com/machinebox/graphql"
 	gql "github.com/kyma-incubator/compass/components/provisioner/internal/graphql"
 	"github.com/pkg/errors"
 )
 
 //go:generate mockery -name=DirectorClient
-type DirectorClient interface {
-	CreateRuntime() error
+type Service interface {
+	CreateRuntime(config *gqlschema.RuntimeInput) (string, error)
 	DeleteRuntime() error
 	UpdateRuntime() error
-	QueryRuntime() error
 }
 
 type directorClient struct {
@@ -20,49 +20,42 @@ type directorClient struct {
 	runtimeConfig string
 }
 
-func NewConfigurationClient(gqlClient gql.Client, runtimeConfig string) DirectorClient {
+func NewDirectorClient(gqlClient gql.Client) Service {
 	return &directorClient{
 		gqlClient:     gqlClient,
 		queryProvider: queryProvider{},
-		runtimeConfig: runtimeConfig,
 	}
 }
 
-func (cc *directorClient) CreateRuntime() (error) {
-	return nil
+func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput) (string, error) {
 
-	response := ApplicationsForRuntimeResponse{}
+	if config == nil {
+		return "", errors.New("Cannot register register runtime in Director: missing Runtime config")
+	}
 
-	applicationsQuery := "my first graphql query"//cc.queryProvider.applicationsForRuntimeQuery(cc.runtimeConfig.RuntimeId)
+	response := CreateRuntimeResponse{}
+
+	applicationsQuery := cc.queryProvider.createRuntimeMutation()
 	req := gcli.NewRequest(applicationsQuery)
-	//req.Header.Set(TenantHeader, cc.runtimeConfig.Tenant)
+	//req.Header.Set(TenantHeader, cc.runtimeConfig.Tenant) ???
 
 	err := cc.gqlClient.Do(req, &response)
 	if err != nil {
-		return errors.Wrap(err, "Failed to register runtime in Director")
+		return "", errors.Wrap(err, "Failed to register runtime in Director")
 	}
 
 	// Nil check is necessary due to GraphQL client not checking response code
 	if response.Result == nil {
-		return errors.Errorf("Failed fetch Applications for Runtime from Director: received nil response.")
+		return "", errors.Errorf("Failed to register runtime in Director: received nil response.")
 	}
 
-	// TODO: After implementation of paging modify the fetching logic
-	/*applications := make([]kymamodel.Application, len(response.Result.Data))
-	for i, app := range response.Result.Data {
-		applications[i] = app.ToApplication()
-	}*/
-
-	return nil
+	return "", nil
 }
 
 func (cc *directorClient) DeleteRuntime() error {
 	return nil
 }
 
-func (cc *directorClient) QueryRuntime() error {
-	return nil
-}
 
 func (cc *directorClient) UpdateRuntime() error {
 	return nil

@@ -16,10 +16,6 @@ type ProviderSpecificConfig interface {
 	IsProviderSpecificConfig()
 }
 
-type Aaaa struct {
-	Test *RuntimeInput `json:"test"`
-}
-
 type AWSProviderConfig struct {
 	Zone         *string `json:"zone"`
 	VpcCidr      *string `json:"vpcCidr"`
@@ -160,7 +156,7 @@ type ProviderSpecificInput struct {
 }
 
 type ProvisionRuntimeInput struct {
-	RuntimeConfig *RuntimeInput       `json:"runtimeConfig"`
+	RuntimeInput  *RuntimeInput       `json:"runtimeInput"`
 	ClusterConfig *ClusterConfigInput `json:"clusterConfig"`
 	Credentials   *CredentialsInput   `json:"credentials"`
 	KymaConfig    *KymaConfigInput    `json:"kymaConfig"`

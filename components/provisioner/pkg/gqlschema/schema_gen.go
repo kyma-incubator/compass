@@ -100,7 +100,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		CleanupRuntimeData    func(childComplexity int, id string) int
 		DeprovisionRuntime    func(childComplexity int, id string) int
-		ProvisionRuntime      func(childComplexity int, id string, config ProvisionRuntimeInput) int
+		ProvisionRuntime      func(childComplexity int, config ProvisionRuntimeInput) int
 		ReconnectRuntimeAgent func(childComplexity int, id string) int
 		UpgradeRuntime        func(childComplexity int, id string, config UpgradeRuntimeInput) int
 	}
@@ -138,7 +138,7 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	ProvisionRuntime(ctx context.Context, id string, config ProvisionRuntimeInput) (string, error)
+	ProvisionRuntime(ctx context.Context, config ProvisionRuntimeInput) (string, error)
 	UpgradeRuntime(ctx context.Context, id string, config UpgradeRuntimeInput) (string, error)
 	DeprovisionRuntime(ctx context.Context, id string) (string, error)
 	CleanupRuntimeData(ctx context.Context, id string) (string, error)
@@ -436,7 +436,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.ProvisionRuntime(childComplexity, args["id"].(string), args["config"].(ProvisionRuntimeInput)), true
+		return e.complexity.Mutation.ProvisionRuntime(childComplexity, args["config"].(ProvisionRuntimeInput)), true
 
 	case "Mutation.reconnectRuntimeAgent":
 		if e.complexity.Mutation.ReconnectRuntimeAgent == nil {
@@ -658,13 +658,6 @@ enum KymaModule {
     KnativeBuild
 }
 
-scalar Labels
-
-input AAAA {
-    test: RuntimeInput
-}
-
-
 # Configuration of Runtime. We can consider returning kubeconfig as a part of this type.
 type RuntimeConfig {
     clusterConfig: ClusterConfig
@@ -774,14 +767,16 @@ enum RuntimeAgentConnectionStatus {
 
 # Inputs
 
-input RuntimeInput {
+scalar Labels
+
+input RuntimeInput { # Configuration of the Runtime to register in Director
     name: String!
     description: String
     labels: Labels
 }
 
 input ProvisionRuntimeInput {
-    runtimeConfig: RuntimeInput!
+    runtimeInput: RuntimeInput!
     clusterConfig: ClusterConfigInput!  # Configuration of the cluster to provision
     credentials: CredentialsInput!      # Credentials
     kymaConfig: KymaConfigInput!        # Configuration of Kyma to be installed on the provisioned cluster
@@ -864,7 +859,7 @@ input UpgradeClusterInput {
 
 type Mutation {
     # Runtime Management; only one asynchronous operation per RuntimeID can run at any given point in time
-    provisionRuntime(id: String!, config: ProvisionRuntimeInput!): String!
+    provisionRuntime(config: ProvisionRuntimeInput!): String!
     upgradeRuntime(id: String!, config: UpgradeRuntimeInput!): String!
     deprovisionRuntime(id: String!): String!
     cleanupRuntimeData(id: String!): String!
@@ -917,22 +912,14 @@ func (ec *executionContext) field_Mutation_deprovisionRuntime_args(ctx context.C
 func (ec *executionContext) field_Mutation_provisionRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	var arg1 ProvisionRuntimeInput
+	var arg0 ProvisionRuntimeInput
 	if tmp, ok := rawArgs["config"]; ok {
-		arg1, err = ec.unmarshalNProvisionRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProvisionRuntimeInput(ctx, tmp)
+		arg0, err = ec.unmarshalNProvisionRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProvisionRuntimeInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["config"] = arg1
+	args["config"] = arg0
 	return args, nil
 }
 
@@ -2232,7 +2219,7 @@ func (ec *executionContext) _Mutation_provisionRuntime(ctx context.Context, fiel
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().ProvisionRuntime(rctx, args["id"].(string), args["config"].(ProvisionRuntimeInput))
+		return ec.resolvers.Mutation().ProvisionRuntime(rctx, args["config"].(ProvisionRuntimeInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4219,24 +4206,6 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputAAAA(ctx context.Context, obj interface{}) (Aaaa, error) {
-	var it Aaaa
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "test":
-			var err error
-			it.Test, err = ec.unmarshalORuntimeInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputAWSProviderConfigInput(ctx context.Context, obj interface{}) (AWSProviderConfigInput, error) {
 	var it AWSProviderConfigInput
 	var asMap = obj.(map[string]interface{})
@@ -4585,9 +4554,9 @@ func (ec *executionContext) unmarshalInputProvisionRuntimeInput(ctx context.Cont
 
 	for k, v := range asMap {
 		switch k {
-		case "runtimeConfig":
+		case "runtimeInput":
 			var err error
-			it.RuntimeConfig, err = ec.unmarshalNRuntimeInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeInput(ctx, v)
+			it.RuntimeInput, err = ec.unmarshalNRuntimeInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6189,18 +6158,6 @@ func (ec *executionContext) marshalORuntimeConnectionStatus2ᚖgithubᚗcomᚋky
 		return graphql.Null
 	}
 	return ec._RuntimeConnectionStatus(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalORuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeInput(ctx context.Context, v interface{}) (RuntimeInput, error) {
-	return ec.unmarshalInputRuntimeInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalORuntimeInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeInput(ctx context.Context, v interface{}) (*RuntimeInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalORuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeInput(ctx, v)
-	return &res, err
 }
 
 func (ec *executionContext) marshalORuntimeStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeStatus(ctx context.Context, sel ast.SelectionSet, v RuntimeStatus) graphql.Marshaler {

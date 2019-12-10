@@ -8,11 +8,11 @@ import (
 )
 
 //go:generate mockery -name=ClientsProvider
-type ClientsProvider interface {
-	GetDirectorClient(certificate *tls.Certificate, url string, runtimeConfig string) (director.DirectorClient, error)
+type GQLClientsProvider interface {
+	GetDirectorClient(certificate *tls.Certificate, url string, runtimeConfig string) (director.Service, error)
 }
 
-func NewClientsProvider(gqlClientConstr graphql.ClientConstructor, insecureConnectorCommunication, insecureConfigFetch, enableLogging bool) ClientsProvider {
+func NewGQLClientsProvider(gqlClientConstr graphql.ClientConstructor, insecureConnectorCommunication bool, insecureConfigFetch bool, enableLogging bool) GQLClientsProvider {
 	return &clientsProvider{
 		gqlClientConstructor:            gqlClientConstr,
 		insecureConnectionCommunication: insecureConnectorCommunication,
@@ -28,11 +28,11 @@ type clientsProvider struct {
 	enableLogging                   bool
 }
 
-func (cp *clientsProvider) GetDirectorClient(certificate *tls.Certificate, url string, runtimeConfig string) (director.DirectorClient, error) {
+func (cp *clientsProvider) GetDirectorClient(certificate *tls.Certificate, url string, runtimeConfig string) (director.Service, error) {
 	gqlClient, err := cp.gqlClientConstructor(certificate, url, cp.enableLogging, cp.insecureConfigFetch)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to create GraphQL client")
 	}
 
-	return director.NewConfigurationClient(gqlClient, runtimeConfig), nil
+	return director.NewDirectorClient(gqlClient), nil
 }

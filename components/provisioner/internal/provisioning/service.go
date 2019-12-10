@@ -45,10 +45,11 @@ type service struct {
 }
 
 func NewProvisioningService(persistenceService persistence.Service, uuidGenerator persistence.UUIDGenerator,
-	hydroform hydroform.Service, configBuilderFactory configuration.BuilderFactory) Service {
+	hydroform hydroform.Service, directorService director.Service, configBuilderFactory configuration.BuilderFactory) Service {
 	return &service{
 		persistenceService:   persistenceService,
 		hydroform:            hydroform,
+		directorService:	  directorService,
 		configBuilderFactory: configBuilderFactory,
 		uuidGenerator:        uuidGenerator,
 	}
@@ -56,18 +57,25 @@ func NewProvisioningService(persistenceService persistence.Service, uuidGenerato
 
 func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (string, <-chan struct{}, error) {
 
-	err := r.checkProvisioningRuntimeConditions(config.RuntimeConfig)
+	runtimeInput := config.RuntimeInput
+
+	runtimeID, err := r.directorService.CreateRuntime(runtimeInput)
 	if err != nil {
 		return "", nil, err
 	}
 
-	runtimeConfig, err := runtimeConfigFromInput(id, config, r.uuidGenerator)
+	err = r.checkProvisioningRuntimeConditions(runtimeID)
+	if err != nil {
+		return "", nil, err
+	}
+
+	runtimeConfig, err := runtimeConfigFromInput(runtimeID, config, r.uuidGenerator)
 
 	if err != nil {
 		return "", nil, err
 	}
 
-	operation, err := r.persistenceService.SetProvisioningStarted(id, runtimeConfig)
+	operation, err := r.persistenceService.SetProvisioningStarted(runtimeID, runtimeConfig)
 
 	if err != nil {
 		return "", nil, err
@@ -77,7 +85,7 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (stri
 
 	builder := r.configBuilderFactory.NewProvisioningBuilder(config)
 
-	go r.startProvisioning(operation.ID, id, builder, finished)
+	go r.startProvisioning(operation.ID, runtimeID, builder, finished)
 
 	return operation.ID, finished, err
 }
