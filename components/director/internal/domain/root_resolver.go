@@ -91,7 +91,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 	apiRtmAuthSvc := apiruntimeauth.NewService(apiRtmAuthRepo, uidSvc)
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc)
-	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo, runtimeRepo, labelRepo, fetchRequestRepo, labelUpsertSvc, scenariosSvc, uidSvc)
+	appSvc := application.NewService(applicationRepo, webhookRepo, apiRepo, eventAPIRepo, docRepo, runtimeRepo, labelRepo, fetchRequestRepo, intSysRepo, labelUpsertSvc, scenariosSvc, uidSvc)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidSvc)
 	eventAPISvc := eventapi.NewService(eventAPIRepo, fetchRequestRepo, uidSvc)
@@ -107,7 +107,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 
 	return &RootResolver{
 		app:         application.NewResolver(transact, appSvc, apiSvc, eventAPISvc, docSvc, webhookSvc, systemAuthSvc, oAuth20Svc, appConverter, docConverter, webhookConverter, apiConverter, eventAPIConverter, systemAuthConverter, eventCfg.DefaultEventURL),
-		appTemplate: apptemplate.NewResolver(transact, appTemplateSvc, appTemplateConverter),
+		appTemplate: apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter),
 		api:         api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, apiRtmAuthSvc, apiConverter, authConverter, frConverter, apiRtmAuthConverter),
 		eventAPI:    eventapi.NewResolver(transact, eventAPISvc, appSvc, eventAPIConverter, frConverter),
 		doc:         document.NewResolver(transact, docSvc, appSvc, frConverter),
@@ -207,6 +207,9 @@ func (r *mutationResolver) DeleteApplication(ctx context.Context, id string) (*g
 }
 func (r *mutationResolver) CreateApplicationTemplate(ctx context.Context, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
 	return r.appTemplate.CreateApplicationTemplate(ctx, in)
+}
+func (r *mutationResolver) RegisterApplicationFromTemplate(ctx context.Context, in graphql.ApplicationFromTemplateInput) (*graphql.Application, error) {
+	return r.appTemplate.RegisterApplicationFromTemplate(ctx, in)
 }
 func (r *mutationResolver) UpdateApplicationTemplate(ctx context.Context, id string, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
 	return r.appTemplate.UpdateApplicationTemplate(ctx, id, in)

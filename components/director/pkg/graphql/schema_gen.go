@@ -279,6 +279,7 @@ type ComplexityRoot struct {
 		GenerateOneTimeTokenForRuntime                func(childComplexity int, id string) int
 		RefetchAPISpec                                func(childComplexity int, apiID string) int
 		RefetchEventAPISpec                           func(childComplexity int, eventID string) int
+		RegisterApplicationFromTemplate               func(childComplexity int, in ApplicationFromTemplateInput) int
 		SetAPIAuth                                    func(childComplexity int, apiID string, runtimeID string, in AuthInput) int
 		SetApplicationLabel                           func(childComplexity int, applicationID string, key string, value interface{}) int
 		SetRuntimeLabel                               func(childComplexity int, runtimeID string, key string, value interface{}) int
@@ -404,6 +405,7 @@ type MutationResolver interface {
 	UpdateApplication(ctx context.Context, id string, in ApplicationUpdateInput) (*Application, error)
 	DeleteApplication(ctx context.Context, id string) (*Application, error)
 	CreateApplicationTemplate(ctx context.Context, in ApplicationTemplateInput) (*ApplicationTemplate, error)
+	RegisterApplicationFromTemplate(ctx context.Context, in ApplicationFromTemplateInput) (*Application, error)
 	UpdateApplicationTemplate(ctx context.Context, id string, in ApplicationTemplateInput) (*ApplicationTemplate, error)
 	DeleteApplicationTemplate(ctx context.Context, id string) (*ApplicationTemplate, error)
 	CreateRuntime(ctx context.Context, in RuntimeInput) (*Runtime, error)
@@ -1676,6 +1678,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.RefetchEventAPISpec(childComplexity, args["eventID"].(string)), true
 
+	case "Mutation.registerApplicationFromTemplate":
+		if e.complexity.Mutation.RegisterApplicationFromTemplate == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_registerApplicationFromTemplate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RegisterApplicationFromTemplate(childComplexity, args["in"].(ApplicationFromTemplateInput)), true
+
 	case "Mutation.setAPIAuth":
 		if e.complexity.Mutation.SetAPIAuth == nil {
 			break
@@ -2367,6 +2381,11 @@ input ApplicationCreateInput {
 	integrationSystemID: ID
 }
 
+input ApplicationFromTemplateInput {
+	templateName: String!
+	values: [TemplateValueInput!]
+}
+
 input ApplicationTemplateInput {
 	name: String!
 	description: String
@@ -2462,6 +2481,11 @@ input LabelFilter {
 	Currently only a limited subset of expressions is supported.
 	"""
 	query: String
+}
+
+input LabelInput {
+	key: String!
+	value: Any!
 }
 
 input OAuthCredentialDataInput {
@@ -2825,8 +2849,15 @@ type Query {
 	applicationsForRuntime(runtimeID: ID!, first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applicationsForRuntime")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
+	
+	**Examples**
+	- [query application templates](examples/query-application-templates/query-application-templates.graphql)
 	"""
 	applicationTemplates(first: Int = 100, after: PageCursor): ApplicationTemplatePage! @hasScopes(path: "graphql.query.applicationTemplates")
+	"""
+	**Examples**
+	- [query application template](examples/query-application-template/query-application-template.graphql)
+	"""
 	applicationTemplate(id: ID!): ApplicationTemplate @hasScopes(path: "graphql.query.applicationTemplate")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
@@ -2872,30 +2903,47 @@ type Mutation {
 	- [create application with webhooks](examples/create-application/create-application-with-webhooks.graphql)
 	- [create application](examples/create-application/create-application.graphql)
 	"""
-	createApplication(in: ApplicationCreateInput!): Application! @hasScopes(path: "graphql.mutation.createApplication")
+	createApplication(in: ApplicationCreateInput! @validate): Application! @hasScopes(path: "graphql.mutation.createApplication")
 	"""
 	**Examples**
 	- [update application](examples/update-application/update-application.graphql)
 	"""
-	updateApplication(id: ID!, in: ApplicationUpdateInput!): Application! @hasScopes(path: "graphql.mutation.updateApplication")
+	updateApplication(id: ID!, in: ApplicationUpdateInput! @validate): Application! @hasScopes(path: "graphql.mutation.updateApplication")
 	"""
 	**Examples**
 	- [delete application](examples/delete-application/delete-application.graphql)
 	"""
 	deleteApplication(id: ID!): Application! @hasScopes(path: "graphql.mutation.deleteApplication")
-	createApplicationTemplate(in: ApplicationTemplateInput!): ApplicationTemplate! @hasScopes(path: "graphql.mutation.createApplicationTemplate")
-	updateApplicationTemplate(id: ID!, in: ApplicationTemplateInput!): ApplicationTemplate! @hasScopes(path: "graphql.mutation.updateApplicationTemplate")
+	"""
+	**Examples**
+	- [create application template](examples/create-application-template/create-application-template.graphql)
+	"""
+	createApplicationTemplate(in: ApplicationTemplateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.createApplicationTemplate")
+	"""
+	**Examples**
+	- [register application from template](examples/register-application-from-template/register-application-from-template.graphql)
+	"""
+	registerApplicationFromTemplate(in: ApplicationFromTemplateInput! @validate): Application! @hasScopes(path: "graphql.mutation.registerApplicationFromTemplate")
+	"""
+	**Examples**
+	- [update application template](examples/update-application-template/update-application-template.graphql)
+	"""
+	updateApplicationTemplate(id: ID!, in: ApplicationTemplateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.updateApplicationTemplate")
+	"""
+	**Examples**
+	- [delete application template](examples/delete-application-template/delete-application-template.graphql)
+	"""
 	deleteApplicationTemplate(id: ID!): ApplicationTemplate! @hasScopes(path: "graphql.mutation.deleteApplicationTemplate")
 	"""
 	**Examples**
 	- [create runtime](examples/create-runtime/create-runtime.graphql)
 	"""
-	createRuntime(in: RuntimeInput!): Runtime! @hasScopes(path: "graphql.mutation.createRuntime")
+	createRuntime(in: RuntimeInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.createRuntime")
 	"""
 	**Examples**
 	- [update runtime](examples/update-runtime/update-runtime.graphql)
 	"""
-	updateRuntime(id: ID!, in: RuntimeInput!): Runtime! @hasScopes(path: "graphql.mutation.updateRuntime")
+	updateRuntime(id: ID!, in: RuntimeInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.updateRuntime")
 	"""
 	**Examples**
 	- [delete runtime](examples/delete-runtime/delete-runtime.graphql)
@@ -2905,12 +2953,12 @@ type Mutation {
 	**Examples**
 	- [create integration system](examples/create-integration-system/create-integration-system.graphql)
 	"""
-	createIntegrationSystem(in: IntegrationSystemInput!): IntegrationSystem! @hasScopes(path: "graphql.mutation.createIntegrationSystem")
+	createIntegrationSystem(in: IntegrationSystemInput! @validate): IntegrationSystem! @hasScopes(path: "graphql.mutation.createIntegrationSystem")
 	"""
 	**Examples**
 	- [update integration system](examples/update-integration-system/update-integration-system.graphql)
 	"""
-	updateIntegrationSystem(id: ID!, in: IntegrationSystemInput!): IntegrationSystem! @hasScopes(path: "graphql.mutation.updateIntegrationSystem")
+	updateIntegrationSystem(id: ID!, in: IntegrationSystemInput! @validate): IntegrationSystem! @hasScopes(path: "graphql.mutation.updateIntegrationSystem")
 	"""
 	**Examples**
 	- [delete integration system](examples/delete-integration-system/delete-integration-system.graphql)
@@ -2920,12 +2968,12 @@ type Mutation {
 	**Examples**
 	- [add application webhook](examples/add-webhook/add-application-webhook.graphql)
 	"""
-	addWebhook(applicationID: ID!, in: WebhookInput!): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
+	addWebhook(applicationID: ID!, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
 	"""
 	**Examples**
 	- [update application webhook](examples/update-webhook/update-application-webhook.graphql)
 	"""
-	updateWebhook(webhookID: ID!, in: WebhookInput!): Webhook! @hasScopes(path: "graphql.mutation.updateWebhook")
+	updateWebhook(webhookID: ID!, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.updateWebhook")
 	"""
 	**Examples**
 	- [delete application webhook](examples/delete-webhook/delete-application-webhook.graphql)
@@ -2935,12 +2983,12 @@ type Mutation {
 	**Examples**
 	- [add api](examples/add-api/add-api.graphql)
 	"""
-	addAPI(applicationID: ID!, in: APIDefinitionInput!): APIDefinition! @hasScopes(path: "graphql.mutation.addAPI")
+	addAPI(applicationID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPI")
 	"""
 	**Examples**
 	- [update api](examples/update-api/update-api.graphql)
 	"""
-	updateAPI(id: ID!, in: APIDefinitionInput!): APIDefinition! @hasScopes(path: "graphql.mutation.updateAPI")
+	updateAPI(id: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.updateAPI")
 	"""
 	**Examples**
 	- [delete api](examples/delete-api/delete-api.graphql)
@@ -2958,17 +3006,17 @@ type Mutation {
 	"""
 	Sets Auth for given Application and Runtime. To set default Auth for API, use updateAPI mutation
 	"""
-	setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput!): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.setAPIAuth")
+	setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput! @validate): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.setAPIAuth")
 	deleteAPIAuth(apiID: ID!, runtimeID: ID!): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.deleteAPIAuth")
-	addEventAPI(applicationID: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition! @hasScopes(path: "graphql.mutation.addEventAPI")
-	updateEventAPI(id: ID!, in: EventAPIDefinitionInput!): EventAPIDefinition! @hasScopes(path: "graphql.mutation.updateEventAPI")
+	addEventAPI(applicationID: ID!, in: EventAPIDefinitionInput! @validate): EventAPIDefinition! @hasScopes(path: "graphql.mutation.addEventAPI")
+	updateEventAPI(id: ID!, in: EventAPIDefinitionInput! @validate): EventAPIDefinition! @hasScopes(path: "graphql.mutation.updateEventAPI")
 	deleteEventAPI(id: ID!): EventAPIDefinition! @hasScopes(path: "graphql.mutation.deleteEventAPI")
 	refetchEventAPISpec(eventID: ID!): EventAPISpec! @hasScopes(path: "graphql.mutation.refetchEventAPISpec")
 	"""
 	**Examples**
 	- [add document](examples/add-document/add-document.graphql)
 	"""
-	addDocument(applicationID: ID!, in: DocumentInput!): Document! @hasScopes(path: "graphql.mutation.addDocument")
+	addDocument(applicationID: ID!, in: DocumentInput! @validate): Document! @hasScopes(path: "graphql.mutation.addDocument")
 	"""
 	**Examples**
 	- [delete document](examples/delete-document/delete-document.graphql)
@@ -2978,12 +3026,12 @@ type Mutation {
 	**Examples**
 	- [create label definition](examples/create-label-definition/create-label-definition.graphql)
 	"""
-	createLabelDefinition(in: LabelDefinitionInput!): LabelDefinition! @hasScopes(path: "graphql.mutation.createLabelDefinition")
+	createLabelDefinition(in: LabelDefinitionInput! @validate): LabelDefinition! @hasScopes(path: "graphql.mutation.createLabelDefinition")
 	"""
 	**Examples**
 	- [update label definition](examples/update-label-definition/update-label-definition.graphql)
 	"""
-	updateLabelDefinition(in: LabelDefinitionInput!): LabelDefinition! @hasScopes(path: "graphql.mutation.updateLabelDefinition")
+	updateLabelDefinition(in: LabelDefinitionInput! @validate): LabelDefinition! @hasScopes(path: "graphql.mutation.updateLabelDefinition")
 	"""
 	**Examples**
 	- [delete label definition](examples/delete-label-definition/delete-label-definition.graphql)
@@ -3185,9 +3233,21 @@ func (ec *executionContext) field_Mutation_addAPI_args(ctx context.Context, rawA
 	args["applicationID"] = arg0
 	var arg1 APIDefinitionInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg1, err = ec.unmarshalNAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(APIDefinitionInput); ok {
+			arg1 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.APIDefinitionInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -3207,9 +3267,21 @@ func (ec *executionContext) field_Mutation_addDocument_args(ctx context.Context,
 	args["applicationID"] = arg0
 	var arg1 DocumentInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg1, err = ec.unmarshalNDocumentInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocumentInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNDocumentInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocumentInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(DocumentInput); ok {
+			arg1 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.DocumentInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -3229,9 +3301,21 @@ func (ec *executionContext) field_Mutation_addEventAPI_args(ctx context.Context,
 	args["applicationID"] = arg0
 	var arg1 EventAPIDefinitionInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg1, err = ec.unmarshalNEventAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinitionInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNEventAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinitionInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(EventAPIDefinitionInput); ok {
+			arg1 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.EventAPIDefinitionInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -3251,9 +3335,21 @@ func (ec *executionContext) field_Mutation_addWebhook_args(ctx context.Context, 
 	args["applicationID"] = arg0
 	var arg1 WebhookInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg1, err = ec.unmarshalNWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(WebhookInput); ok {
+			arg1 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.WebhookInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -3265,9 +3361,21 @@ func (ec *executionContext) field_Mutation_createApplicationTemplate_args(ctx co
 	args := map[string]interface{}{}
 	var arg0 ApplicationTemplateInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg0, err = ec.unmarshalNApplicationTemplateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplateInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNApplicationTemplateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplateInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(ApplicationTemplateInput); ok {
+			arg0 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.ApplicationTemplateInput`, tmp)
 		}
 	}
 	args["in"] = arg0
@@ -3279,9 +3387,21 @@ func (ec *executionContext) field_Mutation_createApplication_args(ctx context.Co
 	args := map[string]interface{}{}
 	var arg0 ApplicationCreateInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg0, err = ec.unmarshalNApplicationCreateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationCreateInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNApplicationCreateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationCreateInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(ApplicationCreateInput); ok {
+			arg0 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.ApplicationCreateInput`, tmp)
 		}
 	}
 	args["in"] = arg0
@@ -3293,9 +3413,21 @@ func (ec *executionContext) field_Mutation_createIntegrationSystem_args(ctx cont
 	args := map[string]interface{}{}
 	var arg0 IntegrationSystemInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg0, err = ec.unmarshalNIntegrationSystemInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystemInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNIntegrationSystemInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystemInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(IntegrationSystemInput); ok {
+			arg0 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.IntegrationSystemInput`, tmp)
 		}
 	}
 	args["in"] = arg0
@@ -3307,9 +3439,21 @@ func (ec *executionContext) field_Mutation_createLabelDefinition_args(ctx contex
 	args := map[string]interface{}{}
 	var arg0 LabelDefinitionInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg0, err = ec.unmarshalNLabelDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelDefinitionInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNLabelDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelDefinitionInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(LabelDefinitionInput); ok {
+			arg0 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.LabelDefinitionInput`, tmp)
 		}
 	}
 	args["in"] = arg0
@@ -3321,9 +3465,21 @@ func (ec *executionContext) field_Mutation_createRuntime_args(ctx context.Contex
 	args := map[string]interface{}{}
 	var arg0 RuntimeInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg0, err = ec.unmarshalNRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(RuntimeInput); ok {
+			arg0 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.RuntimeInput`, tmp)
 		}
 	}
 	args["in"] = arg0
@@ -3670,6 +3826,32 @@ func (ec *executionContext) field_Mutation_refetchEventAPISpec_args(ctx context.
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_registerApplicationFromTemplate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 ApplicationFromTemplateInput
+	if tmp, ok := rawArgs["in"]; ok {
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNApplicationFromTemplateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationFromTemplateInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if data, ok := tmp.(ApplicationFromTemplateInput); ok {
+			arg0 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.ApplicationFromTemplateInput`, tmp)
+		}
+	}
+	args["in"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_setAPIAuth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -3691,9 +3873,21 @@ func (ec *executionContext) field_Mutation_setAPIAuth_args(ctx context.Context, 
 	args["runtimeID"] = arg1
 	var arg2 AuthInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg2, err = ec.unmarshalNAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(AuthInput); ok {
+			arg2 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.AuthInput`, tmp)
 		}
 	}
 	args["in"] = arg2
@@ -3773,9 +3967,21 @@ func (ec *executionContext) field_Mutation_updateAPI_args(ctx context.Context, r
 	args["id"] = arg0
 	var arg1 APIDefinitionInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg1, err = ec.unmarshalNAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(APIDefinitionInput); ok {
+			arg1 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.APIDefinitionInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -3795,9 +4001,21 @@ func (ec *executionContext) field_Mutation_updateApplicationTemplate_args(ctx co
 	args["id"] = arg0
 	var arg1 ApplicationTemplateInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg1, err = ec.unmarshalNApplicationTemplateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplateInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNApplicationTemplateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplateInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(ApplicationTemplateInput); ok {
+			arg1 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.ApplicationTemplateInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -3817,9 +4035,21 @@ func (ec *executionContext) field_Mutation_updateApplication_args(ctx context.Co
 	args["id"] = arg0
 	var arg1 ApplicationUpdateInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg1, err = ec.unmarshalNApplicationUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationUpdateInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNApplicationUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationUpdateInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(ApplicationUpdateInput); ok {
+			arg1 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.ApplicationUpdateInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -3839,9 +4069,21 @@ func (ec *executionContext) field_Mutation_updateEventAPI_args(ctx context.Conte
 	args["id"] = arg0
 	var arg1 EventAPIDefinitionInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg1, err = ec.unmarshalNEventAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinitionInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNEventAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinitionInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(EventAPIDefinitionInput); ok {
+			arg1 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.EventAPIDefinitionInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -3861,9 +4103,21 @@ func (ec *executionContext) field_Mutation_updateIntegrationSystem_args(ctx cont
 	args["id"] = arg0
 	var arg1 IntegrationSystemInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg1, err = ec.unmarshalNIntegrationSystemInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystemInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNIntegrationSystemInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystemInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(IntegrationSystemInput); ok {
+			arg1 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.IntegrationSystemInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -3875,9 +4129,21 @@ func (ec *executionContext) field_Mutation_updateLabelDefinition_args(ctx contex
 	args := map[string]interface{}{}
 	var arg0 LabelDefinitionInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg0, err = ec.unmarshalNLabelDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelDefinitionInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNLabelDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelDefinitionInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(LabelDefinitionInput); ok {
+			arg0 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.LabelDefinitionInput`, tmp)
 		}
 	}
 	args["in"] = arg0
@@ -3897,9 +4163,21 @@ func (ec *executionContext) field_Mutation_updateRuntime_args(ctx context.Contex
 	args["id"] = arg0
 	var arg1 RuntimeInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg1, err = ec.unmarshalNRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(RuntimeInput); ok {
+			arg1 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.RuntimeInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -3919,9 +4197,21 @@ func (ec *executionContext) field_Mutation_updateWebhook_args(ctx context.Contex
 	args["webhookID"] = arg0
 	var arg1 WebhookInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg1, err = ec.unmarshalNWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(WebhookInput); ok {
+			arg1 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.WebhookInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -8613,6 +8903,70 @@ func (ec *executionContext) _Mutation_createApplicationTemplate(ctx context.Cont
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNApplicationTemplate2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplate(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_registerApplicationFromTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_registerApplicationFromTemplate_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().RegisterApplicationFromTemplate(rctx, args["in"].(ApplicationFromTemplateInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.registerApplicationFromTemplate")
+			if err != nil {
+				return nil, err
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if data, ok := tmp.(*Application); ok {
+			return data, nil
+		} else if tmp == nil {
+			return nil, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Application`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Application)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_updateApplicationTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -14343,6 +14697,30 @@ func (ec *executionContext) unmarshalInputApplicationCreateInput(ctx context.Con
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputApplicationFromTemplateInput(ctx context.Context, obj interface{}) (ApplicationFromTemplateInput, error) {
+	var it ApplicationFromTemplateInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "templateName":
+			var err error
+			it.TemplateName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "values":
+			var err error
+			it.Values, err = ec.unmarshalOTemplateValueInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTemplateValueInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputApplicationTemplateInput(ctx context.Context, obj interface{}) (ApplicationTemplateInput, error) {
 	var it ApplicationTemplateInput
 	var asMap = obj.(map[string]interface{})
@@ -14794,6 +15172,30 @@ func (ec *executionContext) unmarshalInputLabelFilter(ctx context.Context, obj i
 		case "query":
 			var err error
 			it.Query, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLabelInput(ctx context.Context, obj interface{}) (LabelInput, error) {
+	var it LabelInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "key":
+			var err error
+			it.Key, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "value":
+			var err error
+			it.Value, err = ec.unmarshalNAny2interface(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -16267,6 +16669,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "registerApplicationFromTemplate":
+			out.Values[i] = ec._Mutation_registerApplicationFromTemplate(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "updateApplicationTemplate":
 			out.Values[i] = ec._Mutation_updateApplicationTemplate(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -17510,6 +17917,10 @@ func (ec *executionContext) unmarshalNApplicationCreateInput2ᚖgithubᚗcomᚋk
 	return &res, err
 }
 
+func (ec *executionContext) unmarshalNApplicationFromTemplateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationFromTemplateInput(ctx context.Context, v interface{}) (ApplicationFromTemplateInput, error) {
+	return ec.unmarshalInputApplicationFromTemplateInput(ctx, v)
+}
+
 func (ec *executionContext) marshalNApplicationPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationPage(ctx context.Context, sel ast.SelectionSet, v ApplicationPage) graphql.Marshaler {
 	return ec._ApplicationPage(ctx, sel, &v)
 }
@@ -18436,6 +18847,18 @@ func (ec *executionContext) marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubato
 		return graphql.Null
 	}
 	return ec._SystemAuth(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNTemplateValueInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTemplateValueInput(ctx context.Context, v interface{}) (TemplateValueInput, error) {
+	return ec.unmarshalInputTemplateValueInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNTemplateValueInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTemplateValueInput(ctx context.Context, v interface{}) (*TemplateValueInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNTemplateValueInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTemplateValueInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) unmarshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx context.Context, v interface{}) (Timestamp, error) {
@@ -19381,6 +19804,26 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 		return graphql.Null
 	}
 	return ec.marshalOString2string(ctx, sel, *v)
+}
+
+func (ec *executionContext) unmarshalOTemplateValueInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTemplateValueInput(ctx context.Context, v interface{}) ([]*TemplateValueInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*TemplateValueInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNTemplateValueInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTemplateValueInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) marshalOVersion2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐVersion(ctx context.Context, sel ast.SelectionSet, v Version) graphql.Marshaler {

@@ -16,8 +16,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const defaultTenant = "2a1502ba-aded-11e9-a2a3-2a2ae2dbcce4"
-
 var tc *TestContext
 
 func init() {

@@ -38,9 +38,11 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			Modules: gqlschema.AllKymaModule,
 		}
 
+		providerCredentials := &gqlschema.CredentialsInput{SecretName: "secret_1"}
+
 		expectedID := "ec781980-0533-4098-aab7-96b535569732"
 
-		config := gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, KymaConfig: kymaConfig}
+		config := gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: providerCredentials, KymaConfig: kymaConfig}
 
 		provisioningService.On("ProvisionRuntime", runtimeID, config).Return(expectedID, nil, nil)
 
@@ -227,4 +229,51 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 		require.Error(t, err)
 		require.Empty(t, status)
 	})
+}
+
+func TestResolver_CleanupRuntimeData(t *testing.T) {
+	ctx := context.Background()
+	runtimeID := "1100bb59-9c40-4ebb-b846-7477c4dc5bbd"
+
+	t.Run("Should clean up Runtime data", func(t *testing.T) {
+
+		//given
+		provisioningService := &mocks.Service{}
+		provisioner := NewResolver(provisioningService)
+		message := "Data cleanup succeeded"
+
+		cleanUpRuntimeDataResult := &gqlschema.CleanUpRuntimeDataResult{
+			ID:      runtimeID,
+			Message: &message,
+		}
+
+		provisioningService.On("CleanupRuntimeData", runtimeID).Return(cleanUpRuntimeDataResult, nil)
+
+		// when
+		result, err := provisioner.CleanupRuntimeData(ctx, runtimeID)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, cleanUpRuntimeDataResult, result)
+		provisioningService.AssertExpectations(t)
+	})
+
+	t.Run("Should return error when CleanupRuntimeData fails", func(t *testing.T) {
+
+		// given
+		provisioningService := &mocks.Service{}
+		provisioner := NewResolver(provisioningService)
+
+		provisioningService.On("CleanupRuntimeData", runtimeID).Return(nil, errors.New("some error"))
+
+		// when
+		result, err := provisioner.CleanupRuntimeData(ctx, runtimeID)
+
+		// then
+		require.Error(t, err)
+		assert.Empty(t, result)
+		provisioningService.AssertExpectations(t)
+
+	})
+
 }

@@ -2,7 +2,7 @@
 mutation {
   result: updateAPI(
     id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-    in: { name: "updated-api-name", targetURL: "updated-api-url" }
+    in: { name: "updated-api-name", targetURL: "http://updated-target.url" }
   ) {
     id
     name

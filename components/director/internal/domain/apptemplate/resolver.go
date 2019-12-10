@@ -16,9 +16,11 @@ import (
 type ApplicationTemplateService interface {
 	Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error)
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
+	GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error)
 	List(ctx context.Context, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
 	Update(ctx context.Context, id string, in model.ApplicationTemplateInput) error
 	Delete(ctx context.Context, id string) error
+	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
 }
 
 //go:generate mockery -name=ApplicationTemplateConverter -output=automock -outpkg=automock -case=underscore
@@ -26,18 +28,36 @@ type ApplicationTemplateConverter interface {
 	ToGraphQL(in *model.ApplicationTemplate) (*graphql.ApplicationTemplate, error)
 	MultipleToGraphQL(in []*model.ApplicationTemplate) ([]*graphql.ApplicationTemplate, error)
 	InputFromGraphQL(in graphql.ApplicationTemplateInput) (model.ApplicationTemplateInput, error)
+	ApplicationFromTemplateInputFromGraphQL(in graphql.ApplicationFromTemplateInput) model.ApplicationFromTemplateInput
+}
+
+//go:generate mockery -name=ApplicationConverter -output=automock -outpkg=automock -case=underscore
+type ApplicationConverter interface {
+	ToGraphQL(in *model.Application) *graphql.Application
+	CreateInputJSONToGQL(in string) (graphql.ApplicationCreateInput, error)
+	CreateInputFromGraphQL(in graphql.ApplicationCreateInput) model.ApplicationCreateInput
+}
+
+//go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
+type ApplicationService interface {
+	Create(ctx context.Context, in model.ApplicationCreateInput) (string, error)
+	Get(ctx context.Context, id string) (*model.Application, error)
 }
 
 type Resolver struct {
 	transact persistence.Transactioner
 
+	appSvc               ApplicationService
+	appConverter         ApplicationConverter
 	appTemplateSvc       ApplicationTemplateService
 	appTemplateConverter ApplicationTemplateConverter
 }
 
-func NewResolver(transact persistence.Transactioner, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter) *Resolver {
 	return &Resolver{
 		transact:             transact,
+		appSvc:               appSvc,
+		appConverter:         appConverter,
 		appTemplateSvc:       appTemplateSvc,
 		appTemplateConverter: appTemplateConverter,
 	}
@@ -152,6 +172,57 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	}
 
 	return gqlAppTemplate, nil
+}
+
+func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graphql.ApplicationFromTemplateInput) (*graphql.Application, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	convertedIn := r.appTemplateConverter.ApplicationFromTemplateInputFromGraphQL(in)
+
+	appTemplate, err := r.appTemplateSvc.GetByName(ctx, convertedIn.TemplateName)
+	if err != nil {
+		return nil, err
+	}
+
+	appCreateInputJSON, err := r.appTemplateSvc.PrepareApplicationCreateInputJSON(appTemplate, convertedIn.Values)
+	if err != nil {
+		return nil, err
+	}
+
+	appCreateInputGQL, err := r.appConverter.CreateInputJSONToGQL(appCreateInputJSON)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := appCreateInputGQL.Validate(); err != nil {
+		return nil, errors.Wrapf(err, "while validating application input from application template [name=%s]", convertedIn.TemplateName)
+	}
+
+	appCreateInputModel := r.appConverter.CreateInputFromGraphQL(appCreateInputGQL)
+
+	id, err := r.appSvc.Create(ctx, appCreateInputModel)
+	if err != nil {
+		return nil, err
+	}
+
+	app, err := r.appSvc.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	gqlApp := r.appConverter.ToGraphQL(app)
+	return gqlApp, nil
 }
 
 func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {

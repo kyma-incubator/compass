@@ -588,7 +588,7 @@ func TestQueryRuntimesWithPagination(t *testing.T) {
 	queriesForFullPage := int(runtimesAmount / after)
 
 	for i := 0; i < queriesForFullPage; i++ {
-		runtimesRequest := fixRuntimeRequestWithPagination(after, cursor)
+		runtimesRequest := fixRuntimeRequestWithPaginationRequest(after, cursor)
 
 		//WHEN
 		runtimePage := graphql.RuntimePage{}
@@ -607,7 +607,7 @@ func TestQueryRuntimesWithPagination(t *testing.T) {
 	}
 
 	//WHEN get last page with last runtime
-	runtimesRequest := fixRuntimeRequestWithPagination(after, cursor)
+	runtimesRequest := fixRuntimeRequestWithPaginationRequest(after, cursor)
 	lastRuntimePage := graphql.RuntimePage{}
 	err := tc.RunOperation(ctx, runtimesRequest, &lastRuntimePage)
 	require.NoError(t, err)

@@ -1,6 +1,8 @@
 package application
 
 import (
+	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -112,6 +114,25 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) mo
 		HealthCheckURL:      in.HealthCheckURL,
 		IntegrationSystemID: in.IntegrationSystemID,
 	}
+}
+
+func (c *converter) CreateInputJSONToGQL(in string) (graphql.ApplicationCreateInput, error) {
+	var appInput graphql.ApplicationCreateInput
+	err := json.Unmarshal([]byte(in), &appInput)
+	if err != nil {
+		return graphql.ApplicationCreateInput{}, errors.Wrap(err, "while unmarshalling string to ApplicationCreateInput")
+	}
+
+	return appInput, nil
+}
+
+func (c *converter) CreateInputGQLToJSON(in *graphql.ApplicationCreateInput) (string, error) {
+	appInput, err := json.Marshal(in)
+	if err != nil {
+		return "", errors.Wrap(err, "while marshaling application input")
+	}
+
+	return string(appInput), nil
 }
 
 func (c *converter) statusToGraphQL(in *model.ApplicationStatus) *graphql.ApplicationStatus {
