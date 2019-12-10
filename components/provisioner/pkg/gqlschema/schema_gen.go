@@ -658,6 +658,13 @@ enum KymaModule {
     KnativeBuild
 }
 
+scalar Labels
+
+input AAAA {
+    test: RuntimeInput
+}
+
+
 # Configuration of Runtime. We can consider returning kubeconfig as a part of this type.
 type RuntimeConfig {
     clusterConfig: ClusterConfig
@@ -767,81 +774,88 @@ enum RuntimeAgentConnectionStatus {
 
 # Inputs
 
+input RuntimeInput {
+    name: String!
+    description: String
+    labels: Labels
+}
+
 input ProvisionRuntimeInput {
-    clusterConfig: ClusterConfigInput!
-    credentials: CredentialsInput!
-    kymaConfig: KymaConfigInput!
+    runtimeConfig: RuntimeInput!
+    clusterConfig: ClusterConfigInput!  # Configuration of the cluster to provision
+    credentials: CredentialsInput!      # Credentials
+    kymaConfig: KymaConfigInput!        # Configuration of Kyma to be installed on the provisioned cluster
 }
 
 input CredentialsInput {
-    secretName: String!
+    secretName: String!     # Secret name
 }
 
 input ClusterConfigInput {
-    gardenerConfig: GardenerConfigInput
-    gcpConfig: GCPConfigInput
+    gardenerConfig: GardenerConfigInput     # Gardener-specific configuration for the cluster to be provisioned
+    gcpConfig: GCPConfigInput               # GCP-specific configuration for the cluster to be provisioned
 }
 
 input GardenerConfigInput {
-    name: String!
-    projectName: String!
-    kubernetesVersion: String!
-    nodeCount: Int!
-    volumeSizeGB: Int!
-    machineType: String!
-    region: String!
-    provider: String!
-    seed: String!
-    targetSecret: String!
-    diskType: String!
-    workerCidr: String!
-    autoScalerMin: Int!
-    autoScalerMax: Int!
-    maxSurge: Int!
-    maxUnavailable: Int!
-    providerSpecificConfig: ProviderSpecificInput!
+    name: String!                                   # Name of the cluster to create
+    projectName: String!                            # Gardener project in which the cluster is created
+    kubernetesVersion: String!                      # Kubernetes version to be installed on the cluster
+    nodeCount: Int!                                 # Number of nodes to create
+    volumeSizeGB: Int!                              # Size of the available disk, provided in GB
+    machineType: String!                            # Type of node machines, varies depending on the target provider
+    region: String!                                 # Region in which the cluster is created
+    provider: String!                               # Target provider on which to provision the cluster (Azure, AWS, GCP)
+    seed: String!                                   # Name of the seed cluster that runs the control plane of the Shoot
+    targetSecret: String!                           # Secret in Gardener containing credentials to the target provider
+    diskType: String!                               # Disk type, varies depending on the target provider
+    workerCidr: String!                             # Classless Inter-Domain Routing range for the nodes
+    autoScalerMin: Int!                             # Minimum number of VMs to create
+    autoScalerMax: Int!                             # Maximum number of VMs to create
+    maxSurge: Int!                                  # Maximum number of VMs created during an update
+    maxUnavailable: Int!                            # Maximum number of VMs that can be unavailable during an update
+    providerSpecificConfig: ProviderSpecificInput!  # Additional parameters, vary depending on the target provider
 }
 
 input ProviderSpecificInput {
-    gcpConfig: GCPProviderConfigInput
-    azureConfig: AzureProviderConfigInput
-    awsConfig: AWSProviderConfigInput
+    gcpConfig: GCPProviderConfigInput        # GCP-specific configuration for the cluster to be provisioned
+    azureConfig: AzureProviderConfigInput    # Azure-specific configuration for the cluster to be provisioned
+    awsConfig: AWSProviderConfigInput        # AWS-specific configuration for the cluster to be provisioned
 }
 
 input GCPProviderConfigInput {
-    zone: String!
+    zone: String!      # Zone in which to create the cluster
 }
 
 input AzureProviderConfigInput {
-    vnetCidr: String!
+    vnetCidr: String!   # Classless Inter-Domain Routing for the Azure Virtual Network
 }
 
 input AWSProviderConfigInput {
-    zone: String!
-    vpcCidr: String!
-    publicCidr: String!
-    internalCidr: String!
+    zone: String!           # Zone in which to create the cluster
+    vpcCidr: String!        # Classless Inter-Domain Routing for the virtual public cloud
+    publicCidr: String!     # Classless Inter-Domain Routing for the public subnet
+    internalCidr: String!   # Classless Inter-Domain Routing for the private subnet
 }
 
 input GCPConfigInput {
-    name: String!
-    projectName: String!
-    kubernetesVersion: String!
-    numberOfNodes: Int!
-    bootDiskSizeGB: Int!
-    machineType: String!
-    region: String! # TODO: later we may require either Region or Zone
-    zone: String
+    name: String!                   # Name of the cluster to create
+    projectName: String!            # GCP project in which to create the cluster
+    kubernetesVersion: String!      # Kubernetes version to be installed on the cluster
+    numberOfNodes: Int!             # Number of nodes to create
+    bootDiskSizeGB: Int!            # Size of the available disk, provided in GB
+    machineType: String!            # Type of node machines
+    region: String! # TODO: later we may require either Region or Zone ## Region in which to create the cluster
+    zone: String                    # Zone in which to create the cluster
 }
 
 input KymaConfigInput {
-    version: String!
-    modules: [KymaModule!]
+    version: String!        # Kyma version to install on the cluster
+    modules: [KymaModule!]  # Kyma components to install on the cluster
 }
 
 input UpgradeRuntimeInput {
-    clusterConfig: UpgradeClusterInput
-    kymaConfig: KymaConfigInput
+    clusterConfig: UpgradeClusterInput  # Configuration of the cluster to upgrade
+    kymaConfig: KymaConfigInput         # Configuration of the Kyma Runtime to upgrade
 }
 
 input UpgradeClusterInput {
@@ -865,8 +879,7 @@ type Query {
 
     # Provides status of specified operation
     runtimeOperationStatus(id: String!): OperationStatus
-}
-`},
+}`},
 )
 
 // endregion ************************** generated!.gotpl **************************
@@ -4206,6 +4219,24 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputAAAA(ctx context.Context, obj interface{}) (Aaaa, error) {
+	var it Aaaa
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "test":
+			var err error
+			it.Test, err = ec.unmarshalORuntimeInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputAWSProviderConfigInput(ctx context.Context, obj interface{}) (AWSProviderConfigInput, error) {
 	var it AWSProviderConfigInput
 	var asMap = obj.(map[string]interface{})
@@ -4554,6 +4585,12 @@ func (ec *executionContext) unmarshalInputProvisionRuntimeInput(ctx context.Cont
 
 	for k, v := range asMap {
 		switch k {
+		case "runtimeConfig":
+			var err error
+			it.RuntimeConfig, err = ec.unmarshalNRuntimeInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "clusterConfig":
 			var err error
 			it.ClusterConfig, err = ec.unmarshalNClusterConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐClusterConfigInput(ctx, v)
@@ -4569,6 +4606,36 @@ func (ec *executionContext) unmarshalInputProvisionRuntimeInput(ctx context.Cont
 		case "kymaConfig":
 			var err error
 			it.KymaConfig, err = ec.unmarshalNKymaConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputRuntimeInput(ctx context.Context, obj interface{}) (RuntimeInput, error) {
+	var it RuntimeInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "description":
+			var err error
+			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "labels":
+			var err error
+			it.Labels, err = ec.unmarshalOLabels2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5491,6 +5558,18 @@ func (ec *executionContext) marshalNRuntimeAgentConnectionStatus2githubᚗcomᚋ
 	return v
 }
 
+func (ec *executionContext) unmarshalNRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeInput(ctx context.Context, v interface{}) (RuntimeInput, error) {
+	return ec.unmarshalInputRuntimeInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNRuntimeInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeInput(ctx context.Context, v interface{}) (*RuntimeInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
 	return graphql.UnmarshalString(v)
 }
@@ -6052,6 +6131,29 @@ func (ec *executionContext) marshalOKymaModule2ᚖgithubᚗcomᚋkymaᚑincubato
 	return v
 }
 
+func (ec *executionContext) unmarshalOLabels2string(ctx context.Context, v interface{}) (string, error) {
+	return graphql.UnmarshalString(v)
+}
+
+func (ec *executionContext) marshalOLabels2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	return graphql.MarshalString(v)
+}
+
+func (ec *executionContext) unmarshalOLabels2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOLabels2string(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOLabels2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOLabels2string(ctx, sel, *v)
+}
+
 func (ec *executionContext) marshalOOperationStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx context.Context, sel ast.SelectionSet, v OperationStatus) graphql.Marshaler {
 	return ec._OperationStatus(ctx, sel, &v)
 }
@@ -6087,6 +6189,18 @@ func (ec *executionContext) marshalORuntimeConnectionStatus2ᚖgithubᚗcomᚋky
 		return graphql.Null
 	}
 	return ec._RuntimeConnectionStatus(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalORuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeInput(ctx context.Context, v interface{}) (RuntimeInput, error) {
+	return ec.unmarshalInputRuntimeInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalORuntimeInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeInput(ctx context.Context, v interface{}) (*RuntimeInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalORuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) marshalORuntimeStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeStatus(ctx context.Context, sel ast.SelectionSet, v RuntimeStatus) graphql.Marshaler {

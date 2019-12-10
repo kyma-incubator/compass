@@ -31,20 +31,21 @@ func NewResolver(provisioningService provisioning.Service) *Resolver {
 	}
 }
 
-func (r *Resolver) ProvisionRuntime(ctx context.Context, id string, config gqlschema.ProvisionRuntimeInput) (string, error) {
+func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.ProvisionRuntimeInput) (string, error) {
+
 	err := validateInput(config)
 	if err != nil {
-		log.Errorf("Failed to provision runtime %s: %s", id, err)
+		log.Errorf("Failed to provision runtime %s: %s", config.RuntimeConfig.Name, err)
 		return "", err
 	}
 
-	log.Infof("Requested provisioning of %s runtime.", id)
+	log.Infof("Requested provisioning of %s runtime.", config.RuntimeConfig.Name)
 
-	operationID, _, err := r.provisioning.ProvisionRuntime(id, config)
+	operationID, _, err := r.provisioning.ProvisionRuntime(config)
 	if err != nil {
-		log.Errorf("Failed to provision runtime %s: %s", id, err)
+		log.Errorf("Failed to provision runtime %s: %s", config.RuntimeConfig.Name, err)
 	}
-	log.Infof("Provisioning stared for %s runtime. Operation id %s", id, operationID)
+	log.Infof("Provisioning stared for %s runtime. Operation id %s", config.RuntimeConfig.Name, operationID)
 
 	return operationID, err
 }

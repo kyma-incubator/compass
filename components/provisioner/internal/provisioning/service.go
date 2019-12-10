@@ -12,6 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
@@ -26,7 +27,7 @@ const (
 
 //go:generate mockery -name=Service
 type Service interface {
-	ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeInput) (string, <-chan struct{}, error)
+	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (string, <-chan struct{}, error)
 	UpgradeRuntime(id string, config *gqlschema.UpgradeRuntimeInput) (string, error)
 	DeprovisionRuntime(id string) (string, <-chan struct{}, error)
 	CleanupRuntimeData(id string) (string, error)
@@ -38,6 +39,7 @@ type Service interface {
 type service struct {
 	persistenceService   persistence.Service
 	hydroform            hydroform.Service
+	directorService      director.Service
 	configBuilderFactory configuration.BuilderFactory
 	uuidGenerator        persistence.UUIDGenerator
 }
@@ -52,8 +54,9 @@ func NewProvisioningService(persistenceService persistence.Service, uuidGenerato
 	}
 }
 
-func (r *service) ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeInput) (string, <-chan struct{}, error) {
-	err := r.checkProvisioningRuntimeConditions(id)
+func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (string, <-chan struct{}, error) {
+
+	err := r.checkProvisioningRuntimeConditions(config.RuntimeConfig)
 	if err != nil {
 		return "", nil, err
 	}
@@ -80,6 +83,7 @@ func (r *service) ProvisionRuntime(id string, config gqlschema.ProvisionRuntimeI
 }
 
 func (r *service) checkProvisioningRuntimeConditions(id string) error {
+
 	lastOperation, err := r.persistenceService.GetLastOperation(id)
 
 	if err == nil && !lastProvisioningFailed(lastOperation) {
