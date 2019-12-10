@@ -53,7 +53,7 @@ type ComplexityRoot struct {
 		VnetCidr func(childComplexity int) int
 	}
 
-	CleanUpRuntimeStatus struct {
+	CleanUpRuntimeDataResult struct {
 		ID      func(childComplexity int) int
 		Message func(childComplexity int) int
 	}
@@ -205,18 +205,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		return e.complexity.AzureProviderConfig.VnetCidr(childComplexity), true
 
 	case "CleanUpRuntimeDataResult.id":
-		if e.complexity.CleanUpRuntimeStatus.ID == nil {
+		if e.complexity.CleanUpRuntimeDataResult.ID == nil {
 			break
 		}
 
-		return e.complexity.CleanUpRuntimeStatus.ID(childComplexity), true
+		return e.complexity.CleanUpRuntimeDataResult.ID(childComplexity), true
 
 	case "CleanUpRuntimeDataResult.message":
-		if e.complexity.CleanUpRuntimeStatus.Message == nil {
+		if e.complexity.CleanUpRuntimeDataResult.Message == nil {
 			break
 		}
 
-		return e.complexity.CleanUpRuntimeStatus.Message(childComplexity), true
+		return e.complexity.CleanUpRuntimeDataResult.Message(childComplexity), true
 
 	case "Error.message":
 		if e.complexity.Error.Message == nil {
@@ -1231,7 +1231,7 @@ func (ec *executionContext) _AzureProviderConfig_vnetCidr(ctx context.Context, f
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _CleanUpRuntimeStatus_id(ctx context.Context, field graphql.CollectedField, obj *CleanUpRuntimeDataResult) (ret graphql.Marshaler) {
+func (ec *executionContext) _CleanUpRuntimeDataResult_id(ctx context.Context, field graphql.CollectedField, obj *CleanUpRuntimeDataResult) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -1268,7 +1268,7 @@ func (ec *executionContext) _CleanUpRuntimeStatus_id(ctx context.Context, field 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _CleanUpRuntimeStatus_message(ctx context.Context, field graphql.CollectedField, obj *CleanUpRuntimeDataResult) (ret graphql.Marshaler) {
+func (ec *executionContext) _CleanUpRuntimeDataResult_message(ctx context.Context, field graphql.CollectedField, obj *CleanUpRuntimeDataResult) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -2461,7 +2461,7 @@ func (ec *executionContext) _Mutation_cleanupRuntimeData(ctx context.Context, fi
 	res := resTmp.(*CleanUpRuntimeDataResult)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNCleanUpRuntimeStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCleanUpRuntimeStatus(ctx, field.Selections, res)
+	return ec.marshalNCleanUpRuntimeDataResult2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCleanUpRuntimeDataResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_reconnectRuntimeAgent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4851,10 +4851,10 @@ func (ec *executionContext) _AzureProviderConfig(ctx context.Context, sel ast.Se
 	return out
 }
 
-var cleanUpRuntimeStatusImplementors = []string{"CleanUpRuntimeDataResult"}
+var cleanUpRuntimeDataResultImplementors = []string{"CleanUpRuntimeDataResult"}
 
-func (ec *executionContext) _CleanUpRuntimeStatus(ctx context.Context, sel ast.SelectionSet, obj *CleanUpRuntimeDataResult) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, cleanUpRuntimeStatusImplementors)
+func (ec *executionContext) _CleanUpRuntimeDataResult(ctx context.Context, sel ast.SelectionSet, obj *CleanUpRuntimeDataResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, cleanUpRuntimeDataResultImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -4863,12 +4863,12 @@ func (ec *executionContext) _CleanUpRuntimeStatus(ctx context.Context, sel ast.S
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("CleanUpRuntimeDataResult")
 		case "id":
-			out.Values[i] = ec._CleanUpRuntimeStatus_id(ctx, field, obj)
+			out.Values[i] = ec._CleanUpRuntimeDataResult_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "message":
-			out.Values[i] = ec._CleanUpRuntimeStatus_message(ctx, field, obj)
+			out.Values[i] = ec._CleanUpRuntimeDataResult_message(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5535,18 +5535,18 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalNCleanUpRuntimeStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCleanUpRuntimeStatus(ctx context.Context, sel ast.SelectionSet, v CleanUpRuntimeDataResult) graphql.Marshaler {
-	return ec._CleanUpRuntimeStatus(ctx, sel, &v)
+func (ec *executionContext) marshalNCleanUpRuntimeDataResult2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCleanUpRuntimeDataResult(ctx context.Context, sel ast.SelectionSet, v CleanUpRuntimeDataResult) graphql.Marshaler {
+	return ec._CleanUpRuntimeDataResult(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNCleanUpRuntimeStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCleanUpRuntimeStatus(ctx context.Context, sel ast.SelectionSet, v *CleanUpRuntimeDataResult) graphql.Marshaler {
+func (ec *executionContext) marshalNCleanUpRuntimeDataResult2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCleanUpRuntimeDataResult(ctx context.Context, sel ast.SelectionSet, v *CleanUpRuntimeDataResult) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
 		return graphql.Null
 	}
-	return ec._CleanUpRuntimeStatus(ctx, sel, v)
+	return ec._CleanUpRuntimeDataResult(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNClusterConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐClusterConfigInput(ctx context.Context, v interface{}) (ClusterConfigInput, error) {
