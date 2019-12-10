@@ -2,12 +2,13 @@ package e2e
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/idtokenprovider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestDifferentTenantAccessDenied(t *testing.T) {

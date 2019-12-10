@@ -5,7 +5,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-type invalidTenantError struct {}
+type invalidTenantError struct{}
 
 func (err *invalidTenantError) Error() string {
 	return "Invalid tenant"

@@ -1,9 +1,15 @@
 package e2e
 
 import (
+	"crypto/tls"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
 	"testing"
+	"time"
+
+	"github.com/avast/retry-go"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -76,4 +82,63 @@ func (b *playgroundURLBuilder) getFinalURL(subdomain string) string {
 
 func (b *playgroundURLBuilder) getGraphQLExampleURL(subdomain string) string {
 	return fmt.Sprintf("%s%s", b.getFinalURL(subdomain), b.graphQLExamplePath)
+}
+
+func getURLWithRetries(client *http.Client, url string) (*http.Response, error) {
+	const (
+		maxAttempts = 10
+		delay       = 10
+	)
+	var resp *http.Response
+
+	happyRun := true
+	err := retry.Do(
+		func() error {
+			_resp, err := client.Get(url)
+			if err != nil {
+				return err
+			}
+
+			if _resp.StatusCode >= 400 {
+				return fmt.Errorf("got status code %d when accessing %s", _resp.StatusCode, url)
+			}
+
+			resp = _resp
+
+			return nil
+		},
+		retry.Attempts(maxAttempts),
+		retry.Delay(delay),
+		retry.DelayType(retry.FixedDelay),
+		retry.OnRetry(func(retryNo uint, err error) {
+			happyRun = false
+			log.Printf("Retry: [%d / %d], error: %s", retryNo, maxAttempts, err)
+		}),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if happyRun {
+		log.Printf("Address %s reached successfully", url)
+	}
+
+	return resp, nil
+}
+
+func getClient() *http.Client {
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
+	return &http.Client{
+		Transport: transport,
+		Timeout:   time.Second * 30,
+	}
+}
+
+func closeBody(t *testing.T, body io.ReadCloser) {
+	err := body.Close()
+	require.NoError(t, err)
 }
