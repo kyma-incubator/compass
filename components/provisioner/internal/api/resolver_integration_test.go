@@ -190,7 +190,7 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	defer containerCleanupFunc()
 
-	connection, err := database.InitializeDatabase(connString, testutils.SchemaFilePath, 10)
+	connection, err := database.InitializeDatabase(connString, testutils.SchemaFilePath, 5)
 
 	require.NoError(t, err)
 	require.NotNil(t, connection)

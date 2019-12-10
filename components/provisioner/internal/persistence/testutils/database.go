@@ -33,6 +33,8 @@ const (
 	EnvPipelineBuild  = "PIPELINE_BUILD"
 
 	TableNotExistsError = "42P01"
+
+	connStringFormat = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
 )
 
 var (
@@ -47,8 +49,6 @@ func makeConnectionString(hostname string, port string) string {
 		host = hostname
 		port = DbPort
 	}
-
-	const connStringFormat string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
 
 	return fmt.Sprintf(connStringFormat, host, port, DbUser,
 		DbPass, DbName, "disable")
@@ -115,14 +115,6 @@ func InitTestDBContainer(t *testing.T, ctx context.Context, hostname string) (fu
 	connString := makeConnectionString(hostname, port.Port())
 
 	return cleanupFunc, connString, nil
-}
-
-func TerminateTestDBContainer(t *testing.T, ctx context.Context, container testcontainers.Container) {
-	if container != nil {
-		err := container.Terminate(ctx)
-
-		assert.Nil(t, err, "Failed to terminate test database container")
-	}
 }
 
 func CheckIfAllDatabaseTablesArePresent(db *dbr.Connection) error {
