@@ -59,13 +59,15 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 
 	reqData, err := h.reqDataParser.Parse(req)
 	if err != nil {
-		respondWithError(writer, http.StatusBadRequest, err, "while parsing the request")
+		logError(err, "while parsing the request")
+		respond(writer, reqData.Body)
 		return
 	}
 
 	tx, err := h.transact.Begin()
 	if err != nil {
-		respondWithError(writer, http.StatusInternalServerError, err, "while opening the db transaction")
+		logError(err, "while opening the db transaction")
+		respond(writer, reqData.Body)
 		return
 	}
 	defer h.transact.RollbackUnlessCommited(tx)
@@ -74,7 +76,8 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 
 	objCtx, err := h.getObjectContext(ctx, reqData)
 	if err != nil {
-		respondWithError(writer, http.StatusInternalServerError, err, "while getting object context")
+		logError(err, "while getting object context")
+		respond(writer, reqData.Body)
 		return
 	}
 
@@ -83,12 +86,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	reqData.Body.Extra["objectID"] = objCtx.ObjectID
 	reqData.Body.Extra["objectType"] = objCtx.ObjectType
 
-	writer.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(writer).Encode(reqData.Body)
-	if err != nil {
-		respondWithError(writer, http.StatusInternalServerError, err, "while encoding data")
-		return
-	}
+	respond(writer, reqData.Body)
 }
 
 func (h *Handler) getObjectContext(ctx context.Context, reqData ReqData) (ObjectContext, error) {
@@ -107,9 +105,15 @@ func (h *Handler) getObjectContext(ctx context.Context, reqData ReqData) (Object
 	return ObjectContext{}, fmt.Errorf("unknown authentication flow (%s)", authFlow)
 }
 
-func respondWithError(writer http.ResponseWriter, httpErrorCode int, err error, wrapperStr string) {
+func logError(err error, wrapperStr string) {
 	wrappedErr := errors.Wrap(err, wrapperStr)
-	log.Error(wrappedErr)
+	log.WithField("component", "tenant-mapping-handler").Error(wrappedErr)
+}
 
-	http.Error(writer, wrappedErr.Error(), httpErrorCode)
+func respond(writer http.ResponseWriter, body ReqBody) {
+	writer.Header().Set("Content-Type", "application/json")
+	err := json.NewEncoder(writer).Encode(body)
+	if err != nil {
+		logError(err, "while encoding data")
+	}
 }

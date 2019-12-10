@@ -2,21 +2,19 @@ package e2e
 
 import (
 	"context"
-	"errors"
-	"testing"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/idtokenprovider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 func TestDifferentTenantAccessDenied(t *testing.T) {
 	ctx := context.Background()
 	notExistingTenant := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 
-	t.Log("Get Dex id token")
+	t.Log("Get Dex id_token")
 	config, err := idtokenprovider.LoadConfig()
 	require.NoError(t, err)
 
@@ -31,5 +29,5 @@ func TestDifferentTenantAccessDenied(t *testing.T) {
 	}
 	_, err = createApplicationWithinTenant(t, ctx, dexGraphQLClient, notExistingTenant, appInput)
 	assert.Error(t, err)
-	assert.Equal(t, errors.New("foo"), err)
+	assert.Equal(t, "graphql: server returned a non-200 status code: 403", err.Error())
 }
