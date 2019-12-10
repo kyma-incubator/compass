@@ -25,6 +25,10 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
+const (
+	databaseConnectionRetries = 20
+)
+
 func newProvisioningService(config config, persistenceService persistence.Service, secrets v1.SecretInterface, releaseRepo release.ReadRepository) provisioning.Service {
 	hydroformClient := client.NewHydroformClient()
 	hydroformService := hydroform.NewHydroformService(hydroformClient, secrets)
@@ -68,7 +72,7 @@ func newResolver(config config, persistenceService persistence.Service, releaseR
 }
 
 func initRepositories(config config, connectionString string) (persistence.Service, release.Repository, error) {
-	connection, err := database.InitializeDatabase(connectionString, config.Database.SchemaFilePath)
+	connection, err := database.InitializeDatabase(connectionString, config.Database.SchemaFilePath, databaseConnectionRetries)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "Failed to initialize persistence")
 	}

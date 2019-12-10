@@ -5,16 +5,22 @@ import (
 	"testing"
 	"time"
 
+	installationMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/mocks"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/converters"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
 	"github.com/kyma-incubator/hydroform/types"
 
-	configMock "github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/configuration/mocks"
 	hydroformmocks "github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/mocks"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dbsession"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/testutils"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -156,24 +162,22 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	mockedKubeConfigValue := "test config value"
-	mockedTerraformState := `{"test_key": "test_value"}`
+	mockedTerraformState := []byte(`{"test_key": "test_value"}`)
 
 	hydroformServiceMock := &hydroformmocks.Service{}
-	factory := &configMock.BuilderFactory{}
-	builder := &configMock.Builder{}
 	hydroformServiceMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: mockedKubeConfigValue, State: mockedTerraformState}, nil).
 		Run(func(args mock.Arguments) {
 			time.Sleep(1 * time.Second)
 		})
-
 	hydroformServiceMock.On("DeprovisionCluster", mock.Anything, mock.Anything, mock.Anything).Return(nil).
 		Run(func(args mock.Arguments) {
 			time.Sleep(1 * time.Second)
 		})
-	factory.On("NewProvisioningBuilder", mock.Anything).Return(builder)
-	factory.On("NewDeprovisioningBuilder", mock.Anything).Return(builder)
 
-	uuidGenerator := persistence.NewUUIDGenerator()
+	installationServiceMock := &installationMocks.Service{}
+	installationServiceMock.On("InstallKyma", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	uuidGenerator := uuid.NewUUIDGenerator()
 
 	ctx := context.Background()
 
@@ -186,7 +190,7 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	defer containerCleanupFunc()
 
-	connection, err := database.InitializeDatabase(connString, testutils.SchemaFilePath, 4)
+	connection, err := database.InitializeDatabase(connString, testutils.SchemaFilePath, 10)
 
 	require.NoError(t, err)
 	require.NotNil(t, connection)
@@ -209,7 +213,11 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			dbSessionFactory := dbsession.NewFactory(connection)
 			persistenceService := persistence.NewService(dbSessionFactory, uuidGenerator)
-			provisioningService := provisioning.NewProvisioningService(persistenceService, uuidGenerator, hydroformServiceMock, factory)
+			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
+			inputConverter := converters.NewInputConverter(uuidGenerator, releaseRepository)
+			graphQLConverter := converters.NewGraphQLConverter()
+
+			provisioningService := provisioning.NewProvisioningService(persistenceService, inputConverter, graphQLConverter, hydroformServiceMock, installationServiceMock)
 			provisioner := NewResolver(provisioningService)
 
 			operationID, err := provisioner.ProvisionRuntime(ctx, cfg.runtimeID, fullConfig)
