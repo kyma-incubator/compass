@@ -197,9 +197,9 @@ func getLatestReleases(releases []model.GithubRelease, latestReleases int) []mod
 		return releases
 	}
 
-	return releases[0:latestReleases]
+	return releases[:latestReleases]
 }
 
 func buildTillerURL(releaseName string) string {
-	return fmt.Sprintf(tillerFormat, releaseName[0:3])
+	return fmt.Sprintf(tillerFormat, releaseName[:3])
 }

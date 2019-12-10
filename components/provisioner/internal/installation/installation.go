@@ -8,8 +8,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
-
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 
 	"k8s.io/client-go/tools/clientcmd"
@@ -42,7 +40,6 @@ func NewInstallationService(installationTimeout time.Duration, installationHandl
 type installationService struct {
 	installationErrorsFailureThreshold int
 	kymaInstallationTimeout            time.Duration
-	releaseRepo                        release.ReadRepository
 	installationHandler                InstallationHandler
 }
 
