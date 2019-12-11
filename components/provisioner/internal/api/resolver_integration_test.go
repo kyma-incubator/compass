@@ -5,21 +5,35 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+
+	installationMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/mocks"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/converters"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
 	"github.com/kyma-incubator/hydroform/types"
 
-	configMock "github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/configuration/mocks"
 	hydroformmocks "github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/mocks"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dbsession"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/testutils"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+)
+
+const (
+	kymaVersion = "1.8"
 )
 
 func waitForOperationCompleted(provisioningService provisioning.Service, operationID string, seconds uint) error {
@@ -49,19 +63,6 @@ type provisionerTestConfig struct {
 }
 
 func getTestClusterConfigurations() []provisionerTestConfig {
-
-	clusterConfigForGCP := &gqlschema.ClusterConfigInput{
-		GcpConfig: &gqlschema.GCPConfigInput{
-			Name:              "Something",
-			ProjectName:       "Project",
-			NumberOfNodes:     3,
-			BootDiskSizeGb:    256,
-			MachineType:       "machine",
-			Region:            "region",
-			Zone:              new(string),
-			KubernetesVersion: "version",
-		},
-	}
 
 	clusterConfigForGardenerWithGCP := &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
@@ -145,7 +146,6 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 	}
 
 	testConfig := []provisionerTestConfig{
-		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bba", config: clusterConfigForGCP, description: "Should provision and deprovision a runtime with happy flow using correct GCP configuration"},
 		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bbb", config: clusterConfigForGardenerWithGCP, description: "Should provision and deprovision a runtime with happy flow using correct Gardener with GCP configuration 1"},
 		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bb4", config: clusterConfigForGardenerWithAzure, description: "Should provision and deprovision a runtime with happy flow using correct Gardener with Azure configuration"},
 		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bb5", config: clusterConfigForGardenerWithAWS, description: "Should provision and deprovision a runtime with happy flow using correct Gardener with AWS configuration"},
@@ -156,24 +156,22 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	mockedKubeConfigValue := "test config value"
-	mockedTerraformState := `{"test_key": "test_value"}`
+	mockedTerraformState := []byte(`{"test_key": "test_value"}`)
 
 	hydroformServiceMock := &hydroformmocks.Service{}
-	factory := &configMock.BuilderFactory{}
-	builder := &configMock.Builder{}
 	hydroformServiceMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: mockedKubeConfigValue, State: mockedTerraformState}, nil).
 		Run(func(args mock.Arguments) {
 			time.Sleep(1 * time.Second)
 		})
-
 	hydroformServiceMock.On("DeprovisionCluster", mock.Anything, mock.Anything, mock.Anything).Return(nil).
 		Run(func(args mock.Arguments) {
 			time.Sleep(1 * time.Second)
 		})
-	factory.On("NewProvisioningBuilder", mock.Anything).Return(builder)
-	factory.On("NewDeprovisioningBuilder", mock.Anything).Return(builder)
 
-	uuidGenerator := persistence.NewUUIDGenerator()
+	installationServiceMock := &installationMocks.Service{}
+	installationServiceMock.On("InstallKyma", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	uuidGenerator := uuid.NewUUIDGenerator()
 
 	ctx := context.Background()
 
@@ -186,7 +184,7 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	defer containerCleanupFunc()
 
-	connection, err := database.InitializeDatabase(connString, testutils.SchemaFilePath, 4)
+	connection, err := database.InitializeDatabase(connString, testutils.SchemaFilePath, 5)
 
 	require.NoError(t, err)
 	require.NotNil(t, connection)
@@ -194,7 +192,7 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 	defer testutils.CloseDatabase(t, connection)
 
 	kymaConfig := &gqlschema.KymaConfigInput{
-		Version: "1.5",
+		Version: kymaVersion,
 		Modules: gqlschema.AllKymaModule,
 	}
 
@@ -209,8 +207,14 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			dbSessionFactory := dbsession.NewFactory(connection)
 			persistenceService := persistence.NewService(dbSessionFactory, uuidGenerator)
-			provisioningService := provisioning.NewProvisioningService(persistenceService, uuidGenerator, hydroformServiceMock, factory)
+			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
+			inputConverter := converters.NewInputConverter(uuidGenerator, releaseRepository)
+			graphQLConverter := converters.NewGraphQLConverter()
+			provisioningService := provisioning.NewProvisioningService(persistenceService, inputConverter, graphQLConverter, hydroformServiceMock, installationServiceMock)
 			provisioner := NewResolver(provisioningService)
+
+			err := insertDummyReleaseIfNotExist(releaseRepository, uuidGenerator.New(), kymaVersion)
+			require.NoError(t, err)
 
 			operationID, err := provisioner.ProvisionRuntime(ctx, cfg.runtimeID, fullConfig)
 			require.NoError(t, err)
@@ -296,4 +300,23 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			assert.Equal(t, runtimeStatusDeprovSuccess, runtimeStatusDeprovisioned.LastOperationStatus)
 		})
 	}
+}
+
+func insertDummyReleaseIfNotExist(releaseRepo release.Repository, id, version string) error {
+	_, err := releaseRepo.GetReleaseByVersion(version)
+	if err == nil {
+		return nil
+	}
+
+	if err.Code() != dberrors.CodeNotFound {
+		return err
+	}
+	_, err = releaseRepo.SaveRelease(model.Release{
+		Id:            id,
+		Version:       version,
+		TillerYAML:    "tiller YAML",
+		InstallerYAML: "installer YAML",
+	})
+
+	return err
 }

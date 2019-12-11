@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gocraft/dbr"
+	"github.com/gocraft/dbr/v2"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -33,6 +33,8 @@ const (
 	EnvPipelineBuild  = "PIPELINE_BUILD"
 
 	TableNotExistsError = "42P01"
+
+	connStringFormat = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
 )
 
 var (
@@ -47,8 +49,6 @@ func makeConnectionString(hostname string, port string) string {
 		host = hostname
 		port = DbPort
 	}
-
-	const connStringFormat string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
 
 	return fmt.Sprintf(connStringFormat, host, port, DbUser,
 		DbPass, DbName, "disable")
@@ -117,14 +117,6 @@ func InitTestDBContainer(t *testing.T, ctx context.Context, hostname string) (fu
 	return cleanupFunc, connString, nil
 }
 
-func TerminateTestDBContainer(t *testing.T, ctx context.Context, container testcontainers.Container) {
-	if container != nil {
-		err := container.Terminate(ctx)
-
-		assert.Nil(t, err, "Failed to terminate test database container")
-	}
-}
-
 func CheckIfAllDatabaseTablesArePresent(db *dbr.Connection) error {
 
 	tables := []string{TableCluster, TableGardenerConfig, TableGCPConfig, TableOperation, TableKymaConfigModule}
@@ -167,7 +159,7 @@ func checkIfDBTableIsPresent(tableNameToCheck string, db *dbr.Connection) error 
 func isDockerTestNetworkPresent(ctx context.Context) (bool, error) {
 
 	netReq := testcontainers.NetworkRequest{
-		Name:   "test_network",
+		Name:   DockerUserNetwork,
 		Driver: "bridge",
 	}
 

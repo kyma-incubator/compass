@@ -16,15 +16,24 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 	runtimeID := "1100bb59-9c40-4ebb-b846-7477c4dc5bbd"
 
 	clusterConfig := &gqlschema.ClusterConfigInput{
-		GcpConfig: &gqlschema.GCPConfigInput{
-			Name:              "Something",
-			ProjectName:       "Project",
-			NumberOfNodes:     3,
-			BootDiskSizeGb:    256,
-			MachineType:       "machine",
-			Region:            "region",
-			Zone:              new(string),
-			KubernetesVersion: "version",
+		GardenerConfig: &gqlschema.GardenerConfigInput{
+			Name:                   "Something",
+			ProjectName:            "Project",
+			KubernetesVersion:      "1.15.4",
+			NodeCount:              3,
+			VolumeSizeGb:           30,
+			MachineType:            "n1-standard-4",
+			Region:                 "europe",
+			Provider:               "gcp",
+			Seed:                   "2",
+			TargetSecret:           "test-secret",
+			DiskType:               "ssd",
+			WorkerCidr:             "10.10.10.10/255",
+			AutoScalerMin:          1,
+			AutoScalerMax:          3,
+			MaxSurge:               40,
+			MaxUnavailable:         1,
+			ProviderSpecificConfig: nil,
 		},
 	}
 
@@ -52,6 +61,41 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		//then
 		require.NoError(t, err)
 		assert.Equal(t, expectedID, operationID)
+	})
+
+	t.Run("Should return error when requested provisioning on GCP", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		provisioner := NewResolver(provisioningService)
+
+		clusterConfig := &gqlschema.ClusterConfigInput{
+			GcpConfig: &gqlschema.GCPConfigInput{
+				Name:              "Something",
+				ProjectName:       "Project",
+				NumberOfNodes:     3,
+				BootDiskSizeGb:    256,
+				MachineType:       "machine",
+				Region:            "region",
+				Zone:              new(string),
+				KubernetesVersion: "version",
+			},
+		}
+
+		kymaConfig := &gqlschema.KymaConfigInput{
+			Version: "1.5",
+			Modules: gqlschema.AllKymaModule,
+		}
+
+		config := gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, KymaConfig: kymaConfig}
+
+		provisioningService.On("ProvisionRuntime", runtimeID, config).Return("ec781980-0533-4098-aab7-96b535569732", nil, nil)
+
+		//when
+		operationID, err := provisioner.ProvisionRuntime(ctx, runtimeID, config)
+
+		//then
+		require.Error(t, err)
+		assert.Empty(t, operationID)
 	})
 
 	t.Run("Should return error when Kyma config validation fails", func(t *testing.T) {

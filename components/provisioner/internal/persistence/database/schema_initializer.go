@@ -5,8 +5,7 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/gocraft/dbr"
-
+	dbr "github.com/gocraft/dbr/v2"
 	"github.com/lib/pq"
 
 	"github.com/pkg/errors"

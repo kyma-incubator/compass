@@ -4,7 +4,7 @@ CREATE TABLE cluster
 (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     kubeconfig text,
-    terraform_state jsonb,
+    terraform_state bytea,
     credentials_secret_name varchar(256) NOT NULL,
     creation_timestamp timestamp without time zone NOT NULL
 );
@@ -97,8 +97,7 @@ CREATE TABLE kyma_release
 CREATE TABLE kyma_config
 (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
-    version varchar(256) NOT NULL,
-    release_id uuid, --TODO: Delete 'version' column and add 'NOT NULL' here
+    release_id uuid NOT NULL,
     cluster_id uuid NOT NULL,
     UNIQUE(cluster_id),
     foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE,
