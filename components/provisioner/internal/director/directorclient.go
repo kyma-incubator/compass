@@ -1,9 +1,9 @@
 package director
 
 import (
+	gql "github.com/kyma-incubator/compass/components/provisioner/internal/graphql"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	gcli "github.com/machinebox/graphql"
-	gql "github.com/kyma-incubator/compass/components/provisioner/internal/graphql"
 	"github.com/pkg/errors"
 )
 
@@ -22,6 +22,7 @@ type DirectorClient interface {
 type directorClient struct {
 	gqlClient     gql.Client
 	queryProvider queryProvider
+	graphqlizer   graphqlizer
 	runtimeConfig string
 }
 
@@ -29,6 +30,7 @@ func NewDirectorClient(gqlClient gql.Client) DirectorClient {
 	return &directorClient{
 		gqlClient:     gqlClient,
 		queryProvider: queryProvider{},
+		graphqlizer:   graphqlizer{},
 	}
 }
 
@@ -40,11 +42,17 @@ func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput) (string,
 
 	var response = CreateRuntimeResponse{}
 
-	applicationsQuery := cc.queryProvider.createRuntimeMutation()
+	graphQLized, err := cc.graphqlizer.RuntimeInputToGraphQL(*config)
+
+	if err != nil {
+		return "", err
+	}
+
+	applicationsQuery := cc.queryProvider.createRuntimeMutation(graphQLized)
 	req := gcli.NewRequest(applicationsQuery)
 	//req.Header.Set(TenantHeader, cc.runtimeConfig.Tenant) ???
 
-	err := cc.gqlClient.Do(req, &response)
+	err = cc.gqlClient.Do(req, &response)
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to register runtime in Director")
 	}
