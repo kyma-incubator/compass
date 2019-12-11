@@ -62,8 +62,8 @@ testing-with-database-network:
 		-v $(COMPONENT_DIR)/../../:$(WORKSPACE_COMPONENT_DIR)/../../ \
 		--network=$(TESTING_DB_NETWORK) \
 		-v $(COMPONENT_DIR):$(WORKSPACE_COMPONENT_DIR):delegated \
-		--env PIPELINE_BUILD=1 \
-		$(DOCKER_CREATE_OPTS) GO111MODULE=on go test ./...
+		--env PIPELINE_BUILD=1 --env GO111MODULE=on \
+		$(DOCKER_CREATE_OPTS) go test ./...
 	@docker network rm $(TESTING_DB_NETWORK)
 
 clean-up:
