@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	log "github.com/sirupsen/logrus"
 
@@ -32,13 +33,19 @@ func NewResolver(provisioningService provisioning.Service) *Resolver {
 }
 
 func (r *Resolver) ProvisionRuntime(ctx context.Context, id string, config gqlschema.ProvisionRuntimeInput) (string, error) {
+	log.Infof("Requested provisioning of Runtime %s.", id)
+
 	err := validateInput(config)
 	if err != nil {
 		log.Errorf("Failed to provision Runtime %s: %s", id, err)
 		return "", err
 	}
 
-	log.Infof("Requested provisioning of Runtime %s.", id)
+	if config.ClusterConfig.GcpConfig != nil && config.ClusterConfig.GardenerConfig == nil {
+		err := fmt.Errorf("Provisioning on GCP is currently not supported, Runtime ID: %s", id)
+		log.Errorf(err.Error())
+		return "", err
+	}
 
 	operationID, _, err := r.provisioning.ProvisionRuntime(id, config)
 	if err != nil {
@@ -53,6 +60,10 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, id string, config gqlsc
 func validateInput(config gqlschema.ProvisionRuntimeInput) error {
 	if len(config.KymaConfig.Modules) == 0 {
 		return errors.New("cannot provision Runtime since Kyma modules list is empty")
+	}
+
+	if config.Credentials == nil {
+		return errors.New("cannot provision Runtime since credentials are missing")
 	}
 
 	return nil
