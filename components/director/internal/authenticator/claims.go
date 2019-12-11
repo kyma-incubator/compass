@@ -8,7 +8,7 @@ import (
 type invalidTenantError struct{}
 
 func (err *invalidTenantError) Error() string {
-	return "Invalid tenant"
+	return "invalid tenant"
 }
 
 func isInvalidTenantError(err error) bool {
