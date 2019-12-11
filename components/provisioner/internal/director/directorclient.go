@@ -68,7 +68,7 @@ func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput) (string,
 func (cc *directorClient) DeleteRuntime(id string) error {
 	var response = DeleteRuntimeResponse{}
 
-	applicationsQuery := cc.queryProvider.deleteRuntimeMutation()
+	applicationsQuery := cc.queryProvider.deleteRuntimeMutation(id)
 	req := gcli.NewRequest(applicationsQuery)
 
 	err := cc.gqlClient.Do(req, &response)

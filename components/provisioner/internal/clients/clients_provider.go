@@ -28,7 +28,7 @@ type clientsProvider struct {
 	enableLogging                   bool
 }
 
-func (cp *clientsProvider) GetDirectorClient(certificate *tls.Certificate, url string, runtimeConfig string) (director.Service, error) {
+func (cp *clientsProvider) GetDirectorClient(certificate *tls.Certificate, url string, runtimeConfig string) (director.DirectorClient, error) {
 	gqlClient, err := cp.gqlClientConstructor(certificate, url, cp.enableLogging, cp.insecureConfigFetch)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to create GraphQL client")
