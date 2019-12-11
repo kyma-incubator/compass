@@ -84,7 +84,20 @@ func NewResolver(transact persistence.Transactioner, svc APIService, appSvc Appl
 	}
 }
 
-func (r *Resolver) AddAPI(ctx context.Context, applicationID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
+func (r *Resolver) AddAPI(ctx context.Context, applicationID *string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
+	if applicationID == nil {
+		return &graphql.APIDefinition{
+			ID:            "xddd",
+			ApplicationID: "asdfasdfas",
+			Name:          "asdfasdfasdfasdf",
+			Description:   nil,
+			Spec:          nil,
+			TargetURL:     "https://asdfasdfasdf.com",
+			Group:         nil,
+			DefaultAuth:   nil,
+			Version:       nil,
+		}, nil
+	}
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -95,7 +108,7 @@ func (r *Resolver) AddAPI(ctx context.Context, applicationID string, in graphql.
 
 	convertedIn := r.converter.InputFromGraphQL(&in)
 
-	found, err := r.appSvc.Exist(ctx, applicationID)
+	found, err := r.appSvc.Exist(ctx, *applicationID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while checking existence of Application")
 	}
@@ -104,7 +117,7 @@ func (r *Resolver) AddAPI(ctx context.Context, applicationID string, in graphql.
 		return nil, errors.New("Cannot add API to not existing Application")
 	}
 
-	id, err := r.svc.Create(ctx, applicationID, *convertedIn)
+	id, err := r.svc.Create(ctx, *applicationID, *convertedIn)
 	if err != nil {
 		return nil, err
 	}
