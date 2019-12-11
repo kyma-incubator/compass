@@ -793,14 +793,14 @@ type CleanUpRuntimeDataResult {
 
 scalar Labels
 
-input RuntimeInput { # Configuration of the Runtime to register in Director
-    name: String!
-    description: String
+input RuntimeInput {
+    name: String!           # Name of the Runtime
+    description: String     # Runtime description
     labels: Labels
 }
 
 input ProvisionRuntimeInput {
-    runtimeInput: RuntimeInput!
+    runtimeInput: RuntimeInput!         # Configuration of the Runtime to register in Director
     clusterConfig: ClusterConfigInput!  # Configuration of the cluster to provision
     credentials: CredentialsInput!      # Credentials
     kymaConfig: KymaConfigInput!        # Configuration of Kyma to be installed on the provisioned cluster
@@ -4699,7 +4699,7 @@ func (ec *executionContext) unmarshalInputRuntimeInput(ctx context.Context, obj 
 			}
 		case "labels":
 			var err error
-			it.Labels, err = ec.unmarshalOLabels2ᚖstring(ctx, v)
+			it.Labels, err = ec.unmarshalOLabels2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐLabels(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6238,27 +6238,28 @@ func (ec *executionContext) marshalOKymaModule2ᚖgithubᚗcomᚋkymaᚑincubato
 	return v
 }
 
-func (ec *executionContext) unmarshalOLabels2string(ctx context.Context, v interface{}) (string, error) {
-	return graphql.UnmarshalString(v)
+func (ec *executionContext) unmarshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐLabels(ctx context.Context, v interface{}) (Labels, error) {
+	var res Labels
+	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalOLabels2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	return graphql.MarshalString(v)
+func (ec *executionContext) marshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐLabels(ctx context.Context, sel ast.SelectionSet, v Labels) graphql.Marshaler {
+	return v
 }
 
-func (ec *executionContext) unmarshalOLabels2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
+func (ec *executionContext) unmarshalOLabels2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐLabels(ctx context.Context, v interface{}) (*Labels, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOLabels2string(ctx, v)
+	res, err := ec.unmarshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐLabels(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOLabels2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+func (ec *executionContext) marshalOLabels2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐLabels(ctx context.Context, sel ast.SelectionSet, v *Labels) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec.marshalOLabels2string(ctx, sel, *v)
+	return v
 }
 
 func (ec *executionContext) marshalOOperationStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx context.Context, sel ast.SelectionSet, v OperationStatus) graphql.Marshaler {

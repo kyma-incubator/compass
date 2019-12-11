@@ -126,14 +126,14 @@ type CleanUpRuntimeDataResult {
 
 scalar Labels
 
-input RuntimeInput { # Configuration of the Runtime to register in Director
-    name: String!
-    description: String
+input RuntimeInput {
+    name: String!           # Name of the Runtime
+    description: String     # Runtime description
     labels: Labels
 }
 
 input ProvisionRuntimeInput {
-    runtimeInput: RuntimeInput!
+    runtimeInput: RuntimeInput!         # Configuration of the Runtime to register in Director
     clusterConfig: ClusterConfigInput!  # Configuration of the cluster to provision
     credentials: CredentialsInput!      # Credentials
     kymaConfig: KymaConfigInput!        # Configuration of Kyma to be installed on the provisioned cluster
