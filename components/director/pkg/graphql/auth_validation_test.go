@@ -12,24 +12,24 @@ func TestAuthInput_Validate_Credential(t *testing.T) {
 	credential := fixValidCredentialDataInput()
 
 	testCases := []struct {
-		Name  string
-		Value *graphql.CredentialDataInput
-		Valid bool
+		Name          string
+		Value         *graphql.CredentialDataInput
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: &credential,
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         &credential,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Invalid - nil",
-			Value: nil,
-			Valid: false,
+			Name:          "Invalid - nil",
+			Value:         nil,
+			ExpectedValid: false,
 		},
 		{
-			Name:  "Invalid - nested validation error",
-			Value: &graphql.CredentialDataInput{},
-			Valid: false,
+			Name:          "Invalid - nested validation error",
+			Value:         &graphql.CredentialDataInput{},
+			ExpectedValid: false,
 		},
 	}
 
@@ -41,7 +41,7 @@ func TestAuthInput_Validate_Credential(t *testing.T) {
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -52,43 +52,43 @@ func TestAuthInput_Validate_Credential(t *testing.T) {
 
 func TestAuthInput_Validate_AdditionalHeaders(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value *graphql.HttpHeaders
-		Valid bool
+		Name          string
+		Value         *graphql.HttpHeaders
+		ExpectedValid bool
 	}{
 		{
-			Name: "Valid",
+			Name: "ExpectedValid",
 			Value: &graphql.HttpHeaders{
 				"Authorization": {"test", "asdf"},
 				"Test":          {"test", "asdf"},
 			},
-			Valid: true,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Valid - nil",
-			Value: nil,
-			Valid: true,
+			Name:          "ExpectedValid - nil",
+			Value:         nil,
+			ExpectedValid: true,
 		},
 		{
 			Name: "Invalid - empty key",
 			Value: &graphql.HttpHeaders{
 				inputvalidationtest.EmptyString: {"test"},
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - nil value",
 			Value: &graphql.HttpHeaders{
 				"test": nil,
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - empty slice element",
 			Value: &graphql.HttpHeaders{
 				"test": {inputvalidationtest.EmptyString},
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 	}
 
@@ -100,7 +100,7 @@ func TestAuthInput_Validate_AdditionalHeaders(t *testing.T) {
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -111,43 +111,43 @@ func TestAuthInput_Validate_AdditionalHeaders(t *testing.T) {
 
 func TestAuthInput_Validate_AdditionalQueryParams(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value *graphql.QueryParams
-		Valid bool
+		Name          string
+		Value         *graphql.QueryParams
+		ExpectedValid bool
 	}{
 		{
-			Name: "Valid",
+			Name: "ExpectedValid",
 			Value: &graphql.QueryParams{
 				"Param": {"test", "asdf"},
 				"Test":  {"test", "asdf"},
 			},
-			Valid: true,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Valid - nil",
-			Value: nil,
-			Valid: true,
+			Name:          "ExpectedValid - nil",
+			Value:         nil,
+			ExpectedValid: true,
 		},
 		{
 			Name: "Invalid - empty key",
 			Value: &graphql.QueryParams{
 				inputvalidationtest.EmptyString: {"test"},
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - nil value",
 			Value: &graphql.QueryParams{
 				"test": nil,
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - empty slice element",
 			Value: &graphql.QueryParams{
 				"test": {inputvalidationtest.EmptyString},
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 	}
 
@@ -159,7 +159,7 @@ func TestAuthInput_Validate_AdditionalQueryParams(t *testing.T) {
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -171,33 +171,33 @@ func TestAuthInput_Validate_AdditionalQueryParams(t *testing.T) {
 func TestAuthInput_Validate_RequestAuth(t *testing.T) {
 	credRequest := fixValidCredentialRequestAuthInput()
 	testCases := []struct {
-		Name  string
-		Value *graphql.CredentialRequestAuthInput
-		Valid bool
+		Name          string
+		Value         *graphql.CredentialRequestAuthInput
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: &credRequest,
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         &credRequest,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Valid - nil",
-			Value: nil,
-			Valid: true,
+			Name:          "ExpectedValid - nil",
+			Value:         nil,
+			ExpectedValid: true,
 		},
 		{
 			Name: "Invalid - no auth provided",
 			Value: &graphql.CredentialRequestAuthInput{
 				Csrf: nil,
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - nested validation error",
 			Value: &graphql.CredentialRequestAuthInput{
 				Csrf: &graphql.CSRFTokenCredentialRequestAuthInput{},
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 	}
 
@@ -209,7 +209,7 @@ func TestAuthInput_Validate_RequestAuth(t *testing.T) {
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -224,14 +224,14 @@ func TestCredentialDataInput_Validate(t *testing.T) {
 	oauth := fixValidOAuthCredentialDataInput()
 
 	testCases := []struct {
-		Name  string
-		Value *graphql.CredentialDataInput
-		Valid bool
+		Name          string
+		Value         *graphql.CredentialDataInput
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: &credential,
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         &credential,
+			ExpectedValid: true,
 		},
 		{
 			Name: "Invalid - no auth provided",
@@ -239,7 +239,7 @@ func TestCredentialDataInput_Validate(t *testing.T) {
 				Basic: nil,
 				Oauth: nil,
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - multiple auths provided",
@@ -247,21 +247,21 @@ func TestCredentialDataInput_Validate(t *testing.T) {
 				Basic: &basic,
 				Oauth: &oauth,
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - nested validation error in Basic",
 			Value: &graphql.CredentialDataInput{
 				Basic: &graphql.BasicCredentialDataInput{},
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - nested validation error in Oauth",
 			Value: &graphql.CredentialDataInput{
 				Oauth: &graphql.OAuthCredentialDataInput{},
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 	}
 
@@ -273,7 +273,7 @@ func TestCredentialDataInput_Validate(t *testing.T) {
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -284,19 +284,19 @@ func TestCredentialDataInput_Validate(t *testing.T) {
 
 func TestBasicCredentialDataInput_Validate_Username(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value string
-		Valid bool
+		Name          string
+		Value         string
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: "John",
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         "John",
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Invalid - Empty string",
-			Value: inputvalidationtest.EmptyString,
-			Valid: false,
+			Name:          "Invalid - Empty string",
+			Value:         inputvalidationtest.EmptyString,
+			ExpectedValid: false,
 		},
 	}
 
@@ -308,7 +308,7 @@ func TestBasicCredentialDataInput_Validate_Username(t *testing.T) {
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -319,19 +319,19 @@ func TestBasicCredentialDataInput_Validate_Username(t *testing.T) {
 
 func TestBasicCredentialDataInput_Validate_Password(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value string
-		Valid bool
+		Name          string
+		Value         string
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: "John",
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         "John",
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Invalid - Empty string",
-			Value: inputvalidationtest.EmptyString,
-			Valid: false,
+			Name:          "Invalid - Empty string",
+			Value:         inputvalidationtest.EmptyString,
+			ExpectedValid: false,
 		},
 	}
 
@@ -343,7 +343,7 @@ func TestBasicCredentialDataInput_Validate_Password(t *testing.T) {
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -354,19 +354,19 @@ func TestBasicCredentialDataInput_Validate_Password(t *testing.T) {
 
 func TestOAuthCredentialDataInput_Validate_ClientID(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value string
-		Valid bool
+		Name          string
+		Value         string
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: "John.2h2kj2k5gw6j3h5gjk34hg-g:0",
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         "John.2h2kj2k5gw6j3h5gjk34hg-g:0",
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Invalid - Empty string",
-			Value: inputvalidationtest.EmptyString,
-			Valid: false,
+			Name:          "Invalid - Empty string",
+			Value:         inputvalidationtest.EmptyString,
+			ExpectedValid: false,
 		},
 	}
 
@@ -378,7 +378,7 @@ func TestOAuthCredentialDataInput_Validate_ClientID(t *testing.T) {
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -389,19 +389,19 @@ func TestOAuthCredentialDataInput_Validate_ClientID(t *testing.T) {
 
 func TestOAuthCredentialDataInput_Validate_ClientSecret(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value string
-		Valid bool
+		Name          string
+		Value         string
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: "Doe.2h2kj2k5gw6j3h5gjk34hg-g:0",
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         "Doe.2h2kj2k5gw6j3h5gjk34hg-g:0",
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Invalid - Empty string",
-			Value: inputvalidationtest.EmptyString,
-			Valid: false,
+			Name:          "Invalid - Empty string",
+			Value:         inputvalidationtest.EmptyString,
+			ExpectedValid: false,
 		},
 	}
 
@@ -413,7 +413,7 @@ func TestOAuthCredentialDataInput_Validate_ClientSecret(t *testing.T) {
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -424,24 +424,24 @@ func TestOAuthCredentialDataInput_Validate_ClientSecret(t *testing.T) {
 
 func TestOAuthCredentialDataInput_Validate_URL(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value string
-		Valid bool
+		Name          string
+		Value         string
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: inputvalidationtest.ValidURL,
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         inputvalidationtest.ValidURL,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Invalid - Empty string",
-			Value: inputvalidationtest.EmptyString,
-			Valid: false,
+			Name:          "Invalid - Empty string",
+			Value:         inputvalidationtest.EmptyString,
+			ExpectedValid: false,
 		},
 		{
-			Name:  "Invalid - Invalid URL",
-			Value: inputvalidationtest.InvalidURL,
-			Valid: false,
+			Name:          "Invalid - Invalid URL",
+			Value:         inputvalidationtest.InvalidURL,
+			ExpectedValid: false,
 		},
 	}
 
@@ -453,7 +453,7 @@ func TestOAuthCredentialDataInput_Validate_URL(t *testing.T) {
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -465,30 +465,30 @@ func TestOAuthCredentialDataInput_Validate_URL(t *testing.T) {
 func TestCredentialRequestAuthInput_Validate(t *testing.T) {
 	csrf := fixValidCSRFTokenCredentialRequestAuthInput()
 	testCases := []struct {
-		Name  string
-		Value *graphql.CredentialRequestAuthInput
-		Valid bool
+		Name          string
+		Value         *graphql.CredentialRequestAuthInput
+		ExpectedValid bool
 	}{
 		{
-			Name: "Valid",
+			Name: "ExpectedValid",
 			Value: &graphql.CredentialRequestAuthInput{
 				Csrf: &csrf,
 			},
-			Valid: true,
+			ExpectedValid: true,
 		},
 		{
 			Name: "Invalid - no auth provided",
 			Value: &graphql.CredentialRequestAuthInput{
 				Csrf: nil,
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - nested validation error in Csrf",
 			Value: &graphql.CredentialRequestAuthInput{
 				Csrf: &graphql.CSRFTokenCredentialRequestAuthInput{},
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 	}
 
@@ -499,7 +499,7 @@ func TestCredentialRequestAuthInput_Validate(t *testing.T) {
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -512,19 +512,19 @@ func TestCSRFTokenCredentialRequestAuthInput_Validate_Credential(t *testing.T) {
 	credential := fixValidCredentialDataInput()
 
 	testCases := []struct {
-		Name  string
-		Value *graphql.CredentialDataInput
-		Valid bool
+		Name          string
+		Value         *graphql.CredentialDataInput
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: &credential,
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         &credential,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Invalid - nil",
-			Value: nil,
-			Valid: false,
+			Name:          "Invalid - nil",
+			Value:         nil,
+			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - nested validation error",
@@ -532,7 +532,7 @@ func TestCSRFTokenCredentialRequestAuthInput_Validate_Credential(t *testing.T) {
 				Basic: nil,
 				Oauth: nil,
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 	}
 
@@ -544,7 +544,7 @@ func TestCSRFTokenCredentialRequestAuthInput_Validate_Credential(t *testing.T) {
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -555,43 +555,43 @@ func TestCSRFTokenCredentialRequestAuthInput_Validate_Credential(t *testing.T) {
 
 func TestCSRFTokenCredentialRequestAuthInput_Validate_AdditionalHeaders(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value *graphql.HttpHeaders
-		Valid bool
+		Name          string
+		Value         *graphql.HttpHeaders
+		ExpectedValid bool
 	}{
 		{
-			Name: "Valid",
+			Name: "ExpectedValid",
 			Value: &graphql.HttpHeaders{
 				"Authorization": {"test", "asdf"},
 				"Test":          {"test", "asdf"},
 			},
-			Valid: true,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Valid - nil",
-			Value: nil,
-			Valid: true,
+			Name:          "ExpectedValid - nil",
+			Value:         nil,
+			ExpectedValid: true,
 		},
 		{
 			Name: "Invalid - empty key",
 			Value: &graphql.HttpHeaders{
 				inputvalidationtest.EmptyString: {"test"},
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - nil value",
 			Value: &graphql.HttpHeaders{
 				"test": nil,
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - empty slice element",
 			Value: &graphql.HttpHeaders{
 				"test": {inputvalidationtest.EmptyString},
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 	}
 
@@ -603,7 +603,7 @@ func TestCSRFTokenCredentialRequestAuthInput_Validate_AdditionalHeaders(t *testi
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -614,43 +614,43 @@ func TestCSRFTokenCredentialRequestAuthInput_Validate_AdditionalHeaders(t *testi
 
 func TestCSRFTokenCredentialRequestAuthInput_Validate_AdditionalQueryParams(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value *graphql.QueryParams
-		Valid bool
+		Name          string
+		Value         *graphql.QueryParams
+		ExpectedValid bool
 	}{
 		{
-			Name: "Valid",
+			Name: "ExpectedValid",
 			Value: &graphql.QueryParams{
 				"Param": {"test", "asdf"},
 				"Test":  {"test", "asdf"},
 			},
-			Valid: true,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Valid - nil",
-			Value: nil,
-			Valid: true,
+			Name:          "ExpectedValid - nil",
+			Value:         nil,
+			ExpectedValid: true,
 		},
 		{
 			Name: "Invalid - empty key",
 			Value: &graphql.QueryParams{
 				inputvalidationtest.EmptyString: {"test"},
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - nil value",
 			Value: &graphql.QueryParams{
 				"test": nil,
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 		{
 			Name: "Invalid - empty slice element",
 			Value: &graphql.QueryParams{
 				"test": {inputvalidationtest.EmptyString},
 			},
-			Valid: false,
+			ExpectedValid: false,
 		},
 	}
 
@@ -662,7 +662,7 @@ func TestCSRFTokenCredentialRequestAuthInput_Validate_AdditionalQueryParams(t *t
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
@@ -673,24 +673,24 @@ func TestCSRFTokenCredentialRequestAuthInput_Validate_AdditionalQueryParams(t *t
 
 func TestCSRFTokenCredentialRequestAuthInput_Validate_TokenEndpointURL(t *testing.T) {
 	testCases := []struct {
-		Name  string
-		Value string
-		Valid bool
+		Name          string
+		Value         string
+		ExpectedValid bool
 	}{
 		{
-			Name:  "Valid",
-			Value: inputvalidationtest.ValidURL,
-			Valid: true,
+			Name:          "ExpectedValid",
+			Value:         inputvalidationtest.ValidURL,
+			ExpectedValid: true,
 		},
 		{
-			Name:  "Invalid - Empty string",
-			Value: inputvalidationtest.EmptyString,
-			Valid: false,
+			Name:          "Invalid - Empty string",
+			Value:         inputvalidationtest.EmptyString,
+			ExpectedValid: false,
 		},
 		{
-			Name:  "Invalid - Invalid URL",
-			Value: inputvalidationtest.InvalidURL,
-			Valid: false,
+			Name:          "Invalid - Invalid URL",
+			Value:         inputvalidationtest.InvalidURL,
+			ExpectedValid: false,
 		},
 	}
 
@@ -702,7 +702,7 @@ func TestCSRFTokenCredentialRequestAuthInput_Validate_TokenEndpointURL(t *testin
 			//WHEN
 			err := sut.Validate()
 			//THEN
-			if testCase.Valid {
+			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)

@@ -78,7 +78,7 @@ func TestSetProvisioning(t *testing.T) {
 		ClusterID:      runtimeID,
 	}
 
-	operationMatcher := getOperationMather(operation)
+	operationMatcher := getOperationMatcher(operation)
 
 	runtimeConfigurations := []struct {
 		config model.RuntimeConfig
@@ -299,7 +299,7 @@ func TestSetDeprovisioning(t *testing.T) {
 		ClusterID:      runtimeID,
 	}
 
-	operationMatcher := getOperationMather(operation)
+	operationMatcher := getOperationMatcher(operation)
 
 	t.Run("Should set deprovisioning started", func(t *testing.T) {
 		// given
@@ -346,7 +346,7 @@ func TestSetUpgrade(t *testing.T) {
 		ClusterID:      runtimeID,
 	}
 
-	operationMatcher := getOperationMather(operation)
+	operationMatcher := getOperationMatcher(operation)
 
 	t.Run("Should set upgrade started", func(t *testing.T) {
 		// given
@@ -515,7 +515,28 @@ func TestGetRuntimeStatus(t *testing.T) {
 	})
 }
 
-func getOperationMather(expected model.Operation) func(model.Operation) bool {
+func TestCleanupClusterData(t *testing.T) {
+
+	t.Run("Should clean up cluster data", func(t *testing.T) {
+
+		// given
+		sessionFactoryMock := &sessionMocks.Factory{}
+		writeSessionMock := &sessionMocks.WriteSession{}
+		runtimeID := "runtimeID"
+
+		sessionFactoryMock.On("NewWriteSession").Return(writeSessionMock)
+		writeSessionMock.On("DeleteCluster", runtimeID).Return(nil)
+
+		// when
+		runtimeService := NewService(sessionFactoryMock, nil)
+		err := runtimeService.CleanupClusterData(runtimeID)
+
+		// then
+		assert.NoError(t, err)
+	})
+}
+
+func getOperationMatcher(expected model.Operation) func(model.Operation) bool {
 	return func(op model.Operation) bool {
 		return op.Type == expected.Type &&
 			op.Message == expected.Message && op.ClusterID == expected.ClusterID &&

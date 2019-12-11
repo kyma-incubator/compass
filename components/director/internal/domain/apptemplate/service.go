@@ -3,6 +3,7 @@ package apptemplate
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 
@@ -13,6 +14,7 @@ import (
 type ApplicationTemplateRepository interface {
 	Create(ctx context.Context, item model.ApplicationTemplate) error
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
+	GetByName(ctx context.Context, id string) (*model.ApplicationTemplate, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	List(ctx context.Context, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
 	Update(ctx context.Context, model model.ApplicationTemplate) error
@@ -41,11 +43,6 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 	id := s.uidService.Generate()
 	appTemplate := in.ToApplicationTemplate(id)
 
-	faultyPlaceholder, ok := s.checkIfPlaceholdersAreUnique(appTemplate.Placeholders)
-	if !ok {
-		return "", fmt.Errorf("while creating Application Template [name=%s]: placeholder [name=%s] appears more than once", in.Name, faultyPlaceholder)
-	}
-
 	err := s.appTemplateRepo.Create(ctx, appTemplate)
 	if err != nil {
 		return "", errors.Wrap(err, "while creating Application Template")
@@ -58,6 +55,15 @@ func (s *service) Get(ctx context.Context, id string) (*model.ApplicationTemplat
 	appTemplate, err := s.appTemplateRepo.Get(ctx, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Application Template with ID %s", id)
+	}
+
+	return appTemplate, nil
+}
+
+func (s *service) GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error) {
+	appTemplate, err := s.appTemplateRepo.GetByName(ctx, name)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Application Template with [name=%s]", name)
 	}
 
 	return appTemplate, nil
@@ -83,11 +89,6 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (model.
 func (s *service) Update(ctx context.Context, id string, in model.ApplicationTemplateInput) error {
 	appTemplate := in.ToApplicationTemplate(id)
 
-	faultyPlaceholder, ok := s.checkIfPlaceholdersAreUnique(appTemplate.Placeholders)
-	if !ok {
-		return fmt.Errorf("while creating Application Template [name=%s]: placeholder [name=%s] appears more than once", in.Name, faultyPlaceholder)
-	}
-
 	err := s.appTemplateRepo.Update(ctx, appTemplate)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Application Template with ID %s", id)
@@ -105,15 +106,14 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *service) checkIfPlaceholdersAreUnique(placeholders []model.ApplicationTemplatePlaceholder) (string, bool) {
-	keys := make(map[string]interface{})
-	for _, item := range placeholders {
-		_, exist := keys[item.Name]
-		if exist {
-			return item.Name, false
-		} else {
-			keys[item.Name] = struct{}{}
+func (s *service) PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error) {
+	appCreateInputJSON := appTemplate.ApplicationInputJSON
+	for _, placeholder := range appTemplate.Placeholders {
+		newValue, err := values.FindPlaceholderValue(placeholder.Name)
+		if err != nil {
+			return "", errors.Wrap(err, "required placeholder not provided")
 		}
+		appCreateInputJSON = strings.ReplaceAll(appCreateInputJSON, fmt.Sprintf("{{%s}}", placeholder.Name), newValue)
 	}
-	return "", true
+	return appCreateInputJSON, nil
 }

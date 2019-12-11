@@ -163,6 +163,83 @@ func TestRepository_Get(t *testing.T) {
 	})
 }
 
+func TestRepository_GetByName(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		appTemplateModel := fixModelAppTemplate(testID, testName)
+		appTemplateEntity := fixEntityAppTemplate(t, testID, testName)
+
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromEntity", appTemplateEntity).Return(appTemplateModel, nil).Once()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		rowsToReturn := fixSQLRows([]apptemplate.Entity{*appTemplateEntity})
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_input, placeholders, access_level FROM public.app_templates WHERE name = $1`)).
+			WithArgs(testName).
+			WillReturnRows(rowsToReturn)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		appTemplateRepo := apptemplate.NewRepository(mockConverter)
+
+		// WHEN
+		result, err := appTemplateRepo.GetByName(ctx, testName)
+
+		// THEN
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Equal(t, appTemplateModel, result)
+	})
+
+	t.Run("Error when getting", func(t *testing.T) {
+		// GIVEN
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_input, placeholders, access_level FROM public.app_templates WHERE name = $1`)).
+			WithArgs(testName).
+			WillReturnError(testError)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		appTemplateRepo := apptemplate.NewRepository(mockConverter)
+
+		// WHEN
+		_, err := appTemplateRepo.GetByName(ctx, testName)
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), testError.Error())
+	})
+
+	t.Run("Error when converting", func(t *testing.T) {
+		// GIVEN
+		appTemplateEntity := fixEntityAppTemplate(t, testID, testName)
+
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromEntity", appTemplateEntity).Return(nil, testError).Once()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		rowsToReturn := fixSQLRows([]apptemplate.Entity{*appTemplateEntity})
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_input, placeholders, access_level FROM public.app_templates WHERE name = $1`)).
+			WithArgs(testName).
+			WillReturnRows(rowsToReturn)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		appTemplateRepo := apptemplate.NewRepository(mockConverter)
+
+		// WHEN
+		_, err := appTemplateRepo.GetByName(ctx, testName)
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), testError.Error())
+	})
+}
+
 func TestRepository_Exists(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN

@@ -38,12 +38,3 @@ func Cast(i interface{}) (string, error) {
 
 	return "", apperrors.NewInvalidStringCastError()
 }
-
-func IsInSlice(searched string, slice []string) bool {
-	for _, item := range slice {
-		if item == searched {
-			return true
-		}
-	}
-	return false
-}

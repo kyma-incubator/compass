@@ -66,6 +66,11 @@ type ApplicationEventConfiguration struct {
 	DefaultURL string `json:"defaultURL"`
 }
 
+type ApplicationFromTemplateInput struct {
+	TemplateName string                `json:"templateName"`
+	Values       []*TemplateValueInput `json:"values"`
+}
+
 type ApplicationPage struct {
 	Data       []*Application `json:"data"`
 	PageInfo   *PageInfo      `json:"pageInfo"`
@@ -287,6 +292,11 @@ type LabelFilter struct {
 	// Optional SQL/JSON Path expression. If query is not provided, returns every object with given label key regardless of its value.
 	// Currently only a limited subset of expressions is supported.
 	Query *string `json:"query"`
+}
+
+type LabelInput struct {
+	Key   string      `json:"key"`
+	Value interface{} `json:"value"`
 }
 
 type OAuthCredentialData struct {

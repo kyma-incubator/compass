@@ -42,6 +42,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 
 	err = tc.RunOperation(ctx, getApplicationTemplateRequest, &appTemplateOutput)
 
+	require.NoError(t, err)
 	require.NotEmpty(t, appTemplateOutput)
 	assertApplicationTemplate(t, appTemplateInput, appTemplateOutput)
 	saveExample(t, getApplicationTemplateRequest.Query(), "query application template")
@@ -155,4 +156,41 @@ func TestQueryApplicationTemplates(t *testing.T) {
 	t.Log("Check if application templates were received")
 	assert.Equal(t, 2, output.TotalCount)
 	saveExample(t, getApplicationTemplatesRequest.Query(), "query application templates")
+}
+
+func TestRegisterApplicationFromTemplate(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	tmplName := "template"
+	placeholderKey := "new-placeholder"
+	appTmplInput := fixApplicationTemplate(tmplName)
+	appTmplInput.ApplicationInput.Description = ptr.String("test {{new-placeholder}}")
+	appTmplInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
+		{
+			Name:        placeholderKey,
+			Description: ptr.String("description"),
+		}}
+
+	appTmpl := createApplicationTemplateFromInput(t, ctx, appTmplInput)
+	defer deleteApplicationTemplate(t, ctx, appTmpl.ID)
+
+	appFromTmpl := graphql.ApplicationFromTemplateInput{TemplateName: tmplName, Values: []*graphql.TemplateValueInput{
+		{
+			Placeholder: placeholderKey,
+			Value:       "new-value",
+		}}}
+	appFromTmplGQL, err := tc.graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
+	require.NoError(t, err)
+	createAppFromTmplRequest := fixRegisterApplicationFromTemplate(appFromTmplGQL)
+	outputApp := graphql.ApplicationExt{}
+	//WHEN
+	err = tc.RunOperation(ctx, createAppFromTmplRequest, &outputApp)
+
+	//THEN
+	require.NoError(t, err)
+	deleteApplication(t, outputApp.ID)
+	require.NotEmpty(t, outputApp)
+	require.NotNil(t, outputApp.Application.Description)
+	require.Equal(t, "test new-value", *outputApp.Application.Description)
+	saveExample(t, createAppFromTmplRequest.Query(), "register application from template")
 }
