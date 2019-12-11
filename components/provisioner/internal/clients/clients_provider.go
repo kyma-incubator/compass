@@ -9,7 +9,7 @@ import (
 
 //go:generate mockery -name=ClientsProvider
 type GQLClientsProvider interface {
-	GetDirectorClient(certificate *tls.Certificate, url string, runtimeConfig string) (director.Service, error)
+	GetDirectorClient(certificate *tls.Certificate, url string, runtimeConfig string) (director.DirectorClient, error)
 }
 
 func NewGQLClientsProvider(gqlClientConstr graphql.ClientConstructor, insecureConnectorCommunication bool, insecureConfigFetch bool, enableLogging bool) GQLClientsProvider {

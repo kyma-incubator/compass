@@ -39,13 +39,13 @@ type Service interface {
 type service struct {
 	persistenceService   persistence.Service
 	hydroform            hydroform.Service
-	directorService      director.Service
+	directorService      director.DirectorClient
 	configBuilderFactory configuration.BuilderFactory
 	uuidGenerator        persistence.UUIDGenerator
 }
 
 func NewProvisioningService(persistenceService persistence.Service, uuidGenerator persistence.UUIDGenerator,
-	hydroform hydroform.Service, directorService director.Service, configBuilderFactory configuration.BuilderFactory) Service {
+	hydroform hydroform.Service, directorService director.DirectorClient, configBuilderFactory configuration.BuilderFactory) Service {
 	return &service{
 		persistenceService:   persistenceService,
 		hydroform:            hydroform,
@@ -125,6 +125,10 @@ func (r *service) DeprovisionRuntime(id string) (string, <-chan struct{}, error)
 	if runtimeStatus.LastOperationStatus.State == model.InProgress {
 		return "", nil, errors.New("cannot start new operation while previous one is in progress")
 	}
+
+	// unregister this runtime from Director
+
+	r.directorService.DeleteRuntime(id)
 
 	operation, err := r.persistenceService.SetDeprovisioningStarted(id)
 

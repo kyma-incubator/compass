@@ -124,6 +124,14 @@
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:320e7ead93de9fd2b0e59b50fd92a4d50c1f8ab455d96bc2eb083267453a9709"
+  name = "github.com/asaskevich/govalidator"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "ccb8e960c48f04d6935e72476ae4a51028f9e22f"
+  version = "v9"
+
+[[projects]]
   digest = "1:3bf866b65d858f7e3a0cda31c46eecb675d1c59600fa9c66356276635ed68a77"
   name = "github.com/aws/aws-sdk-go"
   packages = [
@@ -345,6 +353,17 @@
   pruneopts = "UT"
   revision = "f9ad04069615a36232bcea71b697a57f65abe9b1"
   version = "0.29.2"
+
+[[projects]]
+  digest = "1:5f7b0c5ddd7f129e3a95b534b624b96aefd0487305af5828620a63a9dc94286f"
+  name = "github.com/go-ozzo/ozzo-validation"
+  packages = [
+    ".",
+    "is",
+  ]
+  pruneopts = "UT"
+  revision = "199b55b36bc1af151e6eea487cc92ffa5b460b81"
+  version = "v3.6.0"
 
 [[projects]]
   digest = "1:e43e924cdda2208737c20b6b1c8c03d3c7a2114273cd33bb6d00418c0f95ac1e"
@@ -752,6 +771,20 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:0a8fa32e48b8c60c779e5249c3de12145f5bac2b37590da3e96899c704eed518"
+  name = "github.com/kyma-incubator/compass"
+  packages = [
+    "components/director/internal/model",
+    "components/director/pkg/graphql",
+    "components/director/pkg/inputvalidation",
+    "components/director/pkg/jsonschema",
+    "components/director/pkg/pagination",
+    "components/director/pkg/scalar",
+  ]
+  pruneopts = "UT"
+  revision = "ce505c4e67608d64ff0f9b36f18629a31d297bb1"
+
+[[projects]]
   digest = "1:1bd476795aa01f1a5275fd06b73b5ed330102fce3938a79da851cf71e3d15149"
   name = "github.com/kyma-incubator/hydroform"
   packages = [
@@ -792,6 +825,14 @@
   pruneopts = "UT"
   revision = "3427c32cb71afc948325f299f040e53c1dd78979"
   version = "v1.2.0"
+
+[[projects]]
+  digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
+  name = "github.com/machinebox/graphql"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "05b17f3157491bbfa5d6fc2006443a272d960d15"
+  version = "v0.2.2"
 
 [[projects]]
   digest = "1:c658e84ad3916da105a761660dcaeb01e63416c8ec7bc62256a9b411a05fcd67"
@@ -1108,6 +1149,30 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "cf601e2565a0a7c7418ed014d28a507be6cb1e45"
+  version = "v1.2.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:87fe9bca786484cef53d52adeec7d1c52bc2bfbee75734eddeb75fc5c7023871"
+  name = "github.com/xeipuuv/gojsonpointer"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "02993c407bfbf5f6dae44c4f4b1cf6a39b5fc5bb"
+
+[[projects]]
+  branch = "master"
+  digest = "1:dc6a6c28ca45d38cfce9f7cb61681ee38c5b99ec1425339bfc1e1a7ba769c807"
+  name = "github.com/xeipuuv/gojsonreference"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "bd5ef7bd5415a7ac448318e64f11a24cd21e594b"
+
+[[projects]]
+  digest = "1:a8a0ed98532819a3b0dc5cf3264a14e30aba5284b793ba2850d6f381ada5f987"
+  name = "github.com/xeipuuv/gojsonschema"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "82fcdeb203eb6ab2a67d0a623d9c19e5e5a64927"
   version = "v1.2.0"
 
 [[projects]]
@@ -1725,9 +1790,11 @@
     "github.com/gorilla/mux",
     "github.com/hashicorp/terraform/terraform",
     "github.com/kisielk/errcheck",
+    "github.com/kyma-incubator/compass/components/director/pkg/graphql",
     "github.com/kyma-incubator/hydroform",
     "github.com/kyma-incubator/hydroform/types",
     "github.com/lib/pq",
+    "github.com/machinebox/graphql",
     "github.com/pkg/errors",
     "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/assert",

@@ -8,10 +8,15 @@ import (
 )
 
 //go:generate mockery -name=DirectorClient
-type Service interface {
+type DirectorClient interface {
 	CreateRuntime(config *gqlschema.RuntimeInput) (string, error)
-	DeleteRuntime() error
-	UpdateRuntime() error
+	DeleteRuntime(id string) error
+	//UpdateRuntime(config *gqlschema.RuntimeInput) error maybe not needed
+
+	/*
+	updateRuntime(id: ID!, in: RuntimeInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.updateRuntime")
+	deleteRuntime(id: ID!): Runtime! @hasScopes(path: "graphql.mutation.deleteRuntime")
+	*/
 }
 
 type directorClient struct {
@@ -20,7 +25,7 @@ type directorClient struct {
 	runtimeConfig string
 }
 
-func NewDirectorClient(gqlClient gql.Client) Service {
+func NewDirectorClient(gqlClient gql.Client) DirectorClient {
 	return &directorClient{
 		gqlClient:     gqlClient,
 		queryProvider: queryProvider{},
@@ -33,7 +38,7 @@ func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput) (string,
 		return "", errors.New("Cannot register register runtime in Director: missing Runtime config")
 	}
 
-	response := CreateRuntimeResponse{}
+	var response = CreateRuntimeResponse{}
 
 	applicationsQuery := cc.queryProvider.createRuntimeMutation()
 	req := gcli.NewRequest(applicationsQuery)
@@ -49,17 +54,49 @@ func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput) (string,
 		return "", errors.Errorf("Failed to register runtime in Director: received nil response.")
 	}
 
-	return "", nil
+	return response.Result.ID, nil
 }
 
-func (cc *directorClient) DeleteRuntime() error {
+func (cc *directorClient) DeleteRuntime(id string) error {
+	var response = DeleteRuntimeResponse{}
+
+	applicationsQuery := cc.queryProvider.deleteRuntimeMutation()
+	req := gcli.NewRequest(applicationsQuery)
+
+	err := cc.gqlClient.Do(req, &response)
+	if err != nil {
+		return errors.Wrap(err, "Failed to unregister runtime in Director")
+	}
+	// Nil check is necessary due to GraphQL client not checking response code
+	if response.Result == nil {
+		return errors.Errorf("Failed to register unregister runtime in Director: received nil response.")
+	}
+
+	if response.Result.ID != id {
+		return errors.New ("Failed to unregister correctly the runtime in Director: Received bad Runtime id in response")
+	}
+
 	return nil
 }
 
-
-func (cc *directorClient) UpdateRuntime() error {
-	return nil
-}
+// maybe this is not needed
+//func (cc *directorClient) UpdateRuntime(config *gqlschema.RuntimeInput) error {
+//	var response = DeleteRuntimeResponse{}
+//
+//	applicationsQuery := cc.queryProvider.updateRuntimeMutation()
+//	req := gcli.NewRequest(applicationsQuery)
+//
+//	err := cc.gqlClient.Do(req, &response)
+//	if err != nil {
+//		return errors.Wrap(err, "Failed to update runtime in Director")
+//	}
+//	// Nil check is necessary due to GraphQL client not checking response code
+//	if response.Result == nil {
+//		return errors.Errorf("Failed to update runtime in Director: received nil response.")
+//	}
+//
+//	return nil
+//}
 
 
 /*
