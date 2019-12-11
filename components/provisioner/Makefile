@@ -11,8 +11,9 @@ export PIPELINE_BUILD
 include $(SCRIPTS_DIR)/generic_make_go.mk
 
 .PHONY: gqlgen check-gqlgen testing-with-database-network clean-up mod-verify go-mod-check
+# .PHONY: gqlgen check-gqlgen testing-with-database-network clean-up mod-verify go-mod-check
 
-verify:: gqlgen check-gqlgen testing-with-database-network mod-verify go-mod-check
+verify:: gqlgen check-gqlgen testing-with-database-network clean-up mod-verify go-mod-check
 
 resolve-local:
 	GO111MODULE=on go mod vendor -v
@@ -28,9 +29,6 @@ dep-status-local:
 
 mod-verify-local:
 	GO111MODULE=on go mod verify
-
-test-local:
-	GO111MODULE=on go test ./...
 
 go-mod-check-local:
 	@echo make go-mod-check
@@ -49,10 +47,10 @@ test-local: ;
 
 # TODO - there is no errcheck in go1.13 buildpack, consider creating buildpack-toolbox with go1.13 version
 errcheck-local: ;
-errcheck-local:
-	@docker run $(DOCKER_INTERACTIVE) \
-		-v $(COMPONENT_DIR):$(WORKSPACE_COMPONENT_DIR):delegated \
-		$(DOCKER_CREATE_OPTS) errcheck -blank -asserts -ignorepkg '$$($(DIRS_TO_CHECK) | tr '\n' ',')' -ignoregenerated ./...
+# errcheck-local:
+# 	@docker run $(DOCKER_INTERACTIVE) \
+# 		-v $(COMPONENT_DIR):$(WORKSPACE_COMPONENT_DIR):delegated \
+# 		$(DOCKER_CREATE_OPTS) errcheck -blank -asserts -ignorepkg '$$($(DIRS_TO_CHECK) | tr '\n' ',')' -ignoregenerated ./...
 
 
 testing-with-database-network:
@@ -65,7 +63,7 @@ testing-with-database-network:
 		--network=$(TESTING_DB_NETWORK) \
 		-v $(COMPONENT_DIR):$(WORKSPACE_COMPONENT_DIR):delegated \
 		--env PIPELINE_BUILD=1 \
-		$(DOCKER_CREATE_OPTS) go test ./...
+		$(DOCKER_CREATE_OPTS) GO111MODULE=on go test ./...
 	@docker network rm $(TESTING_DB_NETWORK)
 
 clean-up:
