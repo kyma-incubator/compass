@@ -10,7 +10,7 @@ To establish a secure connection with Compass and generate the client certificat
 - [OpenSSL toolkit](https://www.openssl.org/docs/man1.0.2/apps/openssl.html) to create a Certificate Signing Request (CSR), keys, and certificates which meet high security standards
 - Compass (version >= 1.8)
 - Registered Application
-- Kyma Runtime connected to the Management Plane Services (MPS)
+- Runtime connected to Compass
 
 ## Steps
 
@@ -65,7 +65,7 @@ To establish a secure connection with Compass and generate the client certificat
     openssl base64 -in generated.csr
     ```
 
-4. Sign the CSR. 
+4. Sign the CSR and get a client certificate. 
 
     To get the CSR signed, use the encoded CSR in this GraphQL mutation:
     
@@ -84,3 +84,5 @@ To establish a secure connection with Compass and generate the client certificat
     The response contains a certificate chain, a valid client certificate signed by the Kyma Certificate Authority (CA), and the CA certificate.
     
     After you receive the certificates, decode the certificate chain with the base64 method and use it in your application. 
+    
+    See also, how to [renew](08-02-maintain-secure-connection-with-compass.md) a client certificate.
