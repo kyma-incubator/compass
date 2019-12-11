@@ -11,9 +11,8 @@ export PIPELINE_BUILD
 include $(SCRIPTS_DIR)/generic_make_go.mk
 
 .PHONY: gqlgen check-gqlgen testing-with-database-network clean-up mod-verify go-mod-check
-# .PHONY: gqlgen check-gqlgen testing-with-database-network clean-up mod-verify go-mod-check
 
-verify:: gqlgen check-gqlgen testing-with-database-network clean-up mod-verify go-mod-check
+verify:: gqlgen check-gqlgen testing-with-database-network mod-verify go-mod-check
 
 resolve-local:
 	GO111MODULE=on go mod vendor -v
@@ -45,7 +44,7 @@ go-mod-check-local:
 
 test-local: ;
 
-# TODO - there is no errcheck in go1.13 buildpack, consider creating buildpack-toolbox with go1.13 version
+# TODO: there is no errcheck in go1.13 buildpack, consider creating buildpack-toolbox with go1.13 version
 errcheck-local: ;
 # errcheck-local:
 # 	@docker run $(DOCKER_INTERACTIVE) \
