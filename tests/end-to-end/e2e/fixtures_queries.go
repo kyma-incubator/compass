@@ -11,16 +11,6 @@ import (
 )
 
 //Application
-func createApplicationWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.ApplicationCreateInput) (graphql.ApplicationExt, error) {
-	appInputGQL, err := tc.Graphqlizer.ApplicationCreateInputToGQL(in)
-	require.NoError(t, err)
-
-	createRequest := fixCreateApplicationRequest(appInputGQL)
-	app := graphql.ApplicationExt{}
-	err = tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, createRequest, &app)
-	return app, err
-}
-
 func createApplicationFromInputWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.ApplicationCreateInput) graphql.ApplicationExt {
 	app, err := createApplicationWithinTenant(t, ctx, gqlClient, tenant, in)
 	require.NoError(t, err)
@@ -108,4 +98,14 @@ func generateOneTimeTokenForApplication(t *testing.T, ctx context.Context, gqlCl
 	require.NotEmpty(t, oneTimeToken.Token)
 
 	return oneTimeToken
+}
+
+func createApplicationWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.ApplicationCreateInput) (graphql.ApplicationExt, error) {
+	appInputGQL, err := tc.Graphqlizer.ApplicationCreateInputToGQL(in)
+	require.NoError(t, err)
+
+	createRequest := fixCreateApplicationRequest(appInputGQL)
+	app := graphql.ApplicationExt{}
+	err = tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, createRequest, &app)
+	return app, err
 }

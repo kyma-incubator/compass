@@ -98,12 +98,13 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("Error - forbidden when tenant is empty", func(t *testing.T) {
 		//given
+		tnt := ""
 		middleware := createMiddleware(t, true)
 		handler := testHandler(t, tnt, scopes)
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
 
-		token := createNotSingedToken(t, "", scopes)
+		token := createNotSingedToken(t, tnt, scopes)
 		require.NoError(t, err)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
