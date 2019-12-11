@@ -5,6 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+
 	installationMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/mocks"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
@@ -26,6 +30,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+)
+
+const (
+	kymaVersion = "1.8"
 )
 
 func waitForOperationCompleted(provisioningService provisioning.Service, operationID string, seconds uint) error {
@@ -55,19 +63,6 @@ type provisionerTestConfig struct {
 }
 
 func getTestClusterConfigurations() []provisionerTestConfig {
-
-	clusterConfigForGCP := &gqlschema.ClusterConfigInput{
-		GcpConfig: &gqlschema.GCPConfigInput{
-			Name:              "Something",
-			ProjectName:       "Project",
-			NumberOfNodes:     3,
-			BootDiskSizeGb:    256,
-			MachineType:       "machine",
-			Region:            "region",
-			Zone:              new(string),
-			KubernetesVersion: "version",
-		},
-	}
 
 	clusterConfigForGardenerWithGCP := &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
@@ -151,7 +146,6 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 	}
 
 	testConfig := []provisionerTestConfig{
-		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bba", config: clusterConfigForGCP, description: "Should provision and deprovision a runtime with happy flow using correct GCP configuration"},
 		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bbb", config: clusterConfigForGardenerWithGCP, description: "Should provision and deprovision a runtime with happy flow using correct Gardener with GCP configuration 1"},
 		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bb4", config: clusterConfigForGardenerWithAzure, description: "Should provision and deprovision a runtime with happy flow using correct Gardener with Azure configuration"},
 		{runtimeID: "1100bb59-9c40-4ebb-b846-7477c4dc5bb5", config: clusterConfigForGardenerWithAWS, description: "Should provision and deprovision a runtime with happy flow using correct Gardener with AWS configuration"},
@@ -198,7 +192,7 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 	defer testutils.CloseDatabase(t, connection)
 
 	kymaConfig := &gqlschema.KymaConfigInput{
-		Version: "1.5",
+		Version: kymaVersion,
 		Modules: gqlschema.AllKymaModule,
 	}
 
@@ -216,9 +210,11 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
 			inputConverter := converters.NewInputConverter(uuidGenerator, releaseRepository)
 			graphQLConverter := converters.NewGraphQLConverter()
-
 			provisioningService := provisioning.NewProvisioningService(persistenceService, inputConverter, graphQLConverter, hydroformServiceMock, installationServiceMock)
 			provisioner := NewResolver(provisioningService)
+
+			err := insertDummyReleaseIfNotExist(releaseRepository, uuidGenerator.New(), kymaVersion)
+			require.NoError(t, err)
 
 			operationID, err := provisioner.ProvisionRuntime(ctx, cfg.runtimeID, fullConfig)
 			require.NoError(t, err)
@@ -304,4 +300,23 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			assert.Equal(t, runtimeStatusDeprovSuccess, runtimeStatusDeprovisioned.LastOperationStatus)
 		})
 	}
+}
+
+func insertDummyReleaseIfNotExist(releaseRepo release.Repository, id, version string) error {
+	_, err := releaseRepo.GetReleaseByVersion(version)
+	if err == nil {
+		return nil
+	}
+
+	if err.Code() != dberrors.CodeNotFound {
+		return err
+	}
+	_, err = releaseRepo.SaveRelease(model.Release{
+		Id:            id,
+		Version:       version,
+		TillerYAML:    "tiller YAML",
+		InstallerYAML: "installer YAML",
+	})
+
+	return err
 }

@@ -159,7 +159,7 @@ func checkIfDBTableIsPresent(tableNameToCheck string, db *dbr.Connection) error 
 func isDockerTestNetworkPresent(ctx context.Context) (bool, error) {
 
 	netReq := testcontainers.NetworkRequest{
-		Name:   "test_network",
+		Name:   DockerUserNetwork,
 		Driver: "bridge",
 	}
 
