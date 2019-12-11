@@ -38,7 +38,7 @@ func TestCompassAuth(t *testing.T) {
 	require.NotEmpty(t, tenant)
 	ctx := context.Background()
 
-	t.Log("Get Dex id token")
+	t.Log("Get Dex id_token")
 	config, err := idtokenprovider.LoadConfig()
 	require.NoError(t, err)
 
