@@ -56,7 +56,12 @@ func (m *mapperForSystemAuth) GetObjectContext(ctx context.Context, reqData ReqD
 		return ObjectContext{}, errors.Wrap(err, "while getting context object")
 	}
 
-	return NewObjectContext(scopes, tenant, refObjID, string(refObjType)), nil
+	consumerType, err := MapSystemAuthToConsumerType(refObjType)
+	if err != nil {
+		return ObjectContext{}, errors.New("while mapping reference type to consumer type")
+	}
+
+	return NewObjectContext(scopes, tenant, refObjID, consumerType), nil
 }
 
 func (m *mapperForSystemAuth) getTenantAndScopesForIntegrationSystem(reqData ReqData) (string, string, error) {
