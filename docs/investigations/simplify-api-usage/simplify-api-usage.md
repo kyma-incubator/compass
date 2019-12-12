@@ -76,7 +76,6 @@ and
 `addAPIForApplication(in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPI")`
 
 **Work that has to be done**
-* prepare directive which will retrieve `ID` depending on consumer type
 * add new mutations to schema
 * implement the new mutations (for example for addAPIForApplication mutation we could reuse addAPI implementation)
 * test the new mutations (unit and integration)
@@ -120,7 +119,7 @@ The consumer ID is present in request context, so it can be retrieved from there
 * API doesn't get much bigger(only one query)
 
 **Cons**
-* slight increase of API complexity
+* consumer has to make an additional call to get its ID for other GraphQL operations 
 
 Sources:
 
