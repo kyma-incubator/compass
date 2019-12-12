@@ -2,22 +2,25 @@ package main
 
 import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/clients"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/graphql"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/client"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/configuration"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/oauth"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dbsession"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
 	"github.com/pkg/errors"
+	"net/http"
+	"time"
 
 	"path/filepath"
 
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
-	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/kubernetes/typed/core/v1"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
@@ -35,20 +38,19 @@ func newPersistenceService(connectionString, schemaPath string) (persistence.Ser
 	return persistence.NewService(dbSessionFactory, uuidGenerator), nil
 }
 
-func newProvisioningService(persistenceService persistence.Service, secrets v1.SecretInterface) provisioning.Service {
+func newProvisioningService(persistenceService persistence.Service, secrets v1.SecretInterface, directorURL, hydraURL, oauthCredentialsSecretName string) provisioning.Service {
 	hydroformClient := client.NewHydroformClient()
 	hydroformService := hydroform.NewHydroformService(hydroformClient)
 
-	// all this data from configuration oAuth ???
-	insecureConnectionCommunication := false
-	insecureConfigFetch := false
-	enableLogging := true
-	url := "test.url"
-	runtimeConfig := "runtime_config"
+	gqlClient := graphql.New(directorURL, true)
 
-	provider := clients.NewGQLClientsProvider(graphql.New, insecureConnectionCommunication, insecureConfigFetch, enableLogging)
+	httpClient := &http.Client{
+		Timeout: 30 * time.Second,
+	}
 
-	directorClient, _ := provider.GetDirectorClient(nil, url, runtimeConfig)
+	oauthClient := oauth.NewOauthClient(hydraURL, httpClient, secrets, oauthCredentialsSecretName)
+
+	directorClient := director.NewDirectorClient(gqlClient, oauthClient)
 
 	uuidGenerator := persistence.NewUUIDGenerator()
 	factory := configuration.NewConfigBuilderFactory(secrets)
@@ -77,16 +79,16 @@ func newSecretsInterface(namespace string) (v1.SecretInterface, error) {
 	return coreClientset.CoreV1().Secrets(namespace), nil
 }
 
-func newResolver(connectionString string, schemaFilePath string, namespace string) (*api.Resolver, error) {
-	persistenceService, err := newPersistenceService(connectionString, schemaFilePath)
+func newResolver(connectionString string, cfg config) (*api.Resolver, error) {
+	persistenceService, err := newPersistenceService(connectionString, cfg.Database.SchemaFilePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to initialize persistence")
 	}
 
-	secretInterface, err := newSecretsInterface(namespace)
+	secretInterface, err := newSecretsInterface(cfg.CredentialsNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to create secrets interface")
 	}
 
-	return api.NewResolver(newProvisioningService(persistenceService, secretInterface)), nil
+	return api.NewResolver(newProvisioningService(persistenceService, secretInterface, cfg.DirectorURL, cfg.HydraURL, cfg.OauthCredentialsSecretName)), nil
 }

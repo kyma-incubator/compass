@@ -1,11 +1,16 @@
 package director
 
 import (
+	"fmt"
 	gql "github.com/kyma-incubator/compass/components/provisioner/internal/graphql"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/oauth"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
+)
+
+const (
+	AuthorizationHeader = "Authorization"
 )
 
 //go:generate mockery -name=DirectorClient
@@ -45,8 +50,7 @@ func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput) (string,
 	}
 
 	if cc.token.EmptyOrExpired() {
-		err := cc.getToken()
-		if err != nil {
+		if err := cc.getToken(); err != nil {
 			return "", err
 		}
 	}
@@ -61,7 +65,7 @@ func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput) (string,
 
 	applicationsQuery := cc.queryProvider.createRuntimeMutation(graphQLized)
 	req := gcli.NewRequest(applicationsQuery)
-	//req.Header.Set(TenantHeader, cc.runtimeConfig.Tenant) ???
+	req.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", cc.token.AccessToken))
 
 	err = cc.gqlClient.Do(req, &response)
 	if err != nil {
@@ -78,8 +82,7 @@ func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput) (string,
 
 func (cc *directorClient) DeleteRuntime(id string) error {
 	if cc.token.EmptyOrExpired() {
-		err := cc.getToken()
-		if err != nil {
+		if err := cc.getToken(); err != nil {
 			return err
 		}
 	}
@@ -88,6 +91,7 @@ func (cc *directorClient) DeleteRuntime(id string) error {
 
 	applicationsQuery := cc.queryProvider.deleteRuntimeMutation(id)
 	req := gcli.NewRequest(applicationsQuery)
+	req.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", cc.token.AccessToken))
 
 	err := cc.gqlClient.Do(req, &response)
 	if err != nil {

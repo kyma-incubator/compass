@@ -16,10 +16,13 @@ import (
 const connStringFormat string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
 
 type config struct {
-	Address               string `envconfig:"default=127.0.0.1:3050"`
-	APIEndpoint           string `envconfig:"default=/graphql"`
-	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
-	CredentialsNamespace  string `envconfig:"default=compass-system"`
+	Address                    string `envconfig:"default=127.0.0.1:3050"`
+	APIEndpoint                string `envconfig:"default=/graphql"`
+	PlaygroundAPIEndpoint      string `envconfig:"default=/graphql"`
+	CredentialsNamespace       string `envconfig:"default=compass-system"`
+	DirectorURL                string `envconfig:"default=http://compass-director.compass-system.svc.cluster.local:3000/graphql"`
+	HydraURL                   string `envconfig:"default=http://ory-hydra-public.kyma-system:4444/oauth2/token"`
+	OauthCredentialsSecretName string `envconfig:"default=compass-provisioner-registration"`
 
 	Database struct {
 		User     string `envconfig:"default=postgres"`
@@ -53,7 +56,7 @@ func main() {
 	connString := fmt.Sprintf(connStringFormat, cfg.Database.Host, cfg.Database.Port, cfg.Database.User,
 		cfg.Database.Password, cfg.Database.Name, cfg.Database.SSLMode)
 
-	resolver, err := newResolver(connString, cfg.Database.SchemaFilePath, cfg.CredentialsNamespace)
+	resolver, err := newResolver(connString, cfg)
 	exitOnError(err, "Failed to initialize GraphQL resolver ")
 
 	gqlCfg := gqlschema.Config{
