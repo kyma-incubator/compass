@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	graphql2 "github.com/99designs/gqlgen/graphql"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/event"
@@ -82,20 +80,8 @@ func main() {
 	gqlCfg := graphql.Config{
 		Resolvers: domain.NewRootResolver(transact, scopeCfgProvider, cfg.OneTimeToken, cfg.OAuth20, cfg.Event),
 		Directives: graphql.DirectiveRoot{
-			HasScopes: func(ctx context.Context, obj interface{}, next graphql2.Resolver, path string) (res interface{}, err error) {
-				log.Print("kontekst:", ctx)
-				return next(ctx)
-			},
-			Validate: inputvalidation.NewDirective().Validate,
-			InjectID: func(ctx context.Context, obj interface{}, next graphql2.Resolver) (res interface{}, err error) {
-				log.Printf("mujobiekt: %v", obj)
-				return next(ctx)
-			},
-			Xd: func(ctx context.Context, obj interface{}, next graphql2.Resolver) (res interface{}, err error) {
-				log.Printf("abcdef xdddd: %v", obj)
-				return next(ctx)
-
-			},
+			HasScopes: scope.NewDirective(scopeCfgProvider).VerifyScopes,
+			Validate:  inputvalidation.NewDirective().Validate,
 		},
 	}
 

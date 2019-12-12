@@ -2,7 +2,6 @@ package scope
 
 import (
 	"context"
-	"log"
 
 	"github.com/99designs/gqlgen/graphql"
 
@@ -25,14 +24,6 @@ func NewDirective(getter ScopesGetter) *directive {
 }
 
 func (d *directive) VerifyScopes(ctx context.Context, obj interface{}, next graphql.Resolver, scopesDefinition string) (interface{}, error) {
-	log.Print("odpalilem sie has skopes")
-	log.Printf("before api: %v", obj)
-	//v, ok := obj.(map[string]interface{})
-	//if !ok {
-	//	log.Print("badcast")
-	//}
-	//v["applicationID"] = "abc"
-	//log.Print("after api: %v", obj)
 	actualScopes, err := LoadFromContext(ctx)
 	if err != nil {
 		return nil, err

@@ -2,12 +2,10 @@
 HasScopes directive is added automatically to every query and mutation by scopesdecorator plugin that is triggerred by gqlgen.sh script.
 """
 directive @hasScopes(path: String!) on FIELD_DEFINITION
-directive @injectID on ARGUMENT_DEFINITION
 """
 Validate directive marks mutation arguments that will be validated.
 """
 directive @validate on ARGUMENT_DEFINITION
-directive @xd on INPUT_FIELD_DEFINITION
 scalar Any
 
 scalar CLOB
@@ -126,7 +124,7 @@ input ApplicationCreateInput {
 	apis: [APIDefinitionInput!]
 	eventAPIs: [EventAPIDefinitionInput!]
 	documents: [DocumentInput!]
-	integrationSystemID: ID @xd
+	integrationSystemID: ID
 }
 
 input ApplicationFromTemplateInput {
@@ -731,7 +729,7 @@ type Mutation {
 	**Examples**
 	- [add api](examples/add-api/add-api.graphql)
 	"""
-	addAPI(applicationID: ID @injectID, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPI")
+	addAPI(applicationID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPI")
 	"""
 	**Examples**
 	- [update api](examples/update-api/update-api.graphql)

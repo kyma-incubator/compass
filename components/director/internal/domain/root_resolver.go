@@ -226,7 +226,7 @@ func (r *mutationResolver) UpdateWebhook(ctx context.Context, webhookID string, 
 func (r *mutationResolver) DeleteWebhook(ctx context.Context, webhookID string) (*graphql.Webhook, error) {
 	return r.webhook.DeleteApplicationWebhook(ctx, webhookID)
 }
-func (r *mutationResolver) AddAPI(ctx context.Context, applicationID *string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
+func (r *mutationResolver) AddAPI(ctx context.Context, applicationID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
 	return r.api.AddAPI(ctx, applicationID, in)
 }
 func (r *mutationResolver) UpdateAPI(ctx context.Context, id string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {

@@ -49,11 +49,7 @@ type ResolverRoot interface {
 type DirectiveRoot struct {
 	HasScopes func(ctx context.Context, obj interface{}, next graphql.Resolver, path string) (res interface{}, err error)
 
-	InjectID func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
-
 	Validate func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
-
-	Xd func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
 }
 
 type ComplexityRoot struct {
@@ -252,7 +248,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AddAPI                                        func(childComplexity int, applicationID *string, in APIDefinitionInput) int
+		AddAPI                                        func(childComplexity int, applicationID string, in APIDefinitionInput) int
 		AddDocument                                   func(childComplexity int, applicationID string, in DocumentInput) int
 		AddEventAPI                                   func(childComplexity int, applicationID string, in EventAPIDefinitionInput) int
 		AddWebhook                                    func(childComplexity int, applicationID string, in WebhookInput) int
@@ -421,7 +417,7 @@ type MutationResolver interface {
 	AddWebhook(ctx context.Context, applicationID string, in WebhookInput) (*Webhook, error)
 	UpdateWebhook(ctx context.Context, webhookID string, in WebhookInput) (*Webhook, error)
 	DeleteWebhook(ctx context.Context, webhookID string) (*Webhook, error)
-	AddAPI(ctx context.Context, applicationID *string, in APIDefinitionInput) (*APIDefinition, error)
+	AddAPI(ctx context.Context, applicationID string, in APIDefinitionInput) (*APIDefinition, error)
 	UpdateAPI(ctx context.Context, id string, in APIDefinitionInput) (*APIDefinition, error)
 	DeleteAPI(ctx context.Context, id string) (*APIDefinition, error)
 	RefetchAPISpec(ctx context.Context, apiID string) (*APISpec, error)
@@ -1320,7 +1316,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AddAPI(childComplexity, args["applicationID"].(*string), args["in"].(APIDefinitionInput)), true
+		return e.complexity.Mutation.AddAPI(childComplexity, args["applicationID"].(string), args["in"].(APIDefinitionInput)), true
 
 	case "Mutation.addDocument":
 		if e.complexity.Mutation.AddDocument == nil {
@@ -2260,12 +2256,10 @@ var parsedSchema = gqlparser.MustLoadSchema(
 HasScopes directive is added automatically to every query and mutation by scopesdecorator plugin that is triggerred by gqlgen.sh script.
 """
 directive @hasScopes(path: String!) on FIELD_DEFINITION
-directive @injectID on ARGUMENT_DEFINITION
 """
 Validate directive marks mutation arguments that will be validated.
 """
 directive @validate on ARGUMENT_DEFINITION
-directive @xd on INPUT_FIELD_DEFINITION
 scalar Any
 
 scalar CLOB
@@ -2384,7 +2378,7 @@ input ApplicationCreateInput {
 	apis: [APIDefinitionInput!]
 	eventAPIs: [EventAPIDefinitionInput!]
 	documents: [DocumentInput!]
-	integrationSystemID: ID @xd
+	integrationSystemID: ID
 }
 
 input ApplicationFromTemplateInput {
@@ -2989,7 +2983,7 @@ type Mutation {
 	**Examples**
 	- [add api](examples/add-api/add-api.graphql)
 	"""
-	addAPI(applicationID: ID @injectID, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPI")
+	addAPI(applicationID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPI")
 	"""
 	**Examples**
 	- [update api](examples/update-api/update-api.graphql)
@@ -3229,23 +3223,11 @@ func (ec *executionContext) field_Application_labels_args(ctx context.Context, r
 func (ec *executionContext) field_Mutation_addAPI_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *string
+	var arg0 string
 	if tmp, ok := rawArgs["applicationID"]; ok {
-		directive0 := func(ctx context.Context) (interface{}, error) { return ec.unmarshalOID2ᚖstring(ctx, tmp) }
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			return ec.directives.InjectID(ctx, rawArgs, directive0)
-		}
-
-		tmp, err = directive1(ctx)
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
-		}
-		if data, ok := tmp.(*string); ok {
-			arg0 = data
-		} else if tmp == nil {
-			arg0 = nil
-		} else {
-			return nil, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp)
 		}
 	}
 	args["applicationID"] = arg0
@@ -9718,7 +9700,7 @@ func (ec *executionContext) _Mutation_addAPI(ctx context.Context, field graphql.
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().AddAPI(rctx, args["applicationID"].(*string), args["in"].(APIDefinitionInput))
+			return ec.resolvers.Mutation().AddAPI(rctx, args["applicationID"].(string), args["in"].(APIDefinitionInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.addAPI")
@@ -14705,21 +14687,9 @@ func (ec *executionContext) unmarshalInputApplicationCreateInput(ctx context.Con
 			}
 		case "integrationSystemID":
 			var err error
-			directive0 := func(ctx context.Context) (interface{}, error) { return ec.unmarshalOID2ᚖstring(ctx, v) }
-			directive1 := func(ctx context.Context) (interface{}, error) {
-				return ec.directives.Xd(ctx, obj, directive0)
-			}
-
-			tmp, err := directive1(ctx)
+			it.IntegrationSystemID, err = ec.unmarshalOID2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
-			}
-			if data, ok := tmp.(*string); ok {
-				it.IntegrationSystemID = data
-			} else if tmp == nil {
-				it.IntegrationSystemID = nil
-			} else {
-				return it, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp)
 			}
 		}
 	}
