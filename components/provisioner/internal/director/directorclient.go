@@ -2,6 +2,7 @@ package director
 
 import (
 	gql "github.com/kyma-incubator/compass/components/provisioner/internal/graphql"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/oauth"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
@@ -24,23 +25,33 @@ type directorClient struct {
 	queryProvider queryProvider
 	graphqlizer   graphqlizer
 	runtimeConfig string
+	token         oauth.Token
+	oauthClient   oauth.Client
 }
 
-func NewDirectorClient(gqlClient gql.Client) DirectorClient {
+func NewDirectorClient(gqlClient gql.Client, oauthClient oauth.Client) DirectorClient {
 	return &directorClient{
 		gqlClient:     gqlClient,
+		oauthClient:   oauthClient,
 		queryProvider: queryProvider{},
 		graphqlizer:   graphqlizer{},
+		token:         oauth.Token{},
 	}
 }
 
 func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput) (string, error) {
-
 	if config == nil {
 		return "", errors.New("Cannot register register runtime in Director: missing Runtime config")
 	}
 
-	var response = CreateRuntimeResponse{}
+	if cc.token.EmptyOrExpired() {
+		err := cc.getToken()
+		if err != nil {
+			return "", err
+		}
+	}
+
+	var response CreateRuntimeResponse
 
 	graphQLized, err := cc.graphqlizer.RuntimeInputToGraphQL(*config)
 
@@ -66,7 +77,14 @@ func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput) (string,
 }
 
 func (cc *directorClient) DeleteRuntime(id string) error {
-	var response = DeleteRuntimeResponse{}
+	if cc.token.EmptyOrExpired() {
+		err := cc.getToken()
+		if err != nil {
+			return err
+		}
+	}
+
+	var response DeleteRuntimeResponse
 
 	applicationsQuery := cc.queryProvider.deleteRuntimeMutation(id)
 	req := gcli.NewRequest(applicationsQuery)
@@ -81,9 +99,20 @@ func (cc *directorClient) DeleteRuntime(id string) error {
 	}
 
 	if response.Result.ID != id {
-		return errors.New ("Failed to unregister correctly the runtime in Director: Received bad Runtime id in response")
+		return errors.New("Failed to unregister correctly the runtime in Director: Received bad Runtime id in response")
 	}
 
+	return nil
+}
+
+func (cc *directorClient) getToken() error {
+	token, err := cc.oauthClient.GetAuthorizationToken()
+
+	if err != nil {
+		return errors.Wrap(err, "Error while obtaining token")
+	}
+
+	cc.token = token
 	return nil
 }
 
@@ -105,7 +134,6 @@ func (cc *directorClient) DeleteRuntime(id string) error {
 //
 //	return nil
 //}
-
 
 /*
 package director

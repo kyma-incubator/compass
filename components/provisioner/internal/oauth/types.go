@@ -1,5 +1,7 @@
 package oauth
 
+import "time"
+
 const (
 	contentTypeHeader = "Content-Type"
 
@@ -15,10 +17,19 @@ const (
 
 type Token struct {
 	AccessToken string `json:"access_token"`
-	Expiration  int    `json:"expires_in"`
+	Expiration  int64    `json:"expires_in"`
 }
 
 type credentials struct {
 	clientID     string
 	clientSecret string
+}
+
+func (token Token) EmptyOrExpired() bool {
+	if token.AccessToken == "" {
+		return true
+	}
+
+	expiration := time.Unix(token.Expiration, 0)
+	return time.Now().After(expiration)
 }

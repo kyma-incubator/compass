@@ -11,6 +11,7 @@ import (
 	"net/http"
 )
 
+//go:generate mockery -name=Client
 type Client interface {
 	GetAuthorizationToken() (Token, error)
 }
