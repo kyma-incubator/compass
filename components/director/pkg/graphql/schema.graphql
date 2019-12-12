@@ -643,9 +643,9 @@ type Query {
 type Mutation {
 	"""
 	**Examples**
-	- [register application with apis](examples/register-application/register-application-with-apis.graphql)
+	- [register application with api definitions](examples/register-application/register-application-with-api-definitions.graphql)
 	- [register application with documents](examples/register-application/register-application-with-documents.graphql)
-	- [register application with event apis](examples/register-application/register-application-with-event-apis.graphql)
+	- [register application with event definitions](examples/register-application/register-application-with-event-definitions.graphql)
 	- [register application with webhooks](examples/register-application/register-application-with-webhooks.graphql)
 	- [register application](examples/register-application/register-application.graphql)
 	"""
@@ -750,8 +750,20 @@ type Mutation {
 	"""
 	setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput! @validate): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.setAPIAuth")
 	deleteAPIAuth(apiID: ID!, runtimeID: ID!): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.deleteAPIAuth")
+	"""
+	**Examples**
+	- [add event definition](examples/add-event-definition/add-event-definition.graphql)
+	"""
 	addEventDefinition(applicationID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinition")
+	"""
+	**Examples**
+	- [update event definition](examples/update-event-definition/update-event-definition.graphql)
+	"""
 	updateEventDefinition(id: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.updateEventDefinition")
+	"""
+	**Examples**
+	- [delete event definition](examples/delete-event-definition/delete-event-definition.graphql)
+	"""
 	deleteEventDefinition(id: ID!): EventDefinition! @hasScopes(path: "graphql.mutation.deleteEventDefinition")
 	refetchEventDefinitionSpec(eventID: ID!): EventSpec! @hasScopes(path: "graphql.mutation.refetchEventDefinitionSpec")
 	"""

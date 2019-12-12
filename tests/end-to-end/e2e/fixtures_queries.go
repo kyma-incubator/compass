@@ -11,7 +11,7 @@ import (
 )
 
 //Application
-func createApplicationFromInputWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.ApplicationCreateInput) graphql.ApplicationExt {
+func registerApplicationFromInputWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.ApplicationRegisterInput) graphql.ApplicationExt {
 	app, err := createApplicationWithinTenant(t, ctx, gqlClient, tenant, in)
 	require.NoError(t, err)
 	return app
@@ -100,8 +100,8 @@ func generateOneTimeTokenForApplication(t *testing.T, ctx context.Context, gqlCl
 	return oneTimeToken
 }
 
-func createApplicationWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.ApplicationCreateInput) (graphql.ApplicationExt, error) {
-	appInputGQL, err := tc.Graphqlizer.ApplicationCreateInputToGQL(in)
+func createApplicationWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.ApplicationRegisterInput) (graphql.ApplicationExt, error) {
+	appInputGQL, err := tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
 
 	createRequest := fixCreateApplicationRequest(appInputGQL)
