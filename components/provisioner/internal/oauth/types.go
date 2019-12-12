@@ -1,21 +1,24 @@
 package oauth
 
 const (
-	ContentTypeHeader = "Content-Type"
+	contentTypeHeader = "Content-Type"
 
-	GrantTypeFieldName   = "grant_type"
-	CredentialsGrantType = "client_credentials"
+	grantTypeFieldName   = "grant_type"
+	credentialsGrantType = "client_credentials"
 
-	ScopeFieldName = "scope"
-	Scopes         = "application:read application:write runtime:read runtime:write label_definition:read label_definition:write health_checks:read"
+	scopeFieldName = "scope"
+	scopes         = "application:read application:write runtime:read runtime:write label_definition:read label_definition:write health_checks:read"
+
+	clientIDKey     = "ClientID"
+	clientSecretKey = "ClientSecret"
 )
 
-type TokenResponse struct {
+type Token struct {
 	AccessToken string `json:"access_token"`
 	Expiration  int    `json:"expires_in"`
 }
 
-type Credentials struct {
-	ClientID     string
-	ClientSecret string
+type credentials struct {
+	clientID     string
+	clientSecret string
 }
