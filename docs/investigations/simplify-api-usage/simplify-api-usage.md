@@ -1,11 +1,11 @@
-# Simplify usage of Compass API using ID injection
+# Simplify usage of Compass API
 
 ## Terminology:
 `consumer` - client of a Compass API (Application, Runtime, Integration System)
 
 ## Overview
 
-This document discusses how to simplify usage of Compass API using ID injection mechanism.
+This document discusses how to simplify usage of Compass API
 
 As of right now, there are some mutations that are related to a base entity (e.g. Application or Runtime) and they require the ID of the base entity:
  
@@ -43,10 +43,26 @@ Also, it would be possible for a consumer to update itself (`updateApplication` 
 * adjust resolvers
 
 **Pros**
-* relatively small amount of work to be done
-* no code needs to change
+* no existing code needs to change
 
 **Cons**
+* A LOT work with tests, see that example: 
+
+considering `updateApplication` mutation, we would have to write tests to cover these cases:
+
+|                    | Is `applicationID` provided? | Should pass? |
+|--------------------|:---------------:|--------------|
+| User               | YES             | YES          |
+| User               | NO              | NO           |
+| Application        | YES             | YES          |
+| Application        | NO              | YES          |
+| Runtime            | YES             | NO           |
+| Runtime            | NO              | NO           |
+| Integration system | YES             | YES          |
+| Integration system | NO              | NO           |
+
+There are 8 test cases in just one mutation, having in mind we would change around 20 mutations, it would be around 160 tests. 
+
 * API becomes less readable due to optional `ID` parameter (the user could be confused what happens if we don't provide one)
 * domains dependant on another mechanism which will fetch `consumer ID`
 
@@ -62,17 +78,65 @@ and
 **Work that has to be done**
 * prepare directive which will retrieve `ID` depending on consumer type
 * add new mutations to schema
-* implement the new mutation (for example for addAPIForApplication mutation we could reuse addAPI implementation)
-* test the new mutation(unit and integration)
+* implement the new mutations (for example for addAPIForApplication mutation we could reuse addAPI implementation)
+* test the new mutations (unit and integration)
 
 **Pros**
 * separated mutation for a special use case
 
 **Cons**
-* requires more work than the first solution
+* API becomes a lot bigger - around 20 new mutations
+* the same situation with tests as described in first solution
+
+### 3. The Viewer pattern
+The alternative to solutions presented above is the Viewer pattern.
+It is a GraphQL query that looks like:
+```graphql
+viewer: Viewer!
+type Viewer {
+  id: ID!
+  type: ViewerType!
+}
+```
+Usage:
+```graphql
+viewer {
+   id 
+   type // Application/Runtime/Integration System
+}
+
+```
+
+> The viewer field represents the currently logged-in user; its subfields expose data that are contextual to the user.
+
+The consumer ID is present in request context, so it can be retrieved from there.
+
+**Work that has to be done**
+* prepare and implement the Viewer query
+* test the query
+
+**Pros**
+* small amount of work
+* API doesn't get much bigger(only one query)
+
+**Cons**
+* slight increase of API complexity
+
+Sources:
+
+https://medium.com/workflowgen/graphql-schema-design-the-viewer-field-aeabfacffe72
+https://codeahoy.com/2019/10/13/graphql-practical-tutorial/
+
+The Viewer pattern is used in e.g. Facebook and GitHub API:
+
+https://developer.github.com/v4/query
+https://github.com/graphql/graphql-js/issues/571
 
 ## Decision
 
-The first option seems to be better due to less work effort and easier to maintain(there could be more consumer types in future). However, it has to be well documented, to not get users confused about why the `ID` parameter is optional.
+The first and second option doesn't seem to be good due to:
+- a lot of work
+- significant increase of Compass API
+- Compass API get less readable
 
-The second option was rejected due to greater workload.
+The best option is the third one - the Viewer pattern. Not only we achieve the requirement with the low workload, but it is also less painful to test it.
