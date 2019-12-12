@@ -46,7 +46,7 @@ func (m *mapperForUser) GetObjectContext(reqData ReqData, username string) (Obje
 		return ObjectContext{}, errors.New("tenant mismatch")
 	}
 
-	return NewObjectContext(scopes, tenant, staticUser.Username, "Static User"), nil
+	return NewObjectContext(scopes, tenant, staticUser.Username, USER), nil
 }
 
 func hasValidTenant(assignedTenants []uuid.UUID, tenant string) bool {

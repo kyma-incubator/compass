@@ -37,12 +37,12 @@ func TestHandler(t *testing.T) {
 			},
 		}
 		objCtxMock := tenantmapping.ObjectContext{
-			Scopes:     scopes,
-			TenantID:   tenantID.String(),
-			ObjectID:   username,
-			ObjectType: "Static User",
+			Scopes:       scopes,
+			TenantID:     tenantID.String(),
+			ConsumerID:   username,
+			ConsumerType: "Static User",
 		}
-		expectedRespPayload := `{"subject":"","extra":{"name":"` + username + `","objectID":"` + username + `","objectType":"Static User","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
+		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + username + `","consumerType":"Static User","name":"` + username + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
@@ -78,12 +78,12 @@ func TestHandler(t *testing.T) {
 			},
 		}
 		objCtx := tenantmapping.ObjectContext{
-			Scopes:     scopes,
-			TenantID:   tenantID.String(),
-			ObjectID:   objID.String(),
-			ObjectType: "Integration System",
+			Scopes:       scopes,
+			TenantID:     tenantID.String(),
+			ConsumerID:   objID.String(),
+			ConsumerType: "Integration System",
 		}
-		expectedRespPayload := `{"subject":"","extra":{"client_id":"` + systemAuthID.String() + `","objectID":"` + objID.String() + `","objectType":"Integration System","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
+		expectedRespPayload := `{"subject":"","extra":{"client_id":"` + systemAuthID.String() + `","consumerID":"` + objID.String() + `","consumerType":"Integration System","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
@@ -120,12 +120,12 @@ func TestHandler(t *testing.T) {
 			},
 		}
 		objCtx := tenantmapping.ObjectContext{
-			Scopes:     scopes,
-			TenantID:   tenantID.String(),
-			ObjectID:   objID.String(),
-			ObjectType: "Integration System",
+			Scopes:       scopes,
+			TenantID:     tenantID.String(),
+			ConsumerID:   objID.String(),
+			ConsumerType: "Integration System",
 		}
-		expectedRespPayload := `{"subject":"","extra":{"objectID":"` + objID.String() + `","objectType":"Integration System","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":{"Client-Id-From-Certificate":["` + systemAuthID.String() + `"]}}`
+		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + objID.String() + `","consumerType":"Integration System","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":{"Client-Id-From-Certificate":["` + systemAuthID.String() + `"]}}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()

@@ -16,7 +16,7 @@ global:
       version: "PR-391"
     director:
       dir:
-      version: "PR-514"
+      version: "PR-556"
     gateway:
       dir: pr/
       version: "PR-357"

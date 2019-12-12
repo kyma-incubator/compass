@@ -125,17 +125,17 @@ func (d *ReqData) GetScopes() (string, error) {
 }
 
 type ObjectContext struct {
-	Scopes     string
-	TenantID   string
-	ObjectID   string
-	ObjectType string
+	Scopes       string
+	TenantID     string
+	ConsumerID   string
+	ConsumerType ConsumerType
 }
 
-func NewObjectContext(scopes, tenantID, objID, objType string) ObjectContext {
+func NewObjectContext(scopes, tenantID, consumerID string, consumerType ConsumerType) ObjectContext {
 	return ObjectContext{
-		Scopes:     scopes,
-		TenantID:   tenantID,
-		ObjectID:   objID,
-		ObjectType: objType,
+		Scopes:       scopes,
+		TenantID:     tenantID,
+		ConsumerID:   consumerID,
+		ConsumerType: consumerType,
 	}
 }
