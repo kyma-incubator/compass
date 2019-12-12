@@ -572,7 +572,7 @@ func TestTemplateValueInput_Validate_Description(t *testing.T) {
 func fixValidApplicationTemplateInput() graphql.ApplicationTemplateInput {
 	return graphql.ApplicationTemplateInput{
 		Name: "valid",
-		ApplicationInput: &graphql.ApplicationCreateInput{
+		ApplicationInput: &graphql.ApplicationRegisterInput{
 			Name: "valid",
 		},
 		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,

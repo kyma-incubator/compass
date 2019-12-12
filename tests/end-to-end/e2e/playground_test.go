@@ -98,10 +98,10 @@ func getDexToken(t *testing.T) string {
 }
 
 func createApplicationForCertPlaygroundTest(t *testing.T, ctx context.Context, tenant string, cli *gcli.Client) string {
-	appInput := graphql.ApplicationCreateInput{
+	appInput := graphql.ApplicationRegisterInput{
 		Name: "cert-playground-test",
 	}
-	app := createApplicationFromInputWithinTenant(t, ctx, cli, tenant, appInput)
+	app := registerApplicationFromInputWithinTenant(t, ctx, cli, tenant, appInput)
 	require.NotEmpty(t, app.ID)
 
 	return app.ID

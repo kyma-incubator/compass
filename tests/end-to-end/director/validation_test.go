@@ -23,7 +23,7 @@ func TestCreateRuntime_Validation(t *testing.T) {
 	inputString, err := tc.graphqlizer.RuntimeInputToGQL(invalidInput)
 	require.NoError(t, err)
 	var result graphql.Runtime
-	request := fixCreateRuntimeRequest(inputString)
+	request := fixRegisterRuntimeRequest(inputString)
 
 	// WHEN
 	err = tc.RunOperation(ctx, request, &result)
@@ -36,8 +36,8 @@ func TestCreateRuntime_Validation(t *testing.T) {
 func TestUpdateRuntime_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	rtm := createRuntime(t, ctx, "validation-test-rtm")
-	defer deleteRuntime(t, rtm.ID)
+	rtm := registerRuntime(t, ctx, "validation-test-rtm")
+	defer unregisterRuntime(t, rtm.ID)
 
 	invalidInput := graphql.RuntimeInput{
 		Name: "0invalid",
@@ -105,8 +105,8 @@ func TestUpdateLabelDefinition_Validation(t *testing.T) {
 func TestSetApplicationLabel_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	app := createApplication(t, ctx, "validation-test-app")
-	defer deleteApplication(t, app.ID)
+	app := registerApplication(t, ctx, "validation-test-app")
+	defer unregisterApplication(t, app.ID)
 
 	request := fixSetApplicationLabelRequest(app.ID, strings.Repeat("x", 257), "")
 	var result graphql.Label
@@ -122,8 +122,8 @@ func TestSetApplicationLabel_Validation(t *testing.T) {
 func TestSetRuntimeLabel_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	rtm := createRuntime(t, ctx, "validation-test-rtm")
-	defer deleteRuntime(t, rtm.ID)
+	rtm := registerRuntime(t, ctx, "validation-test-rtm")
+	defer unregisterRuntime(t, rtm.ID)
 
 	request := fixSetRuntimeLabelRequest(rtm.ID, strings.Repeat("x", 257), "")
 	var result graphql.Label
@@ -143,27 +143,27 @@ const longDescErrorMsg = "graphql: validation error for type %s: description: th
 func TestCreateApplication_Validation(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
-	app := fixSampleApplicationCreateInputWithName("placeholder", "name")
+	app := fixSampleApplicationRegisterInputWithName("placeholder", "name")
 	longDesc := strings.Repeat("a", 129)
 	app.Description = &longDesc
 
-	appInputGQL, err := tc.graphqlizer.ApplicationCreateInputToGQL(app)
+	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(app)
 	require.NoError(t, err)
-	createRequest := fixCreateApplicationRequest(appInputGQL)
+	createRequest := fixRegisterApplicationRequest(appInputGQL)
 
 	//WHEN
 	err = tc.RunOperation(ctx, createRequest, nil)
 
 	//THEN
 	require.Error(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(longDescErrorMsg, "ApplicationCreateInput"))
+	assert.EqualError(t, err, fmt.Sprintf(longDescErrorMsg, "ApplicationRegisterInput"))
 }
 
 func TestUpdateApplication_Validation(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
-	app := createApplication(t, ctx, "app-name")
-	defer deleteApplication(t, app.ID)
+	app := registerApplication(t, ctx, "app-name")
+	defer unregisterApplication(t, app.ID)
 
 	longDesc := strings.Repeat("a", 129)
 	appUpdate := graphql.ApplicationUpdateInput{Name: "name", Description: &longDesc}
@@ -182,8 +182,8 @@ func TestUpdateApplication_Validation(t *testing.T) {
 func TestAddDocument_Validation(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
-	app := createApplication(t, ctx, "app-name")
-	defer deleteApplication(t, app.ID)
+	app := registerApplication(t, ctx, "app-name")
+	defer unregisterApplication(t, app.ID)
 
 	doc := fixDocumentInput()
 	doc.DisplayName = strings.Repeat("a", 129)
@@ -208,7 +208,7 @@ func TestCreateIntegrationSystem_Validation(t *testing.T) {
 
 	isInputGQL, err := tc.graphqlizer.IntegrationSystemInputToGQL(intSys)
 	require.NoError(t, err)
-	createRequest := fixCreateIntegrationSystemRequest(isInputGQL)
+	createRequest := fixRegisterIntegrationSystemRequest(isInputGQL)
 
 	//WHEN
 	err = tc.RunOperation(ctx, createRequest, nil)
@@ -221,8 +221,8 @@ func TestCreateIntegrationSystem_Validation(t *testing.T) {
 func TestUpdateIntegrationSystem_Validation(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
-	intSys := createIntegrationSystem(t, ctx, "integration-system")
-	defer deleteIntegrationSystem(t, ctx, intSys.ID)
+	intSys := registerIntegrationSystem(t, ctx, "integration-system")
+	defer unregisterIntegrationSystem(t, ctx, intSys.ID)
 	longDesc := strings.Repeat("a", 256)
 	intSysUpdate := graphql.IntegrationSystemInput{Name: "name", Description: &longDesc}
 	isUpdateGQL, err := tc.graphqlizer.IntegrationSystemInputToGQL(intSysUpdate)
@@ -240,8 +240,8 @@ func TestUpdateIntegrationSystem_Validation(t *testing.T) {
 func TestAddAPI_Validation(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
-	app := createApplication(t, ctx, "name")
-	defer deleteApplication(t, app.ID)
+	app := registerApplication(t, ctx, "name")
+	defer unregisterApplication(t, app.ID)
 
 	api := graphql.APIDefinitionInput{Name: "name", TargetURL: "https://kyma project.io"}
 	apiGQL, err := tc.graphqlizer.APIDefinitionInputToGQL(api)
@@ -259,8 +259,8 @@ func TestAddAPI_Validation(t *testing.T) {
 func TestUpdateAPI_Validation(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
-	app := createApplication(t, ctx, "name")
-	defer deleteApplication(t, app.ID)
+	app := registerApplication(t, ctx, "name")
+	defer unregisterApplication(t, app.ID)
 
 	api := graphql.APIDefinitionInput{Name: "name", TargetURL: "https://kyma-project.io"}
 	addAPI(t, ctx, app.ID, api)
@@ -281,13 +281,13 @@ func TestUpdateAPI_Validation(t *testing.T) {
 func TestAddEventAPI_Validation(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
-	app := createApplication(t, ctx, "name")
-	defer deleteApplication(t, app.ID)
+	app := registerApplication(t, ctx, "name")
+	defer unregisterApplication(t, app.ID)
 
 	eventAPI := fixEventAPIDefinitionInput()
 	longDesc := strings.Repeat("a", 129)
 	eventAPI.Description = &longDesc
-	evenApiGQL, err := tc.graphqlizer.EventAPIDefinitionInputToGQL(eventAPI)
+	evenApiGQL, err := tc.graphqlizer.EventDefinitionInputToGQL(eventAPI)
 	require.NoError(t, err)
 	addEventAPIRequest := fixAddEventAPIRequest(app.ID, evenApiGQL)
 
@@ -296,20 +296,20 @@ func TestAddEventAPI_Validation(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
-	require.EqualError(t, err, fmt.Sprintf(longDescErrorMsg, "EventAPIDefinitionInput"))
+	require.EqualError(t, err, fmt.Sprintf(longDescErrorMsg, "EventDefinitionInput"))
 }
 
 func TestUpdateEventAPI_Validation(t *testing.T) {
 	ctx := context.TODO()
-	app := createApplication(t, ctx, "name")
-	defer deleteApplication(t, app.ID)
+	app := registerApplication(t, ctx, "name")
+	defer unregisterApplication(t, app.ID)
 
 	eventAPIUpdate := fixEventAPIDefinitionInput()
-	eventAPI := addEventAPI(t, ctx, app.ID, eventAPIUpdate)
+	eventAPI := addEventDefinition(t, ctx, app.ID, eventAPIUpdate)
 
 	longDesc := strings.Repeat("a", 129)
 	eventAPIUpdate.Description = &longDesc
-	evenApiGQL, err := tc.graphqlizer.EventAPIDefinitionInputToGQL(eventAPIUpdate)
+	evenApiGQL, err := tc.graphqlizer.EventDefinitionInputToGQL(eventAPIUpdate)
 	require.NoError(t, err)
 	updateEventAPI := fixUpdateEventAPIRequest(eventAPI.ID, evenApiGQL)
 
@@ -318,16 +318,16 @@ func TestUpdateEventAPI_Validation(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
-	require.EqualError(t, err, fmt.Sprintf(longDescErrorMsg, "EventAPIDefinitionInput"))
+	require.EqualError(t, err, fmt.Sprintf(longDescErrorMsg, "EventDefinitionInput"))
 }
 
-func fixEventAPIDefinitionInput() graphql.EventAPIDefinitionInput {
+func fixEventAPIDefinitionInput() graphql.EventDefinitionInput {
 	data := graphql.CLOB("data")
-	return graphql.EventAPIDefinitionInput{Name: "name",
-		Spec: &graphql.EventAPISpecInput{
-			Data:          &data,
-			EventSpecType: graphql.EventAPISpecTypeAsyncAPI,
-			Format:        graphql.SpecFormatJSON,
+	return graphql.EventDefinitionInput{Name: "name",
+		Spec: &graphql.EventSpecInput{
+			Data:   &data,
+			Type:   graphql.EventSpecTypeAsyncAPI,
+			Format: graphql.SpecFormatJSON,
 		}}
 }
 
@@ -337,7 +337,7 @@ func TestCreateApplicationTemplate_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	appCreateInput := fixSampleApplicationCreateInput("placeholder")
+	appCreateInput := fixSampleApplicationRegisterInput("placeholder")
 	invalidInput := graphql.ApplicationTemplateInput{
 		Name:             "0invalid",
 		Placeholders:     []*graphql.PlaceholderDefinitionInput{},
@@ -363,7 +363,7 @@ func TestUpdateApplicationTemplate_Validation(t *testing.T) {
 	appTpl := createApplicationTemplate(t, ctx, "validation-test-app-tpl")
 	defer deleteApplicationTemplate(t, ctx, appTpl.ID)
 
-	appCreateInput := fixSampleApplicationCreateInput("placeholder")
+	appCreateInput := fixSampleApplicationRegisterInput("placeholder")
 	invalidInput := graphql.ApplicationTemplateInput{
 		Name:             "0invalid",
 		Placeholders:     []*graphql.PlaceholderDefinitionInput{},

@@ -165,8 +165,8 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "master"
-  digest = "1:328e9a4362e395a3e3cef47ed43bd9f8148de5506f2c3219646ed0e2330ab229"
+  branch = "graphql-hardening"
+  digest = "1:e584fe988821660b61d533fec42f02c9395da40e6950be5e75dd141f40dac71e"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/connector/pkg/graphql/externalschema",
@@ -178,7 +178,8 @@
     "components/director/pkg/scalar",
   ]
   pruneopts = "UT"
-  revision = "91ed97a77766be70bded83c35485ad40bd5b25dc"
+  revision = "6e0a11e0862a417dbd416b621e52b3a7390abead"
+  source = "https://github.com/aszecowka/compass.git"
 
 [[projects]]
   branch = "master"

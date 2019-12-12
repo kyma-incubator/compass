@@ -31,7 +31,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 		r := onetimetoken.NewTokenResolver(transact, svc, conv)
 
 		//WHEN
-		oneTimeToken, err := r.GenerateOneTimeTokenForApplication(ctx, appID)
+		oneTimeToken, err := r.RequestOneTimeTokenForApplication(ctx, appID)
 
 		//THEN
 		require.NoError(t, err)
@@ -52,7 +52,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 		r := onetimetoken.NewTokenResolver(transact, svc, conv)
 
 		//WHEN
-		_, err := r.GenerateOneTimeTokenForApplication(ctx, appID)
+		_, err := r.RequestOneTimeTokenForApplication(ctx, appID)
 
 		//THEN
 		require.Error(t, err)
@@ -71,7 +71,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 		r := onetimetoken.NewTokenResolver(transact, svc, conv)
 
 		//WHEN
-		_, err := r.GenerateOneTimeTokenForApplication(ctx, appID)
+		_, err := r.RequestOneTimeTokenForApplication(ctx, appID)
 
 		//THEN
 		require.Error(t, err)
@@ -89,7 +89,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 		r := onetimetoken.NewTokenResolver(transact, svc, conv)
 
 		//WHEN
-		_, err := r.GenerateOneTimeTokenForApplication(ctx, appID)
+		_, err := r.RequestOneTimeTokenForApplication(ctx, appID)
 
 		//THEN
 		require.Error(t, err)
@@ -117,7 +117,7 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 		r := onetimetoken.NewTokenResolver(transact, svc, conv)
 
 		//WHEN
-		oneTimeToken, err := r.GenerateOneTimeTokenForRuntime(ctx, runtimeID)
+		oneTimeToken, err := r.RequestOneTimeTokenForRuntime(ctx, runtimeID)
 
 		//THEN
 		require.NoError(t, err)
@@ -138,7 +138,7 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 		r := onetimetoken.NewTokenResolver(transact, svc, conv)
 
 		//WHEN
-		_, err := r.GenerateOneTimeTokenForRuntime(ctx, runtimeID)
+		_, err := r.RequestOneTimeTokenForRuntime(ctx, runtimeID)
 
 		//THEN
 		require.Error(t, err)
@@ -157,7 +157,7 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 		r := onetimetoken.NewTokenResolver(transact, svc, conv)
 
 		//WHEN
-		_, err := r.GenerateOneTimeTokenForRuntime(ctx, runtimeID)
+		_, err := r.RequestOneTimeTokenForRuntime(ctx, runtimeID)
 
 		//THEN
 		require.Error(t, err)
@@ -175,7 +175,7 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 		r := onetimetoken.NewTokenResolver(transact, svc, conv)
 
 		//WHEN
-		_, err := r.GenerateOneTimeTokenForRuntime(ctx, runtimeID)
+		_, err := r.RequestOneTimeTokenForRuntime(ctx, runtimeID)
 
 		//THEN
 		require.Error(t, err)

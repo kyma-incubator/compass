@@ -1,25 +1,25 @@
 package graphql
 
-type EventAPISpec struct {
-	Data         *CLOB            `json:"data"`
-	Type         EventAPISpecType `json:"type"`
-	Format       SpecFormat       `json:"format"`
-	DefinitionID string           // Needed to resolve FetchRequest for given APISpec
+type EventSpec struct {
+	Data         *CLOB         `json:"data"`
+	Type         EventSpecType `json:"type"`
+	Format       SpecFormat    `json:"format"`
+	DefinitionID string        // Needed to resolve FetchRequest for given APISpec
 }
 
 // Extended types used by external API
 
 type EventAPIDefinitionPageExt struct {
-	EventAPIDefinitionPage
+	EventDefinitionPage
 	Data []*EventAPIDefinitionExt `json:"data"`
 }
 
 type EventAPIDefinitionExt struct {
-	EventAPIDefinition
+	EventDefinition
 	Spec *EventAPISpecExt `json:"spec"`
 }
 
 type EventAPISpecExt struct {
-	EventAPISpec
+	EventSpec
 	FetchRequest *FetchRequest `json:"fetchRequest"`
 }

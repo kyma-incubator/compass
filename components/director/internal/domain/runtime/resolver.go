@@ -141,7 +141,7 @@ func (r *Resolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, er
 	return r.converter.ToGraphQL(runtime), nil
 }
 
-func (r *Resolver) CreateRuntime(ctx context.Context, in graphql.RuntimeInput) (*graphql.Runtime, error) {
+func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput) (*graphql.Runtime, error) {
 	convertedIn := r.converter.InputFromGraphQL(in)
 
 	tx, err := r.transact.Begin()

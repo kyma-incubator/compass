@@ -23,7 +23,7 @@ type playgroundTestConfig struct {
 		ClientCertsSubdomain string
 	}
 	DirectorURLFormat          string `envconfig:"default=https://%s.%s/director"`
-	DirectorGraphQLExamplePath string `envconfig:"default=examples/create-application/create-application.graphql"`
+	DirectorGraphQLExamplePath string `envconfig:"default=examples/register-application/register-application.graphql"`
 	DefaultTenant              string
 }
 

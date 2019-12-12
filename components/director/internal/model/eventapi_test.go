@@ -19,17 +19,17 @@ func TestEventAPIDefinitionInput_ToEventAPIDefinition(t *testing.T) {
 
 	testCases := []struct {
 		Name     string
-		Input    *model.EventAPIDefinitionInput
-		Expected *model.EventAPIDefinition
+		Input    *model.EventDefinitionInput
+		Expected *model.EventDefinition
 	}{
 		{
 			Name: "All properties given",
-			Input: &model.EventAPIDefinitionInput{
+			Input: &model.EventDefinitionInput{
 				Name:        name,
 				Description: &desc,
 				Group:       &group,
 			},
-			Expected: &model.EventAPIDefinition{
+			Expected: &model.EventDefinition{
 				ID:            id,
 				Tenant:        tenant,
 				ApplicationID: appID,
@@ -49,7 +49,7 @@ func TestEventAPIDefinitionInput_ToEventAPIDefinition(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToEventAPIDefinition(id, appID, tenant)
+			result := testCase.Input.ToEventDefinition(id, appID, tenant)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)
@@ -61,21 +61,21 @@ func TestEventAPIDefinitionInput_ToEventAPISpec(t *testing.T) {
 	// given
 	data := "bar"
 	format := model.SpecFormat("Sample")
-	specType := model.EventAPISpecType("sample")
+	specType := model.EventSpecType("sample")
 
 	testCases := []struct {
 		Name     string
-		Input    *model.EventAPISpecInput
-		Expected *model.EventAPISpec
+		Input    *model.EventSpecInput
+		Expected *model.EventSpec
 	}{
 		{
 			Name: "All properties given",
-			Input: &model.EventAPISpecInput{
+			Input: &model.EventSpecInput{
 				Data:          &data,
 				EventSpecType: specType,
 				Format:        format,
 			},
-			Expected: &model.EventAPISpec{
+			Expected: &model.EventSpec{
 				Data:   &data,
 				Format: format,
 				Type:   specType,
@@ -92,7 +92,7 @@ func TestEventAPIDefinitionInput_ToEventAPISpec(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToEventAPISpec()
+			result := testCase.Input.ToEventSpec()
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

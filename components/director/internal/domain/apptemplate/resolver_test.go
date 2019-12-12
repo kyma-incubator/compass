@@ -586,7 +586,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppConvFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
-				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(graphql.ApplicationCreateInput{}, testError).Once()
+				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(graphql.ApplicationRegisterInput{}, testError).Once()
 				return appConv
 			},
 			ExpectedOutput: nil,
@@ -612,7 +612,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppConvFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
-				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(graphql.ApplicationCreateInput{}, nil).Once()
+				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(graphql.ApplicationRegisterInput{}, nil).Once()
 				return appConv
 			},
 			ExpectedOutput: nil,

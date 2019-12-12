@@ -54,7 +54,7 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	name := "app-template"
 	newName := "new-app-template"
 	newDescription := "new description"
-	newAppCreateInput := &graphql.ApplicationCreateInput{
+	newAppCreateInput := &graphql.ApplicationRegisterInput{
 		Name:           "new-app-create-input",
 		HealthCheckURL: ptr.String("http://url.valid"),
 	}
@@ -188,7 +188,7 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 
 	//THEN
 	require.NoError(t, err)
-	deleteApplication(t, outputApp.ID)
+	unregisterApplication(t, outputApp.ID)
 	require.NotEmpty(t, outputApp)
 	require.NotNil(t, outputApp.Application.Description)
 	require.Equal(t, "test new-value", *outputApp.Application.Description)

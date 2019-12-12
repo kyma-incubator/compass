@@ -25,7 +25,7 @@ func TestDifferentTenantAccessDenied(t *testing.T) {
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	t.Log("Try to create Application in not existing tenant")
-	appInput := graphql.ApplicationCreateInput{
+	appInput := graphql.ApplicationRegisterInput{
 		Name: "app-tmh-test",
 	}
 	_, err = createApplicationWithinTenant(t, ctx, dexGraphQLClient, notExistingTenant, appInput)
