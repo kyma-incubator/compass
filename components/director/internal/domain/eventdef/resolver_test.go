@@ -104,7 +104,7 @@ func TestResolver_AddEventAPI(t *testing.T) {
 				return conv
 			},
 			ExpectedEventDef: nil,
-			ExpectedErr:      errors.New("Cannot add EventAPI to not existing Application"),
+			ExpectedErr:      errors.New("Cannot add Event Definition to not existing Application"),
 		},
 		{
 			Name:            "Returns error when application existence check failed",
@@ -127,7 +127,7 @@ func TestResolver_AddEventAPI(t *testing.T) {
 			ExpectedErr:      testErr,
 		},
 		{
-			Name:            "Returns error when EventAPI creation failed",
+			Name:            "Returns error when Event Definition creation failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventDefService {
 				svc := &automock.EventDefService{}
@@ -148,7 +148,7 @@ func TestResolver_AddEventAPI(t *testing.T) {
 			ExpectedErr:      testErr,
 		},
 		{
-			Name:            "Returns error when EventAPI retrieval failed",
+			Name:            "Returns error when Event Definition retrieval failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventDefService {
 				svc := &automock.EventDefService{}
@@ -273,7 +273,7 @@ func TestResolver_DeleteEventAPI(t *testing.T) {
 			ExpectedErr:      testErr,
 		},
 		{
-			Name:            "Returns error when EventAPI retrieval failed",
+			Name:            "Returns error when Event Definition retrieval failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventDefService {
 				svc := &automock.EventDefService{}
@@ -404,7 +404,7 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 			ExpectedErr:      testErr,
 		},
 		{
-			Name:            "Returns error when EventAPI update failed",
+			Name:            "Returns error when Event Definition update failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventDefService {
 				svc := &automock.EventDefService{}
@@ -422,7 +422,7 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 			ExpectedErr:      testErr,
 		},
 		{
-			Name:            "Returns error when EventAPI retrieval failed",
+			Name:            "Returns error when Event Definition retrieval failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventDefService {
 				svc := &automock.EventDefService{}
@@ -549,7 +549,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			ExpectedErr:       testErr,
 		},
 		{
-			Name:            "Returns error when refetching EventAPI spec failed",
+			Name:            "Returns error when refetching Event spec failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventDefService {
 				svc := &automock.EventDefService{}

@@ -398,7 +398,7 @@ func TestAddDependentObjectsWhenAppDoesNotExist(t *testing.T) {
 		err = tc.RunOperation(ctx, addReq, nil)
 
 		// THEN
-		require.EqualError(t, err, "graphql: Cannot add EventAPI to not existing Application")
+		require.EqualError(t, err, "graphql: Cannot add Event Definition to not existing Application")
 	})
 	t.Run("add Document", func(t *testing.T) {
 		//GIVEN

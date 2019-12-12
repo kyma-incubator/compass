@@ -188,10 +188,10 @@ func (s *service) GetFetchRequest(ctx context.Context, eventAPIDefID string) (*m
 
 	exists, err := s.eventAPIRepo.Exists(ctx, tnt, eventAPIDefID)
 	if err != nil {
-		return nil, errors.Wrap(err, "while checking if EventAPI Definition exists")
+		return nil, errors.Wrap(err, "while checking if Event Definition exists")
 	}
 	if !exists {
-		return nil, fmt.Errorf("EventAPI Definition with ID %s doesn't exist", eventAPIDefID)
+		return nil, fmt.Errorf("Event Definition with ID %s doesn't exist", eventAPIDefID)
 	}
 
 	fetchRequest, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.EventAPIFetchRequestReference, eventAPIDefID)

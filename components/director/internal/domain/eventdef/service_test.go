@@ -50,7 +50,7 @@ func TestService_Get(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Returns error when EventAPI retrieval failed",
+			Name: "Returns error when Event Definition retrieval failed",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
 				repo.On("GetByID", ctx, tenantID, id).Return(nil, testErr).Once()
@@ -124,7 +124,7 @@ func TestService_GetForApplication(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Returns error when EventAPI retrieval failed",
+			Name: "Returns error when Event Definition retrieval failed",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
 				repo.On("GetForApplication", ctx, tenantID, id, appID).Return(nil, testErr).Once()
@@ -238,7 +238,7 @@ func TestService_List(t *testing.T) {
 			ExpectedErrMessage: "page size must be between 1 and 100",
 		},
 		{
-			Name: "Returns error when EventAPI listing failed",
+			Name: "Returns error when Event Definition listing failed",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
 				repo.On("ListByApplicationID", ctx, tenantID, applicationID, first, after).Return(nil, testErr).Once()
@@ -345,7 +345,7 @@ func TestService_Create(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "Error - EventAPI Creation",
+			Name: "Error - Event Definition Creation",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
 				repo.On("Create", ctx, modelEventAPIDefinition).Return(testErr).Once()
@@ -777,7 +777,7 @@ func TestService_GetFetchRequest(t *testing.T) {
 			ExpectedErrMessage:   testErr.Error(),
 		},
 		{
-			Name: "Error - EventAPI doesn't exist",
+			Name: "Error - Event Definition doesn't exist",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
 				repo.On("Exists", ctx, tenantID, refID).Return(false, nil).Once()
@@ -788,7 +788,7 @@ func TestService_GetFetchRequest(t *testing.T) {
 				repo := &automock.FetchRequestRepository{}
 				return repo
 			},
-			ExpectedErrMessage:   "EventAPI Definition with ID doc-id doesn't exist",
+			ExpectedErrMessage:   "Event Definition with ID doc-id doesn't exist",
 			ExpectedFetchRequest: nil,
 		},
 	}

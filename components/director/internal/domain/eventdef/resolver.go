@@ -76,7 +76,7 @@ func (r *Resolver) AddEventDefinition(ctx context.Context, applicationID string,
 	}
 
 	if !found {
-		return nil, errors.New("Cannot add EventAPI to not existing Application")
+		return nil, errors.New("Cannot add Event Definition to not existing Application")
 	}
 
 	id, err := r.svc.Create(ctx, applicationID, *convertedIn)
