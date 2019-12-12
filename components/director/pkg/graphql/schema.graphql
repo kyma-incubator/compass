@@ -506,6 +506,7 @@ type OAuthCredentialData {
 type OneTimeToken {
 	token: String!
 	connectorURL: String!
+	rawEncoded: String!
 }
 
 type PageInfo {

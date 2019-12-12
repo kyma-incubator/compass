@@ -314,11 +314,6 @@ type OAuthCredentialDataInput struct {
 	URL          string `json:"url"`
 }
 
-type OneTimeToken struct {
-	Token        string `json:"token"`
-	ConnectorURL string `json:"connectorURL"`
-}
-
 type PageInfo struct {
 	StartCursor PageCursor `json:"startCursor"`
 	EndCursor   PageCursor `json:"endCursor"`

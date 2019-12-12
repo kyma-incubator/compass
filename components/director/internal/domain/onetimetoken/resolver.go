@@ -2,6 +2,8 @@ package onetimetoken
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
@@ -69,4 +71,27 @@ func (r *Resolver) RequestOneTimeTokenForApplication(ctx context.Context, id str
 	}
 	gqlToken := r.conv.ToGraphQL(token)
 	return &gqlToken, nil
+}
+
+func (r *Resolver) RawEncoded(ctx context.Context, obj *graphql.OneTimeToken) (string, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return "", err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	rawJson, err := json.Marshal(obj)
+	if err != nil {
+		return "", err
+	}
+
+	rawBaseEncoded := base64.StdEncoding.EncodeToString(rawJson)
+
+	err = tx.Commit()
+	if err != nil {
+		return "", err
+	}
+	return rawBaseEncoded, nil
+
 }
