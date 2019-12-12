@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"text/template"
 
+	"fmt"
+
 	"github.com/Masterminds/sprig"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
-	"fmt"
 )
 
 // Graphqlizer is responsible for converting Go objects to input arguments in graphql format

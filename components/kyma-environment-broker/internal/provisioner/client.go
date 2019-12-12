@@ -3,10 +3,11 @@ package provisioner
 import (
 	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql"
 
+	"fmt"
+
 	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
-	"fmt"
 )
 
 type Client interface {

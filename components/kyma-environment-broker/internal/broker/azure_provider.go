@@ -3,7 +3,6 @@ package broker
 import "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 
 type azureInputProvider struct {
-
 }
 
 var _ inputProvider = &azureInputProvider{}

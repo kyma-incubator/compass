@@ -3,14 +3,15 @@ package broker
 import (
 	"context"
 	"encoding/json"
-	"github.com/pivotal-cf/brokerapi/domain"
-	"github.com/sanity-io/litter"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-	"github.com/pkg/errors"
-	"github.tools.sap/gophers-team/kyma-environment-service-broker/internal/provisioner"
-	"github.com/pivotal-cf/brokerapi/domain/apiresponses"
-	"net/http"
 	"fmt"
+	"net/http"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/pivotal-cf/brokerapi/domain"
+	"github.com/pivotal-cf/brokerapi/domain/apiresponses"
+	"github.com/pkg/errors"
+	"github.com/sanity-io/litter"
 )
 
 const (
@@ -37,8 +38,8 @@ type ProvisioningConfig struct {
 
 // KymaEnvBroker implements the Kyma Environment Broker
 type KymaEnvBroker struct {
-	Dumper                      *Dumper
-	ProvisionerClient           provisioner.Client
+	Dumper            *Dumper
+	ProvisionerClient provisioner.Client
 
 	Config ProvisioningConfig
 }
@@ -144,7 +145,6 @@ func (b *KymaEnvBroker) Provision(ctx context.Context, instanceID string, detail
 	input.Credentials = &gqlschema.CredentialsInput{
 		SecretName: b.Config.SecretName,
 	}
-
 
 	b.Dumper.Dump("Created provisioning input:", input)
 	opID, err := b.ProvisionerClient.ProvisionRuntime(instanceID, *input)

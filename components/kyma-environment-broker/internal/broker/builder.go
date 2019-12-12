@@ -27,15 +27,15 @@ type inputProvider interface {
 }
 
 type provisioningParamsBuilder struct {
-	provider         inputProvider
-	input            *gqlschema.ProvisionRuntimeInput
+	provider inputProvider
+	input    *gqlschema.ProvisionRuntimeInput
 }
 
-func newProvisioningParamsBuilder(ip inputProvider) *provisioningParamsBuilder{
+func newProvisioningParamsBuilder(ip inputProvider) *provisioningParamsBuilder {
 	builder := &provisioningParamsBuilder{
 		input: &gqlschema.ProvisionRuntimeInput{
 			ClusterConfig: ip.Defaults(),
-			KymaConfig: &gqlschema.KymaConfigInput{Version: "1.6", Modules: gqlschema.AllKymaModule},
+			KymaConfig:    &gqlschema.KymaConfigInput{Version: "1.6", Modules: gqlschema.AllKymaModule},
 		},
 		provider: ip,
 	}
@@ -71,4 +71,3 @@ func updateInt(toUpdate *int, value *int) {
 		*toUpdate = *value
 	}
 }
-

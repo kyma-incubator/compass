@@ -5,15 +5,14 @@ import (
 	"net/http"
 	"os"
 
-	"github.tools.sap/gophers-team/kyma-environment-service-broker/internal/broker"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/handlers"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/pivotal-cf/brokerapi"
 	"github.com/vrischmann/envconfig"
-	"github.tools.sap/gophers-team/kyma-environment-service-broker/internal/provisioner"
 )
-
 
 // Config holds configuration for the whole application
 type Config struct {
@@ -49,8 +48,8 @@ func main() {
 	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
 
 	kymaBrokerService := &broker.KymaEnvBroker{
-		Dumper:                      dumper,
-		ProvisionerClient:           provisionerClient,
+		Dumper:            dumper,
+		ProvisionerClient: provisionerClient,
 
 		Config: cfg.Provisioning,
 	}

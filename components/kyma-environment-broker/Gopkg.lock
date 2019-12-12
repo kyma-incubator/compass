@@ -109,11 +109,10 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:c3c641b290ec1c884e26df796225a28399d75ffb95ad515855a96a16bd2caab1"
+  digest = "1:0f69586da545cb56acb04fe66f3357895fcb24b1f11532a8b99d06802b986b06"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/provisioner/pkg/gqlschema",
-    "tests/provisioner-tests/test/testkit/compass/provisioner",
     "tests/provisioner-tests/test/testkit/graphql",
   ]
   pruneopts = "UT"
@@ -200,12 +199,9 @@
   version = "v1.4.2"
 
 [[projects]]
-  digest = "1:99d32780e5238c2621fff621123997c3e3cca96db8be13179013aea77dfab551"
+  digest = "1:8548c309c65a85933a625be5e7d52b6ac927ca30c56869fae58123b8a77a75e1"
   name = "github.com/stretchr/testify"
-  packages = [
-    "assert",
-    "require",
-  ]
+  packages = ["assert"]
   pruneopts = "UT"
   revision = "221dbe5ed46703ee255b1da0dec05086f5035f62"
   version = "v1.4.0"
@@ -266,15 +262,17 @@
   analyzer-version = 1
   input-imports = [
     "code.cloudfoundry.org/lager",
+    "github.com/Masterminds/sprig",
     "github.com/gorilla/handlers",
     "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
-    "github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/provisioner",
+    "github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql",
+    "github.com/machinebox/graphql",
     "github.com/pivotal-cf/brokerapi",
     "github.com/pivotal-cf/brokerapi/domain",
+    "github.com/pivotal-cf/brokerapi/domain/apiresponses",
     "github.com/pkg/errors",
     "github.com/sanity-io/litter",
     "github.com/stretchr/testify/assert",
-    "github.com/stretchr/testify/require",
     "github.com/vrischmann/envconfig",
   ]
   solver-name = "gps-cdcl"
