@@ -165,8 +165,8 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "master"
-  digest = "1:e584fe988821660b61d533fec42f02c9395da40e6950be5e75dd141f40dac71e"
+  branch = "raw-json"
+  digest = "1:ef9b36546c97d0e38b050ac5800fc553528cc92c43f57563c894846ecc851b31"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/connector/pkg/graphql/externalschema",
@@ -178,7 +178,8 @@
     "components/director/pkg/scalar",
   ]
   pruneopts = "UT"
-  revision = "afa6401185bb034361ee4ee77ce69f946308b4e8"
+  revision = "cd299d4c334a7ac07206c27b7531e5ea034d78ca"
+  source = "https://github.com/KarolJaksik/compass.git"
 
 [[projects]]
   branch = "master"
@@ -385,8 +386,7 @@
   version = "v2.2.5"
 
 [[projects]]
-  branch = "master"
-  digest = "1:c1e47561b2e58a28ab64b4b7dc946279f62eae3f1487e83767ab64bcf2fd2522"
+  digest = "1:0c58e2f2dca62b1ce2040c7f65503c4789d5d2c72fab446cf769ccaa9729877a"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/equality",
@@ -416,7 +416,8 @@
     "third_party/forked/golang/reflect",
   ]
   pruneopts = "UT"
-  revision = "adc6f4cd9e7d28fc1c1e5efc658d940d55c0f356"
+  revision = "79c2a76c473a20cdc4ce59cae4b72529b5d9d16b"
+  version = "v0.17.0"
 
 [[projects]]
   digest = "1:93e82f25d75aba18436ad1ac042cb49493f096011f2541075721ed6f9e05c044"
