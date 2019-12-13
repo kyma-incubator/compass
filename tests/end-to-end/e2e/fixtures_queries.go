@@ -96,8 +96,8 @@ func generateOneTimeTokenForApplication(t *testing.T, ctx context.Context, gqlCl
 
 	require.NotEmpty(t, oneTimeToken.ConnectorURL)
 	require.NotEmpty(t, oneTimeToken.Token)
-	require.NotEmpty(t, oneTimeToken.RawEncoded)
 	require.NotEmpty(t, oneTimeToken.Raw)
+	require.NotEmpty(t, oneTimeToken.RawEncoded)
 	return oneTimeToken
 }
 
