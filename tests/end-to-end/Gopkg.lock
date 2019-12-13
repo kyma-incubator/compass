@@ -165,7 +165,7 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "raw-json"
+  branch = "master"
   digest = "1:cecc4d1817cb1779ba0267b073d5e48dc9e82b651dde7d742a7d0e248ebec2ca"
   name = "github.com/kyma-incubator/compass"
   packages = [
@@ -178,8 +178,7 @@
     "components/director/pkg/scalar",
   ]
   pruneopts = "UT"
-  revision = "2a8ee6fd3179a548ae1fdbf2f81ed66cdb138b48"
-  source = "https://github.com/KarolJaksik/compass.git"
+  revision = "1a1abb63ee07802faeb44fdc2723e229ccb2d40c"
 
 [[projects]]
   branch = "master"
