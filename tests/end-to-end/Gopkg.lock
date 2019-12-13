@@ -2,15 +2,15 @@
 
 
 [[projects]]
-  digest = "1:711cd11b4ae785822be831e4c5072963f6f8e32fef376d1796501e5b2a62b997"
+  digest = "1:f84da532ef028ec1a939c4086e44cae3a2463a6679c31614fc23c325565b813f"
   name = "github.com/99designs/gqlgen"
   packages = [
     "graphql",
     "graphql/introspection",
   ]
   pruneopts = "UT"
-  revision = "efb6efe06c6e4fc706440acebf6f81fff85f295c"
-  version = "v0.10.1"
+  revision = "f276a4e6773992c572119b22821d375ad008c53d"
+  version = "v0.10.2"
 
 [[projects]]
   digest = "1:3b10c6fd33854dc41de2cf78b7bae105da94c2789b6fa5b9ac9e593ea43484ac"
@@ -53,12 +53,12 @@
   version = "v9"
 
 [[projects]]
-  digest = "1:6c7e9c6eaab0e5579b85151932e4e11347cd2869a97b2a098b80a872abe561d6"
+  digest = "1:6062abf6317d3d6963496e01e22264a2e8a7e3b35e2917aa00ed3d182f569be6"
   name = "github.com/avast/retry-go"
   packages = ["."]
   pruneopts = "UT"
-  revision = "a322e24d96313ab405dec28ad5711f036c6d25a3"
-  version = "v2.4.2"
+  revision = "f9a5f3752008752cd4f31f9c0c4dc60dec4583e5"
+  version = "v2.4.3"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -131,12 +131,12 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:f9a5e090336881be43cfc1cf468330c1bdd60abdc9dd194e0b1ab69f4b94dd7c"
+  digest = "1:7e9014f41c8285f91b8f6170a30f633532c8d095b4ead42024e1f460c0ac497d"
   name = "github.com/huandu/xstrings"
   packages = ["."]
   pruneopts = "UT"
-  revision = "f02667b379e2fb5916c3cda2cf31e0eb885d79f8"
-  version = "v1.2.0"
+  revision = "874a673206bf7a5c86d29876dfeaccca0922ab62"
+  version = "v1.2.1"
 
 [[projects]]
   digest = "1:78d28d5b84a26159c67ea51996a230da4bc07cac648adaae1dfb5fc0ec8e40d3"
@@ -166,7 +166,7 @@
 
 [[projects]]
   branch = "raw-json"
-  digest = "1:ef9b36546c97d0e38b050ac5800fc553528cc92c43f57563c894846ecc851b31"
+  digest = "1:84582f05633c0ee3ecb57c133373f22b95ae449cbccc778a00e10c06d56a2c0e"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/connector/pkg/graphql/externalschema",
@@ -178,7 +178,7 @@
     "components/director/pkg/scalar",
   ]
   pruneopts = "UT"
-  revision = "cd299d4c334a7ac07206c27b7531e5ea034d78ca"
+  revision = "8b4f4a73d1fef9f37791a456f20e954d6b73ab41"
   source = "https://github.com/KarolJaksik/compass.git"
 
 [[projects]]
@@ -297,11 +297,11 @@
     "scrypt",
   ]
   pruneopts = "UT"
-  revision = "e1110fd1c708ef015366ea01799a23c459593c47"
+  revision = "e9b2fee46413994441b28dfca259d911d963dfed"
 
 [[projects]]
   branch = "master"
-  digest = "1:e5a59d3fa3bb25d42bfc526c30035f07d9811224988c46b459719ac06dd63441"
+  digest = "1:97aca2746ef14a460fe39f1c1aa566b63e076e19b246bda1f17d626ad4963743"
   name = "golang.org/x/net"
   packages = [
     "html",
@@ -312,15 +312,15 @@
     "idna",
   ]
   pruneopts = "UT"
-  revision = "2180aed2234323691e9fd264fb1d32d20ff04b27"
+  revision = "c0dbc17a35534bf2e581d7a942408dc936316da4"
 
 [[projects]]
   branch = "master"
-  digest = "1:824b4d14e35e35e821d3127319e51eb838f72434100750ad395db96d00b5a871"
+  digest = "1:634414cd43ed62a728aaf9b3e61fde85f012880f9b32b7d00678b6fd887ff9c1"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "4c7a9d0fe056d9d1de37e1409ca8a5c17accb46a"
+  revision = "ac6580df4449443a05718fd7858c1f91ad5f8d20"
 
 [[projects]]
   digest = "1:8d8faad6b12a3a4c819a3f9618cb6ee1fa1cfc33253abeeea8b55336721e3405"
@@ -349,7 +349,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c6844361728aad543b24489ce34dd854487d3fb19b7d6b7eca111e318e82b00c"
+  digest = "1:3597679e1e3b5f323562028c1582f24105d9c3440e7fe99d868c65abc0163c00"
   name = "golang.org/x/tools"
   packages = [
     "cmd/goimports",
@@ -364,10 +364,9 @@
     "internal/imports",
     "internal/module",
     "internal/semver",
-    "internal/span",
   ]
   pruneopts = "UT"
-  revision = "4191b8cbba092238a318a71cdff48b20b4e1e5d8"
+  revision = "7093a17b0467e77fb41804b2754a44f54a8c9ca2"
 
 [[projects]]
   digest = "1:2d1fbdc6777e5408cabeb02bf336305e724b925ff4546ded0fa8715a7267922a"
@@ -378,12 +377,12 @@
   version = "v0.9.1"
 
 [[projects]]
-  digest = "1:f26a5d382387e03a40d1471dddfba85dfff9bf05352d7e42d37612677c4d3c5c"
+  digest = "1:b75b3deb2bce8bc079e16bb2aecfe01eb80098f5650f9e93e5643ca8b7b73737"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   pruneopts = "UT"
-  revision = "f90ceb4f409096b60e2e9076b38b304b8246e5fa"
-  version = "v2.2.5"
+  revision = "1f64d6156d11335c3f22d9330b0ad14fc1e789ce"
+  version = "v2.2.7"
 
 [[projects]]
   digest = "1:0c58e2f2dca62b1ce2040c7f65503c4789d5d2c72fab446cf769ccaa9729877a"
