@@ -227,6 +227,7 @@ func (fp *GqlFieldsProvider) ForOneTimeToken() string {
 	return `
 		token
 		connectorURL
+		raw
 		rawEncoded`
 }
 

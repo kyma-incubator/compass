@@ -166,7 +166,7 @@
 
 [[projects]]
   branch = "raw-json"
-  digest = "1:84582f05633c0ee3ecb57c133373f22b95ae449cbccc778a00e10c06d56a2c0e"
+  digest = "1:cecc4d1817cb1779ba0267b073d5e48dc9e82b651dde7d742a7d0e248ebec2ca"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/connector/pkg/graphql/externalschema",
@@ -178,7 +178,7 @@
     "components/director/pkg/scalar",
   ]
   pruneopts = "UT"
-  revision = "8b4f4a73d1fef9f37791a456f20e954d6b73ab41"
+  revision = "2a8ee6fd3179a548ae1fdbf2f81ed66cdb138b48"
   source = "https://github.com/KarolJaksik/compass.git"
 
 [[projects]]
