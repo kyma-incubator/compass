@@ -81,6 +81,10 @@ func (r *Resolver) RawEncoded(ctx context.Context, obj *graphql.OneTimeToken) (s
 	defer r.transact.RollbackUnlessCommited(tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	if obj == nil {
+		return "", errors.New("Token was nil")
+	}
+
 	rawJson, err := json.Marshal(obj)
 	if err != nil {
 		return "", err
@@ -93,7 +97,6 @@ func (r *Resolver) RawEncoded(ctx context.Context, obj *graphql.OneTimeToken) (s
 		return "", err
 	}
 	return rawBaseEncoded, nil
-
 }
 
 func (r *Resolver) Raw(ctx context.Context, obj *graphql.OneTimeToken) (string, error) {
@@ -103,6 +106,10 @@ func (r *Resolver) Raw(ctx context.Context, obj *graphql.OneTimeToken) (string, 
 	}
 	defer r.transact.RollbackUnlessCommited(tx)
 	ctx = persistence.SaveToContext(ctx, tx)
+
+	if obj == nil {
+		return "", errors.New("Token was nil")
+	}
 
 	rawJson, err := json.Marshal(obj)
 
@@ -115,5 +122,4 @@ func (r *Resolver) Raw(ctx context.Context, obj *graphql.OneTimeToken) (string, 
 		return "", err
 	}
 	return string(rawJson), nil
-
 }

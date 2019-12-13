@@ -3,7 +3,6 @@ package onetimetoken_test
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"testing"
 
@@ -193,9 +192,9 @@ func TestResolver_RawEncoded(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 	ctx := context.TODO()
 	tokenGraphql := graphql.OneTimeToken{Token: "Token", ConnectorURL: "connectorURL"}
-	expectedRawToken, err := json.Marshal(graphql.OneTimeToken{Token: "Token", ConnectorURL: "connectorURL"})
-	require.NoError(t, err)
-	expectedBaseToken := base64.StdEncoding.EncodeToString(expectedRawToken)
+	expectedRawToken := "{\"token\":\"Token\"," +
+		"\"connectorURL\":\"connectorURL\"}"
+	expectedBaseToken := base64.StdEncoding.EncodeToString([]byte(expectedRawToken))
 	t.Run("Success", func(t *testing.T) {
 		//GIVEN
 		persist, transact := txGen.ThatSucceeds()
@@ -226,6 +225,20 @@ func TestResolver_RawEncoded(t *testing.T) {
 		transact.AssertExpectations(t)
 	})
 
+	t.Run("Error nil token", func(t *testing.T) {
+		//GIVEN
+		persist, transact := txGen.ThatDoesntExpectCommit()
+		r := onetimetoken.NewTokenResolver(transact, nil, nil)
+
+		//WHEN
+		_, err := r.RawEncoded(ctx, nil)
+
+		//THEN
+		require.Error(t, err)
+		persist.AssertExpectations(t)
+		transact.AssertExpectations(t)
+	})
+
 	t.Run("Error - begin transaction failed", func(t *testing.T) {
 		//GIVEN
 		persist, transact := txGen.ThatFailsOnBegin()
@@ -245,8 +258,8 @@ func TestResolver_Raw(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 	ctx := context.TODO()
 	tokenGraphql := graphql.OneTimeToken{Token: "Token", ConnectorURL: "connectorURL"}
-	expectedRawToken, err := json.Marshal(graphql.OneTimeToken{Token: "Token", ConnectorURL: "connectorURL"})
-	require.NoError(t, err)
+	expectedRawToken := "{\"token\":\"Token\"," +
+		"\"connectorURL\":\"connectorURL\"}"
 	t.Run("Success", func(t *testing.T) {
 		//GIVEN
 		persist, transact := txGen.ThatSucceeds()
@@ -270,6 +283,20 @@ func TestResolver_Raw(t *testing.T) {
 
 		//WHEN
 		_, err := r.Raw(ctx, &tokenGraphql)
+
+		//THEN
+		require.Error(t, err)
+		persist.AssertExpectations(t)
+		transact.AssertExpectations(t)
+	})
+
+	t.Run("Error nil token", func(t *testing.T) {
+		//GIVEN
+		persist, transact := txGen.ThatDoesntExpectCommit()
+		r := onetimetoken.NewTokenResolver(transact, nil, nil)
+
+		//WHEN
+		_, err := r.Raw(ctx, nil)
 
 		//THEN
 		require.Error(t, err)
