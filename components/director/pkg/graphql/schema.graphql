@@ -506,6 +506,7 @@ type OAuthCredentialData {
 type OneTimeToken {
 	token: String!
 	connectorURL: String!
+	raw: String!
 	rawEncoded: String!
 }
 

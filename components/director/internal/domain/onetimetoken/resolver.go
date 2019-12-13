@@ -95,3 +95,25 @@ func (r *Resolver) RawEncoded(ctx context.Context, obj *graphql.OneTimeToken) (s
 	return rawBaseEncoded, nil
 
 }
+
+func (r *Resolver) Raw(ctx context.Context, obj *graphql.OneTimeToken) (string, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return "", err
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	rawJson, err := json.Marshal(obj)
+
+	if err != nil {
+		return "", err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return "", err
+	}
+	return string(rawJson), nil
+
+}

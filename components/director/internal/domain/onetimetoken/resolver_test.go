@@ -239,3 +239,54 @@ func TestResolver_RawEncoded(t *testing.T) {
 		transact.AssertExpectations(t)
 	})
 }
+
+func TestResolver_Raw(t *testing.T) {
+	testErr := errors.New("test error")
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+	ctx := context.TODO()
+	tokenGraphql := graphql.OneTimeToken{Token: "Token", ConnectorURL: "connectorURL"}
+	expectedRawToken, err := json.Marshal(graphql.OneTimeToken{Token: "Token", ConnectorURL: "connectorURL"})
+	require.NoError(t, err)
+	t.Run("Success", func(t *testing.T) {
+		//GIVEN
+		persist, transact := txGen.ThatSucceeds()
+		r := onetimetoken.NewTokenResolver(transact, nil, nil)
+
+		//WHEN
+		baseEncodedToken, err := r.Raw(ctx, &tokenGraphql)
+
+		//THEN
+		require.NoError(t, err)
+		assert.Equal(t, string(expectedRawToken), baseEncodedToken)
+		persist.AssertExpectations(t)
+		transact.AssertExpectations(t)
+
+	})
+
+	t.Run("Error - transaction commit failed", func(t *testing.T) {
+		//GIVEN
+		persist, transact := txGen.ThatFailsOnCommit()
+		r := onetimetoken.NewTokenResolver(transact, nil, nil)
+
+		//WHEN
+		_, err := r.Raw(ctx, &tokenGraphql)
+
+		//THEN
+		require.Error(t, err)
+		persist.AssertExpectations(t)
+		transact.AssertExpectations(t)
+	})
+
+	t.Run("Error - begin transaction failed", func(t *testing.T) {
+		//GIVEN
+		persist, transact := txGen.ThatFailsOnBegin()
+		r := onetimetoken.NewTokenResolver(transact, nil, nil)
+
+		//WHEN
+		_, err := r.Raw(ctx, &tokenGraphql)
+		//THEN
+		require.Error(t, err)
+		persist.AssertExpectations(t)
+		transact.AssertExpectations(t)
+	})
+}

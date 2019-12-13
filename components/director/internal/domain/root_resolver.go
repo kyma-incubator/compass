@@ -420,3 +420,7 @@ type oneTimeTokenResolver struct{ *RootResolver }
 func (r *oneTimeTokenResolver) RawEncoded(ctx context.Context, obj *graphql.OneTimeToken) (string, error) {
 	return r.token.RawEncoded(ctx, obj)
 }
+
+func (r *oneTimeTokenResolver) Raw(ctx context.Context, obj *graphql.OneTimeToken) (string, error) {
+	return r.token.Raw(ctx, obj)
+}
