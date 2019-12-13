@@ -80,7 +80,7 @@ func (r *Resolver) RawEncoded(ctx context.Context, obj *graphql.OneTimeToken) (s
 
 	rawJson, err := json.Marshal(obj)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "while marshalling object to JSON")
 	}
 
 	rawBaseEncoded := base64.StdEncoding.EncodeToString(rawJson)
@@ -94,9 +94,8 @@ func (r *Resolver) Raw(ctx context.Context, obj *graphql.OneTimeToken) (string, 
 	}
 
 	rawJson, err := json.Marshal(obj)
-
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "while marshalling object to JSON")
 	}
 
 	return string(rawJson), nil

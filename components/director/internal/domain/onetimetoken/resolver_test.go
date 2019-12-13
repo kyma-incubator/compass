@@ -203,10 +203,9 @@ func TestResolver_RawEncoded(t *testing.T) {
 		//THEN
 		require.NoError(t, err)
 		assert.Equal(t, expectedBaseToken, baseEncodedToken)
-
 	})
 
-	t.Run("Error nil token", func(t *testing.T) {
+	t.Run("Error - nil token", func(t *testing.T) {
 		//GIVEN
 		r := onetimetoken.NewTokenResolver(nil, nil, nil)
 
@@ -215,7 +214,6 @@ func TestResolver_RawEncoded(t *testing.T) {
 
 		//THEN
 		require.Error(t, err)
-
 	})
 }
 
@@ -234,10 +232,10 @@ func TestResolver_Raw(t *testing.T) {
 
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, string(expectedRawToken), baseEncodedToken)
+		assert.Equal(t, expectedRawToken, baseEncodedToken)
 	})
 
-	t.Run("Error nil token", func(t *testing.T) {
+	t.Run("Error - nil token", func(t *testing.T) {
 		//GIVEN
 		r := onetimetoken.NewTokenResolver(nil, nil, nil)
 
