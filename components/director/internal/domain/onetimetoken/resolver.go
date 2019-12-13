@@ -74,13 +74,6 @@ func (r *Resolver) RequestOneTimeTokenForApplication(ctx context.Context, id str
 }
 
 func (r *Resolver) RawEncoded(ctx context.Context, obj *graphql.OneTimeToken) (string, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return "", err
-	}
-	defer r.transact.RollbackUnlessCommited(tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
 	if obj == nil {
 		return "", errors.New("Token was nil")
 	}
@@ -92,21 +85,10 @@ func (r *Resolver) RawEncoded(ctx context.Context, obj *graphql.OneTimeToken) (s
 
 	rawBaseEncoded := base64.StdEncoding.EncodeToString(rawJson)
 
-	err = tx.Commit()
-	if err != nil {
-		return "", err
-	}
 	return rawBaseEncoded, nil
 }
 
 func (r *Resolver) Raw(ctx context.Context, obj *graphql.OneTimeToken) (string, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return "", err
-	}
-	defer r.transact.RollbackUnlessCommited(tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
 	if obj == nil {
 		return "", errors.New("Token was nil")
 	}
@@ -117,9 +99,5 @@ func (r *Resolver) Raw(ctx context.Context, obj *graphql.OneTimeToken) (string, 
 		return "", err
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return "", err
-	}
 	return string(rawJson), nil
 }
