@@ -152,6 +152,10 @@ func (r *RootResolver) IntegrationSystem() graphql.IntegrationSystemResolver {
 	return &integrationSystemResolver{r}
 }
 
+func (r *RootResolver) OneTimeToken() graphql.OneTimeTokenResolver {
+	return &oneTimeTokenResolver{r}
+}
+
 type queryResolver struct {
 	*RootResolver
 }
@@ -409,4 +413,14 @@ type integrationSystemResolver struct{ *RootResolver }
 
 func (r *integrationSystemResolver) Auths(ctx context.Context, obj *graphql.IntegrationSystem) ([]*graphql.SystemAuth, error) {
 	return r.intSys.Auths(ctx, obj)
+}
+
+type oneTimeTokenResolver struct{ *RootResolver }
+
+func (r *oneTimeTokenResolver) RawEncoded(ctx context.Context, obj *graphql.OneTimeToken) (string, error) {
+	return r.token.RawEncoded(ctx, obj)
+}
+
+func (r *oneTimeTokenResolver) Raw(ctx context.Context, obj *graphql.OneTimeToken) (string, error) {
+	return r.token.Raw(ctx, obj)
 }

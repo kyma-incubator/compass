@@ -91,3 +91,11 @@ models:
         resolver: true
       auths:
         resolver: true
+
+  OneTimeToken:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.OneTimeToken"
+    fields:
+      raw:
+        resolver: true
+      rawEncoded:
+        resolver: true

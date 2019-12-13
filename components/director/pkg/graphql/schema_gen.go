@@ -42,6 +42,7 @@ type ResolverRoot interface {
 	EventSpec() EventSpecResolver
 	IntegrationSystem() IntegrationSystemResolver
 	Mutation() MutationResolver
+	OneTimeToken() OneTimeTokenResolver
 	Query() QueryResolver
 	Runtime() RuntimeResolver
 }
@@ -301,6 +302,8 @@ type ComplexityRoot struct {
 
 	OneTimeToken struct {
 		ConnectorURL func(childComplexity int) int
+		Raw          func(childComplexity int) int
+		RawEncoded   func(childComplexity int) int
 		Token        func(childComplexity int) int
 	}
 
@@ -444,6 +447,10 @@ type MutationResolver interface {
 	DeleteApplicationLabel(ctx context.Context, applicationID string, key string) (*Label, error)
 	SetRuntimeLabel(ctx context.Context, runtimeID string, key string, value interface{}) (*Label, error)
 	DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string) (*Label, error)
+}
+type OneTimeTokenResolver interface {
+	Raw(ctx context.Context, obj *OneTimeToken) (string, error)
+	RawEncoded(ctx context.Context, obj *OneTimeToken) (string, error)
 }
 type QueryResolver interface {
 	Applications(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*ApplicationPage, error)
@@ -1850,6 +1857,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OneTimeToken.ConnectorURL(childComplexity), true
 
+	case "OneTimeToken.raw":
+		if e.complexity.OneTimeToken.Raw == nil {
+			break
+		}
+
+		return e.complexity.OneTimeToken.Raw(childComplexity), true
+
+	case "OneTimeToken.rawEncoded":
+		if e.complexity.OneTimeToken.RawEncoded == nil {
+			break
+		}
+
+		return e.complexity.OneTimeToken.RawEncoded(childComplexity), true
+
 	case "OneTimeToken.token":
 		if e.complexity.OneTimeToken.Token == nil {
 			break
@@ -2760,6 +2781,8 @@ type OAuthCredentialData {
 type OneTimeToken {
 	token: String!
 	connectorURL: String!
+	raw: String!
+	rawEncoded: String!
 }
 
 type PageInfo {
@@ -11594,6 +11617,80 @@ func (ec *executionContext) _OneTimeToken_connectorURL(ctx context.Context, fiel
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _OneTimeToken_raw(ctx context.Context, field graphql.CollectedField, obj *OneTimeToken) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OneTimeToken",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.OneTimeToken().Raw(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OneTimeToken_rawEncoded(ctx context.Context, field graphql.CollectedField, obj *OneTimeToken) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OneTimeToken",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.OneTimeToken().RawEncoded(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field graphql.CollectedField, obj *PageInfo) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -16934,13 +17031,41 @@ func (ec *executionContext) _OneTimeToken(ctx context.Context, sel ast.Selection
 		case "token":
 			out.Values[i] = ec._OneTimeToken_token(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "connectorURL":
 			out.Values[i] = ec._OneTimeToken_connectorURL(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
+		case "raw":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._OneTimeToken_raw(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "rawEncoded":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._OneTimeToken_rawEncoded(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

@@ -2,6 +2,7 @@ package onetimetoken_test
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"testing"
 
@@ -183,5 +184,65 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 		transact.AssertExpectations(t)
 		svc.AssertExpectations(t)
 		conv.AssertExpectations(t)
+	})
+}
+
+func TestResolver_RawEncoded(t *testing.T) {
+	ctx := context.TODO()
+	tokenGraphql := graphql.OneTimeToken{Token: "Token", ConnectorURL: "connectorURL"}
+	expectedRawToken := "{\"token\":\"Token\"," +
+		"\"connectorURL\":\"connectorURL\"}"
+	expectedBaseToken := base64.StdEncoding.EncodeToString([]byte(expectedRawToken))
+	t.Run("Success", func(t *testing.T) {
+		//GIVEN
+		r := onetimetoken.NewTokenResolver(nil, nil, nil)
+
+		//WHEN
+		baseEncodedToken, err := r.RawEncoded(ctx, &tokenGraphql)
+
+		//THEN
+		require.NoError(t, err)
+		assert.Equal(t, expectedBaseToken, baseEncodedToken)
+	})
+
+	t.Run("Error - nil token", func(t *testing.T) {
+		//GIVEN
+		r := onetimetoken.NewTokenResolver(nil, nil, nil)
+
+		//WHEN
+		_, err := r.RawEncoded(ctx, nil)
+
+		//THEN
+		require.Error(t, err)
+	})
+}
+
+func TestResolver_Raw(t *testing.T) {
+	ctx := context.TODO()
+	tokenGraphql := graphql.OneTimeToken{Token: "Token", ConnectorURL: "connectorURL"}
+	expectedRawToken := "{\"token\":\"Token\"," +
+		"\"connectorURL\":\"connectorURL\"}"
+
+	t.Run("Success", func(t *testing.T) {
+		//GIVEN
+		r := onetimetoken.NewTokenResolver(nil, nil, nil)
+
+		//WHEN
+		baseEncodedToken, err := r.Raw(ctx, &tokenGraphql)
+
+		//THEN
+		require.NoError(t, err)
+		assert.Equal(t, expectedRawToken, baseEncodedToken)
+	})
+
+	t.Run("Error - nil token", func(t *testing.T) {
+		//GIVEN
+		r := onetimetoken.NewTokenResolver(nil, nil, nil)
+
+		//WHEN
+		_, err := r.Raw(ctx, nil)
+
+		//THEN
+		require.Error(t, err)
 	})
 }
