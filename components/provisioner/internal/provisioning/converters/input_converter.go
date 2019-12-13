@@ -2,8 +2,8 @@ package converters
 
 import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
@@ -22,18 +22,18 @@ func NewInputConverter(
 	compassHyperscalerAccountPool provisioning.HyperscalerAccountPool) InputConverter {
 
 	return &converter{
-		uuidGenerator: uuidGenerator,
-		releaseRepo:   releaseRepo,
+		uuidGenerator:                  uuidGenerator,
+		releaseRepo:                    releaseRepo,
 		gardenerHyperscalerAccountPool: gardenerHyperscalerAccountPool,
-		compassHyperscalerAccountPool: compassHyperscalerAccountPool,
+		compassHyperscalerAccountPool:  compassHyperscalerAccountPool,
 	}
 }
 
 type converter struct {
-	uuidGenerator uuid.UUIDGenerator
-	releaseRepo   release.ReadRepository
+	uuidGenerator                  uuid.UUIDGenerator
+	releaseRepo                    release.ReadRepository
 	gardenerHyperscalerAccountPool provisioning.HyperscalerAccountPool
-	compassHyperscalerAccountPool provisioning.HyperscalerAccountPool
+	compassHyperscalerAccountPool  provisioning.HyperscalerAccountPool
 }
 
 func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput) (model.Cluster, error) {
