@@ -13,8 +13,7 @@ required = [
 
 [[constraint]]
   name = "github.com/kyma-incubator/compass"
-  source = "https://github.com/KarolJaksik/compass.git"
-  branch = "raw-json"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/stretchr/testify"
