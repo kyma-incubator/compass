@@ -107,7 +107,7 @@ func createApplicationForCertPlaygroundTest(t *testing.T, ctx context.Context, t
 	return app.ID
 }
 
-func generateClientCertForApplication(t *testing.T, oneTimeToken graphql.OneTimeToken) ([]*x509.Certificate, *rsa.PrivateKey) {
+func generateClientCertForApplication(t *testing.T, oneTimeToken graphql.OneTimeTokenExt) ([]*x509.Certificate, *rsa.PrivateKey) {
 	connectorClient := connector.NewClient(oneTimeToken.ConnectorURL)
 	clientCertConfig, err := connectorClient.GetConfiguration(oneTimeToken.Token)
 	require.NoError(t, err)

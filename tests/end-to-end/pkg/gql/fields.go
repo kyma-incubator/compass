@@ -226,7 +226,9 @@ func (fp *GqlFieldsProvider) ForLabelDefinition() string {
 func (fp *GqlFieldsProvider) ForOneTimeToken() string {
 	return `
 		token
-		connectorURL`
+		connectorURL
+		raw
+		rawEncoded`
 }
 
 func (fp *GqlFieldsProvider) ForIntegrationSystem() string {
