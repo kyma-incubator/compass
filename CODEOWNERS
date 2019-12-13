@@ -12,3 +12,6 @@
 
 # compass ui
 /chart/compass/charts/cockpit @kwiatekus @dariadomagala @y-kkamil @parostatkiem @akucharska @sjanota
+
+# kyma environment broker
+/chart/compass/charts/kyma-environment-broker @PK85 @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001
