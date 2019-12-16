@@ -3,17 +3,14 @@ package director
 import (
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/require"
-
 	"github.com/kyma-incubator/compass/components/provisioner/internal/oauth"
 	"github.com/stretchr/testify/assert"
-
+	"github.com/pkg/errors"
 	oauthmocks "github.com/kyma-incubator/compass/components/provisioner/internal/oauth/mocks"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	gql "github.com/kyma-incubator/compass/components/provisioner/internal/graphql"
-
 	gcli "github.com/machinebox/graphql"
-	"github.com/pkg/errors"
 
 	"fmt"
 	"testing"
@@ -22,6 +19,7 @@ import (
 
 const (
 	runtimeID = "test-runtime-ID-12345"
+	runtimeName = "Runtime Test name"
 
 	expectedCreateRuntimeQuery =
 	`mutation {
@@ -34,7 +32,6 @@ const (
 
 	expectedDeleteRuntimeQuery = `mutation {
 	result: deleteRuntime(id: test-runtime-ID-12345)}`
-
 )
 
 var (
@@ -50,7 +47,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 	inputDescription := "runtime description"
 
 	runtimeInput := &gqlschema.RuntimeInput{
-		Name :  "Runtime Test name",
+		Name : runtimeName,
 		Description : &inputDescription,
 	}
 
@@ -60,7 +57,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
 			ID: runtimeID,
-			Name : "runtime name",
+			Name : runtimeName,
 			Description: &responseDescription,
 		}
 
@@ -96,7 +93,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
 			ID: runtimeID,
-			Name : "runtime name",
+			Name : runtimeName,
 			Description: &responseDescription,
 		}
 
@@ -130,7 +127,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
 			ID: runtimeID,
-			Name : "runtime name",
+			Name : runtimeName,
 			Description: &responseDescription,
 		}
 
@@ -169,7 +166,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
 			ID: runtimeID,
-			Name : "runtime name",
+			Name : runtimeName,
 			Description: &responseDescription,
 		}
 
@@ -225,7 +222,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
 			ID: runtimeID,
-			Name : "runtime name",
+			Name : runtimeName,
 			Description: &responseDescription,
 		}
 
@@ -267,7 +264,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
 			ID: runtimeID,
-			Name : "runtime name",
+			Name : runtimeName,
 			Description: &responseDescription,
 		}
 
@@ -302,7 +299,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
 			ID: runtimeID,
-			Name : "runtime name",
+			Name : runtimeName,
 			Description: &responseDescription,
 		}
 
@@ -336,7 +333,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
 			ID: runtimeID,
-			Name : "runtime name",
+			Name : runtimeName,
 			Description: &responseDescription,
 		}
 
@@ -374,7 +371,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
 			ID: runtimeID,
-			Name : "runtime name",
+			Name : runtimeName,
 			Description: &responseDescription,
 		}
 
@@ -428,7 +425,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
 			ID: runtimeID,
-			Name : "runtime name",
+			Name : runtimeName,
 			Description: &responseDescription,
 		}
 
