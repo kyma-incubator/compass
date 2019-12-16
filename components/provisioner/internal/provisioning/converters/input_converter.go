@@ -3,7 +3,7 @@ package converters
 import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler_account"
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
@@ -18,22 +18,19 @@ type InputConverter interface {
 func NewInputConverter(
 	uuidGenerator uuid.UUIDGenerator,
 	releaseRepo release.ReadRepository,
-	gardenerHyperscalerAccountPool provisioning.HyperscalerAccountPool,
-	compassHyperscalerAccountPool provisioning.HyperscalerAccountPool) InputConverter {
+	hyperscalerAccountProvider hyperscaler_account.HyperscalerAccountProvider) InputConverter {
 
 	return &converter{
-		uuidGenerator:                  uuidGenerator,
-		releaseRepo:                    releaseRepo,
-		gardenerHyperscalerAccountPool: gardenerHyperscalerAccountPool,
-		compassHyperscalerAccountPool:  compassHyperscalerAccountPool,
+		uuidGenerator:              uuidGenerator,
+		releaseRepo:                releaseRepo,
+		hyperscalerAccountProvider: hyperscalerAccountProvider,
 	}
 }
 
 type converter struct {
-	uuidGenerator                  uuid.UUIDGenerator
-	releaseRepo                    release.ReadRepository
-	gardenerHyperscalerAccountPool provisioning.HyperscalerAccountPool
-	compassHyperscalerAccountPool  provisioning.HyperscalerAccountPool
+	uuidGenerator              uuid.UUIDGenerator
+	releaseRepo                release.ReadRepository
+	hyperscalerAccountProvider hyperscaler_account.HyperscalerAccountProvider
 }
 
 func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput) (model.Cluster, error) {
@@ -55,24 +52,10 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 		}
 	}
 
-	var credSecretName string
-	if input.Credentials != nil {
-		credSecretName = input.Credentials.SecretName
-	}
-	// If no credentials given to connect to target cluster, try to get credentials from compassHyperscalerAccountPool
-	if input.Credentials == nil || len(input.Credentials.SecretName) == 0 {
-		hyperscalerType, err := provisioning.HyperscalerTypeFromProviderString("TBD") // TODO: how to get provider type in Compass use case?
-		if err != nil {
-			return model.Cluster{}, err
-		}
-		hyperscalerCredential, err := c.compassHyperscalerAccountPool.Credential(hyperscalerType, "tenant-name") // TODO: get tenant name from ...?
-		if err != nil {
-			return model.Cluster{}, err
-		}
-		if input.Credentials == nil {
-			input.Credentials = &gqlschema.CredentialsInput{}
-		}
-		input.Credentials.SecretName = hyperscalerCredential.CredentialName
+	credSecretName, err := c.hyperscalerAccountProvider.CompassSecretName(&input)
+
+	if err != nil {
+		return model.Cluster{}, err
 	}
 
 	return model.Cluster{
@@ -104,6 +87,12 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 		return model.GardenerConfig{}, err
 	}
 
+	targetSecret, err := c.hyperscalerAccountProvider.GardenerSecretName(&input)
+
+	if err != nil {
+		return model.GardenerConfig{}, err
+	}
+
 	gardenerConfig := model.GardenerConfig{
 		ID:                     id,
 		Name:                   input.Name,
@@ -115,7 +104,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 		MachineType:            input.MachineType,
 		Provider:               input.Provider,
 		Seed:                   input.Seed,
-		TargetSecret:           input.TargetSecret,
+		TargetSecret:           targetSecret,
 		WorkerCidr:             input.WorkerCidr,
 		Region:                 input.Region,
 		AutoScalerMin:          input.AutoScalerMin,
@@ -126,37 +115,48 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 		GardenerProviderConfig: providerSpecificConfig,
 	}
 
-	if len(gardenerConfig.TargetSecret) == 0 {
-		hyperscalerType, err := provisioning.HyperscalerTypeFromProviderString(gardenerConfig.Provider)
-		if err != nil {
-			return model.GardenerConfig{}, err
-		}
-		hyperscalerCredential, err := c.gardenerHyperscalerAccountPool.Credential(hyperscalerType, "tenant-name") // TODO: get tenant name from ...?
-		if err != nil {
-			return model.GardenerConfig{}, err
-		}
-		gardenerConfig.TargetSecret = hyperscalerCredential.CredentialName
-	}
-
 	return gardenerConfig, nil
 }
 
-func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpecificInput) (model.GardenerProviderConfig, error) {
+func HyperscalerTypeFromProviderInput(input *gqlschema.ProviderSpecificInput) (hyperscaler_account.HyperscalerType, error) {
+
 	if input == nil {
-		return nil, errors.New("provider config not specified")
+		return hyperscaler_account.HyperscalerType(""), errors.New("ProviderSpecificInput not specified (nil)")
 	}
 
 	if input.GcpConfig != nil {
-		return model.NewGCPGardenerConfig(input.GcpConfig)
+		return hyperscaler_account.GCP, nil
 	}
 	if input.AzureConfig != nil {
-		return model.NewAzureGardenerConfig(input.AzureConfig)
+		return hyperscaler_account.Azure, nil
 	}
 	if input.AwsConfig != nil {
-		return model.NewAWSGardenerConfig(input.AwsConfig)
+		return hyperscaler_account.AWS, nil
 	}
 
-	return nil, errors.New("provider config not specified")
+	return hyperscaler_account.HyperscalerType(""), errors.New("ProviderSpecificInput not specified")
+}
+
+func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpecificInput) (model.GardenerProviderConfig, error) {
+
+	hyperscalerType, err := HyperscalerTypeFromProviderInput(input)
+	if err != nil {
+		return nil, err
+	}
+
+	switch hyperscalerType {
+	case hyperscaler_account.GCP:
+		return model.NewGCPGardenerConfig(input.GcpConfig)
+
+	case hyperscaler_account.Azure:
+		return model.NewAzureGardenerConfig(input.AzureConfig)
+
+	case hyperscaler_account.AWS:
+		return model.NewAWSGardenerConfig(input.AwsConfig)
+
+	}
+
+	return nil, errors.Errorf("Unexpected HyperscalerType: %s from ProviderSpecificInput", hyperscalerType)
 }
 
 func (c converter) gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfigInput) model.GCPConfig {

@@ -1,4 +1,4 @@
-package provisioning
+package hyperscaler_account
 
 import (
 	"github.com/pkg/errors"
@@ -26,8 +26,8 @@ func HyperscalerTypeFromProviderString(provider string) (HyperscalerType, error)
 	hyperscalerType := HyperscalerType(strings.ToLower(provider))
 
 	switch hyperscalerType {
-    case GCP, Azure, AWS:
-    	return hyperscalerType, nil
+	case GCP, Azure, AWS:
+		return hyperscalerType, nil
 	}
 	return "", errors.Errorf("Unknown Hyperscaler provider type: %s", provider)
 }
@@ -81,8 +81,6 @@ func (p *secretsPoolProvider) Credential(hyperscalerType HyperscalerType, tenant
 
 	return credential, nil
 }
-
-
 
 func ExampleTestUsage() {
 

@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/converters"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler_account"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
@@ -35,10 +36,11 @@ func newProvisioningService(config config, persistenceService persistence.Servic
 	uuidGenerator := uuid.NewUUIDGenerator()
 	installationService := installation.NewInstallationService(config.Installation.Timeout, installationSDK.NewKymaInstaller, config.Installation.ErrorsCountFailureThreshold)
 
-	var gardenerHyperscalerAccountPool provisioning.HyperscalerAccountPool = nil // TODO: get SecretInterface connected to Gardener cluster
-	compassHyperscalerAccountPool := provisioning.NewHyperscalerAccountSecretsPool(secrets)
+	var gardenerHyperscalerAccountPool hyperscaler_account.HyperscalerAccountPool = nil // TODO: get SecretInterface connected to Gardener cluster
+	compassHyperscalerAccountPool := hyperscaler_account.NewHyperscalerAccountSecretsPool(secrets)
+	accountProvider := hyperscaler_account.NewHyperscalerAccountProvider(compassHyperscalerAccountPool, gardenerHyperscalerAccountPool)
 
-	inputConverter := converters.NewInputConverter(uuidGenerator, releaseRepo, gardenerHyperscalerAccountPool, compassHyperscalerAccountPool)
+	inputConverter := converters.NewInputConverter(uuidGenerator, releaseRepo, accountProvider)
 	graphQLConverter := converters.NewGraphQLConverter()
 
 	return provisioning.NewProvisioningService(persistenceService, inputConverter, graphQLConverter, hydroformService, installationService)
