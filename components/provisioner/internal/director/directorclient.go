@@ -116,6 +116,10 @@ func (cc *directorClient) getToken() error {
 		return errors.Wrap(err, "Error while obtaining token")
 	}
 
+	if token.EmptyOrExpired() {
+		return errors.New("Obtained empty or expired token")
+	}
+
 	cc.token = token
 	return nil
 }

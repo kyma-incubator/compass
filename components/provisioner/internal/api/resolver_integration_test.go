@@ -10,6 +10,7 @@ import (
 
 	configMock "github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/configuration/mocks"
 	hydroformmocks "github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/mocks"
+	directormock "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dbsession"
@@ -155,6 +156,8 @@ func getTestClusterConfigurations() []provisionerTestConfig {
 
 func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 
+	////////all mocks go here
+
 	mockedKubeConfigValue := "test config value"
 	mockedTerraformState := `{"test_key": "test_value"}`
 
@@ -170,6 +173,7 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 		Run(func(args mock.Arguments) {
 			time.Sleep(1 * time.Second)
 		})
+
 	factory.On("NewProvisioningBuilder", mock.Anything).Return(builder)
 	factory.On("NewDeprovisioningBuilder", mock.Anything).Return(builder)
 
@@ -200,19 +204,30 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	providerCredentials := &gqlschema.CredentialsInput{SecretName: "secret_1"}
 
+	runtimeInput := &gqlschema.RuntimeInput {
+		Name : "test runtime",
+		Description: new(string),
+		Labels : &gqlschema.Labels{},
+	}
+
 	clusterConfigurations := getTestClusterConfigurations()
 
 	for _, cfg := range clusterConfigurations {
 		t.Run(cfg.description, func(t *testing.T) {
 
-			fullConfig := gqlschema.ProvisionRuntimeInput{ClusterConfig: cfg.config, Credentials: providerCredentials, KymaConfig: kymaConfig}
+			// dynamic mock
+			directorServiceMock := &directormock.DirectorClient{}
+			directorServiceMock.On("CreateRuntime", mock.Anything).Return(cfg.runtimeID, nil)
+			directorServiceMock.On("DeleteRuntime", mock.Anything, mock.Anything).Return(nil)
+
+			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput : runtimeInput, ClusterConfig: cfg.config, Credentials: providerCredentials, KymaConfig: kymaConfig}
 
 			dbSessionFactory := dbsession.NewFactory(connection)
 			persistenceService := persistence.NewService(dbSessionFactory, uuidGenerator)
-			provisioningService := provisioning.NewProvisioningService(persistenceService, uuidGenerator, hydroformServiceMock, factory)
+			provisioningService := provisioning.NewProvisioningService(persistenceService, uuidGenerator, hydroformServiceMock, directorServiceMock, factory)
 			provisioner := NewResolver(provisioningService)
 
-			operationID, err := provisioner.ProvisionRuntime(ctx, cfg.runtimeID, fullConfig)
+			operationID, err := provisioner.ProvisionRuntime(ctx, fullConfig)
 			require.NoError(t, err)
 
 			messageProvisioningStarted := "Provisioning started"

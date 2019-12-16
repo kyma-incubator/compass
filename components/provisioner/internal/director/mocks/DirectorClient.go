@@ -33,27 +33,13 @@ func (_m *DirectorClient) CreateRuntime(config *gqlschema.RuntimeInput) (string,
 	return r0, r1
 }
 
-// DeleteRuntime provides a mock function with given fields: config
-func (_m *DirectorClient) DeleteRuntime(config *gqlschema.RuntimeInput) error {
-	ret := _m.Called(config)
+// DeleteRuntime provides a mock function with given fields: id
+func (_m *DirectorClient) DeleteRuntime(id string) error {
+	ret := _m.Called(id)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*gqlschema.RuntimeInput) error); ok {
-		r0 = rf(config)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// UpdateRuntime provides a mock function with given fields: config
-func (_m *DirectorClient) UpdateRuntime(config *gqlschema.RuntimeInput) error {
-	ret := _m.Called(config)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(*gqlschema.RuntimeInput) error); ok {
-		r0 = rf(config)
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(id)
 	} else {
 		r0 = ret.Error(0)
 	}

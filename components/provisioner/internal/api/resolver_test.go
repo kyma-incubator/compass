@@ -28,6 +28,14 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		},
 	}
 
+	runtimeInput := &gqlschema.RuntimeInput {
+		Name : "test runtime",
+		Description: new(string),
+		Labels : &gqlschema.Labels{},
+	}
+
+	providerCredentials := &gqlschema.CredentialsInput{SecretName: "secret_1"}
+
 	t.Run("Should start provisioning and return operation ID", func(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
@@ -38,16 +46,19 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			Modules: gqlschema.AllKymaModule,
 		}
 
-		providerCredentials := &gqlschema.CredentialsInput{SecretName: "secret_1"}
-
 		expectedID := "ec781980-0533-4098-aab7-96b535569732"
 
-		config := gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: providerCredentials, KymaConfig: kymaConfig}
+		config := gqlschema.ProvisionRuntimeInput{
+			RuntimeInput: runtimeInput,
+			ClusterConfig: clusterConfig,
+			Credentials: providerCredentials,
+			KymaConfig: kymaConfig,
+		}
 
-		provisioningService.On("ProvisionRuntime", runtimeID, config).Return(expectedID, nil, nil)
+		provisioningService.On("ProvisionRuntime", config).Return(expectedID, nil, nil)
 
 		//when
-		operationID, err := provisioner.ProvisionRuntime(ctx, runtimeID, config)
+		operationID, err := provisioner.ProvisionRuntime(ctx, config)
 
 		//then
 		require.NoError(t, err)
@@ -63,10 +74,10 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			Version: "1.5",
 		}
 
-		config := gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, KymaConfig: kymaConfig}
+		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, Credentials: providerCredentials, KymaConfig: kymaConfig}
 
 		//when
-		operationID, err := provisioner.ProvisionRuntime(ctx, runtimeID, config)
+		operationID, err := provisioner.ProvisionRuntime(ctx, config)
 
 		//then
 		require.Error(t, err)
@@ -83,12 +94,12 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			Modules: gqlschema.AllKymaModule,
 		}
 
-		config := gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, KymaConfig: kymaConfig}
+		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, Credentials: providerCredentials, KymaConfig: kymaConfig}
 
 		provisioningService.On("ProvisionRuntime", runtimeID, config).Return("", nil, errors.New("Provisioning failed"))
 
 		//when
-		operationID, err := provisioner.ProvisionRuntime(ctx, runtimeID, config)
+		operationID, err := provisioner.ProvisionRuntime(ctx, config)
 
 		//then
 		require.Error(t, err)
