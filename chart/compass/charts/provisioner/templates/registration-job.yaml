@@ -61,7 +61,7 @@ spec:
               ENCODED_TOKEN_PAYLOAD=$(echo -e ${TOKEN_PAYLOAD} | base64 | tr -d \\n)
               INTERNAL_TOKEN="eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.${ENCODED_TOKEN_PAYLOAD//=}."
 
-		        	# TODO - consider providing this value in charts
+              # TODO - consider providing this value in charts
               SECRET_NAME="{{ template "fullname" . }}-registration"
 
               function wait_for_access_to_api_server() {
