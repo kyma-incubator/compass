@@ -9,6 +9,7 @@ type Entity struct {
 	ID                  string         `db:"id"`
 	TenantID            string         `db:"tenant_id"`
 	Name                string         `db:"name"`
+	ProviderDisplayName string         `db:"provider_display_name"`
 	Description         sql.NullString `db:"description"`
 	StatusCondition     string         `db:"status_condition"`
 	StatusTimestamp     time.Time      `db:"status_timestamp"`

@@ -65,6 +65,7 @@ func fixModelApplicationWithAllUpdatableFields(id, tenant, name, description, ur
 		Name:                name,
 		Description:         &description,
 		HealthCheckURL:      &url,
+		ProviderDisplayName: "provider name",
 	}
 }
 
@@ -94,6 +95,7 @@ func fixDetailedModelApplication(t *testing.T, id, tenant, name, description str
 		Tenant:              tenant,
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
+		ProviderDisplayName: "provider name",
 	}
 }
 
@@ -111,6 +113,7 @@ func fixDetailedGQLApplication(t *testing.T, id, name, description string) *grap
 		Description:         &description,
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
+		ProviderDisplayName: "provider name",
 	}
 }
 
@@ -127,6 +130,7 @@ func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description st
 		StatusTimestamp:     ts,
 		HealthCheckURL:      repo.NewValidNullableString(testURL),
 		IntegrationSystemID: repo.NewNullableString(&intSysID),
+		ProviderDisplayName: "provider name",
 	}
 }
 
@@ -141,6 +145,7 @@ func fixModelApplicationRegisterInput(name, description string) model.Applicatio
 		},
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
+		ProviderDisplayName: "provider name",
 		Webhooks: []*model.WebhookInput{
 			{URL: "webhook1.foo.bar"},
 			{URL: "webhook2.foo.bar"},
@@ -166,6 +171,7 @@ func fixModelApplicationUpdateInput(name, description, url string) model.Applica
 		Description:         &description,
 		HealthCheckURL:      &url,
 		IntegrationSystemID: &intSysID,
+		ProviderDisplayName: "provider name",
 	}
 }
 
@@ -181,6 +187,7 @@ func fixGQLApplicationRegisterInput(name, description string) graphql.Applicatio
 		Labels:              &labels,
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
+		ProviderDisplayName: "provider name",
 		Webhooks: []*graphql.WebhookInput{
 			{URL: "webhook1.foo.bar"},
 			{URL: "webhook2.foo.bar"},
@@ -206,6 +213,7 @@ func fixGQLApplicationUpdateInput(name, description, url string) graphql.Applica
 		Description:         &description,
 		HealthCheckURL:      &url,
 		IntegrationSystemID: &intSysID,
+		ProviderDisplayName: "provider name",
 	}
 }
 
