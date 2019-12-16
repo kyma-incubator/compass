@@ -36,9 +36,9 @@ func newProvisioningService(config config, persistenceService persistence.Servic
 	uuidGenerator := uuid.NewUUIDGenerator()
 	installationService := installation.NewInstallationService(config.Installation.Timeout, installationSDK.NewKymaInstaller, config.Installation.ErrorsCountFailureThreshold)
 
-	var gardenerHyperscalerAccountPool hyperscaler.AccountPool = nil // TODO: get SecretInterface connected to Gardener cluster
-	compassHyperscalerAccountPool := hyperscaler.NewAccountPool(secrets)
-	accountProvider := hyperscaler.NewAccountProvider(compassHyperscalerAccountPool, gardenerHyperscalerAccountPool)
+	var gardenerAccountPool hyperscaler.AccountPool = nil // TODO: get SecretInterface connected to Gardener cluster
+	compassAccountPool := hyperscaler.NewAccountPool(secrets)
+	accountProvider := hyperscaler.NewAccountProvider(compassAccountPool, gardenerAccountPool)
 
 	inputConverter := converters.NewInputConverter(uuidGenerator, releaseRepo, accountProvider)
 	graphQLConverter := converters.NewGraphQLConverter()
