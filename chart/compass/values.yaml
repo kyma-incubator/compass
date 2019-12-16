@@ -40,7 +40,7 @@ global:
         version: "PR-562"
       connector:
         dir: pr/
-        version: "PR-391"
+        version: "02e8358c"
       provisioner:
         dir:
         version: "PR-500"
