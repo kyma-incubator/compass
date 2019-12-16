@@ -22,6 +22,6 @@ The Director API offers a mutation that allows assigning the default runtime for
 
 ## Deleteing the default Runtime assigned for the Application eventing
 
-The Directos API offers a moutation that allows deleting the assignment of the default runtime for the Application eventing. The mutation `deleteDefaultEventingForApplication(appID: String!): ApplicationEventingConfiguration!` deletes the label `{APPLICATION_ID}/defaultEventing = true` from the labeled Runtime.
+The Directors API offers a mutation that allows deleting the assignment of the default runtime for the Application eventing. The mutation `deleteDefaultEventingForApplication(appID: String!): ApplicationEventingConfiguration!` deletes the label `{APPLICATION_ID}/defaultEventing = true` from the labeled Runtime.
 
-> **NOTE** After deleting the label `{APPLICATION_ID}/defaultEventing = true` and querying for the `eventingConfiguration` for the Application, the Director API will determin the default Runtime for the Application once again.
+> **NOTE** After deleting the label `{APPLICATION_ID}/defaultEventing = true` and querying for the `eventingConfiguration` for the Application, the Director API will determine the default Runtime for the Application once again.
