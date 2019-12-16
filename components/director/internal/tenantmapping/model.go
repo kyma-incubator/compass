@@ -3,6 +3,8 @@ package tenantmapping
 import (
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -128,10 +130,10 @@ type ObjectContext struct {
 	Scopes       string
 	TenantID     string
 	ConsumerID   string
-	ConsumerType ConsumerType
+	ConsumerType consumer.ConsumerType
 }
 
-func NewObjectContext(scopes, tenantID, consumerID string, consumerType ConsumerType) ObjectContext {
+func NewObjectContext(scopes, tenantID, consumerID string, consumerType consumer.ConsumerType) ObjectContext {
 	return ObjectContext{
 		Scopes:       scopes,
 		TenantID:     tenantID,

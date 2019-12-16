@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
@@ -56,7 +58,7 @@ func (m *mapperForSystemAuth) GetObjectContext(ctx context.Context, reqData ReqD
 		return ObjectContext{}, errors.Wrap(err, "while getting context object")
 	}
 
-	consumerType, err := MapSystemAuthToConsumerType(refObjType)
+	consumerType, err := consumer.MapSystemAuthToConsumerType(refObjType)
 	if err != nil {
 		return ObjectContext{}, errors.New("while mapping reference type to consumer type")
 	}

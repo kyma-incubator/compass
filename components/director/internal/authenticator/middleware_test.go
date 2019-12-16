@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
+	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 
 	"github.com/lestrrat-go/jwx/jwk"
 
@@ -177,20 +177,12 @@ func TestAuthenticator_Handler(t *testing.T) {
 	})
 }
 
-type jwtTokenClaims struct {
-	Scopes     string                     `json:"scopes"`
-	Tenant     string                     `json:"tenant"`
-	ObjectID   string                     `json:"objectID"`
-	ObjectType tenantmapping.ConsumerType `json:"objectType"`
-	jwt.StandardClaims
-}
-
 func createNotSingedToken(t *testing.T, tenant string, scopes string) string {
-	token := jwt.NewWithClaims(jwt.SigningMethodNone, jwtTokenClaims{
-		Tenant:     tenant,
-		Scopes:     scopes,
-		ObjectID:   "1e176e48-e258-4091-a584-feb1bf708b7e",
-		ObjectType: tenantmapping.RUNTIME,
+	token := jwt.NewWithClaims(jwt.SigningMethodNone, authenticator.Claims{
+		Tenant:       tenant,
+		Scopes:       scopes,
+		ConsumerID:   "1e176e48-e258-4091-a584-feb1bf708b7e",
+		ConsumerType: consumer.Runtime,
 	})
 
 	signedToken, err := token.SignedString(jwt.UnsafeAllowNoneSignatureType)
@@ -200,11 +192,11 @@ func createNotSingedToken(t *testing.T, tenant string, scopes string) string {
 }
 
 func createTokenWithSigningMethod(t *testing.T, tnt string, scopes string, key jwk.Key) string {
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwtTokenClaims{
-		Tenant:     tnt,
-		Scopes:     scopes,
-		ObjectID:   "1e176e48-e258-4091-a584-feb1bf708b7e",
-		ObjectType: tenantmapping.RUNTIME,
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, authenticator.Claims{
+		Tenant:       tnt,
+		Scopes:       scopes,
+		ConsumerID:   "1e176e48-e258-4091-a584-feb1bf708b7e",
+		ConsumerType: consumer.Runtime,
 	})
 
 	materializedKey, err := key.Materialize()

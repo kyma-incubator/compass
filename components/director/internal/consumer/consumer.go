@@ -1,4 +1,4 @@
-package tenantmapping
+package consumer
 
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -8,10 +8,10 @@ import (
 type ConsumerType string
 
 const (
-	RUNTIME            ConsumerType = "Runtime"
-	APPLICATION        ConsumerType = "Application"
-	INTEGRATION_SYSTEM ConsumerType = "Integration System"
-	USER               ConsumerType = "Static User"
+	Runtime           ConsumerType = "Runtime"
+	Application       ConsumerType = "Application"
+	IntegrationSystem ConsumerType = "Integration System"
+	User              ConsumerType = "Static User"
 )
 
 type Consumer struct {
@@ -22,11 +22,11 @@ type Consumer struct {
 func MapSystemAuthToConsumerType(refObj model.SystemAuthReferenceObjectType) (ConsumerType, error) {
 	switch refObj {
 	case model.ApplicationReference:
-		return APPLICATION, nil
+		return Application, nil
 	case model.RuntimeReference:
-		return RUNTIME, nil
+		return Runtime, nil
 	case model.IntegrationSystemReference:
-		return INTEGRATION_SYSTEM, nil
+		return IntegrationSystem, nil
 	}
 	return "", errors.New("unknown reference object type")
 }

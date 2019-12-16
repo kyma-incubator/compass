@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+
 	"github.com/google/uuid"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -46,7 +48,7 @@ func (m *mapperForUser) GetObjectContext(reqData ReqData, username string) (Obje
 		return ObjectContext{}, errors.New("tenant mismatch")
 	}
 
-	return NewObjectContext(scopes, tenant, staticUser.Username, USER), nil
+	return NewObjectContext(scopes, tenant, staticUser.Username, consumer.User), nil
 }
 
 func hasValidTenant(assignedTenants []uuid.UUID, tenant string) bool {
