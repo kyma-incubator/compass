@@ -1,12 +1,12 @@
 package director
 
 import (
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-	"github.com/stretchr/testify/require"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/oauth"
-	"github.com/stretchr/testify/assert"
-	"github.com/pkg/errors"
 	oauthmocks "github.com/kyma-incubator/compass/components/provisioner/internal/oauth/mocks"
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	gql "github.com/kyma-incubator/compass/components/provisioner/internal/graphql"
@@ -18,8 +18,9 @@ import (
 )
 
 const (
-	runtimeID = "test-runtime-ID-12345"
-	runtimeName = "Runtime Test name"
+	runtimeTestingID   = "test-runtime-ID-12345"
+	runtimeTestingName = "Runtime Test name"
+	validTokenValue = "12345"
 
 	expectedCreateRuntimeQuery =
 	`mutation {
@@ -27,8 +28,6 @@ const (
 		name: "Runtime Test name",
 		description: "runtime description",
 	})}`
-
-	validTokenValue = "12345"
 
 	expectedDeleteRuntimeQuery = `mutation {
 	result: deleteRuntime(id: test-runtime-ID-12345)}`
@@ -47,7 +46,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 	inputDescription := "runtime description"
 
 	runtimeInput := &gqlschema.RuntimeInput{
-		Name : runtimeName,
+		Name :        runtimeTestingName,
 		Description : &inputDescription,
 	}
 
@@ -56,12 +55,12 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
-			ID: runtimeID,
-			Name : runtimeName,
+			ID:          runtimeTestingID,
+			Name :       runtimeTestingName,
 			Description: &responseDescription,
 		}
 
-		expectedID := runtimeID
+		expectedID := runtimeTestingID
 
 		gqlClient := gql.NewQueryAssertClient(t, false, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*CreateRuntimeResponse)
@@ -92,8 +91,8 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		// given
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
-			ID: runtimeID,
-			Name : runtimeName,
+			ID:          runtimeTestingID,
+			Name :       runtimeTestingName,
 			Description: &responseDescription,
 		}
 
@@ -126,8 +125,8 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		// given
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
-			ID: runtimeID,
-			Name : runtimeName,
+			ID:          runtimeTestingID,
+			Name :       runtimeTestingName,
 			Description: &responseDescription,
 		}
 
@@ -165,8 +164,8 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		// given
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
-			ID: runtimeID,
-			Name : runtimeName,
+			ID:          runtimeTestingID,
+			Name :       runtimeTestingName,
 			Description: &responseDescription,
 		}
 
@@ -221,8 +220,8 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		// given
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
-			ID: runtimeID,
-			Name : runtimeName,
+			ID:          runtimeTestingID,
+			Name :       runtimeTestingName,
 			Description: &responseDescription,
 		}
 
@@ -263,12 +262,10 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
-			ID: runtimeID,
-			Name : runtimeName,
+			ID:          runtimeTestingID,
+			Name :       runtimeTestingName,
 			Description: &responseDescription,
 		}
-
-		expectedID := runtimeID
 
 		gqlClient := gql.NewQueryAssertClient(t, false, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*DeleteRuntimeResponse)
@@ -288,7 +285,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
 		// when
-		err := configClient.DeleteRuntime(expectedID)
+		err := configClient.DeleteRuntime(runtimeTestingID)
 
 		// then
 		assert.NoError(t, err)
@@ -298,8 +295,8 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		// given
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
-			ID: runtimeID,
-			Name : runtimeName,
+			ID:          runtimeTestingID,
+			Name :       runtimeTestingName,
 			Description: &responseDescription,
 		}
 
@@ -321,7 +318,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
 		// when
-		err := configClient.DeleteRuntime(runtimeID)
+		err := configClient.DeleteRuntime(runtimeTestingID)
 
 		// then
 		assert.Error(t, err)
@@ -332,8 +329,8 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		// given
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
-			ID: runtimeID,
-			Name : runtimeName,
+			ID:          runtimeTestingID,
+			Name :       runtimeTestingName,
 			Description: &responseDescription,
 		}
 
@@ -355,7 +352,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
 		// when
-		err := configClient.DeleteRuntime(runtimeID)
+		err := configClient.DeleteRuntime(runtimeTestingID)
 
 		// then
 		assert.Error(t, err)
@@ -370,8 +367,8 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		// given
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
-			ID: runtimeID,
-			Name : runtimeName,
+			ID:          runtimeTestingID,
+			Name :       runtimeTestingName,
 			Description: &responseDescription,
 		}
 
@@ -385,7 +382,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
 		// when
-		err := configClient.DeleteRuntime(runtimeID)
+		err := configClient.DeleteRuntime(runtimeTestingID)
 
 		// then
 		assert.Error(t, err)
@@ -414,7 +411,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
 		// when
-		err := configClient.DeleteRuntime(runtimeID)
+		err := configClient.DeleteRuntime(runtimeTestingID)
 
 		// then
 		assert.Error(t, err)
@@ -424,8 +421,8 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		// given
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
-			ID: runtimeID,
-			Name : runtimeName,
+			ID:          runtimeTestingID,
+			Name :       runtimeTestingName,
 			Description: &responseDescription,
 		}
 
@@ -447,114 +444,44 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
 		// when
-		err := configClient.DeleteRuntime(runtimeID)
+		err := configClient.DeleteRuntime(runtimeTestingID)
+
+		// then
+		assert.Error(t, err)
+	})
+
+	// unusual and strange case
+	t.Run("Should return error when Director returns bad ID after Deleting", func(t *testing.T) {
+		// given
+		responseDescription := "runtime description"
+		expectedResponse := &graphql.Runtime{
+			ID:          "BadId",
+			Name :       runtimeTestingName,
+			Description: &responseDescription,
+		}
+
+		gqlClient := gql.NewQueryAssertClient(t, false, func(t *testing.T, r interface{}) {
+			cfg, ok := r.(*DeleteRuntimeResponse)
+			require.True(t, ok)
+			assert.Empty(t, cfg.Result)
+			cfg.Result = expectedResponse
+		}, expectedRequest)
+
+		validToken := oauth.Token{
+			AccessToken: validTokenValue,
+			Expiration:  futureExpirationTime,
+		}
+
+		mockedOAuthClient := &oauthmocks.Client{}
+		mockedOAuthClient.On("GetAuthorizationToken").Return(validToken, nil)
+
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+
+		// when
+		err := configClient.DeleteRuntime(runtimeTestingID)
 
 		// then
 		assert.Error(t, err)
 	})
 }
 
-//func TestConfigClient_SetURLsLabels(t *testing.T) {
-//
-//	runtimeURLsConfig := RuntimeURLsConfig{
-//		EventsURL:  "https://gateway.kyma.local",
-//		ConsoleURL: "https://console.kyma.local",
-//	}
-//
-//	expectedSetEventsURLRequest := gcli.NewRequest(expectedSetEventsURLLabelQuery)
-//	expectedSetEventsURLRequest.Header.Set(TenantHeader, tenant)
-//	expectedSetConsoleURLRequest := gcli.NewRequest(expectedSetConsoleURLLabelQuery)
-//	expectedSetConsoleURLRequest.Header.Set(TenantHeader, tenant)
-//
-//	newSetExpectedLabelFunc := func(expectedResponses []*graphql.Label) func(t *testing.T, r interface{}) {
-//		var responseIndex = 0
-//
-//		return func(t *testing.T, r interface{}) {
-//			cfg, ok := r.(*SetRuntimeLabelResponse)
-//			require.True(t, ok)
-//			assert.Empty(t, cfg.Result)
-//			cfg.Result = expectedResponses[responseIndex]
-//			responseIndex++
-//		}
-//	}
-//
-//	t.Run("should set URLs as labels", func(t *testing.T) {
-//
-//		expectedResponses := []*graphql.Label{
-//			{
-//				Key:   eventsURLLabelKey,
-//				Value: runtimeURLsConfig.EventsURL,
-//			},
-//			{
-//				Key:   consoleURLLabelKey,
-//				Value: runtimeURLsConfig.ConsoleURL,
-//			},
-//		}
-//
-//		gqlClient := gql.NewQueryAssertClient(t, false, newSetExpectedLabelFunc(expectedResponses), expectedSetEventsURLRequest, expectedSetConsoleURLRequest)
-//
-//		configClient := NewConfigurationClient(gqlClient, runtimeConfig)
-//
-//		// when
-//		labels, err := configClient.SetURLsLabels(runtimeURLsConfig)
-//
-//		// then
-//		require.NoError(t, err)
-//		assert.Equal(t, runtimeURLsConfig.EventsURL, labels[eventsURLLabelKey])
-//		assert.Equal(t, runtimeURLsConfig.ConsoleURL, labels[consoleURLLabelKey])
-//	})
-//
-//	t.Run("should return error if setting Console URL as label returned nil response", func(t *testing.T) {
-//		expectedResponses := []*graphql.Label{
-//			{
-//				Key:   eventsURLLabelKey,
-//				Value: runtimeURLsConfig.EventsURL,
-//			},
-//			nil,
-//		}
-//
-//		gqlClient := gql.NewQueryAssertClient(t, false, newSetExpectedLabelFunc(expectedResponses), expectedSetEventsURLRequest, expectedSetConsoleURLRequest)
-//
-//		configClient := NewConfigurationClient(gqlClient, runtimeConfig)
-//
-//		// when
-//		labels, err := configClient.SetURLsLabels(runtimeURLsConfig)
-//
-//		// then
-//		require.Error(t, err)
-//		assert.Nil(t, labels)
-//	})
-//
-//	t.Run("should return error if setting Console URL as label returned nil response", func(t *testing.T) {
-//		expectedResponses := []*graphql.Label{nil, nil}
-//		//
-//		gqlClient := gql.NewQueryAssertClient(t, false, newSetExpectedLabelFunc(expectedResponses), expectedSetEventsURLRequest, expectedSetConsoleURLRequest)
-//		//
-//		directorClient := NewDirectorClient(gqlClient)
-//		//
-//		//// when
-//		runtimeID, err := directorClient.CreateRuntime(input)
-//		//
-//		//// then
-//		require.Error(t, err)
-//		assert.Nil(t, labels)
-//	})
-//
-//	t.Run("should return error if failed to set labels", func(t *testing.T) {
-//		gqlClient := gql.NewQueryAssertClient(t, true, func(t *testing.T, r interface{}) {
-//			cfg, ok := r.(*SetRuntimeLabelResponse)
-//			require.True(t, ok)
-//			assert.Empty(t, cfg.Result)
-//		}, expectedSetEventsURLRequest, expectedSetConsoleURLRequest)
-//
-//		configClient := NewConfigurationClient(gqlClient, runtimeConfig)
-//
-//		// when
-//		labels, err := configClient.SetURLsLabels(runtimeURLsConfig)
-//
-//		// then
-//		require.Error(t, err)
-//		assert.Nil(t, labels)
-//	})
-//
-//}
