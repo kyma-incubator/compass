@@ -23,3 +23,11 @@ func MultipleFromGraphQL(in []*graphql.LabelFilter) []*LabelFilter {
 
 	return filters
 }
+
+func NewForKey(key string) *LabelFilter {
+	return &LabelFilter{key, nil}
+}
+
+func NewForKeyWithQuery(key, query string) *LabelFilter {
+	return &LabelFilter{key, &query}
+}

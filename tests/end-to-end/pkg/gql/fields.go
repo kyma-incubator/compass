@@ -44,6 +44,7 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 		name
 		description
 		labels
+		eventingConfiguration { defaultURL }
 		status {condition timestamp}
 		webhooks {%s}
 		healthCheckURL
@@ -208,7 +209,9 @@ func (fp *GqlFieldsProvider) ForRuntime() string {
 		description
 		labels 
 		status {condition timestamp}
-		auths {%s}`, fp.ForSystemAuth())
+		metadata { creationTimestamp }
+		auths {%s}
+		eventingConfiguration { defaultURL }`, fp.ForSystemAuth())
 }
 
 func (fp *GqlFieldsProvider) ForApplicationLabel() string {

@@ -82,7 +82,7 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string,
 
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.APIDefinition, error) {
 	var apiDefEntity Entity
-	err := r.singleGetter.Get(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, &apiDefEntity)
+	err := r.singleGetter.Get(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &apiDefEntity)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting APIDefinition")
 	}
@@ -102,7 +102,7 @@ func (r *pgRepository) GetForApplication(ctx context.Context, tenant string, id 
 		repo.NewEqualCondition("id", id),
 		repo.NewEqualCondition("app_id", applicationID),
 	}
-	if err := r.singleGetter.Get(ctx, tenant, conditions, &ent); err != nil {
+	if err := r.singleGetter.Get(ctx, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
 		return nil, err
 	}
 

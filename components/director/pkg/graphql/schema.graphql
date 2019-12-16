@@ -338,10 +338,10 @@ type Application {
 	eventDefinition(id: ID!): EventDefinition
 	documents(first: Int = 100, after: PageCursor): DocumentPage!
 	auths: [SystemAuth!]!
-	eventConfiguration: ApplicationEventConfiguration
+	eventingConfiguration: ApplicationEventingConfiguration
 }
 
-type ApplicationEventConfiguration {
+type ApplicationEventingConfiguration {
 	defaultURL: String!
 }
 
@@ -523,6 +523,7 @@ type PlaceholderDefinition {
 
 type Runtime {
 	id: ID!
+	metadata: RuntimeMetadata!
 	name: String!
 	description: String
 	labels(key: String): Labels!
@@ -531,6 +532,15 @@ type Runtime {
 	Returns array of authentication details for Runtime. For now at most one element in array will be returned.
 	"""
 	auths: [SystemAuth!]!
+	eventingConfiguration: RuntimeEventingConfiguration
+}
+
+type RuntimeEventingConfiguration {
+	defaultURL: String!
+}
+
+type RuntimeMetadata {
+	creationTimestamp: Timestamp!
 }
 
 type RuntimePage implements Pageable {
@@ -815,5 +825,7 @@ type Mutation {
 	If Runtime does not exist or the label key is not found, it returns an error.
 	"""
 	deleteRuntimeLabel(runtimeID: ID!, key: String!): Label! @hasScopes(path: "graphql.mutation.deleteRuntimeLabel")
+	setDefaultEventingForApplication(appID: String!, runtimeID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.setDefaultEventingForApplication")
+	deleteDefaultEventingForApplication(appID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.deleteDefaultEventingForApplication")
 }
 

@@ -46,7 +46,7 @@ func (r *pgRepository) Create(ctx context.Context, item model.IntegrationSystem)
 
 func (r *pgRepository) Get(ctx context.Context, id string) (*model.IntegrationSystem, error) {
 	var entity Entity
-	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, &entity); err != nil {
+	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 	return r.conv.FromEntity(&entity), nil

@@ -106,7 +106,7 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 		return "", errors.Wrapf(err, "while loading tenant from context")
 	}
 	id := s.uidService.Generate()
-	rtm := in.ToRuntime(id, rtmTenant)
+	rtm := in.ToRuntime(id, rtmTenant, time.Now())
 
 	rtm.Status = &model.RuntimeStatus{
 		Condition: model.RuntimeStatusConditionInitial,
@@ -139,7 +139,7 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 
 	currentStatuts := rtm.Status
 
-	rtm = in.ToRuntime(id, rtm.Tenant)
+	rtm = in.ToRuntime(id, rtm.Tenant, time.Now())
 
 	if rtm.Status.Condition == "" {
 		rtm.Status = currentStatuts

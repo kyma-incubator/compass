@@ -29,7 +29,7 @@ func TestGetSingle(t *testing.T) {
 		mock.ExpectQuery(defaultExpectedGetSingleQuery()).WithArgs(givenTenant, givenID).WillReturnRows(rows)
 		dest := User{}
 		// WHEN
-		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, &dest)
+		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, repo.NoOrderBy, &dest)
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, givenID, dest.ID)
@@ -49,7 +49,7 @@ func TestGetSingle(t *testing.T) {
 		mock.ExpectQuery(expectedQuery).WithArgs(givenTenant).WillReturnRows(rows)
 		dest := User{}
 		// WHEN
-		err := sut.Get(ctx, givenTenant, repo.Conditions{}, &dest)
+		err := sut.Get(ctx, givenTenant, repo.Conditions{}, repo.NoOrderBy, &dest)
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, givenID, dest.ID)
@@ -71,7 +71,79 @@ func TestGetSingle(t *testing.T) {
 		mock.ExpectQuery(expectedQuery).WithArgs(givenTenant, "john", "doe").WillReturnRows(rows)
 		// WHEN
 		dest := User{}
-		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("first_name", "john"), repo.NewEqualCondition("last_name", "doe")}, &dest)
+		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("first_name", "john"), repo.NewEqualCondition("last_name", "doe")}, repo.NoOrderBy, &dest)
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("success when IN condition", func(t *testing.T) {
+		// GIVEN
+		givenTenant := uuidB()
+		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE tenant_col = $1 AND first_name IN ('a', 'b')")
+		sut := repo.NewSingleGetter("users", "tenant_col", []string{"id_col"})
+		db, mock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		defer mock.AssertExpectations(t)
+		rows := sqlmock.NewRows([]string{"id_col"}).AddRow(uuidA())
+		mock.ExpectQuery(expectedQuery).WithArgs(givenTenant).WillReturnRows(rows)
+		// WHEN
+		dest := User{}
+		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewInCondition("first_name", "'a', 'b'")}, repo.NoOrderBy, &dest)
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("success with order by params", func(t *testing.T) {
+		// GIVEN
+		givenTenant := uuidB()
+		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE tenant_col = $1 ORDER BY first_name ASC")
+		sut := repo.NewSingleGetter("users", "tenant_col", []string{"id_col"})
+		db, mock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		defer mock.AssertExpectations(t)
+		rows := sqlmock.NewRows([]string{"id_col"}).AddRow(uuidA())
+		mock.ExpectQuery(expectedQuery).WithArgs(givenTenant).WillReturnRows(rows)
+		// WHEN
+		dest := User{}
+		err := sut.Get(ctx, givenTenant, nil, repo.OrderByParams{repo.NewAscOrderBy("first_name")}, &dest)
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("success with multiple order by params", func(t *testing.T) {
+		// GIVEN
+		givenTenant := uuidB()
+		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE tenant_col = $1 ORDER BY first_name ASC, last_name DESC")
+		sut := repo.NewSingleGetter("users", "tenant_col", []string{"id_col"})
+		db, mock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		defer mock.AssertExpectations(t)
+		rows := sqlmock.NewRows([]string{"id_col"}).AddRow(uuidA())
+		mock.ExpectQuery(expectedQuery).WithArgs(givenTenant).WillReturnRows(rows)
+		// WHEN
+		dest := User{}
+		err := sut.Get(ctx, givenTenant, nil, repo.OrderByParams{repo.NewAscOrderBy("first_name"), repo.NewDescOrderBy("last_name")}, &dest)
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("success with conditions and order by params", func(t *testing.T) {
+		// GIVEN
+		givenTenant := uuidB()
+		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE tenant_col = $1 AND first_name = $2 AND last_name = $3 ORDER BY first_name ASC")
+		sut := repo.NewSingleGetter("users", "tenant_col", []string{"id_col"})
+		db, mock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		defer mock.AssertExpectations(t)
+		rows := sqlmock.NewRows([]string{"id_col"}).AddRow(uuidA())
+		mock.ExpectQuery(expectedQuery).WithArgs(givenTenant, "john", "doe").WillReturnRows(rows)
+		// WHEN
+		dest := User{}
+		err := sut.Get(ctx,
+			givenTenant,
+			repo.Conditions{repo.NewEqualCondition("first_name", "john"), repo.NewEqualCondition("last_name", "doe")},
+			repo.OrderByParams{repo.NewAscOrderBy("first_name")},
+			&dest)
 		// THEN
 		require.NoError(t, err)
 	})
@@ -84,7 +156,7 @@ func TestGetSingle(t *testing.T) {
 		mock.ExpectQuery(defaultExpectedGetSingleQuery()).WillReturnError(someError())
 		dest := User{}
 		// WHEN
-		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, &dest)
+		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, repo.NoOrderBy, &dest)
 		// THEN
 		require.EqualError(t, err, "while getting object from DB: some error")
 	})
@@ -98,7 +170,7 @@ func TestGetSingle(t *testing.T) {
 		mock.ExpectQuery(defaultExpectedGetSingleQuery()).WillReturnRows(noRows)
 		dest := User{}
 		// WHEN
-		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, &dest)
+		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, repo.NoOrderBy, &dest)
 		// THEN
 		require.NotNil(t, err)
 		assert.True(t, apperrors.IsNotFoundError(err))
@@ -106,12 +178,12 @@ func TestGetSingle(t *testing.T) {
 
 	t.Run("returns error if missing persistence context", func(t *testing.T) {
 		ctx := context.TODO()
-		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, &User{})
+		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, repo.NoOrderBy, &User{})
 		require.EqualError(t, err, "unable to fetch database from context")
 	})
 
 	t.Run("returns error if destination is nil", func(t *testing.T) {
-		err := sut.Get(context.TODO(), givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}}, nil)
+		err := sut.Get(context.TODO(), givenTenant, repo.Conditions{{Field: "id_col", Val: givenID}}, repo.NoOrderBy, nil)
 		require.EqualError(t, err, "item cannot be nil")
 	})
 }
@@ -130,7 +202,7 @@ func TestGetSingleGlobal(t *testing.T) {
 		mock.ExpectQuery(expectedQuery).WithArgs(givenID).WillReturnRows(rows)
 		dest := User{}
 		// WHEN
-		err := sut.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, &dest)
+		err := sut.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, repo.NoOrderBy, &dest)
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, givenID, dest.ID)
@@ -149,7 +221,7 @@ func TestGetSingleGlobal(t *testing.T) {
 		mock.ExpectQuery(expectedQuery).WillReturnRows(rows)
 		dest := User{}
 		// WHEN
-		err := sut.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, &dest)
+		err := sut.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, repo.NoOrderBy, &dest)
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, givenID, dest.ID)
@@ -169,7 +241,58 @@ func TestGetSingleGlobal(t *testing.T) {
 		mock.ExpectQuery(expectedQuery).WithArgs("john", "doe").WillReturnRows(rows)
 		// WHEN
 		dest := User{}
-		err := sut.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("first_name", "john"), repo.NewEqualCondition("last_name", "doe")}, &dest)
+		err := sut.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("first_name", "john"), repo.NewEqualCondition("last_name", "doe")}, repo.NoOrderBy, &dest)
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("success with order by params", func(t *testing.T) {
+		// GIVEN
+		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users ORDER BY first_name ASC")
+		sut := repo.NewSingleGetterGlobal("users", []string{"id_col"})
+		db, mock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		defer mock.AssertExpectations(t)
+		rows := sqlmock.NewRows([]string{"id_col"}).AddRow(uuidA())
+		mock.ExpectQuery(expectedQuery).WillReturnRows(rows)
+		// WHEN
+		dest := User{}
+		err := sut.GetGlobal(ctx, nil, repo.OrderByParams{repo.NewAscOrderBy("first_name")}, &dest)
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("success with multiple order by params", func(t *testing.T) {
+		// GIVEN
+		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users ORDER BY first_name ASC, last_name DESC")
+		sut := repo.NewSingleGetterGlobal("users", []string{"id_col"})
+		db, mock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		defer mock.AssertExpectations(t)
+		rows := sqlmock.NewRows([]string{"id_col"}).AddRow(uuidA())
+		mock.ExpectQuery(expectedQuery).WillReturnRows(rows)
+		// WHEN
+		dest := User{}
+		err := sut.GetGlobal(ctx, nil, repo.OrderByParams{repo.NewAscOrderBy("first_name"), repo.NewDescOrderBy("last_name")}, &dest)
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("success with conditions and order by params", func(t *testing.T) {
+		// GIVEN
+		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE first_name = $1 AND last_name = $2 ORDER BY first_name ASC")
+		sut := repo.NewSingleGetterGlobal("users", []string{"id_col"})
+		db, mock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		defer mock.AssertExpectations(t)
+		rows := sqlmock.NewRows([]string{"id_col"}).AddRow(uuidA())
+		mock.ExpectQuery(expectedQuery).WithArgs("john", "doe").WillReturnRows(rows)
+		// WHEN
+		dest := User{}
+		err := sut.GetGlobal(ctx,
+			repo.Conditions{repo.NewEqualCondition("first_name", "john"), repo.NewEqualCondition("last_name", "doe")},
+			repo.OrderByParams{repo.NewAscOrderBy("first_name")},
+			&dest)
 		// THEN
 		require.NoError(t, err)
 	})
@@ -183,7 +306,7 @@ func TestGetSingleGlobal(t *testing.T) {
 		mock.ExpectQuery(expectedQuery).WillReturnError(someError())
 		dest := User{}
 		// WHEN
-		err := sut.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, &dest)
+		err := sut.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, repo.NoOrderBy, &dest)
 		// THEN
 		require.EqualError(t, err, "while getting object from DB: some error")
 	})
@@ -198,7 +321,7 @@ func TestGetSingleGlobal(t *testing.T) {
 		mock.ExpectQuery(expectedQuery).WillReturnRows(noRows)
 		dest := User{}
 		// WHEN
-		err := sut.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, &dest)
+		err := sut.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, repo.NoOrderBy, &dest)
 		// THEN
 		require.NotNil(t, err)
 		assert.True(t, apperrors.IsNotFoundError(err))
@@ -206,12 +329,12 @@ func TestGetSingleGlobal(t *testing.T) {
 
 	t.Run("returns error if missing persistence context", func(t *testing.T) {
 		ctx := context.TODO()
-		err := sut.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, &User{})
+		err := sut.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, repo.NoOrderBy, &User{})
 		require.EqualError(t, err, "unable to fetch database from context")
 	})
 
 	t.Run("returns error if destination is nil", func(t *testing.T) {
-		err := sut.GetGlobal(context.TODO(), repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, nil)
+		err := sut.GetGlobal(context.TODO(), repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, repo.NoOrderBy, nil)
 		require.EqualError(t, err, "item cannot be nil")
 	})
 }

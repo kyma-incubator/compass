@@ -28,6 +28,7 @@ func TestEntity_EntityFromRuntimeModel_RuntimeWithDescription(t *testing.T) {
 			Condition: model.RuntimeStatusConditionInitial,
 			Timestamp: time,
 		},
+		CreationTimestamp: time,
 	}
 
 	// when
@@ -42,6 +43,7 @@ func TestEntity_EntityFromRuntimeModel_RuntimeWithDescription(t *testing.T) {
 	assert.Equal(t, *modelRuntime.Description, entityRuntime.Description.String)
 	assert.Equal(t, "INITIAL", entityRuntime.StatusCondition)
 	assert.Equal(t, modelRuntime.Status.Timestamp, entityRuntime.StatusTimestamp)
+	assert.Equal(t, modelRuntime.CreationTimestamp, entityRuntime.CreationTimestamp)
 }
 
 func TestEntity_EntityFromRuntimeModel_RuntimeWithoutDescription(t *testing.T) {
@@ -58,6 +60,7 @@ func TestEntity_EntityFromRuntimeModel_RuntimeWithoutDescription(t *testing.T) {
 			Condition: model.RuntimeStatusConditionInitial,
 			Timestamp: time,
 		},
+		CreationTimestamp: time,
 	}
 
 	// when
@@ -71,6 +74,7 @@ func TestEntity_EntityFromRuntimeModel_RuntimeWithoutDescription(t *testing.T) {
 	assert.False(t, entityRuntime.Description.Valid)
 	assert.Equal(t, "INITIAL", entityRuntime.StatusCondition)
 	assert.Equal(t, modelRuntime.Status.Timestamp, entityRuntime.StatusTimestamp)
+	assert.Equal(t, modelRuntime.CreationTimestamp, entityRuntime.CreationTimestamp)
 }
 
 func TestEntity_RuntimeToModel_RuntimeWithDescription(t *testing.T) {
@@ -84,12 +88,13 @@ func TestEntity_RuntimeToModel_RuntimeWithDescription(t *testing.T) {
 	}
 
 	entityRuntime := runtime.Runtime{
-		ID:              uuid.New().String(),
-		TenantID:        uuid.New().String(),
-		Name:            "Runtime QWE",
-		Description:     description,
-		StatusCondition: "INITIAL",
-		StatusTimestamp: time,
+		ID:                uuid.New().String(),
+		TenantID:          uuid.New().String(),
+		Name:              "Runtime QWE",
+		Description:       description,
+		StatusCondition:   "INITIAL",
+		StatusTimestamp:   time,
+		CreationTimestamp: time,
 	}
 
 	// when
@@ -103,6 +108,7 @@ func TestEntity_RuntimeToModel_RuntimeWithDescription(t *testing.T) {
 	assert.Equal(t, "Description for runtime QWE", *modelRuntime.Description)
 	assert.Equal(t, entityRuntime.StatusCondition, string(modelRuntime.Status.Condition))
 	assert.Equal(t, entityRuntime.StatusTimestamp, modelRuntime.Status.Timestamp)
+	assert.Equal(t, entityRuntime.CreationTimestamp, modelRuntime.CreationTimestamp)
 }
 
 func TestEntity_RuntimeToModel_RuntimeWithoutDescription(t *testing.T) {
@@ -116,12 +122,13 @@ func TestEntity_RuntimeToModel_RuntimeWithoutDescription(t *testing.T) {
 	}
 
 	entityRuntime := runtime.Runtime{
-		ID:              uuid.New().String(),
-		TenantID:        uuid.New().String(),
-		Name:            "Runtime AZE",
-		Description:     description,
-		StatusCondition: "INITIAL",
-		StatusTimestamp: time,
+		ID:                uuid.New().String(),
+		TenantID:          uuid.New().String(),
+		Name:              "Runtime AZE",
+		Description:       description,
+		StatusCondition:   "INITIAL",
+		StatusTimestamp:   time,
+		CreationTimestamp: time,
 	}
 
 	// when
@@ -135,4 +142,5 @@ func TestEntity_RuntimeToModel_RuntimeWithoutDescription(t *testing.T) {
 	assert.Nil(t, modelRuntime.Description)
 	assert.Equal(t, entityRuntime.StatusCondition, string(modelRuntime.Status.Condition))
 	assert.Equal(t, entityRuntime.StatusTimestamp, modelRuntime.Status.Timestamp)
+	assert.Equal(t, entityRuntime.CreationTimestamp, modelRuntime.CreationTimestamp)
 }

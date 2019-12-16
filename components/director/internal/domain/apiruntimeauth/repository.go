@@ -48,7 +48,7 @@ func (r *pgRepository) Get(ctx context.Context, tenant string, apiID string, run
 		repo.NewEqualCondition("runtime_id", runtimeID),
 		repo.NewEqualCondition("api_def_id", apiID),
 	}
-	if err := r.singleGetter.Get(ctx, tenant, conditions, &ent); err != nil {
+	if err := r.singleGetter.Get(ctx, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
 		return nil, err
 	}
 

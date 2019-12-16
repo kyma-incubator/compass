@@ -7,11 +7,12 @@ import (
 )
 
 type Runtime struct {
-	ID          string
-	Name        string
-	Description *string
-	Tenant      string
-	Status      *RuntimeStatus
+	ID                string
+	Name              string
+	Description       *string
+	Tenant            string
+	Status            *RuntimeStatus
+	CreationTimestamp time.Time
 }
 
 type RuntimeStatus struct {
@@ -33,17 +34,18 @@ type RuntimeInput struct {
 	Labels      map[string]interface{}
 }
 
-func (i *RuntimeInput) ToRuntime(id string, tenant string) *Runtime {
+func (i *RuntimeInput) ToRuntime(id string, tenant string, creationTimestamp time.Time) *Runtime {
 	if i == nil {
 		return nil
 	}
 
 	return &Runtime{
-		ID:          id,
-		Name:        i.Name,
-		Description: i.Description,
-		Tenant:      tenant,
-		Status:      &RuntimeStatus{},
+		ID:                id,
+		Name:              i.Name,
+		Description:       i.Description,
+		Tenant:            tenant,
+		Status:            &RuntimeStatus{},
+		CreationTimestamp: creationTimestamp,
 	}
 }
 
