@@ -47,11 +47,21 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 		status {condition timestamp}
 		webhooks {%s}
 		healthCheckURL
-		apis {%s}
-		eventAPIs {%s}
+		apiDefinitions {%s}
+		eventDefinitions {%s}
 		documents {%s}
 		auths {%s}
-	`, fp.ForWebhooks(), fp.Page(fp.ForAPIDefinition(ctx...)), fp.Page(fp.ForEventAPI()), fp.Page(fp.ForDocument()), fp.ForSystemAuth())
+	`, fp.ForWebhooks(), fp.Page(fp.ForAPIDefinition(ctx...)), fp.Page(fp.ForEventDefinition()), fp.Page(fp.ForDocument()), fp.ForSystemAuth())
+}
+
+func (fp *GqlFieldsProvider) ForApplicationTemplate(ctx ...FieldCtx) string {
+	return fmt.Sprintf(`id
+		name
+		description
+		applicationInput
+		placeholders {%s}
+		accessLevel
+	`, fp.ForPlaceholders())
 }
 
 func (fp *GqlFieldsProvider) ForWebhooks() string {
@@ -117,7 +127,7 @@ func (fp *GqlFieldsProvider) ForPageInfo() string {
 		hasNextPage`
 }
 
-func (fp *GqlFieldsProvider) ForEventAPI() string {
+func (fp *GqlFieldsProvider) ForEventDefinition() string {
 	return fmt.Sprintf(`
 			id
 			applicationID
@@ -216,7 +226,9 @@ func (fp *GqlFieldsProvider) ForLabelDefinition() string {
 func (fp *GqlFieldsProvider) ForOneTimeToken() string {
 	return `
 		token
-		connectorURL`
+		connectorURL
+		raw
+		rawEncoded`
 }
 
 func (fp *GqlFieldsProvider) ForIntegrationSystem() string {
@@ -225,4 +237,10 @@ func (fp *GqlFieldsProvider) ForIntegrationSystem() string {
 		name
 		description
 		auths {%s}`, fp.ForSystemAuth())
+}
+
+func (fp *GqlFieldsProvider) ForPlaceholders() interface{} {
+	return `
+		name
+		description`
 }

@@ -84,7 +84,7 @@ func NewResolver(transact persistence.Transactioner, svc APIService, appSvc Appl
 	}
 }
 
-func (r *Resolver) AddAPI(ctx context.Context, applicationID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
+func (r *Resolver) AddAPIDefinition(ctx context.Context, applicationID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -123,7 +123,7 @@ func (r *Resolver) AddAPI(ctx context.Context, applicationID string, in graphql.
 
 	return gqlAPI, nil
 }
-func (r *Resolver) UpdateAPI(ctx context.Context, id string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
+func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -153,7 +153,7 @@ func (r *Resolver) UpdateAPI(ctx context.Context, id string, in graphql.APIDefin
 
 	return gqlAPI, nil
 }
-func (r *Resolver) DeleteAPI(ctx context.Context, id string) (*graphql.APIDefinition, error) {
+func (r *Resolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql.APIDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err

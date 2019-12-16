@@ -60,8 +60,8 @@ type APIRepository interface {
 
 //go:generate mockery -name=EventAPIRepository -output=automock -outpkg=automock -case=underscore
 type EventAPIRepository interface {
-	ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventAPIDefinitionPage, error)
-	Create(ctx context.Context, items *model.EventAPIDefinition) error
+	ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
+	Create(ctx context.Context, items *model.EventDefinition) error
 	DeleteAllByApplicationID(ctx context.Context, tenantID string, appID string) error
 }
 
@@ -224,15 +224,10 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	return exist, nil
 }
 
-func (s *service) Create(ctx context.Context, in model.ApplicationCreateInput) (string, error) {
+func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
-	}
-
-	err = in.Validate()
-	if err != nil {
-		return "", errors.Wrap(err, "while validating Application input")
 	}
 
 	exists, err := s.ensureIntSysExists(ctx, in.IntegrationSystemID)
@@ -282,11 +277,6 @@ func (s *service) Create(ctx context.Context, in model.ApplicationCreateInput) (
 }
 
 func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error {
-	err := in.Validate()
-	if err != nil {
-		return err
-	}
-
 	exists, err := s.ensureIntSysExists(ctx, in.IntegrationSystemID)
 	if err != nil {
 		return errors.Wrap(err, "while validating Integration System ID")
@@ -431,7 +421,7 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 	return nil
 }
 
-func (s *service) createRelatedResources(ctx context.Context, in model.ApplicationCreateInput, tenant string, applicationID string) error {
+func (s *service) createRelatedResources(ctx context.Context, in model.ApplicationRegisterInput, tenant string, applicationID string) error {
 	var err error
 	var webhooks []*model.Webhook
 	for _, item := range in.Webhooks {
@@ -442,40 +432,67 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 		return errors.Wrapf(err, "while creating Webhooks for application")
 	}
 
-	for _, item := range in.Apis {
+	err = s.createAPIs(ctx, applicationID, tenant, in.APIDefinitions)
+	if err != nil {
+		return errors.Wrapf(err, "while creating APIs for application")
+	}
+
+	err = s.createEvents(ctx, applicationID, tenant, in.EventDefinitions)
+	if err != nil {
+		return errors.Wrapf(err, "while creating Events for application")
+	}
+
+	err = s.createDocuments(ctx, applicationID, tenant, in.Documents)
+	if err != nil {
+		return errors.Wrapf(err, "while creating Documents for application")
+	}
+
+	return nil
+}
+
+func (s *service) createAPIs(ctx context.Context, appID, tenant string, apis []*model.APIDefinitionInput) error {
+	var err error
+	for _, item := range apis {
 		apiDefID := s.uidService.Generate()
-		err = s.apiRepo.Create(ctx, item.ToAPIDefinition(apiDefID, applicationID, tenant))
+		err = s.apiRepo.Create(ctx, item.ToAPIDefinition(apiDefID, appID, tenant))
 		if err != nil {
-			return errors.Wrapf(err, "while creating APIs for application")
+			return errors.Wrap(err, "while creating API for application")
 		}
 
 		if item.Spec != nil && item.Spec.FetchRequest != nil {
 			_, err = s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.APIFetchRequestReference, apiDefID)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "while creating FetchRequest for application")
 			}
 		}
 	}
+	return nil
+}
 
-	for _, item := range in.EventAPIs {
-		eventAPIDefID := s.uidService.Generate()
-		err = s.eventAPIRepo.Create(ctx, item.ToEventAPIDefinition(eventAPIDefID, applicationID, tenant))
+func (s *service) createEvents(ctx context.Context, appID, tenant string, events []*model.EventDefinitionInput) error {
+	var err error
+	for _, item := range events {
+		eventID := s.uidService.Generate()
+		err = s.eventAPIRepo.Create(ctx, item.ToEventDefinition(eventID, appID, tenant))
 		if err != nil {
-			return errors.Wrapf(err, "while creating EventAPIs for application")
+			return errors.Wrap(err, "while creating EventDefinitions for application")
 		}
 
 		if item.Spec != nil && item.Spec.FetchRequest != nil {
-			_, err = s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.EventAPIFetchRequestReference, eventAPIDefID)
+			_, err = s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.EventAPIFetchRequestReference, eventID)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "while creating FetchRequest for application")
 			}
 		}
 	}
+	return nil
+}
 
-	for _, item := range in.Documents {
+func (s *service) createDocuments(ctx context.Context, appID, tenant string, events []*model.DocumentInput) error {
+	var err error
+	for _, item := range events {
 		documentID := s.uidService.Generate()
-
-		err = s.documentRepo.Create(ctx, item.ToDocument(documentID, tenant, applicationID))
+		err = s.documentRepo.Create(ctx, item.ToDocument(documentID, tenant, appID))
 		if err != nil {
 			return errors.Wrapf(err, "while creating Document for application")
 		}
@@ -487,7 +504,6 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 			}
 		}
 	}
-
 	return nil
 }
 
@@ -501,12 +517,12 @@ func (s *service) deleteRelatedResources(ctx context.Context, tenant, applicatio
 
 	err = s.apiRepo.DeleteAllByApplicationID(ctx, tenant, applicationID)
 	if err != nil {
-		return errors.Wrapf(err, "while deleting APIs for application %s", applicationID)
+		return errors.Wrapf(err, "while deleting APIDefinitions for application %s", applicationID)
 	}
 
 	err = s.eventAPIRepo.DeleteAllByApplicationID(ctx, tenant, applicationID)
 	if err != nil {
-		return errors.Wrapf(err, "while deleting EventAPIs for application %s", applicationID)
+		return errors.Wrapf(err, "while deleting EventDefinitions for application %s", applicationID)
 	}
 
 	err = s.documentRepo.DeleteAllByApplicationID(ctx, tenant, applicationID)

@@ -1,6 +1,8 @@
 package model
 
-import "time"
+import (
+	"time"
+)
 
 //  Compass performs fetch to validate if request is correct and stores a copy
 type FetchRequest struct {

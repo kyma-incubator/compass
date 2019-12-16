@@ -50,20 +50,13 @@ type APISpecInput struct {
 	FetchRequest *FetchRequestInput `json:"fetchRequest"`
 }
 
-type ApplicationCreateInput struct {
-	Name                string                     `json:"name"`
-	Description         *string                    `json:"description"`
-	Labels              *Labels                    `json:"labels"`
-	Webhooks            []*WebhookInput            `json:"webhooks"`
-	HealthCheckURL      *string                    `json:"healthCheckURL"`
-	Apis                []*APIDefinitionInput      `json:"apis"`
-	EventAPIs           []*EventAPIDefinitionInput `json:"eventAPIs"`
-	Documents           []*DocumentInput           `json:"documents"`
-	IntegrationSystemID *string                    `json:"integrationSystemID"`
-}
-
 type ApplicationEventConfiguration struct {
 	DefaultURL string `json:"defaultURL"`
+}
+
+type ApplicationFromTemplateInput struct {
+	TemplateName string                `json:"templateName"`
+	Values       []*TemplateValueInput `json:"values"`
 }
 
 type ApplicationPage struct {
@@ -73,6 +66,18 @@ type ApplicationPage struct {
 }
 
 func (ApplicationPage) IsPageable() {}
+
+type ApplicationRegisterInput struct {
+	Name                string                  `json:"name"`
+	Description         *string                 `json:"description"`
+	Labels              *Labels                 `json:"labels"`
+	Webhooks            []*WebhookInput         `json:"webhooks"`
+	HealthCheckURL      *string                 `json:"healthCheckURL"`
+	APIDefinitions      []*APIDefinitionInput   `json:"apiDefinitions"`
+	EventDefinitions    []*EventDefinitionInput `json:"eventDefinitions"`
+	Documents           []*DocumentInput        `json:"documents"`
+	IntegrationSystemID *string                 `json:"integrationSystemID"`
+}
 
 type ApplicationStatus struct {
 	Condition ApplicationStatusCondition `json:"condition"`
@@ -91,7 +96,7 @@ type ApplicationTemplate struct {
 type ApplicationTemplateInput struct {
 	Name             string                         `json:"name"`
 	Description      *string                        `json:"description"`
-	ApplicationInput *ApplicationCreateInput        `json:"applicationInput"`
+	ApplicationInput *ApplicationRegisterInput      `json:"applicationInput"`
 	Placeholders     []*PlaceholderDefinitionInput  `json:"placeholders"`
 	AccessLevel      ApplicationTemplateAccessLevel `json:"accessLevel"`
 }
@@ -182,38 +187,38 @@ type DocumentPage struct {
 
 func (DocumentPage) IsPageable() {}
 
-type EventAPIDefinition struct {
+type EventDefinition struct {
 	ID            string  `json:"id"`
 	ApplicationID string  `json:"applicationID"`
 	Name          string  `json:"name"`
 	Description   *string `json:"description"`
 	// group allows you to find the same API but in different version
-	Group   *string       `json:"group"`
-	Spec    *EventAPISpec `json:"spec"`
-	Version *Version      `json:"version"`
+	Group   *string    `json:"group"`
+	Spec    *EventSpec `json:"spec"`
+	Version *Version   `json:"version"`
 }
 
-type EventAPIDefinitionInput struct {
-	Name        string             `json:"name"`
-	Description *string            `json:"description"`
-	Spec        *EventAPISpecInput `json:"spec"`
-	Group       *string            `json:"group"`
-	Version     *VersionInput      `json:"version"`
+type EventDefinitionInput struct {
+	Name        string          `json:"name"`
+	Description *string         `json:"description"`
+	Spec        *EventSpecInput `json:"spec"`
+	Group       *string         `json:"group"`
+	Version     *VersionInput   `json:"version"`
 }
 
-type EventAPIDefinitionPage struct {
-	Data       []*EventAPIDefinition `json:"data"`
-	PageInfo   *PageInfo             `json:"pageInfo"`
-	TotalCount int                   `json:"totalCount"`
+type EventDefinitionPage struct {
+	Data       []*EventDefinition `json:"data"`
+	PageInfo   *PageInfo          `json:"pageInfo"`
+	TotalCount int                `json:"totalCount"`
 }
 
-func (EventAPIDefinitionPage) IsPageable() {}
+func (EventDefinitionPage) IsPageable() {}
 
-type EventAPISpecInput struct {
-	Data          *CLOB              `json:"data"`
-	EventSpecType EventAPISpecType   `json:"eventSpecType"`
-	Format        SpecFormat         `json:"format"`
-	FetchRequest  *FetchRequestInput `json:"fetchRequest"`
+type EventSpecInput struct {
+	Data         *CLOB              `json:"data"`
+	Type         EventSpecType      `json:"type"`
+	Format       SpecFormat         `json:"format"`
+	FetchRequest *FetchRequestInput `json:"fetchRequest"`
 }
 
 // Compass performs fetch to validate if request is correct and stores a copy
@@ -289,6 +294,11 @@ type LabelFilter struct {
 	Query *string `json:"query"`
 }
 
+type LabelInput struct {
+	Key   string      `json:"key"`
+	Value interface{} `json:"value"`
+}
+
 type OAuthCredentialData struct {
 	ClientID     string `json:"clientId"`
 	ClientSecret string `json:"clientSecret"`
@@ -302,11 +312,6 @@ type OAuthCredentialDataInput struct {
 	ClientID     string `json:"clientId"`
 	ClientSecret string `json:"clientSecret"`
 	URL          string `json:"url"`
-}
-
-type OneTimeToken struct {
-	Token        string `json:"token"`
-	ConnectorURL string `json:"connectorURL"`
 }
 
 type PageInfo struct {
@@ -588,42 +593,42 @@ func (e DocumentFormat) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-type EventAPISpecType string
+type EventSpecType string
 
 const (
-	EventAPISpecTypeAsyncAPI EventAPISpecType = "ASYNC_API"
+	EventSpecTypeAsyncAPI EventSpecType = "ASYNC_API"
 )
 
-var AllEventAPISpecType = []EventAPISpecType{
-	EventAPISpecTypeAsyncAPI,
+var AllEventSpecType = []EventSpecType{
+	EventSpecTypeAsyncAPI,
 }
 
-func (e EventAPISpecType) IsValid() bool {
+func (e EventSpecType) IsValid() bool {
 	switch e {
-	case EventAPISpecTypeAsyncAPI:
+	case EventSpecTypeAsyncAPI:
 		return true
 	}
 	return false
 }
 
-func (e EventAPISpecType) String() string {
+func (e EventSpecType) String() string {
 	return string(e)
 }
 
-func (e *EventAPISpecType) UnmarshalGQL(v interface{}) error {
+func (e *EventSpecType) UnmarshalGQL(v interface{}) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = EventAPISpecType(str)
+	*e = EventSpecType(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid EventAPISpecType", str)
+		return fmt.Errorf("%s is not a valid EventSpecType", str)
 	}
 	return nil
 }
 
-func (e EventAPISpecType) MarshalGQL(w io.Writer) {
+func (e EventSpecType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

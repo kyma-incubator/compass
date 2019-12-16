@@ -13,6 +13,7 @@ managing its Client Credentials.
 type IntegrationSystem {
     id: ID!
     name: String!
+    desciption: String
     auths: [SystemAuth!]!
 }
 
@@ -21,12 +22,18 @@ input IntegrationSystemInput {
     description: String
 }
 
+type IntegrationSystemPage implements Pageable {
+	data: [IntegrationSystem!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
+}
+
 type Mutation {
-    createIntegrationSystem(in: IntegrationSystemInput!): IntegrationSystem!
+    registerIntegrationSystem(in: IntegrationSystemInput!): IntegrationSystem!
     updateIntegrationSystem(id: ID!, in: IntegrationSystemInput!): IntegrationSystem!
-    deleteIntegrationSystem(id: ID!): IntegrationSystem! 
+    unregisterIntegrationSystem(id: ID!): IntegrationSystem! 
     
-    generateClientCredentialsForIntegrationSystem(id: ID!): SystemAuth!
+    requestClientCredentialsForIntegrationSystem(id: ID!): SystemAuth!
     deleteSystemAuthForIntegrationSystem(id: ID!): SystemAuth!
 }
 
@@ -41,13 +48,13 @@ The diagram below represents registering IntegrationSystem and pairing it with D
 
 ![](./assets/integration-system-registration.svg)
 
-1. An Integration System Administrator executes mutation  `createIntegrationSystem` with the following input:
+1. An Integration System Administrator executes mutation  `registerIntegrationSystem` with the following input:
 ```graphql
-createIntegrationSystem(in:{name: "IntegrationSystemFromBigProvider"})
+registerIntegrationSystem(in:{name: "IntegrationSystemFromBigProvider"})
 ```
 
 2. After creating IntegrationSystem, Administrator enables communication between IntegrationSystem and Director by
-creating Client Credentials: `generateClientCredentialsForIntegrationSystem(integrationSystemID:ID!)`.
+creating Client Credentials: `requestClientCredentialsForIntegrationSystem(integrationSystemID:ID!)`.
 Director creates pair Client ID and Client Secret by requesting internal API of Hydra Admin and returns those pair to the 
 Administrator.
 

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCreateIntegrationSystem(t *testing.T) {
+func TestRegisterIntegrationSystem(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	name := "int-system"
@@ -18,22 +18,22 @@ func TestCreateIntegrationSystem(t *testing.T) {
 	intSys, err := tc.graphqlizer.IntegrationSystemInputToGQL(intSysInput)
 	require.NoError(t, err)
 
-	createIntegrationSystemRequest := fixCreateIntegrationSystemRequest(intSys)
+	registerIntegrationSystemRequest := fixRegisterIntegrationSystemRequest(intSys)
 	output := graphql.IntegrationSystemExt{}
 
 	// WHEN
-	t.Log("Create integration system")
+	t.Log("Register integration system")
 
-	err = tc.RunOperation(ctx, createIntegrationSystemRequest, &output)
+	err = tc.RunOperation(ctx, registerIntegrationSystemRequest, &output)
 	require.NoError(t, err)
 	require.NotEmpty(t, output.ID)
-	defer deleteIntegrationSystem(t, ctx, output.ID)
+	defer unregisterIntegrationSystem(t, ctx, output.ID)
 
 	//THEN
 	require.NotEmpty(t, output.Name)
-	saveExample(t, createIntegrationSystemRequest.Query(), "create integration system")
+	saveExample(t, registerIntegrationSystemRequest.Query(), "register integration system")
 
-	t.Log("Check if Integration System was created")
+	t.Log("Check if Integration System was registered")
 
 	getIntegrationSystemRequest := fixIntegrationSystemRequest(output.ID)
 	intSysOutput := graphql.IntegrationSystemExt{}
@@ -51,8 +51,8 @@ func TestUpdateIntegrationSystem(t *testing.T) {
 	name := "int-system"
 	newName := "new-int-system"
 	newDescription := "new description"
-	t.Log("Create integration system")
-	intSys := createIntegrationSystem(t, ctx, name)
+	t.Log("Register integration system")
+	intSys := registerIntegrationSystem(t, ctx, name)
 
 	intSysInput := graphql.IntegrationSystemInput{Name: newName, Description: &newDescription}
 	intSysGQL, err := tc.graphqlizer.IntegrationSystemInputToGQL(intSysInput)
@@ -64,7 +64,7 @@ func TestUpdateIntegrationSystem(t *testing.T) {
 	err = tc.RunOperation(ctx, updateIntegrationSystemRequest, &updateOutput)
 	require.NoError(t, err)
 	require.NotEmpty(t, updateOutput.ID)
-	defer deleteIntegrationSystem(t, ctx, updateOutput.ID)
+	defer unregisterIntegrationSystem(t, ctx, updateOutput.ID)
 
 	//THEN
 	t.Log("Check if Integration System was updated")
@@ -72,20 +72,20 @@ func TestUpdateIntegrationSystem(t *testing.T) {
 	saveExample(t, updateIntegrationSystemRequest.Query(), "update integration system")
 }
 
-func TestDeleteIntegrationSystem(t *testing.T) {
+func TestunregisterIntegrationSystem(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	name := "int-system"
 
-	t.Log("Create integration system")
-	intSys := createIntegrationSystem(t, ctx, name)
+	t.Log("Register integration system")
+	intSys := registerIntegrationSystem(t, ctx, name)
 
-	deleteIntegrationSystemRequest := fixDeleteIntegrationSystem(intSys.ID)
+	unregisterIntegrationSystemRequest := fixunregisterIntegrationSystem(intSys.ID)
 	deleteOutput := graphql.IntegrationSystemExt{}
 
 	// WHEN
-	t.Log("Delete integration system")
-	err := tc.RunOperation(ctx, deleteIntegrationSystemRequest, &deleteOutput)
+	t.Log("Unregister integration system")
+	err := tc.RunOperation(ctx, unregisterIntegrationSystemRequest, &deleteOutput)
 	require.NoError(t, err)
 
 	//THEN
@@ -94,7 +94,7 @@ func TestDeleteIntegrationSystem(t *testing.T) {
 	out := getIntegrationSystem(t, ctx, intSys.ID)
 
 	require.Empty(t, out)
-	saveExample(t, deleteIntegrationSystemRequest.Query(), "delete integration system")
+	saveExample(t, unregisterIntegrationSystemRequest.Query(), "unregister integration system")
 }
 
 func TestQueryIntegrationSystem(t *testing.T) {
@@ -102,8 +102,8 @@ func TestQueryIntegrationSystem(t *testing.T) {
 	ctx := context.Background()
 	name := "int-system"
 
-	t.Log("Create integration system")
-	intSys := createIntegrationSystem(t, ctx, name)
+	t.Log("Register integration system")
+	intSys := registerIntegrationSystem(t, ctx, name)
 	getIntegrationSystemRequest := fixIntegrationSystemRequest(intSys.ID)
 	output := graphql.IntegrationSystemExt{}
 
@@ -112,7 +112,7 @@ func TestQueryIntegrationSystem(t *testing.T) {
 	err := tc.RunOperation(ctx, getIntegrationSystemRequest, &output)
 	require.NoError(t, err)
 	require.NotEmpty(t, output.ID)
-	defer deleteIntegrationSystem(t, ctx, output.ID)
+	defer unregisterIntegrationSystem(t, ctx, output.ID)
 
 	//THEN
 	t.Log("Check if Integration System was received")
@@ -125,12 +125,12 @@ func TestQueryIntegrationSystems(t *testing.T) {
 	name1 := "int-system-1"
 	name2 := "int-system-2"
 
-	t.Log("Create integration systems")
-	intSys1 := createIntegrationSystem(t, ctx, name1)
-	defer deleteIntegrationSystem(t, ctx, intSys1.ID)
+	t.Log("Register integration systems")
+	intSys1 := registerIntegrationSystem(t, ctx, name1)
+	defer unregisterIntegrationSystem(t, ctx, intSys1.ID)
 
-	intSys2 := createIntegrationSystem(t, ctx, name2)
-	defer deleteIntegrationSystem(t, ctx, intSys2.ID)
+	intSys2 := registerIntegrationSystem(t, ctx, name2)
+	defer unregisterIntegrationSystem(t, ctx, intSys2.ID)
 
 	first := 2
 	after := ""

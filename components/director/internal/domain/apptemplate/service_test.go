@@ -3,8 +3,9 @@ package apptemplate_test
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -35,7 +36,7 @@ func TestService_Create(t *testing.T) {
 	}{
 		{
 			Name:  "Success",
-			Input: fixModelAppTemplateInput(testName, fixApplicationCreateInputString()),
+			Input: fixModelAppTemplateInput(testName, appInputJSONString),
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Create", ctx, *modelAppTemplate).Return(nil).Once()
@@ -44,28 +45,8 @@ func TestService_Create(t *testing.T) {
 			ExpectedOutput: testID,
 		},
 		{
-			Name: "Error when application template placeholders are not unique",
-			Input: &model.ApplicationTemplateInput{
-				Placeholders: []model.ApplicationTemplatePlaceholder{
-					{
-						Name:        testName,
-						Description: nil,
-					},
-					{
-						Name:        testName,
-						Description: nil,
-					},
-				},
-			},
-			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
-				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				return appTemplateRepo
-			},
-			ExpectedError: fmt.Errorf("while creating Application Template [name=]: placeholder [name=%s] appears more than once", testName),
-		},
-		{
 			Name:  "Error when creating application template",
-			Input: fixModelAppTemplateInput(testName, fixApplicationCreateInputString()),
+			Input: fixModelAppTemplateInput(testName, appInputJSONString),
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Create", ctx, *modelAppTemplate).Return(testError).Once()
@@ -138,6 +119,59 @@ func TestService_Get(t *testing.T) {
 
 			// WHEN
 			result, err := svc.Get(ctx, testID)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedOutput, result)
+
+			appTemplateRepo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_GetByName(t *testing.T) {
+	// GIVEN
+	ctx := tenant.SaveToContext(context.TODO(), testTenant)
+	modelAppTemplate := fixModelAppTemplate(testID, testName)
+
+	testCases := []struct {
+		Name              string
+		AppTemplateRepoFn func() *automock.ApplicationTemplateRepository
+		ExpectedError     error
+		ExpectedOutput    *model.ApplicationTemplate
+	}{
+		{
+			Name: "Success",
+			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
+				appTemplateRepo := &automock.ApplicationTemplateRepository{}
+				appTemplateRepo.On("GetByName", ctx, testName).Return(modelAppTemplate, nil).Once()
+				return appTemplateRepo
+			},
+			ExpectedOutput: modelAppTemplate,
+		},
+		{
+			Name: "Error when getting application template",
+			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
+				appTemplateRepo := &automock.ApplicationTemplateRepository{}
+				appTemplateRepo.On("GetByName", ctx, testName).Return(nil, testError).Once()
+				return appTemplateRepo
+			},
+			ExpectedError: testError,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			appTemplateRepo := testCase.AppTemplateRepoFn()
+			svc := apptemplate.NewService(appTemplateRepo, nil)
+
+			// WHEN
+			result, err := svc.GetByName(ctx, testName)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -299,7 +333,7 @@ func TestService_Update(t *testing.T) {
 	}{
 		{
 			Name:  "Success",
-			Input: fixModelAppTemplateInput(testName, fixApplicationCreateInputString()),
+			Input: fixModelAppTemplateInput(testName, appInputJSONString),
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Update", ctx, *modelAppTemplate).Return(nil).Once()
@@ -307,28 +341,8 @@ func TestService_Update(t *testing.T) {
 			},
 		},
 		{
-			Name: "Error when application template placeholders are not unique",
-			Input: &model.ApplicationTemplateInput{
-				Placeholders: []model.ApplicationTemplatePlaceholder{
-					{
-						Name:        testName,
-						Description: nil,
-					},
-					{
-						Name:        testName,
-						Description: nil,
-					},
-				},
-			},
-			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
-				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				return appTemplateRepo
-			},
-			ExpectedError: fmt.Errorf("while creating Application Template [name=]: placeholder [name=%s] appears more than once", testName),
-		},
-		{
 			Name:  "Error when updating application template",
-			Input: fixModelAppTemplateInput(testName, fixApplicationCreateInputString()),
+			Input: fixModelAppTemplateInput(testName, appInputJSONString),
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Update", ctx, *modelAppTemplate).Return(testError).Once()
@@ -404,6 +418,73 @@ func TestService_Delete(t *testing.T) {
 			}
 
 			appTemplateRepo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_PrepareApplicationCreateInputJSON(t *testing.T) {
+	// GIVEN
+	svc := apptemplate.NewService(nil, nil)
+
+	testCases := []struct {
+		Name             string
+		InputAppTemplate *model.ApplicationTemplate
+		InputValues      model.ApplicationFromTemplateInputValues
+		ExpectedOutput   string
+		ExpectedError    error
+	}{
+		{
+			Name: "Success when no placeholders",
+			InputAppTemplate: &model.ApplicationTemplate{
+				ApplicationInputJSON: `{"Name": "my-app", "Description": "Lorem ipsum"}`,
+				Placeholders:         nil,
+			},
+			InputValues:    nil,
+			ExpectedOutput: `{"Name": "my-app", "Description": "Lorem ipsum"}`,
+			ExpectedError:  nil,
+		},
+		{
+			Name: "Success when with placeholders",
+			InputAppTemplate: &model.ApplicationTemplate{
+				ApplicationInputJSON: `{"Name": "{{name}}", "Description": "Lorem ipsum"}`,
+				Placeholders: []model.ApplicationTemplatePlaceholder{
+					{Name: "name", Description: str.Ptr("Application name")},
+				},
+			},
+			InputValues: []*model.ApplicationTemplateValueInput{
+				{Placeholder: "name", Value: "my-application"},
+			},
+			ExpectedOutput: `{"Name": "my-application", "Description": "Lorem ipsum"}`,
+			ExpectedError:  nil,
+		},
+		{
+			Name: "Returns error when required placeholder value not provided",
+			InputAppTemplate: &model.ApplicationTemplate{
+				ApplicationInputJSON: `{"Name": "{{name}}", "Description": "Lorem ipsum"}`,
+				Placeholders: []model.ApplicationTemplatePlaceholder{
+					{Name: "name", Description: str.Ptr("Application name")},
+				},
+			},
+			InputValues:    []*model.ApplicationTemplateValueInput{},
+			ExpectedOutput: "",
+			ExpectedError:  errors.New("required placeholder not provided: value for placeholder name 'name' not found"),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// WHEN
+			result, err := svc.PrepareApplicationCreateInputJSON(testCase.InputAppTemplate, testCase.InputValues)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Empty(t, result)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedOutput, result)
+			}
 		})
 	}
 }

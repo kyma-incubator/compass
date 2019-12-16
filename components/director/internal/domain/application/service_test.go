@@ -3,7 +3,6 @@ package application_test
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
@@ -26,7 +25,7 @@ func TestService_Create(t *testing.T) {
 	// given
 	timestamp := time.Now()
 	testErr := errors.New("Test error")
-	modelInput := model.ApplicationCreateInput{
+	modelInput := model.ApplicationRegisterInput{
 		Name: "foo.bar-not",
 		Webhooks: []*model.WebhookInput{
 			{URL: "test.foo.com"},
@@ -36,16 +35,16 @@ func TestService_Create(t *testing.T) {
 			{Title: "foo", Description: "test", FetchRequest: &model.FetchRequestInput{URL: "doc.foo.bar"}},
 			{Title: "bar", Description: "test"},
 		},
-		Apis: []*model.APIDefinitionInput{
+		APIDefinitions: []*model.APIDefinitionInput{
 			{
 				Name: "foo",
 				Spec: &model.APISpecInput{FetchRequest: &model.FetchRequestInput{URL: "api.foo.bar"}},
 			}, {Name: "bar"},
 		},
-		EventAPIs: []*model.EventAPIDefinitionInput{
+		EventDefinitions: []*model.EventDefinitionInput{
 			{
 				Name: "foo",
-				Spec: &model.EventAPISpecInput{FetchRequest: &model.FetchRequestInput{URL: "eventapi.foo.bar"}},
+				Spec: &model.EventSpecInput{FetchRequest: &model.FetchRequestInput{URL: "eventapi.foo.bar"}},
 			}, {Name: "bar"},
 		},
 		Labels: map[string]interface{}{
@@ -53,6 +52,7 @@ func TestService_Create(t *testing.T) {
 		},
 		IntegrationSystemID: &intSysID,
 	}
+
 	defaultLabels := map[string]interface{}{
 		model.ScenariosKey:      model.ScenariosDefaultValue,
 		"integration-system-id": intSysID,
@@ -90,7 +90,7 @@ func TestService_Create(t *testing.T) {
 		ScenariosServiceFn func() *automock.ScenariosService
 		LabelServiceFn     func() *automock.LabelUpsertService
 		UIDServiceFn       func() *automock.UIDService
-		Input              model.ApplicationCreateInput
+		Input              model.ApplicationRegisterInput
 		ExpectedErr        error
 	}{
 		{
@@ -113,8 +113,8 @@ func TestService_Create(t *testing.T) {
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, &model.EventAPIDefinition{ID: "foo", ApplicationID: "foo", Tenant: tnt, Name: "foo", Spec: &model.EventAPISpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.EventAPIDefinition{ID: "foo", ApplicationID: "foo", Tenant: tnt, Name: "bar"}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", ApplicationID: "foo", Tenant: tnt, Name: "foo", Spec: &model.EventSpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", ApplicationID: "foo", Tenant: tnt, Name: "bar"}).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -201,7 +201,7 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			Input:       model.ApplicationCreateInput{Name: "test"},
+			Input:       model.ApplicationRegisterInput{Name: "test"},
 			ExpectedErr: nil,
 		},
 		{
@@ -253,7 +253,7 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			Input: model.ApplicationCreateInput{
+			Input: model.ApplicationRegisterInput{
 				Name:   "test",
 				Labels: defaultLabelsWithoutIntSys,
 			},
@@ -493,43 +493,9 @@ func TestService_Create(t *testing.T) {
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// when
-		_, err := svc.Create(context.TODO(), model.ApplicationCreateInput{})
+		_, err := svc.Create(context.TODO(), model.ApplicationRegisterInput{})
 		assert.Equal(t, tenant.NoTenantError, err)
 	})
-}
-
-func TestService_CreateWithInvalidNames(t *testing.T) {
-	//GIVEN
-	tnt := "tenant"
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
-
-	testCases := []struct {
-		Name               string
-		InputID            string
-		Input              model.ApplicationCreateInput
-		ExpectedErrMessage string
-	}{
-		{
-			Name:               "Returns error when application name is empty",
-			InputID:            "foo",
-			Input:              model.ApplicationCreateInput{Name: ""},
-			ExpectedErrMessage: "a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character",
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-
-			//WHEN
-			_, err := svc.Create(ctx, testCase.Input)
-
-			//THEN
-			require.NotNil(t, err)
-			assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
-		})
-	}
 }
 
 func TestService_Update(t *testing.T) {
@@ -754,47 +720,6 @@ func TestService_Update(t *testing.T) {
 	}
 }
 
-func TestService_UpdateWithInvalidNames(t *testing.T) {
-	//GIVEN
-	testError := errors.New("a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character")
-	tnt := "tenant"
-	appID := ""
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt)
-
-	testCases := []struct {
-		Name        string
-		InputID     string
-		Input       model.ApplicationUpdateInput
-		ExpectedErr error
-	}{
-		{
-			Name:        "Returns error when application name is empty",
-			InputID:     "foo",
-			Input:       model.ApplicationUpdateInput{Name: ""},
-			ExpectedErr: testError,
-		},
-		{
-			Name:        "Returns error when application name contains upper case letter",
-			InputID:     "foo",
-			Input:       model.ApplicationUpdateInput{Name: "upperCase"},
-			ExpectedErr: testError,
-		}}
-
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-
-			//WHEN
-			err := svc.Update(ctx, appID, testCase.Input)
-
-			//THEN
-			require.Error(t, err)
-			assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
-		})
-	}
-}
-
 func TestService_Delete(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
@@ -814,7 +739,7 @@ func TestService_Delete(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		AppRepoFn          func() *automock.ApplicationRepository
-		Input              model.ApplicationCreateInput
+		Input              model.ApplicationRegisterInput
 		InputID            string
 		ExpectedErrMessage string
 	}{
@@ -882,7 +807,7 @@ func TestService_Get(t *testing.T) {
 	testCases := []struct {
 		Name                string
 		RepositoryFn        func() *automock.ApplicationRepository
-		Input               model.ApplicationCreateInput
+		Input               model.ApplicationRegisterInput
 		InputID             string
 		ExpectedApplication *model.Application
 		ExpectedErrMessage  string
@@ -1322,6 +1247,7 @@ func TestService_Exist(t *testing.T) {
 
 			// THEN
 			if testCase.ExpectedError != nil {
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
 			} else {
 				require.Nil(t, err)
@@ -1423,6 +1349,7 @@ func TestService_SetLabel(t *testing.T) {
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 			} else {
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
@@ -1767,11 +1694,11 @@ type testModel struct {
 	ApplicationMatcherFn func(app *model.Application) bool
 	Webhooks             []*model.Webhook
 	Apis                 []*model.APIDefinition
-	EventAPIs            []*model.EventAPIDefinition
+	EventAPIs            []*model.EventDefinition
 	Documents            []*model.Document
 }
 
-func modelFromInput(in model.ApplicationCreateInput, tenant, applicationID string) testModel {
+func modelFromInput(in model.ApplicationRegisterInput, tenant, applicationID string) testModel {
 	applicationModelMatcherFn := applicationMatcher(in.Name, in.Description)
 
 	var webhooksModel []*model.Webhook
@@ -1780,13 +1707,13 @@ func modelFromInput(in model.ApplicationCreateInput, tenant, applicationID strin
 	}
 
 	var apisModel []*model.APIDefinition
-	for _, item := range in.Apis {
+	for _, item := range in.APIDefinitions {
 		apisModel = append(apisModel, item.ToAPIDefinition(uuid.New().String(), applicationID, tenant))
 	}
 
-	var eventAPIsModel []*model.EventAPIDefinition
-	for _, item := range in.EventAPIs {
-		eventAPIsModel = append(eventAPIsModel, item.ToEventAPIDefinition(uuid.New().String(), tenant, applicationID))
+	var eventAPIsModel []*model.EventDefinition
+	for _, item := range in.EventDefinitions {
+		eventAPIsModel = append(eventAPIsModel, item.ToEventDefinition(uuid.New().String(), tenant, applicationID))
 	}
 
 	var documentsModel []*model.Document

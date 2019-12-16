@@ -25,20 +25,6 @@ func (_m *Repository) Create(ctx context.Context, item model.SystemAuth) error {
 	return r0
 }
 
-// Delete provides a mock function with given fields: ctx, tenant, id
-func (_m *Repository) Delete(ctx context.Context, tenant string, id string) error {
-	ret := _m.Called(ctx, tenant, id)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
-		r0 = rf(ctx, tenant, id)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // DeleteByIDForObject provides a mock function with given fields: ctx, tenant, id, objType
 func (_m *Repository) DeleteByIDForObject(ctx context.Context, tenant string, id string, objType model.SystemAuthReferenceObjectType) error {
 	ret := _m.Called(ctx, tenant, id, objType)

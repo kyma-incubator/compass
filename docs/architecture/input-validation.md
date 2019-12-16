@@ -6,7 +6,7 @@ This document contains validation rules for all input types.
 
 ## Validation rules explanation
 
-- `name` - Up to 36 characters long. The characters allowed in names are: digits (`0`-`9`), lower case letters (`a`-`z`),`-`, and `.`. Based on Kubernetes resource name format.
+- `name` - Up to 36 characters long. Cannot start with digit. The characters allowed in names are: digits (`0`-`9`), lower case letters (`a`-`z`),`-`, and `.`. Based on Kubernetes resource name format.
 - `required` - Cannot be nil or empty.
 - `url` - Valid URL.
 - `max` - Maximal allowed length.
@@ -31,6 +31,7 @@ defaultAuth: AuthInput | false | |  
 ### APISpecInput
 
 - Struct validator ensures that `type` and `format` work together (ODATA works with XML and JSON, OPEN_API works with YAML and JSON)
+- Struct validator ensures that only one of `data` and `fetchRequest` is present
 
 Field | Required | Rules | Comment
 --- | --- | --- | ---
@@ -39,24 +40,25 @@ type: APISpecType! | true | `oneof=[ODATA, OPEN_API]` |  
 format: SpecFormat! | true | `oneof=[YAML, JSON, XML]` |  
 fetchRequest: FetchRequestInput | false | |  
 
-### EventAPIDefinitionInput
+### EventDefinitionInput
 
 Field | Required | Rules | Comment
 --- | --- | --- | ---
 name: String! | true | `name` | varchar(256) in db  
 description: String | false | `max=128` |  
-spec: EventAPISpecInput! | true | | 
+spec: EventSpecInput! | true | | 
 group: String | false | `max=36` | varchar(256) in db  
 version: VersionInput | false | |  
 
-### EventAPISpecInput
+### EventSpecInput
 
 - Struct validator ensures that `type` and `format` work together (ASYNC_API works with YAML and JSON)
+- Struct validator ensures that only one of `data` and `fetchRequest` is present
 
 Field | Required | Rules | Comment
 --- | --- | --- | ---
 data: CLOB (string) | false | |  
-eventSpecType: EventAPISpecType! | true | `oneof=[ASYNC_API]` |  
+type: EventSpecType! | true | `oneof=[ASYNC_API]` |  
 format: SpecFormat! | true | `oneof=[YAML, JSON]` |  
 fetchRequest: FetchRequestInput | false | |  
 
@@ -69,7 +71,7 @@ deprecated: Boolean = false | true | | required because has default value
 deprecatedSince: String | false | `max=256` | varchar(256) in db
 forRemoval: Boolean = false | true | | required because has default value
 
-### ApplicationCreateInput
+### ApplicationRegisterInput
 
 Field | Required | Rules | Comment
 --- | --- | --- | ---
@@ -78,8 +80,8 @@ description: String | false | `max=128` |  
 labels: Labels (map[string]interface{}) | false | key: `required` |  
 webhooks: [WebhookInput!] | false | `[required]` |  
 healthCheckURL: String | false | `url`, `max=256` | varchar(256) in db  
-apis: [APIDefinitionInput!] | false | `[required]` |  
-eventAPIs: [EventAPIDefinitionInput!] | false | `[required]` |  
+apiDefinitions: [APIDefinitionInput!] | false | `[required]` |  
+eventDefinitions: [EventDefinitionInput!] | false | `[required]` |  
 documents: [DocumentInput!] | false | `[required]` |  
 
 ### ApplicationUpdateInput
@@ -91,6 +93,8 @@ description: String | false | `max=128` |  
 healthCheckURL: String | false | `url`, `max=256` | varchar(256) in db  
 
 ### ApplicationTemplateInput
+
+- Struct validator ensures that provided placeholders' names are unique and that they are used in `applicationInput` 
 
 Field | Required | Rules | Comment
 --- | --- | --- | ---
@@ -105,7 +109,23 @@ accessLevel: ApplicationTemplateAccessLevel! | true | `oneof=[GLOBAL]` |
 Field | Required | Rules | Comment
 --- | --- | --- | ---
 name: String! | true | `name` |
-description: String | false | `max=128` | 
+description: String | false | `max=128` |
+
+### ApplicationFromTemplateInput
+
+- Struct validator ensures that provided placeholders' names are unique
+
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+templateName: String! | true | `name` |
+values: [TemplateValueInput!] | false | `[required]` |
+
+### TemplateValueInput
+
+Field | Required | Rules | Comment
+--- | --- | --- | ---
+placeholder: String! | true | `name` |
+value: String! | true | | 
 
 ### RuntimeInput
 

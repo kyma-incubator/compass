@@ -20,8 +20,8 @@ func TestCreateLabelWithoutLabelDefinition(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	name := "label-without-label-def"
-	application := createApplication(t, ctx, name)
-	defer deleteApplication(t, application.ID)
+	application := registerApplication(t, ctx, name)
+	defer unregisterApplication(t, application.ID)
 
 	t.Log("Set label on application")
 	labelKey := "test"
@@ -89,8 +89,8 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 		labelDefinition := graphql.LabelDefinition{}
 
 		t.Log("Create application")
-		application := createApplication(t, ctx, applicationName)
-		defer deleteApplication(t, application.ID)
+		application := registerApplication(t, ctx, applicationName)
+		defer unregisterApplication(t, application.ID)
 
 		t.Log("Create label definition")
 		err = tc.RunOperation(ctx, createLabelDefinitionRequest, &labelDefinition)
@@ -119,8 +119,8 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 		labelDefinition := graphql.LabelDefinition{}
 
 		t.Log("Create application")
-		application := createApplication(t, ctx, applicationName)
-		defer deleteApplication(t, application.ID)
+		application := registerApplication(t, ctx, applicationName)
+		defer unregisterApplication(t, application.ID)
 
 		t.Log("Create label definition")
 		err = tc.RunOperation(ctx, createLabelDefinitionRequest, &labelDefinition)
@@ -222,8 +222,8 @@ func TestEditLabelDefinition(t *testing.T) {
 		labelDefinition := graphql.LabelDefinition{}
 
 		t.Log("Create application")
-		app := createApplication(t, ctx, "app")
-		defer deleteApplication(t, app.ID)
+		app := registerApplication(t, ctx, "app")
+		defer unregisterApplication(t, app.ID)
 
 		t.Log("Create label definition")
 		err = tc.RunOperation(ctx, createLabelDefinitionRequest, &labelDefinition)
@@ -263,8 +263,8 @@ func TestEditLabelDefinition(t *testing.T) {
 		labelDefinition := graphql.LabelDefinition{}
 
 		t.Log("Create application")
-		app := createApplication(t, ctx, "app")
-		defer deleteApplication(t, app.ID)
+		app := registerApplication(t, ctx, "app")
+		defer unregisterApplication(t, app.ID)
 
 		t.Log("Create label definition")
 		err = tc.RunOperation(ctx, createLabelDefinitionRequest, &labelDefinition)
@@ -313,8 +313,8 @@ func TestCreateScenariosLabel(t *testing.T) {
 	// GIVEN
 	t.Log("Create application")
 	ctx := context.Background()
-	app := createApplication(t, ctx, "app")
-	defer deleteApplication(t, app.ID)
+	app := registerApplication(t, ctx, "app")
+	defer unregisterApplication(t, app.ID)
 
 	t.Log("Check if scenarios LabelDefinition exists")
 	labelKey := "scenarios"
@@ -352,8 +352,8 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	t.Log("Create application")
-	app := createApplication(t, ctx, "app")
-	defer deleteApplication(t, app.ID)
+	app := registerApplication(t, ctx, "app")
+	defer unregisterApplication(t, app.ID)
 	labelKey := "scenarios"
 	defaultValue := "DEFAULT"
 	additionalValue := "ADDITIONAL"
@@ -439,8 +439,8 @@ func TestDeleteLabelDefinition(t *testing.T) {
 	t.Run("Try to delete Label Definition while it's being used by some labels with deleteRelatedLabels parameter set to false - should fail", func(t *testing.T) {
 
 		t.Log("Create application")
-		app := createApplication(t, ctx, "app")
-		defer deleteApplication(t, app.ID)
+		app := registerApplication(t, ctx, "app")
+		defer unregisterApplication(t, app.ID)
 
 		t.Log("Create LabelDefinition")
 		createLabelDefinitionRequest := fixCreateLabelDefinitionRequest(ldInputGql)
@@ -462,7 +462,7 @@ func TestDeleteLabelDefinition(t *testing.T) {
 
 		t.Log("Try to delete Label Definition while it's being used by some labels")
 
-		deleteLabelDefinitionRequest := fixDeleteLabelDefinition(labelKey, false)
+		deleteLabelDefinitionRequest := fixDeleteLabelDefinitionRequest(labelKey, false)
 		err = tc.RunOperation(context.Background(), deleteLabelDefinitionRequest, nil)
 		require.Error(t, err)
 		assert.EqualError(t, err, "graphql: could not delete label definition, it is already used by at least one label")
@@ -479,19 +479,19 @@ func TestDeleteLabelDefinition(t *testing.T) {
 		require.NoError(t, err)
 
 		t.Log("Create application")
-		app := createApplication(t, ctx, "app")
-		defer deleteApplication(t, app.ID)
+		app := registerApplication(t, ctx, "app")
+		defer unregisterApplication(t, app.ID)
 
 		t.Log("Create runtime")
-		rtm := createRuntime(t, ctx, "rtm")
-		defer deleteRuntimeWithinTenant(t, rtm.ID, defaultTenant)
+		rtm := registerRuntime(t, ctx, "rtm")
+		defer unregisterRuntimeWithinTenant(t, rtm.ID, defaultTenant)
 
 		t.Log("Set labels on application and runtime")
 		setApplicationLabel(t, ctx, app.ID, labelKey, map[string]interface{}{labelKey: "app"})
 		setRuntimeLabel(t, ctx, rtm.ID, labelKey, map[string]interface{}{labelKey: "rtm"})
 
 		t.Log("Delete Label Definition while it's being used by some labels")
-		deleteLabelDefinitionRequest := fixDeleteLabelDefinition(labelKey, true)
+		deleteLabelDefinitionRequest := fixDeleteLabelDefinitionRequest(labelKey, true)
 		err = tc.RunOperation(context.Background(), deleteLabelDefinitionRequest, nil)
 		require.NoError(t, err)
 
@@ -511,8 +511,8 @@ func TestDeleteLabelDefinition(t *testing.T) {
 	t.Run("Delete Label from application, then delete the Label Definition - should succeed", func(t *testing.T) {
 
 		t.Log("Create application")
-		app := createApplication(t, ctx, "app")
-		defer deleteApplication(t, app.ID)
+		app := registerApplication(t, ctx, "app")
+		defer unregisterApplication(t, app.ID)
 
 		t.Log("Create LabelDefinition")
 		createLabelDefinitionRequest := fixCreateLabelDefinitionRequest(ldInputGql)
@@ -530,14 +530,14 @@ func TestDeleteLabelDefinition(t *testing.T) {
 		err = tc.RunOperation(ctx, setLabelRequest, &label)
 		require.NoError(t, err)
 
-		deleteApplicationLabelRequest := fixDeleteApplicationLabel(app.ID, labelKey)
+		deleteApplicationLabelRequest := fixDeleteApplicationLabelRequest(app.ID, labelKey)
 		label = graphql.Label{}
 
 		err := tc.RunOperation(ctx, deleteApplicationLabelRequest, &label)
 		require.NoError(t, err)
 		assert.Equal(t, labelKey, label.Key)
 
-		deleteLabelDefinitionRequest := fixDeleteLabelDefinition(labelKey, false)
+		deleteLabelDefinitionRequest := fixDeleteLabelDefinitionRequest(labelKey, false)
 		labelDefinition := graphql.LabelDefinition{}
 
 		err = tc.RunOperation(context.Background(), deleteLabelDefinitionRequest, &labelDefinition)
@@ -550,12 +550,12 @@ func TestDeleteScenariosLabel(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	t.Log("Create application")
-	app := createApplication(t, ctx, "app")
-	defer deleteApplication(t, app.ID)
+	app := registerApplication(t, ctx, "app")
+	defer unregisterApplication(t, app.ID)
 
 	t.Log("Try to delete scenarios label on application")
 	labelKey := "scenarios"
-	deleteApplicationLabelRequest := fixDeleteApplicationLabel(app.ID, labelKey)
+	deleteApplicationLabelRequest := fixDeleteApplicationLabelRequest(app.ID, labelKey)
 
 	// WHEN
 	err := tc.RunOperation(ctx, deleteApplicationLabelRequest, nil)
@@ -569,8 +569,8 @@ func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	t.Log("Create application")
-	app := createApplication(t, ctx, "app")
-	defer deleteApplication(t, app.ID)
+	app := registerApplication(t, ctx, "app")
+	defer unregisterApplication(t, app.ID)
 	labelKey := "scenarios"
 	defaultValue := "DEFAULT"
 
@@ -600,7 +600,7 @@ func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
 
 	// WHEN
 	err = tc.RunOperation(ctx, updateLabelDefinitionRequest, &labelDefinition)
-	errMsg := fmt.Sprintf(`graphql: while updating label definition: while validating Label Definition: while validating schema for key %s: items.enum: At least one of the items must match, items.enum.0: items.enum.0 does not match: "%s"`, labelKey, defaultValue)
+	errMsg := fmt.Sprintf(`graphql: validation error for type LabelDefinitionInput: Rule.ValidSchema: while validating schema for key %s: items.enum: At least one of the items must match, items.enum.0: items.enum.0 does not match: "%s".`, labelKey, defaultValue)
 
 	// THEN
 	require.Error(t, err)
@@ -616,14 +616,14 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	defer deleteLabelDefinition(t, ctx, labelKeyFoo, false)
 	defer deleteLabelDefinition(t, ctx, labelKeyBar, false)
 
-	firstApp := createApplication(t, ctx, "first")
+	firstApp := registerApplication(t, ctx, "first")
 	require.NotEmpty(t, firstApp.ID)
-	defer deleteApplication(t, firstApp.ID)
+	defer unregisterApplication(t, firstApp.ID)
 
 	//Create second application
-	secondApp := createApplication(t, ctx, "second")
+	secondApp := registerApplication(t, ctx, "second")
 	require.NotEmpty(t, secondApp.ID)
-	defer deleteApplication(t, secondApp.ID)
+	defer unregisterApplication(t, secondApp.ID)
 
 	//Set label "foo" on both applications
 	labelValueFoo := "val"
@@ -652,7 +652,7 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	labelFilterGQL, err := tc.graphqlizer.LabelFilterToGQL(labelFilter)
 	require.NoError(t, err)
 
-	applicationRequest := fixApplications(labelFilterGQL, 5, "")
+	applicationRequest := fixApplicationsRequest(labelFilterGQL, 5, "")
 	applicationPage := graphql.ApplicationPageExt{}
 	err = tc.RunOperation(ctx, applicationRequest, &applicationPage)
 	require.NoError(t, err)
@@ -674,7 +674,7 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	labelFilterGQL, err = tc.graphqlizer.LabelFilterToGQL(labelFilter)
 	require.NoError(t, err)
 
-	applicationRequest = fixApplications(labelFilterGQL, 5, "")
+	applicationRequest = fixApplicationsRequest(labelFilterGQL, 5, "")
 	applicationPage = graphql.ApplicationPageExt{}
 	err = tc.RunOperation(ctx, applicationRequest, &applicationPage)
 	require.NoError(t, err)
@@ -697,12 +697,12 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	defer deleteLabelDefinition(t, ctx, labelKeyFoo, false)
 	defer deleteLabelDefinition(t, ctx, labelKeyBar, false)
 
-	firstRuntime := createRuntime(t, ctx, "first")
-	defer deleteRuntime(t, firstRuntime.ID)
+	firstRuntime := registerRuntime(t, ctx, "first")
+	defer unregisterRuntime(t, firstRuntime.ID)
 
 	//Create second runtime
-	secondRuntime := createRuntime(t, ctx, "second")
-	defer deleteRuntime(t, secondRuntime.ID)
+	secondRuntime := registerRuntime(t, ctx, "second")
+	defer unregisterRuntime(t, secondRuntime.ID)
 
 	//Set label "foo" on both runtimes
 	labelValueFoo := "val"
@@ -731,7 +731,7 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	labelFilterGQL, err := tc.graphqlizer.LabelFilterToGQL(labelFilter)
 	require.NoError(t, err)
 
-	runtimesRequest := fixRuntimes(labelFilterGQL, 5, "")
+	runtimesRequest := fixRuntimesRequest(labelFilterGQL, 5, "")
 	runtimePage := graphql.RuntimePageExt{}
 	err = tc.RunOperation(ctx, runtimesRequest, &runtimePage)
 	require.NoError(t, err)
@@ -753,7 +753,7 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	labelFilterGQL, err = tc.graphqlizer.LabelFilterToGQL(labelFilter)
 	require.NoError(t, err)
 
-	runtimesRequest = fixRuntimes(labelFilterGQL, 5, "")
+	runtimesRequest = fixRuntimesRequest(labelFilterGQL, 5, "")
 	runtimePage = graphql.RuntimePageExt{}
 	err = tc.RunOperation(ctx, runtimesRequest, &runtimePage)
 	require.NoError(t, err)
@@ -813,16 +813,16 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 
 	createLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, tenantID)
 
-	appInput := graphql.ApplicationCreateInput{
+	appInput := graphql.ApplicationRegisterInput{
 		Name: name,
 		Labels: &graphql.Labels{
 			scenariosLabel: []string{"Christmas", "New Year"},
 		},
 	}
 
-	application := createApplicationFromInputWithinTenant(t, ctx, appInput, tenantID)
+	application := registerApplicationFromInputWithinTenant(t, ctx, appInput, tenantID)
 	require.NotEmpty(t, application.ID)
-	defer deleteApplicationInTenant(t, application.ID, tenantID)
+	defer unregisterApplicationInTenant(t, application.ID, tenantID)
 
 	//WHEN
 	appLabelRequest := fixSetApplicationLabelRequest(application.ID, scenariosLabel, []string{"Christmas"})

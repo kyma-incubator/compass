@@ -1,6 +1,7 @@
 package director
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -8,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func assertApplication(t *testing.T, in graphql.ApplicationCreateInput, actualApp graphql.ApplicationExt) {
+func assertApplication(t *testing.T, in graphql.ApplicationRegisterInput, actualApp graphql.ApplicationExt) {
 	require.NotEmpty(t, actualApp.ID)
 
 	assert.Equal(t, in.Name, actualApp.Name)
@@ -17,8 +18,8 @@ func assertApplication(t *testing.T, in graphql.ApplicationCreateInput, actualAp
 	assert.Equal(t, in.HealthCheckURL, actualApp.HealthCheckURL)
 	assertWebhooks(t, in.Webhooks, actualApp.Webhooks)
 	assertDocuments(t, in.Documents, actualApp.Documents.Data)
-	assertAPI(t, in.Apis, actualApp.Apis.Data)
-	assertEventsAPI(t, in.EventAPIs, actualApp.EventAPIs.Data)
+	assertAPI(t, in.APIDefinitions, actualApp.APIDefinitions.Data)
+	assertEventsAPI(t, in.EventDefinitions, actualApp.EventDefinitions.Data)
 }
 
 //TODO: After fixing the 'Labels' scalar turn this back into regular assertion
@@ -175,7 +176,7 @@ func assertVersion(t *testing.T, in *graphql.VersionInput, actual *graphql.Versi
 	}
 }
 
-func assertEventsAPI(t *testing.T, in []*graphql.EventAPIDefinitionInput, actual []*graphql.EventAPIDefinitionExt) {
+func assertEventsAPI(t *testing.T, in []*graphql.EventDefinitionInput, actual []*graphql.EventAPIDefinitionExt) {
 	assert.Equal(t, len(in), len(actual))
 	for _, inEv := range in {
 		found := false
@@ -191,7 +192,7 @@ func assertEventsAPI(t *testing.T, in []*graphql.EventAPIDefinitionInput, actual
 				require.NotNil(t, actEv.Spec)
 				assert.Equal(t, inEv.Spec.Data, actEv.Spec.Data)
 				assert.Equal(t, inEv.Spec.Format, actEv.Spec.Format)
-				assert.Equal(t, inEv.Spec.EventSpecType, actEv.Spec.Type)
+				assert.Equal(t, inEv.Spec.Type, actEv.Spec.Type)
 				assertFetchRequest(t, inEv.Spec.FetchRequest, actEv.Spec.FetchRequest)
 			} else {
 				assert.Nil(t, actEv.Spec)
@@ -214,4 +215,26 @@ func assertRuntime(t *testing.T, in graphql.RuntimeInput, actualRuntime graphql.
 func assertIntegrationSystem(t *testing.T, in graphql.IntegrationSystemInput, actualIntegrationSystem graphql.IntegrationSystemExt) {
 	assert.Equal(t, in.Name, actualIntegrationSystem.Name)
 	assert.Equal(t, in.Description, actualIntegrationSystem.Description)
+}
+
+func assertApplicationTemplate(t *testing.T, in graphql.ApplicationTemplateInput, actualApplicationTemplate graphql.ApplicationTemplate) {
+	assert.Equal(t, in.Name, actualApplicationTemplate.Name)
+	assert.Equal(t, in.Description, actualApplicationTemplate.Description)
+
+	gqlAppInput, err := tc.graphqlizer.ApplicationRegisterInputToGQL(*in.ApplicationInput)
+	require.NoError(t, err)
+
+	gqlAppInput = strings.Replace(gqlAppInput, "\t", "", -1)
+	gqlAppInput = strings.Replace(gqlAppInput, "\n", "", -1)
+
+	assert.Equal(t, gqlAppInput, actualApplicationTemplate.ApplicationInput)
+	assertApplicationTemplatePlaceholder(t, in.Placeholders, actualApplicationTemplate.Placeholders)
+	assert.Equal(t, in.AccessLevel, actualApplicationTemplate.AccessLevel)
+}
+
+func assertApplicationTemplatePlaceholder(t *testing.T, in []*graphql.PlaceholderDefinitionInput, actualPlaceholders []*graphql.PlaceholderDefinition) {
+	for i, _ := range in {
+		assert.Equal(t, in[i].Name, actualPlaceholders[i].Name)
+		assert.Equal(t, in[i].Description, actualPlaceholders[i].Description)
+	}
 }

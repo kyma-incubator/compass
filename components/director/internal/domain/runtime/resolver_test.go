@@ -154,7 +154,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			resolver := runtime.NewResolver(transact, svc, nil, nil, converter, nil)
 
 			// when
-			result, err := resolver.CreateRuntime(context.TODO(), testCase.Input)
+			result, err := resolver.RegisterRuntime(context.TODO(), testCase.Input)
 
 			// then
 			assert.Equal(t, testCase.ExpectedRuntime, result)
@@ -864,6 +864,18 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 			persistTx.AssertExpectations(t)
 		})
 	}
+
+	t.Run("Returns error when Label input validation failed", func(t *testing.T) {
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil)
+
+		// when
+		result, err := resolver.SetRuntimeLabel(context.TODO(), "", "", "")
+
+		// then
+		require.Nil(t, result)
+		require.Error(t, err)
+		assert.EqualError(t, err, "validation error for type LabelInput: key: cannot be blank; value: cannot be blank.")
+	})
 }
 
 func TestResolver_DeleteRuntimeLabel(t *testing.T) {

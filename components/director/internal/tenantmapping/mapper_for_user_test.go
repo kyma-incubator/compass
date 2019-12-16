@@ -212,7 +212,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock)
 		_, err := mapper.GetObjectContext(reqData, username)
 
-		require.EqualError(t, err, "tenant missmatch")
+		require.EqualError(t, err, "tenant mismatch")
 
 		mock.AssertExpectationsForObjects(t, staticUserRepoMock)
 	})

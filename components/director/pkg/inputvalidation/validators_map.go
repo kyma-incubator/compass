@@ -41,9 +41,7 @@ func EachKey(rules ...validation.Rule) *eachKeyRule {
 
 func (v eachKeyRule) Validate(value interface{}) error {
 	errs := validation.Errors{}
-
 	t := reflect.ValueOf(value)
-
 	if t.Kind() == reflect.Ptr {
 		if t.IsNil() {
 			return nil
@@ -60,7 +58,7 @@ func (v eachKeyRule) Validate(value interface{}) error {
 			}
 		}
 	default:
-		return errors.New("must be a map or a pointer to map")
+		return errors.New("the value must be a map")
 	}
 
 	if len(errs) > 0 {

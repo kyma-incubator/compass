@@ -141,7 +141,7 @@ func (r *Resolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, er
 	return r.converter.ToGraphQL(runtime), nil
 }
 
-func (r *Resolver) CreateRuntime(ctx context.Context, in graphql.RuntimeInput) (*graphql.Runtime, error) {
+func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput) (*graphql.Runtime, error) {
 	convertedIn := r.converter.InputFromGraphQL(in)
 
 	tx, err := r.transact.Begin()
@@ -242,6 +242,12 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 }
 
 func (r *Resolver) SetRuntimeLabel(ctx context.Context, runtimeID string, key string, value interface{}) (*graphql.Label, error) {
+	// TODO: Use @validation directive on input type instead, after resolving https://github.com/kyma-incubator/compass/issues/515
+	gqlLabel := graphql.LabelInput{Key: key, Value: value}
+	if err := gqlLabel.Validate(); err != nil {
+		return nil, errors.Wrap(err, "validation error for type LabelInput")
+	}
+
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err

@@ -16,15 +16,24 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 	runtimeID := "1100bb59-9c40-4ebb-b846-7477c4dc5bbd"
 
 	clusterConfig := &gqlschema.ClusterConfigInput{
-		GcpConfig: &gqlschema.GCPConfigInput{
-			Name:              "Something",
-			ProjectName:       "Project",
-			NumberOfNodes:     3,
-			BootDiskSizeGb:    256,
-			MachineType:       "machine",
-			Region:            "region",
-			Zone:              new(string),
-			KubernetesVersion: "version",
+		GardenerConfig: &gqlschema.GardenerConfigInput{
+			Name:                   "Something",
+			ProjectName:            "Project",
+			KubernetesVersion:      "1.15.4",
+			NodeCount:              3,
+			VolumeSizeGb:           30,
+			MachineType:            "n1-standard-4",
+			Region:                 "europe",
+			Provider:               "gcp",
+			Seed:                   "2",
+			TargetSecret:           "test-secret",
+			DiskType:               "ssd",
+			WorkerCidr:             "10.10.10.10/255",
+			AutoScalerMin:          1,
+			AutoScalerMax:          3,
+			MaxSurge:               40,
+			MaxUnavailable:         1,
+			ProviderSpecificConfig: nil,
 		},
 	}
 
@@ -38,9 +47,11 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			Modules: gqlschema.AllKymaModule,
 		}
 
+		providerCredentials := &gqlschema.CredentialsInput{SecretName: "secret_1"}
+
 		expectedID := "ec781980-0533-4098-aab7-96b535569732"
 
-		config := gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, KymaConfig: kymaConfig}
+		config := gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: providerCredentials, KymaConfig: kymaConfig}
 
 		provisioningService.On("ProvisionRuntime", runtimeID, config).Return(expectedID, nil, nil)
 
@@ -50,6 +61,41 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		//then
 		require.NoError(t, err)
 		assert.Equal(t, expectedID, operationID)
+	})
+
+	t.Run("Should return error when requested provisioning on GCP", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		provisioner := NewResolver(provisioningService)
+
+		clusterConfig := &gqlschema.ClusterConfigInput{
+			GcpConfig: &gqlschema.GCPConfigInput{
+				Name:              "Something",
+				ProjectName:       "Project",
+				NumberOfNodes:     3,
+				BootDiskSizeGb:    256,
+				MachineType:       "machine",
+				Region:            "region",
+				Zone:              new(string),
+				KubernetesVersion: "version",
+			},
+		}
+
+		kymaConfig := &gqlschema.KymaConfigInput{
+			Version: "1.5",
+			Modules: gqlschema.AllKymaModule,
+		}
+
+		config := gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, KymaConfig: kymaConfig}
+
+		provisioningService.On("ProvisionRuntime", runtimeID, config).Return("ec781980-0533-4098-aab7-96b535569732", nil, nil)
+
+		//when
+		operationID, err := provisioner.ProvisionRuntime(ctx, runtimeID, config)
+
+		//then
+		require.Error(t, err)
+		assert.Empty(t, operationID)
 	})
 
 	t.Run("Should return error when Kyma config validation fails", func(t *testing.T) {
@@ -227,4 +273,51 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 		require.Error(t, err)
 		require.Empty(t, status)
 	})
+}
+
+func TestResolver_CleanupRuntimeData(t *testing.T) {
+	ctx := context.Background()
+	runtimeID := "1100bb59-9c40-4ebb-b846-7477c4dc5bbd"
+
+	t.Run("Should clean up Runtime data", func(t *testing.T) {
+
+		//given
+		provisioningService := &mocks.Service{}
+		provisioner := NewResolver(provisioningService)
+		message := "Data cleanup succeeded"
+
+		cleanUpRuntimeDataResult := &gqlschema.CleanUpRuntimeDataResult{
+			ID:      runtimeID,
+			Message: &message,
+		}
+
+		provisioningService.On("CleanupRuntimeData", runtimeID).Return(cleanUpRuntimeDataResult, nil)
+
+		// when
+		result, err := provisioner.CleanupRuntimeData(ctx, runtimeID)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, cleanUpRuntimeDataResult, result)
+		provisioningService.AssertExpectations(t)
+	})
+
+	t.Run("Should return error when CleanupRuntimeData fails", func(t *testing.T) {
+
+		// given
+		provisioningService := &mocks.Service{}
+		provisioner := NewResolver(provisioningService)
+
+		provisioningService.On("CleanupRuntimeData", runtimeID).Return(nil, errors.New("some error"))
+
+		// when
+		result, err := provisioner.CleanupRuntimeData(ctx, runtimeID)
+
+		// then
+		require.Error(t, err)
+		assert.Empty(t, result)
+		provisioningService.AssertExpectations(t)
+
+	})
+
 }

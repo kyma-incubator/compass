@@ -64,9 +64,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 		middleware := createMiddleware(t, false)
 		handler := testHandler(t, tnt, scopes)
 		rr := httptest.NewRecorder()
-
-		req, err := http.NewRequest("GET", "/", nil)
-		require.NoError(t, err)
+		req := fixEmptyRequest(t)
 
 		token := createTokenWithSigningMethod(t, tnt, scopes, privateJWKS.Keys[0])
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
@@ -84,9 +82,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 		middleware := createMiddleware(t, true)
 		handler := testHandler(t, tnt, scopes)
 		rr := httptest.NewRecorder()
-
-		req, err := http.NewRequest("GET", "/", nil)
-		require.NoError(t, err)
+		req := fixEmptyRequest(t)
 
 		token := createNotSingedToken(t, tnt, scopes)
 		require.NoError(t, err)
@@ -98,7 +94,26 @@ func TestAuthenticator_Handler(t *testing.T) {
 		//then
 		assert.Equal(t, "OK", rr.Body.String())
 		assert.Equal(t, http.StatusOK, rr.Code)
+	})
 
+	t.Run("Error - forbidden when tenant is empty", func(t *testing.T) {
+		//given
+		tnt := ""
+		middleware := createMiddleware(t, true)
+		handler := testHandler(t, tnt, scopes)
+		rr := httptest.NewRecorder()
+		req := fixEmptyRequest(t)
+
+		token := createNotSingedToken(t, tnt, scopes)
+		require.NoError(t, err)
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+
+		//when
+		middleware(handler).ServeHTTP(rr, req)
+
+		//then
+		assert.Equal(t, "forbidden: invalid tenant\n", rr.Body.String())
+		assert.Equal(t, http.StatusForbidden, rr.Code)
 	})
 
 	t.Run("Error - token with no signing method when it's not allowed", func(t *testing.T) {
@@ -107,9 +122,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 		handler := testHandler(t, tnt, scopes)
 
 		rr := httptest.NewRecorder()
-
-		req, err := http.NewRequest("GET", "/", nil)
-		require.NoError(t, err)
+		req := fixEmptyRequest(t)
 
 		token := createNotSingedToken(t, tnt, scopes)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
@@ -127,9 +140,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 		middleware := createMiddleware(t, false)
 		handler := testHandler(t, tnt, scopes)
 		rr := httptest.NewRecorder()
-
-		req, err := http.NewRequest("GET", "/", nil)
-		require.NoError(t, err)
+		req := fixEmptyRequest(t)
 
 		req.Header.Add("Authorization", "Bearer fake-token")
 
@@ -150,9 +161,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 		require.NoError(t, err)
 
 		rr := httptest.NewRecorder()
-
-		req, err := http.NewRequest("GET", "/", nil)
-		require.NoError(t, err)
+		req := fixEmptyRequest(t)
 
 		token := createTokenWithSigningMethod(t, tnt, scopes, privateJWKS2.Keys[0])
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
@@ -219,4 +228,11 @@ func testHandler(t *testing.T, expectedTenant string, scopes string) http.Handle
 		_, err = w.Write([]byte("OK"))
 		require.NoError(t, err)
 	}
+}
+
+func fixEmptyRequest(t *testing.T) *http.Request {
+	req, err := http.NewRequest("GET", "/", nil)
+	require.NoError(t, err)
+
+	return req
 }

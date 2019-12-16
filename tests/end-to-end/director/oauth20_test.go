@@ -19,11 +19,11 @@ func TestGenerateClientCredentialsToApplication(t *testing.T) {
 	name := "app"
 
 	t.Log("Create application")
-	app := createApplication(t, ctx, name)
+	app := registerApplication(t, ctx, name)
 	require.NotEmpty(t, app)
-	defer deleteApplication(t, app.ID)
+	defer unregisterApplication(t, app.ID)
 
-	generateApplicationClientCredentialsRequest := fixGenerateClientCredentialsForApplication(app.ID)
+	generateApplicationClientCredentialsRequest := fixRequestClientCredentialsForApplication(app.ID)
 	appAuth := graphql.SystemAuth{}
 
 	// WHEN
@@ -52,11 +52,11 @@ func TestGenerateClientCredentialsToRuntime(t *testing.T) {
 	name := "runtime"
 
 	t.Log("Create runtime")
-	rtm := createRuntime(t, ctx, name)
+	rtm := registerRuntime(t, ctx, name)
 	require.NotEmpty(t, rtm)
-	defer deleteRuntime(t, rtm.ID)
+	defer unregisterRuntime(t, rtm.ID)
 
-	generateRuntimeClientCredentialsRequest := fixGenerateClientCredentialsForRuntime(rtm.ID)
+	generateRuntimeClientCredentialsRequest := fixRequestClientCredentialsForRuntime(rtm.ID)
 	rtmAuth := graphql.SystemAuth{}
 
 	// WHEN
@@ -85,11 +85,11 @@ func TestGenerateClientCredentialsToIntegrationSystem(t *testing.T) {
 	name := "int-system"
 
 	t.Log("Create integration system")
-	intSys := createIntegrationSystem(t, ctx, name)
+	intSys := registerIntegrationSystem(t, ctx, name)
 	require.NotEmpty(t, intSys)
-	defer deleteIntegrationSystem(t, ctx, intSys.ID)
+	defer unregisterIntegrationSystem(t, ctx, intSys.ID)
 
-	generateIntSysAuthRequest := fixGenerateClientCredentialsForIntegrationSystem(intSys.ID)
+	generateIntSysAuthRequest := fixRequestClientCredentialsForIntegrationSystem(intSys.ID)
 	intSysAuth := graphql.SystemAuth{}
 
 	// WHEN
@@ -115,14 +115,14 @@ func TestDeleteSystemAuthFromApplication(t *testing.T) {
 	name := "app"
 
 	t.Log("Create application")
-	app := createApplication(t, ctx, name)
+	app := registerApplication(t, ctx, name)
 	require.NotEmpty(t, app)
-	defer deleteApplication(t, app.ID)
+	defer unregisterApplication(t, app.ID)
 
 	appAuth := generateClientCredentialsForApplication(t, ctx, app.ID)
 	require.NotEmpty(t, appAuth)
 
-	deleteSystemAuthForApplicationRequest := fixDeleteSystemAuthForApplication(appAuth.ID)
+	deleteSystemAuthForApplicationRequest := fixDeleteSystemAuthForApplicationRequest(appAuth.ID)
 	deleteOutput := graphql.SystemAuth{}
 
 	// WHEN
@@ -143,15 +143,15 @@ func TestDeleteSystemAuthFromApplicationUsingRuntimeMutationShouldReportError(t 
 	name := "app"
 
 	t.Log("Create application")
-	app := createApplication(t, ctx, name)
+	app := registerApplication(t, ctx, name)
 	require.NotEmpty(t, app)
-	defer deleteApplication(t, app.ID)
+	defer unregisterApplication(t, app.ID)
 
 	appAuth := generateClientCredentialsForApplication(t, ctx, app.ID)
 	require.NotEmpty(t, appAuth)
 	defer deleteClientCredentialsForApplication(t, appAuth.ID)
 
-	deleteSystemAuthForRuntimeRequest := fixDeleteSystemAuthForRuntime(appAuth.ID)
+	deleteSystemAuthForRuntimeRequest := fixDeleteSystemAuthForRuntimeRequest(appAuth.ID)
 	deleteOutput := graphql.SystemAuth{}
 
 	// WHEN
@@ -168,15 +168,15 @@ func TestDeleteSystemAuthFromApplicationUsingIntegrationSystemMutationShouldRepo
 	name := "app"
 
 	t.Log("Create application")
-	app := createApplication(t, ctx, name)
+	app := registerApplication(t, ctx, name)
 	require.NotEmpty(t, app)
-	defer deleteApplication(t, app.ID)
+	defer unregisterApplication(t, app.ID)
 
 	appAuth := generateClientCredentialsForApplication(t, ctx, app.ID)
 	require.NotEmpty(t, appAuth)
 	defer deleteClientCredentialsForApplication(t, appAuth.ID)
 
-	deleteSystemAuthForIntegrationSystemRequest := fixDeleteSystemAuthForIntegrationSystem(appAuth.ID)
+	deleteSystemAuthForIntegrationSystemRequest := fixDeleteSystemAuthForIntegrationSystemRequest(appAuth.ID)
 	deleteOutput := graphql.SystemAuth{}
 
 	// WHEN
@@ -193,14 +193,14 @@ func TestDeleteSystemAuthFromRuntime(t *testing.T) {
 	name := "rtm"
 
 	t.Log("Create runtime")
-	rtm := createRuntime(t, ctx, name)
+	rtm := registerRuntime(t, ctx, name)
 	require.NotEmpty(t, rtm)
-	defer deleteRuntime(t, rtm.ID)
+	defer unregisterRuntime(t, rtm.ID)
 
 	rtmAuth := generateClientCredentialsForRuntime(t, ctx, rtm.ID)
 	require.NotEmpty(t, rtmAuth)
 
-	deleteSystemAuthForRuntimeRequest := fixDeleteSystemAuthForRuntime(rtmAuth.ID)
+	deleteSystemAuthForRuntimeRequest := fixDeleteSystemAuthForRuntimeRequest(rtmAuth.ID)
 	deleteOutput := graphql.SystemAuth{}
 
 	// WHEN
@@ -221,15 +221,15 @@ func TestDeleteSystemAuthFromRuntimeUsingApplicationMutationShouldReportError(t 
 	name := "rtm"
 
 	t.Log("Create runtime")
-	rtm := createRuntime(t, ctx, name)
+	rtm := registerRuntime(t, ctx, name)
 	require.NotEmpty(t, rtm)
-	defer deleteRuntime(t, rtm.ID)
+	defer unregisterRuntime(t, rtm.ID)
 
 	rtmAuth := generateClientCredentialsForRuntime(t, ctx, rtm.ID)
 	require.NotEmpty(t, rtmAuth)
 	defer deleteClientCredentialsForRuntime(t, rtmAuth.ID)
 
-	deleteSystemAuthForApplicationRequest := fixDeleteSystemAuthForApplication(rtmAuth.ID)
+	deleteSystemAuthForApplicationRequest := fixDeleteSystemAuthForApplicationRequest(rtmAuth.ID)
 	deleteOutput := graphql.SystemAuth{}
 
 	// WHEN
@@ -246,15 +246,15 @@ func TestDeleteSystemAuthFromRuntimeUsingIntegrationSystemMutationShouldReportEr
 	name := "rtm"
 
 	t.Log("Create runtime")
-	rtm := createRuntime(t, ctx, name)
+	rtm := registerRuntime(t, ctx, name)
 	require.NotEmpty(t, rtm)
-	defer deleteRuntime(t, rtm.ID)
+	defer unregisterRuntime(t, rtm.ID)
 
 	rtmAuth := generateClientCredentialsForRuntime(t, ctx, rtm.ID)
 	require.NotEmpty(t, rtmAuth)
 	defer deleteClientCredentialsForRuntime(t, rtmAuth.ID)
 
-	deleteSystemAuthForIntegrationSystemRequest := fixDeleteSystemAuthForIntegrationSystem(rtmAuth.ID)
+	deleteSystemAuthForIntegrationSystemRequest := fixDeleteSystemAuthForIntegrationSystemRequest(rtmAuth.ID)
 	deleteOutput := graphql.SystemAuth{}
 
 	// WHEN
@@ -271,14 +271,14 @@ func TestDeleteSystemAuthFromIntegrationSystem(t *testing.T) {
 	name := "int-system"
 
 	t.Log("Create integration system")
-	intSys := createIntegrationSystem(t, ctx, name)
+	intSys := registerIntegrationSystem(t, ctx, name)
 	require.NotEmpty(t, intSys)
-	defer deleteIntegrationSystem(t, ctx, intSys.ID)
+	defer unregisterIntegrationSystem(t, ctx, intSys.ID)
 
-	intSysAuth := generateClientCredentialsForIntegrationSystem(t, ctx, intSys.ID)
+	intSysAuth := requestClientCredentialsForIntegrationSystem(t, ctx, intSys.ID)
 	require.NotEmpty(t, intSysAuth)
 
-	deleteSystemAuthForIntegrationSystemRequest := fixDeleteSystemAuthForIntegrationSystem(intSysAuth.ID)
+	deleteSystemAuthForIntegrationSystemRequest := fixDeleteSystemAuthForIntegrationSystemRequest(intSysAuth.ID)
 	deleteOutput := graphql.SystemAuth{}
 
 	// WHEN
@@ -299,15 +299,15 @@ func TestDeleteSystemAuthFromIntegrationSystemUsingApplicationMutationShouldRepo
 	name := "int-system"
 
 	t.Log("Create integration system")
-	intSys := createIntegrationSystem(t, ctx, name)
+	intSys := registerIntegrationSystem(t, ctx, name)
 	require.NotEmpty(t, intSys)
-	defer deleteIntegrationSystem(t, ctx, intSys.ID)
+	defer unregisterIntegrationSystem(t, ctx, intSys.ID)
 
-	intSysAuth := generateClientCredentialsForIntegrationSystem(t, ctx, intSys.ID)
+	intSysAuth := requestClientCredentialsForIntegrationSystem(t, ctx, intSys.ID)
 	require.NotEmpty(t, intSysAuth)
 	defer deleteClientCredentialsForIntegrationSystem(t, intSysAuth.ID)
 
-	deleteSystemAuthForApplicationRequest := fixDeleteSystemAuthForApplication(intSysAuth.ID)
+	deleteSystemAuthForApplicationRequest := fixDeleteSystemAuthForApplicationRequest(intSysAuth.ID)
 	deleteOutput := graphql.SystemAuth{}
 
 	// WHEN
@@ -324,15 +324,15 @@ func TestDeleteSystemAuthFromIntegrationSystemUsingRuntimeMutationShouldReportEr
 	name := "int-system"
 
 	t.Log("Create integration system")
-	intSys := createIntegrationSystem(t, ctx, name)
+	intSys := registerIntegrationSystem(t, ctx, name)
 	require.NotEmpty(t, intSys)
-	defer deleteIntegrationSystem(t, ctx, intSys.ID)
+	defer unregisterIntegrationSystem(t, ctx, intSys.ID)
 
-	intSysAuth := generateClientCredentialsForIntegrationSystem(t, ctx, intSys.ID)
+	intSysAuth := requestClientCredentialsForIntegrationSystem(t, ctx, intSys.ID)
 	require.NotEmpty(t, intSysAuth)
 	defer deleteClientCredentialsForIntegrationSystem(t, intSysAuth.ID)
 
-	deleteSystemAuthForRuntimeRequest := fixDeleteSystemAuthForRuntime(intSysAuth.ID)
+	deleteSystemAuthForRuntimeRequest := fixDeleteSystemAuthForRuntimeRequest(intSysAuth.ID)
 	deleteOutput := graphql.SystemAuth{}
 
 	// WHEN

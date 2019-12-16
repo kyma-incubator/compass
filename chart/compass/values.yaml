@@ -1,6 +1,12 @@
 global:
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
-  tenants: foo bar
+  tenants:
+    - name: default
+      id: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
+    - name: foo
+      id: 1eba80dd-8ff6-54ee-be4d-77944d17b10b
+    - name: bar
+      id: 9ca034f1-11ab-5b25-b76f-dc77106f571d
 
   images:
     containerRegistry:
@@ -10,7 +16,7 @@ global:
       version: "PR-391"
     director:
       dir:
-      version: "PR-499"
+      version: "PR-560"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -22,7 +28,7 @@ global:
       version: "PR-521"
     provisioner:
       dir:
-      version: "PR-424"
+      version: "PR-500"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -31,13 +37,13 @@ global:
     tests:
       e2e:
         dir:
-        version: "PR-512"
+        version: "PR-562"
       connector:
         dir: pr/
         version: "PR-391"
       provisioner:
         dir:
-        version: "PR-424"
+        version: "PR-500"
 
   isLocalEnv: false
 

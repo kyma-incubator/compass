@@ -3,6 +3,8 @@ package application_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -79,14 +81,14 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 }
 
 func TestConverter_CreateInputFromGraphQL(t *testing.T) {
-	allPropsInput := fixGQLApplicationCreateInput("foo", "Lorem ipsum")
-	allPropsExpected := fixModelApplicationCreateInput("foo", "Lorem ipsum")
+	allPropsInput := fixGQLApplicationRegisterInput("foo", "Lorem ipsum")
+	allPropsExpected := fixModelApplicationRegisterInput("foo", "Lorem ipsum")
 
 	// given
 	testCases := []struct {
 		Name                string
-		Input               graphql.ApplicationCreateInput
-		Expected            model.ApplicationCreateInput
+		Input               graphql.ApplicationRegisterInput
+		Expected            model.ApplicationRegisterInput
 		WebhookConverterFn  func() *automock.WebhookConverter
 		DocumentConverterFn func() *automock.DocumentConverter
 		APIConverterFn      func() *automock.APIConverter
@@ -103,12 +105,12 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 			},
 			APIConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("MultipleInputFromGraphQL", allPropsInput.Apis).Return(allPropsExpected.Apis)
+				conv.On("MultipleInputFromGraphQL", allPropsInput.APIDefinitions).Return(allPropsExpected.APIDefinitions)
 				return conv
 			},
 			EventAPIConverterFn: func() *automock.EventAPIConverter {
 				conv := &automock.EventAPIConverter{}
-				conv.On("MultipleInputFromGraphQL", allPropsInput.EventAPIs).Return(allPropsExpected.EventAPIs)
+				conv.On("MultipleInputFromGraphQL", allPropsInput.EventDefinitions).Return(allPropsExpected.EventDefinitions)
 				return conv
 			},
 			DocumentConverterFn: func() *automock.DocumentConverter {
@@ -119,8 +121,8 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 		},
 		{
 			Name:     "Empty",
-			Input:    graphql.ApplicationCreateInput{},
-			Expected: model.ApplicationCreateInput{},
+			Input:    graphql.ApplicationRegisterInput{},
+			Expected: model.ApplicationRegisterInput{},
 			WebhookConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
 				conv.On("MultipleInputFromGraphQL", []*graphql.WebhookInput(nil)).Return(nil)
@@ -133,7 +135,7 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 			},
 			EventAPIConverterFn: func() *automock.EventAPIConverter {
 				conv := &automock.EventAPIConverter{}
-				conv.On("MultipleInputFromGraphQL", []*graphql.EventAPIDefinitionInput(nil)).Return(nil)
+				conv.On("MultipleInputFromGraphQL", []*graphql.EventDefinitionInput(nil)).Return(nil)
 				return conv
 			},
 			DocumentConverterFn: func() *automock.DocumentConverter {
@@ -267,6 +269,39 @@ func TestConverter_FromEntity(t *testing.T) {
 		// THEN
 		assertApplicationDefinition(t, appModel, appEntity)
 	})
+}
+
+func TestConverter_CreateInputGQLJSONConversion(t *testing.T) {
+	// GIVEN
+	conv := application.NewConverter(nil, nil, nil, nil)
+
+	t.Run("Successful two-way conversion", func(t *testing.T) {
+		inputGQL := fixGQLApplicationRegisterInput("name", "description")
+		inputGQL.Labels = &graphql.Labels{"test": "test"}
+
+		// WHEN
+		// GQL -> JSON
+		json, err := conv.CreateInputGQLToJSON(&inputGQL)
+		require.NoError(t, err)
+
+		// JSON -> GQL
+		outputGQL, err := conv.CreateInputJSONToGQL(json)
+		require.NoError(t, err)
+
+		// THEN
+		require.Equal(t, inputGQL, outputGQL)
+	})
+
+	t.Run("Error while JSON to GQL conversion", func(t *testing.T) {
+		// WHEN
+		expectedErr := "invalid character 'a' looking for beginning of value"
+		_, err := conv.CreateInputJSONToGQL("ad[sd")
+
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), expectedErr)
+	})
+
 }
 
 func assertApplicationDefinition(t *testing.T, appModel *model.Application, entity *application.Entity) {

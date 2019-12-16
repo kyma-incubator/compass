@@ -19,31 +19,41 @@ import (
 )
 
 const (
-	testTenant      = "tnt"
-	testID          = "foo"
-	testName        = "bar"
-	testDescription = "Lorem ipsum"
-	testPageSize    = 3
-	testCursor      = ""
+	testTenant         = "tnt"
+	testID             = "foo"
+	testName           = "bar"
+	testPageSize       = 3
+	testCursor         = ""
+	appInputJSONString = `{"Name":"foo","Description":"Lorem ipsum","Labels":{"test":["val","val2"]},"HealthCheckURL":"https://foo.bar","Webhooks":[{"Type":"","URL":"webhook1.foo.bar","Auth":null},{"Type":"","URL":"webhook2.foo.bar","Auth":null}],"ApiDefinitions":[{"Name":"api1","Description":null,"TargetURL":"foo.bar","Group":null,"Spec":null,"Version":null,"DefaultAuth":null},{"Name":"api2","Description":null,"TargetURL":"foo.bar2","Group":null,"Spec":null,"Version":null,"DefaultAuth":null}],"EventDefinitions":[{"Name":"event1","Description":"Sample","Spec":{"Data":"data","Type":"ASYNC_API","Format":"JSON"},"Group":null,"Version":null},{"Name":"event2","Description":"Sample","Spec":{"Data":"data2","Type":"ASYNC_API","Format":"JSON"},"Group":null,"Version":null}],"Documents":[{"Title":"","DisplayName":"doc1","Description":"","Format":"","Kind":"test","Data":null,"FetchRequest":null},{"Title":"","DisplayName":"doc2","Description":"","Format":"","Kind":"test","Data":null,"FetchRequest":null}],"IntegrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
+	appInputGQLString  = `{name: "foo",description: "Lorem ipsum",labels: {test: ["val","val2" ],},webhooks: [ {type: ,url: "webhook1.foo.bar",}, {type: ,url: "webhook2.foo.bar",} ],healthCheckURL: "https://foo.bar",apiDefinitions: [ {name: "api1",targetURL: "foo.bar",}, {name: "api2",targetURL: "foo.bar2",}],eventDefinitions: [ {name: "event1",description: "Sample",spec: {data: "data",type: ASYNC_API,format: JSON,},}, {name: "event2",description: "Sample",spec: {data: "data2",type: ASYNC_API,format: JSON,},}], documents: [{title: "",displayName: "doc1",description: "",format: ,kind: "test",},{title: "",displayName: "doc2",description: "",format: ,kind: "test",} ],integrationSystemID: "iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii",}`
 )
 
 var (
+	testDescription  = "Lorem ipsum"
+	testURL          = "http://valid.url"
 	testError        = errors.New("test error")
 	testTableColumns = []string{"id", "name", "description", "application_input", "placeholders", "access_level"}
 )
 
 func fixModelAppTemplate(id, name string) *model.ApplicationTemplate {
 	desc := testDescription
-	appInputString := fixApplicationCreateInputString()
-
-	return &model.ApplicationTemplate{
+	out := model.ApplicationTemplate{
 		ID:                   id,
 		Name:                 name,
 		Description:          &desc,
-		ApplicationInputJSON: appInputString,
+		ApplicationInputJSON: appInputJSONString,
 		Placeholders:         fixModelPlaceholders(),
 		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
 	}
+
+	return &out
+}
+
+func fixModelAppTemplateWithAppInputJSON(id, name, appInputJSON string) *model.ApplicationTemplate {
+	out := fixModelAppTemplate(id, name)
+	out.ApplicationInputJSON = appInputJSON
+
+	return out
 }
 
 func fixGQLAppTemplate(id, name string) *graphql.ApplicationTemplate {
@@ -53,7 +63,7 @@ func fixGQLAppTemplate(id, name string) *graphql.ApplicationTemplate {
 		ID:               id,
 		Name:             name,
 		Description:      &desc,
-		ApplicationInput: fixApplicationCreateInputGraphqlized(),
+		ApplicationInput: appInputGQLString,
 		Placeholders:     fixGQLPlaceholders(),
 		AccessLevel:      graphql.ApplicationTemplateAccessLevelGlobal,
 	}
@@ -101,7 +111,7 @@ func fixGQLAppTemplateInput(name string) *graphql.ApplicationTemplateInput {
 	return &graphql.ApplicationTemplateInput{
 		Name:        name,
 		Description: &desc,
-		ApplicationInput: &graphql.ApplicationCreateInput{
+		ApplicationInput: &graphql.ApplicationRegisterInput{
 			Name:        "foo",
 			Description: &desc,
 		},
@@ -111,7 +121,7 @@ func fixGQLAppTemplateInput(name string) *graphql.ApplicationTemplateInput {
 }
 
 func fixEntityAppTemplate(t *testing.T, id, name string) *apptemplate.Entity {
-	marshalledAppInput := `{"name":"foo","description":"Lorem ipsum"}`
+	marshalledAppInput := `{"Name":"foo","Description":"Lorem ipsum","Labels":{"test":["val","val2"]},"HealthCheckURL":"https://foo.bar","Webhooks":[{"Type":"","URL":"webhook1.foo.bar","Auth":null},{"Type":"","URL":"webhook2.foo.bar","Auth":null}],"ApiDefinitions":[{"Name":"api1","Description":null,"TargetURL":"foo.bar","Group":null,"Spec":null,"Version":null,"DefaultAuth":null},{"Name":"api2","Description":null,"TargetURL":"foo.bar2","Group":null,"Spec":null,"Version":null,"DefaultAuth":null}],"EventDefinitions":[{"Name":"event1","Description":"Sample","Spec":{"Data":"data","Type":"ASYNC_API","Format":"JSON"},"Group":null,"Version":null},{"Name":"event2","Description":"Sample","Spec":{"Data":"data2","Type":"ASYNC_API","Format":"JSON"},"Group":null,"Version":null}],"Documents":[{"Title":"","DisplayName":"doc1","Description":"","Format":"","Kind":"test","Data":null,"FetchRequest":null},{"Title":"","DisplayName":"doc2","Description":"","Format":"","Kind":"test","Data":null,"FetchRequest":null}],"IntegrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
 
 	placeholders := fixModelPlaceholders()
 	marshalledPlaceholders, err := json.Marshal(placeholders)
@@ -127,14 +137,6 @@ func fixEntityAppTemplate(t *testing.T, id, name string) *apptemplate.Entity {
 	}
 }
 
-func fixApplicationCreateInputString() string {
-
-	return fmt.Sprintf(`{"name":"foo","description":"%s"}`, testDescription)
-}
-
-func fixApplicationCreateInputGraphqlized() string {
-	return `{name: "foo",description: "Lorem ipsum",}`
-}
 func fixModelPlaceholders() []model.ApplicationTemplatePlaceholder {
 	placeholderDesc := testDescription
 	return []model.ApplicationTemplatePlaceholder{
@@ -165,6 +167,26 @@ func fixGQLPlaceholders() []*graphql.PlaceholderDefinition {
 	}
 }
 
+func fixGQLApplicationFromTemplateInput(name string) graphql.ApplicationFromTemplateInput {
+	return graphql.ApplicationFromTemplateInput{
+		TemplateName: name,
+		Values: []*graphql.TemplateValueInput{
+			{Placeholder: "a", Value: "b"},
+			{Placeholder: "c", Value: "d"},
+		},
+	}
+}
+
+func fixModelApplicationFromTemplateInput(name string) model.ApplicationFromTemplateInput {
+	return model.ApplicationFromTemplateInput{
+		TemplateName: name,
+		Values: []*model.ApplicationTemplateValueInput{
+			{Placeholder: "a", Value: "b"},
+			{Placeholder: "c", Value: "d"},
+		},
+	}
+}
+
 func fixAppTemplateCreateArgs(entity apptemplate.Entity) []driver.Value {
 	return []driver.Value{entity.ID, entity.Name, entity.Description, entity.ApplicationInputJSON, entity.PlaceholdersJSON, entity.AccessLevel}
 }
@@ -175,4 +197,43 @@ func fixSQLRows(entities []apptemplate.Entity) *sqlmock.Rows {
 		out.AddRow(entity.ID, entity.Name, entity.Description, entity.ApplicationInputJSON, entity.PlaceholdersJSON, entity.AccessLevel)
 	}
 	return out
+}
+
+func fixJSONApplicationCreateInput(name string) string {
+	return fmt.Sprintf(`{"Name": "%s", "Description": "%s", "HealthCheckURL": "%s"}`, name, testDescription, testURL)
+}
+
+func fixModelApplicationCreateInput(name string) model.ApplicationRegisterInput {
+	return model.ApplicationRegisterInput{
+		Name:           name,
+		Description:    &testDescription,
+		HealthCheckURL: &testURL,
+	}
+}
+
+func fixGQLApplicationCreateInput(name string) graphql.ApplicationRegisterInput {
+	return graphql.ApplicationRegisterInput{
+		Name:           name,
+		Description:    &testDescription,
+		HealthCheckURL: &testURL,
+	}
+}
+
+func fixModelApplication(id, name string) model.Application {
+	return model.Application{
+		ID:             id,
+		Tenant:         testTenant,
+		Name:           name,
+		Description:    &testDescription,
+		HealthCheckURL: &testURL,
+	}
+}
+
+func fixGQLApplication(id, name string) graphql.Application {
+	return graphql.Application{
+		ID:             id,
+		Name:           name,
+		Description:    &testDescription,
+		HealthCheckURL: &testURL,
+	}
 }
