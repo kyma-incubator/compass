@@ -261,7 +261,7 @@ func TestApplicationCreateInput_Validate_APIs(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
 			app := fixValidApplicationCreateInput()
-			app.Apis = testCase.Value
+			app.APIDefinitions = testCase.Value
 			//WHEN
 			err := app.Validate()
 			//THEN
@@ -279,22 +279,22 @@ func TestApplicationCreateInput_Validate_EventAPIs(t *testing.T) {
 
 	testCases := []struct {
 		Name          string
-		Value         []*graphql.EventAPIDefinitionInput
+		Value         []*graphql.EventDefinitionInput
 		ExpectedValid bool
 	}{
 		{
 			Name:          "ExpectedValid array",
-			Value:         []*graphql.EventAPIDefinitionInput{&validObj},
+			Value:         []*graphql.EventDefinitionInput{&validObj},
 			ExpectedValid: true,
 		},
 		{
 			Name:          "Empty array",
-			Value:         []*graphql.EventAPIDefinitionInput{},
+			Value:         []*graphql.EventDefinitionInput{},
 			ExpectedValid: true,
 		},
 		{
 			Name:          "Array with invalid object",
-			Value:         []*graphql.EventAPIDefinitionInput{{}},
+			Value:         []*graphql.EventDefinitionInput{{}},
 			ExpectedValid: false,
 		},
 	}
@@ -303,7 +303,7 @@ func TestApplicationCreateInput_Validate_EventAPIs(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
 			app := fixValidApplicationCreateInput()
-			app.EventAPIs = testCase.Value
+			app.EventDefinitions = testCase.Value
 			//WHEN
 			err := app.Validate()
 			//THEN
@@ -504,8 +504,8 @@ func fixValidApplicationUpdateInput() graphql.ApplicationUpdateInput {
 	}
 }
 
-func fixValidApplicationCreateInput() graphql.ApplicationCreateInput {
-	return graphql.ApplicationCreateInput{
+func fixValidApplicationCreateInput() graphql.ApplicationRegisterInput {
+	return graphql.ApplicationRegisterInput{
 		Name: "application",
 	}
 }

@@ -6,12 +6,16 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/graphql"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/client"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/configuration"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/oauth"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dbsession"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/converters"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
+	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/pkg/errors"
 	"net/http"
 	"time"
@@ -26,36 +30,30 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-func newPersistenceService(connectionString, schemaPath string) (persistence.Service, error) {
-	connection, err := database.InitializeDatabase(connectionString, schemaPath, 20)
-	if err != nil {
-		return nil, err
-	}
+const (
+	databaseConnectionRetries = 20
+)
 
-	dbSessionFactory := dbsession.NewFactory(connection)
-	uuidGenerator := persistence.NewUUIDGenerator()
-
-	return persistence.NewService(dbSessionFactory, uuidGenerator), nil
-}
-
-func newProvisioningService(persistenceService persistence.Service, secrets v1.SecretInterface, directorURL, hydraURL, oauthCredentialsSecretName string) provisioning.Service {
+func newProvisioningService(config config, persistenceService persistence.Service, secrets v1.SecretInterface, releaseRepo release.ReadRepository) provisioning.Service {
 	hydroformClient := client.NewHydroformClient()
-	hydroformService := hydroform.NewHydroformService(hydroformClient)
+	hydroformService := hydroform.NewHydroformService(hydroformClient, secrets)
+	uuidGenerator := uuid.NewUUIDGenerator()
+	installationService := installation.NewInstallationService(config.Installation.Timeout, installationSDK.NewKymaInstaller, config.Installation.ErrorsCountFailureThreshold)
 
-	gqlClient := graphql.New(directorURL, true)
+	inputConverter := converters.NewInputConverter(uuidGenerator, releaseRepo)
+	graphQLConverter := converters.NewGraphQLConverter()
+
+	gqlClient := graphql.New(config.DirectorURL, true)
 
 	httpClient := &http.Client{
 		Timeout: 30 * time.Second,
 	}
 
-	oauthClient := oauth.NewOauthClient(hydraURL, httpClient, secrets, oauthCredentialsSecretName)
+	oauthClient := oauth.NewOauthClient(config.HydraURL, httpClient, secrets, config.OauthCredentialsSecretName)
 
 	directorClient := director.NewDirectorClient(gqlClient, oauthClient)
 
-	uuidGenerator := persistence.NewUUIDGenerator()
-	factory := configuration.NewConfigBuilderFactory(secrets)
-
-	return provisioning.NewProvisioningService(persistenceService, uuidGenerator, hydroformService, directorClient, factory)
+	return provisioning.NewProvisioningService(persistenceService, inputConverter, graphQLConverter, hydroformService, installationService, directorClient)
 }
 
 func newSecretsInterface(namespace string) (v1.SecretInterface, error) {
@@ -79,16 +77,25 @@ func newSecretsInterface(namespace string) (v1.SecretInterface, error) {
 	return coreClientset.CoreV1().Secrets(namespace), nil
 }
 
-func newResolver(connectionString string, cfg config) (*api.Resolver, error) {
-	persistenceService, err := newPersistenceService(connectionString, cfg.Database.SchemaFilePath)
-	if err != nil {
-		return nil, errors.Wrap(err, "Failed to initialize persistence")
-	}
-
-	secretInterface, err := newSecretsInterface(cfg.CredentialsNamespace)
+func newResolver(config config, persistenceService persistence.Service, releaseRepo release.Repository) (*api.Resolver, error) {
+	secretInterface, err := newSecretsInterface(config.CredentialsNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to create secrets interface")
 	}
 
-	return api.NewResolver(newProvisioningService(persistenceService, secretInterface, cfg.DirectorURL, cfg.HydraURL, cfg.OauthCredentialsSecretName)), nil
+	return api.NewResolver(newProvisioningService(config, persistenceService, secretInterface, releaseRepo)), nil
+}
+
+func initRepositories(config config, connectionString string) (persistence.Service, release.Repository, error) {
+	connection, err := database.InitializeDatabase(connectionString, config.Database.SchemaFilePath, databaseConnectionRetries)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "Failed to initialize persistence")
+	}
+	dbSessionFactory := dbsession.NewFactory(connection)
+
+	persistenceService := persistence.NewService(dbSessionFactory, uuid.NewUUIDGenerator())
+
+	releaseRepo := release.NewReleaseRepository(connection, uuid.NewUUIDGenerator())
+
+	return persistenceService, releaseRepo, nil
 }

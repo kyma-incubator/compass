@@ -1,12 +1,15 @@
 package tenantmapping_test
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/textproto"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/google/uuid"
 	persistencemock "github.com/kyma-incubator/compass/components/director/internal/persistence/automock"
@@ -18,6 +21,7 @@ import (
 )
 
 func TestHandler(t *testing.T) {
+	target := "http://example.com/foo"
 	tenantID := uuid.New()
 	systemAuthID := uuid.New()
 	objID := uuid.New()
@@ -40,7 +44,7 @@ func TestHandler(t *testing.T) {
 		}
 		expectedRespPayload := `{"subject":"","extra":{"name":"` + username + `","objectID":"` + username + `","objectType":"Static User","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
 
-		req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", strings.NewReader(""))
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
 		reqDataParserMock := &automock.ReqDataParser{}
@@ -81,7 +85,7 @@ func TestHandler(t *testing.T) {
 		}
 		expectedRespPayload := `{"subject":"","extra":{"client_id":"` + systemAuthID.String() + `","objectID":"` + objID.String() + `","objectType":"Integration System","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
 
-		req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", strings.NewReader(""))
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
 		reqDataParserMock := &automock.ReqDataParser{}
@@ -123,7 +127,7 @@ func TestHandler(t *testing.T) {
 		}
 		expectedRespPayload := `{"subject":"","extra":{"objectID":"` + objID.String() + `","objectType":"Integration System","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":{"Client-Id-From-Certificate":["` + systemAuthID.String() + `"]}}`
 
-		req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", strings.NewReader(""))
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
 		reqDataParserMock := &automock.ReqDataParser{}
@@ -148,7 +152,7 @@ func TestHandler(t *testing.T) {
 	})
 
 	t.Run("error when sending different HTTP verb than POST", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "http://example.com/foo", strings.NewReader(""))
+		req := httptest.NewRequest(http.MethodGet, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
 		handler := tenantmapping.NewHandler(nil, nil, nil, nil)
@@ -163,50 +167,68 @@ func TestHandler(t *testing.T) {
 	})
 
 	t.Run("error when body parser returns error", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", strings.NewReader(""))
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(tenantmapping.ReqData{}, errors.New("some error")).Once()
 
+		logger := getLoggerMock(t, "while parsing the request: some error")
+
 		handler := tenantmapping.NewHandler(reqDataParserMock, nil, nil, nil)
+		handler.SetLogger(logger)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
-		body, err := ioutil.ReadAll(resp.Body)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		out := tenantmapping.ReqData{}
+		err := json.NewDecoder(resp.Body).Decode(&out)
 		require.NoError(t, err)
 
-		require.Equal(t, "while parsing the request: some error", strings.TrimSpace(string(body)))
+		assert.Equal(t, tenantmapping.ReqData{}, out)
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, logger)
 	})
 
 	t.Run("error when transaction begin fails", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", strings.NewReader("{}"))
+		reqData := tenantmapping.ReqData{
+			Body: tenantmapping.ReqBody{
+				Extra: map[string]interface{}{
+					tenantmapping.UsernameKey: "test",
+				},
+			},
+		}
+
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader("{}"))
 		w := httptest.NewRecorder()
 
 		reqDataParserMock := &automock.ReqDataParser{}
-		reqDataParserMock.On("Parse", mock.Anything).Return(tenantmapping.ReqData{}, nil).Once()
+		reqDataParserMock.On("Parse", mock.Anything).Return(reqData, nil).Once()
 
 		transactMock := &persistencemock.Transactioner{}
 		transactMock.On("Begin").Return(nil, errors.New("some error")).Once()
 
+		logger := getLoggerMock(t, "while opening the db transaction: some error")
+
 		handler := tenantmapping.NewHandler(reqDataParserMock, transactMock, nil, nil)
+		handler.SetLogger(logger)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-		body, err := ioutil.ReadAll(resp.Body)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		out := tenantmapping.ReqBody{}
+		err := json.NewDecoder(resp.Body).Decode(&out)
 		require.NoError(t, err)
 
-		require.Equal(t, "while opening the db transaction: some error", strings.TrimSpace(string(body)))
+		assert.Equal(t, reqData.Body, out)
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, transactMock)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, transactMock, logger)
 	})
 
 	t.Run("error when GetAuthID returns error when looking for Auth ID", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", strings.NewReader(""))
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
 		reqDataParserMock := &automock.ReqDataParser{}
@@ -214,17 +236,22 @@ func TestHandler(t *testing.T) {
 
 		transactMock := getTransactMock()
 
+		logger := getLoggerMock(t, "while getting object context: while determining the auth ID from the request: unable to find valid auth ID")
+
 		handler := tenantmapping.NewHandler(reqDataParserMock, transactMock, nil, nil)
+		handler.SetLogger(logger)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-		body, err := ioutil.ReadAll(resp.Body)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		out := tenantmapping.ReqBody{}
+		err := json.NewDecoder(resp.Body).Decode(&out)
 		require.NoError(t, err)
 
-		require.Equal(t, "while getting object context: while determining the auth ID from the request: unable to find valid auth ID", strings.TrimSpace(string(body)))
+		assert.Equal(t, tenantmapping.ReqBody{}, out)
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, transactMock)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, transactMock, logger)
 	})
 }
 
@@ -247,4 +274,14 @@ func getTransactMock() *persistencemock.Transactioner {
 	transact.On("RollbackUnlessCommited", persistTx).Return().Once()
 
 	return transact
+}
+
+func getLoggerMock(t *testing.T, expectedMessage string) *automock.Logger {
+	logger := &automock.Logger{}
+	logger.On("Error", mock.MatchedBy(func(err error) bool {
+		require.Error(t, err)
+		require.Equal(t, expectedMessage, err.Error())
+		return true
+	})).Once()
+	return logger
 }

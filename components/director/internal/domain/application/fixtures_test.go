@@ -130,10 +130,10 @@ func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description st
 	}
 }
 
-func fixModelApplicationCreateInput(name, description string) model.ApplicationCreateInput {
+func fixModelApplicationRegisterInput(name, description string) model.ApplicationRegisterInput {
 	desc := "Sample"
 	kind := "test"
-	return model.ApplicationCreateInput{
+	return model.ApplicationRegisterInput{
 		Name:        name,
 		Description: &description,
 		Labels: map[string]interface{}{
@@ -145,11 +145,11 @@ func fixModelApplicationCreateInput(name, description string) model.ApplicationC
 			{URL: "webhook1.foo.bar"},
 			{URL: "webhook2.foo.bar"},
 		},
-		Apis: []*model.APIDefinitionInput{
+		APIDefinitions: []*model.APIDefinitionInput{
 			{Name: "api1", TargetURL: "foo.bar"},
 			{Name: "api2", TargetURL: "foo.bar2"},
 		},
-		EventAPIs: []*model.EventAPIDefinitionInput{
+		EventDefinitions: []*model.EventDefinitionInput{
 			{Name: "event1", Description: &desc},
 			{Name: "event2", Description: &desc},
 		},
@@ -169,13 +169,13 @@ func fixModelApplicationUpdateInput(name, description, url string) model.Applica
 	}
 }
 
-func fixGQLApplicationCreateInput(name, description string) graphql.ApplicationCreateInput {
+func fixGQLApplicationRegisterInput(name, description string) graphql.ApplicationRegisterInput {
 	labels := graphql.Labels{
 		"test": []string{"val", "val2"},
 	}
 	kind := "test"
 	desc := "Sample"
-	return graphql.ApplicationCreateInput{
+	return graphql.ApplicationRegisterInput{
 		Name:                name,
 		Description:         &description,
 		Labels:              &labels,
@@ -185,11 +185,11 @@ func fixGQLApplicationCreateInput(name, description string) graphql.ApplicationC
 			{URL: "webhook1.foo.bar"},
 			{URL: "webhook2.foo.bar"},
 		},
-		Apis: []*graphql.APIDefinitionInput{
+		APIDefinitions: []*graphql.APIDefinitionInput{
 			{Name: "api1", TargetURL: "foo.bar"},
 			{Name: "api2", TargetURL: "foo.bar2"},
 		},
-		EventAPIs: []*graphql.EventAPIDefinitionInput{
+		EventDefinitions: []*graphql.EventDefinitionInput{
 			{Name: "event1", Description: &desc},
 			{Name: "event2", Description: &desc},
 		},
@@ -280,22 +280,6 @@ func fixGQLWebhook(id string) *graphql.Webhook {
 	}
 }
 
-func fixModelWebhookInput() *model.WebhookInput {
-	return &model.WebhookInput{
-		Type: model.WebhookTypeConfigurationChanged,
-		URL:  "foourl",
-		Auth: &model.AuthInput{},
-	}
-}
-
-func fixGQLWebhookInput() *graphql.WebhookInput {
-	return &graphql.WebhookInput{
-		Type: graphql.ApplicationWebhookTypeConfigurationChanged,
-		URL:  "foourl",
-		Auth: &graphql.AuthInput{},
-	}
-}
-
 func fixAPIDefinitionPage(apiDefinitions []*model.APIDefinition) *model.APIDefinitionPage {
 	return &model.APIDefinitionPage{
 		Data: apiDefinitions,
@@ -339,8 +323,8 @@ func fixGQLAPIDefinition(id, appId, name, description string, group string) *gra
 		Group:         &group,
 	}
 }
-func fixEventAPIDefinitionPage(eventAPIDefinitions []*model.EventAPIDefinition) *model.EventAPIDefinitionPage {
-	return &model.EventAPIDefinitionPage{
+func fixEventAPIDefinitionPage(eventAPIDefinitions []*model.EventDefinition) *model.EventDefinitionPage {
+	return &model.EventDefinitionPage{
 		Data: eventAPIDefinitions,
 		PageInfo: &pagination.Page{
 			StartCursor: "start",
@@ -351,8 +335,8 @@ func fixEventAPIDefinitionPage(eventAPIDefinitions []*model.EventAPIDefinition) 
 	}
 }
 
-func fixGQLEventAPIDefinitionPage(eventAPIDefinitions []*graphql.EventAPIDefinition) *graphql.EventAPIDefinitionPage {
-	return &graphql.EventAPIDefinitionPage{
+func fixGQLEventDefinitionPage(eventAPIDefinitions []*graphql.EventDefinition) *graphql.EventDefinitionPage {
+	return &graphql.EventDefinitionPage{
 		Data: eventAPIDefinitions,
 		PageInfo: &graphql.PageInfo{
 			StartCursor: "start",
@@ -363,8 +347,8 @@ func fixGQLEventAPIDefinitionPage(eventAPIDefinitions []*graphql.EventAPIDefinit
 	}
 }
 
-func fixModelEventAPIDefinition(id, appId, name, description string, group string) *model.EventAPIDefinition {
-	return &model.EventAPIDefinition{
+func fixModelEventAPIDefinition(id, appId, name, description string, group string) *model.EventDefinition {
+	return &model.EventDefinition{
 		ID:            id,
 		ApplicationID: appId,
 		Name:          name,
@@ -372,12 +356,12 @@ func fixModelEventAPIDefinition(id, appId, name, description string, group strin
 		Group:         &group,
 	}
 }
-func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventAPIDefinition {
-	return &model.EventAPIDefinition{ID: id, Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
+func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
+	return &model.EventDefinition{ID: id, Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
 		ApplicationID: "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", Name: placeholder}
 }
-func fixGQLEventAPIDefinition(id, appId, name, description string, group string) *graphql.EventAPIDefinition {
-	return &graphql.EventAPIDefinition{
+func fixGQLEventDefinition(id, appId, name, description string, group string) *graphql.EventDefinition {
+	return &graphql.EventDefinition{
 		ID:            id,
 		ApplicationID: appId,
 		Name:          name,

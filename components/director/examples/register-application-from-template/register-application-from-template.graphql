@@ -54,7 +54,7 @@ mutation {
       }
     }
     healthCheckURL
-    apis {
+    apiDefinitions {
       data {
         id
         name
@@ -191,7 +191,7 @@ mutation {
       }
       totalCount
     }
-    eventAPIs {
+    eventDefinitions {
       data {
         id
         applicationID

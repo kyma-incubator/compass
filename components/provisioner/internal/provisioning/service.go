@@ -1,20 +1,23 @@
 package provisioning
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/converters"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/configuration"
+	"github.com/pkg/errors"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-incubator/hydroform/types"
@@ -37,21 +40,23 @@ type Service interface {
 }
 
 type service struct {
-	persistenceService   persistence.Service
-	hydroform            hydroform.Service
-	directorService      director.DirectorClient
-	configBuilderFactory configuration.BuilderFactory
-	uuidGenerator        persistence.UUIDGenerator
+	persistenceService  persistence.Service
+	hydroform           hydroform.Service
+	installationService installation.Service
+	inputConverter      converters.InputConverter
+	graphQLConverter    converters.GraphQLConverter
+	directorService     director.DirectorClient
 }
 
-func NewProvisioningService(persistenceService persistence.Service, uuidGenerator persistence.UUIDGenerator,
-	hydroform hydroform.Service, directorService director.DirectorClient, configBuilderFactory configuration.BuilderFactory) Service {
+func NewProvisioningService(persistenceService persistence.Service, inputConverter converters.InputConverter,
+	graphQLConverter converters.GraphQLConverter, hydroform hydroform.Service, installationService installation.Service, directorService director.DirectorClient) Service {
 	return &service{
-		persistenceService:   persistenceService,
-		hydroform:            hydroform,
-		directorService:	  directorService,
-		configBuilderFactory: configBuilderFactory,
-		uuidGenerator:        uuidGenerator,
+		persistenceService:  persistenceService,
+		hydroform:           hydroform,
+		installationService: installationService,
+		inputConverter:      inputConverter,
+		graphQLConverter:    graphQLConverter,
+		directorService:     directorService,
 	}
 }
 
@@ -69,23 +74,19 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (stri
 		return "", nil, err
 	}
 
-	runtimeConfig, err := runtimeConfigFromInput(runtimeID, config, r.uuidGenerator)
-
+	cluster, err := r.inputConverter.ProvisioningInputToCluster(runtimeID, config)
 	if err != nil {
 		return "", nil, err
 	}
 
-	operation, err := r.persistenceService.SetProvisioningStarted(runtimeID, runtimeConfig)
-
+	operation, err := r.persistenceService.SetProvisioningStarted(runtimeID, cluster)
 	if err != nil {
 		return "", nil, err
 	}
 
 	finished := make(chan struct{})
 
-	builder := r.configBuilderFactory.NewProvisioningBuilder(config)
-
-	go r.startProvisioning(operation.ID, runtimeID, builder, finished)
+	go r.startProvisioning(operation.ID, cluster, finished)
 
 	return operation.ID, finished, err
 }
@@ -116,14 +117,18 @@ func lastProvisioningFailed(operation model.Operation) bool {
 }
 
 func (r *service) DeprovisionRuntime(id string) (string, <-chan struct{}, error) {
-	runtimeStatus, err := r.persistenceService.GetStatus(id)
-
+	lastOperation, err := r.persistenceService.GetLastOperation(id)
 	if err != nil {
 		return "", nil, err
 	}
 
-	if runtimeStatus.LastOperationStatus.State == model.InProgress {
-		return "", nil, errors.New("cannot start new operation while previous one is in progress")
+	if lastOperation.State == model.InProgress {
+		return "", nil, errors.Errorf("cannot start new operation for %s Runtime while previous one is in progress", id)
+	}
+
+	cluster, dberr := r.persistenceService.GetClusterData(id)
+	if dberr != nil {
+		return "", nil, dberr
 	}
 
 	// unregister this runtime from Director
@@ -131,22 +136,13 @@ func (r *service) DeprovisionRuntime(id string) (string, <-chan struct{}, error)
 	r.directorService.DeleteRuntime(id)
 
 	operation, err := r.persistenceService.SetDeprovisioningStarted(id)
-
 	if err != nil {
 		return "", nil, err
 	}
 
 	finished := make(chan struct{})
 
-	cluster, dberr := r.persistenceService.GetClusterData(id)
-
-	if dberr != nil {
-		return "", nil, dberr
-	}
-
-	builder := r.configBuilderFactory.NewDeprovisioningBuilder(runtimeStatus.RuntimeConfiguration)
-
-	go r.startDeprovisioning(operation.ID, id, builder, cluster.TerraformState, finished)
+	go r.startDeprovisioning(operation.ID, cluster, finished)
 
 	return operation.ID, finished, nil
 }
@@ -160,27 +156,21 @@ func (r *service) ReconnectRuntimeAgent(id string) (string, error) {
 }
 
 func (r *service) RuntimeStatus(runtimeID string) (*gqlschema.RuntimeStatus, error) {
-	runtimeStatus, err := r.persistenceService.GetStatus(runtimeID)
-
+	runtimeStatus, err := r.persistenceService.GetRuntimeStatus(runtimeID)
 	if err != nil {
 		return nil, err
 	}
 
-	status := runtimeStatusToGraphQLStatus(runtimeStatus)
-
-	return status, nil
+	return r.graphQLConverter.RuntimeStatusToGraphQLStatus(runtimeStatus), nil
 }
 
 func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.OperationStatus, error) {
-	operation, err := r.persistenceService.Get(operationID)
-
+	operation, err := r.persistenceService.GetOperation(operationID)
 	if err != nil {
 		return nil, err
 	}
 
-	status := operationStatusToGQLOperationStatus(operation)
-
-	return status, nil
+	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
 }
 
 func (r *service) CleanupRuntimeData(id string) (*gqlschema.CleanUpRuntimeDataResult, error) {
@@ -202,44 +192,64 @@ func (r *service) CleanupRuntimeData(id string) (*gqlschema.CleanUpRuntimeDataRe
 	return &gqlschema.CleanUpRuntimeDataResult{ID: id, Message: &message}, nil
 }
 
-func (r *service) startProvisioning(operationID, runtimeID string, builder configuration.Builder, finished chan<- struct{}) {
+func (r *service) startProvisioning(operationID string, cluster model.Cluster, finished chan<- struct{}) {
 	defer close(finished)
-	log.Infof("Provisioning runtime %s is starting", runtimeID)
-	info, err := r.hydroform.ProvisionCluster(builder)
 
-	if err != nil || info.ClusterStatus != types.Provisioned {
-		log.Errorf("Provisioning runtime %s failed: %s", runtimeID, err.Error())
-		updateOperationStatus(func() error {
-			return r.persistenceService.SetAsFailed(operationID, err.Error())
-		})
-	} else {
-		log.Infof("Provisioning runtime %s finished successfully", runtimeID)
-		updateOperationStatus(func() error {
-			err := r.persistenceService.Update(runtimeID, info.KubeConfig, info.State)
-			if err != nil {
-				return r.persistenceService.SetAsFailed(operationID, err.Error())
-			}
-			return r.persistenceService.SetAsSucceeded(operationID)
-		})
+	log.Infof("Provisioning runtime %s is starting...", cluster.ID)
+	info, err := r.hydroform.ProvisionCluster(cluster)
+	if err != nil {
+		log.Errorf("Error provisioning runtime %s: %s", cluster.ID, err.Error())
+		r.setOperationAsFailed(operationID, err.Error())
+		return
 	}
+	if info.ClusterStatus != types.Provisioned {
+		log.Errorf("Provisioning runtime %s failed, cluster status: %s", cluster.ID, info.ClusterStatus)
+		r.setOperationAsFailed(operationID, fmt.Sprintf("Provisioning failed for unknown reason, cluster status: %s", info.ClusterStatus))
+		return
+	}
+
+	err = r.persistenceService.UpdateClusterData(cluster.ID, info.KubeConfig, info.State)
+	if err != nil {
+		log.Errorf("Failed to update runtime with status")
+		r.setOperationAsFailed(operationID, err.Error())
+		return
+	}
+
+	log.Infof("Runtime %s provisioned successfully. Starting Kyma installation...", cluster.ID)
+	err = r.installationService.InstallKyma(cluster.ID, info.KubeConfig, cluster.KymaConfig.Release)
+	if err != nil {
+		log.Errorf("Error installing Kyma on runtime %s: %s", cluster.ID, err.Error())
+		r.setOperationAsFailed(operationID, err.Error())
+		return
+	}
+
+	log.Infof("Kyma installed successfully on %s Runtime. Operation %s finished. Setting status to success.", cluster.ID, operationID)
+
+	updateOperationStatus(func() error {
+		return r.persistenceService.SetOperationAsSucceeded(operationID)
+	})
 }
 
-func (r *service) startDeprovisioning(operationID, runtimeID string, builder configuration.Builder, terraformState string, finished chan<- struct{}) {
+func (r *service) startDeprovisioning(operationID string, cluster model.Cluster, finished chan<- struct{}) {
 	defer close(finished)
-	log.Infof("Deprovisioning runtime %s is starting", runtimeID)
-	err := r.hydroform.DeprovisionCluster(builder, terraformState)
-
+	log.Infof("Deprovisioning runtime %s is starting", cluster.ID)
+	err := r.hydroform.DeprovisionCluster(cluster)
 	if err != nil {
-		log.Errorf("Deprovisioning runtime %s failed: %s", runtimeID, err.Error())
-		updateOperationStatus(func() error {
-			return r.persistenceService.SetAsFailed(operationID, err.Error())
-		})
-	} else {
-		log.Infof("Deprovisioning runtime %s finished successfully", runtimeID)
-		updateOperationStatus(func() error {
-			return r.persistenceService.SetAsSucceeded(operationID)
-		})
+		log.Errorf("Deprovisioning runtime %s failed: %s", cluster.ID, err.Error())
+		r.setOperationAsFailed(operationID, err.Error())
+		return
 	}
+
+	log.Infof("Deprovisioning runtime %s finished successfully. Operation %s finished. Setting status to success.", cluster.ID, operationID)
+	updateOperationStatus(func() error {
+		return r.persistenceService.SetOperationAsSucceeded(operationID)
+	})
+}
+
+func (r *service) setOperationAsFailed(operationID, message string) {
+	updateOperationStatus(func() error {
+		return r.persistenceService.SetOperationAsFailed(operationID, message)
+	})
 }
 
 func updateOperationStatus(updateFunction func() error) {

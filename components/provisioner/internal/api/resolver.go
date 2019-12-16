@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	log "github.com/sirupsen/logrus"
 
@@ -32,7 +33,7 @@ func NewResolver(provisioningService provisioning.Service) *Resolver {
 }
 
 func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.ProvisionRuntimeInput) (string, error) {
-
+	log.Infof("Requested provisioning of Runtime %s.", config.RuntimeInput.Name)
 	err := validateInput(config)
 	if err != nil {
 		log.Errorf("Failed to provision Runtime %s: %s", config.RuntimeInput.Name, err)
@@ -40,6 +41,11 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.Provis
 	}
 
 	log.Infof("Requested provisioning of Runtime %s.", config.RuntimeInput.Name)
+	if config.ClusterConfig.GcpConfig != nil && config.ClusterConfig.GardenerConfig == nil {
+		err := fmt.Errorf("Provisioning on GCP is currently not supported, Runtime : %s", config.RuntimeInput.Name)
+		log.Errorf(err.Error())
+		return "", err
+	}
 
 	operationID, _, err := r.provisioning.ProvisionRuntime(config)
 	if err != nil {

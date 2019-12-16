@@ -17,7 +17,7 @@ spec:
       shareProcessNamespace: true
       containers:
       - name: tests
-        image: index.docker.io/kryszk/provisioner-tests
+        image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.provisioner.dir }}provisioner-tests:{{ .Values.global.images.tests.provisioner.version }}
         imagePullPolicy: IfNotPresent
         env:
         - name: APP_INTERNAL_PROVISIONER_URL

@@ -14,7 +14,7 @@ import (
 
 //go:generate mockery -name=AppConverter -output=automock -outpkg=automock -case=underscore
 type AppConverter interface {
-	CreateInputGQLToJSON(in *graphql.ApplicationCreateInput) (string, error)
+	CreateInputGQLToJSON(in *graphql.ApplicationRegisterInput) (string, error)
 }
 
 type converter struct {
@@ -142,7 +142,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.ApplicationTemplate, erro
 }
 
 func (c *converter) graphqliseApplicationCreateInput(jsonAppInput string) (string, error) {
-	var gqlAppCreateInput graphql.ApplicationCreateInput
+	var gqlAppCreateInput graphql.ApplicationRegisterInput
 	err := json.Unmarshal([]byte(jsonAppInput), &gqlAppCreateInput)
 	if err != nil {
 		return "", errors.Wrap(err, "while unmarshaling application create input")

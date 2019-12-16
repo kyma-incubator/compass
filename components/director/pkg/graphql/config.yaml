@@ -40,13 +40,13 @@ models:
     fields:
       documents:
         resolver: true
-      eventAPIs:
+      eventDefinitions:
         resolver: true
-      apis:
+      apiDefinitions:
         resolver: true
-      api:
+      apiDefinition:
         resolver: true
-      eventAPI:
+      eventDefinition:
         resolver: true
       webhooks:
         resolver: true
@@ -61,8 +61,8 @@ models:
     fields:
       fetchRequest:
         resolver: true
-  EventAPISpec:
-    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.EventAPISpec"
+  EventSpec:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.EventSpec"
     fields:
       fetchRequest:
         resolver: true
@@ -90,4 +90,12 @@ models:
       auth:
         resolver: true
       auths:
+        resolver: true
+
+  OneTimeToken:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.OneTimeToken"
+    fields:
+      raw:
+        resolver: true
+      rawEncoded:
         resolver: true

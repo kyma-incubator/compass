@@ -40,17 +40,17 @@ type: APISpecType! | true | `oneof=[ODATA, OPEN_API]` |  
 format: SpecFormat! | true | `oneof=[YAML, JSON, XML]` |  
 fetchRequest: FetchRequestInput | false | |  
 
-### EventAPIDefinitionInput
+### EventDefinitionInput
 
 Field | Required | Rules | Comment
 --- | --- | --- | ---
 name: String! | true | `name` | varchar(256) in db  
 description: String | false | `max=128` |  
-spec: EventAPISpecInput! | true | | 
+spec: EventSpecInput! | true | | 
 group: String | false | `max=36` | varchar(256) in db  
 version: VersionInput | false | |  
 
-### EventAPISpecInput
+### EventSpecInput
 
 - Struct validator ensures that `type` and `format` work together (ASYNC_API works with YAML and JSON)
 - Struct validator ensures that only one of `data` and `fetchRequest` is present
@@ -58,7 +58,7 @@ version: VersionInput | false | |  
 Field | Required | Rules | Comment
 --- | --- | --- | ---
 data: CLOB (string) | false | |  
-eventSpecType: EventAPISpecType! | true | `oneof=[ASYNC_API]` |  
+type: EventSpecType! | true | `oneof=[ASYNC_API]` |  
 format: SpecFormat! | true | `oneof=[YAML, JSON]` |  
 fetchRequest: FetchRequestInput | false | |  
 
@@ -71,7 +71,7 @@ deprecated: Boolean = false | true | | required because has default value
 deprecatedSince: String | false | `max=256` | varchar(256) in db
 forRemoval: Boolean = false | true | | required because has default value
 
-### ApplicationCreateInput
+### ApplicationRegisterInput
 
 Field | Required | Rules | Comment
 --- | --- | --- | ---
@@ -80,8 +80,8 @@ description: String | false | `max=128` |  
 labels: Labels (map[string]interface{}) | false | key: `required` |  
 webhooks: [WebhookInput!] | false | `[required]` |  
 healthCheckURL: String | false | `url`, `max=256` | varchar(256) in db  
-apis: [APIDefinitionInput!] | false | `[required]` |  
-eventAPIs: [EventAPIDefinitionInput!] | false | `[required]` |  
+apiDefinitions: [APIDefinitionInput!] | false | `[required]` |  
+eventDefinitions: [EventDefinitionInput!] | false | `[required]` |  
 documents: [DocumentInput!] | false | `[required]` |  
 
 ### ApplicationUpdateInput

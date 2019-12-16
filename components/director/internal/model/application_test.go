@@ -19,12 +19,12 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 	timestamp := time.Now()
 	testCases := []struct {
 		Name     string
-		Input    *model.ApplicationCreateInput
+		Input    *model.ApplicationRegisterInput
 		Expected *model.Application
 	}{
 		{
 			Name: "All properties given",
-			Input: &model.ApplicationCreateInput{
+			Input: &model.ApplicationRegisterInput{
 				Name:        "Foo",
 				Description: &desc,
 				Labels: map[string]interface{}{

@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 )
 
 //go:generate mockery -name=ScopesGetter -output=automock -outpkg=automock -case=underscore
@@ -31,11 +32,17 @@ type ObjectContextForSystemAuthProvider interface {
 	GetObjectContext(ctx context.Context, reqData ReqData, authID string, authFlow AuthFlow) (ObjectContext, error)
 }
 
+//go:generate mockery -name=Logger -output=automock -outpkg=automock -case=underscore
+type Logger interface {
+	Error(args ...interface{})
+}
+
 type Handler struct {
 	reqDataParser       ReqDataParser
 	transact            persistence.Transactioner
 	mapperForUser       ObjectContextForUserProvider
 	mapperForSystemAuth ObjectContextForSystemAuthProvider
+	logger              Logger
 }
 
 func NewHandler(
@@ -48,6 +55,7 @@ func NewHandler(
 		transact:            transact,
 		mapperForUser:       mapperForUser,
 		mapperForSystemAuth: mapperForSystemAuth,
+		logger:              logrus.WithField("component", "tenant-mapping-handler"),
 	}
 }
 
@@ -59,13 +67,15 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 
 	reqData, err := h.reqDataParser.Parse(req)
 	if err != nil {
-		respondWithError(writer, http.StatusBadRequest, err, "while parsing the request")
+		h.logError(err, "while parsing the request")
+		h.respond(writer, reqData.Body)
 		return
 	}
 
 	tx, err := h.transact.Begin()
 	if err != nil {
-		respondWithError(writer, http.StatusInternalServerError, err, "while opening the db transaction")
+		h.logError(err, "while opening the db transaction")
+		h.respond(writer, reqData.Body)
 		return
 	}
 	defer h.transact.RollbackUnlessCommited(tx)
@@ -74,7 +84,8 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 
 	objCtx, err := h.getObjectContext(ctx, reqData)
 	if err != nil {
-		respondWithError(writer, http.StatusInternalServerError, err, "while getting object context")
+		h.logError(err, "while getting object context")
+		h.respond(writer, reqData.Body)
 		return
 	}
 
@@ -83,12 +94,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	reqData.Body.Extra["objectID"] = objCtx.ObjectID
 	reqData.Body.Extra["objectType"] = objCtx.ObjectType
 
-	writer.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(writer).Encode(reqData.Body)
-	if err != nil {
-		respondWithError(writer, http.StatusInternalServerError, err, "while encoding data")
-		return
-	}
+	h.respond(writer, reqData.Body)
 }
 
 func (h *Handler) getObjectContext(ctx context.Context, reqData ReqData) (ObjectContext, error) {
@@ -107,9 +113,15 @@ func (h *Handler) getObjectContext(ctx context.Context, reqData ReqData) (Object
 	return ObjectContext{}, fmt.Errorf("unknown authentication flow (%s)", authFlow)
 }
 
-func respondWithError(writer http.ResponseWriter, httpErrorCode int, err error, wrapperStr string) {
+func (h *Handler) logError(err error, wrapperStr string) {
 	wrappedErr := errors.Wrap(err, wrapperStr)
-	log.Error(wrappedErr)
+	h.logger.Error(wrappedErr)
+}
 
-	http.Error(writer, wrappedErr.Error(), httpErrorCode)
+func (h *Handler) respond(writer http.ResponseWriter, body ReqBody) {
+	writer.Header().Set("Content-Type", "application/json")
+	err := json.NewEncoder(writer).Encode(body)
+	if err != nil {
+		h.logError(err, "while encoding data")
+	}
 }

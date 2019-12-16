@@ -5,14 +5,10 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
-	"io"
-	"log"
 	"net/http"
 	"testing"
 	"time"
 
-	"github.com/avast/retry-go"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/connector"
 	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/gql"
@@ -66,60 +62,6 @@ func TestDirectorPlaygroundAccess(t *testing.T) {
 	})
 }
 
-func getURLWithRetries(client *http.Client, url string) (*http.Response, error) {
-	const (
-		maxAttempts = 10
-		delay       = 10
-	)
-	var resp *http.Response
-
-	happyRun := true
-	err := retry.Do(
-		func() error {
-			_resp, err := client.Get(url)
-			if err != nil {
-				return err
-			}
-
-			if _resp.StatusCode >= 400 {
-				return fmt.Errorf("got status code %d when accessing %s", _resp.StatusCode, url)
-			}
-
-			resp = _resp
-
-			return nil
-		},
-		retry.Attempts(maxAttempts),
-		retry.Delay(delay),
-		retry.DelayType(retry.FixedDelay),
-		retry.OnRetry(func(retryNo uint, err error) {
-			happyRun = false
-			log.Printf("Retry: [%d / %d], error: %s", retryNo, maxAttempts, err)
-		}),
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if happyRun {
-		log.Printf("Address %s reached successfully", url)
-	}
-
-	return resp, nil
-}
-
-func getClient() *http.Client {
-	transport := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-
-	return &http.Client{
-		Transport: transport,
-		Timeout:   time.Second * 30,
-	}
-}
-
 func getClientWithCert(certificates []*x509.Certificate, key *rsa.PrivateKey) *http.Client {
 	rawCerts := make([][]byte, len(certificates))
 	for i, c := range certificates {
@@ -145,11 +87,6 @@ func getClientWithCert(certificates []*x509.Certificate, key *rsa.PrivateKey) *h
 	}
 }
 
-func closeBody(t *testing.T, body io.ReadCloser) {
-	err := body.Close()
-	require.NoError(t, err)
-}
-
 func getDexToken(t *testing.T) string {
 	config, err := idtokenprovider.LoadConfig()
 	require.NoError(t, err)
@@ -161,16 +98,16 @@ func getDexToken(t *testing.T) string {
 }
 
 func createApplicationForCertPlaygroundTest(t *testing.T, ctx context.Context, tenant string, cli *gcli.Client) string {
-	appInput := graphql.ApplicationCreateInput{
+	appInput := graphql.ApplicationRegisterInput{
 		Name: "cert-playground-test",
 	}
-	app := createApplicationFromInputWithinTenant(t, ctx, cli, tenant, appInput)
+	app := registerApplicationFromInputWithinTenant(t, ctx, cli, tenant, appInput)
 	require.NotEmpty(t, app.ID)
 
 	return app.ID
 }
 
-func generateClientCertForApplication(t *testing.T, oneTimeToken graphql.OneTimeToken) ([]*x509.Certificate, *rsa.PrivateKey) {
+func generateClientCertForApplication(t *testing.T, oneTimeToken graphql.OneTimeTokenExt) ([]*x509.Certificate, *rsa.PrivateKey) {
 	connectorClient := connector.NewClient(oneTimeToken.ConnectorURL)
 	clientCertConfig, err := connectorClient.GetConfiguration(oneTimeToken.Token)
 	require.NoError(t, err)

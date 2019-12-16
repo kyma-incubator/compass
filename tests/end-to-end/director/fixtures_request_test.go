@@ -12,10 +12,10 @@ import (
 )
 
 // CREATE
-func fixCreateApplicationRequest(applicationInGQL string) *gcli.Request {
+func fixRegisterApplicationRequest(applicationInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: createApplication(in: %s) {
+			result: registerApplication(in: %s) {
 					%s
 				}
 			}`,
@@ -32,10 +32,10 @@ func fixCreateApplicationTemplateRequest(applicationTemplateInGQL string) *gcli.
 			applicationTemplateInGQL, tc.gqlFieldsProvider.ForApplicationTemplate()))
 }
 
-func fixCreateRuntimeRequest(runtimeInGQL string) *gcli.Request {
+func fixRegisterRuntimeRequest(runtimeInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: createRuntime(in: %s) {
+			result: registerRuntime(in: %s) {
 					%s
 				}
 			}`,
@@ -52,10 +52,10 @@ func fixCreateLabelDefinitionRequest(labelDefinitionInputGQL string) *gcli.Reque
 			labelDefinitionInputGQL, tc.gqlFieldsProvider.ForLabelDefinition()))
 }
 
-func fixCreateIntegrationSystemRequest(integrationSystemInGQL string) *gcli.Request {
+func fixRegisterIntegrationSystemRequest(integrationSystemInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: createIntegrationSystem(in: %s) {
+			result: registerIntegrationSystem(in: %s) {
 					%s
 				}
 			}`,
@@ -84,7 +84,7 @@ func fixAddWebhookRequest(applicationID, webhookInGQL string) *gcli.Request {
 func fixAddAPIRequest(appID, APIInputGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-		result: addAPI(applicationID: "%s", in: %s) {
+		result: addAPIDefinition(applicationID: "%s", in: %s) {
 				%s
 			}
 		}
@@ -94,7 +94,7 @@ func fixAddAPIRequest(appID, APIInputGQL string) *gcli.Request {
 func fixUpdateAPIRequest(appID, APIInputGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-		result: updateAPI(id: "%s", in: %s) {
+		result: updateAPIDefinition(id: "%s", in: %s) {
 				%s
 			}
 		}
@@ -104,21 +104,21 @@ func fixUpdateAPIRequest(appID, APIInputGQL string) *gcli.Request {
 func fixAddEventAPIRequest(appID, eventAPIInputGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-		result: addEventAPI(applicationID: "%s", in: %s) {
+		result: addEventDefinition(applicationID: "%s", in: %s) {
 				%s
 			}
 		}
-		`, appID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventAPI()))
+		`, appID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventDefinition()))
 }
 
 func fixUpdateEventAPIRequest(appID, eventAPIInputGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-		result: updateEventAPI(id: "%s", in: %s) {
+		result: updateEventDefinition(id: "%s", in: %s) {
 				%s
 			}
 		}
-		`, appID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventAPI()))
+		`, appID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventDefinition()))
 }
 
 //UPDATE
@@ -169,19 +169,19 @@ func fixUpdateLabelDefinitionRequest(ldInputGQL string) *gcli.Request {
 				}`, ldInputGQL, tc.gqlFieldsProvider.ForLabelDefinition()))
 }
 
-func fixGenerateOneTimeTokenForRuntimeRequest(id string) *gcli.Request {
+func fixRequestOneTimeTokenForRuntime(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-				result: generateOneTimeTokenForRuntime(id: "%s") {
+				result: requestOneTimeTokenForRuntime(id: "%s") {
 						%s
 					}
 				}`, id, tc.gqlFieldsProvider.ForOneTimeToken()))
 }
 
-func fixGenerateOneTimeTokenForAppRequest(id string) *gcli.Request {
+func fixRequestOneTimeTokenForApp(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-				result: generateOneTimeTokenForApplication(id: "%s") {
+				result: requestOneTimeTokenForApplication(id: "%s") {
 						%s
 					}
 				}`, id, tc.gqlFieldsProvider.ForOneTimeToken()))
@@ -196,28 +196,28 @@ func fixUpdateIntegrationSystemRequest(id, integrationSystemInGQL string) *gcli.
 				}`, id, integrationSystemInGQL, tc.gqlFieldsProvider.ForIntegrationSystem()))
 }
 
-func fixGenerateClientCredentialsForApplicationRequest(id string) *gcli.Request {
+func fixRequestClientCredentialsForApplication(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-				result: generateClientCredentialsForApplication(id: "%s") {
+				result: requestClientCredentialsForApplication(id: "%s") {
 						%s
 					}
 				}`, id, tc.gqlFieldsProvider.ForSystemAuth()))
 }
 
-func fixGenerateClientCredentialsForRuntimeRequest(id string) *gcli.Request {
+func fixRequestClientCredentialsForRuntime(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-				result: generateClientCredentialsForRuntime(id: "%s") {
+				result: requestClientCredentialsForRuntime(id: "%s") {
 						%s
 					}
 				}`, id, tc.gqlFieldsProvider.ForSystemAuth()))
 }
 
-func fixGenerateClientCredentialsForIntegrationSystemRequest(id string) *gcli.Request {
+func fixRequestClientCredentialsForIntegrationSystem(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-				result: generateClientCredentialsForIntegrationSystem(id: "%s") {
+				result: requestClientCredentialsForIntegrationSystem(id: "%s") {
 						%s
 					}
 				}`, id, tc.gqlFieldsProvider.ForSystemAuth()))
@@ -306,9 +306,9 @@ func fixRuntimeRequest(runtimeID string) *gcli.Request {
 				}}`, runtimeID, tc.gqlFieldsProvider.ForRuntime()))
 }
 
-func fixDeleteRuntimeRequest(id string) *gcli.Request {
+func fixUnregisterRuntime(id string) *gcli.Request {
 	return gcli.NewRequest(
-		fmt.Sprintf(`mutation{deleteRuntime(id: "%s") {
+		fmt.Sprintf(`mutation{unregisterRuntime(id: "%s") {
 				id
 			}
 		}`, id))
@@ -430,10 +430,10 @@ func fixDeleteAPIAuthRequestRequest(apiID string, rtmID string) *gcli.Request {
 			}`, apiID, rtmID, tc.gqlFieldsProvider.ForAPIRuntimeAuth()))
 }
 
-func fixDeleteIntegrationSystemRequest(intSysID string) *gcli.Request {
+func fixunregisterIntegrationSystem(intSysID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: deleteIntegrationSystem(id: "%s") {
+			result: unregisterIntegrationSystem(id: "%s") {
 					%s
 				}
 			}`, intSysID, tc.gqlFieldsProvider.ForIntegrationSystem()))
