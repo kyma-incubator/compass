@@ -202,7 +202,7 @@ func TestResolver_RawEncoded(t *testing.T) {
 
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, expectedBaseToken, baseEncodedToken)
+		assert.Equal(t, &expectedBaseToken, baseEncodedToken)
 	})
 
 	t.Run("Error - nil token", func(t *testing.T) {
@@ -232,7 +232,7 @@ func TestResolver_Raw(t *testing.T) {
 
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, expectedRawToken, baseEncodedToken)
+		assert.Equal(t, &expectedRawToken, baseEncodedToken)
 	})
 
 	t.Run("Error - nil token", func(t *testing.T) {
