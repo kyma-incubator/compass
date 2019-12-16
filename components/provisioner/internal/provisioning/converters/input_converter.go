@@ -3,7 +3,7 @@ package converters
 import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler_account"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler"
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
@@ -18,7 +18,7 @@ type InputConverter interface {
 func NewInputConverter(
 	uuidGenerator uuid.UUIDGenerator,
 	releaseRepo release.ReadRepository,
-	hyperscalerAccountProvider hyperscaler_account.HyperscalerAccountProvider) InputConverter {
+	hyperscalerAccountProvider hyperscaler.AccountProvider) InputConverter {
 
 	return &converter{
 		uuidGenerator:              uuidGenerator,
@@ -30,7 +30,7 @@ func NewInputConverter(
 type converter struct {
 	uuidGenerator              uuid.UUIDGenerator
 	releaseRepo                release.ReadRepository
-	hyperscalerAccountProvider hyperscaler_account.HyperscalerAccountProvider
+	hyperscalerAccountProvider hyperscaler.AccountProvider
 }
 
 func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput) (model.Cluster, error) {
@@ -118,23 +118,23 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 	return gardenerConfig, nil
 }
 
-func HyperscalerTypeFromProviderInput(input *gqlschema.ProviderSpecificInput) (hyperscaler_account.HyperscalerType, error) {
+func HyperscalerTypeFromProviderInput(input *gqlschema.ProviderSpecificInput) (hyperscaler.HyperscalerType, error) {
 
 	if input == nil {
-		return hyperscaler_account.HyperscalerType(""), errors.New("ProviderSpecificInput not specified (nil)")
+		return hyperscaler.HyperscalerType(""), errors.New("ProviderSpecificInput not specified (nil)")
 	}
 
 	if input.GcpConfig != nil {
-		return hyperscaler_account.GCP, nil
+		return hyperscaler.GCP, nil
 	}
 	if input.AzureConfig != nil {
-		return hyperscaler_account.Azure, nil
+		return hyperscaler.Azure, nil
 	}
 	if input.AwsConfig != nil {
-		return hyperscaler_account.AWS, nil
+		return hyperscaler.AWS, nil
 	}
 
-	return hyperscaler_account.HyperscalerType(""), errors.New("ProviderSpecificInput not specified")
+	return hyperscaler.HyperscalerType(""), errors.New("ProviderSpecificInput not specified")
 }
 
 func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpecificInput) (model.GardenerProviderConfig, error) {
@@ -145,13 +145,13 @@ func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpec
 	}
 
 	switch hyperscalerType {
-	case hyperscaler_account.GCP:
+	case hyperscaler.GCP:
 		return model.NewGCPGardenerConfig(input.GcpConfig)
 
-	case hyperscaler_account.Azure:
+	case hyperscaler.Azure:
 		return model.NewAzureGardenerConfig(input.AzureConfig)
 
-	case hyperscaler_account.AWS:
+	case hyperscaler.AWS:
 		return model.NewAWSGardenerConfig(input.AwsConfig)
 
 	}

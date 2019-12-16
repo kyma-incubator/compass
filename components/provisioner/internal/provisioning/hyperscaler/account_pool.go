@@ -1,4 +1,4 @@
-package hyperscaler_account
+package hyperscaler
 
 import (
 	"github.com/pkg/errors"
@@ -29,16 +29,16 @@ func HyperscalerTypeFromProviderString(provider string) (HyperscalerType, error)
 	case GCP, Azure, AWS:
 		return hyperscalerType, nil
 	}
-	return "", errors.Errorf("Unknown Hyperscaler provider type: %s", provider)
+	return "", errors.Errorf("Unknown Hyperscaler accountProvider type: %s", provider)
 }
 
-// HyperscalerCredential holds credentials needed to connect to a particular Hyperscaler account
-type HyperscalerCredential struct {
+// Credential holds credentials needed to connect to a particular Hyperscaler account
+type Credential struct {
 
 	// Identifying name for this credential; allows looking up by name in a pool of credentials
 	CredentialName string
 
-	// The Hyperscaler provider (Azure, GCP, etc)
+	// The Hyperscaler accountProvider (Azure, GCP, etc)
 	HyperscalerType HyperscalerType
 
 	// The tenant name for the Kyma account
@@ -48,31 +48,31 @@ type HyperscalerCredential struct {
 	Credential []byte
 }
 
-// HyperscalerAccountPool represents a collection of credentials used by Hydroform/Terraform to provision clusters.
-type HyperscalerAccountPool interface {
+// AccountPool represents a collection of credentials used by Hydroform/Terraform to provision clusters.
+type AccountPool interface {
 
-	// Retrieve a HyperscalerCredential from the pool based on provider HyperscalerType and tenantName
-	Credential(hyperscalerType HyperscalerType, tenantName string) (HyperscalerCredential, error)
+	// Retrieve a Credential from the pool based on accountProvider HyperscalerType and tenantName
+	Credential(hyperscalerType HyperscalerType, tenantName string) (Credential, error)
 }
 
-// Get an instance of of HyperscalerAccountPool that retrieves credentials from Kubernetes secrets
-func NewHyperscalerAccountSecretsPool(secretsClient corev1.SecretInterface) HyperscalerAccountPool {
-	return &secretsPoolProvider{
+// Get an instance of of AccountPool that retrieves credentials from Kubernetes secrets
+func NewAccountPool(secretsClient corev1.SecretInterface) AccountPool {
+	return &secretsAccountPool{
 		secretsClient: secretsClient,
 	}
 }
 
-// private struct for Kubernetes secrets-based implementation of HyperscalerAccountPool
-type secretsPoolProvider struct {
+// private struct for Kubernetes secrets-based implementation of AccountPool
+type secretsAccountPool struct {
 	secretsClient corev1.SecretInterface
 }
 
-func (p *secretsPoolProvider) Credential(hyperscalerType HyperscalerType, tenantName string) (HyperscalerCredential, error) {
+func (p *secretsAccountPool) Credential(hyperscalerType HyperscalerType, tenantName string) (Credential, error) {
 
 	// query the secrets client to get a secret with labels matching hyperscalerType and tenantName
 	//p.secretsClient.Get()
 
-	var credential = HyperscalerCredential{
+	var credential = Credential{
 		CredentialName:  "the-credential-name",
 		HyperscalerType: hyperscalerType,
 		TenantName:      tenantName,
@@ -95,7 +95,7 @@ func ExampleTestUsage() {
 	)
 
 	mockSecrets := fake.NewSimpleClientset(secret).CoreV1().Secrets("some-namespace")
-	pool := NewHyperscalerAccountSecretsPool(mockSecrets)
+	pool := NewAccountPool(mockSecrets)
 	hyperscalerCredentials, _ := pool.Credential(GCP, "the-tenant-name")
 
 	print(hyperscalerCredentials.CredentialName)
