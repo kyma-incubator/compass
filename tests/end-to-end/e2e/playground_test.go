@@ -98,16 +98,16 @@ func getDexToken(t *testing.T) string {
 }
 
 func createApplicationForCertPlaygroundTest(t *testing.T, ctx context.Context, tenant string, cli *gcli.Client) string {
-	appInput := graphql.ApplicationCreateInput{
+	appInput := graphql.ApplicationRegisterInput{
 		Name: "cert-playground-test",
 	}
-	app := createApplicationFromInputWithinTenant(t, ctx, cli, tenant, appInput)
+	app := registerApplicationFromInputWithinTenant(t, ctx, cli, tenant, appInput)
 	require.NotEmpty(t, app.ID)
 
 	return app.ID
 }
 
-func generateClientCertForApplication(t *testing.T, oneTimeToken graphql.OneTimeToken) ([]*x509.Certificate, *rsa.PrivateKey) {
+func generateClientCertForApplication(t *testing.T, oneTimeToken graphql.OneTimeTokenExt) ([]*x509.Certificate, *rsa.PrivateKey) {
 	connectorClient := connector.NewClient(oneTimeToken.ConnectorURL)
 	clientCertConfig, err := connectorClient.GetConfiguration(oneTimeToken.Token)
 	require.NoError(t, err)

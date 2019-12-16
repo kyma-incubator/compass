@@ -12,7 +12,7 @@ import (
 // Graphqlizer is responsible for converting Go objects to input arguments in graphql format
 type Graphqlizer struct{}
 
-func (g *Graphqlizer) ApplicationCreateInputToGQL(in graphql.ApplicationCreateInput) (string, error) {
+func (g *Graphqlizer) ApplicationRegisterInputToGQL(in graphql.ApplicationRegisterInput) (string, error) {
 	return g.genericToGQL(in, `{
 		name: "{{.Name}}",
 		{{- if .Description }}
@@ -30,16 +30,16 @@ func (g *Graphqlizer) ApplicationCreateInputToGQL(in graphql.ApplicationCreateIn
 		{{- if .HealthCheckURL }}
 		healthCheckURL: "{{ .HealthCheckURL }}",
 		{{- end }}
-		{{- if .Apis }}
-		apis: [
-			{{- range $i, $e := .Apis }}
+		{{- if .APIDefinitions }}
+		apiDefinitions: [
+			{{- range $i, $e := .APIDefinitions }}
 			{{- if $i}}, {{- end}} {{ APIDefinitionInputToGQL $e }}
 			{{- end }}],
 		{{- end }}
-		{{- if .EventAPIs }}
-		eventAPIs: [
-			{{- range $i, $e := .EventAPIs }}
-			{{- if $i}}, {{- end}} {{ EventAPIDefinitionInputToGQL $e }}
+		{{- if .EventDefinitions }}
+		eventDefinitions: [
+			{{- range $i, $e := .EventDefinitions }}
+			{{- if $i}}, {{- end}} {{ EventDefinitionInputToGQL $e }}
 			{{- end }}],
 		{{- end }}
 		{{- if .Documents }} 
@@ -75,7 +75,7 @@ func (g *Graphqlizer) ApplicationTemplateInputToGQL(in graphql.ApplicationTempla
 		{{- if .Description }}
 		description: "{{.Description}}",
 		{{- end }}
-		applicationInput: {{ ApplicationCreateInputToGQL .ApplicationInput}},
+		applicationInput: {{ ApplicationRegisterInputToGQL .ApplicationInput}},
 		{{- if .Placeholders }}
 		placeholders: [
 			{{- range $i, $e := .Placeholders }} 
@@ -239,7 +239,7 @@ func (g *Graphqlizer) APIDefinitionInputToGQL(in graphql.APIDefinitionInput) (st
 	}`)
 }
 
-func (g *Graphqlizer) EventAPIDefinitionInputToGQL(in graphql.EventAPIDefinitionInput) (string, error) {
+func (g *Graphqlizer) EventDefinitionInputToGQL(in graphql.EventDefinitionInput) (string, error) {
 	return g.genericToGQL(in, `{
 		name: "{{.Name}}",
 		{{- if .Description }}
@@ -255,12 +255,12 @@ func (g *Graphqlizer) EventAPIDefinitionInputToGQL(in graphql.EventAPIDefinition
 	}`)
 }
 
-func (g *Graphqlizer) EventAPISpecInputToGQL(in graphql.EventAPISpecInput) (string, error) {
+func (g *Graphqlizer) EventAPISpecInputToGQL(in graphql.EventSpecInput) (string, error) {
 	return g.genericToGQL(in, `{
 		{{- if .Data }}
 		data: "{{.Data}}",
 		{{- end }}
-		eventSpecType: {{.EventSpecType}},
+		type: {{.Type}},
 		{{- if .FetchRequest }}
 		fetchRequest: {{- FetchRequesstInputToGQL .FetchRequest }},
 		{{- end }}
@@ -365,14 +365,14 @@ func (g *Graphqlizer) ApplicationFromTemplateInputToGQL(in graphql.ApplicationFr
 
 func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error) {
 	fm := sprig.TxtFuncMap()
-	fm["ApplicationCreateInputToGQL"] = g.ApplicationCreateInputToGQL
+	fm["ApplicationRegisterInputToGQL"] = g.ApplicationRegisterInputToGQL
 	fm["DocumentInputToGQL"] = g.DocumentInputToGQL
 	fm["FetchRequesstInputToGQL"] = g.FetchRequestInputToGQL
 	fm["AuthInputToGQL"] = g.AuthInputToGQL
 	fm["LabelsToGQL"] = g.LabelsToGQL
 	fm["WebhookInputToGQL"] = g.WebhookInputToGQL
 	fm["APIDefinitionInputToGQL"] = g.APIDefinitionInputToGQL
-	fm["EventAPIDefinitionInputToGQL"] = g.EventAPIDefinitionInputToGQL
+	fm["EventDefinitionInputToGQL"] = g.EventDefinitionInputToGQL
 	fm["ApiSpecInputToGQL"] = g.ApiSpecInputToGQL
 	fm["VersionInputToGQL"] = g.VersionInputToGQL
 	fm["HTTPHeadersToGQL"] = g.HTTPHeadersToGQL

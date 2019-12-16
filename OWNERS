@@ -13,6 +13,7 @@ filters:
      - Szymongib 
      - franpog859 
      - Maladie 
+     - KarolJaksik
   '\.md$|/docs/|^milv\.config\.yaml$':
     approvers:
       - documentation-approvers

@@ -11,7 +11,7 @@ import (
 func fixCreateApplicationRequest(applicationInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: createApplication(in: %s) {
+			result: registerApplication(in: %s) {
 					%s
 				}
 			}`,
@@ -21,7 +21,7 @@ func fixCreateApplicationRequest(applicationInGQL string) *gcli.Request {
 func fixCreateIntegrationSystemRequest(integrationSystemInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: createIntegrationSystem(in: %s) {
+			result: registerIntegrationSystem(in: %s) {
 					%s
 				}
 			}`,
@@ -42,7 +42,7 @@ func fixGetIntegrationSystemRequest(integrationSystemID string) *gcli.Request {
 func fixAddApiRequest(applicationId, apiInputInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: addAPI(applicationID: "%s", in: %s) {
+			result: addAPIDefinition(applicationID: "%s", in: %s) {
 					%s
 				}
 			}`, applicationId, apiInputInGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
@@ -52,7 +52,7 @@ func fixAddApiRequest(applicationId, apiInputInGQL string) *gcli.Request {
 func fixGenerateClientCredentialsForIntegrationSystem(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-				result: generateClientCredentialsForIntegrationSystem(id: "%s") {
+				result: requestClientCredentialsForIntegrationSystem(id: "%s") {
 						%s
 					}
 				}`, id, tc.gqlFieldsProvider.ForSystemAuth()))
@@ -62,16 +62,16 @@ func fixGenerateClientCredentialsForIntegrationSystem(id string) *gcli.Request {
 func fixDeleteApplicationRequest(t *testing.T, id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-		deleteApplication(id: "%s") {
+		unregisterApplication(id: "%s") {
 			%s
 		}	
 	}`, id, tc.gqlFieldsProvider.ForApplication()))
 }
 
-func fixDeleteIntegrationSystem(intSysID string) *gcli.Request {
+func fixUnregisterIntegrationSystem(intSysID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: deleteIntegrationSystem(id: "%s") {
+			result: unregisterIntegrationSystem(id: "%s") {
 					%s
 				}
 			}`, intSysID, tc.gqlFieldsProvider.ForIntegrationSystem()))
@@ -80,7 +80,7 @@ func fixDeleteIntegrationSystem(intSysID string) *gcli.Request {
 func fixGenerateOneTimeTokenForApplication(appID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: generateOneTimeTokenForApplication(id: "%s") {
+			result: requestOneTimeTokenForApplication(id: "%s") {
 					%s
 				}
 			}`, appID, tc.gqlFieldsProvider.ForOneTimeToken()))

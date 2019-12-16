@@ -101,7 +101,7 @@ CREATE TABLE api_definitions (
 CREATE INDEX ON api_definitions (tenant_id);
 CREATE UNIQUE INDEX ON api_definitions (tenant_id, id);
 
--- Event API Definition
+-- Event Definition
 
 CREATE TYPE event_api_spec_format AS ENUM (
     'YAML',

@@ -10,7 +10,7 @@ Application connection consists of two phases: Application pairing and API regis
 
 Application pairing phase is a process of creating new Application in Management Plane and establishing trusted connection between Application and Management Plane.
 
-Administrator requests Director to create a new Application in the Management Plane. Director sends back Application details, along with its unique ID. Then, Administrator requests Application pairing to the Connector. Connector generates one-time token, and Administrator passes it to the Application. Application uses this token to establish a trusted relation between Application and Management Plane.
+Administrator requests Director to register a new Application in the Management Plane. Director sends back Application details, along with its unique ID. Then, Administrator requests Application pairing to the Connector. Connector generates one-time token, and Administrator passes it to the Application. Application uses this token to establish a trusted relation between Application and Management Plane.
 
 ![](./assets/app-pairing.svg)
 
@@ -18,13 +18,13 @@ To learn about implementation details of the pairing process, see [this](./estab
 
 ### API registration phase
 
-API registration phase is a process of registering new API and Event API definitions. Application requests API or Event API registration and receives operation result.
+API registration phase is a process of registering new API and Event definitions. Application requests API or Event definition registration and receives operation result.
 
 ![](./assets/api-registration.svg)
 
-## Runtime creation
+## Runtime registration
 
-To create a new Runtime, Administrator sends proper request to the Runtime Provisioner. Runtime Provisioner requests Runtime configuration from Director, and one-time token from Connector. Runtime Provisioner provisions Runtime, and then injects the configuration with one-time token. Runtime Agent uses this token to set-up trusted connection between Management Plane and Runtime Agent.
+To register a new Runtime, Administrator sends proper request to the Runtime Provisioner. Runtime Provisioner requests Runtime configuration from Director, and one-time token from Connector. Runtime Provisioner provisions Runtime, and then injects the configuration with one-time token. Runtime Agent uses this token to set-up trusted connection between Management Plane and Runtime Agent.
 
 ![](./assets/runtime-creation.svg)
 

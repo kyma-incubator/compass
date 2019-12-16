@@ -39,9 +39,10 @@ type ResolverRoot interface {
 	APISpec() APISpecResolver
 	Application() ApplicationResolver
 	Document() DocumentResolver
-	EventAPISpec() EventAPISpecResolver
+	EventSpec() EventSpecResolver
 	IntegrationSystem() IntegrationSystemResolver
 	Mutation() MutationResolver
+	OneTimeToken() OneTimeTokenResolver
 	Query() QueryResolver
 	Runtime() RuntimeResolver
 }
@@ -86,14 +87,14 @@ type ComplexityRoot struct {
 	}
 
 	Application struct {
-		API                 func(childComplexity int, id string) int
-		Apis                func(childComplexity int, group *string, first *int, after *PageCursor) int
+		APIDefinition       func(childComplexity int, id string) int
+		APIDefinitions      func(childComplexity int, group *string, first *int, after *PageCursor) int
 		Auths               func(childComplexity int) int
 		Description         func(childComplexity int) int
 		Documents           func(childComplexity int, first *int, after *PageCursor) int
-		EventAPI            func(childComplexity int, id string) int
-		EventAPIs           func(childComplexity int, group *string, first *int, after *PageCursor) int
 		EventConfiguration  func(childComplexity int) int
+		EventDefinition     func(childComplexity int, id string) int
+		EventDefinitions    func(childComplexity int, group *string, first *int, after *PageCursor) int
 		HealthCheckURL      func(childComplexity int) int
 		ID                  func(childComplexity int) int
 		IntegrationSystemID func(childComplexity int) int
@@ -174,7 +175,7 @@ type ComplexityRoot struct {
 		TotalCount func(childComplexity int) int
 	}
 
-	EventAPIDefinition struct {
+	EventDefinition struct {
 		ApplicationID func(childComplexity int) int
 		Description   func(childComplexity int) int
 		Group         func(childComplexity int) int
@@ -184,13 +185,13 @@ type ComplexityRoot struct {
 		Version       func(childComplexity int) int
 	}
 
-	EventAPIDefinitionPage struct {
+	EventDefinitionPage struct {
 		Data       func(childComplexity int) int
 		PageInfo   func(childComplexity int) int
 		TotalCount func(childComplexity int) int
 	}
 
-	EventAPISpec struct {
+	EventSpec struct {
 		Data         func(childComplexity int) int
 		FetchRequest func(childComplexity int) int
 		Format       func(childComplexity int) int
@@ -248,49 +249,49 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AddAPI                                        func(childComplexity int, applicationID string, in APIDefinitionInput) int
-		AddDocument                                   func(childComplexity int, applicationID string, in DocumentInput) int
-		AddEventAPI                                   func(childComplexity int, applicationID string, in EventAPIDefinitionInput) int
-		AddWebhook                                    func(childComplexity int, applicationID string, in WebhookInput) int
-		CreateApplication                             func(childComplexity int, in ApplicationCreateInput) int
-		CreateApplicationTemplate                     func(childComplexity int, in ApplicationTemplateInput) int
-		CreateIntegrationSystem                       func(childComplexity int, in IntegrationSystemInput) int
-		CreateLabelDefinition                         func(childComplexity int, in LabelDefinitionInput) int
-		CreateRuntime                                 func(childComplexity int, in RuntimeInput) int
-		DeleteAPI                                     func(childComplexity int, id string) int
-		DeleteAPIAuth                                 func(childComplexity int, apiID string, runtimeID string) int
-		DeleteApplication                             func(childComplexity int, id string) int
-		DeleteApplicationLabel                        func(childComplexity int, applicationID string, key string) int
-		DeleteApplicationTemplate                     func(childComplexity int, id string) int
-		DeleteDocument                                func(childComplexity int, id string) int
-		DeleteEventAPI                                func(childComplexity int, id string) int
-		DeleteIntegrationSystem                       func(childComplexity int, id string) int
-		DeleteLabelDefinition                         func(childComplexity int, key string, deleteRelatedLabels *bool) int
-		DeleteRuntime                                 func(childComplexity int, id string) int
-		DeleteRuntimeLabel                            func(childComplexity int, runtimeID string, key string) int
-		DeleteSystemAuthForApplication                func(childComplexity int, authID string) int
-		DeleteSystemAuthForIntegrationSystem          func(childComplexity int, authID string) int
-		DeleteSystemAuthForRuntime                    func(childComplexity int, authID string) int
-		DeleteWebhook                                 func(childComplexity int, webhookID string) int
-		GenerateClientCredentialsForApplication       func(childComplexity int, id string) int
-		GenerateClientCredentialsForIntegrationSystem func(childComplexity int, id string) int
-		GenerateClientCredentialsForRuntime           func(childComplexity int, id string) int
-		GenerateOneTimeTokenForApplication            func(childComplexity int, id string) int
-		GenerateOneTimeTokenForRuntime                func(childComplexity int, id string) int
-		RefetchAPISpec                                func(childComplexity int, apiID string) int
-		RefetchEventAPISpec                           func(childComplexity int, eventID string) int
-		RegisterApplicationFromTemplate               func(childComplexity int, in ApplicationFromTemplateInput) int
-		SetAPIAuth                                    func(childComplexity int, apiID string, runtimeID string, in AuthInput) int
-		SetApplicationLabel                           func(childComplexity int, applicationID string, key string, value interface{}) int
-		SetRuntimeLabel                               func(childComplexity int, runtimeID string, key string, value interface{}) int
-		UpdateAPI                                     func(childComplexity int, id string, in APIDefinitionInput) int
-		UpdateApplication                             func(childComplexity int, id string, in ApplicationUpdateInput) int
-		UpdateApplicationTemplate                     func(childComplexity int, id string, in ApplicationTemplateInput) int
-		UpdateEventAPI                                func(childComplexity int, id string, in EventAPIDefinitionInput) int
-		UpdateIntegrationSystem                       func(childComplexity int, id string, in IntegrationSystemInput) int
-		UpdateLabelDefinition                         func(childComplexity int, in LabelDefinitionInput) int
-		UpdateRuntime                                 func(childComplexity int, id string, in RuntimeInput) int
-		UpdateWebhook                                 func(childComplexity int, webhookID string, in WebhookInput) int
+		AddAPIDefinition                             func(childComplexity int, applicationID string, in APIDefinitionInput) int
+		AddDocument                                  func(childComplexity int, applicationID string, in DocumentInput) int
+		AddEventDefinition                           func(childComplexity int, applicationID string, in EventDefinitionInput) int
+		AddWebhook                                   func(childComplexity int, applicationID string, in WebhookInput) int
+		CreateApplicationTemplate                    func(childComplexity int, in ApplicationTemplateInput) int
+		CreateLabelDefinition                        func(childComplexity int, in LabelDefinitionInput) int
+		DeleteAPIAuth                                func(childComplexity int, apiID string, runtimeID string) int
+		DeleteAPIDefinition                          func(childComplexity int, id string) int
+		DeleteApplicationLabel                       func(childComplexity int, applicationID string, key string) int
+		DeleteApplicationTemplate                    func(childComplexity int, id string) int
+		DeleteDocument                               func(childComplexity int, id string) int
+		DeleteEventDefinition                        func(childComplexity int, id string) int
+		DeleteLabelDefinition                        func(childComplexity int, key string, deleteRelatedLabels *bool) int
+		DeleteRuntimeLabel                           func(childComplexity int, runtimeID string, key string) int
+		DeleteSystemAuthForApplication               func(childComplexity int, authID string) int
+		DeleteSystemAuthForIntegrationSystem         func(childComplexity int, authID string) int
+		DeleteSystemAuthForRuntime                   func(childComplexity int, authID string) int
+		DeleteWebhook                                func(childComplexity int, webhookID string) int
+		RefetchAPISpec                               func(childComplexity int, apiID string) int
+		RefetchEventDefinitionSpec                   func(childComplexity int, eventID string) int
+		RegisterApplication                          func(childComplexity int, in ApplicationRegisterInput) int
+		RegisterApplicationFromTemplate              func(childComplexity int, in ApplicationFromTemplateInput) int
+		RegisterIntegrationSystem                    func(childComplexity int, in IntegrationSystemInput) int
+		RegisterRuntime                              func(childComplexity int, in RuntimeInput) int
+		RequestClientCredentialsForApplication       func(childComplexity int, id string) int
+		RequestClientCredentialsForIntegrationSystem func(childComplexity int, id string) int
+		RequestClientCredentialsForRuntime           func(childComplexity int, id string) int
+		RequestOneTimeTokenForApplication            func(childComplexity int, id string) int
+		RequestOneTimeTokenForRuntime                func(childComplexity int, id string) int
+		SetAPIAuth                                   func(childComplexity int, apiID string, runtimeID string, in AuthInput) int
+		SetApplicationLabel                          func(childComplexity int, applicationID string, key string, value interface{}) int
+		SetRuntimeLabel                              func(childComplexity int, runtimeID string, key string, value interface{}) int
+		UnregisterApplication                        func(childComplexity int, id string) int
+		UnregisterIntegrationSystem                  func(childComplexity int, id string) int
+		UnregisterRuntime                            func(childComplexity int, id string) int
+		UpdateAPIDefinition                          func(childComplexity int, id string, in APIDefinitionInput) int
+		UpdateApplication                            func(childComplexity int, id string, in ApplicationUpdateInput) int
+		UpdateApplicationTemplate                    func(childComplexity int, id string, in ApplicationTemplateInput) int
+		UpdateEventDefinition                        func(childComplexity int, id string, in EventDefinitionInput) int
+		UpdateIntegrationSystem                      func(childComplexity int, id string, in IntegrationSystemInput) int
+		UpdateLabelDefinition                        func(childComplexity int, in LabelDefinitionInput) int
+		UpdateRuntime                                func(childComplexity int, id string, in RuntimeInput) int
+		UpdateWebhook                                func(childComplexity int, webhookID string, in WebhookInput) int
 	}
 
 	OAuthCredentialData struct {
@@ -301,6 +302,8 @@ type ComplexityRoot struct {
 
 	OneTimeToken struct {
 		ConnectorURL func(childComplexity int) int
+		Raw          func(childComplexity int) int
+		RawEncoded   func(childComplexity int) int
 		Token        func(childComplexity int) int
 	}
 
@@ -383,10 +386,10 @@ type ApplicationResolver interface {
 
 	Webhooks(ctx context.Context, obj *Application) ([]*Webhook, error)
 
-	Apis(ctx context.Context, obj *Application, group *string, first *int, after *PageCursor) (*APIDefinitionPage, error)
-	EventAPIs(ctx context.Context, obj *Application, group *string, first *int, after *PageCursor) (*EventAPIDefinitionPage, error)
-	API(ctx context.Context, obj *Application, id string) (*APIDefinition, error)
-	EventAPI(ctx context.Context, obj *Application, id string) (*EventAPIDefinition, error)
+	APIDefinitions(ctx context.Context, obj *Application, group *string, first *int, after *PageCursor) (*APIDefinitionPage, error)
+	EventDefinitions(ctx context.Context, obj *Application, group *string, first *int, after *PageCursor) (*EventDefinitionPage, error)
+	APIDefinition(ctx context.Context, obj *Application, id string) (*APIDefinition, error)
+	EventDefinition(ctx context.Context, obj *Application, id string) (*EventDefinition, error)
 	Documents(ctx context.Context, obj *Application, first *int, after *PageCursor) (*DocumentPage, error)
 	Auths(ctx context.Context, obj *Application) ([]*SystemAuth, error)
 	EventConfiguration(ctx context.Context, obj *Application) (*ApplicationEventConfiguration, error)
@@ -394,47 +397,47 @@ type ApplicationResolver interface {
 type DocumentResolver interface {
 	FetchRequest(ctx context.Context, obj *Document) (*FetchRequest, error)
 }
-type EventAPISpecResolver interface {
-	FetchRequest(ctx context.Context, obj *EventAPISpec) (*FetchRequest, error)
+type EventSpecResolver interface {
+	FetchRequest(ctx context.Context, obj *EventSpec) (*FetchRequest, error)
 }
 type IntegrationSystemResolver interface {
 	Auths(ctx context.Context, obj *IntegrationSystem) ([]*SystemAuth, error)
 }
 type MutationResolver interface {
-	CreateApplication(ctx context.Context, in ApplicationCreateInput) (*Application, error)
+	RegisterApplication(ctx context.Context, in ApplicationRegisterInput) (*Application, error)
 	UpdateApplication(ctx context.Context, id string, in ApplicationUpdateInput) (*Application, error)
-	DeleteApplication(ctx context.Context, id string) (*Application, error)
+	UnregisterApplication(ctx context.Context, id string) (*Application, error)
 	CreateApplicationTemplate(ctx context.Context, in ApplicationTemplateInput) (*ApplicationTemplate, error)
 	RegisterApplicationFromTemplate(ctx context.Context, in ApplicationFromTemplateInput) (*Application, error)
 	UpdateApplicationTemplate(ctx context.Context, id string, in ApplicationTemplateInput) (*ApplicationTemplate, error)
 	DeleteApplicationTemplate(ctx context.Context, id string) (*ApplicationTemplate, error)
-	CreateRuntime(ctx context.Context, in RuntimeInput) (*Runtime, error)
+	RegisterRuntime(ctx context.Context, in RuntimeInput) (*Runtime, error)
 	UpdateRuntime(ctx context.Context, id string, in RuntimeInput) (*Runtime, error)
-	DeleteRuntime(ctx context.Context, id string) (*Runtime, error)
-	CreateIntegrationSystem(ctx context.Context, in IntegrationSystemInput) (*IntegrationSystem, error)
+	UnregisterRuntime(ctx context.Context, id string) (*Runtime, error)
+	RegisterIntegrationSystem(ctx context.Context, in IntegrationSystemInput) (*IntegrationSystem, error)
 	UpdateIntegrationSystem(ctx context.Context, id string, in IntegrationSystemInput) (*IntegrationSystem, error)
-	DeleteIntegrationSystem(ctx context.Context, id string) (*IntegrationSystem, error)
+	UnregisterIntegrationSystem(ctx context.Context, id string) (*IntegrationSystem, error)
 	AddWebhook(ctx context.Context, applicationID string, in WebhookInput) (*Webhook, error)
 	UpdateWebhook(ctx context.Context, webhookID string, in WebhookInput) (*Webhook, error)
 	DeleteWebhook(ctx context.Context, webhookID string) (*Webhook, error)
-	AddAPI(ctx context.Context, applicationID string, in APIDefinitionInput) (*APIDefinition, error)
-	UpdateAPI(ctx context.Context, id string, in APIDefinitionInput) (*APIDefinition, error)
-	DeleteAPI(ctx context.Context, id string) (*APIDefinition, error)
+	AddAPIDefinition(ctx context.Context, applicationID string, in APIDefinitionInput) (*APIDefinition, error)
+	UpdateAPIDefinition(ctx context.Context, id string, in APIDefinitionInput) (*APIDefinition, error)
+	DeleteAPIDefinition(ctx context.Context, id string) (*APIDefinition, error)
 	RefetchAPISpec(ctx context.Context, apiID string) (*APISpec, error)
-	GenerateOneTimeTokenForRuntime(ctx context.Context, id string) (*OneTimeToken, error)
-	GenerateOneTimeTokenForApplication(ctx context.Context, id string) (*OneTimeToken, error)
-	GenerateClientCredentialsForRuntime(ctx context.Context, id string) (*SystemAuth, error)
-	GenerateClientCredentialsForApplication(ctx context.Context, id string) (*SystemAuth, error)
-	GenerateClientCredentialsForIntegrationSystem(ctx context.Context, id string) (*SystemAuth, error)
+	RequestOneTimeTokenForRuntime(ctx context.Context, id string) (*OneTimeToken, error)
+	RequestOneTimeTokenForApplication(ctx context.Context, id string) (*OneTimeToken, error)
+	RequestClientCredentialsForRuntime(ctx context.Context, id string) (*SystemAuth, error)
+	RequestClientCredentialsForApplication(ctx context.Context, id string) (*SystemAuth, error)
+	RequestClientCredentialsForIntegrationSystem(ctx context.Context, id string) (*SystemAuth, error)
 	DeleteSystemAuthForRuntime(ctx context.Context, authID string) (*SystemAuth, error)
 	DeleteSystemAuthForApplication(ctx context.Context, authID string) (*SystemAuth, error)
 	DeleteSystemAuthForIntegrationSystem(ctx context.Context, authID string) (*SystemAuth, error)
 	SetAPIAuth(ctx context.Context, apiID string, runtimeID string, in AuthInput) (*APIRuntimeAuth, error)
 	DeleteAPIAuth(ctx context.Context, apiID string, runtimeID string) (*APIRuntimeAuth, error)
-	AddEventAPI(ctx context.Context, applicationID string, in EventAPIDefinitionInput) (*EventAPIDefinition, error)
-	UpdateEventAPI(ctx context.Context, id string, in EventAPIDefinitionInput) (*EventAPIDefinition, error)
-	DeleteEventAPI(ctx context.Context, id string) (*EventAPIDefinition, error)
-	RefetchEventAPISpec(ctx context.Context, eventID string) (*EventAPISpec, error)
+	AddEventDefinition(ctx context.Context, applicationID string, in EventDefinitionInput) (*EventDefinition, error)
+	UpdateEventDefinition(ctx context.Context, id string, in EventDefinitionInput) (*EventDefinition, error)
+	DeleteEventDefinition(ctx context.Context, id string) (*EventDefinition, error)
+	RefetchEventDefinitionSpec(ctx context.Context, eventID string) (*EventSpec, error)
 	AddDocument(ctx context.Context, applicationID string, in DocumentInput) (*Document, error)
 	DeleteDocument(ctx context.Context, id string) (*Document, error)
 	CreateLabelDefinition(ctx context.Context, in LabelDefinitionInput) (*LabelDefinition, error)
@@ -444,6 +447,10 @@ type MutationResolver interface {
 	DeleteApplicationLabel(ctx context.Context, applicationID string, key string) (*Label, error)
 	SetRuntimeLabel(ctx context.Context, runtimeID string, key string, value interface{}) (*Label, error)
 	DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string) (*Label, error)
+}
+type OneTimeTokenResolver interface {
+	Raw(ctx context.Context, obj *OneTimeToken) (string, error)
+	RawEncoded(ctx context.Context, obj *OneTimeToken) (string, error)
 }
 type QueryResolver interface {
 	Applications(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*ApplicationPage, error)
@@ -625,29 +632,29 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.APISpec.Type(childComplexity), true
 
-	case "Application.api":
-		if e.complexity.Application.API == nil {
+	case "Application.apiDefinition":
+		if e.complexity.Application.APIDefinition == nil {
 			break
 		}
 
-		args, err := ec.field_Application_api_args(context.TODO(), rawArgs)
+		args, err := ec.field_Application_apiDefinition_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Application.API(childComplexity, args["id"].(string)), true
+		return e.complexity.Application.APIDefinition(childComplexity, args["id"].(string)), true
 
-	case "Application.apis":
-		if e.complexity.Application.Apis == nil {
+	case "Application.apiDefinitions":
+		if e.complexity.Application.APIDefinitions == nil {
 			break
 		}
 
-		args, err := ec.field_Application_apis_args(context.TODO(), rawArgs)
+		args, err := ec.field_Application_apiDefinitions_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Application.Apis(childComplexity, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor)), true
+		return e.complexity.Application.APIDefinitions(childComplexity, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor)), true
 
 	case "Application.auths":
 		if e.complexity.Application.Auths == nil {
@@ -675,36 +682,36 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Application.Documents(childComplexity, args["first"].(*int), args["after"].(*PageCursor)), true
 
-	case "Application.eventAPI":
-		if e.complexity.Application.EventAPI == nil {
-			break
-		}
-
-		args, err := ec.field_Application_eventAPI_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Application.EventAPI(childComplexity, args["id"].(string)), true
-
-	case "Application.eventAPIs":
-		if e.complexity.Application.EventAPIs == nil {
-			break
-		}
-
-		args, err := ec.field_Application_eventAPIs_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Application.EventAPIs(childComplexity, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor)), true
-
 	case "Application.eventConfiguration":
 		if e.complexity.Application.EventConfiguration == nil {
 			break
 		}
 
 		return e.complexity.Application.EventConfiguration(childComplexity), true
+
+	case "Application.eventDefinition":
+		if e.complexity.Application.EventDefinition == nil {
+			break
+		}
+
+		args, err := ec.field_Application_eventDefinition_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Application.EventDefinition(childComplexity, args["id"].(string)), true
+
+	case "Application.eventDefinitions":
+		if e.complexity.Application.EventDefinitions == nil {
+			break
+		}
+
+		args, err := ec.field_Application_eventDefinitions_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Application.EventDefinitions(childComplexity, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor)), true
 
 	case "Application.healthCheckURL":
 		if e.complexity.Application.HealthCheckURL == nil {
@@ -1026,103 +1033,103 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DocumentPage.TotalCount(childComplexity), true
 
-	case "EventAPIDefinition.applicationID":
-		if e.complexity.EventAPIDefinition.ApplicationID == nil {
+	case "EventDefinition.applicationID":
+		if e.complexity.EventDefinition.ApplicationID == nil {
 			break
 		}
 
-		return e.complexity.EventAPIDefinition.ApplicationID(childComplexity), true
+		return e.complexity.EventDefinition.ApplicationID(childComplexity), true
 
-	case "EventAPIDefinition.description":
-		if e.complexity.EventAPIDefinition.Description == nil {
+	case "EventDefinition.description":
+		if e.complexity.EventDefinition.Description == nil {
 			break
 		}
 
-		return e.complexity.EventAPIDefinition.Description(childComplexity), true
+		return e.complexity.EventDefinition.Description(childComplexity), true
 
-	case "EventAPIDefinition.group":
-		if e.complexity.EventAPIDefinition.Group == nil {
+	case "EventDefinition.group":
+		if e.complexity.EventDefinition.Group == nil {
 			break
 		}
 
-		return e.complexity.EventAPIDefinition.Group(childComplexity), true
+		return e.complexity.EventDefinition.Group(childComplexity), true
 
-	case "EventAPIDefinition.id":
-		if e.complexity.EventAPIDefinition.ID == nil {
+	case "EventDefinition.id":
+		if e.complexity.EventDefinition.ID == nil {
 			break
 		}
 
-		return e.complexity.EventAPIDefinition.ID(childComplexity), true
+		return e.complexity.EventDefinition.ID(childComplexity), true
 
-	case "EventAPIDefinition.name":
-		if e.complexity.EventAPIDefinition.Name == nil {
+	case "EventDefinition.name":
+		if e.complexity.EventDefinition.Name == nil {
 			break
 		}
 
-		return e.complexity.EventAPIDefinition.Name(childComplexity), true
+		return e.complexity.EventDefinition.Name(childComplexity), true
 
-	case "EventAPIDefinition.spec":
-		if e.complexity.EventAPIDefinition.Spec == nil {
+	case "EventDefinition.spec":
+		if e.complexity.EventDefinition.Spec == nil {
 			break
 		}
 
-		return e.complexity.EventAPIDefinition.Spec(childComplexity), true
+		return e.complexity.EventDefinition.Spec(childComplexity), true
 
-	case "EventAPIDefinition.version":
-		if e.complexity.EventAPIDefinition.Version == nil {
+	case "EventDefinition.version":
+		if e.complexity.EventDefinition.Version == nil {
 			break
 		}
 
-		return e.complexity.EventAPIDefinition.Version(childComplexity), true
+		return e.complexity.EventDefinition.Version(childComplexity), true
 
-	case "EventAPIDefinitionPage.data":
-		if e.complexity.EventAPIDefinitionPage.Data == nil {
+	case "EventDefinitionPage.data":
+		if e.complexity.EventDefinitionPage.Data == nil {
 			break
 		}
 
-		return e.complexity.EventAPIDefinitionPage.Data(childComplexity), true
+		return e.complexity.EventDefinitionPage.Data(childComplexity), true
 
-	case "EventAPIDefinitionPage.pageInfo":
-		if e.complexity.EventAPIDefinitionPage.PageInfo == nil {
+	case "EventDefinitionPage.pageInfo":
+		if e.complexity.EventDefinitionPage.PageInfo == nil {
 			break
 		}
 
-		return e.complexity.EventAPIDefinitionPage.PageInfo(childComplexity), true
+		return e.complexity.EventDefinitionPage.PageInfo(childComplexity), true
 
-	case "EventAPIDefinitionPage.totalCount":
-		if e.complexity.EventAPIDefinitionPage.TotalCount == nil {
+	case "EventDefinitionPage.totalCount":
+		if e.complexity.EventDefinitionPage.TotalCount == nil {
 			break
 		}
 
-		return e.complexity.EventAPIDefinitionPage.TotalCount(childComplexity), true
+		return e.complexity.EventDefinitionPage.TotalCount(childComplexity), true
 
-	case "EventAPISpec.data":
-		if e.complexity.EventAPISpec.Data == nil {
+	case "EventSpec.data":
+		if e.complexity.EventSpec.Data == nil {
 			break
 		}
 
-		return e.complexity.EventAPISpec.Data(childComplexity), true
+		return e.complexity.EventSpec.Data(childComplexity), true
 
-	case "EventAPISpec.fetchRequest":
-		if e.complexity.EventAPISpec.FetchRequest == nil {
+	case "EventSpec.fetchRequest":
+		if e.complexity.EventSpec.FetchRequest == nil {
 			break
 		}
 
-		return e.complexity.EventAPISpec.FetchRequest(childComplexity), true
+		return e.complexity.EventSpec.FetchRequest(childComplexity), true
 
-	case "EventAPISpec.format":
-		if e.complexity.EventAPISpec.Format == nil {
+	case "EventSpec.format":
+		if e.complexity.EventSpec.Format == nil {
 			break
 		}
 
-		return e.complexity.EventAPISpec.Format(childComplexity), true
+		return e.complexity.EventSpec.Format(childComplexity), true
 
-	case "EventAPISpec.type":
-		if e.complexity.EventAPISpec.Type == nil {
+	case "EventSpec.type":
+		if e.complexity.EventSpec.Type == nil {
 			break
 		}
 
-		return e.complexity.EventAPISpec.Type(childComplexity), true
+		return e.complexity.EventSpec.Type(childComplexity), true
 
 	case "FetchRequest.auth":
 		if e.complexity.FetchRequest.Auth == nil {
@@ -1306,17 +1313,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LabelDefinition.Schema(childComplexity), true
 
-	case "Mutation.addAPI":
-		if e.complexity.Mutation.AddAPI == nil {
+	case "Mutation.addAPIDefinition":
+		if e.complexity.Mutation.AddAPIDefinition == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_addAPI_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_addAPIDefinition_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AddAPI(childComplexity, args["applicationID"].(string), args["in"].(APIDefinitionInput)), true
+		return e.complexity.Mutation.AddAPIDefinition(childComplexity, args["applicationID"].(string), args["in"].(APIDefinitionInput)), true
 
 	case "Mutation.addDocument":
 		if e.complexity.Mutation.AddDocument == nil {
@@ -1330,17 +1337,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.AddDocument(childComplexity, args["applicationID"].(string), args["in"].(DocumentInput)), true
 
-	case "Mutation.addEventAPI":
-		if e.complexity.Mutation.AddEventAPI == nil {
+	case "Mutation.addEventDefinition":
+		if e.complexity.Mutation.AddEventDefinition == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_addEventAPI_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_addEventDefinition_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AddEventAPI(childComplexity, args["applicationID"].(string), args["in"].(EventAPIDefinitionInput)), true
+		return e.complexity.Mutation.AddEventDefinition(childComplexity, args["applicationID"].(string), args["in"].(EventDefinitionInput)), true
 
 	case "Mutation.addWebhook":
 		if e.complexity.Mutation.AddWebhook == nil {
@@ -1354,18 +1361,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.AddWebhook(childComplexity, args["applicationID"].(string), args["in"].(WebhookInput)), true
 
-	case "Mutation.createApplication":
-		if e.complexity.Mutation.CreateApplication == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_createApplication_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.CreateApplication(childComplexity, args["in"].(ApplicationCreateInput)), true
-
 	case "Mutation.createApplicationTemplate":
 		if e.complexity.Mutation.CreateApplicationTemplate == nil {
 			break
@@ -1377,18 +1372,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.CreateApplicationTemplate(childComplexity, args["in"].(ApplicationTemplateInput)), true
-
-	case "Mutation.createIntegrationSystem":
-		if e.complexity.Mutation.CreateIntegrationSystem == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_createIntegrationSystem_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.CreateIntegrationSystem(childComplexity, args["in"].(IntegrationSystemInput)), true
 
 	case "Mutation.createLabelDefinition":
 		if e.complexity.Mutation.CreateLabelDefinition == nil {
@@ -1402,30 +1385,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateLabelDefinition(childComplexity, args["in"].(LabelDefinitionInput)), true
 
-	case "Mutation.createRuntime":
-		if e.complexity.Mutation.CreateRuntime == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_createRuntime_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.CreateRuntime(childComplexity, args["in"].(RuntimeInput)), true
-
-	case "Mutation.deleteAPI":
-		if e.complexity.Mutation.DeleteAPI == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_deleteAPI_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.DeleteAPI(childComplexity, args["id"].(string)), true
-
 	case "Mutation.deleteAPIAuth":
 		if e.complexity.Mutation.DeleteAPIAuth == nil {
 			break
@@ -1438,17 +1397,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteAPIAuth(childComplexity, args["apiID"].(string), args["runtimeID"].(string)), true
 
-	case "Mutation.deleteApplication":
-		if e.complexity.Mutation.DeleteApplication == nil {
+	case "Mutation.deleteAPIDefinition":
+		if e.complexity.Mutation.DeleteAPIDefinition == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_deleteApplication_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_deleteAPIDefinition_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteApplication(childComplexity, args["id"].(string)), true
+		return e.complexity.Mutation.DeleteAPIDefinition(childComplexity, args["id"].(string)), true
 
 	case "Mutation.deleteApplicationLabel":
 		if e.complexity.Mutation.DeleteApplicationLabel == nil {
@@ -1486,29 +1445,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteDocument(childComplexity, args["id"].(string)), true
 
-	case "Mutation.deleteEventAPI":
-		if e.complexity.Mutation.DeleteEventAPI == nil {
+	case "Mutation.deleteEventDefinition":
+		if e.complexity.Mutation.DeleteEventDefinition == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_deleteEventAPI_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_deleteEventDefinition_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteEventAPI(childComplexity, args["id"].(string)), true
-
-	case "Mutation.deleteIntegrationSystem":
-		if e.complexity.Mutation.DeleteIntegrationSystem == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_deleteIntegrationSystem_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.DeleteIntegrationSystem(childComplexity, args["id"].(string)), true
+		return e.complexity.Mutation.DeleteEventDefinition(childComplexity, args["id"].(string)), true
 
 	case "Mutation.deleteLabelDefinition":
 		if e.complexity.Mutation.DeleteLabelDefinition == nil {
@@ -1521,18 +1468,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteLabelDefinition(childComplexity, args["key"].(string), args["deleteRelatedLabels"].(*bool)), true
-
-	case "Mutation.deleteRuntime":
-		if e.complexity.Mutation.DeleteRuntime == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_deleteRuntime_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.DeleteRuntime(childComplexity, args["id"].(string)), true
 
 	case "Mutation.deleteRuntimeLabel":
 		if e.complexity.Mutation.DeleteRuntimeLabel == nil {
@@ -1594,66 +1529,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteWebhook(childComplexity, args["webhookID"].(string)), true
 
-	case "Mutation.generateClientCredentialsForApplication":
-		if e.complexity.Mutation.GenerateClientCredentialsForApplication == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_generateClientCredentialsForApplication_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.GenerateClientCredentialsForApplication(childComplexity, args["id"].(string)), true
-
-	case "Mutation.generateClientCredentialsForIntegrationSystem":
-		if e.complexity.Mutation.GenerateClientCredentialsForIntegrationSystem == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_generateClientCredentialsForIntegrationSystem_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.GenerateClientCredentialsForIntegrationSystem(childComplexity, args["id"].(string)), true
-
-	case "Mutation.generateClientCredentialsForRuntime":
-		if e.complexity.Mutation.GenerateClientCredentialsForRuntime == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_generateClientCredentialsForRuntime_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.GenerateClientCredentialsForRuntime(childComplexity, args["id"].(string)), true
-
-	case "Mutation.generateOneTimeTokenForApplication":
-		if e.complexity.Mutation.GenerateOneTimeTokenForApplication == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_generateOneTimeTokenForApplication_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.GenerateOneTimeTokenForApplication(childComplexity, args["id"].(string)), true
-
-	case "Mutation.generateOneTimeTokenForRuntime":
-		if e.complexity.Mutation.GenerateOneTimeTokenForRuntime == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_generateOneTimeTokenForRuntime_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.GenerateOneTimeTokenForRuntime(childComplexity, args["id"].(string)), true
-
 	case "Mutation.refetchAPISpec":
 		if e.complexity.Mutation.RefetchAPISpec == nil {
 			break
@@ -1666,17 +1541,29 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.RefetchAPISpec(childComplexity, args["apiID"].(string)), true
 
-	case "Mutation.refetchEventAPISpec":
-		if e.complexity.Mutation.RefetchEventAPISpec == nil {
+	case "Mutation.refetchEventDefinitionSpec":
+		if e.complexity.Mutation.RefetchEventDefinitionSpec == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_refetchEventAPISpec_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_refetchEventDefinitionSpec_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.RefetchEventAPISpec(childComplexity, args["eventID"].(string)), true
+		return e.complexity.Mutation.RefetchEventDefinitionSpec(childComplexity, args["eventID"].(string)), true
+
+	case "Mutation.registerApplication":
+		if e.complexity.Mutation.RegisterApplication == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_registerApplication_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RegisterApplication(childComplexity, args["in"].(ApplicationRegisterInput)), true
 
 	case "Mutation.registerApplicationFromTemplate":
 		if e.complexity.Mutation.RegisterApplicationFromTemplate == nil {
@@ -1689,6 +1576,90 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.RegisterApplicationFromTemplate(childComplexity, args["in"].(ApplicationFromTemplateInput)), true
+
+	case "Mutation.registerIntegrationSystem":
+		if e.complexity.Mutation.RegisterIntegrationSystem == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_registerIntegrationSystem_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RegisterIntegrationSystem(childComplexity, args["in"].(IntegrationSystemInput)), true
+
+	case "Mutation.registerRuntime":
+		if e.complexity.Mutation.RegisterRuntime == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_registerRuntime_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RegisterRuntime(childComplexity, args["in"].(RuntimeInput)), true
+
+	case "Mutation.requestClientCredentialsForApplication":
+		if e.complexity.Mutation.RequestClientCredentialsForApplication == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_requestClientCredentialsForApplication_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RequestClientCredentialsForApplication(childComplexity, args["id"].(string)), true
+
+	case "Mutation.requestClientCredentialsForIntegrationSystem":
+		if e.complexity.Mutation.RequestClientCredentialsForIntegrationSystem == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_requestClientCredentialsForIntegrationSystem_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RequestClientCredentialsForIntegrationSystem(childComplexity, args["id"].(string)), true
+
+	case "Mutation.requestClientCredentialsForRuntime":
+		if e.complexity.Mutation.RequestClientCredentialsForRuntime == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_requestClientCredentialsForRuntime_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RequestClientCredentialsForRuntime(childComplexity, args["id"].(string)), true
+
+	case "Mutation.requestOneTimeTokenForApplication":
+		if e.complexity.Mutation.RequestOneTimeTokenForApplication == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_requestOneTimeTokenForApplication_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RequestOneTimeTokenForApplication(childComplexity, args["id"].(string)), true
+
+	case "Mutation.requestOneTimeTokenForRuntime":
+		if e.complexity.Mutation.RequestOneTimeTokenForRuntime == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_requestOneTimeTokenForRuntime_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RequestOneTimeTokenForRuntime(childComplexity, args["id"].(string)), true
 
 	case "Mutation.setAPIAuth":
 		if e.complexity.Mutation.SetAPIAuth == nil {
@@ -1726,17 +1697,53 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.SetRuntimeLabel(childComplexity, args["runtimeID"].(string), args["key"].(string), args["value"].(interface{})), true
 
-	case "Mutation.updateAPI":
-		if e.complexity.Mutation.UpdateAPI == nil {
+	case "Mutation.unregisterApplication":
+		if e.complexity.Mutation.UnregisterApplication == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_updateAPI_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_unregisterApplication_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateAPI(childComplexity, args["id"].(string), args["in"].(APIDefinitionInput)), true
+		return e.complexity.Mutation.UnregisterApplication(childComplexity, args["id"].(string)), true
+
+	case "Mutation.unregisterIntegrationSystem":
+		if e.complexity.Mutation.UnregisterIntegrationSystem == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_unregisterIntegrationSystem_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UnregisterIntegrationSystem(childComplexity, args["id"].(string)), true
+
+	case "Mutation.unregisterRuntime":
+		if e.complexity.Mutation.UnregisterRuntime == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_unregisterRuntime_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UnregisterRuntime(childComplexity, args["id"].(string)), true
+
+	case "Mutation.updateAPIDefinition":
+		if e.complexity.Mutation.UpdateAPIDefinition == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateAPIDefinition_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateAPIDefinition(childComplexity, args["id"].(string), args["in"].(APIDefinitionInput)), true
 
 	case "Mutation.updateApplication":
 		if e.complexity.Mutation.UpdateApplication == nil {
@@ -1762,17 +1769,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UpdateApplicationTemplate(childComplexity, args["id"].(string), args["in"].(ApplicationTemplateInput)), true
 
-	case "Mutation.updateEventAPI":
-		if e.complexity.Mutation.UpdateEventAPI == nil {
+	case "Mutation.updateEventDefinition":
+		if e.complexity.Mutation.UpdateEventDefinition == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_updateEventAPI_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_updateEventDefinition_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateEventAPI(childComplexity, args["id"].(string), args["in"].(EventAPIDefinitionInput)), true
+		return e.complexity.Mutation.UpdateEventDefinition(childComplexity, args["id"].(string), args["in"].(EventDefinitionInput)), true
 
 	case "Mutation.updateIntegrationSystem":
 		if e.complexity.Mutation.UpdateIntegrationSystem == nil {
@@ -1849,6 +1856,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.OneTimeToken.ConnectorURL(childComplexity), true
+
+	case "OneTimeToken.raw":
+		if e.complexity.OneTimeToken.Raw == nil {
+			break
+		}
+
+		return e.complexity.OneTimeToken.Raw(childComplexity), true
+
+	case "OneTimeToken.rawEncoded":
+		if e.complexity.OneTimeToken.RawEncoded == nil {
+			break
+		}
+
+		return e.complexity.OneTimeToken.RawEncoded(childComplexity), true
 
 	case "OneTimeToken.token":
 		if e.complexity.OneTimeToken.Token == nil {
@@ -2302,7 +2323,7 @@ enum DocumentFormat {
 	MARKDOWN
 }
 
-enum EventAPISpecType {
+enum EventSpecType {
 	ASYNC_API
 }
 
@@ -2369,27 +2390,27 @@ input APISpecInput {
 	fetchRequest: FetchRequestInput
 }
 
-input ApplicationCreateInput {
-	name: String!
-	description: String
-	labels: Labels
-	webhooks: [WebhookInput!]
-	healthCheckURL: String
-	apis: [APIDefinitionInput!]
-	eventAPIs: [EventAPIDefinitionInput!]
-	documents: [DocumentInput!]
-	integrationSystemID: ID
-}
-
 input ApplicationFromTemplateInput {
 	templateName: String!
 	values: [TemplateValueInput!]
 }
 
+input ApplicationRegisterInput {
+	name: String!
+	description: String
+	labels: Labels
+	webhooks: [WebhookInput!]
+	healthCheckURL: String
+	apiDefinitions: [APIDefinitionInput!]
+	eventDefinitions: [EventDefinitionInput!]
+	documents: [DocumentInput!]
+	integrationSystemID: ID
+}
+
 input ApplicationTemplateInput {
 	name: String!
 	description: String
-	applicationInput: ApplicationCreateInput!
+	applicationInput: ApplicationRegisterInput!
 	placeholders: [PlaceholderDefinitionInput!]
 	accessLevel: ApplicationTemplateAccessLevel!
 }
@@ -2439,17 +2460,17 @@ input DocumentInput {
 	fetchRequest: FetchRequestInput
 }
 
-input EventAPIDefinitionInput {
+input EventDefinitionInput {
 	name: String!
 	description: String
-	spec: EventAPISpecInput!
+	spec: EventSpecInput!
 	group: String
 	version: VersionInput
 }
 
-input EventAPISpecInput {
+input EventSpecInput {
 	data: CLOB
-	eventSpecType: EventAPISpecType!
+	type: EventSpecType!
 	format: SpecFormat!
 	fetchRequest: FetchRequestInput
 }
@@ -2583,13 +2604,13 @@ type Application {
 	group allows to find different versions of the same API
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
 	"""
-	apis(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage!
+	apiDefinitions(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage!
 	"""
-	group allows to find different versions of the same event API
+	group allows to find different versions of the same event Definitions
 	"""
-	eventAPIs(group: String, first: Int = 100, after: PageCursor): EventAPIDefinitionPage!
-	api(id: ID!): APIDefinition
-	eventAPI(id: ID!): EventAPIDefinition
+	eventDefinitions(group: String, first: Int = 100, after: PageCursor): EventDefinitionPage!
+	apiDefinition(id: ID!): APIDefinition
+	eventDefinition(id: ID!): EventDefinition
 	documents(first: Int = 100, after: PageCursor): DocumentPage!
 	auths: [SystemAuth!]!
 	eventConfiguration: ApplicationEventConfiguration
@@ -2669,7 +2690,7 @@ type DocumentPage implements Pageable {
 	totalCount: Int!
 }
 
-type EventAPIDefinition {
+type EventDefinition {
 	id: ID!
 	applicationID: ID!
 	name: String!
@@ -2678,19 +2699,19 @@ type EventAPIDefinition {
 	group allows you to find the same API but in different version
 	"""
 	group: String
-	spec: EventAPISpec!
+	spec: EventSpec!
 	version: Version
 }
 
-type EventAPIDefinitionPage implements Pageable {
-	data: [EventAPIDefinition!]!
+type EventDefinitionPage implements Pageable {
+	data: [EventDefinition!]!
 	pageInfo: PageInfo!
 	totalCount: Int!
 }
 
-type EventAPISpec {
+type EventSpec {
 	data: CLOB
-	type: EventAPISpecType!
+	type: EventSpecType!
 	format: SpecFormat!
 	fetchRequest: FetchRequest
 }
@@ -2760,6 +2781,8 @@ type OAuthCredentialData {
 type OneTimeToken {
 	token: String!
 	connectorURL: String!
+	raw: String!
+	rawEncoded: String!
 }
 
 type PageInfo {
@@ -2897,13 +2920,13 @@ type Query {
 type Mutation {
 	"""
 	**Examples**
-	- [create application with apis](examples/create-application/create-application-with-apis.graphql)
-	- [create application with documents](examples/create-application/create-application-with-documents.graphql)
-	- [create application with event apis](examples/create-application/create-application-with-event-apis.graphql)
-	- [create application with webhooks](examples/create-application/create-application-with-webhooks.graphql)
-	- [create application](examples/create-application/create-application.graphql)
+	- [register application with api definitions](examples/register-application/register-application-with-api-definitions.graphql)
+	- [register application with documents](examples/register-application/register-application-with-documents.graphql)
+	- [register application with event definitions](examples/register-application/register-application-with-event-definitions.graphql)
+	- [register application with webhooks](examples/register-application/register-application-with-webhooks.graphql)
+	- [register application](examples/register-application/register-application.graphql)
 	"""
-	createApplication(in: ApplicationCreateInput! @validate): Application! @hasScopes(path: "graphql.mutation.createApplication")
+	registerApplication(in: ApplicationRegisterInput! @validate): Application! @hasScopes(path: "graphql.mutation.registerApplication")
 	"""
 	**Examples**
 	- [update application](examples/update-application/update-application.graphql)
@@ -2911,9 +2934,9 @@ type Mutation {
 	updateApplication(id: ID!, in: ApplicationUpdateInput! @validate): Application! @hasScopes(path: "graphql.mutation.updateApplication")
 	"""
 	**Examples**
-	- [delete application](examples/delete-application/delete-application.graphql)
+	- [unregister application](examples/unregister-application/unregister-application.graphql)
 	"""
-	deleteApplication(id: ID!): Application! @hasScopes(path: "graphql.mutation.deleteApplication")
+	unregisterApplication(id: ID!): Application! @hasScopes(path: "graphql.mutation.unregisterApplication")
 	"""
 	**Examples**
 	- [create application template](examples/create-application-template/create-application-template.graphql)
@@ -2936,9 +2959,9 @@ type Mutation {
 	deleteApplicationTemplate(id: ID!): ApplicationTemplate! @hasScopes(path: "graphql.mutation.deleteApplicationTemplate")
 	"""
 	**Examples**
-	- [create runtime](examples/create-runtime/create-runtime.graphql)
+	- [register runtime](examples/register-runtime/register-runtime.graphql)
 	"""
-	createRuntime(in: RuntimeInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.createRuntime")
+	registerRuntime(in: RuntimeInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.registerRuntime")
 	"""
 	**Examples**
 	- [update runtime](examples/update-runtime/update-runtime.graphql)
@@ -2946,24 +2969,20 @@ type Mutation {
 	updateRuntime(id: ID!, in: RuntimeInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.updateRuntime")
 	"""
 	**Examples**
-	- [delete runtime](examples/delete-runtime/delete-runtime.graphql)
+	- [unregister runtime](examples/unregister-runtime/unregister-runtime.graphql)
 	"""
-	deleteRuntime(id: ID!): Runtime! @hasScopes(path: "graphql.mutation.deleteRuntime")
+	unregisterRuntime(id: ID!): Runtime! @hasScopes(path: "graphql.mutation.unregisterRuntime")
 	"""
 	**Examples**
-	- [create integration system](examples/create-integration-system/create-integration-system.graphql)
+	- [register integration system](examples/register-integration-system/register-integration-system.graphql)
 	"""
-	createIntegrationSystem(in: IntegrationSystemInput! @validate): IntegrationSystem! @hasScopes(path: "graphql.mutation.createIntegrationSystem")
+	registerIntegrationSystem(in: IntegrationSystemInput! @validate): IntegrationSystem! @hasScopes(path: "graphql.mutation.registerIntegrationSystem")
 	"""
 	**Examples**
 	- [update integration system](examples/update-integration-system/update-integration-system.graphql)
 	"""
 	updateIntegrationSystem(id: ID!, in: IntegrationSystemInput! @validate): IntegrationSystem! @hasScopes(path: "graphql.mutation.updateIntegrationSystem")
-	"""
-	**Examples**
-	- [delete integration system](examples/delete-integration-system/delete-integration-system.graphql)
-	"""
-	deleteIntegrationSystem(id: ID!): IntegrationSystem! @hasScopes(path: "graphql.mutation.deleteIntegrationSystem")
+	unregisterIntegrationSystem(id: ID!): IntegrationSystem! @hasScopes(path: "graphql.mutation.unregisterIntegrationSystem")
 	"""
 	**Examples**
 	- [add application webhook](examples/add-webhook/add-application-webhook.graphql)
@@ -2981,25 +3000,25 @@ type Mutation {
 	deleteWebhook(webhookID: ID!): Webhook! @hasScopes(path: "graphql.mutation.deleteWebhook")
 	"""
 	**Examples**
-	- [add api](examples/add-api/add-api.graphql)
+	- [add api definition](examples/add-api-definition/add-api-definition.graphql)
 	"""
-	addAPI(applicationID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPI")
-	"""
-	**Examples**
-	- [update api](examples/update-api/update-api.graphql)
-	"""
-	updateAPI(id: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.updateAPI")
+	addAPIDefinition(applicationID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinition")
 	"""
 	**Examples**
-	- [delete api](examples/delete-api/delete-api.graphql)
+	- [update api definition](examples/update-api-definition/update-api-definition.graphql)
 	"""
-	deleteAPI(id: ID!): APIDefinition! @hasScopes(path: "graphql.mutation.deleteAPI")
+	updateAPIDefinition(id: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.updateAPIDefinition")
+	"""
+	**Examples**
+	- [delete api definition](examples/delete-api-definition/delete-api-definition.graphql)
+	"""
+	deleteAPIDefinition(id: ID!): APIDefinition! @hasScopes(path: "graphql.mutation.deleteAPIDefinition")
 	refetchAPISpec(apiID: ID!): APISpec! @hasScopes(path: "graphql.mutation.refetchAPISpec")
-	generateOneTimeTokenForRuntime(id: ID!): OneTimeToken! @hasScopes(path: "graphql.mutation.generateOneTimeTokenForRuntime")
-	generateOneTimeTokenForApplication(id: ID!): OneTimeToken! @hasScopes(path: "graphql.mutation.generateOneTimeTokenForApplication")
-	generateClientCredentialsForRuntime(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.generateClientCredentialsForRuntime")
-	generateClientCredentialsForApplication(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.generateClientCredentialsForApplication")
-	generateClientCredentialsForIntegrationSystem(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.generateClientCredentialsForIntegrationSystem")
+	requestOneTimeTokenForRuntime(id: ID!): OneTimeToken! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForRuntime")
+	requestOneTimeTokenForApplication(id: ID!): OneTimeToken! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForApplication")
+	requestClientCredentialsForRuntime(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.requestClientCredentialsForRuntime")
+	requestClientCredentialsForApplication(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.requestClientCredentialsForApplication")
+	requestClientCredentialsForIntegrationSystem(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.requestClientCredentialsForIntegrationSystem")
 	deleteSystemAuthForRuntime(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForRuntime")
 	deleteSystemAuthForApplication(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForApplication")
 	deleteSystemAuthForIntegrationSystem(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForIntegrationSystem")
@@ -3008,10 +3027,22 @@ type Mutation {
 	"""
 	setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput! @validate): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.setAPIAuth")
 	deleteAPIAuth(apiID: ID!, runtimeID: ID!): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.deleteAPIAuth")
-	addEventAPI(applicationID: ID!, in: EventAPIDefinitionInput! @validate): EventAPIDefinition! @hasScopes(path: "graphql.mutation.addEventAPI")
-	updateEventAPI(id: ID!, in: EventAPIDefinitionInput! @validate): EventAPIDefinition! @hasScopes(path: "graphql.mutation.updateEventAPI")
-	deleteEventAPI(id: ID!): EventAPIDefinition! @hasScopes(path: "graphql.mutation.deleteEventAPI")
-	refetchEventAPISpec(eventID: ID!): EventAPISpec! @hasScopes(path: "graphql.mutation.refetchEventAPISpec")
+	"""
+	**Examples**
+	- [add event definition](examples/add-event-definition/add-event-definition.graphql)
+	"""
+	addEventDefinition(applicationID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinition")
+	"""
+	**Examples**
+	- [update event definition](examples/update-event-definition/update-event-definition.graphql)
+	"""
+	updateEventDefinition(id: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.updateEventDefinition")
+	"""
+	**Examples**
+	- [delete event definition](examples/delete-event-definition/delete-event-definition.graphql)
+	"""
+	deleteEventDefinition(id: ID!): EventDefinition! @hasScopes(path: "graphql.mutation.deleteEventDefinition")
+	refetchEventDefinitionSpec(eventID: ID!): EventSpec! @hasScopes(path: "graphql.mutation.refetchEventDefinitionSpec")
 	"""
 	**Examples**
 	- [add document](examples/add-document/add-document.graphql)
@@ -3096,7 +3127,7 @@ func (ec *executionContext) field_APIDefinition_auth_args(ctx context.Context, r
 	return args, nil
 }
 
-func (ec *executionContext) field_Application_api_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Application_apiDefinition_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -3110,7 +3141,7 @@ func (ec *executionContext) field_Application_api_args(ctx context.Context, rawA
 	return args, nil
 }
 
-func (ec *executionContext) field_Application_apis_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Application_apiDefinitions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
@@ -3162,7 +3193,7 @@ func (ec *executionContext) field_Application_documents_args(ctx context.Context
 	return args, nil
 }
 
-func (ec *executionContext) field_Application_eventAPI_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Application_eventDefinition_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -3176,7 +3207,7 @@ func (ec *executionContext) field_Application_eventAPI_args(ctx context.Context,
 	return args, nil
 }
 
-func (ec *executionContext) field_Application_eventAPIs_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Application_eventDefinitions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
@@ -3220,7 +3251,7 @@ func (ec *executionContext) field_Application_labels_args(ctx context.Context, r
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_addAPI_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_addAPIDefinition_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -3288,7 +3319,7 @@ func (ec *executionContext) field_Mutation_addDocument_args(ctx context.Context,
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_addEventAPI_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_addEventDefinition_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -3299,10 +3330,10 @@ func (ec *executionContext) field_Mutation_addEventAPI_args(ctx context.Context,
 		}
 	}
 	args["applicationID"] = arg0
-	var arg1 EventAPIDefinitionInput
+	var arg1 EventDefinitionInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNEventAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinitionInput(ctx, tmp)
+			return ec.unmarshalNEventDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -3312,10 +3343,10 @@ func (ec *executionContext) field_Mutation_addEventAPI_args(ctx context.Context,
 		if err != nil {
 			return nil, err
 		}
-		if data, ok := tmp.(EventAPIDefinitionInput); ok {
+		if data, ok := tmp.(EventDefinitionInput); ok {
 			arg1 = data
 		} else {
-			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.EventAPIDefinitionInput`, tmp)
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.EventDefinitionInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -3382,58 +3413,6 @@ func (ec *executionContext) field_Mutation_createApplicationTemplate_args(ctx co
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_createApplication_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 ApplicationCreateInput
-	if tmp, ok := rawArgs["in"]; ok {
-		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNApplicationCreateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationCreateInput(ctx, tmp)
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			return ec.directives.Validate(ctx, rawArgs, directive0)
-		}
-
-		tmp, err = directive1(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if data, ok := tmp.(ApplicationCreateInput); ok {
-			arg0 = data
-		} else {
-			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.ApplicationCreateInput`, tmp)
-		}
-	}
-	args["in"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_createIntegrationSystem_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 IntegrationSystemInput
-	if tmp, ok := rawArgs["in"]; ok {
-		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNIntegrationSystemInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystemInput(ctx, tmp)
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			return ec.directives.Validate(ctx, rawArgs, directive0)
-		}
-
-		tmp, err = directive1(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if data, ok := tmp.(IntegrationSystemInput); ok {
-			arg0 = data
-		} else {
-			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.IntegrationSystemInput`, tmp)
-		}
-	}
-	args["in"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_createLabelDefinition_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -3454,32 +3433,6 @@ func (ec *executionContext) field_Mutation_createLabelDefinition_args(ctx contex
 			arg0 = data
 		} else {
 			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.LabelDefinitionInput`, tmp)
-		}
-	}
-	args["in"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_createRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 RuntimeInput
-	if tmp, ok := rawArgs["in"]; ok {
-		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeInput(ctx, tmp)
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			return ec.directives.Validate(ctx, rawArgs, directive0)
-		}
-
-		tmp, err = directive1(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if data, ok := tmp.(RuntimeInput); ok {
-			arg0 = data
-		} else {
-			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.RuntimeInput`, tmp)
 		}
 	}
 	args["in"] = arg0
@@ -3508,7 +3461,7 @@ func (ec *executionContext) field_Mutation_deleteAPIAuth_args(ctx context.Contex
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_deleteAPI_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_deleteAPIDefinition_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -3558,20 +3511,6 @@ func (ec *executionContext) field_Mutation_deleteApplicationTemplate_args(ctx co
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_deleteApplication_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_deleteDocument_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -3586,21 +3525,7 @@ func (ec *executionContext) field_Mutation_deleteDocument_args(ctx context.Conte
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_deleteEventAPI_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_deleteIntegrationSystem_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_deleteEventDefinition_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -3655,20 +3580,6 @@ func (ec *executionContext) field_Mutation_deleteRuntimeLabel_args(ctx context.C
 		}
 	}
 	args["key"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_deleteRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
 	return args, nil
 }
 
@@ -3728,76 +3639,6 @@ func (ec *executionContext) field_Mutation_deleteWebhook_args(ctx context.Contex
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_generateClientCredentialsForApplication_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_generateClientCredentialsForIntegrationSystem_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_generateClientCredentialsForRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_generateOneTimeTokenForApplication_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_generateOneTimeTokenForRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_refetchAPISpec_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -3812,7 +3653,7 @@ func (ec *executionContext) field_Mutation_refetchAPISpec_args(ctx context.Conte
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_refetchEventAPISpec_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_refetchEventDefinitionSpec_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -3849,6 +3690,154 @@ func (ec *executionContext) field_Mutation_registerApplicationFromTemplate_args(
 		}
 	}
 	args["in"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_registerApplication_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 ApplicationRegisterInput
+	if tmp, ok := rawArgs["in"]; ok {
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNApplicationRegisterInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationRegisterInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if data, ok := tmp.(ApplicationRegisterInput); ok {
+			arg0 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.ApplicationRegisterInput`, tmp)
+		}
+	}
+	args["in"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_registerIntegrationSystem_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 IntegrationSystemInput
+	if tmp, ok := rawArgs["in"]; ok {
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNIntegrationSystemInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystemInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if data, ok := tmp.(IntegrationSystemInput); ok {
+			arg0 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.IntegrationSystemInput`, tmp)
+		}
+	}
+	args["in"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_registerRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 RuntimeInput
+	if tmp, ok := rawArgs["in"]; ok {
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if data, ok := tmp.(RuntimeInput); ok {
+			arg0 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.RuntimeInput`, tmp)
+		}
+	}
+	args["in"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_requestClientCredentialsForApplication_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_requestClientCredentialsForIntegrationSystem_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_requestClientCredentialsForRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_requestOneTimeTokenForApplication_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_requestOneTimeTokenForRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -3954,7 +3943,49 @@ func (ec *executionContext) field_Mutation_setRuntimeLabel_args(ctx context.Cont
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_updateAPI_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_unregisterApplication_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_unregisterIntegrationSystem_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_unregisterRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateAPIDefinition_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -4056,7 +4087,7 @@ func (ec *executionContext) field_Mutation_updateApplication_args(ctx context.Co
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_updateEventAPI_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_updateEventDefinition_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -4067,10 +4098,10 @@ func (ec *executionContext) field_Mutation_updateEventAPI_args(ctx context.Conte
 		}
 	}
 	args["id"] = arg0
-	var arg1 EventAPIDefinitionInput
+	var arg1 EventDefinitionInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNEventAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinitionInput(ctx, tmp)
+			return ec.unmarshalNEventDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -4080,10 +4111,10 @@ func (ec *executionContext) field_Mutation_updateEventAPI_args(ctx context.Conte
 		if err != nil {
 			return nil, err
 		}
-		if data, ok := tmp.(EventAPIDefinitionInput); ok {
+		if data, ok := tmp.(EventDefinitionInput); ok {
 			arg1 = data
 		} else {
-			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.EventAPIDefinitionInput`, tmp)
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.EventDefinitionInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -5541,7 +5572,7 @@ func (ec *executionContext) _Application_healthCheckURL(ctx context.Context, fie
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Application_apis(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+func (ec *executionContext) _Application_apiDefinitions(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -5558,7 +5589,7 @@ func (ec *executionContext) _Application_apis(ctx context.Context, field graphql
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Application_apis_args(ctx, rawArgs)
+	args, err := ec.field_Application_apiDefinitions_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -5567,7 +5598,7 @@ func (ec *executionContext) _Application_apis(ctx context.Context, field graphql
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Application().Apis(rctx, obj, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor))
+		return ec.resolvers.Application().APIDefinitions(rctx, obj, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5585,7 +5616,7 @@ func (ec *executionContext) _Application_apis(ctx context.Context, field graphql
 	return ec.marshalNAPIDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionPage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Application_eventAPIs(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+func (ec *executionContext) _Application_eventDefinitions(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -5602,7 +5633,7 @@ func (ec *executionContext) _Application_eventAPIs(ctx context.Context, field gr
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Application_eventAPIs_args(ctx, rawArgs)
+	args, err := ec.field_Application_eventDefinitions_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -5611,7 +5642,7 @@ func (ec *executionContext) _Application_eventAPIs(ctx context.Context, field gr
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Application().EventAPIs(rctx, obj, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor))
+		return ec.resolvers.Application().EventDefinitions(rctx, obj, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5623,13 +5654,13 @@ func (ec *executionContext) _Application_eventAPIs(ctx context.Context, field gr
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*EventAPIDefinitionPage)
+	res := resTmp.(*EventDefinitionPage)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNEventAPIDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinitionPage(ctx, field.Selections, res)
+	return ec.marshalNEventDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionPage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Application_api(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+func (ec *executionContext) _Application_apiDefinition(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -5646,7 +5677,7 @@ func (ec *executionContext) _Application_api(ctx context.Context, field graphql.
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Application_api_args(ctx, rawArgs)
+	args, err := ec.field_Application_apiDefinition_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -5655,7 +5686,7 @@ func (ec *executionContext) _Application_api(ctx context.Context, field graphql.
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Application().API(rctx, obj, args["id"].(string))
+		return ec.resolvers.Application().APIDefinition(rctx, obj, args["id"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5670,7 +5701,7 @@ func (ec *executionContext) _Application_api(ctx context.Context, field graphql.
 	return ec.marshalOAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinition(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Application_eventAPI(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+func (ec *executionContext) _Application_eventDefinition(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -5687,7 +5718,7 @@ func (ec *executionContext) _Application_eventAPI(ctx context.Context, field gra
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Application_eventAPI_args(ctx, rawArgs)
+	args, err := ec.field_Application_eventDefinition_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -5696,7 +5727,7 @@ func (ec *executionContext) _Application_eventAPI(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Application().EventAPI(rctx, obj, args["id"].(string))
+		return ec.resolvers.Application().EventDefinition(rctx, obj, args["id"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5705,10 +5736,10 @@ func (ec *executionContext) _Application_eventAPI(ctx context.Context, field gra
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*EventAPIDefinition)
+	res := resTmp.(*EventDefinition)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOEventAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinition(ctx, field.Selections, res)
+	return ec.marshalOEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_documents(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -7202,7 +7233,7 @@ func (ec *executionContext) _DocumentPage_totalCount(ctx context.Context, field 
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _EventAPIDefinition_id(ctx context.Context, field graphql.CollectedField, obj *EventAPIDefinition) (ret graphql.Marshaler) {
+func (ec *executionContext) _EventDefinition_id(ctx context.Context, field graphql.CollectedField, obj *EventDefinition) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -7212,7 +7243,7 @@ func (ec *executionContext) _EventAPIDefinition_id(ctx context.Context, field gr
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "EventAPIDefinition",
+		Object:   "EventDefinition",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -7239,7 +7270,7 @@ func (ec *executionContext) _EventAPIDefinition_id(ctx context.Context, field gr
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _EventAPIDefinition_applicationID(ctx context.Context, field graphql.CollectedField, obj *EventAPIDefinition) (ret graphql.Marshaler) {
+func (ec *executionContext) _EventDefinition_applicationID(ctx context.Context, field graphql.CollectedField, obj *EventDefinition) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -7249,7 +7280,7 @@ func (ec *executionContext) _EventAPIDefinition_applicationID(ctx context.Contex
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "EventAPIDefinition",
+		Object:   "EventDefinition",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -7276,7 +7307,7 @@ func (ec *executionContext) _EventAPIDefinition_applicationID(ctx context.Contex
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _EventAPIDefinition_name(ctx context.Context, field graphql.CollectedField, obj *EventAPIDefinition) (ret graphql.Marshaler) {
+func (ec *executionContext) _EventDefinition_name(ctx context.Context, field graphql.CollectedField, obj *EventDefinition) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -7286,7 +7317,7 @@ func (ec *executionContext) _EventAPIDefinition_name(ctx context.Context, field 
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "EventAPIDefinition",
+		Object:   "EventDefinition",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -7313,7 +7344,7 @@ func (ec *executionContext) _EventAPIDefinition_name(ctx context.Context, field 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _EventAPIDefinition_description(ctx context.Context, field graphql.CollectedField, obj *EventAPIDefinition) (ret graphql.Marshaler) {
+func (ec *executionContext) _EventDefinition_description(ctx context.Context, field graphql.CollectedField, obj *EventDefinition) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -7323,7 +7354,7 @@ func (ec *executionContext) _EventAPIDefinition_description(ctx context.Context,
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "EventAPIDefinition",
+		Object:   "EventDefinition",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -7347,7 +7378,7 @@ func (ec *executionContext) _EventAPIDefinition_description(ctx context.Context,
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _EventAPIDefinition_group(ctx context.Context, field graphql.CollectedField, obj *EventAPIDefinition) (ret graphql.Marshaler) {
+func (ec *executionContext) _EventDefinition_group(ctx context.Context, field graphql.CollectedField, obj *EventDefinition) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -7357,7 +7388,7 @@ func (ec *executionContext) _EventAPIDefinition_group(ctx context.Context, field
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "EventAPIDefinition",
+		Object:   "EventDefinition",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -7381,7 +7412,7 @@ func (ec *executionContext) _EventAPIDefinition_group(ctx context.Context, field
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _EventAPIDefinition_spec(ctx context.Context, field graphql.CollectedField, obj *EventAPIDefinition) (ret graphql.Marshaler) {
+func (ec *executionContext) _EventDefinition_spec(ctx context.Context, field graphql.CollectedField, obj *EventDefinition) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -7391,7 +7422,7 @@ func (ec *executionContext) _EventAPIDefinition_spec(ctx context.Context, field 
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "EventAPIDefinition",
+		Object:   "EventDefinition",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -7412,13 +7443,13 @@ func (ec *executionContext) _EventAPIDefinition_spec(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*EventAPISpec)
+	res := resTmp.(*EventSpec)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNEventAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPISpec(ctx, field.Selections, res)
+	return ec.marshalNEventSpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpec(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _EventAPIDefinition_version(ctx context.Context, field graphql.CollectedField, obj *EventAPIDefinition) (ret graphql.Marshaler) {
+func (ec *executionContext) _EventDefinition_version(ctx context.Context, field graphql.CollectedField, obj *EventDefinition) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -7428,7 +7459,7 @@ func (ec *executionContext) _EventAPIDefinition_version(ctx context.Context, fie
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "EventAPIDefinition",
+		Object:   "EventDefinition",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -7452,7 +7483,7 @@ func (ec *executionContext) _EventAPIDefinition_version(ctx context.Context, fie
 	return ec.marshalOVersion2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐVersion(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _EventAPIDefinitionPage_data(ctx context.Context, field graphql.CollectedField, obj *EventAPIDefinitionPage) (ret graphql.Marshaler) {
+func (ec *executionContext) _EventDefinitionPage_data(ctx context.Context, field graphql.CollectedField, obj *EventDefinitionPage) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -7462,7 +7493,7 @@ func (ec *executionContext) _EventAPIDefinitionPage_data(ctx context.Context, fi
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "EventAPIDefinitionPage",
+		Object:   "EventDefinitionPage",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -7483,13 +7514,13 @@ func (ec *executionContext) _EventAPIDefinitionPage_data(ctx context.Context, fi
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*EventAPIDefinition)
+	res := resTmp.([]*EventDefinition)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNEventAPIDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinition(ctx, field.Selections, res)
+	return ec.marshalNEventDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _EventAPIDefinitionPage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *EventAPIDefinitionPage) (ret graphql.Marshaler) {
+func (ec *executionContext) _EventDefinitionPage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *EventDefinitionPage) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -7499,7 +7530,7 @@ func (ec *executionContext) _EventAPIDefinitionPage_pageInfo(ctx context.Context
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "EventAPIDefinitionPage",
+		Object:   "EventDefinitionPage",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -7526,7 +7557,7 @@ func (ec *executionContext) _EventAPIDefinitionPage_pageInfo(ctx context.Context
 	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _EventAPIDefinitionPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *EventAPIDefinitionPage) (ret graphql.Marshaler) {
+func (ec *executionContext) _EventDefinitionPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *EventDefinitionPage) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -7536,7 +7567,7 @@ func (ec *executionContext) _EventAPIDefinitionPage_totalCount(ctx context.Conte
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "EventAPIDefinitionPage",
+		Object:   "EventDefinitionPage",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -7563,7 +7594,7 @@ func (ec *executionContext) _EventAPIDefinitionPage_totalCount(ctx context.Conte
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _EventAPISpec_data(ctx context.Context, field graphql.CollectedField, obj *EventAPISpec) (ret graphql.Marshaler) {
+func (ec *executionContext) _EventSpec_data(ctx context.Context, field graphql.CollectedField, obj *EventSpec) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -7573,7 +7604,7 @@ func (ec *executionContext) _EventAPISpec_data(ctx context.Context, field graphq
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "EventAPISpec",
+		Object:   "EventSpec",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -7597,7 +7628,7 @@ func (ec *executionContext) _EventAPISpec_data(ctx context.Context, field graphq
 	return ec.marshalOCLOB2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCLOB(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _EventAPISpec_type(ctx context.Context, field graphql.CollectedField, obj *EventAPISpec) (ret graphql.Marshaler) {
+func (ec *executionContext) _EventSpec_type(ctx context.Context, field graphql.CollectedField, obj *EventSpec) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -7607,7 +7638,7 @@ func (ec *executionContext) _EventAPISpec_type(ctx context.Context, field graphq
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "EventAPISpec",
+		Object:   "EventSpec",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -7628,13 +7659,13 @@ func (ec *executionContext) _EventAPISpec_type(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(EventAPISpecType)
+	res := resTmp.(EventSpecType)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNEventAPISpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPISpecType(ctx, field.Selections, res)
+	return ec.marshalNEventSpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecType(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _EventAPISpec_format(ctx context.Context, field graphql.CollectedField, obj *EventAPISpec) (ret graphql.Marshaler) {
+func (ec *executionContext) _EventSpec_format(ctx context.Context, field graphql.CollectedField, obj *EventSpec) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -7644,7 +7675,7 @@ func (ec *executionContext) _EventAPISpec_format(ctx context.Context, field grap
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "EventAPISpec",
+		Object:   "EventSpec",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -7671,7 +7702,7 @@ func (ec *executionContext) _EventAPISpec_format(ctx context.Context, field grap
 	return ec.marshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _EventAPISpec_fetchRequest(ctx context.Context, field graphql.CollectedField, obj *EventAPISpec) (ret graphql.Marshaler) {
+func (ec *executionContext) _EventSpec_fetchRequest(ctx context.Context, field graphql.CollectedField, obj *EventSpec) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -7681,7 +7712,7 @@ func (ec *executionContext) _EventAPISpec_fetchRequest(ctx context.Context, fiel
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "EventAPISpec",
+		Object:   "EventSpec",
 		Field:    field,
 		Args:     nil,
 		IsMethod: true,
@@ -7690,7 +7721,7 @@ func (ec *executionContext) _EventAPISpec_fetchRequest(ctx context.Context, fiel
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.EventAPISpec().FetchRequest(rctx, obj)
+		return ec.resolvers.EventSpec().FetchRequest(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8649,7 +8680,7 @@ func (ec *executionContext) _LabelDefinition_schema(ctx context.Context, field g
 	return ec.marshalOJSONSchema2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSONSchema(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_createApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_registerApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -8666,7 +8697,7 @@ func (ec *executionContext) _Mutation_createApplication(ctx context.Context, fie
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_createApplication_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_registerApplication_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -8676,10 +8707,10 @@ func (ec *executionContext) _Mutation_createApplication(ctx context.Context, fie
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().CreateApplication(rctx, args["in"].(ApplicationCreateInput))
+			return ec.resolvers.Mutation().RegisterApplication(rctx, args["in"].(ApplicationRegisterInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.createApplication")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.registerApplication")
 			if err != nil {
 				return nil, err
 			}
@@ -8777,7 +8808,7 @@ func (ec *executionContext) _Mutation_updateApplication(ctx context.Context, fie
 	return ec.marshalNApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_deleteApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_unregisterApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -8794,7 +8825,7 @@ func (ec *executionContext) _Mutation_deleteApplication(ctx context.Context, fie
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_deleteApplication_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_unregisterApplication_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -8804,10 +8835,10 @@ func (ec *executionContext) _Mutation_deleteApplication(ctx context.Context, fie
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().DeleteApplication(rctx, args["id"].(string))
+			return ec.resolvers.Mutation().UnregisterApplication(rctx, args["id"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.deleteApplication")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.unregisterApplication")
 			if err != nil {
 				return nil, err
 			}
@@ -9097,7 +9128,7 @@ func (ec *executionContext) _Mutation_deleteApplicationTemplate(ctx context.Cont
 	return ec.marshalNApplicationTemplate2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplate(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_createRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_registerRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -9114,7 +9145,7 @@ func (ec *executionContext) _Mutation_createRuntime(ctx context.Context, field g
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_createRuntime_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_registerRuntime_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -9124,10 +9155,10 @@ func (ec *executionContext) _Mutation_createRuntime(ctx context.Context, field g
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().CreateRuntime(rctx, args["in"].(RuntimeInput))
+			return ec.resolvers.Mutation().RegisterRuntime(rctx, args["in"].(RuntimeInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.createRuntime")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.registerRuntime")
 			if err != nil {
 				return nil, err
 			}
@@ -9225,7 +9256,7 @@ func (ec *executionContext) _Mutation_updateRuntime(ctx context.Context, field g
 	return ec.marshalNRuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_deleteRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_unregisterRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -9242,7 +9273,7 @@ func (ec *executionContext) _Mutation_deleteRuntime(ctx context.Context, field g
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_deleteRuntime_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_unregisterRuntime_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -9252,10 +9283,10 @@ func (ec *executionContext) _Mutation_deleteRuntime(ctx context.Context, field g
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().DeleteRuntime(rctx, args["id"].(string))
+			return ec.resolvers.Mutation().UnregisterRuntime(rctx, args["id"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.deleteRuntime")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.unregisterRuntime")
 			if err != nil {
 				return nil, err
 			}
@@ -9289,7 +9320,7 @@ func (ec *executionContext) _Mutation_deleteRuntime(ctx context.Context, field g
 	return ec.marshalNRuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_createIntegrationSystem(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_registerIntegrationSystem(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -9306,7 +9337,7 @@ func (ec *executionContext) _Mutation_createIntegrationSystem(ctx context.Contex
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_createIntegrationSystem_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_registerIntegrationSystem_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -9316,10 +9347,10 @@ func (ec *executionContext) _Mutation_createIntegrationSystem(ctx context.Contex
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().CreateIntegrationSystem(rctx, args["in"].(IntegrationSystemInput))
+			return ec.resolvers.Mutation().RegisterIntegrationSystem(rctx, args["in"].(IntegrationSystemInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.createIntegrationSystem")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.registerIntegrationSystem")
 			if err != nil {
 				return nil, err
 			}
@@ -9417,7 +9448,7 @@ func (ec *executionContext) _Mutation_updateIntegrationSystem(ctx context.Contex
 	return ec.marshalNIntegrationSystem2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystem(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_deleteIntegrationSystem(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_unregisterIntegrationSystem(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -9434,7 +9465,7 @@ func (ec *executionContext) _Mutation_deleteIntegrationSystem(ctx context.Contex
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_deleteIntegrationSystem_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_unregisterIntegrationSystem_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -9444,10 +9475,10 @@ func (ec *executionContext) _Mutation_deleteIntegrationSystem(ctx context.Contex
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().DeleteIntegrationSystem(rctx, args["id"].(string))
+			return ec.resolvers.Mutation().UnregisterIntegrationSystem(rctx, args["id"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.deleteIntegrationSystem")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.unregisterIntegrationSystem")
 			if err != nil {
 				return nil, err
 			}
@@ -9673,7 +9704,7 @@ func (ec *executionContext) _Mutation_deleteWebhook(ctx context.Context, field g
 	return ec.marshalNWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_addAPI(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_addAPIDefinition(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -9690,7 +9721,7 @@ func (ec *executionContext) _Mutation_addAPI(ctx context.Context, field graphql.
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_addAPI_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_addAPIDefinition_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -9700,10 +9731,10 @@ func (ec *executionContext) _Mutation_addAPI(ctx context.Context, field graphql.
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().AddAPI(rctx, args["applicationID"].(string), args["in"].(APIDefinitionInput))
+			return ec.resolvers.Mutation().AddAPIDefinition(rctx, args["applicationID"].(string), args["in"].(APIDefinitionInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.addAPI")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.addAPIDefinition")
 			if err != nil {
 				return nil, err
 			}
@@ -9737,7 +9768,7 @@ func (ec *executionContext) _Mutation_addAPI(ctx context.Context, field graphql.
 	return ec.marshalNAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinition(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_updateAPI(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_updateAPIDefinition(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -9754,7 +9785,7 @@ func (ec *executionContext) _Mutation_updateAPI(ctx context.Context, field graph
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_updateAPI_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_updateAPIDefinition_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -9764,10 +9795,10 @@ func (ec *executionContext) _Mutation_updateAPI(ctx context.Context, field graph
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UpdateAPI(rctx, args["id"].(string), args["in"].(APIDefinitionInput))
+			return ec.resolvers.Mutation().UpdateAPIDefinition(rctx, args["id"].(string), args["in"].(APIDefinitionInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.updateAPI")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.updateAPIDefinition")
 			if err != nil {
 				return nil, err
 			}
@@ -9801,7 +9832,7 @@ func (ec *executionContext) _Mutation_updateAPI(ctx context.Context, field graph
 	return ec.marshalNAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinition(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_deleteAPI(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_deleteAPIDefinition(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -9818,7 +9849,7 @@ func (ec *executionContext) _Mutation_deleteAPI(ctx context.Context, field graph
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_deleteAPI_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_deleteAPIDefinition_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -9828,10 +9859,10 @@ func (ec *executionContext) _Mutation_deleteAPI(ctx context.Context, field graph
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().DeleteAPI(rctx, args["id"].(string))
+			return ec.resolvers.Mutation().DeleteAPIDefinition(rctx, args["id"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.deleteAPI")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.deleteAPIDefinition")
 			if err != nil {
 				return nil, err
 			}
@@ -9929,7 +9960,7 @@ func (ec *executionContext) _Mutation_refetchAPISpec(ctx context.Context, field 
 	return ec.marshalNAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpec(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_generateOneTimeTokenForRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_requestOneTimeTokenForRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -9946,7 +9977,7 @@ func (ec *executionContext) _Mutation_generateOneTimeTokenForRuntime(ctx context
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_generateOneTimeTokenForRuntime_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_requestOneTimeTokenForRuntime_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -9956,10 +9987,10 @@ func (ec *executionContext) _Mutation_generateOneTimeTokenForRuntime(ctx context
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().GenerateOneTimeTokenForRuntime(rctx, args["id"].(string))
+			return ec.resolvers.Mutation().RequestOneTimeTokenForRuntime(rctx, args["id"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.generateOneTimeTokenForRuntime")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.requestOneTimeTokenForRuntime")
 			if err != nil {
 				return nil, err
 			}
@@ -9993,7 +10024,7 @@ func (ec *executionContext) _Mutation_generateOneTimeTokenForRuntime(ctx context
 	return ec.marshalNOneTimeToken2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOneTimeToken(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_generateOneTimeTokenForApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_requestOneTimeTokenForApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -10010,7 +10041,7 @@ func (ec *executionContext) _Mutation_generateOneTimeTokenForApplication(ctx con
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_generateOneTimeTokenForApplication_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_requestOneTimeTokenForApplication_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -10020,10 +10051,10 @@ func (ec *executionContext) _Mutation_generateOneTimeTokenForApplication(ctx con
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().GenerateOneTimeTokenForApplication(rctx, args["id"].(string))
+			return ec.resolvers.Mutation().RequestOneTimeTokenForApplication(rctx, args["id"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.generateOneTimeTokenForApplication")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.requestOneTimeTokenForApplication")
 			if err != nil {
 				return nil, err
 			}
@@ -10057,7 +10088,7 @@ func (ec *executionContext) _Mutation_generateOneTimeTokenForApplication(ctx con
 	return ec.marshalNOneTimeToken2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOneTimeToken(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_generateClientCredentialsForRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_requestClientCredentialsForRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -10074,7 +10105,7 @@ func (ec *executionContext) _Mutation_generateClientCredentialsForRuntime(ctx co
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_generateClientCredentialsForRuntime_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_requestClientCredentialsForRuntime_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -10084,10 +10115,10 @@ func (ec *executionContext) _Mutation_generateClientCredentialsForRuntime(ctx co
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().GenerateClientCredentialsForRuntime(rctx, args["id"].(string))
+			return ec.resolvers.Mutation().RequestClientCredentialsForRuntime(rctx, args["id"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.generateClientCredentialsForRuntime")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.requestClientCredentialsForRuntime")
 			if err != nil {
 				return nil, err
 			}
@@ -10121,7 +10152,7 @@ func (ec *executionContext) _Mutation_generateClientCredentialsForRuntime(ctx co
 	return ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_generateClientCredentialsForApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_requestClientCredentialsForApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -10138,7 +10169,7 @@ func (ec *executionContext) _Mutation_generateClientCredentialsForApplication(ct
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_generateClientCredentialsForApplication_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_requestClientCredentialsForApplication_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -10148,10 +10179,10 @@ func (ec *executionContext) _Mutation_generateClientCredentialsForApplication(ct
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().GenerateClientCredentialsForApplication(rctx, args["id"].(string))
+			return ec.resolvers.Mutation().RequestClientCredentialsForApplication(rctx, args["id"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.generateClientCredentialsForApplication")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.requestClientCredentialsForApplication")
 			if err != nil {
 				return nil, err
 			}
@@ -10185,7 +10216,7 @@ func (ec *executionContext) _Mutation_generateClientCredentialsForApplication(ct
 	return ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_generateClientCredentialsForIntegrationSystem(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_requestClientCredentialsForIntegrationSystem(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -10202,7 +10233,7 @@ func (ec *executionContext) _Mutation_generateClientCredentialsForIntegrationSys
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_generateClientCredentialsForIntegrationSystem_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_requestClientCredentialsForIntegrationSystem_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -10212,10 +10243,10 @@ func (ec *executionContext) _Mutation_generateClientCredentialsForIntegrationSys
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().GenerateClientCredentialsForIntegrationSystem(rctx, args["id"].(string))
+			return ec.resolvers.Mutation().RequestClientCredentialsForIntegrationSystem(rctx, args["id"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.generateClientCredentialsForIntegrationSystem")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.requestClientCredentialsForIntegrationSystem")
 			if err != nil {
 				return nil, err
 			}
@@ -10569,7 +10600,7 @@ func (ec *executionContext) _Mutation_deleteAPIAuth(ctx context.Context, field g
 	return ec.marshalNAPIRuntimeAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIRuntimeAuth(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_addEventAPI(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_addEventDefinition(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -10586,7 +10617,7 @@ func (ec *executionContext) _Mutation_addEventAPI(ctx context.Context, field gra
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_addEventAPI_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_addEventDefinition_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -10596,10 +10627,10 @@ func (ec *executionContext) _Mutation_addEventAPI(ctx context.Context, field gra
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().AddEventAPI(rctx, args["applicationID"].(string), args["in"].(EventAPIDefinitionInput))
+			return ec.resolvers.Mutation().AddEventDefinition(rctx, args["applicationID"].(string), args["in"].(EventDefinitionInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.addEventAPI")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.addEventDefinition")
 			if err != nil {
 				return nil, err
 			}
@@ -10610,12 +10641,12 @@ func (ec *executionContext) _Mutation_addEventAPI(ctx context.Context, field gra
 		if err != nil {
 			return nil, err
 		}
-		if data, ok := tmp.(*EventAPIDefinition); ok {
+		if data, ok := tmp.(*EventDefinition); ok {
 			return data, nil
 		} else if tmp == nil {
 			return nil, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.EventAPIDefinition`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.EventDefinition`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10627,13 +10658,13 @@ func (ec *executionContext) _Mutation_addEventAPI(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*EventAPIDefinition)
+	res := resTmp.(*EventDefinition)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNEventAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinition(ctx, field.Selections, res)
+	return ec.marshalNEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_updateEventAPI(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_updateEventDefinition(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -10650,7 +10681,7 @@ func (ec *executionContext) _Mutation_updateEventAPI(ctx context.Context, field 
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_updateEventAPI_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_updateEventDefinition_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -10660,10 +10691,10 @@ func (ec *executionContext) _Mutation_updateEventAPI(ctx context.Context, field 
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UpdateEventAPI(rctx, args["id"].(string), args["in"].(EventAPIDefinitionInput))
+			return ec.resolvers.Mutation().UpdateEventDefinition(rctx, args["id"].(string), args["in"].(EventDefinitionInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.updateEventAPI")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.updateEventDefinition")
 			if err != nil {
 				return nil, err
 			}
@@ -10674,12 +10705,12 @@ func (ec *executionContext) _Mutation_updateEventAPI(ctx context.Context, field 
 		if err != nil {
 			return nil, err
 		}
-		if data, ok := tmp.(*EventAPIDefinition); ok {
+		if data, ok := tmp.(*EventDefinition); ok {
 			return data, nil
 		} else if tmp == nil {
 			return nil, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.EventAPIDefinition`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.EventDefinition`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10691,13 +10722,13 @@ func (ec *executionContext) _Mutation_updateEventAPI(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*EventAPIDefinition)
+	res := resTmp.(*EventDefinition)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNEventAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinition(ctx, field.Selections, res)
+	return ec.marshalNEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_deleteEventAPI(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_deleteEventDefinition(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -10714,7 +10745,7 @@ func (ec *executionContext) _Mutation_deleteEventAPI(ctx context.Context, field 
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_deleteEventAPI_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_deleteEventDefinition_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -10724,10 +10755,10 @@ func (ec *executionContext) _Mutation_deleteEventAPI(ctx context.Context, field 
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().DeleteEventAPI(rctx, args["id"].(string))
+			return ec.resolvers.Mutation().DeleteEventDefinition(rctx, args["id"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.deleteEventAPI")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.deleteEventDefinition")
 			if err != nil {
 				return nil, err
 			}
@@ -10738,12 +10769,12 @@ func (ec *executionContext) _Mutation_deleteEventAPI(ctx context.Context, field 
 		if err != nil {
 			return nil, err
 		}
-		if data, ok := tmp.(*EventAPIDefinition); ok {
+		if data, ok := tmp.(*EventDefinition); ok {
 			return data, nil
 		} else if tmp == nil {
 			return nil, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.EventAPIDefinition`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.EventDefinition`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10755,13 +10786,13 @@ func (ec *executionContext) _Mutation_deleteEventAPI(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*EventAPIDefinition)
+	res := resTmp.(*EventDefinition)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNEventAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinition(ctx, field.Selections, res)
+	return ec.marshalNEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_refetchEventAPISpec(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_refetchEventDefinitionSpec(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -10778,7 +10809,7 @@ func (ec *executionContext) _Mutation_refetchEventAPISpec(ctx context.Context, f
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_refetchEventAPISpec_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_refetchEventDefinitionSpec_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -10788,10 +10819,10 @@ func (ec *executionContext) _Mutation_refetchEventAPISpec(ctx context.Context, f
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().RefetchEventAPISpec(rctx, args["eventID"].(string))
+			return ec.resolvers.Mutation().RefetchEventDefinitionSpec(rctx, args["eventID"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.refetchEventAPISpec")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.refetchEventDefinitionSpec")
 			if err != nil {
 				return nil, err
 			}
@@ -10802,12 +10833,12 @@ func (ec *executionContext) _Mutation_refetchEventAPISpec(ctx context.Context, f
 		if err != nil {
 			return nil, err
 		}
-		if data, ok := tmp.(*EventAPISpec); ok {
+		if data, ok := tmp.(*EventSpec); ok {
 			return data, nil
 		} else if tmp == nil {
 			return nil, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.EventAPISpec`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.EventSpec`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10819,10 +10850,10 @@ func (ec *executionContext) _Mutation_refetchEventAPISpec(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*EventAPISpec)
+	res := resTmp.(*EventSpec)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNEventAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPISpec(ctx, field.Selections, res)
+	return ec.marshalNEventSpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpec(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_addDocument(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -11569,6 +11600,80 @@ func (ec *executionContext) _OneTimeToken_connectorURL(ctx context.Context, fiel
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.ConnectorURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OneTimeToken_raw(ctx context.Context, field graphql.CollectedField, obj *OneTimeToken) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OneTimeToken",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.OneTimeToken().Raw(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OneTimeToken_rawEncoded(ctx context.Context, field graphql.CollectedField, obj *OneTimeToken) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OneTimeToken",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.OneTimeToken().RawEncoded(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14631,8 +14736,32 @@ func (ec *executionContext) unmarshalInputAPISpecInput(ctx context.Context, obj 
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputApplicationCreateInput(ctx context.Context, obj interface{}) (ApplicationCreateInput, error) {
-	var it ApplicationCreateInput
+func (ec *executionContext) unmarshalInputApplicationFromTemplateInput(ctx context.Context, obj interface{}) (ApplicationFromTemplateInput, error) {
+	var it ApplicationFromTemplateInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "templateName":
+			var err error
+			it.TemplateName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "values":
+			var err error
+			it.Values, err = ec.unmarshalOTemplateValueInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTemplateValueInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputApplicationRegisterInput(ctx context.Context, obj interface{}) (ApplicationRegisterInput, error) {
+	var it ApplicationRegisterInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -14667,15 +14796,15 @@ func (ec *executionContext) unmarshalInputApplicationCreateInput(ctx context.Con
 			if err != nil {
 				return it, err
 			}
-		case "apis":
+		case "apiDefinitions":
 			var err error
-			it.Apis, err = ec.unmarshalOAPIDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionInput(ctx, v)
+			it.APIDefinitions, err = ec.unmarshalOAPIDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "eventAPIs":
+		case "eventDefinitions":
 			var err error
-			it.EventAPIs, err = ec.unmarshalOEventAPIDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinitionInput(ctx, v)
+			it.EventDefinitions, err = ec.unmarshalOEventDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -14688,30 +14817,6 @@ func (ec *executionContext) unmarshalInputApplicationCreateInput(ctx context.Con
 		case "integrationSystemID":
 			var err error
 			it.IntegrationSystemID, err = ec.unmarshalOID2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputApplicationFromTemplateInput(ctx context.Context, obj interface{}) (ApplicationFromTemplateInput, error) {
-	var it ApplicationFromTemplateInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "templateName":
-			var err error
-			it.TemplateName, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "values":
-			var err error
-			it.Values, err = ec.unmarshalOTemplateValueInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTemplateValueInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -14741,7 +14846,7 @@ func (ec *executionContext) unmarshalInputApplicationTemplateInput(ctx context.C
 			}
 		case "applicationInput":
 			var err error
-			it.ApplicationInput, err = ec.unmarshalNApplicationCreateInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationCreateInput(ctx, v)
+			it.ApplicationInput, err = ec.unmarshalNApplicationRegisterInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationRegisterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -14991,8 +15096,8 @@ func (ec *executionContext) unmarshalInputDocumentInput(ctx context.Context, obj
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputEventAPIDefinitionInput(ctx context.Context, obj interface{}) (EventAPIDefinitionInput, error) {
-	var it EventAPIDefinitionInput
+func (ec *executionContext) unmarshalInputEventDefinitionInput(ctx context.Context, obj interface{}) (EventDefinitionInput, error) {
+	var it EventDefinitionInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -15011,7 +15116,7 @@ func (ec *executionContext) unmarshalInputEventAPIDefinitionInput(ctx context.Co
 			}
 		case "spec":
 			var err error
-			it.Spec, err = ec.unmarshalNEventAPISpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPISpecInput(ctx, v)
+			it.Spec, err = ec.unmarshalNEventSpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -15033,8 +15138,8 @@ func (ec *executionContext) unmarshalInputEventAPIDefinitionInput(ctx context.Co
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputEventAPISpecInput(ctx context.Context, obj interface{}) (EventAPISpecInput, error) {
-	var it EventAPISpecInput
+func (ec *executionContext) unmarshalInputEventSpecInput(ctx context.Context, obj interface{}) (EventSpecInput, error) {
+	var it EventSpecInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -15045,9 +15150,9 @@ func (ec *executionContext) unmarshalInputEventAPISpecInput(ctx context.Context,
 			if err != nil {
 				return it, err
 			}
-		case "eventSpecType":
+		case "type":
 			var err error
-			it.EventSpecType, err = ec.unmarshalNEventAPISpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPISpecType(ctx, v)
+			it.Type, err = ec.unmarshalNEventSpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecType(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -15420,10 +15525,10 @@ func (ec *executionContext) _Pageable(ctx context.Context, sel ast.SelectionSet,
 		return ec._DocumentPage(ctx, sel, &obj)
 	case *DocumentPage:
 		return ec._DocumentPage(ctx, sel, obj)
-	case EventAPIDefinitionPage:
-		return ec._EventAPIDefinitionPage(ctx, sel, &obj)
-	case *EventAPIDefinitionPage:
-		return ec._EventAPIDefinitionPage(ctx, sel, obj)
+	case EventDefinitionPage:
+		return ec._EventDefinitionPage(ctx, sel, &obj)
+	case *EventDefinitionPage:
+		return ec._EventDefinitionPage(ctx, sel, obj)
 	case HealthCheckPage:
 		return ec._HealthCheckPage(ctx, sel, &obj)
 	case *HealthCheckPage:
@@ -15696,7 +15801,7 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			})
 		case "healthCheckURL":
 			out.Values[i] = ec._Application_healthCheckURL(ctx, field, obj)
-		case "apis":
+		case "apiDefinitions":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -15704,13 +15809,13 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Application_apis(ctx, field, obj)
+				res = ec._Application_apiDefinitions(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
 				return res
 			})
-		case "eventAPIs":
+		case "eventDefinitions":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -15718,13 +15823,13 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Application_eventAPIs(ctx, field, obj)
+				res = ec._Application_eventDefinitions(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
 				return res
 			})
-		case "api":
+		case "apiDefinition":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -15732,10 +15837,10 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Application_api(ctx, field, obj)
+				res = ec._Application_apiDefinition(ctx, field, obj)
 				return res
 			})
-		case "eventAPI":
+		case "eventDefinition":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -15743,7 +15848,7 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Application_eventAPI(ctx, field, obj)
+				res = ec._Application_eventDefinition(ctx, field, obj)
 				return res
 			})
 		case "documents":
@@ -16207,43 +16312,43 @@ func (ec *executionContext) _DocumentPage(ctx context.Context, sel ast.Selection
 	return out
 }
 
-var eventAPIDefinitionImplementors = []string{"EventAPIDefinition"}
+var eventDefinitionImplementors = []string{"EventDefinition"}
 
-func (ec *executionContext) _EventAPIDefinition(ctx context.Context, sel ast.SelectionSet, obj *EventAPIDefinition) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, eventAPIDefinitionImplementors)
+func (ec *executionContext) _EventDefinition(ctx context.Context, sel ast.SelectionSet, obj *EventDefinition) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, eventDefinitionImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("EventAPIDefinition")
+			out.Values[i] = graphql.MarshalString("EventDefinition")
 		case "id":
-			out.Values[i] = ec._EventAPIDefinition_id(ctx, field, obj)
+			out.Values[i] = ec._EventDefinition_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "applicationID":
-			out.Values[i] = ec._EventAPIDefinition_applicationID(ctx, field, obj)
+			out.Values[i] = ec._EventDefinition_applicationID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "name":
-			out.Values[i] = ec._EventAPIDefinition_name(ctx, field, obj)
+			out.Values[i] = ec._EventDefinition_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "description":
-			out.Values[i] = ec._EventAPIDefinition_description(ctx, field, obj)
+			out.Values[i] = ec._EventDefinition_description(ctx, field, obj)
 		case "group":
-			out.Values[i] = ec._EventAPIDefinition_group(ctx, field, obj)
+			out.Values[i] = ec._EventDefinition_group(ctx, field, obj)
 		case "spec":
-			out.Values[i] = ec._EventAPIDefinition_spec(ctx, field, obj)
+			out.Values[i] = ec._EventDefinition_spec(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "version":
-			out.Values[i] = ec._EventAPIDefinition_version(ctx, field, obj)
+			out.Values[i] = ec._EventDefinition_version(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -16255,29 +16360,29 @@ func (ec *executionContext) _EventAPIDefinition(ctx context.Context, sel ast.Sel
 	return out
 }
 
-var eventAPIDefinitionPageImplementors = []string{"EventAPIDefinitionPage", "Pageable"}
+var eventDefinitionPageImplementors = []string{"EventDefinitionPage", "Pageable"}
 
-func (ec *executionContext) _EventAPIDefinitionPage(ctx context.Context, sel ast.SelectionSet, obj *EventAPIDefinitionPage) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, eventAPIDefinitionPageImplementors)
+func (ec *executionContext) _EventDefinitionPage(ctx context.Context, sel ast.SelectionSet, obj *EventDefinitionPage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, eventDefinitionPageImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("EventAPIDefinitionPage")
+			out.Values[i] = graphql.MarshalString("EventDefinitionPage")
 		case "data":
-			out.Values[i] = ec._EventAPIDefinitionPage_data(ctx, field, obj)
+			out.Values[i] = ec._EventDefinitionPage_data(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "pageInfo":
-			out.Values[i] = ec._EventAPIDefinitionPage_pageInfo(ctx, field, obj)
+			out.Values[i] = ec._EventDefinitionPage_pageInfo(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "totalCount":
-			out.Values[i] = ec._EventAPIDefinitionPage_totalCount(ctx, field, obj)
+			out.Values[i] = ec._EventDefinitionPage_totalCount(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -16292,26 +16397,26 @@ func (ec *executionContext) _EventAPIDefinitionPage(ctx context.Context, sel ast
 	return out
 }
 
-var eventAPISpecImplementors = []string{"EventAPISpec"}
+var eventSpecImplementors = []string{"EventSpec"}
 
-func (ec *executionContext) _EventAPISpec(ctx context.Context, sel ast.SelectionSet, obj *EventAPISpec) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, eventAPISpecImplementors)
+func (ec *executionContext) _EventSpec(ctx context.Context, sel ast.SelectionSet, obj *EventSpec) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, eventSpecImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("EventAPISpec")
+			out.Values[i] = graphql.MarshalString("EventSpec")
 		case "data":
-			out.Values[i] = ec._EventAPISpec_data(ctx, field, obj)
+			out.Values[i] = ec._EventSpec_data(ctx, field, obj)
 		case "type":
-			out.Values[i] = ec._EventAPISpec_type(ctx, field, obj)
+			out.Values[i] = ec._EventSpec_type(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "format":
-			out.Values[i] = ec._EventAPISpec_format(ctx, field, obj)
+			out.Values[i] = ec._EventSpec_format(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
@@ -16323,7 +16428,7 @@ func (ec *executionContext) _EventAPISpec(ctx context.Context, sel ast.Selection
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._EventAPISpec_fetchRequest(ctx, field, obj)
+				res = ec._EventSpec_fetchRequest(ctx, field, obj)
 				return res
 			})
 		default:
@@ -16649,8 +16754,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
-		case "createApplication":
-			out.Values[i] = ec._Mutation_createApplication(ctx, field)
+		case "registerApplication":
+			out.Values[i] = ec._Mutation_registerApplication(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -16659,8 +16764,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "deleteApplication":
-			out.Values[i] = ec._Mutation_deleteApplication(ctx, field)
+		case "unregisterApplication":
+			out.Values[i] = ec._Mutation_unregisterApplication(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -16684,8 +16789,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "createRuntime":
-			out.Values[i] = ec._Mutation_createRuntime(ctx, field)
+		case "registerRuntime":
+			out.Values[i] = ec._Mutation_registerRuntime(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -16694,13 +16799,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "deleteRuntime":
-			out.Values[i] = ec._Mutation_deleteRuntime(ctx, field)
+		case "unregisterRuntime":
+			out.Values[i] = ec._Mutation_unregisterRuntime(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "createIntegrationSystem":
-			out.Values[i] = ec._Mutation_createIntegrationSystem(ctx, field)
+		case "registerIntegrationSystem":
+			out.Values[i] = ec._Mutation_registerIntegrationSystem(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -16709,8 +16814,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "deleteIntegrationSystem":
-			out.Values[i] = ec._Mutation_deleteIntegrationSystem(ctx, field)
+		case "unregisterIntegrationSystem":
+			out.Values[i] = ec._Mutation_unregisterIntegrationSystem(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -16729,18 +16834,18 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "addAPI":
-			out.Values[i] = ec._Mutation_addAPI(ctx, field)
+		case "addAPIDefinition":
+			out.Values[i] = ec._Mutation_addAPIDefinition(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "updateAPI":
-			out.Values[i] = ec._Mutation_updateAPI(ctx, field)
+		case "updateAPIDefinition":
+			out.Values[i] = ec._Mutation_updateAPIDefinition(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "deleteAPI":
-			out.Values[i] = ec._Mutation_deleteAPI(ctx, field)
+		case "deleteAPIDefinition":
+			out.Values[i] = ec._Mutation_deleteAPIDefinition(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -16749,28 +16854,28 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "generateOneTimeTokenForRuntime":
-			out.Values[i] = ec._Mutation_generateOneTimeTokenForRuntime(ctx, field)
+		case "requestOneTimeTokenForRuntime":
+			out.Values[i] = ec._Mutation_requestOneTimeTokenForRuntime(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "generateOneTimeTokenForApplication":
-			out.Values[i] = ec._Mutation_generateOneTimeTokenForApplication(ctx, field)
+		case "requestOneTimeTokenForApplication":
+			out.Values[i] = ec._Mutation_requestOneTimeTokenForApplication(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "generateClientCredentialsForRuntime":
-			out.Values[i] = ec._Mutation_generateClientCredentialsForRuntime(ctx, field)
+		case "requestClientCredentialsForRuntime":
+			out.Values[i] = ec._Mutation_requestClientCredentialsForRuntime(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "generateClientCredentialsForApplication":
-			out.Values[i] = ec._Mutation_generateClientCredentialsForApplication(ctx, field)
+		case "requestClientCredentialsForApplication":
+			out.Values[i] = ec._Mutation_requestClientCredentialsForApplication(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "generateClientCredentialsForIntegrationSystem":
-			out.Values[i] = ec._Mutation_generateClientCredentialsForIntegrationSystem(ctx, field)
+		case "requestClientCredentialsForIntegrationSystem":
+			out.Values[i] = ec._Mutation_requestClientCredentialsForIntegrationSystem(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -16799,23 +16904,23 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "addEventAPI":
-			out.Values[i] = ec._Mutation_addEventAPI(ctx, field)
+		case "addEventDefinition":
+			out.Values[i] = ec._Mutation_addEventDefinition(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "updateEventAPI":
-			out.Values[i] = ec._Mutation_updateEventAPI(ctx, field)
+		case "updateEventDefinition":
+			out.Values[i] = ec._Mutation_updateEventDefinition(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "deleteEventAPI":
-			out.Values[i] = ec._Mutation_deleteEventAPI(ctx, field)
+		case "deleteEventDefinition":
+			out.Values[i] = ec._Mutation_deleteEventDefinition(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "refetchEventAPISpec":
-			out.Values[i] = ec._Mutation_refetchEventAPISpec(ctx, field)
+		case "refetchEventDefinitionSpec":
+			out.Values[i] = ec._Mutation_refetchEventDefinitionSpec(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -16926,13 +17031,41 @@ func (ec *executionContext) _OneTimeToken(ctx context.Context, sel ast.Selection
 		case "token":
 			out.Values[i] = ec._OneTimeToken_token(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "connectorURL":
 			out.Values[i] = ec._OneTimeToken_connectorURL(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
+		case "raw":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._OneTimeToken_raw(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "rawEncoded":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._OneTimeToken_rawEncoded(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -17905,18 +18038,6 @@ func (ec *executionContext) marshalNApplication2ᚖgithubᚗcomᚋkymaᚑincubat
 	return ec._Application(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNApplicationCreateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationCreateInput(ctx context.Context, v interface{}) (ApplicationCreateInput, error) {
-	return ec.unmarshalInputApplicationCreateInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNApplicationCreateInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationCreateInput(ctx context.Context, v interface{}) (*ApplicationCreateInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNApplicationCreateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationCreateInput(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) unmarshalNApplicationFromTemplateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationFromTemplateInput(ctx context.Context, v interface{}) (ApplicationFromTemplateInput, error) {
 	return ec.unmarshalInputApplicationFromTemplateInput(ctx, v)
 }
@@ -17933,6 +18054,18 @@ func (ec *executionContext) marshalNApplicationPage2ᚖgithubᚗcomᚋkymaᚑinc
 		return graphql.Null
 	}
 	return ec._ApplicationPage(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNApplicationRegisterInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationRegisterInput(ctx context.Context, v interface{}) (ApplicationRegisterInput, error) {
+	return ec.unmarshalInputApplicationRegisterInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNApplicationRegisterInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationRegisterInput(ctx context.Context, v interface{}) (*ApplicationRegisterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNApplicationRegisterInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationRegisterInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) marshalNApplicationStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatus(ctx context.Context, sel ast.SelectionSet, v ApplicationStatus) graphql.Marshaler {
@@ -18169,11 +18302,11 @@ func (ec *executionContext) marshalNDocumentPage2ᚖgithubᚗcomᚋkymaᚑincuba
 	return ec._DocumentPage(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNEventAPIDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinition(ctx context.Context, sel ast.SelectionSet, v EventAPIDefinition) graphql.Marshaler {
-	return ec._EventAPIDefinition(ctx, sel, &v)
+func (ec *executionContext) marshalNEventDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx context.Context, sel ast.SelectionSet, v EventDefinition) graphql.Marshaler {
+	return ec._EventDefinition(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNEventAPIDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinition(ctx context.Context, sel ast.SelectionSet, v []*EventAPIDefinition) graphql.Marshaler {
+func (ec *executionContext) marshalNEventDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx context.Context, sel ast.SelectionSet, v []*EventDefinition) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -18197,7 +18330,7 @@ func (ec *executionContext) marshalNEventAPIDefinition2ᚕᚖgithubᚗcomᚋkyma
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNEventAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinition(ctx, sel, v[i])
+			ret[i] = ec.marshalNEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -18210,74 +18343,74 @@ func (ec *executionContext) marshalNEventAPIDefinition2ᚕᚖgithubᚗcomᚋkyma
 	return ret
 }
 
-func (ec *executionContext) marshalNEventAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinition(ctx context.Context, sel ast.SelectionSet, v *EventAPIDefinition) graphql.Marshaler {
+func (ec *executionContext) marshalNEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx context.Context, sel ast.SelectionSet, v *EventDefinition) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
 		return graphql.Null
 	}
-	return ec._EventAPIDefinition(ctx, sel, v)
+	return ec._EventDefinition(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNEventAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinitionInput(ctx context.Context, v interface{}) (EventAPIDefinitionInput, error) {
-	return ec.unmarshalInputEventAPIDefinitionInput(ctx, v)
+func (ec *executionContext) unmarshalNEventDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionInput(ctx context.Context, v interface{}) (EventDefinitionInput, error) {
+	return ec.unmarshalInputEventDefinitionInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNEventAPIDefinitionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinitionInput(ctx context.Context, v interface{}) (*EventAPIDefinitionInput, error) {
+func (ec *executionContext) unmarshalNEventDefinitionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionInput(ctx context.Context, v interface{}) (*EventDefinitionInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNEventAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinitionInput(ctx, v)
+	res, err := ec.unmarshalNEventDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalNEventAPIDefinitionPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinitionPage(ctx context.Context, sel ast.SelectionSet, v EventAPIDefinitionPage) graphql.Marshaler {
-	return ec._EventAPIDefinitionPage(ctx, sel, &v)
+func (ec *executionContext) marshalNEventDefinitionPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionPage(ctx context.Context, sel ast.SelectionSet, v EventDefinitionPage) graphql.Marshaler {
+	return ec._EventDefinitionPage(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNEventAPIDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinitionPage(ctx context.Context, sel ast.SelectionSet, v *EventAPIDefinitionPage) graphql.Marshaler {
+func (ec *executionContext) marshalNEventDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionPage(ctx context.Context, sel ast.SelectionSet, v *EventDefinitionPage) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
 		return graphql.Null
 	}
-	return ec._EventAPIDefinitionPage(ctx, sel, v)
+	return ec._EventDefinitionPage(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNEventAPISpec2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPISpec(ctx context.Context, sel ast.SelectionSet, v EventAPISpec) graphql.Marshaler {
-	return ec._EventAPISpec(ctx, sel, &v)
+func (ec *executionContext) marshalNEventSpec2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpec(ctx context.Context, sel ast.SelectionSet, v EventSpec) graphql.Marshaler {
+	return ec._EventSpec(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNEventAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPISpec(ctx context.Context, sel ast.SelectionSet, v *EventAPISpec) graphql.Marshaler {
+func (ec *executionContext) marshalNEventSpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpec(ctx context.Context, sel ast.SelectionSet, v *EventSpec) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
 		return graphql.Null
 	}
-	return ec._EventAPISpec(ctx, sel, v)
+	return ec._EventSpec(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNEventAPISpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPISpecInput(ctx context.Context, v interface{}) (EventAPISpecInput, error) {
-	return ec.unmarshalInputEventAPISpecInput(ctx, v)
+func (ec *executionContext) unmarshalNEventSpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx context.Context, v interface{}) (EventSpecInput, error) {
+	return ec.unmarshalInputEventSpecInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNEventAPISpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPISpecInput(ctx context.Context, v interface{}) (*EventAPISpecInput, error) {
+func (ec *executionContext) unmarshalNEventSpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx context.Context, v interface{}) (*EventSpecInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNEventAPISpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPISpecInput(ctx, v)
+	res, err := ec.unmarshalNEventSpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalNEventAPISpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPISpecType(ctx context.Context, v interface{}) (EventAPISpecType, error) {
-	var res EventAPISpecType
+func (ec *executionContext) unmarshalNEventSpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecType(ctx context.Context, v interface{}) (EventSpecType, error) {
+	var res EventSpecType
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNEventAPISpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPISpecType(ctx context.Context, sel ast.SelectionSet, v EventAPISpecType) graphql.Marshaler {
+func (ec *executionContext) marshalNEventSpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecType(ctx context.Context, sel ast.SelectionSet, v EventSpecType) graphql.Marshaler {
 	return v
 }
 
@@ -19394,18 +19527,18 @@ func (ec *executionContext) unmarshalODocumentInput2ᚕᚖgithubᚗcomᚋkymaᚑ
 	return res, nil
 }
 
-func (ec *executionContext) marshalOEventAPIDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinition(ctx context.Context, sel ast.SelectionSet, v EventAPIDefinition) graphql.Marshaler {
-	return ec._EventAPIDefinition(ctx, sel, &v)
+func (ec *executionContext) marshalOEventDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx context.Context, sel ast.SelectionSet, v EventDefinition) graphql.Marshaler {
+	return ec._EventDefinition(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOEventAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinition(ctx context.Context, sel ast.SelectionSet, v *EventAPIDefinition) graphql.Marshaler {
+func (ec *executionContext) marshalOEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx context.Context, sel ast.SelectionSet, v *EventDefinition) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._EventAPIDefinition(ctx, sel, v)
+	return ec._EventDefinition(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOEventAPIDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinitionInput(ctx context.Context, v interface{}) ([]*EventAPIDefinitionInput, error) {
+func (ec *executionContext) unmarshalOEventDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionInput(ctx context.Context, v interface{}) ([]*EventDefinitionInput, error) {
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -19415,9 +19548,9 @@ func (ec *executionContext) unmarshalOEventAPIDefinitionInput2ᚕᚖgithubᚗcom
 		}
 	}
 	var err error
-	res := make([]*EventAPIDefinitionInput, len(vSlice))
+	res := make([]*EventDefinitionInput, len(vSlice))
 	for i := range vSlice {
-		res[i], err = ec.unmarshalNEventAPIDefinitionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventAPIDefinitionInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNEventDefinitionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}

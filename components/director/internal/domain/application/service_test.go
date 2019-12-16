@@ -25,7 +25,7 @@ func TestService_Create(t *testing.T) {
 	// given
 	timestamp := time.Now()
 	testErr := errors.New("Test error")
-	modelInput := model.ApplicationCreateInput{
+	modelInput := model.ApplicationRegisterInput{
 		Name: "foo.bar-not",
 		Webhooks: []*model.WebhookInput{
 			{URL: "test.foo.com"},
@@ -35,16 +35,16 @@ func TestService_Create(t *testing.T) {
 			{Title: "foo", Description: "test", FetchRequest: &model.FetchRequestInput{URL: "doc.foo.bar"}},
 			{Title: "bar", Description: "test"},
 		},
-		Apis: []*model.APIDefinitionInput{
+		APIDefinitions: []*model.APIDefinitionInput{
 			{
 				Name: "foo",
 				Spec: &model.APISpecInput{FetchRequest: &model.FetchRequestInput{URL: "api.foo.bar"}},
 			}, {Name: "bar"},
 		},
-		EventAPIs: []*model.EventAPIDefinitionInput{
+		EventDefinitions: []*model.EventDefinitionInput{
 			{
 				Name: "foo",
-				Spec: &model.EventAPISpecInput{FetchRequest: &model.FetchRequestInput{URL: "eventapi.foo.bar"}},
+				Spec: &model.EventSpecInput{FetchRequest: &model.FetchRequestInput{URL: "eventapi.foo.bar"}},
 			}, {Name: "bar"},
 		},
 		Labels: map[string]interface{}{
@@ -90,7 +90,7 @@ func TestService_Create(t *testing.T) {
 		ScenariosServiceFn func() *automock.ScenariosService
 		LabelServiceFn     func() *automock.LabelUpsertService
 		UIDServiceFn       func() *automock.UIDService
-		Input              model.ApplicationCreateInput
+		Input              model.ApplicationRegisterInput
 		ExpectedErr        error
 	}{
 		{
@@ -113,8 +113,8 @@ func TestService_Create(t *testing.T) {
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, &model.EventAPIDefinition{ID: "foo", ApplicationID: "foo", Tenant: tnt, Name: "foo", Spec: &model.EventAPISpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.EventAPIDefinition{ID: "foo", ApplicationID: "foo", Tenant: tnt, Name: "bar"}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", ApplicationID: "foo", Tenant: tnt, Name: "foo", Spec: &model.EventSpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", ApplicationID: "foo", Tenant: tnt, Name: "bar"}).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -201,7 +201,7 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			Input:       model.ApplicationCreateInput{Name: "test"},
+			Input:       model.ApplicationRegisterInput{Name: "test"},
 			ExpectedErr: nil,
 		},
 		{
@@ -253,7 +253,7 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			Input: model.ApplicationCreateInput{
+			Input: model.ApplicationRegisterInput{
 				Name:   "test",
 				Labels: defaultLabelsWithoutIntSys,
 			},
@@ -493,7 +493,7 @@ func TestService_Create(t *testing.T) {
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// when
-		_, err := svc.Create(context.TODO(), model.ApplicationCreateInput{})
+		_, err := svc.Create(context.TODO(), model.ApplicationRegisterInput{})
 		assert.Equal(t, tenant.NoTenantError, err)
 	})
 }
@@ -739,7 +739,7 @@ func TestService_Delete(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		AppRepoFn          func() *automock.ApplicationRepository
-		Input              model.ApplicationCreateInput
+		Input              model.ApplicationRegisterInput
 		InputID            string
 		ExpectedErrMessage string
 	}{
@@ -807,7 +807,7 @@ func TestService_Get(t *testing.T) {
 	testCases := []struct {
 		Name                string
 		RepositoryFn        func() *automock.ApplicationRepository
-		Input               model.ApplicationCreateInput
+		Input               model.ApplicationRegisterInput
 		InputID             string
 		ExpectedApplication *model.Application
 		ExpectedErrMessage  string
@@ -1694,11 +1694,11 @@ type testModel struct {
 	ApplicationMatcherFn func(app *model.Application) bool
 	Webhooks             []*model.Webhook
 	Apis                 []*model.APIDefinition
-	EventAPIs            []*model.EventAPIDefinition
+	EventAPIs            []*model.EventDefinition
 	Documents            []*model.Document
 }
 
-func modelFromInput(in model.ApplicationCreateInput, tenant, applicationID string) testModel {
+func modelFromInput(in model.ApplicationRegisterInput, tenant, applicationID string) testModel {
 	applicationModelMatcherFn := applicationMatcher(in.Name, in.Description)
 
 	var webhooksModel []*model.Webhook
@@ -1707,13 +1707,13 @@ func modelFromInput(in model.ApplicationCreateInput, tenant, applicationID strin
 	}
 
 	var apisModel []*model.APIDefinition
-	for _, item := range in.Apis {
+	for _, item := range in.APIDefinitions {
 		apisModel = append(apisModel, item.ToAPIDefinition(uuid.New().String(), applicationID, tenant))
 	}
 
-	var eventAPIsModel []*model.EventAPIDefinition
-	for _, item := range in.EventAPIs {
-		eventAPIsModel = append(eventAPIsModel, item.ToEventAPIDefinition(uuid.New().String(), tenant, applicationID))
+	var eventAPIsModel []*model.EventDefinition
+	for _, item := range in.EventDefinitions {
+		eventAPIsModel = append(eventAPIsModel, item.ToEventDefinition(uuid.New().String(), tenant, applicationID))
 	}
 
 	var documentsModel []*model.Document

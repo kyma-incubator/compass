@@ -12,28 +12,28 @@ type ApplicationConverter struct {
 }
 
 // CreateInputFromGraphQL provides a mock function with given fields: in
-func (_m *ApplicationConverter) CreateInputFromGraphQL(in graphql.ApplicationCreateInput) model.ApplicationCreateInput {
+func (_m *ApplicationConverter) CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) model.ApplicationRegisterInput {
 	ret := _m.Called(in)
 
-	var r0 model.ApplicationCreateInput
-	if rf, ok := ret.Get(0).(func(graphql.ApplicationCreateInput) model.ApplicationCreateInput); ok {
+	var r0 model.ApplicationRegisterInput
+	if rf, ok := ret.Get(0).(func(graphql.ApplicationRegisterInput) model.ApplicationRegisterInput); ok {
 		r0 = rf(in)
 	} else {
-		r0 = ret.Get(0).(model.ApplicationCreateInput)
+		r0 = ret.Get(0).(model.ApplicationRegisterInput)
 	}
 
 	return r0
 }
 
 // CreateInputJSONToGQL provides a mock function with given fields: in
-func (_m *ApplicationConverter) CreateInputJSONToGQL(in string) (graphql.ApplicationCreateInput, error) {
+func (_m *ApplicationConverter) CreateInputJSONToGQL(in string) (graphql.ApplicationRegisterInput, error) {
 	ret := _m.Called(in)
 
-	var r0 graphql.ApplicationCreateInput
-	if rf, ok := ret.Get(0).(func(string) graphql.ApplicationCreateInput); ok {
+	var r0 graphql.ApplicationRegisterInput
+	if rf, ok := ret.Get(0).(func(string) graphql.ApplicationRegisterInput); ok {
 		r0 = rf(in)
 	} else {
-		r0 = ret.Get(0).(graphql.ApplicationCreateInput)
+		r0 = ret.Get(0).(graphql.ApplicationRegisterInput)
 	}
 
 	var r1 error

@@ -31,7 +31,7 @@ DROP TABLE api_definitions;
 DROP TYPE api_spec_format;
 DROP TYPE api_spec_type;
 
--- Event API Definitions
+-- Event Definitions
 
 DROP TABLE event_api_definitions;
 DROP TYPE event_api_spec_format;
