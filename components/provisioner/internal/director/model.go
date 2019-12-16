@@ -19,7 +19,7 @@ type UpdateRuntimeResponse struct {
 type RuntimeInput struct {
 	Name        string  `json:"name"`
 	Description *string `json:"description"`
-	Labels      *Labels `json:"labels"`
+	Labels      *graphql.Labels `json:"labels"`
 }
 
-type Labels map[string][]string
+//type Labels map[string][]string

@@ -215,10 +215,9 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 	for _, cfg := range clusterConfigurations {
 		t.Run(cfg.description, func(t *testing.T) {
 
-			// dynamic mock
 			directorServiceMock := &directormock.DirectorClient{}
 			directorServiceMock.On("CreateRuntime", mock.Anything).Return(cfg.runtimeID, nil)
-			directorServiceMock.On("DeleteRuntime", mock.Anything, mock.Anything).Return(nil)
+			directorServiceMock.On("DeleteRuntime", mock.Anything).Return(nil)
 
 			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput : runtimeInput, ClusterConfig: cfg.config, Credentials: providerCredentials, KymaConfig: kymaConfig}
 

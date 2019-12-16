@@ -126,9 +126,11 @@ func (r *service) DeprovisionRuntime(id string) (string, <-chan struct{}, error)
 		return "", nil, errors.New("cannot start new operation while previous one is in progress")
 	}
 
-	// unregister this runtime from Director
+	unregErr := r.directorService.DeleteRuntime(id)
 
-	r.directorService.DeleteRuntime(id)
+	if unregErr != nil {
+		return "", nil, unregErr
+	}
 
 	operation, err := r.persistenceService.SetDeprovisioningStarted(id)
 

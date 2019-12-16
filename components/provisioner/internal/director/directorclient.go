@@ -95,15 +95,15 @@ func (cc *directorClient) DeleteRuntime(id string) error {
 
 	err := cc.gqlClient.Do(req, &response)
 	if err != nil {
-		return errors.Wrap(err, "Failed to unregister runtime in Director")
+		return errors.Wrap(err, "Failed to unregister runtime %s in Director")
 	}
 	// Nil check is necessary due to GraphQL client not checking response code
 	if response.Result == nil {
-		return errors.Errorf("Failed to register unregister runtime in Director: received nil response.")
+		return errors.Errorf("Failed to register unregister runtime %s in Director: received nil response.", id)
 	}
 
 	if response.Result.ID != id {
-		return errors.New("Failed to unregister correctly the runtime in Director: Received bad Runtime id in response")
+		return errors.Errorf("Failed to unregister correctly the runtime %s in Director: Received bad Runtime id in response", id)
 	}
 
 	return nil
