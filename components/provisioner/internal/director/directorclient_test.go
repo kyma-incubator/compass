@@ -21,7 +21,6 @@ import (
 )
 
 const (
-
 	runtimeID = "test-runtime-ID-12345"
 
 	expectedCreateRuntimeQuery =
@@ -29,12 +28,12 @@ const (
 	result: createRuntime(in: {
 		name: "Runtime Test name",
 		description: "runtime description",
-	})`
+	})}`
 
 	validTokenValue = "12345"
 
 	expectedDeleteRuntimeQuery = `mutation {
-	result: deleteRuntime(id: test-runtime-ID-12345)`
+	result: deleteRuntime(id: test-runtime-ID-12345)}`
 
 )
 
@@ -60,12 +59,12 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
-			ID: "test-runtime-ID-12345",
+			ID: runtimeID,
 			Name : "runtime name",
 			Description: &responseDescription,
 		}
 
-		expectedID := "test-runtime-ID-12345"
+		expectedID := runtimeID
 
 		gqlClient := gql.NewQueryAssertClient(t, false, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*CreateRuntimeResponse)
@@ -96,7 +95,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		// given
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
-			ID: "test-runtime-ID-12345",
+			ID: runtimeID,
 			Name : "runtime name",
 			Description: &responseDescription,
 		}
@@ -130,7 +129,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		// given
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
-			ID: "test-runtime-ID-12345",
+			ID: runtimeID,
 			Name : "runtime name",
 			Description: &responseDescription,
 		}
@@ -169,7 +168,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		// given
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
-			ID: "test-runtime-ID-12345",
+			ID: runtimeID,
 			Name : "runtime name",
 			Description: &responseDescription,
 		}
@@ -225,7 +224,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		// given
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
-			ID: "test-runtime-ID-12345",
+			ID: runtimeID,
 			Name : "runtime name",
 			Description: &responseDescription,
 		}
@@ -257,7 +256,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 }
 
 
-func TestDirectorClient_UnregisterRuntime(t *testing.T) {
+func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 
 	expectedRequest := gcli.NewRequest(expectedDeleteRuntimeQuery)
 	expectedRequest.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", validTokenValue))
@@ -272,7 +271,7 @@ func TestDirectorClient_UnregisterRuntime(t *testing.T) {
 			Description: &responseDescription,
 		}
 
-		expectedID := "test-runtime-ID-12345"
+		expectedID := runtimeID
 
 		gqlClient := gql.NewQueryAssertClient(t, false, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*DeleteRuntimeResponse)
@@ -374,7 +373,7 @@ func TestDirectorClient_UnregisterRuntime(t *testing.T) {
 		// given
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
-			ID: "test-runtime-ID-12345",
+			ID: runtimeID,
 			Name : "runtime name",
 			Description: &responseDescription,
 		}
@@ -424,11 +423,11 @@ func TestDirectorClient_UnregisterRuntime(t *testing.T) {
 		assert.Error(t, err)
 	})
 
-	t.Run("Should return error when Director fails to delete Runtime ", func(t *testing.T) {
+	t.Run("Should return error when Director fails to delete Runtime", func(t *testing.T) {
 		// given
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
-			ID: "test-runtime-ID-12345",
+			ID: runtimeID,
 			Name : "runtime name",
 			Description: &responseDescription,
 		}
@@ -458,107 +457,107 @@ func TestDirectorClient_UnregisterRuntime(t *testing.T) {
 	})
 }
 
-func TestConfigClient_SetURLsLabels(t *testing.T) {
-
-	//runtimeURLsConfig := RuntimeURLsConfig{
-	//	EventsURL:  "https://gateway.kyma.local",
-	//	ConsoleURL: "https://console.kyma.local",
-	//}
-	//
-	//expectedSetEventsURLRequest := gcli.NewRequest(expectedSetEventsURLLabelQuery)
-	//expectedSetEventsURLRequest.Header.Set(TenantHeader, tenant)
-	//expectedSetConsoleURLRequest := gcli.NewRequest(expectedSetConsoleURLLabelQuery)
-	//expectedSetConsoleURLRequest.Header.Set(TenantHeader, tenant)
-	//
-	//newSetExpectedLabelFunc := func(expectedResponses []*graphql.Label) func(t *testing.T, r interface{}) {
-	//	var responseIndex = 0
-	//
-	//	return func(t *testing.T, r interface{}) {
-	//		cfg, ok := r.(*SetRuntimeLabelResponse)
-	//		require.True(t, ok)
-	//		assert.Empty(t, cfg.Result)
-	//		cfg.Result = expectedResponses[responseIndex]
-	//		responseIndex++
-	//	}
-	//}
-
-	t.Run("should set URLs as labels", func(t *testing.T) {
-
-		//expectedResponses := []*graphql.Label{
-		//	{
-		//		Key:   eventsURLLabelKey,
-		//		Value: runtimeURLsConfig.EventsURL,
-		//	},
-		//	{
-		//		Key:   consoleURLLabelKey,
-		//		Value: runtimeURLsConfig.ConsoleURL,
-		//	},
-		//}
-		//
-		//gqlClient := gql.NewQueryAssertClient(t, false, newSetExpectedLabelFunc(expectedResponses), expectedSetEventsURLRequest, expectedSetConsoleURLRequest)
-		//
-		//configClient := NewConfigurationClient(gqlClient, runtimeConfig)
-		//
-		//// when
-		//labels, err := configClient.SetURLsLabels(runtimeURLsConfig)
-		//
-		//// then
-		//require.NoError(t, err)
-		//assert.Equal(t, runtimeURLsConfig.EventsURL, labels[eventsURLLabelKey])
-		//assert.Equal(t, runtimeURLsConfig.ConsoleURL, labels[consoleURLLabelKey])
-	})
-
-	t.Run("should return error if setting Console URL as label returned nil response", func(t *testing.T) {
-		//expectedResponses := []*graphql.Label{
-		//	{
-		//		Key:   eventsURLLabelKey,
-		//		Value: runtimeURLsConfig.EventsURL,
-		//	},
-		//	nil,
-		//}
-		//
-		//gqlClient := gql.NewQueryAssertClient(t, false, newSetExpectedLabelFunc(expectedResponses), expectedSetEventsURLRequest, expectedSetConsoleURLRequest)
-		//
-		//configClient := NewConfigurationClient(gqlClient, runtimeConfig)
-		//
-		//// when
-		//labels, err := configClient.SetURLsLabels(runtimeURLsConfig)
-		//
-		//// then
-		//require.Error(t, err)
-		//assert.Nil(t, labels)
-	})
-
-	t.Run("should return error if setting Console URL as label returned nil response", func(t *testing.T) {
-	/*	expectedResponses := []*graphql.Label{nil, nil}
-		//
-		gqlClient := gql.NewQueryAssertClient(t, false, newSetExpectedLabelFunc(expectedResponses), expectedSetEventsURLRequest, expectedSetConsoleURLRequest)
-		//
-		directorClient := NewDirectorClient(gqlClient)
-		//
-		//// when
-		runtimeID, err := directorClient.CreateRuntime(input)
-		//
-		//// then
-		require.Error(t, err)
-		assert.Nil(t, labels)*/
-	})
-
-	t.Run("should return error if failed to set labels", func(t *testing.T) {
-	//	gqlClient := gql.NewQueryAssertClient(t, true, func(t *testing.T, r interface{}) {
-	//		cfg, ok := r.(*SetRuntimeLabelResponse)
-	//		require.True(t, ok)
-	//		assert.Empty(t, cfg.Result)
-	//	}, expectedSetEventsURLRequest, expectedSetConsoleURLRequest)
-	//
-	//	configClient := NewConfigurationClient(gqlClient, runtimeConfig)
-	//
-	//	// when
-	//	labels, err := configClient.SetURLsLabels(runtimeURLsConfig)
-	//
-	//	// then
-	//	require.Error(t, err)
-	//	assert.Nil(t, labels)
-	})
-
-}
+//func TestConfigClient_SetURLsLabels(t *testing.T) {
+//
+//	runtimeURLsConfig := RuntimeURLsConfig{
+//		EventsURL:  "https://gateway.kyma.local",
+//		ConsoleURL: "https://console.kyma.local",
+//	}
+//
+//	expectedSetEventsURLRequest := gcli.NewRequest(expectedSetEventsURLLabelQuery)
+//	expectedSetEventsURLRequest.Header.Set(TenantHeader, tenant)
+//	expectedSetConsoleURLRequest := gcli.NewRequest(expectedSetConsoleURLLabelQuery)
+//	expectedSetConsoleURLRequest.Header.Set(TenantHeader, tenant)
+//
+//	newSetExpectedLabelFunc := func(expectedResponses []*graphql.Label) func(t *testing.T, r interface{}) {
+//		var responseIndex = 0
+//
+//		return func(t *testing.T, r interface{}) {
+//			cfg, ok := r.(*SetRuntimeLabelResponse)
+//			require.True(t, ok)
+//			assert.Empty(t, cfg.Result)
+//			cfg.Result = expectedResponses[responseIndex]
+//			responseIndex++
+//		}
+//	}
+//
+//	t.Run("should set URLs as labels", func(t *testing.T) {
+//
+//		expectedResponses := []*graphql.Label{
+//			{
+//				Key:   eventsURLLabelKey,
+//				Value: runtimeURLsConfig.EventsURL,
+//			},
+//			{
+//				Key:   consoleURLLabelKey,
+//				Value: runtimeURLsConfig.ConsoleURL,
+//			},
+//		}
+//
+//		gqlClient := gql.NewQueryAssertClient(t, false, newSetExpectedLabelFunc(expectedResponses), expectedSetEventsURLRequest, expectedSetConsoleURLRequest)
+//
+//		configClient := NewConfigurationClient(gqlClient, runtimeConfig)
+//
+//		// when
+//		labels, err := configClient.SetURLsLabels(runtimeURLsConfig)
+//
+//		// then
+//		require.NoError(t, err)
+//		assert.Equal(t, runtimeURLsConfig.EventsURL, labels[eventsURLLabelKey])
+//		assert.Equal(t, runtimeURLsConfig.ConsoleURL, labels[consoleURLLabelKey])
+//	})
+//
+//	t.Run("should return error if setting Console URL as label returned nil response", func(t *testing.T) {
+//		expectedResponses := []*graphql.Label{
+//			{
+//				Key:   eventsURLLabelKey,
+//				Value: runtimeURLsConfig.EventsURL,
+//			},
+//			nil,
+//		}
+//
+//		gqlClient := gql.NewQueryAssertClient(t, false, newSetExpectedLabelFunc(expectedResponses), expectedSetEventsURLRequest, expectedSetConsoleURLRequest)
+//
+//		configClient := NewConfigurationClient(gqlClient, runtimeConfig)
+//
+//		// when
+//		labels, err := configClient.SetURLsLabels(runtimeURLsConfig)
+//
+//		// then
+//		require.Error(t, err)
+//		assert.Nil(t, labels)
+//	})
+//
+//	t.Run("should return error if setting Console URL as label returned nil response", func(t *testing.T) {
+//		expectedResponses := []*graphql.Label{nil, nil}
+//		//
+//		gqlClient := gql.NewQueryAssertClient(t, false, newSetExpectedLabelFunc(expectedResponses), expectedSetEventsURLRequest, expectedSetConsoleURLRequest)
+//		//
+//		directorClient := NewDirectorClient(gqlClient)
+//		//
+//		//// when
+//		runtimeID, err := directorClient.CreateRuntime(input)
+//		//
+//		//// then
+//		require.Error(t, err)
+//		assert.Nil(t, labels)
+//	})
+//
+//	t.Run("should return error if failed to set labels", func(t *testing.T) {
+//		gqlClient := gql.NewQueryAssertClient(t, true, func(t *testing.T, r interface{}) {
+//			cfg, ok := r.(*SetRuntimeLabelResponse)
+//			require.True(t, ok)
+//			assert.Empty(t, cfg.Result)
+//		}, expectedSetEventsURLRequest, expectedSetConsoleURLRequest)
+//
+//		configClient := NewConfigurationClient(gqlClient, runtimeConfig)
+//
+//		// when
+//		labels, err := configClient.SetURLsLabels(runtimeURLsConfig)
+//
+//		// then
+//		require.Error(t, err)
+//		assert.Nil(t, labels)
+//	})
+//
+//}

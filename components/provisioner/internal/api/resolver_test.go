@@ -284,7 +284,6 @@ func TestResolver_CleanupRuntimeData(t *testing.T) {
 		require.Error(t, err)
 		assert.Empty(t, result)
 		provisioningService.AssertExpectations(t)
-
 	})
 
 }
