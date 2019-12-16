@@ -360,13 +360,13 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 	runtimeScenarios := []string{"Java", "Go", "Elixir"}
 	scenariosQuery := fmt.Sprintf(`SELECT "app_id" FROM public.labels
 					WHERE "app_id" IS NOT NULL AND "tenant_id" = '%s'
-						AND "key" = 'scenarios' AND "value" @> '["Java"]'
+						AND "key" = 'scenarios' AND "value" ?| array['Java']
 					UNION SELECT "app_id" FROM public.labels
 						WHERE "app_id" IS NOT NULL AND "tenant_id" = '%s'
-						AND "key" = 'scenarios' AND "value" @> '["Go"]'
+						AND "key" = 'scenarios' AND "value" ?| array['Go']
 					UNION SELECT "app_id" FROM public.labels
 						WHERE "app_id" IS NOT NULL AND "tenant_id" = '%s'
-						AND "key" = 'scenarios' AND "value" @> '["Elixir"]'`, tenantID, tenantID, tenantID)
+						AND "key" = 'scenarios' AND "value" ?| array['Elixir']`, tenantID, tenantID, tenantID)
 	applicationScenarioQuery := regexp.QuoteMeta(scenariosQuery)
 
 	pagableQuery := fmt.Sprintf(`SELECT (.+) FROM public\.applications WHERE tenant_id=\$1 AND "id" IN \(%s\) ORDER BY id LIMIT %d OFFSET %d`,

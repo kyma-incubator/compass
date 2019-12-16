@@ -56,7 +56,7 @@ func (r *repository) Create(ctx context.Context, item model.SystemAuth) error {
 
 func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.SystemAuth, error) {
 	var entity Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, &entity); err != nil {
+	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 
@@ -70,7 +70,7 @@ func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.Sys
 
 func (r *repository) GetByIDGlobal(ctx context.Context, id string) (*model.SystemAuth, error) {
 	var entity Entity
-	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, &entity); err != nil {
+	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 

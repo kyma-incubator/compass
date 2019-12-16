@@ -11,6 +11,9 @@ mutation {
       condition
       timestamp
     }
+    metadata {
+      creationTimestamp
+    }
     auths {
       id
       auth {
@@ -46,6 +49,9 @@ mutation {
           }
         }
       }
+    }
+    eventingConfiguration {
+      defaultURL
     }
   }
 }

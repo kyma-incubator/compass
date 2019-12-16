@@ -55,7 +55,7 @@ func (r *repository) Create(ctx context.Context, item model.ApplicationTemplate)
 
 func (r *repository) Get(ctx context.Context, id string) (*model.ApplicationTemplate, error) {
 	var entity Entity
-	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, &entity); err != nil {
+	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 
@@ -69,7 +69,7 @@ func (r *repository) Get(ctx context.Context, id string) (*model.ApplicationTemp
 
 func (r *repository) GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error) {
 	var entity Entity
-	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("name", name)}, &entity); err != nil {
+	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("name", name)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 

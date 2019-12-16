@@ -395,3 +395,17 @@ func fixLabelInput(key string, value string, objectID string, objectType model.L
 		ObjectType: objectType,
 	}
 }
+
+func fixModelApplicationEventingConfiguration(url string) *model.ApplicationEventingConfiguration {
+	return &model.ApplicationEventingConfiguration{
+		EventingConfiguration: model.EventingConfiguration{
+			DefaultURL: url,
+		},
+	}
+}
+
+func fixGQLApplicationEventingConfiguration(url string) *graphql.ApplicationEventingConfiguration {
+	return &graphql.ApplicationEventingConfiguration{
+		DefaultURL: url,
+	}
+}

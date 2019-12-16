@@ -1,6 +1,8 @@
 package runtime
 
 import (
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
@@ -21,6 +23,7 @@ func (c *converter) ToGraphQL(in *model.Runtime) *graphql.Runtime {
 		Status:      c.statusToGraphQL(in.Status),
 		Name:        in.Name,
 		Description: in.Description,
+		Metadata:    c.metadataToGraphQL(in.CreationTimestamp),
 	}
 }
 
@@ -73,5 +76,11 @@ func (c *converter) statusToGraphQL(in *model.RuntimeStatus) *graphql.RuntimeSta
 	return &graphql.RuntimeStatus{
 		Condition: condition,
 		Timestamp: graphql.Timestamp(in.Timestamp),
+	}
+}
+
+func (c *converter) metadataToGraphQL(creationTimestamp time.Time) *graphql.RuntimeMetadata {
+	return &graphql.RuntimeMetadata{
+		CreationTimestamp: graphql.Timestamp(creationTimestamp),
 	}
 }

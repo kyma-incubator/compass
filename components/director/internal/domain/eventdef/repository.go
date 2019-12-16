@@ -59,7 +59,7 @@ func (r EventAPIDefCollection) Len() int {
 
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error) {
 	var eventAPIDefEntity Entity
-	err := r.singleGetter.Get(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, &eventAPIDefEntity)
+	err := r.singleGetter.Get(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &eventAPIDefEntity)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting EventDefinition")
 	}
@@ -79,7 +79,7 @@ func (r *pgRepository) GetForApplication(ctx context.Context, tenant string, id 
 		repo.NewEqualCondition("id", id),
 		repo.NewEqualCondition("app_id", applicationID),
 	}
-	if err := r.singleGetter.Get(ctx, tenant, conditions, &ent); err != nil {
+	if err := r.singleGetter.Get(ctx, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
 		return nil, err
 	}
 

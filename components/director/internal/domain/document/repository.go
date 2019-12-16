@@ -54,7 +54,7 @@ func (r *repository) Exists(ctx context.Context, tenant, id string) (bool, error
 
 func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.Document, error) {
 	var entity Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, &entity); err != nil {
+	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 
