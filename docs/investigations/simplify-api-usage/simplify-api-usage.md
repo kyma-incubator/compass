@@ -1,11 +1,11 @@
 # Simplify usage of Compass API
 
 ## Terminology:
-`consumer` - client of a Compass API (Application, Runtime, Integration System)
+`consumer` - client of a Compass API (Application, Runtime, Integration System - no User included!)
 
 ## Overview
 
-This document discusses how to simplify usage of Compass API
+This document discusses how to simplify usage of Compass API.
 
 As of right now, there are some mutations that are related to a base entity (e.g. Application or Runtime) and they require the ID of the base entity:
  
@@ -37,6 +37,12 @@ It is possible due to the fact that it can be retrieved from the request context
 The directive could be used both on parameter(e.g. `addAPI` mutation) and field inside input(`integrationSystemID` case).
 Also, it would be possible for a consumer to update itself (`updateApplication` mutation) and not provide it's `ID`
  
+For example, `addAPI` and `updateApplication` mutations would look like that:
+
+`addAPI(applicationID: ID, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPI") @injectID`
+ 
+`updateApplication(id: ID, in: ApplicationUpdateInput! @validate): Application! @hasScopes(path: "graphql.mutation.updateApplication") @injectID`
+ 
 **Work that has to be done**
 * prepare directive which will retrieve `ID` depending on consumer type
 * change `ID` parameters to optional in mutations in GraphQL schema
@@ -64,7 +70,7 @@ considering `updateApplication` mutation, we would have to write tests to cover 
 There are 8 test cases in just one mutation, having in mind we would change around 20 mutations, it would be around 160 tests. 
 
 * API becomes less readable due to optional `ID` parameter (the user could be confused what happens if we don't provide one)
-* domains dependant on another mechanism which will fetch `consumer ID`
+* internal API complexity increases - additional dependancy for resolvers 
 
 ### 2. Separated mutations where `consumer ID` input parameter is not needed
 There could be another mutation which doesn't accept `applicationID`/`runtimeID` as a parameter, so we would have doubled mutations. Take this for example:
@@ -73,7 +79,7 @@ There could be another mutation which doesn't accept `applicationID`/`runtimeID`
 
 and 
 
-`addAPIForApplication(in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPI")`
+`addAPIForCurrentApplication(in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPI")`
 
 **Work that has to be done**
 * add new mutations to schema
@@ -91,17 +97,20 @@ and
 The alternative to solutions presented above is the Viewer pattern.
 It is a GraphQL query that looks like:
 ```graphql
-viewer: Viewer!
 type Viewer {
   id: ID!
   type: ViewerType!
+}
+
+type Query {
+  viewer: Viewer!
 }
 ```
 Usage:
 ```graphql
 viewer {
    id 
-   type // Application/Runtime/Integration System
+   type # Application/Runtime/Integration System
 }
 
 ```
@@ -119,17 +128,22 @@ The consumer ID is present in request context, so it can be retrieved from there
 * API doesn't get much bigger(only one query)
 
 **Cons**
-* consumer has to make an additional call to get its ID for other GraphQL operations 
+* consumer has to make an additional call to get its ID for other GraphQL operations. 
 
-Sources:
+However, it is not such a big issue considering the fact that in the case that integration system or user for example wants to update application, that query won't be used because it has to provide ID of the application explicitly.
+The only consumer of that method would be an Application at the moment. If there is a library for performing GraphQL queries, the overhead of performing additional query would not be too big. 
+
+## References
 
 https://medium.com/workflowgen/graphql-schema-design-the-viewer-field-aeabfacffe72
+
 https://codeahoy.com/2019/10/13/graphql-practical-tutorial/
 
 The Viewer pattern is used in e.g. Facebook and GitHub API:
 
 https://developer.github.com/v4/query
-https://github.com/graphql/graphql-js/issues/571
+
+https://blog.usejournal.com/the-significance-of-graphql-part-2-how-facebook-coursera-and-artsy-use-graphql-86abe9ab9cb2
 
 ## Decision
 
