@@ -1,7 +1,6 @@
 # Maintain a secure connection with Compass
 
-After you have established a secure connection with Compass, you can fetch the configuration details and renew the client certificate before it expires.  
-To renew the client certificate, follow the steps in this tutorial.
+After you have established a secure connection with Compass, you can fetch the configuration details and renew the client certificate before it expires. To renew the client certificate, follow the steps in this tutorial.
 
 ## Prerequisites
 
@@ -10,10 +9,6 @@ To renew the client certificate, follow the steps in this tutorial.
 - Registered Application
 - Runtime connected to Compass
 - [Established secure connection with Compass](08-01-establish-secure-connection-with-compass.md)
-
-> **NOTE**: To see how to establish a secure connection with Compass and generate a client certificate, see [this](08-01-establish-secure-connection-with-compass.md) document. 
-
-<!--- TODO: link in the note above --->
 
 ## Steps
 
@@ -63,3 +58,5 @@ To renew the client certificate, follow the steps in this tutorial.
     ```
 
     The response contains a renewed client certificate signed by the Kyma Certificate Authority (CA), certificate chain, and the CA certificate.
+    
+>**NOTE:** To learn how to revoke a client certificate, read [this](08-03-revoke-client-certificate.md) document.

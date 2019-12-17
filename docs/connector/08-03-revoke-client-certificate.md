@@ -12,8 +12,7 @@ After you have established a secure connection with Compass and generated a clie
 - Runtime connected to Compass
 - [Established secure connection with Compass](08-01-establish-secure-connection-with-compass.md)
 
-> **NOTE**: To see how to establish a secure connection with Compass and generate a client certificate, see [this](08-01-establish-secure-connection-with-compass.md) document. To see how to maintain a secure connection with Compass and renew a client certificate, go [here](08-02-maintain-secure-connection-with-compass.md).
-<!--- TODO: link in the note above --->
+> **NOTE**: To see how to maintain a secure connection with Compass and renew a client certificate, read [this](08-02-maintain-secure-connection-with-compass.md) document.
 
 ## Steps
 
