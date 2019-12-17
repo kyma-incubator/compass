@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -85,7 +87,9 @@ func (a *Authenticator) contextWithClaims(ctx context.Context, claims Claims) co
 	ctxWithTenant := tenant.SaveToContext(ctx, claims.Tenant)
 	scopesArray := strings.Split(claims.Scopes, " ")
 	ctxWithScopes := scope.SaveToContext(ctxWithTenant, scopesArray)
-	return ctxWithScopes
+	apiConsumer := consumer.Consumer{ConsumerID: claims.ConsumerID, ConsumerType: claims.ConsumerType}
+	ctxWithConsumerInfo := consumer.SaveToContext(ctxWithScopes, apiConsumer)
+	return ctxWithConsumerInfo
 }
 
 func (a *Authenticator) getKeyFunc() func(token *jwt.Token) (interface{}, error) {

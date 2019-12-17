@@ -91,8 +91,8 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 
 	reqData.Body.Extra["tenant"] = objCtx.TenantID
 	reqData.Body.Extra["scope"] = objCtx.Scopes
-	reqData.Body.Extra["objectID"] = objCtx.ObjectID
-	reqData.Body.Extra["objectType"] = objCtx.ObjectType
+	reqData.Body.Extra["consumerID"] = objCtx.ConsumerID
+	reqData.Body.Extra["consumerType"] = objCtx.ConsumerType
 
 	h.respond(writer, reqData.Body)
 }

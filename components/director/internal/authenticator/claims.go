@@ -2,6 +2,7 @@ package authenticator
 
 import (
 	"github.com/dgrijalva/jwt-go"
+	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/pkg/errors"
 )
 
@@ -20,8 +21,10 @@ func isInvalidTenantError(err error) bool {
 }
 
 type Claims struct {
-	Tenant string `json:"tenant"`
-	Scopes string `json:"scopes"`
+	Tenant       string                `json:"tenant"`
+	Scopes       string                `json:"scopes"`
+	ConsumerID   string                `json:"consumerID"`
+	ConsumerType consumer.ConsumerType `json:"consumerType"`
 	jwt.StandardClaims
 }
 
