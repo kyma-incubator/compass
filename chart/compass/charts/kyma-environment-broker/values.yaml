@@ -1,8 +1,8 @@
 replicaCount: 1
 
 image:
-  repository: mszostok/kyma-env-broker
-  tag: 0.1.0
+  repository: eu.gcr.io/kyma-project/incubator/kyma-environment-broker
+  tag: PR-554
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []
