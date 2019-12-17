@@ -1,7 +1,4 @@
----
-title: Revoke client certificate
-type: Tutorials
----
+# Revoke a client certificate
 
 After you have established a secure connection with Compass and generated a client certificate, you may want to revoke this certificate at some point. To revoke a client certificate, follow the steps in this tutorial.
 

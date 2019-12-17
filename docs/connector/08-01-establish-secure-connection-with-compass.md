@@ -1,7 +1,4 @@
----
-title: Establish a secure connection with Compass
-type: Tutorials
----
+# Establish a secure connection with Compass
 
 To establish a secure connection with Compass and generate the client certificate, follow this tutorial. 
 
