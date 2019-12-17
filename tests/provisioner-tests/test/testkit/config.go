@@ -17,7 +17,7 @@ type TestConfig struct {
 	GardenerProjectName string
 	GardenerAzureSecret string
 	//Default set to empty as we are not supporting tests on GCP right now
-	GardenerGCPSecret   string `envconfig:"default= "`
+	GardenerGCPSecret string `envconfig:"default= "`
 
 	// GCPCredentials is base64 encoded service account key
 	GCPCredentials string
