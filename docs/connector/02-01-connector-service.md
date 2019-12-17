@@ -23,5 +23,5 @@ This diagram illustrates the client certificate generation flow in details:
 
 >**NOTE:**  The external application can fetch configuration information using the client certificate. It uses this information to generate a CSR prior to certificate renewal. This approach makes certificate rotation process convenient and flexible, since the external application does not need to store information required to generate a CSR in its data model.     
 
->**NOTE:** To establish a secure connection, follow [this](../../../docs/tutorials/08-01-establish-secure-connection-with-compass.md) guide.  
-> To mainatain a secure connection, see [this](../../../docs/tutorials/08-02-maintain-secure-connection-with-compass.md) tutorial.
+>**NOTE:** To establish a secure connection, follow [this](08-01-establish-secure-connection-with-compass.md) guide.  
+> To mainatain a secure connection, see [this](08-02-maintain-secure-connection-with-compass.md) tutorial.
