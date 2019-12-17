@@ -99,7 +99,6 @@ func Test_E2E_Gardener(t *testing.T) {
 		defer ensureClusterIsDeprovisioned(runtimeId)
 
 		var provisioningOperationStatus gqlschema.OperationStatus
-
 		err = testkit.RunParallelToMainFunction(ProvisioningTimeout+5*time.Second,
 			func() error {
 				logrus.Infof("Waiting for provisioning to finish...")
@@ -324,7 +323,7 @@ func assertGardenerRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionR
 
 func verifyProviderConfig(t *testing.T, input gqlschema.ProviderSpecificInput, config interface{}) {
 	if input.AzureConfig != nil {
-		azureConfig, ok := config.(gqlschema.AzureProviderConfig);
+		azureConfig, ok := config.(gqlschema.AzureProviderConfig)
 		if !ok {
 			t.Failed()
 		}
@@ -332,7 +331,7 @@ func verifyProviderConfig(t *testing.T, input gqlschema.ProviderSpecificInput, c
 	}
 
 	if input.AwsConfig != nil {
-		awsConfig, ok := config.(gqlschema.AWSProviderConfig);
+		awsConfig, ok := config.(gqlschema.AWSProviderConfig)
 		if !ok {
 			t.Failed()
 		}
@@ -343,7 +342,7 @@ func verifyProviderConfig(t *testing.T, input gqlschema.ProviderSpecificInput, c
 	}
 
 	if input.GcpConfig != nil {
-		gcpConfig, ok := config.(gqlschema.GCPProviderConfigInput);
+		gcpConfig, ok := config.(gqlschema.GCPProviderConfigInput)
 		if !ok {
 			t.Failed()
 		}
