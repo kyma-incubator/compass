@@ -2,6 +2,7 @@ package dbsession
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 
 	dbr "github.com/gocraft/dbr/v2"
@@ -74,34 +75,47 @@ func (ws writeSession) InsertGCPConfig(config model.GCPConfig) dberrors.Error {
 }
 
 func (ws writeSession) InsertKymaConfig(kymaConfig model.KymaConfig) dberrors.Error {
-	_, err := ws.insertInto("kyma_config").
+	jsonConfig, err := json.Marshal(kymaConfig.GlobalConfiguration)
+	if err != nil {
+		return dberrors.Internal("Failed to marshal global configuration: %s", err.Error())
+	}
+
+	_, err = ws.insertInto("kyma_config").
 		Pair("id", kymaConfig.ID).
 		Pair("release_id", kymaConfig.Release.Id).
 		Pair("cluster_id", kymaConfig.ClusterID).
+		Pair("global_configuration", jsonConfig).
 		Exec()
 
 	if err != nil {
 		return dberrors.Internal("Failed to insert record to KymaConfig table: %s", err)
 	}
 
-	for _, kymaConfigModule := range kymaConfig.Modules {
-		err = ws.insertKymaConfigModule(kymaConfig.ID, kymaConfigModule)
+	for _, kymaConfigModule := range kymaConfig.Components {
+		err = ws.insertKymaComponentConfig(kymaConfigModule)
 		if err != nil {
-			return dberrors.Internal("Failed to insert record to KymaConfigModule table: %s", err)
+			return dberrors.Internal("Failed to insert record to KymaComponentConfig table: %s", err)
 		}
 	}
 
 	return nil
 }
 
-func (ws writeSession) insertKymaConfigModule(kymaConfigID string, kymaConfigModule model.KymaConfigModule) dberrors.Error {
-	_, err := ws.insertInto("kyma_config_module").
-		Columns("id", "module", "kyma_config_id").
-		Record(kymaConfigModule).
+func (ws writeSession) insertKymaComponentConfig(kymaConfigModule model.KymaComponentConfig) dberrors.Error {
+	jsonConfig, err := json.Marshal(kymaConfigModule.Configuration)
+	if err != nil {
+		return dberrors.Internal("Failed to marshal %s component configuration: %s", kymaConfigModule.Component, err.Error())
+	}
+
+	_, err = ws.insertInto("kyma_component_config").
+		Pair("id", kymaConfigModule.ID).
+		Pair("component", kymaConfigModule.Component).
+		Pair("kyma_config_id", kymaConfigModule.KymaConfigID).
+		Pair("configuration", jsonConfig).
 		Exec()
 
 	if err != nil {
-		return dberrors.Internal("Failed to insert record to KymaConfigModule table: %s", err)
+		return dberrors.Internal("Failed to insert record to KymaComponentConfig table: %s", err)
 	}
 
 	return nil

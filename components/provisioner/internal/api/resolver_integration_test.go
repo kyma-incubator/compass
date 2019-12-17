@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
@@ -191,10 +193,7 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	defer testutils.CloseDatabase(t, connection)
 
-	kymaConfig := &gqlschema.KymaConfigInput{
-		Version: kymaVersion,
-		Modules: gqlschema.AllKymaModule,
-	}
+	kymaConfig := fixKymaGraphQLConfigInput()
 
 	providerCredentials := &gqlschema.CredentialsInput{SecretName: "secret_1"}
 
@@ -230,10 +229,10 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			}
 
 			runtimeStatusProvisioningStarted, err := provisioner.RuntimeStatus(ctx, cfg.runtimeID)
-
 			require.NoError(t, err)
 			require.NotNil(t, runtimeStatusProvisioningStarted)
 			assert.Equal(t, statusForProvisioningStarted, runtimeStatusProvisioningStarted.LastOperationStatus)
+			assert.Equal(t, fixKymaGraphQLConfig(), runtimeStatusProvisioningStarted.RuntimeConfiguration.KymaConfig)
 
 			err = waitForOperationCompleted(provisioningService, operationID, 3)
 			require.NoError(t, err)
@@ -252,9 +251,9 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, runtimeStatusProvisioned)
 			assert.Equal(t, statusForProvisioningSucceeded, runtimeStatusProvisioned.LastOperationStatus)
+			assert.Equal(t, fixKymaGraphQLConfig(), runtimeStatusProvisioningStarted.RuntimeConfiguration.KymaConfig)
 
 			clusterData, err := persistenceService.GetClusterData(cfg.runtimeID)
-
 			require.NoError(t, err)
 			require.NotNil(t, clusterData)
 			require.NotNil(t, clusterData.Kubeconfig)
@@ -275,7 +274,6 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			}
 
 			runtimeStatusDeprovStarted, err := provisioner.RuntimeStatus(ctx, cfg.runtimeID)
-
 			require.NoError(t, err)
 			require.NotNil(t, runtimeStatusDeprovStarted)
 			assert.Equal(t, statusForDeprovisioningStarted, runtimeStatusDeprovStarted.LastOperationStatus)
@@ -294,7 +292,6 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			}
 
 			runtimeStatusDeprovisioned, err := provisioner.RuntimeStatus(ctx, cfg.runtimeID)
-
 			require.NoError(t, err)
 			require.NotNil(t, runtimeStatusDeprovisioned)
 			assert.Equal(t, runtimeStatusDeprovSuccess, runtimeStatusDeprovisioned.LastOperationStatus)
@@ -319,4 +316,90 @@ func insertDummyReleaseIfNotExist(releaseRepo release.Repository, id, version st
 	})
 
 	return err
+}
+
+// TODO - those are the same functions as in Converters tests - think of some way to not to duplicate all that code
+func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {
+	ceComp := gqlschema.KymaComponentClusterEssentials
+	coreComp := gqlschema.KymaComponentCore
+	acComp := gqlschema.KymaComponentApplicationConnector
+
+	return &gqlschema.KymaConfigInput{
+		Version: kymaVersion,
+		Components: []*gqlschema.ComponentConfigurationInput{
+			{
+				Component: ceComp,
+			},
+			{
+				Component: coreComp,
+				Configuration: []*gqlschema.ConfigEntryInput{
+					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
+					fixGQLConfigEntryInput("test.config.key2", "value2", util.BoolPtr(false)),
+				},
+			},
+			{
+				Component: acComp,
+				Configuration: []*gqlschema.ConfigEntryInput{
+					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
+					fixGQLConfigEntryInput("test.secret.key", "secretValue", util.BoolPtr(true)),
+				},
+			},
+		},
+		Configuration: []*gqlschema.ConfigEntryInput{
+			fixGQLConfigEntryInput("global.config.key", "globalValue", util.BoolPtr(false)),
+			fixGQLConfigEntryInput("global.config.key2", "globalValue2", util.BoolPtr(false)),
+			fixGQLConfigEntryInput("global.secret.key", "globalSecretValue", util.BoolPtr(true)),
+		},
+	}
+}
+
+func fixGQLConfigEntryInput(key, val string, secret *bool) *gqlschema.ConfigEntryInput {
+	return &gqlschema.ConfigEntryInput{
+		Key:    key,
+		Value:  val,
+		Secret: secret,
+	}
+}
+
+func fixKymaGraphQLConfig() *gqlschema.KymaConfig {
+	ceComp := gqlschema.KymaComponentClusterEssentials
+	coreComp := gqlschema.KymaComponentCore
+	acComp := gqlschema.KymaComponentApplicationConnector
+
+	return &gqlschema.KymaConfig{
+		Version: util.StringPtr(kymaVersion),
+		Components: []*gqlschema.ComponentConfiguration{
+			{
+				Component:     &ceComp,
+				Configuration: make([]*gqlschema.ConfigEntry, 0, 0),
+			},
+			{
+				Component: &coreComp,
+				Configuration: []*gqlschema.ConfigEntry{
+					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
+					fixGQLConfigEntry("test.config.key2", "value2", util.BoolPtr(false)),
+				},
+			},
+			{
+				Component: &acComp,
+				Configuration: []*gqlschema.ConfigEntry{
+					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
+					fixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),
+				},
+			},
+		},
+		Configuration: []*gqlschema.ConfigEntry{
+			fixGQLConfigEntry("global.config.key", "globalValue", util.BoolPtr(false)),
+			fixGQLConfigEntry("global.config.key2", "globalValue2", util.BoolPtr(false)),
+			fixGQLConfigEntry("global.secret.key", "globalSecretValue", util.BoolPtr(true)),
+		},
+	}
+}
+
+func fixGQLConfigEntry(key, val string, secret *bool) *gqlschema.ConfigEntry {
+	return &gqlschema.ConfigEntry{
+		Key:    key,
+		Value:  val,
+		Secret: secret,
+	}
 }

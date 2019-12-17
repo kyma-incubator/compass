@@ -62,7 +62,12 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 	kymaConfig := &gqlschema.KymaConfigInput{
 		Version: kymaVersion,
-		Modules: gqlschema.AllKymaModule,
+		Components: []*gqlschema.ComponentConfigurationInput{
+			{
+				Component:     gqlschema.KymaComponentCore,
+				Configuration: nil,
+			},
+		},
 	}
 
 	t.Run("Should start runtime provisioning and return operation ID", func(t *testing.T) {

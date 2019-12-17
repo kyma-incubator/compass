@@ -52,6 +52,28 @@ type ClusterConfigInput struct {
 	GcpConfig      *GCPConfigInput      `json:"gcpConfig"`
 }
 
+type ComponentConfiguration struct {
+	Component     *KymaComponent `json:"component"`
+	Configuration []*ConfigEntry `json:"configuration"`
+}
+
+type ComponentConfigurationInput struct {
+	Component     KymaComponent       `json:"component"`
+	Configuration []*ConfigEntryInput `json:"configuration"`
+}
+
+type ConfigEntry struct {
+	Key    string `json:"key"`
+	Value  string `json:"value"`
+	Secret *bool  `json:"secret"`
+}
+
+type ConfigEntryInput struct {
+	Key    string `json:"key"`
+	Value  string `json:"value"`
+	Secret *bool  `json:"secret"`
+}
+
 type CredentialsInput struct {
 	SecretName string `json:"secretName"`
 }
@@ -137,13 +159,15 @@ type GardenerConfigInput struct {
 }
 
 type KymaConfig struct {
-	Version *string       `json:"version"`
-	Modules []*KymaModule `json:"modules"`
+	Version       *string                   `json:"version"`
+	Components    []*ComponentConfiguration `json:"components"`
+	Configuration []*ConfigEntry            `json:"configuration"`
 }
 
 type KymaConfigInput struct {
-	Version string       `json:"version"`
-	Modules []KymaModule `json:"modules"`
+	Version       string                         `json:"version"`
+	Components    []*ComponentConfigurationInput `json:"components"`
+	Configuration []*ConfigEntryInput            `json:"configuration"`
 }
 
 type OperationStatus struct {
@@ -193,56 +217,114 @@ type UpgradeRuntimeInput struct {
 	KymaConfig    *KymaConfigInput     `json:"kymaConfig"`
 }
 
-type KymaModule string
+type KymaComponent string
 
 const (
-	KymaModuleBackup             KymaModule = "Backup"
-	KymaModuleBackupInit         KymaModule = "BackupInit"
-	KymaModuleJaeger             KymaModule = "Jaeger"
-	KymaModuleLogging            KymaModule = "Logging"
-	KymaModuleMonitoring         KymaModule = "Monitoring"
-	KymaModulePrometheusOperator KymaModule = "PrometheusOperator"
-	KymaModuleKiali              KymaModule = "Kiali"
-	KymaModuleKnativeBuild       KymaModule = "KnativeBuild"
+	KymaComponentAPIGateway                  KymaComponent = "APIGateway"
+	KymaComponentApplicationConnector        KymaComponent = "ApplicationConnector"
+	KymaComponentApplicationConnectorIngress KymaComponent = "ApplicationConnectorIngress"
+	KymaComponentAssetStore                  KymaComponent = "AssetStore"
+	KymaComponentBackup                      KymaComponent = "Backup"
+	KymaComponentBackupInit                  KymaComponent = "BackupInit"
+	KymaComponentClusterEssentials           KymaComponent = "ClusterEssentials"
+	KymaComponentCms                         KymaComponent = "CMS"
+	KymaComponentCompass                     KymaComponent = "Compass"
+	KymaComponentCompassRuntimeAgent         KymaComponent = "CompassRuntimeAgent"
+	KymaComponentCore                        KymaComponent = "Core"
+	KymaComponentDex                         KymaComponent = "Dex"
+	KymaComponentEventBus                    KymaComponent = "EventBus"
+	KymaComponentEventSources                KymaComponent = "EventSources"
+	KymaComponentFunctionController          KymaComponent = "FunctionController"
+	KymaComponentHelmBroker                  KymaComponent = "HelmBroker"
+	KymaComponentIstio                       KymaComponent = "Istio"
+	KymaComponentIstioInit                   KymaComponent = "IstioInit"
+	KymaComponentIstioKymaPatch              KymaComponent = "IstioKymaPatch"
+	KymaComponentJaeger                      KymaComponent = "Jaeger"
+	KymaComponentKiali                       KymaComponent = "Kiali"
+	KymaComponentKnativeBuild                KymaComponent = "KnativeBuild"
+	KymaComponentKnativeBuildInit            KymaComponent = "KnativeBuildInit"
+	KymaComponentKnativeEventing             KymaComponent = "KnativeEventing"
+	KymaComponentKnativeProvisionerNatss     KymaComponent = "KnativeProvisionerNatss"
+	KymaComponentKnativeServing              KymaComponent = "KnativeServing"
+	KymaComponentKnativeServingInit          KymaComponent = "KnativeServingInit"
+	KymaComponentLogging                     KymaComponent = "Logging"
+	KymaComponentMonitoring                  KymaComponent = "Monitoring"
+	KymaComponentNatsStreaming               KymaComponent = "NatsStreaming"
+	KymaComponentOry                         KymaComponent = "Ory"
+	KymaComponentRafter                      KymaComponent = "Rafter"
+	KymaComponentServiceCatalog              KymaComponent = "ServiceCatalog"
+	KymaComponentServiceCatalogAddons        KymaComponent = "ServiceCatalogAddons"
+	KymaComponentServiceManagerProxy         KymaComponent = "ServiceManagerProxy"
+	KymaComponentTesting                     KymaComponent = "Testing"
+	KymaComponentXipPatch                    KymaComponent = "XipPatch"
 )
 
-var AllKymaModule = []KymaModule{
-	KymaModuleBackup,
-	KymaModuleBackupInit,
-	KymaModuleJaeger,
-	KymaModuleLogging,
-	KymaModuleMonitoring,
-	KymaModulePrometheusOperator,
-	KymaModuleKiali,
-	KymaModuleKnativeBuild,
+var AllKymaComponent = []KymaComponent{
+	KymaComponentAPIGateway,
+	KymaComponentApplicationConnector,
+	KymaComponentApplicationConnectorIngress,
+	KymaComponentAssetStore,
+	KymaComponentBackup,
+	KymaComponentBackupInit,
+	KymaComponentClusterEssentials,
+	KymaComponentCms,
+	KymaComponentCompass,
+	KymaComponentCompassRuntimeAgent,
+	KymaComponentCore,
+	KymaComponentDex,
+	KymaComponentEventBus,
+	KymaComponentEventSources,
+	KymaComponentFunctionController,
+	KymaComponentHelmBroker,
+	KymaComponentIstio,
+	KymaComponentIstioInit,
+	KymaComponentIstioKymaPatch,
+	KymaComponentJaeger,
+	KymaComponentKiali,
+	KymaComponentKnativeBuild,
+	KymaComponentKnativeBuildInit,
+	KymaComponentKnativeEventing,
+	KymaComponentKnativeProvisionerNatss,
+	KymaComponentKnativeServing,
+	KymaComponentKnativeServingInit,
+	KymaComponentLogging,
+	KymaComponentMonitoring,
+	KymaComponentNatsStreaming,
+	KymaComponentOry,
+	KymaComponentRafter,
+	KymaComponentServiceCatalog,
+	KymaComponentServiceCatalogAddons,
+	KymaComponentServiceManagerProxy,
+	KymaComponentTesting,
+	KymaComponentXipPatch,
 }
 
-func (e KymaModule) IsValid() bool {
+func (e KymaComponent) IsValid() bool {
 	switch e {
-	case KymaModuleBackup, KymaModuleBackupInit, KymaModuleJaeger, KymaModuleLogging, KymaModuleMonitoring, KymaModulePrometheusOperator, KymaModuleKiali, KymaModuleKnativeBuild:
+	case KymaComponentAPIGateway, KymaComponentApplicationConnector, KymaComponentApplicationConnectorIngress, KymaComponentAssetStore, KymaComponentBackup, KymaComponentBackupInit, KymaComponentClusterEssentials, KymaComponentCms, KymaComponentCompass, KymaComponentCompassRuntimeAgent, KymaComponentCore, KymaComponentDex, KymaComponentEventBus, KymaComponentEventSources, KymaComponentFunctionController, KymaComponentHelmBroker, KymaComponentIstio, KymaComponentIstioInit, KymaComponentIstioKymaPatch, KymaComponentJaeger, KymaComponentKiali, KymaComponentKnativeBuild, KymaComponentKnativeBuildInit, KymaComponentKnativeEventing, KymaComponentKnativeProvisionerNatss, KymaComponentKnativeServing, KymaComponentKnativeServingInit, KymaComponentLogging, KymaComponentMonitoring, KymaComponentNatsStreaming, KymaComponentOry, KymaComponentRafter, KymaComponentServiceCatalog, KymaComponentServiceCatalogAddons, KymaComponentServiceManagerProxy, KymaComponentTesting, KymaComponentXipPatch:
 		return true
 	}
 	return false
 }
 
-func (e KymaModule) String() string {
+func (e KymaComponent) String() string {
 	return string(e)
 }
 
-func (e *KymaModule) UnmarshalGQL(v interface{}) error {
+func (e *KymaComponent) UnmarshalGQL(v interface{}) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = KymaModule(str)
+	*e = KymaComponent(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid KymaModule", str)
+		return fmt.Errorf("%s is not a valid KymaComponent", str)
 	}
 	return nil
 }
 
-func (e KymaModule) MarshalGQL(w io.Writer) {
+func (e KymaComponent) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

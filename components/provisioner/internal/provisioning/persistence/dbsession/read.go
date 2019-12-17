@@ -1,6 +1,8 @@
 package dbsession
 
 import (
+	"encoding/json"
+
 	dbr "github.com/gocraft/dbr/v2"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
@@ -31,24 +33,26 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 
 func (r readSession) GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors.Error) {
 	var kymaConfig []struct {
-		ID            string
-		KymaConfigID  string
-		ReleaseID     string
-		Version       string
-		TillerYAML    string
-		InstallerYAML string
-		Module        string
-		ClusterID     string
+		ID                  string
+		KymaConfigID        string
+		GlobalConfiguration []byte
+		ReleaseID           string
+		Version             string
+		TillerYAML          string
+		InstallerYAML       string
+		Component           string
+		Configuration       []byte
+		ClusterID           string
 	}
 
 	rowsCount, err := r.session.
-		Select("kyma_config_id", "kyma_config.release_id",
-			"kyma_config_module.id", "kyma_config_module.module",
+		Select("kyma_config_id", "kyma_config.release_id", "kyma_config.global_configuration",
+			"kyma_component_config.id", "kyma_component_config.component", "kyma_component_config.configuration",
 			"cluster_id",
 			"kyma_release.version", "kyma_release.tiller_yaml", "kyma_release.installer_yaml").
 		From("cluster").
 		Join("kyma_config", "cluster.id=kyma_config.cluster_id").
-		Join("kyma_config_module", "kyma_config.id=kyma_config_module.kyma_config_id").
+		Join("kyma_component_config", "kyma_config.id=kyma_component_config.kyma_config_id").
 		Join("kyma_release", "kyma_config.release_id=kyma_release.id").
 		Where(dbr.Eq("cluster.id", runtimeID)).
 		Load(&kymaConfig)
@@ -61,14 +65,28 @@ func (r readSession) GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors
 		return model.KymaConfig{}, dberrors.NotFound("Cannot find Kyma Config for runtimeID: %s", runtimeID)
 	}
 
-	kymaModules := make([]model.KymaConfigModule, 0)
+	kymaModules := make([]model.KymaComponentConfig, 0)
 
-	for _, configModule := range kymaConfig {
-		kymaConfigModule := model.KymaConfigModule{
-			ID:     configModule.ID,
-			Module: model.KymaModule(configModule.Module),
+	for _, componentCfg := range kymaConfig {
+		var configuration model.Configuration
+		err := json.Unmarshal(componentCfg.Configuration, &configuration)
+		if err != nil {
+			return model.KymaConfig{}, dberrors.Internal("Failed to unmarshal configuration for %s component: %s", componentCfg.Component, err.Error())
 		}
-		kymaModules = append(kymaModules, kymaConfigModule)
+
+		kymaComponentConfig := model.KymaComponentConfig{
+			ID:            componentCfg.ID,
+			Component:     model.KymaComponent(componentCfg.Component),
+			Configuration: configuration,
+			KymaConfigID:  componentCfg.KymaConfigID,
+		}
+		kymaModules = append(kymaModules, kymaComponentConfig)
+	}
+
+	var globalConfiguration model.Configuration
+	err = json.Unmarshal(kymaConfig[0].GlobalConfiguration, &globalConfiguration)
+	if err != nil {
+		return model.KymaConfig{}, dberrors.Internal("Failed to unmarshal global configuration: %s", err.Error())
 	}
 
 	return model.KymaConfig{
@@ -79,7 +97,9 @@ func (r readSession) GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors
 			TillerYAML:    kymaConfig[0].TillerYAML,
 			InstallerYAML: kymaConfig[0].InstallerYAML,
 		},
-		Modules: kymaModules,
+		Components:          kymaModules,
+		GlobalConfiguration: globalConfiguration,
+		ClusterID:           runtimeID,
 	}, nil
 }
 

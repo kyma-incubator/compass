@@ -1,13 +1,42 @@
 
-enum KymaModule {
+enum KymaComponent {
+    APIGateway
+    ApplicationConnector
+    ApplicationConnectorIngress
+    AssetStore
     Backup
     BackupInit
+    ClusterEssentials
+    CMS
+    Compass
+    CompassRuntimeAgent
+    Core
+    Dex
+    EventBus
+    EventSources
+    FunctionController
+    HelmBroker
+    Istio
+    IstioInit
+    IstioKymaPatch
     Jaeger
-    Logging
-    Monitoring
-    PrometheusOperator
     Kiali
     KnativeBuild
+    KnativeBuildInit
+    KnativeEventing
+    KnativeProvisionerNatss
+    KnativeServing
+    KnativeServingInit
+    Logging
+    Monitoring
+    NatsStreaming
+    Ory
+    Rafter
+    ServiceCatalog
+    ServiceCatalogAddons
+    ServiceManagerProxy
+    Testing
+    XipPatch
 }
 
 # Configuration of Runtime. We can consider returning kubeconfig as a part of this type.
@@ -68,9 +97,21 @@ type GCPConfig {
     zone: String
 }
 
+type ConfigEntry {
+    key: String!
+    value: String!
+    secret: Boolean
+}
+
+type ComponentConfiguration {
+    component: KymaComponent
+    configuration: [ConfigEntry]
+}
+
 type KymaConfig {
     version: String
-    modules: [KymaModule]
+    components: [ComponentConfiguration]
+    configuration: [ConfigEntry]
 }
 
 type OperationStatus {
@@ -192,9 +233,22 @@ input GCPConfigInput {
 }
 
 input KymaConfigInput {
-    version: String!        # Kyma version to install on the cluster
-    modules: [KymaModule!]  # Kyma components to install on the cluster
+    version: String!                            # Kyma version to install on the cluster
+    components: [ComponentConfigurationInput]!  # List of Kyma Components with specific configuration
+    configuration: [ConfigEntryInput]           # Global Kyma configuration
 }
+
+input ConfigEntryInput {
+    key: String!        # Configuration property key
+    value: String!      # Configuration property value
+    secret: Boolean     # Specifies if the property is confidential
+}
+
+input ComponentConfigurationInput {
+    component: KymaComponent!             # Kyma component
+    configuration: [ConfigEntryInput]     # Component specific configuration
+}
+
 
 input UpgradeRuntimeInput {
     clusterConfig: UpgradeClusterInput  # Configuration of the cluster to upgrade

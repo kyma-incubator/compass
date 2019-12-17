@@ -3,6 +3,7 @@ package converters
 import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
@@ -152,25 +153,47 @@ func (c converter) kymaConfigFromInput(runtimeID string, input gqlschema.KymaCon
 		return model.KymaConfig{}, errors.WithMessagef(err, "Failed to get Kyma Release with version %s", input.Version)
 	}
 
-	var modules []model.KymaConfigModule
+	var components []model.KymaComponentConfig
 	kymaConfigID := c.uuidGenerator.New()
 
-	for _, module := range input.Modules {
+	for _, component := range input.Components {
 		id := c.uuidGenerator.New()
 
-		kymaConfigModule := model.KymaConfigModule{
-			ID:           id,
-			Module:       model.KymaModule(module.String()),
-			KymaConfigID: kymaConfigID,
+		kymaConfigModule := model.KymaComponentConfig{
+			ID:            id,
+			Component:     model.KymaComponent(component.Component),
+			Configuration: c.configurationFromInput(component.Configuration),
+			KymaConfigID:  kymaConfigID,
 		}
 
-		modules = append(modules, kymaConfigModule)
+		components = append(components, kymaConfigModule)
 	}
 
 	return model.KymaConfig{
-		ID:        kymaConfigID,
-		Release:   kymaRelease,
-		Modules:   modules,
-		ClusterID: runtimeID,
+		ID:                  kymaConfigID,
+		Release:             kymaRelease,
+		Components:          components,
+		ClusterID:           runtimeID,
+		GlobalConfiguration: c.configurationFromInput(input.Configuration),
 	}, nil
+}
+
+func (c converter) configurationFromInput(input []*gqlschema.ConfigEntryInput) model.Configuration {
+	configuration := model.Configuration{
+		ConfigEntries: make([]model.ConfigEntry, 0, len(input)),
+	}
+
+	for _, ce := range input {
+		configuration.ConfigEntries = append(configuration.ConfigEntries, configEntryFromInput(ce))
+	}
+
+	return configuration
+}
+
+func configEntryFromInput(entry *gqlschema.ConfigEntryInput) model.ConfigEntry {
+	return model.ConfigEntry{
+		Key:    entry.Key,
+		Value:  entry.Value,
+		Secret: util.BoolFromPtr(entry.Secret),
+	}
 }

@@ -3,6 +3,8 @@ package converters
 import (
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+
 	realeaseMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/release/mocks"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
@@ -42,10 +44,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			Credentials: &gqlschema.CredentialsInput{
 				SecretName: "secretName",
 			},
-			KymaConfig: &gqlschema.KymaConfigInput{
-				Version: kymaVersion,
-				Modules: []gqlschema.KymaModule{gqlschema.KymaModuleBackup, gqlschema.KymaModuleBackupInit},
-			},
+			KymaConfig: fixKymaGraphQLConfigInput(),
 		}
 	}
 
@@ -64,13 +63,8 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				KubernetesVersion: "version",
 				ClusterID:         "runtimeID",
 			},
-			Kubeconfig: nil,
-			KymaConfig: model.KymaConfig{
-				ID:        "id",
-				Release:   fixKymaRelease(),
-				Modules:   fixKymaModules(),
-				ClusterID: "runtimeID",
-			},
+			Kubeconfig:            nil,
+			KymaConfig:            fixKymaConfig(),
 			CredentialsSecretName: "secretName",
 		}
 	}
@@ -104,10 +98,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		Credentials: &gqlschema.CredentialsInput{
 			SecretName: "secretName",
 		},
-		KymaConfig: &gqlschema.KymaConfigInput{
-			Version: kymaVersion,
-			Modules: []gqlschema.KymaModule{gqlschema.KymaModuleBackup, gqlschema.KymaModuleBackupInit},
-		},
+		KymaConfig: fixKymaGraphQLConfigInput(),
 	}
 
 	expectedGCPProviderCfg, err := model.NewGCPGardenerConfig(gcpGardenerProvider)
@@ -136,13 +127,8 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			ClusterID:              "runtimeID",
 			GardenerProviderConfig: expectedGCPProviderCfg,
 		},
-		Kubeconfig: nil,
-		KymaConfig: model.KymaConfig{
-			ID:        "id",
-			Release:   fixKymaRelease(),
-			Modules:   fixKymaModules(),
-			ClusterID: "runtimeID",
-		},
+		Kubeconfig:            nil,
+		KymaConfig:            fixKymaConfig(),
 		CredentialsSecretName: "secretName",
 	}
 
@@ -175,10 +161,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		Credentials: &gqlschema.CredentialsInput{
 			SecretName: "secretName",
 		},
-		KymaConfig: &gqlschema.KymaConfigInput{
-			Version: kymaVersion,
-			Modules: []gqlschema.KymaModule{gqlschema.KymaModuleBackup, gqlschema.KymaModuleBackupInit},
-		},
+		KymaConfig: fixKymaGraphQLConfigInput(),
 	}
 
 	expectedAzureProviderCfg, err := model.NewAzureGardenerConfig(azureGardenerProvider)
@@ -207,13 +190,8 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			ClusterID:              "runtimeID",
 			GardenerProviderConfig: expectedAzureProviderCfg,
 		},
-		Kubeconfig: nil,
-		KymaConfig: model.KymaConfig{
-			ID:        "id",
-			Release:   fixKymaRelease(),
-			Modules:   fixKymaModules(),
-			ClusterID: "runtimeID",
-		},
+		Kubeconfig:            nil,
+		KymaConfig:            fixKymaConfig(),
 		CredentialsSecretName: "secretName",
 	}
 
@@ -251,10 +229,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		Credentials: &gqlschema.CredentialsInput{
 			SecretName: "secretName",
 		},
-		KymaConfig: &gqlschema.KymaConfigInput{
-			Version: kymaVersion,
-			Modules: []gqlschema.KymaModule{gqlschema.KymaModuleBackup, gqlschema.KymaModuleBackupInit},
-		},
+		KymaConfig: fixKymaGraphQLConfigInput(),
 	}
 
 	expectedAWSProviderCfg, err := model.NewAWSGardenerConfig(awsGardenerProvider)
@@ -283,13 +258,8 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			ClusterID:              "runtimeID",
 			GardenerProviderConfig: expectedAWSProviderCfg,
 		},
-		Kubeconfig: nil,
-		KymaConfig: model.KymaConfig{
-			ID:        "id",
-			Release:   fixKymaRelease(),
-			Modules:   fixKymaModules(),
-			ClusterID: "runtimeID",
-		},
+		Kubeconfig:            nil,
+		KymaConfig:            fixKymaConfig(),
 		CredentialsSecretName: "secretName",
 	}
 
@@ -331,7 +301,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		t.Run(testCase.description, func(t *testing.T) {
 			//given
 			uuidGeneratorMock := &mocks.UUIDGenerator{}
-			uuidGeneratorMock.On("New").Return("id").Times(4)
+			uuidGeneratorMock.On("New").Return("id").Times(5)
 
 			inputConverter := NewInputConverter(uuidGeneratorMock, readSession)
 
@@ -413,4 +383,46 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 		assert.Contains(t, err.Error(), "provider config not specified")
 	})
 
+}
+
+func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {
+	ceComp := gqlschema.KymaComponentClusterEssentials
+	coreComp := gqlschema.KymaComponentCore
+	acComp := gqlschema.KymaComponentApplicationConnector
+
+	return &gqlschema.KymaConfigInput{
+		Version: kymaVersion,
+		Components: []*gqlschema.ComponentConfigurationInput{
+			{
+				Component: ceComp,
+			},
+			{
+				Component: coreComp,
+				Configuration: []*gqlschema.ConfigEntryInput{
+					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
+					fixGQLConfigEntryInput("test.config.key2", "value2", util.BoolPtr(false)),
+				},
+			},
+			{
+				Component: acComp,
+				Configuration: []*gqlschema.ConfigEntryInput{
+					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
+					fixGQLConfigEntryInput("test.secret.key", "secretValue", util.BoolPtr(true)),
+				},
+			},
+		},
+		Configuration: []*gqlschema.ConfigEntryInput{
+			fixGQLConfigEntryInput("global.config.key", "globalValue", util.BoolPtr(false)),
+			fixGQLConfigEntryInput("global.config.key2", "globalValue2", util.BoolPtr(false)),
+			fixGQLConfigEntryInput("global.secret.key", "globalSecretValue", util.BoolPtr(true)),
+		},
+	}
+}
+
+func fixGQLConfigEntryInput(key, val string, secret *bool) *gqlschema.ConfigEntryInput {
+	return &gqlschema.ConfigEntryInput{
+		Key:    key,
+		Value:  val,
+		Secret: secret,
+	}
 }
