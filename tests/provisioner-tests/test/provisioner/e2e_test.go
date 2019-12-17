@@ -27,11 +27,119 @@ const (
 	gcpClusterZone = "europe-west4-b"
 )
 
+var GardenerInputs = map[string]gqlschema.GardenerConfigInput{
+	"Azure": gqlschema.GardenerConfigInput{
+		MachineType:  "Standard_D2_v3",
+		DiskType:     "Standard_LRS",
+		Region:       "westeurope",
+		Seed:         "az-eu1",
+		TargetSecret: "", // TODO
+
+		ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+			AzureConfig: &gqlschema.AzureProviderConfigInput{
+				VnetCidr: "10.250.0.0/19",
+			},
+		},
+	},
+}
+
+func Test_E2E_Gardener(t *testing.T) {
+
+	logrus.Infof("Starting Compass Provisioner tests concerning Gardener. Test ID: %s", testSuite.TestId)
+
+	for _, provider := range testSuite.providers {
+
+		runtimeId := uuid.New().String()
+
+		// Provision runtime
+		credentialsInput := gqlschema.CredentialsInput{SecretName: testSuite.CredentialsSecretName}
+
+		provisioningInput := gqlschema.ProvisionRuntimeInput{
+			ClusterConfig: &gqlschema.ClusterConfigInput{
+				GardenerConfig: &gqlschema.GardenerConfigInput{
+					Name:                   testCaseGardenerName(provider, testSuite.TestId),
+					ProjectName:            config.GardenerProjectName,
+					KubernetesVersion:      "1.15.4",
+					NodeCount:              3,
+					VolumeSizeGb:           30,
+					MachineType:            GardenerInputs[provider].MachineType,
+					Region:                 GardenerInputs[provider].Region,
+					Provider:               provider,
+					Seed:                   GardenerInputs[provider].Seed,
+					TargetSecret:           GardenerInputs[provider].TargetSecret,
+					WorkerCidr:             "10.250.0.0/19",
+					AutoScalerMin:          2,
+					AutoScalerMax:          4,
+					MaxSurge:               4,
+					MaxUnavailable:         1,
+					ProviderSpecificConfig: GardenerInputs[provider].ProviderSpecificConfig,
+				},
+			},
+			Credentials: &credentialsInput,
+			KymaConfig:  &gqlschema.KymaConfigInput{Version: "1.6", Modules: gqlschema.AllKymaModule},
+		}
+
+		logrus.Infof("Provisioning %s runtime on %s...", runtimeId, provider)
+		provisioningOperationId, err := testSuite.ProvisionerClient.ProvisionRuntime(runtimeId, provisioningInput)
+		assertions.RequireNoError(t, err)
+		logrus.Infof("Provisioning operation id: %s", provisioningOperationId)
+		defer ensureClusterIsDeprovisioned(runtimeId)
+
+		var provisioningOperationStatus gqlschema.OperationStatus
+		err = testkit.RunParallelToMainFunction(ProvisioningTimeout+5*time.Second,
+			func() error {
+				logrus.Infof("Waiting for provisioning to finish...")
+				var waitErr error
+				provisioningOperationStatus, waitErr = testSuite.WaitUntilOperationIsFinished(ProvisioningTimeout, provisioningOperationId)
+				return waitErr
+			},
+			func() error {
+				logrus.Infof("Checking if operation will fail while other in progress...")
+				operationStatus, err := testSuite.ProvisionerClient.RuntimeOperationStatus(provisioningOperationId)
+				if err != nil {
+					return errors.WithMessagef(err, "Failed to get %s operation status", provisioningOperationId)
+				}
+
+				if operationStatus.State != gqlschema.OperationStateInProgress {
+					return errors.New("Operation %s not in progress")
+				}
+
+				_, err = testSuite.ProvisionerClient.ProvisionRuntime(runtimeId, provisioningInput)
+				if err == nil {
+					return errors.New("Operation scheduled successfully while other operation in progress")
+				}
+
+				return nil
+			},
+		)
+		assertions.RequireNoError(t, err, "Provisioning operation status: ", provisioningOperationStatus.State)
+
+		assertions.AssertOperationSucceed(t, gqlschema.OperationTypeProvision, runtimeId, provisioningOperationStatus)
+		logrus.Infof("Runtime provisioned successfully on %s", provider)
+
+		logrus.Infof("Fetching %s runtime status...", provider)
+		runtimeStatus, err := testSuite.ProvisionerClient.GCPRuntimeStatus(runtimeId)
+		assertions.RequireNoError(t, err)
+
+		assertGCPRuntimeConfiguration(t, provisioningInput, runtimeStatus)
+
+		logrus.Infof("Deprovisioning %s runtime on...", provider)
+		deprovisioningOperationId, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtimeId)
+		assertions.RequireNoError(t, err)
+		logrus.Infof("Deprovisioning operation id: %s", deprovisioningOperationId)
+
+		deprovisioningOperationStatus, err := testSuite.WaitUntilOperationIsFinished(DeprovisioningTimeout, deprovisioningOperationId)
+		assertions.RequireNoError(t, err)
+		assertions.AssertOperationSucceed(t, gqlschema.OperationTypeDeprovision, runtimeId, deprovisioningOperationStatus)
+		logrus.Infof("Runtime deprovisioned successfully")
+	}
+}
+
 func Test_E2e(t *testing.T) {
 	// TODO: Support for GCP was dropped and for now the GCP tests are skipped
 	t.SkipNow()
 
-	logrus.Infof("Starting tests. Test id: %s", testSuite.TestId)
+	logrus.Infof("Starting GCP tests. Test id: %s", testSuite.TestId)
 
 	runtimeId := uuid.New().String()
 
@@ -164,4 +272,8 @@ func unwrapString(str *string) string {
 	}
 
 	return ""
+}
+
+func testCaseGardenerName(provider, testID string) string {
+	return "gardener-" + provider + "-provisioner-test-" + testID
 }
