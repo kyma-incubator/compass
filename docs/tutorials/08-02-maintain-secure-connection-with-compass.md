@@ -14,7 +14,7 @@ To renew the client certificate, follow the steps in this tutorial.
 - Registered Application
 - Runtime connected to Compass
 
-> **NOTE**: To see how to establish a secure connection with Compass, see [this](08-01-establish-secure-connection-with-compass.md) document. 
+> **NOTE**: To see how to establish a secure connection with Compass and generate a client certificate, see [this](08-01-establish-secure-connection-with-compass.md) document. 
 
 <!--- TODO: link in the note above --->
 
