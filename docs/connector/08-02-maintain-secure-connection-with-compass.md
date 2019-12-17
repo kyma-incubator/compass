@@ -6,10 +6,10 @@ To renew the client certificate, follow the steps in this tutorial.
 ## Prerequisites
 
 - [OpenSSL toolkit](https://www.openssl.org/docs/man1.0.2/apps/openssl.html) to create a Certificate Signing Request (CSR), keys, and certificates which meet high security standards
-- [Established secure connection with Compass](08-01-establish-secure-connection-with-compass.md)
 - Compass (version 1.8 or higher)
 - Registered Application
 - Runtime connected to Compass
+- [Established secure connection with Compass](08-01-establish-secure-connection-with-compass.md)
 
 > **NOTE**: To see how to establish a secure connection with Compass and generate a client certificate, see [this](08-01-establish-secure-connection-with-compass.md) document. 
 
