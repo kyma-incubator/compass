@@ -98,7 +98,7 @@ func createFakeCredentialsSecret(t *testing.T, secrets core.SecretInterface, cre
 			APIVersion: "v1",
 		},
 		Data: map[string][]byte{
-			clientIDKey: []byte(encodedClientID),
+			clientIDKey:     []byte(encodedClientID),
 			clientSecretKey: []byte(encodedClientSecret),
 		},
 	}

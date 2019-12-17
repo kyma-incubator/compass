@@ -17,14 +17,14 @@ func TestToken_EmptyOrExpired(t *testing.T) {
 		//then
 		assert.True(t, empty)
 	})
-	
+
 	t.Run("Should return true when expired", func(t *testing.T) {
 		//given
 		time2000 := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC).Unix()
 
 		token := Token{
 			AccessToken: "token",
-			Expiration: time2000,
+			Expiration:  time2000,
 		}
 
 		//when
@@ -40,7 +40,7 @@ func TestToken_EmptyOrExpired(t *testing.T) {
 
 		token := Token{
 			AccessToken: "token",
-			Expiration: time3000,
+			Expiration:  time3000,
 		}
 
 		//when

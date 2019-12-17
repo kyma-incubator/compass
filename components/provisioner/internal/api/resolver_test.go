@@ -95,7 +95,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			Modules: gqlschema.AllKymaModule,
 		}
 
-		config := gqlschema.ProvisionRuntimeInput{RuntimeInput:  runtimeInput, ClusterConfig: clusterConfig, KymaConfig: kymaConfig}
+		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, KymaConfig: kymaConfig}
 
 		provisioningService.On("ProvisionRuntime", config).Return("ec781980-0533-4098-aab7-96b535569732", nil, nil)
 

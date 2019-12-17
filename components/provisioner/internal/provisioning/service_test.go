@@ -66,17 +66,17 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		Modules: gqlschema.AllKymaModule,
 	}
 
-	runtimeInput := &gqlschema.RuntimeInput {
-		Name : "test runtime",
+	runtimeInput := &gqlschema.RuntimeInput{
+		Name:        "test runtime",
 		Description: new(string),
-		Labels : &gqlschema.Labels{},
+		Labels:      &gqlschema.Labels{},
 	}
 
 	provisionRuntimeInput := gqlschema.ProvisionRuntimeInput{
-		RuntimeInput: runtimeInput,
+		RuntimeInput:  runtimeInput,
 		ClusterConfig: clusterConfig,
-		Credentials: &gqlschema.CredentialsInput{},
-		KymaConfig: kymaConfig,
+		Credentials:   &gqlschema.CredentialsInput{},
+		KymaConfig:    kymaConfig,
 	}
 
 	t.Run("Should start runtime provisioning and return operation ID", func(t *testing.T) {

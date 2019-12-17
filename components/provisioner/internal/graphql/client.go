@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/machinebox/graphql"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -70,5 +70,3 @@ func (c *client) addLog(log string) {
 func (c *client) clearLogs() {
 	c.logs = []string{}
 }
-
-

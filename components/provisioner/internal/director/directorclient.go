@@ -17,12 +17,6 @@ const (
 type DirectorClient interface {
 	CreateRuntime(config *gqlschema.RuntimeInput) (string, error)
 	DeleteRuntime(id string) error
-	//UpdateRuntime(config *gqlschema.RuntimeInput) error maybe not needed
-
-	/*
-	updateRuntime(id: ID!, in: RuntimeInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.updateRuntime")
-	deleteRuntime(id: ID!): Runtime! @hasScopes(path: "graphql.mutation.deleteRuntime")
-	*/
 }
 
 type directorClient struct {

@@ -17,7 +17,7 @@ const (
 
 type Token struct {
 	AccessToken string `json:"access_token"`
-	Expiration  int64    `json:"expires_in"`
+	Expiration  int64  `json:"expires_in"`
 }
 
 type credentials struct {

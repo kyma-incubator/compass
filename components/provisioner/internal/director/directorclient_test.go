@@ -20,10 +20,9 @@ import (
 const (
 	runtimeTestingID   = "test-runtime-ID-12345"
 	runtimeTestingName = "Runtime Test name"
-	validTokenValue = "12345"
+	validTokenValue    = "12345"
 
-	expectedCreateRuntimeQuery =
-	`mutation {
+	expectedCreateRuntimeQuery = `mutation {
 	result: createRuntime(in: {
 		name: "Runtime Test name",
 		description: "runtime description",
@@ -46,8 +45,8 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 	inputDescription := "runtime description"
 
 	runtimeInput := &gqlschema.RuntimeInput{
-		Name :        runtimeTestingName,
-		Description : &inputDescription,
+		Name:        runtimeTestingName,
+		Description: &inputDescription,
 	}
 
 	t.Run("Should register runtime and return new runtime ID when the Director access token is valid", func(t *testing.T) {
@@ -56,7 +55,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
 			ID:          runtimeTestingID,
-			Name :       runtimeTestingName,
+			Name:        runtimeTestingName,
 			Description: &responseDescription,
 		}
 
@@ -92,7 +91,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
 			ID:          runtimeTestingID,
-			Name :       runtimeTestingName,
+			Name:        runtimeTestingName,
 			Description: &responseDescription,
 		}
 
@@ -126,7 +125,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
 			ID:          runtimeTestingID,
-			Name :       runtimeTestingName,
+			Name:        runtimeTestingName,
 			Description: &responseDescription,
 		}
 
@@ -155,17 +154,16 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		assert.Empty(t, receivedRuntimeID)
 	})
 
-
 	t.Run("Should not register Runtime and return error when the client fails to get an access token for Director", func(t *testing.T) {
 		// given
 		mockedOAuthClient := &oauthmocks.Client{}
-		mockedOAuthClient.On("GetAuthorizationToken").Return(oauth.Token {}, errors.New("Failed token error"))
+		mockedOAuthClient.On("GetAuthorizationToken").Return(oauth.Token{}, errors.New("Failed token error"))
 
 		// given
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
 			ID:          runtimeTestingID,
-			Name :       runtimeTestingName,
+			Name:        runtimeTestingName,
 			Description: &responseDescription,
 		}
 
@@ -205,7 +203,6 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 			cfg.Result = nil
 		}, expectedRequest)
 
-
 		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
 		// when
@@ -221,7 +218,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
 			ID:          runtimeTestingID,
-			Name :       runtimeTestingName,
+			Name:        runtimeTestingName,
 			Description: &responseDescription,
 		}
 
@@ -251,7 +248,6 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 	})
 }
 
-
 func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 
 	expectedRequest := gcli.NewRequest(expectedDeleteRuntimeQuery)
@@ -263,7 +259,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
 			ID:          runtimeTestingID,
-			Name :       runtimeTestingName,
+			Name:        runtimeTestingName,
 			Description: &responseDescription,
 		}
 
@@ -296,7 +292,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
 			ID:          runtimeTestingID,
-			Name :       runtimeTestingName,
+			Name:        runtimeTestingName,
 			Description: &responseDescription,
 		}
 
@@ -330,7 +326,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
 			ID:          runtimeTestingID,
-			Name :       runtimeTestingName,
+			Name:        runtimeTestingName,
 			Description: &responseDescription,
 		}
 
@@ -358,17 +354,16 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		assert.Error(t, err)
 	})
 
-
 	t.Run("Should not unregister Runtime and return error when the client fails to get an access token for Director", func(t *testing.T) {
 		// given
 		mockedOAuthClient := &oauthmocks.Client{}
-		mockedOAuthClient.On("GetAuthorizationToken").Return(oauth.Token {}, errors.New("Failed token error"))
+		mockedOAuthClient.On("GetAuthorizationToken").Return(oauth.Token{}, errors.New("Failed token error"))
 
 		// given
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
 			ID:          runtimeTestingID,
-			Name :       runtimeTestingName,
+			Name:        runtimeTestingName,
 			Description: &responseDescription,
 		}
 
@@ -407,7 +402,6 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 			cfg.Result = nil
 		}, expectedRequest)
 
-
 		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
 		// when
@@ -422,7 +416,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
 			ID:          runtimeTestingID,
-			Name :       runtimeTestingName,
+			Name:        runtimeTestingName,
 			Description: &responseDescription,
 		}
 
@@ -456,7 +450,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		responseDescription := "runtime description"
 		expectedResponse := &graphql.Runtime{
 			ID:          "BadId",
-			Name :       runtimeTestingName,
+			Name:        runtimeTestingName,
 			Description: &responseDescription,
 		}
 
@@ -484,4 +478,3 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
-
