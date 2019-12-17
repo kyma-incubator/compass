@@ -351,7 +351,7 @@ func (r *applicationResolver) Auths(ctx context.Context, obj *graphql.Applicatio
 	return r.app.Auths(ctx, obj)
 }
 
-func (r *applicationResolver) Labels(ctx context.Context, obj *graphql.Application, key *string) (graphql.Labels, error) {
+func (r *applicationResolver) Labels(ctx context.Context, obj *graphql.Application, key *string) (*graphql.Labels, error) {
 	return r.app.Labels(ctx, obj, key)
 }
 func (r *applicationResolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*graphql.Webhook, error) {
@@ -381,7 +381,7 @@ type runtimeResolver struct {
 	*RootResolver
 }
 
-func (r *runtimeResolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string) (graphql.Labels, error) {
+func (r *runtimeResolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string) (*graphql.Labels, error) {
 	return r.runtime.Labels(ctx, obj, key)
 }
 
@@ -430,10 +430,10 @@ func (r *integrationSystemResolver) Auths(ctx context.Context, obj *graphql.Inte
 
 type oneTimeTokenResolver struct{ *RootResolver }
 
-func (r *oneTimeTokenResolver) RawEncoded(ctx context.Context, obj *graphql.OneTimeToken) (string, error) {
+func (r *oneTimeTokenResolver) RawEncoded(ctx context.Context, obj *graphql.OneTimeToken) (*string, error) {
 	return r.token.RawEncoded(ctx, obj)
 }
 
-func (r *oneTimeTokenResolver) Raw(ctx context.Context, obj *graphql.OneTimeToken) (string, error) {
+func (r *oneTimeTokenResolver) Raw(ctx context.Context, obj *graphql.OneTimeToken) (*string, error) {
 	return r.token.Raw(ctx, obj)
 }

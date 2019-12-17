@@ -1025,7 +1025,7 @@ func TestResolver_Labels(t *testing.T) {
 		},
 	}
 
-	gqlLabels := graphql.Labels{
+	gqlLabels := &graphql.Labels{
 		labelKey: labelValue,
 		labelKey: labelValue,
 	}
@@ -1039,7 +1039,7 @@ func TestResolver_Labels(t *testing.T) {
 		ServiceFn       func() *automock.RuntimeService
 		InputRuntime    *graphql.Runtime
 		InputKey        string
-		ExpectedResult  graphql.Labels
+		ExpectedResult  *graphql.Labels
 		ExpectedErr     error
 	}{
 		{
