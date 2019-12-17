@@ -38,11 +38,19 @@ const (
 	checkInterval = 2 * time.Second
 )
 
+var providers = []string{
+	"azure",
+	// "aws",
+	// "gcp",
+}
+
 type TestSuite struct {
 	TestId            string
 	ProvisionerClient provisioner.Client
 
 	CredentialsSecretName string
+
+	providers []string
 
 	config        testkit.TestConfig
 	secretsClient v1client.SecretInterface
@@ -72,9 +80,12 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 		TestId:            testId,
 		ProvisionerClient: provisionerClient,
 
-		config:                config,
-		secretsClient:         k8sClient.CoreV1().Secrets(config.CredentialsNamespace),
 		CredentialsSecretName: fmt.Sprintf("tests-cred-%s", testId),
+
+		providers: providers,
+
+		config:        config,
+		secretsClient: k8sClient.CoreV1().Secrets(config.CredentialsNamespace),
 	}, nil
 }
 
