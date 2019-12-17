@@ -154,7 +154,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			resolver := runtime.NewResolver(transact, svc, nil, nil, converter, nil)
 
 			// when
-			result, err := resolver.CreateRuntime(context.TODO(), testCase.Input)
+			result, err := resolver.RegisterRuntime(context.TODO(), testCase.Input)
 
 			// then
 			assert.Equal(t, testCase.ExpectedRuntime, result)

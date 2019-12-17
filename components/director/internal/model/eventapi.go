@@ -4,75 +4,75 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
-type EventAPIDefinition struct {
+type EventDefinition struct {
 	ID            string
 	Tenant        string
 	ApplicationID string
 	Name          string
 	Description   *string
 	Group         *string
-	Spec          *EventAPISpec
+	Spec          *EventSpec
 	Version       *Version
 }
 
-type EventAPISpecType string
+type EventSpecType string
 
 const (
-	EventAPISpecTypeAsyncAPI EventAPISpecType = "ASYNC_API"
+	EventSpecTypeAsyncAPI EventSpecType = "ASYNC_API"
 )
 
-type EventAPISpec struct {
+type EventSpec struct {
 	Data   *string
-	Type   EventAPISpecType
+	Type   EventSpecType
 	Format SpecFormat
 }
 
-type EventAPIDefinitionPage struct {
-	Data       []*EventAPIDefinition
+type EventDefinitionPage struct {
+	Data       []*EventDefinition
 	PageInfo   *pagination.Page
 	TotalCount int
 }
 
-func (EventAPIDefinitionPage) IsPageable() {}
+func (EventDefinitionPage) IsPageable() {}
 
-type EventAPIDefinitionInput struct {
+type EventDefinitionInput struct {
 	Name        string
 	Description *string
-	Spec        *EventAPISpecInput
+	Spec        *EventSpecInput
 	Group       *string
 	Version     *VersionInput
 }
 
-type EventAPISpecInput struct {
+type EventSpecInput struct {
 	Data          *string
-	EventSpecType EventAPISpecType
+	EventSpecType EventSpecType
 	Format        SpecFormat
 	FetchRequest  *FetchRequestInput
 }
 
-func (e *EventAPIDefinitionInput) ToEventAPIDefinition(id, appID, tenant string) *EventAPIDefinition {
+func (e *EventDefinitionInput) ToEventDefinition(id, appID, tenant string) *EventDefinition {
 	if e == nil {
 		return nil
 	}
 
-	return &EventAPIDefinition{
+	return &EventDefinition{
 		ID:            id,
 		ApplicationID: appID,
 		Tenant:        tenant,
 		Name:          e.Name,
 		Description:   e.Description,
 		Group:         e.Group,
-		Spec:          e.Spec.ToEventAPISpec(),
+		Spec:          e.Spec.ToEventSpec(),
 		Version:       e.Version.ToVersion(),
 	}
 }
 
-func (e *EventAPISpecInput) ToEventAPISpec() *EventAPISpec {
+func (e *EventSpecInput) ToEventSpec() *EventSpec {
 	if e == nil {
 		return nil
 	}
 
-	return &EventAPISpec{
+	return &EventSpec{
 		Data:   e.Data,
 		Type:   e.EventSpecType,
 		Format: e.Format,

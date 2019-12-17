@@ -4,7 +4,14 @@ import (
 	"errors"
 	"testing"
 
-	configMock "github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/configuration/mocks"
+	releaseMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/release/mocks"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/converters"
+
+	installationMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/mocks"
+	uuidMocks "github.com/kyma-incubator/compass/components/provisioner/internal/uuid/mocks"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
 
@@ -12,7 +19,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
-	persistenceMocks "github.com/kyma-incubator/compass/components/provisioner/internal/persistence/mocks"
+	persistenceMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/mocks"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-incubator/hydroform/types"
 	"github.com/stretchr/testify/assert"
@@ -20,12 +27,26 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	kubeconfigFile = "kubeconfig data"
+	kymaVersion    = "1.5"
+)
+
+var (
+	kymaRelease = model.Release{
+		Id:            "releaseId",
+		Version:       kymaVersion,
+		TillerYAML:    "tiller yaml",
+		InstallerYAML: "installer yaml",
+	}
+)
+
 func TestService_ProvisionRuntime(t *testing.T) {
-	hydroformMock := &mocks.Service{}
-	persistenceServiceMock := &persistenceMocks.Service{}
-	uuidGenerator := &persistenceMocks.UUIDGenerator{}
-	factory := &configMock.BuilderFactory{}
-	builder := &configMock.Builder{}
+	releaseRepo := &releaseMocks.Repository{}
+	releaseRepo.On("GetReleaseByVersion", kymaVersion).Return(kymaRelease, nil)
+
+	inputConverter := converters.NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo)
+	graphQLConverter := converters.NewGraphQLConverter()
 
 	clusterConfig := &gqlschema.ClusterConfigInput{
 		GcpConfig: &gqlschema.GCPConfigInput{
@@ -41,42 +62,44 @@ func TestService_ProvisionRuntime(t *testing.T) {
 	}
 
 	kymaConfig := &gqlschema.KymaConfigInput{
-		Version: "1.5",
+		Version: kymaVersion,
 		Modules: gqlschema.AllKymaModule,
+	}
+
+	runtimeInput := &gqlschema.RuntimeInput {
+		Name : "test runtime",
+		Description: new(string),
+		Labels : &gqlschema.Labels{},
+	}
+
+	provisionRuntimeInput := gqlschema.ProvisionRuntimeInput{
+		RuntimeInput: runtimeInput,
+		ClusterConfig: clusterConfig,
+		Credentials: &gqlschema.CredentialsInput{},
+		KymaConfig: kymaConfig,
 	}
 
 	t.Run("Should start runtime provisioning and return operation ID", func(t *testing.T) {
 		//given
+		hydroformMock := &mocks.Service{}
+		persistenceServiceMock := &persistenceMocks.Service{}
+		installationSvc := &installationMocks.Service{}
+
 		runtimeID := "184ccdf2-59e4-44b7-b553-6cb296af5ea0"
 		expOperationID := "223949ed-e6b6-4ab2-ab3e-8e19cd456dd40"
 		operation := model.Operation{ID: expOperationID}
-
-		uuidGenerator.On("New").Return("id", nil)
-
-		runtimeInput := &gqlschema.RuntimeInput {
-			Name : "test runtime",
-			Description: new(string),
-			Labels : &gqlschema.Labels{},
-		}
 
 		directorServiceMock := &directormock.DirectorClient{}
 		directorServiceMock.On("CreateRuntime", mock.Anything).Return(runtimeID, nil)
 
 		persistenceServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.NotFound("Not found"))
 		persistenceServiceMock.On("SetProvisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
-		persistenceServiceMock.On("Update", runtimeID, "", "").Return(nil)
-		persistenceServiceMock.On("SetAsSucceeded", expOperationID).Return(nil)
-		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: "", State: ""}, nil)
-		factory.On("NewProvisioningBuilder", mock.Anything).Return(builder)
+		persistenceServiceMock.On("UpdateClusterData", runtimeID, kubeconfigFile, []byte("")).Return(nil)
+		persistenceServiceMock.On("SetOperationAsSucceeded", expOperationID).Return(nil)
+		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: kubeconfigFile, State: []byte("")}, nil)
+		installationSvc.On("InstallKyma", runtimeID, kubeconfigFile, kymaRelease).Return(nil)
 
-		service := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock, directorServiceMock, factory)
-
-		provisionRuntimeInput := gqlschema.ProvisionRuntimeInput{
-			RuntimeInput: runtimeInput,
-			ClusterConfig: clusterConfig,
-			Credentials: &gqlschema.CredentialsInput{},
-			KymaConfig: kymaConfig,
-		}
+		service := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, installationSvc, directorServiceMock)
 
 		//when
 		operationID, finished, err := service.ProvisionRuntime(provisionRuntimeInput)
@@ -88,29 +111,17 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		assert.Equal(t, expOperationID, operationID)
 		hydroformMock.AssertExpectations(t)
 		persistenceServiceMock.AssertExpectations(t)
-		uuidGenerator.AssertExpectations(t)
+		installationSvc.AssertExpectations(t)
+		releaseRepo.AssertExpectations(t)
 		directorServiceMock.AssertExpectations(t)
 	})
 
 	t.Run("Should fail runtime provisioning after failing Registering Runtime in Director", func(t *testing.T) {
 		//given
-		runtimeInput := &gqlschema.RuntimeInput {
-			Name : "test runtime",
-			Description: new(string),
-			Labels : &gqlschema.Labels{},
-		}
-
 		directorServiceMock := &directormock.DirectorClient{}
 		directorServiceMock.On("CreateRuntime", mock.Anything).Return("", errors.New("Some error"))
 
-		service := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock, directorServiceMock, factory)
-
-		provisionRuntimeInput := gqlschema.ProvisionRuntimeInput{
-			RuntimeInput: runtimeInput,
-			ClusterConfig: clusterConfig,
-			Credentials: &gqlschema.CredentialsInput{},
-			KymaConfig: kymaConfig,
-		}
+		service := NewProvisioningService(nil, nil, nil, nil, nil, directorServiceMock)
 
 		//when
 		operationID, finished, err := service.ProvisionRuntime(provisionRuntimeInput)
@@ -119,38 +130,30 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, finished)
 		assert.Empty(t, operationID)
+		directorServiceMock.AssertExpectations(t)
 	})
 
 	t.Run("Should start runtime provisioning and return operation ID when previous provisioning failed", func(t *testing.T) {
 		//given
+		hydroformMock := &mocks.Service{}
+		persistenceServiceMock := &persistenceMocks.Service{}
+		installationSvc := &installationMocks.Service{}
+
 		runtimeID := "184ccdf2-59e4-44b7-b553-6cb296af5ea0"
 		expOperationID := "223949ed-e6b6-4ab2-ab3e-8e19cd456dd40"
 		operation := model.Operation{ID: expOperationID}
 
-		runtimeInput := &gqlschema.RuntimeInput {
-			Name : "test runtime",
-			Description: new(string),
-			Labels : &gqlschema.Labels{},
-		}
-
 		directorServiceMock := &directormock.DirectorClient{}
 		directorServiceMock.On("CreateRuntime", mock.Anything).Return(runtimeID, nil)
-
 		persistenceServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{Type: model.Provision, State: model.Failed}, nil)
+		persistenceServiceMock.On("CleanupClusterData", runtimeID).Return(nil)
 		persistenceServiceMock.On("SetProvisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
-		persistenceServiceMock.On("Update", runtimeID, "", "").Return(nil)
-		persistenceServiceMock.On("SetAsSucceeded", expOperationID).Return(nil)
-		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: "", State: ""}, nil)
-		factory.On("NewProvisioningBuilder", mock.Anything).Return(builder)
+		persistenceServiceMock.On("UpdateClusterData", runtimeID, kubeconfigFile, []byte("")).Return(nil)
+		persistenceServiceMock.On("SetOperationAsSucceeded", expOperationID).Return(nil)
+		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: kubeconfigFile, State: []byte("")}, nil)
+		installationSvc.On("InstallKyma", runtimeID, kubeconfigFile, kymaRelease).Return(nil)
 
-		service := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock, directorServiceMock, factory)
-
-		provisionRuntimeInput := gqlschema.ProvisionRuntimeInput{
-			RuntimeInput: runtimeInput,
-			ClusterConfig: clusterConfig,
-			Credentials: &gqlschema.CredentialsInput{},
-			KymaConfig: kymaConfig,
-		}
+		service := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, installationSvc, directorServiceMock)
 
 		//when
 		operationID, finished, err := service.ProvisionRuntime(provisionRuntimeInput)
@@ -162,59 +165,99 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		assert.Equal(t, expOperationID, operationID)
 		hydroformMock.AssertExpectations(t)
 		persistenceServiceMock.AssertExpectations(t)
-		uuidGenerator.AssertExpectations(t)
+		installationSvc.AssertExpectations(t)
+		releaseRepo.AssertExpectations(t)
+		directorServiceMock.AssertExpectations(t)
 	})
 
-	// TODO must check this !!!! Logic is leaking to Director Service
-	//t.Run("Should return error when cluster is already provisioned", func(t *testing.T) {
-	//	//given
-	//	runtimeID := "0ad91f16-d553-413f-aa27-4eefd9e5f1c6"
-	//	persistenceServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{}, nil)
-	//	uuidGenerator := &persistenceMocks.UUIDGenerator{}
-	//
-	//	service := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock, factory)
-	//
-	//	//when
-	//	_, _, err := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: &gqlschema.CredentialsInput{}, KymaConfig: kymaConfig})
-	//
-	//	//then
-	//	require.Error(t, err)
-	//	persistenceServiceMock.AssertExpectations(t)
-	//	uuidGenerator.AssertExpectations(t)
-	//})
+	t.Run("Should return error when Kyma installation failed", func(t *testing.T) {
+		//given
+		hydroformMock := &mocks.Service{}
+		persistenceServiceMock := &persistenceMocks.Service{}
+		installationSvc := &installationMocks.Service{}
+
+		runtimeID := "184ccdf2-59e4-44b7-b553-6cb296af5ea0"
+		expOperationID := "223949ed-e6b6-4ab2-ab3e-8e19cd456dd40"
+		operation := model.Operation{ID: expOperationID}
+
+		persistenceServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.NotFound("Not found"))
+		persistenceServiceMock.On("SetProvisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
+		persistenceServiceMock.On("UpdateClusterData", runtimeID, kubeconfigFile, []byte("")).Return(nil)
+		hydroformMock.On("ProvisionCluster", mock.Anything, mock.Anything).Return(hydroform.ClusterInfo{ClusterStatus: types.Provisioned, KubeConfig: kubeconfigFile, State: []byte("")}, nil)
+		installationSvc.On("InstallKyma", runtimeID, kubeconfigFile, kymaRelease).Return(errors.New("error"))
+		persistenceServiceMock.On("SetOperationAsFailed", expOperationID, mock.AnythingOfType("string")).Return(nil)
+
+		directorServiceMock := &directormock.DirectorClient{}
+		directorServiceMock.On("CreateRuntime", mock.Anything).Return(runtimeID, nil)
+
+		service := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, installationSvc, directorServiceMock)
+
+		//when
+		operationID, finished, err := service.ProvisionRuntime(provisionRuntimeInput)
+		require.NoError(t, err)
+
+		waitUntilFinished(finished)
+
+		//then
+		assert.Equal(t, expOperationID, operationID)
+		hydroformMock.AssertExpectations(t)
+		persistenceServiceMock.AssertExpectations(t)
+		installationSvc.AssertExpectations(t)
+		releaseRepo.AssertExpectations(t)
+		directorServiceMock.AssertExpectations(t)
+	})
+
+	t.Run("Should return error when cluster is already provisioned", func(t *testing.T) {
+		//given
+		hydroformMock := &mocks.Service{}
+		persistenceServiceMock := &persistenceMocks.Service{}
+
+		runtimeID := "0ad91f16-d553-413f-aa27-4eefd9e5f1c6"
+		persistenceServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{}, nil)
+
+		directorServiceMock := &directormock.DirectorClient{}
+		directorServiceMock.On("CreateRuntime", mock.Anything).Return(runtimeID, nil)
+
+		service := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, nil, nil)
+
+		//when
+		_, _, err := service.ProvisionRuntime(provisionRuntimeInput)
+
+		//then
+		require.Error(t, err)
+		persistenceServiceMock.AssertExpectations(t)
+		directorServiceMock.AssertExpectations(t)
+	})
 }
 
 func TestService_DeprovisionRuntime(t *testing.T) {
 	persistenceServiceMock := &persistenceMocks.Service{}
 	hydroformMock := &mocks.Service{}
-	uuidGenerator := &persistenceMocks.UUIDGenerator{}
-	factory := &configMock.BuilderFactory{}
-	builder := &configMock.Builder{}
 
-	runtimeConfig := model.RuntimeConfig{
-		ClusterConfig: model.GCPConfig{},
-	}
+	releaseRepo := &releaseMocks.Repository{}
+	releaseRepo.On("GetReleaseByVersion", kymaVersion).Return(kymaRelease, nil)
+
+	inputConverter := converters.NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo)
+	graphQLConverter := converters.NewGraphQLConverter()
 
 	t.Run("Should start runtime deprovisioning and return operation ID", func(t *testing.T) {
 		//given
 		lastOperation := model.Operation{State: model.Succeeded}
-		runtimeStatus := model.RuntimeStatus{LastOperationStatus: lastOperation, RuntimeConfiguration: runtimeConfig}
 
 		runtimeID := "92a1c394-639a-424e-8578-ba1ca7501dc1"
 		expOperationID := "c7241d2d-5ffd-434b-9a52-17ce9ee04578"
 		operation := model.Operation{ID: expOperationID}
 
+		persistenceServiceMock.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+		persistenceServiceMock.On("SetDeprovisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
+		persistenceServiceMock.On("GetClusterData", runtimeID).Return(model.Cluster{TerraformState: []byte("{}"), ClusterConfig: model.GCPConfig{}}, nil)
+		persistenceServiceMock.On("SetOperationAsSucceeded", expOperationID).Return(nil)
+		hydroformMock.On("DeprovisionCluster", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 		directorServiceMock := &directormock.DirectorClient{}
 		directorServiceMock.On("DeleteRuntime", runtimeID).Return(nil)
 
-		persistenceServiceMock.On("GetStatus", runtimeID).Return(runtimeStatus, nil)
-		persistenceServiceMock.On("SetDeprovisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
-		persistenceServiceMock.On("GetClusterData", runtimeID).Return(model.Cluster{TerraformState: "{}"}, nil)
-		persistenceServiceMock.On("SetAsSucceeded", expOperationID).Return(nil)
-		hydroformMock.On("DeprovisionCluster", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-		factory.On("NewDeprovisioningBuilder", mock.Anything).Return(builder)
-
-		resolver := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock, directorServiceMock, factory)
+		resolver := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, nil, directorServiceMock)
 
 		//when
 		opt, finished, err := resolver.DeprovisionRuntime(runtimeID)
@@ -226,21 +269,17 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		assert.Equal(t, expOperationID, opt)
 		hydroformMock.AssertExpectations(t)
 		persistenceServiceMock.AssertExpectations(t)
-		uuidGenerator.AssertExpectations(t)
+		directorServiceMock.AssertExpectations(t)
 	})
 
 	t.Run("Should not start deprovisioning when previous operation is in progress", func(t *testing.T) {
 		//given
 		runtimeID := "a24142da-1111-4ec2-93e3-e47ccaa6973f"
 		persistenceServiceMock := &persistenceMocks.Service{}
-		lastOperation := model.Operation{State: model.InProgress}
-		runtimeStatus := model.RuntimeStatus{LastOperationStatus: lastOperation}
 
-		persistenceServiceMock.On("GetStatus", runtimeID).Return(runtimeStatus, nil)
+		persistenceServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{State: model.InProgress}, nil)
 
-		directorServiceMock := &directormock.DirectorClient{}
-
-		resolver := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock, directorServiceMock, factory)
+		resolver := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, nil, nil)
 
 		//when
 		_, _, err := resolver.DeprovisionRuntime(runtimeID)
@@ -249,8 +288,6 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		require.Error(t, err)
 		hydroformMock.AssertExpectations(t)
 		persistenceServiceMock.AssertExpectations(t)
-		uuidGenerator.AssertExpectations(t)
-		directorServiceMock.AssertExpectations(t)
 	})
 
 	t.Run("Should not start deprovisioning when Director fails to unregister Runtime", func(t *testing.T) {
@@ -260,22 +297,20 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		directorServiceMock := &directormock.DirectorClient{}
 
 		lastOperation := model.Operation{State: model.Succeeded}
-		runtimeStatus := model.RuntimeStatus{LastOperationStatus: lastOperation}
 
-		persistenceServiceMock.On("GetStatus", runtimeID).Return(runtimeStatus, nil)
+		persistenceServiceMock.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 
 		directorServiceMock.On("DeleteRuntime", runtimeID).Return(errors.New("Some error!"))
 
-		resolver := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock, directorServiceMock, factory)
+		service := NewProvisioningService(persistenceServiceMock, nil, nil, nil, nil, directorServiceMock)
 
 		//when
-		_, _, err := resolver.DeprovisionRuntime(runtimeID)
+		_, _, err := service.DeprovisionRuntime(runtimeID)
 
 		//then
 		require.Error(t, err)
 		hydroformMock.AssertExpectations(t)
 		persistenceServiceMock.AssertExpectations(t)
-		uuidGenerator.AssertExpectations(t)
 		directorServiceMock.AssertExpectations(t)
 	})
 }
@@ -283,8 +318,13 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 func TestService_RuntimeOperationStatus(t *testing.T) {
 	persistenceServiceMock := &persistenceMocks.Service{}
 	hydroformMock := &mocks.Service{}
-	uuidGenerator := &persistenceMocks.UUIDGenerator{}
-	factory := &configMock.BuilderFactory{}
+	uuidGenerator := &uuidMocks.UUIDGenerator{}
+
+	releaseRepo := &releaseMocks.Repository{}
+	releaseRepo.On("GetReleaseByVersion", kymaVersion).Return(kymaRelease, nil)
+
+	inputConverter := converters.NewInputConverter(uuidGenerator, releaseRepo)
+	graphQLConverter := converters.NewGraphQLConverter()
 
 	t.Run("Should return operation status", func(t *testing.T) {
 		//given
@@ -299,11 +339,8 @@ func TestService_RuntimeOperationStatus(t *testing.T) {
 			Message:   "some message",
 		}
 
-		persistenceServiceMock.On("Get", operationID).Return(operation, nil)
-
-		directorServiceMock := &directormock.DirectorClient{}
-
-		resolver := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock, directorServiceMock, factory)
+		persistenceServiceMock.On("GetOperation", operationID).Return(operation, nil)
+		resolver := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, nil, nil)
 
 		//when
 		status, err := resolver.RuntimeOperationStatus(operationID)
@@ -323,16 +360,11 @@ func TestCleanUpRuntimeData(t *testing.T) {
 	t.Run("Should fail to get Clean Up Runtime Data result when Runtime ID not found in database", func(t *testing.T) {
 		// given
 		runtimeID := "a24142da-1111-4ec2-93e3-e47ccaa6973f"
-		uuidGenerator := &persistenceMocks.UUIDGenerator{}
-		hydroformMock := &mocks.Service{}
-		factory := &configMock.BuilderFactory{}
 
 		persistenceServiceMock := &persistenceMocks.Service{}
 		persistenceServiceMock.On("CleanupClusterData", runtimeID).Return(dberrors.NotFound("Could not find given Runtime in database"))
 
-		directorServiceMock := &directormock.DirectorClient{}
-
-		provisioningService := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock, directorServiceMock, factory)
+		provisioningService := NewProvisioningService(persistenceServiceMock, nil, nil, nil, nil, nil)
 
 		// when
 		result, err := provisioningService.CleanupRuntimeData(runtimeID)
@@ -347,16 +379,11 @@ func TestCleanUpRuntimeData(t *testing.T) {
 	t.Run("Should fail to get Clean Up Runtime Data result when internal database error occurs", func(t *testing.T) {
 		// given
 		runtimeID := "a24142da-1111-4ec2-93e3-e47ccaa6973f"
-		uuidGenerator := &persistenceMocks.UUIDGenerator{}
-		hydroformMock := &mocks.Service{}
-		factory := &configMock.BuilderFactory{}
-
-		directorServiceMock := &directormock.DirectorClient{}
 
 		persistenceServiceMock := &persistenceMocks.Service{}
 		persistenceServiceMock.On("CleanupClusterData", runtimeID).Return(dberrors.Internal("Internal database error occurred"))
 
-		provisioningService := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock, directorServiceMock, factory)
+		provisioningService := NewProvisioningService(persistenceServiceMock, nil, nil, nil, nil, nil)
 
 		// when
 		result, err := provisioningService.CleanupRuntimeData(runtimeID)
@@ -370,15 +397,11 @@ func TestCleanUpRuntimeData(t *testing.T) {
 	t.Run("Should pass and return Runtime ID and Clean Up Runtime Data result when data for given Runtime gets deleted", func(t *testing.T) {
 		// given
 		runtimeID := "a24142da-1111-4ec2-93e3-e47ccaa6973f"
-		uuidGenerator := &persistenceMocks.UUIDGenerator{}
-		hydroformMock := &mocks.Service{}
-		factory := &configMock.BuilderFactory{}
-		directorServiceMock := &directormock.DirectorClient{}
 
 		persistenceServiceMock := &persistenceMocks.Service{}
 		persistenceServiceMock.On("CleanupClusterData", runtimeID).Return(nil)
 
-		provisioningService := NewProvisioningService(persistenceServiceMock, uuidGenerator, hydroformMock, directorServiceMock, factory)
+		provisioningService := NewProvisioningService(persistenceServiceMock, nil, nil, nil, nil, nil)
 
 		// when
 		result, err := provisioningService.CleanupRuntimeData(runtimeID)

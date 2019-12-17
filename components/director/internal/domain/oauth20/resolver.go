@@ -58,15 +58,15 @@ func NewResolver(transactioner persistence.Transactioner, svc Service, appSvc Ap
 	return &Resolver{transact: transactioner, svc: svc, appSvc: appSvc, rtmSvc: rtmSvc, systemAuthSvc: systemAuthSvc, isSvc: isSvc, systemAuthConv: systemAuthConv}
 }
 
-func (r *Resolver) GenerateClientCredentialsForRuntime(ctx context.Context, id string) (*graphql.SystemAuth, error) {
+func (r *Resolver) RequestClientCredentialsForRuntime(ctx context.Context, id string) (*graphql.SystemAuth, error) {
 	return r.generateClientCredentials(ctx, model.RuntimeReference, id)
 }
 
-func (r *Resolver) GenerateClientCredentialsForApplication(ctx context.Context, id string) (*graphql.SystemAuth, error) {
+func (r *Resolver) RequestClientCredentialsForApplication(ctx context.Context, id string) (*graphql.SystemAuth, error) {
 	return r.generateClientCredentials(ctx, model.ApplicationReference, id)
 }
 
-func (r *Resolver) GenerateClientCredentialsForIntegrationSystem(ctx context.Context, id string) (*graphql.SystemAuth, error) {
+func (r *Resolver) RequestClientCredentialsForIntegrationSystem(ctx context.Context, id string) (*graphql.SystemAuth, error) {
 	return r.generateClientCredentials(ctx, model.IntegrationSystemReference, id)
 }
 

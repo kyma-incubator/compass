@@ -88,13 +88,13 @@ func (c *converter) MultipleToGraphQL(in []*model.Application) []*graphql.Applic
 	return runtimes
 }
 
-func (c *converter) CreateInputFromGraphQL(in graphql.ApplicationCreateInput) model.ApplicationCreateInput {
+func (c *converter) CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) model.ApplicationRegisterInput {
 	var labels map[string]interface{}
 	if in.Labels != nil {
 		labels = *in.Labels
 	}
 
-	return model.ApplicationCreateInput{
+	return model.ApplicationRegisterInput{
 		Name:                in.Name,
 		Description:         in.Description,
 		Labels:              labels,
@@ -102,8 +102,8 @@ func (c *converter) CreateInputFromGraphQL(in graphql.ApplicationCreateInput) mo
 		IntegrationSystemID: in.IntegrationSystemID,
 		Webhooks:            c.webhook.MultipleInputFromGraphQL(in.Webhooks),
 		Documents:           c.document.MultipleInputFromGraphQL(in.Documents),
-		EventAPIs:           c.eventAPI.MultipleInputFromGraphQL(in.EventAPIs),
-		Apis:                c.api.MultipleInputFromGraphQL(in.Apis),
+		EventDefinitions:    c.eventAPI.MultipleInputFromGraphQL(in.EventDefinitions),
+		APIDefinitions:      c.api.MultipleInputFromGraphQL(in.APIDefinitions),
 	}
 }
 
@@ -116,17 +116,17 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) mo
 	}
 }
 
-func (c *converter) CreateInputJSONToGQL(in string) (graphql.ApplicationCreateInput, error) {
-	var appInput graphql.ApplicationCreateInput
+func (c *converter) CreateInputJSONToGQL(in string) (graphql.ApplicationRegisterInput, error) {
+	var appInput graphql.ApplicationRegisterInput
 	err := json.Unmarshal([]byte(in), &appInput)
 	if err != nil {
-		return graphql.ApplicationCreateInput{}, errors.Wrap(err, "while unmarshalling string to ApplicationCreateInput")
+		return graphql.ApplicationRegisterInput{}, errors.Wrap(err, "while unmarshalling string to ApplicationRegisterInput")
 	}
 
 	return appInput, nil
 }
 
-func (c *converter) CreateInputGQLToJSON(in *graphql.ApplicationCreateInput) (string, error) {
+func (c *converter) CreateInputGQLToJSON(in *graphql.ApplicationRegisterInput) (string, error) {
 	appInput, err := json.Marshal(in)
 	if err != nil {
 		return "", errors.Wrap(err, "while marshaling application input")

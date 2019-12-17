@@ -48,7 +48,7 @@ enum DocumentFormat {
 	MARKDOWN
 }
 
-enum EventAPISpecType {
+enum EventSpecType {
 	ASYNC_API
 }
 
@@ -115,27 +115,27 @@ input APISpecInput {
 	fetchRequest: FetchRequestInput
 }
 
-input ApplicationCreateInput {
-	name: String!
-	description: String
-	labels: Labels
-	webhooks: [WebhookInput!]
-	healthCheckURL: String
-	apis: [APIDefinitionInput!]
-	eventAPIs: [EventAPIDefinitionInput!]
-	documents: [DocumentInput!]
-	integrationSystemID: ID
-}
-
 input ApplicationFromTemplateInput {
 	templateName: String!
 	values: [TemplateValueInput!]
 }
 
+input ApplicationRegisterInput {
+	name: String!
+	description: String
+	labels: Labels
+	webhooks: [WebhookInput!]
+	healthCheckURL: String
+	apiDefinitions: [APIDefinitionInput!]
+	eventDefinitions: [EventDefinitionInput!]
+	documents: [DocumentInput!]
+	integrationSystemID: ID
+}
+
 input ApplicationTemplateInput {
 	name: String!
 	description: String
-	applicationInput: ApplicationCreateInput!
+	applicationInput: ApplicationRegisterInput!
 	placeholders: [PlaceholderDefinitionInput!]
 	accessLevel: ApplicationTemplateAccessLevel!
 }
@@ -185,17 +185,17 @@ input DocumentInput {
 	fetchRequest: FetchRequestInput
 }
 
-input EventAPIDefinitionInput {
+input EventDefinitionInput {
 	name: String!
 	description: String
-	spec: EventAPISpecInput!
+	spec: EventSpecInput!
 	group: String
 	version: VersionInput
 }
 
-input EventAPISpecInput {
+input EventSpecInput {
 	data: CLOB
-	eventSpecType: EventAPISpecType!
+	type: EventSpecType!
 	format: SpecFormat!
 	fetchRequest: FetchRequestInput
 }
@@ -329,13 +329,13 @@ type Application {
 	group allows to find different versions of the same API
 	Maximum `first` parameter value is 100
 	"""
-	apis(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage!
+	apiDefinitions(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage!
 	"""
-	group allows to find different versions of the same event API
+	group allows to find different versions of the same event Definitions
 	"""
-	eventAPIs(group: String, first: Int = 100, after: PageCursor): EventAPIDefinitionPage!
-	api(id: ID!): APIDefinition
-	eventAPI(id: ID!): EventAPIDefinition
+	eventDefinitions(group: String, first: Int = 100, after: PageCursor): EventDefinitionPage!
+	apiDefinition(id: ID!): APIDefinition
+	eventDefinition(id: ID!): EventDefinition
 	documents(first: Int = 100, after: PageCursor): DocumentPage!
 	auths: [SystemAuth!]!
 	eventConfiguration: ApplicationEventConfiguration
@@ -415,7 +415,7 @@ type DocumentPage implements Pageable {
 	totalCount: Int!
 }
 
-type EventAPIDefinition {
+type EventDefinition {
 	id: ID!
 	applicationID: ID!
 	name: String!
@@ -424,19 +424,19 @@ type EventAPIDefinition {
 	group allows you to find the same API but in different version
 	"""
 	group: String
-	spec: EventAPISpec!
+	spec: EventSpec!
 	version: Version
 }
 
-type EventAPIDefinitionPage implements Pageable {
-	data: [EventAPIDefinition!]!
+type EventDefinitionPage implements Pageable {
+	data: [EventDefinition!]!
 	pageInfo: PageInfo!
 	totalCount: Int!
 }
 
-type EventAPISpec {
+type EventSpec {
 	data: CLOB
-	type: EventAPISpecType!
+	type: EventSpecType!
 	format: SpecFormat!
 	fetchRequest: FetchRequest
 }
@@ -506,6 +506,8 @@ type OAuthCredentialData {
 type OneTimeToken {
 	token: String!
 	connectorURL: String!
+	raw: String!
+	rawEncoded: String!
 }
 
 type PageInfo {
@@ -643,13 +645,13 @@ type Query {
 type Mutation {
 	"""
 	**Examples**
-	- [create application with apis](examples/create-application/create-application-with-apis.graphql)
-	- [create application with documents](examples/create-application/create-application-with-documents.graphql)
-	- [create application with event apis](examples/create-application/create-application-with-event-apis.graphql)
-	- [create application with webhooks](examples/create-application/create-application-with-webhooks.graphql)
-	- [create application](examples/create-application/create-application.graphql)
+	- [register application with api definitions](examples/register-application/register-application-with-api-definitions.graphql)
+	- [register application with documents](examples/register-application/register-application-with-documents.graphql)
+	- [register application with event definitions](examples/register-application/register-application-with-event-definitions.graphql)
+	- [register application with webhooks](examples/register-application/register-application-with-webhooks.graphql)
+	- [register application](examples/register-application/register-application.graphql)
 	"""
-	createApplication(in: ApplicationCreateInput! @validate): Application! @hasScopes(path: "graphql.mutation.createApplication")
+	registerApplication(in: ApplicationRegisterInput! @validate): Application! @hasScopes(path: "graphql.mutation.registerApplication")
 	"""
 	**Examples**
 	- [update application](examples/update-application/update-application.graphql)
@@ -657,9 +659,9 @@ type Mutation {
 	updateApplication(id: ID!, in: ApplicationUpdateInput! @validate): Application! @hasScopes(path: "graphql.mutation.updateApplication")
 	"""
 	**Examples**
-	- [delete application](examples/delete-application/delete-application.graphql)
+	- [unregister application](examples/unregister-application/unregister-application.graphql)
 	"""
-	deleteApplication(id: ID!): Application! @hasScopes(path: "graphql.mutation.deleteApplication")
+	unregisterApplication(id: ID!): Application! @hasScopes(path: "graphql.mutation.unregisterApplication")
 	"""
 	**Examples**
 	- [create application template](examples/create-application-template/create-application-template.graphql)
@@ -682,9 +684,9 @@ type Mutation {
 	deleteApplicationTemplate(id: ID!): ApplicationTemplate! @hasScopes(path: "graphql.mutation.deleteApplicationTemplate")
 	"""
 	**Examples**
-	- [create runtime](examples/create-runtime/create-runtime.graphql)
+	- [register runtime](examples/register-runtime/register-runtime.graphql)
 	"""
-	createRuntime(in: RuntimeInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.createRuntime")
+	registerRuntime(in: RuntimeInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.registerRuntime")
 	"""
 	**Examples**
 	- [update runtime](examples/update-runtime/update-runtime.graphql)
@@ -692,24 +694,20 @@ type Mutation {
 	updateRuntime(id: ID!, in: RuntimeInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.updateRuntime")
 	"""
 	**Examples**
-	- [delete runtime](examples/delete-runtime/delete-runtime.graphql)
+	- [unregister runtime](examples/unregister-runtime/unregister-runtime.graphql)
 	"""
-	deleteRuntime(id: ID!): Runtime! @hasScopes(path: "graphql.mutation.deleteRuntime")
+	unregisterRuntime(id: ID!): Runtime! @hasScopes(path: "graphql.mutation.unregisterRuntime")
 	"""
 	**Examples**
-	- [create integration system](examples/create-integration-system/create-integration-system.graphql)
+	- [register integration system](examples/register-integration-system/register-integration-system.graphql)
 	"""
-	createIntegrationSystem(in: IntegrationSystemInput! @validate): IntegrationSystem! @hasScopes(path: "graphql.mutation.createIntegrationSystem")
+	registerIntegrationSystem(in: IntegrationSystemInput! @validate): IntegrationSystem! @hasScopes(path: "graphql.mutation.registerIntegrationSystem")
 	"""
 	**Examples**
 	- [update integration system](examples/update-integration-system/update-integration-system.graphql)
 	"""
 	updateIntegrationSystem(id: ID!, in: IntegrationSystemInput! @validate): IntegrationSystem! @hasScopes(path: "graphql.mutation.updateIntegrationSystem")
-	"""
-	**Examples**
-	- [delete integration system](examples/delete-integration-system/delete-integration-system.graphql)
-	"""
-	deleteIntegrationSystem(id: ID!): IntegrationSystem! @hasScopes(path: "graphql.mutation.deleteIntegrationSystem")
+	unregisterIntegrationSystem(id: ID!): IntegrationSystem! @hasScopes(path: "graphql.mutation.unregisterIntegrationSystem")
 	"""
 	**Examples**
 	- [add application webhook](examples/add-webhook/add-application-webhook.graphql)
@@ -727,25 +725,25 @@ type Mutation {
 	deleteWebhook(webhookID: ID!): Webhook! @hasScopes(path: "graphql.mutation.deleteWebhook")
 	"""
 	**Examples**
-	- [add api](examples/add-api/add-api.graphql)
+	- [add api definition](examples/add-api-definition/add-api-definition.graphql)
 	"""
-	addAPI(applicationID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPI")
-	"""
-	**Examples**
-	- [update api](examples/update-api/update-api.graphql)
-	"""
-	updateAPI(id: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.updateAPI")
+	addAPIDefinition(applicationID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinition")
 	"""
 	**Examples**
-	- [delete api](examples/delete-api/delete-api.graphql)
+	- [update api definition](examples/update-api-definition/update-api-definition.graphql)
 	"""
-	deleteAPI(id: ID!): APIDefinition! @hasScopes(path: "graphql.mutation.deleteAPI")
+	updateAPIDefinition(id: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.updateAPIDefinition")
+	"""
+	**Examples**
+	- [delete api definition](examples/delete-api-definition/delete-api-definition.graphql)
+	"""
+	deleteAPIDefinition(id: ID!): APIDefinition! @hasScopes(path: "graphql.mutation.deleteAPIDefinition")
 	refetchAPISpec(apiID: ID!): APISpec! @hasScopes(path: "graphql.mutation.refetchAPISpec")
-	generateOneTimeTokenForRuntime(id: ID!): OneTimeToken! @hasScopes(path: "graphql.mutation.generateOneTimeTokenForRuntime")
-	generateOneTimeTokenForApplication(id: ID!): OneTimeToken! @hasScopes(path: "graphql.mutation.generateOneTimeTokenForApplication")
-	generateClientCredentialsForRuntime(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.generateClientCredentialsForRuntime")
-	generateClientCredentialsForApplication(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.generateClientCredentialsForApplication")
-	generateClientCredentialsForIntegrationSystem(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.generateClientCredentialsForIntegrationSystem")
+	requestOneTimeTokenForRuntime(id: ID!): OneTimeToken! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForRuntime")
+	requestOneTimeTokenForApplication(id: ID!): OneTimeToken! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForApplication")
+	requestClientCredentialsForRuntime(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.requestClientCredentialsForRuntime")
+	requestClientCredentialsForApplication(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.requestClientCredentialsForApplication")
+	requestClientCredentialsForIntegrationSystem(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.requestClientCredentialsForIntegrationSystem")
 	deleteSystemAuthForRuntime(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForRuntime")
 	deleteSystemAuthForApplication(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForApplication")
 	deleteSystemAuthForIntegrationSystem(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForIntegrationSystem")
@@ -754,10 +752,22 @@ type Mutation {
 	"""
 	setAPIAuth(apiID: ID!, runtimeID: ID!, in: AuthInput! @validate): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.setAPIAuth")
 	deleteAPIAuth(apiID: ID!, runtimeID: ID!): APIRuntimeAuth! @hasScopes(path: "graphql.mutation.deleteAPIAuth")
-	addEventAPI(applicationID: ID!, in: EventAPIDefinitionInput! @validate): EventAPIDefinition! @hasScopes(path: "graphql.mutation.addEventAPI")
-	updateEventAPI(id: ID!, in: EventAPIDefinitionInput! @validate): EventAPIDefinition! @hasScopes(path: "graphql.mutation.updateEventAPI")
-	deleteEventAPI(id: ID!): EventAPIDefinition! @hasScopes(path: "graphql.mutation.deleteEventAPI")
-	refetchEventAPISpec(eventID: ID!): EventAPISpec! @hasScopes(path: "graphql.mutation.refetchEventAPISpec")
+	"""
+	**Examples**
+	- [add event definition](examples/add-event-definition/add-event-definition.graphql)
+	"""
+	addEventDefinition(applicationID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinition")
+	"""
+	**Examples**
+	- [update event definition](examples/update-event-definition/update-event-definition.graphql)
+	"""
+	updateEventDefinition(id: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.updateEventDefinition")
+	"""
+	**Examples**
+	- [delete event definition](examples/delete-event-definition/delete-event-definition.graphql)
+	"""
+	deleteEventDefinition(id: ID!): EventDefinition! @hasScopes(path: "graphql.mutation.deleteEventDefinition")
+	refetchEventDefinitionSpec(eventID: ID!): EventSpec! @hasScopes(path: "graphql.mutation.refetchEventDefinitionSpec")
 	"""
 	**Examples**
 	- [add document](examples/add-document/add-document.graphql)

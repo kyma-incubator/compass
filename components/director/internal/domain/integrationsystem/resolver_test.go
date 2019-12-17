@@ -356,7 +356,7 @@ func TestResolver_CreateIntegrationSystem(t *testing.T) {
 			resolver := integrationsystem.NewResolver(transact, intSysSvc, nil, nil, intSysConv, nil)
 
 			// WHEN
-			result, err := resolver.CreateIntegrationSystem(ctx, gqlIntSysInput)
+			result, err := resolver.RegisterIntegrationSystem(ctx, gqlIntSysInput)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -501,7 +501,7 @@ func TestResolver_UpdateIntegrationSystem(t *testing.T) {
 	}
 }
 
-func TestResolver_DeleteIntegrationSystem(t *testing.T) {
+func TestResolver_UnregisterIntegrationSystem(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testTenant)
 
@@ -702,7 +702,7 @@ func TestResolver_DeleteIntegrationSystem(t *testing.T) {
 			resolver := integrationsystem.NewResolver(transact, intSysSvc, sysAuthSvc, oAuth20Svc, intSysConv, nil)
 
 			// WHEN
-			result, err := resolver.DeleteIntegrationSystem(ctx, testID)
+			result, err := resolver.UnregisterIntegrationSystem(ctx, testID)
 
 			// THEN
 			if testCase.ExpectedError != nil {

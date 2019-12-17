@@ -14,18 +14,18 @@ type ApplicationService struct {
 }
 
 // Create provides a mock function with given fields: ctx, in
-func (_m *ApplicationService) Create(ctx context.Context, in model.ApplicationCreateInput) (string, error) {
+func (_m *ApplicationService) Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error) {
 	ret := _m.Called(ctx, in)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationCreateInput) string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationRegisterInput) string); ok {
 		r0 = rf(ctx, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, model.ApplicationCreateInput) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, model.ApplicationRegisterInput) error); ok {
 		r1 = rf(ctx, in)
 	} else {
 		r1 = ret.Error(1)
