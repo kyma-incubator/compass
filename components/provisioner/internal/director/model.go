@@ -21,5 +21,3 @@ type RuntimeInput struct {
 	Description *string `json:"description"`
 	Labels      *graphql.Labels `json:"labels"`
 }
-
-//type Labels map[string][]string

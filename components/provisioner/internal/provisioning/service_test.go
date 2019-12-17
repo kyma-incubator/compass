@@ -218,7 +218,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		directorServiceMock := &directormock.DirectorClient{}
 		directorServiceMock.On("CreateRuntime", mock.Anything).Return(runtimeID, nil)
 
-		service := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, nil, nil)
+		service := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, nil, directorServiceMock)
 
 		//when
 		_, _, err := service.ProvisionRuntime(provisionRuntimeInput)
@@ -299,7 +299,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		lastOperation := model.Operation{State: model.Succeeded}
 
 		persistenceServiceMock.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
-
+		persistenceServiceMock.On("GetClusterData", runtimeID).Return(model.Cluster{TerraformState: []byte("{}"), ClusterConfig: model.GCPConfig{}}, nil)
 		directorServiceMock.On("DeleteRuntime", runtimeID).Return(errors.New("Some error!"))
 
 		service := NewProvisioningService(persistenceServiceMock, nil, nil, nil, nil, directorServiceMock)
