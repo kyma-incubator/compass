@@ -30,6 +30,7 @@ const (
 
 var (
 	testDescription  = "Lorem ipsum"
+	testProviderName = "provider-display-name"
 	testURL          = "http://valid.url"
 	testError        = errors.New("test error")
 	testTableColumns = []string{"id", "name", "description", "application_input", "placeholders", "access_level"}
@@ -200,7 +201,7 @@ func fixSQLRows(entities []apptemplate.Entity) *sqlmock.Rows {
 }
 
 func fixJSONApplicationCreateInput(name string) string {
-	return fmt.Sprintf(`{"Name": "%s", "Description": "%s", "HealthCheckURL": "%s"}`, name, testDescription, testURL)
+	return fmt.Sprintf(`{"Name": "%s", "ProviderDisplayName": "%s", "Description": "%s", "HealthCheckURL": "%s"}`, name, testProviderName, testDescription, testURL)
 }
 
 func fixModelApplicationCreateInput(name string) model.ApplicationRegisterInput {
@@ -213,9 +214,10 @@ func fixModelApplicationCreateInput(name string) model.ApplicationRegisterInput 
 
 func fixGQLApplicationCreateInput(name string) graphql.ApplicationRegisterInput {
 	return graphql.ApplicationRegisterInput{
-		Name:           name,
-		Description:    &testDescription,
-		HealthCheckURL: &testURL,
+		Name:                name,
+		ProviderDisplayName: testProviderName,
+		Description:         &testDescription,
+		HealthCheckURL:      &testURL,
 	}
 }
 
