@@ -8,7 +8,7 @@
 * @PK85 @aszecowka @crabtree @pkosiec @kfurgol @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @dbadura @KarolJaksik
 
 # All .md files
-/README.md @klaudiagrz @kazydek @tomekpapiernik @bszwarc @mmitoraj @majakurcius @alexandra-simeonova
+*.mdx @klaudiagrz @kazydek @tomekpapiernik @bszwarc @mmitoraj @majakurcius @alexandra-simeonova
 
 # compass ui
 /chart/compass/charts/cockpit @kwiatekus @dariadomagala @y-kkamil @parostatkiem @akucharska @sjanota
