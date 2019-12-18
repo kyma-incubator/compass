@@ -246,29 +246,25 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 }
 
 func fixKymaGraphQLConfig() *gqlschema.KymaConfig {
-	ceComp := gqlschema.KymaComponentClusterEssentials
-	coreComp := gqlschema.KymaComponentCore
-	acComp := gqlschema.KymaComponentApplicationConnector
-
 	return &gqlschema.KymaConfig{
 		Version: util.StringPtr(kymaVersion),
 		Components: []*gqlschema.ComponentConfiguration{
 			{
-				Component:     &ceComp,
-				Namespace:     util.StringPtr(kymaSystemNamespace),
+				Component:     clusterEssentialsComponent,
+				Namespace:     kymaSystemNamespace,
 				Configuration: make([]*gqlschema.ConfigEntry, 0, 0),
 			},
 			{
-				Component: &coreComp,
-				Namespace: util.StringPtr(kymaSystemNamespace),
+				Component: coreComponent,
+				Namespace: kymaSystemNamespace,
 				Configuration: []*gqlschema.ConfigEntry{
 					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntry("test.config.key2", "value2", util.BoolPtr(false)),
 				},
 			},
 			{
-				Component: &acComp,
-				Namespace: util.StringPtr(kymaIntegrationNamespace),
+				Component: applicationConnectorComponent,
+				Namespace: kymaIntegrationNamespace,
 				Configuration: []*gqlschema.ConfigEntry{
 					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),
@@ -316,14 +312,14 @@ func fixKymaComponents() []model.KymaComponentConfig {
 		{
 			ID:            "id",
 			KymaConfigID:  "id",
-			Component:     "ClusterEssentials",
+			Component:     clusterEssentialsComponent,
 			Namespace:     kymaSystemNamespace,
 			Configuration: model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0, 0)},
 		},
 		{
 			ID:           "id",
 			KymaConfigID: "id",
-			Component:    "Core",
+			Component:    coreComponent,
 			Namespace:    kymaSystemNamespace,
 			Configuration: model.Configuration{
 				ConfigEntries: []model.ConfigEntry{
@@ -335,7 +331,7 @@ func fixKymaComponents() []model.KymaComponentConfig {
 		{
 			ID:           "id",
 			KymaConfigID: "id",
-			Component:    "ApplicationConnector",
+			Component:    applicationConnectorComponent,
 			Namespace:    kymaIntegrationNamespace,
 			Configuration: model.Configuration{
 				ConfigEntries: []model.ConfigEntry{

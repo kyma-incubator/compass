@@ -33,9 +33,12 @@ import (
 )
 
 const (
-	kymaVersion              = "1.8"
-	kymaSystemNamespace      = "kyma-system"
-	kymaIntegrationNamespace = "kyma-integration"
+	kymaVersion                   = "1.8"
+	kymaSystemNamespace           = "kyma-system"
+	kymaIntegrationNamespace      = "kyma-integration"
+	clusterEssentialsComponent    = "cluster-essentials"
+	coreComponent                 = "core"
+	applicationConnectorComponent = "application-connector"
 )
 
 func waitForOperationCompleted(provisioningService provisioning.Service, operationID string, seconds uint) error {
@@ -327,19 +330,16 @@ func insertDummyReleaseIfNotExist(releaseRepo release.Repository, id, version st
 
 // TODO - those are the same functions as in Converters tests - think of some way to not to duplicate all that code
 func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {
-	ceComp := gqlschema.KymaComponentClusterEssentials
-	coreComp := gqlschema.KymaComponentCore
-	acComp := gqlschema.KymaComponentApplicationConnector
 
 	return &gqlschema.KymaConfigInput{
 		Version: kymaVersion,
 		Components: []*gqlschema.ComponentConfigurationInput{
 			{
-				Component: ceComp,
+				Component: clusterEssentialsComponent,
 				Namespace: kymaSystemNamespace,
 			},
 			{
-				Component: coreComp,
+				Component: coreComponent,
 				Namespace: kymaSystemNamespace,
 				Configuration: []*gqlschema.ConfigEntryInput{
 					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
@@ -347,7 +347,7 @@ func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {
 				},
 			},
 			{
-				Component: acComp,
+				Component: applicationConnectorComponent,
 				Namespace: kymaIntegrationNamespace,
 				Configuration: []*gqlschema.ConfigEntryInput{
 					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
@@ -372,29 +372,26 @@ func fixGQLConfigEntryInput(key, val string, secret *bool) *gqlschema.ConfigEntr
 }
 
 func fixKymaGraphQLConfig() *gqlschema.KymaConfig {
-	ceComp := gqlschema.KymaComponentClusterEssentials
-	coreComp := gqlschema.KymaComponentCore
-	acComp := gqlschema.KymaComponentApplicationConnector
 
 	return &gqlschema.KymaConfig{
 		Version: util.StringPtr(kymaVersion),
 		Components: []*gqlschema.ComponentConfiguration{
 			{
-				Component:     &ceComp,
-				Namespace:     util.StringPtr(kymaSystemNamespace),
+				Component:     clusterEssentialsComponent,
+				Namespace:     kymaSystemNamespace,
 				Configuration: make([]*gqlschema.ConfigEntry, 0, 0),
 			},
 			{
-				Component: &coreComp,
-				Namespace: util.StringPtr(kymaSystemNamespace),
+				Component: coreComponent,
+				Namespace: kymaSystemNamespace,
 				Configuration: []*gqlschema.ConfigEntry{
 					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntry("test.config.key2", "value2", util.BoolPtr(false)),
 				},
 			},
 			{
-				Component: &acComp,
-				Namespace: util.StringPtr(kymaIntegrationNamespace),
+				Component: applicationConnectorComponent,
+				Namespace: kymaIntegrationNamespace,
 				Configuration: []*gqlschema.ConfigEntry{
 					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),

@@ -237,9 +237,9 @@ func Test_getInstallationCRModificationFunc(t *testing.T) {
 
 		// then
 		require.Equal(t, 3, len(installationCR.Spec.Components))
-		assertComponent(t, "ClusterEssentials", kymaSystemNamespace, installationCR.Spec.Components[0])
-		assertComponent(t, "Core", kymaSystemNamespace, installationCR.Spec.Components[1])
-		assertComponent(t, "ApplicationConnector", kymaIntegrationNamespace, installationCR.Spec.Components[2])
+		assertComponent(t, "cluster-essentials", kymaSystemNamespace, installationCR.Spec.Components[0])
+		assertComponent(t, "core", kymaSystemNamespace, installationCR.Spec.Components[1])
+		assertComponent(t, "application-connector", kymaIntegrationNamespace, installationCR.Spec.Components[2])
 	})
 
 	t.Run("should have no components if configuration is empty", func(t *testing.T) {
@@ -323,18 +323,18 @@ func expectedInstallationConfig() installation.Configuration {
 		},
 		ComponentConfiguration: []installation.ComponentConfiguration{
 			{
-				Component:     "ClusterEssentials",
+				Component:     "cluster-essentials",
 				Configuration: make([]installation.ConfigEntry, 0),
 			},
 			{
-				Component: "Core",
+				Component: "core",
 				Configuration: []installation.ConfigEntry{
 					fixInstallationConfigEntry("test.config.key", "value", false),
 					fixInstallationConfigEntry("test.config.key2", "value2", false),
 				},
 			},
 			{
-				Component: "ApplicationConnector",
+				Component: "application-connector",
 				Configuration: []installation.ConfigEntry{
 					fixInstallationConfigEntry("test.config.key", "value", false),
 					fixInstallationConfigEntry("test.secret.key", "secretValue", true),
@@ -349,14 +349,14 @@ func fixComponentsConfig() []model.KymaComponentConfig {
 		{
 			ID:            "id",
 			KymaConfigID:  "id",
-			Component:     "ClusterEssentials",
+			Component:     "cluster-essentials",
 			Namespace:     kymaSystemNamespace,
 			Configuration: model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0, 0)},
 		},
 		{
 			ID:           "id",
 			KymaConfigID: "id",
-			Component:    "Core",
+			Component:    "core",
 			Namespace:    kymaSystemNamespace,
 			Configuration: model.Configuration{
 				ConfigEntries: []model.ConfigEntry{
@@ -368,7 +368,7 @@ func fixComponentsConfig() []model.KymaComponentConfig {
 		{
 			ID:           "id",
 			KymaConfigID: "id",
-			Component:    "ApplicationConnector",
+			Component:    "application-connector",
 			Namespace:    kymaIntegrationNamespace,
 			Configuration: model.Configuration{
 				ConfigEntries: []model.ConfigEntry{

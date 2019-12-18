@@ -46,7 +46,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			Version: "1.5",
 			Components: []*gqlschema.ComponentConfigurationInput{
 				{
-					Component:     gqlschema.KymaComponentCore,
+					Component:     "core",
 					Configuration: nil,
 				},
 			},
@@ -90,7 +90,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			Version: "1.5",
 			Components: []*gqlschema.ComponentConfigurationInput{
 				{
-					Component:     gqlschema.KymaComponentCore,
+					Component:     "core",
 					Configuration: nil,
 				},
 			},
@@ -136,7 +136,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			Version: "1.5",
 			Components: []*gqlschema.ComponentConfigurationInput{
 				{
-					Component:     gqlschema.KymaComponentCore,
+					Component:     "core",
 					Configuration: nil,
 				},
 			},

@@ -53,13 +53,13 @@ type ClusterConfigInput struct {
 }
 
 type ComponentConfiguration struct {
-	Component     *KymaComponent `json:"component"`
-	Namespace     *string        `json:"namespace"`
+	Component     string         `json:"component"`
+	Namespace     string         `json:"namespace"`
 	Configuration []*ConfigEntry `json:"configuration"`
 }
 
 type ComponentConfigurationInput struct {
-	Component     KymaComponent       `json:"component"`
+	Component     string              `json:"component"`
 	Namespace     string              `json:"namespace"`
 	Configuration []*ConfigEntryInput `json:"configuration"`
 }
@@ -217,117 +217,6 @@ type UpgradeClusterInput struct {
 type UpgradeRuntimeInput struct {
 	ClusterConfig *UpgradeClusterInput `json:"clusterConfig"`
 	KymaConfig    *KymaConfigInput     `json:"kymaConfig"`
-}
-
-type KymaComponent string
-
-const (
-	KymaComponentAPIGateway                  KymaComponent = "APIGateway"
-	KymaComponentApplicationConnector        KymaComponent = "ApplicationConnector"
-	KymaComponentApplicationConnectorIngress KymaComponent = "ApplicationConnectorIngress"
-	KymaComponentAssetStore                  KymaComponent = "AssetStore"
-	KymaComponentBackup                      KymaComponent = "Backup"
-	KymaComponentBackupInit                  KymaComponent = "BackupInit"
-	KymaComponentClusterEssentials           KymaComponent = "ClusterEssentials"
-	KymaComponentCms                         KymaComponent = "CMS"
-	KymaComponentCompass                     KymaComponent = "Compass"
-	KymaComponentCompassRuntimeAgent         KymaComponent = "CompassRuntimeAgent"
-	KymaComponentCore                        KymaComponent = "Core"
-	KymaComponentDex                         KymaComponent = "Dex"
-	KymaComponentEventBus                    KymaComponent = "EventBus"
-	KymaComponentEventSources                KymaComponent = "EventSources"
-	KymaComponentFunctionController          KymaComponent = "FunctionController"
-	KymaComponentHelmBroker                  KymaComponent = "HelmBroker"
-	KymaComponentIstio                       KymaComponent = "Istio"
-	KymaComponentIstioInit                   KymaComponent = "IstioInit"
-	KymaComponentIstioKymaPatch              KymaComponent = "IstioKymaPatch"
-	KymaComponentJaeger                      KymaComponent = "Jaeger"
-	KymaComponentKiali                       KymaComponent = "Kiali"
-	KymaComponentKnativeBuild                KymaComponent = "KnativeBuild"
-	KymaComponentKnativeBuildInit            KymaComponent = "KnativeBuildInit"
-	KymaComponentKnativeEventing             KymaComponent = "KnativeEventing"
-	KymaComponentKnativeProvisionerNatss     KymaComponent = "KnativeProvisionerNatss"
-	KymaComponentKnativeServing              KymaComponent = "KnativeServing"
-	KymaComponentKnativeServingInit          KymaComponent = "KnativeServingInit"
-	KymaComponentLogging                     KymaComponent = "Logging"
-	KymaComponentMonitoring                  KymaComponent = "Monitoring"
-	KymaComponentNatsStreaming               KymaComponent = "NatsStreaming"
-	KymaComponentOry                         KymaComponent = "Ory"
-	KymaComponentRafter                      KymaComponent = "Rafter"
-	KymaComponentServiceCatalog              KymaComponent = "ServiceCatalog"
-	KymaComponentServiceCatalogAddons        KymaComponent = "ServiceCatalogAddons"
-	KymaComponentServiceManagerProxy         KymaComponent = "ServiceManagerProxy"
-	KymaComponentTesting                     KymaComponent = "Testing"
-	KymaComponentXipPatch                    KymaComponent = "XipPatch"
-)
-
-var AllKymaComponent = []KymaComponent{
-	KymaComponentAPIGateway,
-	KymaComponentApplicationConnector,
-	KymaComponentApplicationConnectorIngress,
-	KymaComponentAssetStore,
-	KymaComponentBackup,
-	KymaComponentBackupInit,
-	KymaComponentClusterEssentials,
-	KymaComponentCms,
-	KymaComponentCompass,
-	KymaComponentCompassRuntimeAgent,
-	KymaComponentCore,
-	KymaComponentDex,
-	KymaComponentEventBus,
-	KymaComponentEventSources,
-	KymaComponentFunctionController,
-	KymaComponentHelmBroker,
-	KymaComponentIstio,
-	KymaComponentIstioInit,
-	KymaComponentIstioKymaPatch,
-	KymaComponentJaeger,
-	KymaComponentKiali,
-	KymaComponentKnativeBuild,
-	KymaComponentKnativeBuildInit,
-	KymaComponentKnativeEventing,
-	KymaComponentKnativeProvisionerNatss,
-	KymaComponentKnativeServing,
-	KymaComponentKnativeServingInit,
-	KymaComponentLogging,
-	KymaComponentMonitoring,
-	KymaComponentNatsStreaming,
-	KymaComponentOry,
-	KymaComponentRafter,
-	KymaComponentServiceCatalog,
-	KymaComponentServiceCatalogAddons,
-	KymaComponentServiceManagerProxy,
-	KymaComponentTesting,
-	KymaComponentXipPatch,
-}
-
-func (e KymaComponent) IsValid() bool {
-	switch e {
-	case KymaComponentAPIGateway, KymaComponentApplicationConnector, KymaComponentApplicationConnectorIngress, KymaComponentAssetStore, KymaComponentBackup, KymaComponentBackupInit, KymaComponentClusterEssentials, KymaComponentCms, KymaComponentCompass, KymaComponentCompassRuntimeAgent, KymaComponentCore, KymaComponentDex, KymaComponentEventBus, KymaComponentEventSources, KymaComponentFunctionController, KymaComponentHelmBroker, KymaComponentIstio, KymaComponentIstioInit, KymaComponentIstioKymaPatch, KymaComponentJaeger, KymaComponentKiali, KymaComponentKnativeBuild, KymaComponentKnativeBuildInit, KymaComponentKnativeEventing, KymaComponentKnativeProvisionerNatss, KymaComponentKnativeServing, KymaComponentKnativeServingInit, KymaComponentLogging, KymaComponentMonitoring, KymaComponentNatsStreaming, KymaComponentOry, KymaComponentRafter, KymaComponentServiceCatalog, KymaComponentServiceCatalogAddons, KymaComponentServiceManagerProxy, KymaComponentTesting, KymaComponentXipPatch:
-		return true
-	}
-	return false
-}
-
-func (e KymaComponent) String() string {
-	return string(e)
-}
-
-func (e *KymaComponent) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = KymaComponent(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid KymaComponent", str)
-	}
-	return nil
-}
-
-func (e KymaComponent) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 type OperationState string

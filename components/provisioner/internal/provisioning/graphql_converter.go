@@ -114,12 +114,10 @@ func (c graphQLConverter) gcpConfigToGraphQLConfig(config model.GCPConfig) gqlsc
 func (c graphQLConverter) kymaConfigToGraphQLConfig(config model.KymaConfig) *gqlschema.KymaConfig {
 	var components []*gqlschema.ComponentConfiguration
 	for _, cmp := range config.Components {
-		componentName := gqlschema.KymaComponent(cmp.Component)
-		namespace := cmp.Namespace
 
 		component := gqlschema.ComponentConfiguration{
-			Component:     &componentName,
-			Namespace:     &namespace,
+			Component:     string(cmp.Component),
+			Namespace:     cmp.Namespace,
 			Configuration: c.configurationToGraphQLConfig(cmp.Configuration),
 		}
 

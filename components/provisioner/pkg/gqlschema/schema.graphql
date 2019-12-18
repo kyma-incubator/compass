@@ -1,44 +1,4 @@
 
-enum KymaComponent {
-    APIGateway
-    ApplicationConnector
-    ApplicationConnectorIngress
-    AssetStore
-    Backup
-    BackupInit
-    ClusterEssentials
-    CMS
-    Compass
-    CompassRuntimeAgent
-    Core
-    Dex
-    EventBus
-    EventSources
-    FunctionController
-    HelmBroker
-    Istio
-    IstioInit
-    IstioKymaPatch
-    Jaeger
-    Kiali
-    KnativeBuild
-    KnativeBuildInit
-    KnativeEventing
-    KnativeProvisionerNatss
-    KnativeServing
-    KnativeServingInit
-    Logging
-    Monitoring
-    NatsStreaming
-    Ory
-    Rafter
-    ServiceCatalog
-    ServiceCatalogAddons
-    ServiceManagerProxy
-    Testing
-    XipPatch
-}
-
 # Configuration of Runtime. We can consider returning kubeconfig as a part of this type.
 type RuntimeConfig {
     clusterConfig: ClusterConfig
@@ -104,8 +64,8 @@ type ConfigEntry {
 }
 
 type ComponentConfiguration {
-    component: KymaComponent
-    namespace: String
+    component: String!
+    namespace: String!
     configuration: [ConfigEntry]
 }
 
@@ -246,7 +206,7 @@ input ConfigEntryInput {
 }
 
 input ComponentConfigurationInput {
-    component: KymaComponent!             # Kyma component
+    component: String!                    # Kyma component name
     namespace: String!                    # Namespace to which component should be installed
     configuration: [ConfigEntryInput]     # Component specific configuration
 }

@@ -19,7 +19,10 @@ import (
 )
 
 const (
-	kymaVersion = "1.5"
+	kymaVersion                   = "1.5"
+	clusterEssentialsComponent    = "cluster-essentials"
+	coreComponent                 = "core"
+	applicationConnectorComponent = "application-connector"
 )
 
 func Test_ProvisioningInputToCluster(t *testing.T) {
@@ -386,19 +389,15 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 }
 
 func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {
-	ceComp := gqlschema.KymaComponentClusterEssentials
-	coreComp := gqlschema.KymaComponentCore
-	acComp := gqlschema.KymaComponentApplicationConnector
-
 	return &gqlschema.KymaConfigInput{
 		Version: kymaVersion,
 		Components: []*gqlschema.ComponentConfigurationInput{
 			{
-				Component: ceComp,
+				Component: clusterEssentialsComponent,
 				Namespace: kymaSystemNamespace,
 			},
 			{
-				Component: coreComp,
+				Component: coreComponent,
 				Namespace: kymaSystemNamespace,
 				Configuration: []*gqlschema.ConfigEntryInput{
 					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
@@ -406,7 +405,7 @@ func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {
 				},
 			},
 			{
-				Component: acComp,
+				Component: applicationConnectorComponent,
 				Namespace: kymaIntegrationNamespace,
 				Configuration: []*gqlschema.ConfigEntryInput{
 					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
