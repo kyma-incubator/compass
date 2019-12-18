@@ -87,8 +87,9 @@ To establish a secure connection with Compass and generate the client certificat
 
     The response contains a certificate chain, a valid client certificate signed by the Kyma Certificate Authority (CA), and the CA certificate.
     
- 5. After you receive the certificates, decode the certificate chain with the base64 method and use it in your application. 
-    
+ 5. Decode the certificate chain.
+ 
+    After you receive the certificates, decode the certificate chain with the base64 method and use it in your application: 
     ```bash
     base64 -d {CERTIFICATE_CHAIN}
     ```
