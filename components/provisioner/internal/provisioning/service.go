@@ -176,6 +176,7 @@ func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.Operati
 }
 
 func (r *service) CleanupRuntimeData(id string) (*gqlschema.CleanUpRuntimeDataResult, error) {
+
 	err := r.persistenceService.CleanupClusterData(id)
 
 	if err != nil {
@@ -190,7 +191,16 @@ func (r *service) CleanupRuntimeData(id string) (*gqlschema.CleanUpRuntimeDataRe
 		}
 	}
 
-	message := fmt.Sprintf("Successfully cleaned up data for Runtime with ID %s", id)
+	unregErr := r.directorService.DeleteRuntime(id)
+
+	var message string
+
+	if unregErr != nil {
+		message = fmt.Sprintf("Successfully cleaned up data for Runtime with ID %s only from Provisioner database", id)
+	}  else {
+		message = fmt.Sprintf("Successfully cleaned up data for Runtime with ID %s from Provisioner and Director", id)
+	}
+	
 	return &gqlschema.CleanUpRuntimeDataResult{ID: id, Message: &message}, nil
 }
 
