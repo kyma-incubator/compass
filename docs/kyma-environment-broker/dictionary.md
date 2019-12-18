@@ -16,16 +16,10 @@ The Platform UAA manages the platform users (space developers and administrators
 
 The User Account and Authentication service (UAA) is the central infrastructure component of the Cloud Foundry environment at SAP Cloud Platform for user authentication and authorization. The XSUAA has been developed by SAP. It is an extension of the CFUAA and acts as the central infrastructure component of the Cloud Foundry environment at SAP Cloud Platform for business user authentication and authorization. SAP has enhanced the CFUAA by adding a service broker, multitenancy, management API functions, and some minor enhancements. The XSUAA manages business users and enables them to authenticate to applications deployed in SAP Cloud Platform.
 
-Link: https://help.sap.com/viewer/65de2977205c403bbc107264b8eccf4b/Cloud/en-US/51ec15a8979e497fbcaadf80da9b63ba.html
-
-
 ## CIS and ERS
 
 ![](assets/sm.png)
 
-Commercial Infrastructure Services (CIS) is a fundamental part of the SAP Cloud Platform Foundation, serving both commercials, technical and operational goals (read [this](https://wiki.wdf.sap.corp/wiki/display/CPC15N/%5BINTRO%5D+CIS@CF+Overview) for more info). One of sub-domain is **CIS Provisioning and registries (XRS, ERS, XPR, Tenant LCM)** which contains Environment Registry Service (ERS).	
+Commercial Infrastructure Services (CIS) is a fundamental part of the SAP Cloud Platform Foundation, serving both commercials, technical and operational goals. One of sub-domain is **CIS Provisioning and registries (XRS, ERS, XPR, Tenant LCM)** which contains Environment Registry Service (ERS).	
 
-The ERS manages the lifecycle of environment instances like CF organizations, K8S clusters. During provisioning context is passed to the provisioned environment and mapping between environment instance and the commercial context is kept (binding to subaccount). See here more information about the environment manager  https://wiki.wdf.sap.corp/wiki/display/CPC15N/CIS+Environment+Registry+Service
-
-
-More about the ERS: https://wiki.wdf.sap.corp/wiki/pages/viewpage.action?pageId=1917617707
+The ERS manages the lifecycle of environment instances like CF organizations, K8S clusters. During provisioning context is passed to the provisioned environment and mapping between environment instance and the commercial context is kept (binding to subaccount).

@@ -19,9 +19,4 @@ FROM scratch
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=build /bin/kyma-env-broker /bin/kyma-env-broker
 
-ENV APP_PORT 8080
-EXPOSE 8080/tcp
-
-WORKDIR /
-
 CMD ["/bin/kyma-env-broker"]

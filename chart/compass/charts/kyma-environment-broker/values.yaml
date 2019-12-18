@@ -1,9 +1,9 @@
-replicaCount: 1
-
-image:
-  repository: eu.gcr.io/kyma-project/incubator/kyma-environment-broker
-  tag: PR-554
-  pullPolicy: IfNotPresent
+deployment:
+  replicaCount: 1
+  image:
+    pullPolicy: IfNotPresent
+  securityContext:
+    runAsUser: 2000
 
 imagePullSecrets: []
 nameOverride: ""
