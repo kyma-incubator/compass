@@ -17,6 +17,58 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func Test_DeleteDefaultForApplication(t *testing.T) {
+	t.Run("Success when deletion does not return errors", func(t *testing.T) {
+		// GIVEN
+		ctx := fixCtxWithTenant()
+		labelRepo := &automock.LabelRepository{}
+		labelRepo.On("DeleteByKey", ctx, tenantID.String(), getDefaultEventingForAppLabelKey(applicationID)).Return(nil)
+
+		svc := NewService(nil, labelRepo)
+
+		// WHEN
+		eventingCfg, err := svc.DeleteDefaultForApplication(ctx, applicationID)
+
+		// THEN
+
+		require.NoError(t, err)
+		require.NotNil(t, eventingCfg)
+		require.Equal(t, EmptyEventingURL, eventingCfg.DefaultURL)
+		mock.AssertExpectationsForObjects(t, labelRepo)
+	})
+
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		// GIVEN
+		svc := NewService(nil, nil)
+
+		// WHEN
+		_, err := svc.GetForApplication(context.TODO(), uuid.Nil)
+
+		// THEN
+		require.Error(t, err)
+		require.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
+	})
+
+	t.Run("Error when deletion returns errors", func(t *testing.T) {
+		// GIVEN
+		expectedError := fmt.Sprintf(`while deleting labels [key=%s]: some-error`, getDefaultEventingForAppLabelKey(applicationID))
+		ctx := fixCtxWithTenant()
+		labelRepo := &automock.LabelRepository{}
+		labelRepo.On("DeleteByKey", ctx, tenantID.String(), getDefaultEventingForAppLabelKey(applicationID)).Return(errors.New("some-error"))
+
+		svc := NewService(nil, labelRepo)
+
+		// WHEN
+		_, err := svc.DeleteDefaultForApplication(ctx, applicationID)
+
+		// THEN
+
+		require.Error(t, err)
+		require.EqualError(t, err, expectedError)
+		mock.AssertExpectationsForObjects(t, labelRepo)
+	})
+}
+
 func Test_GetForApplication(t *testing.T) {
 	t.Run("Success when there is default runtime labeled for application eventing", func(t *testing.T) {
 		// GIVEN

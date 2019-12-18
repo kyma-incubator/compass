@@ -34,6 +34,7 @@ type RuntimeRepository interface {
 type LabelRepository interface {
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
+	DeleteByKey(ctx context.Context, tenant string, key string) error
 	Upsert(ctx context.Context, label *model.Label) error
 }
 
@@ -47,6 +48,21 @@ func NewService(runtimeRepo RuntimeRepository, labelRepo LabelRepository) *servi
 		runtimeRepo: runtimeRepo,
 		labelRepo:   labelRepo,
 	}
+}
+
+func (s *service) DeleteDefaultForApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error) {
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	labelKey := getDefaultEventingForAppLabelKey(appID)
+	err = s.labelRepo.DeleteByKey(ctx, tenantID, labelKey)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while deleting labels [key=%s]", labelKey)
+	}
+
+	return model.NewApplicationEventingConfiguration(EmptyEventingURL), nil
 }
 
 func (s *service) GetForApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error) {

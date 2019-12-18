@@ -77,6 +77,7 @@ type EventAPIConverter interface {
 
 //go:generate mockery -name=EventingService -output=automock -outpkg=automock -case=underscore
 type EventingService interface {
+	DeleteDefaultForApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error)
 	GetForApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error)
 }
 
@@ -368,6 +369,15 @@ func (r *Resolver) UnregisterApplication(ctx context.Context, id string) (*graph
 
 	app, err := r.appSvc.Get(ctx, id)
 	if err != nil {
+		return nil, err
+	}
+
+	appID, err := uuid.Parse(app.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing application ID as UUID")
+	}
+
+	if _, err = r.eventingSvc.DeleteDefaultForApplication(ctx, appID); err != nil {
 		return nil, err
 	}
 
