@@ -61,6 +61,7 @@ type ComplexityRoot struct {
 	ComponentConfiguration struct {
 		Component     func(childComplexity int) int
 		Configuration func(childComplexity int) int
+		Namespace     func(childComplexity int) int
 	}
 
 	ConfigEntry struct {
@@ -243,6 +244,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ComponentConfiguration.Configuration(childComplexity), true
+
+	case "ComponentConfiguration.namespace":
+		if e.complexity.ComponentConfiguration.Namespace == nil {
+			break
+		}
+
+		return e.complexity.ComponentConfiguration.Namespace(childComplexity), true
 
 	case "ConfigEntry.key":
 		if e.complexity.ConfigEntry.Key == nil {
@@ -841,6 +849,7 @@ type ConfigEntry {
 
 type ComponentConfiguration {
     component: KymaComponent
+    namespace: String
     configuration: [ConfigEntry]
 }
 
@@ -982,6 +991,7 @@ input ConfigEntryInput {
 
 input ComponentConfigurationInput {
     component: KymaComponent!             # Kyma component
+    namespace: String!                    # Namespace to which component should be installed
     configuration: [ConfigEntryInput]     # Component specific configuration
 }
 
@@ -1372,6 +1382,30 @@ func (ec *executionContext) _ComponentConfiguration_component(ctx context.Contex
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOKymaComponent2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaComponent(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ComponentConfiguration_namespace(ctx context.Context, field graphql.CollectedField, obj *ComponentConfiguration) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "ComponentConfiguration",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Namespace, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ComponentConfiguration_configuration(ctx context.Context, field graphql.CollectedField, obj *ComponentConfiguration) graphql.Marshaler {
@@ -3749,6 +3783,12 @@ func (ec *executionContext) unmarshalInputComponentConfigurationInput(ctx contex
 			if err != nil {
 				return it, err
 			}
+		case "namespace":
+			var err error
+			it.Namespace, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "configuration":
 			var err error
 			it.Configuration, err = ec.unmarshalOConfigEntryInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx, v)
@@ -4275,6 +4315,8 @@ func (ec *executionContext) _ComponentConfiguration(ctx context.Context, sel ast
 			out.Values[i] = graphql.MarshalString("ComponentConfiguration")
 		case "component":
 			out.Values[i] = ec._ComponentConfiguration_component(ctx, field, obj)
+		case "namespace":
+			out.Values[i] = ec._ComponentConfiguration_namespace(ctx, field, obj)
 		case "configuration":
 			out.Values[i] = ec._ComponentConfiguration_configuration(ctx, field, obj)
 		default:

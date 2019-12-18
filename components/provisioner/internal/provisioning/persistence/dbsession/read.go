@@ -41,13 +41,14 @@ func (r readSession) GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors
 		TillerYAML          string
 		InstallerYAML       string
 		Component           string
+		Namespace           string
 		Configuration       []byte
 		ClusterID           string
 	}
 
 	rowsCount, err := r.session.
 		Select("kyma_config_id", "kyma_config.release_id", "kyma_config.global_configuration",
-			"kyma_component_config.id", "kyma_component_config.component", "kyma_component_config.configuration",
+			"kyma_component_config.id", "kyma_component_config.component", "kyma_component_config.namespace", "kyma_component_config.configuration",
 			"cluster_id",
 			"kyma_release.version", "kyma_release.tiller_yaml", "kyma_release.installer_yaml").
 		From("cluster").
@@ -77,6 +78,7 @@ func (r readSession) GetKymaConfig(runtimeID string) (model.KymaConfig, dberrors
 		kymaComponentConfig := model.KymaComponentConfig{
 			ID:            componentCfg.ID,
 			Component:     model.KymaComponent(componentCfg.Component),
+			Namespace:     componentCfg.Namespace,
 			Configuration: configuration,
 			KymaConfigID:  componentCfg.KymaConfigID,
 		}

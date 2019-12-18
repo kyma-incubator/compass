@@ -110,6 +110,7 @@ func (ws writeSession) insertKymaComponentConfig(kymaConfigModule model.KymaComp
 	_, err = ws.insertInto("kyma_component_config").
 		Pair("id", kymaConfigModule.ID).
 		Pair("component", kymaConfigModule.Component).
+		Pair("namespace", kymaConfigModule.Namespace).
 		Pair("kyma_config_id", kymaConfigModule.KymaConfigID).
 		Pair("configuration", jsonConfig).
 		Exec()

@@ -1,4 +1,4 @@
-package converters
+package provisioning
 
 import (
 	"testing"
@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	coreComponent                 = gqlschema.KymaComponentCore
-	applicationConnectorComponent = gqlschema.KymaComponentApplicationConnector
+	kymaSystemNamespace      = "kyma-system"
+	kymaIntegrationNamespace = "kyma-integration"
 )
 
 func TestOperationStatusToGQLOperationStatus(t *testing.T) {
@@ -255,10 +255,12 @@ func fixKymaGraphQLConfig() *gqlschema.KymaConfig {
 		Components: []*gqlschema.ComponentConfiguration{
 			{
 				Component:     &ceComp,
+				Namespace:     util.StringPtr(kymaSystemNamespace),
 				Configuration: make([]*gqlschema.ConfigEntry, 0, 0),
 			},
 			{
 				Component: &coreComp,
+				Namespace: util.StringPtr(kymaSystemNamespace),
 				Configuration: []*gqlschema.ConfigEntry{
 					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntry("test.config.key2", "value2", util.BoolPtr(false)),
@@ -266,6 +268,7 @@ func fixKymaGraphQLConfig() *gqlschema.KymaConfig {
 			},
 			{
 				Component: &acComp,
+				Namespace: util.StringPtr(kymaIntegrationNamespace),
 				Configuration: []*gqlschema.ConfigEntry{
 					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),
@@ -290,25 +293,21 @@ func fixGQLConfigEntry(key, val string, secret *bool) *gqlschema.ConfigEntry {
 
 func fixKymaConfig() model.KymaConfig {
 	return model.KymaConfig{
-		ID:         "id",
-		Release:    fixKymaRelease(),
-		Components: fixKymaComponents(),
-		GlobalConfiguration: model.Configuration{
-			ConfigEntries: []model.ConfigEntry{
-				fixConfigEntry("global.config.key", "globalValue", false),
-				fixConfigEntry("global.config.key2", "globalValue2", false),
-				fixConfigEntry("global.secret.key", "globalSecretValue", true),
-			},
-		},
-		ClusterID: "runtimeID",
+		ID:                  "id",
+		Release:             fixKymaRelease(),
+		Components:          fixKymaComponents(),
+		GlobalConfiguration: fixGlobalConfig(),
+		ClusterID:           "runtimeID",
 	}
 }
 
-func fixConfigEntry(key, val string, secret bool) model.ConfigEntry {
-	return model.ConfigEntry{
-		Key:    key,
-		Value:  val,
-		Secret: secret,
+func fixGlobalConfig() model.Configuration {
+	return model.Configuration{
+		ConfigEntries: []model.ConfigEntry{
+			model.NewConfigEntry("global.config.key", "globalValue", false),
+			model.NewConfigEntry("global.config.key2", "globalValue2", false),
+			model.NewConfigEntry("global.secret.key", "globalSecretValue", true),
+		},
 	}
 }
 
@@ -318,16 +317,18 @@ func fixKymaComponents() []model.KymaComponentConfig {
 			ID:            "id",
 			KymaConfigID:  "id",
 			Component:     "ClusterEssentials",
+			Namespace:     kymaSystemNamespace,
 			Configuration: model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0, 0)},
 		},
 		{
 			ID:           "id",
 			KymaConfigID: "id",
 			Component:    "Core",
+			Namespace:    kymaSystemNamespace,
 			Configuration: model.Configuration{
 				ConfigEntries: []model.ConfigEntry{
-					fixConfigEntry("test.config.key", "value", false),
-					fixConfigEntry("test.config.key2", "value2", false),
+					model.NewConfigEntry("test.config.key", "value", false),
+					model.NewConfigEntry("test.config.key2", "value2", false),
 				},
 			},
 		},
@@ -335,10 +336,11 @@ func fixKymaComponents() []model.KymaComponentConfig {
 			ID:           "id",
 			KymaConfigID: "id",
 			Component:    "ApplicationConnector",
+			Namespace:    kymaIntegrationNamespace,
 			Configuration: model.Configuration{
 				ConfigEntries: []model.ConfigEntry{
-					fixConfigEntry("test.config.key", "value", false),
-					fixConfigEntry("test.secret.key", "secretValue", true),
+					model.NewConfigEntry("test.config.key", "value", false),
+					model.NewConfigEntry("test.secret.key", "secretValue", true),
 				},
 			},
 		},

@@ -32,6 +32,7 @@ type Asset struct {
 type KymaComponentConfig struct {
 	ID            string
 	Component     KymaComponent
+	Namespace     string
 	Configuration Configuration
 	KymaConfigID  string
 }
@@ -44,4 +45,12 @@ type ConfigEntry struct {
 	Key    string `json:"key"`
 	Value  string `json:"value"`
 	Secret bool   `json:"secret"`
+}
+
+func NewConfigEntry(key, val string, secret bool) ConfigEntry {
+	return ConfigEntry{
+		Key:    key,
+		Value:  val,
+		Secret: secret,
+	}
 }

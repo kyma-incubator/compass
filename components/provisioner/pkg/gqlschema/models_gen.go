@@ -54,11 +54,13 @@ type ClusterConfigInput struct {
 
 type ComponentConfiguration struct {
 	Component     *KymaComponent `json:"component"`
+	Namespace     *string        `json:"namespace"`
 	Configuration []*ConfigEntry `json:"configuration"`
 }
 
 type ComponentConfigurationInput struct {
 	Component     KymaComponent       `json:"component"`
+	Namespace     string              `json:"namespace"`
 	Configuration []*ConfigEntryInput `json:"configuration"`
 }
 

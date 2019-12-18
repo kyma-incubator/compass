@@ -14,8 +14,6 @@ import (
 	installationMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/mocks"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/converters"
-
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
@@ -35,7 +33,9 @@ import (
 )
 
 const (
-	kymaVersion = "1.8"
+	kymaVersion              = "1.8"
+	kymaSystemNamespace      = "kyma-system"
+	kymaIntegrationNamespace = "kyma-integration"
 )
 
 func waitForOperationCompleted(provisioningService provisioning.Service, operationID string, seconds uint) error {
@@ -171,7 +171,14 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 		})
 
 	installationServiceMock := &installationMocks.Service{}
-	installationServiceMock.On("InstallKyma", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	installationServiceMock.On(
+		"InstallKyma",
+		mock.AnythingOfType("string"),
+		mock.AnythingOfType("string"),
+		mock.AnythingOfType("model.Release"),
+		mock.AnythingOfType("model.Configuration"),
+		mock.AnythingOfType("[]model.KymaComponentConfig")).
+		Return(nil)
 
 	uuidGenerator := uuid.NewUUIDGenerator()
 
@@ -207,8 +214,8 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			dbSessionFactory := dbsession.NewFactory(connection)
 			persistenceService := persistence.NewService(dbSessionFactory, uuidGenerator)
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
-			inputConverter := converters.NewInputConverter(uuidGenerator, releaseRepository)
-			graphQLConverter := converters.NewGraphQLConverter()
+			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository)
+			graphQLConverter := provisioning.NewGraphQLConverter()
 			provisioningService := provisioning.NewProvisioningService(persistenceService, inputConverter, graphQLConverter, hydroformServiceMock, installationServiceMock)
 			provisioner := NewResolver(provisioningService)
 
@@ -329,9 +336,11 @@ func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {
 		Components: []*gqlschema.ComponentConfigurationInput{
 			{
 				Component: ceComp,
+				Namespace: kymaSystemNamespace,
 			},
 			{
 				Component: coreComp,
+				Namespace: kymaSystemNamespace,
 				Configuration: []*gqlschema.ConfigEntryInput{
 					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntryInput("test.config.key2", "value2", util.BoolPtr(false)),
@@ -339,6 +348,7 @@ func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {
 			},
 			{
 				Component: acComp,
+				Namespace: kymaIntegrationNamespace,
 				Configuration: []*gqlschema.ConfigEntryInput{
 					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntryInput("test.secret.key", "secretValue", util.BoolPtr(true)),
@@ -371,10 +381,12 @@ func fixKymaGraphQLConfig() *gqlschema.KymaConfig {
 		Components: []*gqlschema.ComponentConfiguration{
 			{
 				Component:     &ceComp,
+				Namespace:     util.StringPtr(kymaSystemNamespace),
 				Configuration: make([]*gqlschema.ConfigEntry, 0, 0),
 			},
 			{
 				Component: &coreComp,
+				Namespace: util.StringPtr(kymaSystemNamespace),
 				Configuration: []*gqlschema.ConfigEntry{
 					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntry("test.config.key2", "value2", util.BoolPtr(false)),
@@ -382,6 +394,7 @@ func fixKymaGraphQLConfig() *gqlschema.KymaConfig {
 			},
 			{
 				Component: &acComp,
+				Namespace: util.StringPtr(kymaIntegrationNamespace),
 				Configuration: []*gqlschema.ConfigEntry{
 					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),

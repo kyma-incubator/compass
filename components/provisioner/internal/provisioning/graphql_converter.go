@@ -1,4 +1,4 @@
-package converters
+package provisioning
 
 import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
@@ -115,8 +115,11 @@ func (c graphQLConverter) kymaConfigToGraphQLConfig(config model.KymaConfig) *gq
 	var components []*gqlschema.ComponentConfiguration
 	for _, cmp := range config.Components {
 		componentName := gqlschema.KymaComponent(cmp.Component)
+		namespace := cmp.Namespace
+
 		component := gqlschema.ComponentConfiguration{
 			Component:     &componentName,
+			Namespace:     &namespace,
 			Configuration: c.configurationToGraphQLConfig(cmp.Configuration),
 		}
 

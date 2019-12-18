@@ -14,6 +14,7 @@ require (
 	github.com/json-iterator/go v1.1.8 // indirect
 	github.com/kyma-incubator/hydroform v0.0.0-20191128070310-d7996cb46e38
 	github.com/kyma-incubator/hydroform/install v0.0.0-20191128070310-d7996cb46e38
+	github.com/kyma-project/kyma v0.5.1-0.20191106070956-5aa08d114ca0
 	github.com/lib/pq v1.2.0
 	github.com/onsi/ginkgo v1.10.1 // indirect
 	github.com/onsi/gomega v1.7.0 // indirect

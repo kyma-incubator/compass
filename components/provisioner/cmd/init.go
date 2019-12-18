@@ -8,7 +8,6 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/converters"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
@@ -35,8 +34,8 @@ func newProvisioningService(config config, persistenceService persistence.Servic
 	uuidGenerator := uuid.NewUUIDGenerator()
 	installationService := installation.NewInstallationService(config.Installation.Timeout, installationSDK.NewKymaInstaller, config.Installation.ErrorsCountFailureThreshold)
 
-	inputConverter := converters.NewInputConverter(uuidGenerator, releaseRepo)
-	graphQLConverter := converters.NewGraphQLConverter()
+	inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepo)
+	graphQLConverter := provisioning.NewGraphQLConverter()
 
 	return provisioning.NewProvisioningService(persistenceService, inputConverter, graphQLConverter, hydroformService, installationService)
 }

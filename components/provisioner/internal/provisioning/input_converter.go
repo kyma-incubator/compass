@@ -1,4 +1,4 @@
-package converters
+package provisioning
 
 import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
@@ -162,6 +162,7 @@ func (c converter) kymaConfigFromInput(runtimeID string, input gqlschema.KymaCon
 		kymaConfigModule := model.KymaComponentConfig{
 			ID:            id,
 			Component:     model.KymaComponent(component.Component),
+			Namespace:     component.Namespace,
 			Configuration: c.configurationFromInput(component.Configuration),
 			KymaConfigID:  kymaConfigID,
 		}
@@ -191,9 +192,5 @@ func (c converter) configurationFromInput(input []*gqlschema.ConfigEntryInput) m
 }
 
 func configEntryFromInput(entry *gqlschema.ConfigEntryInput) model.ConfigEntry {
-	return model.ConfigEntry{
-		Key:    entry.Key,
-		Value:  entry.Value,
-		Secret: util.BoolFromPtr(entry.Secret),
-	}
+	return model.NewConfigEntry(entry.Key, entry.Value, util.BoolFromPtr(entry.Secret))
 }

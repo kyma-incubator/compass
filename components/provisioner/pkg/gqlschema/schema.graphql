@@ -105,6 +105,7 @@ type ConfigEntry {
 
 type ComponentConfiguration {
     component: KymaComponent
+    namespace: String
     configuration: [ConfigEntry]
 }
 
@@ -246,6 +247,7 @@ input ConfigEntryInput {
 
 input ComponentConfigurationInput {
     component: KymaComponent!             # Kyma component
+    namespace: String!                    # Namespace to which component should be installed
     configuration: [ConfigEntryInput]     # Component specific configuration
 }
 

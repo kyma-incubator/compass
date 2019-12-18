@@ -1,4 +1,4 @@
-package converters
+package provisioning
 
 import (
 	"testing"
@@ -395,9 +395,11 @@ func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {
 		Components: []*gqlschema.ComponentConfigurationInput{
 			{
 				Component: ceComp,
+				Namespace: kymaSystemNamespace,
 			},
 			{
 				Component: coreComp,
+				Namespace: kymaSystemNamespace,
 				Configuration: []*gqlschema.ConfigEntryInput{
 					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntryInput("test.config.key2", "value2", util.BoolPtr(false)),
@@ -405,6 +407,7 @@ func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {
 			},
 			{
 				Component: acComp,
+				Namespace: kymaIntegrationNamespace,
 				Configuration: []*gqlschema.ConfigEntryInput{
 					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntryInput("test.secret.key", "secretValue", util.BoolPtr(true)),
