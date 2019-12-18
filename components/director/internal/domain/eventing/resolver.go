@@ -13,7 +13,7 @@ import (
 //go:generate mockery -name=EventingService -output=automock -outpkg=automock -case=underscore
 type EventingService interface {
 	SetAsDefaultForApplication(ctx context.Context, runtimeID uuid.UUID, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error)
-	DeleteDefaultForApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error)
+	UnsetDefaultForApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error)
 }
 
 type Resolver struct {
@@ -59,7 +59,7 @@ func (r *Resolver) SetDefaultEventingForApplication(ctx context.Context, app str
 	return ApplicationEventingConfigurationToGraphQL(eventingCfg), nil
 }
 
-func (r *Resolver) DeleteDefaultEventingForApplication(ctx context.Context, app string) (*graphql.ApplicationEventingConfiguration, error) {
+func (r *Resolver) UnsetDefaultEventingForApplication(ctx context.Context, app string) (*graphql.ApplicationEventingConfiguration, error) {
 	appID, err := uuid.Parse(app)
 	if err != nil {
 		return nil, errors.Wrap(err, "while parsing application ID as UUID")
@@ -73,7 +73,7 @@ func (r *Resolver) DeleteDefaultEventingForApplication(ctx context.Context, app 
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	eventingCfg, err := r.eventingSvc.DeleteDefaultForApplication(ctx, appID)
+	eventingCfg, err := r.eventingSvc.UnsetDefaultForApplication(ctx, appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching eventing cofiguration for application")
 	}

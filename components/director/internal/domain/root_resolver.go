@@ -342,7 +342,7 @@ func (r *mutationResolver) SetDefaultEventingForApplication(ctx context.Context,
 }
 
 func (r *mutationResolver) DeleteDefaultEventingForApplication(ctx context.Context, appID string) (*graphql.ApplicationEventingConfiguration, error) {
-	return r.eventing.DeleteDefaultEventingForApplication(ctx, appID)
+	return r.eventing.UnsetDefaultEventingForApplication(ctx, appID)
 }
 
 type applicationResolver struct {
