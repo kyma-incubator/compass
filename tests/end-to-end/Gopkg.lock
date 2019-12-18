@@ -177,7 +177,7 @@
     "components/director/pkg/scalar",
   ]
   pruneopts = "UT"
-  revision = "63c99862d66de5fc9eb8a13daab13595683857da"
+  revision = "c5d8d2fa870067e5415c8f2693948356f10bf160"
   source = "github.com/crabtree/compass"
 
 [[projects]]
