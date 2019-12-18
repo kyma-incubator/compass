@@ -120,7 +120,7 @@ spec:
                 -H 'Content-Type: application/json' \
                 -H "authorization: Bearer ${INTERNAL_TOKEN}" \
                 --data-binary '{
-                  "query":"mutation registerIntegrationSystem\ {\n  result: registerIntegrationSystem\(\n    in: { name: \"compass-provisioner\", description: \"Compass Provisioner\" }\n  ) {\n    id\n  }\n}\n"
+                  "query":"mutation registerIntegrationSystem {\n  result: registerIntegrationSystem(\n    in: { name: \"compass-provisioner\", description: \"Compass Provisioner\" }\n  ) {\n    id\n  }\n}\n"
                 }')
               echo $RESPONSE_BODY
 
