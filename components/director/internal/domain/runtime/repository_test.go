@@ -136,7 +136,7 @@ func TestPgRepository_GetOldestForFilters_ShouldReturnRuntimeModelForRuntimeEnti
 	rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp"}).
 		AddRow(runtimeID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp, timestamp)
 
-	sqlMock.ExpectQuery(`^SELECT (.+) FROM public.runtimes WHERE tenant_id = \$1 ORDER BY creation_timestamp DESC$`).
+	sqlMock.ExpectQuery(`^SELECT (.+) FROM public.runtimes WHERE tenant_id = \$1 ORDER BY creation_timestamp ASC$`).
 		WithArgs(tenantID).
 		WillReturnRows(rows)
 
@@ -167,7 +167,7 @@ func TestPgRepository_GetOldestForFilters_WithAdditionalFilers_ShouldReturnRunti
 
 	rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp"}).
 		AddRow(runtimeID, tenantID, "Runtime ABC", "Description for runtime ABC", "INITIAL", timestamp, timestamp)
-	sqlMock.ExpectQuery(`^SELECT (.+) FROM public.runtimes WHERE tenant_id = \$1 AND id IN \(SELECT "runtime_id" FROM public\.labels WHERE "runtime_id" IS NOT NULL AND "tenant_id" = '` + tenantID + `' AND "key" = 'scenarios' AND "value" \?\| array\['DEFAULT'\]\) ORDER BY creation_timestamp DESC$`).
+	sqlMock.ExpectQuery(`^SELECT (.+) FROM public.runtimes WHERE tenant_id = \$1 AND id IN \(SELECT "runtime_id" FROM public\.labels WHERE "runtime_id" IS NOT NULL AND "tenant_id" = '` + tenantID + `' AND "key" = 'scenarios' AND "value" \?\| array\['DEFAULT'\]\) ORDER BY creation_timestamp ASC$`).
 		WithArgs(tenantID).
 		WillReturnRows(rows)
 
