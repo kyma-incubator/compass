@@ -30,7 +30,8 @@ To establish a secure connection with Compass and generate the client certificat
 
 2. Get the CSR information and configuration details from Kyma using the one-time token.
 
-    To get the CSR information and configuration details, send this GraphQL query with the one-time token included in the `connector-token` header to the Connector URL:
+    To get the CSR information and configuration details, send this GraphQL query to the Connector URL.
+    You must include the `connector-token` header containing the one-time token when making the call.
 
     ```graphql
     query {
