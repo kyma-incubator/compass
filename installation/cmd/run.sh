@@ -19,7 +19,7 @@ kyma install -o $INSTALLER_CR_PATH  -o $OVERRIDES_COMPASS_GATEWAY --source "${KY
 kubectl get -n kyma-installer secret helm-secret -o jsonpath="{.data['global\.helm\.ca\.crt']}" | base64 --decode > "$(helm home)/ca.pem"
 kubectl get -n kyma-installer secret helm-secret -o jsonpath="{.data['global\.helm\.tls\.crt']}" | base64 --decode > "$(helm home)/cert.pem"
 kubectl get -n kyma-installer secret helm-secret -o jsonpath="{.data['global\.helm\.tls\.key']}" | base64 --decode > "$(helm home)/key.pem"
-echo "Secrets with Tiller tls client certificates have been created \n"
+echo -e "Secrets with Tiller tls client certificates have been created \n"
 
 MINIKUBE_IP=$(eval minikube ip)
 helm install --set=global.minikubeIP=${MINIKUBE_IP} --set=director.deployment.allowJWTSigningNone=true --set=global.isLocalEnv=true --name "${COMPASS_HELM_RELEASE_NAME}" --namespace "${COMPASS_HELM_RELEASE_NAMESPACE}" "${ROOT_PATH}"/chart/compass --tls --wait
