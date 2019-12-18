@@ -145,6 +145,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 		directorServiceMock := &directormock.DirectorClient{}
 		directorServiceMock.On("CreateRuntime", mock.Anything).Return(runtimeID, nil)
+		directorServiceMock.On("DeleteRuntime", runtimeID).Return(nil)
 		persistenceServiceMock.On("GetLastOperation", runtimeID).Return(model.Operation{Type: model.Provision, State: model.Failed}, nil)
 		persistenceServiceMock.On("CleanupClusterData", runtimeID).Return(nil)
 		persistenceServiceMock.On("SetProvisioningStarted", runtimeID, mock.Anything).Return(operation, nil)
@@ -364,7 +365,10 @@ func TestCleanUpRuntimeData(t *testing.T) {
 		persistenceServiceMock := &persistenceMocks.Service{}
 		persistenceServiceMock.On("CleanupClusterData", runtimeID).Return(dberrors.NotFound("Could not find given Runtime in database"))
 
-		provisioningService := NewProvisioningService(persistenceServiceMock, nil, nil, nil, nil, nil)
+		directorServiceMock := &directormock.DirectorClient{}
+		directorServiceMock.On("DeleteRuntime", runtimeID).Return(nil)
+
+		provisioningService := NewProvisioningService(persistenceServiceMock, nil, nil, nil, nil, directorServiceMock)
 
 		// when
 		result, err := provisioningService.CleanupRuntimeData(runtimeID)
@@ -401,7 +405,10 @@ func TestCleanUpRuntimeData(t *testing.T) {
 		persistenceServiceMock := &persistenceMocks.Service{}
 		persistenceServiceMock.On("CleanupClusterData", runtimeID).Return(nil)
 
-		provisioningService := NewProvisioningService(persistenceServiceMock, nil, nil, nil, nil, nil)
+		directorServiceMock := &directormock.DirectorClient{}
+		directorServiceMock.On("DeleteRuntime", runtimeID).Return(nil)
+
+		provisioningService := NewProvisioningService(persistenceServiceMock, nil, nil, nil, nil, directorServiceMock)
 
 		// when
 		result, err := provisioningService.CleanupRuntimeData(runtimeID)
