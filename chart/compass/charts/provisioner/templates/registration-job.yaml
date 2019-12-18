@@ -24,8 +24,8 @@ metadata:
   name: {{ template "fullname" . }}-registration
   namespace: {{ .Release.Namespace }}
 rules:
-  - apiGroups: [""]
-    resources: [oauth2clients.hydra.ory.sh]
+  - apiGroups: ["hydra.ory.sh"]
+    resources: ["oauth2clients"]
     verbs: [create, get]
 ---
 apiVersion: batch/v1

@@ -197,10 +197,10 @@ func (r *service) CleanupRuntimeData(id string) (*gqlschema.CleanUpRuntimeDataRe
 
 	if unregErr != nil {
 		message = fmt.Sprintf("Successfully cleaned up data for Runtime with ID %s only from Provisioner database", id)
-	}  else {
+	} else {
 		message = fmt.Sprintf("Successfully cleaned up data for Runtime with ID %s from Provisioner and Director", id)
 	}
-	
+
 	return &gqlschema.CleanUpRuntimeDataResult{ID: id, Message: &message}, nil
 }
 

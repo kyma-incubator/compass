@@ -91,7 +91,7 @@ func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, err
 	}
 
 	if response.StatusCode != http.StatusOK {
-		return Token{}, fmt.Errorf("get token call returned unexpected status code, %d", response.StatusCode)
+		return Token{}, fmt.Errorf("get token call returned unexpected status code, %d, %s", response.StatusCode, response.Status)
 	}
 
 	defer response.Body.Close()
