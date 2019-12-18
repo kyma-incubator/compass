@@ -34,7 +34,7 @@ metadata:
   name: {{ template "fullname" . }}-registration
   namespace: {{ .Release.Namespace }}
   annotations:
-    "helm.sh/hook": pre-install, pre-upgrade
+    "helm.sh/hook": post-install, post-upgrade
     "helm.sh/hook-weight": "1"
     "helm.sh/hook-delete-policy": before-hook-creation ## TODO
 spec:
@@ -120,7 +120,7 @@ spec:
                 -H 'Content-Type: application/json' \
                 -H "authorization: Bearer ${INTERNAL_TOKEN}" \
                 --data-binary '{
-                  "query":"mutation createIntegrationSystem {\n  result: createIntegrationSystem(\n    in: { name: \"compass-provisioner\", description: \"Compass Provisioner\" }\n  ) {\n    id\n  }\n}\n"
+                  "query":"mutation registerIntegrationSystem\ {\n  result: registerIntegrationSystem\(\n    in: { name: \"compass-provisioner\", description: \"Compass Provisioner\" }\n  ) {\n    id\n  }\n}\n"
                 }')
               echo $RESPONSE_BODY
 
