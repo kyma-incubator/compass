@@ -55,18 +55,24 @@ To establish a secure connection with Compass and generate the client certificat
 
 3. Generate a key and a Certificate Signing Request (CSR).
 
-    Generate a CSR with this command using the certificate subject data obtained with the CSR information: 
+    Generate a CSR with the following command. `SUBJECT` is the certificate subject data returned with the CSR information as `subject`.   
     
     ```bash
-    openssl genrsa -out generated.key 2048
-    openssl req -new -sha256 -out generated.csr -key generated.key -subj "{SUBJECT}"
-    openssl base64 -in generated.csr
+    export KEY_LENGTH=4096
+    openssl genrsa -out compass-app.key $KEY_LENGTH
+    openssl req -new -sha256 -out compass-app.csr -key compass-app.key -subj "{SUBJECT}"
     ```
+   
+   > **NOTE:** The key length is configurable, however, 4096 is the recommended value.
 
 4. Sign the CSR and get a client certificate. 
 
+    Encode the obtained CSR with base64:
+    ```bash
+    openssl base64 -in compass-app.csr 
+    ```
+
     To get the CSR signed, use the encoded CSR in this GraphQL mutation:
-    
     ```graphql
     mutation {
         result: signCertificateSigningRequest(csr: "{BASE64_ENCODED_CSR}") {
@@ -77,10 +83,14 @@ To establish a secure connection with Compass and generate the client certificat
     }
     ```
    
-    Send the modified GraphQL mutation to the Connector URL including the one-time token fetched with the configuration in the `connector-token` header.
+    Send the modified GraphQL mutation to the Connector URL. You must include the `connector-token` header containing the one-time token fetched with the configuration.
 
     The response contains a certificate chain, a valid client certificate signed by the Kyma Certificate Authority (CA), and the CA certificate.
     
-    After you receive the certificates, decode the certificate chain with the base64 method and use it in your application. 
+ 5. After you receive the certificates, decode the certificate chain with the base64 method and use it in your application. 
+    
+    ```bash
+    base64 -d {CERTIFICATE_CHAIN}
+    ```
     
  >**NOTE:** To learn how to renew a client certificate, read [this](08-02-maintain-secure-connection-with-compass.md) document.
