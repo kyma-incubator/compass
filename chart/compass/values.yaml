@@ -39,7 +39,7 @@ global:
         dir:
         version: "PR-562"
       connector:
-        dir: pr/
+        dir:
         version: "02e8358c"
       provisioner:
         dir:
