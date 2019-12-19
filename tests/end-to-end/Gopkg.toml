@@ -14,7 +14,7 @@ required = [
 [[constraint]]
   name = "github.com/kyma-incubator/compass"
   source = "github.com/crabtree/compass"
-  revision = "c5d8d2fa870067e5415c8f2693948356f10bf160"
+  revision = "7f2a222b1bd2d3eda61bb53a7e7e1d69f6db42b5"
 
 [[constraint]]
   name = "github.com/stretchr/testify"
