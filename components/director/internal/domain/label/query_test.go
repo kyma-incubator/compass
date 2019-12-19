@@ -132,14 +132,14 @@ func Test_FilterQuery_Intersection(t *testing.T) {
 			Name:                 "[Scenarios] Query for label assigned with value",
 			ReturnSetCombination: IntersectSet,
 			FilterInput:          []*labelfilter.LabelFilter{&filterScenariosWithFooValues},
-			ExpectedQueryFilter:  stmtPrefix + ` AND "key" = '` + filterScenariosWithFooValues.Key + `' AND "value" @> '["foo"]'`,
+			ExpectedQueryFilter:  stmtPrefix + ` AND "key" = '` + filterScenariosWithFooValues.Key + `' AND "value" ?| array['foo']`,
 			ExpectedError:        nil,
 		}, {
 			Name:                 "[Scenarios] Query for label assigned with values",
 			ReturnSetCombination: IntersectSet,
 			FilterInput:          []*labelfilter.LabelFilter{&filterScenariosWithFooValues, &filterScenariosWithbarPongValues},
-			ExpectedQueryFilter: stmtPrefix + ` AND "key" = '` + filterScenariosWithFooValues.Key + `' AND "value" @> '["foo"]'` +
-				` INTERSECT ` + stmtPrefix + ` AND "key" = '` + filterScenariosWithbarPongValues.Key + `' AND "value" @> '["bar pong"]'`,
+			ExpectedQueryFilter: stmtPrefix + ` AND "key" = '` + filterScenariosWithFooValues.Key + `' AND "value" ?| array['foo']` +
+				` INTERSECT ` + stmtPrefix + ` AND "key" = '` + filterScenariosWithbarPongValues.Key + `' AND "value" ?| array['bar pong']`,
 			ExpectedError: nil,
 		},
 	}

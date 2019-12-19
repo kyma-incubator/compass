@@ -38,5 +38,4 @@ func TestScopesContext(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, givenScopes, actual)
 	})
-
 }

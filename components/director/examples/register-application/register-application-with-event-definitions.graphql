@@ -46,6 +46,9 @@ mutation {
     name
     description
     labels
+    eventingConfiguration {
+      defaultURL
+    }
     status {
       condition
       timestamp

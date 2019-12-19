@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/google/uuid"
@@ -165,7 +167,7 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, page
 		return nil, errors.New("runtime does not exist")
 	}
 
-	label, err := s.labelRepo.GetByKey(ctx, tenantID, model.RuntimeLabelableObject, runtimeID.String(), model.ScenariosKey)
+	scenariosLabel, err := s.labelRepo.GetByKey(ctx, tenantID, model.RuntimeLabelableObject, runtimeID.String(), model.ScenariosKey)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return &model.ApplicationPage{
@@ -177,7 +179,7 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, page
 		return nil, errors.Wrap(err, "while getting scenarios for runtime")
 	}
 
-	scenarios, err := getScenariosValues(label.Value)
+	scenarios, err := label.ValueToStringsSlice(scenariosLabel.Value)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting scenarios labels")
 	}
@@ -546,24 +548,6 @@ func (s *service) createFetchRequest(ctx context.Context, tenant string, in *mod
 	}
 
 	return &id, nil
-}
-
-func getScenariosValues(labels interface{}) ([]string, error) {
-	tmpScenarios, ok := labels.([]interface{})
-	if !ok {
-		return nil, errors.New("Cannot convert scenario labels to array of string")
-	}
-
-	var scenarios []string
-	for _, label := range tmpScenarios {
-		scenario, ok := label.(string)
-		if !ok {
-			return nil, errors.New("Cannot convert scenario label to string")
-		}
-		scenarios = append(scenarios, scenario)
-	}
-
-	return scenarios, nil
 }
 
 func createLabel(key string, value string, objectID string) *model.LabelInput {

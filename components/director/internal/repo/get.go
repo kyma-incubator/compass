@@ -15,11 +15,11 @@ import (
 )
 
 type SingleGetter interface {
-	Get(ctx context.Context, tenant string, conditions Conditions, dest interface{}) error
+	Get(ctx context.Context, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error
 }
 
 type SingleGetterGlobal interface {
-	GetGlobal(ctx context.Context, conditions Conditions, dest interface{}) error
+	GetGlobal(ctx context.Context, conditions Conditions, orderByParams OrderByParams, dest interface{}) error
 }
 
 type universalSingleGetter struct {
@@ -43,15 +43,15 @@ func NewSingleGetterGlobal(tableName string, selectedColumns []string) SingleGet
 	}
 }
 
-func (g *universalSingleGetter) Get(ctx context.Context, tenant string, conditions Conditions, dest interface{}) error {
-	return g.unsafeGet(ctx, str.Ptr(tenant), conditions, dest)
+func (g *universalSingleGetter) Get(ctx context.Context, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
+	return g.unsafeGet(ctx, str.Ptr(tenant), conditions, orderByParams, dest)
 }
 
-func (g *universalSingleGetter) GetGlobal(ctx context.Context, conditions Conditions, dest interface{}) error {
-	return g.unsafeGet(ctx, nil, conditions, dest)
+func (g *universalSingleGetter) GetGlobal(ctx context.Context, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
+	return g.unsafeGet(ctx, nil, conditions, orderByParams, dest)
 }
 
-func (g *universalSingleGetter) unsafeGet(ctx context.Context, tenant *string, conditions Conditions, dest interface{}) error {
+func (g *universalSingleGetter) unsafeGet(ctx context.Context, tenant *string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
 	if dest == nil {
 		return errors.New("item cannot be nil")
 	}
@@ -77,6 +77,10 @@ func (g *universalSingleGetter) unsafeGet(ctx context.Context, tenant *string, c
 	err = writeEnumeratedConditions(&stmtBuilder, startIdx, conditions)
 	if err != nil {
 		return errors.Wrap(err, "while writing enumerated conditions")
+	}
+	err = writeOrderByPart(&stmtBuilder, orderByParams)
+	if err != nil {
+		return errors.Wrap(err, "while writing order by part")
 	}
 	allArgs := getAllArgs(tenant, conditions)
 	err = persist.Get(dest, stmtBuilder.String(), allArgs...)
