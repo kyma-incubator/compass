@@ -489,3 +489,13 @@ func fixRegisterApplicationFromTemplate(applicationFromTemplateInputInGQL string
 			}`,
 			applicationFromTemplateInputInGQL, tc.gqlFieldsProvider.ForApplication()))
 }
+
+func fixSetDefaultEventingForApplication(appID string, runtimeID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: setDefaultEventingForApplication(runtimeID: "%s", appID: "%s") {
+					%s
+				}
+			}`,
+			runtimeID, appID, tc.gqlFieldsProvider.ForEventingConfiguration()))
+}
