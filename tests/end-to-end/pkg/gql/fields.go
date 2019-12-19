@@ -242,13 +242,13 @@ func (fp *GqlFieldsProvider) ForIntegrationSystem() string {
 		auths {%s}`, fp.ForSystemAuth())
 }
 
-func (fp *GqlFieldsProvider) ForPlaceholders() interface{} {
+func (fp *GqlFieldsProvider) ForPlaceholders() string {
 	return `
 		name
 		description`
 }
 
-func (fp *GqlFieldsProvider) ForEventingConfiguration() interface{} {
+func (fp *GqlFieldsProvider) ForEventingConfiguration() string {
 	return `
 		defaultURL`
 }
