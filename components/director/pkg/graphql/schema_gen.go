@@ -2997,13 +2997,11 @@ type Query {
 type Mutation {
 	"""
 	**Examples**
-	- [delete default eventing for application](examples/register-application/delete-default-eventing-for-application.graphql)
 	- [register application with api definitions](examples/register-application/register-application-with-api-definitions.graphql)
 	- [register application with documents](examples/register-application/register-application-with-documents.graphql)
 	- [register application with event definitions](examples/register-application/register-application-with-event-definitions.graphql)
 	- [register application with webhooks](examples/register-application/register-application-with-webhooks.graphql)
 	- [register application](examples/register-application/register-application.graphql)
-	- [set default eventing for application](examples/register-application/set-default-eventing-for-application.graphql)
 	"""
 	registerApplication(in: ApplicationRegisterInput! @validate): Application! @hasScopes(path: "graphql.mutation.registerApplication")
 	"""
