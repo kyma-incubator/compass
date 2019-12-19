@@ -11,18 +11,18 @@ type AppConverter struct {
 }
 
 // CreateInputGQLToJSON provides a mock function with given fields: in
-func (_m *AppConverter) CreateInputGQLToJSON(in *graphql.ApplicationCreateInput) (string, error) {
+func (_m *AppConverter) CreateInputGQLToJSON(in *graphql.ApplicationRegisterInput) (string, error) {
 	ret := _m.Called(in)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(*graphql.ApplicationCreateInput) string); ok {
+	if rf, ok := ret.Get(0).(func(*graphql.ApplicationRegisterInput) string); ok {
 		r0 = rf(in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*graphql.ApplicationCreateInput) error); ok {
+	if rf, ok := ret.Get(1).(func(*graphql.ApplicationRegisterInput) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)

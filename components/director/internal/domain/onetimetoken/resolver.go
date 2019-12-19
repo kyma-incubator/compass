@@ -2,6 +2,8 @@ package onetimetoken
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
@@ -29,7 +31,7 @@ func NewTokenResolver(transact persistence.Transactioner, svc TokenService, conv
 	return &Resolver{transact: transact, svc: svc, conv: conv}
 }
 
-func (r *Resolver) GenerateOneTimeTokenForRuntime(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
+func (r *Resolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -50,7 +52,7 @@ func (r *Resolver) GenerateOneTimeTokenForRuntime(ctx context.Context, id string
 	return &gqlToken, nil
 }
 
-func (r *Resolver) GenerateOneTimeTokenForApplication(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
+func (r *Resolver) RequestOneTimeTokenForApplication(ctx context.Context, id string) (*graphql.OneTimeToken, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -69,4 +71,34 @@ func (r *Resolver) GenerateOneTimeTokenForApplication(ctx context.Context, id st
 	}
 	gqlToken := r.conv.ToGraphQL(token)
 	return &gqlToken, nil
+}
+
+func (r *Resolver) RawEncoded(ctx context.Context, obj *graphql.OneTimeToken) (*string, error) {
+	if obj == nil {
+		return nil, errors.New("Token was nil")
+	}
+
+	rawJSON, err := json.Marshal(obj)
+	if err != nil {
+		return nil, errors.Wrap(err, "while marshalling object to JSON")
+	}
+
+	rawBaseEncoded := base64.StdEncoding.EncodeToString(rawJSON)
+
+	return &rawBaseEncoded, nil
+}
+
+func (r *Resolver) Raw(ctx context.Context, obj *graphql.OneTimeToken) (*string, error) {
+	if obj == nil {
+		return nil, errors.New("Token was nil")
+	}
+
+	rawJSON, err := json.Marshal(obj)
+	if err != nil {
+		return nil, errors.Wrap(err, "while marshalling object to JSON")
+	}
+
+	rawJSONStr := string(rawJSON)
+
+	return &rawJSONStr, nil
 }

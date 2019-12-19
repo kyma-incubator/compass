@@ -2,7 +2,7 @@
 
 > **NOTE**: This document currently contains changes in API that are not yet implemented:
 >- Label input in ApplicationRegisterInput
->- Updated mutation names, such as `register` and `unregisterApplication`
+
 
 Managing Applications can be passed on some external system, to remove from Applications the burden of integration with Compass.
 Because of that [Integration System](./components.md#Integration-System) was introduced.
@@ -23,8 +23,8 @@ input ApplicationRegisterInput {
     labels: Labels
     webhooks: [WebhookInput!]
     healthCheckURL: String
-    apis: [APIDefinitionInput!]
-    eventAPIs: [EventAPIDefinitionInput!]
+    apiDefinitions: [APIDefinitionInput!]
+    eventDefinitions: [EventDefinitionInput!]
     documents: [DocumentInput!]
     integrationSystemID: ID
 }
@@ -72,7 +72,7 @@ mutation {
 ```
 
 Thanks to that,  Integration System can easily fetch all dependant Applications by querying them by label.
-Then, Integration System is responsible for updating Application details, like registering API and events.
+Then, Integration System is responsible for updating Application details, like registering API and events definitions.
 Given Integration System has privileges for modifying only Applications with matching `integrationSystemID`, so it cannot
 modify Applications managed manually or managed by other Integration System.
 

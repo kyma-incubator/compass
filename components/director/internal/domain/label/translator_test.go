@@ -12,16 +12,20 @@ func Test_ExtractValueFromJSONPath_WithValidInput(t *testing.T) {
 	testCases := []struct {
 		Name     string
 		Input    string
-		Expected string
+		Expected []string
 	}{
 		{
 			Name:     "Single word",
 			Input:    `$[*] ? (@ == "dd")`,
-			Expected: "dd",
+			Expected: []string{"dd"},
 		}, {
-			Name:     "Separated with space",
+			Name:     "Single with space",
 			Input:    `$[*] ? (@ == "aa cc")`,
-			Expected: "aa cc",
+			Expected: []string{"aa cc"},
+		}, {
+			Name:     "Many words",
+			Input:    `$[*] ? (@ == "aacc" || @ == "bbee")`,
+			Expected: []string{"aacc", "bbee"},
 		},
 	}
 
@@ -29,7 +33,7 @@ func Test_ExtractValueFromJSONPath_WithValidInput(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			extractedVal, err := ExtractValueFromJSONPath(testCase.Input)
 			require.NotNil(t, extractedVal)
-			assert.Equal(t, testCase.Expected, *extractedVal)
+			assert.Equal(t, testCase.Expected, extractedVal)
 			assert.NoError(t, err)
 		})
 	}

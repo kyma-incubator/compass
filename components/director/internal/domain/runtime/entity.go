@@ -11,12 +11,13 @@ type runtimeStatusCondition string
 
 // Runtime struct represents database entity for Runtime
 type Runtime struct {
-	ID              string         `db:"id"`
-	TenantID        string         `db:"tenant_id"`
-	Name            string         `db:"name"`
-	Description     sql.NullString `db:"description"`
-	StatusCondition string         `db:"status_condition"`
-	StatusTimestamp time.Time      `db:"status_timestamp"`
+	ID                string         `db:"id"`
+	TenantID          string         `db:"tenant_id"`
+	Name              string         `db:"name"`
+	Description       sql.NullString `db:"description"`
+	StatusCondition   string         `db:"status_condition"`
+	StatusTimestamp   time.Time      `db:"status_timestamp"`
+	CreationTimestamp time.Time      `db:"creation_timestamp"`
 }
 
 // EntityFromRuntimeModel converts Runtime model to Runtime entity
@@ -30,12 +31,13 @@ func EntityFromRuntimeModel(model *model.Runtime) (*Runtime, error) {
 	}
 
 	return &Runtime{
-		ID:              model.ID,
-		TenantID:        model.Tenant,
-		Name:            model.Name,
-		Description:     nullDescription,
-		StatusCondition: string(model.Status.Condition),
-		StatusTimestamp: model.Status.Timestamp,
+		ID:                model.ID,
+		TenantID:          model.Tenant,
+		Name:              model.Name,
+		Description:       nullDescription,
+		StatusCondition:   string(model.Status.Condition),
+		StatusTimestamp:   model.Status.Timestamp,
+		CreationTimestamp: model.CreationTimestamp,
 	}, nil
 }
 
@@ -56,5 +58,6 @@ func (e Runtime) ToModel() (*model.Runtime, error) {
 			Condition: model.RuntimeStatusCondition(e.StatusCondition),
 			Timestamp: e.StatusTimestamp,
 		},
+		CreationTimestamp: e.CreationTimestamp,
 	}, nil
 }

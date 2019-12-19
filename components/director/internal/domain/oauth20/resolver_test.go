@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestResolver_CommonGenerateClientCredentialsSuccess(t *testing.T) {
+func TestResolver_CommonRequestClientCredentialsSuccess(t *testing.T) {
 	// Given
 	id := "foo"
 	clientID := "clientid"
@@ -57,7 +57,7 @@ func TestResolver_CommonGenerateClientCredentialsSuccess(t *testing.T) {
 				return isSvc
 			},
 			Method: func(resolver *oauth20.Resolver, ctx context.Context, id string) (*graphql.SystemAuth, error) {
-				return resolver.GenerateClientCredentialsForRuntime(ctx, id)
+				return resolver.RequestClientCredentialsForRuntime(ctx, id)
 			},
 		},
 		{
@@ -78,7 +78,7 @@ func TestResolver_CommonGenerateClientCredentialsSuccess(t *testing.T) {
 				return isSvc
 			},
 			Method: func(resolver *oauth20.Resolver, ctx context.Context, id string) (*graphql.SystemAuth, error) {
-				return resolver.GenerateClientCredentialsForApplication(ctx, id)
+				return resolver.RequestClientCredentialsForApplication(ctx, id)
 			},
 		},
 		{
@@ -99,7 +99,7 @@ func TestResolver_CommonGenerateClientCredentialsSuccess(t *testing.T) {
 				return isSvc
 			},
 			Method: func(resolver *oauth20.Resolver, ctx context.Context, id string) (*graphql.SystemAuth, error) {
-				return resolver.GenerateClientCredentialsForIntegrationSystem(ctx, id)
+				return resolver.RequestClientCredentialsForIntegrationSystem(ctx, id)
 			},
 		},
 	}
@@ -146,7 +146,7 @@ func TestResolver_CommonGenerateClientCredentialsSuccess(t *testing.T) {
 	}
 }
 
-func TestResolver_CommonGenerateClientCredentialsError(t *testing.T) {
+func TestResolver_CommonRequestClientCredentialsError(t *testing.T) {
 	// Given
 	id := "foo"
 	objType := model.RuntimeReference
@@ -366,7 +366,7 @@ func TestResolver_CommonGenerateClientCredentialsError(t *testing.T) {
 			resolver := oauth20.NewResolver(transact, svc, nil, rtmSvc, nil, systemAuthSvc, nil)
 
 			// When
-			_, err := resolver.GenerateClientCredentialsForRuntime(context.TODO(), id)
+			_, err := resolver.RequestClientCredentialsForRuntime(context.TODO(), id)
 
 			// Then
 			require.Error(t, err)

@@ -44,14 +44,15 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 		name
 		description
 		labels
+		eventingConfiguration { defaultURL }
 		status {condition timestamp}
 		webhooks {%s}
 		healthCheckURL
-		apis {%s}
-		eventAPIs {%s}
+		apiDefinitions {%s}
+		eventDefinitions {%s}
 		documents {%s}
 		auths {%s}
-	`, fp.ForWebhooks(), fp.Page(fp.ForAPIDefinition(ctx...)), fp.Page(fp.ForEventAPI()), fp.Page(fp.ForDocument()), fp.ForSystemAuth())
+	`, fp.ForWebhooks(), fp.Page(fp.ForAPIDefinition(ctx...)), fp.Page(fp.ForEventDefinition()), fp.Page(fp.ForDocument()), fp.ForSystemAuth())
 }
 
 func (fp *GqlFieldsProvider) ForApplicationTemplate(ctx ...FieldCtx) string {
@@ -127,7 +128,7 @@ func (fp *GqlFieldsProvider) ForPageInfo() string {
 		hasNextPage`
 }
 
-func (fp *GqlFieldsProvider) ForEventAPI() string {
+func (fp *GqlFieldsProvider) ForEventDefinition() string {
 	return fmt.Sprintf(`
 			id
 			applicationID
@@ -208,7 +209,9 @@ func (fp *GqlFieldsProvider) ForRuntime() string {
 		description
 		labels 
 		status {condition timestamp}
-		auths {%s}`, fp.ForSystemAuth())
+		metadata { creationTimestamp }
+		auths {%s}
+		eventingConfiguration { defaultURL }`, fp.ForSystemAuth())
 }
 
 func (fp *GqlFieldsProvider) ForApplicationLabel() string {
@@ -226,7 +229,9 @@ func (fp *GqlFieldsProvider) ForLabelDefinition() string {
 func (fp *GqlFieldsProvider) ForOneTimeToken() string {
 	return `
 		token
-		connectorURL`
+		connectorURL
+		raw
+		rawEncoded`
 }
 
 func (fp *GqlFieldsProvider) ForIntegrationSystem() string {

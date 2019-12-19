@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/google/uuid"
@@ -18,7 +19,7 @@ import (
 
 //go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
 type ApplicationService interface {
-	Create(ctx context.Context, in model.ApplicationCreateInput) (string, error)
+	Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error)
 	Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error
 	Get(ctx context.Context, id string) (*model.Application, error)
 	Delete(ctx context.Context, id string) error
@@ -34,7 +35,7 @@ type ApplicationService interface {
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
 	MultipleToGraphQL(in []*model.Application) []*graphql.Application
-	CreateInputFromGraphQL(in graphql.ApplicationCreateInput) model.ApplicationCreateInput
+	CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) model.ApplicationRegisterInput
 	UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) model.ApplicationUpdateInput
 }
 
@@ -56,22 +57,28 @@ type APIConverter interface {
 	InputFromGraphQL(in *graphql.APIDefinitionInput) *model.APIDefinitionInput
 }
 
-//go:generate mockery -name=EventAPIService -output=automock -outpkg=automock -case=underscore
-type EventAPIService interface {
-	Get(ctx context.Context, id string) (*model.EventAPIDefinition, error)
-	GetForApplication(ctx context.Context, id string, applicationID string) (*model.EventAPIDefinition, error)
-	List(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.EventAPIDefinitionPage, error)
-	Create(ctx context.Context, applicationID string, in model.EventAPIDefinitionInput) (string, error)
-	Update(ctx context.Context, id string, in model.EventAPIDefinitionInput) error
+//go:generate mockery -name=EventDefinitionService -output=automock -outpkg=automock -case=underscore
+type EventDefinitionService interface {
+	Get(ctx context.Context, id string) (*model.EventDefinition, error)
+	GetForApplication(ctx context.Context, id string, applicationID string) (*model.EventDefinition, error)
+	List(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
+	Create(ctx context.Context, applicationID string, in model.EventDefinitionInput) (string, error)
+	Update(ctx context.Context, id string, in model.EventDefinitionInput) error
 	Delete(ctx context.Context, id string) error
 }
 
 //go:generate mockery -name=EventAPIConverter -output=automock -outpkg=automock -case=underscore
 type EventAPIConverter interface {
-	ToGraphQL(in *model.EventAPIDefinition) *graphql.EventAPIDefinition
-	MultipleToGraphQL(in []*model.EventAPIDefinition) []*graphql.EventAPIDefinition
-	MultipleInputFromGraphQL(in []*graphql.EventAPIDefinitionInput) []*model.EventAPIDefinitionInput
-	InputFromGraphQL(in *graphql.EventAPIDefinitionInput) *model.EventAPIDefinitionInput
+	ToGraphQL(in *model.EventDefinition) *graphql.EventDefinition
+	MultipleToGraphQL(in []*model.EventDefinition) []*graphql.EventDefinition
+	MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) []*model.EventDefinitionInput
+	InputFromGraphQL(in *graphql.EventDefinitionInput) *model.EventDefinitionInput
+}
+
+//go:generate mockery -name=EventingService -output=automock -outpkg=automock -case=underscore
+type EventingService interface {
+	DeleteDefaultForApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error)
+	GetForApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error)
 }
 
 //go:generate mockery -name=DocumentService -output=automock -outpkg=automock -case=underscore
@@ -117,6 +124,12 @@ type OAuth20Service interface {
 	DeleteMultipleClientCredentials(ctx context.Context, auths []model.SystemAuth) error
 }
 
+//go:generate mockery -name=RuntimeService -output=automock -outpkg=automock -case=underscore
+type RuntimeService interface {
+	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
+	GetLabel(ctx context.Context, runtimeID string, key string) (*model.Label, error)
+}
+
 type Resolver struct {
 	transact persistence.Transactioner
 
@@ -124,51 +137,51 @@ type Resolver struct {
 	appConverter ApplicationConverter
 
 	apiSvc      APIService
-	eventAPISvc EventAPIService
+	eventDefSvc EventDefinitionService
 	webhookSvc  WebhookService
 	documentSvc DocumentService
-	sysAuthSvc  SystemAuthService
 	oAuth20Svc  OAuth20Service
+	sysAuthSvc  SystemAuthService
 
 	documentConverter DocumentConverter
 	webhookConverter  WebhookConverter
 	apiConverter      APIConverter
 	eventApiConverter EventAPIConverter
 	sysAuthConv       SystemAuthConverter
-	defaultEventURL   string
+	eventingSvc       EventingService
 }
 
 func NewResolver(transact persistence.Transactioner,
 	svc ApplicationService,
 	apiSvc APIService,
-	eventAPISvc EventAPIService,
+	eventDefSrv EventDefinitionService,
 	documentSvc DocumentService,
 	webhookSvc WebhookService,
-	sysAuthSvc SystemAuthService,
 	oAuth20Svc OAuth20Service,
+	sysAuthSvc SystemAuthService,
 	appConverter ApplicationConverter,
 	documentConverter DocumentConverter,
 	webhookConverter WebhookConverter,
 	apiConverter APIConverter,
 	eventAPIConverter EventAPIConverter,
 	sysAuthConv SystemAuthConverter,
-	defaultEventURL string) *Resolver {
+	eventingSvc EventingService) *Resolver {
 	return &Resolver{
 		transact:          transact,
 		appSvc:            svc,
 		apiSvc:            apiSvc,
-		eventAPISvc:       eventAPISvc,
+		eventDefSvc:       eventDefSrv,
 		documentSvc:       documentSvc,
 		webhookSvc:        webhookSvc,
-		sysAuthSvc:        sysAuthSvc,
 		oAuth20Svc:        oAuth20Svc,
+		sysAuthSvc:        sysAuthSvc,
 		appConverter:      appConverter,
 		documentConverter: documentConverter,
 		webhookConverter:  webhookConverter,
 		apiConverter:      apiConverter,
 		eventApiConverter: eventAPIConverter,
 		sysAuthConv:       sysAuthConv,
-		defaultEventURL:   defaultEventURL,
+		eventingSvc:       eventingSvc,
 	}
 }
 
@@ -287,7 +300,7 @@ func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string,
 	}, nil
 }
 
-func (r *Resolver) CreateApplication(ctx context.Context, in graphql.ApplicationCreateInput) (*graphql.Application, error) {
+func (r *Resolver) RegisterApplication(ctx context.Context, in graphql.ApplicationRegisterInput) (*graphql.Application, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -345,7 +358,7 @@ func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.
 
 	return gqlApp, nil
 }
-func (r *Resolver) DeleteApplication(ctx context.Context, id string) (*graphql.Application, error) {
+func (r *Resolver) UnregisterApplication(ctx context.Context, id string) (*graphql.Application, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -356,6 +369,15 @@ func (r *Resolver) DeleteApplication(ctx context.Context, id string) (*graphql.A
 
 	app, err := r.appSvc.Get(ctx, id)
 	if err != nil {
+		return nil, err
+	}
+
+	appID, err := uuid.Parse(app.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing application ID as UUID")
+	}
+
+	if _, err = r.eventingSvc.DeleteDefaultForApplication(ctx, appID); err != nil {
 		return nil, err
 	}
 
@@ -448,7 +470,7 @@ func (r *Resolver) DeleteApplicationLabel(ctx context.Context, applicationID str
 	}, nil
 }
 
-func (r *Resolver) Apis(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
+func (r *Resolver) ApiDefinitions(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -489,7 +511,7 @@ func (r *Resolver) Apis(ctx context.Context, obj *graphql.Application, group *st
 		},
 	}, nil
 }
-func (r *Resolver) EventAPIs(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.EventAPIDefinitionPage, error) {
+func (r *Resolver) EventDefinitions(ctx context.Context, obj *graphql.Application, group *string, first *int, after *graphql.PageCursor) (*graphql.EventDefinitionPage, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -506,7 +528,7 @@ func (r *Resolver) EventAPIs(ctx context.Context, obj *graphql.Application, grou
 		return nil, errors.New("missing required parameter 'first'")
 	}
 
-	eventAPIPage, err := r.eventAPISvc.List(ctx, obj.ID, *first, cursor)
+	eventAPIPage, err := r.eventDefSvc.List(ctx, obj.ID, *first, cursor)
 	if err != nil {
 		return nil, err
 	}
@@ -519,7 +541,7 @@ func (r *Resolver) EventAPIs(ctx context.Context, obj *graphql.Application, grou
 	gqlApis := r.eventApiConverter.MultipleToGraphQL(eventAPIPage.Data)
 	totalCount := len(gqlApis)
 
-	return &graphql.EventAPIDefinitionPage{
+	return &graphql.EventDefinitionPage{
 		Data:       gqlApis,
 		TotalCount: totalCount,
 		PageInfo: &graphql.PageInfo{
@@ -530,7 +552,7 @@ func (r *Resolver) EventAPIs(ctx context.Context, obj *graphql.Application, grou
 	}, nil
 }
 
-func (r *Resolver) API(ctx context.Context, id string, application *graphql.Application) (*graphql.APIDefinition, error) {
+func (r *Resolver) APIDefinition(ctx context.Context, id string, application *graphql.Application) (*graphql.APIDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -555,7 +577,7 @@ func (r *Resolver) API(ctx context.Context, id string, application *graphql.Appl
 	return r.apiConverter.ToGraphQL(api), nil
 }
 
-func (r *Resolver) EventAPI(ctx context.Context, id string, application *graphql.Application) (*graphql.EventAPIDefinition, error) {
+func (r *Resolver) EventDefinition(ctx context.Context, id string, application *graphql.Application) (*graphql.EventDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -564,7 +586,7 @@ func (r *Resolver) EventAPI(ctx context.Context, id string, application *graphql
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	eventAPI, err := r.eventAPISvc.GetForApplication(ctx, id, application.ID)
+	eventAPI, err := r.eventDefSvc.GetForApplication(ctx, id, application.ID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, nil
@@ -646,7 +668,7 @@ func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*g
 	return gqlWebhooks, nil
 }
 
-func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *string) (graphql.Labels, error) {
+func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *string) (*graphql.Labels, error) {
 	if obj == nil {
 		return nil, errors.New("Application cannot be empty")
 	}
@@ -662,7 +684,7 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *st
 	itemMap, err := r.appSvc.ListLabels(ctx, obj.ID)
 	if err != nil {
 		if strings.Contains(err.Error(), "doesn't exist") {
-			return graphql.Labels{}, nil
+			return nil, nil
 		}
 
 		return nil, err
@@ -679,7 +701,9 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *st
 		resultLabels[label.Key] = label.Value
 	}
 
-	return resultLabels, nil
+	var gqlLabels graphql.Labels = resultLabels
+
+	return &gqlLabels, nil
 }
 
 func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*graphql.SystemAuth, error) {
@@ -713,12 +737,32 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 	return out, nil
 }
 
-func (r *Resolver) EventConfiguration(ctx context.Context, obj *graphql.Application) (*graphql.ApplicationEventConfiguration, error) {
-	if r.defaultEventURL == "" {
-		return nil, nil
+func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Application) (*graphql.ApplicationEventingConfiguration, error) {
+	if obj == nil {
+		return nil, errors.New("Application cannot be empty")
 	}
-	return &graphql.ApplicationEventConfiguration{
-		DefaultURL: r.defaultEventURL,
-	}, nil
 
+	appID, err := uuid.Parse(obj.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing application ID as UUID")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, errors.Wrap(err, "while opening the transaction")
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	eventingCfg, err := r.eventingSvc.GetForApplication(ctx, appID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching eventing cofiguration for application")
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, errors.Wrap(err, "while commiting the transaction")
+	}
+
+	return eventing.ApplicationEventingConfigurationToGraphQL(eventingCfg), nil
 }

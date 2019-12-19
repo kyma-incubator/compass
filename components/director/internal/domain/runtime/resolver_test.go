@@ -16,6 +16,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
+	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -32,8 +33,8 @@ var contextParam = mock.MatchedBy(func(ctx context.Context) bool {
 
 func TestResolver_CreateRuntime(t *testing.T) {
 	// given
-	modelRuntime := fixModelRuntime("foo", "tenant-foo", "Foo", "Lorem ipsum")
-	gqlRuntime := fixGQLRuntime("foo", "Foo", "Lorem ipsum")
+	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Lorem ipsum")
+	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Lorem ipsum")
 	testErr := errors.New("Test error")
 
 	desc := "Lorem ipsum"
@@ -151,26 +152,24 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, converter, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, converter, nil, nil)
 
 			// when
-			result, err := resolver.CreateRuntime(context.TODO(), testCase.Input)
+			result, err := resolver.RegisterRuntime(context.TODO(), testCase.Input)
 
 			// then
 			assert.Equal(t, testCase.ExpectedRuntime, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
-			svc.AssertExpectations(t)
-			converter.AssertExpectations(t)
-			persistTx.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, svc, converter, transact, persistTx)
 		})
 	}
 }
 
 func TestResolver_UpdateRuntime(t *testing.T) {
 	// given
-	modelRuntime := fixModelRuntime("foo", "tenant-foo", "Foo", "Lorem ipsum")
-	gqlRuntime := fixGQLRuntime("foo", "Foo", "Lorem ipsum")
+	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Lorem ipsum")
+	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Lorem ipsum")
 	testErr := errors.New("Test error")
 
 	desc := "Lorem ipsum"
@@ -292,7 +291,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, converter, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, converter, nil, nil)
 
 			// when
 			result, err := resolver.UpdateRuntime(context.TODO(), testCase.RuntimeID, testCase.Input)
@@ -301,17 +300,15 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 			assert.Equal(t, testCase.ExpectedRuntime, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
-			svc.AssertExpectations(t)
-			converter.AssertExpectations(t)
-			persistTx.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, svc, converter, transact, persistTx)
 		})
 	}
 }
 
 func TestResolver_DeleteRuntime(t *testing.T) {
 	// given
-	modelRuntime := fixModelRuntime("foo", "tenant-foo", "Foo", "Bar")
-	gqlRuntime := fixGQLRuntime("foo", "Foo", "Bar")
+	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Bar")
+	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Bar")
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 	testAuths := fixOAuths()
@@ -522,7 +519,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			sysAuthSvc := testCase.SysAuthServiceFn()
 			oAuth20Svc := testCase.OAuth20ServiceFn()
 
-			resolver := runtime.NewResolver(transact, svc, sysAuthSvc, oAuth20Svc, converter, nil)
+			resolver := runtime.NewResolver(transact, svc, sysAuthSvc, oAuth20Svc, converter, nil, nil)
 
 			// when
 			result, err := resolver.DeleteRuntime(context.TODO(), testCase.InputID)
@@ -535,20 +532,15 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				assert.NoError(t, err)
 			}
 
-			svc.AssertExpectations(t)
-			converter.AssertExpectations(t)
-			persistTx.AssertExpectations(t)
-			transact.AssertExpectations(t)
-			sysAuthSvc.AssertExpectations(t)
-			oAuth20Svc.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, svc, converter, transact, persistTx, sysAuthSvc, oAuth20Svc)
 		})
 	}
 }
 
 func TestResolver_Runtime(t *testing.T) {
 	// given
-	modelRuntime := fixModelRuntime("foo", "tenant-foo", "Foo", "Bar")
-	gqlRuntime := fixGQLRuntime("foo", "Foo", "Bar")
+	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Bar")
+	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Bar")
 	testErr := errors.New("Test error")
 
 	testCases := []struct {
@@ -626,7 +618,7 @@ func TestResolver_Runtime(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, converter, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, converter, nil, nil)
 
 			// when
 			result, err := resolver.Runtime(context.TODO(), testCase.InputID)
@@ -635,9 +627,7 @@ func TestResolver_Runtime(t *testing.T) {
 			assert.Equal(t, testCase.ExpectedRuntime, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
-			svc.AssertExpectations(t)
-			converter.AssertExpectations(t)
-			persistTx.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, svc, converter, transact, persistTx)
 		})
 	}
 }
@@ -645,13 +635,13 @@ func TestResolver_Runtime(t *testing.T) {
 func TestResolver_Runtimes(t *testing.T) {
 	// given
 	modelRuntimes := []*model.Runtime{
-		fixModelRuntime("foo", "tenant-foo", "Foo", "Lorem Ipsum"),
-		fixModelRuntime("bar", "tenant-bar", "Bar", "Lorem Ipsum"),
+		fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Lorem Ipsum"),
+		fixModelRuntime(t, "bar", "tenant-bar", "Bar", "Lorem Ipsum"),
 	}
 
 	gqlRuntimes := []*graphql.Runtime{
-		fixGQLRuntime("foo", "Foo", "Lorem Ipsum"),
-		fixGQLRuntime("bar", "Bar", "Lorem Ipsum"),
+		fixGQLRuntime(t, "foo", "Foo", "Lorem Ipsum"),
+		fixGQLRuntime(t, "bar", "Bar", "Lorem Ipsum"),
 	}
 
 	first := 2
@@ -740,7 +730,7 @@ func TestResolver_Runtimes(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, converter, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, converter, nil, nil)
 
 			// when
 			result, err := resolver.Runtimes(context.TODO(), testCase.InputLabelFilters, testCase.InputFirst, testCase.InputAfter)
@@ -749,9 +739,7 @@ func TestResolver_Runtimes(t *testing.T) {
 			assert.Equal(t, testCase.ExpectedResult, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
-			svc.AssertExpectations(t)
-			converter.AssertExpectations(t)
-			persistTx.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, svc, converter, transact, persistTx)
 		})
 	}
 }
@@ -850,7 +838,7 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, converter, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, converter, nil, nil)
 
 			// when
 			result, err := resolver.SetRuntimeLabel(context.TODO(), testCase.InputRuntimeID, testCase.InputKey, testCase.InputValue)
@@ -859,14 +847,12 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 			assert.Equal(t, testCase.ExpectedLabel, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
-			svc.AssertExpectations(t)
-			converter.AssertExpectations(t)
-			persistTx.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, svc, converter, transact, persistTx)
 		})
 	}
 
 	t.Run("Returns error when Label input validation failed", func(t *testing.T) {
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil)
 
 		// when
 		result, err := resolver.SetRuntimeLabel(context.TODO(), "", "", "")
@@ -997,7 +983,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, converter, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, converter, nil, nil)
 
 			// when
 			result, err := resolver.DeleteRuntimeLabel(context.TODO(), testCase.InputRuntimeID, testCase.InputKey)
@@ -1006,22 +992,19 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			assert.Equal(t, testCase.ExpectedLabel, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
-			svc.AssertExpectations(t)
-			converter.AssertExpectations(t)
-			persistTx.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, svc, converter, transact, persistTx)
 		})
 	}
 }
 
 func TestResolver_Labels(t *testing.T) {
 	// given
-
 	id := "foo"
 	tenant := "tenant"
 	labelKey := "key"
 	labelValue := "val"
 
-	gqlRuntime := fixGQLRuntime(id, "name", "desc")
+	gqlRuntime := fixGQLRuntime(t, id, "name", "desc")
 
 	modelLabels := map[string]*model.Label{
 		"abc": {
@@ -1042,7 +1025,7 @@ func TestResolver_Labels(t *testing.T) {
 		},
 	}
 
-	gqlLabels := graphql.Labels{
+	gqlLabels := &graphql.Labels{
 		labelKey: labelValue,
 		labelKey: labelValue,
 	}
@@ -1056,7 +1039,7 @@ func TestResolver_Labels(t *testing.T) {
 		ServiceFn       func() *automock.RuntimeService
 		InputRuntime    *graphql.Runtime
 		InputKey        string
-		ExpectedResult  graphql.Labels
+		ExpectedResult  *graphql.Labels
 		ExpectedErr     error
 	}{
 		{
@@ -1110,7 +1093,7 @@ func TestResolver_Labels(t *testing.T) {
 			svc := testCase.ServiceFn()
 			transact := testCase.TransactionerFn(persistTx)
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil)
 
 			// when
 			result, err := resolver.Labels(context.TODO(), gqlRuntime, &testCase.InputKey)
@@ -1119,9 +1102,7 @@ func TestResolver_Labels(t *testing.T) {
 			assert.Equal(t, testCase.ExpectedResult, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
-			svc.AssertExpectations(t)
-			transact.AssertExpectations(t)
-			persistTx.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, svc, transact, persistTx)
 		})
 	}
 }
@@ -1132,7 +1113,7 @@ func TestResolver_Auths(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt)
 
-	parentRuntime := fixGQLRuntime("foo", "bar", "baz")
+	parentRuntime := fixGQLRuntime(t, "foo", "bar", "baz")
 
 	modelSysAuths := []model.SystemAuth{
 		fixModelSystemAuth("bar", tnt, parentRuntime.ID, fixModelAuth()),
@@ -1227,7 +1208,7 @@ func TestResolver_Auths(t *testing.T) {
 			sysAuthSvc := testCase.SysAuthSvcFn()
 			sysAuthConv := testCase.SysAuthConvFn()
 
-			resolver := runtime.NewResolver(transact, nil, sysAuthSvc, nil, nil, sysAuthConv)
+			resolver := runtime.NewResolver(transact, nil, sysAuthSvc, nil, nil, sysAuthConv, nil)
 
 			// WHEN
 			result, err := resolver.Auths(ctx, parentRuntime)
@@ -1241,18 +1222,133 @@ func TestResolver_Auths(t *testing.T) {
 			}
 			assert.Equal(t, testCase.ExpectedOutput, result)
 
-			persist.AssertExpectations(t)
-			transact.AssertExpectations(t)
-			sysAuthSvc.AssertExpectations(t)
-			sysAuthConv.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, sysAuthSvc, sysAuthConv, transact, persist)
 		})
 	}
 
 	t.Run("Error when parent object is nil", func(t *testing.T) {
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		result, err := resolver.Auths(context.TODO(), nil)
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Runtime cannot be empty")
+		assert.Nil(t, result)
+	})
+}
+
+func TestResolver_EventingConfiguration(t *testing.T) {
+	// GIVEN
+	tnt := "tnt"
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt)
+
+	runtimeID := uuid.New()
+	gqlRuntime := fixGQLRuntime(t, runtimeID.String(), "bar", "baz")
+
+	testErr := errors.New("this is a test error")
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	defaultEveningURL := "https://eventing.domain.local"
+	modelRuntimeEventingCfg := fixModelRuntimeEventingConfiguration(defaultEveningURL)
+	gqlRuntimeEventingCfg := fixGQLRuntimeEventingConfiguration(defaultEveningURL)
+
+	testCases := []struct {
+		Name            string
+		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		EventingSvcFn   func() *automock.EventingService
+		ExpectedOutput  *graphql.RuntimeEventingConfiguration
+		ExpectedError   error
+	}{
+		{
+			Name:            "Success",
+			TransactionerFn: txGen.ThatSucceeds,
+			EventingSvcFn: func() *automock.EventingService {
+				eventingSvc := &automock.EventingService{}
+				eventingSvc.On("GetForRuntime", txtest.CtxWithDBMatcher(), runtimeID).Return(modelRuntimeEventingCfg, nil).Once()
+
+				return eventingSvc
+			},
+			ExpectedOutput: gqlRuntimeEventingCfg,
+			ExpectedError:  nil,
+		}, {
+			Name:            "Error when getting the configuration for runtime failed",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			EventingSvcFn: func() *automock.EventingService {
+				eventingSvc := &automock.EventingService{}
+				eventingSvc.On("GetForRuntime", txtest.CtxWithDBMatcher(), runtimeID).Return(nil, testErr).Once()
+
+				return eventingSvc
+			},
+			ExpectedOutput: nil,
+			ExpectedError:  testErr,
+		}, {
+			Name:            "Error when beginning transaction",
+			TransactionerFn: txGen.ThatFailsOnBegin,
+			EventingSvcFn: func() *automock.EventingService {
+				eventingSvc := &automock.EventingService{}
+				return eventingSvc
+			},
+			ExpectedOutput: nil,
+			ExpectedError:  testErr,
+		}, {
+			Name:            "Error when committing transaction",
+			TransactionerFn: txGen.ThatFailsOnCommit,
+			EventingSvcFn: func() *automock.EventingService {
+				eventingSvc := &automock.EventingService{}
+				eventingSvc.On("GetForRuntime", txtest.CtxWithDBMatcher(), runtimeID).Return(modelRuntimeEventingCfg, nil).Once()
+
+				return eventingSvc
+			},
+			ExpectedOutput: nil,
+			ExpectedError:  testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persist, transact := testCase.TransactionerFn()
+			eventingSvc := testCase.EventingSvcFn()
+
+			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, eventingSvc)
+
+			// WHEN
+			result, err := resolver.EventingConfiguration(ctx, gqlRuntime)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedOutput, result)
+
+			mock.AssertExpectationsForObjects(t, eventingSvc, transact, persist)
+		})
+	}
+
+	t.Run("Error when parent object ID is not a valid UUID", func(t *testing.T) {
+		// GIVEN
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil)
+
+		// WHEN
+		result, err := resolver.EventingConfiguration(ctx, &graphql.Runtime{ID: "abc"})
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "while parsing runtime ID as UUID")
+		assert.Nil(t, result)
+	})
+
+	t.Run("Error when parent object is nil", func(t *testing.T) {
+		// GIVEN
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil)
+
+		// WHEN
+		result, err := resolver.EventingConfiguration(context.TODO(), nil)
 
 		// THEN
 		require.Error(t, err)

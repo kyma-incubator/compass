@@ -66,7 +66,7 @@ The Director binary allows to override some configuration parameters. You can sp
 | APP_OAUTH20_CLIENT_ENDPOINT              |                                 | The endpoint for managing OAuth 2.0 clients               |
 | APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT |                                 | The public endpoint for fetching OAuth 2.0 access token   |
 | APP_STATIC_USERS_SRC                     |                                 | The path for static users configuration file              |
-| APP_EVENT_DEFAULT_EVENT_URL              |                                 | The default Event URL                                     |
+
 
 ## Usage
 

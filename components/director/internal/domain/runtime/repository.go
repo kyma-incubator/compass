@@ -16,7 +16,7 @@ import (
 const runtimeTable string = `public.runtimes`
 
 var (
-	runtimeColumns = []string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp"}
+	runtimeColumns = []string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp"}
 	tenantColumn   = "tenant_id"
 )
 
@@ -50,7 +50,36 @@ func (r *pgRepository) Delete(ctx context.Context, tenant string, id string) err
 
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error) {
 	var runtimeEnt Runtime
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, &runtimeEnt); err != nil {
+	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &runtimeEnt); err != nil {
+		return nil, err
+	}
+
+	runtimeModel, err := runtimeEnt.ToModel()
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating runtime model from entity")
+	}
+
+	return runtimeModel, nil
+}
+
+func (r *pgRepository) GetByFiltersAndID(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (*model.Runtime, error) {
+	tenantID, err := uuid.Parse(tenant)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing tenant as UUID")
+	}
+
+	additionalConditions := repo.Conditions{repo.NewEqualCondition("id", id)}
+
+	filterSubquery, err := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while building filter query")
+	}
+	if filterSubquery != "" {
+		additionalConditions = append(additionalConditions, repo.NewInCondition("id", filterSubquery))
+	}
+
+	var runtimeEnt Runtime
+	if err := r.singleGetter.Get(ctx, tenant, additionalConditions, repo.NoOrderBy, &runtimeEnt); err != nil {
 		return nil, err
 	}
 
@@ -124,4 +153,34 @@ func (r *pgRepository) Update(ctx context.Context, item *model.Runtime) error {
 		return errors.Wrap(err, "while creating runtime entity from model")
 	}
 	return r.updater.UpdateSingle(ctx, runtimeEnt)
+}
+
+func (r *pgRepository) GetOldestForFilters(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Runtime, error) {
+	tenantID, err := uuid.Parse(tenant)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing tenant as UUID")
+	}
+
+	var additionalConditions repo.Conditions
+	filterSubquery, err := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while building filter query")
+	}
+	if filterSubquery != "" {
+		additionalConditions = append(additionalConditions, repo.NewInCondition("id", filterSubquery))
+	}
+
+	orderByParams := repo.OrderByParams{repo.NewDescOrderBy("creation_timestamp")}
+
+	var runtimeEnt Runtime
+	if err := r.singleGetter.Get(ctx, tenant, additionalConditions, orderByParams, &runtimeEnt); err != nil {
+		return nil, err
+	}
+
+	runtimeModel, err := runtimeEnt.ToModel()
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating runtime model from entity")
+	}
+
+	return runtimeModel, nil
 }

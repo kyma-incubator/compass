@@ -34,13 +34,13 @@ type ApplicationTemplateConverter interface {
 //go:generate mockery -name=ApplicationConverter -output=automock -outpkg=automock -case=underscore
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
-	CreateInputJSONToGQL(in string) (graphql.ApplicationCreateInput, error)
-	CreateInputFromGraphQL(in graphql.ApplicationCreateInput) model.ApplicationCreateInput
+	CreateInputJSONToGQL(in string) (graphql.ApplicationRegisterInput, error)
+	CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) model.ApplicationRegisterInput
 }
 
 //go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
 type ApplicationService interface {
-	Create(ctx context.Context, in model.ApplicationCreateInput) (string, error)
+	Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error)
 	Get(ctx context.Context, id string) (*model.Application, error)
 }
 

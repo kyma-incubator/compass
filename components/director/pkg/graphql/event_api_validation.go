@@ -6,19 +6,19 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (i EventAPIDefinitionInput) Validate() error {
+func (i EventDefinitionInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Name, validation.Required, inputvalidation.Name),
 		validation.Field(&i.Description, validation.RuneLength(0, shortStringLengthLimit)),
-		validation.Field(&i.Spec, validation.Required),
+		validation.Field(&i.Spec, validation.NilOrNotEmpty),
 		validation.Field(&i.Group, validation.RuneLength(0, groupLengthLimit)),
 		validation.Field(&i.Version, validation.NilOrNotEmpty),
 	)
 }
 
-func (i EventAPISpecInput) Validate() error {
+func (i EventSpecInput) Validate() error {
 	return validation.Errors{
-		"Rule.Type":                  validation.Validate(&i.EventSpecType, validation.Required, validation.In(EventAPISpecTypeAsyncAPI)),
+		"Rule.Type":                  validation.Validate(&i.Type, validation.Required, validation.In(EventSpecTypeAsyncAPI)),
 		"Rule.Format":                validation.Validate(&i.Format, validation.Required, validation.In(SpecFormatYaml, SpecFormatJSON)),
 		"Rule.MatchingTypeAndFormat": i.validateTypeWithMatchingSpecFormat(),
 		"Rule.FetchRequest":          validation.Validate(&i.FetchRequest),
@@ -26,14 +26,14 @@ func (i EventAPISpecInput) Validate() error {
 	}.Filter()
 }
 
-func (i EventAPISpecInput) validateTypeWithMatchingSpecFormat() error {
-	switch i.EventSpecType {
-	case EventAPISpecTypeAsyncAPI:
+func (i EventSpecInput) validateTypeWithMatchingSpecFormat() error {
+	switch i.Type {
+	case EventSpecTypeAsyncAPI:
 		if !i.Format.isOneOf([]SpecFormat{SpecFormatYaml, SpecFormatJSON}) {
-			return errors.Errorf("format %s is not a valid spec format for spec type %s", i.Format, i.EventSpecType)
+			return errors.Errorf("format %s is not a valid spec format for spec type %s", i.Format, i.Type)
 		}
 	default:
-		return errors.Errorf("%s is an invalid spec type", i.EventSpecType)
+		return errors.Errorf("%s is an invalid spec type", i.Type)
 	}
 	return nil
 }

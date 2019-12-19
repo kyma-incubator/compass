@@ -1,5 +1,7 @@
 package model
 
+import "github.com/google/uuid"
+
 type Label struct {
 	ID         string
 	Tenant     string
@@ -33,3 +35,25 @@ const (
 	RuntimeLabelableObject     LabelableObject = "Runtime"
 	ApplicationLabelableObject LabelableObject = "Application"
 )
+
+func NewLabelForRuntime(runtime Runtime, key string, value interface{}) *Label {
+	return &Label{
+		ID:         uuid.New().String(),
+		Tenant:     runtime.Tenant,
+		ObjectType: RuntimeLabelableObject,
+		ObjectID:   runtime.ID,
+		Key:        key,
+		Value:      value,
+	}
+}
+
+func NewLabelForApplication(app Application, key string, value interface{}) *Label {
+	return &Label{
+		ID:         uuid.New().String(),
+		Tenant:     app.Tenant,
+		ObjectType: ApplicationLabelableObject,
+		ObjectID:   app.ID,
+		Key:        key,
+		Value:      value,
+	}
+}

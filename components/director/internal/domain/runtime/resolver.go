@@ -4,8 +4,11 @@ import (
 	"context"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/persistence"
@@ -16,6 +19,16 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
+
+//go:generate mockery -name=EventingService -output=automock -outpkg=automock -case=underscore
+type EventingService interface {
+	GetForRuntime(ctx context.Context, runtimeID uuid.UUID) (*model.RuntimeEventingConfiguration, error)
+}
+
+//go:generate mockery -name=OAuth20Service -output=automock -outpkg=automock -case=underscore
+type OAuth20Service interface {
+	DeleteMultipleClientCredentials(ctx context.Context, auths []model.SystemAuth) error
+}
 
 //go:generate mockery -name=RuntimeService -output=automock -outpkg=automock -case=underscore
 type RuntimeService interface {
@@ -30,11 +43,6 @@ type RuntimeService interface {
 	DeleteLabel(ctx context.Context, runtimeID string, key string) error
 }
 
-//go:generate mockery -name=SystemAuthService -output=automock -outpkg=automock -case=underscore
-type SystemAuthService interface {
-	ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
-}
-
 //go:generate mockery -name=RuntimeConverter -output=automock -outpkg=automock -case=underscore
 type RuntimeConverter interface {
 	ToGraphQL(in *model.Runtime) *graphql.Runtime
@@ -47,9 +55,9 @@ type SystemAuthConverter interface {
 	ToGraphQL(in *model.SystemAuth) *graphql.SystemAuth
 }
 
-//go:generate mockery -name=OAuth20Service -output=automock -outpkg=automock -case=underscore
-type OAuth20Service interface {
-	DeleteMultipleClientCredentials(ctx context.Context, auths []model.SystemAuth) error
+//go:generate mockery -name=SystemAuthService -output=automock -outpkg=automock -case=underscore
+type SystemAuthService interface {
+	ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
 }
 
 type Resolver struct {
@@ -59,9 +67,10 @@ type Resolver struct {
 	converter   RuntimeConverter
 	sysAuthConv SystemAuthConverter
 	oAuth20Svc  OAuth20Service
+	eventingSvc EventingService
 }
 
-func NewResolver(transact persistence.Transactioner, svc RuntimeService, sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc RuntimeService, sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter, eventingSvc EventingService) *Resolver {
 	return &Resolver{
 		transact:    transact,
 		svc:         svc,
@@ -69,6 +78,7 @@ func NewResolver(transact persistence.Transactioner, svc RuntimeService, sysAuth
 		oAuth20Svc:  oAuthSvc,
 		converter:   conv,
 		sysAuthConv: sysAuthConv,
+		eventingSvc: eventingSvc,
 	}
 }
 
@@ -141,7 +151,7 @@ func (r *Resolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, er
 	return r.converter.ToGraphQL(runtime), nil
 }
 
-func (r *Resolver) CreateRuntime(ctx context.Context, in graphql.RuntimeInput) (*graphql.Runtime, error) {
+func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput) (*graphql.Runtime, error) {
 	convertedIn := r.converter.InputFromGraphQL(in)
 
 	tx, err := r.transact.Begin()
@@ -307,7 +317,7 @@ func (r *Resolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key
 	}, nil
 }
 
-func (r *Resolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string) (graphql.Labels, error) {
+func (r *Resolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string) (*graphql.Labels, error) {
 	if obj == nil {
 		return nil, errors.New("Runtime cannot be empty")
 	}
@@ -323,7 +333,7 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string
 	itemMap, err := r.svc.ListLabels(ctx, obj.ID)
 	if err != nil {
 		if strings.Contains(err.Error(), "doesn't exist") { // TODO: Use custom error and check its type
-			return graphql.Labels{}, nil
+			return nil, nil
 		}
 
 		return nil, err
@@ -340,7 +350,8 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string
 		resultLabels[label.Key] = label.Value
 	}
 
-	return resultLabels, nil
+	var gqlLabels graphql.Labels = resultLabels
+	return &gqlLabels, nil
 }
 
 func (r *Resolver) Auths(ctx context.Context, obj *graphql.Runtime) ([]*graphql.SystemAuth, error) {
@@ -373,4 +384,34 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Runtime) ([]*graphql.
 	}
 
 	return out, nil
+}
+
+func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Runtime) (*graphql.RuntimeEventingConfiguration, error) {
+	if obj == nil {
+		return nil, errors.New("Runtime cannot be empty")
+	}
+
+	runtimeID, err := uuid.Parse(obj.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing runtime ID as UUID")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, errors.Wrap(err, "while opening the transaction")
+	}
+	defer r.transact.RollbackUnlessCommited(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	eventingCfg, err := r.eventingSvc.GetForRuntime(ctx, runtimeID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching eventing configuration for runtime")
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, errors.Wrap(err, "while commiting the transaction")
+	}
+
+	return eventing.RuntimeEventingConfigurationToGraphQL(eventingCfg), nil
 }

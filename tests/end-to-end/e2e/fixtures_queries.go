@@ -11,7 +11,7 @@ import (
 )
 
 //Application
-func createApplicationFromInputWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.ApplicationCreateInput) graphql.ApplicationExt {
+func registerApplicationFromInputWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.ApplicationRegisterInput) graphql.ApplicationExt {
 	app, err := createApplicationWithinTenant(t, ctx, gqlClient, tenant, in)
 	require.NoError(t, err)
 	return app
@@ -41,7 +41,7 @@ func addAPIWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Clien
 }
 
 // Integration System
-func createIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, name string) *graphql.IntegrationSystemExt {
+func registerIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, name string) *graphql.IntegrationSystemExt {
 	input := graphql.IntegrationSystemInput{Name: name}
 	in, err := tc.Graphqlizer.IntegrationSystemInputToGQL(input)
 	if err != nil {
@@ -57,14 +57,14 @@ func createIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.
 	return intSys
 }
 
-func deleteIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) {
-	req := fixDeleteIntegrationSystem(id)
+func unregisterIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) {
+	req := fixUnregisterIntegrationSystem(id)
 	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil)
 	require.NoError(t, err)
 }
 
-func deleteIntegrationSystemWithErr(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) {
-	req := fixDeleteIntegrationSystem(id)
+func unregisterIntegrationSystemWithErr(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) {
+	req := fixUnregisterIntegrationSystem(id)
 	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "referenced by it")
@@ -87,21 +87,22 @@ func generateClientCredentialsForIntegrationSystem(t *testing.T, ctx context.Con
 	return systemAuth
 }
 
-func generateOneTimeTokenForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.OneTimeToken {
+func generateOneTimeTokenForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.OneTimeTokenExt {
 	req := fixGenerateOneTimeTokenForApplication(id)
-	oneTimeToken := graphql.OneTimeToken{}
+	oneTimeToken := graphql.OneTimeTokenExt{}
 
 	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &oneTimeToken)
 	require.NoError(t, err)
 
 	require.NotEmpty(t, oneTimeToken.ConnectorURL)
 	require.NotEmpty(t, oneTimeToken.Token)
-
+	require.NotEmpty(t, oneTimeToken.Raw)
+	require.NotEmpty(t, oneTimeToken.RawEncoded)
 	return oneTimeToken
 }
 
-func createApplicationWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.ApplicationCreateInput) (graphql.ApplicationExt, error) {
-	appInputGQL, err := tc.Graphqlizer.ApplicationCreateInputToGQL(in)
+func createApplicationWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.ApplicationRegisterInput) (graphql.ApplicationExt, error) {
+	appInputGQL, err := tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
 
 	createRequest := fixCreateApplicationRequest(appInputGQL)

@@ -5,6 +5,9 @@ query {
     name
     description
     labels
+    eventingConfiguration {
+      defaultURL
+    }
     status {
       condition
       timestamp
@@ -49,7 +52,7 @@ query {
       }
     }
     healthCheckURL
-    apis {
+    apiDefinitions {
       data {
         id
         name
@@ -186,7 +189,7 @@ query {
       }
       totalCount
     }
-    eventAPIs {
+    eventDefinitions {
       data {
         id
         applicationID

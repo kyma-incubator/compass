@@ -68,7 +68,7 @@ func fixApplicationTemplate(name string) graphql.ApplicationTemplateInput {
 	appTemplateInput := graphql.ApplicationTemplateInput{
 		Name:        name,
 		Description: &appTemplateDesc,
-		ApplicationInput: &graphql.ApplicationCreateInput{
+		ApplicationInput: &graphql.ApplicationRegisterInput{
 			Name:        "app",
 			Description: ptr.String("test {{new-placeholder}}"),
 			Labels: &graphql.Labels{

@@ -36,19 +36,19 @@ type ApplicationPage struct {
 	TotalCount int
 }
 
-type ApplicationCreateInput struct {
+type ApplicationRegisterInput struct {
 	Name                string
 	Description         *string
 	Labels              map[string]interface{}
 	HealthCheckURL      *string
 	Webhooks            []*WebhookInput
-	Apis                []*APIDefinitionInput
-	EventAPIs           []*EventAPIDefinitionInput
+	APIDefinitions      []*APIDefinitionInput
+	EventDefinitions    []*EventDefinitionInput
 	Documents           []*DocumentInput
 	IntegrationSystemID *string
 }
 
-func (i *ApplicationCreateInput) ToApplication(timestamp time.Time, condition ApplicationStatusCondition, id, tenant string) *Application {
+func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, condition ApplicationStatusCondition, id, tenant string) *Application {
 	if i == nil {
 		return nil
 	}

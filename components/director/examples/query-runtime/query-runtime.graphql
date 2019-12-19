@@ -9,6 +9,9 @@ query {
       condition
       timestamp
     }
+    metadata {
+      creationTimestamp
+    }
     auths {
       id
       auth {
@@ -44,6 +47,9 @@ query {
           }
         }
       }
+    }
+    eventingConfiguration {
+      defaultURL
     }
   }
 }

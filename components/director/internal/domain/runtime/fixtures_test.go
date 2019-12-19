@@ -34,19 +34,26 @@ func fixGQLRuntimePage(runtimes []*graphql.Runtime) *graphql.RuntimePage {
 	}
 }
 
-func fixModelRuntime(id, tenant, name, description string) *model.Runtime {
+func fixModelRuntime(t *testing.T, id, tenant, name, description string) *model.Runtime {
+	time, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
+	require.NoError(t, err)
+
 	return &model.Runtime{
 		ID:     id,
 		Tenant: tenant,
 		Status: &model.RuntimeStatus{
 			Condition: model.RuntimeStatusConditionInitial,
 		},
-		Name:        name,
-		Description: &description,
+		Name:              name,
+		Description:       &description,
+		CreationTimestamp: time,
 	}
 }
 
-func fixGQLRuntime(id, name, description string) *graphql.Runtime {
+func fixGQLRuntime(t *testing.T, id, name, description string) *graphql.Runtime {
+	time, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
+	require.NoError(t, err)
+
 	return &graphql.Runtime{
 		ID: id,
 		Status: &graphql.RuntimeStatus{
@@ -54,6 +61,9 @@ func fixGQLRuntime(id, name, description string) *graphql.Runtime {
 		},
 		Name:        name,
 		Description: &description,
+		Metadata: &graphql.RuntimeMetadata{
+			CreationTimestamp: graphql.Timestamp(time),
+		},
 	}
 }
 
@@ -67,9 +77,10 @@ func fixDetailedModelRuntime(t *testing.T, id, name, description string) *model.
 			Condition: model.RuntimeStatusConditionInitial,
 			Timestamp: time,
 		},
-		Name:        name,
-		Description: &description,
-		Tenant:      "tenant",
+		Name:              name,
+		Description:       &description,
+		Tenant:            "tenant",
+		CreationTimestamp: time,
 	}
 }
 
@@ -85,6 +96,9 @@ func fixDetailedGQLRuntime(t *testing.T, id, name, description string) *graphql.
 		},
 		Name:        name,
 		Description: &description,
+		Metadata: &graphql.RuntimeMetadata{
+			CreationTimestamp: graphql.Timestamp(time),
+		},
 	}
 }
 
@@ -217,5 +231,19 @@ func fixGQLSystemAuth(id string, auth *graphql.Auth) *graphql.SystemAuth {
 	return &graphql.SystemAuth{
 		ID:   id,
 		Auth: auth,
+	}
+}
+
+func fixModelRuntimeEventingConfiguration(url string) *model.RuntimeEventingConfiguration {
+	return &model.RuntimeEventingConfiguration{
+		EventingConfiguration: model.EventingConfiguration{
+			DefaultURL: url,
+		},
+	}
+}
+
+func fixGQLRuntimeEventingConfiguration(url string) *graphql.RuntimeEventingConfiguration {
+	return &graphql.RuntimeEventingConfiguration{
+		DefaultURL: url,
 	}
 }
