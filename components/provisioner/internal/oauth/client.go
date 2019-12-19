@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/kubernetes/client-go/kubernetes/typed/core/v1"
+	"github.com/kyma-project/kyma/components/application-gateway/pkg/apperrors"
 	log "github.com/sirupsen/logrus"
+	"io/ioutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"mime/multipart"
 	"net/http"
@@ -122,19 +124,34 @@ func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, err
 		return Token{}, fmt.Errorf("Get token call returned unexpected status code, %d, %s", response.StatusCode, response.Status)
 	}
 
+	body, err := ioutil.ReadAll(response.Body)
 	defer response.Body.Close()
-
-	var tokenResponse Token
-
-	log.Errorf("Received response token :%s", response.Body)
-
-	err = json.NewDecoder(response.Body).Decode(&tokenResponse)
-
 	if err != nil {
-		return Token{}, err
+		return Token{}, apperrors.UpstreamServerCallFailed("failed to read token response body from '%s': %s", c.tokensEndpoint, err.Error())
 	}
 
-	return tokenResponse, nil
+	tokenResponse := &Token{}
+
+	err = json.Unmarshal(body, tokenResponse)
+	if err != nil {
+		return Token{}, apperrors.UpstreamServerCallFailed("failed to unmarshal token response body: %s", err.Error())
+	}
+
+	/*
+
+		defer response.Body.Close()
+
+		var tokenResponse Token
+
+		log.Errorf("Received response token :%s", response.Body)
+
+		err = json.NewDecoder(response.Body).Decode(&tokenResponse)
+
+		if err != nil {
+			return Token{}, err
+		}*/
+
+	return *tokenResponse, nil
 }
 
 func setRequiredFields(w *multipart.Writer) error {
