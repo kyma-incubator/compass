@@ -4,6 +4,7 @@ import "time"
 
 const (
 	contentTypeHeader = "Content-Type"
+	contentTypeApplicationURLEncoded = "application/x-www-form-urlencoded"
 
 	grantTypeFieldName   = "grant_type"
 	credentialsGrantType = "client_credentials"

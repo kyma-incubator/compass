@@ -1,14 +1,16 @@
 package oauth
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/kubernetes/client-go/kubernetes/typed/core/v1"
+	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"mime/multipart"
 	"net/http"
+	"net/url"
+	"strings"
 )
 
 //go:generate mockery -name=Client
@@ -46,17 +48,22 @@ func (c *oauthClient) getCredentials() (credentials, error) {
 	secret, err := c.secretsClient.Get(c.secretName, metav1.GetOptions{})
 
 	if err != nil {
+		log.Errorf("Cannot get secret %s", c.secretName)
 		return credentials{}, err
 	}
 
 	clientID, err := decodeSecret(secret.Data[clientIDKey])
 	if err != nil {
+		log.Errorf("Cannot get client Id %s", clientIDKey)
 		return credentials{}, err
 	}
 	clientSecret, err := decodeSecret(secret.Data[clientSecretKey])
 	if err != nil {
+		log.Errorf("Cannot get client secret from secret key %s", clientSecretKey)
 		return credentials{}, err
 	}
+
+	log.Errorf("Sucessfully got credentials from secret %s with ClientID %s and SecretKey %s", c.secretName, clientIDKey, clientSecretKey)
 
 	return credentials{
 		clientID:     clientID,
@@ -65,16 +72,23 @@ func (c *oauthClient) getCredentials() (credentials, error) {
 }
 
 func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, error) {
-	buffer := &bytes.Buffer{}
-	writer := multipart.NewWriter(buffer)
 
-	err := setRequiredFields(writer)
+	form := url.Values{}
+	form.Add("client_id", credentials.clientID)
+	form.Add("client_secret", credentials.clientSecret)
+	form.Add(grantTypeFieldName, credentialsGrantType)
+	form.Add(scopeFieldName, scopes)
 
-	if err != nil {
-		return Token{}, err
-	}
+	//buffer := &bytes.Buffer{}
+	//writer := multipart.NewWriter(buffer)
+	//
+	//err := setRequiredFields(writer)
+	//
+	//if err != nil {
+	//	return Token{}, err
+	//}
 
-	request, err := http.NewRequest(http.MethodPost, c.tokensEndpoint, buffer)
+	request, err := http.NewRequest(http.MethodPost, c.tokensEndpoint, strings.NewReader(form.Encode()))
 
 	if err != nil {
 		return Token{}, err
@@ -82,7 +96,7 @@ func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, err
 
 	request.SetBasicAuth(credentials.clientID, credentials.clientSecret)
 
-	request.Header.Set(contentTypeHeader, writer.FormDataContentType())
+	request.Header.Set(contentTypeHeader, contentTypeApplicationURLEncoded)
 
 	response, err := c.httpClient.Do(request)
 
