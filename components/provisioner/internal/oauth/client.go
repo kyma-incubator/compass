@@ -63,7 +63,7 @@ func (c *oauthClient) getCredentials() (credentials, error) {
 		return credentials{}, err
 	}
 
-	log.Errorf("Sucessfully got credentials from secret %s with ClientID %s and SecretKey %s", c.secretName, clientIDKey, clientSecretKey)
+	log.Errorf("Sucessfully got credentials from secret %s and value of ClientID is >>%s<< and SecretKey is >>%s<<", c.secretName, clientID, clientSecret)
 
 	return credentials{
 		clientID:     clientID,
