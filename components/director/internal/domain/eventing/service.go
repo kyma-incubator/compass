@@ -50,7 +50,7 @@ func NewService(runtimeRepo RuntimeRepository, labelRepo LabelRepository) *servi
 	}
 }
 
-func (s *service) DeleteDefaultForApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error) {
+func (s *service) CleanupAfterUnregisteringApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")

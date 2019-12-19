@@ -11,6 +11,7 @@ required = [
   name = "github.com/machinebox/graphql"
   branch = "master"
 
+# TODO: move to right source when merged
 [[constraint]]
   name = "github.com/kyma-incubator/compass"
   source = "github.com/crabtree/compass"

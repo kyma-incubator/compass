@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_DeleteDefaultForApplication(t *testing.T) {
-	t.Run("Success when deletion does not return errors", func(t *testing.T) {
+func Test_CleanupAfterUnregisteringApplication(t *testing.T) {
+	t.Run("Success when cleanup does not return errors", func(t *testing.T) {
 		// GIVEN
 		ctx := fixCtxWithTenant()
 		labelRepo := &automock.LabelRepository{}
@@ -24,7 +24,7 @@ func Test_DeleteDefaultForApplication(t *testing.T) {
 		svc := NewService(nil, labelRepo)
 
 		// WHEN
-		eventingCfg, err := svc.DeleteDefaultForApplication(ctx, applicationID)
+		eventingCfg, err := svc.CleanupAfterUnregisteringApplication(ctx, applicationID)
 
 		// THEN
 
@@ -39,14 +39,14 @@ func Test_DeleteDefaultForApplication(t *testing.T) {
 		svc := NewService(nil, nil)
 
 		// WHEN
-		_, err := svc.DeleteDefaultForApplication(context.TODO(), uuid.Nil)
+		_, err := svc.CleanupAfterUnregisteringApplication(context.TODO(), uuid.Nil)
 
 		// THEN
 		require.Error(t, err)
 		require.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
 	})
 
-	t.Run("Error when deletion returns errors", func(t *testing.T) {
+	t.Run("Error when cleanup returns errors", func(t *testing.T) {
 		// GIVEN
 		expectedError := fmt.Sprintf(`while deleting labels [key=%s]: some-error`, getDefaultEventingForAppLabelKey(applicationID))
 		ctx := fixCtxWithTenant()
@@ -56,7 +56,7 @@ func Test_DeleteDefaultForApplication(t *testing.T) {
 		svc := NewService(nil, labelRepo)
 
 		// WHEN
-		_, err := svc.DeleteDefaultForApplication(ctx, applicationID)
+		_, err := svc.CleanupAfterUnregisteringApplication(ctx, applicationID)
 
 		// THEN
 

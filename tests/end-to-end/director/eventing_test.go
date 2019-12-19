@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetDefaultRuntimeForEventingForApplication(t *testing.T) {
+func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventingAssigned(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	runtimeEventingURLLabelKey := "runtime/event_service_url"
@@ -97,7 +97,7 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 	err := tc.RunOperation(ctx, request, &actualEventingCfg)
 
 	// THEN
-	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "set default eventing for application")
+	saveExampleInCustomDir(t, request.Query(), eventingCategory, "set default eventing for application")
 	require.NoError(t, err)
 	require.Equal(t, runtime2EventingURL, actualEventingCfg.DefaultURL)
 
@@ -148,7 +148,7 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	err := tc.RunOperation(ctx, request, &actualEventingCfg)
 
 	// THEN
-	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "delete default eventing for application")
+	saveExampleInCustomDir(t, request.Query(), eventingCategory, "delete default eventing for application")
 	require.NoError(t, err)
 	require.Equal(t, runtime2EventingURL, actualEventingCfg.DefaultURL)
 

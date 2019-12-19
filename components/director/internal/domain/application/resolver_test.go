@@ -331,7 +331,7 @@ func TestResolver_UnregisterApplication(t *testing.T) {
 			},
 			EventingSvcFn: func() *automock.EventingService {
 				svc := &automock.EventingService{}
-				svc.On("DeleteDefaultForApplication", contextParam, appID).Return(nil, nil).Once()
+				svc.On("CleanupAfterUnregisteringApplication", contextParam, appID).Return(nil, nil).Once()
 				return svc
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
@@ -363,7 +363,7 @@ func TestResolver_UnregisterApplication(t *testing.T) {
 			},
 			EventingSvcFn: func() *automock.EventingService {
 				svc := &automock.EventingService{}
-				svc.On("DeleteDefaultForApplication", contextParam, appID).Return(nil, nil).Once()
+				svc.On("CleanupAfterUnregisteringApplication", contextParam, appID).Return(nil, nil).Once()
 				return svc
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
@@ -396,7 +396,7 @@ func TestResolver_UnregisterApplication(t *testing.T) {
 			},
 			EventingSvcFn: func() *automock.EventingService {
 				svc := &automock.EventingService{}
-				svc.On("DeleteDefaultForApplication", contextParam, appID).Return(nil, nil).Once()
+				svc.On("CleanupAfterUnregisteringApplication", contextParam, appID).Return(nil, nil).Once()
 				return svc
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
@@ -483,7 +483,7 @@ func TestResolver_UnregisterApplication(t *testing.T) {
 			},
 			EventingSvcFn: func() *automock.EventingService {
 				svc := &automock.EventingService{}
-				svc.On("DeleteDefaultForApplication", contextParam, appID).Return(nil, nil).Once()
+				svc.On("CleanupAfterUnregisteringApplication", contextParam, appID).Return(nil, nil).Once()
 				return svc
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
@@ -513,7 +513,7 @@ func TestResolver_UnregisterApplication(t *testing.T) {
 			},
 			EventingSvcFn: func() *automock.EventingService {
 				svc := &automock.EventingService{}
-				svc.On("DeleteDefaultForApplication", contextParam, appID).Return(nil, nil).Once()
+				svc.On("CleanupAfterUnregisteringApplication", contextParam, appID).Return(nil, nil).Once()
 				return svc
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
@@ -543,7 +543,7 @@ func TestResolver_UnregisterApplication(t *testing.T) {
 			},
 			EventingSvcFn: func() *automock.EventingService {
 				svc := &automock.EventingService{}
-				svc.On("DeleteDefaultForApplication", contextParam, appID).Return(nil, testErr).Once()
+				svc.On("CleanupAfterUnregisteringApplication", contextParam, appID).Return(nil, testErr).Once()
 				return svc
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {

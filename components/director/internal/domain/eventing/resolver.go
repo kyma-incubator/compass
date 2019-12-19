@@ -49,7 +49,7 @@ func (r *Resolver) SetEventingForApplication(ctx context.Context, app string, ru
 
 	eventingCfg, err := r.eventingSvc.SetForApplication(ctx, runtimeID, appID)
 	if err != nil {
-		return nil, errors.Wrap(err, "while fetching eventing cofiguration for application")
+		return nil, errors.Wrap(err, "while setting eventing cofiguration for application")
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -75,7 +75,7 @@ func (r *Resolver) UnsetEventingForApplication(ctx context.Context, app string) 
 
 	eventingCfg, err := r.eventingSvc.UnsetForApplication(ctx, appID)
 	if err != nil {
-		return nil, errors.Wrap(err, "while fetching eventing cofiguration for application")
+		return nil, errors.Wrap(err, "while unsetting eventing cofiguration for application")
 	}
 
 	if err = tx.Commit(); err != nil {

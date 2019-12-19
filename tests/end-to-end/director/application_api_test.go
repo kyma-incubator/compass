@@ -14,6 +14,7 @@ import (
 )
 
 const (
+	eventingCategory            = "eventing"
 	registerApplicationCategory = "register application"
 	queryApplicationsCategory   = "query applications"
 	queryApplicationCategory    = "query application"

@@ -12,8 +12,8 @@ type EventingService struct {
 	mock.Mock
 }
 
-// DeleteDefaultForApplication provides a mock function with given fields: ctx, appID
-func (_m *EventingService) DeleteDefaultForApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error) {
+// CleanupAfterUnregisteringApplication provides a mock function with given fields: ctx, appID
+func (_m *EventingService) CleanupAfterUnregisteringApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error) {
 	ret := _m.Called(ctx, appID)
 
 	var r0 *model.ApplicationEventingConfiguration
