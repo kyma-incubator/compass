@@ -3,7 +3,7 @@ package oauth
 import "time"
 
 const (
-	contentTypeHeader = "Content-Type"
+	contentTypeHeader                = "Content-Type"
 	contentTypeApplicationURLEncoded = "application/x-www-form-urlencoded"
 
 	grantTypeFieldName   = "grant_type"
