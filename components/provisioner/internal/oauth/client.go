@@ -69,6 +69,31 @@ func (c *oauthClient) getCredentials() (credentials, error) {
 
 func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, error) {
 
+	//buffer := &bytes.Buffer{}
+	//writer := multipart.NewWriter(buffer)
+	//
+	//err := setRequiredFields(writer)
+	//
+	//if err != nil {
+	//	return Token{}, err
+	//}
+	//
+	//request, err := http.NewRequest(http.MethodPost, c.tokensEndpoint, buffer)
+	//
+	//if err != nil {
+	//	return Token{}, err
+	//}
+	//
+	//request.SetBasicAuth(credentials.clientID, credentials.clientSecret)
+	//
+	//request.Header.Set(contentTypeHeader, writer.FormDataContentType())
+	//
+	//response, err := c.httpClient.Do(request)
+	//
+	//if err != nil {
+	//	return Token{}, err
+	//}
+
 	form := url.Values{}
 	form.Add("client_id", credentials.clientID)
 	form.Add("client_secret", credentials.clientSecret)
@@ -94,12 +119,14 @@ func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, err
 	}
 
 	if response.StatusCode != http.StatusOK {
-		return Token{}, fmt.Errorf("get token call returned unexpected status code, %d, %s", response.StatusCode, response.Status)
+		return Token{}, fmt.Errorf("Get token call returned unexpected status code, %d, %s", response.StatusCode, response.Status)
 	}
 
 	defer response.Body.Close()
 
 	var tokenResponse Token
+
+	log.Errorf("Received response token :%s", response.Body)
 
 	err = json.NewDecoder(response.Body).Decode(&tokenResponse)
 
