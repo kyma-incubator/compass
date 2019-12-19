@@ -79,14 +79,7 @@ func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, err
 	form.Add(grantTypeFieldName, credentialsGrantType)
 	form.Add(scopeFieldName, scopes)
 
-	//buffer := &bytes.Buffer{}
-	//writer := multipart.NewWriter(buffer)
-	//
-	//err := setRequiredFields(writer)
-	//
-	//if err != nil {
-	//	return Token{}, err
-	//}
+	log.Errorf("Generated request:%s", form.Encode())
 
 	request, err := http.NewRequest(http.MethodPost, c.tokensEndpoint, strings.NewReader(form.Encode()))
 
