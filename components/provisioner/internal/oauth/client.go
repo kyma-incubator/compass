@@ -48,22 +48,18 @@ func (c *oauthClient) getCredentials() (credentials, error) {
 	secret, err := c.secretsClient.Get(c.secretName, metav1.GetOptions{})
 
 	if err != nil {
-		log.Errorf("Cannot get secret %s", c.secretName)
 		return credentials{}, err
 	}
 
 	clientID, err := decodeSecret(secret.Data[clientIDKey])
 	if err != nil {
-		log.Errorf("Cannot get client Id %s", clientIDKey)
-		return credentials{}, err
-	}
-	clientSecret, err := decodeSecret(secret.Data[clientSecretKey])
-	if err != nil {
-		log.Errorf("Cannot get client secret from secret key %s", clientSecretKey)
 		return credentials{}, err
 	}
 
-	log.Errorf("Sucessfully got credentials from secret %s and value of ClientID is >>%s<< and SecretKey is >>%s<<", c.secretName, clientID, clientSecret)
+	clientSecret, err := decodeSecret(secret.Data[clientSecretKey])
+	if err != nil {
+		return credentials{}, err
+	}
 
 	return credentials{
 		clientID:     clientID,

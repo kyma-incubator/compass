@@ -12,8 +12,8 @@ const (
 	scopeFieldName = "scope"
 	scopes         = "application:read application:write runtime:read runtime:write label_definition:read label_definition:write health_checks:read"
 
-	clientIDKey     = "ClientID"
-	clientSecretKey = "ClientSecret"
+	clientIDKey     = "client_id"
+	clientSecretKey = "client_secret"
 )
 
 type Token struct {
