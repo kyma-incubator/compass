@@ -66,7 +66,7 @@ func Test_DeleteDefaultForApplication(t *testing.T) {
 	})
 }
 
-func Test_SetAsDefaultForApplication(t *testing.T) {
+func Test_SetForApplication(t *testing.T) {
 	t.Run("Success when assigning new default runtime, when there was no previous one", func(t *testing.T) {
 		// GIVEN
 		ctx := fixCtxWithTenant()
@@ -85,7 +85,7 @@ func Test_SetAsDefaultForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		eventingCfg, err := svc.SetAsDefaultForApplication(ctx, runtimeID, applicationID)
+		eventingCfg, err := svc.SetForApplication(ctx, runtimeID, applicationID)
 
 		// THEN
 		require.NoError(t, err)
@@ -114,7 +114,7 @@ func Test_SetAsDefaultForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		eventingCfg, err := svc.SetAsDefaultForApplication(ctx, runtimeID, applicationID)
+		eventingCfg, err := svc.SetForApplication(ctx, runtimeID, applicationID)
 
 		// THEN
 		require.NoError(t, err)
@@ -128,7 +128,7 @@ func Test_SetAsDefaultForApplication(t *testing.T) {
 		svc := NewService(nil, nil)
 
 		// WHEN
-		_, err := svc.SetAsDefaultForApplication(context.TODO(), uuid.Nil, uuid.Nil)
+		_, err := svc.SetForApplication(context.TODO(), uuid.Nil, uuid.Nil)
 
 		// THEN
 		require.Error(t, err)
@@ -147,7 +147,7 @@ func Test_SetAsDefaultForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.SetAsDefaultForApplication(ctx, runtimeID, applicationID)
+		_, err := svc.SetForApplication(ctx, runtimeID, applicationID)
 
 		// THEN
 		require.Error(t, err)
@@ -167,7 +167,7 @@ func Test_SetAsDefaultForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.SetAsDefaultForApplication(ctx, runtimeID, applicationID)
+		_, err := svc.SetForApplication(ctx, runtimeID, applicationID)
 
 		// THEN
 		require.Error(t, err)
@@ -189,7 +189,7 @@ func Test_SetAsDefaultForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.SetAsDefaultForApplication(ctx, runtimeID, applicationID)
+		_, err := svc.SetForApplication(ctx, runtimeID, applicationID)
 
 		// THEN
 		require.Error(t, err)
@@ -213,7 +213,7 @@ func Test_SetAsDefaultForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.SetAsDefaultForApplication(ctx, runtimeID, applicationID)
+		_, err := svc.SetForApplication(ctx, runtimeID, applicationID)
 
 		// THEN
 		require.Error(t, err)
@@ -237,7 +237,7 @@ func Test_SetAsDefaultForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.SetAsDefaultForApplication(ctx, runtimeID, applicationID)
+		_, err := svc.SetForApplication(ctx, runtimeID, applicationID)
 
 		// THEN
 		require.Error(t, err)
@@ -263,7 +263,7 @@ func Test_SetAsDefaultForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.SetAsDefaultForApplication(ctx, runtimeID, applicationID)
+		_, err := svc.SetForApplication(ctx, runtimeID, applicationID)
 
 		// THEN
 		require.Error(t, err)
@@ -289,7 +289,7 @@ func Test_SetAsDefaultForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.SetAsDefaultForApplication(ctx, runtimeID, applicationID)
+		_, err := svc.SetForApplication(ctx, runtimeID, applicationID)
 
 		// THEN
 		require.Error(t, err)
@@ -316,7 +316,7 @@ func Test_SetAsDefaultForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.SetAsDefaultForApplication(ctx, runtimeID, applicationID)
+		_, err := svc.SetForApplication(ctx, runtimeID, applicationID)
 
 		// THEN
 		require.Error(t, err)
@@ -345,7 +345,7 @@ func Test_SetAsDefaultForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.SetAsDefaultForApplication(ctx, runtimeID, applicationID)
+		_, err := svc.SetForApplication(ctx, runtimeID, applicationID)
 
 		// THEN
 		require.Error(t, err)
@@ -354,7 +354,7 @@ func Test_SetAsDefaultForApplication(t *testing.T) {
 	})
 }
 
-func Test_UnsetDefaultForApplication(t *testing.T) {
+func Test_UnsetForApplication(t *testing.T) {
 	t.Run("Success when there is no default runtime assigned for eventing", func(t *testing.T) {
 		// GIVEN
 		ctx := fixCtxWithTenant()
@@ -365,7 +365,7 @@ func Test_UnsetDefaultForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, nil)
 
 		// WHEN
-		eventingCfg, err := svc.UnsetDefaultForApplication(ctx, applicationID)
+		eventingCfg, err := svc.UnsetForApplication(ctx, applicationID)
 
 		// THEN
 		require.NoError(t, err)
@@ -389,7 +389,7 @@ func Test_UnsetDefaultForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		eventingCfg, err := svc.UnsetDefaultForApplication(ctx, applicationID)
+		eventingCfg, err := svc.UnsetForApplication(ctx, applicationID)
 
 		// THEN
 		require.NoError(t, err)
@@ -403,7 +403,7 @@ func Test_UnsetDefaultForApplication(t *testing.T) {
 		svc := NewService(nil, nil)
 
 		// WHEN
-		_, err := svc.UnsetDefaultForApplication(context.TODO(), uuid.Nil)
+		_, err := svc.UnsetForApplication(context.TODO(), uuid.Nil)
 
 		// THEN
 		require.Error(t, err)
@@ -421,7 +421,7 @@ func Test_UnsetDefaultForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, nil)
 
 		// WHEN
-		_, err := svc.UnsetDefaultForApplication(ctx, applicationID)
+		_, err := svc.UnsetForApplication(ctx, applicationID)
 
 		// THEN
 		require.Error(t, err)
@@ -440,7 +440,7 @@ func Test_UnsetDefaultForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, nil)
 
 		// WHEN
-		_, err := svc.UnsetDefaultForApplication(ctx, applicationID)
+		_, err := svc.UnsetForApplication(ctx, applicationID)
 
 		// THEN
 		require.Error(t, err)
@@ -462,7 +462,7 @@ func Test_UnsetDefaultForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.UnsetDefaultForApplication(ctx, applicationID)
+		_, err := svc.UnsetForApplication(ctx, applicationID)
 
 		// THEN
 		require.Error(t, err)
@@ -486,7 +486,7 @@ func Test_UnsetDefaultForApplication(t *testing.T) {
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
-		_, err := svc.UnsetDefaultForApplication(ctx, applicationID)
+		_, err := svc.UnsetForApplication(ctx, applicationID)
 
 		// THEN
 		require.Error(t, err)

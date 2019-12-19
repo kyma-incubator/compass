@@ -39,7 +39,7 @@ func TestResolver_SetDefaultEventingForApplication(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			EventingSvcFn: func() *automock.EventingService {
 				eventingSvc := &automock.EventingService{}
-				eventingSvc.On("SetAsDefaultForApplication", txtest.CtxWithDBMatcher(), runtimeID, applicationID).
+				eventingSvc.On("SetForApplication", txtest.CtxWithDBMatcher(), runtimeID, applicationID).
 					Return(modelAppEventingCfg, nil).Once()
 
 				return eventingSvc
@@ -51,7 +51,7 @@ func TestResolver_SetDefaultEventingForApplication(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			EventingSvcFn: func() *automock.EventingService {
 				eventingSvc := &automock.EventingService{}
-				eventingSvc.On("SetAsDefaultForApplication", txtest.CtxWithDBMatcher(), runtimeID, applicationID).
+				eventingSvc.On("SetForApplication", txtest.CtxWithDBMatcher(), runtimeID, applicationID).
 					Return(nil, testErr).Once()
 
 				return eventingSvc
@@ -72,7 +72,7 @@ func TestResolver_SetDefaultEventingForApplication(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			EventingSvcFn: func() *automock.EventingService {
 				eventingSvc := &automock.EventingService{}
-				eventingSvc.On("SetAsDefaultForApplication", txtest.CtxWithDBMatcher(), runtimeID, applicationID).
+				eventingSvc.On("SetForApplication", txtest.CtxWithDBMatcher(), runtimeID, applicationID).
 					Return(modelAppEventingCfg, nil).Once()
 
 				return eventingSvc
@@ -89,7 +89,7 @@ func TestResolver_SetDefaultEventingForApplication(t *testing.T) {
 			resolver := NewResolver(transact, eventingSvc)
 
 			// WHEN
-			result, err := resolver.SetDefaultEventingForApplication(ctx, applicationID.String(), runtimeID.String())
+			result, err := resolver.SetEventingForApplication(ctx, applicationID.String(), runtimeID.String())
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -109,7 +109,7 @@ func TestResolver_SetDefaultEventingForApplication(t *testing.T) {
 		resolver := NewResolver(nil, nil)
 
 		// WHEN
-		result, err := resolver.SetDefaultEventingForApplication(ctx, applicationID.String(), "abc")
+		result, err := resolver.SetEventingForApplication(ctx, applicationID.String(), "abc")
 
 		// THEN
 		require.Error(t, err)
@@ -122,7 +122,7 @@ func TestResolver_SetDefaultEventingForApplication(t *testing.T) {
 		resolver := NewResolver(nil, nil)
 
 		// WHEN
-		result, err := resolver.SetDefaultEventingForApplication(ctx, "abc", runtimeID.String())
+		result, err := resolver.SetEventingForApplication(ctx, "abc", runtimeID.String())
 
 		// THEN
 		require.Error(t, err)
@@ -155,7 +155,7 @@ func TestResolver_UnsetDefaultEventingForApplication(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			EventingSvcFn: func() *automock.EventingService {
 				eventingSvc := &automock.EventingService{}
-				eventingSvc.On("UnsetDefaultForApplication", txtest.CtxWithDBMatcher(), applicationID).
+				eventingSvc.On("UnsetForApplication", txtest.CtxWithDBMatcher(), applicationID).
 					Return(modelAppEventingCfg, nil).Once()
 
 				return eventingSvc
@@ -167,7 +167,7 @@ func TestResolver_UnsetDefaultEventingForApplication(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			EventingSvcFn: func() *automock.EventingService {
 				eventingSvc := &automock.EventingService{}
-				eventingSvc.On("UnsetDefaultForApplication", txtest.CtxWithDBMatcher(), applicationID).
+				eventingSvc.On("UnsetForApplication", txtest.CtxWithDBMatcher(), applicationID).
 					Return(nil, testErr).Once()
 
 				return eventingSvc
@@ -188,7 +188,7 @@ func TestResolver_UnsetDefaultEventingForApplication(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			EventingSvcFn: func() *automock.EventingService {
 				eventingSvc := &automock.EventingService{}
-				eventingSvc.On("UnsetDefaultForApplication", txtest.CtxWithDBMatcher(), applicationID).
+				eventingSvc.On("UnsetForApplication", txtest.CtxWithDBMatcher(), applicationID).
 					Return(modelAppEventingCfg, nil).Once()
 
 				return eventingSvc
@@ -205,7 +205,7 @@ func TestResolver_UnsetDefaultEventingForApplication(t *testing.T) {
 			resolver := NewResolver(transact, eventingSvc)
 
 			// WHEN
-			result, err := resolver.UnsetDefaultEventingForApplication(ctx, applicationID.String())
+			result, err := resolver.UnsetEventingForApplication(ctx, applicationID.String())
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -225,7 +225,7 @@ func TestResolver_UnsetDefaultEventingForApplication(t *testing.T) {
 		resolver := NewResolver(nil, nil)
 
 		// WHEN
-		result, err := resolver.UnsetDefaultEventingForApplication(ctx, "abc")
+		result, err := resolver.UnsetEventingForApplication(ctx, "abc")
 
 		// THEN
 		require.Error(t, err)

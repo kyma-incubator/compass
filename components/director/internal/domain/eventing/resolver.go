@@ -12,8 +12,8 @@ import (
 
 //go:generate mockery -name=EventingService -output=automock -outpkg=automock -case=underscore
 type EventingService interface {
-	SetAsDefaultForApplication(ctx context.Context, runtimeID uuid.UUID, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error)
-	UnsetDefaultForApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error)
+	SetForApplication(ctx context.Context, runtimeID uuid.UUID, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error)
+	UnsetForApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error)
 }
 
 type Resolver struct {
@@ -28,7 +28,7 @@ func NewResolver(transact persistence.Transactioner, eventingSvc EventingService
 	}
 }
 
-func (r *Resolver) SetDefaultEventingForApplication(ctx context.Context, app string, runtime string) (*graphql.ApplicationEventingConfiguration, error) {
+func (r *Resolver) SetEventingForApplication(ctx context.Context, app string, runtime string) (*graphql.ApplicationEventingConfiguration, error) {
 	appID, err := uuid.Parse(app)
 	if err != nil {
 		return nil, errors.Wrap(err, "while parsing application ID as UUID")
@@ -47,7 +47,7 @@ func (r *Resolver) SetDefaultEventingForApplication(ctx context.Context, app str
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	eventingCfg, err := r.eventingSvc.SetAsDefaultForApplication(ctx, runtimeID, appID)
+	eventingCfg, err := r.eventingSvc.SetForApplication(ctx, runtimeID, appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching eventing cofiguration for application")
 	}
@@ -59,7 +59,7 @@ func (r *Resolver) SetDefaultEventingForApplication(ctx context.Context, app str
 	return ApplicationEventingConfigurationToGraphQL(eventingCfg), nil
 }
 
-func (r *Resolver) UnsetDefaultEventingForApplication(ctx context.Context, app string) (*graphql.ApplicationEventingConfiguration, error) {
+func (r *Resolver) UnsetEventingForApplication(ctx context.Context, app string) (*graphql.ApplicationEventingConfiguration, error) {
 	appID, err := uuid.Parse(app)
 	if err != nil {
 		return nil, errors.Wrap(err, "while parsing application ID as UUID")
@@ -73,7 +73,7 @@ func (r *Resolver) UnsetDefaultEventingForApplication(ctx context.Context, app s
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	eventingCfg, err := r.eventingSvc.UnsetDefaultForApplication(ctx, appID)
+	eventingCfg, err := r.eventingSvc.UnsetForApplication(ctx, appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching eventing cofiguration for application")
 	}

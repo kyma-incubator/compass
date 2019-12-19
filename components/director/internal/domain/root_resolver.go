@@ -338,11 +338,11 @@ func (r *mutationResolver) UnregisterIntegrationSystem(ctx context.Context, id s
 }
 
 func (r *mutationResolver) SetDefaultEventingForApplication(ctx context.Context, appID string, runtimeID string) (*graphql.ApplicationEventingConfiguration, error) {
-	return r.eventing.SetDefaultEventingForApplication(ctx, appID, runtimeID)
+	return r.eventing.SetEventingForApplication(ctx, appID, runtimeID)
 }
 
 func (r *mutationResolver) DeleteDefaultEventingForApplication(ctx context.Context, appID string) (*graphql.ApplicationEventingConfiguration, error) {
-	return r.eventing.UnsetDefaultEventingForApplication(ctx, appID)
+	return r.eventing.UnsetEventingForApplication(ctx, appID)
 }
 
 type applicationResolver struct {

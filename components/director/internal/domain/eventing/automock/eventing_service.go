@@ -13,8 +13,8 @@ type EventingService struct {
 	mock.Mock
 }
 
-// SetAsDefaultForApplication provides a mock function with given fields: ctx, runtimeID, appID
-func (_m *EventingService) SetAsDefaultForApplication(ctx context.Context, runtimeID uuid.UUID, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error) {
+// SetForApplication provides a mock function with given fields: ctx, runtimeID, appID
+func (_m *EventingService) SetForApplication(ctx context.Context, runtimeID uuid.UUID, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error) {
 	ret := _m.Called(ctx, runtimeID, appID)
 
 	var r0 *model.ApplicationEventingConfiguration
@@ -36,8 +36,8 @@ func (_m *EventingService) SetAsDefaultForApplication(ctx context.Context, runti
 	return r0, r1
 }
 
-// UnsetDefaultForApplication provides a mock function with given fields: ctx, appID
-func (_m *EventingService) UnsetDefaultForApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error) {
+// UnsetForApplication provides a mock function with given fields: ctx, appID
+func (_m *EventingService) UnsetForApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error) {
 	ret := _m.Called(ctx, appID)
 
 	var r0 *model.ApplicationEventingConfiguration

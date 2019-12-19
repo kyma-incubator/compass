@@ -65,13 +65,13 @@ func (s *service) DeleteDefaultForApplication(ctx context.Context, appID uuid.UU
 	return model.NewApplicationEventingConfiguration(EmptyEventingURL), nil
 }
 
-func (s *service) SetAsDefaultForApplication(ctx context.Context, runtimeID uuid.UUID, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error) {
+func (s *service) SetForApplication(ctx context.Context, runtimeID uuid.UUID, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	_, _, err = s.unsetDefaultForApplication(ctx, tenantID, appID)
+	_, _, err = s.unsetForApplication(ctx, tenantID, appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while deleting default eventing for application")
 	}
@@ -97,13 +97,13 @@ func (s *service) SetAsDefaultForApplication(ctx context.Context, runtimeID uuid
 	return model.NewApplicationEventingConfiguration(runtimeEventingCfg.DefaultURL), nil
 }
 
-func (s *service) UnsetDefaultForApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error) {
+func (s *service) UnsetForApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	runtime, found, err := s.unsetDefaultForApplication(ctx, tenantID, appID)
+	runtime, found, err := s.unsetForApplication(ctx, tenantID, appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while deleting default eventing for application")
 	}
@@ -199,7 +199,7 @@ func (s *service) GetForRuntime(ctx context.Context, runtimeID uuid.UUID) (*mode
 	return model.NewRuntimeEventingConfiguration(eventingURL), nil
 }
 
-func (s *service) unsetDefaultForApplication(ctx context.Context, tenantID string, appID uuid.UUID) (*model.Runtime, bool, error) {
+func (s *service) unsetForApplication(ctx context.Context, tenantID string, appID uuid.UUID) (*model.Runtime, bool, error) {
 	runtime, foundDefault, err := s.getDefaultRuntimeForAppEventing(ctx, tenantID, appID)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "while getting default runtime for app eventing")
