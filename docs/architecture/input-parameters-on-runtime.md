@@ -87,7 +87,7 @@ The solution utilizes LabelDefinitions and labels on Application level. It requi
 
 - Introduce new feature on Compass side
     - Need to resolve LabelDefinition conflicts (for example, LabelDefinition `foo/*` and LabelDefinition `/foo/bar/*`: we can block it or enable overrides)
-- Runtime Agent has to read LabelDefinitions for a specific prefixes
+- Runtime Agent has to read LabelDefinitions for specific prefixes
     - This can be solved with an optional parameter with for `labelDefinitions` query, like `labelDefinitions(prefix: String)`
 
 #### Option #2: Instance Create Parameter Schema in Label
