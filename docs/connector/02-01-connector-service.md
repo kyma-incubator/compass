@@ -5,7 +5,7 @@ type: Architecture
 
 The Connector generates client certificates which are used to secure the communication between Compass and the connected external solutions.        
 
-Generating a new client certificate is the first step in the process of configuring an Application. Kyma stores the Root Certificate and serves as the Certificate Authority (CA) when you configure a new Application. When you generate a new client certificate, the Connectors returns it along with the CA certificate (the Root Certificate) to allow validation.  
+Generating a new client certificate is the first step in the process of configuring an Application. Kyma stores the Root Certificate and serves as the Certificate Authority (CA) when you configure a new Application. When you generate a new client certificate, the Connector returns it along with the CA certificate (the Root Certificate) to allow validation.  
 
 This diagram illustrates the client certificate generation flow in details:
 
