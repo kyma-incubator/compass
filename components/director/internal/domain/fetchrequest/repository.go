@@ -61,7 +61,7 @@ func (r *repository) GetByReferenceObjectID(ctx context.Context, tenant string, 
 	}
 
 	var entity Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition(fieldName, objectID)}, &entity); err != nil {
+	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition(fieldName, objectID)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 

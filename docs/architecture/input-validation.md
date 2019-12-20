@@ -46,7 +46,7 @@ Field | Required | Rules | Comment
 --- | --- | --- | ---
 name: String! | true | `name` | varchar(256) in db  
 description: String | false | `max=128` |  
-spec: EventSpecInput! | true | | 
+spec: EventSpecInput! | false | | 
 group: String | false | `max=36` | varchar(256) in db  
 version: VersionInput | false | |  
 

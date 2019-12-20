@@ -133,7 +133,7 @@ func TestDeleteSystemAuthFromApplication(t *testing.T) {
 
 	//THEN
 	t.Log("Check if system auth was deleted")
-	appAfterDelete := getApp(ctx, t, app.ID)
+	appAfterDelete := getApplication(t, ctx, app.ID)
 	require.Empty(t, appAfterDelete.Auths)
 }
 

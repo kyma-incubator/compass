@@ -13,7 +13,7 @@ required = [
 
 [[constraint]]
   name = "github.com/kyma-incubator/compass"
-  branch = "master"
+  revision = "4d7c2a7bb533bdd81a86ccefd58964f047077d73"
 
 [[constraint]]
   name = "github.com/stretchr/testify"

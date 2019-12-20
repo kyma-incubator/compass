@@ -13,7 +13,7 @@ directorURL: "http://compass-director.compass-system.svc.cluster.local:3000/grap
 hydraURL: "http://ory-hydra-public.kyma-system:4444/oauth2/token"
 
 installation:
-  timeout: 30m
+  timeout: 40m
   errorsCountFailureThreshold: 5
 
 tests:

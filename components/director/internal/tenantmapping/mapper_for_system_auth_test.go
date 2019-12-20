@@ -44,8 +44,8 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
 		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
-		require.Equal(t, refObjID.String(), objCtx.ObjectID)
-		require.Equal(t, "Application", objCtx.ObjectType)
+		require.Equal(t, refObjID.String(), objCtx.ConsumerID)
+		require.Equal(t, "Application", string(objCtx.ConsumerType))
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock, scopesGetterMock)
 	})
@@ -79,8 +79,8 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
 		require.Equal(t, expectedScopes, objCtx.Scopes)
-		require.Equal(t, refObjID.String(), objCtx.ObjectID)
-		require.Equal(t, "Integration System", objCtx.ObjectType)
+		require.Equal(t, refObjID.String(), objCtx.ConsumerID)
+		require.Equal(t, "Integration System", string(objCtx.ConsumerType))
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
 	})
@@ -113,8 +113,8 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
 		require.Equal(t, expectedScopes, objCtx.Scopes)
-		require.Equal(t, refObjID.String(), objCtx.ObjectID)
-		require.Equal(t, "Application", objCtx.ObjectType)
+		require.Equal(t, refObjID.String(), objCtx.ConsumerID)
+		require.Equal(t, "Application", string(objCtx.ConsumerType))
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
 	})

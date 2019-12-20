@@ -18,12 +18,13 @@ type ApplicationPageExt struct {
 
 type ApplicationExt struct {
 	Application
-	Labels           Labels                    `json:"labels"`
-	Webhooks         []Webhook                 `json:"webhooks"`
-	APIDefinitions   APIDefinitionPageExt      `json:"apiDefinitions"`
-	EventDefinitions EventAPIDefinitionPageExt `json:"eventDefinitions"`
-	APIDefinition    APIDefinition             `json:"apiDefinition"`
-	EventDefinition  EventDefinition           `json:"eventDefinition"`
-	Documents        DocumentPageExt           `json:"documents"`
-	Auths            []*SystemAuth             `json:"auths"`
+	Labels                Labels                           `json:"labels"`
+	Webhooks              []Webhook                        `json:"webhooks"`
+	APIDefinitions        APIDefinitionPageExt             `json:"apiDefinitions"`
+	EventDefinitions      EventAPIDefinitionPageExt        `json:"eventDefinitions"`
+	APIDefinition         APIDefinition                    `json:"apiDefinition"`
+	EventDefinition       EventDefinition                  `json:"eventDefinition"`
+	Documents             DocumentPageExt                  `json:"documents"`
+	Auths                 []*SystemAuth                    `json:"auths"`
+	EventingConfiguration ApplicationEventingConfiguration `json:"eventingConfiguration"`
 }

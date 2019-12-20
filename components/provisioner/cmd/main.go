@@ -41,7 +41,7 @@ type config struct {
 	}
 
 	Installation struct {
-		Timeout                     time.Duration `envconfig:"default=30m"`
+		Timeout                     time.Duration `envconfig:"default=40m"`
 		ErrorsCountFailureThreshold int           `envconfig:"default=5"`
 	}
 }

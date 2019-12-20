@@ -16,7 +16,7 @@ global:
       version: "PR-391"
     director:
       dir:
-      version: "PR-560"
+      version: "PR-559"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -25,7 +25,7 @@ global:
       version: "PR-357"
     schema_migrator:
       dir:
-      version: "PR-521"
+      version: "PR-524"
     provisioner:
       dir:
       version: "PR-552"
@@ -37,10 +37,10 @@ global:
     tests:
       e2e:
         dir:
-        version: "PR-562"
+        version: "PR-588"
       connector:
-        dir: pr/
-        version: "PR-391"
+        dir:
+        version: "02e8358c"
       provisioner:
         dir:
       version: "PR-552"
@@ -48,7 +48,6 @@ global:
   isLocalEnv: false
 
   director:
-    hasDefaultEventURL: false
     port: 3000
 
   connector:

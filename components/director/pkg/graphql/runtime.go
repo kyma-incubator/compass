@@ -1,10 +1,12 @@
 package graphql
 
 type Runtime struct {
-	ID          string         `json:"id"`
-	Name        string         `json:"name"`
-	Description *string        `json:"description"`
-	Status      *RuntimeStatus `json:"status"`
+	ID                    string                        `json:"id"`
+	Name                  string                        `json:"name"`
+	Description           *string                       `json:"description"`
+	Status                *RuntimeStatus                `json:"status"`
+	Metadata              *RuntimeMetadata              `json:"metadata"`
+	EventingConfiguration *RuntimeEventingConfiguration `json:"eventingConfiguration"`
 }
 
 // Extended types used by external API

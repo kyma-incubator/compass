@@ -1,0 +1,1 @@
+ALTER TABLE runtimes ADD COLUMN creation_timestamp TIMESTAMP DEFAULT NOW();

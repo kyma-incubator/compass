@@ -49,7 +49,7 @@ func NewRepository(conv EntityConverter) *repository {
 
 func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.Webhook, error) {
 	var entity Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, &entity); err != nil {
+	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 	m, err := r.conv.FromEntity(entity)

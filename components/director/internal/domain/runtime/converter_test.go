@@ -31,6 +31,9 @@ func TestConverter_ToGraphQL(t *testing.T) {
 				Status: &graphql.RuntimeStatus{
 					Condition: graphql.RuntimeStatusConditionInitial,
 				},
+				Metadata: &graphql.RuntimeMetadata{
+					CreationTimestamp: graphql.Timestamp{},
+				},
 			},
 		},
 		{
@@ -55,17 +58,20 @@ func TestConverter_ToGraphQL(t *testing.T) {
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// given
 	input := []*model.Runtime{
-		fixModelRuntime("foo", "tenant-foo", "Foo", "Lorem ipsum"),
-		fixModelRuntime("bar", "tenant-bar", "Bar", "Dolor sit amet"),
+		fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Lorem ipsum"),
+		fixModelRuntime(t, "bar", "tenant-bar", "Bar", "Dolor sit amet"),
 		{},
 		nil,
 	}
 	expected := []*graphql.Runtime{
-		fixGQLRuntime("foo", "Foo", "Lorem ipsum"),
-		fixGQLRuntime("bar", "Bar", "Dolor sit amet"),
+		fixGQLRuntime(t, "foo", "Foo", "Lorem ipsum"),
+		fixGQLRuntime(t, "bar", "Bar", "Dolor sit amet"),
 		{
 			Status: &graphql.RuntimeStatus{
 				Condition: graphql.RuntimeStatusConditionInitial,
+			},
+			Metadata: &graphql.RuntimeMetadata{
+				CreationTimestamp: graphql.Timestamp{},
 			},
 		},
 	}

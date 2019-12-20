@@ -50,7 +50,7 @@ type APISpecInput struct {
 	FetchRequest *FetchRequestInput `json:"fetchRequest"`
 }
 
-type ApplicationEventConfiguration struct {
+type ApplicationEventingConfiguration struct {
 	DefaultURL string `json:"defaultURL"`
 }
 
@@ -330,10 +330,18 @@ type PlaceholderDefinitionInput struct {
 	Description *string `json:"description"`
 }
 
+type RuntimeEventingConfiguration struct {
+	DefaultURL string `json:"defaultURL"`
+}
+
 type RuntimeInput struct {
 	Name        string  `json:"name"`
 	Description *string `json:"description"`
 	Labels      *Labels `json:"labels"`
+}
+
+type RuntimeMetadata struct {
+	CreationTimestamp Timestamp `json:"creationTimestamp"`
 }
 
 type RuntimePage struct {

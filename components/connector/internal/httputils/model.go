@@ -1,5 +1,9 @@
 package httputils
 
 type ErrorResponse struct {
-	Error error `json:"error"`
+	Errors []Error `json:"errors"`
+}
+
+type Error struct {
+	Message string `json:"message"`
 }

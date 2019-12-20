@@ -42,10 +42,6 @@ github.com/PuerkitoBio/purell v1.0.0/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbt
 github.com/PuerkitoBio/purell v1.1.0/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbtSwDGJws/X0=
 github.com/PuerkitoBio/urlesc v0.0.0-20160726150825-5bd2802263f2/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
 github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
-github.com/Szymongib/hydroform v0.0.0-20191203093804-e9fcbe88dcd5 h1:+pWUXBLrEa6UdZ2d8lhataIjIiKjCdaNEwWGkYSIysc=
-github.com/Szymongib/hydroform v0.0.0-20191203093804-e9fcbe88dcd5/go.mod h1:okiz6l+hLqrXv9O7IwDuyWXxf34OjIXcJX+SqFnYD8o=
-github.com/Szymongib/hydroform/install v0.0.0-20191203093804-e9fcbe88dcd5 h1:8XEZalLLCkzLdfrkVCwl14iShteqV/RZ88GXmDf8FSc=
-github.com/Szymongib/hydroform/install v0.0.0-20191203093804-e9fcbe88dcd5/go.mod h1:cu0KmMDfLm1nY+lkRWhckdjeo+lzUsI4YkLCkRc3zWY=
 github.com/Unknwon/com v0.0.0-20151008135407-28b053d5a292 h1:tuQ7w+my8a8mkwN7x2TSd7OzTjkZ7rAeSyH4xncuAMI=
 github.com/Unknwon/com v0.0.0-20151008135407-28b053d5a292/go.mod h1:KYCjqMOeHpNuTOiFQU6WEcTG7poCJrUs0YgyHNtn1no=
 github.com/abdullin/seq v0.0.0-20160510034733-d5467c17e7af h1:DBNMBMuMiWYu0b+8KMJuWmfCkcxl09JwdlqwDZZ6U14=
