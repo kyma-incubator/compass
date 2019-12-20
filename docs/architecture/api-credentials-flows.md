@@ -15,6 +15,6 @@ Assume we have Application with one API Definition which is already registered i
 
 1. The Administrator requests new Runtime with Application via Cockpit.
 2. The Cockpit requests configuration for Runtime and the Director asks Application for new credentials.
-3. The Cockpit requests Runtime with configuration for Agent and Runtime Provisioner creates Runtime.
+3. The Cockpit requests Runtime with configuration for Runtime Agent and Runtime Provisioner creates Runtime.
 4. The Application sets API Definition credentials for given Runtime.
-5. The Agent enables Runtime to call Application APIs.
+5. The Rutime Agent enables Runtime to call Application APIs.

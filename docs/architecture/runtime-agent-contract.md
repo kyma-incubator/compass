@@ -9,11 +9,11 @@ This document describes contract between Management Plane and Runtime Agent. Mai
 
 ## Establishing trusted connection
 
-Runtime Agent automates the process of [establishing trusted connection](./establishing-trusted-connection.md#establishing-trusted-connection) between Runtime and Management Plane. To initially trigger the process the Runtime Provisioner configures the Runtime Agent providing it the required parameters to establish the trusted connection between Management Plane and the Runtime. The Runtime Agent configuration in its minimal scope requires setting up the form of the initial secured connection to the Connector. Currently, Runtime Provisioner sets up on the Runtime a resource that holds the one-time token to enable the pairing. Runtime Agent triggered by the creation of the resource performs the pairing process and in the end, the trusted connection between the Runtime and the Management Plane is established. At this point further communication between Runtime Agent and Management Plane, and Application and Runtime is possible.
+Runtime Agent automates the process of [establishing trusted connection](../archive/establishing-trusted-connection.md#establishing-trusted-connection) between Runtime and Management Plane. To initially trigger the process the Runtime Provisioner configures the Runtime Agent providing it the required parameters to establish the trusted connection between Management Plane and the Runtime. The Runtime Agent configuration in its minimal scope requires setting up the form of the initial secured connection to the Connector. Currently, Runtime Provisioner sets up on the Runtime a resource that holds the one-time token to enable the pairing. Runtime Agent triggered by the creation of the resource performs the pairing process and in the end, the trusted connection between the Runtime and the Management Plane is established. At this point further communication between Runtime Agent and Management Plane, and Application and Runtime is possible.
 
 ## Renewing trusted connection
 
-Depending on the type of trusted connection, during the runtime lifecycle, it may be required to periodically [renew trusted connection](./establishing-trusted-connection.md#client-certificate-flow---certificate-renewal).
+Depending on the type of trusted connection, during the runtime lifecycle, it may be required to periodically [renew trusted connection](../archive/establishing-trusted-connection.md#client-certificate-flow---certificate-renewal).
 
 ## Configuring the Runtime
 
