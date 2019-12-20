@@ -73,6 +73,7 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 }
 
 func TestApplicationUpdateInput_UpdateApplication(t *testing.T) {
+	//GIVEN
 	filledAppUpdate := model.ApplicationUpdateInput{
 		Name:                "",
 		ProviderDisplayName: "provider name",
@@ -80,35 +81,15 @@ func TestApplicationUpdateInput_UpdateApplication(t *testing.T) {
 		HealthCheckURL:      str.Ptr("https://kyma-project.io"),
 		IntegrationSystemID: str.Ptr("int sys id"),
 	}
+	app := model.Application{}
 
-	testCases := []struct {
-		Name      string
-		AppUpdate model.ApplicationUpdateInput
-	}{
-		{
-			Name:      "All properties filled",
-			AppUpdate: filledAppUpdate,
-		},
-		{
-			Name:      "Only needed properties",
-			AppUpdate: model.ApplicationUpdateInput{Name: "name"},
-		},
-	}
+	//WHEN
+	app.UpdateApplication(filledAppUpdate)
 
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			//GIVEN
-			app := model.Application{}
-
-			//WHEN
-			app.UpdateApplication(testCase.AppUpdate)
-
-			//THEN
-			assert.Equal(t, testCase.AppUpdate.Name, app.Name)
-			assert.Equal(t, testCase.AppUpdate.Description, app.Description)
-			assert.Equal(t, testCase.AppUpdate.HealthCheckURL, app.HealthCheckURL)
-			assert.Equal(t, testCase.AppUpdate.IntegrationSystemID, app.IntegrationSystemID)
-			assert.Equal(t, testCase.AppUpdate.ProviderDisplayName, app.ProviderDisplayName)
-		})
-	}
+	//THEN
+	assert.Equal(t, filledAppUpdate.Name, app.Name)
+	assert.Equal(t, filledAppUpdate.Description, app.Description)
+	assert.Equal(t, filledAppUpdate.HealthCheckURL, app.HealthCheckURL)
+	assert.Equal(t, filledAppUpdate.IntegrationSystemID, app.IntegrationSystemID)
+	assert.Equal(t, filledAppUpdate.ProviderDisplayName, app.ProviderDisplayName)
 }
