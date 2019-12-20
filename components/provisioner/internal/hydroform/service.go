@@ -13,7 +13,6 @@ import (
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/client"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/hydroform/types"
@@ -22,8 +21,7 @@ import (
 )
 
 const (
-	timeout  = 20 * time.Minute
-	interval = 30 * time.Second
+	clusterCreationTimeout = 40 * time.Minute
 )
 
 const credentialsKey = "credentials"
@@ -66,26 +64,19 @@ func (s service) ProvisionCluster(clusterData model.Cluster) (ClusterInfo, error
 	}
 
 	log.Infof("Starting %s Runtime provisioning", clusterData.ID)
-	cluster, err = s.hydroformClient.Provision(cluster, provider)
+	cluster, err = s.hydroformClient.Provision(cluster, provider, types.WithTimeouts(&types.Timeouts{Create: clusterCreationTimeout}))
 	if err != nil {
 		return ClusterInfo{}, errors.WithMessagef(err, "Cluster %s provisioning failed", clusterData.ID)
 	}
 
 	log.Infof("Cluster provisioned for %s Runtime", clusterData.ID)
 
-	var status *types.ClusterStatus
-	//TODO Change this temporary solution when Hydroform handles Provisioning status correctly
-	err = util.WaitForFunction(interval, timeout, func() (bool, error) {
-		status, err = s.hydroformClient.Status(cluster, provider)
-		if err != nil {
-			return false, err
-		}
-		log.Infof("Cluster status for %s Runtime: %s", clusterData.ID, status.Phase)
-
-		return status.Phase == types.Provisioned, nil
-	})
+	status, err := s.hydroformClient.Status(cluster, provider)
 	if err != nil {
-		return ClusterInfo{}, errors.WithMessagef(err, "Unexpected status for %s Runtime", clusterData.ID)
+		return ClusterInfo{}, errors.WithMessagef(err, "Failed to get cluster status for %s Runtime", clusterData.ID)
+	}
+	if status.Phase != types.Provisioned {
+		return ClusterInfo{}, errors.Errorf("Unexpected cluster status for %s Runtime, status: %s", clusterData.ID, status.Phase)
 	}
 
 	log.Infof("Retrieving kubeconfig for %s Runtime", clusterData.ID)
