@@ -12,7 +12,7 @@ This diagram illustrates the client certificate generation flow in details:
 ![Client certificate generation operation flow](assets/001-connection-flow.svg)
 
 1. The administrator requests a token using <!--- the CLI or --> the UI and receives the Connector URL and the one-time token, which is valid for a limited period of time.
-    >**NOTE:** The Director creates and stores mapping data, which is used to map the Application ID onto the Tenant ID. 
+   >**NOTE:** The Director creates and stores mapping data, which is used to map the Application ID onto the Tenant ID. 
 2. The administrator passes the token and the connection URL to the external system, which requests information regarding the Kyma configuration and CSR information. In the response, it receives:
     - the certificate-secured Connector URL
     - the URL of the Compass Director
