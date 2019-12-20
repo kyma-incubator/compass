@@ -48,6 +48,7 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 		status {condition timestamp}
 		webhooks {%s}
 		healthCheckURL
+		providerDisplayName
 		apiDefinitions {%s}
 		eventDefinitions {%s}
 		documents {%s}
