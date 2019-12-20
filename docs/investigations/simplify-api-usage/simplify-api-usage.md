@@ -1,7 +1,7 @@
 # Simplify usage of Compass API
 
 ## Terminology:
-`consumer` - client of a Compass API (Application, Runtime, Integration System - no User included!)
+`consumer` - system, which calls Compass API (Application, Runtime, Integration System - no User included!)
 
 ## Overview
 
@@ -128,7 +128,7 @@ The consumer ID is present in request context, so it can be retrieved from there
 * API doesn't get much bigger(only one query)
 
 **Cons**
-* consumer has to make an additional call to get its ID for other GraphQL operations. 
+* Application / Runtime has to make an additional call to get its ID for other GraphQL operations. 
 
 However, it is not such a big issue considering the fact that in the case that integration system or user for example wants to update application, that query won't be used because it has to provide ID of the application explicitly.
 The only consumer of that method would be an Application at the moment. If there is a library for performing GraphQL queries, the overhead of performing additional query would not be too big. 
