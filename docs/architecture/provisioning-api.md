@@ -42,7 +42,7 @@ These operations must be supported:
 These are the basic assumptions for the API design:
 
 - Cluster provisioning and Kyma installation is considered an atomic operation.
-- Provisioning, deprovisioning, upgrade and Runtime Agent reconnecting is uniquely identified by OperationID.
+- Provisioning, deprovisioning, upgrade, and the Runtime Agent reconnecting is uniquely identified by OperationID.
 - Runtime is uniquely identified by RuntimeID.
 - Before you provision the Runtime, register it in Director API. Use RuntimeID returned from Director in Provisioner API.
 - Only one asynchronous operation can be in progress on a given Runtime.  
@@ -93,7 +93,7 @@ The mutation returns OperationID allowing to retrieve the operation status.
 
 The mutation returns OperationID allowing to retrieve the operation status.
 
-### Reconnecting Runtime Agent mutation
+### Reconnect Runtime Agent mutation
 
 ***reconnectRuntimeAgent*** mutation reconnects the Runtime Agent. Pass the RuntimeID as argument. 
 
