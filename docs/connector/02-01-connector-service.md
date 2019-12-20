@@ -20,7 +20,7 @@ This diagram illustrates the client certificate generation flow in details:
     - new one-time token
 3. The external system generates a CSR based on the information provided by Kyma and sends the CSR back to the Connector URL. In the response, the external system receives a signed certificate and the CA certificate. It can use the certificate to authenticate and safely communicate with Kyma.
 
-The external application must not hardcode any URLs. The external application must store the Connector URL, the Director URL and the certificate-secured Connector URL along with the certificate. 
+The external application must not hardcode any URLs. The external application must store the Connector URL, the Director URL, and the certificate-secured Connector URL along with the certificate. 
 
 The external application can fetch configuration information using the client certificate. It uses this information to generate a CSR prior to certificate renewal. This approach makes certificate rotation process convenient and flexible, since the external application does not need to store information required to generate a CSR in its data model.     
 
