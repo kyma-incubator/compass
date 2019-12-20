@@ -6,7 +6,7 @@ The following document describes flow that needs to be performed to establish tr
 
 This diagram shows the sequence of API calls that allows the Application or Runtime to establish a trusted connection using a client certificate.
 
-![](./assets/client-certificate-flow.svg)
+![](../architecture/assets/client-certificate-flow.svg)
 
 > **NOTE:** All API calls to the Connector require valid one-time token that can be also obtained from Connector API.
 

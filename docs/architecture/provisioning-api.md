@@ -25,7 +25,7 @@ The following operations must be supported:
 
 ### Runtime Agent connection management
 
-The API must support resetting the connection between Runtime and Management Plane Services. The goal of this functionality is to force Compass Runtime Agent installed on the Runtime to establish new connection.
+The API must support resetting the connection between Runtime and Management Plane Services. The goal of this functionality is to force the Runtime Agent installed on the Runtime to establish new connection.
 
 ### Status information retrieval
 
@@ -42,7 +42,7 @@ These operations must be supported:
 These are the basic assumptions for the API design:
 
 - Cluster provisioning and Kyma installation is considered an atomic operation.
-- Provisioning, deprovisioning, upgrade and Compass Runtime Agent reconnecting is uniquely identified by OperationID.
+- Provisioning, deprovisioning, upgrade and Runtime Agent reconnecting is uniquely identified by OperationID.
 - Runtime is uniquely identified by RuntimeID.
 - Before you provision the Runtime, register it in Director API. Use RuntimeID returned from Director in Provisioner API.
 - Only one asynchronous operation can be in progress on a given Runtime.  
@@ -51,7 +51,7 @@ These are the basic assumptions for the API design:
   - The status of an asynchronous operation
   - Runtime status comprised of:
     - The status of the last operation
-    - Compass Runtime Agent Connection status
+    - Runtime Agent Connection status
 
 ## Runtime management
 
@@ -93,9 +93,9 @@ The mutation returns OperationID allowing to retrieve the operation status.
 
 The mutation returns OperationID allowing to retrieve the operation status.
 
-### Reconnecting Compass Runtime Agent mutation
+### Reconnecting Runtime Agent mutation
 
-***reconnectRuntimeAgent*** mutation reconnects Compass Runtime Agent. Pass the RuntimeID as argument. 
+***reconnectRuntimeAgent*** mutation reconnects the Runtime Agent. Pass the RuntimeID as argument. 
 
 The mutation returns OperationID allowing to retrieve the operation status.
 

@@ -10,7 +10,7 @@ This document is a proposal for eventing flows we want to support with use of th
 
 1. The event is registered using **Management Plane** API.
 2. The **Director** sends an event url to **EventGateway**.
-3. The **Agent** fetches the event data and exposes it inside **Runtime**.  
+3. The **Runtime Agent** fetches the event data and exposes it inside **Runtime**.  
 4. The **Application** publishes an event.
 
 >**NOTE** The Event Gateway will support multiple protocols like HTTP or MQTT which can be specified inside EventSpec data.
@@ -20,7 +20,7 @@ It will also support many authentication (e.g. OpenID Connect) and authorization
 ![Management Plane Components](assets/external-event-flow.svg)
 
 1. The event is registered using **Management Plane** API with external event bus data.
-2. The **Agent** fetches the event and exposes it inside **Runtime**.
+2. The **Runtime Agent** fetches the event and exposes it inside **Runtime**.
 3. **Eventing system** subscribes on external event bus.
 4. The application publishes an event.
 
