@@ -57,6 +57,7 @@ mutation {
       }
     }
     healthCheckURL
+    providerDisplayName
     apiDefinitions {
       data {
         id

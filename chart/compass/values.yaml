@@ -16,7 +16,7 @@ global:
       version: "PR-391"
     director:
       dir:
-      version: "PR-559"
+      version: "PR-564"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -25,7 +25,7 @@ global:
       version: "PR-357"
     schema_migrator:
       dir:
-      version: "PR-524"
+      version: "PR-564"
     provisioner:
       dir:
       version: "PR-555"
@@ -37,7 +37,7 @@ global:
     tests:
       e2e:
         dir:
-        version: "PR-588"
+        version: "PR-567"
       connector:
         dir:
         version: "02e8358c"
