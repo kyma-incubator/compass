@@ -84,7 +84,7 @@ func TestApplicationUpdateInput_UpdateApplication(t *testing.T) {
 	app := model.Application{}
 
 	//WHEN
-	app.UpdateApplication(filledAppUpdate)
+	app.SetFromUpdateInput(filledAppUpdate)
 
 	//THEN
 	assert.Equal(t, filledAppUpdate.Name, app.Name)

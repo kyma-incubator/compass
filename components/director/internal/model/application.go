@@ -17,7 +17,7 @@ type Application struct {
 	IntegrationSystemID *string
 }
 
-func (app *Application) UpdateApplication(update ApplicationUpdateInput) {
+func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput) {
 	app.Name = update.Name
 	app.Description = update.Description
 	app.HealthCheckURL = update.HealthCheckURL

@@ -293,7 +293,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 		return errors.Wrap(err, "while getting Application")
 	}
 
-	app.UpdateApplication(in)
+	app.SetFromUpdateInput(in)
 
 	err = s.appRepo.Update(ctx, app)
 	if err != nil {
