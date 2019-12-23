@@ -27,8 +27,12 @@ type client struct {
 	logging   bool
 }
 
-func New(graphqlEndpoint string, enableLogging bool) Client {
-	httpClient := &http.Client{}
+func NewGraphQLClient(graphqlEndpoint string, enableLogging bool, insecureSkipVerify bool) Client {
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: insecureSkipVerify},
+		},
+	}
 
 	gqlClient := graphql.NewClient(graphqlEndpoint, graphql.WithHTTPClient(httpClient))
 

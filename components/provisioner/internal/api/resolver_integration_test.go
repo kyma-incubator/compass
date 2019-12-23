@@ -228,16 +228,26 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			err := insertDummyReleaseIfNotExist(releaseRepository, uuidGenerator.New(), kymaVersion)
 			require.NoError(t, err)
 
-			operationID, err := provisioner.ProvisionRuntime(ctx, fullConfig)
+			status, err := provisioner.ProvisionRuntime(ctx, fullConfig)
+
+			require.NotNil(t, status)
+			if status != nil {
+				require.NotNil(t, status.RuntimeID)
+
+				if status.RuntimeID != nil {
+					assert.Equal(t, cfg.runtimeID, *status.RuntimeID)
+				}
+			}
+
 			require.NoError(t, err)
 
 			messageProvisioningStarted := "Provisioning started"
 
 			statusForProvisioningStarted := &gqlschema.OperationStatus{
-				ID:        &operationID,
+				ID:        status.ID,
 				Operation: gqlschema.OperationTypeProvision,
 				State:     gqlschema.OperationStateInProgress,
-				RuntimeID: &cfg.runtimeID,
+				RuntimeID: status.RuntimeID,
 				Message:   &messageProvisioningStarted,
 			}
 
@@ -247,16 +257,16 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			require.NotNil(t, runtimeStatusProvisioningStarted)
 			assert.Equal(t, statusForProvisioningStarted, runtimeStatusProvisioningStarted.LastOperationStatus)
 
-			err = waitForOperationCompleted(provisioningService, operationID, 3)
+			err = waitForOperationCompleted(provisioningService, *status.ID, 3)
 			require.NoError(t, err)
 
 			messageProvisioningSucceeded := "Operation succeeded."
 
 			statusForProvisioningSucceeded := &gqlschema.OperationStatus{
-				ID:        &operationID,
+				ID:        status.ID,
 				Operation: gqlschema.OperationTypeProvision,
 				State:     gqlschema.OperationStateSucceeded,
-				RuntimeID: &cfg.runtimeID,
+				RuntimeID: status.RuntimeID,
 				Message:   &messageProvisioningSucceeded,
 			}
 

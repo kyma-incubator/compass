@@ -30,7 +30,7 @@ const (
 
 //go:generate mockery -name=Service
 type Service interface {
-	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (string, <-chan struct{}, error)
+	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (string, string, <-chan struct{}, error)
 	UpgradeRuntime(id string, config *gqlschema.UpgradeRuntimeInput) (string, error)
 	DeprovisionRuntime(id string) (string, <-chan struct{}, error)
 	CleanupRuntimeData(id string) (*gqlschema.CleanUpRuntimeDataResult, error)
@@ -60,35 +60,35 @@ func NewProvisioningService(persistenceService persistence.Service, inputConvert
 	}
 }
 
-func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (string, <-chan struct{}, error) {
+func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput) (string, string, <-chan struct{}, error) {
 
 	runtimeInput := config.RuntimeInput
 
 	runtimeID, err := r.directorService.CreateRuntime(runtimeInput)
 	if err != nil {
-		return "", nil, err
+		return "", "", nil, err
 	}
 
 	err = r.checkProvisioningRuntimeConditions(runtimeID)
 	if err != nil {
-		return "", nil, err
+		return "", "", nil, err
 	}
 
 	cluster, err := r.inputConverter.ProvisioningInputToCluster(runtimeID, config)
 	if err != nil {
-		return "", nil, err
+		return "", "", nil, err
 	}
 
 	operation, err := r.persistenceService.SetProvisioningStarted(runtimeID, cluster)
 	if err != nil {
-		return "", nil, err
+		return "", "", nil, err
 	}
 
 	finished := make(chan struct{})
 
 	go r.startProvisioning(operation.ID, cluster, finished)
 
-	return operation.ID, finished, err
+	return operation.ID, runtimeID, finished, err
 }
 
 func (r *service) checkProvisioningRuntimeConditions(id string) error {

@@ -1,18 +1,16 @@
 package oauth
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/kubernetes/client-go/kubernetes/typed/core/v1"
-	"github.com/kyma-project/kyma/components/application-gateway/pkg/apperrors"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"mime/multipart"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 //go:generate mockery -name=Client
@@ -21,18 +19,16 @@ type Client interface {
 }
 
 type oauthClient struct {
-	tokensEndpoint string
-	httpClient     *http.Client
-	secretsClient  v1.SecretInterface
-	secretName     string
+	httpClient    *http.Client
+	secretsClient v1.SecretInterface
+	secretName    string
 }
 
-func NewOauthClient(hydraTokensEndpoint string, client *http.Client, secrets v1.SecretInterface, secretName string) Client {
+func NewOauthClient(client *http.Client, secrets v1.SecretInterface, secretName string) Client {
 	return &oauthClient{
-		tokensEndpoint: hydraTokensEndpoint,
-		httpClient:     client,
-		secretsClient:  secrets,
-		secretName:     secretName,
+		httpClient:    client,
+		secretsClient: secrets,
+		secretName:    secretName,
 	}
 }
 
@@ -53,68 +49,37 @@ func (c *oauthClient) getCredentials() (credentials, error) {
 		return credentials{}, err
 	}
 
-	clientID, err := decodeSecret(secret.Data[clientIDKey])
-	if err != nil {
-		return credentials{}, err
-	}
-
-	clientSecret, err := decodeSecret(secret.Data[clientSecretKey])
-	if err != nil {
-		return credentials{}, err
-	}
-
 	return credentials{
-		clientID:     clientID,
-		clientSecret: clientSecret,
+		clientID:       string(secret.Data[clientIDKey]),
+		clientSecret:   string(secret.Data[clientSecretKey]),
+		tokensEndpoint: string(secret.Data[tokensEndpointKey]),
 	}, nil
 }
 
 func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, error) {
 
-	//buffer := &bytes.Buffer{}
-	//writer := multipart.NewWriter(buffer)
-	//
-	//err := setRequiredFields(writer)
-	//
-	//if err != nil {
-	//	return Token{}, err
-	//}
-	//
-	//request, err := http.NewRequest(http.MethodPost, c.tokensEndpoint, buffer)
-	//
-	//if err != nil {
-	//	return Token{}, err
-	//}
-	//
-	//request.SetBasicAuth(credentials.clientID, credentials.clientSecret)
-	//
-	//request.Header.Set(contentTypeHeader, writer.FormDataContentType())
-	//
-	//response, err := c.httpClient.Do(request)
-	//
-	//if err != nil {
-	//	return Token{}, err
-	//}
+	log.Infof("Getting authorisation token for credentials clientID %s, secret %s, from endpoint: %s", credentials.clientID, credentials.clientSecret, credentials.tokensEndpoint)
 
 	form := url.Values{}
-	form.Add("client_id", credentials.clientID)
-	form.Add("client_secret", credentials.clientSecret)
 	form.Add(grantTypeFieldName, credentialsGrantType)
 	form.Add(scopeFieldName, scopes)
 
-	log.Errorf("Generated request:%s", form.Encode())
+	log.Infof("Generated request:%s", form.Encode())
 
-	request, err := http.NewRequest(http.MethodPost, c.tokensEndpoint, strings.NewReader(form.Encode()))
+	request, err := http.NewRequest(http.MethodPost, credentials.tokensEndpoint, strings.NewReader(form.Encode()))
 
 	if err != nil {
+		log.Errorf("Failed to create token request")
 		return Token{}, err
 	}
 
+	now := time.Now().Unix()
+
 	request.SetBasicAuth(credentials.clientID, credentials.clientSecret)
-
 	request.Header.Set(contentTypeHeader, contentTypeApplicationURLEncoded)
-
 	response, err := c.httpClient.Do(request)
+
+	log.Errorf("Sent request!")
 
 	if err != nil {
 		return Token{}, err
@@ -125,55 +90,25 @@ func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, err
 	}
 
 	body, err := ioutil.ReadAll(response.Body)
+
+	log.Errorf("Received response body %s", body)
 	defer response.Body.Close()
 	if err != nil {
-		return Token{}, apperrors.UpstreamServerCallFailed("failed to read token response body from '%s': %s", c.tokensEndpoint, err.Error())
+		return Token{}, fmt.Errorf("failed to read token response body from '%s': %s", credentials.tokensEndpoint, err.Error())
 	}
 
-	tokenResponse := &Token{}
+	tokenResponse := Token{}
 
-	err = json.Unmarshal(body, tokenResponse)
+	err = json.Unmarshal(body, &tokenResponse)
 	if err != nil {
-		return Token{}, apperrors.UpstreamServerCallFailed("failed to unmarshal token response body: %s", err.Error())
+		return Token{}, fmt.Errorf("failed to unmarshal token response body: %s", err.Error())
 	}
 
-	/*
+	log.Errorf("Sucessfully unmarshal response tokens")
+	log.Errorf("Access token: %s", tokenResponse.AccessToken)
+	log.Errorf("Expiration: %d", tokenResponse.Expiration)
 
-		defer response.Body.Close()
+	tokenResponse.Expiration += now
 
-		var tokenResponse Token
-
-		log.Errorf("Received response token :%s", response.Body)
-
-		err = json.NewDecoder(response.Body).Decode(&tokenResponse)
-
-		if err != nil {
-			return Token{}, err
-		}*/
-
-	return *tokenResponse, nil
-}
-
-func setRequiredFields(w *multipart.Writer) error {
-	defer w.Close()
-
-	err := w.WriteField(grantTypeFieldName, credentialsGrantType)
-	if err != nil {
-		return err
-	}
-	err = w.WriteField(scopeFieldName, scopes)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func decodeSecret(encoded []byte) (string, error) {
-	decoded, err := base64.StdEncoding.DecodeString(string(encoded))
-
-	if err != nil {
-		return "", err
-	}
-
-	return string(decoded), nil
+	return tokenResponse, nil
 }

@@ -17,12 +17,15 @@ require (
 	github.com/hashicorp/terraform v0.12.16
 	github.com/huandu/xstrings v1.2.1 // indirect
 	github.com/json-iterator/go v1.1.8 // indirect
+	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kubernetes/client-go v11.0.0+incompatible
 	github.com/kyma-incubator/compass v0.0.0-20191213152550-bd76175256e3
-	github.com/kyma-incubator/hydroform v0.0.0-20191128070310-d7996cb46e38
-	github.com/kyma-incubator/hydroform/install v0.0.0-20191128070310-d7996cb46e38
+	github.com/kyma-incubator/hydroform v0.0.0-20191212125252-7afdb02ac964
+	github.com/kyma-incubator/hydroform/install v0.0.0-20191212125252-7afdb02ac964
+	github.com/kyma-project/kyma v0.5.1-0.20191106070956-5aa08d114ca0
 	github.com/lib/pq v1.2.0
 	github.com/machinebox/graphql v0.2.2
+	github.com/matryer/is v1.2.0 // indirect
 	github.com/onsi/ginkgo v1.10.1 // indirect
 	github.com/onsi/gomega v1.7.0 // indirect
 	github.com/pkg/errors v0.8.1
@@ -32,7 +35,9 @@ require (
 	github.com/testcontainers/testcontainers-go v0.0.8
 	github.com/vektah/gqlparser v1.2.0
 	github.com/vrischmann/envconfig v1.2.0
+	golang.org/x/sys v0.0.0-20191220142924-d4481acd189f // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
+	gopkg.in/yaml.v2 v2.2.7 // indirect
 	k8s.io/api v0.0.0-20191114100237-2cd11237263f
 	k8s.io/apimachinery v0.0.0-20191004115701-31ade1b30762
 	k8s.io/client-go v0.0.0-20191114101336-8cba805ad12d // tag kubernetes-1.15.6

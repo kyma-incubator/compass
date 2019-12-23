@@ -6,7 +6,7 @@ type queryProvider struct{}
 
 func (qp queryProvider) createRuntimeMutation(runtimeInput string) string {
 	return fmt.Sprintf(`mutation {
-	result: createRuntime(in: %s)}`, runtimeInput)
+	result: registerRuntime(in: %s) { id } }`, runtimeInput)
 }
 
 func (qp queryProvider) deleteRuntimeMutation(runtimeID string) string {

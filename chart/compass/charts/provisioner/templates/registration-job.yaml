@@ -24,9 +24,9 @@ metadata:
   name: {{ template "fullname" . }}-registration
   namespace: {{ .Release.Namespace }}
 rules:
-  - apiGroups: ["hydra.ory.sh"]
-    resources: ["oauth2clients"]
-    verbs: [create, get]
+  - apiGroups: ["*"]
+    resources: ["secrets"]
+    verbs: ["create"]
 ---
 apiVersion: batch/v1
 kind: Job
@@ -127,22 +127,25 @@ spec:
               INTEGRATION_SYSTEM_ID=$(echo $RESPONSE_BODY | jq -e '.data .result .id')
               INTEGRATION_SYSTEM_ID="${INTEGRATION_SYSTEM_ID:1:${#INTEGRATION_SYSTEM_ID}-2}"
 
-              cat <<EOF | kubectl apply -f -
-              apiVersion: hydra.ory.sh/v1alpha1
-              kind: OAuth2Client
-              metadata:
-                name: {{ template "fullname" . }}-registration-integration-system
-                namespace: {{ .Release.Namespace }}
-              spec:
-                grantTypes:
-                - client_credentials
-                responseTypes:
-                - token
-                scope: "${SCOPES}"
-                secretName: "${SECRET_NAME}"
+              CREDENTIAL_RESPONSE_BODY=$(curl -k "${DIRECTOR_URL}" \
+                -H 'Content-Type: application/json' \
+                -H 'Accept: application/json' \
+                -H 'Connection: keep-alive' \
+                -H "authorization: Bearer ${INTERNAL_TOKEN}" \
+                --data-binary '{"query":"mutation requestCredentials {\n\trequestClientCredentialsForIntegrationSystem (id : \"'"$INTEGRATION_SYSTEM_ID"'\") {\n    id\n    auth {\n      credential {\n        ... on BasicCredentialData {\n            username\n            password\n        }\n        ...  on OAuthCredentialData {\n            clientId\n            clientSecret\n            url\n        }\n      }\n    }\n  }\n}\n"
+               }')
 
-              EOF
-              echo "Compass Provisioner registration as integration system - finished."
+              CLIENT_ID=$(echo $CREDENTIAL_RESPONSE_BODY | jq -e '.data .requestClientCredentialsForIntegrationSystem .auth .credential .clientId')
+              CLIENT_SECRET=$(echo $CREDENTIAL_RESPONSE_BODY | jq -e '.data .requestClientCredentialsForIntegrationSystem .auth .credential .clientSecret')
+              TOKENS_ENDPOINT=$(echo $CREDENTIAL_RESPONSE_BODY | jq -e '.data .requestClientCredentialsForIntegrationSystem .auth .credential .url')
+
+              CLIENT_ID="${CLIENT_ID:1:${#CLIENT_ID}-2}"
+              CLIENT_SECRET="${CLIENT_SECRET:1:${#CLIENT_SECRET}-2}"
+              TOKENS_ENDPOINT="${TOKENS_ENDPOINT:1:${#TOKENS_ENDPOINT}-2}"
+
+              kubectl create secret generic compass-provisioner-registration --from-literal=client_id=$CLIENT_ID --from-literal=client_secret=$CLIENT_SECRET --from-literal=tokens_endpoint=$TOKENS_ENDPOINT -n {{ .Release.Namespace }}
+
+              echo "Compass Provisioner registration as integration system and requesting credentials - finished."
               set -o pipefail
               }
 
@@ -155,16 +158,6 @@ spec:
 
               echo "Waiting for access to API Server..."
               wait_for_access_to_api_server
-
-              echo "Checking if OAuth2Client exists..."
-              
-              set +o errexit
-              kubectl get oauth2clients.hydra.ory.sh {{ template "fullname" . }}-registration-integration-system -n {{ .Release.Namespace }} > /dev/null 2>&1
-              if [[ $? -eq 0 ]]; then
-                echo "Compass Provisioner OAuth2Client already exists."
-                kill_proxy_and_exit
-              fi
-              set -o errexit
 
               director_readiness
               register_provisioner

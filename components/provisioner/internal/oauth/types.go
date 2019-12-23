@@ -10,10 +10,11 @@ const (
 	credentialsGrantType = "client_credentials"
 
 	scopeFieldName = "scope"
-	scopes         = "application:read application:write runtime:read runtime:write label_definition:read label_definition:write health_checks:read"
+	scopes         = "runtime:read runtime:write"
 
-	clientIDKey     = "client_id"
-	clientSecretKey = "client_secret"
+	clientIDKey       = "client_id"
+	clientSecretKey   = "client_secret"
+	tokensEndpointKey = "tokens_endpoint"
 )
 
 type Token struct {
@@ -22,8 +23,9 @@ type Token struct {
 }
 
 type credentials struct {
-	clientID     string
-	clientSecret string
+	clientID       string
+	clientSecret   string
+	tokensEndpoint string
 }
 
 func (token Token) EmptyOrExpired() bool {

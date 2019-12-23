@@ -9,7 +9,6 @@ deployment:
 database:
   schemaFilePath: "/assets/database/provisioner.sql"
 
-directorURL: "http://compass-director.compass-system.svc.cluster.local:3000/graphql"
 hydraURL: "http://ory-hydra-public.kyma-system:4444/oauth2/token"
 
 installation:

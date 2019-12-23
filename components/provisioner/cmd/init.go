@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/graphql"
@@ -18,9 +19,8 @@ import (
 	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/pkg/errors"
 	"net/http"
-	"time"
-
 	"path/filepath"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
@@ -43,15 +43,17 @@ func newProvisioningService(config config, persistenceService persistence.Servic
 	inputConverter := converters.NewInputConverter(uuidGenerator, releaseRepo)
 	graphQLConverter := converters.NewGraphQLConverter()
 
-	gqlClient := graphql.New(config.DirectorURL, true)
-
-	httpClient := &http.Client{
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: config.SkipCertVerification},
+		},
 		Timeout: 30 * time.Second,
 	}
 
-	oauthClient := oauth.NewOauthClient(config.HydraURL, httpClient, secrets, config.OauthCredentialsSecretName)
+	gqlClient := graphql.NewGraphQLClient(config.DirectorURL, true, config.SkipCertVerification)
+	oauthClient := oauth.NewOauthClient(client, secrets, config.OauthCredentialsSecretName)
 
-	directorClient := director.NewDirectorClient(gqlClient, oauthClient)
+	directorClient := director.NewDirectorClient(gqlClient, oauthClient, config.DefaultTenant)
 
 	return provisioning.NewProvisioningService(persistenceService, inputConverter, graphQLConverter, hydroformService, installationService, directorClient)
 }

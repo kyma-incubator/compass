@@ -32,29 +32,37 @@ func NewResolver(provisioningService provisioning.Service) *Resolver {
 	}
 }
 
-func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.ProvisionRuntimeInput) (string, error) {
-	log.Infof("Requested provisioning of Runtime %s.", config.RuntimeInput.Name)
+func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.ProvisionRuntimeInput) (*gqlschema.OperationStatus, error) {
+	log.Infof("Requested provisioning of RUNTIME %s.", config.RuntimeInput.Name)
 	err := validateInput(config)
 	if err != nil {
 		log.Errorf("Failed to provision Runtime %s: %s", config.RuntimeInput.Name, err)
-		return "", err
+		return nil, err
 	}
 
 	log.Infof("Requested provisioning of Runtime %s.", config.RuntimeInput.Name)
 	if config.ClusterConfig.GcpConfig != nil && config.ClusterConfig.GardenerConfig == nil {
 		err := fmt.Errorf("Provisioning on GCP is currently not supported, Runtime : %s", config.RuntimeInput.Name)
-		log.Errorf(err.Error())
-		return "", err
+		strError := err.Error()
+		log.Errorf(strError)
+		return nil, err
 	}
 
-	operationID, _, err := r.provisioning.ProvisionRuntime(config)
+	operationID, runtimeID, _, err := r.provisioning.ProvisionRuntime(config)
 	if err != nil {
 		log.Errorf("Failed to provision Runtime %s: %s", config.RuntimeInput.Name, err)
-		return "", err
+		return nil, err
 	}
-	log.Infof("Provisioning stared for Runtime %s. Operation id %s", config.RuntimeInput.Name, operationID)
+	log.Infof("Provisioning started for Runtime %s. Operation id %s", config.RuntimeInput.Name, operationID)
 
-	return operationID, nil
+	messageProvisioningStarted := "Provisioning started"
+
+	return &gqlschema.OperationStatus{
+		ID:        &operationID,
+		Operation: gqlschema.OperationTypeProvision,
+		Message:   &messageProvisioningStarted,
+		RuntimeID: &runtimeID,
+	}, nil
 }
 
 func validateInput(config gqlschema.ProvisionRuntimeInput) error {

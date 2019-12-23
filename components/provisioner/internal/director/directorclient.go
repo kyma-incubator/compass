@@ -7,10 +7,12 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
 	AuthorizationHeader = "Authorization"
+	TenantKey           = "tenant"
 )
 
 //go:generate mockery -name=DirectorClient
@@ -23,43 +25,58 @@ type directorClient struct {
 	gqlClient     gql.Client
 	queryProvider queryProvider
 	graphqlizer   graphqlizer
-	runtimeConfig string
+	tenant        string
 	token         oauth.Token
 	oauthClient   oauth.Client
 }
 
-func NewDirectorClient(gqlClient gql.Client, oauthClient oauth.Client) DirectorClient {
+func NewDirectorClient(gqlClient gql.Client, oauthClient oauth.Client, tenant string) DirectorClient {
 	return &directorClient{
 		gqlClient:     gqlClient,
 		oauthClient:   oauthClient,
 		queryProvider: queryProvider{},
 		graphqlizer:   graphqlizer{},
+		tenant:        tenant,
 		token:         oauth.Token{},
 	}
 }
 
 func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput) (string, error) {
+	log.Infof("Registering Runtime on Director service")
+
 	if config == nil {
 		return "", errors.New("Cannot register register runtime in Director: missing Runtime config")
 	}
 
 	if cc.token.EmptyOrExpired() {
+		log.Infof("Getting token to access Director Service")
 		if err := cc.getToken(); err != nil {
 			return "", err
 		}
 	}
+
+	log.Infof("Valid token to connect with Director Service")
 
 	var response CreateRuntimeResponse
 
 	graphQLized, err := cc.graphqlizer.RuntimeInputToGraphQL(*config)
 
 	if err != nil {
+		log.Infof("Failed to create graphQLized Runtime input")
 		return "", err
 	}
 
-	applicationsQuery := cc.queryProvider.createRuntimeMutation(graphQLized)
-	req := gcli.NewRequest(applicationsQuery)
+	log.Infof("Successfully create graphQLized Runtime input %s", graphQLized)
+
+	runtimeQuery := cc.queryProvider.createRuntimeMutation(graphQLized)
+
+	req := gcli.NewRequest(runtimeQuery)
 	req.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", cc.token.AccessToken))
+	req.Header.Set(TenantKey, cc.tenant)
+
+	log.Infof("Sending GraphQL mutation: \r\n %s", runtimeQuery)
+	log.Infof("Authorisation: Bearer\r\n %s", cc.token.AccessToken)
+	log.Infof("Tenant: %s", cc.tenant)
 
 	err = cc.gqlClient.Do(req, &response)
 	if err != nil {
@@ -83,9 +100,14 @@ func (cc *directorClient) DeleteRuntime(id string) error {
 
 	var response DeleteRuntimeResponse
 
-	applicationsQuery := cc.queryProvider.deleteRuntimeMutation(id)
-	req := gcli.NewRequest(applicationsQuery)
+	runtimeQuery := cc.queryProvider.deleteRuntimeMutation(id)
+	req := gcli.NewRequest(runtimeQuery)
 	req.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", cc.token.AccessToken))
+	req.Header.Set(TenantKey, cc.tenant)
+
+	log.Infof("Sending GraphQL mutation: \r\n %s", runtimeQuery)
+	log.Infof("Authorisation: Bearer\r\n %s", cc.token.AccessToken)
+	log.Infof("Tenant: %s", cc.tenant)
 
 	err := cc.gqlClient.Do(req, &response)
 	if err != nil {

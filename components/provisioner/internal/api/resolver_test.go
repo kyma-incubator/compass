@@ -53,7 +53,8 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			Modules: gqlschema.AllKymaModule,
 		}
 
-		expectedID := "ec781980-0533-4098-aab7-96b535569732"
+		expOperationID := "ec781980-0533-4098-aab7-96b535569732"
+		expRuntimeID := "1100bb59-9c40-4ebb-b846-7477c4dc5bbb"
 
 		config := gqlschema.ProvisionRuntimeInput{
 			RuntimeInput:  runtimeInput,
@@ -62,14 +63,18 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			KymaConfig:    kymaConfig,
 		}
 
-		provisioningService.On("ProvisionRuntime", config).Return(expectedID, nil, nil)
+		provisioningService.On("ProvisionRuntime", config).Return(expOperationID, expRuntimeID, nil, nil)
 
 		//when
-		operationID, err := provisioner.ProvisionRuntime(ctx, config)
+		status, err := provisioner.ProvisionRuntime(ctx, config)
 
 		//then
 		require.NoError(t, err)
-		assert.Equal(t, expectedID, operationID)
+		require.NotNil(t, status)
+		require.NotNil(t, status.ID)
+		require.NotNil(t, status.RuntimeID)
+		assert.Equal(t, expOperationID, *status.ID)
+		assert.Equal(t, expRuntimeID, *status.RuntimeID)
 	})
 
 	t.Run("Should return error when requested provisioning on GCP", func(t *testing.T) {
@@ -97,14 +102,12 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 
 		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, KymaConfig: kymaConfig}
 
-		provisioningService.On("ProvisionRuntime", config).Return("ec781980-0533-4098-aab7-96b535569732", nil, nil)
-
 		//when
-		operationID, err := provisioner.ProvisionRuntime(ctx, config)
+		status, err := provisioner.ProvisionRuntime(ctx, config)
 
 		//then
 		require.Error(t, err)
-		assert.Empty(t, operationID)
+		assert.Nil(t, status)
 	})
 
 	t.Run("Should return error when Kyma config validation fails", func(t *testing.T) {
@@ -119,11 +122,11 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, Credentials: providerCredentials, KymaConfig: kymaConfig}
 
 		//when
-		operationID, err := provisioner.ProvisionRuntime(ctx, config)
+		status, err := provisioner.ProvisionRuntime(ctx, config)
 
 		//then
 		require.Error(t, err)
-		assert.Empty(t, operationID)
+		assert.Nil(t, status)
 	})
 
 	t.Run("Should return error when provisioning fails", func(t *testing.T) {
@@ -138,14 +141,14 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 
 		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, Credentials: providerCredentials, KymaConfig: kymaConfig}
 
-		provisioningService.On("ProvisionRuntime", config).Return("", nil, errors.New("Provisioning failed"))
+		provisioningService.On("ProvisionRuntime", config).Return("", "", nil, errors.New("Provisioning failed"))
 
 		//when
-		operationID, err := provisioner.ProvisionRuntime(ctx, config)
+		status, err := provisioner.ProvisionRuntime(ctx, config)
 
 		//then
 		require.Error(t, err)
-		assert.Empty(t, operationID)
+		assert.Nil(t, status)
 	})
 }
 

@@ -143,7 +143,7 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	ProvisionRuntime(ctx context.Context, config ProvisionRuntimeInput) (string, error)
+	ProvisionRuntime(ctx context.Context, config ProvisionRuntimeInput) (*OperationStatus, error)
 	UpgradeRuntime(ctx context.Context, id string, config UpgradeRuntimeInput) (string, error)
 	DeprovisionRuntime(ctx context.Context, id string) (string, error)
 	CleanupRuntimeData(ctx context.Context, id string) (*CleanUpRuntimeDataResult, error)
@@ -898,7 +898,7 @@ input UpgradeClusterInput {
 
 type Mutation {
     # Runtime Management; only one asynchronous operation per RuntimeID can run at any given point in time
-    provisionRuntime(config: ProvisionRuntimeInput!): String!
+    provisionRuntime(config: ProvisionRuntimeInput!): OperationStatus
     upgradeRuntime(id: String!, config: UpgradeRuntimeInput!): String!
     deprovisionRuntime(id: String!): String!
     cleanupRuntimeData(id: String!): CleanUpRuntimeDataResult!
@@ -1962,15 +1962,12 @@ func (ec *executionContext) _Mutation_provisionRuntime(ctx context.Context, fiel
 		return ec.resolvers.Mutation().ProvisionRuntime(rctx, args["config"].(ProvisionRuntimeInput))
 	})
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*OperationStatus)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOOperationStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_upgradeRuntime(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -4166,9 +4163,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = graphql.MarshalString("Mutation")
 		case "provisionRuntime":
 			out.Values[i] = ec._Mutation_provisionRuntime(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "upgradeRuntime":
 			out.Values[i] = ec._Mutation_upgradeRuntime(ctx, field)
 			if out.Values[i] == graphql.Null {

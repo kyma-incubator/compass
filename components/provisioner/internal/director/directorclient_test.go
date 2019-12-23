@@ -21,12 +21,13 @@ const (
 	runtimeTestingID   = "test-runtime-ID-12345"
 	runtimeTestingName = "Runtime Test name"
 	validTokenValue    = "12345"
+	tenantValue        = "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"
 
-	expectedCreateRuntimeQuery = `mutation {
-	result: createRuntime(in: {
+	expectedRegisterRuntimeQuery = `mutation {
+	result: registerRuntime(in: {
 		name: "Runtime Test name",
 		description: "runtime description",
-	})}`
+	}) { id } }`
 
 	expectedDeleteRuntimeQuery = `mutation {
 	result: deleteRuntime(id: test-runtime-ID-12345)}`
@@ -39,8 +40,9 @@ var (
 
 func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 
-	expectedRequest := gcli.NewRequest(expectedCreateRuntimeQuery)
+	expectedRequest := gcli.NewRequest(expectedRegisterRuntimeQuery)
 	expectedRequest.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", validTokenValue))
+	expectedRequest.Header.Set(TenantKey, tenantValue)
 
 	inputDescription := "runtime description"
 
@@ -76,7 +78,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		mockedOAuthClient := &oauthmocks.Client{}
 		mockedOAuthClient.On("GetAuthorizationToken").Return(token, nil)
 
-		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient, tenantValue)
 
 		// when
 		receivedRuntimeID, err := configClient.CreateRuntime(runtimeInput)
@@ -110,7 +112,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		mockedOAuthClient := &oauthmocks.Client{}
 		mockedOAuthClient.On("GetAuthorizationToken").Return(token, nil)
 
-		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient, tenantValue)
 
 		// when
 		receivedRuntimeID, err := configClient.CreateRuntime(runtimeInput)
@@ -144,7 +146,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		mockedOAuthClient := &oauthmocks.Client{}
 		mockedOAuthClient.On("GetAuthorizationToken").Return(expiredToken, nil)
 
-		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient, tenantValue)
 
 		// when
 		receivedRuntimeID, err := configClient.CreateRuntime(runtimeInput)
@@ -174,7 +176,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 			cfg.Result = expectedResponse
 		}, expectedRequest)
 
-		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient, tenantValue)
 
 		// when
 		receivedRuntimeID, err := configClient.CreateRuntime(runtimeInput)
@@ -203,7 +205,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 			cfg.Result = nil
 		}, expectedRequest)
 
-		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient, tenantValue)
 
 		// when
 		receivedRuntimeID, err := configClient.CreateRuntime(runtimeInput)
@@ -237,7 +239,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		mockedOAuthClient := &oauthmocks.Client{}
 		mockedOAuthClient.On("GetAuthorizationToken").Return(validToken, nil)
 
-		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient, tenantValue)
 
 		// when
 		receivedRuntimeID, err := configClient.CreateRuntime(runtimeInput)
@@ -252,6 +254,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 
 	expectedRequest := gcli.NewRequest(expectedDeleteRuntimeQuery)
 	expectedRequest.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", validTokenValue))
+	expectedRequest.Header.Set(TenantKey, tenantValue)
 
 	t.Run("Should unregister runtime of given ID and return no error when the Director access token is valid", func(t *testing.T) {
 		// given
@@ -278,7 +281,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		mockedOAuthClient := &oauthmocks.Client{}
 		mockedOAuthClient.On("GetAuthorizationToken").Return(validToken, nil)
 
-		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient, tenantValue)
 
 		// when
 		err := configClient.DeleteRuntime(runtimeTestingID)
@@ -311,7 +314,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		mockedOAuthClient := &oauthmocks.Client{}
 		mockedOAuthClient.On("GetAuthorizationToken").Return(emptyToken, nil)
 
-		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient, tenantValue)
 
 		// when
 		err := configClient.DeleteRuntime(runtimeTestingID)
@@ -345,7 +348,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		mockedOAuthClient := &oauthmocks.Client{}
 		mockedOAuthClient.On("GetAuthorizationToken").Return(expiredToken, nil)
 
-		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient, tenantValue)
 
 		// when
 		err := configClient.DeleteRuntime(runtimeTestingID)
@@ -374,7 +377,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 			cfg.Result = expectedResponse
 		}, expectedRequest)
 
-		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient, tenantValue)
 
 		// when
 		err := configClient.DeleteRuntime(runtimeTestingID)
@@ -402,7 +405,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 			cfg.Result = nil
 		}, expectedRequest)
 
-		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient, tenantValue)
 
 		// when
 		err := configClient.DeleteRuntime(runtimeTestingID)
@@ -435,7 +438,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		mockedOAuthClient := &oauthmocks.Client{}
 		mockedOAuthClient.On("GetAuthorizationToken").Return(validToken, nil)
 
-		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient, tenantValue)
 
 		// when
 		err := configClient.DeleteRuntime(runtimeTestingID)
@@ -469,7 +472,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		mockedOAuthClient := &oauthmocks.Client{}
 		mockedOAuthClient.On("GetAuthorizationToken").Return(validToken, nil)
 
-		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient, tenantValue)
 
 		// when
 		err := configClient.DeleteRuntime(runtimeTestingID)

@@ -2,18 +2,17 @@ package oauth
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
-	"io/ioutil"
-	"net/http"
-	"testing"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"io/ioutil"
 	v1 "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 	core "k8s.io/client-go/kubernetes/typed/core/v1"
+	"net/http"
+	"testing"
+	"time"
 )
 
 const (
@@ -25,16 +24,15 @@ func TestOauthClient_GetAuthorizationToken(t *testing.T) {
 	t.Run("Should return oauth token", func(t *testing.T) {
 		//given
 		credentials := credentials{
-			clientID:     "12345",
-			clientSecret: "some dark and scary secret",
+			clientID:       "12345",
+			clientSecret:   "some dark and scary secret",
+			tokensEndpoint: "http://hydra:4445",
 		}
 
 		token := Token{
 			AccessToken: "12345",
 			Expiration:  1234,
 		}
-
-		hydraUrl := "http://hydra:4445"
 
 		client := NewTestClient(func(req *http.Request) *http.Response {
 			username, secret, ok := req.BasicAuth()
@@ -60,11 +58,12 @@ func TestOauthClient_GetAuthorizationToken(t *testing.T) {
 		createFakeCredentialsSecret(t, secrets, credentials)
 		defer deleteSecret(t, secrets)
 
-		oauthClient := NewOauthClient(hydraUrl, client, secrets, secretName)
+		oauthClient := NewOauthClient(client, secrets, secretName)
 
 		//when
 		responseToken, err := oauthClient.GetAuthorizationToken()
 		require.NoError(t, err)
+		token.Expiration += time.Now().Unix()
 
 		//then
 		assert.Equal(t, token.AccessToken, responseToken.AccessToken)
@@ -85,8 +84,6 @@ func (f RoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 func createFakeCredentialsSecret(t *testing.T, secrets core.SecretInterface, credentials credentials) {
-	encodedClientID := base64.StdEncoding.EncodeToString([]byte(credentials.clientID))
-	encodedClientSecret := base64.StdEncoding.EncodeToString([]byte(credentials.clientSecret))
 
 	secret := &v1.Secret{
 		ObjectMeta: meta.ObjectMeta{
@@ -98,8 +95,9 @@ func createFakeCredentialsSecret(t *testing.T, secrets core.SecretInterface, cre
 			APIVersion: "v1",
 		},
 		Data: map[string][]byte{
-			clientIDKey:     []byte(encodedClientID),
-			clientSecretKey: []byte(encodedClientSecret),
+			clientIDKey:       []byte(credentials.clientID),
+			clientSecretKey:   []byte(credentials.clientSecret),
+			tokensEndpointKey: []byte(credentials.tokensEndpoint),
 		},
 	}
 
