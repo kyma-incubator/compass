@@ -1,6 +1,7 @@
 package provisioner
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -33,7 +34,7 @@ var GardenerInputs = map[string]gqlschema.GardenerConfigInput{
 		DiskType:     "Standard_LRS",
 		Region:       "westeurope",
 		Seed:         "az-eu1",
-		TargetSecret: "", // TODO
+		TargetSecret: "mszymanski-azure", // TODO
 
 		ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 			AzureConfig: &gqlschema.AzureProviderConfigInput{
@@ -57,11 +58,12 @@ func Test_E2E_Gardener(t *testing.T) {
 		provisioningInput := gqlschema.ProvisionRuntimeInput{
 			ClusterConfig: &gqlschema.ClusterConfigInput{
 				GardenerConfig: &gqlschema.GardenerConfigInput{
-					Name:                   testCaseGardenerName(provider, testSuite.TestId),
+					Name:                   provider + "-test",
 					ProjectName:            config.GardenerProjectName,
 					KubernetesVersion:      "1.15.4",
 					NodeCount:              3,
-					VolumeSizeGb:           30,
+					DiskType:               GardenerInputs[provider].DiskType,
+					VolumeSizeGb:           35,
 					MachineType:            GardenerInputs[provider].MachineType,
 					Region:                 GardenerInputs[provider].Region,
 					Provider:               provider,
@@ -76,10 +78,10 @@ func Test_E2E_Gardener(t *testing.T) {
 				},
 			},
 			Credentials: &credentialsInput,
-			KymaConfig:  &gqlschema.KymaConfigInput{Version: "1.6", Modules: gqlschema.AllKymaModule},
+			KymaConfig:  &gqlschema.KymaConfigInput{Version: "1.8", Modules: gqlschema.AllKymaModule},
 		}
 
-		logrus.Infof("Provisioning %s runtime on %s...", runtimeId, provider)
+		logrus.Infof("Provisioning %s runtime on %s...", runtimeId, toName(provider))
 		provisioningOperationId, err := testSuite.ProvisionerClient.ProvisionRuntime(runtimeId, provisioningInput)
 		assertions.RequireNoError(t, err)
 		logrus.Infof("Provisioning operation id: %s", provisioningOperationId)
@@ -139,7 +141,7 @@ func Test_E2e(t *testing.T) {
 	// TODO: Support for GCP was dropped and for now the GCP tests are skipped
 	t.SkipNow()
 
-	logrus.Infof("Starting GCP tests. Test id: %s", testSuite.TestId)
+	logrus.Infof("Starting provisioner tests concerning GCP. Test id: %s", testSuite.TestId)
 
 	runtimeId := uuid.New().String()
 
@@ -153,7 +155,7 @@ func Test_E2e(t *testing.T) {
 				ProjectName:       config.GCPProjectName,
 				KubernetesVersion: "1.14",
 				NumberOfNodes:     3,
-				BootDiskSizeGb:    30,
+				BootDiskSizeGb:    35, // minimal value
 				MachineType:       gcpMachineType,
 				Region:            gcpClusterZone,
 			},
@@ -274,6 +276,6 @@ func unwrapString(str *string) string {
 	return ""
 }
 
-func testCaseGardenerName(provider, testID string) string {
-	return "gardener-" + provider + "-provisioner-test-" + testID
+func toName(provider string) string {
+	return strings.ToUpper(string(provider[0])) + provider[1:]
 }
