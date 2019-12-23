@@ -38,6 +38,7 @@ func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
 		StatusTimestamp:     in.Status.Timestamp,
 		HealthCheckURL:      repo.NewNullableString(in.HealthCheckURL),
 		IntegrationSystemID: repo.NewNullableString(in.IntegrationSystemID),
+		ProviderDisplayName: in.ProviderDisplayName,
 	}, nil
 }
 
@@ -57,6 +58,7 @@ func (c *converter) FromEntity(entity *Entity) *model.Application {
 		},
 		IntegrationSystemID: repo.StringPtrFromNullableString(entity.IntegrationSystemID),
 		HealthCheckURL:      repo.StringPtrFromNullableString(entity.HealthCheckURL),
+		ProviderDisplayName: entity.ProviderDisplayName,
 	}
 }
 
@@ -72,6 +74,7 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 		Description:         in.Description,
 		HealthCheckURL:      in.HealthCheckURL,
 		IntegrationSystemID: in.IntegrationSystemID,
+		ProviderDisplayName: in.ProviderDisplayName,
 	}
 }
 
@@ -100,6 +103,7 @@ func (c *converter) CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) 
 		Labels:              labels,
 		HealthCheckURL:      in.HealthCheckURL,
 		IntegrationSystemID: in.IntegrationSystemID,
+		ProviderDisplayName: in.ProviderDisplayName,
 		Webhooks:            c.webhook.MultipleInputFromGraphQL(in.Webhooks),
 		Documents:           c.document.MultipleInputFromGraphQL(in.Documents),
 		EventDefinitions:    c.eventAPI.MultipleInputFromGraphQL(in.EventDefinitions),
@@ -113,6 +117,7 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) mo
 		Description:         in.Description,
 		HealthCheckURL:      in.HealthCheckURL,
 		IntegrationSystemID: in.IntegrationSystemID,
+		ProviderDisplayName: in.ProviderDisplayName,
 	}
 }
 

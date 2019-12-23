@@ -100,6 +100,7 @@ type ComplexityRoot struct {
 		IntegrationSystemID   func(childComplexity int) int
 		Labels                func(childComplexity int, key *string) int
 		Name                  func(childComplexity int) int
+		ProviderDisplayName   func(childComplexity int) int
 		Status                func(childComplexity int) int
 		Webhooks              func(childComplexity int) int
 	}
@@ -767,6 +768,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.Name(childComplexity), true
+
+	case "Application.providerDisplayName":
+		if e.complexity.Application.ProviderDisplayName == nil {
+			break
+		}
+
+		return e.complexity.Application.ProviderDisplayName(childComplexity), true
 
 	case "Application.status":
 		if e.complexity.Application.Status == nil {
@@ -2464,6 +2472,7 @@ input ApplicationFromTemplateInput {
 
 input ApplicationRegisterInput {
 	name: String!
+	providerDisplayName: String!
 	description: String
 	labels: Labels
 	webhooks: [WebhookInput!]
@@ -2484,6 +2493,7 @@ input ApplicationTemplateInput {
 
 input ApplicationUpdateInput {
 	name: String!
+	providerDisplayName: String!
 	description: String
 	healthCheckURL: String
 	integrationSystemID: ID
@@ -2661,6 +2671,7 @@ type APISpec {
 type Application {
 	id: ID!
 	name: String!
+	providerDisplayName: String!
 	description: String
 	integrationSystemID: ID
 	labels(key: String): Labels
@@ -5444,6 +5455,43 @@ func (ec *executionContext) _Application_name(ctx context.Context, field graphql
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Application_providerDisplayName(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Application",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProviderDisplayName, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -15121,6 +15169,12 @@ func (ec *executionContext) unmarshalInputApplicationRegisterInput(ctx context.C
 			if err != nil {
 				return it, err
 			}
+		case "providerDisplayName":
+			var err error
+			it.ProviderDisplayName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "description":
 			var err error
 			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
@@ -15226,6 +15280,12 @@ func (ec *executionContext) unmarshalInputApplicationUpdateInput(ctx context.Con
 		case "name":
 			var err error
 			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "providerDisplayName":
+			var err error
+			it.ProviderDisplayName, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -16102,6 +16162,11 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			}
 		case "name":
 			out.Values[i] = ec._Application_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "providerDisplayName":
+			out.Values[i] = ec._Application_providerDisplayName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
