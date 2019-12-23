@@ -43,9 +43,9 @@ const (
 )
 
 var providers = []string{
-	"Azure",
-	// "AWS",
-	// "GCP",
+	"azure",
+	// "aws",
+	// "gcp",
 }
 
 type TestSuite struct {

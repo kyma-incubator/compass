@@ -92,7 +92,7 @@ func Test_E2E_Gardener(t *testing.T) {
 			KymaConfig:  &gqlschema.KymaConfigInput{Version: "1.8.0", Modules: gqlschema.AllKymaModule},
 		}
 
-		logrus.Infof("Provisioning %s runtime on %s...", runtimeId, provider)
+		logrus.Infof("Provisioning %s runtime on %s...", runtimeId, toName(provider))
 		provisioningOperationId, err := testSuite.ProvisionerClient.ProvisionRuntime(runtimeId, provisioningInput)
 		assertions.RequireNoError(t, err)
 		logrus.Infof("Provisioning operation id: %s", provisioningOperationId)
