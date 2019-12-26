@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler"
 	"testing"
 	"time"
 
@@ -197,6 +198,7 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 	}
 
 	providerCredentials := &gqlschema.CredentialsInput{SecretName: "secret_1"}
+	accountProvider := hyperscaler.NewAccountProvider(nil, nil)
 
 	clusterConfigurations := getTestClusterConfigurations()
 
@@ -208,7 +210,7 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			dbSessionFactory := dbsession.NewFactory(connection)
 			persistenceService := persistence.NewService(dbSessionFactory, uuidGenerator)
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
-			inputConverter := converters.NewInputConverter(uuidGenerator, releaseRepository)
+			inputConverter := converters.NewInputConverter(uuidGenerator, releaseRepository, accountProvider)
 			graphQLConverter := converters.NewGraphQLConverter()
 			provisioningService := provisioning.NewProvisioningService(persistenceService, inputConverter, graphQLConverter, hydroformServiceMock, installationServiceMock)
 			provisioner := NewResolver(provisioningService)

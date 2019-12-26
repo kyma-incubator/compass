@@ -7,9 +7,10 @@ import (
 // AccountProvider provides access to the Kubernetes instance used to provision a new cluster by
 // means of K8S secret containing credentials to the appropriate account. There are different pools of
 // credentials for different use-cases (Gardener, Compass).
+//go:generate mockery -name=AccountProvider
 type AccountProvider interface {
-	CompassCredentials(hyperscalerType HyperscalerType, tenantName string) (Credential, error)
-	GardnerCredentials(hyperscalerType HyperscalerType, tenantName string) (Credential, error)
+	CompassCredentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error)
+	GardnerCredentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error)
 	CompassSecretName(input *gqlschema.ProvisionRuntimeInput) (string, error)
 	GardenerSecretName(input *gqlschema.GardenerConfigInput) (string, error)
 }
@@ -29,15 +30,15 @@ func NewAccountProvider(
 	}
 }
 
-func (h *accountProvider) CompassCredentials(hyperscalerType HyperscalerType, tenantName string) (Credential, error) {
+func (h *accountProvider) CompassCredentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error) {
 
-	return h.compassPool.Credential(hyperscalerType, tenantName)
+	return h.compassPool.Credentials(hyperscalerType, tenantName)
 
 }
 
-func (h *accountProvider) GardnerCredentials(hyperscalerType HyperscalerType, tenantName string) (Credential, error) {
+func (h *accountProvider) GardnerCredentials(hyperscalerType HyperscalerType, tenantName string) (Credentials, error) {
 
-	return h.gardenerPool.Credential(hyperscalerType, tenantName)
+	return h.gardenerPool.Credentials(hyperscalerType, tenantName)
 
 }
 
@@ -66,19 +67,18 @@ func (h *accountProvider) CompassSecretName(input *gqlschema.ProvisionRuntimeInp
 
 func (h *accountProvider) GardenerSecretName(input *gqlschema.GardenerConfigInput) (string, error) {
 
+	// If Gardener config already has a TargetSecret, just return that
 	if len(input.TargetSecret) > 0 {
 		return input.TargetSecret, nil
 	}
 
-	// TODO: which type resolution is better/more correct?
-	//hyperscalerType, err := HyperscalerTypeFromProviderInput(input.ProviderSpecificConfig)
 	hyperscalerType, err := HyperscalerTypeFromProviderString(input.Provider)
 
 	if err != nil {
 		return "", err
 	}
 	// TODO: get tenant name from ...?
-	credential, err := h.GardnerCredentials(hyperscalerType, "tenant-name")
+	credential, err := h.GardnerCredentials(hyperscalerType, "tenant2")
 
 	if err != nil {
 		return "", err

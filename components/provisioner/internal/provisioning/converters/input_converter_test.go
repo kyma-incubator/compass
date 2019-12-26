@@ -1,11 +1,13 @@
 package converters
 
 import (
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler"
 	"testing"
 
 	realeaseMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/release/mocks"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
+	hyperscalerMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler/mocks"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid/mocks"
 	"github.com/stretchr/testify/require"
@@ -327,13 +329,15 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		},
 	}
 
+	accountProvider := hyperscaler.NewAccountProvider(nil, nil)
+
 	for _, testCase := range configurations {
 		t.Run(testCase.description, func(t *testing.T) {
 			//given
 			uuidGeneratorMock := &mocks.UUIDGenerator{}
 			uuidGeneratorMock.On("New").Return("id").Times(4)
 
-			inputConverter := NewInputConverter(uuidGeneratorMock, readSession)
+			inputConverter := NewInputConverter(uuidGeneratorMock, readSession, accountProvider)
 
 			//when
 			runtimeConfig, err := inputConverter.ProvisioningInputToCluster("runtimeID", testCase.input)
@@ -365,8 +369,9 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 				Version: kymaVersion,
 			},
 		}
+		accountProvider := &hyperscalerMocks.AccountProvider{}
 
-		inputConverter := NewInputConverter(uuidGeneratorMock, readSession)
+		inputConverter := NewInputConverter(uuidGeneratorMock, readSession, accountProvider)
 
 		//when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input)
@@ -382,7 +387,7 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 			ClusterConfig: &gqlschema.ClusterConfigInput{},
 		}
 
-		inputConverter := NewInputConverter(nil, nil)
+		inputConverter := NewInputConverter(nil, nil, nil)
 
 		//when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input)
@@ -403,14 +408,14 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 			},
 		}
 
-		inputConverter := NewInputConverter(uuidGeneratorMock, nil)
+		inputConverter := NewInputConverter(uuidGeneratorMock, nil, &hyperscalerMocks.AccountProvider{})
 
 		//when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input)
 
 		//then
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "provider config not specified")
+		assert.Contains(t, err.Error(), "ProviderSpecificInput not specified (was nil)")
 	})
 
 }

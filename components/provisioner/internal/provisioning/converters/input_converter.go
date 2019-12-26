@@ -121,7 +121,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 func HyperscalerTypeFromProviderInput(input *gqlschema.ProviderSpecificInput) (hyperscaler.HyperscalerType, error) {
 
 	if input == nil {
-		return hyperscaler.HyperscalerType(""), errors.New("ProviderSpecificInput not specified (nil)")
+		return hyperscaler.HyperscalerType(""), errors.New("ProviderSpecificInput not specified (was nil)")
 	}
 
 	if input.GcpConfig != nil {

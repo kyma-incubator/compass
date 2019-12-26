@@ -2,6 +2,7 @@ package provisioning
 
 import (
 	"errors"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/hyperscaler"
 	"testing"
 
 	releaseMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/release/mocks"
@@ -44,7 +45,8 @@ func TestService_ProvisionRuntime(t *testing.T) {
 	releaseRepo := &releaseMocks.Repository{}
 	releaseRepo.On("GetReleaseByVersion", kymaVersion).Return(kymaRelease, nil)
 
-	inputConverter := converters.NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo)
+	accountProvider := hyperscaler.NewAccountProvider(nil, nil)
+	inputConverter := converters.NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo, accountProvider)
 	graphQLConverter := converters.NewGraphQLConverter()
 
 	clusterConfig := &gqlschema.ClusterConfigInput{
@@ -64,6 +66,8 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		Version: kymaVersion,
 		Modules: gqlschema.AllKymaModule,
 	}
+
+	credentials := &gqlschema.CredentialsInput{SecretName: "secretName"}
 
 	t.Run("Should start runtime provisioning and return operation ID", func(t *testing.T) {
 		//given
@@ -85,7 +89,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		service := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, installationSvc)
 
 		//when
-		operationID, finished, err := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: &gqlschema.CredentialsInput{}, KymaConfig: kymaConfig})
+		operationID, finished, err := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: credentials, KymaConfig: kymaConfig})
 		require.NoError(t, err)
 
 		waitUntilFinished(finished)
@@ -119,7 +123,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		service := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, installationSvc)
 
 		//when
-		operationID, finished, err := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: &gqlschema.CredentialsInput{}, KymaConfig: kymaConfig})
+		operationID, finished, err := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: credentials, KymaConfig: kymaConfig})
 		require.NoError(t, err)
 
 		waitUntilFinished(finished)
@@ -152,7 +156,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		service := NewProvisioningService(persistenceServiceMock, inputConverter, graphQLConverter, hydroformMock, installationSvc)
 
 		//when
-		operationID, finished, err := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: &gqlschema.CredentialsInput{}, KymaConfig: kymaConfig})
+		operationID, finished, err := service.ProvisionRuntime(runtimeID, gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, Credentials: credentials, KymaConfig: kymaConfig})
 		require.NoError(t, err)
 
 		waitUntilFinished(finished)
@@ -191,7 +195,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 	releaseRepo := &releaseMocks.Repository{}
 	releaseRepo.On("GetReleaseByVersion", kymaVersion).Return(kymaRelease, nil)
 
-	inputConverter := converters.NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo)
+	inputConverter := converters.NewInputConverter(uuid.NewUUIDGenerator(), releaseRepo, nil)
 	graphQLConverter := converters.NewGraphQLConverter()
 
 	t.Run("Should start runtime deprovisioning and return operation ID", func(t *testing.T) {
@@ -249,7 +253,7 @@ func TestService_RuntimeOperationStatus(t *testing.T) {
 	releaseRepo := &releaseMocks.Repository{}
 	releaseRepo.On("GetReleaseByVersion", kymaVersion).Return(kymaRelease, nil)
 
-	inputConverter := converters.NewInputConverter(uuidGenerator, releaseRepo)
+	inputConverter := converters.NewInputConverter(uuidGenerator, releaseRepo, nil)
 	graphQLConverter := converters.NewGraphQLConverter()
 
 	t.Run("Should return operation status", func(t *testing.T) {
