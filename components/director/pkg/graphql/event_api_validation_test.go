@@ -116,7 +116,7 @@ func TestEventAPIDefinitionInput_Validate_Spec(t *testing.T) {
 		{
 			Name:          "Nil object",
 			Value:         nil,
-			ExpectedValid: false,
+			ExpectedValid: true,
 		},
 		{
 			Name:          "Invalid object",

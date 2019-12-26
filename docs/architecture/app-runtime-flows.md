@@ -14,7 +14,7 @@ Administrator requests Director to register a new Application in the Management 
 
 ![](./assets/app-pairing.svg)
 
-To learn about implementation details of the pairing process, see [this](./establishing-trusted-connection.md) document.
+To learn about implementation details of the pairing process, see [this](../archive/establishing-trusted-connection.md) document.
 
 ### API registration phase
 

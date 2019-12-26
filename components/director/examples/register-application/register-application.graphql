@@ -3,6 +3,7 @@ mutation {
   result: registerApplication(
     in: {
       name: "wordpress"
+      providerDisplayName: "provider name"
       description: "my first wordpress application"
       labels: { group: ["production", "experimental"], scenarios: ["DEFAULT"] }
       healthCheckURL: "http://mywordpress.com/health"
@@ -59,6 +60,7 @@ mutation {
       }
     }
     healthCheckURL
+    providerDisplayName
     apiDefinitions {
       data {
         id

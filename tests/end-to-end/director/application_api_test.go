@@ -14,6 +14,7 @@ import (
 )
 
 const (
+	eventingCategory            = "eventing"
 	registerApplicationCategory = "register application"
 	queryApplicationsCategory   = "query applications"
 	queryApplicationCategory    = "query application"
@@ -29,9 +30,10 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	in := graphql.ApplicationRegisterInput{
-		Name:           "wordpress",
-		Description:    ptr.String("my first wordpress application"),
-		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
+		Name:                "wordpress",
+		ProviderDisplayName: "provider name",
+		Description:         ptr.String("my first wordpress application"),
+		HealthCheckURL:      ptr.String("http://mywordpress.com/health"),
 		Labels: &graphql.Labels{
 			"group":     []interface{}{"production", "experimental"},
 			"scenarios": []interface{}{"DEFAULT"},
@@ -65,7 +67,8 @@ func TestRegisterApplicationWithWebhooks(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	in := graphql.ApplicationRegisterInput{
-		Name: "wordpress",
+		Name:                "wordpress",
+		ProviderDisplayName: "compass",
 		Webhooks: []*graphql.WebhookInput{
 			{
 				Type: graphql.ApplicationWebhookTypeConfigurationChanged,
@@ -107,7 +110,8 @@ func TestRegisterApplicationWithAPIs(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	in := graphql.ApplicationRegisterInput{
-		Name: "wordpress",
+		Name:                "wordpress",
+		ProviderDisplayName: "compass",
 		APIDefinitions: []*graphql.APIDefinitionInput{
 			{
 				Name:        "comments-v1",
@@ -191,7 +195,8 @@ func TestRegisterApplicationWithEventDefinitions(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	in := graphql.ApplicationRegisterInput{
-		Name: "create-application-with-event-apis",
+		Name:                "create-application-with-event-apis",
+		ProviderDisplayName: "compass",
 		EventDefinitions: []*graphql.EventDefinitionInput{
 			{
 				Name:        "comments-v1",
@@ -254,7 +259,8 @@ func TestRegisterApplicationWithDocuments(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	in := graphql.ApplicationRegisterInput{
-		Name: "create-application-with-documents",
+		Name:                "create-application-with-documents",
+		ProviderDisplayName: "compass",
 		Documents: []*graphql.DocumentInput{
 			{
 				Title:       "Readme",
@@ -434,6 +440,7 @@ func TestUpdateApplication(t *testing.T) {
 
 	expectedApp := actualApp
 	expectedApp.Name = "after"
+	expectedApp.ProviderDisplayName = "after"
 	expectedApp.Description = ptr.String("after")
 	expectedApp.HealthCheckURL = ptr.String("https://kyma-project.io")
 
@@ -584,7 +591,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		err := tc.RunOperation(ctx, addReq, &createdLabel)
 		require.NoError(t, err)
 		assert.Equal(t, &expectedLabel, createdLabel)
-		actualApp := getApp(ctx, t, actualApp.ID)
+		actualApp := getApplication(t, ctx, actualApp.ID)
 		assert.Contains(t, actualApp.Labels[expectedLabel.Key], "aaa")
 		assert.Contains(t, actualApp.Labels[expectedLabel.Key], "bbb")
 
@@ -601,7 +608,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		err = tc.RunOperation(ctx, delReq, &deletedLabel)
 		require.NoError(t, err)
 		assert.Equal(t, expectedLabel, deletedLabel)
-		actualApp = getApp(ctx, t, actualApp.ID)
+		actualApp = getApplication(t, ctx, actualApp.ID)
 		assert.Nil(t, actualApp.Labels[expectedLabel.Key])
 
 	})
@@ -631,7 +638,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		require.NotNil(t, id)
 
 		// get all webhooks
-		updatedApp := getApp(ctx, t, actualApp.ID)
+		updatedApp := getApplication(t, ctx, actualApp.ID)
 		assert.Len(t, updatedApp.Webhooks, 2)
 
 		// update
@@ -705,7 +712,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		assert.Equal(t, "new-api-name", actualAPI.Name)
 		assert.Equal(t, "https://target.url", actualAPI.TargetURL)
 
-		updatedApp := getApp(ctx, t, actualApp.ID)
+		updatedApp := getApplication(t, ctx, actualApp.ID)
 		assert.Len(t, updatedApp.APIDefinitions.Data, 2)
 		actualAPINames := make(map[string]struct{})
 		for _, api := range updatedApp.APIDefinitions.Data {
@@ -733,7 +740,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 		//THEN
 		require.NoError(t, err)
-		updatedApp = getApp(ctx, t, actualApp.ID)
+		updatedApp = getApplication(t, ctx, actualApp.ID)
 		assert.Len(t, updatedApp.APIDefinitions.Data, 2)
 		actualAPINamesAfterUpdate := make(map[string]struct{})
 		for _, api := range updatedApp.APIDefinitions.Data {
@@ -758,7 +765,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, id, delAPI.ID)
 
-		app := getApp(ctx, t, actualApp.ID)
+		app := getApplication(t, ctx, actualApp.ID)
 		require.Len(t, app.APIDefinitions.Data, 1)
 		assert.Equal(t, placeholder, app.APIDefinitions.Data[0].Name)
 
@@ -795,7 +802,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "new-event-api", actualEventAPI.Name)
 		assert.NotEmpty(t, actualEventAPI.ID)
-		updatedApp := getApp(ctx, t, actualApp.ID)
+		updatedApp := getApplication(t, ctx, actualApp.ID)
 		assert.Len(t, updatedApp.EventDefinitions.Data, 2)
 
 		// update
@@ -838,7 +845,6 @@ func TestUpdateApplicationParts(t *testing.T) {
 		err = tc.RunOperation(ctx, delReq, nil)
 		// THEN
 		require.NoError(t, err)
-
 	})
 
 	t.Run("manage documents", func(t *testing.T) {
@@ -873,7 +879,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 		//delete
 
-		updatedApp := getApp(ctx, t, actualApp.ID)
+		updatedApp := getApplication(t, ctx, actualApp.ID)
 		assert.Len(t, updatedApp.Documents.Data, 2)
 		actualDocuTitles := make(map[string]struct{})
 		for _, docu := range updatedApp.Documents.Data {
@@ -899,7 +905,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, id, delDocument.ID)
 
-		app := getApp(ctx, t, actualApp.ID)
+		app := getApplication(t, ctx, actualApp.ID)
 		require.Len(t, app.Documents.Data, 1)
 		assert.Equal(t, placeholder, app.Documents.Data[0].Title)
 	})
@@ -918,7 +924,8 @@ func TestQueryApplications(t *testing.T) {
 	ctx := context.Background()
 	for i := 0; i < 3; i++ {
 		in := graphql.ApplicationRegisterInput{
-			Name: fmt.Sprintf("app-%d", i),
+			Name:                fmt.Sprintf("app-%d", i),
+			ProviderDisplayName: "compass",
 		}
 
 		appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
@@ -956,7 +963,8 @@ func TestQueryApplications(t *testing.T) {
 func TestQuerySpecificApplication(t *testing.T) {
 	// GIVEN
 	in := graphql.ApplicationRegisterInput{
-		Name: fmt.Sprintf("app"),
+		Name:                fmt.Sprintf("app"),
+		ProviderDisplayName: "Compass",
 	}
 
 	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
@@ -1071,8 +1079,9 @@ func TestQueryAPIRuntimeAuths(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appInput := graphql.ApplicationRegisterInput{
-				Name:           "test-app",
-				APIDefinitions: testCase.Apis,
+				Name:                "test-app",
+				ProviderDisplayName: "compass",
+				APIDefinitions:      testCase.Apis,
 				Labels: &graphql.Labels{
 					"scenarios": []interface{}{"DEFAULT"},
 				},
@@ -1236,22 +1245,10 @@ func TestQuerySpecificEventAPIDefinition(t *testing.T) {
 	assert.Equal(t, createdID, actualEventAPI.ID)
 }
 
-func getApp(ctx context.Context, t *testing.T, id string) graphql.ApplicationExt {
-	q := gcli.NewRequest(
-		fmt.Sprintf(`query {
-			result: application(id: "%s") {
-				%s
-			} 
-		}`, id, tc.gqlFieldsProvider.ForApplication()))
-	var app graphql.ApplicationExt
-	require.NoError(t, tc.RunOperation(ctx, q, &app))
-	return app
-
-}
-
 func fixSampleApplicationRegisterInput(placeholder string) graphql.ApplicationRegisterInput {
 	return graphql.ApplicationRegisterInput{
-		Name: placeholder,
+		Name:                placeholder,
+		ProviderDisplayName: "compass",
 		Documents: []*graphql.DocumentInput{{
 			Title:       placeholder,
 			DisplayName: placeholder,
@@ -1291,9 +1288,10 @@ func fixSampleApplicationCreateInputWithIntegrationSystem(placeholder string) gr
 
 func fixSampleApplicationUpdateInput(placeholder string) graphql.ApplicationUpdateInput {
 	return graphql.ApplicationUpdateInput{
-		Name:           placeholder,
-		Description:    &placeholder,
-		HealthCheckURL: ptr.String(webhookURL),
+		Name:                placeholder,
+		Description:         &placeholder,
+		HealthCheckURL:      ptr.String(webhookURL),
+		ProviderDisplayName: placeholder,
 	}
 }
 
@@ -1303,6 +1301,7 @@ func fixSampleApplicationUpdateInputWithIntegrationSystem(placeholder string) gr
 		Description:         &placeholder,
 		HealthCheckURL:      ptr.String(webhookURL),
 		IntegrationSystemID: &integrationSystemID,
+		ProviderDisplayName: placeholder,
 	}
 }
 

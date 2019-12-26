@@ -309,3 +309,9 @@ func deleteSystemAuthForIntegrationSystem(t *testing.T, ctx context.Context, id 
 	err := tc.RunOperation(ctx, req, nil)
 	require.NoError(t, err)
 }
+
+func setDefaultEventingForApplication(t *testing.T, ctx context.Context, appID string, runtimeID string) {
+	req := fixSetDefaultEventingForApplication(appID, runtimeID)
+	err := tc.RunOperation(ctx, req, nil)
+	require.NoError(t, err)
+}

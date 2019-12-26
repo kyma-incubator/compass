@@ -14,7 +14,7 @@ Read these documents to learn the basics of the Compass architecture:
 These documents provide you with more architectural details:
 
 - [Application and Runtime Flows](./architecture/app-runtime-flows.md)
-- [Establishing a trusted connection](./architecture/establishing-trusted-connection.md)
+- [Establishing a trusted connection](archive/establishing-trusted-connection.md)
 - [API Credentials Flow](./architecture/api-credentials-flows.md)
 - [Support for legacy REST API](./architecture/support-for-legacy-rest-api.md)
 - [Event flows proposal](./architecture/event-flows-proposal.md)

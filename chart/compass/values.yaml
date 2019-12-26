@@ -16,7 +16,7 @@ global:
       version: "PR-391"
     director:
       dir:
-      version: "PR-524"
+      version: "PR-564"
     gateway:
       dir: pr/
       version: "PR-357"
@@ -25,10 +25,10 @@ global:
       version: "PR-357"
     schema_migrator:
       dir:
-      version: "PR-524"
+      version: "PR-564"
     provisioner:
       dir:
-      version: "PR-500"
+      version: "PR-555"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -37,10 +37,10 @@ global:
     tests:
       e2e:
         dir:
-        version: "PR-524"
+        version: "PR-567"
       connector:
-        dir: pr/
-        version: "PR-391"
+        dir:
+        version: "02e8358c"
       provisioner:
         dir:
         version: "PR-500"

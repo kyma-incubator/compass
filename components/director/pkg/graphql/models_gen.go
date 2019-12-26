@@ -69,6 +69,7 @@ func (ApplicationPage) IsPageable() {}
 
 type ApplicationRegisterInput struct {
 	Name                string                  `json:"name"`
+	ProviderDisplayName string                  `json:"providerDisplayName"`
 	Description         *string                 `json:"description"`
 	Labels              *Labels                 `json:"labels"`
 	Webhooks            []*WebhookInput         `json:"webhooks"`
@@ -111,6 +112,7 @@ func (ApplicationTemplatePage) IsPageable() {}
 
 type ApplicationUpdateInput struct {
 	Name                string  `json:"name"`
+	ProviderDisplayName string  `json:"providerDisplayName"`
 	Description         *string `json:"description"`
 	HealthCheckURL      *string `json:"healthCheckURL"`
 	IntegrationSystemID *string `json:"integrationSystemID"`

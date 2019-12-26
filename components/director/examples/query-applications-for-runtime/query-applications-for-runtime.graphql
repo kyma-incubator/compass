@@ -57,6 +57,7 @@ query {
         }
       }
       healthCheckURL
+      providerDisplayName
       apiDefinitions {
         data {
           id

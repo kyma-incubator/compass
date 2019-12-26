@@ -77,6 +77,7 @@ type EventAPIConverter interface {
 
 //go:generate mockery -name=EventingService -output=automock -outpkg=automock -case=underscore
 type EventingService interface {
+	CleanupAfterUnregisteringApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error)
 	GetForApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error)
 }
 
@@ -371,6 +372,15 @@ func (r *Resolver) UnregisterApplication(ctx context.Context, id string) (*graph
 		return nil, err
 	}
 
+	appID, err := uuid.Parse(app.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing application ID as UUID")
+	}
+
+	if _, err = r.eventingSvc.CleanupAfterUnregisteringApplication(ctx, appID); err != nil {
+		return nil, err
+	}
+
 	auths, err := r.sysAuthSvc.ListForObject(ctx, model.ApplicationReference, app.ID)
 	if err != nil {
 		return nil, err
@@ -658,7 +668,7 @@ func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*g
 	return gqlWebhooks, nil
 }
 
-func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *string) (graphql.Labels, error) {
+func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *string) (*graphql.Labels, error) {
 	if obj == nil {
 		return nil, errors.New("Application cannot be empty")
 	}
@@ -674,7 +684,7 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *st
 	itemMap, err := r.appSvc.ListLabels(ctx, obj.ID)
 	if err != nil {
 		if strings.Contains(err.Error(), "doesn't exist") {
-			return graphql.Labels{}, nil
+			return nil, nil
 		}
 
 		return nil, err
@@ -691,7 +701,9 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *st
 		resultLabels[label.Key] = label.Value
 	}
 
-	return resultLabels, nil
+	var gqlLabels graphql.Labels = resultLabels
+
+	return &gqlLabels, nil
 }
 
 func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*graphql.SystemAuth, error) {

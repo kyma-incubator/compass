@@ -15,6 +15,8 @@ Below you can find a list of mock GraphQL queries and mutations:
 - [delete event definition](./delete-event-definition/delete-event-definition.graphql)
 - [delete label definition](./delete-label-definition/delete-label-definition.graphql)
 - [delete application webhook](./delete-webhook/delete-application-webhook.graphql)
+- [delete default eventing for application](./eventing/delete-default-eventing-for-application.graphql)
+- [set default eventing for application](./eventing/set-default-eventing-for-application.graphql)
 - [query api definition](./query-api-definition/query-api-definition.graphql)
 - [query api runtime auths](./query-application/query-api-runtime-auths.graphql)
 - [query application](./query-application/query-application.graphql)

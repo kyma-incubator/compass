@@ -10,7 +10,7 @@ func (i EventDefinitionInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Name, validation.Required, inputvalidation.Name),
 		validation.Field(&i.Description, validation.RuneLength(0, shortStringLengthLimit)),
-		validation.Field(&i.Spec, validation.Required),
+		validation.Field(&i.Spec, validation.NilOrNotEmpty),
 		validation.Field(&i.Group, validation.RuneLength(0, groupLengthLimit)),
 		validation.Field(&i.Version, validation.NilOrNotEmpty),
 	)

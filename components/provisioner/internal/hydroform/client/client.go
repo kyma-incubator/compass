@@ -7,7 +7,7 @@ import (
 
 //go:generate mockery -name=Client
 type Client interface {
-	Provision(cluster *types.Cluster, provider *types.Provider) (*types.Cluster, error)
+	Provision(cluster *types.Cluster, provider *types.Provider, ops ...types.Option) (*types.Cluster, error)
 	Status(cluster *types.Cluster, provider *types.Provider) (*types.ClusterStatus, error)
 	Credentials(cluster *types.Cluster, provider *types.Provider) ([]byte, error)
 	Deprovision(cluster *types.Cluster, provider *types.Provider) error
@@ -19,8 +19,8 @@ func NewHydroformClient() Client {
 	return &client{}
 }
 
-func (c client) Provision(cluster *types.Cluster, provider *types.Provider) (*types.Cluster, error) {
-	return hydroform.Provision(cluster, provider)
+func (c client) Provision(cluster *types.Cluster, provider *types.Provider, ops ...types.Option) (*types.Cluster, error) {
+	return hydroform.Provision(cluster, provider, ops...)
 }
 func (c client) Status(cluster *types.Cluster, provider *types.Provider) (*types.ClusterStatus, error) {
 	return hydroform.Status(cluster, provider)

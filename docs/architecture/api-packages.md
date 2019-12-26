@@ -146,7 +146,7 @@ In order to do so, Runtime Agent executes the following steps:
 
 1. Query Applications for Runtime
 1. For every Application:
-   - Read `api-packages` label and populate ServiceClasses for API Packages. Agent generates IDs for these Service Classes.
+   - Read `api-packages` label and populate ServiceClasses for API Packages. Runtime Agent generates IDs for these Service Classes.
    - Read all API and Event Definitions, excluding items from all API Packages. Every API or Event Definition is a Separate Class with ID equal to API/Event Definition ID.
 
 ### UI

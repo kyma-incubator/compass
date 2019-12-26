@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tenant"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
@@ -126,5 +127,19 @@ func fixApplicationScenariosLabel() *model.Label {
 func fixMatcherDefaultEventingForAppLabel() func(l *model.Label) bool {
 	return func(l *model.Label) bool {
 		return l.Key == getDefaultEventingForAppLabelKey(applicationID)
+	}
+}
+
+func fixModelApplicationEventingConfiguration(url string) *model.ApplicationEventingConfiguration {
+	return &model.ApplicationEventingConfiguration{
+		EventingConfiguration: model.EventingConfiguration{
+			DefaultURL: url,
+		},
+	}
+}
+
+func fixGQLApplicationEventingConfiguration(url string) *graphql.ApplicationEventingConfiguration {
+	return &graphql.ApplicationEventingConfiguration{
+		DefaultURL: url,
 	}
 }

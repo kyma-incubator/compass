@@ -100,6 +100,7 @@ type ComplexityRoot struct {
 		IntegrationSystemID   func(childComplexity int) int
 		Labels                func(childComplexity int, key *string) int
 		Name                  func(childComplexity int) int
+		ProviderDisplayName   func(childComplexity int) int
 		Status                func(childComplexity int) int
 		Webhooks              func(childComplexity int) int
 	}
@@ -394,7 +395,7 @@ type APISpecResolver interface {
 	FetchRequest(ctx context.Context, obj *APISpec) (*FetchRequest, error)
 }
 type ApplicationResolver interface {
-	Labels(ctx context.Context, obj *Application, key *string) (Labels, error)
+	Labels(ctx context.Context, obj *Application, key *string) (*Labels, error)
 
 	Webhooks(ctx context.Context, obj *Application) ([]*Webhook, error)
 
@@ -463,8 +464,8 @@ type MutationResolver interface {
 	DeleteDefaultEventingForApplication(ctx context.Context, appID string) (*ApplicationEventingConfiguration, error)
 }
 type OneTimeTokenResolver interface {
-	Raw(ctx context.Context, obj *OneTimeToken) (string, error)
-	RawEncoded(ctx context.Context, obj *OneTimeToken) (string, error)
+	Raw(ctx context.Context, obj *OneTimeToken) (*string, error)
+	RawEncoded(ctx context.Context, obj *OneTimeToken) (*string, error)
 }
 type QueryResolver interface {
 	Applications(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*ApplicationPage, error)
@@ -481,7 +482,7 @@ type QueryResolver interface {
 	IntegrationSystem(ctx context.Context, id string) (*IntegrationSystem, error)
 }
 type RuntimeResolver interface {
-	Labels(ctx context.Context, obj *Runtime, key *string) (Labels, error)
+	Labels(ctx context.Context, obj *Runtime, key *string) (*Labels, error)
 
 	Auths(ctx context.Context, obj *Runtime) ([]*SystemAuth, error)
 	EventingConfiguration(ctx context.Context, obj *Runtime) (*RuntimeEventingConfiguration, error)
@@ -767,6 +768,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.Name(childComplexity), true
+
+	case "Application.providerDisplayName":
+		if e.complexity.Application.ProviderDisplayName == nil {
+			break
+		}
+
+		return e.complexity.Application.ProviderDisplayName(childComplexity), true
 
 	case "Application.status":
 		if e.complexity.Application.Status == nil {
@@ -2464,6 +2472,7 @@ input ApplicationFromTemplateInput {
 
 input ApplicationRegisterInput {
 	name: String!
+	providerDisplayName: String!
 	description: String
 	labels: Labels
 	webhooks: [WebhookInput!]
@@ -2484,6 +2493,7 @@ input ApplicationTemplateInput {
 
 input ApplicationUpdateInput {
 	name: String!
+	providerDisplayName: String!
 	description: String
 	healthCheckURL: String
 	integrationSystemID: ID
@@ -2530,7 +2540,7 @@ input DocumentInput {
 input EventDefinitionInput {
 	name: String!
 	description: String
-	spec: EventSpecInput!
+	spec: EventSpecInput
 	group: String
 	version: VersionInput
 }
@@ -2625,11 +2635,11 @@ type APIDefinition {
 	"""
 	"If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified.
 	"""
-	auth(runtimeID: ID!): APIRuntimeAuth!
+	auth(runtimeID: ID!): APIRuntimeAuth
 	"""
 	Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified.
 	"""
-	auths: [APIRuntimeAuth!]!
+	auths: [APIRuntimeAuth!]
 	"""
 	If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly.
 	"""
@@ -2661,25 +2671,26 @@ type APISpec {
 type Application {
 	id: ID!
 	name: String!
+	providerDisplayName: String!
 	description: String
 	integrationSystemID: ID
-	labels(key: String): Labels!
+	labels(key: String): Labels
 	status: ApplicationStatus!
-	webhooks: [Webhook!]!
+	webhooks: [Webhook!]
 	healthCheckURL: String
 	"""
 	group allows to find different versions of the same API
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
 	"""
-	apiDefinitions(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage!
+	apiDefinitions(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage
 	"""
 	group allows to find different versions of the same event Definitions
 	"""
-	eventDefinitions(group: String, first: Int = 100, after: PageCursor): EventDefinitionPage!
+	eventDefinitions(group: String, first: Int = 100, after: PageCursor): EventDefinitionPage
 	apiDefinition(id: ID!): APIDefinition
 	eventDefinition(id: ID!): EventDefinition
-	documents(first: Int = 100, after: PageCursor): DocumentPage!
-	auths: [SystemAuth!]!
+	documents(first: Int = 100, after: PageCursor): DocumentPage
+	auths: [SystemAuth!]
 	eventingConfiguration: ApplicationEventingConfiguration
 }
 
@@ -2817,7 +2828,7 @@ type IntegrationSystem {
 	id: ID!
 	name: String!
 	description: String
-	auths: [SystemAuth!]!
+	auths: [SystemAuth!]
 }
 
 type IntegrationSystemPage implements Pageable {
@@ -2848,8 +2859,8 @@ type OAuthCredentialData {
 type OneTimeToken {
 	token: String!
 	connectorURL: String!
-	raw: String!
-	rawEncoded: String!
+	raw: String
+	rawEncoded: String
 }
 
 type PageInfo {
@@ -2868,12 +2879,12 @@ type Runtime {
 	metadata: RuntimeMetadata!
 	name: String!
 	description: String
-	labels(key: String): Labels!
+	labels(key: String): Labels
 	status: RuntimeStatus!
 	"""
 	Returns array of authentication details for Runtime. For now at most one element in array will be returned.
 	"""
-	auths: [SystemAuth!]!
+	auths: [SystemAuth!]
 	eventingConfiguration: RuntimeEventingConfiguration
 }
 
@@ -4953,15 +4964,12 @@ func (ec *executionContext) _APIDefinition_auth(ctx context.Context, field graph
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*APIRuntimeAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAPIRuntimeAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIRuntimeAuth(ctx, field.Selections, res)
+	return ec.marshalOAPIRuntimeAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIRuntimeAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APIDefinition_auths(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) (ret graphql.Marshaler) {
@@ -4990,15 +4998,12 @@ func (ec *executionContext) _APIDefinition_auths(ctx context.Context, field grap
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.([]*APIRuntimeAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAPIRuntimeAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIRuntimeAuth(ctx, field.Selections, res)
+	return ec.marshalOAPIRuntimeAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIRuntimeAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APIDefinition_defaultAuth(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) (ret graphql.Marshaler) {
@@ -5467,6 +5472,43 @@ func (ec *executionContext) _Application_name(ctx context.Context, field graphql
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Application_providerDisplayName(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Application",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProviderDisplayName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Application_description(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -5568,15 +5610,12 @@ func (ec *executionContext) _Application_labels(ctx context.Context, field graph
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(Labels)
+	res := resTmp.(*Labels)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, field.Selections, res)
+	return ec.marshalOLabels2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_status(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -5642,15 +5681,12 @@ func (ec *executionContext) _Application_webhooks(ctx context.Context, field gra
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.([]*Webhook)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNWebhook2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx, field.Selections, res)
+	return ec.marshalOWebhook2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_healthCheckURL(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -5720,15 +5756,12 @@ func (ec *executionContext) _Application_apiDefinitions(ctx context.Context, fie
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*APIDefinitionPage)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAPIDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionPage(ctx, field.Selections, res)
+	return ec.marshalOAPIDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionPage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_eventDefinitions(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -5764,15 +5797,12 @@ func (ec *executionContext) _Application_eventDefinitions(ctx context.Context, f
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*EventDefinitionPage)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNEventDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionPage(ctx, field.Selections, res)
+	return ec.marshalOEventDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionPage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_apiDefinition(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -5890,15 +5920,12 @@ func (ec *executionContext) _Application_documents(ctx context.Context, field gr
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*DocumentPage)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNDocumentPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocumentPage(ctx, field.Selections, res)
+	return ec.marshalODocumentPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocumentPage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_auths(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -5927,15 +5954,12 @@ func (ec *executionContext) _Application_auths(ctx context.Context, field graphq
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.([]*SystemAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
+	return ec.marshalOSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_eventingConfiguration(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -8528,15 +8552,12 @@ func (ec *executionContext) _IntegrationSystem_auths(ctx context.Context, field 
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.([]*SystemAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
+	return ec.marshalOSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _IntegrationSystemPage_data(ctx context.Context, field graphql.CollectedField, obj *IntegrationSystemPage) (ret graphql.Marshaler) {
@@ -11886,15 +11907,12 @@ func (ec *executionContext) _OneTimeToken_raw(ctx context.Context, field graphql
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OneTimeToken_rawEncoded(ctx context.Context, field graphql.CollectedField, obj *OneTimeToken) (ret graphql.Marshaler) {
@@ -11923,15 +11941,12 @@ func (ec *executionContext) _OneTimeToken_rawEncoded(ctx context.Context, field 
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field graphql.CollectedField, obj *PageInfo) (ret graphql.Marshaler) {
@@ -13113,15 +13128,12 @@ func (ec *executionContext) _Runtime_labels(ctx context.Context, field graphql.C
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(Labels)
+	res := resTmp.(*Labels)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, field.Selections, res)
+	return ec.marshalOLabels2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Runtime_status(ctx context.Context, field graphql.CollectedField, obj *Runtime) (ret graphql.Marshaler) {
@@ -13187,15 +13199,12 @@ func (ec *executionContext) _Runtime_auths(ctx context.Context, field graphql.Co
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.([]*SystemAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
+	return ec.marshalOSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Runtime_eventingConfiguration(ctx context.Context, field graphql.CollectedField, obj *Runtime) (ret graphql.Marshaler) {
@@ -15160,6 +15169,12 @@ func (ec *executionContext) unmarshalInputApplicationRegisterInput(ctx context.C
 			if err != nil {
 				return it, err
 			}
+		case "providerDisplayName":
+			var err error
+			it.ProviderDisplayName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "description":
 			var err error
 			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
@@ -15265,6 +15280,12 @@ func (ec *executionContext) unmarshalInputApplicationUpdateInput(ctx context.Con
 		case "name":
 			var err error
 			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "providerDisplayName":
+			var err error
+			it.ProviderDisplayName, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -15504,7 +15525,7 @@ func (ec *executionContext) unmarshalInputEventDefinitionInput(ctx context.Conte
 			}
 		case "spec":
 			var err error
-			it.Spec, err = ec.unmarshalNEventSpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx, v)
+			it.Spec, err = ec.unmarshalOEventSpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -15984,9 +16005,6 @@ func (ec *executionContext) _APIDefinition(ctx context.Context, sel ast.Selectio
 					}
 				}()
 				res = ec._APIDefinition_auth(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "auths":
@@ -15998,9 +16016,6 @@ func (ec *executionContext) _APIDefinition(ctx context.Context, sel ast.Selectio
 					}
 				}()
 				res = ec._APIDefinition_auths(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "defaultAuth":
@@ -16150,6 +16165,11 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "providerDisplayName":
+			out.Values[i] = ec._Application_providerDisplayName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "description":
 			out.Values[i] = ec._Application_description(ctx, field, obj)
 		case "integrationSystemID":
@@ -16163,9 +16183,6 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 					}
 				}()
 				res = ec._Application_labels(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "status":
@@ -16182,9 +16199,6 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 					}
 				}()
 				res = ec._Application_webhooks(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "healthCheckURL":
@@ -16198,9 +16212,6 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 					}
 				}()
 				res = ec._Application_apiDefinitions(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "eventDefinitions":
@@ -16212,9 +16223,6 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 					}
 				}()
 				res = ec._Application_eventDefinitions(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "apiDefinition":
@@ -16248,9 +16256,6 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 					}
 				}()
 				res = ec._Application_documents(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "auths":
@@ -16262,9 +16267,6 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 					}
 				}()
 				res = ec._Application_auths(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "eventingConfiguration":
@@ -17013,9 +17015,6 @@ func (ec *executionContext) _IntegrationSystem(ctx context.Context, sel ast.Sele
 					}
 				}()
 				res = ec._IntegrationSystem_auths(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		default:
@@ -17445,9 +17444,6 @@ func (ec *executionContext) _OneTimeToken(ctx context.Context, sel ast.Selection
 					}
 				}()
 				res = ec._OneTimeToken_raw(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "rawEncoded":
@@ -17459,9 +17455,6 @@ func (ec *executionContext) _OneTimeToken(ctx context.Context, sel ast.Selection
 					}
 				}()
 				res = ec._OneTimeToken_rawEncoded(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		default:
@@ -17761,9 +17754,6 @@ func (ec *executionContext) _Runtime(ctx context.Context, sel ast.SelectionSet, 
 					}
 				}()
 				res = ec._Runtime_labels(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "status":
@@ -17780,9 +17770,6 @@ func (ec *executionContext) _Runtime(ctx context.Context, sel ast.SelectionSet, 
 					}
 				}()
 				res = ec._Runtime_auths(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "eventingConfiguration":
@@ -18344,59 +18331,8 @@ func (ec *executionContext) unmarshalNAPIDefinitionInput2ᚖgithubᚗcomᚋkyma�
 	return &res, err
 }
 
-func (ec *executionContext) marshalNAPIDefinitionPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionPage(ctx context.Context, sel ast.SelectionSet, v APIDefinitionPage) graphql.Marshaler {
-	return ec._APIDefinitionPage(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNAPIDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionPage(ctx context.Context, sel ast.SelectionSet, v *APIDefinitionPage) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._APIDefinitionPage(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNAPIRuntimeAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIRuntimeAuth(ctx context.Context, sel ast.SelectionSet, v APIRuntimeAuth) graphql.Marshaler {
 	return ec._APIRuntimeAuth(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNAPIRuntimeAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIRuntimeAuth(ctx context.Context, sel ast.SelectionSet, v []*APIRuntimeAuth) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		rctx := &graphql.ResolverContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithResolverContext(ctx, rctx)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNAPIRuntimeAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIRuntimeAuth(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
 }
 
 func (ec *executionContext) marshalNAPIRuntimeAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIRuntimeAuth(ctx context.Context, sel ast.SelectionSet, v *APIRuntimeAuth) graphql.Marshaler {
@@ -18770,20 +18706,6 @@ func (ec *executionContext) unmarshalNDocumentInput2ᚖgithubᚗcomᚋkymaᚑinc
 	return &res, err
 }
 
-func (ec *executionContext) marshalNDocumentPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocumentPage(ctx context.Context, sel ast.SelectionSet, v DocumentPage) graphql.Marshaler {
-	return ec._DocumentPage(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNDocumentPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocumentPage(ctx context.Context, sel ast.SelectionSet, v *DocumentPage) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._DocumentPage(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNEventDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx context.Context, sel ast.SelectionSet, v EventDefinition) graphql.Marshaler {
 	return ec._EventDefinition(ctx, sel, &v)
 }
@@ -18847,20 +18769,6 @@ func (ec *executionContext) unmarshalNEventDefinitionInput2ᚖgithubᚗcomᚋkym
 	return &res, err
 }
 
-func (ec *executionContext) marshalNEventDefinitionPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionPage(ctx context.Context, sel ast.SelectionSet, v EventDefinitionPage) graphql.Marshaler {
-	return ec._EventDefinitionPage(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNEventDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionPage(ctx context.Context, sel ast.SelectionSet, v *EventDefinitionPage) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._EventDefinitionPage(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNEventSpec2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpec(ctx context.Context, sel ast.SelectionSet, v EventSpec) graphql.Marshaler {
 	return ec._EventSpec(ctx, sel, &v)
 }
@@ -18873,18 +18781,6 @@ func (ec *executionContext) marshalNEventSpec2ᚖgithubᚗcomᚋkymaᚑincubator
 		return graphql.Null
 	}
 	return ec._EventSpec(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNEventSpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx context.Context, v interface{}) (EventSpecInput, error) {
-	return ec.unmarshalInputEventSpecInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNEventSpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx context.Context, v interface{}) (*EventSpecInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNEventSpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx, v)
-	return &res, err
 }
 
 func (ec *executionContext) unmarshalNEventSpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecType(ctx context.Context, v interface{}) (EventSpecType, error) {
@@ -19189,15 +19085,6 @@ func (ec *executionContext) unmarshalNLabelFilter2ᚖgithubᚗcomᚋkymaᚑincub
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalNLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx context.Context, v interface{}) (Labels, error) {
-	var res Labels
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalNLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx context.Context, sel ast.SelectionSet, v Labels) graphql.Marshaler {
-	return v
-}
-
 func (ec *executionContext) marshalNOneTimeToken2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOneTimeToken(ctx context.Context, sel ast.SelectionSet, v OneTimeToken) graphql.Marshaler {
 	return ec._OneTimeToken(ctx, sel, &v)
 }
@@ -19431,43 +19318,6 @@ func (ec *executionContext) marshalNSystemAuth2githubᚗcomᚋkymaᚑincubator�
 	return ec._SystemAuth(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx context.Context, sel ast.SelectionSet, v []*SystemAuth) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		rctx := &graphql.ResolverContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithResolverContext(ctx, rctx)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
 func (ec *executionContext) marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx context.Context, sel ast.SelectionSet, v *SystemAuth) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
@@ -19501,43 +19351,6 @@ func (ec *executionContext) marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋ
 
 func (ec *executionContext) marshalNWebhook2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx context.Context, sel ast.SelectionSet, v Webhook) graphql.Marshaler {
 	return ec._Webhook(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNWebhook2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx context.Context, sel ast.SelectionSet, v []*Webhook) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		rctx := &graphql.ResolverContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithResolverContext(ctx, rctx)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
 }
 
 func (ec *executionContext) marshalNWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx context.Context, sel ast.SelectionSet, v *Webhook) graphql.Marshaler {
@@ -19819,6 +19632,68 @@ func (ec *executionContext) unmarshalOAPIDefinitionInput2ᚕᚖgithubᚗcomᚋky
 	return res, nil
 }
 
+func (ec *executionContext) marshalOAPIDefinitionPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionPage(ctx context.Context, sel ast.SelectionSet, v APIDefinitionPage) graphql.Marshaler {
+	return ec._APIDefinitionPage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOAPIDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionPage(ctx context.Context, sel ast.SelectionSet, v *APIDefinitionPage) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._APIDefinitionPage(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOAPIRuntimeAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIRuntimeAuth(ctx context.Context, sel ast.SelectionSet, v APIRuntimeAuth) graphql.Marshaler {
+	return ec._APIRuntimeAuth(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOAPIRuntimeAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIRuntimeAuth(ctx context.Context, sel ast.SelectionSet, v []*APIRuntimeAuth) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNAPIRuntimeAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIRuntimeAuth(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOAPIRuntimeAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIRuntimeAuth(ctx context.Context, sel ast.SelectionSet, v *APIRuntimeAuth) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._APIRuntimeAuth(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOAPISpec2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpec(ctx context.Context, sel ast.SelectionSet, v APISpec) graphql.Marshaler {
 	return ec._APISpec(ctx, sel, &v)
 }
@@ -20023,6 +19898,17 @@ func (ec *executionContext) unmarshalODocumentInput2ᚕᚖgithubᚗcomᚋkymaᚑ
 	return res, nil
 }
 
+func (ec *executionContext) marshalODocumentPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocumentPage(ctx context.Context, sel ast.SelectionSet, v DocumentPage) graphql.Marshaler {
+	return ec._DocumentPage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalODocumentPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocumentPage(ctx context.Context, sel ast.SelectionSet, v *DocumentPage) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._DocumentPage(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOEventDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx context.Context, sel ast.SelectionSet, v EventDefinition) graphql.Marshaler {
 	return ec._EventDefinition(ctx, sel, &v)
 }
@@ -20052,6 +19938,29 @@ func (ec *executionContext) unmarshalOEventDefinitionInput2ᚕᚖgithubᚗcomᚋ
 		}
 	}
 	return res, nil
+}
+
+func (ec *executionContext) marshalOEventDefinitionPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionPage(ctx context.Context, sel ast.SelectionSet, v EventDefinitionPage) graphql.Marshaler {
+	return ec._EventDefinitionPage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOEventDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionPage(ctx context.Context, sel ast.SelectionSet, v *EventDefinitionPage) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._EventDefinitionPage(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOEventSpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx context.Context, v interface{}) (EventSpecInput, error) {
+	return ec.unmarshalInputEventSpecInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOEventSpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx context.Context, v interface{}) (*EventSpecInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOEventSpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) unmarshalOFetchMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchMode(ctx context.Context, v interface{}) (FetchMode, error) {
@@ -20446,6 +20355,46 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	return ec.marshalOString2string(ctx, sel, *v)
 }
 
+func (ec *executionContext) marshalOSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx context.Context, sel ast.SelectionSet, v []*SystemAuth) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
 func (ec *executionContext) unmarshalOTemplateValueInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTemplateValueInput(ctx context.Context, v interface{}) ([]*TemplateValueInput, error) {
 	var vSlice []interface{}
 	if v != nil {
@@ -20487,6 +20436,46 @@ func (ec *executionContext) unmarshalOVersionInput2ᚖgithubᚗcomᚋkymaᚑincu
 	}
 	res, err := ec.unmarshalOVersionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐVersionInput(ctx, v)
 	return &res, err
+}
+
+func (ec *executionContext) marshalOWebhook2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx context.Context, sel ast.SelectionSet, v []*Webhook) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
 }
 
 func (ec *executionContext) unmarshalOWebhookInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInput(ctx context.Context, v interface{}) ([]*WebhookInput, error) {
