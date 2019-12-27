@@ -10,10 +10,7 @@ func TestGardenerSecretNamePreAssigned(t *testing.T) {
 
 	pool := newTestAccountPool()
 
-	accountProvider := &accountProvider{
-		compassPool:  nil,
-		gardenerPool: pool,
-	}
+	accountProvider := NewAccountProvider(nil, pool)
 
 	configInput := &gqlschema.GardenerConfigInput{
 		TargetSecret: "pre-assigned-secret",
@@ -29,10 +26,7 @@ func TestCompassSecretNamePreAssigned(t *testing.T) {
 
 	pool := newTestAccountPool()
 
-	accountProvider := &accountProvider{
-		compassPool:  pool,
-		gardenerPool: nil,
-	}
+	accountProvider := NewAccountProvider(pool, nil)
 
 	input := &gqlschema.ProvisionRuntimeInput{
 		Credentials: &gqlschema.CredentialsInput{
@@ -50,10 +44,7 @@ func TestGardenerSecretNamePool(t *testing.T) {
 
 	pool := newTestAccountPool()
 
-	accountProvider := &accountProvider{
-		compassPool:  nil,
-		gardenerPool: pool,
-	}
+	accountProvider := NewAccountProvider(nil, pool)
 
 	configInput := &gqlschema.GardenerConfigInput{
 		Provider:     "AWS",
@@ -70,10 +61,7 @@ func TestGardenerSecretNameError(t *testing.T) {
 
 	pool := newTestAccountPool()
 
-	accountProvider := &accountProvider{
-		compassPool:  nil,
-		gardenerPool: pool,
-	}
+	accountProvider := NewAccountProvider(nil, pool)
 
 	configInput := &gqlschema.GardenerConfigInput{
 		Provider:     "bogus",
@@ -89,10 +77,7 @@ func TestCompassSecretNameError(t *testing.T) {
 
 	pool := newTestAccountPool()
 
-	accountProvider := &accountProvider{
-		compassPool:  pool,
-		gardenerPool: nil,
-	}
+	accountProvider := NewAccountProvider(pool, nil)
 
 	input := &gqlschema.ProvisionRuntimeInput{
 		Credentials: &gqlschema.CredentialsInput{
@@ -109,10 +94,7 @@ func TestGardenerSecretNameNotFound(t *testing.T) {
 
 	pool := newTestAccountPool()
 
-	accountProvider := &accountProvider{
-		compassPool:  nil,
-		gardenerPool: pool,
-	}
+	accountProvider := NewAccountProvider(nil, pool)
 
 	configInput := &gqlschema.GardenerConfigInput{
 		Provider:     "azure",
