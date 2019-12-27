@@ -15,3 +15,4 @@
 
 # kyma environment broker
 /chart/compass/charts/kyma-environment-broker @PK85 @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001
+/components/kyma-environment-broker @PK85 @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001
