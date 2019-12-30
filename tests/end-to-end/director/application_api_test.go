@@ -30,10 +30,10 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	in := graphql.ApplicationRegisterInput{
-		Name:                "wordpress",
-		ProviderDisplayName: "provider name",
-		Description:         ptr.String("my first wordpress application"),
-		HealthCheckURL:      ptr.String("http://mywordpress.com/health"),
+		Name:           "wordpress",
+		ProviderName:   "provider name",
+		Description:    ptr.String("my first wordpress application"),
+		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
 		Labels: &graphql.Labels{
 			"group":     []interface{}{"production", "experimental"},
 			"scenarios": []interface{}{"DEFAULT"},
@@ -67,8 +67,8 @@ func TestRegisterApplicationWithWebhooks(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	in := graphql.ApplicationRegisterInput{
-		Name:                "wordpress",
-		ProviderDisplayName: "compass",
+		Name:         "wordpress",
+		ProviderName: "compass",
 		Webhooks: []*graphql.WebhookInput{
 			{
 				Type: graphql.ApplicationWebhookTypeConfigurationChanged,
@@ -110,8 +110,8 @@ func TestRegisterApplicationWithAPIs(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	in := graphql.ApplicationRegisterInput{
-		Name:                "wordpress",
-		ProviderDisplayName: "compass",
+		Name:         "wordpress",
+		ProviderName: "compass",
 		APIDefinitions: []*graphql.APIDefinitionInput{
 			{
 				Name:        "comments-v1",
@@ -195,8 +195,8 @@ func TestRegisterApplicationWithEventDefinitions(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	in := graphql.ApplicationRegisterInput{
-		Name:                "create-application-with-event-apis",
-		ProviderDisplayName: "compass",
+		Name:         "create-application-with-event-apis",
+		ProviderName: "compass",
 		EventDefinitions: []*graphql.EventDefinitionInput{
 			{
 				Name:        "comments-v1",
@@ -259,8 +259,8 @@ func TestRegisterApplicationWithDocuments(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	in := graphql.ApplicationRegisterInput{
-		Name:                "create-application-with-documents",
-		ProviderDisplayName: "compass",
+		Name:         "create-application-with-documents",
+		ProviderName: "compass",
 		Documents: []*graphql.DocumentInput{
 			{
 				Title:       "Readme",
@@ -440,7 +440,7 @@ func TestUpdateApplication(t *testing.T) {
 
 	expectedApp := actualApp
 	expectedApp.Name = "after"
-	expectedApp.ProviderDisplayName = "after"
+	expectedApp.ProviderName = "after"
 	expectedApp.Description = ptr.String("after")
 	expectedApp.HealthCheckURL = ptr.String("https://kyma-project.io")
 
@@ -924,8 +924,8 @@ func TestQueryApplications(t *testing.T) {
 	ctx := context.Background()
 	for i := 0; i < 3; i++ {
 		in := graphql.ApplicationRegisterInput{
-			Name:                fmt.Sprintf("app-%d", i),
-			ProviderDisplayName: "compass",
+			Name:         fmt.Sprintf("app-%d", i),
+			ProviderName: "compass",
 		}
 
 		appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
@@ -963,8 +963,8 @@ func TestQueryApplications(t *testing.T) {
 func TestQuerySpecificApplication(t *testing.T) {
 	// GIVEN
 	in := graphql.ApplicationRegisterInput{
-		Name:                fmt.Sprintf("app"),
-		ProviderDisplayName: "Compass",
+		Name:         fmt.Sprintf("app"),
+		ProviderName: "Compass",
 	}
 
 	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
@@ -1079,9 +1079,9 @@ func TestQueryAPIRuntimeAuths(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appInput := graphql.ApplicationRegisterInput{
-				Name:                "test-app",
-				ProviderDisplayName: "compass",
-				APIDefinitions:      testCase.Apis,
+				Name:           "test-app",
+				ProviderName:   "compass",
+				APIDefinitions: testCase.Apis,
 				Labels: &graphql.Labels{
 					"scenarios": []interface{}{"DEFAULT"},
 				},
@@ -1247,8 +1247,8 @@ func TestQuerySpecificEventAPIDefinition(t *testing.T) {
 
 func fixSampleApplicationRegisterInput(placeholder string) graphql.ApplicationRegisterInput {
 	return graphql.ApplicationRegisterInput{
-		Name:                placeholder,
-		ProviderDisplayName: "compass",
+		Name:         placeholder,
+		ProviderName: "compass",
 		Documents: []*graphql.DocumentInput{{
 			Title:       placeholder,
 			DisplayName: placeholder,
@@ -1288,10 +1288,10 @@ func fixSampleApplicationCreateInputWithIntegrationSystem(placeholder string) gr
 
 func fixSampleApplicationUpdateInput(placeholder string) graphql.ApplicationUpdateInput {
 	return graphql.ApplicationUpdateInput{
-		Name:                placeholder,
-		Description:         &placeholder,
-		HealthCheckURL:      ptr.String(webhookURL),
-		ProviderDisplayName: placeholder,
+		Name:           placeholder,
+		Description:    &placeholder,
+		HealthCheckURL: ptr.String(webhookURL),
+		ProviderName:   placeholder,
 	}
 }
 
@@ -1301,7 +1301,7 @@ func fixSampleApplicationUpdateInputWithIntegrationSystem(placeholder string) gr
 		Description:         &placeholder,
 		HealthCheckURL:      ptr.String(webhookURL),
 		IntegrationSystemID: &integrationSystemID,
-		ProviderDisplayName: placeholder,
+		ProviderName:        placeholder,
 	}
 }
 
