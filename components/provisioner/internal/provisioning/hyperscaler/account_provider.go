@@ -78,7 +78,7 @@ func (h *accountProvider) GardenerSecretName(input *gqlschema.GardenerConfigInpu
 		return "", err
 	}
 	// TODO: get tenant name from ...?
-	credential, err := h.GardnerCredentials(hyperscalerType, "tenant2")
+	credential, err := h.GardnerCredentials(hyperscalerType, "tenant-name")
 
 	if err != nil {
 		return "", err
