@@ -1,4 +1,3 @@
-
 # Components
 
 These are the components related to Compass:
@@ -62,4 +61,3 @@ for more details.
 Represents an object for creating Applications from predefined static definition.
 See [Automatic Application Management document](./auto-app-management.md)
 for more details.
-  

@@ -1,7 +1,6 @@
-# Authentication and Authorization
+# Security
 
-## Introduction
-Currently, communication between the Compass and both Runtimes and Applications is not secured. We need to provide some security possibilities.
+Currently, communication between Compass and both Runtimes and Applications is not secured. We need to provide some security possibilities.
 We want to secure the Compass using ORY's Hydra and OathKeeper. There will be three ways of authentication:
  - OAuth 2.0
  - Client Certificates (mTLS)

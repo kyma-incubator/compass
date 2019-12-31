@@ -6,7 +6,9 @@ The `docs` folder contains end-to-end documentation on Compass and its component
 
 Start with the overarching Compass documentation where you can find the general information on Compass. The documents are arranged in the fixed order that follows the [content strategy](https://kyma-project.io/community/guidelines/content/#content-strategy-content-strategy-documentation-types). Then, read about the components in more detail:
 * [Connector](./connector)
+* [Integration System](./integration-system)
 * [Provisioner](./provisioner)
+* [Runtime Agent](./runtime-agent)
 
 ### Docs structure
 
@@ -15,9 +17,11 @@ The directory has the following structure:
 ```
   ├── archive                  # Directory for archived documents    
   ├── compass                  # Overarching Compass documentation
-  ├── connector                # Documentation for the Connector component                                    
+  ├── connector                # Documentation for the Connector component          
+  ├── integration-system       # Documentation for the Integration System component                                    
   ├── investigations           # Directory for conducted investigations
-  └── provisioner              # Documentation for the Provisioner component
+  ├── provisioner              # Documentation for the Provisioner component                                    
+  └── runtime-agent            # Documentation for the Runtime Agent component
 ```
 
 ## Development
