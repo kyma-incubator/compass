@@ -55,7 +55,7 @@ func TestApplicationRegisterInput_Validate_Name(t *testing.T) {
 	}
 }
 
-func TestApplicationRegisterInput_Validate_ProviderDisplayName(t *testing.T) {
+func TestApplicationRegisterInput_Validate_ProviderName(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		Value         string
@@ -443,7 +443,7 @@ func TestApplicationUpdateInput_Validate_Name(t *testing.T) {
 	}
 }
 
-func TestApplicationUpdateInput_Validate_ProviderDisplayName(t *testing.T) {
+func TestApplicationUpdateInput_Validate_ProviderName(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		Value         string
