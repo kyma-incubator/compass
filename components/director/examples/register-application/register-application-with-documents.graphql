@@ -3,7 +3,7 @@ mutation {
   result: registerApplication(
     in: {
       name: "create-application-with-documents"
-      providerDisplayName: "compass"
+      providerName: "compass"
       labels: { scenarios: ["DEFAULT"] }
       documents: [
         {
@@ -86,7 +86,7 @@ mutation {
       }
     }
     healthCheckURL
-    providerDisplayName
+    providerName
     apiDefinitions {
       data {
         id

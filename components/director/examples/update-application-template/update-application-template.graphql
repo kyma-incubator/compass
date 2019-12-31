@@ -7,7 +7,7 @@ mutation {
       description: "new description"
       applicationInput: {
         name: "new-app-create-input"
-        providerDisplayName: "compass"
+        providerName: "compass"
         healthCheckURL: "http://url.valid"
       }
       accessLevel: GLOBAL

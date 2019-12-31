@@ -55,9 +55,9 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	newName := "new-app-template"
 	newDescription := "new description"
 	newAppCreateInput := &graphql.ApplicationRegisterInput{
-		Name:                "new-app-create-input",
-		ProviderDisplayName: "compass",
-		HealthCheckURL:      ptr.String("http://url.valid"),
+		Name:           "new-app-create-input",
+		ProviderName:   "compass",
+		HealthCheckURL: ptr.String("http://url.valid"),
 	}
 
 	t.Log("Create application template")

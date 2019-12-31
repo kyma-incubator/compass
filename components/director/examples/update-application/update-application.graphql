@@ -4,7 +4,7 @@ mutation {
     id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
     in: {
       name: "after"
-      providerDisplayName: "after"
+      providerName: "after"
       description: "after"
       healthCheckURL: "https://kyma-project.io"
     }
@@ -60,7 +60,7 @@ mutation {
       }
     }
     healthCheckURL
-    providerDisplayName
+    providerName
     apiDefinitions {
       data {
         id

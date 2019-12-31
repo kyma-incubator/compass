@@ -21,12 +21,12 @@
   version = "v1.1.0"
 
 [[projects]]
-  digest = "1:a5f0485ed2aad9b9c6a730815d1f2bc92b0acc126d7ee8e36c1a51882fc284f5"
+  digest = "1:f313598719f69ec4edbcd75b0f2ef1c8ed9e00f6ff3d7583ac3966db2d70d326"
   name = "github.com/Masterminds/semver"
   packages = ["."]
   pruneopts = "UT"
-  revision = "25911d36c978be5eb3e81847734874fd4e1dc6c7"
-  version = "v3.0.2"
+  revision = "910aa146bd66780c2815d652b92a7fc5331e533c"
+  version = "v3.0.3"
 
 [[projects]]
   digest = "1:b565deb585c50ab8e94fe5d6c9903f1495970b97814803e4ab0e70c0a9c87a30"
@@ -88,15 +88,14 @@
   version = "v3.6.0"
 
 [[projects]]
-  digest = "1:582e25eccee928dc12416ea4c23b6dae8f3b5687730632aa1473ebebe80a2359"
+  digest = "1:7b9d9b866ab20f5d6b9efb59b2c45c55d6f73fbb8e69147e536fc2b3c6e17f96"
   name = "github.com/gogo/protobuf"
   packages = [
     "proto",
     "sortkeys",
   ]
   pruneopts = "UT"
-  revision = "5628607bb4c51c3157aacc3a50f0ab707582b805"
-  version = "v1.3.1"
+  revision = "65acae22fc9d"
 
 [[projects]]
   digest = "1:a6181aca1fd5e27103f9a920876f29ac72854df7345a39f3b01e61c8c94cc8af"
@@ -166,7 +165,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:ad4df4aa9a84d5cb745898690dfd3c8978982a327807f885a2a7f65fc9a3d579"
+  digest = "1:91a82f7c899197a45859f2e27b721ff4b5ac31d18ca0ba7d855f66b3b32890fb"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/connector/pkg/graphql/externalschema",
@@ -178,7 +177,7 @@
     "components/director/pkg/scalar",
   ]
   pruneopts = "UT"
-  revision = "29f9f98ceeb8fa2340f5e6c822f91aee54601950"
+  revision = "a2c02da763a87196277c480e1178cc2deacc9865"
 
 [[projects]]
   branch = "master"
@@ -296,7 +295,7 @@
     "scrypt",
   ]
   pruneopts = "UT"
-  revision = "e9b2fee46413994441b28dfca259d911d963dfed"
+  revision = "53104e6ec876ad4e22ad27cce588b01392043c1b"
 
 [[projects]]
   branch = "master"
@@ -315,11 +314,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:634414cd43ed62a728aaf9b3e61fde85f012880f9b32b7d00678b6fd887ff9c1"
+  digest = "1:21fdc4d02e91b37ce39866d3a949a4b54220f3acb839ccb0b3ae0497df638903"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "ac6580df4449443a05718fd7858c1f91ad5f8d20"
+  revision = "04cbcbbfeed8aa0b2b010b2ddab558e9f717fd3e"
 
 [[projects]]
   digest = "1:8d8faad6b12a3a4c819a3f9618cb6ee1fa1cfc33253abeeea8b55336721e3405"
@@ -348,7 +347,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:3597679e1e3b5f323562028c1582f24105d9c3440e7fe99d868c65abc0163c00"
+  digest = "1:1806c19944b7a6d56769a39235a81a0803e622ad3d7f3613df218e1497b394ce"
   name = "golang.org/x/tools"
   packages = [
     "cmd/goimports",
@@ -365,7 +364,7 @@
     "internal/semver",
   ]
   pruneopts = "UT"
-  revision = "7093a17b0467e77fb41804b2754a44f54a8c9ca2"
+  revision = "7b8e75db28f4b09dc0b853eadee5b034956bcb9e"
 
 [[projects]]
   digest = "1:2d1fbdc6777e5408cabeb02bf336305e724b925ff4546ded0fa8715a7267922a"
