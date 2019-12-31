@@ -76,7 +76,7 @@ forRemoval: Boolean = false | true | | required because has default value
 Field | Required | Rules | Comment
 --- | --- | --- | ---
 name: String! | true | `name` | max 36 characters
-providerDisplayName String!| true | `max=256` | varchar(256) in db
+providerName String!| true | `max=256` | varchar(256) in db
 description: String | false | `max=128` |  
 labels: Labels (map[string]interface{}) | false | key: `required` |  
 webhooks: [WebhookInput!] | false | `[required]` |  
@@ -90,7 +90,7 @@ documents: [DocumentInput!] | false | `[required]` |  
 Field | Required | Rules | Comment
 --- | --- | --- | ---
 name: String! | true | `name` | max 36 characters
-providerDisplayName String!| true | `max=256` | varchar(256) in db
+providerName String!| true | `max=256` | varchar(256) in db
 description: String | false | `max=128` |  
 healthCheckURL: String | false | `url`, `max=256` | varchar(256) in db  
 
