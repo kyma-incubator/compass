@@ -100,7 +100,7 @@ type ComplexityRoot struct {
 		IntegrationSystemID   func(childComplexity int) int
 		Labels                func(childComplexity int, key *string) int
 		Name                  func(childComplexity int) int
-		ProviderDisplayName   func(childComplexity int) int
+		ProviderName          func(childComplexity int) int
 		Status                func(childComplexity int) int
 		Webhooks              func(childComplexity int) int
 	}
@@ -769,12 +769,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Application.Name(childComplexity), true
 
-	case "Application.providerDisplayName":
-		if e.complexity.Application.ProviderDisplayName == nil {
+	case "Application.providerName":
+		if e.complexity.Application.ProviderName == nil {
 			break
 		}
 
-		return e.complexity.Application.ProviderDisplayName(childComplexity), true
+		return e.complexity.Application.ProviderName(childComplexity), true
 
 	case "Application.status":
 		if e.complexity.Application.Status == nil {
@@ -2472,7 +2472,7 @@ input ApplicationFromTemplateInput {
 
 input ApplicationRegisterInput {
 	name: String!
-	providerDisplayName: String!
+	providerName: String!
 	description: String
 	labels: Labels
 	webhooks: [WebhookInput!]
@@ -2493,7 +2493,7 @@ input ApplicationTemplateInput {
 
 input ApplicationUpdateInput {
 	name: String!
-	providerDisplayName: String!
+	providerName: String!
 	description: String
 	healthCheckURL: String
 	integrationSystemID: ID
@@ -2671,7 +2671,7 @@ type APISpec {
 type Application {
 	id: ID!
 	name: String!
-	providerDisplayName: String!
+	providerName: String!
 	description: String
 	integrationSystemID: ID
 	labels(key: String): Labels
@@ -5472,7 +5472,7 @@ func (ec *executionContext) _Application_name(ctx context.Context, field graphql
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Application_providerDisplayName(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+func (ec *executionContext) _Application_providerName(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -5491,7 +5491,7 @@ func (ec *executionContext) _Application_providerDisplayName(ctx context.Context
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ProviderDisplayName, nil
+		return obj.ProviderName, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -15169,9 +15169,9 @@ func (ec *executionContext) unmarshalInputApplicationRegisterInput(ctx context.C
 			if err != nil {
 				return it, err
 			}
-		case "providerDisplayName":
+		case "providerName":
 			var err error
-			it.ProviderDisplayName, err = ec.unmarshalNString2string(ctx, v)
+			it.ProviderName, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -15283,9 +15283,9 @@ func (ec *executionContext) unmarshalInputApplicationUpdateInput(ctx context.Con
 			if err != nil {
 				return it, err
 			}
-		case "providerDisplayName":
+		case "providerName":
 			var err error
-			it.ProviderDisplayName, err = ec.unmarshalNString2string(ctx, v)
+			it.ProviderName, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -16165,8 +16165,8 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "providerDisplayName":
-			out.Values[i] = ec._Application_providerDisplayName(ctx, field, obj)
+		case "providerName":
+			out.Values[i] = ec._Application_providerName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}

@@ -55,7 +55,7 @@ func TestApplicationRegisterInput_Validate_Name(t *testing.T) {
 	}
 }
 
-func TestApplicationRegisterInput_Validate_ProviderDisplayName(t *testing.T) {
+func TestApplicationRegisterInput_Validate_ProviderName(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		Value         string
@@ -82,7 +82,7 @@ func TestApplicationRegisterInput_Validate_ProviderDisplayName(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
 			app := fixValidApplicationCreateInput()
-			app.ProviderDisplayName = testCase.Value
+			app.ProviderName = testCase.Value
 			//WHEN
 			err := app.Validate()
 			//THEN
@@ -443,7 +443,7 @@ func TestApplicationUpdateInput_Validate_Name(t *testing.T) {
 	}
 }
 
-func TestApplicationUpdateInput_Validate_ProviderDisplayName(t *testing.T) {
+func TestApplicationUpdateInput_Validate_ProviderName(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		Value         string
@@ -470,7 +470,7 @@ func TestApplicationUpdateInput_Validate_ProviderDisplayName(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
 			app := fixValidApplicationCreateInput()
-			app.ProviderDisplayName = testCase.Value
+			app.ProviderName = testCase.Value
 			//WHEN
 			err := app.Validate()
 			//THEN
@@ -580,14 +580,14 @@ func TestApplicationUpdateInput_Validate_HealthCheckURL(t *testing.T) {
 
 func fixValidApplicationUpdateInput() graphql.ApplicationUpdateInput {
 	return graphql.ApplicationUpdateInput{
-		Name:                "application",
-		ProviderDisplayName: "provider-name",
+		Name:         "application",
+		ProviderName: "provider-name",
 	}
 }
 
 func fixValidApplicationCreateInput() graphql.ApplicationRegisterInput {
 	return graphql.ApplicationRegisterInput{
-		Name:                "application",
-		ProviderDisplayName: "provider-name",
+		Name:         "application",
+		ProviderName: "provider-name",
 	}
 }

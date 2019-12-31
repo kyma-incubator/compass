@@ -94,8 +94,8 @@ func TestRepository_Create(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.applications ( id, tenant_id, name, description, status_condition, status_timestamp, healthcheck_url, integration_system_id, provider_display_name ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? )`)).
-			WithArgs(givenID(), givenTenant(), appModel.Name, appModel.Description, appModel.Status.Condition, appModel.Status.Timestamp, appModel.HealthCheckURL, appModel.IntegrationSystemID, appModel.ProviderDisplayName).
+		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.applications ( id, tenant_id, name, description, status_condition, status_timestamp, healthcheck_url, integration_system_id, provider_name ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? )`)).
+			WithArgs(givenID(), givenTenant(), appModel.Name, appModel.Description, appModel.Status.Condition, appModel.Status.Timestamp, appModel.HealthCheckURL, appModel.IntegrationSystemID, appModel.ProviderName).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -150,7 +150,7 @@ func TestRepository_Create(t *testing.T) {
 }
 
 func TestRepository_Update(t *testing.T) {
-	updateStmt := `UPDATE public\.applications SET name = \?, description = \?, status_condition = \?, status_timestamp = \?, healthcheck_url = \?, integration_system_id = \?, provider_display_name = \? WHERE tenant_id = \? AND id = \?`
+	updateStmt := `UPDATE public\.applications SET name = \?, description = \?, status_condition = \?, status_timestamp = \?, healthcheck_url = \?, integration_system_id = \?, provider_name = \? WHERE tenant_id = \? AND id = \?`
 
 	t.Run("Success", func(t *testing.T) {
 		// given
@@ -165,7 +165,7 @@ func TestRepository_Update(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		dbMock.ExpectExec(updateStmt).
-			WithArgs(appModel.Name, appModel.Description, appModel.Status.Condition, appModel.Status.Timestamp, appModel.HealthCheckURL, appModel.IntegrationSystemID, appModel.ProviderDisplayName, givenTenant(), givenID()).
+			WithArgs(appModel.Name, appModel.Description, appModel.Status.Condition, appModel.Status.Timestamp, appModel.HealthCheckURL, appModel.IntegrationSystemID, appModel.ProviderName, givenTenant(), givenID()).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -234,8 +234,8 @@ func TestRepository_GetByID(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_display_name"}).
-			AddRow(givenID(), givenTenant(), appEntity.Name, appEntity.Description, appEntity.StatusCondition, appEntity.StatusTimestamp, appEntity.HealthCheckURL, appEntity.IntegrationSystemID, appEntity.ProviderDisplayName)
+		rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name"}).
+			AddRow(givenID(), givenTenant(), appEntity.Name, appEntity.Description, appEntity.StatusCondition, appEntity.StatusTimestamp, appEntity.HealthCheckURL, appEntity.IntegrationSystemID, appEntity.ProviderName)
 
 		dbMock.ExpectQuery(`^SELECT (.+) FROM public.applications WHERE tenant_id = \$1 AND id = \$2$`).
 			WithArgs(givenTenant(), givenID()).
@@ -289,9 +289,9 @@ func TestPgRepository_List(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		// given
-		rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_display_name"}).
-			AddRow(appEntity1.ID, appEntity1.TenantID, appEntity1.Name, appEntity1.Description, appEntity1.StatusCondition, appEntity1.StatusTimestamp, appEntity1.HealthCheckURL, appEntity1.IntegrationSystemID, appEntity1.ProviderDisplayName).
-			AddRow(appEntity2.ID, appEntity2.TenantID, appEntity2.Name, appEntity2.Description, appEntity2.StatusCondition, appEntity2.StatusTimestamp, appEntity2.HealthCheckURL, appEntity2.IntegrationSystemID, appEntity2.ProviderDisplayName)
+		rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name"}).
+			AddRow(appEntity1.ID, appEntity1.TenantID, appEntity1.Name, appEntity1.Description, appEntity1.StatusCondition, appEntity1.StatusTimestamp, appEntity1.HealthCheckURL, appEntity1.IntegrationSystemID, appEntity1.ProviderName).
+			AddRow(appEntity2.ID, appEntity2.TenantID, appEntity2.Name, appEntity2.Description, appEntity2.StatusCondition, appEntity2.StatusTimestamp, appEntity2.HealthCheckURL, appEntity2.IntegrationSystemID, appEntity2.ProviderName)
 
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		defer sqlMock.AssertExpectations(t)

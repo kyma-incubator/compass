@@ -8,7 +8,7 @@ import (
 
 type Application struct {
 	ID                  string
-	ProviderDisplayName string
+	ProviderName        string
 	Tenant              string
 	Name                string
 	Description         *string
@@ -22,7 +22,7 @@ func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput) {
 	app.Description = update.Description
 	app.HealthCheckURL = update.HealthCheckURL
 	app.IntegrationSystemID = update.IntegrationSystemID
-	app.ProviderDisplayName = update.ProviderDisplayName
+	app.ProviderName = update.ProviderName
 }
 
 type ApplicationStatus struct {
@@ -47,7 +47,7 @@ type ApplicationPage struct {
 
 type ApplicationRegisterInput struct {
 	Name                string
-	ProviderDisplayName string
+	ProviderName        string
 	Description         *string
 	Labels              map[string]interface{}
 	HealthCheckURL      *string
@@ -70,7 +70,7 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, condition 
 		Tenant:              tenant,
 		HealthCheckURL:      i.HealthCheckURL,
 		IntegrationSystemID: i.IntegrationSystemID,
-		ProviderDisplayName: i.ProviderDisplayName,
+		ProviderName:        i.ProviderName,
 		Status: &ApplicationStatus{
 			Condition: condition,
 			Timestamp: timestamp,
@@ -80,7 +80,7 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, condition 
 
 type ApplicationUpdateInput struct {
 	Name                string
-	ProviderDisplayName string
+	ProviderName        string
 	Description         *string
 	HealthCheckURL      *string
 	IntegrationSystemID *string
