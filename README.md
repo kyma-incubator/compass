@@ -2,8 +2,6 @@
  <img src="https://raw.githubusercontent.com/kyma-incubator/compass/master/logo.png" width="235">
 </p>
 
-# Compass
-
 ## Overview
 
 Compass is a central, multi-tenant system that allows you to connect Applications and manage them across multiple [Kyma Runtimes](#architecture-components-kyma-runtime). Using Compass, you can control and monitor your Application landscape in one central place. As an integral part of Kyma, Compass uses a set of features that Kyma provides, such as Istio, Prometheus, Monitoring, and Tracing. It also includes Compass UI Cockpit that exposes Compass APIs to users.
@@ -16,7 +14,7 @@ Compass allows you to:
 
 Compass by design does not participate in direct communication between Applications and Runtimes. It only sets up the connection. In case the cluster with Compass is down, the Applications and Runtimes cooperation still works.
 
-For more information about the Compass architecture and technical details, read the project [documentation](./docs).
+For more information about the Compass architecture, technical details, and components, read the project [documentation](./docs).
 
 ## Prerequisites
 
