@@ -42,7 +42,7 @@ func TestCompassAuth(t *testing.T) {
 	config, err := idtokenprovider.NewConfigFromEnv()
 	require.NoError(t, err)
 
-	dexToken, err := idtokenprovider.Authenticate(config.IdProviderConfig)
+	dexToken, err := idtokenprovider.Authenticate(config)
 	require.NoError(t, err)
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)

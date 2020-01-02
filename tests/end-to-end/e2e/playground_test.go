@@ -91,7 +91,7 @@ func getDexToken(t *testing.T) string {
 	config, err := idtokenprovider.NewConfigFromEnv()
 	require.NoError(t, err)
 
-	dexToken, err := idtokenprovider.Authenticate(config.IdProviderConfig)
+	dexToken, err := idtokenprovider.Authenticate(config)
 	require.NoError(t, err)
 
 	return dexToken
