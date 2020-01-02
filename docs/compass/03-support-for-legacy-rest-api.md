@@ -15,3 +15,5 @@ Following diagram shows the flow when dealing with calls to REST API that are tr
 ### Calling REST API flow
 
 ![](./assets/rest-api-to-to-gql-flow.svg)
+
+[comment]: <> (What it is that, why we descrbe something that is not implemented???)
