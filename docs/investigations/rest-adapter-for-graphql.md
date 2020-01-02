@@ -23,6 +23,7 @@ AFAIK, creating application was a manual step usually performed in UI. Because o
 not introducing previously mentioned controller, and just instruct Admins to create application using Compass UI. 
 
 2. Get the client certificate
+
 When creating Token Request, a  Controller updates the status and provide token and configuration URL fields.
 Controller needs to be reconfigured, to point to the REST Adapter endpoint `/v1/applications/signingRequests/info`. Token is generated via sending request to `/v1/applications/tokens` and this also has to be reconfigured to point to the Adapter Endpoint.
 REST Adapter forwards request to mutation `requestOneTimeTokenForApplication`.
