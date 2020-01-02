@@ -16,7 +16,7 @@ func TestDifferentTenantAccessDenied(t *testing.T) {
 	notExistingTenant := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 
 	t.Log("Get Dex id_token")
-	config, err := idtokenprovider.LoadConfig()
+	config, err := idtokenprovider.NewConfigFromEnv()
 	require.NoError(t, err)
 
 	dexToken, err := idtokenprovider.Authenticate(config.IdProviderConfig)

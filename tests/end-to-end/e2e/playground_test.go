@@ -88,7 +88,7 @@ func getClientWithCert(certificates []*x509.Certificate, key *rsa.PrivateKey) *h
 }
 
 func getDexToken(t *testing.T) string {
-	config, err := idtokenprovider.LoadConfig()
+	config, err := idtokenprovider.NewConfigFromEnv()
 	require.NoError(t, err)
 
 	dexToken, err := idtokenprovider.Authenticate(config.IdProviderConfig)

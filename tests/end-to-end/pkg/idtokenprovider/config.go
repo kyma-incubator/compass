@@ -49,15 +49,25 @@ type userCredentials struct {
 	Password string
 }
 
-func LoadConfig() (Config, error) {
+func NewConfigFromEnv() (Config, error) {
 	env := envConfig{}
 	err := envconfig.Init(&env)
 	if err != nil {
 		return Config{}, errors.Wrap(err, "while loading environment variables")
 	}
-
 	config := Config{EnvConfig: env}
 
+	return initConfig(config,env), nil
+}
+
+func NewConfigFromVars(email, password, domain string, timeout time.Duration) (Config, error) {
+	env := envConfig{Domain:domain,UserEmail:email,UserPassword:password, ClientTimeout:timeout}
+	config := Config{EnvConfig: env}
+
+	return initConfig(config,env), nil
+}
+
+func initConfig(config Config, env envConfig) Config{
 	config.IdProviderConfig = idProviderConfig{
 		DexConfig: dexConfig{
 			BaseUrl:           fmt.Sprintf("https://dex.%s", env.Domain),
@@ -79,6 +89,5 @@ func LoadConfig() (Config, error) {
 		Username: env.UserEmail,
 		Password: env.UserPassword,
 	}
-
-	return config, nil
 }
+
