@@ -16,16 +16,11 @@ type envConfig struct {
 }
 
 type Config struct {
-	IdProviderConfig idProviderConfig
-	EnvConfig        envConfig
-}
-
-type idProviderConfig struct {
 	DexConfig       dexConfig
 	ClientConfig    clientConfig
 	UserCredentials userCredentials
-	RetryConfig     retryConfig
-}
+	RetryConfig     retryConfig}
+
 
 type dexConfig struct {
 	BaseUrl           string
@@ -55,20 +50,19 @@ func NewConfigFromEnv() (Config, error) {
 	if err != nil {
 		return Config{}, errors.Wrap(err, "while loading environment variables")
 	}
-	config := Config{EnvConfig: env}
 
-	return initConfig(config,env), nil
+	return initConfig(env), nil
 }
 
-func NewConfigFromVars(email, password, domain string, timeout time.Duration) (Config, error) {
+func NewConfig(email, password, domain string, timeout time.Duration) (Config, error) {
 	env := envConfig{Domain:domain,UserEmail:email,UserPassword:password, ClientTimeout:timeout}
-	config := Config{EnvConfig: env}
 
-	return initConfig(config,env), nil
+	return initConfig(env), nil
 }
 
-func initConfig(config Config, env envConfig) Config{
-	config.IdProviderConfig = idProviderConfig{
+func initConfig(env envConfig) Config{
+
+	config := Config{
 		DexConfig: dexConfig{
 			BaseUrl:           fmt.Sprintf("https://dex.%s", env.Domain),
 			AuthorizeEndpoint: fmt.Sprintf("https://dex.%s/auth", env.Domain),
@@ -85,7 +79,7 @@ func initConfig(config Config, env envConfig) Config{
 		},
 	}
 
-	config.IdProviderConfig.UserCredentials = userCredentials{
+	config.UserCredentials = userCredentials{
 		Username: env.UserEmail,
 		Password: env.UserPassword,
 	}
