@@ -19,8 +19,8 @@ type Config struct {
 	DexConfig       dexConfig
 	ClientConfig    clientConfig
 	UserCredentials userCredentials
-	RetryConfig     retryConfig}
-
+	RetryConfig     retryConfig
+}
 
 type dexConfig struct {
 	BaseUrl           string
@@ -55,12 +55,12 @@ func NewConfigFromEnv() (Config, error) {
 }
 
 func NewConfig(email, password, domain string, timeout time.Duration) (Config, error) {
-	env := envConfig{Domain:domain,UserEmail:email,UserPassword:password, ClientTimeout:timeout}
+	env := envConfig{Domain: domain, UserEmail: email, UserPassword: password, ClientTimeout: timeout}
 
 	return initConfig(env), nil
 }
 
-func initConfig(env envConfig) Config{
+func initConfig(env envConfig) Config {
 
 	config := Config{
 		DexConfig: dexConfig{
@@ -83,5 +83,5 @@ func initConfig(env envConfig) Config{
 		Username: env.UserEmail,
 		Password: env.UserPassword,
 	}
+	return config
 }
-
