@@ -42,6 +42,7 @@ type RootResolver struct {
 	appTemplate *apptemplate.Resolver
 	api         *api.Resolver
 	eventAPI    *eventdef.Resolver
+	eventing    *eventing.Resolver
 	doc         *document.Resolver
 	runtime     *runtime.Resolver
 	healthCheck *healthcheck.Resolver
@@ -112,6 +113,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 		appTemplate: apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter),
 		api:         api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, apiRtmAuthSvc, apiConverter, authConverter, frConverter, apiRtmAuthConverter),
 		eventAPI:    eventdef.NewResolver(transact, eventAPISvc, appSvc, eventAPIConverter, frConverter),
+		eventing:    eventing.NewResolver(transact, eventingSvc),
 		doc:         document.NewResolver(transact, docSvc, appSvc, frConverter),
 		runtime:     runtime.NewResolver(transact, runtimeSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc),
 		healthCheck: healthcheck.NewResolver(healthCheckSvc),
@@ -336,11 +338,11 @@ func (r *mutationResolver) UnregisterIntegrationSystem(ctx context.Context, id s
 }
 
 func (r *mutationResolver) SetDefaultEventingForApplication(ctx context.Context, appID string, runtimeID string) (*graphql.ApplicationEventingConfiguration, error) {
-	return nil, nil
+	return r.eventing.SetEventingForApplication(ctx, appID, runtimeID)
 }
 
 func (r *mutationResolver) DeleteDefaultEventingForApplication(ctx context.Context, appID string) (*graphql.ApplicationEventingConfiguration, error) {
-	return nil, nil
+	return r.eventing.UnsetEventingForApplication(ctx, appID)
 }
 
 type applicationResolver struct {
@@ -351,7 +353,7 @@ func (r *applicationResolver) Auths(ctx context.Context, obj *graphql.Applicatio
 	return r.app.Auths(ctx, obj)
 }
 
-func (r *applicationResolver) Labels(ctx context.Context, obj *graphql.Application, key *string) (graphql.Labels, error) {
+func (r *applicationResolver) Labels(ctx context.Context, obj *graphql.Application, key *string) (*graphql.Labels, error) {
 	return r.app.Labels(ctx, obj, key)
 }
 func (r *applicationResolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*graphql.Webhook, error) {
@@ -381,7 +383,7 @@ type runtimeResolver struct {
 	*RootResolver
 }
 
-func (r *runtimeResolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string) (graphql.Labels, error) {
+func (r *runtimeResolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string) (*graphql.Labels, error) {
 	return r.runtime.Labels(ctx, obj, key)
 }
 
@@ -430,10 +432,10 @@ func (r *integrationSystemResolver) Auths(ctx context.Context, obj *graphql.Inte
 
 type oneTimeTokenResolver struct{ *RootResolver }
 
-func (r *oneTimeTokenResolver) RawEncoded(ctx context.Context, obj *graphql.OneTimeToken) (string, error) {
+func (r *oneTimeTokenResolver) RawEncoded(ctx context.Context, obj *graphql.OneTimeToken) (*string, error) {
 	return r.token.RawEncoded(ctx, obj)
 }
 
-func (r *oneTimeTokenResolver) Raw(ctx context.Context, obj *graphql.OneTimeToken) (string, error) {
+func (r *oneTimeTokenResolver) Raw(ctx context.Context, obj *graphql.OneTimeToken) (*string, error) {
 	return r.token.Raw(ctx, obj)
 }

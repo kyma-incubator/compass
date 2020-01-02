@@ -616,7 +616,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				return appConv
 			},
 			ExpectedOutput: nil,
-			ExpectedError:  errors.New("while validating application input from application template [name=bar]: name: cannot be blank."),
+			ExpectedError:  errors.New("while validating application input from application template [name=bar]: name: cannot be blank; providerName: cannot be blank."),
 		},
 		{
 			Name: "Returns error when creating Application fails",

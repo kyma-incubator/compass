@@ -54,23 +54,27 @@ models:
         resolver: true
       auths:
         resolver: true
-      eventConfiguration:
+      eventingConfiguration:
         resolver: true
+
   APISpec:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.APISpec"
     fields:
       fetchRequest:
         resolver: true
+
   EventSpec:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.EventSpec"
     fields:
       fetchRequest:
         resolver: true
+
   Document:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Document"
     fields:
       fetchRequest:
         resolver: true
+
   Runtime:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Runtime"
     fields:
@@ -78,6 +82,9 @@ models:
         resolver: true
       auths:
         resolver: true
+      eventingConfiguration:
+        resolver: true
+
   IntegrationSystem:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.IntegrationSystem"
     fields:

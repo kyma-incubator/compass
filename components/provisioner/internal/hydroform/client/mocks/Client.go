@@ -49,13 +49,20 @@ func (_m *Client) Deprovision(cluster *types.Cluster, provider *types.Provider) 
 	return r0
 }
 
-// Provision provides a mock function with given fields: cluster, provider
-func (_m *Client) Provision(cluster *types.Cluster, provider *types.Provider) (*types.Cluster, error) {
-	ret := _m.Called(cluster, provider)
+// Provision provides a mock function with given fields: cluster, provider, ops
+func (_m *Client) Provision(cluster *types.Cluster, provider *types.Provider, ops ...types.Option) (*types.Cluster, error) {
+	_va := make([]interface{}, len(ops))
+	for _i := range ops {
+		_va[_i] = ops[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, cluster, provider)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 *types.Cluster
-	if rf, ok := ret.Get(0).(func(*types.Cluster, *types.Provider) *types.Cluster); ok {
-		r0 = rf(cluster, provider)
+	if rf, ok := ret.Get(0).(func(*types.Cluster, *types.Provider, ...types.Option) *types.Cluster); ok {
+		r0 = rf(cluster, provider, ops...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*types.Cluster)
@@ -63,8 +70,8 @@ func (_m *Client) Provision(cluster *types.Cluster, provider *types.Provider) (*
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*types.Cluster, *types.Provider) error); ok {
-		r1 = rf(cluster, provider)
+	if rf, ok := ret.Get(1).(func(*types.Cluster, *types.Provider, ...types.Option) error); ok {
+		r1 = rf(cluster, provider, ops...)
 	} else {
 		r1 = ret.Error(1)
 	}

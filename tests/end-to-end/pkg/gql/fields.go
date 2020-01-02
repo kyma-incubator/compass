@@ -48,6 +48,7 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 		status {condition timestamp}
 		webhooks {%s}
 		healthCheckURL
+		providerName
 		apiDefinitions {%s}
 		eventDefinitions {%s}
 		documents {%s}
@@ -242,8 +243,13 @@ func (fp *GqlFieldsProvider) ForIntegrationSystem() string {
 		auths {%s}`, fp.ForSystemAuth())
 }
 
-func (fp *GqlFieldsProvider) ForPlaceholders() interface{} {
+func (fp *GqlFieldsProvider) ForPlaceholders() string {
 	return `
 		name
 		description`
+}
+
+func (fp *GqlFieldsProvider) ForEventingConfiguration() string {
+	return `
+		defaultURL`
 }

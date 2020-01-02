@@ -11,7 +11,7 @@ set -o errexit
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
 
-ALL_SCOPES="runtime:write application:write label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read application_template:read application_template:write" \
+ALL_SCOPES="runtime:write application:write label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read application_template:read application_template:write eventing:manage" \
 DOMAIN="kyma.local" \
 GATEWAY_OAUTH20_SUBDOMAIN="compass-gateway-auth-oauth" \
 GATEWAY_JWT_SUBDOMAIN="compass-gateway" \

@@ -122,6 +122,7 @@ input ApplicationFromTemplateInput {
 
 input ApplicationRegisterInput {
 	name: String!
+	providerName: String!
 	description: String
 	labels: Labels
 	webhooks: [WebhookInput!]
@@ -142,6 +143,7 @@ input ApplicationTemplateInput {
 
 input ApplicationUpdateInput {
 	name: String!
+	providerName: String!
 	description: String
 	healthCheckURL: String
 	integrationSystemID: ID
@@ -188,7 +190,7 @@ input DocumentInput {
 input EventDefinitionInput {
 	name: String!
 	description: String
-	spec: EventSpecInput!
+	spec: EventSpecInput
 	group: String
 	version: VersionInput
 }
@@ -283,11 +285,11 @@ type APIDefinition {
 	"""
 	"If runtime does not exist, an error is returned. If runtime exists but Auth for it is not set, defaultAuth is returned if specified.
 	"""
-	auth(runtimeID: ID!): APIRuntimeAuth!
+	auth(runtimeID: ID!): APIRuntimeAuth
 	"""
 	Returns authentication details for all runtimes, even for a runtime, where Auth is not yet specified.
 	"""
-	auths: [APIRuntimeAuth!]!
+	auths: [APIRuntimeAuth!]
 	"""
 	If defaultAuth is specified, it will be used for all Runtimes that does not specify Auth explicitly.
 	"""
@@ -319,25 +321,26 @@ type APISpec {
 type Application {
 	id: ID!
 	name: String!
+	providerName: String!
 	description: String
 	integrationSystemID: ID
-	labels(key: String): Labels!
+	labels(key: String): Labels
 	status: ApplicationStatus!
-	webhooks: [Webhook!]!
+	webhooks: [Webhook!]
 	healthCheckURL: String
 	"""
 	group allows to find different versions of the same API
 	Maximum `first` parameter value is 100
 	"""
-	apiDefinitions(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage!
+	apiDefinitions(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage
 	"""
 	group allows to find different versions of the same event Definitions
 	"""
-	eventDefinitions(group: String, first: Int = 100, after: PageCursor): EventDefinitionPage!
+	eventDefinitions(group: String, first: Int = 100, after: PageCursor): EventDefinitionPage
 	apiDefinition(id: ID!): APIDefinition
 	eventDefinition(id: ID!): EventDefinition
-	documents(first: Int = 100, after: PageCursor): DocumentPage!
-	auths: [SystemAuth!]!
+	documents(first: Int = 100, after: PageCursor): DocumentPage
+	auths: [SystemAuth!]
 	eventingConfiguration: ApplicationEventingConfiguration
 }
 
@@ -475,7 +478,7 @@ type IntegrationSystem {
 	id: ID!
 	name: String!
 	description: String
-	auths: [SystemAuth!]!
+	auths: [SystemAuth!]
 }
 
 type IntegrationSystemPage implements Pageable {
@@ -506,8 +509,8 @@ type OAuthCredentialData {
 type OneTimeToken {
 	token: String!
 	connectorURL: String!
-	raw: String!
-	rawEncoded: String!
+	raw: String
+	rawEncoded: String
 }
 
 type PageInfo {
@@ -526,12 +529,12 @@ type Runtime {
 	metadata: RuntimeMetadata!
 	name: String!
 	description: String
-	labels(key: String): Labels!
+	labels(key: String): Labels
 	status: RuntimeStatus!
 	"""
 	Returns array of authentication details for Runtime. For now at most one element in array will be returned.
 	"""
-	auths: [SystemAuth!]!
+	auths: [SystemAuth!]
 	eventingConfiguration: RuntimeEventingConfiguration
 }
 

@@ -67,6 +67,7 @@ func TestCompassAuth(t *testing.T) {
 	t.Log("Create an application as Integration System")
 	appInput := graphql.ApplicationRegisterInput{
 		Name:                "app-created-by-integration-system",
+		ProviderName:        "compass",
 		IntegrationSystemID: &intSys.ID,
 	}
 	appByIntSys := registerApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, tenant, appInput)

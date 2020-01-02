@@ -3,6 +3,7 @@ mutation {
   result: registerApplication(
     in: {
       name: "wordpress"
+      providerName: "compass"
       labels: { scenarios: ["DEFAULT"] }
       apiDefinitions: [
         {
@@ -124,6 +125,7 @@ mutation {
       }
     }
     healthCheckURL
+    providerName
     apiDefinitions {
       data {
         id

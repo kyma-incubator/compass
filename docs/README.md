@@ -1,53 +1,36 @@
-# Docs
+# Documentation
 
 ## Overview
 
-This folder contains documents that relate to the project.
+The `docs` folder contains end-to-end documentation on Compass and its components.
 
-## Architecture
+Start with the overarching Compass documentation where you can find the general information on Compass. The documents are arranged in the fixed order that follows the [content strategy](https://kyma-project.io/community/guidelines/content/#content-strategy-content-strategy-documentation-types). Then, read about the components in more detail:
+* [Connector](./connector)
+* [Director](./director)
+* [Integration System](./integration-system)
+* [Provisioner](./provisioner)
+* [Runtime Agent](./runtime-agent)
 
-Read these documents to learn the basics of the Compass architecture:
+### Docs structure
 
-- [Components](./architecture/components.md)
-- [Basic architecture](./architecture/basic-architecture.md)
+The directory has the following structure:
 
-These documents provide you with more architectural details:
+```
+  ├── archive                  # Directory for archived documents    
+  ├── compass                  # Overarching Compass documentation
+  ├── connector                # Documentation for the Connector component     
+  ├── director                 # Documentation for the Director component      
+  ├── integration-system       # Documentation for the Integration System component                                    
+  ├── investigations           # Directory for conducted investigations
+  ├── provisioner              # Documentation for the Provisioner component                                    
+  └── runtime-agent            # Documentation for the Runtime Agent component
+```
 
-- [Application and Runtime Flows](./architecture/app-runtime-flows.md)
-- [Establishing a trusted connection](./architecture/establishing-trusted-connection.md)
-- [API Credentials Flow](./architecture/api-credentials-flows.md)
-- [Support for legacy REST API](./architecture/support-for-legacy-rest-api.md)
-- [Event flows proposal](./architecture/event-flows-proposal.md)
-- [Director component](./architecture/director-component.md)
-- [Runtime Agent contract](./architecture/runtime-agent-contract.md)
-- [Database scheme](./architecture/db-scheme.md)
-- [Authentication and authorization](./architecture/authentication-and-authorization.md)
-- [Integration Systems](./architecture/integration-systems.md)
-- [Proposal: Input validation](./architecture/input-validation.md)
-- [Proposal: API specifications support](./architecture/api-specs-support.md)
-- [Automatic Application Management](./architecture/auto-app-management.md)
-- [Default eventing for application](./architecture/default-eventing-for-application.md)
-- [Proposal: API Packages](./architecture/api-packages.md)
-- [Proposal: Input parameters for API, Event Definitions or API Packages in the Runtime](./architecture/input-parameters-on-runtime.md)
-- [Proposal: Custom configuration for Kyma installation](./architecture/provisioning-custom-configuration.md)
+## Development
 
-## Examples
+Follow these basic rules when you add a new document to the official documentation:
 
-Here you can find mock GraphQL queries and mutations:
-
-- [Examples](./../components/director/examples/README.md)
-
-## Investigations
-
-Here you can read about the conducted investigations:
-
-- [Storage - Requirements](./investigations/storage/requirements.md)
-- [Storage - S3](./investigations/storage/s3/README.md)
-- [Storage - S3 - Parquet](./investigations/storage/s3/parquet.md)
-- [Storage - Managed DB](./investigations/storage/managed-db/managed-dbs.md)
-- [Storage - PostgreSQL Evaluation](./investigations/storage/postgres/postgres.md)
-- [Storage - SQL Toolbox](./investigations/storage/sql-toolbox/sql-toolbox.md)
-- [GraphQL - File Upload](./investigations/graphql-file-upload/file-upload-with-graphql.md)
-- [GraphQL - Mutation for updating complex types](./investigations/graphql-complex-updates/graphql-complex-updates.md)
-- [GraphQL - Secure Resolvers](./investigations/secure-resolvers/secure-resolvers.md)
-- [Documentation - Generating static page for our schema](./investigations/api-documentation/generate-api-documentation.md)
+1. Get familiar with the [Content Strategy](https://github.com/kyma-project/community/blob/master/guidelines/content-guidelines/01-content-strategy.md) to learn about the official approach to content development.
+2. Follow the [Contribution Guide](https://github.com/kyma-project/community/blob/master/contributing/02-contributing.md) for the general contribution rules and process.
+3. Make use of the [templates](https://github.com/kyma-project/community/tree/master/guidelines/templates) to structure your documents properly.
+4. Be compliant with the writing [guidelines](https://github.com/kyma-project/community/blob/master/guidelines/content-guidelines) to contribute high-quality and standardized content.

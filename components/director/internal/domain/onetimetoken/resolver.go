@@ -73,30 +73,32 @@ func (r *Resolver) RequestOneTimeTokenForApplication(ctx context.Context, id str
 	return &gqlToken, nil
 }
 
-func (r *Resolver) RawEncoded(ctx context.Context, obj *graphql.OneTimeToken) (string, error) {
+func (r *Resolver) RawEncoded(ctx context.Context, obj *graphql.OneTimeToken) (*string, error) {
 	if obj == nil {
-		return "", errors.New("Token was nil")
+		return nil, errors.New("Token was nil")
 	}
 
-	rawJson, err := json.Marshal(obj)
+	rawJSON, err := json.Marshal(obj)
 	if err != nil {
-		return "", errors.Wrap(err, "while marshalling object to JSON")
+		return nil, errors.Wrap(err, "while marshalling object to JSON")
 	}
 
-	rawBaseEncoded := base64.StdEncoding.EncodeToString(rawJson)
+	rawBaseEncoded := base64.StdEncoding.EncodeToString(rawJSON)
 
-	return rawBaseEncoded, nil
+	return &rawBaseEncoded, nil
 }
 
-func (r *Resolver) Raw(ctx context.Context, obj *graphql.OneTimeToken) (string, error) {
+func (r *Resolver) Raw(ctx context.Context, obj *graphql.OneTimeToken) (*string, error) {
 	if obj == nil {
-		return "", errors.New("Token was nil")
+		return nil, errors.New("Token was nil")
 	}
 
-	rawJson, err := json.Marshal(obj)
+	rawJSON, err := json.Marshal(obj)
 	if err != nil {
-		return "", errors.Wrap(err, "while marshalling object to JSON")
+		return nil, errors.Wrap(err, "while marshalling object to JSON")
 	}
 
-	return string(rawJson), nil
+	rawJSONStr := string(rawJSON)
+
+	return &rawJSONStr, nil
 }

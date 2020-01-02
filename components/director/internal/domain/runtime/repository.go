@@ -170,7 +170,7 @@ func (r *pgRepository) GetOldestForFilters(ctx context.Context, tenant string, f
 		additionalConditions = append(additionalConditions, repo.NewInCondition("id", filterSubquery))
 	}
 
-	orderByParams := repo.OrderByParams{repo.NewDescOrderBy("creation_timestamp")}
+	orderByParams := repo.OrderByParams{repo.NewAscOrderBy("creation_timestamp")}
 
 	var runtimeEnt Runtime
 	if err := r.singleGetter.Get(ctx, tenant, additionalConditions, orderByParams, &runtimeEnt); err != nil {

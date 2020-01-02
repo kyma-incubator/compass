@@ -4,8 +4,6 @@ This is the basic terminology that appears in the Compass documentation:
 
 * **Administrator** - a user that can configure and group Applications and Runtimes.
 
-* [Agent](https://github.com/kyma-incubator/compass/blob/master/docs/architecture/components.md#agent)
-
 * [Application](https://github.com/kyma-incubator/compass/blob/master/docs/architecture/components.md#application)
 
 * [ApplicationTemplate](https://github.com/kyma-incubator/compass/blob/master/docs/architecture/components.md#applicationtemplate)
@@ -23,6 +21,8 @@ This is the basic terminology that appears in the Compass documentation:
 * [Management Plane](https://github.com/kyma-incubator/compass/blob/master/docs/architecture/components.md#management-plane)
 
 * [Runtime](https://github.com/kyma-incubator/compass/blob/master/docs/architecture/components.md#kyma-runtime)
+
+* [Runtime Agent](https://github.com/kyma-incubator/compass/blob/master/docs/architecture/components.md#agent)
 
 * [Runtime Provisioner](https://github.com/kyma-incubator/compass/blob/master/docs/architecture/components.md#runtime-provisioner)
 

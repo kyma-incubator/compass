@@ -294,10 +294,11 @@ func TestResolver_UpdateApplication(t *testing.T) {
 	}
 }
 
-func TestResolver_DeleteApplication(t *testing.T) {
+func TestResolver_UnregisterApplication(t *testing.T) {
 	// given
-	modelApplication := fixModelApplication("foo", "tenant-foo", "Foo", "Bar")
-	gqlApplication := fixGQLApplication("foo", "Foo", "Bar")
+	appID := uuid.New()
+	modelApplication := fixModelApplication(appID.String(), "tenant-foo", "Foo", "Bar")
+	gqlApplication := fixGQLApplication(appID.String(), "Foo", "Bar")
 	testErr := errors.New("Test error")
 	testAuths := fixOAuths()
 	txGen := txtest.NewTransactionContextGenerator(testErr)
@@ -307,6 +308,7 @@ func TestResolver_DeleteApplication(t *testing.T) {
 		TransactionerFn     func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn           func() *automock.ApplicationService
 		ConverterFn         func() *automock.ApplicationConverter
+		EventingSvcFn       func() *automock.EventingService
 		SysAuthServiceFn    func() *automock.SystemAuthService
 		OAuth20ServiceFn    func() *automock.OAuth20Service
 		InputID             string
@@ -318,14 +320,19 @@ func TestResolver_DeleteApplication(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", contextParam, "foo").Return(modelApplication, nil).Once()
-				svc.On("Delete", contextParam, "foo").Return(nil).Once()
+				svc.On("Get", contextParam, appID.String()).Return(modelApplication, nil).Once()
+				svc.On("Delete", contextParam, appID.String()).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
 				conv := &automock.ApplicationConverter{}
 				conv.On("ToGraphQL", modelApplication).Return(gqlApplication).Once()
 				return conv
+			},
+			EventingSvcFn: func() *automock.EventingService {
+				svc := &automock.EventingService{}
+				svc.On("CleanupAfterUnregisteringApplication", contextParam, appID).Return(nil, nil).Once()
+				return svc
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
@@ -337,7 +344,7 @@ func TestResolver_DeleteApplication(t *testing.T) {
 				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
 				return svc
 			},
-			InputID:             "foo",
+			InputID:             appID.String(),
 			ExpectedApplication: gqlApplication,
 			ExpectedErr:         nil,
 		},
@@ -346,13 +353,18 @@ func TestResolver_DeleteApplication(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", contextParam, "foo").Return(modelApplication, nil).Once()
-				svc.On("Delete", contextParam, "foo").Return(nil).Once()
+				svc.On("Get", contextParam, appID.String()).Return(modelApplication, nil).Once()
+				svc.On("Delete", contextParam, appID.String()).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
 				conv := &automock.ApplicationConverter{}
 				return conv
+			},
+			EventingSvcFn: func() *automock.EventingService {
+				svc := &automock.EventingService{}
+				svc.On("CleanupAfterUnregisteringApplication", contextParam, appID).Return(nil, nil).Once()
+				return svc
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
@@ -365,7 +377,7 @@ func TestResolver_DeleteApplication(t *testing.T) {
 
 				return svc
 			},
-			InputID:             "foo",
+			InputID:             appID.String(),
 			ExpectedApplication: nil,
 			ExpectedErr:         testErr,
 		},
@@ -374,13 +386,18 @@ func TestResolver_DeleteApplication(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", contextParam, "foo").Return(modelApplication, nil).Once()
-				svc.On("Delete", contextParam, "foo").Return(testErr).Once()
+				svc.On("Get", contextParam, appID.String()).Return(modelApplication, nil).Once()
+				svc.On("Delete", contextParam, appID.String()).Return(testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
 				conv := &automock.ApplicationConverter{}
 				return conv
+			},
+			EventingSvcFn: func() *automock.EventingService {
+				svc := &automock.EventingService{}
+				svc.On("CleanupAfterUnregisteringApplication", contextParam, appID).Return(nil, nil).Once()
+				return svc
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
@@ -393,7 +410,7 @@ func TestResolver_DeleteApplication(t *testing.T) {
 
 				return svc
 			},
-			InputID:             "foo",
+			InputID:             appID.String(),
 			ExpectedApplication: nil,
 			ExpectedErr:         testErr,
 		},
@@ -402,12 +419,16 @@ func TestResolver_DeleteApplication(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", contextParam, "foo").Return(nil, testErr).Once()
+				svc.On("Get", contextParam, appID.String()).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
 				conv := &automock.ApplicationConverter{}
 				return conv
+			},
+			EventingSvcFn: func() *automock.EventingService {
+				svc := &automock.EventingService{}
+				return svc
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
@@ -417,7 +438,7 @@ func TestResolver_DeleteApplication(t *testing.T) {
 				svc := &automock.OAuth20Service{}
 				return svc
 			},
-			InputID:             "foo",
+			InputID:             appID.String(),
 			ExpectedApplication: nil,
 			ExpectedErr:         testErr,
 		},
@@ -432,6 +453,10 @@ func TestResolver_DeleteApplication(t *testing.T) {
 				conv := &automock.ApplicationConverter{}
 				return conv
 			},
+			EventingSvcFn: func() *automock.EventingService {
+				svc := &automock.EventingService{}
+				return svc
+			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
 				return svc
@@ -440,7 +465,7 @@ func TestResolver_DeleteApplication(t *testing.T) {
 				svc := &automock.OAuth20Service{}
 				return svc
 			},
-			InputID:             "foo",
+			InputID:             appID.String(),
 			ExpectedApplication: nil,
 			ExpectedErr:         testErr,
 		},
@@ -449,12 +474,17 @@ func TestResolver_DeleteApplication(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", contextParam, "foo").Return(modelApplication, nil).Once()
+				svc.On("Get", contextParam, appID.String()).Return(modelApplication, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
 				conv := &automock.ApplicationConverter{}
 				return conv
+			},
+			EventingSvcFn: func() *automock.EventingService {
+				svc := &automock.EventingService{}
+				svc.On("CleanupAfterUnregisteringApplication", contextParam, appID).Return(nil, nil).Once()
+				return svc
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
@@ -465,7 +495,7 @@ func TestResolver_DeleteApplication(t *testing.T) {
 				svc := &automock.OAuth20Service{}
 				return svc
 			},
-			InputID:             "foo",
+			InputID:             appID.String(),
 			ExpectedApplication: nil,
 			ExpectedErr:         testErr,
 		},
@@ -474,12 +504,17 @@ func TestResolver_DeleteApplication(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", contextParam, "foo").Return(modelApplication, nil).Once()
+				svc.On("Get", contextParam, appID.String()).Return(modelApplication, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
 				conv := &automock.ApplicationConverter{}
 				return conv
+			},
+			EventingSvcFn: func() *automock.EventingService {
+				svc := &automock.EventingService{}
+				svc.On("CleanupAfterUnregisteringApplication", contextParam, appID).Return(nil, nil).Once()
+				return svc
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
@@ -491,7 +526,35 @@ func TestResolver_DeleteApplication(t *testing.T) {
 				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(testErr)
 				return svc
 			},
-			InputID:             "foo",
+			InputID:             appID.String(),
+			ExpectedApplication: nil,
+			ExpectedErr:         testErr,
+		}, {
+			Name:            "Returns error when removing default eventing labels",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("Get", contextParam, appID.String()).Return(modelApplication, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				return conv
+			},
+			EventingSvcFn: func() *automock.EventingService {
+				svc := &automock.EventingService{}
+				svc.On("CleanupAfterUnregisteringApplication", contextParam, appID).Return(nil, testErr).Once()
+				return svc
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				return svc
+			},
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				return svc
+			},
+			InputID:             appID.String(),
 			ExpectedApplication: nil,
 			ExpectedErr:         testErr,
 		},
@@ -501,10 +564,11 @@ func TestResolver_DeleteApplication(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
+			eventingSvc := testCase.EventingSvcFn()
 			persistTx, transact := testCase.TransactionerFn()
 			sysAuthSvc := testCase.SysAuthServiceFn()
 			oAuth20Svc := testCase.OAuth20ServiceFn()
-			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, oAuth20Svc, sysAuthSvc, nil, nil, nil, nil, nil, nil, nil)
+			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, oAuth20Svc, sysAuthSvc, nil, nil, nil, nil, nil, nil, eventingSvc)
 			resolver.SetConverter(converter)
 
 			// when
@@ -517,12 +581,8 @@ func TestResolver_DeleteApplication(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
-			svc.AssertExpectations(t)
-			converter.AssertExpectations(t)
-			persistTx.AssertExpectations(t)
-			transact.AssertExpectations(t)
-			sysAuthSvc.AssertExpectations(t)
-			oAuth20Svc.AssertExpectations(t)
+
+			mock.AssertExpectationsForObjects(t, svc, converter, persistTx, transact, sysAuthSvc, oAuth20Svc, eventingSvc)
 		})
 	}
 }
@@ -1769,7 +1829,7 @@ func TestResolver_Labels(t *testing.T) {
 		},
 	}
 
-	gqlLabels := graphql.Labels{
+	gqlLabels := &graphql.Labels{
 		labelKey: labelValue,
 		labelKey: labelValue,
 	}
@@ -1783,7 +1843,7 @@ func TestResolver_Labels(t *testing.T) {
 		ServiceFn       func() *automock.ApplicationService
 		InputApp        *graphql.Application
 		InputKey        string
-		ExpectedResult  graphql.Labels
+		ExpectedResult  *graphql.Labels
 		ExpectedErr     error
 	}{
 		{

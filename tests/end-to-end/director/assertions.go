@@ -16,6 +16,7 @@ func assertApplication(t *testing.T, in graphql.ApplicationRegisterInput, actual
 	assert.Equal(t, in.Description, actualApp.Description)
 	assertLabels(t, *in.Labels, actualApp.Labels, actualApp.IntegrationSystemID)
 	assert.Equal(t, in.HealthCheckURL, actualApp.HealthCheckURL)
+	assert.Equal(t, in.ProviderName, actualApp.ProviderName)
 	assertWebhooks(t, in.Webhooks, actualApp.Webhooks)
 	assertDocuments(t, in.Documents, actualApp.Documents.Data)
 	assertAPI(t, in.APIDefinitions, actualApp.APIDefinitions.Data)
