@@ -60,7 +60,7 @@ func TestCompassAuth(t *testing.T) {
 	t.Log("Issue a Hydra token with Client Credentials")
 	oauthCredentials := fmt.Sprintf("%s:%s", intSysOauthCredentialData.ClientID, intSysOauthCredentialData.ClientSecret)
 	encodedCredentials := base64.StdEncoding.EncodeToString([]byte(oauthCredentials))
-	hydraToken, err := fetchHydraAccessToken(t, encodedCredentials, intSysOauthCredentialData.URL)
+	hydraToken, err := fetchHydraAccessTokenWithScopesForApplication(t, encodedCredentials, intSysOauthCredentialData.URL)
 	require.NoError(t, err)
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(hydraToken.AccessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", domain))
 
@@ -99,16 +99,12 @@ func TestCompassAuth(t *testing.T) {
 	require.Empty(t, appByIntSys.ID)
 
 	t.Log("Check if token can not be fetched with old client credentials")
-	_, err = fetchHydraAccessToken(t, encodedCredentials, intSysOauthCredentialData.URL)
+	_, err = fetchHydraAccessTokenWithScopesForApplication(t, encodedCredentials, intSysOauthCredentialData.URL)
 	require.Error(t, err)
 	assert.Equal(t, "response status code is 401", err.Error())
 }
 
-func fetchHydraAccessToken(t *testing.T, encodedCredentials string, tokenURL string) (*hydraToken, error) {
-	form := url.Values{}
-	form.Set("grant_type", "client_credentials")
-	form.Set("scope", "application:write application:read")
-
+func fetchHydraAccessToken(t *testing.T, encodedCredentials string, tokenURL string, form url.Values) (*hydraToken, error) {
 	req, err := http.NewRequest("POST", tokenURL, strings.NewReader(form.Encode()))
 	require.NoError(t, err)
 
@@ -137,6 +133,22 @@ func fetchHydraAccessToken(t *testing.T, encodedCredentials string, tokenURL str
 		return nil, errors.New(fmt.Sprintf("response status code is %d", resp.StatusCode))
 	}
 	return &hydraToken, nil
+}
+
+func fetchHydraAccessTokenWithScopesForApplication(t *testing.T, encodedCredentials string, tokenURL string) (*hydraToken, error) {
+	form := url.Values{}
+	form.Set("grant_type", "client_credentials")
+	form.Set("scope", "application:write application:read")
+
+	return fetchHydraAccessToken(t, encodedCredentials, tokenURL, form)
+}
+
+func fetchHydraAccessTokenWithScopesForRuntime(t *testing.T, encodedCredentials string, tokenURL string) (*hydraToken, error) {
+	form := url.Values{}
+	form.Set("grant_type", "client_credentials")
+	form.Set("scope", "runtime:write runtime:read")
+
+	return fetchHydraAccessToken(t, encodedCredentials, tokenURL, form)
 }
 
 func httpRequestBodyCloser(t *testing.T, resp *http.Response) {

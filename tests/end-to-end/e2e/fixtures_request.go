@@ -28,6 +28,16 @@ func fixCreateIntegrationSystemRequest(integrationSystemInGQL string) *gcli.Requ
 			integrationSystemInGQL, tc.gqlFieldsProvider.ForIntegrationSystem()))
 }
 
+func fixRegisterRuntimeRequest(runtimeInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: registerRuntime(in: %s) {
+					%s
+				}
+			}`,
+			runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
+}
+
 func fixGetIntegrationSystemRequest(integrationSystemID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
@@ -36,6 +46,16 @@ func fixGetIntegrationSystemRequest(integrationSystemID string) *gcli.Request {
 				}
 			}`,
 			integrationSystemID, tc.gqlFieldsProvider.ForIntegrationSystem()))
+}
+
+func fixGetViewerRequest() *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: viewer {
+					%s
+				}
+			}`,
+			tc.gqlFieldsProvider.ForViewer()))
 }
 
 // ADD
@@ -58,6 +78,24 @@ func fixGenerateClientCredentialsForIntegrationSystem(id string) *gcli.Request {
 				}`, id, tc.gqlFieldsProvider.ForSystemAuth()))
 }
 
+func fixGenerateClientCredentialsForApplication(id string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+				result: requestClientCredentialsForApplication(id: "%s") {
+						%s
+					}
+				}`, id, tc.gqlFieldsProvider.ForSystemAuth()))
+}
+
+func fixGenerateClientCredentialsForRuntime(id string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+				result: requestClientCredentialsForRuntime(id: "%s") {
+						%s
+					}
+				}`, id, tc.gqlFieldsProvider.ForSystemAuth()))
+}
+
 // DELETE
 func fixDeleteApplicationRequest(t *testing.T, id string) *gcli.Request {
 	return gcli.NewRequest(
@@ -66,6 +104,14 @@ func fixDeleteApplicationRequest(t *testing.T, id string) *gcli.Request {
 			%s
 		}	
 	}`, id, tc.gqlFieldsProvider.ForApplication()))
+}
+
+func fixUnregisterRuntime(id string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation{unregisterRuntime(id: "%s") {
+				%s
+			}
+		}`, id, tc.gqlFieldsProvider.ForRuntime()))
 }
 
 func fixUnregisterIntegrationSystem(intSysID string) *gcli.Request {

@@ -17,6 +17,15 @@ func registerApplicationFromInputWithinTenant(t *testing.T, ctx context.Context,
 	return app
 }
 
+func generateClientCredentialsForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.SystemAuth {
+	req := fixGenerateClientCredentialsForApplication(id)
+	systemAuth := graphql.SystemAuth{}
+
+	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &systemAuth)
+	require.NoError(t, err)
+	return systemAuth
+}
+
 func deleteApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, applicationID string) graphql.ApplicationExt {
 	deleteRequest := fixDeleteApplicationRequest(t, applicationID)
 	app := graphql.ApplicationExt{}
@@ -24,6 +33,36 @@ func deleteApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client
 	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, deleteRequest, &app)
 	require.NoError(t, err)
 	return app
+}
+
+// Runtime
+func registerRuntimeFromInputWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, input *graphql.RuntimeInput) *graphql.RuntimeExt {
+	inputGQL, err := tc.Graphqlizer.RuntimeInputToGQL(*input)
+	require.NoError(t, err)
+
+	registerRuntimeRequest := fixRegisterRuntimeRequest(inputGQL)
+	var runtime graphql.RuntimeExt
+
+	err = tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, registerRuntimeRequest, &runtime)
+	require.NoError(t, err)
+	require.NotEmpty(t, runtime.ID)
+	return &runtime
+}
+
+func generateClientCredentialsForRuntime(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.SystemAuth {
+	req := fixGenerateClientCredentialsForRuntime(id)
+	systemAuth := graphql.SystemAuth{}
+
+	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &systemAuth)
+	require.NoError(t, err)
+	return systemAuth
+}
+
+func unregisterRuntimeWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) {
+	delReq := fixUnregisterRuntime(id)
+
+	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, delReq, nil)
+	require.NoError(t, err)
 }
 
 // API Spec
