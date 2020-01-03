@@ -46,7 +46,7 @@ In the second case, if any connected Runtime changes, Application is notified vi
 
 ![](./assets/runtime-notification.svg)
 
-When connected Runtime is runtime, Application generates API credentials for it and sends them to Director. To learn more about API Credentials flow, see the [API Credentials flow diagram](./../architecture/api-credentials-flows.md).
+When connected Runtime is runtime, Application generates API credentials for it and sends them to Director. To learn more about API Credentials flow, see the [API Credentials flow diagram](./03-api-credentials-flows.md).
 
 ### Runtime configuration update
 

@@ -5,7 +5,7 @@
 
 
 Managing Applications can be passed on some external system, to remove from Applications the burden of integration with Compass.
-Because of that [Integration System](./components.md#Integration-System) was introduced.
+Because of that [Integration System](../compass/02-01-components.md#Integration-System) was introduced.
 
 To simplify the creation of Applications, Director API is extended with ApplicationTemplate.
 An ApplicationTemplate is a reusable input for creating Applications that can be customized with placeholders provided
