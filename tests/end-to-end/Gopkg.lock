@@ -164,11 +164,12 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "master"
-  digest = "1:91a82f7c899197a45859f2e27b721ff4b5ac31d18ca0ba7d855f66b3b32890fb"
+  branch = "graphql-viewer-pattern"
+  digest = "1:17bf56acedb5394a1c84b41ed2435440369b8718bb816c6681adc2d19f1dd369"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/connector/pkg/graphql/externalschema",
+    "components/director/internal/consumer",
     "components/director/internal/model",
     "components/director/pkg/graphql",
     "components/director/pkg/inputvalidation",
@@ -177,7 +178,8 @@
     "components/director/pkg/scalar",
   ]
   pruneopts = "UT"
-  revision = "a2c02da763a87196277c480e1178cc2deacc9865"
+  revision = "464cc431ef251470935aae06ac70d7134a76179c"
+  source = "github.com/dbadura/compass"
 
 [[projects]]
   branch = "master"
