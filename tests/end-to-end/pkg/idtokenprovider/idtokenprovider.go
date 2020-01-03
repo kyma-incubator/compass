@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
-
-	"log"
 
 	retry "github.com/avast/retry-go"
 	"github.com/pkg/errors"
@@ -24,6 +23,21 @@ type idTokenProvider interface {
 type dexIdTokenProvider struct {
 	httpClient *http.Client
 	config     Config
+}
+
+
+func GetDexTokenFromEnv() (string, error) {
+	config, err := NewConfigFromEnv()
+	if err != nil{
+		return "",err
+	}
+
+	dexToken, err := Authenticate(config)
+	if err != nil{
+		return "",err
+	}
+
+	return dexToken,nil
 }
 
 func newDexIdTokenProvider(httpClient *http.Client, config Config) idTokenProvider {
