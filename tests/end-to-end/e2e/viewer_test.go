@@ -22,9 +22,9 @@ func TestViewerQuery(t *testing.T) {
 	ctx := context.Background()
 
 	t.Log("Get Dex id_token")
-	config, err := idtokenprovider.LoadConfig()
+	config, err := idtokenprovider.NewConfigFromEnv()
 	require.NoError(t, err)
-	dexToken, err := idtokenprovider.Authenticate(config.IdProviderConfig)
+	dexToken, err := idtokenprovider.Authenticate(config)
 	require.NoError(t, err)
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
@@ -62,8 +62,8 @@ func TestViewerQuery(t *testing.T) {
 
 	t.Run("Test viewer as Application", func(t *testing.T) {
 		appInput := graphql.ApplicationRegisterInput{
-			Name:                "test-app",
-			ProviderDisplayName: "compass",
+			Name:         "test-app",
+			ProviderName: "compass",
 			Labels: &graphql.Labels{
 				"scenarios": []interface{}{"DEFAULT"},
 			},
