@@ -1,6 +1,8 @@
 package broker
 
-import "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+import (
+	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+)
 
 type awsInputProvider struct {
 }
@@ -35,6 +37,6 @@ func (p *awsInputProvider) Defaults() *gqlschema.ClusterConfigInput {
 	}
 }
 
-func (p *awsInputProvider) ApplyParameters(input *gqlschema.ClusterConfigInput, params *ProvisioningParameters) {
+func (p *awsInputProvider) ApplyParameters(input *gqlschema.ClusterConfigInput, params *provisioningParameters) {
 	updateString(&input.GardenerConfig.ProviderSpecificConfig.AwsConfig.Zone, params.Zone)
 }

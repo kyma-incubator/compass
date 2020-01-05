@@ -11,7 +11,7 @@ func TestGCP(t *testing.T) {
 	b := newProvisioningParamsBuilder(&gcpInputProvider{})
 
 	// when
-	b.ApplyParameters(&ProvisioningParameters{
+	b.ApplyParameters(&provisioningParameters{
 		Name: "gcp-cluster",
 	})
 	input := b.ClusterConfigInput()
@@ -26,7 +26,7 @@ func TestAzure(t *testing.T) {
 	b := newProvisioningParamsBuilder(&azureInputProvider{})
 
 	// when
-	b.ApplyParameters(&ProvisioningParameters{
+	b.ApplyParameters(&provisioningParameters{
 		Name: "azure-cluster",
 	})
 	input := b.ClusterConfigInput()
@@ -41,7 +41,7 @@ func TestAWS(t *testing.T) {
 	b := newProvisioningParamsBuilder(&awsInputProvider{})
 
 	// when
-	b.ApplyParameters(&ProvisioningParameters{
+	b.ApplyParameters(&provisioningParameters{
 		Name: "aws-cluster",
 	})
 	input := b.ClusterConfigInput()

@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/domain"
@@ -38,26 +41,12 @@ type ProvisioningConfig struct {
 
 // KymaEnvBroker implements the Kyma Environment Broker
 type KymaEnvBroker struct {
-	Dumper            *Dumper
+	Dumper *Dumper
+
 	ProvisionerClient provisioner.Client
+	Config            ProvisioningConfig
 
-	Config ProvisioningConfig
-
-	// todo: remove after the storage is done
-	intanceToRuntimeIDs map[string]string
-}
-
-type ProvisioningParameters struct {
-	Name           string  `json:"name"`
-	NodeCount      *int    `json:"nodeCount"`
-	VolumeSizeGb   *int    `json:"volumeSizeGb"`
-	MachineType    *string `json:"machineType"`
-	Region         *string `json:"region"`
-	Zone           *string `json:"zone"`
-	AutoScalerMin  *int    `json:"autoScalerMin"`
-	AutoScalerMax  *int    `json:"autoScalerMax"`
-	MaxSurge       *int    `json:"maxSurge"`
-	MaxUnavailable *int    `json:"maxUnavailable"`
+	Storage storage.BrokerStorage
 }
 
 var enabledPlanIDs = map[string]struct{}{
@@ -75,7 +64,6 @@ func NewBroker(pCli provisioner.Client, cfg ProvisioningConfig) (*KymaEnvBroker,
 		ProvisionerClient:   pCli,
 		Dumper:              dumper,
 		Config:              cfg,
-		intanceToRuntimeIDs: map[string]string{},
 	}, nil
 }
 
@@ -139,7 +127,7 @@ func (b *KymaEnvBroker) Provision(ctx context.Context, instanceID string, detail
 	}
 
 	// unmarshall provisioning parameters
-	var parameters ProvisioningParameters
+	var parameters provisioningParameters
 	err = json.Unmarshal(details.RawParameters, &parameters)
 	if err != nil {
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusBadRequest, fmt.Sprintf("could not read parameters, instanceID %s", instanceID))
@@ -168,15 +156,23 @@ func (b *KymaEnvBroker) Provision(ctx context.Context, instanceID string, detail
 
 	b.Dumper.Dump("Created provisioning input:", input)
 	resp, err := b.ProvisionerClient.ProvisionRuntime(instanceID, *input)
-
-	// todo: store in the storage
+	if err != nil {
+		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusBadRequest, fmt.Sprintf("could not provision runtime, instanceID %s", instanceID))
+	}
 	if resp.RuntimeID == nil {
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusInternalServerError, fmt.Sprintf("could not provision runtime, runtime ID not provided (instanceID %s)", instanceID))
 	}
-	b.registerRuntime(instanceID, *resp.RuntimeID)
-
+	err = b.Storage.Instances().Insert(internal.Instance{
+		InstanceID:             instanceID,
+		RuntimeID:              *resp.RuntimeID,
+		GlobalAccountID:        ersContext.GlobalaccountID,
+		ServiceID:              details.ServiceID,
+		ServicePlanID:          details.PlanID,
+		DashboardURL:           fixedDummyURL,
+		ProvisioningParameters: parameters.ToModel(),
+	})
 	if err != nil {
-		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusBadRequest, fmt.Sprintf("could not provision runtime, instanceID %s", instanceID))
+		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusInternalServerError, fmt.Sprintf("could not save instance, instanceID %s", instanceID))
 	}
 
 	spec := domain.ProvisionedServiceSpec{
@@ -197,12 +193,12 @@ func (b *KymaEnvBroker) Deprovision(ctx context.Context, instanceID string, deta
 	b.Dumper.Dump("Deprovision asyncAllowed:", asyncAllowed)
 
 	// todo: read from storage
-	runtimeID, found := b.runtimeIDByInstance(instanceID)
-	if !found {
+	instance, err := b.Storage.Instances().GetByID(instanceID)
+	if err != nil {
 		return domain.DeprovisionServiceSpec{}, apiresponses.NewFailureResponseBuilder(fmt.Errorf("instance not found"), http.StatusBadRequest, fmt.Sprintf("could not deprovision runtime, instanceID %s", instanceID))
 	}
 
-	opID, err := b.ProvisionerClient.DeprovisionRuntime(runtimeID)
+	opID, err := b.ProvisionerClient.DeprovisionRuntime(instance.RuntimeID)
 	if err != nil {
 		return domain.DeprovisionServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusBadRequest, fmt.Sprintf("could not deprovision runtime, instanceID %s", instanceID))
 	}
@@ -326,15 +322,4 @@ func (b *KymaEnvBroker) LastBindingOperation(ctx context.Context, instanceID, bi
 
 	op := domain.LastOperation{}
 	return op, nil
-}
-
-// todo: remove after the storage is done
-func (b *KymaEnvBroker) registerRuntime(instnanceID string, runtimeID string) {
-	b.intanceToRuntimeIDs[instnanceID] = runtimeID
-}
-
-// todo: remove after the storage is done
-func (b *KymaEnvBroker) runtimeIDByInstance(instanceID string) (string, bool) {
-	rID, found := b.intanceToRuntimeIDs[instanceID]
-	return rID, found
 }
