@@ -21,7 +21,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/provisioner"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	restclient "k8s.io/client-go/rest"
@@ -36,19 +36,18 @@ const (
 	DeprovisioningTimeout = 15 * time.Minute
 
 	checkInterval = 2 * time.Second
-)
 
-var providers = []string{
-	"azure",
-	// "aws",
-	// "gcp",
-}
+	Azure = "Azure"
+	GCP = "GCP"
+	AWS = "AWS"
+)
 
 type TestSuite struct {
 	TestId            string
 	ProvisionerClient provisioner.Client
 
-	CredentialsSecretName string
+	GCPCredentialsSecretName      string
+	GardenerCredentialsSecretName string
 
 	providers []string
 
@@ -80,9 +79,10 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 		TestId:            testId,
 		ProvisionerClient: provisionerClient,
 
-		CredentialsSecretName: fmt.Sprintf("tests-cred-%s", testId),
+		GCPCredentialsSecretName: fmt.Sprintf("tests-cred-gcp-%s", testId),
+		GardenerCredentialsSecretName: fmt.Sprintf("gcp-tests-cred-gardener-%s", testId),
 
-		providers: providers,
+		providers: []string{Azure},
 
 		config:        config,
 		secretsClient: k8sClient.CoreV1().Secrets(config.CredentialsNamespace),
@@ -92,9 +92,15 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 func (ts *TestSuite) Setup() error {
 	logrus.Infof("Setting up environment")
 
-	err := ts.saveCredentialsToSecret(ts.config.GCPCredentials)
+	err := ts.saveCredentialsToSecret(ts.config.GCPCredentials, ts.GCPCredentialsSecretName)
 	if err != nil {
-		return errors.WithMessagef(err, "Failed to save credentials to %s secret", ts.CredentialsSecretName)
+		return errors.WithMessagef(err, "Failed to save GCP credentials to %s secret", ts.GCPCredentialsSecretName)
+	}
+
+	err = ts.saveCredentialsToSecret(ts.config.GardenerCredentials, ts.GardenerCredentialsSecretName)
+
+	if err != nil {
+		return errors.WithMessagef(err, "Failed to save Gardener credentials to %s secret", ts.GCPCredentialsSecretName)
 	}
 
 	return nil
@@ -103,10 +109,16 @@ func (ts *TestSuite) Setup() error {
 func (ts *TestSuite) Cleanup() {
 	logrus.Infof("Starting cleanup...")
 
-	logrus.Infof("Removing credentials secret %s ...", ts.CredentialsSecretName)
-	err := ts.removeCredentialsSecret()
+	logrus.Infof("Removing GCP credentials secret %s ...", ts.GCPCredentialsSecretName)
+	err := ts.removeCredentialsSecret(ts.GCPCredentialsSecretName)
 	if err != nil {
-		logrus.Warnf("Failed to remove credentials secret: %s", err.Error())
+		logrus.Warnf("Failed to remove GCP credentials secret: %s", err.Error())
+	}
+
+	logrus.Infof("Removing Gardener credentials secret %s ...", ts.GCPCredentialsSecretName)
+	err = ts.removeCredentialsSecret(ts.GardenerCredentialsSecretName)
+	if err != nil {
+		logrus.Warnf("Failed to remove Gardener credentials secret: %s", err.Error())
 	}
 }
 
@@ -153,15 +165,15 @@ func (ts *TestSuite) KubernetesClientFromRawConfig(t *testing.T, rawConfig strin
 	return k8sClient
 }
 
-func (ts *TestSuite) saveCredentialsToSecret(credentials string) error {
+func (ts *TestSuite) saveCredentialsToSecret(credentials, secretName string) error {
 	decodedCredentials, err := base64.StdEncoding.DecodeString(ts.config.GCPCredentials)
 	if err != nil {
 		return errors.Errorf("Failed to decode credentials from base64: %s", err.Error())
 	}
 
-	logrus.Infof("Creating credentials secret %s ...", ts.CredentialsSecretName)
+	logrus.Infof("Creating credentials secret %s ...", secretName)
 	_, err = ts.secretsClient.Create(&v1.Secret{
-		ObjectMeta: v1meta.ObjectMeta{Name: ts.CredentialsSecretName},
+		ObjectMeta: v1meta.ObjectMeta{Name: secretName},
 		Data: map[string][]byte{
 			provisionerCredentialsSecretKey: decodedCredentials,
 		},
@@ -173,8 +185,8 @@ func (ts *TestSuite) saveCredentialsToSecret(credentials string) error {
 	return nil
 }
 
-func (ts *TestSuite) removeCredentialsSecret() error {
-	return ts.secretsClient.Delete(ts.CredentialsSecretName, &v1meta.DeleteOptions{})
+func (ts *TestSuite) removeCredentialsSecret(secretName string) error {
+	return ts.secretsClient.Delete(secretName, &v1meta.DeleteOptions{})
 }
 
 func getK8sConfig() (*restclient.Config, error) {

@@ -21,5 +21,5 @@ func AssertOperation(t *testing.T, expectedState gqlschema.OperationState, expec
 	logrus.Infof("Operation message: %s", *operation.Message)
 	require.Equal(t, expectedState, operation.State)
 	assert.Equal(t, expectedType, operation.Operation)
-	AssertNotNillAndEqualString(t, expectedRuntimeId, operation.RuntimeID)
+	AssertNotNilAndEqualString(t, expectedRuntimeId, operation.RuntimeID)
 }

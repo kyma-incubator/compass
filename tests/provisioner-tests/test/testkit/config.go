@@ -15,6 +15,7 @@ type TestConfig struct {
 	// GardenerCredentials is base64 encoded service account key
 	GardenerCredentials string
 	GardenerProjectName string
+	GardenerAzureSecret string
 
 	// GCPCredentials is base64 encoded service account key
 	GCPCredentials string

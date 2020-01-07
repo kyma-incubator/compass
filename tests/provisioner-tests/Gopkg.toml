@@ -4,7 +4,8 @@ required = [
 ]
 
 [[constraint]]
-  name = "github.com/rafalpotempa/compass"
+  name = "github.com/kyma-incubator/compass"
+  source = "github.com/rafalpotempa/compass"
   branch = "gardener-azure"
 
 [[constraint]]
