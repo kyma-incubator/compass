@@ -127,7 +127,7 @@ func (b *KymaEnvBroker) Provision(ctx context.Context, instanceID string, detail
 	}
 
 	// unmarshall provisioning parameters
-	var parameters provisioningParameters
+	var parameters internal.ProvisioningParametersDTO
 	err = json.Unmarshal(details.RawParameters, &parameters)
 	if err != nil {
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusBadRequest, fmt.Sprintf("could not read parameters, instanceID %s", instanceID))
@@ -169,7 +169,7 @@ func (b *KymaEnvBroker) Provision(ctx context.Context, instanceID string, detail
 		ServiceID:              details.ServiceID,
 		ServicePlanID:          details.PlanID,
 		DashboardURL:           fixedDummyURL,
-		ProvisioningParameters: parameters.ToModel(),
+		ProvisioningParameters: string(details.RawParameters),
 	})
 	if err != nil {
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponseBuilder(err, http.StatusInternalServerError, fmt.Sprintf("could not save instance, instanceID %s", instanceID))

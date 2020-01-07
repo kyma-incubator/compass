@@ -169,7 +169,7 @@ func InitTestDBContainer(t *testing.T, ctx context.Context, hostname string) (fu
 }
 
 func CheckIfAllDatabaseTablesArePresent(db *dbr.Connection) error {
-	tables := []string{TableInstances}
+	tables := []string{InstancesTableName}
 
 	for _, table := range tables {
 		checkError := checkIfDBTableIsPresent(table, db)

@@ -3,6 +3,8 @@ package broker
 import (
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -11,7 +13,7 @@ func TestGCP(t *testing.T) {
 	b := newProvisioningParamsBuilder(&gcpInputProvider{})
 
 	// when
-	b.ApplyParameters(&provisioningParameters{
+	b.ApplyParameters(&internal.ProvisioningParametersDTO{
 		Name: "gcp-cluster",
 	})
 	input := b.ClusterConfigInput()
@@ -26,7 +28,7 @@ func TestAzure(t *testing.T) {
 	b := newProvisioningParamsBuilder(&azureInputProvider{})
 
 	// when
-	b.ApplyParameters(&provisioningParameters{
+	b.ApplyParameters(&internal.ProvisioningParametersDTO{
 		Name: "azure-cluster",
 	})
 	input := b.ClusterConfigInput()
@@ -41,7 +43,7 @@ func TestAWS(t *testing.T) {
 	b := newProvisioningParamsBuilder(&awsInputProvider{})
 
 	// when
-	b.ApplyParameters(&provisioningParameters{
+	b.ApplyParameters(&internal.ProvisioningParametersDTO{
 		Name: "aws-cluster",
 	})
 	input := b.ClusterConfigInput()

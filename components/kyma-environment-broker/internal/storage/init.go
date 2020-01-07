@@ -55,7 +55,7 @@ func closeDBConnection(db *dbr.Connection) {
 const TableNotExistsError = "42P01"
 
 func checkIfDatabaseInitialized(db *dbr.Connection) (bool, error) {
-	checkQuery := fmt.Sprintf(`SELECT '%s.%s'::regclass;`, schemaName, instancesTableName)
+	checkQuery := fmt.Sprintf(`SELECT '%s.%s'::regclass;`, schemaName, InstancesTableName)
 
 	row := db.QueryRow(checkQuery)
 
@@ -72,7 +72,7 @@ func checkIfDatabaseInitialized(db *dbr.Connection) (bool, error) {
 		return false, errors.Wrap(err, "Failed to check if schema initialized")
 	}
 
-	return tableName == instancesTableName, nil
+	return tableName == InstancesTableName, nil
 }
 
 func waitForDatabaseAccess(connString string, retryCount int) (*dbr.Connection, error) {

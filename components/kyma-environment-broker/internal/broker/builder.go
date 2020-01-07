@@ -19,7 +19,7 @@ func NewInputBuilderForPlan(planID string) (*provisioningParamsBuilder, bool) {
 
 type inputProvider interface {
 	Defaults() *gqlschema.ClusterConfigInput
-	ApplyParameters(input *gqlschema.ClusterConfigInput, params *provisioningParameters)
+	ApplyParameters(input *gqlschema.ClusterConfigInput, params *internal.ProvisioningParametersDTO)
 }
 
 type provisioningParamsBuilder struct {
@@ -38,35 +38,7 @@ func newProvisioningParamsBuilder(ip inputProvider) *provisioningParamsBuilder {
 	return builder
 }
 
-type provisioningParameters struct {
-	Name           string  `json:"name"`
-	NodeCount      *int    `json:"nodeCount"`
-	VolumeSizeGb   *int    `json:"volumeSizeGb"`
-	MachineType    *string `json:"machineType"`
-	Region         *string `json:"region"`
-	Zone           *string `json:"zone"`
-	AutoScalerMin  *int    `json:"autoScalerMin"`
-	AutoScalerMax  *int    `json:"autoScalerMax"`
-	MaxSurge       *int    `json:"maxSurge"`
-	MaxUnavailable *int    `json:"maxUnavailable"`
-}
-
-func (b *provisioningParameters) ToModel() *internal.ProvisioningParameters {
-	return &internal.ProvisioningParameters{
-		Name:           b.Name,
-		NodeCount:      b.NodeCount,
-		VolumeSizeGb:   b.VolumeSizeGb,
-		MachineType:    b.MachineType,
-		Region:         b.Region,
-		Zone:           b.Zone,
-		AutoScalerMin:  b.AutoScalerMin,
-		AutoScalerMax:  b.AutoScalerMax,
-		MaxSurge:       b.MaxSurge,
-		MaxUnavailable: b.MaxUnavailable,
-	}
-}
-
-func (b *provisioningParamsBuilder) ApplyParameters(params *provisioningParameters) {
+func (b *provisioningParamsBuilder) ApplyParameters(params *internal.ProvisioningParametersDTO) {
 	b.input.ClusterConfig.GardenerConfig.Name = params.Name
 	updateInt(&b.input.ClusterConfig.GardenerConfig.NodeCount, params.NodeCount)
 	updateInt(&b.input.ClusterConfig.GardenerConfig.MaxUnavailable, params.MaxUnavailable)

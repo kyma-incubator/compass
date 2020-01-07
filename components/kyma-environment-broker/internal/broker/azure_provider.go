@@ -1,6 +1,7 @@
 package broker
 
 import (
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 )
 
@@ -34,5 +35,5 @@ func (p *azureInputProvider) Defaults() *gqlschema.ClusterConfigInput {
 	}
 }
 
-func (p *azureInputProvider) ApplyParameters(input *gqlschema.ClusterConfigInput, params *provisioningParameters) {
+func (p *azureInputProvider) ApplyParameters(input *gqlschema.ClusterConfigInput, params *internal.ProvisioningParametersDTO) {
 }
