@@ -36,7 +36,7 @@ func TestResolver_Viewer(t *testing.T) {
 		assert.Equal(t, expectedViewer, *vwr)
 	})
 
-	t.Run("error while converting", func(t *testing.T) {
+	t.Run("Error while converting", func(t *testing.T) {
 		//GIVEN
 		ctx := context.TODO()
 		invalidConsumer := consumer.Consumer{
@@ -49,10 +49,10 @@ func TestResolver_Viewer(t *testing.T) {
 		_, err := resolver.Viewer(ctx)
 		//THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "Viewer not exist")
+		assert.EqualError(t, err, "viewer does not exist")
 	})
 
-	t.Run("No consumer in ctx ", func(t *testing.T) {
+	t.Run("No consumer in ctx", func(t *testing.T) {
 		//GIVEN
 		ctx := context.TODO()
 		resolver := viewer.NewViewerResolver()

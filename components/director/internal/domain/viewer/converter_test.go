@@ -1,7 +1,9 @@
-package graphql_test
+package viewer_test
 
 import (
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/viewer"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
@@ -49,7 +51,7 @@ func TestToViewer(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 
 			//WHEN
-			viewer, err := graphql.ToViewer(tc.Input)
+			viewer, err := viewer.ToViewer(tc.Input)
 			//THEN
 			if tc.ExpectedErr {
 				require.Error(t, err)

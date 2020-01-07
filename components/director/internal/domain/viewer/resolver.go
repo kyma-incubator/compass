@@ -21,5 +21,5 @@ func (r *Resolver) Viewer(ctx context.Context) (*graphql.Viewer, error) {
 		return nil, errors.Wrap(err, "while getting viewer from context")
 	}
 
-	return graphql.ToViewer(cons)
+	return ToViewer(cons)
 }
