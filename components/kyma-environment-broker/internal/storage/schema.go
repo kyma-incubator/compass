@@ -3,26 +3,13 @@ package storage
 import "fmt"
 
 const (
-	instancesTableName       = "instances"
-	provisionParamsTableName = "provisioning_parameters"
+	InstancesTableName       = "instances"
+	ProvisionParamsTableName = "provisioning_parameters"
 )
 
-var schema = map[string]string{
-	instancesTableName: fmt.Sprintf(`CREATE TABLE %s (
-			instance_id serial PRIMARY KEY,
-			runtime_id varchar(255) NOT NULL,
-			global_account_id varchar(255) NOT NULL,
-			service_id varchar(255) NOT NULL,
-			service_plan_id varchar(255) NOT NULL,
-			dashboard_url varchar(255),
-			parameters_id varchar(255),
-			UNIQUE(instance_id),
-			UNIQUE(global_account_id),
-    		foreign key (parameters_id) REFERENCES %s (id) ON DELETE CASCADE,
-		)`, instancesTableName, provisionParamsTableName),
-
-	provisionParamsTableName: fmt.Sprintf(`CREATE TABLE %s (
-			id serial PRIMARY KEY,
+var schema = []string{
+	fmt.Sprintf(`CREATE TABLE %s (
+			params_id uuid PRIMARY KEY,
 			name varchar(255) NOT NULL,
 			node_Count integer NOT NULL,
     		volume_size_gb varchar(256) NOT NULL,
@@ -32,6 +19,20 @@ var schema = map[string]string{
 			auto_scaler_min integer NOT NULL,
     		auto_scaler_max integer NOT NULL,
 			max_surge integer NOT NULL,
-    		max_unavailable integer NOT NULL,
-		)`, provisionParamsTableName),
+    		max_unavailable integer NOT NULL
+		)`, ProvisionParamsTableName),
+
+	fmt.Sprintf(`CREATE TABLE %s (
+			instance_id uuid PRIMARY KEY,
+			runtime_id varchar(255) NOT NULL,
+			global_account_id varchar(255) NOT NULL,
+			service_id varchar(255) NOT NULL,
+			service_plan_id varchar(255) NOT NULL,
+			dashboard_url varchar(255) NOT NULL,
+			parameters_id uuid NOT NULL,
+			UNIQUE(instance_id),
+			UNIQUE(global_account_id),
+			UNIQUE(parameters_id),
+    		foreign key (parameters_id) REFERENCES %s (params_id) ON DELETE CASCADE
+		)`, InstancesTableName, ProvisionParamsTableName),
 }

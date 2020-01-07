@@ -14,7 +14,7 @@ import (
 
 const (
 	schemaName        = "public"
-	connectionRetries = 5
+	connectionRetries = 3
 )
 
 // InitializeDatabase opens database connection and initializes schema if it does not exist
