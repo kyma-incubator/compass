@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"testing"
 	"time"
 
@@ -244,6 +245,8 @@ func createTestNetworkForDB(ctx context.Context) (testcontainers.Network, error)
 }
 
 func EnsureTestNetworkForDB(t *testing.T, ctx context.Context) (func(), error) {
+	exec.Command("systemctl start docker.service")
+
 	networkPresent, err := isDockerTestNetworkPresent(ctx)
 	if networkPresent && err == nil {
 		return func() {}, nil

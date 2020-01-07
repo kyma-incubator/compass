@@ -14,7 +14,7 @@ var schema = []string{
 			service_id varchar(255) NOT NULL,
 			service_plan_id varchar(255) NOT NULL,
 			dashboard_url varchar(255) NOT NULL,
-			parameters_id varchar(2000) NOT NULL,
-			UNIQUE(instance_id),
+			parameters text NOT NULL,
+			UNIQUE(instance_id)
 		)`, InstancesTableName),
 }

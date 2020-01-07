@@ -23,12 +23,6 @@ const (
 	fixedDummyURL = "https://dummy.dashboard.com"
 )
 
-type ERSContext struct {
-	TenantID        string `json:"tenant_id"`
-	SubaccountID    string `json:"subaccount_id"`
-	GlobalaccountID string `json:"globalaccount_id"`
-}
-
 // ProvisioningConfig holds all configurations connected with Provisioner API
 type ProvisioningConfig struct {
 	URL                 string
@@ -115,7 +109,7 @@ func (b *KymaEnvBroker) Provision(ctx context.Context, instanceID string, detail
 	b.Dumper.Dump("Provision asyncAllowed:", asyncAllowed)
 
 	// unmarshall ERS context
-	var ersContext ERSContext
+	var ersContext internal.ERSContext
 	err := json.Unmarshal(details.RawContext, &ersContext)
 	if err != nil {
 		return domain.ProvisionedServiceSpec{}, errors.Wrap(err, "while decoding context")

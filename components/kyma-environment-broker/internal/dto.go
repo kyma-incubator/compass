@@ -12,3 +12,9 @@ type ProvisioningParametersDTO struct {
 	MaxSurge       *int    `json:"maxSurge"`
 	MaxUnavailable *int    `json:"maxUnavailable"`
 }
+
+type ERSContext struct {
+	TenantID        string `json:"tenant_id"`
+	SubaccountID    string `json:"subaccount_id"`
+	GlobalaccountID string `json:"globalaccount_id"`
+}
