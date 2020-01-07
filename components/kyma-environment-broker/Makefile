@@ -10,9 +10,21 @@ include $(SCRIPTS_DIR)/generic_make_go.mk
 
 .DEFAULT_GOAL := custom-verify
 
-.PHONY: testing-with-database-network check-imports check-fmt release
-
 custom-verify: testing-with-database-network check-imports check-fmt
+
+verify:: custom-verify build-image push-image
+
+# We have to override test-local and errcheck, because we need to run provisioner with database
+#as docker container connected with custom network and the buildpack container itsefl has to be connected to the network
+
+test-local: ;
+errcheck-local: ;
+
+# TODO: there is no errcheck in go1.13 buildpack, consider creating buildpack-toolbox with go1.13 version
+# errcheck-local:
+# 	@docker run $(DOCKER_INTERACTIVE) \
+# 		-v $(COMPONENT_DIR):$(WORKSPACE_COMPONENT_DIR):delegated \
+# 		$(DOCKER_CREATE_OPTS) errcheck -blank -asserts -ignorepkg '$$($(DIRS_TO_CHECK) | tr '\n' ',')' -ignoregenerated ./...
 
 testing-with-database-network:
 	@echo testing-with-database-network
