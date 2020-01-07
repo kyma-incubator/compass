@@ -92,13 +92,15 @@ func Test_E2E_Gardener(t *testing.T) {
 			KymaConfig:  &gqlschema.KymaConfigInput{Version: "1.8.0", Modules: gqlschema.AllKymaModule},
 		}
 
-		logrus.Infof("Provisioning %s runtime on %s...", runtimeId, toName(provider))
+		logrus.Infof("Provisioning %s runtime on %s...", runtimeId, provider)
 		provisioningOperationId, err := testSuite.ProvisionerClient.ProvisionRuntime(runtimeId, provisioningInput)
 		assertions.RequireNoError(t, err)
 		logrus.Infof("Provisioning operation id: %s", provisioningOperationId)
 		defer ensureClusterIsDeprovisioned(runtimeId)
 
 		var provisioningOperationStatus gqlschema.OperationStatus
+
+		//Check if another provisioning of the same cluster can start while previous one is in progress
 		err = testkit.RunParallelToMainFunction(ProvisioningTimeout+5*time.Second,
 			func() error {
 				logrus.Infof("Waiting for provisioning to finish...")
