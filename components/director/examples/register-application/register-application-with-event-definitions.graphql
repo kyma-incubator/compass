@@ -3,6 +3,7 @@ mutation {
   result: registerApplication(
     in: {
       name: "create-application-with-event-apis"
+      providerName: "compass"
       labels: { scenarios: ["DEFAULT"] }
       eventDefinitions: [
         {
@@ -93,6 +94,7 @@ mutation {
       }
     }
     healthCheckURL
+    providerName
     apiDefinitions {
       data {
         id

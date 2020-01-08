@@ -88,10 +88,10 @@ func getClientWithCert(certificates []*x509.Certificate, key *rsa.PrivateKey) *h
 }
 
 func getDexToken(t *testing.T) string {
-	config, err := idtokenprovider.LoadConfig()
+	config, err := idtokenprovider.NewConfigFromEnv()
 	require.NoError(t, err)
 
-	dexToken, err := idtokenprovider.Authenticate(config.IdProviderConfig)
+	dexToken, err := idtokenprovider.Authenticate(config)
 	require.NoError(t, err)
 
 	return dexToken
@@ -99,7 +99,8 @@ func getDexToken(t *testing.T) string {
 
 func createApplicationForCertPlaygroundTest(t *testing.T, ctx context.Context, tenant string, cli *gcli.Client) string {
 	appInput := graphql.ApplicationRegisterInput{
-		Name: "cert-playground-test",
+		Name:         "cert-playground-test",
+		ProviderName: "playground-test",
 	}
 	app := registerApplicationFromInputWithinTenant(t, ctx, cli, tenant, appInput)
 	require.NotEmpty(t, app.ID)

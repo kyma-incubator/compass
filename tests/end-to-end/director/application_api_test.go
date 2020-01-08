@@ -31,6 +31,7 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	ctx := context.Background()
 	in := graphql.ApplicationRegisterInput{
 		Name:           "wordpress",
+		ProviderName:   "provider name",
 		Description:    ptr.String("my first wordpress application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
 		Labels: &graphql.Labels{
@@ -66,7 +67,8 @@ func TestRegisterApplicationWithWebhooks(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	in := graphql.ApplicationRegisterInput{
-		Name: "wordpress",
+		Name:         "wordpress",
+		ProviderName: "compass",
 		Webhooks: []*graphql.WebhookInput{
 			{
 				Type: graphql.ApplicationWebhookTypeConfigurationChanged,
@@ -108,7 +110,8 @@ func TestRegisterApplicationWithAPIs(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	in := graphql.ApplicationRegisterInput{
-		Name: "wordpress",
+		Name:         "wordpress",
+		ProviderName: "compass",
 		APIDefinitions: []*graphql.APIDefinitionInput{
 			{
 				Name:        "comments-v1",
@@ -192,7 +195,8 @@ func TestRegisterApplicationWithEventDefinitions(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	in := graphql.ApplicationRegisterInput{
-		Name: "create-application-with-event-apis",
+		Name:         "create-application-with-event-apis",
+		ProviderName: "compass",
 		EventDefinitions: []*graphql.EventDefinitionInput{
 			{
 				Name:        "comments-v1",
@@ -255,7 +259,8 @@ func TestRegisterApplicationWithDocuments(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	in := graphql.ApplicationRegisterInput{
-		Name: "create-application-with-documents",
+		Name:         "create-application-with-documents",
+		ProviderName: "compass",
 		Documents: []*graphql.DocumentInput{
 			{
 				Title:       "Readme",
@@ -435,6 +440,7 @@ func TestUpdateApplication(t *testing.T) {
 
 	expectedApp := actualApp
 	expectedApp.Name = "after"
+	expectedApp.ProviderName = "after"
 	expectedApp.Description = ptr.String("after")
 	expectedApp.HealthCheckURL = ptr.String("https://kyma-project.io")
 
@@ -839,7 +845,6 @@ func TestUpdateApplicationParts(t *testing.T) {
 		err = tc.RunOperation(ctx, delReq, nil)
 		// THEN
 		require.NoError(t, err)
-
 	})
 
 	t.Run("manage documents", func(t *testing.T) {
@@ -919,7 +924,8 @@ func TestQueryApplications(t *testing.T) {
 	ctx := context.Background()
 	for i := 0; i < 3; i++ {
 		in := graphql.ApplicationRegisterInput{
-			Name: fmt.Sprintf("app-%d", i),
+			Name:         fmt.Sprintf("app-%d", i),
+			ProviderName: "compass",
 		}
 
 		appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
@@ -957,7 +963,8 @@ func TestQueryApplications(t *testing.T) {
 func TestQuerySpecificApplication(t *testing.T) {
 	// GIVEN
 	in := graphql.ApplicationRegisterInput{
-		Name: fmt.Sprintf("app"),
+		Name:         fmt.Sprintf("app"),
+		ProviderName: "Compass",
 	}
 
 	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
@@ -1073,6 +1080,7 @@ func TestQueryAPIRuntimeAuths(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appInput := graphql.ApplicationRegisterInput{
 				Name:           "test-app",
+				ProviderName:   "compass",
 				APIDefinitions: testCase.Apis,
 				Labels: &graphql.Labels{
 					"scenarios": []interface{}{"DEFAULT"},
@@ -1239,7 +1247,8 @@ func TestQuerySpecificEventAPIDefinition(t *testing.T) {
 
 func fixSampleApplicationRegisterInput(placeholder string) graphql.ApplicationRegisterInput {
 	return graphql.ApplicationRegisterInput{
-		Name: placeholder,
+		Name:         placeholder,
+		ProviderName: "compass",
 		Documents: []*graphql.DocumentInput{{
 			Title:       placeholder,
 			DisplayName: placeholder,
@@ -1282,6 +1291,7 @@ func fixSampleApplicationUpdateInput(placeholder string) graphql.ApplicationUpda
 		Name:           placeholder,
 		Description:    &placeholder,
 		HealthCheckURL: ptr.String(webhookURL),
+		ProviderName:   placeholder,
 	}
 }
 
@@ -1291,6 +1301,7 @@ func fixSampleApplicationUpdateInputWithIntegrationSystem(placeholder string) gr
 		Description:         &placeholder,
 		HealthCheckURL:      ptr.String(webhookURL),
 		IntegrationSystemID: &integrationSystemID,
+		ProviderName:        placeholder,
 	}
 }
 

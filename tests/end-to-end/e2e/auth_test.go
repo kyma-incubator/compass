@@ -39,10 +39,10 @@ func TestCompassAuth(t *testing.T) {
 	ctx := context.Background()
 
 	t.Log("Get Dex id_token")
-	config, err := idtokenprovider.LoadConfig()
+	config, err := idtokenprovider.NewConfigFromEnv()
 	require.NoError(t, err)
 
-	dexToken, err := idtokenprovider.Authenticate(config.IdProviderConfig)
+	dexToken, err := idtokenprovider.Authenticate(config)
 	require.NoError(t, err)
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
@@ -67,6 +67,7 @@ func TestCompassAuth(t *testing.T) {
 	t.Log("Create an application as Integration System")
 	appInput := graphql.ApplicationRegisterInput{
 		Name:                "app-created-by-integration-system",
+		ProviderName:        "compass",
 		IntegrationSystemID: &intSys.ID,
 	}
 	appByIntSys := registerApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, tenant, appInput)

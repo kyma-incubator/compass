@@ -16,17 +16,18 @@ func TestDifferentTenantAccessDenied(t *testing.T) {
 	notExistingTenant := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 
 	t.Log("Get Dex id_token")
-	config, err := idtokenprovider.LoadConfig()
+	config, err := idtokenprovider.NewConfigFromEnv()
 	require.NoError(t, err)
 
-	dexToken, err := idtokenprovider.Authenticate(config.IdProviderConfig)
+	dexToken, err := idtokenprovider.Authenticate(config)
 	require.NoError(t, err)
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	t.Log("Try to create Application in not existing tenant")
 	appInput := graphql.ApplicationRegisterInput{
-		Name: "app-tmh-test",
+		Name:         "app-tmh-test",
+		ProviderName: "compass",
 	}
 	_, err = createApplicationWithinTenant(t, ctx, dexGraphQLClient, notExistingTenant, appInput)
 	assert.Error(t, err)

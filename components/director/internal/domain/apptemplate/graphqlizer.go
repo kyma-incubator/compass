@@ -16,6 +16,7 @@ type Graphqlizer struct{}
 func (g *Graphqlizer) ApplicationCreateInputToGQL(in graphql.ApplicationRegisterInput) (string, error) {
 	return g.genericToGQL(in, `{
 		name: "{{.Name}}",
+		providerName: "{{.ProviderName}}",
 		{{- if .Description }}
 		description: "{{.Description}}",
 		{{- end }}

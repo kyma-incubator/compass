@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,6 +18,7 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 	id := "foo"
 	tenant := "sample"
 	intSysID := "bar"
+	providerName := "provider name"
 	timestamp := time.Now()
 	testCases := []struct {
 		Name     string
@@ -34,6 +37,7 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 				},
 				HealthCheckURL:      &url,
 				IntegrationSystemID: &intSysID,
+				ProviderName:        providerName,
 			},
 			Expected: &model.Application{
 				Name:                "Foo",
@@ -42,6 +46,7 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 				Description:         &desc,
 				HealthCheckURL:      &url,
 				IntegrationSystemID: &intSysID,
+				ProviderName:        providerName,
 				Status: &model.ApplicationStatus{
 					Timestamp: timestamp,
 					Condition: model.ApplicationStatusConditionUnknown,
@@ -65,4 +70,26 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 			assert.Equal(t, testCase.Expected, result)
 		})
 	}
+}
+
+func TestApplicationUpdateInput_UpdateApplication(t *testing.T) {
+	//GIVEN
+	filledAppUpdate := model.ApplicationUpdateInput{
+		Name:                "",
+		ProviderName:        "provider name",
+		Description:         str.Ptr("description"),
+		HealthCheckURL:      str.Ptr("https://kyma-project.io"),
+		IntegrationSystemID: str.Ptr("int sys id"),
+	}
+	app := model.Application{}
+
+	//WHEN
+	app.SetFromUpdateInput(filledAppUpdate)
+
+	//THEN
+	assert.Equal(t, filledAppUpdate.Name, app.Name)
+	assert.Equal(t, filledAppUpdate.Description, app.Description)
+	assert.Equal(t, filledAppUpdate.HealthCheckURL, app.HealthCheckURL)
+	assert.Equal(t, filledAppUpdate.IntegrationSystemID, app.IntegrationSystemID)
+	assert.Equal(t, filledAppUpdate.ProviderName, app.ProviderName)
 }
