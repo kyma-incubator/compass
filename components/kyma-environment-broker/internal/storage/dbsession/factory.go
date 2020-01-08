@@ -1,13 +1,10 @@
-package session
+package dbsession
 
 import (
 	dbr "github.com/gocraft/dbr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 )
-
-// partially copied from
-// https://github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession/factory.go
 
 //go:generate mockery -name=Factory
 type Factory interface {

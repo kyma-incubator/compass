@@ -1,16 +1,16 @@
-package entity
+package service
 
 import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/session"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession"
 	"github.com/pkg/errors"
 )
 
 type Instance struct {
-	session.Factory
+	dbsession.Factory
 }
 
-func NewInstance(sess session.Factory) *Instance {
+func NewInstance(sess dbsession.Factory) *Instance {
 	return &Instance{
 		Factory: sess,
 	}

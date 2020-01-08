@@ -55,7 +55,7 @@ func main() {
 		provisionerClient = provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
 	}
 
-	db, err := storage.New(cfg.Database)
+	db, err := storage.New(cfg.Database.ConnectionURL())
 	fatalOnError(err)
 
 	dumper, err := broker.NewDumper()

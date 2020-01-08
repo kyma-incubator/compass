@@ -1,8 +1,8 @@
 package storage
 
 import (
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/entity"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/session"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/service"
 	"github.com/pkg/errors"
 )
 
@@ -10,15 +10,15 @@ type BrokerStorage interface {
 	Instances() Instances
 }
 
-func New(cfg Config) (BrokerStorage, error) {
-	connection, err := InitializeDatabase(cfg.ConnectionURL())
+func New(connectionURL string) (BrokerStorage, error) {
+	connection, err := InitializeDatabase(connectionURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to initialize database")
 	}
-	fact := session.NewFactory(connection)
+	fact := dbsession.NewFactory(connection)
 
 	return storage{
-		instance: entity.NewInstance(fact),
+		instance: service.NewInstance(fact),
 	}, nil
 }
 

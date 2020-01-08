@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/schema"
+
 	"github.com/gocraft/dbr"
 
 	"github.com/pkg/errors"
@@ -14,7 +16,7 @@ import (
 
 const (
 	schemaName        = "public"
-	connectionRetries = 5
+	connectionRetries = 10
 )
 
 // InitializeDatabase opens database connection and initializes schema if it does not exist
@@ -35,7 +37,7 @@ func InitializeDatabase(connectionURL string) (*dbr.Connection, error) {
 	}
 
 	log.Info("Database not initialized. Setting up schema...")
-	for _, v := range schema {
+	for _, v := range schema.Tables {
 		if _, err := connection.Exec(v); err != nil {
 			return nil, err
 		}
@@ -55,7 +57,7 @@ func closeDBConnection(db *dbr.Connection) {
 const TableNotExistsError = "42P01"
 
 func checkIfDatabaseInitialized(db *dbr.Connection) (bool, error) {
-	checkQuery := fmt.Sprintf(`SELECT '%s.%s'::regclass;`, schemaName, InstancesTableName)
+	checkQuery := fmt.Sprintf(`SELECT '%s.%s'::regclass;`, schemaName, schema.InstancesTableName)
 
 	row := db.QueryRow(checkQuery)
 
@@ -72,7 +74,7 @@ func checkIfDatabaseInitialized(db *dbr.Connection) (bool, error) {
 		return false, errors.Wrap(err, "Failed to check if schema initialized")
 	}
 
-	return tableName == InstancesTableName, nil
+	return tableName == schema.InstancesTableName, nil
 }
 
 func waitForDatabaseAccess(connString string, retryCount int) (*dbr.Connection, error) {

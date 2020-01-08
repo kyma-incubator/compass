@@ -1,7 +1,9 @@
-package session
+package dbsession
 
 import (
 	"database/sql"
+
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/schema"
 
 	dbr "github.com/gocraft/dbr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
@@ -14,13 +16,14 @@ type writeSession struct {
 }
 
 func (ws writeSession) InsertInstance(instance internal.Instance) dberr.Error {
-	_, err := ws.insertInto("instance").
+	_, err := ws.insertInto(schema.InstancesTableName).
 		Pair("instance_id", instance.InstanceID).
 		Pair("runtime_id", instance.RuntimeID).
 		Pair("global_account_id", instance.GlobalAccountID).
 		Pair("service_id", instance.ServiceID).
 		Pair("service_plan_id", instance.ServicePlanID).
 		Pair("dashboard_url", instance.DashboardURL).
+		Pair("provisioning_parameters", instance.ProvisioningParameters).
 		Exec()
 	if err != nil {
 		return dberr.Internal("Failed to insert record to Instance table: %s", err)
@@ -30,14 +33,15 @@ func (ws writeSession) InsertInstance(instance internal.Instance) dberr.Error {
 }
 
 func (ws writeSession) UpdateInstance(instance internal.Instance) dberr.Error {
-	res, err := ws.update("instance").
-		Where(dbr.Eq("instances.instance_id", instance.InstanceID)).
+	res, err := ws.update(schema.InstancesTableName).
+		Where(dbr.Eq(schema.InstancesTableName+".instance_id", instance.InstanceID)).
 		Set("instance_id", instance.InstanceID).
 		Set("runtime_id", instance.RuntimeID).
 		Set("global_account_id", instance.GlobalAccountID).
 		Set("service_id", instance.ServiceID).
 		Set("service_plan_id", instance.ServicePlanID).
 		Set("dashboard_url", instance.DashboardURL).
+		Set("provisioning_parameters", instance.ProvisioningParameters).
 		Exec()
 	if err != nil {
 		return dberr.Internal("Failed to update record to Instance table: %s", err)

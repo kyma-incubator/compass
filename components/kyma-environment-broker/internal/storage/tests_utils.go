@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/schema"
+
 	"github.com/gocraft/dbr"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
@@ -33,8 +35,15 @@ func makeConnectionString(hostname string, port string) string {
 		port = DbPort
 	}
 
-	return fmt.Sprintf(connectionURLFormat, host, port, DbUser,
-		DbPass, DbName, "disable")
+	cfg := Config{
+		Host:     host,
+		User:     DbUser,
+		Password: DbPass,
+		Port:     port,
+		Name:     DbName,
+		SSLMode:  "disable",
+	}
+	return cfg.ConnectionURL()
 }
 
 func CloseDatabase(t *testing.T, connection *dbr.Connection) {
@@ -94,11 +103,13 @@ func InitTestDBContainer(t *testing.T, ctx context.Context, hostname string) (fu
 
 	connString := makeConnectionString(hostname, port.Port())
 
+	fmt.Println(connString)
+
 	return cleanupFunc, connString, nil
 }
 
 func CheckIfAllDatabaseTablesArePresent(db *dbr.Connection) error {
-	tables := []string{InstancesTableName}
+	tables := []string{schema.InstancesTableName}
 
 	for _, table := range tables {
 		checkError := checkIfDBTableIsPresent(table, db)
@@ -125,7 +136,7 @@ func checkIfDBTableIsPresent(tableNameToCheck string, db *dbr.Connection) error 
 		return errors.Wrap(err, "Failed to check if table is present in the database")
 	}
 
-	if tableName != InstancesTableName {
+	if tableName != schema.InstancesTableName {
 		return errors.Wrap(err, "Failed verify table name in the database")
 	}
 

@@ -1,4 +1,4 @@
-package storage
+package schema
 
 import "fmt"
 
@@ -6,15 +6,15 @@ const (
 	InstancesTableName = "instances"
 )
 
-var schema = []string{
-	fmt.Sprintf(`CREATE TABLE %s (
-			instance_id uuid PRIMARY KEY,
+var Tables = map[string]string{
+	InstancesTableName: fmt.Sprintf(
+		`CREATE TABLE %s (
+			instance_id varchar(255) PRIMARY KEY,
 			runtime_id varchar(255) NOT NULL,
 			global_account_id varchar(255) NOT NULL,
 			service_id varchar(255) NOT NULL,
 			service_plan_id varchar(255) NOT NULL,
 			dashboard_url varchar(255) NOT NULL,
-			parameters text NOT NULL,
-			UNIQUE(instance_id)
+			provisioning_parameters text NOT NULL
 		)`, InstancesTableName),
 }

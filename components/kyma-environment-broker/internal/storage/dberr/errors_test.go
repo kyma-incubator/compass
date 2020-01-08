@@ -7,7 +7,6 @@ import (
 )
 
 func TestAppError(t *testing.T) {
-
 	t.Run("should create error with proper code", func(t *testing.T) {
 		assert.Equal(t, CodeInternal, Internal("error").Code())
 		assert.Equal(t, CodeNotFound, NotFound("error").Code())

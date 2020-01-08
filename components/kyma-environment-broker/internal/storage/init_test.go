@@ -8,8 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// partially copied from
-// https://github.com/kyma-incubator/compass/blob/master/components/provisioner/internal/persistence/database/schema_initializer_test.go
 func TestSchemaInitializer(t *testing.T) {
 	ctx := context.Background()
 
