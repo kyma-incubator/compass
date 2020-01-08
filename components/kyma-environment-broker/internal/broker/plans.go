@@ -5,7 +5,6 @@ import (
 )
 
 const (
-	defaultPlanID = "cf3698e9-8833-4c10-8213-c84d2438da07"
 	gcpPlanID     = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
 	azurePlanID   = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
 	awsPlanID     = "badf964a-8908-46e3-bbfd-db2eefe35836"
@@ -32,34 +31,6 @@ var plans = map[string]struct {
 	planDefinition        domain.ServicePlan
 	provisioningRawSchema []byte
 }{
-	defaultPlanID: {
-		planDefinition: domain.ServicePlan{
-			ID:          defaultPlanID,
-			Name:        "default",
-			Description: "default GCP",
-			Metadata: &domain.ServicePlanMetadata{
-				DisplayName: "default GCP (deprecated)",
-			},
-			Schemas: &domain.ServiceSchemas{
-				Instance: domain.ServiceInstanceSchema{
-					Create: domain.Schema{
-						Parameters: make(map[string]interface{}),
-					},
-				},
-			},
-		},
-		provisioningRawSchema: []byte(`{
-		  "$schema": "http://json-schema.org/draft-04/schema#",
-		  "type": "object",
-		  "properties": {
-			"name": {
-			  "type": "string"
-			}
-		  },
-		  "required": [
-			"name"
-		  ]
-		}`)},
 	gcpPlanID: {
 		planDefinition: domain.ServicePlan{
 			ID:          gcpPlanID,
