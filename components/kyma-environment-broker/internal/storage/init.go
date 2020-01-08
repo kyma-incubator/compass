@@ -19,7 +19,6 @@ const (
 
 // InitializeDatabase opens database connection and initializes schema if it does not exist
 func InitializeDatabase(connectionURL string) (*dbr.Connection, error) {
-	fmt.Println(connectionURL)
 	connection, err := waitForDatabaseAccess(connectionURL, connectionRetries)
 	if err != nil {
 		return nil, err

@@ -27,5 +27,5 @@ type storage struct {
 }
 
 func (s storage) Instances() Instances {
-	return s.Instances()
+	return s.instance
 }
