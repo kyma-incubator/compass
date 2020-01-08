@@ -24,6 +24,9 @@ type Config struct {
 	Port string `envconfig:"default=8080"`
 
 	Provisioning broker.ProvisioningConfig
+
+	// feature flag indicates whether use Provisioner API which returns RuntimeID
+	ProcessRuntimeID bool `envconfig:"default=false"`
 }
 
 func main() {
@@ -42,17 +45,15 @@ func main() {
 		Password: cfg.Auth.Password,
 	}
 
-	dumper, err := broker.NewDumper()
-	fatalOnError(err)
-
-	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
-
-	kymaBrokerService := &broker.KymaEnvBroker{
-		Dumper:            dumper,
-		ProvisionerClient: provisionerClient,
-
-		Config: cfg.Provisioning,
+	var provisionerClient provisioner.Client
+	if cfg.ProcessRuntimeID {
+		provisionerClient = provisioner.NewProvisionerClientV2(cfg.Provisioning.URL, true)
+	} else {
+		provisionerClient = provisioner.NewProvisionerClient(cfg.Provisioning.URL, true)
 	}
+
+	kymaBrokerService, err := broker.NewBroker(provisionerClient, cfg.Provisioning)
+	fatalOnError(err)
 
 	brokerAPI := brokerapi.New(kymaBrokerService, logger, brokerCredentials)
 	r := handlers.LoggingHandler(os.Stdout, brokerAPI)
