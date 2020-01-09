@@ -57,7 +57,7 @@ type ProvisioningParameters struct {
 	MaxUnavailable *int    `json:"maxUnavailable"`
 }
 
-var enabledPlanIDs = map[string]struct{} {
+var enabledPlanIDs = map[string]struct{}{
 	azurePlanID: {},
 	// add plan IDs which must be enabled
 }

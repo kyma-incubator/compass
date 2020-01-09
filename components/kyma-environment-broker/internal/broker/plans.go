@@ -5,9 +5,9 @@ import (
 )
 
 const (
-	gcpPlanID     = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
-	azurePlanID   = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
-	awsPlanID     = "badf964a-8908-46e3-bbfd-db2eefe35836"
+	gcpPlanID   = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
+	azurePlanID = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
+	awsPlanID   = "badf964a-8908-46e3-bbfd-db2eefe35836"
 )
 
 var instanceCreateSchema = []byte(`{
