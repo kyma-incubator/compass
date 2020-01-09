@@ -164,7 +164,7 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "graphql-viewer-pattern"
+  branch = "master"
   digest = "1:15bb0282ed18a1beca2b81986cf2fed355777b45f3bcb12edf878a7f3309092f"
   name = "github.com/kyma-incubator/compass"
   packages = [
@@ -177,8 +177,7 @@
     "components/director/pkg/scalar",
   ]
   pruneopts = "UT"
-  revision = "3ed44d4e9611f4467bcfd426f7e0aeff9877e914"
-  source = "https://github.com/dbadura/compass.git"
+  revision = "e5d75546a1cd925f7800451c37036e4046efb7de"
 
 [[projects]]
   branch = "master"
