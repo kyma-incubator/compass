@@ -3,6 +3,8 @@ package domain
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/viewer"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
@@ -52,6 +54,7 @@ type RootResolver struct {
 	systemAuth  *systemauth.Resolver
 	oAuth20     *oauth20.Resolver
 	intSys      *integrationsystem.Resolver
+	viewer      *viewer.Resolver
 }
 
 func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope.Provider, oneTimeTokenCfg onetimetoken.Config, oAuth20Cfg oauth20.Config) *RootResolver {
@@ -123,6 +126,7 @@ func NewRootResolver(transact persistence.Transactioner, scopeCfgProvider *scope
 		systemAuth:  systemauth.NewResolver(transact, systemAuthSvc, oAuth20Svc, systemAuthConverter),
 		oAuth20:     oauth20.NewResolver(transact, oAuth20Svc, appSvc, runtimeSvc, intSysSvc, systemAuthSvc, systemAuthConverter),
 		intSys:      integrationsystem.NewResolver(transact, intSysSvc, systemAuthSvc, oAuth20Svc, intSysConverter, systemAuthConverter),
+		viewer:      viewer.NewViewerResolver(),
 	}
 }
 
@@ -161,6 +165,10 @@ func (r *RootResolver) OneTimeToken() graphql.OneTimeTokenResolver {
 
 type queryResolver struct {
 	*RootResolver
+}
+
+func (r *queryResolver) Viewer(ctx context.Context) (*graphql.Viewer, error) {
+	return r.viewer.Viewer(ctx)
 }
 
 func (r *queryResolver) Applications(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
