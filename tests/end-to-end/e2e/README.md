@@ -3,7 +3,7 @@
 ## Test Scenario:
 - Get Dex token, create IntegrationSystem with it and request client credentials for IntSystem
 - Call Hydra for OAuth 2.0 access token with client_id and client_secret pair - https://github.com/kyma-incubator/examples/tree/master/ory-hydra/scenarios/client-credentials
-- Create an Application (as Integration System)
+- Register an Application (as Integration System)
 - Add example API Spec using issued OAuth2.0 Access token (as Integration System)
 - Try removing the Integration System
 - Remove Application using issued OAuth2.0 Access token (test if the token is still valid)
@@ -21,5 +21,7 @@ To run the test locally, set these environment variables:
 | USER_PASSWORD |    Dex static user password   |   - |
 | DEFAULT_TENANT | Default tenant value |    `3e64ebae-38b5-46a0-b1ed-9ccee153a0ae` |
 | DOMAIN | Kyma domain name |    `kyma.local` |
-
+| GATEWAY_JWTSUBDOMAIN | Default gateway for handling requests with JWT | compass-gateway |
+| GATEWAY_CLIENT_CERTS_SUBDOMAIN | Default gateway for handling requests with certificate | compass-gateway-mtls |
+| GATEWAY_OAUTH20_SUBDOMAIN | Default gateway forhandling requests with OAuth access token | compass-gateway-auth-oauth|
 Then run `go test ./... -count=1 -v` inside `./tests/end-to-end/e2e` directory.
