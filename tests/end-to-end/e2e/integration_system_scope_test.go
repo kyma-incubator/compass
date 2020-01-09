@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/idtokenprovider"
 	"os"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/idtokenprovider"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/gql"
@@ -24,7 +25,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 
 	t.Log("Get Dex id_token")
 	dexToken, err := idtokenprovider.GetDexTokenFromEnv()
-	require.NoError(t,err)
+	require.NoError(t, err)
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
@@ -33,7 +34,6 @@ func TestIntegrationSystemScenario(t *testing.T) {
 
 	t.Log("Generate Client Credentials for Integration System")
 	intSysOauthCredentialData := generateOAuthClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, tenant, intSys.ID)
-
 
 	t.Log("Issue a token with Client Credentials")
 	oauthCredentials := fmt.Sprintf("%s:%s", intSysOauthCredentialData.ClientID, intSysOauthCredentialData.ClientSecret)

@@ -25,19 +25,18 @@ type dexIdTokenProvider struct {
 	config     Config
 }
 
-
 func GetDexTokenFromEnv() (string, error) {
 	config, err := NewConfigFromEnv()
-	if err != nil{
-		return "",err
+	if err != nil {
+		return "", err
 	}
 
 	dexToken, err := Authenticate(config)
-	if err != nil{
-		return "",err
+	if err != nil {
+		return "", err
 	}
 
-	return dexToken,nil
+	return dexToken, nil
 }
 
 func newDexIdTokenProvider(httpClient *http.Client, config Config) idTokenProvider {

@@ -3,6 +3,10 @@ package e2e
 import (
 	"context"
 	"encoding/base64"
+	"os"
+
+	"github.com/kyma-incubator/compass/tests/end-to-end/pkg/idtokenprovider"
+
 	"fmt"
 	"os"
 	"testing"
@@ -25,7 +29,7 @@ func TestCompassAuth(t *testing.T) {
 	ctx := context.Background()
 
 	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
+	dexToken, err := idtokenprovider.GetDexTokenFromEnv()
 	require.NoError(t, err)
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
