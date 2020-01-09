@@ -22,7 +22,7 @@ func NewProvisionerClientV2(endpoint string, queryLogging bool) Client {
 	}
 }
 
-func (c *clientV2) ProvisionRuntime(id string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error) {
+func (c *clientV2) ProvisionRuntime(accountID, runtimeID string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error) {
 	provisionRuntimeIptGQL, err := c.graphqlizer.ProvisionRuntimeInputToGraphQL(config)
 	if err != nil {
 		return schema.OperationStatus{}, errors.Wrap(err, "Failed to convert Provision Runtime Input to query")
@@ -30,6 +30,7 @@ func (c *clientV2) ProvisionRuntime(id string, config schema.ProvisionRuntimeInp
 
 	query := c.queryProvider.provisionRuntimeV2(provisionRuntimeIptGQL)
 	req := gcli.NewRequest(query)
+	req.Header.Add(accountIDKey, accountID)
 
 	var response schema.OperationStatus
 	err = c.graphQLClient.ExecuteRequest(req, &response, schema.OperationStatus{})
@@ -40,7 +41,7 @@ func (c *clientV2) ProvisionRuntime(id string, config schema.ProvisionRuntimeInp
 	return response, nil
 }
 
-func (c *clientV2) UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInput) (string, error) {
+func (c *clientV2) UpgradeRuntime(accountID, runtimeID string, config schema.UpgradeRuntimeInput) (string, error) {
 	upgradeRuntimeIptGQL, err := c.graphqlizer.UpgradeRuntimeInputToGraphQL(config)
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to convert Upgrade Runtime Input to query")
@@ -48,6 +49,7 @@ func (c *clientV2) UpgradeRuntime(runtimeID string, config schema.UpgradeRuntime
 
 	query := c.queryProvider.upgradeRuntime(runtimeID, upgradeRuntimeIptGQL)
 	req := gcli.NewRequest(query)
+	req.Header.Add(accountIDKey, accountID)
 
 	var operationId string
 	err = c.graphQLClient.ExecuteRequest(req, &operationId, "")
@@ -57,9 +59,10 @@ func (c *clientV2) UpgradeRuntime(runtimeID string, config schema.UpgradeRuntime
 	return operationId, nil
 }
 
-func (c *clientV2) DeprovisionRuntime(runtimeID string) (string, error) {
+func (c *clientV2) DeprovisionRuntime(accountID, runtimeID string) (string, error) {
 	query := c.queryProvider.deprovisionRuntime(runtimeID)
 	req := gcli.NewRequest(query)
+	req.Header.Add(accountIDKey, accountID)
 
 	var operationId string
 	err := c.graphQLClient.ExecuteRequest(req, &operationId, "")
@@ -69,9 +72,10 @@ func (c *clientV2) DeprovisionRuntime(runtimeID string) (string, error) {
 	return operationId, nil
 }
 
-func (c *clientV2) ReconnectRuntimeAgent(runtimeID string) (string, error) {
+func (c *clientV2) ReconnectRuntimeAgent(accountID, runtimeID string) (string, error) {
 	query := c.queryProvider.reconnectRuntimeAgent(runtimeID)
 	req := gcli.NewRequest(query)
+	req.Header.Add(accountIDKey, accountID)
 
 	var operationId string
 	err := c.graphQLClient.ExecuteRequest(req, &operationId, "")
@@ -81,9 +85,10 @@ func (c *clientV2) ReconnectRuntimeAgent(runtimeID string) (string, error) {
 	return operationId, nil
 }
 
-func (c *clientV2) GCPRuntimeStatus(runtimeID string) (GCPRuntimeStatus, error) {
+func (c *clientV2) GCPRuntimeStatus(accountID, runtimeID string) (GCPRuntimeStatus, error) {
 	query := c.queryProvider.runtimeStatus(runtimeID)
 	req := gcli.NewRequest(query)
+	req.Header.Add(accountIDKey, accountID)
 
 	var response GCPRuntimeStatus
 	err := c.graphQLClient.ExecuteRequest(req, &response, &GCPRuntimeStatus{})
@@ -93,9 +98,10 @@ func (c *clientV2) GCPRuntimeStatus(runtimeID string) (GCPRuntimeStatus, error) 
 	return response, nil
 }
 
-func (c *clientV2) RuntimeOperationStatus(operationID string) (schema.OperationStatus, error) {
+func (c *clientV2) RuntimeOperationStatus(accountID, operationID string) (schema.OperationStatus, error) {
 	query := c.queryProvider.runtimeOperationStatus(operationID)
 	req := gcli.NewRequest(query)
+	req.Header.Add(accountIDKey, accountID)
 
 	var response schema.OperationStatus
 	err := c.graphQLClient.ExecuteRequest(req, &response, &schema.OperationStatus{})
