@@ -8,7 +8,7 @@ import (
 )
 
 // CREATE
-func fixCreateApplicationRequest(applicationInGQL string) *gcli.Request {
+func fixRegisterApplicationRequest(applicationInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			result: registerApplication(in: %s) {
@@ -78,7 +78,7 @@ func fixGenerateClientCredentialsForIntegrationSystem(id string) *gcli.Request {
 				}`, id, tc.gqlFieldsProvider.ForSystemAuth()))
 }
 
-func fixGenerateClientCredentialsForApplication(id string) *gcli.Request {
+func fixRequestClientCredentialsForApplication(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 				result: requestClientCredentialsForApplication(id: "%s") {
@@ -87,7 +87,7 @@ func fixGenerateClientCredentialsForApplication(id string) *gcli.Request {
 				}`, id, tc.gqlFieldsProvider.ForSystemAuth()))
 }
 
-func fixGenerateClientCredentialsForRuntime(id string) *gcli.Request {
+func fixRequestClientCredentialsForRuntime(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 				result: requestClientCredentialsForRuntime(id: "%s") {

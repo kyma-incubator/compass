@@ -12,13 +12,23 @@ import (
 
 //Application
 func registerApplicationFromInputWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.ApplicationRegisterInput) graphql.ApplicationExt {
-	app, err := createApplicationWithinTenant(t, ctx, gqlClient, tenant, in)
+	app, err := registerApplicationWithinTenant(t, ctx, gqlClient, tenant, in)
 	require.NoError(t, err)
 	return app
 }
 
-func generateClientCredentialsForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.SystemAuth {
-	req := fixGenerateClientCredentialsForApplication(id)
+func registerApplicationWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.ApplicationRegisterInput) (graphql.ApplicationExt, error) {
+	appInputGQL, err := tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
+	require.NoError(t, err)
+
+	createRequest := fixRegisterApplicationRequest(appInputGQL)
+	app := graphql.ApplicationExt{}
+	err = tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, createRequest, &app)
+	return app, err
+}
+
+func requestClientCredentialsForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.SystemAuth {
+	req := fixRequestClientCredentialsForApplication(id)
 	systemAuth := graphql.SystemAuth{}
 
 	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &systemAuth)
@@ -36,7 +46,7 @@ func deleteApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client
 }
 
 // Runtime
-func registerRuntimeFromInputWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, input *graphql.RuntimeInput) *graphql.RuntimeExt {
+func registerRuntimeFromInputWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, input *graphql.RuntimeInput) graphql.RuntimeExt {
 	inputGQL, err := tc.Graphqlizer.RuntimeInputToGQL(*input)
 	require.NoError(t, err)
 
@@ -46,11 +56,11 @@ func registerRuntimeFromInputWithinTenant(t *testing.T, ctx context.Context, gql
 	err = tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, registerRuntimeRequest, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
-	return &runtime
+	return runtime
 }
 
-func generateClientCredentialsForRuntime(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.SystemAuth {
-	req := fixGenerateClientCredentialsForRuntime(id)
+func requestClientCredentialsForRuntime(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.SystemAuth {
+	req := fixRequestClientCredentialsForRuntime(id)
 	systemAuth := graphql.SystemAuth{}
 
 	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &systemAuth)
@@ -66,7 +76,7 @@ func unregisterRuntimeWithinTenant(t *testing.T, ctx context.Context, gqlClient 
 }
 
 // API Spec
-func addAPIWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.APIDefinitionInput, applicationID string) *graphql.APIDefinitionExt {
+func addAPIWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.APIDefinitionInput, applicationID string) graphql.APIDefinitionExt {
 	apiInputGQL, err := tc.Graphqlizer.APIDefinitionInputToGQL(in)
 	require.NoError(t, err)
 
@@ -76,7 +86,7 @@ func addAPIWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Clien
 	err = tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, addApiRequest, &api)
 	require.NoError(t, err)
 	require.NotEmpty(t, api.ID)
-	return &api
+	return api
 }
 
 // Integration System
@@ -117,13 +127,17 @@ func getSystemAuthsForIntegrationSystem(t *testing.T, ctx context.Context, gqlCl
 	return intSys.Auths
 }
 
-func generateClientCredentialsForIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.SystemAuth {
+func requestClientCredentialsForIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) *graphql.OAuthCredentialData {
 	req := fixGenerateClientCredentialsForIntegrationSystem(id)
 	systemAuth := graphql.SystemAuth{}
 
 	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &systemAuth)
 	require.NoError(t, err)
-	return systemAuth
+	intSysOauthCredentialData, ok := systemAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+	require.NotEmpty(t, intSysOauthCredentialData.ClientSecret)
+	require.NotEmpty(t, intSysOauthCredentialData.ClientID)
+	return intSysOauthCredentialData
 }
 
 func generateOneTimeTokenForApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.OneTimeTokenExt {
@@ -138,14 +152,4 @@ func generateOneTimeTokenForApplication(t *testing.T, ctx context.Context, gqlCl
 	require.NotEmpty(t, oneTimeToken.Raw)
 	require.NotEmpty(t, oneTimeToken.RawEncoded)
 	return oneTimeToken
-}
-
-func createApplicationWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.ApplicationRegisterInput) (graphql.ApplicationExt, error) {
-	appInputGQL, err := tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
-	require.NoError(t, err)
-
-	createRequest := fixCreateApplicationRequest(appInputGQL)
-	app := graphql.ApplicationExt{}
-	err = tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, createRequest, &app)
-	return app, err
 }

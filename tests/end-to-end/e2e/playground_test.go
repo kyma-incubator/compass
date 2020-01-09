@@ -43,7 +43,8 @@ func TestDirectorPlaygroundAccess(t *testing.T) {
 		subdomain := cfg.Gateway.ClientCertsSubdomain
 		tenant := cfg.DefaultTenant
 
-		dexToken := getDexToken(t)
+		dexToken, err := idtokenprovider.GetDexToken()
+		require.NoError(t, err)
 		dexGQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 		ctx := context.Background()
@@ -85,16 +86,6 @@ func getClientWithCert(certificates []*x509.Certificate, key *rsa.PrivateKey) *h
 		Transport: transport,
 		Timeout:   time.Second * 30,
 	}
-}
-
-func getDexToken(t *testing.T) string {
-	config, err := idtokenprovider.NewConfigFromEnv()
-	require.NoError(t, err)
-
-	dexToken, err := idtokenprovider.Authenticate(config)
-	require.NoError(t, err)
-
-	return dexToken
 }
 
 func createApplicationForCertPlaygroundTest(t *testing.T, ctx context.Context, tenant string, cli *gcli.Client) string {
