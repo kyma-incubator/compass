@@ -42,6 +42,13 @@ func newProvisioningService(config config, persistenceService persistence.Servic
 
 	inputConverter := converters.NewInputConverter(uuidGenerator, releaseRepo)
 	graphQLConverter := converters.NewGraphQLConverter()
+	if config.SkipCertVerification == true {
+		logrus.Info("TLS certificate verification is off")
+	} else {
+		logrus.Info("TLS certificate verification is on")
+	}
+
+	logrus.Infof("Director endpoint %s", config.DirectorURL)
 
 	client := &http.Client{
 		Transport: &http.Transport{
