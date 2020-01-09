@@ -2,7 +2,7 @@ package storage
 
 import "fmt"
 
-const ConnectionURLFormat = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
+const connectionURLFormat = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
 
 type Config struct {
 	User     string `envconfig:"default=postgres"`
@@ -14,6 +14,6 @@ type Config struct {
 }
 
 func (cfg *Config) ConnectionURL() string {
-	return fmt.Sprintf(ConnectionURLFormat, cfg.Host, cfg.Port, cfg.User,
+	return fmt.Sprintf(connectionURLFormat, cfg.Host, cfg.Port, cfg.User,
 		cfg.Password, cfg.Name, cfg.SSLMode)
 }

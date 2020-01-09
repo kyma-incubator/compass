@@ -1,10 +1,8 @@
-package storage
+package postsql
 
 import (
 	"fmt"
 	"time"
-
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/schema"
 
 	"github.com/gocraft/dbr"
 
@@ -37,7 +35,7 @@ func InitializeDatabase(connectionURL string) (*dbr.Connection, error) {
 	}
 
 	log.Info("Database not initialized. Setting up schema...")
-	for _, v := range schema.Tables {
+	for _, v := range Tables {
 		if _, err := connection.Exec(v); err != nil {
 			return nil, err
 		}
@@ -57,7 +55,7 @@ func closeDBConnection(db *dbr.Connection) {
 const TableNotExistsError = "42P01"
 
 func checkIfDatabaseInitialized(db *dbr.Connection) (bool, error) {
-	checkQuery := fmt.Sprintf(`SELECT '%s.%s'::regclass;`, schemaName, schema.InstancesTableName)
+	checkQuery := fmt.Sprintf(`SELECT '%s.%s'::regclass;`, schemaName, InstancesTableName)
 
 	row := db.QueryRow(checkQuery)
 
@@ -74,7 +72,7 @@ func checkIfDatabaseInitialized(db *dbr.Connection) (bool, error) {
 		return false, errors.Wrap(err, "Failed to check if schema initialized")
 	}
 
-	return tableName == schema.InstancesTableName, nil
+	return tableName == InstancesTableName, nil
 }
 
 func waitForDatabaseAccess(connString string, retryCount int) (*dbr.Connection, error) {

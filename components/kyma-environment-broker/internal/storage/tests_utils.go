@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/schema"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/postsql"
 
 	"github.com/gocraft/dbr"
 	"github.com/lib/pq"
@@ -109,7 +109,7 @@ func InitTestDBContainer(t *testing.T, ctx context.Context, hostname string) (fu
 }
 
 func CheckIfAllDatabaseTablesArePresent(db *dbr.Connection) error {
-	tables := []string{schema.InstancesTableName}
+	tables := []string{postsql.InstancesTableName}
 
 	for _, table := range tables {
 		checkError := checkIfDBTableIsPresent(table, db)
@@ -130,13 +130,13 @@ func checkIfDBTableIsPresent(tableNameToCheck string, db *dbr.Connection) error 
 	if err != nil {
 		psqlErr, converted := err.(*pq.Error)
 
-		if converted && psqlErr.Code == TableNotExistsError {
+		if converted && psqlErr.Code == postsql.TableNotExistsError {
 			return errors.Wrap(err, "Table is missing in the database")
 		}
 		return errors.Wrap(err, "Failed to check if table is present in the database")
 	}
 
-	if tableName != schema.InstancesTableName {
+	if tableName != postsql.InstancesTableName {
 		return errors.Wrap(err, "Failed verify table name in the database")
 	}
 

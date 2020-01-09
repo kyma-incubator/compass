@@ -15,6 +15,6 @@ type ProvisioningParametersDTO struct {
 
 type ERSContext struct {
 	TenantID        string `json:"tenant_id"`
-	SubaccountID    string `json:"subaccount_id"`
-	GlobalaccountID string `json:"globalaccount_id"`
+	SubAccountID    string `json:"subaccount_id"`
+	GlobalAccountID string `json:"globalaccount_id"`
 }

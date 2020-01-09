@@ -36,7 +36,7 @@ testing-with-database-network:
 		--network=$(TESTING_DB_NETWORK) \
 		-v $(COMPONENT_DIR):$(WORKSPACE_COMPONENT_DIR):delegated \
 		--env PIPELINE_BUILD=1 \
-		$(DOCKER_CREATE_OPTS) go test ./...
+		$(DOCKER_CREATE_OPTS) go test  -tags=integration ./...
 	@docker network rm $(TESTING_DB_NETWORK) || true
 
 clean-up:

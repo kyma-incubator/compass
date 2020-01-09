@@ -1,13 +1,10 @@
 package dbsession
 
 import (
-	"database/sql"
-
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/schema"
-
 	dbr "github.com/gocraft/dbr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/postsql"
 )
 
 type writeSession struct {
@@ -16,7 +13,7 @@ type writeSession struct {
 }
 
 func (ws writeSession) InsertInstance(instance internal.Instance) dberr.Error {
-	_, err := ws.insertInto(schema.InstancesTableName).
+	_, err := ws.insertInto(postsql.InstancesTableName).
 		Pair("instance_id", instance.InstanceID).
 		Pair("runtime_id", instance.RuntimeID).
 		Pair("global_account_id", instance.GlobalAccountID).
@@ -33,8 +30,8 @@ func (ws writeSession) InsertInstance(instance internal.Instance) dberr.Error {
 }
 
 func (ws writeSession) UpdateInstance(instance internal.Instance) dberr.Error {
-	res, err := ws.update(schema.InstancesTableName).
-		Where(dbr.Eq(schema.InstancesTableName+".instance_id", instance.InstanceID)).
+	_, err := ws.update(postsql.InstancesTableName).
+		Where(dbr.Eq(postsql.InstancesTableName+".instance_id", instance.InstanceID)).
 		Set("instance_id", instance.InstanceID).
 		Set("runtime_id", instance.RuntimeID).
 		Set("global_account_id", instance.GlobalAccountID).
@@ -45,19 +42,6 @@ func (ws writeSession) UpdateInstance(instance internal.Instance) dberr.Error {
 		Exec()
 	if err != nil {
 		return dberr.Internal("Failed to update record to Instance table: %s", err)
-	}
-
-	return ws.updateSucceeded(res, err.Error())
-}
-
-func (ws writeSession) updateSucceeded(result sql.Result, errorMsg string) dberr.Error {
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return dberr.Internal("Failed to get number of rows affected: %s", err)
-	}
-
-	if rowsAffected == 0 {
-		return dberr.NotFound(errorMsg)
 	}
 
 	return nil

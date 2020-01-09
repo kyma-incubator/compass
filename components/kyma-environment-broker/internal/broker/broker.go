@@ -158,8 +158,8 @@ func (b *KymaEnvBroker) Provision(ctx context.Context, instanceID string, detail
 	}
 	err = b.Storage.Instances().Insert(internal.Instance{
 		InstanceID:             instanceID,
+		GlobalAccountID:        ersContext.GlobalAccountID,
 		RuntimeID:              *resp.RuntimeID,
-		GlobalAccountID:        ersContext.GlobalaccountID,
 		ServiceID:              details.ServiceID,
 		ServicePlanID:          details.PlanID,
 		DashboardURL:           fixedDummyURL,

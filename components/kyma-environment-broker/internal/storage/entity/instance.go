@@ -1,4 +1,4 @@
-package service
+package entity
 
 import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"

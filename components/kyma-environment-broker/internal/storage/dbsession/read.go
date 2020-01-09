@@ -4,7 +4,7 @@ import (
 	dbr "github.com/gocraft/dbr"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/schema"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/postsql"
 )
 
 type readSession struct {
@@ -16,8 +16,8 @@ func (r readSession) GetInstanceByID(instanceID string) (internal.Instance, dber
 
 	err := r.session.
 		Select("*").
-		From(schema.InstancesTableName).
-		Where(dbr.Eq(schema.InstancesTableName+".instance_id", instanceID)).
+		From(postsql.InstancesTableName).
+		Where(dbr.Eq("instance_id", instanceID)).
 		LoadOne(&instance)
 
 	if err != nil {

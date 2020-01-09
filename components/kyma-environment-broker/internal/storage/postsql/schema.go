@@ -1,4 +1,4 @@
-package schema
+package postsql
 
 import "fmt"
 
