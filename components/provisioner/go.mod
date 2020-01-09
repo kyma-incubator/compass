@@ -12,8 +12,9 @@ require (
 	github.com/gorilla/mux v1.7.3
 	github.com/hashicorp/terraform v0.12.16
 	github.com/json-iterator/go v1.1.8 // indirect
-	github.com/kyma-incubator/hydroform v0.0.0-20191212125252-7afdb02ac964
-	github.com/kyma-incubator/hydroform/install v0.0.0-20191212125252-7afdb02ac964
+	github.com/kyma-incubator/hydroform v0.0.0-20191217171037-affe7099c3b9
+	github.com/kyma-incubator/hydroform/install v0.0.0-20191217171037-affe7099c3b9
+	github.com/kyma-project/kyma v0.5.1-0.20191106070956-5aa08d114ca0
 	github.com/lib/pq v1.2.0
 	github.com/onsi/ginkgo v1.10.1 // indirect
 	github.com/onsi/gomega v1.7.0 // indirect

@@ -52,6 +52,30 @@ type ClusterConfigInput struct {
 	GcpConfig      *GCPConfigInput      `json:"gcpConfig"`
 }
 
+type ComponentConfiguration struct {
+	Component     string         `json:"component"`
+	Namespace     string         `json:"namespace"`
+	Configuration []*ConfigEntry `json:"configuration"`
+}
+
+type ComponentConfigurationInput struct {
+	Component     string              `json:"component"`
+	Namespace     string              `json:"namespace"`
+	Configuration []*ConfigEntryInput `json:"configuration"`
+}
+
+type ConfigEntry struct {
+	Key    string `json:"key"`
+	Value  string `json:"value"`
+	Secret *bool  `json:"secret"`
+}
+
+type ConfigEntryInput struct {
+	Key    string `json:"key"`
+	Value  string `json:"value"`
+	Secret *bool  `json:"secret"`
+}
+
 type CredentialsInput struct {
 	SecretName string `json:"secretName"`
 }
@@ -137,13 +161,15 @@ type GardenerConfigInput struct {
 }
 
 type KymaConfig struct {
-	Version *string       `json:"version"`
-	Modules []*KymaModule `json:"modules"`
+	Version       *string                   `json:"version"`
+	Components    []*ComponentConfiguration `json:"components"`
+	Configuration []*ConfigEntry            `json:"configuration"`
 }
 
 type KymaConfigInput struct {
-	Version string       `json:"version"`
-	Modules []KymaModule `json:"modules"`
+	Version       string                         `json:"version"`
+	Components    []*ComponentConfigurationInput `json:"components"`
+	Configuration []*ConfigEntryInput            `json:"configuration"`
 }
 
 type OperationStatus struct {
@@ -191,59 +217,6 @@ type UpgradeClusterInput struct {
 type UpgradeRuntimeInput struct {
 	ClusterConfig *UpgradeClusterInput `json:"clusterConfig"`
 	KymaConfig    *KymaConfigInput     `json:"kymaConfig"`
-}
-
-type KymaModule string
-
-const (
-	KymaModuleBackup             KymaModule = "Backup"
-	KymaModuleBackupInit         KymaModule = "BackupInit"
-	KymaModuleJaeger             KymaModule = "Jaeger"
-	KymaModuleLogging            KymaModule = "Logging"
-	KymaModuleMonitoring         KymaModule = "Monitoring"
-	KymaModulePrometheusOperator KymaModule = "PrometheusOperator"
-	KymaModuleKiali              KymaModule = "Kiali"
-	KymaModuleKnativeBuild       KymaModule = "KnativeBuild"
-)
-
-var AllKymaModule = []KymaModule{
-	KymaModuleBackup,
-	KymaModuleBackupInit,
-	KymaModuleJaeger,
-	KymaModuleLogging,
-	KymaModuleMonitoring,
-	KymaModulePrometheusOperator,
-	KymaModuleKiali,
-	KymaModuleKnativeBuild,
-}
-
-func (e KymaModule) IsValid() bool {
-	switch e {
-	case KymaModuleBackup, KymaModuleBackupInit, KymaModuleJaeger, KymaModuleLogging, KymaModuleMonitoring, KymaModulePrometheusOperator, KymaModuleKiali, KymaModuleKnativeBuild:
-		return true
-	}
-	return false
-}
-
-func (e KymaModule) String() string {
-	return string(e)
-}
-
-func (e *KymaModule) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = KymaModule(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid KymaModule", str)
-	}
-	return nil
-}
-
-func (e KymaModule) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 type OperationState string

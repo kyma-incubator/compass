@@ -58,6 +58,18 @@ type ComplexityRoot struct {
 		Message func(childComplexity int) int
 	}
 
+	ComponentConfiguration struct {
+		Component     func(childComplexity int) int
+		Configuration func(childComplexity int) int
+		Namespace     func(childComplexity int) int
+	}
+
+	ConfigEntry struct {
+		Key    func(childComplexity int) int
+		Secret func(childComplexity int) int
+		Value  func(childComplexity int) int
+	}
+
 	Error struct {
 		Message func(childComplexity int) int
 	}
@@ -98,8 +110,9 @@ type ComplexityRoot struct {
 	}
 
 	KymaConfig struct {
-		Modules func(childComplexity int) int
-		Version func(childComplexity int) int
+		Components    func(childComplexity int) int
+		Configuration func(childComplexity int) int
+		Version       func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -217,6 +230,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.CleanUpRuntimeDataResult.Message(childComplexity), true
+
+	case "ComponentConfiguration.component":
+		if e.complexity.ComponentConfiguration.Component == nil {
+			break
+		}
+
+		return e.complexity.ComponentConfiguration.Component(childComplexity), true
+
+	case "ComponentConfiguration.configuration":
+		if e.complexity.ComponentConfiguration.Configuration == nil {
+			break
+		}
+
+		return e.complexity.ComponentConfiguration.Configuration(childComplexity), true
+
+	case "ComponentConfiguration.namespace":
+		if e.complexity.ComponentConfiguration.Namespace == nil {
+			break
+		}
+
+		return e.complexity.ComponentConfiguration.Namespace(childComplexity), true
+
+	case "ConfigEntry.key":
+		if e.complexity.ConfigEntry.Key == nil {
+			break
+		}
+
+		return e.complexity.ConfigEntry.Key(childComplexity), true
+
+	case "ConfigEntry.secret":
+		if e.complexity.ConfigEntry.Secret == nil {
+			break
+		}
+
+		return e.complexity.ConfigEntry.Secret(childComplexity), true
+
+	case "ConfigEntry.value":
+		if e.complexity.ConfigEntry.Value == nil {
+			break
+		}
+
+		return e.complexity.ConfigEntry.Value(childComplexity), true
 
 	case "Error.message":
 		if e.complexity.Error.Message == nil {
@@ -407,12 +462,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GardenerConfig.WorkerCidr(childComplexity), true
 
-	case "KymaConfig.modules":
-		if e.complexity.KymaConfig.Modules == nil {
+	case "KymaConfig.components":
+		if e.complexity.KymaConfig.Components == nil {
 			break
 		}
 
-		return e.complexity.KymaConfig.Modules(childComplexity), true
+		return e.complexity.KymaConfig.Components(childComplexity), true
+
+	case "KymaConfig.configuration":
+		if e.complexity.KymaConfig.Configuration == nil {
+			break
+		}
+
+		return e.complexity.KymaConfig.Configuration(childComplexity), true
 
 	case "KymaConfig.version":
 		if e.complexity.KymaConfig.Version == nil {
@@ -681,17 +743,6 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 
 var parsedSchema = gqlparser.MustLoadSchema(
 	&ast.Source{Name: "schema.graphql", Input: `
-enum KymaModule {
-    Backup
-    BackupInit
-    Jaeger
-    Logging
-    Monitoring
-    PrometheusOperator
-    Kiali
-    KnativeBuild
-}
-
 # Configuration of Runtime. We can consider returning kubeconfig as a part of this type.
 type RuntimeConfig {
     clusterConfig: ClusterConfig
@@ -750,9 +801,22 @@ type GCPConfig {
     zone: String
 }
 
+type ConfigEntry {
+    key: String!
+    value: String!
+    secret: Boolean
+}
+
+type ComponentConfiguration {
+    component: String!
+    namespace: String!
+    configuration: [ConfigEntry]
+}
+
 type KymaConfig {
     version: String
-    modules: [KymaModule]
+    components: [ComponentConfiguration]
+    configuration: [ConfigEntry]
 }
 
 type OperationStatus {
@@ -874,9 +938,23 @@ input GCPConfigInput {
 }
 
 input KymaConfigInput {
-    version: String!        # Kyma version to install on the cluster
-    modules: [KymaModule!]  # Kyma components to install on the cluster
+    version: String!                            # Kyma version to install on the cluster
+    components: [ComponentConfigurationInput]!  # List of Kyma Components with specific configuration
+    configuration: [ConfigEntryInput]           # Global Kyma configuration
 }
+
+input ConfigEntryInput {
+    key: String!        # Configuration property key
+    value: String!      # Configuration property value
+    secret: Boolean     # Specifies if the property is confidential
+}
+
+input ComponentConfigurationInput {
+    component: String!                    # Kyma component name
+    namespace: String!                    # Namespace to which component should be installed
+    configuration: [ConfigEntryInput]     # Component specific configuration
+}
+
 
 input UpgradeRuntimeInput {
     clusterConfig: UpgradeClusterInput  # Configuration of the cluster to upgrade
@@ -1240,6 +1318,162 @@ func (ec *executionContext) _CleanUpRuntimeDataResult_message(ctx context.Contex
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ComponentConfiguration_component(ctx context.Context, field graphql.CollectedField, obj *ComponentConfiguration) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "ComponentConfiguration",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Component, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ComponentConfiguration_namespace(ctx context.Context, field graphql.CollectedField, obj *ComponentConfiguration) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "ComponentConfiguration",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Namespace, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ComponentConfiguration_configuration(ctx context.Context, field graphql.CollectedField, obj *ComponentConfiguration) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "ComponentConfiguration",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Configuration, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*ConfigEntry)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOConfigEntry2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntry(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ConfigEntry_key(ctx context.Context, field graphql.CollectedField, obj *ConfigEntry) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "ConfigEntry",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Key, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ConfigEntry_value(ctx context.Context, field graphql.CollectedField, obj *ConfigEntry) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "ConfigEntry",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ConfigEntry_secret(ctx context.Context, field graphql.CollectedField, obj *ConfigEntry) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "ConfigEntry",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Secret, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Error_message(ctx context.Context, field graphql.CollectedField, obj *Error) graphql.Marshaler {
@@ -1914,7 +2148,7 @@ func (ec *executionContext) _KymaConfig_version(ctx context.Context, field graph
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _KymaConfig_modules(ctx context.Context, field graphql.CollectedField, obj *KymaConfig) graphql.Marshaler {
+func (ec *executionContext) _KymaConfig_components(ctx context.Context, field graphql.CollectedField, obj *KymaConfig) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -1927,15 +2161,39 @@ func (ec *executionContext) _KymaConfig_modules(ctx context.Context, field graph
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Modules, nil
+		return obj.Components, nil
 	})
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*KymaModule)
+	res := resTmp.([]*ComponentConfiguration)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOKymaModule2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaModule(ctx, field.Selections, res)
+	return ec.marshalOComponentConfiguration2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfiguration(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _KymaConfig_configuration(ctx context.Context, field graphql.CollectedField, obj *KymaConfig) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "KymaConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Configuration, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*ConfigEntry)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOConfigEntry2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntry(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_provisionRuntime(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -3479,6 +3737,66 @@ func (ec *executionContext) unmarshalInputClusterConfigInput(ctx context.Context
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputComponentConfigurationInput(ctx context.Context, v interface{}) (ComponentConfigurationInput, error) {
+	var it ComponentConfigurationInput
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "component":
+			var err error
+			it.Component, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "namespace":
+			var err error
+			it.Namespace, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "configuration":
+			var err error
+			it.Configuration, err = ec.unmarshalOConfigEntryInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputConfigEntryInput(ctx context.Context, v interface{}) (ConfigEntryInput, error) {
+	var it ConfigEntryInput
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "key":
+			var err error
+			it.Key, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "value":
+			var err error
+			it.Value, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "secret":
+			var err error
+			it.Secret, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCredentialsInput(ctx context.Context, v interface{}) (CredentialsInput, error) {
 	var it CredentialsInput
 	var asMap = v.(map[string]interface{})
@@ -3701,9 +4019,15 @@ func (ec *executionContext) unmarshalInputKymaConfigInput(ctx context.Context, v
 			if err != nil {
 				return it, err
 			}
-		case "modules":
+		case "components":
 			var err error
-			it.Modules, err = ec.unmarshalOKymaModule2ᚕgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaModule(ctx, v)
+			it.Components, err = ec.unmarshalNComponentConfigurationInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfigurationInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "configuration":
+			var err error
+			it.Configuration, err = ec.unmarshalOConfigEntryInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3944,6 +4268,74 @@ func (ec *executionContext) _CleanUpRuntimeDataResult(ctx context.Context, sel a
 	return out
 }
 
+var componentConfigurationImplementors = []string{"ComponentConfiguration"}
+
+func (ec *executionContext) _ComponentConfiguration(ctx context.Context, sel ast.SelectionSet, obj *ComponentConfiguration) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, componentConfigurationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ComponentConfiguration")
+		case "component":
+			out.Values[i] = ec._ComponentConfiguration_component(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "namespace":
+			out.Values[i] = ec._ComponentConfiguration_namespace(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "configuration":
+			out.Values[i] = ec._ComponentConfiguration_configuration(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var configEntryImplementors = []string{"ConfigEntry"}
+
+func (ec *executionContext) _ConfigEntry(ctx context.Context, sel ast.SelectionSet, obj *ConfigEntry) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, configEntryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ConfigEntry")
+		case "key":
+			out.Values[i] = ec._ConfigEntry_key(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "value":
+			out.Values[i] = ec._ConfigEntry_value(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "secret":
+			out.Values[i] = ec._ConfigEntry_secret(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var errorImplementors = []string{"Error"}
 
 func (ec *executionContext) _Error(ctx context.Context, sel ast.SelectionSet, obj *Error) graphql.Marshaler {
@@ -4099,8 +4491,10 @@ func (ec *executionContext) _KymaConfig(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = graphql.MarshalString("KymaConfig")
 		case "version":
 			out.Values[i] = ec._KymaConfig_version(ctx, field, obj)
-		case "modules":
-			out.Values[i] = ec._KymaConfig_modules(ctx, field, obj)
+		case "components":
+			out.Values[i] = ec._KymaConfig_components(ctx, field, obj)
+		case "configuration":
+			out.Values[i] = ec._KymaConfig_configuration(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4625,6 +5019,26 @@ func (ec *executionContext) unmarshalNClusterConfigInput2ᚖgithubᚗcomᚋkyma�
 	return &res, err
 }
 
+func (ec *executionContext) unmarshalNComponentConfigurationInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfigurationInput(ctx context.Context, v interface{}) ([]*ComponentConfigurationInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*ComponentConfigurationInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalOComponentConfigurationInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfigurationInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
 func (ec *executionContext) unmarshalNCredentialsInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCredentialsInput(ctx context.Context, v interface{}) (CredentialsInput, error) {
 	return ec.unmarshalInputCredentialsInput(ctx, v)
 }
@@ -4675,15 +5089,6 @@ func (ec *executionContext) unmarshalNKymaConfigInput2ᚖgithubᚗcomᚋkymaᚑi
 	}
 	res, err := ec.unmarshalNKymaConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx, v)
 	return &res, err
-}
-
-func (ec *executionContext) unmarshalNKymaModule2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaModule(ctx context.Context, v interface{}) (KymaModule, error) {
-	var res KymaModule
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalNKymaModule2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaModule(ctx context.Context, sel ast.SelectionSet, v KymaModule) graphql.Marshaler {
-	return v
 }
 
 func (ec *executionContext) unmarshalNOperationState2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationState(ctx context.Context, v interface{}) (OperationState, error) {
@@ -5024,6 +5429,152 @@ func (ec *executionContext) marshalOClusterConfig2githubᚗcomᚋkymaᚑincubato
 	return ec._ClusterConfig(ctx, sel, &v)
 }
 
+func (ec *executionContext) marshalOComponentConfiguration2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfiguration(ctx context.Context, sel ast.SelectionSet, v ComponentConfiguration) graphql.Marshaler {
+	return ec._ComponentConfiguration(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOComponentConfiguration2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfiguration(ctx context.Context, sel ast.SelectionSet, v []*ComponentConfiguration) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOComponentConfiguration2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfiguration(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOComponentConfiguration2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfiguration(ctx context.Context, sel ast.SelectionSet, v *ComponentConfiguration) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ComponentConfiguration(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOComponentConfigurationInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfigurationInput(ctx context.Context, v interface{}) (ComponentConfigurationInput, error) {
+	return ec.unmarshalInputComponentConfigurationInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOComponentConfigurationInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfigurationInput(ctx context.Context, v interface{}) (*ComponentConfigurationInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOComponentConfigurationInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfigurationInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOConfigEntry2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntry(ctx context.Context, sel ast.SelectionSet, v ConfigEntry) graphql.Marshaler {
+	return ec._ConfigEntry(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOConfigEntry2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntry(ctx context.Context, sel ast.SelectionSet, v []*ConfigEntry) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOConfigEntry2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntry(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOConfigEntry2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntry(ctx context.Context, sel ast.SelectionSet, v *ConfigEntry) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ConfigEntry(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOConfigEntryInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx context.Context, v interface{}) (ConfigEntryInput, error) {
+	return ec.unmarshalInputConfigEntryInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOConfigEntryInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx context.Context, v interface{}) ([]*ConfigEntryInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*ConfigEntryInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalOConfigEntryInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOConfigEntryInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx context.Context, v interface{}) (*ConfigEntryInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOConfigEntryInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) marshalOError2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx context.Context, sel ast.SelectionSet, v []*Error) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -5144,150 +5695,6 @@ func (ec *executionContext) unmarshalOKymaConfigInput2ᚖgithubᚗcomᚋkymaᚑi
 	}
 	res, err := ec.unmarshalOKymaConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx, v)
 	return &res, err
-}
-
-func (ec *executionContext) unmarshalOKymaModule2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaModule(ctx context.Context, v interface{}) (KymaModule, error) {
-	var res KymaModule
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalOKymaModule2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaModule(ctx context.Context, sel ast.SelectionSet, v KymaModule) graphql.Marshaler {
-	return v
-}
-
-func (ec *executionContext) unmarshalOKymaModule2ᚕgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaModule(ctx context.Context, v interface{}) ([]KymaModule, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]KymaModule, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalNKymaModule2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaModule(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalOKymaModule2ᚕgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaModule(ctx context.Context, sel ast.SelectionSet, v []KymaModule) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		rctx := &graphql.ResolverContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithResolverContext(ctx, rctx)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNKymaModule2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaModule(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
-func (ec *executionContext) unmarshalOKymaModule2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaModule(ctx context.Context, v interface{}) ([]*KymaModule, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*KymaModule, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalOKymaModule2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaModule(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalOKymaModule2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaModule(ctx context.Context, sel ast.SelectionSet, v []*KymaModule) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		rctx := &graphql.ResolverContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithResolverContext(ctx, rctx)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOKymaModule2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaModule(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
-func (ec *executionContext) unmarshalOKymaModule2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaModule(ctx context.Context, v interface{}) (*KymaModule, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOKymaModule2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaModule(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOKymaModule2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaModule(ctx context.Context, sel ast.SelectionSet, v *KymaModule) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return v
 }
 
 func (ec *executionContext) marshalOOperationStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx context.Context, sel ast.SelectionSet, v OperationStatus) graphql.Marshaler {

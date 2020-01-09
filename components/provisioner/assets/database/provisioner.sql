@@ -99,15 +99,18 @@ CREATE TABLE kyma_config
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     release_id uuid NOT NULL,
     cluster_id uuid NOT NULL,
+    global_configuration jsonb,
     UNIQUE(cluster_id),
     foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE,
     foreign key (release_id) REFERENCES kyma_release (id) ON DELETE RESTRICT
 );
 
-CREATE TABLE kyma_config_module
+CREATE TABLE kyma_component_config
 (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
-    module varchar(256) NOT NULL,
+    component varchar(256) NOT NULL,
+    namespace varchar(256) NOT NULL,
+    configuration jsonb,
     kyma_config_id uuid NOT NULL,
     foreign key (kyma_config_id) REFERENCES kyma_config (id) ON DELETE CASCADE
 );

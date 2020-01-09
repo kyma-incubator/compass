@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/converters"
-
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
@@ -42,12 +40,12 @@ type service struct {
 	persistenceService  persistence.Service
 	hydroform           hydroform.Service
 	installationService installation.Service
-	inputConverter      converters.InputConverter
-	graphQLConverter    converters.GraphQLConverter
+	inputConverter      InputConverter
+	graphQLConverter    GraphQLConverter
 }
 
-func NewProvisioningService(persistenceService persistence.Service, inputConverter converters.InputConverter,
-	graphQLConverter converters.GraphQLConverter, hydroform hydroform.Service, installationService installation.Service) Service {
+func NewProvisioningService(persistenceService persistence.Service, inputConverter InputConverter,
+	graphQLConverter GraphQLConverter, hydroform hydroform.Service, installationService installation.Service) Service {
 	return &service{
 		persistenceService:  persistenceService,
 		hydroform:           hydroform,
@@ -200,7 +198,7 @@ func (r *service) startProvisioning(operationID string, cluster model.Cluster, f
 	}
 
 	log.Infof("Runtime %s provisioned successfully. Starting Kyma installation...", cluster.ID)
-	err = r.installationService.InstallKyma(cluster.ID, info.KubeConfig, cluster.KymaConfig.Release)
+	err = r.installationService.InstallKyma(cluster.ID, info.KubeConfig, cluster.KymaConfig.Release, cluster.KymaConfig.GlobalConfiguration, cluster.KymaConfig.Components)
 	if err != nil {
 		log.Errorf("Error installing Kyma on runtime %s: %s", cluster.ID, err.Error())
 		r.setOperationAsFailed(operationID, err.Error())

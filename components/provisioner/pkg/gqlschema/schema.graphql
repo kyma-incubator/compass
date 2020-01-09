@@ -1,15 +1,4 @@
 
-enum KymaModule {
-    Backup
-    BackupInit
-    Jaeger
-    Logging
-    Monitoring
-    PrometheusOperator
-    Kiali
-    KnativeBuild
-}
-
 # Configuration of Runtime. We can consider returning kubeconfig as a part of this type.
 type RuntimeConfig {
     clusterConfig: ClusterConfig
@@ -68,9 +57,22 @@ type GCPConfig {
     zone: String
 }
 
+type ConfigEntry {
+    key: String!
+    value: String!
+    secret: Boolean
+}
+
+type ComponentConfiguration {
+    component: String!
+    namespace: String!
+    configuration: [ConfigEntry]
+}
+
 type KymaConfig {
     version: String
-    modules: [KymaModule]
+    components: [ComponentConfiguration]
+    configuration: [ConfigEntry]
 }
 
 type OperationStatus {
@@ -192,9 +194,23 @@ input GCPConfigInput {
 }
 
 input KymaConfigInput {
-    version: String!        # Kyma version to install on the cluster
-    modules: [KymaModule!]  # Kyma components to install on the cluster
+    version: String!                            # Kyma version to install on the cluster
+    components: [ComponentConfigurationInput]!  # List of Kyma Components with specific configuration
+    configuration: [ConfigEntryInput]           # Global Kyma configuration
 }
+
+input ConfigEntryInput {
+    key: String!        # Configuration property key
+    value: String!      # Configuration property value
+    secret: Boolean     # Specifies if the property is confidential
+}
+
+input ComponentConfigurationInput {
+    component: String!                    # Kyma component name
+    namespace: String!                    # Namespace to which component should be installed
+    configuration: [ConfigEntryInput]     # Component specific configuration
+}
+
 
 input UpgradeRuntimeInput {
     clusterConfig: UpgradeClusterInput  # Configuration of the cluster to upgrade

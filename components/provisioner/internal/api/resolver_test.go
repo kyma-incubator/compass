@@ -44,7 +44,12 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 
 		kymaConfig := &gqlschema.KymaConfigInput{
 			Version: "1.5",
-			Modules: gqlschema.AllKymaModule,
+			Components: []*gqlschema.ComponentConfigurationInput{
+				{
+					Component:     "core",
+					Configuration: nil,
+				},
+			},
 		}
 
 		providerCredentials := &gqlschema.CredentialsInput{SecretName: "secret_1"}
@@ -83,7 +88,12 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 
 		kymaConfig := &gqlschema.KymaConfigInput{
 			Version: "1.5",
-			Modules: gqlschema.AllKymaModule,
+			Components: []*gqlschema.ComponentConfigurationInput{
+				{
+					Component:     "core",
+					Configuration: nil,
+				},
+			},
 		}
 
 		config := gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, KymaConfig: kymaConfig}
@@ -124,7 +134,12 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 
 		kymaConfig := &gqlschema.KymaConfigInput{
 			Version: "1.5",
-			Modules: gqlschema.AllKymaModule,
+			Components: []*gqlschema.ComponentConfigurationInput{
+				{
+					Component:     "core",
+					Configuration: nil,
+				},
+			},
 		}
 
 		config := gqlschema.ProvisionRuntimeInput{ClusterConfig: clusterConfig, KymaConfig: kymaConfig}

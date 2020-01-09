@@ -12,13 +12,13 @@ type Service struct {
 	mock.Mock
 }
 
-// InstallKyma provides a mock function with given fields: runtimeId, kubeconfigRaw, release
-func (_m *Service) InstallKyma(runtimeId string, kubeconfigRaw string, release model.Release) error {
-	ret := _m.Called(runtimeId, kubeconfigRaw, release)
+// InstallKyma provides a mock function with given fields: runtimeId, kubeconfigRaw, release, globalConfig, componentsConfig
+func (_m *Service) InstallKyma(runtimeId string, kubeconfigRaw string, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
+	ret := _m.Called(runtimeId, kubeconfigRaw, release, globalConfig, componentsConfig)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string, model.Release) error); ok {
-		r0 = rf(runtimeId, kubeconfigRaw, release)
+	if rf, ok := ret.Get(0).(func(string, string, model.Release, model.Configuration, []model.KymaComponentConfig) error); ok {
+		r0 = rf(runtimeId, kubeconfigRaw, release, globalConfig, componentsConfig)
 	} else {
 		r0 = ret.Error(0)
 	}

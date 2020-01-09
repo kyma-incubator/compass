@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
@@ -12,8 +14,6 @@ import (
 	installationMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/mocks"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/converters"
-
 	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
@@ -33,7 +33,12 @@ import (
 )
 
 const (
-	kymaVersion = "1.8"
+	kymaVersion                   = "1.8"
+	kymaSystemNamespace           = "kyma-system"
+	kymaIntegrationNamespace      = "kyma-integration"
+	clusterEssentialsComponent    = "cluster-essentials"
+	coreComponent                 = "core"
+	applicationConnectorComponent = "application-connector"
 )
 
 func waitForOperationCompleted(provisioningService provisioning.Service, operationID string, seconds uint) error {
@@ -169,7 +174,14 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 		})
 
 	installationServiceMock := &installationMocks.Service{}
-	installationServiceMock.On("InstallKyma", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	installationServiceMock.On(
+		"InstallKyma",
+		mock.AnythingOfType("string"),
+		mock.AnythingOfType("string"),
+		mock.AnythingOfType("model.Release"),
+		mock.AnythingOfType("model.Configuration"),
+		mock.AnythingOfType("[]model.KymaComponentConfig")).
+		Return(nil)
 
 	uuidGenerator := uuid.NewUUIDGenerator()
 
@@ -191,10 +203,7 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	defer testutils.CloseDatabase(t, connection)
 
-	kymaConfig := &gqlschema.KymaConfigInput{
-		Version: kymaVersion,
-		Modules: gqlschema.AllKymaModule,
-	}
+	kymaConfig := fixKymaGraphQLConfigInput()
 
 	providerCredentials := &gqlschema.CredentialsInput{SecretName: "secret_1"}
 
@@ -208,8 +217,8 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			dbSessionFactory := dbsession.NewFactory(connection)
 			persistenceService := persistence.NewService(dbSessionFactory, uuidGenerator)
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
-			inputConverter := converters.NewInputConverter(uuidGenerator, releaseRepository)
-			graphQLConverter := converters.NewGraphQLConverter()
+			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository)
+			graphQLConverter := provisioning.NewGraphQLConverter()
 			provisioningService := provisioning.NewProvisioningService(persistenceService, inputConverter, graphQLConverter, hydroformServiceMock, installationServiceMock)
 			provisioner := NewResolver(provisioningService)
 
@@ -230,10 +239,10 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			}
 
 			runtimeStatusProvisioningStarted, err := provisioner.RuntimeStatus(ctx, cfg.runtimeID)
-
 			require.NoError(t, err)
 			require.NotNil(t, runtimeStatusProvisioningStarted)
 			assert.Equal(t, statusForProvisioningStarted, runtimeStatusProvisioningStarted.LastOperationStatus)
+			assert.Equal(t, fixKymaGraphQLConfig(), runtimeStatusProvisioningStarted.RuntimeConfiguration.KymaConfig)
 
 			err = waitForOperationCompleted(provisioningService, operationID, 3)
 			require.NoError(t, err)
@@ -252,9 +261,9 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, runtimeStatusProvisioned)
 			assert.Equal(t, statusForProvisioningSucceeded, runtimeStatusProvisioned.LastOperationStatus)
+			assert.Equal(t, fixKymaGraphQLConfig(), runtimeStatusProvisioningStarted.RuntimeConfiguration.KymaConfig)
 
 			clusterData, err := persistenceService.GetClusterData(cfg.runtimeID)
-
 			require.NoError(t, err)
 			require.NotNil(t, clusterData)
 			require.NotNil(t, clusterData.Kubeconfig)
@@ -275,7 +284,6 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			}
 
 			runtimeStatusDeprovStarted, err := provisioner.RuntimeStatus(ctx, cfg.runtimeID)
-
 			require.NoError(t, err)
 			require.NotNil(t, runtimeStatusDeprovStarted)
 			assert.Equal(t, statusForDeprovisioningStarted, runtimeStatusDeprovStarted.LastOperationStatus)
@@ -294,7 +302,6 @@ func TestResolver_ProvisionRuntimeWithDatabase(t *testing.T) {
 			}
 
 			runtimeStatusDeprovisioned, err := provisioner.RuntimeStatus(ctx, cfg.runtimeID)
-
 			require.NoError(t, err)
 			require.NotNil(t, runtimeStatusDeprovisioned)
 			assert.Equal(t, runtimeStatusDeprovSuccess, runtimeStatusDeprovisioned.LastOperationStatus)
@@ -319,4 +326,90 @@ func insertDummyReleaseIfNotExist(releaseRepo release.Repository, id, version st
 	})
 
 	return err
+}
+
+// TODO - those are the same functions as in Converters tests - think of some way to not to duplicate all that code
+func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {
+
+	return &gqlschema.KymaConfigInput{
+		Version: kymaVersion,
+		Components: []*gqlschema.ComponentConfigurationInput{
+			{
+				Component: clusterEssentialsComponent,
+				Namespace: kymaSystemNamespace,
+			},
+			{
+				Component: coreComponent,
+				Namespace: kymaSystemNamespace,
+				Configuration: []*gqlschema.ConfigEntryInput{
+					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
+					fixGQLConfigEntryInput("test.config.key2", "value2", util.BoolPtr(false)),
+				},
+			},
+			{
+				Component: applicationConnectorComponent,
+				Namespace: kymaIntegrationNamespace,
+				Configuration: []*gqlschema.ConfigEntryInput{
+					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
+					fixGQLConfigEntryInput("test.secret.key", "secretValue", util.BoolPtr(true)),
+				},
+			},
+		},
+		Configuration: []*gqlschema.ConfigEntryInput{
+			fixGQLConfigEntryInput("global.config.key", "globalValue", util.BoolPtr(false)),
+			fixGQLConfigEntryInput("global.config.key2", "globalValue2", util.BoolPtr(false)),
+			fixGQLConfigEntryInput("global.secret.key", "globalSecretValue", util.BoolPtr(true)),
+		},
+	}
+}
+
+func fixGQLConfigEntryInput(key, val string, secret *bool) *gqlschema.ConfigEntryInput {
+	return &gqlschema.ConfigEntryInput{
+		Key:    key,
+		Value:  val,
+		Secret: secret,
+	}
+}
+
+func fixKymaGraphQLConfig() *gqlschema.KymaConfig {
+
+	return &gqlschema.KymaConfig{
+		Version: util.StringPtr(kymaVersion),
+		Components: []*gqlschema.ComponentConfiguration{
+			{
+				Component:     clusterEssentialsComponent,
+				Namespace:     kymaSystemNamespace,
+				Configuration: make([]*gqlschema.ConfigEntry, 0, 0),
+			},
+			{
+				Component: coreComponent,
+				Namespace: kymaSystemNamespace,
+				Configuration: []*gqlschema.ConfigEntry{
+					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
+					fixGQLConfigEntry("test.config.key2", "value2", util.BoolPtr(false)),
+				},
+			},
+			{
+				Component: applicationConnectorComponent,
+				Namespace: kymaIntegrationNamespace,
+				Configuration: []*gqlschema.ConfigEntry{
+					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
+					fixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),
+				},
+			},
+		},
+		Configuration: []*gqlschema.ConfigEntry{
+			fixGQLConfigEntry("global.config.key", "globalValue", util.BoolPtr(false)),
+			fixGQLConfigEntry("global.config.key2", "globalValue2", util.BoolPtr(false)),
+			fixGQLConfigEntry("global.secret.key", "globalSecretValue", util.BoolPtr(true)),
+		},
+	}
+}
+
+func fixGQLConfigEntry(key, val string, secret *bool) *gqlschema.ConfigEntry {
+	return &gqlschema.ConfigEntry{
+		Key:    key,
+		Value:  val,
+		Secret: secret,
+	}
 }
