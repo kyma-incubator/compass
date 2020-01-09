@@ -22,6 +22,6 @@ To run the test locally, set these environment variables:
 | DEFAULT_TENANT | Default tenant value |    `3e64ebae-38b5-46a0-b1ed-9ccee153a0ae` |
 | DOMAIN | Kyma domain name |    `kyma.local` |
 | GATEWAY_JWTSUBDOMAIN | Default gateway for handling requests with JWT | compass-gateway |
-| GATEWAY_CLIENT_CERTS_SUBDOMAIN | Default gateway for handling requests with certificate | compass-gateway-mtls |
+| GATEWAY_CLIENT_CERTS_SUBDOMAIN | Default gateway for handling requests with a certificate | compass-gateway-mtls |
 | GATEWAY_OAUTH20_SUBDOMAIN | Default gateway for handling requests with an OAuth access token | compass-gateway-auth-oauth|
 Then run `go test ./... -count=1 -v` inside `./tests/end-to-end/e2e` directory.
