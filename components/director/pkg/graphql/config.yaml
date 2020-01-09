@@ -1,0 +1,108 @@
+schema: schema.graphql
+
+# Let gqlgen know where to put the generated server
+exec:
+  filename: schema_gen.go
+  package: graphql
+
+# Let gqlgen know where to the generated models (if any)
+model:
+  filename: models_gen.go
+  package: graphql
+
+# Optional turns on binding to field names by tag provided
+struct_tag: json
+
+# Uncomment to turn on resolver stub generation
+#resolver:
+#  filename: resolver.go # where to write them
+#  type: Resolver  # what's the resolver root implementation type called?
+
+# Tell gqlgen about any existing models you want to reuse for
+# graphql. These normally come from the db or a remote api.
+models:
+  Labels:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Labels"
+  Timestamp:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Timestamp"
+  HttpHeaders:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.HttpHeaders"
+  QueryParams:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.QueryParams"
+  CLOB:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.CLOB"
+  JSONSchema:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.JSONSchema"
+  PageCursor:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.PageCursor"
+  Application:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Application"
+    fields:
+      documents:
+        resolver: true
+      eventDefinitions:
+        resolver: true
+      apiDefinitions:
+        resolver: true
+      apiDefinition:
+        resolver: true
+      eventDefinition:
+        resolver: true
+      webhooks:
+        resolver: true
+      labels:
+        resolver: true
+      auths:
+        resolver: true
+      eventingConfiguration:
+        resolver: true
+
+  APISpec:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.APISpec"
+    fields:
+      fetchRequest:
+        resolver: true
+
+  EventSpec:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.EventSpec"
+    fields:
+      fetchRequest:
+        resolver: true
+
+  Document:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Document"
+    fields:
+      fetchRequest:
+        resolver: true
+
+  Runtime:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Runtime"
+    fields:
+      labels:
+        resolver: true
+      auths:
+        resolver: true
+      eventingConfiguration:
+        resolver: true
+
+  IntegrationSystem:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.IntegrationSystem"
+    fields:
+      auths:
+        resolver: true
+
+  APIDefinition:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.APIDefinition"
+    fields:
+      auth:
+        resolver: true
+      auths:
+        resolver: true
+
+  OneTimeToken:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.OneTimeToken"
+    fields:
+      raw:
+        resolver: true
+      rawEncoded:
+        resolver: true
