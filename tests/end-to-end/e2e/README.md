@@ -3,7 +3,7 @@
 Compass end to end test scenario consists of the following steps:
 - Get a Dex token, create the Integration System using this token, and request client credentials for the IntegrationSystem
 - Call Hydra for OAuth 2.0 access token with client_id and client_secret pair - https://github.com/kyma-incubator/examples/tree/master/ory-hydra/scenarios/client-credentials
-- Register an Application (as Integration System)
+- Register an Application as the Integration System
 - Add example API Spec using issued OAuth2.0 Access token (as Integration System)
 - Try removing the Integration System
 - Remove Application using issued OAuth2.0 Access token (test if the token is still valid)
