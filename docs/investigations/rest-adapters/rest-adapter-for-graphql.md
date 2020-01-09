@@ -95,7 +95,7 @@ TODO: CSRF tokens are not implemented in Compass
 - documentation: in Compass, documentation can be added only on the Application level
 
 # Diagram
-![](./adpters.svg)
+![](adpters.svg)
 
 Kyma Integration Layer implemented as a part of the External Solution reads status of the TokenRequest, which returns URL pointing to Adapters.
 Adapters proxies calls to Compass components (REST --> GraphQL) and performing type conversions. 
