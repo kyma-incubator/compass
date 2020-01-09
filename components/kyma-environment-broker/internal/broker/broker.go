@@ -59,6 +59,7 @@ type ProvisioningParameters struct {
 
 var enabledPlanIDs = map[string]struct{} {
 	azurePlanID: {},
+	// add plan IDs which must be enabled
 }
 
 // Services gets the catalog of services offered by the service broker
@@ -197,7 +198,7 @@ func (b *KymaEnvBroker) GetInstance(ctx context.Context, instanceID string) (dom
 
 	spec := domain.GetInstanceDetailsSpec{
 		ServiceID:    kymaServiceID,
-		PlanID:       defaultPlanID,
+		PlanID:       azurePlanID, // todo: read the ID from the storage
 		DashboardURL: fixedDummyURL,
 	}
 	return spec, nil
