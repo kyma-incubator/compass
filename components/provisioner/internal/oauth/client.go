@@ -58,18 +58,16 @@ func (c *oauthClient) getCredentials() (credentials, error) {
 
 func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, error) {
 
-	log.Infof("Getting authorisation token for credentials clientID %s, secret %s, from endpoint: %s", credentials.clientID, credentials.clientSecret, credentials.tokensEndpoint)
+	log.Infof("Getting authorisation token for credentials to access Director from endpoint: %s", credentials.tokensEndpoint)
 
 	form := url.Values{}
 	form.Add(grantTypeFieldName, credentialsGrantType)
 	form.Add(scopeFieldName, scopes)
 
-	log.Infof("Generated request:%s", form.Encode())
-
 	request, err := http.NewRequest(http.MethodPost, credentials.tokensEndpoint, strings.NewReader(form.Encode()))
 
 	if err != nil {
-		log.Errorf("Failed to create token request")
+		log.Errorf("Failed to create authorisation token request")
 		return Token{}, err
 	}
 
@@ -78,8 +76,6 @@ func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, err
 	request.SetBasicAuth(credentials.clientID, credentials.clientSecret)
 	request.Header.Set(contentTypeHeader, contentTypeApplicationURLEncoded)
 	response, err := c.httpClient.Do(request)
-
-	log.Errorf("Sent request!")
 
 	if err != nil {
 		return Token{}, err
@@ -91,10 +87,9 @@ func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, err
 
 	body, err := ioutil.ReadAll(response.Body)
 
-	log.Errorf("Received response body %s", body)
 	defer response.Body.Close()
 	if err != nil {
-		return Token{}, fmt.Errorf("failed to read token response body from '%s': %s", credentials.tokensEndpoint, err.Error())
+		return Token{}, fmt.Errorf("Failed to read token response body from '%s': %s", credentials.tokensEndpoint, err.Error())
 	}
 
 	tokenResponse := Token{}
@@ -104,9 +99,7 @@ func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, err
 		return Token{}, fmt.Errorf("failed to unmarshal token response body: %s", err.Error())
 	}
 
-	log.Errorf("Sucessfully unmarshal response tokens")
-	log.Errorf("Access token: %s", tokenResponse.AccessToken)
-	log.Errorf("Expiration: %d", tokenResponse.Expiration)
+	log.Errorf("Successfully unmarshal response oauth token for accessing Director")
 
 	tokenResponse.Expiration += now
 

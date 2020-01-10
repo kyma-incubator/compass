@@ -45,17 +45,15 @@ func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput) (string,
 	log.Infof("Registering Runtime on Director service")
 
 	if config == nil {
-		return "", errors.New("Cannot register register runtime in Director: missing Runtime config")
+		return "", errors.New("Cannot register runtime in Director: missing Runtime config")
 	}
 
 	if cc.token.EmptyOrExpired() {
-		log.Infof("Getting token to access Director Service")
+		log.Infof("Refreshing token to access Director Service")
 		if err := cc.getToken(); err != nil {
 			return "", err
 		}
 	}
-
-	log.Infof("Valid token to connect with Director Service")
 
 	var response CreateRuntimeResponse
 
@@ -66,33 +64,30 @@ func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput) (string,
 		return "", err
 	}
 
-	log.Infof("Successfully create graphQLized Runtime input %s", graphQLized)
-
 	runtimeQuery := cc.queryProvider.createRuntimeMutation(graphQLized)
 
 	req := gcli.NewRequest(runtimeQuery)
 	req.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", cc.token.AccessToken))
 	req.Header.Set(TenantKey, cc.tenant)
 
-	log.Infof("Sending GraphQL mutation: \r\n %s", runtimeQuery)
-	log.Infof("Authorisation: Bearer\r\n %s", cc.token.AccessToken)
-	log.Infof("Tenant: %s", cc.tenant)
-
 	err = cc.gqlClient.Do(req, &response)
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to register runtime in Director")
+		return "", errors.Wrap(err, "Failed to register runtime in Director. Request failed")
 	}
 
 	// Nil check is necessary due to GraphQL client not checking response code
 	if response.Result == nil {
-		return "", errors.Errorf("Failed to register runtime in Director: received nil response.")
+		return "", errors.Errorf("Failed to register runtime in Director: Received nil response.")
 	}
+
+	log.Infof("Successfully sent GraphQL mutation to Director to register runtime %s for tenant %s", config.Name, cc.tenant)
 
 	return response.Result.ID, nil
 }
 
 func (cc *directorClient) DeleteRuntime(id string) error {
 	if cc.token.EmptyOrExpired() {
+		log.Infof("Refreshing token to access Director Service")
 		if err := cc.getToken(); err != nil {
 			return err
 		}
@@ -104,10 +99,6 @@ func (cc *directorClient) DeleteRuntime(id string) error {
 	req := gcli.NewRequest(runtimeQuery)
 	req.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", cc.token.AccessToken))
 	req.Header.Set(TenantKey, cc.tenant)
-
-	log.Infof("Sending GraphQL mutation: \r\n %s", runtimeQuery)
-	log.Infof("Authorisation: Bearer\r\n %s", cc.token.AccessToken)
-	log.Infof("Tenant: %s", cc.tenant)
 
 	err := cc.gqlClient.Do(req, &response)
 	if err != nil {
@@ -121,6 +112,8 @@ func (cc *directorClient) DeleteRuntime(id string) error {
 	if response.Result.ID != id {
 		return errors.Errorf("Failed to unregister correctly the runtime %s in Director: Received bad Runtime id in response", id)
 	}
+
+	log.Infof("Successfully sent GraphQL mutation to Director to delete runtime %s for tenant %s", id, cc.tenant)
 
 	return nil
 }
