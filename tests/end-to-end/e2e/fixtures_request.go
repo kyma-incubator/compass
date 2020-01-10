@@ -38,6 +38,16 @@ func fixRegisterRuntimeRequest(runtimeInGQL string) *gcli.Request {
 			runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
 }
 
+func fixCreateApplicationTemplateRequest(applicationTemplateInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: createApplicationTemplate(in: %s) {
+					%s
+				}
+			}`,
+			applicationTemplateInGQL, tc.gqlFieldsProvider.ForApplicationTemplate()))
+}
+
 func fixGetIntegrationSystemRequest(integrationSystemID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
@@ -130,4 +140,50 @@ func fixGenerateOneTimeTokenForApplication(appID string) *gcli.Request {
 					%s
 				}
 			}`, appID, tc.gqlFieldsProvider.ForOneTimeToken()))
+}
+
+func fixDeleteApplicationTemplateRequest(appTemplateID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: deleteApplicationTemplate(id: "%s") {
+					%s
+				}
+			}`, appTemplateID, tc.gqlFieldsProvider.ForApplicationTemplate()))
+}
+
+//GET
+func fixGetApplicationRequest(applicationID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+					%s
+				}
+			}`, applicationID, tc.gqlFieldsProvider.ForApplication()))
+}
+
+func fixIntegrationSystemRequest(integrationSystemID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: integrationSystem(id: "%s") {
+					%s
+				}
+			}`,
+			integrationSystemID, tc.gqlFieldsProvider.ForIntegrationSystem()))
+}
+
+func fixApplicationTemplateRequest(applicationTemplateID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: applicationTemplate(id: "%s") {
+					%s
+				}
+			}`, applicationTemplateID, tc.gqlFieldsProvider.ForApplicationTemplate()))
+}
+
+func fixRuntimeRequest(runtimeID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: runtime(id: "%s") {
+					%s
+				}}`, runtimeID, tc.gqlFieldsProvider.ForRuntime()))
 }

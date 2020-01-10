@@ -64,7 +64,7 @@ func TestViewerQuery(t *testing.T) {
 		app := registerApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, appInput)
 
 		t.Logf("Registered Application with [id=%s]", app.ID)
-		defer deleteApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
+		defer unregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
 
 		t.Log("Request Client Credentials for Application")
 		appAuth := requestClientCredentialsForApplication(t, ctx, dexGraphQLClient, tenant, app.ID)

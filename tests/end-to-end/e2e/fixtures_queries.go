@@ -36,11 +36,20 @@ func requestClientCredentialsForApplication(t *testing.T, ctx context.Context, g
 	return systemAuth
 }
 
-func deleteApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, applicationID string) graphql.ApplicationExt {
+func unregisterApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, applicationID string) graphql.ApplicationExt {
 	deleteRequest := fixDeleteApplicationRequest(t, applicationID)
 	app := graphql.ApplicationExt{}
 
 	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, deleteRequest, &app)
+	require.NoError(t, err)
+	return app
+}
+
+func getApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.ApplicationExt {
+	appRequest := fixGetApplicationRequest(id)
+	app := graphql.ApplicationExt{}
+
+	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, appRequest, &app)
 	require.NoError(t, err)
 	return app
 }
@@ -73,6 +82,15 @@ func unregisterRuntimeWithinTenant(t *testing.T, ctx context.Context, gqlClient 
 
 	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, delReq, nil)
 	require.NoError(t, err)
+}
+
+func getRuntime(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.RuntimeExt {
+	req := fixRuntimeRequest(id)
+	runtime := graphql.RuntimeExt{}
+
+	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &runtime)
+	require.NoError(t, err)
+	return runtime
 }
 
 // API Spec
@@ -152,4 +170,32 @@ func generateOneTimeTokenForApplication(t *testing.T, ctx context.Context, gqlCl
 	require.NotEmpty(t, oneTimeToken.Raw)
 	require.NotEmpty(t, oneTimeToken.RawEncoded)
 	return oneTimeToken
+}
+
+//Application Template
+func createApplicationTemplate(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, input graphql.ApplicationTemplateInput) graphql.ApplicationTemplate {
+	appTemplate, err := tc.Graphqlizer.ApplicationTemplateInputToGQL(input)
+	require.NoError(t, err)
+
+	req := fixCreateApplicationTemplateRequest(appTemplate)
+	appTpl := graphql.ApplicationTemplate{}
+	err = tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &appTpl)
+	require.NoError(t, err)
+	return appTpl
+}
+
+func getApplicationTemplate(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) graphql.ApplicationTemplate {
+	req := fixApplicationTemplateRequest(id)
+	appTpl := graphql.ApplicationTemplate{}
+
+	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &appTpl)
+	require.NoError(t, err)
+	return appTpl
+}
+
+func deleteApplicationTemplate(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, applicationTemplateID string) {
+	req := fixDeleteApplicationTemplateRequest(applicationTemplateID)
+
+	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil)
+	require.NoError(t, err)
 }

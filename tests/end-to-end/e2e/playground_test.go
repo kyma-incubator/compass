@@ -49,7 +49,7 @@ func TestDirectorPlaygroundAccess(t *testing.T) {
 
 		ctx := context.Background()
 		appID := createApplicationForCertPlaygroundTest(t, ctx, tenant, dexGQLClient)
-		defer deleteApplication(t, ctx, dexGQLClient, tenant, appID)
+		defer unregisterApplication(t, ctx, dexGQLClient, tenant, appID)
 
 		oneTimeToken := generateOneTimeTokenForApplication(t, ctx, dexGQLClient, tenant, appID)
 		certChain, clientKey := generateClientCertForApplication(t, oneTimeToken)
