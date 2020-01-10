@@ -84,7 +84,6 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		expOperationID := "223949ed-e6b6-4ab2-ab3e-8e19cd456dd40"
 		operation := model.Operation{ID: expOperationID}
 
-
 		directorServiceMock := &directormock.DirectorClient{}
 		directorServiceMock.On("CreateRuntime", mock.Anything).Return(expRuntimeID, nil)
 
