@@ -43,7 +43,7 @@ func TestDirectorPlaygroundAccess(t *testing.T) {
 		subdomain := cfg.Gateway.ClientCertsSubdomain
 		tenant := cfg.DefaultTenant
 
-		dexToken, err := idtokenprovider.GetDexTokenFromEnv()
+		dexToken, err := idtokenprovider.GetDexToken()
 		require.NoError(t, err)
 		dexGQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 

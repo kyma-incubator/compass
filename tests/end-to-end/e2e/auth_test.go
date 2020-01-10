@@ -26,7 +26,7 @@ func TestCompassAuth(t *testing.T) {
 	ctx := context.Background()
 
 	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexTokenFromEnv()
+	dexToken, err := idtokenprovider.GetDexToken()
 	require.NoError(t, err)
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
