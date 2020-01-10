@@ -434,7 +434,7 @@ type EventDefinition {
 	group allows you to find the same API but in different version
 	"""
 	group: String
-	spec: EventSpec!
+	spec: EventSpec
 	version: Version
 }
 

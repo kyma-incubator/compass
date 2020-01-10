@@ -2812,7 +2812,7 @@ type EventDefinition {
 	group allows you to find the same API but in different version
 	"""
 	group: String
-	spec: EventSpec!
+	spec: EventSpec
 	version: Version
 }
 
@@ -7618,15 +7618,12 @@ func (ec *executionContext) _EventDefinition_spec(ctx context.Context, field gra
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*EventSpec)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNEventSpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpec(ctx, field.Selections, res)
+	return ec.marshalOEventSpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpec(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EventDefinition_version(ctx context.Context, field graphql.CollectedField, obj *EventDefinition) (ret graphql.Marshaler) {
@@ -16906,9 +16903,6 @@ func (ec *executionContext) _EventDefinition(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._EventDefinition_group(ctx, field, obj)
 		case "spec":
 			out.Values[i] = ec._EventDefinition_spec(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "version":
 			out.Values[i] = ec._EventDefinition_version(ctx, field, obj)
 		default:
@@ -20190,6 +20184,17 @@ func (ec *executionContext) marshalOEventDefinitionPage2ᚖgithubᚗcomᚋkyma�
 		return graphql.Null
 	}
 	return ec._EventDefinitionPage(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOEventSpec2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpec(ctx context.Context, sel ast.SelectionSet, v EventSpec) graphql.Marshaler {
+	return ec._EventSpec(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOEventSpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpec(ctx context.Context, sel ast.SelectionSet, v *EventSpec) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._EventSpec(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOEventSpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx context.Context, v interface{}) (EventSpecInput, error) {
